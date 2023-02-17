@@ -47,11 +47,11 @@ The runtime is designed to be used in local emulator environments and for contai
 
 - [Runtime Core](./runtime/core)
 
-### Runtime applications
+### Runtimes
 
-The runtime applications are instances of the core Rust runtime embedded into thin wrapper applications in supported Celerity languages.
+The runtime directories host instances of the core Rust runtime embedded into thin wrapper applications along with automatically generated SDKs for supported Celerity languages.
 
-Each runtime application has an accompanying docker image that are used in the build-time phase in deploying applications as containerised services. 
+Each runtime has an accompanying docker image that are used in the build-time phase in deploying applications as containerised services. 
 
 - [Go](./runtime/go)
 - [Java](./runtime/java)
