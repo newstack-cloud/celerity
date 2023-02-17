@@ -27,8 +27,8 @@ lint_project libs/blueprint
 lint_project libs/common
 lint_project libs/build-engine
 
-lint_project tools/api
-lint_project tools/cli
+lint_project apps/api
+lint_project apps/cli
 
 lint_project runtime/core
 lint_project runtime/go
