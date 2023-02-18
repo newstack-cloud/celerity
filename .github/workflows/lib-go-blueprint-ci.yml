@@ -7,10 +7,10 @@ name: Go Blueprint Library
 on:
   push:
     branches: [ main ]
-    paths: 'packages/go/blueprint/**'
+    paths: 'libs/blueprint/**'
   pull_request:
     branches: [ main ]
-    paths: 'packages/go/blueprint/**'
+    paths: 'libs/blueprint/**'
   workflow_dispatch:
     inputs: {}
 
