@@ -26,6 +26,26 @@ bash ./scripts/run-tests.sh
 bash scripts/run-tests.sh --update-snapshots
 ```
 
+## Release tag format
+
+Release tags for the common library should be created in the following format:
+
+```
+blueprint-MAJOR.MINOR.PATCH
+
+e.g. blueprint-0.1.0
+```
+
+## Commit scope
+
+**blueprint**
+
+Example commit:
+
+```bash
+git commit -m 'fix(blueprint): correct cyclic dependency bug'
+```
+
 ## Architecture
 
 ![blueprint architecture](./assets/BlueprintArchitectureOverview.png)
