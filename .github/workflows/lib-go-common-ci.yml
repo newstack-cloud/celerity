@@ -49,3 +49,11 @@ jobs:
     - name: Run Tests
       run: bash scripts/run-tests.sh --tags unit
       working-directory: ${{env.working-directory}}
+
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      with:
+        projectBaseDir: ${{ env.working-directory }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
