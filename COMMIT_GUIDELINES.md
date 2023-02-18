@@ -36,10 +36,10 @@ This list will evolve as more applications are added to Celerity.
 - `build-engine` - This commit scope should be used for a commit that represents work that pertains to the build engine that sits at the core of the test/build/package/deploy tooling.
 - `common` - This commit scope should be used for a commit that represents work that pertains to the common Go library.
 - `runtime-core` - This commit scope should be used for a commit that represents work that pertains to the core Rust runtime library.
-- `runtime-go` - This commit scope should be used for a commit that represents work that pertains to the Go wrapper application for the core runtime.
-- `runtime-java` - This commit scope should be used for a commit that represents work that pertains to the Java wrapper application for the core runtime.
-- `runtime-nodejs` - This commit scope should be used for a commit that represents work that pertains to the NodeJS wrapper application for the core runtime.
-- `runtime-python` - This commit scope should be used for a commit that represents work that pertains to the Python wrapper application for the core runtime.
+- `runtime-go` - This commit scope should be used for a commit that represents work that pertains to the Go wrapper application for the core runtime and the supporting Go SDK.
+- `runtime-java` - This commit scope should be used for a commit that represents work that pertains to the Java wrapper application for the core runtime and the supporting Java SDK.
+- `runtime-nodejs` - This commit scope should be used for a commit that represents work that pertains to the NodeJS wrapper application for the core runtime and the supporting NodeJS SDK.
+- `runtime-python` - This commit scope should be used for a commit that represents work that pertains to the Python wrapper application for the core runtime and the supporting Python SDK.
 - `runtime-rust` - This commit scope should be used for a commit that represents work that pertains to the Rust wrapper application for the core runtime.
 - `api` - This commit scope should be used for a commit that represents work that pertains to the API that allows for remote build/package/deploy resource orchestration.
 - `cli` - This commit scope should be used for a commit that represents work that pertains to the CLI for the test/build/package/deploy tooling.
