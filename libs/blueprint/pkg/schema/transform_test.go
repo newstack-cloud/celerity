@@ -49,7 +49,7 @@ func (s *TransformTestSuite) Test_parses_valid_string_transform_yaml_input(c *C)
 		c.FailNow()
 	}
 
-	c.Assert(targetTransform.Values, DeepEquals, []string{"stratosx-2022-01-22"})
+	c.Assert(targetTransform.Values, DeepEquals, []string{"celerity-2022-01-22"})
 }
 
 func (s *TransformTestSuite) Test_parses_valid_string_list_transform_yaml_input(c *C) {
@@ -61,7 +61,7 @@ func (s *TransformTestSuite) Test_parses_valid_string_list_transform_yaml_input(
 	}
 
 	c.Assert(targetTransform.Values, DeepEquals, []string{
-		"stratosx-2022-01-22",
+		"celerity-2022-01-22",
 		"custom-transform-2",
 		"custom-transform-3",
 	})
@@ -103,7 +103,7 @@ func (s *TransformTestSuite) Test_serialise_valid_transform_yaml_input(c *C) {
 
 	serialisedBytes, err := yaml.Marshal(&TransformValueWrapper{
 		Values: []string{
-			"stratosx-2022-01-22",
+			"celerity-2022-01-22",
 			"custom-transform-2023-01-01",
 			"custom-transform-2023-02-21",
 		},
@@ -131,7 +131,7 @@ func (s *TransformTestSuite) Test_parses_valid_string_transform_field_json_input
 		c.FailNow()
 	}
 
-	c.Assert(targetTransform.Values, DeepEquals, []string{"stratosx-2022-01-22"})
+	c.Assert(targetTransform.Values, DeepEquals, []string{"celerity-2022-01-22"})
 }
 
 func (s *TransformTestSuite) Test_parses_valid_string_list_value_transform_field_json_input(c *C) {
@@ -143,7 +143,7 @@ func (s *TransformTestSuite) Test_parses_valid_string_list_value_transform_field
 	}
 
 	c.Assert(targetTransform.Values, DeepEquals, []string{
-		"stratosx-2022-01-22",
+		"celerity-2022-01-22",
 		"custom-transform-2",
 		"custom-transform-3",
 	})
@@ -185,7 +185,7 @@ func (s *TransformTestSuite) Test_serialise_valid_transform_json_input(c *C) {
 
 	serialisedBytes, err := json.Marshal(&TransformValueWrapper{
 		Values: []string{
-			"stratosx-2022-01-22",
+			"celerity-2022-01-22",
 			"custom-transform-2023-01-01",
 			"custom-transform-2023-02-21",
 		},

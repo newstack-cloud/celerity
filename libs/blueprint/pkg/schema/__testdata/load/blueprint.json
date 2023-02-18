@@ -1,6 +1,6 @@
 {
   "version": "2021-12-18",
-  "transform": "stratosx-2022-01-22",
+  "transform": "celerity-2022-01-22",
   "variables": {
     "dynamoDBTable": {
       "type": "string",

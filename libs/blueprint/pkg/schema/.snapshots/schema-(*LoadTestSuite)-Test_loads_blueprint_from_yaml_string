@@ -2,7 +2,7 @@
   Version: (string) (len=10) "2021-12-18",
   Transform: (*schema.TransformValueWrapper)({
     Values: ([]string) (len=1) {
-      (string) (len=19) "stratosx-2022-01-22"
+      (string) (len=19) "celerity-2022-01-22"
     }
   }),
   Variables: (map[string]*schema.Variable) (len=2) {
