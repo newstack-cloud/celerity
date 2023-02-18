@@ -1,0 +1,147 @@
+{
+  "version": "2021-12-18",
+  "transform": "stratosx-2022-01-22",
+  "variables": {
+    "dynamoDBTable": {
+      "type": "string",
+      "description": "The Orders DynamoDB Table"
+    },
+    "ordersTopicName": {
+      "type": "string",
+      "description": "The Orders Event Topic"
+    }
+  },
+  "dataSources": {
+    "network": {
+      "type": "aws/vpc",
+      "metadata": {
+        "displayName": "Network source"
+      },
+      "exports": {
+        "subnets": {
+          "type": "array"
+        },
+        "securityGroups": {
+          "type": "array"
+        },
+        "vpc": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "resources": {
+    "orderApi": {
+      "type": "celerity/api",
+      "metadata": {
+        "displayName": "Order API",
+        "labels": {
+          "app": "orderApi"
+        }
+      },
+      "linkSelector": {
+        "byLabel": {
+          "app": "orderApi"
+        }
+      },
+      "spec": {
+        "environment": {
+          "variables": {
+            "DYNAMODB_TABLE": "${dynamoDBTable}"
+          }
+        },
+        "runtime": "go1.x",
+        "tracingEnabled": true
+      }
+    },
+    "authoriser": {
+      "type": "celerity/handler",
+      "metadata": {
+        "displayName": "Authoriser",
+        "annotations": {
+          "authoriser": true,
+          "authoriser.identity.header": "MyCustomAuthHeader",
+          "authoriser.identity.validationExpression": "Bearer .*",
+          "authoriser.identity.reauthoriseEvery": 20
+        },
+        "labels": {
+          "app": "orderApi"
+        }
+      },
+      "spec": {
+        "handler": "handlers.Authoriser",
+        "timeout": 120
+      }
+    },
+    "getOrdersHandler": {
+      "type": "celerity/handler",
+      "metadata": {
+        "displayName": "Get Orders Handler",
+        "labels": {
+          "app": "orderApi"
+        }
+      },
+      "spec": {
+        "handler": "handlers.GetOrders",
+        "timeout": 120,
+        "endpoint": {
+          "method": "get",
+          "path": "/orders",
+          "authoriser": "${authoriser}"
+        }
+      }
+    },
+    "updateOrderFunction": {
+      "type": "celerity/handler",
+      "metadata": {
+        "displayName": "Update Order Function",
+        "labels": {
+          "workflow": "orderPubSub",
+          "pubsubType": "consumer"
+        }
+      },
+      "spec": {
+        "handler": "handlers.UpdateOrder",
+        "timeout": 120,
+        "events": {
+          "orderEvent": {
+            "type": "pubsub",
+            "batchSize": 10
+          }
+        }
+      }
+    },
+    "sharedPackagesLayer": {
+      "type": "celerity/layerVersion",
+      "metadata": {
+        "displayName": "Shared Packages Layer",
+        "labels": {
+          "workflow": "orderPubSub",
+          "app": "orderApi"
+        }
+      },
+      "spec": {
+        "compatibleRuntimes": ["go1.x"],
+        "content": "build/shared-packages-layer",
+        "layerName": "sharedPackagesLayer"
+      }
+    },
+    "orderPubSub": {
+      "type": "celerity/pubsub",
+      "metadata": {
+        "displayName": "Order Pub/Sub",
+        "labels": {
+          "workflow": "orderPubSub"
+        }
+      },
+      "linkSelector": {
+        "byLabel": {
+          "workflow": "orderPubSub"
+        }
+      },
+      "spec": {
+        "topicName": "${ordersTopicName}"
+      }
+    }
+  }
+}

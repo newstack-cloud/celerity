@@ -1,0 +1,78 @@
+([]*links.snapshotChainLink) (len=3) {
+  (*links.snapshotChainLink)({
+    ResourceName: (string) (len=20) "exchangeRateFunction",
+    Resource: (*schema.Resource)({
+      Type: (string) (len=19) "aws/lambda/function",
+      Metadata: (*schema.Metadata)({
+        DisplayName: (string) "",
+        Annotations: (map[string]core.ScalarValue) <nil>,
+        Labels: (map[string]string) (len=1) {
+          (string) (len=3) "app": (string) (len=13) "exchangeRates"
+        },
+        Custom: (map[string]interface {}) <nil>
+      }),
+      LinkSelector: (*schema.LinkSelector)(<nil>),
+      Spec: (map[string]interface {}) <nil>
+    }),
+    Selectors: (map[string][]string) {
+    },
+    LinkImplementations: (map[string]provider.Link[interface {},interface {}]) {
+    },
+    LinksTo: ([]*links.snapshotChainLink) {
+    },
+    LinkedFrom: ([]string) {
+    },
+    Paths: ([]string) {
+    }
+  }),
+  (*links.snapshotChainLink)({
+    ResourceName: (string) (len=28) "refreshExchangeRatesFunction",
+    Resource: (*schema.Resource)({
+      Type: (string) (len=19) "aws/lambda/function",
+      Metadata: (*schema.Metadata)({
+        DisplayName: (string) "",
+        Annotations: (map[string]core.ScalarValue) <nil>,
+        Labels: (map[string]string) (len=1) {
+          (string) (len=3) "app": (string) (len=13) "exchangeRates"
+        },
+        Custom: (map[string]interface {}) <nil>
+      }),
+      LinkSelector: (*schema.LinkSelector)(<nil>),
+      Spec: (map[string]interface {}) <nil>
+    }),
+    Selectors: (map[string][]string) {
+    },
+    LinkImplementations: (map[string]provider.Link[interface {},interface {}]) {
+    },
+    LinksTo: ([]*links.snapshotChainLink) {
+    },
+    LinkedFrom: ([]string) {
+    },
+    Paths: ([]string) {
+    }
+  }),
+  (*links.snapshotChainLink)({
+    ResourceName: (string) (len=15) "standaloneRole2",
+    Resource: (*schema.Resource)({
+      Type: (string) (len=12) "aws/iam/role",
+      Metadata: (*schema.Metadata)({
+        DisplayName: (string) "",
+        Annotations: (map[string]core.ScalarValue) <nil>,
+        Labels: (map[string]string) <nil>,
+        Custom: (map[string]interface {}) <nil>
+      }),
+      LinkSelector: (*schema.LinkSelector)(<nil>),
+      Spec: (map[string]interface {}) <nil>
+    }),
+    Selectors: (map[string][]string) {
+    },
+    LinkImplementations: (map[string]provider.Link[interface {},interface {}]) {
+    },
+    LinksTo: ([]*links.snapshotChainLink) {
+    },
+    LinkedFrom: ([]string) {
+    },
+    Paths: ([]string) {
+    }
+  })
+}

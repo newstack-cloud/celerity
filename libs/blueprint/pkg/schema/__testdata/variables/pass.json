@@ -1,0 +1,6 @@
+{
+  "type": "integer",
+  "description": "This is an example integer variable",
+  "secret": false,
+  "default": 3423
+}

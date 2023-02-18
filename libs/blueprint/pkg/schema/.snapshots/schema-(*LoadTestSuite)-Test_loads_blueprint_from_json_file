@@ -1,0 +1,208 @@
+(*schema.Blueprint)({
+  Version: (string) (len=10) "2021-12-18",
+  Transform: (*schema.TransformValueWrapper)({
+    Values: ([]string) (len=1) {
+      (string) (len=19) "stratosx-2022-01-22"
+    }
+  }),
+  Variables: (map[string]*schema.Variable) (len=2) {
+    (string) (len=13) "dynamoDBTable": (*schema.Variable)({
+      Type: (*schema.VariableTypeWrapper)({
+        Value: (schema.VariableType) (len=6) "string"
+      }),
+      Description: (string) (len=25) "The Orders DynamoDB Table",
+      Secret: (bool) false,
+      Default: (*core.ScalarValue)(<nil>)
+    }),
+    (string) (len=15) "ordersTopicName": (*schema.Variable)({
+      Type: (*schema.VariableTypeWrapper)({
+        Value: (schema.VariableType) (len=6) "string"
+      }),
+      Description: (string) (len=22) "The Orders Event Topic",
+      Secret: (bool) false,
+      Default: (*core.ScalarValue)(<nil>)
+    })
+  },
+  Resources: (map[string]*schema.Resource) (len=6) {
+    (string) (len=10) "authoriser": (*schema.Resource)({
+      Type: (string) (len=16) "celerity/handler",
+      Metadata: (*schema.Metadata)({
+        DisplayName: (string) (len=10) "Authoriser",
+        Annotations: (map[string]core.ScalarValue) (len=4) {
+          (string) (len=10) "authoriser": (core.ScalarValue) {
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(true),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)(<nil>)
+          },
+          (string) (len=26) "authoriser.identity.header": (core.ScalarValue) {
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=18) "MyCustomAuthHeader")
+          },
+          (string) (len=36) "authoriser.identity.reauthoriseEvery": (core.ScalarValue) {
+            IntValue: (*int)(20),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)(<nil>)
+          },
+          (string) (len=40) "authoriser.identity.validationExpression": (core.ScalarValue) {
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=9) "Bearer .*")
+          }
+        },
+        Labels: (map[string]string) (len=1) {
+          (string) (len=3) "app": (string) (len=8) "orderApi"
+        },
+        Custom: (map[string]interface {}) <nil>
+      }),
+      LinkSelector: (*schema.LinkSelector)(<nil>),
+      Spec: (map[string]interface {}) (len=2) {
+        (string) (len=7) "handler": (string) (len=19) "handlers.Authoriser",
+        (string) (len=7) "timeout": (float64) 120
+      }
+    }),
+    (string) (len=16) "getOrdersHandler": (*schema.Resource)({
+      Type: (string) (len=16) "celerity/handler",
+      Metadata: (*schema.Metadata)({
+        DisplayName: (string) (len=18) "Get Orders Handler",
+        Annotations: (map[string]core.ScalarValue) <nil>,
+        Labels: (map[string]string) (len=1) {
+          (string) (len=3) "app": (string) (len=8) "orderApi"
+        },
+        Custom: (map[string]interface {}) <nil>
+      }),
+      LinkSelector: (*schema.LinkSelector)(<nil>),
+      Spec: (map[string]interface {}) (len=3) {
+        (string) (len=8) "endpoint": (map[string]interface {}) (len=3) {
+          (string) (len=10) "authoriser": (string) (len=13) "${authoriser}",
+          (string) (len=6) "method": (string) (len=3) "get",
+          (string) (len=4) "path": (string) (len=7) "/orders"
+        },
+        (string) (len=7) "handler": (string) (len=18) "handlers.GetOrders",
+        (string) (len=7) "timeout": (float64) 120
+      }
+    }),
+    (string) (len=8) "orderApi": (*schema.Resource)({
+      Type: (string) (len=12) "celerity/api",
+      Metadata: (*schema.Metadata)({
+        DisplayName: (string) (len=9) "Order API",
+        Annotations: (map[string]core.ScalarValue) <nil>,
+        Labels: (map[string]string) (len=1) {
+          (string) (len=3) "app": (string) (len=8) "orderApi"
+        },
+        Custom: (map[string]interface {}) <nil>
+      }),
+      LinkSelector: (*schema.LinkSelector)({
+        ByLabel: (map[string]string) (len=1) {
+          (string) (len=3) "app": (string) (len=8) "orderApi"
+        }
+      }),
+      Spec: (map[string]interface {}) (len=3) {
+        (string) (len=11) "environment": (map[string]interface {}) (len=1) {
+          (string) (len=9) "variables": (map[string]interface {}) (len=1) {
+            (string) (len=14) "DYNAMODB_TABLE": (string) (len=16) "${dynamoDBTable}"
+          }
+        },
+        (string) (len=7) "runtime": (string) (len=5) "go1.x",
+        (string) (len=14) "tracingEnabled": (bool) true
+      }
+    }),
+    (string) (len=11) "orderPubSub": (*schema.Resource)({
+      Type: (string) (len=15) "celerity/pubsub",
+      Metadata: (*schema.Metadata)({
+        DisplayName: (string) (len=13) "Order Pub/Sub",
+        Annotations: (map[string]core.ScalarValue) <nil>,
+        Labels: (map[string]string) (len=1) {
+          (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+        },
+        Custom: (map[string]interface {}) <nil>
+      }),
+      LinkSelector: (*schema.LinkSelector)({
+        ByLabel: (map[string]string) (len=1) {
+          (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+        }
+      }),
+      Spec: (map[string]interface {}) (len=1) {
+        (string) (len=9) "topicName": (string) (len=18) "${ordersTopicName}"
+      }
+    }),
+    (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
+      Type: (string) (len=21) "celerity/layerVersion",
+      Metadata: (*schema.Metadata)({
+        DisplayName: (string) (len=21) "Shared Packages Layer",
+        Annotations: (map[string]core.ScalarValue) <nil>,
+        Labels: (map[string]string) (len=2) {
+          (string) (len=3) "app": (string) (len=8) "orderApi",
+          (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+        },
+        Custom: (map[string]interface {}) <nil>
+      }),
+      LinkSelector: (*schema.LinkSelector)(<nil>),
+      Spec: (map[string]interface {}) (len=3) {
+        (string) (len=18) "compatibleRuntimes": ([]interface {}) (len=1) {
+          (string) (len=5) "go1.x"
+        },
+        (string) (len=7) "content": (string) (len=27) "build/shared-packages-layer",
+        (string) (len=9) "layerName": (string) (len=19) "sharedPackagesLayer"
+      }
+    }),
+    (string) (len=19) "updateOrderFunction": (*schema.Resource)({
+      Type: (string) (len=16) "celerity/handler",
+      Metadata: (*schema.Metadata)({
+        DisplayName: (string) (len=21) "Update Order Function",
+        Annotations: (map[string]core.ScalarValue) <nil>,
+        Labels: (map[string]string) (len=2) {
+          (string) (len=10) "pubsubType": (string) (len=8) "consumer",
+          (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+        },
+        Custom: (map[string]interface {}) <nil>
+      }),
+      LinkSelector: (*schema.LinkSelector)(<nil>),
+      Spec: (map[string]interface {}) (len=3) {
+        (string) (len=6) "events": (map[string]interface {}) (len=1) {
+          (string) (len=10) "orderEvent": (map[string]interface {}) (len=2) {
+            (string) (len=9) "batchSize": (float64) 10,
+            (string) (len=4) "type": (string) (len=6) "pubsub"
+          }
+        },
+        (string) (len=7) "handler": (string) (len=20) "handlers.UpdateOrder",
+        (string) (len=7) "timeout": (float64) 120
+      }
+    })
+  },
+  DataSources: (map[string]*schema.DataSource) (len=1) {
+    (string) (len=7) "network": (*schema.DataSource)({
+      Type: (string) (len=7) "aws/vpc",
+      DataSourceMetadata: (*schema.Metadata)({
+        DisplayName: (string) (len=14) "Network source",
+        Annotations: (map[string]core.ScalarValue) <nil>,
+        Labels: (map[string]string) <nil>,
+        Custom: (map[string]interface {}) <nil>
+      }),
+      Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
+        (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
+          Type: (*schema.DataSourceFieldTypeWrapper)({
+            Value: (schema.DataSourceFieldType) (len=5) "array"
+          }),
+          Description: (string) ""
+        }),
+        (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
+          Type: (*schema.DataSourceFieldTypeWrapper)({
+            Value: (schema.DataSourceFieldType) (len=5) "array"
+          }),
+          Description: (string) ""
+        }),
+        (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
+          Type: (*schema.DataSourceFieldTypeWrapper)({
+            Value: (schema.DataSourceFieldType) (len=6) "string"
+          }),
+          Description: (string) ""
+        })
+      }
+    })
+  }
+})

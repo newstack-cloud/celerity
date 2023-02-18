@@ -1,0 +1,7 @@
+{
+    "go.testFlags": ["-v"],
+    "editor.formatOnSave": true,
+    "files.associations": {
+        "*.yaml.tmpl": "yaml"
+    }
+}
