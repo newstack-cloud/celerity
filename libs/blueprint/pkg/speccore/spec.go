@@ -1,6 +1,6 @@
 package speccore
 
-import "github.com/freshwebio/celerity/libs/blueprint/pkg/schema"
+import "github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 
 // BlueprintSpec provides an interface for a service that holds
 // a parsed blueprint schema and concrete resource specs.

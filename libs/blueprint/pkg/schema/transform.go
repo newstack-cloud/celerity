@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/freshwebio/celerity/libs/common/pkg/core"
+	"github.com/two-hundred/celerity/libs/common/pkg/core"
 	"gopkg.in/yaml.v3"
 )
 

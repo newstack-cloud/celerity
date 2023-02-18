@@ -1,10 +1,10 @@
 package container
 
 import (
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/links"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/provider"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/schema"
-	"github.com/freshwebio/celerity/libs/common/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/links"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/common/pkg/core"
 	. "gopkg.in/check.v1"
 )
 

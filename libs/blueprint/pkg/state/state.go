@@ -3,7 +3,7 @@ package state
 import (
 	"context"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 )
 
 // Container provides an interface for services

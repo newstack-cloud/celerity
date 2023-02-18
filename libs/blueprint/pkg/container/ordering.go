@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/links"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/provider"
-	"github.com/freshwebio/celerity/libs/common/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/links"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/provider"
+	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
 
 // OrderLinksForDeployment deals with creating a flat ordered

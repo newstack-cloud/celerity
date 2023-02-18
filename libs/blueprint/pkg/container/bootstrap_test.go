@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/core"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/provider"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/state"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/state"
 	. "gopkg.in/check.v1"
 )
 

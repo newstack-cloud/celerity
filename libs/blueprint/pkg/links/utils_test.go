@@ -3,7 +3,7 @@ package links
 import (
 	"reflect"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	. "gopkg.in/check.v1"
 )
 

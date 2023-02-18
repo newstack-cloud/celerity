@@ -1,6 +1,6 @@
 # blueprint library
 
-The blueprint engine library (Also known as the blueprint lifecycle framework or blueprint engine) is the foundation for Celerity application deployments that can be used as a standalone library for cloud and other resource deployment systems.
+The blueprint library (Also known as the blueprint lifecycle framework or blueprint engine) is the foundation for Celerity application deployments that can be used as a standalone library for cloud and other resource deployment systems.
 
 ## Getting set up
 
@@ -53,7 +53,7 @@ git commit -m 'fix(blueprint): correct cyclic dependency bug'
 The blueprint library provides a set of building blocks for creating systems
 that can parse, validate and manage the lifecycle of blueprints.
 
-A blueprint is a specification of resources the can be deployed to an downstream provider.
+A blueprint is a specification of resources the can be deployed to a downstream provider.
 Providers are implemented on a per-namespace basis and there are no limitations around the type
 of providers and resources that can be implemented in the model this library providers.
 

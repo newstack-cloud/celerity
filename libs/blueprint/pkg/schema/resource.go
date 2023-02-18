@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 )
 
 // Resource represents a blueprint

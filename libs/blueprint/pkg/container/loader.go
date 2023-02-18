@@ -4,13 +4,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/core"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/links"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/provider"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/schema"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/speccore"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/state"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/transform"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/links"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/speccore"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/state"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/transform"
 )
 
 // Loader provides the interface for a service that deals

@@ -3,8 +3,8 @@ package provider
 import (
 	"context"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/core"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 )
 
 // DataSource provides the interface for a data source

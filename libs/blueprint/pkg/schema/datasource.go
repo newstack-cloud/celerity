@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	bpcore "github.com/freshwebio/celerity/libs/blueprint/pkg/core"
-	"github.com/freshwebio/celerity/libs/common/pkg/core"
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/common/pkg/core"
 	"gopkg.in/yaml.v3"
 )
 

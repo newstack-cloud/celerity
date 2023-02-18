@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
 )

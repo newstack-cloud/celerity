@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/provider"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/schema"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/speccore"
-	"github.com/freshwebio/celerity/libs/common/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/speccore"
+	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
 
 // SpecLinkInfo provides the interface for a service that provides

@@ -3,7 +3,7 @@ package container
 import (
 	"strings"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 )
 
 func deriveSpecFormat(specFilePath string) (schema.SpecFormat, error) {

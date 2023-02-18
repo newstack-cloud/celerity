@@ -3,9 +3,9 @@ package links
 import (
 	"fmt"
 
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/schema"
-	"github.com/freshwebio/celerity/libs/blueprint/pkg/speccore"
-	"github.com/freshwebio/celerity/libs/common/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/speccore"
+	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
 
 // SelectGroup provides a grouping of selector and selected resources
