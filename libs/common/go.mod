@@ -1,4 +1,4 @@
-module github.com/freshwebio/celerity/libs/common
+module github.com/two-hundred/celerity/libs/common
 
 go 1.20
 
