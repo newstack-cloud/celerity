@@ -1,5 +1,9 @@
 # common library
 
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-common&metric=coverage)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-common)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-common&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-common)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-common&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-common)
+
 The common library provides common utility packages used in Celerity.
 
 ## Getting set up
