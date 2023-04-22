@@ -125,6 +125,8 @@ and deploying resources.
 
 A resource provider is also responsible for implementing data sources that allows for dependencies between blueprints and sourcing data from external systems that have were deployed or created outside of the blueprint lifecycle.
 
+_In the architecture diagram above, you will see the data source provider is a separate entity from the resource/link provider. This is purely like this to provide a clearer visualisation of the architecture and in code, data sources are a part of resource providers._
+
 Finally, a resource provider is also responsible for implementing link implementations for links between resources.
 
 In the case where there are links between resources that span multiple providers (e.g. AWS and Google Cloud), a resource provider needs to be implemented that represents the relationship between providers. In most cases this would be an abstraction that fulfils the provider interface that internally holds multiple providers. This will have it's own set of link implementations for resource types across providers.
