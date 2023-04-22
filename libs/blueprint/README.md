@@ -1,10 +1,10 @@
-# blueprint library
+# blueprint framework
 
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-blueprint&metric=coverage)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-blueprint)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-blueprint&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-blueprint)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-blueprint&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-blueprint)
 
-The blueprint library (Also known as the blueprint lifecycle framework or blueprint engine) is the foundation for Celerity application deployments that can be used as a standalone library for cloud and other resource deployment systems.
+The blueprint framework is the foundation for Celerity application deployments that can be used as a standalone library for cloud and other resource deployment systems.
 
 ## Getting set up
 
