@@ -14,7 +14,7 @@ import (
 // where a lot of detail can be abstracted away.
 //
 // Spec transformers are called straight after a schema has been successfully
-// parsed and validated.
+// parsed and variables have been validated.
 type SpecTransformer interface {
 	Transform(ctx context.Context, inputBlueprint *schema.Blueprint) (*schema.Blueprint, error)
 }

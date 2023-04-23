@@ -160,6 +160,8 @@ func (l *defaultLoader) loadSpec(
 		return nil, err
 	}
 
+	// todo: validate custom variable types
+
 	// Validate before transformations to include validation of high-level
 	// resources that are expanded by transformers.
 	internalResourceSpecs, err := l.validateResources(ctx, blueprintSchema, params)

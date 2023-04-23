@@ -18,4 +18,9 @@ type Provider interface {
 	// Link retrieves a link plugin to handle a link between two resource types
 	// in a blueprint.
 	Link(resourceTypeA string, resourceTypeB string) Link[any, any]
+	// CustomVariableType retrieves a custom variable type plugin to handle validating
+	// convenience variable types with a (usually large) fixed set of possible values.
+	// These custom variable types should not be used for dynamically sourced values
+	// external to a blueprint, data sources exist for that purpose.
+	CustomVariableType(customVariableType string) CustomVariableType
 }

@@ -33,8 +33,9 @@ func (s *testBlueprintSpec) Schema() *schema.Blueprint {
 }
 
 type testAWSProvider struct {
-	resources map[string]provider.Resource[any]
-	links     map[string]provider.Link[any, any]
+	resources           map[string]provider.Resource[any]
+	links               map[string]provider.Link[any, any]
+	customVariableTypes map[string]provider.CustomVariableType
 }
 
 func newTestAWSProvider() provider.Provider {
@@ -63,6 +64,7 @@ func newTestAWSProvider() provider.Provider {
 			"stratosaws/iam/role::aws/lambda/function":        &testStratosIAMRoleLambdaLink{},
 			"stratosaws/lambda/function::aws/dynamodb/table":  &testStratosLambdaDynamoDBTableLink{},
 		},
+		customVariableTypes: map[string]provider.CustomVariableType{},
 	}
 }
 
@@ -77,6 +79,11 @@ func (p *testAWSProvider) Link(resourceTypeA string, resourceTypeB string) provi
 
 // DataSource is not used for spec link info!
 func (p *testAWSProvider) DataSource(dataSourceType string) provider.DataSource {
+	return nil
+}
+
+// CustomVariableType is not used for spec link info!
+func (p *testAWSProvider) CustomVariableType(customVariableType string) provider.CustomVariableType {
 	return nil
 }
 

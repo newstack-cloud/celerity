@@ -16,8 +16,9 @@ func Test(t *testing.T) {
 }
 
 type testAWSProvider struct {
-	resources map[string]provider.Resource[any]
-	links     map[string]provider.Link[any, any]
+	resources           map[string]provider.Resource[any]
+	links               map[string]provider.Link[any, any]
+	customVariableTypes map[string]provider.CustomVariableType
 }
 
 func newTestAWSProvider() provider.Provider {
@@ -34,6 +35,7 @@ func newTestAWSProvider() provider.Provider {
 			"aws/ec2/route::aws/ec2/routeTable":        &testRouteRouteTableLink{},
 			"aws/ec2/route::aws/ec2/internetGateway":   &testRouteInternetGatewayLink{},
 		},
+		customVariableTypes: map[string]provider.CustomVariableType{},
 	}
 }
 
@@ -47,6 +49,10 @@ func (p *testAWSProvider) Link(resourceTypeA string, resourceTypeB string) provi
 }
 
 func (p *testAWSProvider) DataSource(dataSourceType string) provider.DataSource {
+	return nil
+}
+
+func (p *testAWSProvider) CustomVariableType(customVariableType string) provider.CustomVariableType {
 	return nil
 }
 
