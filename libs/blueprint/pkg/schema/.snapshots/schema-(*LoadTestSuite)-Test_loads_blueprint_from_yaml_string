@@ -7,20 +7,18 @@
   }),
   Variables: (map[string]*schema.Variable) (len=2) {
     (string) (len=13) "dynamoDBTable": (*schema.Variable)({
-      Type: (*schema.VariableTypeWrapper)({
-        Value: (schema.VariableType) (len=6) "string"
-      }),
+      Type: (schema.VariableType) (len=6) "string",
       Description: (string) (len=25) "The Orders DynamoDB Table",
       Secret: (bool) false,
-      Default: (*core.ScalarValue)(<nil>)
+      Default: (*core.ScalarValue)(<nil>),
+      AllowedValues: ([]*core.ScalarValue) <nil>
     }),
     (string) (len=15) "ordersTopicName": (*schema.Variable)({
-      Type: (*schema.VariableTypeWrapper)({
-        Value: (schema.VariableType) (len=6) "string"
-      }),
+      Type: (schema.VariableType) (len=6) "string",
       Description: (string) (len=22) "The Orders Event Topic",
       Secret: (bool) false,
-      Default: (*core.ScalarValue)(<nil>)
+      Default: (*core.ScalarValue)(<nil>),
+      AllowedValues: ([]*core.ScalarValue) <nil>
     })
   },
   Resources: (map[string]*schema.Resource) (len=6) {

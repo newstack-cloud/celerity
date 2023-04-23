@@ -32,16 +32,6 @@ const (
 	ErrorSchemaReasonCodeInvalidTransformType ErrorSchemaReasonCode = "invalid_transform_type"
 )
 
-func errInvalidVariableType(variableType VariableType) error {
-	return &Error{
-		ReasonCode: ErrorSchemaReasonCodeInvalidVariableType,
-		Err: fmt.Errorf(
-			"unsupported variable type %s has been provided, you can choose from string, integer, float and boolean",
-			variableType,
-		),
-	}
-}
-
 func errInvalidDataSourceFieldType(dataSourceFieldType DataSourceFieldType) error {
 	return &Error{
 		ReasonCode: ErrorSchemaReasonCodeInvalidDataSourceFieldType,
