@@ -38,3 +38,17 @@ const (
 	// in a blueprint.
 	VariableTypeBoolean VariableType = "boolean"
 )
+
+var (
+	// CoreVariableTypes provides a slice of all the core supported
+	// variable types to be used for clean validation of fields
+	// with a field with VariableType.
+	// This does not represent all possible variable types,
+	// as provider custom variable types are also supported.
+	CoreVariableTypes = []VariableType{
+		VariableTypeString,
+		VariableTypeInteger,
+		VariableTypeFloat,
+		VariableTypeBoolean,
+	}
+)
