@@ -54,7 +54,7 @@ git commit -m 'fix(blueprint): correct cyclic dependency bug'
 
 ![blueprint architecture](./assets/BlueprintArchitectureOverview.png)
 
-The blueprint library provides a set of building blocks for creating systems
+The blueprint framework provides a set of building blocks for creating systems
 that can parse, validate and manage the lifecycle of blueprints.
 
 A blueprint is a specification of resources the can be deployed to a downstream provider.
@@ -126,6 +126,8 @@ and deploying resources.
 A resource provider is also responsible for implementing data sources that allows for dependencies between blueprints and sourcing data from external systems that have were deployed or created outside of the blueprint lifecycle.
 
 _In the architecture diagram above, you will see the data source provider is a separate entity from the resource/link provider. This is purely like this to provide a clearer visualisation of the architecture and in code, data sources are a part of resource providers._
+
+A resource provider can also provide custom variable types which are enum variable types with a fixed set of possible values; these are useful for a type of value with a large set of fixed possible values.
 
 Finally, a resource provider is also responsible for implementing link implementations for links between resources.
 
