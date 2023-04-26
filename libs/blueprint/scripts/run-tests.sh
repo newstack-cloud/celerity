@@ -51,7 +51,7 @@ fi
 if [ -z "$GITHUB_ACTION" ]; then
   # We are on a dev machine so produce html output of coverage
   # to get a visual to better reveal uncovered lines.
-  go tool cover -html=coverage.txt
+  go tool cover -html=coverage.txt -o coverage.html
 fi
 
 if [ -n "$GITHUB_ACTION" ]; then
