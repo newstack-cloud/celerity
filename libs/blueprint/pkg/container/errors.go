@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
 
@@ -55,6 +57,13 @@ const (
 	// transformers that aren't supported by the blueprint loader
 	// used to parse the schema.
 	ErrorReasonMissingTransformers ErrorReasonCode = "missing_transformers"
+	// ErrorReasonCodeInvalidVariable is provided when the reason
+	// for a blueprint spec load error is due to one or more variables
+	// being invalid.
+	// This could be due to a mismatch between the type and the value,
+	// a missing required variable (one without a default value),
+	// an invalid default value, invalid allowed values or an incorrect variable type.
+	ErrorReasonCodeInvalidVariable ErrorReasonCode = "invalid_variable"
 )
 
 func errUnsupportedSpecFileExtension(filePath string) error {
@@ -100,5 +109,197 @@ func errTransformersMissingError(missingTransformers []string) error {
 		Err: fmt.Errorf(
 			"the following transformers are missing in the blueprint loader: %s", strings.Join(missingTransformers, ", "),
 		),
+	}
+}
+
+func errVariableInvalidDefaultValue(varType schema.VariableType, varName string, defaultValue *bpcore.ScalarValue) error {
+	defaultVarType := deriveVarType(defaultValue)
+
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid default value for variable \"%s\", %s was provided when %s was expected",
+			varName,
+			defaultVarType,
+			varType,
+		),
+	}
+}
+
+func errVariableEmptyDefaultValue(varType schema.VariableType, varName string) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an empty default %s value, you must provide a value when declaring a default in a blueprint",
+			varType,
+		),
+	}
+}
+
+func errVariableInvalidOrMissing(
+	varType schema.VariableType,
+	varName string,
+	value *bpcore.ScalarValue,
+	varSchema *schema.Variable,
+) error {
+	actualVarType := deriveOptionalVarType(value)
+	if actualVarType == nil {
+		return &LoadError{
+			ReasonCode: ErrorReasonCodeInvalidVariable,
+			Err: fmt.Errorf(
+				"validation failed to a missing value for variable \"%s\", a value of type %s must be provided",
+				varName,
+				varType,
+			),
+		}
+	}
+
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an incorrect type used for variable \"%s\", "+
+				"expected a value of type %s but one of type %s was provided",
+			varName,
+			varType,
+			*actualVarType,
+		),
+	}
+}
+
+func errVariableEmptyValue(
+	varType schema.VariableType,
+	varName string,
+) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an empty value being provided for variable \"%s\", "+
+				"please provide a valid %s value that is not empty",
+			varName,
+			varType,
+		),
+	}
+}
+
+func errVariableInvalidAllowedValue(
+	varType schema.VariableType,
+	allowedValue *bpcore.ScalarValue,
+) error {
+	allowedValueVarType := deriveVarType(allowedValue)
+	scalarValueStr := deriveScalarValueAsString(allowedValue)
+
+	return fmt.Errorf(
+		"an invalid allowed value was provided, %s with the value \"%s\" was provided when only %ss are allowed",
+		varTypeToUnit(allowedValueVarType),
+		scalarValueStr,
+		varType,
+	)
+}
+
+func errVariableInvalidAllowedValues(
+	varName string,
+	allowedValueErrors []error,
+) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to one or more invalid allowed values being provided for variable \"%s\"",
+			varName,
+		),
+		ChildErrors: allowedValueErrors,
+	}
+}
+
+func errVariableInvalidAllowedValuesNotSupported(
+	varType schema.VariableType,
+	varName string,
+) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an allowed values list being provided for %s variable \"%s\","+
+				" %s variables do not support allowed values enumeration",
+			varType,
+			varName,
+			varType,
+		),
+	}
+}
+
+func deriveOptionalVarType(value *bpcore.ScalarValue) *schema.VariableType {
+	if value.IntValue != nil {
+		intVarType := schema.VariableTypeInteger
+		return &intVarType
+	}
+
+	if value.FloatValue != nil {
+		floatVarType := schema.VariableTypeFloat
+		return &floatVarType
+	}
+
+	if value.BoolValue != nil {
+		boolVarType := schema.VariableTypeBoolean
+		return &boolVarType
+	}
+
+	if value.StringValue != nil {
+		stringVarType := schema.VariableTypeString
+		return &stringVarType
+	}
+
+	return nil
+}
+
+func deriveVarType(value *bpcore.ScalarValue) schema.VariableType {
+	if value.IntValue != nil {
+		return schema.VariableTypeInteger
+	}
+
+	if value.FloatValue != nil {
+		return schema.VariableTypeFloat
+	}
+
+	if value.BoolValue != nil {
+		return schema.VariableTypeBoolean
+	}
+
+	// This should only ever be used in a context where
+	// the given scalar has a value, so string will always
+	// be the default.
+	return schema.VariableTypeString
+}
+
+func deriveScalarValueAsString(value *bpcore.ScalarValue) string {
+	if value.IntValue != nil {
+		return fmt.Sprintf("%d", *value.IntValue)
+	}
+
+	if value.FloatValue != nil {
+		return fmt.Sprintf("%.2f", *value.FloatValue)
+	}
+
+	if value.BoolValue != nil {
+		return fmt.Sprintf("%t", *value.BoolValue)
+	}
+
+	if value.StringValue != nil {
+		return *value.StringValue
+	}
+
+	return ""
+}
+
+func varTypeToUnit(varType schema.VariableType) string {
+	switch varType {
+	case schema.VariableTypeInteger:
+		return "an integer"
+	case schema.VariableTypeFloat:
+		return "a float"
+	case schema.VariableTypeBoolean:
+		return "a boolean"
+	case schema.VariableTypeString:
+		return "a string"
+	default:
+		return "an unknown type"
 	}
 }

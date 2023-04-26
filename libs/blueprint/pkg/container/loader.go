@@ -4,13 +4,14 @@ import (
 	"context"
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/links"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/state"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/transform"
+	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
 
 // Loader provides the interface for a service that deals
@@ -24,23 +25,23 @@ type Loader interface {
 	// Provider and blueprint variables can be provided to the blueprint container
 	// methods at a later stage, you can provide an empty set of parameters when
 	// loading a spec.
-	Load(ctx context.Context, blueprintSpecFile string, params core.BlueprintParams) (BlueprintContainer, error)
+	Load(ctx context.Context, blueprintSpecFile string, params bpcore.BlueprintParams) (BlueprintContainer, error)
 	// Validate deals with validating a specification that lies on the local
 	// file system without loading a blueprint container.
 	// Provider and blueprint variables can be provided for enhanced
 	// validation that also checks variables.
-	Validate(ctx context.Context, blueprintSpecFile string, params core.BlueprintParams) (links.SpecLinkInfo, error)
+	Validate(ctx context.Context, blueprintSpecFile string, params bpcore.BlueprintParams) (links.SpecLinkInfo, error)
 	// LoadString deals with loading a blueprint specification from a string
 	// along with provider and blueprint variables.
 	// Provider and blueprint variables can be provided to the blueprint container
 	// methods at a later stage, you can provide an empty set of parameters when
 	// loading a spec.
-	LoadString(ctx context.Context, blueprintSpec string, inputFormat schema.SpecFormat, params core.BlueprintParams) (BlueprintContainer, error)
+	LoadString(ctx context.Context, blueprintSpec string, inputFormat schema.SpecFormat, params bpcore.BlueprintParams) (BlueprintContainer, error)
 	// ValidateString deals with validating a specification provided as a string
 	// without loading a blueprint container.
 	// Provider and blueprint variables can be provided for enhanced
 	// validation that also checks variables.
-	ValidateString(ctx context.Context, blueprintSpec string, inputFormat schema.SpecFormat, params core.BlueprintParams) (links.SpecLinkInfo, error)
+	ValidateString(ctx context.Context, blueprintSpec string, inputFormat schema.SpecFormat, params bpcore.BlueprintParams) (links.SpecLinkInfo, error)
 }
 
 // Stores both the resource schemas coupled with their concrete spec types
@@ -102,11 +103,11 @@ func NewDefaultLoader(
 	}
 }
 
-func (l *defaultLoader) Load(ctx context.Context, blueprintSpecFile string, params core.BlueprintParams) (BlueprintContainer, error) {
+func (l *defaultLoader) Load(ctx context.Context, blueprintSpecFile string, params bpcore.BlueprintParams) (BlueprintContainer, error) {
 	return l.loadSpecAndLinkInfo(ctx, blueprintSpecFile, params, schema.Load, deriveSpecFormat)
 }
 
-func (l *defaultLoader) Validate(ctx context.Context, blueprintSpecFile string, params core.BlueprintParams) (links.SpecLinkInfo, error) {
+func (l *defaultLoader) Validate(ctx context.Context, blueprintSpecFile string, params bpcore.BlueprintParams) (links.SpecLinkInfo, error) {
 	container, err := l.loadSpecAndLinkInfo(ctx, blueprintSpecFile, params, schema.Load, deriveSpecFormat)
 	if err != nil {
 		return nil, err
@@ -117,7 +118,7 @@ func (l *defaultLoader) Validate(ctx context.Context, blueprintSpecFile string, 
 func (l *defaultLoader) loadSpecAndLinkInfo(
 	ctx context.Context,
 	blueprintSpecOrFilePath string,
-	params core.BlueprintParams,
+	params bpcore.BlueprintParams,
 	schemaLoader schema.Loader,
 	formatLoader func(string) (schema.SpecFormat, error),
 ) (BlueprintContainer, error) {
@@ -145,7 +146,7 @@ func (l *defaultLoader) createResourceProviderMap(blueprintSpec speccore.Bluepri
 func (l *defaultLoader) loadSpec(
 	ctx context.Context,
 	specOrFilePath string,
-	params core.BlueprintParams,
+	params bpcore.BlueprintParams,
 	loader schema.Loader,
 	formatLoader func(string) (schema.SpecFormat, error),
 ) (*internalBlueprintSpec, error) {
@@ -160,7 +161,14 @@ func (l *defaultLoader) loadSpec(
 		return nil, err
 	}
 
-	// todo: validate custom variable types
+	err = l.validateVariables(ctx, blueprintSchema, params)
+	if err != nil {
+		return nil, err
+	}
+
+	// todo: change l.validateResources to l.validateAbstractResources
+	// to limit pre-transform validation to abstract resources provided by
+	// transformers only.
 
 	// Validate before transformations to include validation of high-level
 	// resources that are expanded by transformers.
@@ -213,10 +221,74 @@ func (l *defaultLoader) collectTransformers(schema *schema.Blueprint) ([]transfo
 	return usedBySpec, nil
 }
 
+func (l *defaultLoader) validateVariables(
+	ctx context.Context,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+) error {
+	// To be as useful as possible, we'll collect and
+	// report issues for all the problematic variables.
+	variableErrors := map[string]error{}
+	for name, varSchema := range bpSchema.Variables {
+		if core.SliceContains(schema.CoreVariableTypes, varSchema.Type) {
+			err := ValidateCoreVariable(ctx, name, varSchema, params)
+			if err != nil {
+				variableErrors[name] = err
+			}
+		} else {
+			err := l.validateCustomVariableType(ctx, varSchema, params)
+			if err != nil {
+				variableErrors[name] = err
+			}
+		}
+	}
+	return nil
+}
+
+func (l *defaultLoader) validateCustomVariableType(
+	ctx context.Context,
+	varSchema *schema.Variable,
+	params bpcore.BlueprintParams,
+) error {
+	providerCustomVarType, err := l.deriveProviderCustomVarType(varSchema.Type)
+	if err != nil {
+		return err
+	}
+	return providerCustomVarType.Validate(ctx, varSchema, params)
+}
+
+func (l *defaultLoader) deriveProviderCustomVarType(variableType schema.VariableType) (provider.CustomVariableType, error) {
+	// The provider should be keyed exactly by \w+\/ which is the custom type prefix.
+	// Avoid using a regular expression as it is more efficient to split the string.
+	parts := strings.SplitAfter(string(variableType), "/")
+	if len(parts) == 0 {
+		// return nil, errInvalidCustomVariableType(resourceType)
+		return nil, nil
+	}
+
+	providerKey := parts[0]
+
+	provider, ok := l.providers[providerKey]
+	if !ok {
+		// return nil, errMissingProviderForCustomVarType(providerKey, variableType)
+		return nil, nil
+	}
+
+	customVarType := provider.CustomVariableType(string(variableType))
+	if !ok {
+		// return nil, errMissingCustomVariableType(providerKey, variableType)
+		return nil, nil
+	}
+
+	return customVarType, nil
+}
+
 func (l *defaultLoader) validateResources(
-	ctx context.Context, blueprintSchema *schema.Blueprint, params core.BlueprintParams,
+	ctx context.Context,
+	blueprintSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
 ) (map[string]speccore.ResourceSchemaSpec[interface{}], error) {
-	// To be as useful as possible we'll collect and
+	// To be as useful as possible, we'll collect and
 	// report issues for all the problematic resources.
 	resourceErrors := map[string]error{}
 	internalResourceSpecs := map[string]speccore.ResourceSchemaSpec[interface{}]{}
@@ -240,7 +312,7 @@ func (l *defaultLoader) validateResources(
 }
 
 func (l *defaultLoader) validateResource(
-	ctx context.Context, resourceSchema *schema.Resource, params core.BlueprintParams,
+	ctx context.Context, resourceSchema *schema.Resource, params bpcore.BlueprintParams,
 ) (interface{}, error) {
 	providerResource, err := l.deriveProviderResource(resourceSchema.Type)
 	if err != nil {
@@ -273,13 +345,13 @@ func (l *defaultLoader) deriveProviderResource(resourceType string) (provider.Re
 }
 
 func (l *defaultLoader) LoadString(
-	ctx context.Context, blueprintSpec string, inputFormat schema.SpecFormat, params core.BlueprintParams,
+	ctx context.Context, blueprintSpec string, inputFormat schema.SpecFormat, params bpcore.BlueprintParams,
 ) (BlueprintContainer, error) {
 	return l.loadSpecAndLinkInfo(ctx, blueprintSpec, params, schema.LoadString, predefinedFormatFactory(inputFormat))
 }
 
 func (l *defaultLoader) ValidateString(
-	ctx context.Context, blueprintSpec string, inputFormat schema.SpecFormat, params core.BlueprintParams,
+	ctx context.Context, blueprintSpec string, inputFormat schema.SpecFormat, params bpcore.BlueprintParams,
 ) (links.SpecLinkInfo, error) {
 
 	container, err := l.loadSpecAndLinkInfo(ctx, blueprintSpec, params, schema.LoadString, predefinedFormatFactory(inputFormat))

@@ -388,3 +388,25 @@ func (l *testRouteInternetGatewayLink) Deploy(
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Test blueprint params implementing the core.BlueprintParams interface.
+////////////////////////////////////////////////////////////////////////////////
+
+type testBlueprintParams struct {
+	providerConfig     map[string]map[string]*core.ScalarValue
+	contextVariables   map[string]*core.ScalarValue
+	blueprintVariables map[string]*core.ScalarValue
+}
+
+func (p *testBlueprintParams) ProviderConfig(namespace string) map[string]*core.ScalarValue {
+	return p.providerConfig[namespace]
+}
+
+func (p *testBlueprintParams) ContextVariable(name string) *core.ScalarValue {
+	return p.contextVariables[name]
+}
+
+func (p *testBlueprintParams) BlueprintVariable(name string) *core.ScalarValue {
+	return p.blueprintVariables[name]
+}

@@ -14,6 +14,7 @@ gen-*.go
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 coverage.txt
+coverage.html
 
 # Test report for sonar.
 report.json
