@@ -226,6 +226,45 @@ func errVariableInvalidAllowedValuesNotSupported(
 	}
 }
 
+func errVariableValueNotAllowed(
+	varType schema.VariableType,
+	varName string,
+	value *bpcore.ScalarValue,
+	allowedValues []*bpcore.ScalarValue,
+	usingDefault bool,
+) error {
+	valueLabel := deriveValueLabel(value, usingDefault)
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid %s being provided for variable \"%s\","+
+				" only the following values are supported: %s",
+			valueLabel,
+			varName,
+			scalarListToString(allowedValues),
+		),
+	}
+}
+
+func errRequiredVariableMissing(varName string) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to a value not being provided for the "+
+				"required variable \"%s\", as it does not have a default",
+			varName,
+		),
+	}
+}
+
+func deriveValueLabel(value *bpcore.ScalarValue, usingDefault bool) string {
+	if usingDefault {
+		return "default value"
+	}
+
+	return "value"
+}
+
 func deriveOptionalVarType(value *bpcore.ScalarValue) *schema.VariableType {
 	if value.IntValue != nil {
 		intVarType := schema.VariableTypeInteger
@@ -248,6 +287,15 @@ func deriveOptionalVarType(value *bpcore.ScalarValue) *schema.VariableType {
 	}
 
 	return nil
+}
+
+func scalarListToString(scalars []*bpcore.ScalarValue) string {
+	scalarStrings := make([]string, len(scalars))
+	for i, scalar := range scalars {
+		scalarStrings[i] = deriveScalarValueAsString(scalar)
+	}
+
+	return strings.Join(scalarStrings, ", ")
 }
 
 func deriveVarType(value *bpcore.ScalarValue) schema.VariableType {

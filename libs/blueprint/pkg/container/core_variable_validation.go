@@ -69,24 +69,37 @@ func validateCoreStringVariable(
 		)
 	}
 
-	value := params.BlueprintVariable(varName)
-	if value == nil {
-		value = varSchema.Default
+	userProvidedValue := params.BlueprintVariable(varName)
+	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
+
+	if finalValue == nil {
+		return errRequiredVariableMissing(varName)
 	}
 
-	if value.StringValue == nil {
+	if finalValue.StringValue == nil {
 		return errVariableInvalidOrMissing(
 			schema.VariableTypeString,
 			varName,
-			value,
+			finalValue,
 			varSchema,
 		)
 	}
 
-	if strings.TrimSpace(*value.StringValue) == "" {
+	if strings.TrimSpace(*finalValue.StringValue) == "" {
 		return errVariableEmptyValue(
 			schema.VariableTypeString,
 			varName,
+		)
+	}
+
+	if len(varSchema.AllowedValues) > 0 && !isAllowedValue(finalValue, varSchema.AllowedValues) {
+		usingDefault := userProvidedValue == nil
+		return errVariableValueNotAllowed(
+			schema.VariableTypeString,
+			varName,
+			finalValue,
+			varSchema.AllowedValues,
+			usingDefault,
 		)
 	}
 
@@ -167,17 +180,30 @@ func validateCoreIntegerVariable(
 	// No need for explicit empty value checks for an integer as the default empty value
 	// for an integer in go (0) is a valid value.
 
-	value := params.BlueprintVariable(varName)
-	if value == nil {
-		value = varSchema.Default
+	userProvidedValue := params.BlueprintVariable(varName)
+	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
+
+	if finalValue == nil {
+		return errRequiredVariableMissing(varName)
 	}
 
-	if value.IntValue == nil {
+	if finalValue.IntValue == nil {
 		return errVariableInvalidOrMissing(
 			schema.VariableTypeInteger,
 			varName,
-			value,
+			finalValue,
 			varSchema,
+		)
+	}
+
+	if len(varSchema.AllowedValues) > 0 && !isAllowedValue(finalValue, varSchema.AllowedValues) {
+		usingDefault := userProvidedValue == nil
+		return errVariableValueNotAllowed(
+			schema.VariableTypeInteger,
+			varName,
+			finalValue,
+			varSchema.AllowedValues,
+			usingDefault,
 		)
 	}
 
@@ -242,17 +268,30 @@ func validateCoreFloatVariable(
 	// No need for explicit empty value checks for a float as the default empty value
 	// for a floating point number in go (0.0) is a valid value.
 
-	value := params.BlueprintVariable(varName)
-	if value == nil {
-		value = varSchema.Default
+	userProvidedValue := params.BlueprintVariable(varName)
+	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
+
+	if finalValue == nil {
+		return errRequiredVariableMissing(varName)
 	}
 
-	if value.FloatValue == nil {
+	if finalValue.FloatValue == nil {
 		return errVariableInvalidOrMissing(
 			schema.VariableTypeFloat,
 			varName,
-			value,
+			finalValue,
 			varSchema,
+		)
+	}
+
+	if len(varSchema.AllowedValues) > 0 && !isAllowedValue(finalValue, varSchema.AllowedValues) {
+		usingDefualt := userProvidedValue == nil
+		return errVariableValueNotAllowed(
+			schema.VariableTypeFloat,
+			varName,
+			finalValue,
+			varSchema.AllowedValues,
+			usingDefualt,
 		)
 	}
 
@@ -319,6 +358,10 @@ func validateCoreBooleanVariable(
 		value = varSchema.Default
 	}
 
+	if value == nil {
+		return errRequiredVariableMissing(varName)
+	}
+
 	if value.BoolValue == nil {
 		return errVariableInvalidOrMissing(
 			schema.VariableTypeBoolean,
@@ -329,4 +372,21 @@ func validateCoreBooleanVariable(
 	}
 
 	return nil
+}
+
+func isAllowedValue(value *bpcore.ScalarValue, allowedValues []*bpcore.ScalarValue) bool {
+	found := false
+	i := 0
+	for !found && i < len(allowedValues) {
+		found = allowedValues[i].Equal(value)
+		i += 1
+	}
+	return found
+}
+
+func fallbackToDefault(value *bpcore.ScalarValue, defaultValue *bpcore.ScalarValue) *bpcore.ScalarValue {
+	if value == nil {
+		return defaultValue
+	}
+	return value
 }

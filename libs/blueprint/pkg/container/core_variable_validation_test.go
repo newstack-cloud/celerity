@@ -12,7 +12,7 @@ type CoreVariableValidationTestSuite struct{}
 
 var _ = Suite(&CoreVariableValidationTestSuite{})
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variable_succeeds_with_no_errors_for_a_valid_integer_variable(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_integer_variable(c *C) {
 	maxRetries := 5
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -30,7 +30,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variable_succeeds_w
 	c.Assert(err, IsNil)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variable_succeeds_with_no_errors_for_a_valid_float_variable(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_float_variable(c *C) {
 	timeoutInSeconds := 30.5
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -48,7 +48,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variable_succeeds_w
 	c.Assert(err, IsNil)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variable_succeeds_with_no_errors_for_a_valid_string_variable(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_string_variable(c *C) {
 	region := "us-east-1"
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -79,7 +79,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variable_succeeds_w
 	c.Assert(err, IsNil)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variable_succeeds_with_no_errors_for_a_valid_bool_variable(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_bool_variable(c *C) {
 	experimentalFeatures := true
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -97,7 +97,87 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variable_succeeds_w
 	c.Assert(err, IsNil)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_invalid_string_value_is_provided(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_value_is_not_provided_for_a_string_variable_with_a_default_value(c *C) {
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	allowedValue1 := "us-east-1"
+	allowedValue2 := "us-west-1"
+	defaultRegion := allowedValue1
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeString,
+		Description: "The region to deploy the blueprint resources to.",
+		AllowedValues: []*core.ScalarValue{
+			{
+				StringValue: &allowedValue1,
+			},
+			{
+				StringValue: &allowedValue2,
+			},
+		},
+		Default: &core.ScalarValue{
+			StringValue: &defaultRegion,
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
+	c.Assert(err, IsNil)
+}
+
+func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_value_is_not_provided_for_an_integer_variable_with_a_default_value(c *C) {
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	defaultMaxRetries := 5
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeInteger,
+		Description: "Maximum number of retries for interacting with the core API.",
+		Default: &core.ScalarValue{
+			IntValue: &defaultMaxRetries,
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params)
+	c.Assert(err, IsNil)
+}
+
+func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_value_is_not_provided_for_a_float_variable_with_a_default_value(c *C) {
+
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	defaultTimeoutInSeconds := 43.21
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeFloat,
+		Description: "The timeout for the requests for the core API.",
+		Default: &core.ScalarValue{
+			FloatValue: &defaultTimeoutInSeconds,
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params)
+	c.Assert(err, IsNil)
+}
+
+func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_value_is_not_provided_for_a_boolean_variable_with_a_default_value(c *C) {
+
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	defaultExperimentalFeatures := true
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeBoolean,
+		Description: "Whether or not the application should include experimental features.",
+		Default: &core.ScalarValue{
+			BoolValue: &defaultExperimentalFeatures,
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params)
+	c.Assert(err, IsNil)
+}
+
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_string_value_is_provided(c *C) {
 	invalidValue := 4391
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -124,7 +204,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_invalid_integer_value_is_provided(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_integer_value_is_provided(c *C) {
 	invalidValue := false
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -151,7 +231,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_invalid_float_value_is_provided(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_float_value_is_provided(c *C) {
 	invalidValue := "experiments"
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -178,7 +258,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_invalid_bool_value_is_provided(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_bool_value_is_provided(c *C) {
 	invalidValue := 4305.29
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -205,7 +285,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_an_invalid_default_is_provided_for_a_string(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_default_is_provided_for_a_string(c *C) {
 	validRegion := "us-east-1"
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -236,7 +316,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_an_invalid_default_is_provided_for_an_integer(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_default_is_provided_for_an_integer(c *C) {
 	validMaxRetries := 3
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -267,7 +347,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_an_invalid_default_is_provided_for_a_float(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_default_is_provided_for_a_float(c *C) {
 	validTimeout := 30.0
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -298,7 +378,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_an_invalid_default_is_provided_for_a_bool(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_default_is_provided_for_a_bool(c *C) {
 	validExperimentalFeatures := true
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -329,7 +409,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_invalid_allowed_values_are_provided_for_a_string(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allowed_values_are_provided_for_a_string(c *C) {
 	validRegion := "us-west-1"
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -380,7 +460,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_invalid_allowed_values_are_provided_for_an_integer(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allowed_values_are_provided_for_an_integer(c *C) {
 	validMaxRetries := 5
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -431,7 +511,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_invalid_allowed_values_are_provided_for_a_float(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allowed_values_are_provided_for_a_float(c *C) {
 	validTimeoutInSeconds := 45.3
 	params := &testBlueprintParams{
 		blueprintVariables: map[string]*core.ScalarValue{
@@ -489,7 +569,7 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_allowed_values_are_provided_for_a_bool(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_allowed_values_are_provided_for_a_bool(c *C) {
 	// Boolean variables do not support allowed values as binary enumeration does not make much sense,
 	// it is better to set boolean variables that can be true or false and use other types for enumerable lists of options.
 	// This test is to help with providing a better user experience by ensuring this limitation is made clear to the user.
@@ -533,25 +613,343 @@ func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_e
 	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_a_value_that_is_not_in_the_allowed_set_is_provided_for_a_string(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_is_not_in_the_allowed_set_is_provided_for_a_string(c *C) {
+	region := "us-west-2"
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{
+			"region": {
+				StringValue: &region,
+			},
+		},
+	}
+
+	allowedValue1 := "eu-west-1"
+	allowedValue2 := "us-east-1"
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeString,
+		Description: "The region to deploy the application to.",
+		AllowedValues: []*core.ScalarValue{
+			{
+				StringValue: &allowedValue1,
+			},
+			{
+				StringValue: &allowedValue2,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to an invalid value being provided for "+
+			"variable \"region\", only the following values are supported: eu-west-1, us-east-1",
+	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_a_value_that_is_not_in_the_allowed_set_is_provided_for_an_integer(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_is_not_in_the_allowed_set_is_provided_for_an_integer(c *C) {
+	maxRetries := 20
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{
+			"maxRetries": {
+				IntValue: &maxRetries,
+			},
+		},
+	}
+
+	allowedValue1 := 15
+	allowedValue2 := 30
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeInteger,
+		Description: "The maximum number of retries allowed when calling the core API.",
+		AllowedValues: []*core.ScalarValue{
+			{
+				IntValue: &allowedValue1,
+			},
+			{
+				IntValue: &allowedValue2,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to an invalid value being provided for "+
+			"variable \"maxRetries\", only the following values are supported: 15, 30",
+	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_a_value_that_is_not_in_the_allowed_set_is_provided_for_a_float(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_is_not_in_the_allowed_set_is_provided_for_a_float(c *C) {
+	timeoutInSeconds := 45.5
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{
+			"timeoutInSeconds": {
+				FloatValue: &timeoutInSeconds,
+			},
+		},
+	}
+
+	allowedValue1 := 30.5
+	allowedValue2 := 32.6
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeFloat,
+		Description: "The maximum number of retries allowed when calling the core API.",
+		AllowedValues: []*core.ScalarValue{
+			{
+				FloatValue: &allowedValue1,
+			},
+			{
+				FloatValue: &allowedValue2,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to an invalid value being provided for "+
+			"variable \"timeoutInSeconds\", only the following values are supported: 30.50, 32.60",
+	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_a_default_value_that_is_not_in_the_allowed_set_is_provided_for_a_string(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_value_that_is_not_in_the_allowed_set_is_provided_for_a_string(c *C) {
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	defaultRegion := "us-north-3"
+	allowedValue1 := "eu-west-1"
+	allowedValue2 := "us-east-1"
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeString,
+		Description: "The region to deploy the application to.",
+		AllowedValues: []*core.ScalarValue{
+			{
+				StringValue: &allowedValue1,
+			},
+			{
+				StringValue: &allowedValue2,
+			},
+		},
+		Default: &core.ScalarValue{
+			StringValue: &defaultRegion,
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to an invalid default value being provided for "+
+			"variable \"region\", only the following values are supported: eu-west-1, us-east-1",
+	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_a_default_value_that_is_not_in_the_allowed_set_is_provided_for_an_integer(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_value_that_is_not_in_the_allowed_set_is_provided_for_an_integer(c *C) {
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	defaultBatchSize := 50000
+	allowedValue1 := 10
+	allowedValue2 := 25
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeInteger,
+		Description: "The maximum size for a batch events streamed to order processing.",
+		AllowedValues: []*core.ScalarValue{
+			{
+				IntValue: &allowedValue1,
+			},
+			{
+				IntValue: &allowedValue2,
+			},
+		},
+		Default: &core.ScalarValue{
+			IntValue: &defaultBatchSize,
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxBatchSize", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to an invalid default value being provided for "+
+			"variable \"maxBatchSize\", only the following values are supported: 10, 25",
+	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_a_default_value_that_is_not_in_the_allowed_set_is_provided_for_a_float(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_value_that_is_not_in_the_allowed_set_is_provided_for_a_float(c *C) {
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	defaultSampleRate := 0.5
+	allowedValue1 := 0.1
+	allowedValue2 := 0.3
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeFloat,
+		Description: "Sample rate for distributed traces in the app.",
+		AllowedValues: []*core.ScalarValue{
+			{
+				FloatValue: &allowedValue1,
+			},
+			{
+				FloatValue: &allowedValue2,
+			},
+		},
+		Default: &core.ScalarValue{
+			FloatValue: &defaultSampleRate,
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "sampleRate", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to an invalid default value being provided for "+
+			"variable \"sampleRate\", only the following values are supported: 0.10, 0.30",
+	)
 }
 
-func (s *CoreVariableValidationTestSuite) Test_validate_core_variables_reports_errors_when_string_variable_with_explicit_empty_value_is_provided(c *C) {
+func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_string_variable_with_explicit_empty_value_is_provided(c *C) {
+	emptyRegion := ""
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{
+			"region": {
+				StringValue: &emptyRegion,
+			},
+		},
+	}
+
+	variableSchema := &schema.Variable{
+		Type:          schema.VariableTypeString,
+		Description:   "The region to deploy the application to.",
+		AllowedValues: []*core.ScalarValue{},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to an empty value being provided for "+
+			"variable \"region\", please provide a valid string value that is not empty",
+	)
+}
+
+func (s *CoreVariableValidationTestSuite) Test_reports_error_when_string_variable_without_a_default_value_is_not_provided(c *C) {
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	variableSchema := &schema.Variable{
+		Type:          schema.VariableTypeString,
+		Description:   "The region to deploy the application to.",
+		AllowedValues: []*core.ScalarValue{},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a value not being provided for the "+
+			"required variable \"region\", as it does not have a default",
+	)
+}
+
+func (s *CoreVariableValidationTestSuite) Test_reports_error_when_integer_variable_without_a_default_value_is_not_provided(c *C) {
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	variableSchema := &schema.Variable{
+		Type:          schema.VariableTypeInteger,
+		Description:   "The maximum number of retries allowed when calling the core API.",
+		AllowedValues: []*core.ScalarValue{},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a value not being provided for the "+
+			"required variable \"maxRetries\", as it does not have a default",
+	)
+}
+
+func (s *CoreVariableValidationTestSuite) Test_reports_error_when_float_variable_without_a_default_value_is_not_provided(c *C) {
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	variableSchema := &schema.Variable{
+		Type:          schema.VariableTypeFloat,
+		Description:   "The timeout in seconds used when calling the core API.",
+		AllowedValues: []*core.ScalarValue{},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a value not being provided for the "+
+			"required variable \"timeoutInSeconds\", as it does not have a default",
+	)
+}
+
+func (s *CoreVariableValidationTestSuite) Test_reports_error_when_boolean_variable_without_a_default_value_is_not_provided(c *C) {
+	params := &testBlueprintParams{
+		blueprintVariables: map[string]*core.ScalarValue{},
+	}
+
+	variableSchema := &schema.Variable{
+		Type:          schema.VariableTypeBoolean,
+		Description:   "Whether or not to enable experimental features in the app.",
+		AllowedValues: []*core.ScalarValue{},
+	}
+	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a value not being provided for the "+
+			"required variable \"experimentalFeatures\", as it does not have a default",
+	)
 }
 
 func errorsToStrings(errs []error) []string {

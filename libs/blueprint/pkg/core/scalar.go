@@ -150,3 +150,23 @@ func (v *ScalarValue) UnmarshalJSON(data []byte) error {
 
 	return ErrValueMustBeScalar
 }
+
+func (l *ScalarValue) Equal(otherScalar *ScalarValue) bool {
+	if l.StringValue != nil && otherScalar.StringValue != nil {
+		return *l.StringValue == *otherScalar.StringValue
+	}
+
+	if l.IntValue != nil && otherScalar.IntValue != nil {
+		return *l.IntValue == *otherScalar.IntValue
+	}
+
+	if l.BoolValue != nil && otherScalar.BoolValue != nil {
+		return *l.BoolValue == *otherScalar.BoolValue
+	}
+
+	if l.FloatValue != nil && otherScalar.FloatValue != nil {
+		return *l.FloatValue == *otherScalar.FloatValue
+	}
+
+	return false
+}
