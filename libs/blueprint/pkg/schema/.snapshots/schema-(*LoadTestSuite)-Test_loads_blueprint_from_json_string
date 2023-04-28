@@ -202,5 +202,6 @@
         })
       }
     })
-  }
+  },
+  Exports: (map[string]*schema.Export) <nil>
 })

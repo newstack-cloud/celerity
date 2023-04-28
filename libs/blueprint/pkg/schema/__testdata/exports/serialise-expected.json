@@ -1,0 +1,5 @@
+{
+  "type": "string",
+  "description": "The ARN of the function used to save orders to the system.",
+  "field": "resources.saveOrdersFunction.state.functionArn"
+}

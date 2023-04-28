@@ -8,4 +8,5 @@ type Blueprint struct {
 	Variables   map[string]*Variable   `yaml:"variables" json:"variables"`
 	Resources   map[string]*Resource   `yaml:"resources" json:"resources"`
 	DataSources map[string]*DataSource `yaml:"dataSources" json:"dataSources"`
+	Exports     map[string]*Export     `yaml:"exports" json:"exports"`
 }
