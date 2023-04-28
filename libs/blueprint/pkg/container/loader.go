@@ -236,7 +236,7 @@ func (l *defaultLoader) validateVariables(
 				variableErrors[name] = err
 			}
 		} else {
-			err := l.validateCustomVariableType(ctx, varSchema, params)
+			err := l.validateCustomVariableType(ctx, name, varSchema, params)
 			if err != nil {
 				variableErrors[name] = err
 			}
@@ -247,6 +247,7 @@ func (l *defaultLoader) validateVariables(
 
 func (l *defaultLoader) validateCustomVariableType(
 	ctx context.Context,
+	varName string,
 	varSchema *schema.Variable,
 	params bpcore.BlueprintParams,
 ) error {
@@ -254,7 +255,7 @@ func (l *defaultLoader) validateCustomVariableType(
 	if err != nil {
 		return err
 	}
-	return providerCustomVarType.Validate(ctx, varSchema, params)
+	return ValidateCustomVariable(ctx, varName, varSchema, params, providerCustomVarType)
 }
 
 func (l *defaultLoader) deriveProviderCustomVarType(variableType schema.VariableType) (provider.CustomVariableType, error) {

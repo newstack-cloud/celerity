@@ -52,7 +52,7 @@ func validateCoreStringVariable(
 		}
 	}
 
-	// Catch default value issues initially, regardless or whether
+	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
 	if varSchema.Default != nil && varSchema.Default.StringValue == nil {
 		return errVariableInvalidDefaultValue(
@@ -92,7 +92,7 @@ func validateCoreStringVariable(
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !isAllowedValue(finalValue, varSchema.AllowedValues) {
+	if len(varSchema.AllowedValues) > 0 && !isInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefault := userProvidedValue == nil
 		return errVariableValueNotAllowed(
 			schema.VariableTypeString,
@@ -131,22 +131,6 @@ func validateCoreStringVariableAllowedValues(
 			invalidAllowedValueErrors,
 		)
 	}
-
-	// if varSchema.Default != nil && varSchema.Default.StringValue != nil {
-	// 	defaultValue := *varSchema.Default.StringValue
-	// 	for _, allowedValue := range varSchema.AllowedValues {
-	// 		if defaultValue == allowedValue {
-	// 			return nil
-	// 		}
-	// 	}
-
-	// 	return errVariableDefaultNotAllowed(
-	// 		schema.VariableTypeString,
-	// 		varName,
-	// 		varSchema.Default,
-	// 		varSchema.AllowedValues,
-	// 	)
-	// }
 
 	return nil
 }
@@ -196,7 +180,7 @@ func validateCoreIntegerVariable(
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !isAllowedValue(finalValue, varSchema.AllowedValues) {
+	if len(varSchema.AllowedValues) > 0 && !isInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefault := userProvidedValue == nil
 		return errVariableValueNotAllowed(
 			schema.VariableTypeInteger,
@@ -255,7 +239,7 @@ func validateCoreFloatVariable(
 		}
 	}
 
-	// Catch default value issues initially, regardless or whether
+	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
 	if varSchema.Default != nil && varSchema.Default.FloatValue == nil {
 		return errVariableInvalidDefaultValue(
@@ -284,7 +268,7 @@ func validateCoreFloatVariable(
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !isAllowedValue(finalValue, varSchema.AllowedValues) {
+	if len(varSchema.AllowedValues) > 0 && !isInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefualt := userProvidedValue == nil
 		return errVariableValueNotAllowed(
 			schema.VariableTypeFloat,
@@ -340,7 +324,7 @@ func validateCoreBooleanVariable(
 		)
 	}
 
-	// Catch default value issues initially, regardless or whether
+	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
 	if varSchema.Default != nil && varSchema.Default.BoolValue == nil {
 		return errVariableInvalidDefaultValue(
@@ -372,16 +356,6 @@ func validateCoreBooleanVariable(
 	}
 
 	return nil
-}
-
-func isAllowedValue(value *bpcore.ScalarValue, allowedValues []*bpcore.ScalarValue) bool {
-	found := false
-	i := 0
-	for !found && i < len(allowedValues) {
-		found = allowedValues[i].Equal(value)
-		i += 1
-	}
-	return found
 }
 
 func fallbackToDefault(value *bpcore.ScalarValue, defaultValue *bpcore.ScalarValue) *bpcore.ScalarValue {

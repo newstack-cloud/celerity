@@ -20,7 +20,8 @@ func (e *LoadError) Error() string {
 	if childErrCount == 0 {
 		return fmt.Sprintf("blueprint load error: %s", e.Err.Error())
 	}
-	return fmt.Sprintf("blueprint load error (%d child errors): %s", childErrCount, e.Err.Error())
+	errorsLabel := deriveErrorsLabel(childErrCount)
+	return fmt.Sprintf("blueprint load error (%d child %s): %s", childErrCount, errorsLabel, e.Err.Error())
 }
 
 type ErrorReasonCode string
@@ -130,8 +131,9 @@ func errVariableEmptyDefaultValue(varType schema.VariableType, varName string) e
 	return &LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
-			"validation failed due to an empty default %s value, you must provide a value when declaring a default in a blueprint",
+			"validation failed due to an empty default %s value for variable \"%s\", you must provide a value when declaring a default in a blueprint",
 			varType,
+			varName,
 		),
 	}
 }
@@ -246,6 +248,26 @@ func errVariableValueNotAllowed(
 	}
 }
 
+func errCustomVariableValueNotInOptions(
+	varType schema.VariableType,
+	varName string,
+	value *bpcore.ScalarValue,
+	usingDefault bool,
+) error {
+	valueLabel := deriveValueLabel(value, usingDefault)
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid %s \"%s\" being provided for variable \"%s\","+
+				" which is not a valid %s option, see the custom type documentation for more details",
+			valueLabel,
+			deriveScalarValueAsString(value),
+			varName,
+			varType,
+		),
+	}
+}
+
 func errRequiredVariableMissing(varName string) error {
 	return &LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
@@ -257,12 +279,92 @@ func errRequiredVariableMissing(varName string) error {
 	}
 }
 
+func errCustomVariableOptions(
+	varName string,
+	varSchema *schema.Variable,
+	err error,
+) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an error when loading options for variable \"%s\" of custom type \"%s\"",
+			varName,
+			varSchema.Type,
+		),
+		ChildErrors: []error{err},
+	}
+}
+
+func errCustomVariableMixedTypes(
+	varName string,
+	varSchema *schema.Variable,
+) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to mixed types provided as options for variable type \"%s\" used in variable \"%s\", "+
+				"all options must be of the same scalar type",
+			varSchema.Type,
+			varName,
+		),
+	}
+}
+
+func errCustomVariableInvalidDefaultValueType(varType schema.VariableType, varName string, defaultValue *bpcore.ScalarValue) error {
+	defaultVarType := deriveVarType(defaultValue)
+
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid type for a default value for variable \"%s\", %s was provided "+
+				"when a custom variable type option of %s was expected",
+			varName,
+			defaultVarType,
+			varType,
+		),
+	}
+}
+
+func errCustomVariableAllowedValuesNotInOptions(varType schema.VariableType, varName string, invalidOptions []string) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to invalid allowed values being provided for variable \"%s\" "+
+				"of custom type \"%s\". See custom type documentation for possible values. Invalid values provided: %s",
+			varName,
+			varType,
+			strings.Join(invalidOptions, ", "),
+		),
+	}
+}
+
+func errCustomVariableDefaultValueNotInOptions(varType schema.VariableType, varName string, defaultValue string) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid default value for variable \"%s\" "+
+				"of custom type \"%s\". See custom type documentation for possible values. Invalid default value provided: %s",
+			varName,
+			varType,
+			defaultValue,
+		),
+	}
+}
+
 func deriveValueLabel(value *bpcore.ScalarValue, usingDefault bool) string {
 	if usingDefault {
 		return "default value"
 	}
 
 	return "value"
+}
+
+func deriveErrorsLabel(errorCount int) string {
+	if errorCount == 1 {
+		return "error"
+	}
+
+	return "errors"
 }
 
 func deriveOptionalVarType(value *bpcore.ScalarValue) *schema.VariableType {
@@ -296,58 +398,4 @@ func scalarListToString(scalars []*bpcore.ScalarValue) string {
 	}
 
 	return strings.Join(scalarStrings, ", ")
-}
-
-func deriveVarType(value *bpcore.ScalarValue) schema.VariableType {
-	if value.IntValue != nil {
-		return schema.VariableTypeInteger
-	}
-
-	if value.FloatValue != nil {
-		return schema.VariableTypeFloat
-	}
-
-	if value.BoolValue != nil {
-		return schema.VariableTypeBoolean
-	}
-
-	// This should only ever be used in a context where
-	// the given scalar has a value, so string will always
-	// be the default.
-	return schema.VariableTypeString
-}
-
-func deriveScalarValueAsString(value *bpcore.ScalarValue) string {
-	if value.IntValue != nil {
-		return fmt.Sprintf("%d", *value.IntValue)
-	}
-
-	if value.FloatValue != nil {
-		return fmt.Sprintf("%.2f", *value.FloatValue)
-	}
-
-	if value.BoolValue != nil {
-		return fmt.Sprintf("%t", *value.BoolValue)
-	}
-
-	if value.StringValue != nil {
-		return *value.StringValue
-	}
-
-	return ""
-}
-
-func varTypeToUnit(varType schema.VariableType) string {
-	switch varType {
-	case schema.VariableTypeInteger:
-		return "an integer"
-	case schema.VariableTypeFloat:
-		return "a float"
-	case schema.VariableTypeBoolean:
-		return "a boolean"
-	case schema.VariableTypeString:
-		return "a string"
-	default:
-		return "an unknown type"
-	}
 }
