@@ -53,6 +53,20 @@ const (
 	// errors which can be used for reporting useful information
 	// about issues with the spec.
 	ErrorReasonCodeResourceValidationErrors ErrorReasonCode = "resource_validation_errors"
+	// ErrorReasonCodeResourceValidationErrors is provided
+	// when the reason for a blueprint spec load error is due to
+	// a collection of errors for one or more variables in the spec.
+	// This should be used for a wrapper error that holds more specific
+	// errors which can be used for reporting useful information
+	// about issues with the spec.
+	ErrorReasonCodeVariableValidationErrors ErrorReasonCode = "variable_validation_errors"
+	// ErrorReasonCodeResourceValidationErrors is provided
+	// when the reason for a blueprint spec load error is due to
+	// a collection of errors for one or more variables in the spec.
+	// This should be used for a wrapper error that holds more specific
+	// errors which can be used for reporting useful information
+	// about issues with the spec.
+	ErrorReasonCodeExportValidationErrors ErrorReasonCode = "export_validation_errors"
 	// ErrorReasonMissingTransformers is provided when the
 	// reason for a blueprint spec load error is due to a spec referencing
 	// transformers that aren't supported by the blueprint loader
@@ -65,6 +79,14 @@ const (
 	// a missing required variable (one without a default value),
 	// an invalid default value, invalid allowed values or an incorrect variable type.
 	ErrorReasonCodeInvalidVariable ErrorReasonCode = "invalid_variable"
+	// ErrorReasonCodeInvalidExport is provided when the reason
+	// for a blueprint spec load error is due to one or more exports
+	// being invalid.
+	ErrorReasonCodeInvalidExport ErrorReasonCode = "invalid_export"
+	// ErrorReasonCodeInvalidReference is provided when the reason
+	// for a blueprint spec load error is due to one or more references
+	// being invalid.
+	ErrorReasonCodeInvalidReference ErrorReasonCode = "invalid_reference"
 )
 
 func errUnsupportedSpecFileExtension(filePath string) error {
@@ -100,6 +122,24 @@ func errResourceValidationError(errorMap map[string]error) error {
 	return &LoadError{
 		ReasonCode:  ErrorReasonCodeResourceValidationErrors,
 		Err:         fmt.Errorf("validation failed due to issues with %d resources in the spec", errCount),
+		ChildErrors: core.MapToSlice(errorMap),
+	}
+}
+
+func errVariableValidationError(errorMap map[string]error) error {
+	errCount := len(errorMap)
+	return &LoadError{
+		ReasonCode:  ErrorReasonCodeVariableValidationErrors,
+		Err:         fmt.Errorf("validation failed due to issues with %d variables in the spec", errCount),
+		ChildErrors: core.MapToSlice(errorMap),
+	}
+}
+
+func errExportValidationError(errorMap map[string]error) error {
+	errCount := len(errorMap)
+	return &LoadError{
+		ReasonCode:  ErrorReasonCodeExportValidationErrors,
+		Err:         fmt.Errorf("validation failed due to issues with %d exports in the spec", errCount),
 		ChildErrors: core.MapToSlice(errorMap),
 	}
 }
@@ -347,6 +387,66 @@ func errCustomVariableDefaultValueNotInOptions(varType schema.VariableType, varN
 			varName,
 			varType,
 			defaultValue,
+		),
+	}
+}
+
+func errInvalidExportType(exportType schema.ExportType, exportName string) error {
+	validExportTypes := strings.Join(
+		core.Map(
+			schema.ExportTypes,
+			func(exportType schema.ExportType, index int) string {
+				return string(exportType)
+			},
+		),
+		", ",
+	)
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidExport,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid export type of \"%s\" being provided for export \"%s\". "+
+				"The following export types are supported: %s",
+			exportType,
+			exportName,
+			validExportTypes,
+		),
+	}
+}
+
+func errEmptyExportField(exportName string) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidExport,
+		Err: fmt.Errorf(
+			"validation failed due to an empty field string being provided for export \"%s\"",
+			exportName,
+		),
+	}
+}
+
+func errReferenceContextAccess(reference string, context string, referenceableType Referenceable) error {
+	referencedObjectLabel := referenceableLabel(referenceableType)
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidReference,
+		Err: fmt.Errorf(
+			"validation failed due to a reference to a %s (\"%s\") being made from \"%s\", "+
+				"which can not access values from a %s",
+			referencedObjectLabel,
+			reference,
+			context,
+			referencedObjectLabel,
+		),
+	}
+}
+
+func errInvalidReferencePattern(reference string, context string, referenceableType Referenceable) error {
+	return &LoadError{
+		ReasonCode: ErrorReasonCodeInvalidReference,
+		Err: fmt.Errorf(
+			"validation failed due to an incorrectly formed reference to a %s (\"%s\") in \"%s\". "+
+				"See the spec documentation for examples and rules for references",
+			referenceableLabel(referenceableType),
+			reference,
+			context,
 		),
 	}
 }

@@ -166,6 +166,11 @@ func (l *defaultLoader) loadSpec(
 		return nil, err
 	}
 
+	err = l.validateExports(ctx, blueprintSchema)
+	if err != nil {
+		return nil, err
+	}
+
 	// todo: change l.validateResources to l.validateAbstractResources
 	// to limit pre-transform validation to abstract resources provided by
 	// transformers only.
@@ -242,6 +247,31 @@ func (l *defaultLoader) validateVariables(
 			}
 		}
 	}
+
+	if len(variableErrors) > 0 {
+		return errVariableValidationError(variableErrors)
+	}
+
+	return nil
+}
+
+func (l *defaultLoader) validateExports(
+	ctx context.Context,
+	bpSchema *schema.Blueprint,
+) error {
+	// We'll collect and report issues for all the problematic exports.
+	exportErrors := map[string]error{}
+	for name, exportSchema := range bpSchema.Exports {
+		err := ValidateExport(ctx, name, exportSchema)
+		if err != nil {
+			exportErrors[name] = err
+		}
+	}
+
+	if len(exportErrors) > 0 {
+		return errExportValidationError(exportErrors)
+	}
+
 	return nil
 }
 

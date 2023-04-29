@@ -10,6 +10,9 @@ import (
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
 
+// ValidateCustomVariable validates a custom variable in a blueprint.
+// This validation spans all the fields of a variable in the parsed schema
+// as well as the runtime variable value provided by the user.
 func ValidateCustomVariable(
 	ctx context.Context,
 	varName string,
