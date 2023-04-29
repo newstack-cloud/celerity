@@ -1,4 +1,4 @@
-package container
+package validation
 
 import (
 	"context"
@@ -193,7 +193,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_strin
 	}
 	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -220,7 +220,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_integ
 	}
 	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -247,7 +247,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_float
 	}
 	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -274,7 +274,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_bool_
 	}
 	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -305,7 +305,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 	}
 	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -336,7 +336,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 	}
 	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -367,7 +367,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 	}
 	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -398,7 +398,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 	}
 	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -439,7 +439,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 	}
 	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	// Multiple errors are expected here.
@@ -490,7 +490,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 	}
 	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	// Multiple errors are expected here.
@@ -548,7 +548,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 	}
 	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	// Multiple errors are expected here.
@@ -601,7 +601,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_allowed_value
 	}
 	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -639,7 +639,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 	}
 	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -676,7 +676,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 	}
 	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -713,7 +713,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 	}
 	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -749,7 +749,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 	}
 	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -785,7 +785,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 	}
 	err := ValidateCoreVariable(context.Background(), "maxBatchSize", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -821,7 +821,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 	}
 	err := ValidateCoreVariable(context.Background(), "sampleRate", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -849,7 +849,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_string_variab
 	}
 	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -872,7 +872,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_string_variabl
 	}
 	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -895,7 +895,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_integer_variab
 	}
 	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -918,7 +918,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_float_variable
 	}
 	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(
@@ -941,7 +941,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_boolean_variab
 	}
 	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*core.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
 	c.Assert(

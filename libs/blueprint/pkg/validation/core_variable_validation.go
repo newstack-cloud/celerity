@@ -1,4 +1,4 @@
-package container
+package validation
 
 import (
 	"context"
@@ -92,7 +92,7 @@ func validateCoreStringVariable(
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !isInScalarList(finalValue, varSchema.AllowedValues) {
+	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefault := userProvidedValue == nil
 		return errVariableValueNotAllowed(
 			schema.VariableTypeString,
@@ -180,7 +180,7 @@ func validateCoreIntegerVariable(
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !isInScalarList(finalValue, varSchema.AllowedValues) {
+	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefault := userProvidedValue == nil
 		return errVariableValueNotAllowed(
 			schema.VariableTypeInteger,
@@ -268,7 +268,7 @@ func validateCoreFloatVariable(
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !isInScalarList(finalValue, varSchema.AllowedValues) {
+	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefualt := userProvidedValue == nil
 		return errVariableValueNotAllowed(
 			schema.VariableTypeFloat,

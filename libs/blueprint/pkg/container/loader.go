@@ -11,6 +11,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/state"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/transform"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/validation"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
 
@@ -236,7 +237,7 @@ func (l *defaultLoader) validateVariables(
 	variableErrors := map[string]error{}
 	for name, varSchema := range bpSchema.Variables {
 		if core.SliceContains(schema.CoreVariableTypes, varSchema.Type) {
-			err := ValidateCoreVariable(ctx, name, varSchema, params)
+			err := validation.ValidateCoreVariable(ctx, name, varSchema, params)
 			if err != nil {
 				variableErrors[name] = err
 			}
@@ -262,7 +263,7 @@ func (l *defaultLoader) validateExports(
 	// We'll collect and report issues for all the problematic exports.
 	exportErrors := map[string]error{}
 	for name, exportSchema := range bpSchema.Exports {
-		err := ValidateExport(ctx, name, exportSchema)
+		err := validation.ValidateExport(ctx, name, exportSchema)
 		if err != nil {
 			exportErrors[name] = err
 		}
@@ -285,7 +286,7 @@ func (l *defaultLoader) validateCustomVariableType(
 	if err != nil {
 		return err
 	}
-	return ValidateCustomVariable(ctx, varName, varSchema, params, providerCustomVarType)
+	return validation.ValidateCustomVariable(ctx, varName, varSchema, params, providerCustomVarType)
 }
 
 func (l *defaultLoader) deriveProviderCustomVarType(variableType schema.VariableType) (provider.CustomVariableType, error) {

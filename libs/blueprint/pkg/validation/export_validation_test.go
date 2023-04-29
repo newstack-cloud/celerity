@@ -1,8 +1,9 @@
-package container
+package validation
 
 import (
 	"context"
 
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	. "gopkg.in/check.v1"
 )
@@ -30,7 +31,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_expor
 	}
 	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*bpcore.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidExport)
 	c.Assert(
@@ -50,7 +51,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_fiel
 	}
 	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*bpcore.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidExport)
 	c.Assert(
@@ -69,7 +70,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_incorrect_referen
 	}
 	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*LoadError)
+	loadErr, isLoadErr := err.(*bpcore.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
 	c.Assert(
