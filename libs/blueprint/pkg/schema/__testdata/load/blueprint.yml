@@ -56,7 +56,7 @@ resources:
       # reference from code.
       environment:
         variables:
-          DYNAMODB_TABLE: ${dynamoDBTable}
+          DYNAMODB_TABLE: ${variables.dynamoDBTable}
       # All handlers need to use the same runtime to be compatible with a containerised
       # deployment.
       # The closest equivalent runtime will be selected for each cloud provider.
@@ -160,4 +160,4 @@ resources:
       byLabel:
         workflow: orderPubSub
     spec:
-      topicName: ${ordersTopicName}
+      topicName: ${variables.ordersTopicName}

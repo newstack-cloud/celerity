@@ -47,7 +47,7 @@
       "spec": {
         "environment": {
           "variables": {
-            "DYNAMODB_TABLE": "${dynamoDBTable}"
+            "DYNAMODB_TABLE": "${variables.dynamoDBTable}"
           }
         },
         "runtime": "go1.x",
@@ -140,7 +140,7 @@
         }
       },
       "spec": {
-        "topicName": "${ordersTopicName}"
+        "topicName": "${variables.ordersTopicName}"
       }
     }
   }

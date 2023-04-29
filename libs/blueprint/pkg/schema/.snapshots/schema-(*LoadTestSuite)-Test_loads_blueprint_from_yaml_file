@@ -115,7 +115,7 @@
       Spec: (map[string]interface {}) (len=3) {
         (string) (len=11) "environment": (map[string]interface {}) (len=1) {
           (string) (len=9) "variables": (map[string]interface {}) (len=1) {
-            (string) (len=14) "DYNAMODB_TABLE": (string) (len=16) "${dynamoDBTable}"
+            (string) (len=14) "DYNAMODB_TABLE": (string) (len=26) "${variables.dynamoDBTable}"
           }
         },
         (string) (len=7) "runtime": (string) (len=5) "go1.x",
@@ -138,7 +138,7 @@
         }
       }),
       Spec: (map[string]interface {}) (len=1) {
-        (string) (len=9) "topicName": (string) (len=18) "${ordersTopicName}"
+        (string) (len=9) "topicName": (string) (len=28) "${variables.ordersTopicName}"
       }
     }),
     (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
