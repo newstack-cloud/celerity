@@ -25,6 +25,10 @@ const (
 	// for a blueprint spec load error is due to one or more references
 	// being invalid.
 	ErrorReasonCodeInvalidReference bpcore.ErrorReasonCode = "invalid_reference"
+	// ErrorReasonCodeInvalidInclude is provided when the reason
+	// for a blueprint spec load error is due to one or more includes
+	// being invalid.
+	ErrorReasonCodeInvalidInclude bpcore.ErrorReasonCode = "invalid_include"
 )
 
 func errVariableInvalidDefaultValue(varType schema.VariableType, varName string, defaultValue *bpcore.ScalarValue) error {
@@ -321,6 +325,16 @@ func errInvalidReferencePattern(reference string, context string, referenceableT
 			referenceableLabel(referenceableType),
 			reference,
 			context,
+		),
+	}
+}
+
+func errIncludeEmptyPath(includeName string) error {
+	return &bpcore.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidInclude,
+		Err: fmt.Errorf(
+			"validation failed due to an empty path being provided for include \"%s\"",
+			includeName,
 		),
 	}
 }
