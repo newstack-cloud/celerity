@@ -166,7 +166,7 @@ var (
 	// Data source export fields can be primitives or arrays of primitives
 	// only, see the specification.
 	DataSourceReferencePattern = regexp.MustCompile(
-		`^dataSources\.[A-Za-z_][A-Za-z0-9_-]\.[A-Za-z_][A-Za-z0-9_-]$`,
+		`^dataSources\.[A-Za-z_][A-Za-z0-9_-]+\.[A-Za-z_][A-Za-z0-9_-]+(\[\d*\])?$`,
 	)
 
 	// ChildReferencePattern is the pattern that a child blueprint
