@@ -25,6 +25,7 @@
   Resources: (map[string]*schema.Resource) (len=6) {
     (string) (len=10) "authoriser": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) (len=10) "Authoriser",
         Annotations: (map[string]core.ScalarValue) (len=4) {
@@ -66,6 +67,7 @@
     }),
     (string) (len=16) "getOrdersHandler": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) (len=18) "Get Orders Handler",
         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -87,6 +89,7 @@
     }),
     (string) (len=8) "orderApi": (*schema.Resource)({
       Type: (string) (len=12) "celerity/api",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) (len=9) "Order API",
         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -125,6 +128,7 @@
     }),
     (string) (len=11) "orderPubSub": (*schema.Resource)({
       Type: (string) (len=15) "celerity/pubsub",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) (len=13) "Order Pub/Sub",
         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -144,6 +148,7 @@
     }),
     (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
       Type: (string) (len=21) "celerity/layerVersion",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) (len=21) "Shared Packages Layer",
         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -164,6 +169,7 @@
     }),
     (string) (len=19) "updateOrderFunction": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) (len=21) "Update Order Function",
         Annotations: (map[string]core.ScalarValue) <nil>,

@@ -3,6 +3,7 @@
     ResourceName: (string) (len=20) "exchangeRateFunction",
     Resource: (*schema.Resource)({
       Type: (string) (len=19) "aws/lambda/function",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) "",
         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -29,6 +30,7 @@
     ResourceName: (string) (len=28) "refreshExchangeRatesFunction",
     Resource: (*schema.Resource)({
       Type: (string) (len=19) "aws/lambda/function",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) "",
         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -55,6 +57,7 @@
     ResourceName: (string) (len=15) "standaloneRole2",
     Resource: (*schema.Resource)({
       Type: (string) (len=12) "aws/iam/role",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) "",
         Annotations: (map[string]core.ScalarValue) <nil>,

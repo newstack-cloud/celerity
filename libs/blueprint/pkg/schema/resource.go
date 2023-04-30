@@ -8,6 +8,7 @@ import (
 // resource in the specification.
 type Resource struct {
 	Type         string        `yaml:"type" json:"type"`
+	Description  string        `yaml:"description,omitempty" json:"description,omitempty"`
 	Metadata     *Metadata     `yaml:"metadata" json:"metadata"`
 	LinkSelector *LinkSelector `yaml:"linkSelector,omitempty" json:"linkSelector,omitempty"`
 	// This is an initial form of the spec that is fed into

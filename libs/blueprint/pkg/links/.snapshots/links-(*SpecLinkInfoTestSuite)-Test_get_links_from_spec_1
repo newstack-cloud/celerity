@@ -3,6 +3,7 @@
     ResourceName: (string) (len=8) "orderApi",
     Resource: (*schema.Resource)({
       Type: (string) (len=18) "aws/apigateway/api",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) "",
         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -35,6 +36,7 @@
         ResourceName: (string) (len=19) "createOrderFunction",
         Resource: (*schema.Resource)({
           Type: (string) (len=19) "aws/lambda/function",
+          Description: (string) "",
           Metadata: (*schema.Metadata)({
             DisplayName: (string) "",
             Annotations: (map[string]core.ScalarValue) <nil>,
@@ -64,6 +66,7 @@
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
               Type: (string) (len=18) "aws/dynamodb/table",
+              Description: (string) "",
               Metadata: (*schema.Metadata)({
                 DisplayName: (string) "",
                 Annotations: (map[string]core.ScalarValue) <nil>,
@@ -93,6 +96,7 @@
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
                   Type: (string) (len=19) "aws/dynamodb/stream",
+                  Description: (string) "",
                   Metadata: (*schema.Metadata)({
                     DisplayName: (string) "",
                     Annotations: (map[string]core.ScalarValue) <nil>,
@@ -122,6 +126,7 @@
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
                       Type: (string) (len=19) "aws/lambda/function",
+                      Description: (string) "",
                       Metadata: (*schema.Metadata)({
                         DisplayName: (string) "",
                         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -182,6 +187,7 @@
         ResourceName: (string) (len=17) "getOrdersFunction",
         Resource: (*schema.Resource)({
           Type: (string) (len=19) "aws/lambda/function",
+          Description: (string) "",
           Metadata: (*schema.Metadata)({
             DisplayName: (string) "",
             Annotations: (map[string]core.ScalarValue) <nil>,
@@ -211,6 +217,7 @@
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
               Type: (string) (len=18) "aws/dynamodb/table",
+              Description: (string) "",
               Metadata: (*schema.Metadata)({
                 DisplayName: (string) "",
                 Annotations: (map[string]core.ScalarValue) <nil>,
@@ -240,6 +247,7 @@
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
                   Type: (string) (len=19) "aws/dynamodb/stream",
+                  Description: (string) "",
                   Metadata: (*schema.Metadata)({
                     DisplayName: (string) "",
                     Annotations: (map[string]core.ScalarValue) <nil>,
@@ -269,6 +277,7 @@
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
                       Type: (string) (len=19) "aws/lambda/function",
+                      Description: (string) "",
                       Metadata: (*schema.Metadata)({
                         DisplayName: (string) "",
                         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -335,6 +344,7 @@
     ResourceName: (string) (len=10) "orderQueue",
     Resource: (*schema.Resource)({
       Type: (string) (len=13) "aws/sqs/queue",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) "",
         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -364,6 +374,7 @@
         ResourceName: (string) (len=21) "processOrdersFunction",
         Resource: (*schema.Resource)({
           Type: (string) (len=19) "aws/lambda/function",
+          Description: (string) "",
           Metadata: (*schema.Metadata)({
             DisplayName: (string) "",
             Annotations: (map[string]core.ScalarValue) <nil>,
@@ -393,6 +404,7 @@
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
               Type: (string) (len=18) "aws/dynamodb/table",
+              Description: (string) "",
               Metadata: (*schema.Metadata)({
                 DisplayName: (string) "",
                 Annotations: (map[string]core.ScalarValue) <nil>,
@@ -422,6 +434,7 @@
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
                   Type: (string) (len=19) "aws/dynamodb/stream",
+                  Description: (string) "",
                   Metadata: (*schema.Metadata)({
                     DisplayName: (string) "",
                     Annotations: (map[string]core.ScalarValue) <nil>,
@@ -451,6 +464,7 @@
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
                       Type: (string) (len=19) "aws/lambda/function",
+                      Description: (string) "",
                       Metadata: (*schema.Metadata)({
                         DisplayName: (string) "",
                         Annotations: (map[string]core.ScalarValue) <nil>,
@@ -517,6 +531,7 @@
     ResourceName: (string) (len=14) "standaloneRole",
     Resource: (*schema.Resource)({
       Type: (string) (len=12) "aws/iam/role",
+      Description: (string) "",
       Metadata: (*schema.Metadata)({
         DisplayName: (string) "",
         Annotations: (map[string]core.ScalarValue) <nil>,
