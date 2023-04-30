@@ -42,10 +42,9 @@ func validateExportFieldFormat(exportField, exportName string) error {
 var (
 	// ExportCanReference is a list of objects that can be referenced
 	// by an export.
+	// In the current version of the specification, only resources can be referenced
+	// from an export.
 	ExportCanReference = []Referenceable{
-		ReferenceableVariable,
-		ReferenceableChild,
-		ReferenceableDataSource,
 		ReferenceableResource,
 	}
 )

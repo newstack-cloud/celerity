@@ -65,8 +65,8 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_incorrect_referen
 	exportSchema := &schema.Export{
 		Type:        schema.ExportTypeObject,
 		Description: "The endpoint information to be used to connect to a cache cluster.",
-		// Variable field types are simple key value pairs with primitive or enum values.
-		Field: "variables.cacheCluster.state.cacheNodes.endpoints[0].host",
+		// Missing a valid attribute that can be extracted from a resource.
+		Field: "resources.cacheCluster.",
 	}
 	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema)
 	c.Assert(err, NotNil)
@@ -76,8 +76,8 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_incorrect_referen
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an incorrectly formed reference to a variable "+
-			"(\"variables.cacheCluster.state.cacheNodes.endpoints[0].host\") in \"exports.cacheEndpointInfo\". "+
+		"blueprint load error: validation failed due to an incorrectly formed reference to a resource "+
+			"(\"resources.cacheCluster.\") in \"exports.cacheEndpointInfo\". "+
 			"See the spec documentation for examples and rules for references",
 	)
 }
