@@ -21,7 +21,25 @@
       AllowedValues: ([]*core.ScalarValue) <nil>
     })
   },
-  Include: (map[string]*schema.Include) <nil>,
+  Include: (map[string]*schema.Include) (len=1) {
+    (string) (len=9) "coreInfra": (*schema.Include)({
+      Path: (string) (len=15) "core-infra.yaml",
+      Variables: (map[string]*core.ScalarValue) (len=1) {
+        (string) (len=9) "tableName": (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=26) "${variables.dynamoDBTable}")
+        })
+      },
+      Metadata: (map[string]interface {}) (len=3) {
+        (string) (len=6) "bucket": (string) (len=23) "order-system-blueprints",
+        (string) (len=6) "region": (string) (len=9) "eu-west-1",
+        (string) (len=10) "sourceType": (string) (len=6) "aws/s3"
+      },
+      Description: (string) (len=38) "core infrastructure for the Orders API"
+    })
+  },
   Resources: (map[string]*schema.Resource) (len=6) {
     (string) (len=10) "authoriser": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
@@ -116,7 +134,7 @@
       Spec: (map[string]interface {}) (len=3) {
         (string) (len=11) "environment": (map[string]interface {}) (len=1) {
           (string) (len=9) "variables": (map[string]interface {}) (len=1) {
-            (string) (len=14) "DYNAMODB_TABLE": (string) (len=26) "${variables.dynamoDBTable}"
+            (string) (len=14) "DYNAMODB_TABLE": (string) (len=35) "${children.coreInfra.dynamoDBTable}"
           }
         },
         (string) (len=7) "runtime": (string) (len=5) "go1.x",

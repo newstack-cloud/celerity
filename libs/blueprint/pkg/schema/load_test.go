@@ -21,8 +21,10 @@ var _ = Suite(&LoadTestSuite{})
 func (s *LoadTestSuite) SetUpSuite(c *C) {
 	s.specFixtures = make(map[string]fixture)
 	fixturesToLoad := map[string]string{
-		"yaml": "__testdata/load/blueprint.yml",
-		"json": "__testdata/load/blueprint.json",
+		"yaml":            "__testdata/load/blueprint.yml",
+		"json":            "__testdata/load/blueprint.json",
+		"yamlWithInclude": "__testdata/load/blueprint-with-include.yml",
+		"jsonWithInclude": "__testdata/load/blueprint-with-include.json",
 	}
 
 	for name, filePath := range fixturesToLoad {
@@ -52,6 +54,30 @@ func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file(c *C) {
 
 func (s *LoadTestSuite) Test_loads_blueprint_from_json_file(c *C) {
 	blueprint, err := Load(s.specFixtures["json"].filePath, JSONSpecFormat)
+	if err != nil {
+		c.Error(err)
+		c.FailNow()
+	}
+	err = cupaloy.Snapshot(blueprint)
+	if err != nil {
+		c.Error(err)
+	}
+}
+
+func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file_winth_includes(c *C) {
+	blueprint, err := Load(s.specFixtures["yamlWithInclude"].filePath, YAMLSpecFormat)
+	if err != nil {
+		c.Error(err)
+		c.FailNow()
+	}
+	err = cupaloy.Snapshot(blueprint)
+	if err != nil {
+		c.Error(err)
+	}
+}
+
+func (s *LoadTestSuite) Test_loads_blueprint_from_json_file_with_include(c *C) {
+	blueprint, err := Load(s.specFixtures["jsonWithInclude"].filePath, JSONSpecFormat)
 	if err != nil {
 		c.Error(err)
 		c.FailNow()

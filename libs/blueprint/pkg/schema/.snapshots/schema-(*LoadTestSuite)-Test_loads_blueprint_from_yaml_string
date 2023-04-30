@@ -21,6 +21,7 @@
       AllowedValues: ([]*core.ScalarValue) <nil>
     })
   },
+  Include: (map[string]*schema.Include) <nil>,
   Resources: (map[string]*schema.Resource) (len=6) {
     (string) (len=10) "authoriser": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
