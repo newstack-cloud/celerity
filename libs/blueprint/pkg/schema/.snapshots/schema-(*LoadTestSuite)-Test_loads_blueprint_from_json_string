@@ -204,5 +204,6 @@
       }
     })
   },
-  Exports: (map[string]*schema.Export) <nil>
+  Exports: (map[string]*schema.Export) <nil>,
+  Metadata: (map[string]interface {}) <nil>
 })
