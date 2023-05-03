@@ -8,7 +8,7 @@ import (
 )
 
 // ValidateReference validates a reference in a blueprint,
-// a reference can be a reference to a variable, resource, child blueprint or data source.
+// a reference can be to a variable, resource, child blueprint or data source.
 // This validation does not validate that the reference can be resolved,
 // as this validation will normally be carried out at an early stage before information
 // is available about what resources, variables, data sources or child blueprints are available.

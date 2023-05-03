@@ -10,6 +10,18 @@ import (
 )
 
 const (
+	// ErrorReasonCodeMissingType is provided when the reason
+	// for a blueprint spec load error is due to the version property
+	// not being provided for a blueprint.
+	ErrorReasonCodeMissingVersion bpcore.ErrorReasonCode = "missing_version"
+	// ErrorReasonCodeInvalidVersion is provided when the reason
+	// for a blueprint spec load error is due to an invalid version
+	// of the spec being provided.
+	ErrorReasonCodeInvalidVersion bpcore.ErrorReasonCode = "invalid_version"
+	// ErrorReasonCodeMissingResources is provided when the reason
+	// for a blueprint spec load error is due to an empty map of resources being
+	// provided or where the resources property is omitted.
+	ErrorReasonCodeMissingResources bpcore.ErrorReasonCode = "missing_resources"
 	// ErrorReasonCodeInvalidVariable is provided when the reason
 	// for a blueprint spec load error is due to one or more variables
 	// being invalid.
@@ -30,6 +42,35 @@ const (
 	// being invalid.
 	ErrorReasonCodeInvalidInclude bpcore.ErrorReasonCode = "invalid_include"
 )
+
+func errBlueprintMissingVersion() error {
+	return &bpcore.LoadError{
+		ReasonCode: ErrorReasonCodeMissingVersion,
+		Err:        fmt.Errorf("validation failed due to a version not being provided, version is a required property"),
+	}
+}
+
+func errBlueprintMissingResources() error {
+	return &bpcore.LoadError{
+		ReasonCode: ErrorReasonCodeMissingResources,
+		Err: fmt.Errorf(
+			"validation failed due to an empty set of resources," +
+				" at least one resource must be defined in a blueprint",
+		),
+	}
+}
+
+func errBlueprintUnsupportedVersion(version string) error {
+	return &bpcore.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVersion,
+		Err: fmt.Errorf(
+			"validation failed due to an unsupported version \"%s\" being provided. "+
+				"supported versions include: %s",
+			version,
+			strings.Join(SupportedVersions, ", "),
+		),
+	}
+}
 
 func errVariableInvalidDefaultValue(varType schema.VariableType, varName string, defaultValue *bpcore.ScalarValue) error {
 	defaultVarType := deriveVarType(defaultValue)
