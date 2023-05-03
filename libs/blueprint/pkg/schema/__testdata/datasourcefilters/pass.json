@@ -1,0 +1,5 @@
+{
+  "field": "tags",
+  "operator": "has key",
+  "search": "${variables.environment}"
+}

@@ -9,6 +9,10 @@
     "ordersTopicName": {
       "type": "string",
       "description": "The Orders Event Topic"
+    },
+    "environment": {
+      "type": "string",
+      "description": "The environment to deploy to"
     }
   },
   "dataSources": {
@@ -16,6 +20,11 @@
       "type": "aws/vpc",
       "metadata": {
         "displayName": "Network source"
+      },
+      "filter": {
+        "field": "tags",
+        "operator": "has key",
+        "search": "${variables.environment}"
       },
       "exports": {
         "subnets": {

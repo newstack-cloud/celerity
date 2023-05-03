@@ -200,32 +200,36 @@
   DataSources: (map[string]*schema.DataSource) (len=1) {
     (string) (len=7) "network": (*schema.DataSource)({
       Type: (string) (len=7) "aws/vpc",
-      DataSourceMetadata: (*schema.Metadata)({
+      DataSourceMetadata: (*schema.DataSourceMetadata)({
         DisplayName: (string) (len=14) "Network source",
         Annotations: (map[string]core.ScalarValue) <nil>,
-        Labels: (map[string]string) <nil>,
         Custom: (map[string]interface {}) <nil>
       }),
+      Filter: (*schema.DataSourceFilter)(<nil>),
       Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
         (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
           Type: (*schema.DataSourceFieldTypeWrapper)({
             Value: (schema.DataSourceFieldType) (len=5) "array"
           }),
+          AliasFor: (string) "",
           Description: (string) ""
         }),
         (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
           Type: (*schema.DataSourceFieldTypeWrapper)({
             Value: (schema.DataSourceFieldType) (len=5) "array"
           }),
+          AliasFor: (string) "",
           Description: (string) ""
         }),
         (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
           Type: (*schema.DataSourceFieldTypeWrapper)({
             Value: (schema.DataSourceFieldType) (len=6) "string"
           }),
+          AliasFor: (string) "",
           Description: (string) ""
         })
-      }
+      },
+      Description: (string) ""
     })
   },
   Exports: (map[string]*schema.Export) <nil>,
