@@ -25,7 +25,6 @@ func ValidateBlueprint(ctx context.Context, blueprint *schema.Blueprint) error {
 	}
 
 	return nil
-
 }
 
 const (

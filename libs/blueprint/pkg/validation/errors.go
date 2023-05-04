@@ -41,6 +41,10 @@ const (
 	// for a blueprint spec load error is due to one or more includes
 	// being invalid.
 	ErrorReasonCodeInvalidInclude bpcore.ErrorReasonCode = "invalid_include"
+	// ErrorReasonCodeInvalidResource is provided when the reason
+	// for a blueprint spec load error is due to one or more data sources
+	// being invalid.
+	ErrorReasonCodeInvalidDataSource bpcore.ErrorReasonCode = "invalid_data_source"
 )
 
 func errBlueprintMissingVersion() error {
@@ -376,6 +380,50 @@ func errIncludeEmptyPath(includeName string) error {
 		Err: fmt.Errorf(
 			"validation failed due to an empty path being provided for include \"%s\"",
 			includeName,
+		),
+	}
+}
+
+func errDataSourceMissingFilter(dataSourceName string) error {
+	return &bpcore.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing filter in "+
+				"data source \"%s\", every data source must have a filter",
+			dataSourceName,
+		),
+	}
+}
+
+func errDataSourceMissingFilterField(dataSourceName string) error {
+	return &bpcore.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing field in filter for "+
+				"data source \"%s\", field must be set for a data source filter",
+			dataSourceName,
+		),
+	}
+}
+
+func errDataSourceMissingFilterSearch(dataSourceName string) error {
+	return &bpcore.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing search in filter for "+
+				"data source \"%s\", at least one search value must be provided for a filter",
+			dataSourceName,
+		),
+	}
+}
+
+func errDataSourceMissingExports(dataSourceName string) error {
+	return &bpcore.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to missing exports for "+
+				"data source \"%s\", at least one field must be exported for a data source",
+			dataSourceName,
 		),
 	}
 }
