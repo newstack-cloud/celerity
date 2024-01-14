@@ -2,9 +2,11 @@ package validation
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 )
 
 // ValidateInclude deals with early stage validation of a child blueprint
@@ -20,7 +22,14 @@ func ValidateInclude(
 	includeSchema *schema.Include,
 	variables map[string]*schema.Variable,
 ) error {
-	return validatePathFormat(includeName, includeSchema.Path)
+	includeSubContext := fmt.Sprintf("include.%s", includeName)
+
+	formatted, err := substitutions.SubstitutionsToString(includeSubContext, includeSchema.Path)
+	if err != nil {
+		return err
+	}
+
+	return validatePathFormat(includeName, formatted)
 }
 
 func validatePathFormat(includeName, path string) error {

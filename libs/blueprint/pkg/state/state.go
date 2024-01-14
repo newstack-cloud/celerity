@@ -54,14 +54,29 @@ type Container interface {
 // This includes the status, the Raw data from the downstream resouce provider
 // along with reasons for failure when a resource is in a failure state.
 type ResourceState struct {
-	Status core.ResourceStatus
+	ResourceID string
+	Status     core.ResourceStatus
 	// ResourceData is the mapping that holds the structure of
 	// the "raw" resource data from the resource provider service.
 	// (e.g. AWS Lambda Function object)
-	ResourceData   map[string]interface{}
+	ResourceData map[string]interface{}
+	// Holds the latest reasons for failures in deploying a resource,
+	// this only every holds the results of the latest deployment attempt.
 	FailureReasons []string
 }
 
 // InstanceState stores the state of a blueprint instance
-// which is a mapping of resource IDs to resource state.
-type InstanceState map[string]*ResourceState
+// including resources, metadata, exported fields and child blueprints.
+type InstanceState struct {
+	InstanceID string
+	RevisionID string
+	Status     core.InstanceStatus
+	Resources  map[string]*ResourceState
+	// Metadata is used internally to store additional non-structured information
+	// that is relevant to the blueprint framework but can also be used to store
+	// additional information that is relevant to the application/tool
+	// making use of this library.
+	Metadata        map[string]interface{}
+	Exports         map[string]interface{}
+	ChildBlueprints map[string]*InstanceState
+}

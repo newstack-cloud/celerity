@@ -46,7 +46,7 @@ type BlueprintContainer interface {
 // range of resource types for a blueprint at compile time.
 // We must check the resource types associated with a set of changes
 // at runtime.
-type BlueprintChanges map[string]*provider.Changes[interface{}]
+type BlueprintChanges map[string]*provider.Changes
 
 // UpdateEventType provides a convenience alias
 // to allow us to distinguish between deployment

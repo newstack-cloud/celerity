@@ -3,7 +3,7 @@ package validation
 import (
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	. "gopkg.in/check.v1"
 )
 
@@ -50,11 +50,11 @@ func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of
 
 func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of_valid_data_source_references(c *C) {
 	references := []string{
-		"dataSources.network.vpc",
-		"dataSources.network.endpoints[]",
-		"dataSources.network.endpoints[0]",
-		"dataSources.core-infra.queueUrl",
-		"dataSources.coreInfra1.topics[1]",
+		"datasources.network.vpc",
+		"datasources.network.endpoints[]",
+		"datasources.network.endpoints[0]",
+		"datasources.core-infra.queueUrl",
+		"datasources.coreInfra1.topics[1]",
 	}
 
 	for _, reference := range references {
@@ -96,7 +96,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_r
 	for _, reference := range references {
 		err := ValidateReference(reference, "test.field", []Referenceable{ReferenceableResource})
 		c.Assert(err, NotNil)
-		loadErr, isLoadErr := err.(*core.LoadError)
+		loadErr, isLoadErr := err.(*errors.LoadError)
 		c.Assert(isLoadErr, Equals, true)
 		c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
 		c.Assert(
@@ -126,7 +126,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_v
 	for _, reference := range references {
 		err := ValidateReference(reference, "test.field", []Referenceable{ReferenceableVariable})
 		c.Assert(err, NotNil)
-		loadErr, isLoadErr := err.(*core.LoadError)
+		loadErr, isLoadErr := err.(*errors.LoadError)
 		c.Assert(isLoadErr, Equals, true)
 		c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
 		c.Assert(
@@ -144,19 +144,19 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_v
 func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_data_source_references(c *C) {
 	references := []string{
 		// Data source fields should not be objects with child properties.
-		"dataSources.orders-topic.configuration.topicArn",
+		"datasources.orders-topic.configuration.topicArn",
 		// Data source arrays can only be one-dimensional primitive arrays.
-		"dataSources.orders-topic.field[0][1]",
+		"datasources.orders-topic.field[0][1]",
 		// Missing data source name.
-		"dataSources.",
+		"datasources.",
 		// Missing data source field.
-		"dataSources.orders-topic.",
+		"datasources.orders-topic.",
 	}
 
 	for _, reference := range references {
 		err := ValidateReference(reference, "test.otherField", []Referenceable{ReferenceableDataSource})
 		c.Assert(err, NotNil)
-		loadErr, isLoadErr := err.(*core.LoadError)
+		loadErr, isLoadErr := err.(*errors.LoadError)
 		c.Assert(isLoadErr, Equals, true)
 		c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
 		c.Assert(
@@ -184,7 +184,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_c
 	for _, reference := range references {
 		err := ValidateReference(reference, "test.alternativeField", []Referenceable{ReferenceableChild})
 		c.Assert(err, NotNil)
-		loadErr, isLoadErr := err.(*core.LoadError)
+		loadErr, isLoadErr := err.(*errors.LoadError)
 		c.Assert(isLoadErr, Equals, true)
 		c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
 		c.Assert(
@@ -212,7 +212,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_resource_referen
 		},
 	)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*core.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
 	c.Assert(
@@ -236,7 +236,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_variable_referen
 		},
 	)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*core.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
 	c.Assert(
@@ -249,7 +249,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_variable_referen
 
 func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_data_source_reference_for_a_context_that_can_not_reference_data_sources(c *C) {
 	err := ValidateReference(
-		"dataSources.network.vpc",
+		"datasources.network.vpc",
 		"test.alternativeField",
 		[]Referenceable{
 			ReferenceableResource,
@@ -260,13 +260,13 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_data_source_refe
 		},
 	)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*core.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to a reference to a data source (\"dataSources.network.vpc\") "+
+		"blueprint load error: validation failed due to a reference to a data source (\"datasources.network.vpc\") "+
 			"being made from \"test.alternativeField\", which can not access values from a data source",
 	)
 }
@@ -284,7 +284,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_child_blueprint_
 		},
 	)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*core.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
 	c.Assert(

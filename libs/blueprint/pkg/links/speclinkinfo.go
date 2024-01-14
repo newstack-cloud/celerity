@@ -49,7 +49,7 @@ type ChainLink struct {
 	// LinkImplementations holds the link provider implementations keyed by resource name
 	// for all the resources the current resource in the chain links
 	// to.
-	LinkImplementations map[string]provider.Link[interface{}, interface{}]
+	LinkImplementations map[string]provider.Link
 	// LinksTo holds the chain link nodes for the resources
 	// that the curent resource links to.
 	LinksTo []*ChainLink
@@ -127,7 +127,7 @@ func (l *defaultSpecLinkInfo) buildChainLinks(
 			// Values will be filled in for link implementations, selectors and linksTo
 			// when the candidate link appears as a selector in SelectGroup.SelectorResources.
 			Selectors:           map[string][]string{},
-			LinkImplementations: map[string]provider.Link[interface{}, interface{}]{},
+			LinkImplementations: map[string]provider.Link{},
 			LinksTo:             []*ChainLink{},
 			LinkedFrom:          []*ChainLink{},
 			Paths:               []string{},
@@ -266,7 +266,7 @@ func (l *defaultSpecLinkInfo) collectSelectorChainLinks(
 }
 
 type linkCheckInfo struct {
-	linkImplementation provider.Link[interface{}, interface{}]
+	linkImplementation provider.Link
 	canLinkTo          bool
 }
 
@@ -426,7 +426,7 @@ func (l *defaultSpecLinkInfo) connectCandidateIfMeetsConditions(
 			// Values will be filled in for link implementations, selectors and linksTo
 			// when the candidate link appears as a selector in SelectGroup.SelectorResources.
 			Selectors:           core.SliceToMapKeys[string](candidateLinkedResource.Selectors),
-			LinkImplementations: map[string]provider.Link[interface{}, interface{}]{},
+			LinkImplementations: map[string]provider.Link{},
 			LinksTo:             []*ChainLink{},
 			LinkedFrom:          []*ChainLink{},
 			Paths:               []string{},
@@ -569,7 +569,7 @@ func determineChainLink(existingChainLink *ChainLink, resource *ResourceWithName
 		// down to those that can be linked to by the current resource.
 		// For now we'll just prepare an empty slice for each selector key.
 		Selectors:           core.SliceToMapKeys[string](resource.Selectors),
-		LinkImplementations: map[string]provider.Link[interface{}, interface{}]{},
+		LinkImplementations: map[string]provider.Link{},
 		LinksTo:             []*ChainLink{},
 		LinkedFrom:          []*ChainLink{},
 		Paths:               []string{},

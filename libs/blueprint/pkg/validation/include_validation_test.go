@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	. "gopkg.in/check.v1"
 )
 
@@ -14,19 +16,70 @@ var _ = Suite(&IncludeValidationTestSuite{})
 
 func (s *IncludeValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_child_blueprint_include(c *C) {
 	databaseName := "${variables.databaseName}"
+	path := "core-infra.yml"
+	sourceType := "aws/s3"
+	bucket := "order-system-blueprints"
+	region := "eu-west-1"
+	description := "A child blueprint that creates a core infrastructure."
 	includeSchema := &schema.Include{
-		Path: "core-infra.yml",
-		Variables: map[string]*core.ScalarValue{
-			"databaseName": {
-				StringValue: &databaseName,
+		Path: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &path,
+				},
 			},
 		},
-		Metadata: map[string]interface{}{
-			"sourceType": "aws/s3",
-			"bucket":     "order-system-blueprints",
-			"region":     "eu-west-1",
+		Variables: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{
+				"databaseName": &core.MappingNode{
+					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &databaseName,
+							},
+						},
+					},
+				},
+			},
 		},
-		Description: "A child blueprint that creates a core infrastructure.",
+		Metadata: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{
+				"sourceType": &core.MappingNode{
+					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &sourceType,
+							},
+						},
+					},
+				},
+				"bucket": &core.MappingNode{
+					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &bucket,
+							},
+						},
+					},
+				},
+				"region": &core.MappingNode{
+					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &region,
+							},
+						},
+					},
+				},
+			},
+		},
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
 	}
 	variables := map[string]*schema.Variable{
 		"databaseName": {
@@ -39,19 +92,70 @@ func (s *IncludeValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_ch
 
 func (s *IncludeValidationTestSuite) Test_reports_error_for_a_child_blueprint_include_with_an_empty_path(c *C) {
 	databaseName := "${variables.databaseName}"
+	path := ""
+	sourceType := "aws/s3"
+	bucket := "order-system-blueprints"
+	region := "eu-west-1"
+	description := "A child blueprint that creates a core infrastructure."
 	includeSchema := &schema.Include{
-		Path: "",
-		Variables: map[string]*core.ScalarValue{
-			"databaseName": {
-				StringValue: &databaseName,
+		Path: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &path,
+				},
 			},
 		},
-		Metadata: map[string]interface{}{
-			"sourceType": "aws/s3",
-			"bucket":     "order-system-blueprints",
-			"region":     "eu-west-1",
+		Variables: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{
+				"databaseName": &core.MappingNode{
+					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &databaseName,
+							},
+						},
+					},
+				},
+			},
 		},
-		Description: "A child blueprint that creates a core infrastructure.",
+		Metadata: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{
+				"sourceType": &core.MappingNode{
+					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &sourceType,
+							},
+						},
+					},
+				},
+				"bucket": &core.MappingNode{
+					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &bucket,
+							},
+						},
+					},
+				},
+				"region": &core.MappingNode{
+					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &region,
+							},
+						},
+					},
+				},
+			},
+		},
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
 	}
 	variables := map[string]*schema.Variable{
 		"databaseName": {
@@ -60,7 +164,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_for_a_child_blueprint_in
 	}
 	err := ValidateInclude(context.Background(), "coreInfra", includeSchema, variables)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*core.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidInclude)
 	c.Assert(

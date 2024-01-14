@@ -1,5 +1,9 @@
 package schema
 
+import (
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
+)
+
 // Export represents a blueprint
 // exported field in the specification.
 // Exports are designed to be persisted with the state of a blueprint instance
@@ -7,9 +11,9 @@ package schema
 // via an API, an include reference or as a field in a "blueprint" resource.
 // (The latter of the three options would require an implementation of blueprint resource provider)
 type Export struct {
-	Type        ExportType `yaml:"type" json:"type"`
-	Field       string     `yaml:"field" json:"field"`
-	Description string     `yaml:"description,omitempty" json:"description,omitempty"`
+	Type        ExportType                           `yaml:"type" json:"type"`
+	Field       string                               `yaml:"field" json:"field"`
+	Description *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // ExportType represents a type of exported field

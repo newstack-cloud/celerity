@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
@@ -13,49 +14,49 @@ const (
 	// ErrorReasonCodeMissingType is provided when the reason
 	// for a blueprint spec load error is due to the version property
 	// not being provided for a blueprint.
-	ErrorReasonCodeMissingVersion bpcore.ErrorReasonCode = "missing_version"
+	ErrorReasonCodeMissingVersion errors.ErrorReasonCode = "missing_version"
 	// ErrorReasonCodeInvalidVersion is provided when the reason
 	// for a blueprint spec load error is due to an invalid version
 	// of the spec being provided.
-	ErrorReasonCodeInvalidVersion bpcore.ErrorReasonCode = "invalid_version"
+	ErrorReasonCodeInvalidVersion errors.ErrorReasonCode = "invalid_version"
 	// ErrorReasonCodeMissingResources is provided when the reason
 	// for a blueprint spec load error is due to an empty map of resources being
 	// provided or where the resources property is omitted.
-	ErrorReasonCodeMissingResources bpcore.ErrorReasonCode = "missing_resources"
+	ErrorReasonCodeMissingResources errors.ErrorReasonCode = "missing_resources"
 	// ErrorReasonCodeInvalidVariable is provided when the reason
 	// for a blueprint spec load error is due to one or more variables
 	// being invalid.
 	// This could be due to a mismatch between the type and the value,
 	// a missing required variable (one without a default value),
 	// an invalid default value, invalid allowed values or an incorrect variable type.
-	ErrorReasonCodeInvalidVariable bpcore.ErrorReasonCode = "invalid_variable"
+	ErrorReasonCodeInvalidVariable errors.ErrorReasonCode = "invalid_variable"
 	// ErrorReasonCodeInvalidExport is provided when the reason
 	// for a blueprint spec load error is due to one or more exports
 	// being invalid.
-	ErrorReasonCodeInvalidExport bpcore.ErrorReasonCode = "invalid_export"
+	ErrorReasonCodeInvalidExport errors.ErrorReasonCode = "invalid_export"
 	// ErrorReasonCodeInvalidReference is provided when the reason
 	// for a blueprint spec load error is due to one or more references
 	// being invalid.
-	ErrorReasonCodeInvalidReference bpcore.ErrorReasonCode = "invalid_reference"
+	ErrorReasonCodeInvalidReference errors.ErrorReasonCode = "invalid_reference"
 	// ErrorReasonCodeInvalidInclude is provided when the reason
 	// for a blueprint spec load error is due to one or more includes
 	// being invalid.
-	ErrorReasonCodeInvalidInclude bpcore.ErrorReasonCode = "invalid_include"
+	ErrorReasonCodeInvalidInclude errors.ErrorReasonCode = "invalid_include"
 	// ErrorReasonCodeInvalidResource is provided when the reason
 	// for a blueprint spec load error is due to one or more data sources
 	// being invalid.
-	ErrorReasonCodeInvalidDataSource bpcore.ErrorReasonCode = "invalid_data_source"
+	ErrorReasonCodeInvalidDataSource errors.ErrorReasonCode = "invalid_data_source"
 )
 
 func errBlueprintMissingVersion() error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeMissingVersion,
 		Err:        fmt.Errorf("validation failed due to a version not being provided, version is a required property"),
 	}
 }
 
 func errBlueprintMissingResources() error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeMissingResources,
 		Err: fmt.Errorf(
 			"validation failed due to an empty set of resources," +
@@ -65,7 +66,7 @@ func errBlueprintMissingResources() error {
 }
 
 func errBlueprintUnsupportedVersion(version string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVersion,
 		Err: fmt.Errorf(
 			"validation failed due to an unsupported version \"%s\" being provided. "+
@@ -79,7 +80,7 @@ func errBlueprintUnsupportedVersion(version string) error {
 func errVariableInvalidDefaultValue(varType schema.VariableType, varName string, defaultValue *bpcore.ScalarValue) error {
 	defaultVarType := deriveVarType(defaultValue)
 
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an invalid default value for variable \"%s\", %s was provided when %s was expected",
@@ -91,7 +92,7 @@ func errVariableInvalidDefaultValue(varType schema.VariableType, varName string,
 }
 
 func errVariableEmptyDefaultValue(varType schema.VariableType, varName string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an empty default %s value for variable \"%s\", you must provide a value when declaring a default in a blueprint",
@@ -109,7 +110,7 @@ func errVariableInvalidOrMissing(
 ) error {
 	actualVarType := deriveOptionalVarType(value)
 	if actualVarType == nil {
-		return &bpcore.LoadError{
+		return &errors.LoadError{
 			ReasonCode: ErrorReasonCodeInvalidVariable,
 			Err: fmt.Errorf(
 				"validation failed to a missing value for variable \"%s\", a value of type %s must be provided",
@@ -119,7 +120,7 @@ func errVariableInvalidOrMissing(
 		}
 	}
 
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an incorrect type used for variable \"%s\", "+
@@ -135,7 +136,7 @@ func errVariableEmptyValue(
 	varType schema.VariableType,
 	varName string,
 ) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an empty value being provided for variable \"%s\", "+
@@ -165,7 +166,7 @@ func errVariableInvalidAllowedValues(
 	varName string,
 	allowedValueErrors []error,
 ) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to one or more invalid allowed values being provided for variable \"%s\"",
@@ -179,7 +180,7 @@ func errVariableInvalidAllowedValuesNotSupported(
 	varType schema.VariableType,
 	varName string,
 ) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an allowed values list being provided for %s variable \"%s\","+
@@ -199,7 +200,7 @@ func errVariableValueNotAllowed(
 	usingDefault bool,
 ) error {
 	valueLabel := deriveValueLabel(value, usingDefault)
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an invalid %s being provided for variable \"%s\","+
@@ -218,7 +219,7 @@ func errCustomVariableValueNotInOptions(
 	usingDefault bool,
 ) error {
 	valueLabel := deriveValueLabel(value, usingDefault)
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an invalid %s \"%s\" being provided for variable \"%s\","+
@@ -232,7 +233,7 @@ func errCustomVariableValueNotInOptions(
 }
 
 func errRequiredVariableMissing(varName string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to a value not being provided for the "+
@@ -247,7 +248,7 @@ func errCustomVariableOptions(
 	varSchema *schema.Variable,
 	err error,
 ) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an error when loading options for variable \"%s\" of custom type \"%s\"",
@@ -262,7 +263,7 @@ func errCustomVariableMixedTypes(
 	varName string,
 	varSchema *schema.Variable,
 ) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to mixed types provided as options for variable type \"%s\" used in variable \"%s\", "+
@@ -276,7 +277,7 @@ func errCustomVariableMixedTypes(
 func errCustomVariableInvalidDefaultValueType(varType schema.VariableType, varName string, defaultValue *bpcore.ScalarValue) error {
 	defaultVarType := deriveVarType(defaultValue)
 
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an invalid type for a default value for variable \"%s\", %s was provided "+
@@ -289,7 +290,7 @@ func errCustomVariableInvalidDefaultValueType(varType schema.VariableType, varNa
 }
 
 func errCustomVariableAllowedValuesNotInOptions(varType schema.VariableType, varName string, invalidOptions []string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to invalid allowed values being provided for variable \"%s\" "+
@@ -302,7 +303,7 @@ func errCustomVariableAllowedValuesNotInOptions(varType schema.VariableType, var
 }
 
 func errCustomVariableDefaultValueNotInOptions(varType schema.VariableType, varName string, defaultValue string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"validation failed due to an invalid default value for variable \"%s\" "+
@@ -324,7 +325,7 @@ func errInvalidExportType(exportType schema.ExportType, exportName string) error
 		),
 		", ",
 	)
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidExport,
 		Err: fmt.Errorf(
 			"validation failed due to an invalid export type of \"%s\" being provided for export \"%s\". "+
@@ -337,7 +338,7 @@ func errInvalidExportType(exportType schema.ExportType, exportName string) error
 }
 
 func errEmptyExportField(exportName string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidExport,
 		Err: fmt.Errorf(
 			"validation failed due to an empty field string being provided for export \"%s\"",
@@ -348,7 +349,7 @@ func errEmptyExportField(exportName string) error {
 
 func errReferenceContextAccess(reference string, context string, referenceableType Referenceable) error {
 	referencedObjectLabel := referenceableLabel(referenceableType)
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidReference,
 		Err: fmt.Errorf(
 			"validation failed due to a reference to a %s (\"%s\") being made from \"%s\", "+
@@ -362,7 +363,7 @@ func errReferenceContextAccess(reference string, context string, referenceableTy
 }
 
 func errInvalidReferencePattern(reference string, context string, referenceableType Referenceable) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidReference,
 		Err: fmt.Errorf(
 			"validation failed due to an incorrectly formed reference to a %s (\"%s\") in \"%s\". "+
@@ -375,7 +376,7 @@ func errInvalidReferencePattern(reference string, context string, referenceableT
 }
 
 func errIncludeEmptyPath(includeName string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidInclude,
 		Err: fmt.Errorf(
 			"validation failed due to an empty path being provided for include \"%s\"",
@@ -385,7 +386,7 @@ func errIncludeEmptyPath(includeName string) error {
 }
 
 func errDataSourceMissingFilter(dataSourceName string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSource,
 		Err: fmt.Errorf(
 			"validation failed due to a missing filter in "+
@@ -396,7 +397,7 @@ func errDataSourceMissingFilter(dataSourceName string) error {
 }
 
 func errDataSourceMissingFilterField(dataSourceName string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSource,
 		Err: fmt.Errorf(
 			"validation failed due to a missing field in filter for "+
@@ -407,7 +408,7 @@ func errDataSourceMissingFilterField(dataSourceName string) error {
 }
 
 func errDataSourceMissingFilterSearch(dataSourceName string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSource,
 		Err: fmt.Errorf(
 			"validation failed due to a missing search in filter for "+
@@ -418,7 +419,7 @@ func errDataSourceMissingFilterSearch(dataSourceName string) error {
 }
 
 func errDataSourceMissingExports(dataSourceName string) error {
-	return &bpcore.LoadError{
+	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSource,
 		Err: fmt.Errorf(
 			"validation failed due to missing exports for "+

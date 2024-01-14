@@ -116,7 +116,7 @@ func orderFixture1Chains() []*links.ChainLink {
 			Type: "aws/apigateway/api",
 		},
 		Paths: []string{},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"getOrdersFunction":   apiGatewayLambdaLinkImpl,
 			"createOrderFunction": apiGatewayLambdaLinkImpl,
 			"updateOrderFunction": apiGatewayLambdaLinkImpl,
@@ -132,7 +132,7 @@ func orderFixture1Chains() []*links.ChainLink {
 			Type: "aws/lambda/function",
 		},
 		Paths: []string{"/orderApi"},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"ordersTable": lambdaDynamoDBTableLink,
 		},
 		LinkedFrom: []*links.ChainLink{
@@ -144,7 +144,7 @@ func orderFixture1Chains() []*links.ChainLink {
 		Resource: &schema.Resource{
 			Type: "aws/lambda/function",
 		},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"ordersTable": lambdaDynamoDBTableLink,
 		},
 		Paths: []string{"/orderApi"},
@@ -157,7 +157,7 @@ func orderFixture1Chains() []*links.ChainLink {
 		Resource: &schema.Resource{
 			Type: "aws/lambda/function",
 		},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"ordersTable": lambdaDynamoDBTableLink,
 		},
 		Paths: []string{"/orderApi"},
@@ -174,7 +174,7 @@ func orderFixture1Chains() []*links.ChainLink {
 		Resource: &schema.Resource{
 			Type: "aws/dynamodb/table",
 		},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"ordersStream": dynamoDBTableStreamLink,
 		},
 		Paths: []string{
@@ -198,7 +198,7 @@ func orderFixture1Chains() []*links.ChainLink {
 			"/orderApi/createOrderFunction/ordersTable",
 			"/orderApi/updateOrderFunction/ordersTable",
 		},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"statsAccumulatorFunction": dynamoDBStreamLambdaLink,
 		},
 		LinkedFrom: []*links.ChainLink{
@@ -220,7 +220,7 @@ func orderFixture1Chains() []*links.ChainLink {
 			"/orderApi/createOrderFunction/ordersTable/ordersStream",
 			"/orderApi/updateOrderFunction/ordersTable/ordersStream",
 		},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"ordersTable": lambdaDynamoDBTableLink,
 		},
 		LinkedFrom: []*links.ChainLink{
@@ -238,7 +238,7 @@ func orderFixture1Chains() []*links.ChainLink {
 			"/orderApi/createOrderFunction/ordersTable/ordersStream/statsAccumulator",
 			"/orderApi/updateOrderFunction/ordersTable/ordersStream/statsAccumulator",
 		},
-		LinkImplementations: map[string]provider.Link[any, any]{},
+		LinkImplementations: map[string]provider.Link{},
 		LinkedFrom: []*links.ChainLink{
 			statsAccumulatorFunction,
 		},
@@ -302,7 +302,7 @@ func orderFixture2Chain() []*links.ChainLink {
 			Type: "aws/ec2/route",
 		},
 		Paths: []string{},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"routeTable1":      routeRouteTableLink,
 			"internetGateway1": routeIGWLink,
 		},
@@ -319,7 +319,7 @@ func orderFixture2Chain() []*links.ChainLink {
 		Paths: []string{
 			"/route1",
 		},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"vpc1": routeTableVPCLink,
 		},
 		LinkedFrom: []*links.ChainLink{
@@ -336,7 +336,7 @@ func orderFixture2Chain() []*links.ChainLink {
 		Paths: []string{
 			"/route1",
 		},
-		LinkImplementations: map[string]provider.Link[any, any]{},
+		LinkImplementations: map[string]provider.Link{},
 		LinkedFrom: []*links.ChainLink{
 			route,
 		},
@@ -350,7 +350,7 @@ func orderFixture2Chain() []*links.ChainLink {
 			Type: "aws/ec2/subnet",
 		},
 		Paths: []string{},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"vpc1": subnetVPCLink,
 		},
 		LinkedFrom: []*links.ChainLink{},
@@ -364,7 +364,7 @@ func orderFixture2Chain() []*links.ChainLink {
 			Type: "aws/ec2/securityGroup",
 		},
 		Paths: []string{},
-		LinkImplementations: map[string]provider.Link[any, any]{
+		LinkImplementations: map[string]provider.Link{
 			"vpc1": securityGroupLink,
 		},
 		LinkedFrom: []*links.ChainLink{},
@@ -381,7 +381,7 @@ func orderFixture2Chain() []*links.ChainLink {
 			"/subnet1",
 			"/sg1",
 		},
-		LinkImplementations: map[string]provider.Link[any, any]{},
+		LinkImplementations: map[string]provider.Link{},
 		LinkedFrom: []*links.ChainLink{
 			routeTable,
 			subnet,

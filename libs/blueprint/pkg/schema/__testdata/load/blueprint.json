@@ -15,7 +15,7 @@
       "description": "The environment to deploy to"
     }
   },
-  "dataSources": {
+  "datasources": {
     "network": {
       "type": "aws/vpc",
       "metadata": {

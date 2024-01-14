@@ -7,13 +7,13 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/state"
 )
 
-type Link[ResourceSpecTypeA any, ResourceSpecTypeB any] interface {
+type Link interface {
 	// StageChanges must detail the changes that will be made when a deployment of the loaded blueprint
 	// for the link between two resources and blueprint instance provided in resourceInfo.
 	StageChanges(
 		ctx context.Context,
-		resourceAInfo *ResourceInfo[ResourceSpecTypeA],
-		resourceBInfo *ResourceInfo[ResourceSpecTypeB],
+		resourceAInfo *ResourceInfo,
+		resourceBInfo *ResourceInfo,
 		params core.BlueprintParams,
 	) (LinkChanges, error)
 	// Deploy deals with deploying a link between two resources in the downstream provider.
@@ -26,8 +26,8 @@ type Link[ResourceSpecTypeA any, ResourceSpecTypeB any] interface {
 	Deploy(
 		ctx context.Context,
 		changes LinkChanges,
-		resourceAInfo *ResourceInfo[ResourceSpecTypeA],
-		resourceBInfo *ResourceInfo[ResourceSpecTypeB],
+		resourceAInfo *ResourceInfo,
+		resourceBInfo *ResourceInfo,
 		params core.BlueprintParams,
 	) (state.ResourceState, error)
 	// PriorityResourceType retrieves the resource type in the relationship
@@ -41,10 +41,10 @@ type Link[ResourceSpecTypeA any, ResourceSpecTypeB any] interface {
 	Type() LinkType
 	// HandleResourceTypeAError deals with handling errors in
 	// the deployment of the first of the two linked resources.
-	HandleResourceTypeAError(ctx context.Context, resourceInfo *ResourceInfo[ResourceSpecTypeA]) error
+	HandleResourceTypeAError(ctx context.Context, resourceInfo *ResourceInfo) error
 	// HandleResourceTypeBError deals with handling errors
 	// in the second of the two linked resources.
-	HandleResourceTypeBError(ctx context.Context, resourceInfo *ResourceInfo[ResourceSpecTypeB]) error
+	HandleResourceTypeBError(ctx context.Context, resourceInfo *ResourceInfo) error
 }
 
 // LinkType provides a way to categorise links to help determine the order

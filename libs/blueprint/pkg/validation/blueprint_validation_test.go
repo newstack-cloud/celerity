@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	. "gopkg.in/check.v1"
 )
@@ -14,13 +15,20 @@ var _ = Suite(&BlueprintValidationTestSuite{})
 
 func (s *BlueprintValidationTestSuite) Test_succeeds_without_any_issues_for_a_valid_blueprint(c *C) {
 
+	instanceType := "t2.micro"
 	blueprint := &schema.Blueprint{
 		Version: Version2023_04_20,
 		Resources: map[string]*schema.Resource{
 			"resource1": {
 				Type: "aws/ec2/instance",
-				Spec: map[string]interface{}{
-					"instanceType": "t2.micro",
+				Spec: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"instanceType": &core.MappingNode{
+							Literal: &core.ScalarValue{
+								StringValue: &instanceType,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -30,12 +38,19 @@ func (s *BlueprintValidationTestSuite) Test_succeeds_without_any_issues_for_a_va
 }
 
 func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_not_set(c *C) {
+	instanceType := "t2.micro"
 	blueprint := &schema.Blueprint{
 		Resources: map[string]*schema.Resource{
 			"resource1": {
 				Type: "aws/ec2/instance",
-				Spec: map[string]interface{}{
-					"instanceType": "t2.micro",
+				Spec: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"instanceType": &core.MappingNode{
+							Literal: &core.ScalarValue{
+								StringValue: &instanceType,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -43,7 +58,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_n
 
 	err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*core.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMissingVersion)
 	c.Assert(
@@ -56,20 +71,27 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_n
 func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_incorrect(c *C) {
 	// In the intial version of blueprint framework, only version
 	// 2023-04-20 of the spec is supported.
+	instanceType := "t2.micro"
 	blueprint := &schema.Blueprint{
 		Version: "2023-09-15",
 		Resources: map[string]*schema.Resource{
 			"resource1": {
 				Type: "aws/ec2/instance",
-				Spec: map[string]interface{}{
-					"instanceType": "t2.micro",
+				Spec: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"instanceType": &core.MappingNode{
+							Literal: &core.ScalarValue{
+								StringValue: &instanceType,
+							},
+						},
+					},
 				},
 			},
 		},
 	}
 	err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*core.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVersion)
 	c.Assert(
@@ -86,7 +108,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_resources_pr
 	}
 	err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*core.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMissingResources)
 	c.Assert(
@@ -103,7 +125,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_no_resources_are
 	}
 	err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*core.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMissingResources)
 	c.Assert(

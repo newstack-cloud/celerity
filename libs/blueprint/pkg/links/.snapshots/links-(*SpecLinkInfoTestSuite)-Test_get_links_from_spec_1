@@ -3,21 +3,21 @@
     ResourceName: (string) (len=8) "orderApi",
     Resource: (*schema.Resource)({
       Type: (string) (len=18) "aws/apigateway/api",
-      Description: (string) "",
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
-        DisplayName: (string) "",
-        Annotations: (map[string]core.ScalarValue) <nil>,
+        DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (map[string]interface {}) <nil>
+        Custom: (*core.MappingNode)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         }
       }),
-      Spec: (map[string]interface {}) <nil>
+      Spec: (*core.MappingNode)(<nil>)
     }),
     Selectors: (map[string][]string) (len=1) {
       (string) (len=19) "label::app:orderApi": ([]string) (len=2) {
@@ -25,7 +25,7 @@
         (string) (len=17) "getOrdersFunction"
       }
     },
-    LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=2) {
+    LinkImplementations: (map[string]provider.Link) (len=2) {
       (string) (len=19) "createOrderFunction": (*links.testApiGatewayLambdaLink)({
       }),
       (string) (len=17) "getOrdersFunction": (*links.testApiGatewayLambdaLink)({
@@ -36,28 +36,28 @@
         ResourceName: (string) (len=19) "createOrderFunction",
         Resource: (*schema.Resource)({
           Type: (string) (len=19) "aws/lambda/function",
-          Description: (string) "",
+          Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)({
-            DisplayName: (string) "",
-            Annotations: (map[string]core.ScalarValue) <nil>,
+            DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+            Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
             Labels: (map[string]string) (len=1) {
               (string) (len=3) "app": (string) (len=8) "orderApi"
             },
-            Custom: (map[string]interface {}) <nil>
+            Custom: (*core.MappingNode)(<nil>)
           }),
           LinkSelector: (*schema.LinkSelector)({
             ByLabel: (map[string]string) (len=1) {
               (string) (len=6) "system": (string) (len=6) "orders"
             }
           }),
-          Spec: (map[string]interface {}) <nil>
+          Spec: (*core.MappingNode)(<nil>)
         }),
         Selectors: (map[string][]string) (len=1) {
           (string) (len=20) "label::system:orders": ([]string) (len=1) {
             (string) (len=11) "ordersTable"
           }
         },
-        LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+        LinkImplementations: (map[string]provider.Link) (len=1) {
           (string) (len=11) "ordersTable": (*links.testLambdaDynamoDBTableLink)({
           })
         },
@@ -66,28 +66,28 @@
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
               Type: (string) (len=18) "aws/dynamodb/table",
-              Description: (string) "",
+              Description: (*substitutions.StringOrSubstitutions)(<nil>),
               Metadata: (*schema.Metadata)({
-                DisplayName: (string) "",
-                Annotations: (map[string]core.ScalarValue) <nil>,
+                DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+                Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
                 Labels: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
                 },
-                Custom: (map[string]interface {}) <nil>
+                Custom: (*core.MappingNode)(<nil>)
               }),
               LinkSelector: (*schema.LinkSelector)({
                 ByLabel: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
                 }
               }),
-              Spec: (map[string]interface {}) <nil>
+              Spec: (*core.MappingNode)(<nil>)
             }),
             Selectors: (map[string][]string) (len=1) {
               (string) (len=20) "label::system:orders": ([]string) (len=1) {
                 (string) (len=12) "ordersStream"
               }
             },
-            LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+            LinkImplementations: (map[string]provider.Link) (len=1) {
               (string) (len=12) "ordersStream": (*links.testDynamoDBTableStreamLink)({
               })
             },
@@ -96,28 +96,28 @@
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
                   Type: (string) (len=19) "aws/dynamodb/stream",
-                  Description: (string) "",
+                  Description: (*substitutions.StringOrSubstitutions)(<nil>),
                   Metadata: (*schema.Metadata)({
-                    DisplayName: (string) "",
-                    Annotations: (map[string]core.ScalarValue) <nil>,
+                    DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+                    Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
                     Labels: (map[string]string) (len=1) {
                       (string) (len=6) "system": (string) (len=6) "orders"
                     },
-                    Custom: (map[string]interface {}) <nil>
+                    Custom: (*core.MappingNode)(<nil>)
                   }),
                   LinkSelector: (*schema.LinkSelector)({
                     ByLabel: (map[string]string) (len=1) {
                       (string) (len=8) "workflow": (string) (len=10) "orderStats"
                     }
                   }),
-                  Spec: (map[string]interface {}) <nil>
+                  Spec: (*core.MappingNode)(<nil>)
                 }),
                 Selectors: (map[string][]string) (len=1) {
                   (string) (len=26) "label::workflow:orderStats": ([]string) (len=1) {
                     (string) (len=24) "statsAccumulatorFunction"
                   }
                 },
-                LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+                LinkImplementations: (map[string]provider.Link) (len=1) {
                   (string) (len=24) "statsAccumulatorFunction": (*links.testDynamoDBStreamLambdaLink)({
                   })
                 },
@@ -126,21 +126,21 @@
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
                       Type: (string) (len=19) "aws/lambda/function",
-                      Description: (string) "",
+                      Description: (*substitutions.StringOrSubstitutions)(<nil>),
                       Metadata: (*schema.Metadata)({
-                        DisplayName: (string) "",
-                        Annotations: (map[string]core.ScalarValue) <nil>,
+                        DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+                        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
                         Labels: (map[string]string) (len=1) {
                           (string) (len=8) "workflow": (string) (len=10) "orderStats"
                         },
-                        Custom: (map[string]interface {}) <nil>
+                        Custom: (*core.MappingNode)(<nil>)
                       }),
                       LinkSelector: (*schema.LinkSelector)(<nil>),
-                      Spec: (map[string]interface {}) <nil>
+                      Spec: (*core.MappingNode)(<nil>)
                     }),
                     Selectors: (map[string][]string) {
                     },
-                    LinkImplementations: (map[string]provider.Link[interface {},interface {}]) {
+                    LinkImplementations: (map[string]provider.Link) {
                     },
                     LinksTo: ([]*links.snapshotChainLink) {
                     },
@@ -187,28 +187,28 @@
         ResourceName: (string) (len=17) "getOrdersFunction",
         Resource: (*schema.Resource)({
           Type: (string) (len=19) "aws/lambda/function",
-          Description: (string) "",
+          Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)({
-            DisplayName: (string) "",
-            Annotations: (map[string]core.ScalarValue) <nil>,
+            DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+            Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
             Labels: (map[string]string) (len=1) {
               (string) (len=3) "app": (string) (len=8) "orderApi"
             },
-            Custom: (map[string]interface {}) <nil>
+            Custom: (*core.MappingNode)(<nil>)
           }),
           LinkSelector: (*schema.LinkSelector)({
             ByLabel: (map[string]string) (len=1) {
               (string) (len=6) "system": (string) (len=6) "orders"
             }
           }),
-          Spec: (map[string]interface {}) <nil>
+          Spec: (*core.MappingNode)(<nil>)
         }),
         Selectors: (map[string][]string) (len=1) {
           (string) (len=20) "label::system:orders": ([]string) (len=1) {
             (string) (len=11) "ordersTable"
           }
         },
-        LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+        LinkImplementations: (map[string]provider.Link) (len=1) {
           (string) (len=11) "ordersTable": (*links.testLambdaDynamoDBTableLink)({
           })
         },
@@ -217,28 +217,28 @@
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
               Type: (string) (len=18) "aws/dynamodb/table",
-              Description: (string) "",
+              Description: (*substitutions.StringOrSubstitutions)(<nil>),
               Metadata: (*schema.Metadata)({
-                DisplayName: (string) "",
-                Annotations: (map[string]core.ScalarValue) <nil>,
+                DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+                Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
                 Labels: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
                 },
-                Custom: (map[string]interface {}) <nil>
+                Custom: (*core.MappingNode)(<nil>)
               }),
               LinkSelector: (*schema.LinkSelector)({
                 ByLabel: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
                 }
               }),
-              Spec: (map[string]interface {}) <nil>
+              Spec: (*core.MappingNode)(<nil>)
             }),
             Selectors: (map[string][]string) (len=1) {
               (string) (len=20) "label::system:orders": ([]string) (len=1) {
                 (string) (len=12) "ordersStream"
               }
             },
-            LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+            LinkImplementations: (map[string]provider.Link) (len=1) {
               (string) (len=12) "ordersStream": (*links.testDynamoDBTableStreamLink)({
               })
             },
@@ -247,28 +247,28 @@
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
                   Type: (string) (len=19) "aws/dynamodb/stream",
-                  Description: (string) "",
+                  Description: (*substitutions.StringOrSubstitutions)(<nil>),
                   Metadata: (*schema.Metadata)({
-                    DisplayName: (string) "",
-                    Annotations: (map[string]core.ScalarValue) <nil>,
+                    DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+                    Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
                     Labels: (map[string]string) (len=1) {
                       (string) (len=6) "system": (string) (len=6) "orders"
                     },
-                    Custom: (map[string]interface {}) <nil>
+                    Custom: (*core.MappingNode)(<nil>)
                   }),
                   LinkSelector: (*schema.LinkSelector)({
                     ByLabel: (map[string]string) (len=1) {
                       (string) (len=8) "workflow": (string) (len=10) "orderStats"
                     }
                   }),
-                  Spec: (map[string]interface {}) <nil>
+                  Spec: (*core.MappingNode)(<nil>)
                 }),
                 Selectors: (map[string][]string) (len=1) {
                   (string) (len=26) "label::workflow:orderStats": ([]string) (len=1) {
                     (string) (len=24) "statsAccumulatorFunction"
                   }
                 },
-                LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+                LinkImplementations: (map[string]provider.Link) (len=1) {
                   (string) (len=24) "statsAccumulatorFunction": (*links.testDynamoDBStreamLambdaLink)({
                   })
                 },
@@ -277,21 +277,21 @@
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
                       Type: (string) (len=19) "aws/lambda/function",
-                      Description: (string) "",
+                      Description: (*substitutions.StringOrSubstitutions)(<nil>),
                       Metadata: (*schema.Metadata)({
-                        DisplayName: (string) "",
-                        Annotations: (map[string]core.ScalarValue) <nil>,
+                        DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+                        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
                         Labels: (map[string]string) (len=1) {
                           (string) (len=8) "workflow": (string) (len=10) "orderStats"
                         },
-                        Custom: (map[string]interface {}) <nil>
+                        Custom: (*core.MappingNode)(<nil>)
                       }),
                       LinkSelector: (*schema.LinkSelector)(<nil>),
-                      Spec: (map[string]interface {}) <nil>
+                      Spec: (*core.MappingNode)(<nil>)
                     }),
                     Selectors: (map[string][]string) {
                     },
-                    LinkImplementations: (map[string]provider.Link[interface {},interface {}]) {
+                    LinkImplementations: (map[string]provider.Link) {
                     },
                     LinksTo: ([]*links.snapshotChainLink) {
                     },
@@ -344,28 +344,28 @@
     ResourceName: (string) (len=10) "orderQueue",
     Resource: (*schema.Resource)({
       Type: (string) (len=13) "aws/sqs/queue",
-      Description: (string) "",
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
-        DisplayName: (string) "",
-        Annotations: (map[string]core.ScalarValue) <nil>,
+        DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=13) "orderWorkflow"
         },
-        Custom: (map[string]interface {}) <nil>
+        Custom: (*core.MappingNode)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=13) "orderWorkflow"
         }
       }),
-      Spec: (map[string]interface {}) <nil>
+      Spec: (*core.MappingNode)(<nil>)
     }),
     Selectors: (map[string][]string) (len=1) {
       (string) (len=24) "label::app:orderWorkflow": ([]string) (len=1) {
         (string) (len=21) "processOrdersFunction"
       }
     },
-    LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+    LinkImplementations: (map[string]provider.Link) (len=1) {
       (string) (len=21) "processOrdersFunction": (*links.testSQSQueueLambdaLink)({
       })
     },
@@ -374,28 +374,28 @@
         ResourceName: (string) (len=21) "processOrdersFunction",
         Resource: (*schema.Resource)({
           Type: (string) (len=19) "aws/lambda/function",
-          Description: (string) "",
+          Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)({
-            DisplayName: (string) "",
-            Annotations: (map[string]core.ScalarValue) <nil>,
+            DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+            Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
             Labels: (map[string]string) (len=1) {
               (string) (len=3) "app": (string) (len=13) "orderWorkflow"
             },
-            Custom: (map[string]interface {}) <nil>
+            Custom: (*core.MappingNode)(<nil>)
           }),
           LinkSelector: (*schema.LinkSelector)({
             ByLabel: (map[string]string) (len=1) {
               (string) (len=6) "system": (string) (len=6) "orders"
             }
           }),
-          Spec: (map[string]interface {}) <nil>
+          Spec: (*core.MappingNode)(<nil>)
         }),
         Selectors: (map[string][]string) (len=1) {
           (string) (len=20) "label::system:orders": ([]string) (len=1) {
             (string) (len=11) "ordersTable"
           }
         },
-        LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+        LinkImplementations: (map[string]provider.Link) (len=1) {
           (string) (len=11) "ordersTable": (*links.testLambdaDynamoDBTableLink)({
           })
         },
@@ -404,28 +404,28 @@
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
               Type: (string) (len=18) "aws/dynamodb/table",
-              Description: (string) "",
+              Description: (*substitutions.StringOrSubstitutions)(<nil>),
               Metadata: (*schema.Metadata)({
-                DisplayName: (string) "",
-                Annotations: (map[string]core.ScalarValue) <nil>,
+                DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+                Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
                 Labels: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
                 },
-                Custom: (map[string]interface {}) <nil>
+                Custom: (*core.MappingNode)(<nil>)
               }),
               LinkSelector: (*schema.LinkSelector)({
                 ByLabel: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
                 }
               }),
-              Spec: (map[string]interface {}) <nil>
+              Spec: (*core.MappingNode)(<nil>)
             }),
             Selectors: (map[string][]string) (len=1) {
               (string) (len=20) "label::system:orders": ([]string) (len=1) {
                 (string) (len=12) "ordersStream"
               }
             },
-            LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+            LinkImplementations: (map[string]provider.Link) (len=1) {
               (string) (len=12) "ordersStream": (*links.testDynamoDBTableStreamLink)({
               })
             },
@@ -434,28 +434,28 @@
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
                   Type: (string) (len=19) "aws/dynamodb/stream",
-                  Description: (string) "",
+                  Description: (*substitutions.StringOrSubstitutions)(<nil>),
                   Metadata: (*schema.Metadata)({
-                    DisplayName: (string) "",
-                    Annotations: (map[string]core.ScalarValue) <nil>,
+                    DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+                    Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
                     Labels: (map[string]string) (len=1) {
                       (string) (len=6) "system": (string) (len=6) "orders"
                     },
-                    Custom: (map[string]interface {}) <nil>
+                    Custom: (*core.MappingNode)(<nil>)
                   }),
                   LinkSelector: (*schema.LinkSelector)({
                     ByLabel: (map[string]string) (len=1) {
                       (string) (len=8) "workflow": (string) (len=10) "orderStats"
                     }
                   }),
-                  Spec: (map[string]interface {}) <nil>
+                  Spec: (*core.MappingNode)(<nil>)
                 }),
                 Selectors: (map[string][]string) (len=1) {
                   (string) (len=26) "label::workflow:orderStats": ([]string) (len=1) {
                     (string) (len=24) "statsAccumulatorFunction"
                   }
                 },
-                LinkImplementations: (map[string]provider.Link[interface {},interface {}]) (len=1) {
+                LinkImplementations: (map[string]provider.Link) (len=1) {
                   (string) (len=24) "statsAccumulatorFunction": (*links.testDynamoDBStreamLambdaLink)({
                   })
                 },
@@ -464,21 +464,21 @@
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
                       Type: (string) (len=19) "aws/lambda/function",
-                      Description: (string) "",
+                      Description: (*substitutions.StringOrSubstitutions)(<nil>),
                       Metadata: (*schema.Metadata)({
-                        DisplayName: (string) "",
-                        Annotations: (map[string]core.ScalarValue) <nil>,
+                        DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+                        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
                         Labels: (map[string]string) (len=1) {
                           (string) (len=8) "workflow": (string) (len=10) "orderStats"
                         },
-                        Custom: (map[string]interface {}) <nil>
+                        Custom: (*core.MappingNode)(<nil>)
                       }),
                       LinkSelector: (*schema.LinkSelector)(<nil>),
-                      Spec: (map[string]interface {}) <nil>
+                      Spec: (*core.MappingNode)(<nil>)
                     }),
                     Selectors: (map[string][]string) {
                     },
-                    LinkImplementations: (map[string]provider.Link[interface {},interface {}]) {
+                    LinkImplementations: (map[string]provider.Link) {
                     },
                     LinksTo: ([]*links.snapshotChainLink) {
                     },
@@ -531,19 +531,19 @@
     ResourceName: (string) (len=14) "standaloneRole",
     Resource: (*schema.Resource)({
       Type: (string) (len=12) "aws/iam/role",
-      Description: (string) "",
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
-        DisplayName: (string) "",
-        Annotations: (map[string]core.ScalarValue) <nil>,
+        DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) <nil>,
-        Custom: (map[string]interface {}) <nil>
+        Custom: (*core.MappingNode)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (map[string]interface {}) <nil>
+      Spec: (*core.MappingNode)(<nil>)
     }),
     Selectors: (map[string][]string) {
     },
-    LinkImplementations: (map[string]provider.Link[interface {},interface {}]) {
+    LinkImplementations: (map[string]provider.Link) {
     },
     LinksTo: ([]*links.snapshotChainLink) {
     },

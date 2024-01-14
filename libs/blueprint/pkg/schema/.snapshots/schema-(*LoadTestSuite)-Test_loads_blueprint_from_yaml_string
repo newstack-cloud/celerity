@@ -32,171 +32,207 @@
   Resources: (map[string]*schema.Resource) (len=6) {
     (string) (len=10) "authoriser": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
-      Description: (string) "",
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
-        DisplayName: (string) (len=10) "Authoriser",
-        Annotations: (map[string]core.ScalarValue) (len=4) {
-          (string) (len=10) "authoriser": (core.ScalarValue) {
-            IntValue: (*int)(<nil>),
-            BoolValue: (*bool)(true),
-            FloatValue: (*float64)(<nil>),
-            StringValue: (*string)(<nil>)
-          },
-          (string) (len=26) "authoriser.identity.header": (core.ScalarValue) {
-            IntValue: (*int)(<nil>),
-            BoolValue: (*bool)(<nil>),
-            FloatValue: (*float64)(<nil>),
-            StringValue: (*string)((len=18) "MyCustomAuthHeader")
-          },
-          (string) (len=36) "authoriser.identity.reauthoriseEvery": (core.ScalarValue) {
-            IntValue: (*int)(20),
-            BoolValue: (*bool)(<nil>),
-            FloatValue: (*float64)(<nil>),
-            StringValue: (*string)(<nil>)
-          },
-          (string) (len=40) "authoriser.identity.validationExpression": (core.ScalarValue) {
-            IntValue: (*int)(<nil>),
-            BoolValue: (*bool)(<nil>),
-            FloatValue: (*float64)(<nil>),
-            StringValue: (*string)((len=9) "Bearer .*")
+        DisplayName: (*substitutions.StringOrSubstitutions)({
+          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+            (*substitutions.StringOrSubstitution)({
+              StringValue: (*string)((len=10) "Authoriser"),
+              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+            })
           }
+        }),
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) (len=4) {
+          (string) (len=10) "authoriser": (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=4) "true"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              })
+            }
+          }),
+          (string) (len=26) "authoriser.identity.header": (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=18) "MyCustomAuthHeader"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              })
+            }
+          }),
+          (string) (len=36) "authoriser.identity.reauthoriseEvery": (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=2) "20"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              })
+            }
+          }),
+          (string) (len=40) "authoriser.identity.validationExpression": (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=9) "Bearer .*"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              })
+            }
+          })
         },
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (map[string]interface {}) <nil>
+        Custom: (*core.MappingNode)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (map[string]interface {}) (len=2) {
-        (string) (len=7) "handler": (string) (len=19) "handlers.Authoriser",
-        (string) (len=7) "timeout": (int) 120
-      }
+      Spec: (*core.MappingNode)({
+        Literal: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+      })
     }),
     (string) (len=16) "getOrdersHandler": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
-      Description: (string) "",
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
-        DisplayName: (string) (len=18) "Get Orders Handler",
-        Annotations: (map[string]core.ScalarValue) <nil>,
+        DisplayName: (*substitutions.StringOrSubstitutions)({
+          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+            (*substitutions.StringOrSubstitution)({
+              StringValue: (*string)((len=18) "Get Orders Handler"),
+              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+            })
+          }
+        }),
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (map[string]interface {}) <nil>
+        Custom: (*core.MappingNode)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (map[string]interface {}) (len=3) {
-        (string) (len=8) "endpoint": (map[string]interface {}) (len=3) {
-          (string) (len=10) "authoriser": (string) (len=13) "${authoriser}",
-          (string) (len=6) "method": (string) (len=3) "get",
-          (string) (len=4) "path": (string) (len=7) "/orders"
-        },
-        (string) (len=7) "handler": (string) (len=18) "handlers.GetOrders",
-        (string) (len=7) "timeout": (int) 120
-      }
+      Spec: (*core.MappingNode)({
+        Literal: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+      })
     }),
     (string) (len=8) "orderApi": (*schema.Resource)({
       Type: (string) (len=12) "celerity/api",
-      Description: (string) "",
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
-        DisplayName: (string) (len=9) "Order API",
-        Annotations: (map[string]core.ScalarValue) <nil>,
+        DisplayName: (*substitutions.StringOrSubstitutions)({
+          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+            (*substitutions.StringOrSubstitution)({
+              StringValue: (*string)((len=9) "Order API"),
+              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+            })
+          }
+        }),
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (map[string]interface {}) (len=1) {
-          (string) (len=6) "visual": (map[string]interface {}) (len=4) {
-            (string) (len=6) "height": (int) 50,
-            (string) (len=9) "linkPorts": ([]interface {}) (len=1) {
-              (map[string]interface {}) (len=3) {
-                (string) (len=10) "annotation": (string) (len=10) "Orders API",
-                (string) (len=9) "connectAt": (string) (len=6) "70 100",
-                (string) (len=6) "linkTo": (string) (len=16) "getOrderEndpoint"
-              }
-            },
-            (string) (len=5) "point": (string) (len=6) "20 100",
-            (string) (len=5) "width": (int) 50
-          }
-        }
+        Custom: (*core.MappingNode)({
+          Literal: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) <nil>,
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+        })
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         }
       }),
-      Spec: (map[string]interface {}) (len=3) {
-        (string) (len=11) "environment": (map[string]interface {}) (len=1) {
-          (string) (len=9) "variables": (map[string]interface {}) (len=1) {
-            (string) (len=14) "DYNAMODB_TABLE": (string) (len=26) "${variables.dynamoDBTable}"
-          }
-        },
-        (string) (len=7) "runtime": (string) (len=5) "go1.x",
-        (string) (len=14) "tracingEnabled": (bool) true
-      }
+      Spec: (*core.MappingNode)({
+        Literal: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+      })
     }),
     (string) (len=11) "orderPubSub": (*schema.Resource)({
       Type: (string) (len=15) "celerity/pubsub",
-      Description: (string) "",
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
-        DisplayName: (string) (len=13) "Order Pub/Sub",
-        Annotations: (map[string]core.ScalarValue) <nil>,
+        DisplayName: (*substitutions.StringOrSubstitutions)({
+          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+            (*substitutions.StringOrSubstitution)({
+              StringValue: (*string)((len=13) "Order Pub/Sub"),
+              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+            })
+          }
+        }),
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         },
-        Custom: (map[string]interface {}) <nil>
+        Custom: (*core.MappingNode)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         }
       }),
-      Spec: (map[string]interface {}) (len=1) {
-        (string) (len=9) "topicName": (string) (len=28) "${variables.ordersTopicName}"
-      }
+      Spec: (*core.MappingNode)({
+        Literal: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+      })
     }),
     (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
       Type: (string) (len=21) "celerity/layerVersion",
-      Description: (string) "",
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
-        DisplayName: (string) (len=21) "Shared Packages Layer",
-        Annotations: (map[string]core.ScalarValue) <nil>,
+        DisplayName: (*substitutions.StringOrSubstitutions)({
+          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+            (*substitutions.StringOrSubstitution)({
+              StringValue: (*string)((len=21) "Shared Packages Layer"),
+              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+            })
+          }
+        }),
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=2) {
           (string) (len=3) "app": (string) (len=8) "orderApi",
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         },
-        Custom: (map[string]interface {}) <nil>
+        Custom: (*core.MappingNode)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (map[string]interface {}) (len=3) {
-        (string) (len=18) "compatibleRuntimes": ([]interface {}) (len=1) {
-          (string) (len=5) "go1.x"
-        },
-        (string) (len=7) "content": (string) (len=27) "build/shared-packages-layer",
-        (string) (len=9) "layerName": (string) (len=19) "sharedPackagesLayer"
-      }
+      Spec: (*core.MappingNode)({
+        Literal: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+      })
     }),
     (string) (len=19) "updateOrderFunction": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
-      Description: (string) "",
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
-        DisplayName: (string) (len=21) "Update Order Function",
-        Annotations: (map[string]core.ScalarValue) <nil>,
+        DisplayName: (*substitutions.StringOrSubstitutions)({
+          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+            (*substitutions.StringOrSubstitution)({
+              StringValue: (*string)((len=21) "Update Order Function"),
+              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+            })
+          }
+        }),
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=2) {
           (string) (len=10) "pubsubType": (string) (len=8) "consumer",
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         },
-        Custom: (map[string]interface {}) <nil>
+        Custom: (*core.MappingNode)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (map[string]interface {}) (len=3) {
-        (string) (len=6) "events": (map[string]interface {}) (len=1) {
-          (string) (len=10) "orderEvent": (map[string]interface {}) (len=2) {
-            (string) (len=9) "batchSize": (int) 10,
-            (string) (len=4) "type": (string) (len=6) "pubsub"
-          }
-        },
-        (string) (len=7) "handler": (string) (len=20) "handlers.UpdateOrder",
-        (string) (len=7) "timeout": (int) 120
-      }
+      Spec: (*core.MappingNode)({
+        Literal: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+      })
     })
   },
   DataSources: (map[string]*schema.DataSource) (len=1) {
@@ -213,14 +249,7 @@
           Value: (schema.DataSourceFilterOperator) (len=7) "has key"
         }),
         Search: (*schema.DataSourceFilterSearch)({
-          Values: ([]*core.ScalarValue) (len=1) {
-            (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=24) "${variables.environment}")
-            })
-          }
+          Values: ([]*substitutions.StringOrSubstitutions) <nil>
         })
       }),
       Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
@@ -250,5 +279,5 @@
     })
   },
   Exports: (map[string]*schema.Export) <nil>,
-  Metadata: (map[string]interface {}) <nil>
+  Metadata: (*core.MappingNode)(<nil>)
 })

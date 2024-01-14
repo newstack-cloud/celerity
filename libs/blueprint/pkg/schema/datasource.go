@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 	"gopkg.in/yaml.v3"
 )
@@ -12,9 +13,9 @@ import (
 // DataSource represents a blueprint
 // data source in the specification.
 // Data sources are accessible to all resources in a blueprint via the
-// ${dataSources.{dataSourceName}.{exportedField}} reference.
+// ${datasources.{dataSourceName}.{exportedField}} reference.
 // For example, you would access a data source called network with an exported
-// vpc field via ${dataSources.network.vpc}.
+// vpc field via ${datasources.network.vpc}.
 type DataSource struct {
 	Type               string                            `yaml:"type" json:"type"`
 	DataSourceMetadata *DataSourceMetadata               `yaml:"metadata" json:"metadata"`
@@ -34,7 +35,7 @@ type DataSourceFilter struct {
 // DataSourceFilterSearch provides the definition of one or more
 // search values for a data source filter.
 type DataSourceFilterSearch struct {
-	Values []*bpcore.ScalarValue
+	Values []*substitutions.StringOrSubstitutions
 }
 
 func (s *DataSourceFilterSearch) MarshalYAML() (interface{}, error) {
@@ -49,26 +50,26 @@ func (s *DataSourceFilterSearch) MarshalYAML() (interface{}, error) {
 }
 
 func (s *DataSourceFilterSearch) UnmarshalYAML(value *yaml.Node) error {
-	if value.Kind == yaml.SequenceNode {
-		values := []*bpcore.ScalarValue{}
-		for _, node := range value.Content {
-			value := &bpcore.ScalarValue{}
-			err := value.UnmarshalYAML(node)
-			if err != nil {
-				return err
-			}
-			values = append(values, value)
-		}
-		s.Values = values
-	}
+	// if value.Kind == yaml.SequenceNode {
+	// 	values := [][]*bpcore.StringOrSubstitution{}
+	// 	for _, node := range value.Content {
+	// 		value := &bpcore.ScalarValue{}
+	// 		err := value.UnmarshalYAML(node)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		values = append(values, value)
+	// 	}
+	// 	s.Values = values
+	// }
 
-	singleValue := &bpcore.ScalarValue{}
-	err := singleValue.UnmarshalYAML(value)
-	if err != nil {
-		return err
-	}
+	// singleValue := &bpcore.ScalarValue{}
+	// err := singleValue.UnmarshalYAML(value)
+	// if err != nil {
+	// 	return err
+	// }
 
-	s.Values = []*bpcore.ScalarValue{singleValue}
+	// s.Values = []*bpcore.ScalarValue{singleValue}
 	return nil
 }
 
@@ -81,20 +82,20 @@ func (s *DataSourceFilterSearch) MarshalJSON() ([]byte, error) {
 }
 
 func (s *DataSourceFilterSearch) UnmarshalJSON(data []byte) error {
-	singleValue := bpcore.ScalarValue{}
-	err := json.Unmarshal(data, &singleValue)
-	if err == nil {
-		s.Values = []*bpcore.ScalarValue{&singleValue}
-		return nil
-	}
+	// singleValue := bpcore.ScalarValue{}
+	// err := json.Unmarshal(data, &singleValue)
+	// if err == nil {
+	// 	s.Values = []*bpcore.ScalarValue{&singleValue}
+	// 	return nil
+	// }
 
-	multipleValues := []*bpcore.ScalarValue{}
-	err = json.Unmarshal(data, &multipleValues)
-	if err != nil {
-		return err
-	}
+	// multipleValues := []*bpcore.ScalarValue{}
+	// err = json.Unmarshal(data, &multipleValues)
+	// if err != nil {
+	// 	return err
+	// }
 
-	s.Values = multipleValues
+	// s.Values = multipleValues
 	return nil
 }
 

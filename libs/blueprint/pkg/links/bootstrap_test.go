@@ -33,14 +33,14 @@ func (s *testBlueprintSpec) Schema() *schema.Blueprint {
 }
 
 type testAWSProvider struct {
-	resources           map[string]provider.Resource[any]
-	links               map[string]provider.Link[any, any]
+	resources           map[string]provider.Resource
+	links               map[string]provider.Link
 	customVariableTypes map[string]provider.CustomVariableType
 }
 
 func newTestAWSProvider() provider.Provider {
 	return &testAWSProvider{
-		resources: map[string]provider.Resource[any]{
+		resources: map[string]provider.Resource{
 			"aws/apigateway/api":         &testApiGatewayResource{},
 			"aws/sqs/queue":              &testSQSQueueResource{},
 			"aws/lambda/function":        &testLambdaFunctionResource{},
@@ -50,7 +50,7 @@ func newTestAWSProvider() provider.Provider {
 			"aws/iam/role":               &testIAMRoleResource{},
 			"stratosaws/iam/role":        &testStratosIAMRoleResource{},
 		},
-		links: map[string]provider.Link[any, any]{
+		links: map[string]provider.Link{
 			"aws/apigateway/api::aws/lambda/function":         &testApiGatewayLambdaLink{},
 			"aws/sqs/queue::aws/lambda/function":              &testSQSQueueLambdaLink{},
 			"aws/lambda/function::aws/dynamodb/table":         &testLambdaDynamoDBTableLink{},
@@ -68,11 +68,11 @@ func newTestAWSProvider() provider.Provider {
 	}
 }
 
-func (p *testAWSProvider) Resource(resourceType string) provider.Resource[any] {
+func (p *testAWSProvider) Resource(resourceType string) provider.Resource {
 	return p.resources[resourceType]
 }
 
-func (p *testAWSProvider) Link(resourceTypeA string, resourceTypeB string) provider.Link[any, any] {
+func (p *testAWSProvider) Link(resourceTypeA string, resourceTypeB string) provider.Link {
 	linkKey := fmt.Sprintf("%s::%s", resourceTypeA, resourceTypeB)
 	return p.links[linkKey]
 }
@@ -104,19 +104,19 @@ func (r *testApiGatewayResource) GetType() string {
 // StageChanges is not used for spec link info!
 func (r *testApiGatewayResource) StageChanges(
 	ctx context.Context,
-	resourceInfo *provider.ResourceInfo[any],
+	resourceInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
-) (provider.Changes[any], error) {
-	return provider.Changes[any]{}, nil
+) (provider.Changes, error) {
+	return provider.Changes{}, nil
 }
 
 // Validate is not used for spec link info!
-func (r *testApiGatewayResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) (any, error) {
-	return nil, nil
+func (r *testApiGatewayResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
+	return nil
 }
 
 // Deploy is not used for spec link info!
-func (r *testApiGatewayResource) Deploy(ctx context.Context, changes provider.Changes[any], params core.BlueprintParams) (state.ResourceState, error) {
+func (r *testApiGatewayResource) Deploy(ctx context.Context, changes provider.Changes, params core.BlueprintParams) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
 }
 
@@ -147,19 +147,19 @@ func (r *testSQSQueueResource) GetType() string {
 // StageChanges is not used for spec link info!
 func (r *testSQSQueueResource) StageChanges(
 	ctx context.Context,
-	resourceInfo *provider.ResourceInfo[any],
+	resourceInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
-) (provider.Changes[any], error) {
-	return provider.Changes[any]{}, nil
+) (provider.Changes, error) {
+	return provider.Changes{}, nil
 }
 
 // Validate is not used for spec link info!
-func (r *testSQSQueueResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) (any, error) {
-	return nil, nil
+func (r *testSQSQueueResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
+	return nil
 }
 
 // Deploy is not used for spec link info!
-func (r *testSQSQueueResource) Deploy(ctx context.Context, changes provider.Changes[any], params core.BlueprintParams) (state.ResourceState, error) {
+func (r *testSQSQueueResource) Deploy(ctx context.Context, changes provider.Changes, params core.BlueprintParams) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
 }
 
@@ -193,19 +193,19 @@ func (r *testLambdaFunctionResource) GetType() string {
 // StageChanges is not used for spec link info!
 func (r *testLambdaFunctionResource) StageChanges(
 	ctx context.Context,
-	resourceInfo *provider.ResourceInfo[any],
+	resourceInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
-) (provider.Changes[any], error) {
-	return provider.Changes[any]{}, nil
+) (provider.Changes, error) {
+	return provider.Changes{}, nil
 }
 
 // Validate is not used for spec link info!
-func (r *testLambdaFunctionResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) (any, error) {
-	return nil, nil
+func (r *testLambdaFunctionResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
+	return nil
 }
 
 // Deploy is not used for spec link info!
-func (r *testLambdaFunctionResource) Deploy(ctx context.Context, changes provider.Changes[any], params core.BlueprintParams) (state.ResourceState, error) {
+func (r *testLambdaFunctionResource) Deploy(ctx context.Context, changes provider.Changes, params core.BlueprintParams) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
 }
 
@@ -236,19 +236,19 @@ func (r *testStratosLambdaFunctionResource) GetType() string {
 // StageChanges is not used for spec link info!
 func (r *testStratosLambdaFunctionResource) StageChanges(
 	ctx context.Context,
-	resourceInfo *provider.ResourceInfo[any],
+	resourceInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
-) (provider.Changes[any], error) {
-	return provider.Changes[any]{}, nil
+) (provider.Changes, error) {
+	return provider.Changes{}, nil
 }
 
 // Validate is not used for spec link info!
-func (r *testStratosLambdaFunctionResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) (any, error) {
-	return nil, nil
+func (r *testStratosLambdaFunctionResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
+	return nil
 }
 
 // Deploy is not used for spec link info!
-func (r *testStratosLambdaFunctionResource) Deploy(ctx context.Context, changes provider.Changes[any], params core.BlueprintParams) (state.ResourceState, error) {
+func (r *testStratosLambdaFunctionResource) Deploy(ctx context.Context, changes provider.Changes, params core.BlueprintParams) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
 }
 
@@ -279,19 +279,19 @@ func (r *testDynamoDBTableResource) GetType() string {
 // StageChanges is not used for spec link info!
 func (r *testDynamoDBTableResource) StageChanges(
 	ctx context.Context,
-	resourceInfo *provider.ResourceInfo[any],
+	resourceInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
-) (provider.Changes[any], error) {
-	return provider.Changes[any]{}, nil
+) (provider.Changes, error) {
+	return provider.Changes{}, nil
 }
 
 // Validate is not used for spec link info!
-func (r *testDynamoDBTableResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) (any, error) {
-	return nil, nil
+func (r *testDynamoDBTableResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
+	return nil
 }
 
 // Deploy is not used for spec link info!
-func (r *testDynamoDBTableResource) Deploy(ctx context.Context, changes provider.Changes[any], params core.BlueprintParams) (state.ResourceState, error) {
+func (r *testDynamoDBTableResource) Deploy(ctx context.Context, changes provider.Changes, params core.BlueprintParams) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
 }
 
@@ -322,19 +322,19 @@ func (r *testDynamoDBStreamResource) GetType() string {
 // StageChanges is not used for spec link info!
 func (r *testDynamoDBStreamResource) StageChanges(
 	ctx context.Context,
-	resourceInfo *provider.ResourceInfo[any],
+	resourceInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
-) (provider.Changes[any], error) {
-	return provider.Changes[any]{}, nil
+) (provider.Changes, error) {
+	return provider.Changes{}, nil
 }
 
 // Validate is not used for spec link info!
-func (r *testDynamoDBStreamResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) (any, error) {
-	return nil, nil
+func (r *testDynamoDBStreamResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
+	return nil
 }
 
 // Deploy is not used for spec link info!
-func (r *testDynamoDBStreamResource) Deploy(ctx context.Context, changes provider.Changes[any], params core.BlueprintParams) (state.ResourceState, error) {
+func (r *testDynamoDBStreamResource) Deploy(ctx context.Context, changes provider.Changes, params core.BlueprintParams) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
 }
 
@@ -366,19 +366,19 @@ func (r *testIAMRoleResource) GetType() string {
 // StageChanges is not used for spec link info!
 func (r *testIAMRoleResource) StageChanges(
 	ctx context.Context,
-	resourceInfo *provider.ResourceInfo[any],
+	resourceInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
-) (provider.Changes[any], error) {
-	return provider.Changes[any]{}, nil
+) (provider.Changes, error) {
+	return provider.Changes{}, nil
 }
 
 // Validate is not used for spec link info!
-func (r *testIAMRoleResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) (any, error) {
-	return nil, nil
+func (r *testIAMRoleResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
+	return nil
 }
 
 // Deploy is not used for spec link info!
-func (r *testIAMRoleResource) Deploy(ctx context.Context, changes provider.Changes[any], params core.BlueprintParams) (state.ResourceState, error) {
+func (r *testIAMRoleResource) Deploy(ctx context.Context, changes provider.Changes, params core.BlueprintParams) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
 }
 
@@ -409,19 +409,19 @@ func (r *testStratosIAMRoleResource) GetType() string {
 // StageChanges is not used for spec link info!
 func (r *testStratosIAMRoleResource) StageChanges(
 	ctx context.Context,
-	resourceInfo *provider.ResourceInfo[any],
+	resourceInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
-) (provider.Changes[any], error) {
-	return provider.Changes[any]{}, nil
+) (provider.Changes, error) {
+	return provider.Changes{}, nil
 }
 
 // Validate is not used for spec link info!
-func (r *testStratosIAMRoleResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) (any, error) {
-	return nil, nil
+func (r *testStratosIAMRoleResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
+	return nil
 }
 
 // Deploy is not used for spec link info!
-func (r *testStratosIAMRoleResource) Deploy(ctx context.Context, changes provider.Changes[any], params core.BlueprintParams) (state.ResourceState, error) {
+func (r *testStratosIAMRoleResource) Deploy(ctx context.Context, changes provider.Changes, params core.BlueprintParams) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
 }
 
@@ -443,8 +443,8 @@ type testApiGatewayLambdaLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testApiGatewayLambdaLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -460,12 +460,12 @@ func (l *testApiGatewayLambdaLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testApiGatewayLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testApiGatewayLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testApiGatewayLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testApiGatewayLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -473,8 +473,8 @@ func (l *testApiGatewayLambdaLink) HandleResourceTypeBError(ctx context.Context,
 func (l *testApiGatewayLambdaLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -488,8 +488,8 @@ type testSQSQueueLambdaLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testSQSQueueLambdaLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -505,12 +505,12 @@ func (l *testSQSQueueLambdaLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testSQSQueueLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testSQSQueueLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testSQSQueueLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testSQSQueueLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -518,8 +518,8 @@ func (l *testSQSQueueLambdaLink) HandleResourceTypeBError(ctx context.Context, r
 func (l *testSQSQueueLambdaLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -533,8 +533,8 @@ type testLambdaDynamoDBTableLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testLambdaDynamoDBTableLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -551,12 +551,12 @@ func (l *testLambdaDynamoDBTableLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testLambdaDynamoDBTableLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testLambdaDynamoDBTableLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testLambdaDynamoDBTableLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testLambdaDynamoDBTableLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -564,8 +564,8 @@ func (l *testLambdaDynamoDBTableLink) HandleResourceTypeBError(ctx context.Conte
 func (l *testLambdaDynamoDBTableLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -579,8 +579,8 @@ type testStratosLambdaDynamoDBTableLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testStratosLambdaDynamoDBTableLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -596,12 +596,12 @@ func (l *testStratosLambdaDynamoDBTableLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testStratosLambdaDynamoDBTableLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testStratosLambdaDynamoDBTableLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testStratosLambdaDynamoDBTableLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testStratosLambdaDynamoDBTableLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -609,8 +609,8 @@ func (l *testStratosLambdaDynamoDBTableLink) HandleResourceTypeBError(ctx contex
 func (l *testStratosLambdaDynamoDBTableLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -624,8 +624,8 @@ type testLambdaSQSQueueLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testLambdaSQSQueueLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -641,12 +641,12 @@ func (l *testLambdaSQSQueueLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testLambdaSQSQueueLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testLambdaSQSQueueLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testLambdaSQSQueueLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testLambdaSQSQueueLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -654,8 +654,8 @@ func (l *testLambdaSQSQueueLink) HandleResourceTypeBError(ctx context.Context, r
 func (l *testLambdaSQSQueueLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -669,8 +669,8 @@ type testDynamoDBTableStreamLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testDynamoDBTableStreamLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -687,12 +687,12 @@ func (l *testDynamoDBTableStreamLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testDynamoDBTableStreamLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testDynamoDBTableStreamLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testDynamoDBTableStreamLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testDynamoDBTableStreamLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -700,8 +700,8 @@ func (l *testDynamoDBTableStreamLink) HandleResourceTypeBError(ctx context.Conte
 func (l *testDynamoDBTableStreamLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -715,8 +715,8 @@ type testDynamoDBStreamLambdaLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testDynamoDBStreamLambdaLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -733,12 +733,12 @@ func (l *testDynamoDBStreamLambdaLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -746,8 +746,8 @@ func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeBError(ctx context.Cont
 func (l *testDynamoDBStreamLambdaLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -761,8 +761,8 @@ type testDynamoDBStreamStratosLambdaLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testDynamoDBStreamStratosLambdaLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -779,12 +779,12 @@ func (l *testDynamoDBStreamStratosLambdaLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -792,8 +792,8 @@ func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceTypeBError(ctx conte
 func (l *testDynamoDBStreamStratosLambdaLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -807,8 +807,8 @@ type testIAMRoleLambdaLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testIAMRoleLambdaLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -825,12 +825,12 @@ func (l *testIAMRoleLambdaLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testIAMRoleLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testIAMRoleLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testIAMRoleLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testIAMRoleLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -838,8 +838,8 @@ func (l *testIAMRoleLambdaLink) HandleResourceTypeBError(ctx context.Context, re
 func (l *testIAMRoleLambdaLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -853,8 +853,8 @@ type testStratosIAMRoleLambdaLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testStratosIAMRoleLambdaLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -870,12 +870,12 @@ func (l *testStratosIAMRoleLambdaLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testStratosIAMRoleLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testStratosIAMRoleLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testStratosIAMRoleLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testStratosIAMRoleLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -883,8 +883,8 @@ func (l *testStratosIAMRoleLambdaLink) HandleResourceTypeBError(ctx context.Cont
 func (l *testStratosIAMRoleLambdaLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -898,8 +898,8 @@ type testLambdaIAMRoleLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testLambdaIAMRoleLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -916,12 +916,12 @@ func (l *testLambdaIAMRoleLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testLambdaIAMRoleLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testLambdaIAMRoleLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testLambdaIAMRoleLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testLambdaIAMRoleLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -929,8 +929,8 @@ func (l *testLambdaIAMRoleLink) HandleResourceTypeBError(ctx context.Context, re
 func (l *testLambdaIAMRoleLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -944,8 +944,8 @@ type testLambdaStratosIAMRoleLink struct{}
 // StageChanges is not used for spec link info!
 func (l *testLambdaStratosIAMRoleLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (provider.LinkChanges, error) {
 	return provider.LinkChanges{}, nil
@@ -961,12 +961,12 @@ func (l *testLambdaStratosIAMRoleLink) Type() provider.LinkType {
 }
 
 // HandleResourceTypeAError is not used for spec link info!
-func (l *testLambdaStratosIAMRoleLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testLambdaStratosIAMRoleLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
 // HandleResourceTypeBError is not used for spec link info!
-func (l *testLambdaStratosIAMRoleLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo[any]) error {
+func (l *testLambdaStratosIAMRoleLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
 	return nil
 }
 
@@ -974,8 +974,8 @@ func (l *testLambdaStratosIAMRoleLink) HandleResourceTypeBError(ctx context.Cont
 func (l *testLambdaStratosIAMRoleLink) Deploy(
 	ctx context.Context,
 	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo[any],
-	resourceBInfo *provider.ResourceInfo[any],
+	resourceAInfo *provider.ResourceInfo,
+	resourceBInfo *provider.ResourceInfo,
 	params core.BlueprintParams,
 ) (state.ResourceState, error) {
 	return state.ResourceState{}, nil
@@ -998,7 +998,7 @@ type snapshotChainLink struct {
 	// LinkImplementations holds the link provider implementations keyed by resource name
 	// for all the resources the current resource in the chain links
 	// to.
-	LinkImplementations map[string]provider.Link[interface{}, interface{}]
+	LinkImplementations map[string]provider.Link
 	// LinksTo holds the chain link nodes for the resources
 	// that the curent resource links to.
 	LinksTo []*snapshotChainLink

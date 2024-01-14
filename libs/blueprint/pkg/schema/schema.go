@@ -1,5 +1,7 @@
 package schema
 
+import "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+
 // Blueprint provides the type for a blueprint
 // specification loaded into memory.
 type Blueprint struct {
@@ -8,7 +10,7 @@ type Blueprint struct {
 	Variables   map[string]*Variable   `yaml:"variables" json:"variables"`
 	Include     map[string]*Include    `yaml:"include" json:"include"`
 	Resources   map[string]*Resource   `yaml:"resources" json:"resources"`
-	DataSources map[string]*DataSource `yaml:"dataSources" json:"dataSources"`
+	DataSources map[string]*DataSource `yaml:"datasources" json:"datasources"`
 	Exports     map[string]*Export     `yaml:"exports" json:"exports"`
-	Metadata    map[string]interface{} `yaml:"metadata" json:"metadata"`
+	Metadata    *core.MappingNode      `yaml:"metadata" json:"metadata"`
 }

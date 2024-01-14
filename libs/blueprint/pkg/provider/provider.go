@@ -11,13 +11,13 @@ package provider
 type Provider interface {
 	// Resource retrieves a resource plugin to handle a resource in a blueprint for
 	// a given resource type.
-	Resource(resourceType string) Resource[any]
+	Resource(resourceType string) Resource
 	// DataSource retrieves a data source plugin to handle a data source in a blueprint
 	// for a given data source type.
 	DataSource(dataSourceType string) DataSource
 	// Link retrieves a link plugin to handle a link between two resource types
 	// in a blueprint.
-	Link(resourceTypeA string, resourceTypeB string) Link[any, any]
+	Link(resourceTypeA string, resourceTypeB string) Link
 	// CustomVariableType retrieves a custom variable type plugin to handle validating
 	// convenience variable types with a (usually large) fixed set of possible values.
 	// These custom variable types should not be used for dynamically sourced values

@@ -6,8 +6,9 @@ package validation
 import (
 	"context"
 
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	. "gopkg.in/check.v1"
 )
 
@@ -26,9 +27,13 @@ func (s *DataSourceValidationTestSuite) Test_succeeds_without_any_issues_for_a_v
 				Value: schema.DataSourceFilterOperatorHasKey,
 			},
 			Search: &schema.DataSourceFilterSearch{
-				Values: []*bpcore.ScalarValue{
+				Values: []*substitutions.StringOrSubstitutions{
 					{
-						StringValue: &search,
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &search,
+							},
+						},
 					},
 				},
 			},
@@ -62,7 +67,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_is_missi
 
 	err := ValidateDataSource(context.Background(), "vmInstance", dataSource)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*bpcore.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidDataSource)
 	c.Assert(
@@ -85,11 +90,20 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 				Value: schema.DataSourceFilterOperatorIn,
 			},
 			Search: &schema.DataSourceFilterSearch{
-				Values: []*bpcore.ScalarValue{
+				Values: []*substitutions.StringOrSubstitutions{
 					{
-						StringValue: &name1,
-					}, {
-						StringValue: &name2,
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &name1,
+							},
+						},
+					},
+					{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &name2,
+							},
+						},
 					},
 				},
 			},
@@ -106,7 +120,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 
 	err := ValidateDataSource(context.Background(), "vmInstance", dataSource)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*bpcore.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidDataSource)
 	c.Assert(
@@ -139,7 +153,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_i
 
 	err := ValidateDataSource(context.Background(), "vmInstance", dataSource)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*bpcore.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidDataSource)
 	c.Assert(
@@ -161,9 +175,13 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_no_exported_fie
 				Value: schema.DataSourceFilterOperatorIn,
 			},
 			Search: &schema.DataSourceFilterSearch{
-				Values: []*bpcore.ScalarValue{
+				Values: []*substitutions.StringOrSubstitutions{
 					{
-						StringValue: &search,
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &search,
+							},
+						},
 					},
 				},
 			},
@@ -175,7 +193,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_no_exported_fie
 
 	err := ValidateDataSource(context.Background(), "vmInstance", dataSource)
 	c.Assert(err, NotNil)
-	loadErr, isLoadErr := err.(*bpcore.LoadError)
+	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidDataSource)
 	c.Assert(

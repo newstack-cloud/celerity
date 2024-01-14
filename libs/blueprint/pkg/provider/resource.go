@@ -12,7 +12,7 @@ import (
 // including the blueprint schema data with annotations, labels
 // and the concrete specification type for everything under
 // the spec mapping of a resource.
-type ResourceInfo[ResourceSpecType any] struct {
+type ResourceInfo struct {
 	// ResourceID holds the ID of a resource when in the context
 	// of a blueprint instance when deploying or staging changes.
 	// Sometimes staging changes is independent of an instance and is used to compare
@@ -26,17 +26,16 @@ type ResourceInfo[ResourceSpecType any] struct {
 	// that the current resource deployment belongs to.
 	RevisionID     string
 	SchemaResource *schema.Resource
-	Spec           *ResourceSpecType
 }
 
 // Resource provides the interface for a resource
 // that a provider can contain which includes logic for validating,
 // transforming, linking and deploying a resource.
-type Resource[ResourceSpecType any] interface {
+type Resource interface {
 	// Validate a resource's specification and produce a concrete type
 	// that can be used in all phases of the blueprint instance lifecycle
 	// for said resource.
-	Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) (ResourceSpecType, error)
+	Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
 	CanLinkTo() []string
@@ -50,9 +49,9 @@ type Resource[ResourceSpecType any] interface {
 	// for the resource and blueprint instance provided in resourceInfo.
 	StageChanges(
 		ctx context.Context,
-		resourceInfo *ResourceInfo[ResourceSpecType],
+		resourceInfo *ResourceInfo,
 		params core.BlueprintParams,
-	) (Changes[ResourceSpecType], error)
+	) (Changes, error)
 	// GetType deals with retrieving the namespaced type for a resource in a blueprint spec.
 	GetType() string
 	// Deploy deals with deploying a resource with the downstream resource provider.
@@ -62,7 +61,7 @@ type Resource[ResourceSpecType any] interface {
 	// Parameters are passed into Deploy for extra context, blueprint variables will have already
 	// been substituted at this stage and must be used instead of the passed in params argument
 	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
-	Deploy(ctx context.Context, changes Changes[ResourceSpecType], params core.BlueprintParams) (state.ResourceState, error)
+	Deploy(ctx context.Context, changes Changes, params core.BlueprintParams) (state.ResourceState, error)
 	// GetExternalState deals with getting a revision of the state of the resource from the resource provider.
 	// (e.g. AWS or Google Cloud)
 	// The blueprint instance, resource and in same case the revision IDs should be
@@ -78,11 +77,11 @@ type Resource[ResourceSpecType any] interface {
 // Changes provides a set of modified fields along with a version
 // of the resource schema (includes metadata labels and annotations) and spec
 // that has already had all it's variables substituted.
-type Changes[ResourceSpecType any] struct {
+type Changes struct {
 	// AppliedResourceInfo provides a new version of the spec
 	// and schema for which variable substitution has been applied
 	// so the deploy phase has everything it needs to deploy the resource.
-	AppliedResourceInfo *ResourceInfo[ResourceSpecType]
+	AppliedResourceInfo *ResourceInfo
 	MustRecreate        bool
 	ModifiedFields      []string
 	NewFields           []string

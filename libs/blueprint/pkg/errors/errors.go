@@ -1,4 +1,4 @@
-package core
+package errors
 
 import "fmt"
 
@@ -25,4 +25,19 @@ func deriveErrorsLabel(errorCount int) string {
 	}
 
 	return "errors"
+}
+
+type SerialiseError struct {
+	ReasonCode  ErrorReasonCode
+	Err         error
+	ChildErrors []error
+}
+
+func (e *SerialiseError) Error() string {
+	childErrCount := len(e.ChildErrors)
+	if childErrCount == 0 {
+		return fmt.Sprintf("blueprint serialise error: %s", e.Err.Error())
+	}
+	errorsLabel := deriveErrorsLabel(childErrCount)
+	return fmt.Sprintf("blueprint serialise error (%d child %s): %s", childErrCount, errorsLabel, e.Err.Error())
 }

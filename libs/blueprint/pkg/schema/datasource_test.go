@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
 )
@@ -204,7 +204,7 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c 
 
 	c.Assert(targetFilter.Field, Equals, "tags")
 	c.Assert(targetFilter.Operator.Value, Equals, DataSourceFilterOperatorHasKey)
-	c.Assert(*targetFilter.Search.Values[0].StringValue, Equals, "${variables.environment}")
+	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, "${variables.environment}")
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_data_source_filter(c *C) {
@@ -235,9 +235,13 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_yaml_input
 			Value: DataSourceFilterOperatorEquals,
 		},
 		Search: &DataSourceFilterSearch{
-			Values: []*bpcore.ScalarValue{
+			Values: []*substitutions.StringOrSubstitutions{
 				{
-					StringValue: &searchFor,
+					Values: []*substitutions.StringOrSubstitution{
+						{
+							StringValue: &searchFor,
+						},
+					},
 				},
 			},
 		},
@@ -256,7 +260,7 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_yaml_input
 
 	c.Assert(targetFilter.Field, Equals, expected.Field)
 	c.Assert(targetFilter.Operator.Value, Equals, expected.Operator.Value)
-	c.Assert(*targetFilter.Search.Values[0].StringValue, Equals, *expected.Search.Values[0].StringValue)
+	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, *expected.Search.Values[0].Values[0].StringValue)
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_serialise_yaml_due_to_unsupported_data_source_filter_operator(c *C) {
@@ -268,9 +272,13 @@ func (s *DataSourceTestSuite) Test_fails_to_serialise_yaml_due_to_unsupported_da
 			Value: DataSourceFilterOperator("unknown"),
 		},
 		Search: &DataSourceFilterSearch{
-			Values: []*bpcore.ScalarValue{
+			Values: []*substitutions.StringOrSubstitutions{
 				{
-					StringValue: &search,
+					Values: []*substitutions.StringOrSubstitution{
+						{
+							StringValue: &search,
+						},
+					},
 				},
 			},
 		},
@@ -295,7 +303,7 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_json_input(c 
 
 	c.Assert(targetFilter.Field, Equals, "tags")
 	c.Assert(targetFilter.Operator.Value, Equals, DataSourceFilterOperatorHasKey)
-	c.Assert(*targetFilter.Search.Values[0].StringValue, Equals, "${variables.environment}")
+	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, "${variables.environment}")
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_parse_json_due_to_unsupported_data_source_filter_operator(c *C) {
@@ -326,9 +334,13 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_json_input
 			Value: DataSourceFilterOperatorEquals,
 		},
 		Search: &DataSourceFilterSearch{
-			Values: []*bpcore.ScalarValue{
+			Values: []*substitutions.StringOrSubstitutions{
 				{
-					StringValue: &searchFor,
+					Values: []*substitutions.StringOrSubstitution{
+						{
+							StringValue: &searchFor,
+						},
+					},
 				},
 			},
 		},
@@ -347,7 +359,7 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_json_input
 
 	c.Assert(targetFilter.Field, Equals, expected.Field)
 	c.Assert(targetFilter.Operator.Value, Equals, expected.Operator.Value)
-	c.Assert(*targetFilter.Search.Values[0].StringValue, Equals, *expected.Search.Values[0].StringValue)
+	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, *expected.Search.Values[0].Values[0].StringValue)
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_serialise_json_due_to_unsupported_data_source_filter_operator(c *C) {
@@ -359,9 +371,13 @@ func (s *DataSourceTestSuite) Test_fails_to_serialise_json_due_to_unsupported_da
 			Value: DataSourceFilterOperator("unknown"),
 		},
 		Search: &DataSourceFilterSearch{
-			Values: []*bpcore.ScalarValue{
+			Values: []*substitutions.StringOrSubstitutions{
 				{
-					StringValue: &search,
+					Values: []*substitutions.StringOrSubstitution{
+						{
+							StringValue: &search,
+						},
+					},
 				},
 			},
 		},
