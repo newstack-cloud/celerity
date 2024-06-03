@@ -17,11 +17,11 @@ import (
 // For example, you would access a data source called network with an exported
 // vpc field via ${datasources.network.vpc}.
 type DataSource struct {
-	Type               string                            `yaml:"type" json:"type"`
-	DataSourceMetadata *DataSourceMetadata               `yaml:"metadata" json:"metadata"`
-	Filter             *DataSourceFilter                 `yaml:"filter" json:"filter"`
-	Exports            map[string]*DataSourceFieldExport `yaml:"exports" json:"exports"`
-	Description        string                            `yaml:"description" json:"description"`
+	Type               string                               `yaml:"type" json:"type"`
+	DataSourceMetadata *DataSourceMetadata                  `yaml:"metadata" json:"metadata"`
+	Filter             *DataSourceFilter                    `yaml:"filter" json:"filter"`
+	Exports            map[string]*DataSourceFieldExport    `yaml:"exports" json:"exports"`
+	Description        *substitutions.StringOrSubstitutions `yaml:"description" json:"description"`
 }
 
 // DataSourceFilter provides the definition of a filter
@@ -50,26 +50,26 @@ func (s *DataSourceFilterSearch) MarshalYAML() (interface{}, error) {
 }
 
 func (s *DataSourceFilterSearch) UnmarshalYAML(value *yaml.Node) error {
-	// if value.Kind == yaml.SequenceNode {
-	// 	values := [][]*bpcore.StringOrSubstitution{}
-	// 	for _, node := range value.Content {
-	// 		value := &bpcore.ScalarValue{}
-	// 		err := value.UnmarshalYAML(node)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		values = append(values, value)
-	// 	}
-	// 	s.Values = values
-	// }
+	if value.Kind == yaml.SequenceNode {
+		values := []*substitutions.StringOrSubstitutions{}
+		for _, node := range value.Content {
+			value := &substitutions.StringOrSubstitutions{}
+			err := value.UnmarshalYAML(node)
+			if err != nil {
+				return err
+			}
+			values = append(values, value)
+		}
+		s.Values = values
+	}
 
-	// singleValue := &bpcore.ScalarValue{}
-	// err := singleValue.UnmarshalYAML(value)
-	// if err != nil {
-	// 	return err
-	// }
+	singleValue := &substitutions.StringOrSubstitutions{}
+	err := singleValue.UnmarshalYAML(value)
+	if err != nil {
+		return err
+	}
 
-	// s.Values = []*bpcore.ScalarValue{singleValue}
+	s.Values = []*substitutions.StringOrSubstitutions{singleValue}
 	return nil
 }
 
@@ -82,20 +82,20 @@ func (s *DataSourceFilterSearch) MarshalJSON() ([]byte, error) {
 }
 
 func (s *DataSourceFilterSearch) UnmarshalJSON(data []byte) error {
-	// singleValue := bpcore.ScalarValue{}
-	// err := json.Unmarshal(data, &singleValue)
-	// if err == nil {
-	// 	s.Values = []*bpcore.ScalarValue{&singleValue}
-	// 	return nil
-	// }
+	singleValue := substitutions.StringOrSubstitutions{}
+	err := json.Unmarshal(data, &singleValue)
+	if err == nil {
+		s.Values = []*substitutions.StringOrSubstitutions{&singleValue}
+		return nil
+	}
 
-	// multipleValues := []*bpcore.ScalarValue{}
-	// err = json.Unmarshal(data, &multipleValues)
-	// if err != nil {
-	// 	return err
-	// }
+	multipleValues := []*substitutions.StringOrSubstitutions{}
+	err = json.Unmarshal(data, &multipleValues)
+	if err != nil {
+		return err
+	}
 
-	// s.Values = multipleValues
+	s.Values = multipleValues
 	return nil
 }
 
@@ -209,9 +209,9 @@ var (
 // DataSourceFieldExport provides the definition of an exported field
 // from a data source in a blueprint.
 type DataSourceFieldExport struct {
-	Type        *DataSourceFieldTypeWrapper `yaml:"type" json:"type"`
-	AliasFor    string                      `yaml:"aliasFor" json:"aliasFor"`
-	Description string                      `yaml:"description,omitempty" json:"description,omitempty"`
+	Type        *DataSourceFieldTypeWrapper          `yaml:"type" json:"type"`
+	AliasFor    string                               `yaml:"aliasFor" json:"aliasFor"`
+	Description *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // DataSourceMetadata represents the metadata associated
@@ -219,9 +219,9 @@ type DataSourceFieldExport struct {
 // annotations that are used to configure data sources when fetching data
 // from the data source provider.
 type DataSourceMetadata struct {
-	DisplayName string                        `yaml:"displayName" json:"displayName"`
-	Annotations map[string]bpcore.ScalarValue `yaml:"annotations" json:"annotations"`
-	Custom      map[string]interface{}        `yaml:"custom" json:"custom"`
+	DisplayName *substitutions.StringOrSubstitutions           `yaml:"displayName" json:"displayName"`
+	Annotations map[string]*substitutions.StringOrSubstitution `yaml:"annotations" json:"annotations"`
+	Custom      *bpcore.MappingNode                            `yaml:"custom" json:"custom"`
 }
 
 // DataSourceFieldTypeWrapper provides a struct that holds a data source field type

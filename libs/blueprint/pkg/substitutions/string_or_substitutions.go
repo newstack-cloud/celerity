@@ -52,10 +52,17 @@ func (v *StringOrSubstitutions) MarshalJSON() ([]byte, error) {
 // to unmarshal a string that could contain interpolated
 // references.
 func (s *StringOrSubstitutions) UnmarshalJSON(data []byte) error {
+	dataStr := string(data)
+	// Remove the quotes from the string
+	if len(dataStr) < 2 || dataStr[0] != '"' || dataStr[len(dataStr)-1] != '"' {
+		return errSubstitutions("", []error{fmt.Errorf("invalid string value: %s", dataStr)})
+	}
+	quotesStripped := dataStr[1 : len(dataStr)-1]
+
 	// During deserialisation, there is no way of knowing the context
 	// (i.e. the key or field name) in which the substitutions are being used.
 	// This is why an empty string is passed as the substitution context.
-	parsedValues, err := ParseSubstitutionValues("", string(data))
+	parsedValues, err := ParseSubstitutionValues("", quotesStripped)
 	if err != nil {
 		return err
 	}

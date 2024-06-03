@@ -52,7 +52,14 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_field_yaml_input(c *
 		c.FailNow()
 	}
 
-	c.Assert(targetField.Description, Equals, "This is an example boolean data source field")
+	description := "This is an example boolean data source field"
+	c.Assert(targetField.Description, DeepEquals, &substitutions.StringOrSubstitutions{
+		Values: []*substitutions.StringOrSubstitution{
+			{
+				StringValue: &description,
+			},
+		},
+	})
 	c.Assert(targetField.Type.Value, Equals, DataSourceFieldType("boolean"))
 }
 
@@ -77,11 +84,18 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_yaml_input(
 		c.FailNow()
 	}
 
+	description := "The AWS region to connect to AWS services with"
 	serialisedBytes, err := yaml.Marshal(&DataSourceFieldExport{
 		Type: &DataSourceFieldTypeWrapper{
 			Value: DataSourceFieldTypeString,
 		},
-		Description: "The AWS region to connect to AWS services with",
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
 	})
 	if err != nil {
 		c.Error(err)
@@ -96,16 +110,23 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_yaml_input(
 	}
 
 	c.Assert(targetField.Type.Value, Equals, expected.Type.Value)
-	c.Assert(targetField.Description, Equals, expected.Description)
+	c.Assert(targetField.Description, DeepEquals, expected.Description)
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_serialise_yaml_due_to_unsupported_data_source_type(c *C) {
+	description := "The AWS region to connect to AWS services with"
 	_, err := yaml.Marshal(&DataSourceFieldExport{
 		Type: &DataSourceFieldTypeWrapper{
 			// "unknown" is not a valid data source field type.
 			Value: DataSourceFieldType("unknown"),
 		},
-		Description: "The AWS region to connect to AWS services with",
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
 	})
 	if err == nil {
 		c.Error(errors.New("expected to fail serialisation due to unsupported data source field type"))
@@ -125,7 +146,14 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_field_json_input(c *
 		c.FailNow()
 	}
 
-	c.Assert(targetField.Description, Equals, "This is an example integer data source field")
+	description := "This is an example integer data source field"
+	c.Assert(targetField.Description, DeepEquals, &substitutions.StringOrSubstitutions{
+		Values: []*substitutions.StringOrSubstitution{
+			{
+				StringValue: &description,
+			},
+		},
+	})
 	c.Assert(targetField.Type.Value, Equals, DataSourceFieldType("integer"))
 }
 
@@ -150,11 +178,18 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_json_input(
 		c.FailNow()
 	}
 
+	description := "The AWS region to connect to AWS services with"
 	serialisedBytes, err := json.Marshal(&DataSourceFieldExport{
 		Type: &DataSourceFieldTypeWrapper{
 			Value: DataSourceFieldTypeString,
 		},
-		Description: "The AWS region to connect to AWS services with",
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
 	})
 	if err != nil {
 		c.Error(err)
@@ -169,16 +204,23 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_json_input(
 	}
 
 	c.Assert(targetField.Type.Value, Equals, expected.Type.Value)
-	c.Assert(targetField.Description, Equals, expected.Description)
+	c.Assert(targetField.Description, DeepEquals, expected.Description)
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_serialise_json_due_to_unsupported_data_source_field_type(c *C) {
+	description := "The AWS region to connect to AWS services with"
 	_, err := json.Marshal(&DataSourceFieldExport{
 		Type: &DataSourceFieldTypeWrapper{
 			// "list" is not a valid data source field type.
 			Value: DataSourceFieldType("list"),
 		},
-		Description: "The AWS region to connect to AWS services with",
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
 	})
 	if err == nil {
 		c.Error(errors.New("expected to fail serialisation due to unsupported data source field type"))
@@ -204,7 +246,23 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c 
 
 	c.Assert(targetFilter.Field, Equals, "tags")
 	c.Assert(targetFilter.Operator.Value, Equals, DataSourceFilterOperatorHasKey)
-	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, "${variables.environment}")
+	c.Assert(
+		targetFilter.Search.Values,
+		DeepEquals,
+		[]*substitutions.StringOrSubstitutions{
+			{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						SubstitutionValue: &substitutions.Substitution{
+							Variable: &substitutions.SubstitutionVariable{
+								VariableName: "environment",
+							},
+						},
+					},
+				},
+			},
+		},
+	)
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_data_source_filter(c *C) {
@@ -303,7 +361,23 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_json_input(c 
 
 	c.Assert(targetFilter.Field, Equals, "tags")
 	c.Assert(targetFilter.Operator.Value, Equals, DataSourceFilterOperatorHasKey)
-	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, "${variables.environment}")
+	c.Assert(
+		targetFilter.Search.Values,
+		DeepEquals,
+		[]*substitutions.StringOrSubstitutions{
+			{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						SubstitutionValue: &substitutions.Substitution{
+							Variable: &substitutions.SubstitutionVariable{
+								VariableName: "environment",
+							},
+						},
+					},
+				},
+			},
+		},
+	)
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_parse_json_due_to_unsupported_data_source_filter_operator(c *C) {

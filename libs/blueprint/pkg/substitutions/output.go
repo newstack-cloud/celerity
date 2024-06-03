@@ -54,13 +54,13 @@ func SubstitutionToString(substitutionContext string, substitution *Substitution
 	if substitution.Function != nil {
 		return subFunctionToString(substitutionContext, substitution.Function)
 	} else if substitution.Variable != nil {
-		return subVariableToString(substitutionContext, substitution.Variable)
+		return subVariableToString(substitution.Variable)
 	} else if substitution.DataSourceProperty != nil {
-		return subDataSourcePropertyToString(substitutionContext, substitution.DataSourceProperty)
+		return subDataSourcePropertyToString(substitution.DataSourceProperty)
 	} else if substitution.ResourceProperty != nil {
-		return subResourcePropertyToString(substitutionContext, substitution.ResourceProperty)
+		return subResourcePropertyToString(substitution.ResourceProperty)
 	} else if substitution.Child != nil {
-		return subChildToString(substitutionContext, substitution.Child)
+		return subChildToString(substitution.Child)
 	}
 	return "", nil
 }
@@ -121,7 +121,7 @@ func isSupportedSubstitutionFunction(functionName SubstitutionFunctionName) bool
 	return core.SliceContainsComparable(SubstitutionFunctions, functionName)
 }
 
-func subVariableToString(substitutionContext string, variable *SubstitutionVariable) (string, error) {
+func subVariableToString(variable *SubstitutionVariable) (string, error) {
 	if NamePattern.MatchString(variable.VariableName) {
 		return fmt.Sprintf("variables.%s", variable.VariableName), nil
 	}
@@ -133,7 +133,7 @@ func subVariableToString(substitutionContext string, variable *SubstitutionVaria
 	return "", errSerialiseSubstitutionInvalidVariableName(variable.VariableName)
 }
 
-func subDataSourcePropertyToString(substitutionContext string, prop *SubstitutionDataSourceProperty) (string, error) {
+func subDataSourcePropertyToString(prop *SubstitutionDataSourceProperty) (string, error) {
 	path := "datasources"
 	if NamePattern.MatchString(prop.DataSourceName) {
 		path += fmt.Sprintf(".%s", prop.DataSourceName)
@@ -158,7 +158,7 @@ func subDataSourcePropertyToString(substitutionContext string, prop *Substitutio
 	return path, nil
 }
 
-func subResourcePropertyToString(substitutionContext string, prop *SubstitutionResourceProperty) (string, error) {
+func subResourcePropertyToString(prop *SubstitutionResourceProperty) (string, error) {
 	path := "resources"
 	if NamePattern.MatchString(prop.ResourceName) {
 		path += fmt.Sprintf(".%s", prop.ResourceName)
@@ -200,7 +200,7 @@ func propertyPathItemToString(pathItem *SubstitutionPathItem) (string, error) {
 	return fmt.Sprintf("[\"%s\"]", pathItem.FieldName), errSerialiseSubstitutionInvalidPathItem(pathItem)
 }
 
-func subChildToString(substitutionContext string, child *SubstitutionChild) (string, error) {
+func subChildToString(child *SubstitutionChild) (string, error) {
 	path := "children"
 	if NamePattern.MatchString(child.ChildName) {
 		path += fmt.Sprintf(".%s", child.ChildName)
