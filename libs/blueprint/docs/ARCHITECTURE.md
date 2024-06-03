@@ -159,30 +159,60 @@ The library comes with a default blueprint spec that should meet all your needs.
 ## State Container (state.Container)
 
 ```go
-type BlueprintContainer interface {
+type Container interface {
 
-	StageChanges(
+	GetResource(
         ctx context.Context,
         instanceID string,
-        paramOverrides core.BlueprintParams,
-    ) (BlueprintChanges, error)
+        resourceID string,
+    ) (ResourceState, error)
 
-	Deploy(ctx context.Context, instanceID string) (string, error)
+	GetResourceForRevision(
+        ctx context.Context,
+        instanceID string,
+        revisionID string,
+        resourceID string,
+    ) (ResourceState, error)
 
-	Destroy(
+	GetInstance(
+        ctx context.Context,
+        instanceID string,
+    ) (InstanceState, error)
+
+	GetInstanceRevision(
+        ctx context.Context,
+        instanceID string,
+        revisionID string,
+    ) (InstanceState, error)
+
+	SaveInstance(
+        ctx context.Context,
+        instanceID string,
+        instanceState InstanceState,
+    ) (InstanceState, error)
+
+	RemoveInstance(ctx context.Context, instanceID string) error
+
+	RemoveInstanceRevision(
         ctx context.Context,
         instanceID string,
         revisionID string,
     ) error
 
-	Rollback(
+	SaveResource(
         ctx context.Context,
         instanceID string,
-        revisionIDToRollback string,
-        prevRevisionID string,
+        resourceID string,
+        resourceState ResourceState,
     ) error
 
-	SpecLinkInfo() links.SpecLinkInfo
+	RemoveResource(
+        ctx context.Context,
+        instanceID string,
+        resourceID string,
+    ) (ResourceState, error)
+
+	CleanupRevisions(ctx context.Context, instanceID string) error
 }
 ```
 

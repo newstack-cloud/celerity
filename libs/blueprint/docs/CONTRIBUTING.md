@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-- [Go](https://golang.org/dl/) >=1.20
+- [Go](https://golang.org/dl/) >=1.22
 
 Dependencies are managed with Go modules (go.mod) and will be installed automatically when you first
 run tests.
