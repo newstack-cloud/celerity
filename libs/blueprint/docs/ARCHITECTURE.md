@@ -250,7 +250,7 @@ In the case where there are links between resources that span multiple providers
 
 The library does NOT come with any provider implementations, you must implement them yourself or use a library that extends the blueprint framework.
 
-## SpecTransformer (transform.SpecTransformer)
+## SpecTransformer (transformer.SpecTransformer)
 
 ```go
 type SpecTransformer interface {
