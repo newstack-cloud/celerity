@@ -51,7 +51,7 @@ type Container interface {
 
 // ResourceState provides the current state of a resource
 // in a blueprint instance.
-// This includes the status, the Raw data from the downstream resouce provider
+// This includes the status, the Raw data from the upstream resouce provider
 // along with reasons for failure when a resource is in a failure state.
 type ResourceState struct {
 	ResourceID string

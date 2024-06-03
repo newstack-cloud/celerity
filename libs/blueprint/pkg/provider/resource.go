@@ -54,7 +54,7 @@ type Resource interface {
 	) (Changes, error)
 	// GetType deals with retrieving the namespaced type for a resource in a blueprint spec.
 	GetType() string
-	// Deploy deals with deploying a resource with the downstream resource provider.
+	// Deploy deals with deploying a resource with the upstream resource provider.
 	// The behaviour of deploy is completely down to the implementation of a resource provider and how long
 	// a resource is likely to take to deploy. The state will be synchronised periodically and will reflect the current
 	// state for long running deployments that we won't be waiting around for.

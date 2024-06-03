@@ -1,4 +1,3 @@
-
 # Architecture
 
 ![blueprint architecture](../assets/BlueprintArchitectureOverview.png)
@@ -6,7 +5,7 @@
 The blueprint framework provides a set of building blocks for creating systems
 that can parse, validate and manage the lifecycle of blueprints.
 
-A blueprint is a specification of resources the can be deployed to a downstream provider.
+A blueprint is a specification of resources the can be deployed to a upstream provider.
 Providers are implemented on a per-namespace basis and there are no limitations around the type
 of providers and resources that can be implemented in the model this library providers.
 

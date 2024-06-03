@@ -16,7 +16,7 @@ type Link interface {
 		resourceBInfo *ResourceInfo,
 		params core.BlueprintParams,
 	) (LinkChanges, error)
-	// Deploy deals with deploying a link between two resources in the downstream provider.
+	// Deploy deals with deploying a link between two resources in the upstream provider.
 	// The behaviour of deploy is completely down to the implementation of a link provider and how long
 	// a link is likely to take to deploy. The state will be synchronised periodically and will reflect the current
 	// state for long running deployments that we won't be waiting around for.

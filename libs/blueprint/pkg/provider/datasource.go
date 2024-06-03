@@ -14,7 +14,7 @@ type DataSource interface {
 	// Validate deals with ensuring all the exported fields
 	// defined by a user in the spec are supported.
 	Validate(ctx context.Context, schemaDataSource *schema.DataSource, params core.BlueprintParams) error
-	// Fetch deals with loading the data from the downstream data source
+	// Fetch deals with loading the data from the upstream data source
 	// and returning the exported fields defined in the spec.
 	Fetch(ctx context.Context, schemaDataSource *schema.DataSource, params core.BlueprintParams) (map[string]interface{}, error)
 }
