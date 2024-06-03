@@ -5,7 +5,7 @@ package core
 // general context variables and variables for the blueprint.
 type BlueprintParams interface {
 	// ProviderConfig retrieves the config for the provider
-	// with the given namespace in the form a concrete struct.
+	// with the given namespace in the form a map of key-value pairs.
 	// It's up to the caller to validate the provider config at runtime.
 	ProviderConfig(namespace string) map[string]*ScalarValue
 	// ContextVariable retrieves a context-wide variable

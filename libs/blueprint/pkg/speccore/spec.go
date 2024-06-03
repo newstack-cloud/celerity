@@ -5,10 +5,7 @@ import (
 )
 
 // BlueprintSpec provides an interface for a service that holds
-// a parsed blueprint schema and concrete resource specs.
-// Concrete resource specs are concrete structs that hold a strongly
-// typed representation of all the "spec" mapping parameters
-// that the resource provider supports.
+// a parsed blueprint schema and direct access to resource schemas.
 // This interface is provided to decouple containers and loaders
 // to make every component of the blueprint mechanism composable.
 type BlueprintSpec interface {

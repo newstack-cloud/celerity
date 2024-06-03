@@ -54,9 +54,8 @@ The library comes with a default link info provider that should meet all your ne
 
 ## Blueprint Spec (container.BlueprintSpec)
 
-The blueprint spec deals with providing the schema of a blueprint, it's resources and the concrete spec generated
-by the resource provider for each resource. A concrete spec is everything under the the `spec` mapping in the
-YAML or JSON input blueprint.
+The blueprint spec deals with providing the schema of a blueprint, its resources and a `*core.MappingNode` representation of the resource specification. The resource specification is everything under the the `spec` mapping in the
+YAML or JSON input blueprint. The spec must be a `*core.MappingNode` to allow for the usage of substitutions (with `${..}` syntax); a concrete, user-defined struct would not allow for this.
 
 The library comes with a default blueprint spec that should meet all your needs.
 

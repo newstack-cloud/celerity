@@ -10,8 +10,7 @@ import (
 
 // ResourceInfo provides all the information needed for a resource
 // including the blueprint schema data with annotations, labels
-// and the concrete specification type for everything under
-// the spec mapping of a resource.
+// and the spec as a core mapping node.
 type ResourceInfo struct {
 	// ResourceID holds the ID of a resource when in the context
 	// of a blueprint instance when deploying or staging changes.
@@ -32,9 +31,7 @@ type ResourceInfo struct {
 // that a provider can contain which includes logic for validating,
 // transforming, linking and deploying a resource.
 type Resource interface {
-	// Validate a resource's specification and produce a concrete type
-	// that can be used in all phases of the blueprint instance lifecycle
-	// for said resource.
+	// Validate a resource's specification.
 	Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
