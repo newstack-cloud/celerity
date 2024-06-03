@@ -1,6 +1,6 @@
 module github.com/two-hundred/celerity/libs/blueprint
 
-go 1.20
+go 1.22
 
 require (
 	github.com/bradleyjkemp/cupaloy v2.3.0+incompatible
