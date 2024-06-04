@@ -24,6 +24,24 @@ bash ./scripts/run-tests.sh
 bash scripts/run-tests.sh --update-snapshots
 ```
 
+## Generating protobuf code
+
+The blueprint framework uses protobuf to store and transmit an expanded version of a blueprint. Expanded blueprints include AST-like expansions of substitutions that can be cached with an implementation of the `cache.BlueprintCache` interface.
+
+1. Follow the instructions [here](https://grpc.io/docs/protoc-installation/#install-using-a-package-manager) to install the `protoc` compiler.
+
+2. Install the Go protoc plugin:
+
+```bash
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+```
+
+3. Run the following command from the `libs/blueprint` directory to generate the protobuf code:
+
+```bash
+protoc --go_out=./pkg ./schema.proto
+```
+
 ## Release tag format
 
 Release tags for the common library should be created in the following format:

@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/bradleyjkemp/cupaloy v2.3.0+incompatible
 	github.com/two-hundred/celerity/libs/common v0.0.0-20230218163258-17885df77d52
+	google.golang.org/protobuf v1.34.1
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
 	gopkg.in/yaml.v3 v3.0.1
 )
