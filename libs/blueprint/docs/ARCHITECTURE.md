@@ -31,26 +31,26 @@ Authentication and authorisation is out of scope for this library and should be 
 ```go
 type Loader interface {
 
-	Load(
+    Load(
         ctx context.Context,
         blueprintSpecFile string,
         params bpcore.BlueprintParams,
     ) (BlueprintContainer, error)
 
-	Validate(
+    Validate(
         ctx context.Context,
         blueprintSpecFile string,
         params bpcore.BlueprintParams,
     ) (links.SpecLinkInfo, error)
 
-	LoadString(
+    LoadString(
         ctx context.Context,
         blueprintSpec string,
         inputFormat schema.SpecFormat,
         params bpcore.BlueprintParams,
     ) (BlueprintContainer, error)
 
-	ValidateString(
+    ValidateString(
         ctx context.Context,
         blueprintSpec string,
         inputFormat schema.SpecFormat,
@@ -89,24 +89,24 @@ The library comes with a default container loader that should meet all your need
 ```go
 type BlueprintContainer interface {
 
-	StageChanges(
+    StageChanges(
         ctx context.Context,
         instanceID string,
         paramOverrides core.BlueprintParams,
     ) (BlueprintChanges, error)
 
-	Deploy(ctx context.Context, instanceID string) (string, error)
+    Deploy(ctx context.Context, instanceID string) (string, error)
 
-	Destroy(ctx context.Context, instanceID string, revisionID string) error
+    Destroy(ctx context.Context, instanceID string, revisionID string) error
 
-	Rollback(
+    Rollback(
         ctx context.Context,
         instanceID string,
         revisionIDToRollback string,
         prevRevisionID string,
     ) error
 
-	SpecLinkInfo() links.SpecLinkInfo
+    SpecLinkInfo() links.SpecLinkInfo
 }
 ```
 
@@ -127,9 +127,9 @@ The library comes with a default blueprint container that should meet all your n
 ```go
 type SpecLinkInfo interface {
 
-	Links(ctx context.Context) ([]*ChainLink, error)
+    Links(ctx context.Context) ([]*ChainLink, error)
 
-	Warnings(ctx context.Context) ([]string, error)
+    Warnings(ctx context.Context) ([]string, error)
 }
 ```
 
@@ -145,9 +145,9 @@ The library comes with a default link info provider that should meet all your ne
 ```go
 type BlueprintSpec interface {
 
-	ResourceSchema(resourceName string) *schema.Resource
+    ResourceSchema(resourceName string) *schema.Resource
 
-	Schema() *schema.Blueprint
+    Schema() *schema.Blueprint
 }
 ```
 
@@ -161,58 +161,58 @@ The library comes with a default blueprint spec that should meet all your needs.
 ```go
 type Container interface {
 
-	GetResource(
+    GetResource(
         ctx context.Context,
         instanceID string,
         resourceID string,
     ) (ResourceState, error)
 
-	GetResourceForRevision(
+    GetResourceForRevision(
         ctx context.Context,
         instanceID string,
         revisionID string,
         resourceID string,
     ) (ResourceState, error)
 
-	GetInstance(
+    GetInstance(
         ctx context.Context,
         instanceID string,
     ) (InstanceState, error)
 
-	GetInstanceRevision(
+    GetInstanceRevision(
         ctx context.Context,
         instanceID string,
         revisionID string,
     ) (InstanceState, error)
 
-	SaveInstance(
+    SaveInstance(
         ctx context.Context,
         instanceID string,
         instanceState InstanceState,
     ) (InstanceState, error)
 
-	RemoveInstance(ctx context.Context, instanceID string) error
+    RemoveInstance(ctx context.Context, instanceID string) error
 
-	RemoveInstanceRevision(
+    RemoveInstanceRevision(
         ctx context.Context,
         instanceID string,
         revisionID string,
     ) error
 
-	SaveResource(
+    SaveResource(
         ctx context.Context,
         instanceID string,
         resourceID string,
         resourceState ResourceState,
     ) error
 
-	RemoveResource(
+    RemoveResource(
         ctx context.Context,
         instanceID string,
         resourceID string,
     ) (ResourceState, error)
 
-	CleanupRevisions(ctx context.Context, instanceID string) error
+    CleanupRevisions(ctx context.Context, instanceID string) error
 }
 ```
 
@@ -225,13 +225,13 @@ The library does NOT come with any state container implementations, you must imp
 ```go
 type Provider interface {
 
-	Resource(resourceType string) Resource
+    Resource(resourceType string) Resource
 
-	DataSource(dataSourceType string) DataSource
+    DataSource(dataSourceType string) DataSource
 
-	Link(resourceTypeA string, resourceTypeB string) Link
+    Link(resourceTypeA string, resourceTypeB string) Link
 
-	CustomVariableType(customVariableType string) CustomVariableType
+    CustomVariableType(customVariableType string) CustomVariableType
 }
 ```
 
@@ -254,7 +254,7 @@ The library does NOT come with any provider implementations, you must implement 
 
 ```go
 type SpecTransformer interface {
-	Transform(
+    Transform(
         ctx context.Context,
         inputBlueprint *schema.Blueprint,
     ) (*schema.Blueprint, error)
