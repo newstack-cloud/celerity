@@ -23,7 +23,7 @@ type Metadata struct {
 	DisplayName *substitutions.StringOrSubstitutions            `yaml:"displayName" json:"displayName"`
 	Annotations map[string]*substitutions.StringOrSubstitutions `yaml:"annotations" json:"annotations"`
 	Labels      map[string]string                               `yaml:"labels" json:"labels"`
-	Custom      *core.MappingNode                               `yaml:"custom" json:"custom"`
+	Custom      *core.MappingNode                               `yaml:"custom,omitempty" json:"custom,omitempty"`
 }
 
 // LinkSelector allows a resource to select other resources

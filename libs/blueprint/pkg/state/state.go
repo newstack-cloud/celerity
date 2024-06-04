@@ -17,7 +17,7 @@ type Container interface {
 	GetResource(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
 	// GetResourceForRevision deals with retrieving the state for a given resource
 	// in the provided blueprint instance revision.
-	GetResourceForRevision(ctx context.Context, instanceID string, revisionId string, resourceID string) (ResourceState, error)
+	GetResourceForRevision(ctx context.Context, instanceID string, revisionID string, resourceID string) (ResourceState, error)
 	// GetInstance deals with retrieving the state for a given blueprint
 	// instance ID.
 	// This retrieves the latest revision of an instance.
@@ -47,6 +47,12 @@ type Container interface {
 	// There is no way to remove a resource from a specific instance revision,
 	// the instance revision should be removed as a whole and recreated instead.
 	RemoveResource(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
+	// CleanupRevisions deals with removing old revisions of a blueprint instance
+	// based on a retention policy.
+	// Applications using this library should implement functionality that facilitates
+	// retention policies for blueprint instance revisions, the blueprint framework
+	// only provides the interface to remove old revisions.
+	CleanupRevisions(ctx context.Context, instanceID string) error
 }
 
 // ResourceState provides the current state of a resource
@@ -61,7 +67,7 @@ type ResourceState struct {
 	// (e.g. AWS Lambda Function object)
 	ResourceData map[string]interface{}
 	// Holds the latest reasons for failures in deploying a resource,
-	// this only every holds the results of the latest deployment attempt.
+	// this only ever holds the results of the latest deployment attempt.
 	FailureReasons []string
 }
 

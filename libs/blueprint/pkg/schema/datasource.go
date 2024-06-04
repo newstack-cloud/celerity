@@ -21,7 +21,7 @@ type DataSource struct {
 	DataSourceMetadata *DataSourceMetadata                  `yaml:"metadata" json:"metadata"`
 	Filter             *DataSourceFilter                    `yaml:"filter" json:"filter"`
 	Exports            map[string]*DataSourceFieldExport    `yaml:"exports" json:"exports"`
-	Description        *substitutions.StringOrSubstitutions `yaml:"description" json:"description"`
+	Description        *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // DataSourceFilter provides the definition of a filter

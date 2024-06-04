@@ -73,10 +73,10 @@
       "metadata": {
         "displayName": "Authoriser",
         "annotations": {
-          "authoriser": true,
+          "authoriser": "true",
           "authoriser.identity.header": "MyCustomAuthHeader",
           "authoriser.identity.validationExpression": "Bearer .*",
-          "authoriser.identity.reauthoriseEvery": 20
+          "authoriser.identity.reauthoriseEvery": "20"
         },
         "labels": {
           "app": "orderApi"

@@ -1,8 +1,22 @@
 package core
 
 import (
+	"encoding/json"
+	"errors"
+
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	"gopkg.in/yaml.v3"
+)
+
+var (
+	// ErrInvalidMappingNode is an error that is returned
+	// when a blueprint value that is expected to be a mapping node
+	// is not a valid scalar, mapping or sequence node when unmarshalling.
+	ErrInvalidMappingNode = errors.New("a blueprint mapping node must be a valid scalar, mapping or sequence")
+	// ErrMissingMappingNodeValue is an error that is returned
+	// when a blueprint mapping node does not have a valid value
+	//set when marshalling.
+	ErrMissingMappingNodeValue = errors.New("a blueprint mapping node must have a valid value set")
 )
 
 // MappingNode provides a tree structure for user-defined
@@ -51,12 +65,114 @@ func (m *MappingNode) MarshalYAML() (interface{}, error) {
 		return m.Items, nil
 	}
 
-	return nil, nil
+	return nil, ErrMissingMappingNodeValue
 }
 
 // UnmarshalYAML fulfils the yaml.Unmarshaler interface
 // to unmarshal a YAML representation into a mapping node.
 func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
-	// todo: implement unmarshalling a mapping node.
+	if node.Kind == yaml.ScalarNode {
+		return m.parseYAMLSubstitutionsOrScalar(node)
+	}
+
+	if node.Kind == yaml.SequenceNode {
+		m.Items = make([]*MappingNode, len(node.Content))
+		for i, item := range node.Content {
+			m.Items[i] = &MappingNode{}
+			if err := m.Items[i].UnmarshalYAML(item); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	if node.Kind == yaml.MappingNode {
+		m.Fields = make(map[string]*MappingNode)
+		for i := 0; i < len(node.Content); i += 2 {
+			key := node.Content[i]
+			value := node.Content[i+1]
+
+			m.Fields[key.Value] = &MappingNode{}
+			if err := m.Fields[key.Value].UnmarshalYAML(value); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return ErrInvalidMappingNode
+}
+
+func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
+	strSubs, err := substitutions.ParseSubstitutionValues("", node.Value)
+	// Parse literal value if there are no substitutions.
+	if err != nil || len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
+		m.Literal = &ScalarValue{}
+		return m.Literal.UnmarshalYAML(node)
+	}
+
+	m.StringWithSubstitutions = &substitutions.StringOrSubstitutions{
+		Values: strSubs,
+	}
+	return nil
+}
+
+// MarshalJSON fulfils the json.Marshaler interface
+// to marshal a blueprint mapping node into a JSON representation.
+func (m *MappingNode) MarshalJSON() ([]byte, error) {
+	if m.Literal != nil {
+		return json.Marshal(m.Literal)
+	}
+
+	if m.StringWithSubstitutions != nil {
+		return json.Marshal(m.StringWithSubstitutions)
+	}
+
+	if m.Fields != nil {
+		return json.Marshal(m.Fields)
+	}
+
+	if m.Items != nil {
+		return json.Marshal(m.Items)
+	}
+
+	return nil, ErrMissingMappingNodeValue
+}
+
+// UnmarshalJSON fulfils the json.Unmarshaler interface
+// to unmarshal a serialised blueprint mapping node.
+func (m *MappingNode) UnmarshalJSON(data []byte) error {
+
+	var items []*MappingNode
+	if err := json.Unmarshal(data, &items); err == nil {
+		m.Items = items
+		return nil
+	}
+
+	var fields map[string]*MappingNode
+	if err := json.Unmarshal(data, &fields); err == nil {
+		m.Fields = fields
+		return nil
+	}
+
+	err := m.parseJSONSubstitutionsOrScalar(data)
+	if err == nil {
+		return nil
+	}
+
+	return ErrInvalidMappingNode
+}
+
+func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {
+	strSubs, err := substitutions.ParseSubstitutionValues("", string(data))
+	// Parse literal value if there are no substitutions.
+	if err != nil || len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
+		m.Literal = &ScalarValue{}
+		return m.Literal.UnmarshalJSON(data)
+	}
+
+	m.StringWithSubstitutions = &substitutions.StringOrSubstitutions{
+		Values: strSubs,
+	}
 	return nil
 }

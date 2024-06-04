@@ -33,13 +33,73 @@
       }),
       Variables: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) <nil>,
+        Fields: (map[string]*core.MappingNode) (len=1) {
+          (string) (len=9) "tableName": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)(<nil>),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
+              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                (*substitutions.StringOrSubstitution)({
+                  StringValue: (*string)(<nil>),
+                  SubstitutionValue: (*substitutions.Substitution)({
+                    Function: (*substitutions.SubstitutionFunction)(<nil>),
+                    Variable: (*substitutions.SubstitutionVariable)({
+                      VariableName: (string) (len=13) "dynamoDBTable"
+                    }),
+                    DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                    ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
+                    Child: (*substitutions.SubstitutionChild)(<nil>),
+                    StringValue: (*string)(<nil>),
+                    IntValue: (*int64)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    BoolValue: (*bool)(<nil>)
+                  })
+                })
+              }
+            })
+          })
+        },
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
       }),
       Metadata: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) <nil>,
+        Fields: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=6) "bucket": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=23) "order-system-blueprints")
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=6) "region": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=9) "eu-west-1")
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=10) "sourceType": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=6) "aws/s3")
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          })
+        },
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
       }),
@@ -108,7 +168,30 @@
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) <nil>,
+        Fields: (map[string]*core.MappingNode) (len=2) {
+          (string) (len=7) "handler": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=19) "handlers.Authoriser")
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=7) "timeout": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(120),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          })
+        },
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
       })
@@ -134,7 +217,86 @@
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) <nil>,
+        Fields: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=8) "endpoint": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)(<nil>),
+            Fields: (map[string]*core.MappingNode) (len=3) {
+              (string) (len=10) "authoriser": (*core.MappingNode)({
+                Literal: (*core.ScalarValue)(<nil>),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
+                  Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                    (*substitutions.StringOrSubstitution)({
+                      StringValue: (*string)(<nil>),
+                      SubstitutionValue: (*substitutions.Substitution)({
+                        Function: (*substitutions.SubstitutionFunction)(<nil>),
+                        Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                        DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                        ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
+                          ResourceName: (string) (len=10) "authoriser",
+                          Path: ([]*substitutions.SubstitutionPathItem) {
+                          }
+                        }),
+                        Child: (*substitutions.SubstitutionChild)(<nil>),
+                        StringValue: (*string)(<nil>),
+                        IntValue: (*int64)(<nil>),
+                        FloatValue: (*float64)(<nil>),
+                        BoolValue: (*bool)(<nil>)
+                      })
+                    })
+                  }
+                })
+              }),
+              (string) (len=6) "method": (*core.MappingNode)({
+                Literal: (*core.ScalarValue)({
+                  IntValue: (*int)(<nil>),
+                  BoolValue: (*bool)(<nil>),
+                  FloatValue: (*float64)(<nil>),
+                  StringValue: (*string)((len=3) "get")
+                }),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+              }),
+              (string) (len=4) "path": (*core.MappingNode)({
+                Literal: (*core.ScalarValue)({
+                  IntValue: (*int)(<nil>),
+                  BoolValue: (*bool)(<nil>),
+                  FloatValue: (*float64)(<nil>),
+                  StringValue: (*string)((len=7) "/orders")
+                }),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+              })
+            },
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=7) "handler": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=18) "handlers.GetOrders")
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=7) "timeout": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(120),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          })
+        },
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
       })
@@ -157,7 +319,95 @@
         },
         Custom: (*core.MappingNode)({
           Literal: (*core.ScalarValue)(<nil>),
-          Fields: (map[string]*core.MappingNode) <nil>,
+          Fields: (map[string]*core.MappingNode) (len=1) {
+            (string) (len=6) "visual": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=4) {
+                (string) (len=6) "height": (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)({
+                    IntValue: (*int)(50),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                }),
+                (string) (len=9) "linkPorts": (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)(<nil>),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) (len=1) {
+                    (*core.MappingNode)({
+                      Literal: (*core.ScalarValue)(<nil>),
+                      Fields: (map[string]*core.MappingNode) (len=3) {
+                        (string) (len=10) "annotation": (*core.MappingNode)({
+                          Literal: (*core.ScalarValue)({
+                            IntValue: (*int)(<nil>),
+                            BoolValue: (*bool)(<nil>),
+                            FloatValue: (*float64)(<nil>),
+                            StringValue: (*string)((len=10) "Orders API")
+                          }),
+                          Fields: (map[string]*core.MappingNode) <nil>,
+                          Items: ([]*core.MappingNode) <nil>,
+                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                        }),
+                        (string) (len=9) "connectAt": (*core.MappingNode)({
+                          Literal: (*core.ScalarValue)({
+                            IntValue: (*int)(<nil>),
+                            BoolValue: (*bool)(<nil>),
+                            FloatValue: (*float64)(<nil>),
+                            StringValue: (*string)((len=6) "70 100")
+                          }),
+                          Fields: (map[string]*core.MappingNode) <nil>,
+                          Items: ([]*core.MappingNode) <nil>,
+                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                        }),
+                        (string) (len=6) "linkTo": (*core.MappingNode)({
+                          Literal: (*core.ScalarValue)({
+                            IntValue: (*int)(<nil>),
+                            BoolValue: (*bool)(<nil>),
+                            FloatValue: (*float64)(<nil>),
+                            StringValue: (*string)((len=16) "getOrderEndpoint")
+                          }),
+                          Fields: (map[string]*core.MappingNode) <nil>,
+                          Items: ([]*core.MappingNode) <nil>,
+                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                        })
+                      },
+                      Items: ([]*core.MappingNode) <nil>,
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                    })
+                  },
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                }),
+                (string) (len=5) "point": (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=6) "20 100")
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                }),
+                (string) (len=5) "width": (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)({
+                    IntValue: (*int)(50),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            })
+          },
           Items: ([]*core.MappingNode) <nil>,
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
         })
@@ -169,7 +419,75 @@
       }),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) <nil>,
+        Fields: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=11) "environment": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)(<nil>),
+            Fields: (map[string]*core.MappingNode) (len=1) {
+              (string) (len=9) "variables": (*core.MappingNode)({
+                Literal: (*core.ScalarValue)(<nil>),
+                Fields: (map[string]*core.MappingNode) (len=1) {
+                  (string) (len=14) "DYNAMODB_TABLE": (*core.MappingNode)({
+                    Literal: (*core.ScalarValue)(<nil>),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) <nil>,
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
+                      Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                        (*substitutions.StringOrSubstitution)({
+                          StringValue: (*string)(<nil>),
+                          SubstitutionValue: (*substitutions.Substitution)({
+                            Function: (*substitutions.SubstitutionFunction)(<nil>),
+                            Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                            DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                            ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
+                            Child: (*substitutions.SubstitutionChild)({
+                              ChildName: (string) (len=9) "coreInfra",
+                              Path: ([]*substitutions.SubstitutionPathItem) (len=1) {
+                                (*substitutions.SubstitutionPathItem)({
+                                  FieldName: (string) (len=13) "dynamoDBTable",
+                                  PrimitiveArrIndex: (*int64)(<nil>)
+                                })
+                              }
+                            }),
+                            StringValue: (*string)(<nil>),
+                            IntValue: (*int64)(<nil>),
+                            FloatValue: (*float64)(<nil>),
+                            BoolValue: (*bool)(<nil>)
+                          })
+                        })
+                      }
+                    })
+                  })
+                },
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+              })
+            },
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=7) "runtime": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=5) "go1.x")
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=14) "tracingEnabled": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(true),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          })
+        },
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
       })
@@ -199,7 +517,33 @@
       }),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) <nil>,
+        Fields: (map[string]*core.MappingNode) (len=1) {
+          (string) (len=9) "topicName": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)(<nil>),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
+              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                (*substitutions.StringOrSubstitution)({
+                  StringValue: (*string)(<nil>),
+                  SubstitutionValue: (*substitutions.Substitution)({
+                    Function: (*substitutions.SubstitutionFunction)(<nil>),
+                    Variable: (*substitutions.SubstitutionVariable)({
+                      VariableName: (string) (len=15) "ordersTopicName"
+                    }),
+                    DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                    ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
+                    Child: (*substitutions.SubstitutionChild)(<nil>),
+                    StringValue: (*string)(<nil>),
+                    IntValue: (*int64)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    BoolValue: (*bool)(<nil>)
+                  })
+                })
+              }
+            })
+          })
+        },
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
       })
@@ -226,7 +570,48 @@
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) <nil>,
+        Fields: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=18) "compatibleRuntimes": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)(<nil>),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) (len=1) {
+              (*core.MappingNode)({
+                Literal: (*core.ScalarValue)({
+                  IntValue: (*int)(<nil>),
+                  BoolValue: (*bool)(<nil>),
+                  FloatValue: (*float64)(<nil>),
+                  StringValue: (*string)((len=5) "go1.x")
+                }),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+              })
+            },
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=7) "content": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=27) "build/shared-packages-layer")
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=9) "layerName": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=19) "sharedPackagesLayer")
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          })
+        },
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
       })
@@ -253,7 +638,66 @@
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) <nil>,
+        Fields: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=6) "events": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)(<nil>),
+            Fields: (map[string]*core.MappingNode) (len=1) {
+              (string) (len=10) "orderEvent": (*core.MappingNode)({
+                Literal: (*core.ScalarValue)(<nil>),
+                Fields: (map[string]*core.MappingNode) (len=2) {
+                  (string) (len=9) "batchSize": (*core.MappingNode)({
+                    Literal: (*core.ScalarValue)({
+                      IntValue: (*int)(10),
+                      BoolValue: (*bool)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      StringValue: (*string)(<nil>)
+                    }),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) <nil>,
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                  }),
+                  (string) (len=4) "type": (*core.MappingNode)({
+                    Literal: (*core.ScalarValue)({
+                      IntValue: (*int)(<nil>),
+                      BoolValue: (*bool)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      StringValue: (*string)((len=6) "pubsub")
+                    }),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) <nil>,
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                  })
+                },
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+              })
+            },
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=7) "handler": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=20) "handlers.UpdateOrder")
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          }),
+          (string) (len=7) "timeout": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(120),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          })
+        },
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
       })
@@ -263,9 +707,16 @@
     (string) (len=7) "network": (*schema.DataSource)({
       Type: (string) (len=7) "aws/vpc",
       DataSourceMetadata: (*schema.DataSourceMetadata)({
-        DisplayName: (string) (len=14) "Network source",
-        Annotations: (map[string]core.ScalarValue) <nil>,
-        Custom: (map[string]interface {}) <nil>
+        DisplayName: (*substitutions.StringOrSubstitutions)({
+          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+            (*substitutions.StringOrSubstitution)({
+              StringValue: (*string)((len=14) "Network source"),
+              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+            })
+          }
+        }),
+        Annotations: (map[string]*substitutions.StringOrSubstitution) <nil>,
+        Custom: (*core.MappingNode)(<nil>)
       }),
       Filter: (*schema.DataSourceFilter)(<nil>),
       Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
@@ -274,24 +725,24 @@
             Value: (schema.DataSourceFieldType) (len=5) "array"
           }),
           AliasFor: (string) "",
-          Description: (string) ""
+          Description: (*substitutions.StringOrSubstitutions)(<nil>)
         }),
         (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
           Type: (*schema.DataSourceFieldTypeWrapper)({
             Value: (schema.DataSourceFieldType) (len=5) "array"
           }),
           AliasFor: (string) "",
-          Description: (string) ""
+          Description: (*substitutions.StringOrSubstitutions)(<nil>)
         }),
         (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
           Type: (*schema.DataSourceFieldTypeWrapper)({
             Value: (schema.DataSourceFieldType) (len=6) "string"
           }),
           AliasFor: (string) "",
-          Description: (string) ""
+          Description: (*substitutions.StringOrSubstitutions)(<nil>)
         })
       },
-      Description: (string) ""
+      Description: (*substitutions.StringOrSubstitutions)(<nil>)
     })
   },
   Exports: (map[string]*schema.Export) <nil>,

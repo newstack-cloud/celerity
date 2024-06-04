@@ -258,12 +258,28 @@ type SpecTransformer interface {
         ctx context.Context,
         inputBlueprint *schema.Blueprint,
     ) (*schema.Blueprint, error)
+
+    AbstractResource(resourceType string) AbstractResource
 }
 ```
 
 A spec transformer transforms a blueprint spec into an expanded form.
 The primary purpose of a transformer is to allow users to define more concise specifications where a lot of detail can be abstracted away
 during the blueprint development process and then expanded into a more detailed form for deployment.
+
+## AbstractResource (transformer.AbstractResource)
+
+```go
+type AbstractResource interface {
+    Validate(
+        ctx context.Context,
+        schemaResource *schema.Resource,
+        params core.BlueprintParams,
+    ) error
+}
+```
+
+An abstract resource provides a way to validate a resource in an abstract (usually more concise) form before it is expanded into a more detailed form in the spec transformer implementation that the abstract resource belongs to.
 
 ## BlueprintCache (cache.BlueprintCache)
 

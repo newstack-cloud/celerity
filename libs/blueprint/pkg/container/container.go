@@ -29,10 +29,10 @@ type BlueprintContainer interface {
 	// Destroy deals with destroying all the resources and links
 	// for a revision of a blueprint instance.
 	Destroy(ctx context.Context, instanceID string, revisionID string) error
-	// RollBack deals with rolling a blueprint instance back to a previous revision.
+	// Rollback deals with rolling a blueprint instance back to a previous revision.
 	// This will destroy any new resources that were created as a part of the revision
 	// that is being rolled back.
-	RollBack(ctx context.Context, instanceID string, revisionIDToRollBack string, prevRevisionID string) error
+	Rollback(ctx context.Context, instanceID string, revisionIDToRollback string, prevRevisionID string) error
 	// SpecLinkInfo provides the chain link and warnings for potential issues
 	// with links provided in the given specification.
 	SpecLinkInfo() links.SpecLinkInfo
@@ -234,7 +234,7 @@ func (c *defaultBlueprintContainer) SpecLinkInfo() links.SpecLinkInfo {
 	return c.linkInfo
 }
 
-func (c *defaultBlueprintContainer) RollBack(ctx context.Context, instanceID string, revisionIDToRollBack string, prevRevisionID string) error {
+func (c *defaultBlueprintContainer) Rollback(ctx context.Context, instanceID string, revisionIDToRollback string, prevRevisionID string) error {
 	return nil
 }
 

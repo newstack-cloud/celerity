@@ -3,7 +3,7 @@ package substitutions
 import "regexp"
 
 // There are no patterns in this file for string literals
-// or function calls as they are complex to represent with
+// or function calls as they are too complex to represent with
 // regular expressions that do not support lookaheads.
 // They are instead handled by a hand-rolled
 // sequential character processing state machine.

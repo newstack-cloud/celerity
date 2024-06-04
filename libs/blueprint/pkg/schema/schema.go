@@ -12,5 +12,5 @@ type Blueprint struct {
 	Resources   map[string]*Resource   `yaml:"resources" json:"resources"`
 	DataSources map[string]*DataSource `yaml:"datasources" json:"datasources"`
 	Exports     map[string]*Export     `yaml:"exports" json:"exports"`
-	Metadata    *core.MappingNode      `yaml:"metadata" json:"metadata"`
+	Metadata    *core.MappingNode      `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 }
