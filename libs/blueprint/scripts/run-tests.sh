@@ -43,9 +43,12 @@ set -e
 echo "" > coverage.txt
 
 if [ -n "$UPDATE_SNAPSHOTS" ]; then
-  UPDATE_SNAPSHOTS=true go test -timeout 30000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic ./...
+  # Exclude generated protobuf code from coverage.
+  UPDATE_SNAPSHOTS=true go test -timeout 30000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic `go list ./... | egrep -v '(/schemapb)$'`
+
 else
-  go test -timeout 30000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic ./...
+  # Exclude generated protobuf code from coverage.
+  go test -timeout 30000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic `go list ./... | egrep -v '(/schemapb)$'`
 fi
 
 if [ -z "$GITHUB_ACTION" ]; then
