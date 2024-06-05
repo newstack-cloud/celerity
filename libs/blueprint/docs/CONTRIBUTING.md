@@ -42,14 +42,54 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 protoc --go_out=./pkg ./schema.proto
 ```
 
-## Release tag format
+## Releasing
 
-Release tags for the common library should be created in the following format:
+To release a new version of the library, you need to create a new tag and push it to the repository.
 
+The format must be `libs/blueprint/vX.Y.Z` where `X.Y.Z` is the semantic version number.
+The reason for this is that Go's mechanism for picking up modules from multi-repo packages is based on the sub-directory path being in the version tag.
+
+See [here](https://go.dev/wiki/Modules#publishing-a-release).
+
+1. add a change log entry to the `CHANGELOG.md` file following the template below:
+
+```markdown
+## [0.2.0] - 2024-06-05
+
+### Fixed:
+
+- Corrects error reporting for change staging.
+
+### Added
+
+- Adds retry behaviour to resource providers.
 ```
-blueprint-MAJOR.MINOR.PATCH
 
-e.g. blueprint-0.1.0
+2. Create and push the new tag prefixed by sub-directory path:
+
+```bash
+git tag -a libs/blueprint/v0.2.0 -m "chore(blueprint): Release v0.2.0"
+git push --tags
+```
+
+Be sure to add a release for the tag with notes following this template:
+
+Title: `Blueprint Framework - v0.2.0`
+
+```markdown
+## Fixed:
+
+- Corrects claims handling for JWT middleware.
+
+## Added
+
+- Adds dihandlers-compatible middleware for access control.
+```
+
+3. Prompt Go to update its index of modules with the new release:
+
+```bash
+GOPROXY=proxy.golang.org go list -m github.com/two-hundred/celerity/libs/blueprint@v0.2.0
 ```
 
 ## Commit scope
