@@ -312,24 +312,18 @@ type BlueprintCache interface {
 ```
 
 The blueprint cache allows for the caching of expanded blueprint schemas to make loading blueprints that have been previously loaded without modifications more efficient.
-For implementations that require a serialised form of the blueprint spec to store in a scalable cache, the `schema.Blueprint` struct can be serialised as a [Protocol Buffer](http://protobuf.dev/) using the built-in [ExpandedBlueprintSerialiser](#expandedblueprintserialiser-coreexpandedblueprintserialiser) and stored in the cache. _JSON and YAML serialisation can be used but will not store the blueprint in its expanded form so the primary benefits of caching will be lost. This is because the JSON and YAML serialisation will collapse `${..}` substitutions into strings and deserialisation will expand `${..}` substitutions._
+For implementations that require a serialised form of the blueprint spec to store in a scalable cache, the `schema.Blueprint` struct can be serialised as a [Protocol Buffer](http://protobuf.dev/) using the built-in [ExpandedBlueprintSerialiser](#expandedblueprintserialiser-serialisationexpandedblueprintserialiser) and stored in the cache. _JSON and YAML serialisation can be used but will not store the blueprint in its expanded form so the primary benefits of caching will be lost. This is because the JSON and YAML serialisation will collapse `${..}` substitutions into strings and deserialisation will expand `${..}` substitutions._
 
 The library does NOT come with any provider implementations, you must implement them yourself or use a library that extends the blueprint framework.
 
-## ExpandedBlueprintSerialiser (core.ExpandedBlueprintSerialiser)
+## ExpandedBlueprintSerialiser (serialisation.ExpandedBlueprintSerialiser)
 
 ```go
 type ExpandedBlueprintSerialiser interface {
 
-    Marshal(
-        ctx context.Context,
-        blueprint *schema.Blueprint,
-    ) ([]byte, error)
+    Marshal(blueprint *schema.Blueprint) ([]byte, error)
 
-    Unmarshal(
-        ctx context.Context,
-        data []byte,
-    ) (*schema.Blueprint, error)
+    Unmarshal(data []byte) (*schema.Blueprint, error)
 }
 ```
 
