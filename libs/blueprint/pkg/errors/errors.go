@@ -41,3 +41,18 @@ func (e *SerialiseError) Error() string {
 	errorsLabel := deriveErrorsLabel(childErrCount)
 	return fmt.Sprintf("blueprint serialise error (%d child %s): %s", childErrCount, errorsLabel, e.Err.Error())
 }
+
+type ExpandedSerialiseError struct {
+	ReasonCode  ErrorReasonCode
+	Err         error
+	ChildErrors []error
+}
+
+func (e *ExpandedSerialiseError) Error() string {
+	childErrCount := len(e.ChildErrors)
+	if childErrCount == 0 {
+		return fmt.Sprintf("expanded blueprint serialise error: %s", e.Err.Error())
+	}
+	errorsLabel := deriveErrorsLabel(childErrCount)
+	return fmt.Sprintf("expanded blueprint serialise error (%d child %s): %s", childErrCount, errorsLabel, e.Err.Error())
+}

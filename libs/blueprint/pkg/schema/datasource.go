@@ -219,9 +219,9 @@ type DataSourceFieldExport struct {
 // annotations that are used to configure data sources when fetching data
 // from the data source provider.
 type DataSourceMetadata struct {
-	DisplayName *substitutions.StringOrSubstitutions           `yaml:"displayName" json:"displayName"`
-	Annotations map[string]*substitutions.StringOrSubstitution `yaml:"annotations" json:"annotations"`
-	Custom      *bpcore.MappingNode                            `yaml:"custom" json:"custom"`
+	DisplayName *substitutions.StringOrSubstitutions            `yaml:"displayName" json:"displayName"`
+	Annotations map[string]*substitutions.StringOrSubstitutions `yaml:"annotations,omitempty" json:"annotations,omitempty"`
+	Custom      *bpcore.MappingNode                             `yaml:"custom,omitempty" json:"custom,omitempty"`
 }
 
 // DataSourceFieldTypeWrapper provides a struct that holds a data source field type

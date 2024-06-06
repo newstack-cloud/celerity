@@ -654,7 +654,7 @@
             })
           }
         }),
-        Annotations: (map[string]*substitutions.StringOrSubstitution) <nil>,
+        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Custom: (*core.MappingNode)(<nil>)
       }),
       Filter: (*schema.DataSourceFilter)(<nil>),

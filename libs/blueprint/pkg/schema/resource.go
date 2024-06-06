@@ -10,7 +10,7 @@ import (
 type Resource struct {
 	Type         string                               `yaml:"type" json:"type"`
 	Description  *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
-	Metadata     *Metadata                            `yaml:"metadata" json:"metadata"`
+	Metadata     *Metadata                            `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 	LinkSelector *LinkSelector                        `yaml:"linkSelector,omitempty" json:"linkSelector,omitempty"`
 	Spec         *core.MappingNode                    `yaml:"spec" json:"spec"`
 }
@@ -21,8 +21,8 @@ type Resource struct {
 // instances and used for link selections.
 type Metadata struct {
 	DisplayName *substitutions.StringOrSubstitutions            `yaml:"displayName" json:"displayName"`
-	Annotations map[string]*substitutions.StringOrSubstitutions `yaml:"annotations" json:"annotations"`
-	Labels      map[string]string                               `yaml:"labels" json:"labels"`
+	Annotations map[string]*substitutions.StringOrSubstitutions `yaml:"annotations,omitempty" json:"annotations,omitempty"`
+	Labels      map[string]string                               `yaml:"labels,omitempty" json:"labels,omitempty"`
 	Custom      *core.MappingNode                               `yaml:"custom,omitempty" json:"custom,omitempty"`
 }
 
