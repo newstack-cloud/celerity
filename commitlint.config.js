@@ -25,6 +25,7 @@ module.exports = {
       "always",
       [
         "blueprint",
+        "blueprint-ls",
         "build-engine",
         "common",
         "runtime-core",

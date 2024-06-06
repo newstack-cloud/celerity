@@ -33,6 +33,7 @@ a base for more advanced tooling to allow for efficient searches for decisions a
 This list will evolve as more applications are added to Celerity.
 
 - `blueprint` - This commit scope should be used for a commit that represents work that pertains to the blueprint library/framework.
+- `blueprint-ls` - This commit scope should be used for a commit that represents work that pertains to the Blueprint Language Server.
 - `build-engine` - This commit scope should be used for a commit that represents work that pertains to the build engine that sits at the core of the test/build/package/deploy tooling.
 - `common` - This commit scope should be used for a commit that represents work that pertains to the common Go library.
 - `runtime-core` - This commit scope should be used for a commit that represents work that pertains to the core Rust runtime library.
