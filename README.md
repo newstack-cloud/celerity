@@ -23,4 +23,4 @@ The language server can be used with any language server protocol compatible edi
 
 The language server only supports `yaml` files due to [intended limitations](https://github.com/golang/go/issues/43513) of Go's built-in `json` encoding library.
 
-[Blueprint LSP](./tools/blueprint-ls)
+[Blueprint Language Server](./tools/blueprint-ls)
