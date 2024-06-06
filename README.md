@@ -7,7 +7,7 @@ The backend toolkit that gets you moving fast
 
 ## Components of Celerity
 
-### Blueprint framework
+### Blueprint Framework
 
 The blueprint framework provides a set of interfaces and tools to deploy and manage the lifecycle of resources that can be represented as a blueprint. The framework is designed to be minimal at its core, yet extensible and can be used to deploy resources in any environment.
 

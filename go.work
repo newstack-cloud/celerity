@@ -3,4 +3,5 @@ go 1.22
 use (
 	./libs/blueprint
 	./libs/common
+	./tools/blueprint-ls
 )
