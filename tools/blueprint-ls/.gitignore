@@ -7,6 +7,7 @@ gen-*.go
 *.dll
 *.so
 *.dylib
+blueprint-language-server
 
 # Test binary, built with `go test -c`
 *.test
