@@ -40,7 +40,7 @@ set -e
 echo "" > coverage.txt
 
 
-go test -timeout 30000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic
+go test -timeout 30000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic ./...
 
 
 if [ -z "$GITHUB_ACTION" ]; then
