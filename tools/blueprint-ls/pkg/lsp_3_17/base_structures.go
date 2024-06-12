@@ -115,6 +115,19 @@ func (p Position) IndexIn(text string, posEncodingKind PositionEncodingKind) int
 	return byteOffset
 }
 
+func (p Position) EndOfLineIn(content string, posEncodingKind PositionEncodingKind) Position {
+	index := p.IndexIn(content, posEncodingKind)
+	remains := content[index:]
+	if eol := strings.Index(remains, "\n"); eol != -1 {
+		return Position{
+			Line:      p.Line,
+			Character: p.Character + UInteger(eol),
+		}
+	} else {
+		return p
+	}
+}
+
 func (p Position) getLineIndex(text string) int {
 	hasNewLine := true
 	index := 0
@@ -182,6 +195,10 @@ type Range struct {
 
 	// The range's end position.
 	End Position `json:"end"`
+}
+
+func (r Range) IndexesIn(content string, posEncodingKind PositionEncodingKind) (int, int) {
+	return r.Start.IndexIn(content, posEncodingKind), r.End.IndexIn(content, posEncodingKind)
 }
 
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentItem
