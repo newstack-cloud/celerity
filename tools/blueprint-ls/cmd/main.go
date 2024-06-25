@@ -1,21 +1,49 @@
 package main
 
 import (
-	"github.com/tliron/commonlog"
-	_ "github.com/tliron/commonlog/simple"
-	"github.com/tliron/glsp/server"
-	"github.com/two-hundred/celerity/tools/blueprint-ls/pkg/languageserver"
+	"log"
+	"os"
+
+	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/languageserver"
+	"github.com/two-hundred/ls-builder/server"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func main() {
-	path := "blueprint-ls.log"
-	commonlog.Configure(2, &path)
+	logger, logFile, err := setupLogger()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logFile.Close()
 
 	state := languageserver.NewState()
-	app := languageserver.NewApplication(state)
+	app := languageserver.NewApplication(state, logger)
 	app.Setup()
 
-	server := server.NewServer(app.Handler(), languageserver.Name, true)
+	srv := server.NewServer(app.Handler(), true, logger, nil)
 
-	server.RunStdio()
+	stdio := server.Stdio{}
+	conn := server.NewStreamConnection(srv.NewHandler(), stdio)
+	srv.Serve(conn, logger)
+}
+
+func setupLogger() (*zap.Logger, *os.File, error) {
+	logFileHandle, err := os.OpenFile("blueprint-ls.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, nil, err
+	}
+	writerSync := zapcore.NewMultiWriteSyncer(
+		// stdout and stdin are used for communication with the client
+		// and should not be logged to.
+		zapcore.AddSync(os.Stderr),
+		zapcore.AddSync(logFileHandle),
+	)
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		writerSync,
+		zap.DebugLevel,
+	)
+	logger := zap.New(core)
+	return logger, logFileHandle, nil
 }
