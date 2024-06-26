@@ -59,61 +59,6 @@ func (a *Application) handleWorkspaceDidChangeConfiguration(ctx *common.LSPConte
 	return nil
 }
 
-// func (a *Application) trace(context *common.LSPContext, mType lsp.MessageType, message string) error {
-// 	if a.hasTraceMessageType(mType) {
-// 		return context.Notify(lsp.MethodLogTrace, &lsp.LogMessageParams{
-// 			Type:    mType,
-// 			Message: message,
-// 		})
-// 	}
-// 	return nil
-// }
-
-// func (a *Application) hasTraceMessageType(mType lsp.MessageType) bool {
-// 	switch mType {
-// 	case lsp.MessageTypeError, lsp.MessageTypeWarning, lsp.MessageTypeInfo:
-// 		return a.hasTraceLevel(lsp.TraceValueMessage)
-
-// 	case lsp.MessageTypeLog:
-// 		return a.hasTraceLevel(lsp.TraceValueVerbose)
-
-// 	default:
-// 		a.logger.Fatal(fmt.Sprintf("unsupported message type: %d", mType))
-// 		return false
-// 	}
-// }
-
-// func (a *Application) getTraceValue() lsp.TraceValue {
-// 	a.mu.Lock()
-// 	defer a.mu.Unlock()
-// 	return a.traceValue
-// }
-
-// func (a *Application) hasTraceLevel(value lsp.TraceValue) bool {
-// 	current := a.getTraceValue()
-// 	switch current {
-// 	case lsp.TraceValueOff:
-// 		return false
-
-// 	case lsp.TraceValueMessage:
-// 		return value == lsp.TraceValueMessage
-
-// 	case lsp.TraceValueVerbose:
-// 		return true
-
-// 	default:
-// 		a.logger.Fatal(fmt.Sprintf("unsupported trace level: %s", current))
-// 		return false
-// 	}
-// }
-
-func (a *Application) handleSetTrace(ctx *common.LSPContext, params *lsp.SetTraceParams) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.traceValue = params.Value
-	return nil
-}
-
 func (a *Application) handleTextDocumentDidChange(ctx *common.LSPContext, params *lsp.DidChangeTextDocumentParams) error {
 	ctx.Notify("window/logMessage", &lsp.LogMessageParams{
 		Type:    lsp.MessageTypeInfo,

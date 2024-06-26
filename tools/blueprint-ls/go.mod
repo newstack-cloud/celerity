@@ -3,7 +3,7 @@ module github.com/two-hundred/celerity/tools/blueprint-ls
 go 1.22.2
 
 require (
-	github.com/two-hundred/ls-builder v0.1.0
+	github.com/two-hundred/ls-builder v0.2.0
 	go.uber.org/zap v1.27.0
 )
 

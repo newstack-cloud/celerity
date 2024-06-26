@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/languageserver"
+	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
 	"github.com/two-hundred/ls-builder/server"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -18,7 +19,8 @@ func main() {
 	defer logFile.Close()
 
 	state := languageserver.NewState()
-	app := languageserver.NewApplication(state, logger)
+	traceService := lsp.NewTraceService(logger)
+	app := languageserver.NewApplication(state, traceService, logger)
 	app.Setup()
 
 	srv := server.NewServer(app.Handler(), true, logger, nil)

@@ -1,24 +1,22 @@
 package languageserver
 
 import (
-	"sync"
-
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
 	"go.uber.org/zap"
 )
 
 type Application struct {
-	handler    *lsp.Handler
-	state      *State
-	logger     *zap.Logger
-	traceValue lsp.TraceValue
-	mu         sync.Mutex
+	handler      *lsp.Handler
+	state        *State
+	logger       *zap.Logger
+	traceService *lsp.TraceService
 }
 
-func NewApplication(state *State, logger *zap.Logger) *Application {
+func NewApplication(state *State, traceService *lsp.TraceService, logger *zap.Logger) *Application {
 	return &Application{
-		state:  state,
-		logger: logger,
+		state:        state,
+		logger:       logger,
+		traceService: traceService,
 	}
 }
 
@@ -29,7 +27,7 @@ func (a *Application) Setup() {
 		lsp.WithShutdownHandler(a.handleShutdown),
 		lsp.WithTextDocumentDidChangeHandler(a.handleTextDocumentDidChange),
 		lsp.WithCompletionHandler(a.handleTextDocumentCompletion),
-		lsp.WithSetTraceHandler(a.handleSetTrace),
+		lsp.WithSetTraceHandler(a.traceService.CreateSetTraceHandler()),
 	)
 }
 
