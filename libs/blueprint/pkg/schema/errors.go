@@ -73,7 +73,11 @@ func errInvalidDataSourceFieldType(
 	}
 }
 
-func errInvalidDataSourceFilterOperator(dataSourceFilterOperator DataSourceFilterOperator) error {
+func errInvalidDataSourceFilterOperator(
+	dataSourceFilterOperator DataSourceFilterOperator,
+	line *int,
+	column *int,
+) error {
 	return &Error{
 		ReasonCode: ErrorSchemaReasonCodeInvalidDataSourceFilterOperator,
 		Err: fmt.Errorf(

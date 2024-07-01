@@ -630,12 +630,14 @@
           SourceMeta: (*source.Meta)(<nil>)
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       Filter: (*schema.DataSourceFilter)({
         Field: (string) (len=4) "tags",
         Operator: (*schema.DataSourceFilterOperatorWrapper)({
-          Value: (schema.DataSourceFilterOperator) (len=7) "has key"
+          Value: (schema.DataSourceFilterOperator) (len=7) "has key",
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Search: (*schema.DataSourceFilterSearch)({
           Values: ([]*substitutions.StringOrSubstitutions) (len=1) {
@@ -663,33 +665,42 @@
               },
               SourceMeta: (*source.Meta)(<nil>)
             })
-          }
-        })
+          },
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
         (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
           Type: (*schema.DataSourceFieldTypeWrapper)({
-            Value: (schema.DataSourceFieldType) (len=5) "array"
+            Value: (schema.DataSourceFieldType) (len=5) "array",
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           AliasFor: (string) "",
-          Description: (*substitutions.StringOrSubstitutions)(<nil>)
+          Description: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
           Type: (*schema.DataSourceFieldTypeWrapper)({
-            Value: (schema.DataSourceFieldType) (len=5) "array"
+            Value: (schema.DataSourceFieldType) (len=5) "array",
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           AliasFor: (string) "",
-          Description: (*substitutions.StringOrSubstitutions)(<nil>)
+          Description: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
           Type: (*schema.DataSourceFieldTypeWrapper)({
-            Value: (schema.DataSourceFieldType) (len=6) "string"
+            Value: (schema.DataSourceFieldType) (len=6) "string",
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           AliasFor: (string) "",
-          Description: (*substitutions.StringOrSubstitutions)(<nil>)
+          Description: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>)
         })
       },
-      Description: (*substitutions.StringOrSubstitutions)(<nil>)
+      Description: (*substitutions.StringOrSubstitutions)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>)
     })
   },
   Exports: (map[string]*schema.Export) <nil>,

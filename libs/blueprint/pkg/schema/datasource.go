@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 	"gopkg.in/yaml.v3"
@@ -22,20 +23,63 @@ type DataSource struct {
 	Filter             *DataSourceFilter                    `yaml:"filter" json:"filter"`
 	Exports            map[string]*DataSourceFieldExport    `yaml:"exports" json:"exports"`
 	Description        *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
+	SourceMeta         *source.Meta                         `yaml:"-" json:"-"`
+}
+
+func (s *DataSource) UnmarshalYAML(value *yaml.Node) error {
+	s.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	type dataSourceAlias DataSource
+	var alias dataSourceAlias
+	if err := value.Decode(&alias); err != nil {
+		return wrapErrorWithLineInfo(err, value)
+	}
+
+	s.Type = alias.Type
+	s.DataSourceMetadata = alias.DataSourceMetadata
+	s.Filter = alias.Filter
+	s.Exports = alias.Exports
+	s.Description = alias.Description
+
+	return nil
 }
 
 // DataSourceFilter provides the definition of a filter
 // used to select a specific data source instance from a provider.
 type DataSourceFilter struct {
-	Field    string                           `yaml:"field" json:"field"`
-	Operator *DataSourceFilterOperatorWrapper `yaml:"operator" json:"operator"`
-	Search   *DataSourceFilterSearch          `yaml:"search" json:"search"`
+	Field      string                           `yaml:"field" json:"field"`
+	Operator   *DataSourceFilterOperatorWrapper `yaml:"operator" json:"operator"`
+	Search     *DataSourceFilterSearch          `yaml:"search" json:"search"`
+	SourceMeta *source.Meta                     `yaml:"-" json:"-"`
+}
+
+func (f *DataSourceFilter) UnmarshalYAML(value *yaml.Node) error {
+	f.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	type dataSourceFilterAlias DataSourceFilter
+	var alias dataSourceFilterAlias
+	if err := value.Decode(&alias); err != nil {
+		return wrapErrorWithLineInfo(err, value)
+	}
+
+	f.Field = alias.Field
+	f.Operator = alias.Operator
+	f.Search = alias.Search
+
+	return nil
 }
 
 // DataSourceFilterSearch provides the definition of one or more
 // search values for a data source filter.
 type DataSourceFilterSearch struct {
-	Values []*substitutions.StringOrSubstitutions
+	Values     []*substitutions.StringOrSubstitutions
+	SourceMeta *source.Meta
 }
 
 func (s *DataSourceFilterSearch) MarshalYAML() (interface{}, error) {
@@ -50,13 +94,18 @@ func (s *DataSourceFilterSearch) MarshalYAML() (interface{}, error) {
 }
 
 func (s *DataSourceFilterSearch) UnmarshalYAML(value *yaml.Node) error {
+	s.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
 	if value.Kind == yaml.SequenceNode {
 		values := []*substitutions.StringOrSubstitutions{}
 		for _, node := range value.Content {
 			value := &substitutions.StringOrSubstitutions{}
 			err := value.UnmarshalYAML(node)
 			if err != nil {
-				return err
+				return wrapErrorWithLineInfo(err, node)
 			}
 			values = append(values, value)
 		}
@@ -66,7 +115,7 @@ func (s *DataSourceFilterSearch) UnmarshalYAML(value *yaml.Node) error {
 	singleValue := &substitutions.StringOrSubstitutions{}
 	err := singleValue.UnmarshalYAML(value)
 	if err != nil {
-		return err
+		return wrapErrorWithLineInfo(err, value)
 	}
 
 	s.Values = []*substitutions.StringOrSubstitutions{singleValue}
@@ -105,21 +154,30 @@ func (s *DataSourceFilterSearch) UnmarshalJSON(data []byte) error {
 // when serialising and deserialising data source filter operators in a blueprint
 // so we can check precise values.
 type DataSourceFilterOperatorWrapper struct {
-	Value DataSourceFilterOperator
+	Value      DataSourceFilterOperator
+	SourceMeta *source.Meta
 }
 
 func (w *DataSourceFilterOperatorWrapper) MarshalYAML() (interface{}, error) {
 	if !core.SliceContains(DataSourceFilterOperators, w.Value) {
-		return nil, errInvalidDataSourceFilterOperator(w.Value)
+		return nil, errInvalidDataSourceFilterOperator(w.Value, nil, nil)
 	}
 
 	return w.Value, nil
 }
 
 func (w *DataSourceFilterOperatorWrapper) UnmarshalYAML(value *yaml.Node) error {
+	w.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
 	valueFilterOperator := DataSourceFilterOperator(value.Value)
 	if !core.SliceContains(DataSourceFilterOperators, valueFilterOperator) {
-		return errInvalidDataSourceFilterOperator(valueFilterOperator)
+		return errInvalidDataSourceFilterOperator(
+			valueFilterOperator,
+			&value.Line,
+			&value.Column,
+		)
 	}
 
 	w.Value = valueFilterOperator
@@ -128,7 +186,7 @@ func (w *DataSourceFilterOperatorWrapper) UnmarshalYAML(value *yaml.Node) error 
 
 func (w *DataSourceFilterOperatorWrapper) MarshalJSON() ([]byte, error) {
 	if !core.SliceContains(DataSourceFilterOperators, w.Value) {
-		return nil, errInvalidDataSourceFilterOperator(w.Value)
+		return nil, errInvalidDataSourceFilterOperator(w.Value, nil, nil)
 	}
 	return []byte(fmt.Sprintf("\"%s\"", w.Value)), nil
 }
@@ -142,7 +200,7 @@ func (w *DataSourceFilterOperatorWrapper) UnmarshalJSON(data []byte) error {
 
 	typeValDataSourceFilterOperator := DataSourceFilterOperator(typeVal)
 	if !core.SliceContains(DataSourceFilterOperators, typeValDataSourceFilterOperator) {
-		return errInvalidDataSourceFilterOperator(typeValDataSourceFilterOperator)
+		return errInvalidDataSourceFilterOperator(typeValDataSourceFilterOperator, nil, nil)
 	}
 	w.Value = typeValDataSourceFilterOperator
 
@@ -212,6 +270,26 @@ type DataSourceFieldExport struct {
 	Type        *DataSourceFieldTypeWrapper          `yaml:"type" json:"type"`
 	AliasFor    string                               `yaml:"aliasFor" json:"aliasFor"`
 	Description *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
+	SourceMeta  *source.Meta                         `yaml:"-" json:"-"`
+}
+
+func (e *DataSourceFieldExport) UnmarshalYAML(value *yaml.Node) error {
+	e.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	type dataSourceFieldExportAlias DataSourceFieldExport
+	var alias dataSourceFieldExportAlias
+	if err := value.Decode(&alias); err != nil {
+		return wrapErrorWithLineInfo(err, value)
+	}
+
+	e.Type = alias.Type
+	e.AliasFor = alias.AliasFor
+	e.Description = alias.Description
+
+	return nil
 }
 
 // DataSourceMetadata represents the metadata associated
@@ -222,6 +300,26 @@ type DataSourceMetadata struct {
 	DisplayName *substitutions.StringOrSubstitutions            `yaml:"displayName" json:"displayName"`
 	Annotations map[string]*substitutions.StringOrSubstitutions `yaml:"annotations,omitempty" json:"annotations,omitempty"`
 	Custom      *bpcore.MappingNode                             `yaml:"custom,omitempty" json:"custom,omitempty"`
+	SourceMeta  *source.Meta                                    `yaml:"-" json:"-"`
+}
+
+func (m *DataSourceMetadata) UnmarshalYAML(value *yaml.Node) error {
+	m.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	type dataSourceMetadataAlias DataSourceMetadata
+	var alias dataSourceMetadataAlias
+	if err := value.Decode(&alias); err != nil {
+		return wrapErrorWithLineInfo(err, value)
+	}
+
+	m.DisplayName = alias.DisplayName
+	m.Annotations = alias.Annotations
+	m.Custom = alias.Custom
+
+	return nil
 }
 
 // DataSourceFieldTypeWrapper provides a struct that holds a data source field type
@@ -230,7 +328,8 @@ type DataSourceMetadata struct {
 // when serialising and deserialising data source field exports in a blueprint
 // so we can check precise values.
 type DataSourceFieldTypeWrapper struct {
-	Value DataSourceFieldType
+	Value      DataSourceFieldType
+	SourceMeta *source.Meta
 }
 
 func (t *DataSourceFieldTypeWrapper) MarshalYAML() (interface{}, error) {
@@ -242,6 +341,10 @@ func (t *DataSourceFieldTypeWrapper) MarshalYAML() (interface{}, error) {
 }
 
 func (t *DataSourceFieldTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
+	t.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
 	valueDataSourceFieldType := DataSourceFieldType(value.Value)
 	if !core.SliceContains(DataSourceFieldTypes, valueDataSourceFieldType) {
 		return errInvalidDataSourceFieldType(
