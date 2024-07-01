@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"gopkg.in/yaml.v3"
 )
 
@@ -33,6 +34,7 @@ type ScalarValue struct {
 	BoolValue   *bool
 	FloatValue  *float64
 	StringValue *string
+	SourceMeta  *source.Meta
 }
 
 // MarshalYAML fulfils the yaml.Marshaler interface

@@ -235,7 +235,7 @@ type DataSourceFieldTypeWrapper struct {
 
 func (t *DataSourceFieldTypeWrapper) MarshalYAML() (interface{}, error) {
 	if !core.SliceContains(DataSourceFieldTypes, t.Value) {
-		return nil, errInvalidDataSourceFieldType(t.Value)
+		return nil, errInvalidDataSourceFieldType(t.Value, nil, nil)
 	}
 
 	return t.Value, nil
@@ -244,7 +244,11 @@ func (t *DataSourceFieldTypeWrapper) MarshalYAML() (interface{}, error) {
 func (t *DataSourceFieldTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 	valueDataSourceFieldType := DataSourceFieldType(value.Value)
 	if !core.SliceContains(DataSourceFieldTypes, valueDataSourceFieldType) {
-		return errInvalidDataSourceFieldType(valueDataSourceFieldType)
+		return errInvalidDataSourceFieldType(
+			valueDataSourceFieldType,
+			&value.Line,
+			&value.Column,
+		)
 	}
 
 	t.Value = valueDataSourceFieldType
@@ -253,7 +257,7 @@ func (t *DataSourceFieldTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 
 func (t *DataSourceFieldTypeWrapper) MarshalJSON() ([]byte, error) {
 	if !core.SliceContains(DataSourceFieldTypes, t.Value) {
-		return nil, errInvalidDataSourceFieldType(t.Value)
+		return nil, errInvalidDataSourceFieldType(t.Value, nil, nil)
 	}
 	return []byte(fmt.Sprintf("\"%s\"", t.Value)), nil
 }
@@ -267,7 +271,7 @@ func (t *DataSourceFieldTypeWrapper) UnmarshalJSON(data []byte) error {
 
 	typeValDataSourceFieldType := DataSourceFieldType(typeVal)
 	if !core.SliceContains(DataSourceFieldTypes, typeValDataSourceFieldType) {
-		return errInvalidDataSourceFieldType(typeValDataSourceFieldType)
+		return errInvalidDataSourceFieldType(typeValDataSourceFieldType, nil, nil)
 	}
 	t.Value = DataSourceFieldType(typeVal)
 

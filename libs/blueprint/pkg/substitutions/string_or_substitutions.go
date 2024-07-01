@@ -3,6 +3,7 @@ package substitutions
 import (
 	"fmt"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"gopkg.in/yaml.v3"
 )
 
@@ -10,6 +11,10 @@ import (
 // that represents a string interpolated with substitutions.
 type StringOrSubstitutions struct {
 	Values []*StringOrSubstitution
+	// SourceMeta is the source metadata for the string or substitutions,
+	// this is optional and may or may not be set depending on the context
+	// and the source blueprint.
+	SourceMeta *source.Meta
 }
 
 // MarshalYAML fulfils the yaml.Marshaler interface

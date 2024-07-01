@@ -12,6 +12,18 @@ import (
 type Error struct {
 	ReasonCode ErrorSchemaReasonCode
 	Err        error
+	// The line in the source blueprint file
+	// where the error occurred.
+	// This will be nil if the error is not related
+	// to a specific line in the blueprint file
+	// or the source format is JSON.
+	SourceLine *int
+	// The column on a line in the source blueprint file
+	// where the error occurred.
+	// This will be nil if the error is not related
+	// to a specific line/column in the blueprint file
+	// or the source format is JSON.
+	SourceColumn *int
 }
 
 func (e *Error) Error() string {
@@ -39,13 +51,19 @@ const (
 	ErrorSchemaReasonCodeInvalidTransformType ErrorSchemaReasonCode = "invalid_transform_type"
 )
 
-func errInvalidDataSourceFieldType(dataSourceFieldType DataSourceFieldType) error {
+func errInvalidDataSourceFieldType(
+	dataSourceFieldType DataSourceFieldType,
+	line *int,
+	column *int,
+) error {
 	return &Error{
 		ReasonCode: ErrorSchemaReasonCodeInvalidDataSourceFieldType,
 		Err: fmt.Errorf(
 			"unsupported data source field type %s has been provided, you can choose from string, integer, float, boolean, object and array",
 			dataSourceFieldType,
 		),
+		SourceLine:   line,
+		SourceColumn: column,
 	}
 }
 
@@ -65,12 +83,14 @@ func errInvalidDataSourceFilterOperator(dataSourceFilterOperator DataSourceFilte
 	}
 }
 
-func errInvalidTransformType(underlyingError error) error {
+func errInvalidTransformType(underlyingError error, line *int, column *int) error {
 	return &Error{
 		ReasonCode: ErrorSchemaReasonCodeInvalidTransformType,
 		Err: fmt.Errorf(
 			"unsupported type provided for spec transform, must be string or a list of strings: %s",
 			underlyingError.Error(),
 		),
+		SourceLine:   line,
+		SourceColumn: column,
 	}
 }

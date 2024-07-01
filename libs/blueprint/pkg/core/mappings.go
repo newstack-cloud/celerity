@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	"gopkg.in/yaml.v3"
 )
@@ -44,6 +45,10 @@ type MappingNode struct {
 	// resource properties, data source properties and child blueprint properties
 	// or function calls wrapped contained within ${..}.
 	StringWithSubstitutions *substitutions.StringOrSubstitutions
+	// SourceMeta is the source metadata for the mapping node,
+	// this is optional and may or may not be set depending on the context
+	// and the source blueprint.
+	SourceMeta *source.Meta
 }
 
 // MarshalYAML fulfils the yaml.Marshaler interface

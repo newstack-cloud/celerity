@@ -3,6 +3,12 @@
   Transform: (*schema.TransformValueWrapper)({
     Values: ([]string) (len=1) {
       (string) (len=19) "celerity-2022-01-22"
+    },
+    SourceMeta: ([]*source.Meta) (len=1) {
+      (*source.Meta)({
+        Line: (int) 3,
+        Column: (int) 5
+      })
     }
   }),
   Variables: (map[string]*schema.Variable) (len=2) {
@@ -11,14 +17,16 @@
       Description: (string) (len=25) "The Orders DynamoDB Table",
       Secret: (bool) false,
       Default: (*core.ScalarValue)(<nil>),
-      AllowedValues: ([]*core.ScalarValue) <nil>
+      AllowedValues: ([]*core.ScalarValue) <nil>,
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     (string) (len=15) "ordersTopicName": (*schema.Variable)({
       Type: (schema.VariableType) (len=6) "string",
       Description: (string) (len=22) "The Orders Event Topic",
       Secret: (bool) false,
       Default: (*core.ScalarValue)(<nil>),
-      AllowedValues: ([]*core.ScalarValue) <nil>
+      AllowedValues: ([]*core.ScalarValue) <nil>,
+      SourceMeta: (*source.Meta)(<nil>)
     })
   },
   Include: (map[string]*schema.Include) (len=1) {
@@ -27,9 +35,11 @@
         Values: ([]*substitutions.StringOrSubstitution) (len=1) {
           (*substitutions.StringOrSubstitution)({
             StringValue: (*string)((len=15) "core-infra.yaml"),
-            SubstitutionValue: (*substitutions.Substitution)(<nil>)
+            SubstitutionValue: (*substitutions.Substitution)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           })
-        }
+        },
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       Variables: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
@@ -45,7 +55,8 @@
                   SubstitutionValue: (*substitutions.Substitution)({
                     Function: (*substitutions.SubstitutionFunction)(<nil>),
                     Variable: (*substitutions.SubstitutionVariable)({
-                      VariableName: (string) (len=13) "dynamoDBTable"
+                      VariableName: (string) (len=13) "dynamoDBTable",
+                      SourceMeta: (*source.Meta)(<nil>)
                     }),
                     DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                     ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
@@ -53,15 +64,20 @@
                     StringValue: (*string)(<nil>),
                     IntValue: (*int64)(<nil>),
                     FloatValue: (*float64)(<nil>),
-                    BoolValue: (*bool)(<nil>)
-                  })
+                    BoolValue: (*bool)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  SourceMeta: (*source.Meta)(<nil>)
                 })
-              }
-            })
+              },
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            SourceMeta: (*source.Meta)(<nil>)
           })
         },
         Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       Metadata: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
@@ -71,45 +87,54 @@
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=23) "order-system-blueprints")
+              StringValue: (*string)((len=23) "order-system-blueprints"),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=6) "region": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=9) "eu-west-1")
+              StringValue: (*string)((len=9) "eu-west-1"),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=10) "sourceType": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=6) "aws/s3")
+              StringValue: (*string)((len=6) "aws/s3"),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           })
         },
         Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       Description: (*substitutions.StringOrSubstitutions)({
         Values: ([]*substitutions.StringOrSubstitution) (len=1) {
           (*substitutions.StringOrSubstitution)({
             StringValue: (*string)((len=38) "core infrastructure for the Orders API"),
-            SubstitutionValue: (*substitutions.Substitution)(<nil>)
+            SubstitutionValue: (*substitutions.Substitution)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           })
-        }
+        },
+        SourceMeta: (*source.Meta)(<nil>)
       })
     })
   },
@@ -122,42 +147,52 @@
           Values: ([]*substitutions.StringOrSubstitution) (len=1) {
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=10) "Authoriser"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              SubstitutionValue: (*substitutions.Substitution)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             })
-          }
+          },
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) (len=4) {
           (string) (len=10) "authoriser": (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
               (*substitutions.StringOrSubstitution)({
                 StringValue: (*string)((len=4) "true"),
-                SubstitutionValue: (*substitutions.Substitution)(<nil>)
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               })
-            }
+            },
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=26) "authoriser.identity.header": (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
               (*substitutions.StringOrSubstitution)({
                 StringValue: (*string)((len=18) "MyCustomAuthHeader"),
-                SubstitutionValue: (*substitutions.Substitution)(<nil>)
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               })
-            }
+            },
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=36) "authoriser.identity.reauthoriseEvery": (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
               (*substitutions.StringOrSubstitution)({
                 StringValue: (*string)((len=2) "20"),
-                SubstitutionValue: (*substitutions.Substitution)(<nil>)
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               })
-            }
+            },
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=40) "authoriser.identity.validationExpression": (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
               (*substitutions.StringOrSubstitution)({
                 StringValue: (*string)((len=9) "Bearer .*"),
-                SubstitutionValue: (*substitutions.Substitution)(<nil>)
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               })
-            }
+            },
+            SourceMeta: (*source.Meta)(<nil>)
           })
         },
         Labels: (map[string]string) (len=1) {
@@ -174,26 +209,31 @@
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=19) "handlers.Authoriser")
+              StringValue: (*string)((len=19) "handlers.Authoriser"),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=7) "timeout": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(120),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)(<nil>)
+              StringValue: (*string)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           })
         },
         Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       })
     }),
     (string) (len=16) "getOrdersHandler": (*schema.Resource)({
@@ -204,9 +244,11 @@
           Values: ([]*substitutions.StringOrSubstitution) (len=1) {
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=18) "Get Orders Handler"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              SubstitutionValue: (*substitutions.Substitution)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             })
-          }
+          },
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
@@ -236,69 +278,84 @@
                         ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
                           ResourceName: (string) (len=10) "authoriser",
                           Path: ([]*substitutions.SubstitutionPathItem) {
-                          }
+                          },
+                          SourceMeta: (*source.Meta)(<nil>)
                         }),
                         Child: (*substitutions.SubstitutionChild)(<nil>),
                         StringValue: (*string)(<nil>),
                         IntValue: (*int64)(<nil>),
                         FloatValue: (*float64)(<nil>),
-                        BoolValue: (*bool)(<nil>)
-                      })
+                        BoolValue: (*bool)(<nil>),
+                        SourceMeta: (*source.Meta)(<nil>)
+                      }),
+                      SourceMeta: (*source.Meta)(<nil>)
                     })
-                  }
-                })
+                  },
+                  SourceMeta: (*source.Meta)(<nil>)
+                }),
+                SourceMeta: (*source.Meta)(<nil>)
               }),
               (string) (len=6) "method": (*core.MappingNode)({
                 Literal: (*core.ScalarValue)({
                   IntValue: (*int)(<nil>),
                   BoolValue: (*bool)(<nil>),
                   FloatValue: (*float64)(<nil>),
-                  StringValue: (*string)((len=3) "get")
+                  StringValue: (*string)((len=3) "get"),
+                  SourceMeta: (*source.Meta)(<nil>)
                 }),
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               }),
               (string) (len=4) "path": (*core.MappingNode)({
                 Literal: (*core.ScalarValue)({
                   IntValue: (*int)(<nil>),
                   BoolValue: (*bool)(<nil>),
                   FloatValue: (*float64)(<nil>),
-                  StringValue: (*string)((len=7) "/orders")
+                  StringValue: (*string)((len=7) "/orders"),
+                  SourceMeta: (*source.Meta)(<nil>)
                 }),
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               })
             },
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=7) "handler": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=18) "handlers.GetOrders")
+              StringValue: (*string)((len=18) "handlers.GetOrders"),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=7) "timeout": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(120),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)(<nil>)
+              StringValue: (*string)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           })
         },
         Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       })
     }),
     (string) (len=8) "orderApi": (*schema.Resource)({
@@ -309,9 +366,11 @@
           Values: ([]*substitutions.StringOrSubstitution) (len=1) {
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=9) "Order API"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              SubstitutionValue: (*substitutions.Substitution)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             })
-          }
+          },
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
@@ -328,11 +387,13 @@
                     IntValue: (*int)(50),
                     BoolValue: (*bool)(<nil>),
                     FloatValue: (*float64)(<nil>),
-                    StringValue: (*string)(<nil>)
+                    StringValue: (*string)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
                   Fields: (map[string]*core.MappingNode) <nil>,
                   Items: ([]*core.MappingNode) <nil>,
-                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>)
                 }),
                 (string) (len=9) "linkPorts": (*core.MappingNode)({
                   Literal: (*core.ScalarValue)(<nil>),
@@ -346,70 +407,84 @@
                             IntValue: (*int)(<nil>),
                             BoolValue: (*bool)(<nil>),
                             FloatValue: (*float64)(<nil>),
-                            StringValue: (*string)((len=10) "Orders API")
+                            StringValue: (*string)((len=10) "Orders API"),
+                            SourceMeta: (*source.Meta)(<nil>)
                           }),
                           Fields: (map[string]*core.MappingNode) <nil>,
                           Items: ([]*core.MappingNode) <nil>,
-                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                          SourceMeta: (*source.Meta)(<nil>)
                         }),
                         (string) (len=9) "connectAt": (*core.MappingNode)({
                           Literal: (*core.ScalarValue)({
                             IntValue: (*int)(<nil>),
                             BoolValue: (*bool)(<nil>),
                             FloatValue: (*float64)(<nil>),
-                            StringValue: (*string)((len=6) "70 100")
+                            StringValue: (*string)((len=6) "70 100"),
+                            SourceMeta: (*source.Meta)(<nil>)
                           }),
                           Fields: (map[string]*core.MappingNode) <nil>,
                           Items: ([]*core.MappingNode) <nil>,
-                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                          SourceMeta: (*source.Meta)(<nil>)
                         }),
                         (string) (len=6) "linkTo": (*core.MappingNode)({
                           Literal: (*core.ScalarValue)({
                             IntValue: (*int)(<nil>),
                             BoolValue: (*bool)(<nil>),
                             FloatValue: (*float64)(<nil>),
-                            StringValue: (*string)((len=16) "getOrderEndpoint")
+                            StringValue: (*string)((len=16) "getOrderEndpoint"),
+                            SourceMeta: (*source.Meta)(<nil>)
                           }),
                           Fields: (map[string]*core.MappingNode) <nil>,
                           Items: ([]*core.MappingNode) <nil>,
-                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                          SourceMeta: (*source.Meta)(<nil>)
                         })
                       },
                       Items: ([]*core.MappingNode) <nil>,
-                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>)
                     })
                   },
-                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>)
                 }),
                 (string) (len=5) "point": (*core.MappingNode)({
                   Literal: (*core.ScalarValue)({
                     IntValue: (*int)(<nil>),
                     BoolValue: (*bool)(<nil>),
                     FloatValue: (*float64)(<nil>),
-                    StringValue: (*string)((len=6) "20 100")
+                    StringValue: (*string)((len=6) "20 100"),
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
                   Fields: (map[string]*core.MappingNode) <nil>,
                   Items: ([]*core.MappingNode) <nil>,
-                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>)
                 }),
                 (string) (len=5) "width": (*core.MappingNode)({
                   Literal: (*core.ScalarValue)({
                     IntValue: (*int)(50),
                     BoolValue: (*bool)(<nil>),
                     FloatValue: (*float64)(<nil>),
-                    StringValue: (*string)(<nil>)
+                    StringValue: (*string)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
                   Fields: (map[string]*core.MappingNode) <nil>,
                   Items: ([]*core.MappingNode) <nil>,
-                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>)
                 })
               },
               Items: ([]*core.MappingNode) <nil>,
-              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             })
           },
           Items: ([]*core.MappingNode) <nil>,
-          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>)
         })
       }),
       LinkSelector: (*schema.LinkSelector)({
@@ -446,50 +521,62 @@
                                   FieldName: (string) (len=13) "dynamoDBTable",
                                   PrimitiveArrIndex: (*int64)(<nil>)
                                 })
-                              }
+                              },
+                              SourceMeta: (*source.Meta)(<nil>)
                             }),
                             StringValue: (*string)(<nil>),
                             IntValue: (*int64)(<nil>),
                             FloatValue: (*float64)(<nil>),
-                            BoolValue: (*bool)(<nil>)
-                          })
+                            BoolValue: (*bool)(<nil>),
+                            SourceMeta: (*source.Meta)(<nil>)
+                          }),
+                          SourceMeta: (*source.Meta)(<nil>)
                         })
-                      }
-                    })
+                      },
+                      SourceMeta: (*source.Meta)(<nil>)
+                    }),
+                    SourceMeta: (*source.Meta)(<nil>)
                   })
                 },
                 Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               })
             },
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=7) "runtime": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=5) "go1.x")
+              StringValue: (*string)((len=5) "go1.x"),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=14) "tracingEnabled": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(true),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)(<nil>)
+              StringValue: (*string)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           })
         },
         Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       })
     }),
     (string) (len=11) "orderPubSub": (*schema.Resource)({
@@ -500,9 +587,11 @@
           Values: ([]*substitutions.StringOrSubstitution) (len=1) {
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=13) "Order Pub/Sub"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              SubstitutionValue: (*substitutions.Substitution)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             })
-          }
+          },
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
@@ -529,7 +618,8 @@
                   SubstitutionValue: (*substitutions.Substitution)({
                     Function: (*substitutions.SubstitutionFunction)(<nil>),
                     Variable: (*substitutions.SubstitutionVariable)({
-                      VariableName: (string) (len=15) "ordersTopicName"
+                      VariableName: (string) (len=15) "ordersTopicName",
+                      SourceMeta: (*source.Meta)(<nil>)
                     }),
                     DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                     ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
@@ -537,15 +627,20 @@
                     StringValue: (*string)(<nil>),
                     IntValue: (*int64)(<nil>),
                     FloatValue: (*float64)(<nil>),
-                    BoolValue: (*bool)(<nil>)
-                  })
+                    BoolValue: (*bool)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  SourceMeta: (*source.Meta)(<nil>)
                 })
-              }
-            })
+              },
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            SourceMeta: (*source.Meta)(<nil>)
           })
         },
         Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       })
     }),
     (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
@@ -556,9 +651,11 @@
           Values: ([]*substitutions.StringOrSubstitution) (len=1) {
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=21) "Shared Packages Layer"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              SubstitutionValue: (*substitutions.Substitution)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             })
-          }
+          },
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=2) {
@@ -580,40 +677,48 @@
                   IntValue: (*int)(<nil>),
                   BoolValue: (*bool)(<nil>),
                   FloatValue: (*float64)(<nil>),
-                  StringValue: (*string)((len=5) "go1.x")
+                  StringValue: (*string)((len=5) "go1.x"),
+                  SourceMeta: (*source.Meta)(<nil>)
                 }),
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               })
             },
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=7) "content": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=27) "build/shared-packages-layer")
+              StringValue: (*string)((len=27) "build/shared-packages-layer"),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=9) "layerName": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=19) "sharedPackagesLayer")
+              StringValue: (*string)((len=19) "sharedPackagesLayer"),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           })
         },
         Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       })
     }),
     (string) (len=19) "updateOrderFunction": (*schema.Resource)({
@@ -624,9 +729,11 @@
           Values: ([]*substitutions.StringOrSubstitution) (len=1) {
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=21) "Update Order Function"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              SubstitutionValue: (*substitutions.Substitution)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             })
-          }
+          },
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=2) {
@@ -650,56 +757,67 @@
                       IntValue: (*int)(10),
                       BoolValue: (*bool)(<nil>),
                       FloatValue: (*float64)(<nil>),
-                      StringValue: (*string)(<nil>)
+                      StringValue: (*string)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>)
                     }),
                     Fields: (map[string]*core.MappingNode) <nil>,
                     Items: ([]*core.MappingNode) <nil>,
-                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
                   (string) (len=4) "type": (*core.MappingNode)({
                     Literal: (*core.ScalarValue)({
                       IntValue: (*int)(<nil>),
                       BoolValue: (*bool)(<nil>),
                       FloatValue: (*float64)(<nil>),
-                      StringValue: (*string)((len=6) "pubsub")
+                      StringValue: (*string)((len=6) "pubsub"),
+                      SourceMeta: (*source.Meta)(<nil>)
                     }),
                     Fields: (map[string]*core.MappingNode) <nil>,
                     Items: ([]*core.MappingNode) <nil>,
-                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
                   })
                 },
                 Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               })
             },
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=7) "handler": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=20) "handlers.UpdateOrder")
+              StringValue: (*string)((len=20) "handlers.UpdateOrder"),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           (string) (len=7) "timeout": (*core.MappingNode)({
             Literal: (*core.ScalarValue)({
               IntValue: (*int)(120),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)(<nil>)
+              StringValue: (*string)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           })
         },
         Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>)
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       })
     })
   },
@@ -711,9 +829,11 @@
           Values: ([]*substitutions.StringOrSubstitution) (len=1) {
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=14) "Network source"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>)
+              SubstitutionValue: (*substitutions.Substitution)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             })
-          }
+          },
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Custom: (*core.MappingNode)(<nil>)

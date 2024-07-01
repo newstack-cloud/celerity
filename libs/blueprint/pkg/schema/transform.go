@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 	"gopkg.in/yaml.v3"
 )
@@ -15,6 +16,9 @@ import (
 // as a string or as a list of strings.
 type TransformValueWrapper struct {
 	Values []string
+	// A list of source meta information for each transform value
+	// that if populated, will be in the same order as the transform values.
+	SourceMeta []*source.Meta
 }
 
 func (t *TransformValueWrapper) MarshalYAML() (interface{}, error) {
@@ -25,20 +29,29 @@ func (t *TransformValueWrapper) MarshalYAML() (interface{}, error) {
 func (t *TransformValueWrapper) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind == yaml.ScalarNode {
 		t.Values = []string{value.Value}
+		t.SourceMeta = []*source.Meta{
+			{
+				Line:   value.Line,
+				Column: value.Column,
+			},
+		}
 		return nil
 	}
 
 	if value.Kind == yaml.SequenceNode {
-		values, err := collectStringNodeValues(value.Content)
+		values, positions, err := collectStringNodeValues(value.Content)
 		if err != nil {
 			return err
 		}
 		t.Values = values
+		t.SourceMeta = positions
 		return nil
 	}
 
 	return errInvalidTransformType(
 		fmt.Errorf("unexpected yaml node for transform: %s", yamlKindMappings[value.Kind]),
+		&value.Line,
+		&value.Column,
 	)
 }
 
@@ -65,36 +78,52 @@ func (t *TransformValueWrapper) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return errInvalidTransformType(
 			fmt.Errorf("unexpected value provided for transform in json: %s", err.Error()),
+			nil,
+			nil,
 		)
 	}
 	t.Values = []string{transformValue}
 	return nil
 }
 
-func collectStringNodeValues(nodes []*yaml.Node) ([]string, error) {
+func collectStringNodeValues(nodes []*yaml.Node) ([]string, []*source.Meta, error) {
 	values := []string{}
+	sourceMeta := []*source.Meta{}
 	// For at least 99% of the cases it will be trivial to go through
 	// the entire list of transform value nodes and identify any invalid
 	// values. This is much better for users of the spec too!
 	nonScalarNodeKinds := []yaml.Kind{}
-	for _, node := range nodes {
+	firstNonScalarIndex := -1
+	for i, node := range nodes {
 		if node.Kind != yaml.ScalarNode {
 			nonScalarNodeKinds = append(nonScalarNodeKinds, node.Kind)
+			if firstNonScalarIndex == -1 {
+				firstNonScalarIndex = i
+			}
 		} else {
 			values = append(values, node.Value)
+			sourceMeta = append(sourceMeta, &source.Meta{
+				Line:   node.Line,
+				Column: node.Column,
+			})
 		}
 	}
 
 	if len(nonScalarNodeKinds) > 0 {
-		return nil, errInvalidTransformType(
+		return nil, nil, errInvalidTransformType(
 			fmt.Errorf(
 				"unexpected yaml nodes in transform list, only scalars are supported: %s",
 				formatYamlNodeKindsForError(nonScalarNodeKinds),
 			),
+			// Take the position of the first non-scalar node,
+			// the error message will be detailed enough for the user to figure out
+			// which transforms in the list are invalid.
+			&nodes[firstNonScalarIndex].Line,
+			&nodes[firstNonScalarIndex].Column,
 		)
 	}
 
-	return values, nil
+	return values, sourceMeta, nil
 }
 
 func formatYamlNodeKindsForError(nodeKinds []yaml.Kind) string {

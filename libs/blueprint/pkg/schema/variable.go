@@ -2,6 +2,7 @@ package schema
 
 import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 )
 
 // Variable provides the definition of a variable
@@ -12,6 +13,7 @@ type Variable struct {
 	Secret        bool                  `yaml:"secret" json:"secret"`
 	Default       *bpcore.ScalarValue   `yaml:"default,omitempty" json:"default,omitempty"`
 	AllowedValues []*bpcore.ScalarValue `yaml:"allowedValues,omitempty" json:"allowedValues,omitempty"`
+	SourceMeta    *source.Meta          `yaml:"sourceMeta,omitempty" json:"sourceMeta,omitempty"`
 }
 
 // VariableType represents a type of variable

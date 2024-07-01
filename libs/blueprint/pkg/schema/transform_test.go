@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
 )
@@ -50,6 +51,9 @@ func (s *TransformTestSuite) Test_parses_valid_string_transform_yaml_input(c *C)
 	}
 
 	c.Assert(targetTransform.Values, DeepEquals, []string{"celerity-2022-01-22"})
+	c.Assert(targetTransform.SourceMeta, HasLen, 1)
+	c.Assert(targetTransform.SourceMeta[0].Line, Equals, 1)
+	c.Assert(targetTransform.SourceMeta[0].Column, Equals, 1)
 }
 
 func (s *TransformTestSuite) Test_parses_valid_string_list_transform_yaml_input(c *C) {
@@ -65,6 +69,11 @@ func (s *TransformTestSuite) Test_parses_valid_string_list_transform_yaml_input(
 		"custom-transform-2",
 		"custom-transform-3",
 	})
+	c.Assert(targetTransform.SourceMeta, DeepEquals, []*source.Meta{
+		{Line: 1, Column: 3},
+		{Line: 2, Column: 3},
+		{Line: 3, Column: 3},
+	})
 }
 
 func (s *TransformTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_transform_type(c *C) {
@@ -78,6 +87,8 @@ func (s *TransformTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_transfo
 	schemaError, isSchemaError := err.(*Error)
 	c.Assert(isSchemaError, Equals, true)
 	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidTransformType)
+	c.Assert(*schemaError.SourceLine, Equals, 1)
+	c.Assert(*schemaError.SourceColumn, Equals, 1)
 }
 
 func (s *TransformTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_transform_list_value_type(c *C) {
@@ -91,6 +102,8 @@ func (s *TransformTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_transfo
 	schemaError, isSchemaError := err.(*Error)
 	c.Assert(isSchemaError, Equals, true)
 	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidTransformType)
+	c.Assert(*schemaError.SourceLine, Equals, 1)
+	c.Assert(*schemaError.SourceColumn, Equals, 3)
 }
 
 func (s *TransformTestSuite) Test_serialise_valid_transform_yaml_input(c *C) {
