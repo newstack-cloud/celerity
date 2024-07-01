@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
@@ -54,6 +55,10 @@ func (s *ExportTestSuite) Test_parses_valid_string_export_yaml_input(c *C) {
 			},
 		},
 		Field: "resources.orderQueue.state.arn",
+		SourceMeta: &source.Meta{
+			Line:   1,
+			Column: 1,
+		},
 	})
 }
 
@@ -116,7 +121,7 @@ func (s *ExportTestSuite) Test_parses_valid_export_json_input(c *C) {
 
 func (s *ExportTestSuite) Test_serialise_valid_export_json_input(c *C) {
 	expected := &Export{}
-	err := yaml.Unmarshal([]byte(s.specFixtures["serialiseExpectedJSON"]), expected)
+	err := json.Unmarshal([]byte(s.specFixtures["serialiseExpectedJSON"]), expected)
 	if err != nil {
 		c.Error(fmt.Errorf("failed to parse expected fixture to compare with: %s", err.Error()))
 		c.FailNow()

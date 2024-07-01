@@ -1,7 +1,9 @@
 package schema
 
 import (
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
+	"gopkg.in/yaml.v3"
 )
 
 // Export represents a blueprint
@@ -14,6 +16,26 @@ type Export struct {
 	Type        ExportType                           `yaml:"type" json:"type"`
 	Field       string                               `yaml:"field" json:"field"`
 	Description *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
+	SourceMeta  *source.Meta                         `yaml:"-" json:"-"`
+}
+
+func (e *Export) UnmarshalYAML(value *yaml.Node) error {
+	e.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	type exportAlias Export
+	var alias exportAlias
+	if err := value.Decode(&alias); err != nil {
+		return wrapErrorWithLineInfo(err, value)
+	}
+
+	e.Type = alias.Type
+	e.Field = alias.Field
+	e.Description = alias.Description
+
+	return nil
 }
 
 // ExportType represents a type of exported field
