@@ -10,10 +10,12 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=13) "exchangeRates"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (*core.MappingNode)(<nil>)
+      Spec: (*core.MappingNode)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     Selectors: (map[string][]string) {
     },
@@ -37,10 +39,12 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=13) "exchangeRates"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (*core.MappingNode)(<nil>)
+      Spec: (*core.MappingNode)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     Selectors: (map[string][]string) {
     },
@@ -62,10 +66,12 @@
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) <nil>,
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (*core.MappingNode)(<nil>)
+      Spec: (*core.MappingNode)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     Selectors: (map[string][]string) {
     },

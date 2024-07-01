@@ -10,14 +10,17 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
-        }
+        },
+        SourceMeta: (*source.Meta)(<nil>)
       }),
-      Spec: (*core.MappingNode)(<nil>)
+      Spec: (*core.MappingNode)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     Selectors: (map[string][]string) (len=1) {
       (string) (len=19) "label::app:orderApi": ([]string) (len=2) {
@@ -43,14 +46,17 @@
             Labels: (map[string]string) (len=1) {
               (string) (len=3) "app": (string) (len=8) "orderApi"
             },
-            Custom: (*core.MappingNode)(<nil>)
+            Custom: (*core.MappingNode)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           LinkSelector: (*schema.LinkSelector)({
             ByLabel: (map[string]string) (len=1) {
               (string) (len=6) "system": (string) (len=6) "orders"
-            }
+            },
+            SourceMeta: (*source.Meta)(<nil>)
           }),
-          Spec: (*core.MappingNode)(<nil>)
+          Spec: (*core.MappingNode)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Selectors: (map[string][]string) (len=1) {
           (string) (len=20) "label::system:orders": ([]string) (len=1) {
@@ -73,14 +79,17 @@
                 Labels: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
                 },
-                Custom: (*core.MappingNode)(<nil>)
+                Custom: (*core.MappingNode)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               }),
               LinkSelector: (*schema.LinkSelector)({
                 ByLabel: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
-                }
+                },
+                SourceMeta: (*source.Meta)(<nil>)
               }),
-              Spec: (*core.MappingNode)(<nil>)
+              Spec: (*core.MappingNode)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Selectors: (map[string][]string) (len=1) {
               (string) (len=20) "label::system:orders": ([]string) (len=1) {
@@ -103,14 +112,17 @@
                     Labels: (map[string]string) (len=1) {
                       (string) (len=6) "system": (string) (len=6) "orders"
                     },
-                    Custom: (*core.MappingNode)(<nil>)
+                    Custom: (*core.MappingNode)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
                   LinkSelector: (*schema.LinkSelector)({
                     ByLabel: (map[string]string) (len=1) {
                       (string) (len=8) "workflow": (string) (len=10) "orderStats"
-                    }
+                    },
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
-                  Spec: (*core.MappingNode)(<nil>)
+                  Spec: (*core.MappingNode)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>)
                 }),
                 Selectors: (map[string][]string) (len=1) {
                   (string) (len=26) "label::workflow:orderStats": ([]string) (len=1) {
@@ -133,10 +145,12 @@
                         Labels: (map[string]string) (len=1) {
                           (string) (len=8) "workflow": (string) (len=10) "orderStats"
                         },
-                        Custom: (*core.MappingNode)(<nil>)
+                        Custom: (*core.MappingNode)(<nil>),
+                        SourceMeta: (*source.Meta)(<nil>)
                       }),
                       LinkSelector: (*schema.LinkSelector)(<nil>),
-                      Spec: (*core.MappingNode)(<nil>)
+                      Spec: (*core.MappingNode)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>)
                     }),
                     Selectors: (map[string][]string) {
                     },
@@ -194,14 +208,17 @@
             Labels: (map[string]string) (len=1) {
               (string) (len=3) "app": (string) (len=8) "orderApi"
             },
-            Custom: (*core.MappingNode)(<nil>)
+            Custom: (*core.MappingNode)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           LinkSelector: (*schema.LinkSelector)({
             ByLabel: (map[string]string) (len=1) {
               (string) (len=6) "system": (string) (len=6) "orders"
-            }
+            },
+            SourceMeta: (*source.Meta)(<nil>)
           }),
-          Spec: (*core.MappingNode)(<nil>)
+          Spec: (*core.MappingNode)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Selectors: (map[string][]string) (len=1) {
           (string) (len=20) "label::system:orders": ([]string) (len=1) {
@@ -224,14 +241,17 @@
                 Labels: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
                 },
-                Custom: (*core.MappingNode)(<nil>)
+                Custom: (*core.MappingNode)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               }),
               LinkSelector: (*schema.LinkSelector)({
                 ByLabel: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
-                }
+                },
+                SourceMeta: (*source.Meta)(<nil>)
               }),
-              Spec: (*core.MappingNode)(<nil>)
+              Spec: (*core.MappingNode)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Selectors: (map[string][]string) (len=1) {
               (string) (len=20) "label::system:orders": ([]string) (len=1) {
@@ -254,14 +274,17 @@
                     Labels: (map[string]string) (len=1) {
                       (string) (len=6) "system": (string) (len=6) "orders"
                     },
-                    Custom: (*core.MappingNode)(<nil>)
+                    Custom: (*core.MappingNode)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
                   LinkSelector: (*schema.LinkSelector)({
                     ByLabel: (map[string]string) (len=1) {
                       (string) (len=8) "workflow": (string) (len=10) "orderStats"
-                    }
+                    },
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
-                  Spec: (*core.MappingNode)(<nil>)
+                  Spec: (*core.MappingNode)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>)
                 }),
                 Selectors: (map[string][]string) (len=1) {
                   (string) (len=26) "label::workflow:orderStats": ([]string) (len=1) {
@@ -284,10 +307,12 @@
                         Labels: (map[string]string) (len=1) {
                           (string) (len=8) "workflow": (string) (len=10) "orderStats"
                         },
-                        Custom: (*core.MappingNode)(<nil>)
+                        Custom: (*core.MappingNode)(<nil>),
+                        SourceMeta: (*source.Meta)(<nil>)
                       }),
                       LinkSelector: (*schema.LinkSelector)(<nil>),
-                      Spec: (*core.MappingNode)(<nil>)
+                      Spec: (*core.MappingNode)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>)
                     }),
                     Selectors: (map[string][]string) {
                     },
@@ -351,14 +376,17 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=13) "orderWorkflow"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=13) "orderWorkflow"
-        }
+        },
+        SourceMeta: (*source.Meta)(<nil>)
       }),
-      Spec: (*core.MappingNode)(<nil>)
+      Spec: (*core.MappingNode)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     Selectors: (map[string][]string) (len=1) {
       (string) (len=24) "label::app:orderWorkflow": ([]string) (len=1) {
@@ -381,14 +409,17 @@
             Labels: (map[string]string) (len=1) {
               (string) (len=3) "app": (string) (len=13) "orderWorkflow"
             },
-            Custom: (*core.MappingNode)(<nil>)
+            Custom: (*core.MappingNode)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
           }),
           LinkSelector: (*schema.LinkSelector)({
             ByLabel: (map[string]string) (len=1) {
               (string) (len=6) "system": (string) (len=6) "orders"
-            }
+            },
+            SourceMeta: (*source.Meta)(<nil>)
           }),
-          Spec: (*core.MappingNode)(<nil>)
+          Spec: (*core.MappingNode)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>)
         }),
         Selectors: (map[string][]string) (len=1) {
           (string) (len=20) "label::system:orders": ([]string) (len=1) {
@@ -411,14 +442,17 @@
                 Labels: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
                 },
-                Custom: (*core.MappingNode)(<nil>)
+                Custom: (*core.MappingNode)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
               }),
               LinkSelector: (*schema.LinkSelector)({
                 ByLabel: (map[string]string) (len=1) {
                   (string) (len=6) "system": (string) (len=6) "orders"
-                }
+                },
+                SourceMeta: (*source.Meta)(<nil>)
               }),
-              Spec: (*core.MappingNode)(<nil>)
+              Spec: (*core.MappingNode)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
             }),
             Selectors: (map[string][]string) (len=1) {
               (string) (len=20) "label::system:orders": ([]string) (len=1) {
@@ -441,14 +475,17 @@
                     Labels: (map[string]string) (len=1) {
                       (string) (len=6) "system": (string) (len=6) "orders"
                     },
-                    Custom: (*core.MappingNode)(<nil>)
+                    Custom: (*core.MappingNode)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
                   LinkSelector: (*schema.LinkSelector)({
                     ByLabel: (map[string]string) (len=1) {
                       (string) (len=8) "workflow": (string) (len=10) "orderStats"
-                    }
+                    },
+                    SourceMeta: (*source.Meta)(<nil>)
                   }),
-                  Spec: (*core.MappingNode)(<nil>)
+                  Spec: (*core.MappingNode)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>)
                 }),
                 Selectors: (map[string][]string) (len=1) {
                   (string) (len=26) "label::workflow:orderStats": ([]string) (len=1) {
@@ -471,10 +508,12 @@
                         Labels: (map[string]string) (len=1) {
                           (string) (len=8) "workflow": (string) (len=10) "orderStats"
                         },
-                        Custom: (*core.MappingNode)(<nil>)
+                        Custom: (*core.MappingNode)(<nil>),
+                        SourceMeta: (*source.Meta)(<nil>)
                       }),
                       LinkSelector: (*schema.LinkSelector)(<nil>),
-                      Spec: (*core.MappingNode)(<nil>)
+                      Spec: (*core.MappingNode)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>)
                     }),
                     Selectors: (map[string][]string) {
                     },
@@ -536,10 +575,12 @@
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) <nil>,
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (*core.MappingNode)(<nil>)
+      Spec: (*core.MappingNode)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     Selectors: (map[string][]string) {
     },

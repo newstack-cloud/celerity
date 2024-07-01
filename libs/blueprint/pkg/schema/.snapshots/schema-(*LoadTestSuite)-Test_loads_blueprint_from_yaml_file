@@ -107,7 +107,11 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)({
+          Line: (int) 84,
+          Column: (int) 7
+        })
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
@@ -158,6 +162,10 @@
           Line: (int) 99,
           Column: (int) 7
         })
+      }),
+      SourceMeta: (*source.Meta)({
+        Line: (int) 82,
+        Column: (int) 5
       })
     }),
     (string) (len=16) "getOrdersHandler": (*schema.Resource)({
@@ -178,7 +186,11 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)({
+          Line: (int) 105,
+          Column: (int) 7
+        })
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
@@ -313,6 +325,10 @@
           Line: (int) 109,
           Column: (int) 7
         })
+      }),
+      SourceMeta: (*source.Meta)({
+        Line: (int) 103,
+        Column: (int) 5
       })
     }),
     (string) (len=8) "orderApi": (*schema.Resource)({
@@ -490,12 +506,20 @@
             Line: (int) 43,
             Column: (int) 9
           })
+        }),
+        SourceMeta: (*source.Meta)({
+          Line: (int) 39,
+          Column: (int) 7
         })
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
-        }
+        },
+        SourceMeta: (*source.Meta)({
+          Line: (int) 52,
+          Column: (int) 7
+        })
       }),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
@@ -600,6 +624,10 @@
           Line: (int) 64,
           Column: (int) 7
         })
+      }),
+      SourceMeta: (*source.Meta)({
+        Line: (int) 37,
+        Column: (int) 5
       })
     }),
     (string) (len=11) "orderPubSub": (*schema.Resource)({
@@ -620,12 +648,20 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)({
+          Line: (int) 163,
+          Column: (int) 7
+        })
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-        }
+        },
+        SourceMeta: (*source.Meta)({
+          Line: (int) 167,
+          Column: (int) 7
+        })
       }),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
@@ -670,6 +706,10 @@
           Line: (int) 170,
           Column: (int) 7
         })
+      }),
+      SourceMeta: (*source.Meta)({
+        Line: (int) 161,
+        Column: (int) 5
       })
     }),
     (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
@@ -691,7 +731,11 @@
           (string) (len=3) "app": (string) (len=8) "orderApi",
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)({
+          Line: (int) 147,
+          Column: (int) 7
+        })
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
@@ -772,6 +816,10 @@
           Line: (int) 152,
           Column: (int) 7
         })
+      }),
+      SourceMeta: (*source.Meta)({
+        Line: (int) 145,
+        Column: (int) 5
       })
     }),
     (string) (len=19) "updateOrderFunction": (*schema.Resource)({
@@ -793,7 +841,11 @@
           (string) (len=10) "pubsubType": (string) (len=8) "consumer",
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)({
+          Line: (int) 120,
+          Column: (int) 7
+        })
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
@@ -904,6 +956,10 @@
           Line: (int) 129,
           Column: (int) 7
         })
+      }),
+      SourceMeta: (*source.Meta)({
+        Line: (int) 118,
+        Column: (int) 5
       })
     })
   },

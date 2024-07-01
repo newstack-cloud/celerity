@@ -194,7 +194,8 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
@@ -230,7 +231,8 @@
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
-      })
+      }),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     (string) (len=16) "getOrdersHandler": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
@@ -250,7 +252,8 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
@@ -352,7 +355,8 @@
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
-      })
+      }),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     (string) (len=8) "orderApi": (*schema.Resource)({
       Type: (string) (len=12) "celerity/api",
@@ -372,12 +376,14 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=3) "app": (string) (len=8) "orderApi"
-        }
+        },
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
@@ -464,7 +470,8 @@
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
-      })
+      }),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     (string) (len=11) "orderPubSub": (*schema.Resource)({
       Type: (string) (len=15) "celerity/pubsub",
@@ -484,12 +491,14 @@
         Labels: (map[string]string) (len=1) {
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)({
         ByLabel: (map[string]string) (len=1) {
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-        }
+        },
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       Spec: (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
@@ -528,7 +537,8 @@
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
-      })
+      }),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
       Type: (string) (len=21) "celerity/layerVersion",
@@ -549,7 +559,8 @@
           (string) (len=3) "app": (string) (len=8) "orderApi",
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
@@ -606,7 +617,8 @@
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
-      })
+      }),
+      SourceMeta: (*source.Meta)(<nil>)
     }),
     (string) (len=19) "updateOrderFunction": (*schema.Resource)({
       Type: (string) (len=16) "celerity/handler",
@@ -627,7 +639,8 @@
           (string) (len=10) "pubsubType": (string) (len=8) "consumer",
           (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
         },
-        Custom: (*core.MappingNode)(<nil>)
+        Custom: (*core.MappingNode)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)({
@@ -705,7 +718,8 @@
         Items: ([]*core.MappingNode) <nil>,
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
-      })
+      }),
+      SourceMeta: (*source.Meta)(<nil>)
     })
   },
   DataSources: (map[string]*schema.DataSource) (len=1) {

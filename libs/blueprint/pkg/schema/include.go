@@ -26,8 +26,8 @@ type Include struct {
 	SourceMeta  *source.Meta                         `yaml:"-" json:"-"`
 }
 
-func (t *Include) UnmarshalYAML(value *yaml.Node) error {
-	t.SourceMeta = &source.Meta{
+func (i *Include) UnmarshalYAML(value *yaml.Node) error {
+	i.SourceMeta = &source.Meta{
 		Line:   value.Line,
 		Column: value.Column,
 	}
@@ -38,10 +38,10 @@ func (t *Include) UnmarshalYAML(value *yaml.Node) error {
 		return wrapErrorWithLineInfo(err, value)
 	}
 
-	t.Path = alias.Path
-	t.Variables = alias.Variables
-	t.Metadata = alias.Metadata
-	t.Description = alias.Description
+	i.Path = alias.Path
+	i.Variables = alias.Variables
+	i.Metadata = alias.Metadata
+	i.Description = alias.Description
 
 	return nil
 }
