@@ -2,22 +2,10 @@ package core
 
 import (
 	"encoding/json"
-	"errors"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	// ErrInvalidMappingNode is an error that is returned
-	// when a blueprint value that is expected to be a mapping node
-	// is not a valid scalar, mapping or sequence node when unmarshalling.
-	ErrInvalidMappingNode = errors.New("a blueprint mapping node must be a valid scalar, mapping or sequence")
-	// ErrMissingMappingNodeValue is an error that is returned
-	// when a blueprint mapping node does not have a valid value
-	//set when marshalling.
-	ErrMissingMappingNodeValue = errors.New("a blueprint mapping node must have a valid value set")
 )
 
 // MappingNode provides a tree structure for user-defined
@@ -70,7 +58,7 @@ func (m *MappingNode) MarshalYAML() (interface{}, error) {
 		return m.Items, nil
 	}
 
-	return nil, ErrMissingMappingNodeValue
+	return nil, errMissingMappingNode(nil)
 }
 
 // UnmarshalYAML fulfils the yaml.Unmarshaler interface
@@ -105,7 +93,7 @@ func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
 		return nil
 	}
 
-	return ErrInvalidMappingNode
+	return errInvalidMappingNode(node)
 }
 
 func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
@@ -141,7 +129,7 @@ func (m *MappingNode) MarshalJSON() ([]byte, error) {
 		return json.Marshal(m.Items)
 	}
 
-	return nil, ErrMissingMappingNodeValue
+	return nil, errMissingMappingNode(nil)
 }
 
 // UnmarshalJSON fulfils the json.Unmarshaler interface
@@ -165,11 +153,17 @@ func (m *MappingNode) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	return ErrInvalidMappingNode
+	return errInvalidMappingNode(nil)
 }
 
 func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {
-	strSubs, err := substitutions.ParseSubstitutionValues("", string(data))
+	dataStr := string(data)
+	// Remove the quotes from the string
+	normalised := dataStr
+	if len(dataStr) >= 2 && dataStr[0] == '"' && dataStr[len(dataStr)-1] == '"' {
+		normalised = dataStr[1 : len(dataStr)-1]
+	}
+	strSubs, err := substitutions.ParseSubstitutionValues("", normalised)
 	// Parse literal value if there are no substitutions.
 	if err != nil || len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
 		m.Literal = &ScalarValue{}

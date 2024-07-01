@@ -2,17 +2,10 @@ package core
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	// ErrValueMustBeScalar is an error that is returned
-	// when a blueprint scalar is not a scalar value.
-	ErrValueMustBeScalar = errors.New("a blueprint scalar value must be a scalar (string, int, bool or float)")
 )
 
 // ScalarValue represents a scalar value in
@@ -58,7 +51,12 @@ func (v *ScalarValue) MarshalYAML() (interface{}, error) {
 // supported scalar types.
 func (v *ScalarValue) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind != yaml.ScalarNode {
-		return ErrValueMustBeScalar
+		return errMustBeScalar(value)
+	}
+
+	v.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
 	}
 
 	// Decode will read floating point numbers as integers
@@ -92,7 +90,7 @@ func (v *ScalarValue) UnmarshalYAML(value *yaml.Node) error {
 		return nil
 	}
 
-	return ErrValueMustBeScalar
+	return errMustBeScalar(value)
 }
 
 // MarshalJSON fulfils the json.Marshaler interface
@@ -150,7 +148,7 @@ func (v *ScalarValue) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	return ErrValueMustBeScalar
+	return errMustBeScalar(nil)
 }
 
 func (l *ScalarValue) Equal(otherScalar *ScalarValue) bool {

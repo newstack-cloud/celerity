@@ -163,12 +163,7 @@
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
                 StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
-                  Values: ([]*substitutions.StringOrSubstitution) (len=3) {
-                    (*substitutions.StringOrSubstitution)({
-                      StringValue: (*string)((len=1) "\""),
-                      SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                      SourceMeta: (*source.Meta)(<nil>)
-                    }),
+                  Values: ([]*substitutions.StringOrSubstitution) (len=1) {
                     (*substitutions.StringOrSubstitution)({
                       StringValue: (*string)(<nil>),
                       SubstitutionValue: (*substitutions.Substitution)({
@@ -188,11 +183,6 @@
                         BoolValue: (*bool)(<nil>),
                         SourceMeta: (*source.Meta)(<nil>)
                       }),
-                      SourceMeta: (*source.Meta)(<nil>)
-                    }),
-                    (*substitutions.StringOrSubstitution)({
-                      StringValue: (*string)((len=1) "\""),
-                      SubstitutionValue: (*substitutions.Substitution)(<nil>),
                       SourceMeta: (*source.Meta)(<nil>)
                     })
                   },
@@ -302,12 +292,7 @@
                     Fields: (map[string]*core.MappingNode) <nil>,
                     Items: ([]*core.MappingNode) <nil>,
                     StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
-                      Values: ([]*substitutions.StringOrSubstitution) (len=3) {
-                        (*substitutions.StringOrSubstitution)({
-                          StringValue: (*string)((len=1) "\""),
-                          SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                          SourceMeta: (*source.Meta)(<nil>)
-                        }),
+                      Values: ([]*substitutions.StringOrSubstitution) (len=1) {
                         (*substitutions.StringOrSubstitution)({
                           StringValue: (*string)(<nil>),
                           SubstitutionValue: (*substitutions.Substitution)({
@@ -325,11 +310,6 @@
                             BoolValue: (*bool)(<nil>),
                             SourceMeta: (*source.Meta)(<nil>)
                           }),
-                          SourceMeta: (*source.Meta)(<nil>)
-                        }),
-                        (*substitutions.StringOrSubstitution)({
-                          StringValue: (*string)((len=1) "\""),
-                          SubstitutionValue: (*substitutions.Substitution)(<nil>),
                           SourceMeta: (*source.Meta)(<nil>)
                         })
                       },
@@ -412,12 +392,7 @@
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
             StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=3) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=1) "\""),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
-                }),
+              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
                 (*substitutions.StringOrSubstitution)({
                   StringValue: (*string)(<nil>),
                   SubstitutionValue: (*substitutions.Substitution)({
@@ -435,11 +410,6 @@
                     BoolValue: (*bool)(<nil>),
                     SourceMeta: (*source.Meta)(<nil>)
                   }),
-                  SourceMeta: (*source.Meta)(<nil>)
-                }),
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=1) "\""),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
                   SourceMeta: (*source.Meta)(<nil>)
                 })
               },

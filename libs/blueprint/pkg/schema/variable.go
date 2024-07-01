@@ -3,6 +3,7 @@ package schema
 import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
+	"gopkg.in/yaml.v3"
 )
 
 // Variable provides the definition of a variable
@@ -13,7 +14,28 @@ type Variable struct {
 	Secret        bool                  `yaml:"secret" json:"secret"`
 	Default       *bpcore.ScalarValue   `yaml:"default,omitempty" json:"default,omitempty"`
 	AllowedValues []*bpcore.ScalarValue `yaml:"allowedValues,omitempty" json:"allowedValues,omitempty"`
-	SourceMeta    *source.Meta          `yaml:"sourceMeta,omitempty" json:"sourceMeta,omitempty"`
+	SourceMeta    *source.Meta          `yaml:"-" json:"-"`
+}
+
+func (t *Variable) UnmarshalYAML(value *yaml.Node) error {
+	t.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	type variableAlias Variable
+	var alias variableAlias
+	if err := value.Decode(&alias); err != nil {
+		return wrapErrorWithLineInfo(err, value)
+	}
+
+	t.Type = alias.Type
+	t.Description = alias.Description
+	t.Secret = alias.Secret
+	t.Default = alias.Default
+	t.AllowedValues = alias.AllowedValues
+
+	return nil
 }
 
 // VariableType represents a type of variable

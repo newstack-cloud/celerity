@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
+	"gopkg.in/yaml.v3"
 )
 
 // Error represents an error due to an issue
@@ -49,6 +51,10 @@ const (
 	// when the reason for a blueprint schema load error is due to
 	// an invalid transform field value being provided.
 	ErrorSchemaReasonCodeInvalidTransformType ErrorSchemaReasonCode = "invalid_transform_type"
+	// ErrorSchemaReasonCodeGeneral is provided when the reason
+	// for a blueprint schema load error is not specific,
+	// primarily used for errors wrapped with parent scope line information.
+	ErrorSchemaReasonCodeGeneral ErrorSchemaReasonCode = "general"
 )
 
 func errInvalidDataSourceFieldType(
@@ -92,5 +98,22 @@ func errInvalidTransformType(underlyingError error, line *int, column *int) erro
 		),
 		SourceLine:   line,
 		SourceColumn: column,
+	}
+}
+
+func wrapErrorWithLineInfo(underlyingError error, parent *yaml.Node) error {
+	if _, isSchemaError := underlyingError.(*Error); isSchemaError {
+		return underlyingError
+	}
+
+	if _, isScalarError := underlyingError.(*bpcore.Error); isScalarError {
+		return underlyingError
+	}
+
+	return &Error{
+		ReasonCode:   ErrorSchemaReasonCodeGeneral,
+		Err:          underlyingError,
+		SourceLine:   &parent.Line,
+		SourceColumn: &parent.Column,
 	}
 }

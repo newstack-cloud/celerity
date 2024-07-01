@@ -52,6 +52,9 @@ func (s *VariableTestSuite) Test_parses_valid_variable_yaml_input(c *C) {
 	c.Assert(targetVar.Description, Equals, "This is an example boolean variable")
 	c.Assert(targetVar.Secret, Equals, false)
 	c.Assert(targetVar.Type, Equals, VariableType("boolean"))
+	c.Assert(targetVar.SourceMeta, NotNil)
+	c.Assert(targetVar.SourceMeta.Line, Equals, 1)
+	c.Assert(targetVar.SourceMeta.Column, Equals, 1)
 }
 
 func (s *VariableTestSuite) Test_serialise_valid_variable_yaml_input(c *C) {

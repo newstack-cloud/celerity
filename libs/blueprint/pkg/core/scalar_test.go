@@ -55,6 +55,8 @@ func (s *ScalarTestSuite) Test_parse_string_value_yaml(c *C) {
 	c.Assert(targetScalar.BoolValue, IsNil)
 	c.Assert(targetScalar.IntValue, IsNil)
 	c.Assert(targetScalar.FloatValue, IsNil)
+	c.Assert(targetScalar.SourceMeta.Line, Equals, 1)
+	c.Assert(targetScalar.SourceMeta.Column, Equals, 1)
 }
 
 func (s *ScalarTestSuite) Test_parse_int_value_yaml(c *C) {
@@ -123,7 +125,11 @@ func (s *ScalarTestSuite) Test_parse_fails_for_invalid_value_yaml(c *C) {
 		c.FailNow()
 	}
 
-	c.Assert(err, Equals, ErrValueMustBeScalar)
+	coreErr, isCoreError := err.(*Error)
+	c.Assert(isCoreError, Equals, true)
+	c.Assert(coreErr.ReasonCode, Equals, ErrorCoreReasonCodeMustBeScalar)
+	c.Assert(*coreErr.SourceLine, Equals, 1)
+	c.Assert(*coreErr.SourceColumn, Equals, 1)
 }
 
 func (s *ScalarTestSuite) Test_serialise_string_value_yaml(c *C) {
@@ -272,7 +278,7 @@ func (s *ScalarTestSuite) Test_parse_fails_for_invalid_value_json(c *C) {
 		c.FailNow()
 	}
 
-	c.Assert(err, Equals, ErrValueMustBeScalar)
+	c.Assert(err.Error(), Equals, errMustBeScalar(nil).Error())
 }
 
 func (s *ScalarTestSuite) Test_serialise_string_value_json(c *C) {

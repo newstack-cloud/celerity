@@ -18,7 +18,10 @@
       Secret: (bool) false,
       Default: (*core.ScalarValue)(<nil>),
       AllowedValues: ([]*core.ScalarValue) <nil>,
-      SourceMeta: (*source.Meta)(<nil>)
+      SourceMeta: (*source.Meta)({
+        Line: (int) 6,
+        Column: (int) 5
+      })
     }),
     (string) (len=15) "ordersTopicName": (*schema.Variable)({
       Type: (schema.VariableType) (len=6) "string",
@@ -26,7 +29,10 @@
       Secret: (bool) false,
       Default: (*core.ScalarValue)(<nil>),
       AllowedValues: ([]*core.ScalarValue) <nil>,
-      SourceMeta: (*source.Meta)(<nil>)
+      SourceMeta: (*source.Meta)({
+        Line: (int) 9,
+        Column: (int) 5
+      })
     })
   },
   Include: (map[string]*schema.Include) (len=1) {
@@ -88,7 +94,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)((len=23) "order-system-blueprints"),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 19,
+                Column: (int) 15
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -101,7 +110,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)((len=9) "eu-west-1"),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 20,
+                Column: (int) 15
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -114,7 +126,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)((len=6) "aws/s3"),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 18,
+                Column: (int) 19
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -210,7 +225,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)((len=19) "handlers.Authoriser"),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 102,
+                Column: (int) 16
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -223,7 +241,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 103,
+                Column: (int) 16
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -301,7 +322,10 @@
                   BoolValue: (*bool)(<nil>),
                   FloatValue: (*float64)(<nil>),
                   StringValue: (*string)((len=3) "get"),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 115,
+                    Column: (int) 17
+                  })
                 }),
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
@@ -314,7 +338,10 @@
                   BoolValue: (*bool)(<nil>),
                   FloatValue: (*float64)(<nil>),
                   StringValue: (*string)((len=7) "/orders"),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 116,
+                    Column: (int) 15
+                  })
                 }),
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
@@ -332,7 +359,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)((len=18) "handlers.GetOrders"),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 112,
+                Column: (int) 16
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -345,7 +375,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 113,
+                Column: (int) 16
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -388,7 +421,10 @@
                     BoolValue: (*bool)(<nil>),
                     FloatValue: (*float64)(<nil>),
                     StringValue: (*string)(<nil>),
-                    SourceMeta: (*source.Meta)(<nil>)
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 49,
+                      Column: (int) 19
+                    })
                   }),
                   Fields: (map[string]*core.MappingNode) <nil>,
                   Items: ([]*core.MappingNode) <nil>,
@@ -408,7 +444,10 @@
                             BoolValue: (*bool)(<nil>),
                             FloatValue: (*float64)(<nil>),
                             StringValue: (*string)((len=10) "Orders API"),
-                            SourceMeta: (*source.Meta)(<nil>)
+                            SourceMeta: (*source.Meta)({
+                              Line: (int) 53,
+                              Column: (int) 27
+                            })
                           }),
                           Fields: (map[string]*core.MappingNode) <nil>,
                           Items: ([]*core.MappingNode) <nil>,
@@ -421,7 +460,10 @@
                             BoolValue: (*bool)(<nil>),
                             FloatValue: (*float64)(<nil>),
                             StringValue: (*string)((len=6) "70 100"),
-                            SourceMeta: (*source.Meta)(<nil>)
+                            SourceMeta: (*source.Meta)({
+                              Line: (int) 52,
+                              Column: (int) 26
+                            })
                           }),
                           Fields: (map[string]*core.MappingNode) <nil>,
                           Items: ([]*core.MappingNode) <nil>,
@@ -434,7 +476,10 @@
                             BoolValue: (*bool)(<nil>),
                             FloatValue: (*float64)(<nil>),
                             StringValue: (*string)((len=16) "getOrderEndpoint"),
-                            SourceMeta: (*source.Meta)(<nil>)
+                            SourceMeta: (*source.Meta)({
+                              Line: (int) 51,
+                              Column: (int) 23
+                            })
                           }),
                           Fields: (map[string]*core.MappingNode) <nil>,
                           Items: ([]*core.MappingNode) <nil>,
@@ -456,7 +501,10 @@
                     BoolValue: (*bool)(<nil>),
                     FloatValue: (*float64)(<nil>),
                     StringValue: (*string)((len=6) "20 100"),
-                    SourceMeta: (*source.Meta)(<nil>)
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 47,
+                      Column: (int) 18
+                    })
                   }),
                   Fields: (map[string]*core.MappingNode) <nil>,
                   Items: ([]*core.MappingNode) <nil>,
@@ -469,7 +517,10 @@
                     BoolValue: (*bool)(<nil>),
                     FloatValue: (*float64)(<nil>),
                     StringValue: (*string)(<nil>),
-                    SourceMeta: (*source.Meta)(<nil>)
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 48,
+                      Column: (int) 18
+                    })
                   }),
                   Fields: (map[string]*core.MappingNode) <nil>,
                   Items: ([]*core.MappingNode) <nil>,
@@ -553,7 +604,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)((len=5) "go1.x"),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 74,
+                Column: (int) 16
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -566,7 +620,10 @@
               BoolValue: (*bool)(true),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 77,
+                Column: (int) 23
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -678,7 +735,10 @@
                   BoolValue: (*bool)(<nil>),
                   FloatValue: (*float64)(<nil>),
                   StringValue: (*string)((len=5) "go1.x"),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 155,
+                    Column: (int) 28
+                  })
                 }),
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
@@ -695,7 +755,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)((len=27) "build/shared-packages-layer"),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 158,
+                Column: (int) 16
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -708,7 +771,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)((len=19) "sharedPackagesLayer"),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 159,
+                Column: (int) 18
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -758,7 +824,10 @@
                       BoolValue: (*bool)(<nil>),
                       FloatValue: (*float64)(<nil>),
                       StringValue: (*string)(<nil>),
-                      SourceMeta: (*source.Meta)(<nil>)
+                      SourceMeta: (*source.Meta)({
+                        Line: (int) 139,
+                        Column: (int) 22
+                      })
                     }),
                     Fields: (map[string]*core.MappingNode) <nil>,
                     Items: ([]*core.MappingNode) <nil>,
@@ -771,7 +840,10 @@
                       BoolValue: (*bool)(<nil>),
                       FloatValue: (*float64)(<nil>),
                       StringValue: (*string)((len=6) "pubsub"),
-                      SourceMeta: (*source.Meta)(<nil>)
+                      SourceMeta: (*source.Meta)({
+                        Line: (int) 136,
+                        Column: (int) 17
+                      })
                     }),
                     Fields: (map[string]*core.MappingNode) <nil>,
                     Items: ([]*core.MappingNode) <nil>,
@@ -794,7 +866,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)((len=20) "handlers.UpdateOrder"),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 132,
+                Column: (int) 16
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,
@@ -807,7 +882,10 @@
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
               StringValue: (*string)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 133,
+                Column: (int) 16
+              })
             }),
             Fields: (map[string]*core.MappingNode) <nil>,
             Items: ([]*core.MappingNode) <nil>,

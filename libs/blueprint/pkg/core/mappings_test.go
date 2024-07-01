@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
@@ -31,11 +32,13 @@ func (s *MappingNodeTestSuite) Test_parse_string_val_yaml(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(targetMappingNode.Literal.StringValue, NotNil)
 	c.Assert(*targetMappingNode.Literal.StringValue, Equals, testStringValue)
+	c.Assert(targetMappingNode.Literal.SourceMeta.Line, Equals, 1)
+	c.Assert(targetMappingNode.Literal.SourceMeta.Column, Equals, 1)
 }
 
 func (s *MappingNodeTestSuite) Test_parse_string_val_json(c *C) {
 	targetMappingNode := &MappingNode{}
-	err := yaml.Unmarshal(s.specParseFixtures["stringValJSON"], targetMappingNode)
+	err := json.Unmarshal(s.specParseFixtures["stringValJSON"], targetMappingNode)
 	c.Assert(err, IsNil)
 	c.Assert(targetMappingNode.Literal.StringValue, NotNil)
 	c.Assert(*targetMappingNode.Literal.StringValue, Equals, testStringValue)
@@ -63,7 +66,7 @@ func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml(c *C) {
 
 func (s *MappingNodeTestSuite) Test_parse_string_with_subs_json(c *C) {
 	targetMappingNode := &MappingNode{}
-	err := yaml.Unmarshal(s.specParseFixtures["stringWithSubsJSON"], targetMappingNode)
+	err := json.Unmarshal(s.specParseFixtures["stringWithSubsJSON"], targetMappingNode)
 	c.Assert(err, IsNil)
 	c.Assert(targetMappingNode, DeepEquals, &MappingNode{
 		StringWithSubstitutions: &substitutions.StringOrSubstitutions{
@@ -93,17 +96,47 @@ func (s *MappingNodeTestSuite) Test_parse_fields_val_yaml(c *C) {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["fieldsValYAML"], targetMappingNode)
 	c.Assert(err, IsNil)
-	assertFieldsNode(c, targetMappingNode)
+	assertFieldsNodeYAML(c, targetMappingNode)
 }
 
 func (s *MappingNodeTestSuite) Test_parse_fields_val_json(c *C) {
 	targetMappingNode := &MappingNode{}
-	err := yaml.Unmarshal(s.specParseFixtures["fieldsValJSON"], targetMappingNode)
+	err := json.Unmarshal(s.specParseFixtures["fieldsValJSON"], targetMappingNode)
 	c.Assert(err, IsNil)
-	assertFieldsNode(c, targetMappingNode)
+	assertFieldsNodeJSON(c, targetMappingNode)
 }
 
-func assertFieldsNode(c *C, actual *MappingNode) {
+func assertFieldsNodeYAML(c *C, actual *MappingNode) {
+	expectedIntVal := 45172131
+	expectedStrVal := "value1"
+	expectedStrSubPrefix := "value with sub "
+	c.Assert(actual, DeepEquals, &MappingNode{
+		Fields: map[string]*MappingNode{
+			"key1": {
+				Literal: &ScalarValue{StringValue: &expectedStrVal, SourceMeta: &source.Meta{Line: 2, Column: 15}},
+			},
+			"key2": {
+				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+					Values: []*substitutions.StringOrSubstitution{
+						{StringValue: &expectedStrSubPrefix},
+						{
+							SubstitutionValue: &substitutions.Substitution{
+								Variable: &substitutions.SubstitutionVariable{
+									VariableName: "environment",
+								},
+							},
+						},
+					},
+				},
+			},
+			"key3": {
+				Literal: &ScalarValue{IntValue: &expectedIntVal, SourceMeta: &source.Meta{Line: 4, Column: 15}},
+			},
+		},
+	})
+}
+
+func assertFieldsNodeJSON(c *C, actual *MappingNode) {
 	expectedIntVal := 45172131
 	expectedStrVal := "value1"
 	expectedStrSubPrefix := "value with sub "
@@ -116,7 +149,6 @@ func assertFieldsNode(c *C, actual *MappingNode) {
 				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 					Values: []*substitutions.StringOrSubstitution{
 						{StringValue: &expectedStrSubPrefix},
-
 						{
 							SubstitutionValue: &substitutions.Substitution{
 								Variable: &substitutions.SubstitutionVariable{
@@ -138,24 +170,27 @@ func (s *MappingNodeTestSuite) Test_parse_items_val_yaml(c *C) {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["itemsValYAML"], targetMappingNode)
 	c.Assert(err, IsNil)
-	assertItemsNode(c, targetMappingNode)
+	assertItemsNodeYAML(c, targetMappingNode)
 }
 
 func (s *MappingNodeTestSuite) Test_parse_items_val_json(c *C) {
 	targetMappingNode := &MappingNode{}
-	err := yaml.Unmarshal(s.specParseFixtures["itemsValJSON"], targetMappingNode)
+	err := json.Unmarshal(s.specParseFixtures["itemsValJSON"], targetMappingNode)
 	c.Assert(err, IsNil)
-	assertItemsNode(c, targetMappingNode)
+	assertItemsNodeJSON(c, targetMappingNode)
 }
 
-func assertItemsNode(c *C, actual *MappingNode) {
+func assertItemsNodeYAML(c *C, actual *MappingNode) {
 	expectedIntVal := 45172131
 	expectedStrVal := "value1"
 	expectedStrSubPrefix := "value with sub "
 	c.Assert(actual, DeepEquals, &MappingNode{
 		Items: []*MappingNode{
 			{
-				Literal: &ScalarValue{StringValue: &expectedStrVal},
+				Literal: &ScalarValue{
+					StringValue: &expectedStrVal,
+					SourceMeta:  &source.Meta{Line: 2, Column: 11},
+				},
 			},
 			{
 				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
@@ -172,7 +207,44 @@ func assertItemsNode(c *C, actual *MappingNode) {
 				},
 			},
 			{
-				Literal: &ScalarValue{IntValue: &expectedIntVal},
+				Literal: &ScalarValue{
+					IntValue:   &expectedIntVal,
+					SourceMeta: &source.Meta{Line: 4, Column: 11},
+				},
+			},
+		},
+	})
+}
+
+func assertItemsNodeJSON(c *C, actual *MappingNode) {
+	expectedIntVal := 45172131
+	expectedStrVal := "value1"
+	expectedStrSubPrefix := "value with sub "
+	c.Assert(actual, DeepEquals, &MappingNode{
+		Items: []*MappingNode{
+			{
+				Literal: &ScalarValue{
+					StringValue: &expectedStrVal,
+				},
+			},
+			{
+				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+					Values: []*substitutions.StringOrSubstitution{
+						{StringValue: &expectedStrSubPrefix},
+						{
+							SubstitutionValue: &substitutions.Substitution{
+								Variable: &substitutions.SubstitutionVariable{
+									VariableName: "environment",
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Literal: &ScalarValue{
+					IntValue: &expectedIntVal,
+				},
 			},
 		},
 	})
@@ -182,17 +254,17 @@ func (s *MappingNodeTestSuite) Test_parse_nested_val_yaml(c *C) {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["nestedValYAML"], targetMappingNode)
 	c.Assert(err, IsNil)
-	assertNestedNode(c, targetMappingNode)
+	assertNestedNodeYAML(c, targetMappingNode)
 }
 
 func (s *MappingNodeTestSuite) Test_parse_nested_val_json(c *C) {
 	targetMappingNode := &MappingNode{}
-	err := yaml.Unmarshal(s.specParseFixtures["nestedValJSON"], targetMappingNode)
+	err := json.Unmarshal(s.specParseFixtures["nestedValJSON"], targetMappingNode)
 	c.Assert(err, IsNil)
-	assertNestedNode(c, targetMappingNode)
+	assertNestedNodeJSON(c, targetMappingNode)
 }
 
-func assertNestedNode(c *C, actual *MappingNode) {
+func assertNestedNodeJSON(c *C, actual *MappingNode) {
 	expectedIntVal := 931721304
 	expectedStrVal1 := "value10"
 	expectedStrVal2 := "value11"
@@ -233,6 +305,64 @@ func assertNestedNode(c *C, actual *MappingNode) {
 			},
 			"key5": {
 				Literal: &ScalarValue{IntValue: &expectedIntVal},
+			},
+		},
+	})
+}
+
+func assertNestedNodeYAML(c *C, actual *MappingNode) {
+	expectedIntVal := 931721304
+	expectedStrVal1 := "value10"
+	expectedStrVal2 := "value11"
+	expectedStrVal3 := "value12"
+	expectedStrSubPrefix := "value13 with sub "
+	c.Assert(actual, DeepEquals, &MappingNode{
+		Fields: map[string]*MappingNode{
+			"key1": {
+				Literal: &ScalarValue{
+					StringValue: &expectedStrVal1,
+					SourceMeta:  &source.Meta{Line: 2, Column: 17},
+				},
+			},
+			"key2": {
+				Fields: map[string]*MappingNode{
+					"key3": {
+						Literal: &ScalarValue{
+							StringValue: &expectedStrVal2,
+							SourceMeta:  &source.Meta{Line: 4, Column: 19},
+						},
+					},
+				},
+			},
+			"key4": {
+				Items: []*MappingNode{
+					{
+						Literal: &ScalarValue{
+							StringValue: &expectedStrVal3,
+							SourceMeta:  &source.Meta{Line: 6, Column: 14},
+						},
+					},
+					{
+						StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+							Values: []*substitutions.StringOrSubstitution{
+								{StringValue: &expectedStrSubPrefix},
+								{
+									SubstitutionValue: &substitutions.Substitution{
+										Variable: &substitutions.SubstitutionVariable{
+											VariableName: "environment",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"key5": {
+				Literal: &ScalarValue{
+					IntValue:   &expectedIntVal,
+					SourceMeta: &source.Meta{Line: 8, Column: 17},
+				},
 			},
 		},
 	})
