@@ -168,6 +168,10 @@
           })
         },
         SourceMeta: (*source.Meta)(<nil>)
+      }),
+      SourceMeta: (*source.Meta)({
+        Line: (int) 13,
+        Column: (int) 5
       })
     })
   },

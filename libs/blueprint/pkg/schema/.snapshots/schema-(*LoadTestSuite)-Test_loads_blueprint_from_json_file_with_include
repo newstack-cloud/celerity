@@ -130,7 +130,8 @@
           })
         },
         SourceMeta: (*source.Meta)(<nil>)
-      })
+      }),
+      SourceMeta: (*source.Meta)(<nil>)
     })
   },
   Resources: (map[string]*schema.Resource) (len=6) {
