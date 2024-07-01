@@ -64,6 +64,11 @@ func (m *MappingNode) MarshalYAML() (interface{}, error) {
 // UnmarshalYAML fulfils the yaml.Unmarshaler interface
 // to unmarshal a YAML representation into a mapping node.
 func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
+	m.SourceMeta = &source.Meta{
+		Line:   node.Line,
+		Column: node.Column,
+	}
+
 	if node.Kind == yaml.ScalarNode {
 		return m.parseYAMLSubstitutionsOrScalar(node)
 	}

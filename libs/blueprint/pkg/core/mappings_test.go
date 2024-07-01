@@ -61,6 +61,7 @@ func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml(c *C) {
 				},
 			},
 		},
+		SourceMeta: &source.Meta{Line: 1, Column: 1},
 	})
 }
 
@@ -113,7 +114,11 @@ func assertFieldsNodeYAML(c *C, actual *MappingNode) {
 	c.Assert(actual, DeepEquals, &MappingNode{
 		Fields: map[string]*MappingNode{
 			"key1": {
-				Literal: &ScalarValue{StringValue: &expectedStrVal, SourceMeta: &source.Meta{Line: 2, Column: 15}},
+				Literal: &ScalarValue{
+					StringValue: &expectedStrVal,
+					SourceMeta:  &source.Meta{Line: 2, Column: 15},
+				},
+				SourceMeta: &source.Meta{Line: 2, Column: 15},
 			},
 			"key2": {
 				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
@@ -128,11 +133,17 @@ func assertFieldsNodeYAML(c *C, actual *MappingNode) {
 						},
 					},
 				},
+				SourceMeta: &source.Meta{Line: 3, Column: 15},
 			},
 			"key3": {
-				Literal: &ScalarValue{IntValue: &expectedIntVal, SourceMeta: &source.Meta{Line: 4, Column: 15}},
+				Literal: &ScalarValue{
+					IntValue:   &expectedIntVal,
+					SourceMeta: &source.Meta{Line: 4, Column: 15},
+				},
+				SourceMeta: &source.Meta{Line: 4, Column: 15},
 			},
 		},
+		SourceMeta: &source.Meta{Line: 2, Column: 9},
 	})
 }
 
@@ -191,6 +202,7 @@ func assertItemsNodeYAML(c *C, actual *MappingNode) {
 					StringValue: &expectedStrVal,
 					SourceMeta:  &source.Meta{Line: 2, Column: 11},
 				},
+				SourceMeta: &source.Meta{Line: 2, Column: 11},
 			},
 			{
 				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
@@ -205,14 +217,17 @@ func assertItemsNodeYAML(c *C, actual *MappingNode) {
 						},
 					},
 				},
+				SourceMeta: &source.Meta{Line: 3, Column: 11},
 			},
 			{
 				Literal: &ScalarValue{
 					IntValue:   &expectedIntVal,
 					SourceMeta: &source.Meta{Line: 4, Column: 11},
 				},
+				SourceMeta: &source.Meta{Line: 4, Column: 11},
 			},
 		},
+		SourceMeta: &source.Meta{Line: 2, Column: 9},
 	})
 }
 
@@ -323,6 +338,7 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 					StringValue: &expectedStrVal1,
 					SourceMeta:  &source.Meta{Line: 2, Column: 17},
 				},
+				SourceMeta: &source.Meta{Line: 2, Column: 17},
 			},
 			"key2": {
 				Fields: map[string]*MappingNode{
@@ -331,8 +347,10 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 							StringValue: &expectedStrVal2,
 							SourceMeta:  &source.Meta{Line: 4, Column: 19},
 						},
+						SourceMeta: &source.Meta{Line: 4, Column: 19},
 					},
 				},
+				SourceMeta: &source.Meta{Line: 4, Column: 13},
 			},
 			"key4": {
 				Items: []*MappingNode{
@@ -341,6 +359,7 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 							StringValue: &expectedStrVal3,
 							SourceMeta:  &source.Meta{Line: 6, Column: 14},
 						},
+						SourceMeta: &source.Meta{Line: 6, Column: 14},
 					},
 					{
 						StringWithSubstitutions: &substitutions.StringOrSubstitutions{
@@ -355,16 +374,20 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 								},
 							},
 						},
+						SourceMeta: &source.Meta{Line: 7, Column: 14},
 					},
 				},
+				SourceMeta: &source.Meta{Line: 6, Column: 12},
 			},
 			"key5": {
 				Literal: &ScalarValue{
 					IntValue:   &expectedIntVal,
 					SourceMeta: &source.Meta{Line: 8, Column: 17},
 				},
+				SourceMeta: &source.Meta{Line: 8, Column: 17},
 			},
 		},
+		SourceMeta: &source.Meta{Line: 2, Column: 11},
 	})
 }
 
