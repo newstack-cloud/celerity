@@ -83,6 +83,8 @@ func (s *DataSourceTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_data_s
 	schemaError, isSchemaError := err.(*Error)
 	c.Assert(isSchemaError, Equals, true)
 	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFieldType)
+	c.Assert(*schemaError.SourceLine, Equals, 1)
+	c.Assert(*schemaError.SourceColumn, Equals, 7)
 }
 
 func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_yaml_input(c *C) {
@@ -303,6 +305,8 @@ func (s *DataSourceTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_data_s
 	schemaError, isSchemaError := err.(*Error)
 	c.Assert(isSchemaError, Equals, true)
 	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFilterOperator)
+	c.Assert(*schemaError.SourceLine, Equals, 2)
+	c.Assert(*schemaError.SourceColumn, Equals, 11)
 }
 
 func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_yaml_input(c *C) {

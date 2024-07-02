@@ -424,6 +424,11 @@ func (s *MappingNodeTestSuite) Test_fails_to_parse_invalid_value(c *C) {
 	err := yaml.Unmarshal(s.specParseFixtures["failInvalidValue"], targetMappingNode)
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "a blueprint mapping node must be a valid scalar, mapping or sequence")
+	coreErr, isCoreErr := err.(*Error)
+	c.Assert(isCoreErr, Equals, true)
+	c.Assert(coreErr.ReasonCode, Equals, ErrorCoreReasonCodeInvalidMappingNode)
+	c.Assert(*coreErr.SourceLine, Equals, 3)
+	c.Assert(*coreErr.SourceColumn, Equals, 11)
 }
 
 func (s *MappingNodeTestSuite) Test_serialise_string_val_yaml(c *C) {

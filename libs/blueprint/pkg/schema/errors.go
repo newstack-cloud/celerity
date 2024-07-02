@@ -90,6 +90,8 @@ func errInvalidDataSourceFilterOperator(
 				",",
 			),
 		),
+		SourceLine:   line,
+		SourceColumn: column,
 	}
 }
 

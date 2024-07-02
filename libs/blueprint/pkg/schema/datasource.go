@@ -173,6 +173,8 @@ func (w *DataSourceFilterOperatorWrapper) UnmarshalYAML(value *yaml.Node) error 
 	}
 	valueFilterOperator := DataSourceFilterOperator(value.Value)
 	if !core.SliceContains(DataSourceFilterOperators, valueFilterOperator) {
+		fmt.Println("Returning unsupported operator error")
+		fmt.Printf("Value: %+v\n", value)
 		return errInvalidDataSourceFilterOperator(
 			valueFilterOperator,
 			&value.Line,
