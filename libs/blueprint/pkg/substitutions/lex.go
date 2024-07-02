@@ -4,12 +4,20 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 )
 
 type lexState struct {
-	candidateToken string
-	prevChar       rune
-	tokens         []*token
+	candidateToken    string
+	prevChar          rune
+	tokens            []*token
+	parentSourceStart *source.Meta
+	// Used to assign line and column numbers to tokens,
+	// lex errors will not be reported with line and column,
+	// the parent source context will have to suffice for mapping
+	// locations to lex errors.
+	relativeLineInfo *source.Meta
 }
 
 type tokenType string
@@ -34,8 +42,10 @@ const (
 )
 
 type token struct {
-	tokenType tokenType
-	value     string
+	tokenType    tokenType
+	value        string
+	relativeLine int
+	relativeCol  int
 }
 
 var (
@@ -44,17 +54,28 @@ var (
 	lexStringLiteralNamePattern = regexp.MustCompile(`([A-Za-z0-9_-]|\.)+`)
 )
 
-func lex(sequence string) ([]*token, error) {
+func lex(sequence string, parentSourceStart *source.Meta) ([]*token, error) {
 	lexState := &lexState{
-		candidateToken: "",
-		prevChar:       ' ',
-		tokens:         []*token{},
+		candidateToken:    "",
+		prevChar:          ' ',
+		tokens:            []*token{},
+		parentSourceStart: parentSourceStart,
+		relativeLineInfo: &source.Meta{
+			Line:   0,
+			Column: 0,
+		},
 	}
+
+	// TODO: iterate over runes instead of bytes
+	// decode rune increment by rune width
 	errors := []error{}
 	i := 0
 	for i < len(sequence) {
+		lexUpdateLine(lexState, sequence[i])
+
 		if whiteSpacePattern.MatchString(string(sequence[i])) {
 			i += 1
+			lexState.relativeLineInfo.Column += 1
 			// Use continue to avoid using a complex if else chain
 			// for each possible token type.
 			continue
@@ -63,24 +84,28 @@ func lex(sequence string) ([]*token, error) {
 		isPunctuation := checkPunctuation(string(sequence[i]), lexState)
 		if isPunctuation {
 			i += 1
+			lexState.relativeLineInfo.Column += 1
 			continue
 		}
 
 		charsConsumed := checkNumber(sequence, i, lexState)
 		if charsConsumed > 0 {
 			i += charsConsumed
+			lexState.relativeLineInfo.Column += charsConsumed
 			continue
 		}
 
 		charsConsumed = checkBoolLiteral(sequence, i, lexState)
 		if charsConsumed > 0 {
 			i += charsConsumed
+			lexState.relativeLineInfo.Column += charsConsumed
 			continue
 		}
 
 		charsConsumed = checkIdentifierOrKeyword(sequence, i, lexState)
 		if charsConsumed > 0 {
 			i += charsConsumed
+			lexState.relativeLineInfo.Column += charsConsumed
 			continue
 		}
 
@@ -90,6 +115,7 @@ func lex(sequence string) ([]*token, error) {
 		}
 		if charsConsumed > 0 {
 			i += charsConsumed
+			lexState.relativeLineInfo.Column += charsConsumed
 			continue
 		}
 
@@ -108,38 +134,50 @@ func checkPunctuation(char string, state *lexState) bool {
 	switch char {
 	case "[":
 		state.tokens = append(state.tokens, &token{
-			tokenType: tokenOpenBracket,
-			value:     "[",
+			tokenType:    tokenOpenBracket,
+			value:        "[",
+			relativeLine: state.relativeLineInfo.Line,
+			relativeCol:  state.relativeLineInfo.Column,
 		})
 		return true
 	case "]":
 		state.tokens = append(state.tokens, &token{
-			tokenType: tokenCloseBracket,
-			value:     "]",
+			tokenType:    tokenCloseBracket,
+			value:        "]",
+			relativeLine: state.relativeLineInfo.Line,
+			relativeCol:  state.relativeLineInfo.Column,
 		})
 		return true
 	case "(":
 		state.tokens = append(state.tokens, &token{
-			tokenType: tokenOpenParen,
-			value:     "(",
+			tokenType:    tokenOpenParen,
+			value:        "(",
+			relativeLine: state.relativeLineInfo.Line,
+			relativeCol:  state.relativeLineInfo.Column,
 		})
 		return true
 	case ")":
 		state.tokens = append(state.tokens, &token{
-			tokenType: tokenCloseParen,
-			value:     ")",
+			tokenType:    tokenCloseParen,
+			value:        ")",
+			relativeLine: state.relativeLineInfo.Line,
+			relativeCol:  state.relativeLineInfo.Column,
 		})
 		return true
 	case ",":
 		state.tokens = append(state.tokens, &token{
-			tokenType: tokenComma,
-			value:     ",",
+			tokenType:    tokenComma,
+			value:        ",",
+			relativeLine: state.relativeLineInfo.Line,
+			relativeCol:  state.relativeLineInfo.Column,
 		})
 		return true
 	case ".":
 		state.tokens = append(state.tokens, &token{
-			tokenType: tokenPeriod,
-			value:     ".",
+			tokenType:    tokenPeriod,
+			value:        ".",
+			relativeLine: state.relativeLineInfo.Line,
+			relativeCol:  state.relativeLineInfo.Column,
 		})
 		return true
 	default:
@@ -219,8 +257,10 @@ func takeFloatLiteral(state *lexState, sequence string, startPos int) int {
 
 	value := fmt.Sprintf("%s%s.%s", sign, intPart, fractionalPart)
 	state.tokens = append(state.tokens, &token{
-		tokenType: tokenFloatLiteral,
-		value:     value,
+		tokenType:    tokenFloatLiteral,
+		value:        value,
+		relativeLine: state.relativeLineInfo.Line,
+		relativeCol:  state.relativeLineInfo.Column,
 	})
 
 	return len(value)
@@ -250,8 +290,10 @@ func takeIntLiteral(state *lexState, sequence string, startPos int) int {
 	}
 
 	state.tokens = append(state.tokens, &token{
-		tokenType: tokenIntLiteral,
-		value:     value,
+		tokenType:    tokenIntLiteral,
+		value:        value,
+		relativeLine: state.relativeLineInfo.Line,
+		relativeCol:  state.relativeLineInfo.Column,
 	})
 
 	return len(value)
@@ -282,15 +324,19 @@ func takeStringLiteral(state *lexState, sequence string, startPos int) (int, err
 	prevTokenOpenBracket := len(state.tokens) > 0 && state.tokens[len(state.tokens)-1].tokenType == tokenOpenBracket
 	if prevTokenOpenBracket && lexStringLiteralNamePattern.MatchString(value) {
 		state.tokens = append(state.tokens, &token{
-			tokenType: tokenNameStringLiteral,
-			value:     strings.Replace(value, "\\\"", "\"", -1),
+			tokenType:    tokenNameStringLiteral,
+			value:        strings.Replace(value, "\\\"", "\"", -1),
+			relativeLine: state.relativeLineInfo.Line,
+			relativeCol:  state.relativeLineInfo.Column,
 		})
 		return len(value) + 2, nil
 	}
 
 	state.tokens = append(state.tokens, &token{
-		tokenType: tokenStringLiteral,
-		value:     strings.Replace(value, "\\\"", "\"", -1),
+		tokenType:    tokenStringLiteral,
+		value:        strings.Replace(value, "\\\"", "\"", -1),
+		relativeLine: state.relativeLineInfo.Line,
+		relativeCol:  state.relativeLineInfo.Column,
 	})
 
 	// Add 2 to account for the quotes.
@@ -312,8 +358,10 @@ func takeIdentifierOrKeyword(state *lexState, sequence string, restStartPos int,
 
 	tType := deriveIdentOrKeywordTokenType(value)
 	state.tokens = append(state.tokens, &token{
-		tokenType: tType,
-		value:     value,
+		tokenType:    tType,
+		value:        value,
+		relativeLine: state.relativeLineInfo.Line,
+		relativeCol:  state.relativeLineInfo.Column,
 	})
 
 	return len(value)
@@ -339,10 +387,19 @@ func takeBoolLiteral(state *lexState, sequence string, startPos int) int {
 	value := boolPattern.FindString(subSequence)
 	if len(value) > 0 {
 		state.tokens = append(state.tokens, &token{
-			tokenType: tokenBoolLiteral,
-			value:     value,
+			tokenType:    tokenBoolLiteral,
+			value:        value,
+			relativeLine: state.relativeLineInfo.Line,
+			relativeCol:  state.relativeLineInfo.Column,
 		})
 	}
 
 	return len(value)
+}
+
+func lexUpdateLine(state *lexState, char byte) {
+	if char == '\n' {
+		state.relativeLineInfo.Line += 1
+		state.relativeLineInfo.Column = 1
+	}
 }

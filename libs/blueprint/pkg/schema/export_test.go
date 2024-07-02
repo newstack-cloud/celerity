@@ -51,7 +51,15 @@ func (s *ExportTestSuite) Test_parses_valid_string_export_yaml_input(c *C) {
 			Values: []*substitutions.StringOrSubstitution{
 				{
 					StringValue: &description,
+					SourceMeta: &source.Meta{
+						Line:   2,
+						Column: 14,
+					},
 				},
+			},
+			SourceMeta: &source.Meta{
+				Line:   2,
+				Column: 14,
 			},
 		},
 		Field: "resources.orderQueue.state.arn",
@@ -94,6 +102,8 @@ func (s *ExportTestSuite) Test_serialise_valid_export_yaml_input(c *C) {
 		c.FailNow()
 	}
 
+	NormaliseExport(targetExport)
+	NormaliseExport(expected)
 	c.Assert(targetExport, DeepEquals, expected)
 }
 

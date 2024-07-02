@@ -3,6 +3,8 @@ package substitutions
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 )
 
 // Parser provides an implementation of a parser
@@ -13,16 +15,20 @@ type Parser struct {
 	// A stack of positions in the sequence where a token
 	// evaluation started, this allows for state.pos updates
 	// to be reverted when a token evaluation fails.
-	startPosStack []int
-	tokens        []*token
+	startPosStack     []int
+	tokens            []*token
+	parentSourceStart *source.Meta
+	outputLineInfo    bool
 }
 
 // NewParser creates a new substitution parser.
-func NewParser(tokens []*token) *Parser {
+func NewParser(tokens []*token, parentSourceStart *source.Meta, outputLineInfo bool) *Parser {
 	return &Parser{
-		pos:           0,
-		startPosStack: []int{},
-		tokens:        tokens,
+		pos:               0,
+		startPosStack:     []int{},
+		tokens:            tokens,
+		parentSourceStart: parentSourceStart,
+		outputLineInfo:    outputLineInfo,
 	}
 }
 
@@ -36,7 +42,8 @@ func (p *Parser) substitition() (*Substitution, error) {
 	var funcCall *SubstitutionFunction
 	if funcCall, err = p.functionCall(); funcCall != nil {
 		return &Substitution{
-			Function: funcCall,
+			Function:   funcCall,
+			SourceMeta: funcCall.SourceMeta,
 		}, nil
 	}
 	if err != nil {
@@ -46,7 +53,8 @@ func (p *Parser) substitition() (*Substitution, error) {
 	var varRef *SubstitutionVariable
 	if varRef, err = p.variableReference(); varRef != nil {
 		return &Substitution{
-			Variable: varRef,
+			Variable:   varRef,
+			SourceMeta: varRef.SourceMeta,
 		}, nil
 	}
 	// Errors are only returned in the case of a parse error where
@@ -67,6 +75,7 @@ func (p *Parser) substitition() (*Substitution, error) {
 	if datasourceRef, err = p.datasourceReference(); datasourceRef != nil {
 		return &Substitution{
 			DataSourceProperty: datasourceRef,
+			SourceMeta:         datasourceRef.SourceMeta,
 		}, nil
 	}
 	if err != nil {
@@ -76,7 +85,8 @@ func (p *Parser) substitition() (*Substitution, error) {
 	var childRef *SubstitutionChild
 	if childRef, err = p.childReference(); childRef != nil {
 		return &Substitution{
-			Child: childRef,
+			Child:      childRef,
+			SourceMeta: childRef.SourceMeta,
 		}, nil
 	}
 	if err != nil {
@@ -87,6 +97,7 @@ func (p *Parser) substitition() (*Substitution, error) {
 	if resourceRef, err = p.resourceReference(); resourceRef != nil {
 		return &Substitution{
 			ResourceProperty: resourceRef,
+			SourceMeta:       resourceRef.SourceMeta,
 		}, nil
 	}
 	if err != nil {
@@ -95,39 +106,65 @@ func (p *Parser) substitition() (*Substitution, error) {
 
 	var boolLiteral *bool
 	if boolLiteral = p.boolLiteral(); boolLiteral != nil {
+		boolSourceMeta := p.sourceMeta(p.previous())
 		return &Substitution{
-			BoolValue: boolLiteral,
+			BoolValue:  boolLiteral,
+			SourceMeta: boolSourceMeta,
 		}, nil
 	}
 
 	var floatLiteral *float64
 	if floatLiteral = p.floatLiteral(); floatLiteral != nil {
+		floatSourceMeta := p.sourceMeta(p.previous())
 		return &Substitution{
 			FloatValue: floatLiteral,
+			SourceMeta: floatSourceMeta,
 		}, nil
 	}
 
 	var intLiteral *int64
 	if intLiteral = p.intLiteral(); intLiteral != nil {
+		intSourceMeta := p.sourceMeta(p.previous())
 		return &Substitution{
-			IntValue: intLiteral,
+			IntValue:   intLiteral,
+			SourceMeta: intSourceMeta,
 		}, nil
 	}
 
 	var stringLiteral *string
 	if stringLiteral = p.stringLiteral(); stringLiteral != nil {
+		prevToken := p.previous()
+		strSourceMeta := p.sourceMeta(prevToken)
 		return &Substitution{
 			StringValue: stringLiteral,
+			SourceMeta:  strSourceMeta,
 		}, nil
 	}
 
 	token := p.currentToken()
-	return nil, errParseError(token, p.pos, "failed to parse substitution, found unexpected or missing token")
+	line := token.relativeLine + 1
+	if p.parentSourceStart != nil {
+		line = token.relativeLine + p.parentSourceStart.Line
+	}
+
+	col := token.relativeCol + 1
+	if p.parentSourceStart != nil {
+		col = token.relativeCol + p.parentSourceStart.Column
+	}
+
+	return nil, errParseError(
+		token,
+		p.pos,
+		"failed to parse substitution, found unexpected or missing token",
+		line,
+		col,
+	)
 }
 
 // variableRef = "variables" , nameAccessor ;
 func (p *Parser) variableReference() (*SubstitutionVariable, error) {
-	if !p.match(tokenKeywordVariables) {
+	varKeywordToken, err := p.consume(tokenKeywordVariables, "expected variables keyword")
+	if err != nil {
 		return nil, nil
 	}
 
@@ -141,12 +178,17 @@ func (p *Parser) variableReference() (*SubstitutionVariable, error) {
 
 	return &SubstitutionVariable{
 		VariableName: *name,
+		SourceMeta:   p.sourceMeta(varKeywordToken),
 	}, nil
 }
 
 // datasourceRef = "datasources" , nameAccessor , nameAccessor , [ indexAccessor ] ;
 func (p *Parser) datasourceReference() (*SubstitutionDataSourceProperty, error) {
-	if !p.match(tokenKeywordDatasources) {
+	datasourceKeywordToken, err := p.consume(
+		tokenKeywordDatasources,
+		"expected datasources keyword",
+	)
+	if err != nil {
 		return nil, nil
 	}
 
@@ -175,18 +217,24 @@ func (p *Parser) datasourceReference() (*SubstitutionDataSourceProperty, error) 
 			DataSourceName:    *name,
 			FieldName:         *fieldName,
 			PrimitiveArrIndex: indexAccessorPart,
+			SourceMeta:        p.sourceMeta(datasourceKeywordToken),
 		}, nil
 	}
 
 	return &SubstitutionDataSourceProperty{
 		DataSourceName: *name,
 		FieldName:      *fieldName,
+		SourceMeta:     p.sourceMeta(datasourceKeywordToken),
 	}, nil
 }
 
 // childRef = "children" , nameAccessor , { nameAccessor | indexAccessor }- ;
 func (p *Parser) childReference() (*SubstitutionChild, error) {
-	if !p.match(tokenKeywordChildren) {
+	childrenKeywordToken, err := p.consume(
+		tokenKeywordChildren,
+		"expected children keyword",
+	)
+	if err != nil {
 		return nil, nil
 	}
 
@@ -212,13 +260,15 @@ func (p *Parser) childReference() (*SubstitutionChild, error) {
 	}
 
 	return &SubstitutionChild{
-		ChildName: *childBlueprintName,
-		Path:      path,
+		ChildName:  *childBlueprintName,
+		Path:       path,
+		SourceMeta: p.sourceMeta(childrenKeywordToken),
 	}, nil
 }
 
 // resourceRef = resourceName , [ ( nameAccessor , { namAccessor | indexAccessor } ) ] ;
 func (p *Parser) resourceReference() (*SubstitutionResourceProperty, error) {
+	firstPartToken := p.currentToken()
 	resourceName, err := p.resourceName()
 	if err != nil {
 		return nil, err
@@ -232,6 +282,7 @@ func (p *Parser) resourceReference() (*SubstitutionResourceProperty, error) {
 		return &SubstitutionResourceProperty{
 			ResourceName: *resourceName,
 			Path:         []*SubstitutionPathItem{},
+			SourceMeta:   p.sourceMeta(firstPartToken),
 		}, nil
 	}
 
@@ -243,6 +294,7 @@ func (p *Parser) resourceReference() (*SubstitutionResourceProperty, error) {
 	return &SubstitutionResourceProperty{
 		ResourceName: *resourceName,
 		Path:         path,
+		SourceMeta:   p.sourceMeta(firstPartToken),
 	}, nil
 }
 
@@ -375,7 +427,7 @@ func (p *Parser) functionCall() (*SubstitutionFunction, error) {
 		return nil, nil
 	}
 
-	functionName := p.previous().value
+	funcNameToken := p.previous()
 	// Identifiers can match as the start of a function call or
 	// a resource reference, so an error will not be returned
 	// if the next token is not an open parenthesis.
@@ -426,8 +478,9 @@ func (p *Parser) functionCall() (*SubstitutionFunction, error) {
 	}
 
 	return &SubstitutionFunction{
-		FunctionName: SubstitutionFunctionName(functionName),
+		FunctionName: SubstitutionFunctionName(funcNameToken.value),
 		Arguments:    args,
+		SourceMeta:   p.sourceMeta(funcNameToken),
 	}, nil
 }
 
@@ -501,7 +554,17 @@ func (p *Parser) consume(tType tokenType, errorMessage string) (*token, error) {
 }
 
 func (p *Parser) error(t *token, message string) error {
-	return errParseError(t, p.pos, message)
+	line := t.relativeLine + 1
+	if p.parentSourceStart != nil {
+		line = t.relativeLine + p.parentSourceStart.Line
+	}
+
+	col := t.relativeCol + 1
+	if p.parentSourceStart != nil {
+		col = t.relativeCol + p.parentSourceStart.Column
+	}
+
+	return errParseError(t, p.pos, message, line, col)
 }
 
 func (p *Parser) check(tokenType tokenType) bool {
@@ -556,5 +619,30 @@ func (p *Parser) backtrack() {
 func (p *Parser) popPos() {
 	if len(p.startPosStack) > 0 {
 		p.startPosStack = p.startPosStack[:len(p.startPosStack)-1]
+	}
+}
+
+func (p *Parser) sourceMeta(token *token) *source.Meta {
+	if !p.outputLineInfo {
+		return nil
+	}
+
+	if token == nil {
+		return nil
+	}
+
+	line := token.relativeLine + 1
+	if p.parentSourceStart != nil {
+		line = token.relativeLine + p.parentSourceStart.Line
+	}
+
+	col := token.relativeCol + 1
+	if p.parentSourceStart != nil {
+		col = token.relativeCol + p.parentSourceStart.Column
+	}
+
+	return &source.Meta{
+		Line:   line,
+		Column: col,
 	}
 }

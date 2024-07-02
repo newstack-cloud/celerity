@@ -51,15 +51,22 @@ func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml(c *C) {
 	c.Assert(targetMappingNode, DeepEquals, &MappingNode{
 		StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
-				{StringValue: &testStringValPart},
+				{
+					StringValue: &testStringValPart,
+					SourceMeta:  &source.Meta{Line: 1, Column: 1},
+				},
 				{
 					SubstitutionValue: &substitutions.Substitution{
 						Variable: &substitutions.SubstitutionVariable{
 							VariableName: "environment",
+							SourceMeta:   &source.Meta{Line: 1, Column: 25},
 						},
+						SourceMeta: &source.Meta{Line: 1, Column: 25},
 					},
+					SourceMeta: &source.Meta{Line: 1, Column: 23},
 				},
 			},
+			SourceMeta: &source.Meta{Line: 1, Column: 1},
 		},
 		SourceMeta: &source.Meta{Line: 1, Column: 1},
 	})
@@ -123,15 +130,22 @@ func assertFieldsNodeYAML(c *C, actual *MappingNode) {
 			"key2": {
 				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 					Values: []*substitutions.StringOrSubstitution{
-						{StringValue: &expectedStrSubPrefix},
+						{
+							StringValue: &expectedStrSubPrefix,
+							SourceMeta:  &source.Meta{Line: 3, Column: 15},
+						},
 						{
 							SubstitutionValue: &substitutions.Substitution{
 								Variable: &substitutions.SubstitutionVariable{
 									VariableName: "environment",
+									SourceMeta:   &source.Meta{Line: 3, Column: 32},
 								},
+								SourceMeta: &source.Meta{Line: 3, Column: 32},
 							},
+							SourceMeta: &source.Meta{Line: 3, Column: 30},
 						},
 					},
+					SourceMeta: &source.Meta{Line: 3, Column: 15},
 				},
 				SourceMeta: &source.Meta{Line: 3, Column: 15},
 			},
@@ -207,15 +221,22 @@ func assertItemsNodeYAML(c *C, actual *MappingNode) {
 			{
 				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 					Values: []*substitutions.StringOrSubstitution{
-						{StringValue: &expectedStrSubPrefix},
+						{
+							StringValue: &expectedStrSubPrefix,
+							SourceMeta:  &source.Meta{Line: 3, Column: 11},
+						},
 						{
 							SubstitutionValue: &substitutions.Substitution{
 								Variable: &substitutions.SubstitutionVariable{
 									VariableName: "environment",
+									SourceMeta:   &source.Meta{Line: 3, Column: 28},
 								},
+								SourceMeta: &source.Meta{Line: 3, Column: 28},
 							},
+							SourceMeta: &source.Meta{Line: 3, Column: 26},
 						},
 					},
+					SourceMeta: &source.Meta{Line: 3, Column: 11},
 				},
 				SourceMeta: &source.Meta{Line: 3, Column: 11},
 			},
@@ -364,15 +385,22 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 					{
 						StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 							Values: []*substitutions.StringOrSubstitution{
-								{StringValue: &expectedStrSubPrefix},
+								{
+									StringValue: &expectedStrSubPrefix,
+									SourceMeta:  &source.Meta{Line: 7, Column: 14},
+								},
 								{
 									SubstitutionValue: &substitutions.Substitution{
 										Variable: &substitutions.SubstitutionVariable{
 											VariableName: "environment",
+											SourceMeta:   &source.Meta{Line: 7, Column: 33},
 										},
+										SourceMeta: &source.Meta{Line: 7, Column: 33},
 									},
+									SourceMeta: &source.Meta{Line: 7, Column: 31},
 								},
 							},
+							SourceMeta: &source.Meta{Line: 7, Column: 14},
 						},
 						SourceMeta: &source.Meta{Line: 7, Column: 14},
 					},

@@ -57,10 +57,16 @@
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=10) "Authoriser"),
               SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 84,
+                Column: (int) 20
+              })
             })
           },
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)({
+            Line: (int) 84,
+            Column: (int) 20
+          })
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) (len=4) {
           (string) (len=10) "authoriser": (*substitutions.StringOrSubstitutions)({
@@ -68,40 +74,64 @@
               (*substitutions.StringOrSubstitution)({
                 StringValue: (*string)((len=4) "true"),
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                SourceMeta: (*source.Meta)(<nil>)
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 89,
+                  Column: (int) 21
+                })
               })
             },
-            SourceMeta: (*source.Meta)(<nil>)
+            SourceMeta: (*source.Meta)({
+              Line: (int) 89,
+              Column: (int) 21
+            })
           }),
           (string) (len=26) "authoriser.identity.header": (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
               (*substitutions.StringOrSubstitution)({
                 StringValue: (*string)((len=18) "MyCustomAuthHeader"),
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                SourceMeta: (*source.Meta)(<nil>)
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 93,
+                  Column: (int) 37
+                })
               })
             },
-            SourceMeta: (*source.Meta)(<nil>)
+            SourceMeta: (*source.Meta)({
+              Line: (int) 93,
+              Column: (int) 37
+            })
           }),
           (string) (len=36) "authoriser.identity.reauthoriseEvery": (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
               (*substitutions.StringOrSubstitution)({
                 StringValue: (*string)((len=2) "20"),
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                SourceMeta: (*source.Meta)(<nil>)
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 95,
+                  Column: (int) 47
+                })
               })
             },
-            SourceMeta: (*source.Meta)(<nil>)
+            SourceMeta: (*source.Meta)({
+              Line: (int) 95,
+              Column: (int) 47
+            })
           }),
           (string) (len=40) "authoriser.identity.validationExpression": (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
               (*substitutions.StringOrSubstitution)({
                 StringValue: (*string)((len=9) "Bearer .*"),
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                SourceMeta: (*source.Meta)(<nil>)
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 94,
+                  Column: (int) 51
+                })
               })
             },
-            SourceMeta: (*source.Meta)(<nil>)
+            SourceMeta: (*source.Meta)({
+              Line: (int) 94,
+              Column: (int) 51
+            })
           })
         },
         Labels: (map[string]string) (len=1) {
@@ -177,10 +207,16 @@
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=18) "Get Orders Handler"),
               SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 105,
+                Column: (int) 20
+              })
             })
           },
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)({
+            Line: (int) 105,
+            Column: (int) 20
+          })
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
@@ -215,19 +251,31 @@
                           ResourceName: (string) (len=10) "authoriser",
                           Path: ([]*substitutions.SubstitutionPathItem) {
                           },
-                          SourceMeta: (*source.Meta)(<nil>)
+                          SourceMeta: (*source.Meta)({
+                            Line: (int) 114,
+                            Column: (int) 23
+                          })
                         }),
                         Child: (*substitutions.SubstitutionChild)(<nil>),
                         StringValue: (*string)(<nil>),
                         IntValue: (*int64)(<nil>),
                         FloatValue: (*float64)(<nil>),
                         BoolValue: (*bool)(<nil>),
-                        SourceMeta: (*source.Meta)(<nil>)
+                        SourceMeta: (*source.Meta)({
+                          Line: (int) 114,
+                          Column: (int) 23
+                        })
                       }),
-                      SourceMeta: (*source.Meta)(<nil>)
+                      SourceMeta: (*source.Meta)({
+                        Line: (int) 114,
+                        Column: (int) 21
+                      })
                     })
                   },
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 114,
+                    Column: (int) 21
+                  })
                 }),
                 SourceMeta: (*source.Meta)({
                   Line: (int) 114,
@@ -340,10 +388,16 @@
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=9) "Order API"),
               SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 39,
+                Column: (int) 20
+              })
             })
           },
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)({
+            Line: (int) 39,
+            Column: (int) 20
+          })
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
@@ -542,7 +596,10 @@
                             Function: (*substitutions.SubstitutionFunction)(<nil>),
                             Variable: (*substitutions.SubstitutionVariable)({
                               VariableName: (string) (len=13) "dynamoDBTable",
-                              SourceMeta: (*source.Meta)(<nil>)
+                              SourceMeta: (*source.Meta)({
+                                Line: (int) 66,
+                                Column: (int) 29
+                              })
                             }),
                             DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                             ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
@@ -551,12 +608,21 @@
                             IntValue: (*int64)(<nil>),
                             FloatValue: (*float64)(<nil>),
                             BoolValue: (*bool)(<nil>),
-                            SourceMeta: (*source.Meta)(<nil>)
+                            SourceMeta: (*source.Meta)({
+                              Line: (int) 66,
+                              Column: (int) 29
+                            })
                           }),
-                          SourceMeta: (*source.Meta)(<nil>)
+                          SourceMeta: (*source.Meta)({
+                            Line: (int) 66,
+                            Column: (int) 27
+                          })
                         })
                       },
-                      SourceMeta: (*source.Meta)(<nil>)
+                      SourceMeta: (*source.Meta)({
+                        Line: (int) 66,
+                        Column: (int) 27
+                      })
                     }),
                     SourceMeta: (*source.Meta)({
                       Line: (int) 66,
@@ -639,10 +705,16 @@
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=13) "Order Pub/Sub"),
               SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 163,
+                Column: (int) 20
+              })
             })
           },
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)({
+            Line: (int) 163,
+            Column: (int) 20
+          })
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=1) {
@@ -678,7 +750,10 @@
                     Function: (*substitutions.SubstitutionFunction)(<nil>),
                     Variable: (*substitutions.SubstitutionVariable)({
                       VariableName: (string) (len=15) "ordersTopicName",
-                      SourceMeta: (*source.Meta)(<nil>)
+                      SourceMeta: (*source.Meta)({
+                        Line: (int) 170,
+                        Column: (int) 20
+                      })
                     }),
                     DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                     ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
@@ -687,12 +762,21 @@
                     IntValue: (*int64)(<nil>),
                     FloatValue: (*float64)(<nil>),
                     BoolValue: (*bool)(<nil>),
-                    SourceMeta: (*source.Meta)(<nil>)
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 170,
+                      Column: (int) 20
+                    })
                   }),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 170,
+                    Column: (int) 18
+                  })
                 })
               },
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 170,
+                Column: (int) 18
+              })
             }),
             SourceMeta: (*source.Meta)({
               Line: (int) 170,
@@ -721,10 +805,16 @@
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=21) "Shared Packages Layer"),
               SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 147,
+                Column: (int) 20
+              })
             })
           },
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)({
+            Line: (int) 147,
+            Column: (int) 20
+          })
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=2) {
@@ -831,10 +921,16 @@
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=21) "Update Order Function"),
               SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 120,
+                Column: (int) 20
+              })
             })
           },
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)({
+            Line: (int) 120,
+            Column: (int) 20
+          })
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Labels: (map[string]string) (len=2) {
@@ -972,10 +1068,16 @@
             (*substitutions.StringOrSubstitution)({
               StringValue: (*string)((len=14) "Network source"),
               SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 18,
+                Column: (int) 20
+              })
             })
           },
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)({
+            Line: (int) 18,
+            Column: (int) 20
+          })
         }),
         Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
         Custom: (*core.MappingNode)(<nil>),
@@ -1003,7 +1105,10 @@
                     Function: (*substitutions.SubstitutionFunction)(<nil>),
                     Variable: (*substitutions.SubstitutionVariable)({
                       VariableName: (string) (len=11) "environment",
-                      SourceMeta: (*source.Meta)(<nil>)
+                      SourceMeta: (*source.Meta)({
+                        Line: (int) 22,
+                        Column: (int) 17
+                      })
                     }),
                     DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                     ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
@@ -1012,12 +1117,21 @@
                     IntValue: (*int64)(<nil>),
                     FloatValue: (*float64)(<nil>),
                     BoolValue: (*bool)(<nil>),
-                    SourceMeta: (*source.Meta)(<nil>)
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 22,
+                      Column: (int) 17
+                    })
                   }),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 22,
+                    Column: (int) 15
+                  })
                 })
               },
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)({
+                Line: (int) 22,
+                Column: (int) 15
+              })
             })
           },
           SourceMeta: (*source.Meta)({

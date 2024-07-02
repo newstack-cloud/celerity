@@ -18,11 +18,15 @@ const (
 func errSubstitutions(
 	substitutionContext string,
 	substitutionErrors []error,
+	line *int,
+	column *int,
 ) error {
 	return &errors.LoadError{
 		ReasonCode:  ErrorReasonCodeInvalidReferenceSub,
 		Err:         errSubstitutionsMessage(substitutionContext),
 		ChildErrors: substitutionErrors,
+		Line:        line,
+		Column:      column,
 	}
 }
 
@@ -203,6 +207,8 @@ type ParseError struct {
 	pos     int
 	token   *token
 	message string
+	Line    int
+	Column  int
 }
 
 func (e *ParseError) Error() string {
@@ -215,11 +221,13 @@ func (e *ParseError) Error() string {
 	return errStr
 }
 
-func errParseError(t *token, pos int, message string) error {
+func errParseError(t *token, pos int, message string, line int, col int) error {
 	return &ParseError{
 		token:   t,
 		pos:     pos,
 		message: message,
+		Line:    line,
+		Column:  col,
 	}
 }
 

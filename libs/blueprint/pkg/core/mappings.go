@@ -102,7 +102,11 @@ func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
 }
 
 func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
-	strSubs, err := substitutions.ParseSubstitutionValues("", node.Value)
+	sourceMeta := &source.Meta{
+		Line:   node.Line,
+		Column: node.Column,
+	}
+	strSubs, err := substitutions.ParseSubstitutionValues("", node.Value, sourceMeta, true)
 	// Parse literal value if there are no substitutions.
 	if err != nil || len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
 		m.Literal = &ScalarValue{}
@@ -110,7 +114,8 @@ func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 	}
 
 	m.StringWithSubstitutions = &substitutions.StringOrSubstitutions{
-		Values: strSubs,
+		Values:     strSubs,
+		SourceMeta: sourceMeta,
 	}
 	return nil
 }
@@ -168,7 +173,7 @@ func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {
 	if len(dataStr) >= 2 && dataStr[0] == '"' && dataStr[len(dataStr)-1] == '"' {
 		normalised = dataStr[1 : len(dataStr)-1]
 	}
-	strSubs, err := substitutions.ParseSubstitutionValues("", normalised)
+	strSubs, err := substitutions.ParseSubstitutionValues("", normalised, nil, false)
 	// Parse literal value if there are no substitutions.
 	if err != nil || len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
 		m.Literal = &ScalarValue{}

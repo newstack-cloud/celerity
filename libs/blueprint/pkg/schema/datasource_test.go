@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
@@ -57,7 +58,15 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_field_yaml_input(c *
 		Values: []*substitutions.StringOrSubstitution{
 			{
 				StringValue: &description,
+				SourceMeta: &source.Meta{
+					Line:   2,
+					Column: 14,
+				},
 			},
+		},
+		SourceMeta: &source.Meta{
+			Line:   2,
+			Column: 14,
 		},
 	})
 	c.Assert(targetField.Type.Value, Equals, DataSourceFieldType("boolean"))
@@ -109,6 +118,8 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_yaml_input(
 		c.FailNow()
 	}
 
+	NormaliseStringOrSubstitutions(targetField.Description)
+	NormaliseStringOrSubstitutions(expected.Description)
 	c.Assert(targetField.Type.Value, Equals, expected.Type.Value)
 	c.Assert(targetField.Description, DeepEquals, expected.Description)
 }
@@ -256,9 +267,25 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c 
 						SubstitutionValue: &substitutions.Substitution{
 							Variable: &substitutions.SubstitutionVariable{
 								VariableName: "environment",
+								SourceMeta: &source.Meta{
+									Line:   3,
+									Column: 11,
+								},
+							},
+							SourceMeta: &source.Meta{
+								Line:   3,
+								Column: 11,
 							},
 						},
+						SourceMeta: &source.Meta{
+							Line:   3,
+							Column: 9,
+						},
 					},
+				},
+				SourceMeta: &source.Meta{
+					Line:   3,
+					Column: 9,
 				},
 			},
 		},

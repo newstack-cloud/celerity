@@ -8,6 +8,8 @@ type LoadError struct {
 	ReasonCode  ErrorReasonCode
 	Err         error
 	ChildErrors []error
+	Line        *int
+	Column      *int
 }
 
 func (e *LoadError) Error() string {
