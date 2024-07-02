@@ -191,7 +191,7 @@ func errLexUnexpectedEndOfInput(evaluatingTokenType string) error {
 
 func errLexUnexpectedChar(
 	column int,
-	char byte,
+	char rune,
 ) error {
 	return fmt.Errorf(
 		"validation failed due to an unexpected character \"%s\" having "+

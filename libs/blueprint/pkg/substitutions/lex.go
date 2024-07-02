@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 )
@@ -66,25 +67,24 @@ func lex(sequence string, parentSourceStart *source.Meta) ([]*token, error) {
 		},
 	}
 
-	// TODO: iterate over runes instead of bytes
-	// decode rune increment by rune width
 	errors := []error{}
 	i := 0
 	for i < len(sequence) {
-		lexUpdateLine(lexState, sequence[i])
+		char, width := utf8.DecodeRuneInString(sequence[i:])
+		lexUpdateLine(lexState, char)
 
-		if whiteSpacePattern.MatchString(string(sequence[i])) {
-			i += 1
-			lexState.relativeLineInfo.Column += 1
+		if whiteSpacePattern.MatchString(string(char)) {
+			i += width
+			lexState.relativeLineInfo.Column += width
 			// Use continue to avoid using a complex if else chain
 			// for each possible token type.
 			continue
 		}
 
-		isPunctuation := checkPunctuation(string(sequence[i]), lexState)
+		isPunctuation := checkPunctuation(string(char), lexState)
 		if isPunctuation {
-			i += 1
-			lexState.relativeLineInfo.Column += 1
+			i += width
+			lexState.relativeLineInfo.Column += width
 			continue
 		}
 
@@ -119,7 +119,7 @@ func lex(sequence string, parentSourceStart *source.Meta) ([]*token, error) {
 			continue
 		}
 
-		errors = append(errors, errLexUnexpectedChar(i, sequence[i]))
+		errors = append(errors, errLexUnexpectedChar(i, char))
 		i += 1
 	}
 
@@ -186,7 +186,8 @@ func checkPunctuation(char string, state *lexState) bool {
 }
 
 func checkNumber(sequence string, startPos int, state *lexState) int {
-	if sequence[startPos] == '-' || (sequence[startPos] >= '0' && sequence[startPos] <= '9') {
+	char, _ := utf8.DecodeRuneInString(sequence[startPos:])
+	if char == '-' || (char >= '0' && char <= '9') {
 		charsConsumed := takeFloatLiteral(state, sequence, startPos)
 		if charsConsumed > 0 {
 			return charsConsumed
@@ -199,31 +200,34 @@ func checkNumber(sequence string, startPos int, state *lexState) int {
 }
 
 func checkIdentifierOrKeyword(sequence string, startPos int, state *lexState) int {
-	if isIdentStartChar(sequence[startPos]) {
-		return takeIdentifierOrKeyword(state, sequence, startPos+1, sequence[startPos])
+	char, width := utf8.DecodeRuneInString(sequence[startPos:])
+	if isIdentStartChar(char) {
+		return takeIdentifierOrKeyword(state, sequence, startPos+width, char)
 	}
 	return 0
 }
 
 func lexCheckStringLiteral(sequence string, startPos int, state *lexState) (int, error) {
-	if sequence[startPos] == '"' {
-		return takeStringLiteral(state, sequence, startPos+1)
+	char, width := utf8.DecodeRuneInString(sequence[startPos:])
+	if char == '"' {
+		return takeStringLiteral(state, sequence, startPos+width)
 	}
 	return 0, nil
 }
 
 func checkBoolLiteral(sequence string, startPos int, state *lexState) int {
-	if sequence[startPos] == 't' || sequence[startPos] == 'f' {
+	char, _ := utf8.DecodeRuneInString(sequence[startPos:])
+	if char == 't' || char == 'f' {
 		return takeBoolLiteral(state, sequence, startPos)
 	}
 	return 0
 }
 
-func isIdentStartChar(char byte) bool {
+func isIdentStartChar(char rune) bool {
 	return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char == '_'
 }
 
-func isIdentChar(char byte) bool {
+func isIdentChar(char rune) bool {
 	return isIdentStartChar(char) || (char >= '0' && char <= '9') || char == '-'
 }
 
@@ -236,17 +240,18 @@ func takeFloatLiteral(state *lexState, sequence string, startPos int) int {
 	fractionalPart := ""
 
 	for inPossibleFloat && i < len(sequence) {
-		if sequence[i] == '-' && i == startPos {
+		char, width := utf8.DecodeRuneInString(sequence[i:])
+		if char == '-' && i == startPos {
 			sign = "-"
-		} else if sequence[i] == '.' && !passedDecimalPoint {
+		} else if char == '.' && !passedDecimalPoint {
 			passedDecimalPoint = true
-		} else if sequence[i] >= '0' && sequence[i] <= '9' {
-			updateFloatParts(&intPart, &fractionalPart, passedDecimalPoint, sequence[i])
+		} else if char >= '0' && char <= '9' {
+			updateFloatParts(&intPart, &fractionalPart, passedDecimalPoint, char)
 		} else {
 			inPossibleFloat = false
 		}
 
-		i += 1
+		i += width
 	}
 
 	if !passedDecimalPoint || intPart == "" || fractionalPart == "" {
@@ -266,7 +271,7 @@ func takeFloatLiteral(state *lexState, sequence string, startPos int) int {
 	return len(value)
 }
 
-func updateFloatParts(intPart *string, fractionalPart *string, passedDecimalPoint bool, char byte) {
+func updateFloatParts(intPart *string, fractionalPart *string, passedDecimalPoint bool, char rune) {
 	if passedDecimalPoint {
 		*fractionalPart += string(char)
 	} else {
@@ -280,13 +285,14 @@ func takeIntLiteral(state *lexState, sequence string, startPos int) int {
 	value := ""
 
 	for inPossibleInt && i < len(sequence) {
-		if sequence[i] >= '0' && sequence[i] <= '9' {
-			value += string(sequence[i])
+		char, width := utf8.DecodeRuneInString(sequence[i:])
+		if char >= '0' && char <= '9' {
+			value += string(char)
 		} else {
 			inPossibleInt = false
 		}
 
-		i += 1
+		i += width
 	}
 
 	state.tokens = append(state.tokens, &token{
@@ -305,13 +311,14 @@ func takeStringLiteral(state *lexState, sequence string, startPos int) (int, err
 	prevChar := ' '
 	value := ""
 	for inStringLiteral && i < len(sequence) {
-		if sequence[i] == '"' && prevChar != '\\' {
+		char, width := utf8.DecodeRuneInString(sequence[i:])
+		if char == '"' && prevChar != '\\' {
 			inStringLiteral = false
 		} else {
-			value += string(sequence[i])
+			value += string(char)
 		}
-		prevChar = rune(sequence[i])
-		i += 1
+		prevChar = char
+		i += width
 	}
 
 	if inStringLiteral && i == len(sequence) {
@@ -343,17 +350,18 @@ func takeStringLiteral(state *lexState, sequence string, startPos int) (int, err
 	return len(value) + 2, nil
 }
 
-func takeIdentifierOrKeyword(state *lexState, sequence string, restStartPos int, startChar byte) int {
+func takeIdentifierOrKeyword(state *lexState, sequence string, restStartPos int, startChar rune) int {
 	inPossibleIdent := true
 	i := restStartPos
 	value := string(startChar)
 	for inPossibleIdent && i < len(sequence) {
-		if isIdentChar(sequence[i]) {
-			value += string(sequence[i])
+		char, width := utf8.DecodeRuneInString(sequence[i:])
+		if isIdentChar(char) {
+			value += string(char)
 		} else {
 			inPossibleIdent = false
 		}
-		i += 1
+		i += width
 	}
 
 	tType := deriveIdentOrKeywordTokenType(value)
@@ -397,7 +405,7 @@ func takeBoolLiteral(state *lexState, sequence string, startPos int) int {
 	return len(value)
 }
 
-func lexUpdateLine(state *lexState, char byte) {
+func lexUpdateLine(state *lexState, char rune) {
 	if char == '\n' {
 		state.relativeLineInfo.Line += 1
 		state.relativeLineInfo.Column = 1

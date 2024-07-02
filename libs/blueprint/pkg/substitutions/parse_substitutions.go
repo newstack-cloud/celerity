@@ -2,6 +2,7 @@ package substitutions
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 )
@@ -66,21 +67,23 @@ func ParseSubstitutionValues(
 		outputLineInfo:     outputLineInfo,
 	}
 
-	// TODO: iterate over runes instead of bytes
-	// decode rune increment by rune width
-	for i := 0; i < len(value); i += 1 {
+	i := 0
+	for i < len(value) {
 		isOpenSubBracket := checkOpenSubBracket(state, value, i)
 		checkStringLiteral(state, value, i)
 		isCloseSubBracket := checkCloseSubBracket(state, value, i, substitutionContext)
 
-		state.prevChar = rune(value[i])
+		char, width := utf8.DecodeRuneInString(value[i:])
+		state.prevChar = char
 		if !isCloseSubBracket {
-			state.potentialNonSubStr += string(value[i])
+			state.potentialNonSubStr += string(char)
 		}
 		if state.inPossibleSub && !isOpenSubBracket {
-			state.potentialSub += string(value[i])
+			state.potentialSub += string(char)
 		}
-		updateLineInfo(state, value[i])
+		updateLineInfo(state, char)
+
+		i += width
 	}
 
 	if len(state.potentialNonSubStr) > 0 {
@@ -132,7 +135,7 @@ func prepareSubstitutionErrors(substitutionContext string, state *interpolationP
 	)
 }
 
-func updateLineInfo(state *interpolationParseState, value byte) {
+func updateLineInfo(state *interpolationParseState, value rune) {
 	if value == '\n' {
 		state.relativeLineInfo.Line += 1
 		state.relativeLineInfo.Column = 1
@@ -142,7 +145,8 @@ func updateLineInfo(state *interpolationParseState, value byte) {
 }
 
 func checkOpenSubBracket(state *interpolationParseState, value string, i int) bool {
-	isOpenSubBracket := state.prevChar == '$' && value[i] == '{' && !state.inStringLiteral
+	char, _ := utf8.DecodeRuneInString(value[i:])
+	isOpenSubBracket := state.prevChar == '$' && char == '{' && !state.inStringLiteral
 	if isOpenSubBracket {
 		// Start of a substitution
 		state.inPossibleSub = true
@@ -192,13 +196,15 @@ func createStringValSourceMeta(state *interpolationParseState, stringVal string)
 }
 
 func checkStringLiteral(state *interpolationParseState, value string, i int) {
-	if value[i] == '"' && state.prevChar != '\\' && state.inPossibleSub {
+	char, _ := utf8.DecodeRuneInString(value[i:])
+	if char == '"' && state.prevChar != '\\' && state.inPossibleSub {
 		state.inStringLiteral = !state.inStringLiteral
 	}
 }
 
 func checkCloseSubBracket(state *interpolationParseState, value string, i int, substitutionContext string) bool {
-	isCloseSubBracket := value[i] == '}' && state.inPossibleSub && !state.inStringLiteral
+	char, _ := utf8.DecodeRuneInString(value[i:])
+	isCloseSubBracket := char == '}' && state.inPossibleSub && !state.inStringLiteral
 	if isCloseSubBracket {
 		// End of a substitution
 		subSourceStart := toAbsSourceMeta(state.parentSourceStart, state.relativeSubStart)
