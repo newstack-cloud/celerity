@@ -181,30 +181,31 @@ func errSerialiseSubstitutionInvalidPathItem(pathItem *SubstitutionPathItem) err
 	}
 }
 
-func errLexUnexpectedEndOfInput(evaluatingTokenType string) error {
-	return fmt.Errorf(
+func errLexUnexpectedEndOfInput(line int, column int, evaluatingTokenType string) error {
+	message := fmt.Sprintf(
 		"validation failed due to an unexpected end of input having "+
 			"been encountered in a reference substitution when evaluating \"%s\"",
 		evaluatingTokenType,
 	)
+	return errLexError(message, line, column)
 }
 
 func errLexUnexpectedChar(
+	line int,
 	column int,
 	char rune,
 ) error {
-	return fmt.Errorf(
+	message := fmt.Sprintf(
 		"validation failed due to an unexpected character \"%s\" having "+
-			"been encountered in a reference substitution at column %d",
+			"been encountered in a reference substitution",
 		string(char),
-		column,
 	)
+	return errLexError(message, line, column)
 }
 
 // ParseError is an error that is returned
 // during failure to parse a reference substitution.
 type ParseError struct {
-	pos     int
 	token   *token
 	message string
 	Line    int
@@ -214,17 +215,16 @@ type ParseError struct {
 func (e *ParseError) Error() string {
 	var errStr string
 	if e.token != nil {
-		errStr = fmt.Sprintf("parse error at column %d with token type %s: %s", e.pos, e.token.tokenType, e.message)
+		errStr = fmt.Sprintf("parse error at column %d with token type %s: %s", e.Column, e.token.tokenType, e.message)
 	} else {
 		errStr = fmt.Sprintf("parse error at end of input: %s", e.message)
 	}
 	return errStr
 }
 
-func errParseError(t *token, pos int, message string, line int, col int) error {
+func errParseError(t *token, message string, line int, col int) error {
 	return &ParseError{
 		token:   t,
-		pos:     pos,
 		message: message,
 		Line:    line,
 		Column:  col,
@@ -232,13 +232,13 @@ func errParseError(t *token, pos int, message string, line int, col int) error {
 }
 
 type ParseErrors struct {
-	message string
-	errors  []error
+	message     string
+	ChildErrors []error
 }
 
 func (e *ParseErrors) Error() string {
 	errStr := fmt.Sprintf("parse errors: %s", e.message)
-	for _, err := range e.errors {
+	for _, err := range e.ChildErrors {
 		errStr += fmt.Sprintf(childErrorsFormatStr, err.Error())
 	}
 	return errStr
@@ -246,19 +246,19 @@ func (e *ParseErrors) Error() string {
 
 func errParseErrorMultiple(message string, errors []error) error {
 	return &ParseErrors{
-		message: message,
-		errors:  errors,
+		message:     message,
+		ChildErrors: errors,
 	}
 }
 
 type LexErrors struct {
-	message string
-	errors  []error
+	message     string
+	ChildErrors []error
 }
 
 func (e *LexErrors) Error() string {
 	errStr := fmt.Sprintf("lex errors: %s", e.message)
-	for _, err := range e.errors {
+	for _, err := range e.ChildErrors {
 		errStr += fmt.Sprintf(childErrorsFormatStr, err.Error())
 	}
 	return errStr
@@ -266,7 +266,28 @@ func (e *LexErrors) Error() string {
 
 func errLexMultiple(message string, errors []error) error {
 	return &LexErrors{
+		message:     message,
+		ChildErrors: errors,
+	}
+}
+
+// LexError is an error that is returned
+// during failure to during lexical analysis
+// of a reference substitution.
+type LexError struct {
+	message string
+	Line    int
+	Column  int
+}
+
+func (e *LexError) Error() string {
+	return fmt.Sprintf("lex error at column %d: %s", e.Column, e.message)
+}
+
+func errLexError(message string, line int, col int) error {
+	return &LexError{
 		message: message,
-		errors:  errors,
+		Line:    line,
+		Column:  col,
 	}
 }

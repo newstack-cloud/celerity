@@ -3,6 +3,7 @@ package substitutions
 import (
 	"testing"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	. "gopkg.in/check.v1"
 )
@@ -529,4 +530,86 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 			Column: 50,
 		},
 	})
+}
+
+func (s *ParseSubstitutionsTestSuite) Test_fails_to_parse_susbstitution_reporting_correct_position(c *C) {
+	_, err := ParseSubstitutionValues(
+		"",
+		// hex numbers are not supported in the substitution language.
+		`${  format(0x23)   }`,
+		// Emulate this substitution starting on line 100, column 50.
+		// Source meta values of substitution components are offset from the start
+		// of the input string.
+		&source.Meta{
+			Line:   100,
+			Column: 50,
+		},
+		true,
+	)
+	c.Assert(err, NotNil)
+
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	// Top-level error corresponds to the outer start point
+	// of the substitution (the location of the "${").
+	c.Assert(*loadErr.Line, Equals, 100)
+	c.Assert(*loadErr.Column, Equals, 50)
+
+	parseErrs, isParseErrs := loadErr.ChildErrors[0].(*ParseErrors)
+	c.Assert(isParseErrs, Equals, true)
+	c.Assert(parseErrs.ChildErrors, HasLen, 1)
+
+	parseErr, isParseErr := parseErrs.ChildErrors[0].(*ParseError)
+	c.Assert(isParseErr, Equals, true)
+	// The parse error corresponds to the "x" in "0x23"
+	// which is not expected after the "0".
+	c.Assert(parseErr.Line, Equals, 100)
+	c.Assert(parseErr.Column, Equals, 62)
+	c.Assert(
+		parseErr.Error(),
+		Equals,
+		"parse error at column 62 with token type identifier: "+
+			"expected a comma after function argument 0",
+	)
+}
+
+func (s *ParseSubstitutionsTestSuite) Test_fails_to_parse_susbstitution_reporting_correct_position_for_lex_error(c *C) {
+	_, err := ParseSubstitutionValues(
+		"",
+		// "!" is an unexpected punctuation mark in the substitution language,
+		// this should lead to a lex error.
+		`${  "start of string literal"!  }`,
+		// Emulate this substitution starting on line 150, column 70.
+		// Source meta values of substitution components are offset from the start
+		// of the input string.
+		&source.Meta{
+			Line:   150,
+			Column: 70,
+		},
+		true,
+	)
+	c.Assert(err, NotNil)
+
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	// Top-level error corresponds to the outer start point
+	// of the substitution (the location of the "${").
+	c.Assert(*loadErr.Line, Equals, 150)
+	c.Assert(*loadErr.Column, Equals, 70)
+
+	lexErrs, isLexErrs := loadErr.ChildErrors[0].(*LexErrors)
+	c.Assert(isLexErrs, Equals, true)
+	c.Assert(lexErrs.ChildErrors, HasLen, 1)
+
+	lexErr, isLexErr := lexErrs.ChildErrors[0].(*LexError)
+	c.Assert(isLexErr, Equals, true)
+	// The lex error corresponds to the "!" after the string literal.
+	c.Assert(lexErr.Line, Equals, 150)
+	c.Assert(lexErr.Column, Equals, 99)
+	c.Assert(
+		lexErr.Error(),
+		Equals,
+		"lex error at column 99: validation failed due to an unexpected"+
+			" character \"!\" having been encountered in a reference substitution",
+	)
 }

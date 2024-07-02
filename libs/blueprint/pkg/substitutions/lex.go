@@ -119,7 +119,15 @@ func lex(sequence string, parentSourceStart *source.Meta) ([]*token, error) {
 			continue
 		}
 
-		errors = append(errors, errLexUnexpectedChar(i, char))
+		line := toAbsLine(
+			lexState.parentSourceStart.Line,
+			lexState.relativeLineInfo.Line,
+		)
+		col := toAbsColumn(
+			lexState.parentSourceStart.Column,
+			lexState.relativeLineInfo.Column,
+		)
+		errors = append(errors, errLexUnexpectedChar(line, col, char))
 		i += 1
 	}
 
@@ -322,7 +330,15 @@ func takeStringLiteral(state *lexState, sequence string, startPos int) (int, err
 	}
 
 	if inStringLiteral && i == len(sequence) {
-		return i - startPos, errLexUnexpectedEndOfInput("string literal")
+		line := toAbsLine(
+			state.parentSourceStart.Line,
+			state.relativeLineInfo.Line,
+		)
+		col := toAbsColumn(
+			state.parentSourceStart.Column,
+			state.relativeLineInfo.Column,
+		)
+		return i - startPos, errLexUnexpectedEndOfInput(line, col, "string literal")
 	}
 
 	// Differentiate between a string literal and a name string literal

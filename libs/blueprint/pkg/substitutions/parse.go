@@ -154,7 +154,6 @@ func (p *Parser) substitition() (*Substitution, error) {
 
 	return nil, errParseError(
 		token,
-		p.pos,
 		"failed to parse substitution, found unexpected or missing token",
 		line,
 		col,
@@ -564,7 +563,7 @@ func (p *Parser) error(t *token, message string) error {
 		col = t.relativeCol + p.parentSourceStart.Column
 	}
 
-	return errParseError(t, p.pos, message, line, col)
+	return errParseError(t, message, line, col)
 }
 
 func (p *Parser) check(tokenType tokenType) bool {
