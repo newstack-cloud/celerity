@@ -17,10 +17,11 @@ func NormaliseSchema(bpSchema *Blueprint) {
 		NormaliseTransform(bpSchema.Transform)
 	}
 
-	if bpSchema.Variables != nil {
-		for _, variable := range bpSchema.Variables {
+	if bpSchema.Variables != nil && bpSchema.Variables.Values != nil {
+		for _, variable := range bpSchema.Variables.Values {
 			NormaliseVariable(variable)
 		}
+		bpSchema.Variables.SourceMeta = nil
 	}
 }
 

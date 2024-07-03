@@ -152,6 +152,10 @@ func (v *ScalarValue) UnmarshalJSON(data []byte) error {
 }
 
 func (l *ScalarValue) Equal(otherScalar *ScalarValue) bool {
+	if l == nil || otherScalar == nil {
+		return false
+	}
+
 	if l.StringValue != nil && otherScalar.StringValue != nil {
 		return *l.StringValue == *otherScalar.StringValue
 	}

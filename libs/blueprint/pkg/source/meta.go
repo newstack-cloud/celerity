@@ -9,3 +9,13 @@ type Meta struct {
 	Line   int
 	Column int
 }
+
+// PositionFromSourceMeta returns the line and column from the provided source meta.
+// This is primarily useful for attaching position information to errors.
+func PositionFromSourceMeta(sourceMeta *Meta) (line *int, column *int) {
+	if sourceMeta == nil {
+		return nil, nil
+	}
+
+	return &sourceMeta.Line, &sourceMeta.Column
+}

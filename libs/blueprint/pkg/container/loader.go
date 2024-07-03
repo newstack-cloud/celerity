@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/links"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/state"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/transform"
@@ -71,6 +72,7 @@ type defaultLoader struct {
 	stateContainer        state.Container
 	updateChan            chan Update
 	validateRuntimeValues bool
+	transformSpec         bool
 }
 
 // NewDefaultLoader creates a new instance of the default
@@ -87,12 +89,19 @@ type defaultLoader struct {
 // This is useful when you want to validate a blueprint spec without
 // associating it with an instance.
 // (e.g. validation for code editors or CLI dry runs)
+//
+// You can set transformSpec to false if you don't want to apply
+// transformers to the blueprint spec.
+// This is useful when you want to validate a blueprint spec without
+// applying any transformations.
+// (e.g. validation for code editors or CLI dry runs)
 func NewDefaultLoader(
 	providers map[string]provider.Provider,
 	specTransformers map[string]transform.SpecTransformer,
 	stateContainer state.Container,
 	updateChan chan Update,
 	validateRuntimeValues bool,
+	transformSpec bool,
 ) Loader {
 	return &defaultLoader{
 		providers,
@@ -100,6 +109,7 @@ func NewDefaultLoader(
 		stateContainer,
 		updateChan,
 		validateRuntimeValues,
+		transformSpec,
 	}
 }
 
@@ -186,6 +196,12 @@ func (l *defaultLoader) loadSpec(
 		return nil, err
 	}
 
+	if !l.transformSpec {
+		return &internalBlueprintSpec{
+			schema: blueprintSchema,
+		}, nil
+	}
+
 	// todo: change l.validateResources to l.validateAbstractResources
 	// to limit pre-transform validation to abstract resources provided by
 	// transformers only.
@@ -226,16 +242,29 @@ func (l *defaultLoader) loadSpec(
 func (l *defaultLoader) collectTransformers(schema *schema.Blueprint) ([]transform.SpecTransformer, error) {
 	usedBySpec := []transform.SpecTransformer{}
 	missingTransformers := []string{}
-	for _, name := range schema.Transform.Values {
+	childErrors := []error{}
+	for i, name := range schema.Transform.Values {
 		transformer, exists := l.specTransformers[name]
 		if exists {
 			usedBySpec = append(usedBySpec, transformer)
 		} else {
 			missingTransformers = append(missingTransformers, name)
+			sourceMeta := (*source.Meta)(nil)
+			if len(schema.Transform.SourceMeta) > 0 {
+				sourceMeta = schema.Transform.SourceMeta[i]
+			}
+			line, col := source.PositionFromSourceMeta(sourceMeta)
+			childErrors = append(childErrors, errTransformerMissing(name, line, col))
 		}
 	}
 	if len(missingTransformers) > 0 {
-		return nil, errTransformersMissingError(missingTransformers)
+		firstSourceMeta := (*source.Meta)(nil)
+		if len(schema.Transform.SourceMeta) > 0 {
+			firstSourceMeta = schema.Transform.SourceMeta[0]
+		}
+
+		line, col := source.PositionFromSourceMeta(firstSourceMeta)
+		return nil, errTransformersMissing(missingTransformers, childErrors, line, col)
 	}
 	return usedBySpec, nil
 }
@@ -245,10 +274,14 @@ func (l *defaultLoader) validateVariables(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 ) error {
+	if bpSchema.Variables == nil {
+		return nil
+	}
+
 	// To be as useful as possible, we'll collect and
 	// report issues for all the problematic variables.
 	variableErrors := map[string]error{}
-	for name, varSchema := range bpSchema.Variables {
+	for name, varSchema := range bpSchema.Variables.Values {
 		if core.SliceContains(schema.CoreVariableTypes, varSchema.Type) {
 			err := validation.ValidateCoreVariable(
 				ctx, name, varSchema, params, l.validateRuntimeValues,

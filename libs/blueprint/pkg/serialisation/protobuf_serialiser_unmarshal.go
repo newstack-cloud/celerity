@@ -66,13 +66,13 @@ func fromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
 	}, nil
 }
 
-func fromVariablesPB(variables map[string]*schemapb.Variable) (map[string]*schema.Variable, error) {
-	if variables == nil {
+func fromVariablesPB(variablesPB map[string]*schemapb.Variable) (*schema.VariableMap, error) {
+	if variablesPB == nil {
 		return nil, nil
 	}
 
-	var variablesPB = make(map[string]*schema.Variable)
-	for k, v := range variables {
+	var variables = make(map[string]*schema.Variable)
+	for k, v := range variablesPB {
 		defaultValue, err := fromScalarValuePB(v.Default, true)
 		if err != nil {
 			return nil, err
@@ -83,7 +83,7 @@ func fromVariablesPB(variables map[string]*schemapb.Variable) (map[string]*schem
 			return nil, err
 		}
 
-		variablesPB[k] = &schema.Variable{
+		variables[k] = &schema.Variable{
 			Type:          schema.VariableType(v.Type),
 			Description:   *v.Description,
 			Secret:        v.Secret,
@@ -91,7 +91,10 @@ func fromVariablesPB(variables map[string]*schemapb.Variable) (map[string]*schem
 			AllowedValues: allowedValues,
 		}
 	}
-	return variablesPB, nil
+
+	return &schema.VariableMap{
+		Values: variables,
+	}, nil
 }
 
 func fromIncludesPB(includesPB map[string]*schemapb.Include) (map[string]*schema.Include, error) {

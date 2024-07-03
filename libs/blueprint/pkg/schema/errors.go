@@ -51,6 +51,10 @@ const (
 	// when the reason for a blueprint schema load error is due to
 	// an invalid transform field value being provided.
 	ErrorSchemaReasonCodeInvalidTransformType ErrorSchemaReasonCode = "invalid_transform_type"
+	// ErrorSchemaReasonCodeInvalidMap is provided when the reason
+	// for a blueprint schema load error is due to an invalid map
+	// being provided.
+	ErrorSchemaReasonCodeInvalidMap ErrorSchemaReasonCode = "invalid_map"
 	// ErrorSchemaReasonCodeGeneral is provided when the reason
 	// for a blueprint schema load error is not specific,
 	// primarily used for errors wrapped with parent scope line information.
@@ -104,6 +108,23 @@ func errInvalidTransformType(underlyingError error, line *int, column *int) erro
 		),
 		SourceLine:   line,
 		SourceColumn: column,
+	}
+}
+
+func errInvalidMap(value *yaml.Node, field string) error {
+	innerError := fmt.Errorf("an invalid value has been provided for %s, expected a mapping", field)
+	if value == nil {
+		return &Error{
+			ReasonCode: ErrorSchemaReasonCodeInvalidMap,
+			Err:        innerError,
+		}
+	}
+
+	return &Error{
+		ReasonCode:   ErrorSchemaReasonCodeInvalidMap,
+		Err:          innerError,
+		SourceLine:   &value.Line,
+		SourceColumn: &value.Column,
 	}
 }
 

@@ -2,6 +2,8 @@ package container
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
@@ -95,6 +97,8 @@ func errUnsupportedSpecFileExtension(filePath string) error {
 
 func errVariableValidationError(errorMap map[string]error) error {
 	errCount := len(errorMap)
+	l := log.New(os.Stderr, "", 0)
+	l.Printf("errVariableValidationError: errorMap: %+v\n", errorMap)
 	return &errors.LoadError{
 		ReasonCode:  ErrorReasonCodeVariableValidationErrors,
 		Err:         fmt.Errorf("validation failed due to issues with %d variables in the spec", errCount),
@@ -111,11 +115,25 @@ func errExportValidationError(errorMap map[string]error) error {
 	}
 }
 
-func errTransformersMissingError(missingTransformers []string) error {
+func errTransformersMissing(missingTransformers []string, childErrors []error, line *int, column *int) error {
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonMissingTransformers,
 		Err: fmt.Errorf(
 			"the following transformers are missing in the blueprint loader: %s", strings.Join(missingTransformers, ", "),
 		),
+		ChildErrors: childErrors,
+		Line:        line,
+		Column:      column,
+	}
+}
+
+func errTransformerMissing(transformer string, line *int, column *int) error {
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonMissingTransformers,
+		Err: fmt.Errorf(
+			"the following transformer is missing from the blueprint loader: %s", transformer,
+		),
+		Line:   line,
+		Column: column,
 	}
 }

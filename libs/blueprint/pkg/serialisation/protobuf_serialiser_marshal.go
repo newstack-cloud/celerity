@@ -64,9 +64,13 @@ func toSchemaPB(blueprint *schema.Blueprint) (*schemapb.Blueprint, error) {
 	}, nil
 }
 
-func toVariablesPB(variables map[string]*schema.Variable) (map[string]*schemapb.Variable, error) {
+func toVariablesPB(variables *schema.VariableMap) (map[string]*schemapb.Variable, error) {
+	if variables == nil {
+		return nil, nil
+	}
+
 	var variablesPB = make(map[string]*schemapb.Variable)
-	for k, v := range variables {
+	for k, v := range variables.Values {
 		defaultValue, err := toScalarValuePB(v.Default, true)
 		if err != nil {
 			return nil, err

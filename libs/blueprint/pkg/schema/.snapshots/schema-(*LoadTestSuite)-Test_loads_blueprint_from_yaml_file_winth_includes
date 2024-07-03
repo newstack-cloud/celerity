@@ -11,30 +11,42 @@
       })
     }
   }),
-  Variables: (map[string]*schema.Variable) (len=2) {
-    (string) (len=13) "dynamoDBTable": (*schema.Variable)({
-      Type: (schema.VariableType) (len=6) "string",
-      Description: (string) (len=25) "The Orders DynamoDB Table",
-      Secret: (bool) false,
-      Default: (*core.ScalarValue)(<nil>),
-      AllowedValues: ([]*core.ScalarValue) <nil>,
-      SourceMeta: (*source.Meta)({
-        Line: (int) 6,
-        Column: (int) 5
+  Variables: (*schema.VariableMap)({
+    Values: (map[string]*schema.Variable) (len=2) {
+      (string) (len=13) "dynamoDBTable": (*schema.Variable)({
+        Type: (schema.VariableType) (len=6) "string",
+        Description: (string) (len=25) "The Orders DynamoDB Table",
+        Secret: (bool) false,
+        Default: (*core.ScalarValue)(<nil>),
+        AllowedValues: ([]*core.ScalarValue) <nil>,
+        SourceMeta: (*source.Meta)({
+          Line: (int) 6,
+          Column: (int) 5
+        })
+      }),
+      (string) (len=15) "ordersTopicName": (*schema.Variable)({
+        Type: (schema.VariableType) (len=6) "string",
+        Description: (string) (len=22) "The Orders Event Topic",
+        Secret: (bool) false,
+        Default: (*core.ScalarValue)(<nil>),
+        AllowedValues: ([]*core.ScalarValue) <nil>,
+        SourceMeta: (*source.Meta)({
+          Line: (int) 9,
+          Column: (int) 5
+        })
       })
-    }),
-    (string) (len=15) "ordersTopicName": (*schema.Variable)({
-      Type: (schema.VariableType) (len=6) "string",
-      Description: (string) (len=22) "The Orders Event Topic",
-      Secret: (bool) false,
-      Default: (*core.ScalarValue)(<nil>),
-      AllowedValues: ([]*core.ScalarValue) <nil>,
-      SourceMeta: (*source.Meta)({
-        Line: (int) 9,
-        Column: (int) 5
+    },
+    SourceMeta: (map[string]*source.Meta) (len=2) {
+      (string) (len=13) "dynamoDBTable": (*source.Meta)({
+        Line: (int) 5,
+        Column: (int) 3
+      }),
+      (string) (len=15) "ordersTopicName": (*source.Meta)({
+        Line: (int) 8,
+        Column: (int) 3
       })
-    })
-  },
+    }
+  }),
   Include: (map[string]*schema.Include) (len=1) {
     (string) (len=9) "coreInfra": (*schema.Include)({
       Path: (*substitutions.StringOrSubstitutions)({
