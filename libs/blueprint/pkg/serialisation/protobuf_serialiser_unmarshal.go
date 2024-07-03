@@ -137,7 +137,7 @@ func fromIncludesPB(includesPB map[string]*schemapb.Include) (*schema.IncludeMap
 	}, nil
 }
 
-func fromResourcesPB(resourcesPB map[string]*schemapb.Resource) (map[string]*schema.Resource, error) {
+func fromResourcesPB(resourcesPB map[string]*schemapb.Resource) (*schema.ResourceMap, error) {
 	if resourcesPB == nil {
 		return nil, nil
 	}
@@ -151,7 +151,10 @@ func fromResourcesPB(resourcesPB map[string]*schemapb.Resource) (map[string]*sch
 
 		resources[k] = resource
 	}
-	return resources, nil
+
+	return &schema.ResourceMap{
+		Values: resources,
+	}, nil
 }
 
 func fromDataSourcesPB(dataSourcesPB map[string]*schemapb.DataSource) (map[string]*schema.DataSource, error) {

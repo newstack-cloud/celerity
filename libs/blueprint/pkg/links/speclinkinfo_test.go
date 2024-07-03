@@ -353,135 +353,139 @@ func followPaths(ssChainLink *snapshotChainLink, possiblePaths interface{}) erro
 
 // Lots of links.
 var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
-	Resources: map[string]*schema.Resource{
-		"orderApi": {
-			Type: "aws/apigateway/api",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderApi",
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"orderApi": {
+				Type: "aws/apigateway/api",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderApi",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"app": "orderApi",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"app": "orderApi",
+			"orderQueue": {
+				Type: "aws/sqs/queue",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderWorkflow",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"app": "orderWorkflow",
+					},
 				},
 			},
-		},
-		"orderQueue": {
-			Type: "aws/sqs/queue",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderWorkflow",
+			"processOrdersFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderWorkflow",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"app": "orderWorkflow",
+			"createOrderFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderApi",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-		},
-		"processOrdersFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderWorkflow",
+			"getOrdersFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderApi",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
+			"ordersTable": {
+				Type: "aws/dynamodb/table",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"system": "orders",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-		},
-		"createOrderFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderApi",
+			"ordersStream": {
+				Type: "aws/dynamodb/stream",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"system": "orders",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"workflow": "orderStats",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
+			"statsAccumulatorFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"workflow": "orderStats",
+					},
 				},
 			},
-		},
-		"getOrdersFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderApi",
-				},
+			"standaloneRole": {
+				Type:     "aws/iam/role",
+				Metadata: &schema.Metadata{},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
-				},
-			},
-		},
-		"ordersTable": {
-			Type: "aws/dynamodb/table",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"system": "orders",
-				},
-			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
-				},
-			},
-		},
-		"ordersStream": {
-			Type: "aws/dynamodb/stream",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"system": "orders",
-				},
-			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"workflow": "orderStats",
-				},
-			},
-		},
-		"statsAccumulatorFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"workflow": "orderStats",
-				},
-			},
-		},
-		"standaloneRole": {
-			Type:     "aws/iam/role",
-			Metadata: &schema.Metadata{},
 		},
 	},
 }
 
 // No links.
 var testSpecLinkInfoBlueprintSchema2 = &schema.Blueprint{
-	Resources: map[string]*schema.Resource{
-		"exchangeRateFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "exchangeRates",
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"exchangeRateFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "exchangeRates",
+					},
 				},
 			},
-		},
-		"refreshExchangeRatesFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "exchangeRates",
+			"refreshExchangeRatesFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "exchangeRates",
+					},
 				},
 			},
-		},
-		"standaloneRole2": {
-			Type:     "aws/iam/role",
-			Metadata: &schema.Metadata{},
+			"standaloneRole2": {
+				Type:     "aws/iam/role",
+				Metadata: &schema.Metadata{},
+			},
 		},
 	},
 }
@@ -491,25 +495,27 @@ var testSpecLinkInfoBlueprintSchema2 = &schema.Blueprint{
 // fixture set up, however there is no link implementation for
 // lambda to lambda links.
 var testSpecLinkInfoBlueprintSchema3 = &schema.Blueprint{
-	Resources: map[string]*schema.Resource{
-		"exchangeRatesFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "exchangeRates",
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"exchangeRatesFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "exchangeRates",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"app": "exchangeRates",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"app": "exchangeRates",
-				},
-			},
-		},
-		"saveExchangeRatesFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "exchangeRates",
+			"saveExchangeRatesFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "exchangeRates",
+					},
 				},
 			},
 		},
@@ -524,76 +530,78 @@ var testSpecLinkInfoBlueprintSchema3 = &schema.Blueprint{
 // does not need to exist in order to deploy/create the other.
 // For this blueprint, an error should be returned.
 var testSpecLinkInfoBlueprintSchema4 = &schema.Blueprint{
-	Resources: map[string]*schema.Resource{
-		"ordersTable": {
-			Type: "aws/dynamodb/table",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"system": "orders",
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"ordersTable": {
+				Type: "aws/dynamodb/table",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"system": "orders",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
+			"ordersStream": {
+				Type: "aws/dynamodb/stream",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"system": "orders",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"workflow": "orderStats",
+					},
 				},
 			},
-		},
-		"ordersStream": {
-			Type: "aws/dynamodb/stream",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"system": "orders",
+			"statsAccumulatorFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"workflow": "orderStats",
+					},
+				},
+				// Indirect hard circular link back to orders table.
+				// (In reality the relationship between an lambda and a DynamoDB table is
+				// not hard but for the sake of this test case it is)
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"workflow": "orderStats",
+			"statsRetrieverFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"purpose": "retrieveStats",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"purpose": "retrieveStats",
+					},
 				},
 			},
-		},
-		"statsAccumulatorFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"workflow": "orderStats",
+			"lambdaExecutionRole": {
+				Type: "aws/iam/role",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"purpose": "retrieveStats",
+					},
 				},
-			},
-			// Indirect hard circular link back to orders table.
-			// (In reality the relationship between an lambda and a DynamoDB table is
-			// not hard but for the sake of this test case it is)
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
-				},
-			},
-		},
-		"statsRetrieverFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"purpose": "retrieveStats",
-				},
-			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"purpose": "retrieveStats",
-				},
-			},
-		},
-		"lambdaExecutionRole": {
-			Type: "aws/iam/role",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"purpose": "retrieveStats",
-				},
-			},
-			// Direct hard circular link between statsRetrieverFunction
-			// and lambdaExecutionRole.
-			// (In reality the relationship between an IAM role and a lambda is
-			// not hard but for the sake of this test case it is)
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"purpose": "retrieveStats",
+				// Direct hard circular link between statsRetrieverFunction
+				// and lambdaExecutionRole.
+				// (In reality the relationship between an IAM role and a lambda is
+				// not hard but for the sake of this test case it is)
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"purpose": "retrieveStats",
+					},
 				},
 			},
 		},
@@ -603,78 +611,80 @@ var testSpecLinkInfoBlueprintSchema4 = &schema.Blueprint{
 // Circular links with soft links breaking hard link cycles.
 // This should not cause an error!
 var testSpecLinkInfoBlueprintSchema5 = &schema.Blueprint{
-	Resources: map[string]*schema.Resource{
-		"ordersTable": {
-			Type: "aws/dynamodb/table",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"system": "orders",
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"ordersTable": {
+				Type: "aws/dynamodb/table",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"system": "orders",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
+			"ordersStream": {
+				Type: "aws/dynamodb/stream",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"system": "orders",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"workflow": "orderStats",
+					},
 				},
 			},
-		},
-		"ordersStream": {
-			Type: "aws/dynamodb/stream",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"system": "orders",
+			"statsAccumulatorFunction": {
+				// Represents a theoretical stratos abstraction
+				// of an aws lambda function.
+				Type: "stratosaws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"workflow": "orderStats",
+					},
+				},
+				// Indirect circular link back to orders table.
+				// The soft link between "stratosaws/lambda/function"
+				// and "aws/dynamodb/table" breaks the hard link cycle.
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"workflow": "orderStats",
+			"statsRetrieverFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"purpose": "retrieveStats",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"purpose": "retrieveStats",
+					},
 				},
 			},
-		},
-		"statsAccumulatorFunction": {
-			// Represents a theoretical stratos abstraction
-			// of an aws lambda function.
-			Type: "stratosaws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"workflow": "orderStats",
+			"lambdaExecutionRole": {
+				// Represents a theoretical stratos abstraction
+				// of an aws iam role.
+				Type: "stratosaws/iam/role",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"purpose": "retrieveStats",
+					},
 				},
-			},
-			// Indirect circular link back to orders table.
-			// The soft link between "stratosaws/lambda/function"
-			// and "aws/dynamodb/table" breaks the hard link cycle.
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
-				},
-			},
-		},
-		"statsRetrieverFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"purpose": "retrieveStats",
-				},
-			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"purpose": "retrieveStats",
-				},
-			},
-		},
-		"lambdaExecutionRole": {
-			// Represents a theoretical stratos abstraction
-			// of an aws iam role.
-			Type: "stratosaws/iam/role",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"purpose": "retrieveStats",
-				},
-			},
-			// Direct soft circular link between statsRetrieverFunction
-			// and lambdaExecutionRole.
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"purpose": "retrieveStats",
+				// Direct soft circular link between statsRetrieverFunction
+				// and lambdaExecutionRole.
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"purpose": "retrieveStats",
+					},
 				},
 			},
 		},

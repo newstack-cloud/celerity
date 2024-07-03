@@ -18,14 +18,16 @@ func (s *BlueprintValidationTestSuite) Test_succeeds_without_any_issues_for_a_va
 	instanceType := "t2.micro"
 	blueprint := &schema.Blueprint{
 		Version: Version2023_04_20,
-		Resources: map[string]*schema.Resource{
-			"resource1": {
-				Type: "aws/ec2/instance",
-				Spec: &core.MappingNode{
-					Fields: map[string]*core.MappingNode{
-						"instanceType": &core.MappingNode{
-							Literal: &core.ScalarValue{
-								StringValue: &instanceType,
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"resource1": {
+					Type: "aws/ec2/instance",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"instanceType": &core.MappingNode{
+								Literal: &core.ScalarValue{
+									StringValue: &instanceType,
+								},
 							},
 						},
 					},
@@ -40,14 +42,16 @@ func (s *BlueprintValidationTestSuite) Test_succeeds_without_any_issues_for_a_va
 func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_not_set(c *C) {
 	instanceType := "t2.micro"
 	blueprint := &schema.Blueprint{
-		Resources: map[string]*schema.Resource{
-			"resource1": {
-				Type: "aws/ec2/instance",
-				Spec: &core.MappingNode{
-					Fields: map[string]*core.MappingNode{
-						"instanceType": &core.MappingNode{
-							Literal: &core.ScalarValue{
-								StringValue: &instanceType,
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"resource1": {
+					Type: "aws/ec2/instance",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"instanceType": &core.MappingNode{
+								Literal: &core.ScalarValue{
+									StringValue: &instanceType,
+								},
 							},
 						},
 					},
@@ -74,14 +78,16 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_i
 	instanceType := "t2.micro"
 	blueprint := &schema.Blueprint{
 		Version: "2023-09-15",
-		Resources: map[string]*schema.Resource{
-			"resource1": {
-				Type: "aws/ec2/instance",
-				Spec: &core.MappingNode{
-					Fields: map[string]*core.MappingNode{
-						"instanceType": &core.MappingNode{
-							Literal: &core.ScalarValue{
-								StringValue: &instanceType,
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"resource1": {
+					Type: "aws/ec2/instance",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"instanceType": &core.MappingNode{
+								Literal: &core.ScalarValue{
+									StringValue: &instanceType,
+								},
 							},
 						},
 					},
@@ -121,7 +127,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_resources_pr
 func (s *BlueprintValidationTestSuite) Test_reports_errors_when_no_resources_are_provided(c *C) {
 	blueprint := &schema.Blueprint{
 		Version:   Version2023_04_20,
-		Resources: map[string]*schema.Resource{},
+		Resources: &schema.ResourceMap{},
 	}
 	err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)

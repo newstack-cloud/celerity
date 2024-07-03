@@ -85,7 +85,7 @@ type defaultLoader struct {
 // blueprint, it will fail.
 //
 // You can set validateRuntimeValues to false if you don't want to check
-// the runtime values such as variables when loading blueprints.
+// the runtime values such as variable values when loading blueprints.
 // This is useful when you want to validate a blueprint spec without
 // associating it with an instance.
 // (e.g. validation for code editors or CLI dry runs)
@@ -162,7 +162,12 @@ func (l *defaultLoader) checkForInvalidReferencePlaceholders(blueprintSpec specc
 
 func (l *defaultLoader) createResourceProviderMap(blueprintSpec speccore.BlueprintSpec) map[string]provider.Provider {
 	resourceProviderMap := map[string]provider.Provider{}
-	for name := range blueprintSpec.Schema().Resources {
+	resources := map[string]*schema.Resource{}
+	if blueprintSpec.Schema().Resources != nil {
+		resources = blueprintSpec.Schema().Resources.Values
+	}
+
+	for name := range resources {
 		namespace := strings.SplitAfter(name, "/")[0]
 		resourceProviderMap[name] = l.providers[namespace]
 	}

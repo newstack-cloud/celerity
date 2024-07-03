@@ -169,7 +169,12 @@ func (l *defaultSpecLinkInfo) extractStandaloneResources(
 ) []*ResourceWithNameAndSelectors {
 	standaloneResources := []*ResourceWithNameAndSelectors{}
 	resourceNamesWithLinks := l.collectResourceNamesWithLinks()
-	for resourceName, resource := range l.spec.Schema().Resources {
+	resources := map[string]*schema.Resource{}
+	if l.spec.Schema().Resources != nil {
+		resources = l.spec.Schema().Resources.Values
+	}
+
+	for resourceName, resource := range resources {
 		if !core.SliceContainsComparable(resourceNamesWithLinks, resourceName) {
 			standaloneResources = append(standaloneResources, &ResourceWithNameAndSelectors{
 				Name:      resourceName,

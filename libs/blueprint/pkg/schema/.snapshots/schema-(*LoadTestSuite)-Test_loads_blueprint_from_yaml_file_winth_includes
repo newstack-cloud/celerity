@@ -219,1024 +219,1052 @@
       })
     }
   }),
-  Resources: (map[string]*schema.Resource) (len=6) {
-    (string) (len=10) "authoriser": (*schema.Resource)({
-      Type: (string) (len=16) "celerity/handler",
-      Description: (*substitutions.StringOrSubstitutions)(<nil>),
-      Metadata: (*schema.Metadata)({
-        DisplayName: (*substitutions.StringOrSubstitutions)({
-          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-            (*substitutions.StringOrSubstitution)({
-              StringValue: (*string)((len=10) "Authoriser"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>),
+  Resources: (*schema.ResourceMap)({
+    Values: (map[string]*schema.Resource) (len=6) {
+      (string) (len=10) "authoriser": (*schema.Resource)({
+        Type: (string) (len=16) "celerity/handler",
+        Description: (*substitutions.StringOrSubstitutions)(<nil>),
+        Metadata: (*schema.Metadata)({
+          DisplayName: (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=10) "Authoriser"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 87,
+                  Column: (int) 20
+                })
+              })
+            },
+            SourceMeta: (*source.Meta)({
+              Line: (int) 87,
+              Column: (int) 20
+            })
+          }),
+          Annotations: (map[string]*substitutions.StringOrSubstitutions) (len=4) {
+            (string) (len=10) "authoriser": (*substitutions.StringOrSubstitutions)({
+              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                (*substitutions.StringOrSubstitution)({
+                  StringValue: (*string)((len=4) "true"),
+                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 92,
+                    Column: (int) 21
+                  })
+                })
+              },
               SourceMeta: (*source.Meta)({
-                Line: (int) 87,
-                Column: (int) 20
+                Line: (int) 92,
+                Column: (int) 21
+              })
+            }),
+            (string) (len=26) "authoriser.identity.header": (*substitutions.StringOrSubstitutions)({
+              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                (*substitutions.StringOrSubstitution)({
+                  StringValue: (*string)((len=18) "MyCustomAuthHeader"),
+                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 96,
+                    Column: (int) 37
+                  })
+                })
+              },
+              SourceMeta: (*source.Meta)({
+                Line: (int) 96,
+                Column: (int) 37
+              })
+            }),
+            (string) (len=36) "authoriser.identity.reauthoriseEvery": (*substitutions.StringOrSubstitutions)({
+              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                (*substitutions.StringOrSubstitution)({
+                  StringValue: (*string)((len=2) "20"),
+                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 98,
+                    Column: (int) 47
+                  })
+                })
+              },
+              SourceMeta: (*source.Meta)({
+                Line: (int) 98,
+                Column: (int) 47
+              })
+            }),
+            (string) (len=40) "authoriser.identity.validationExpression": (*substitutions.StringOrSubstitutions)({
+              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                (*substitutions.StringOrSubstitution)({
+                  StringValue: (*string)((len=9) "Bearer .*"),
+                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 97,
+                    Column: (int) 51
+                  })
+                })
+              },
+              SourceMeta: (*source.Meta)({
+                Line: (int) 97,
+                Column: (int) 51
               })
             })
           },
+          Labels: (map[string]string) (len=1) {
+            (string) (len=3) "app": (string) (len=8) "orderApi"
+          },
+          Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Line: (int) 87,
-            Column: (int) 20
+            Column: (int) 7
           })
         }),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) (len=4) {
-          (string) (len=10) "authoriser": (*substitutions.StringOrSubstitutions)({
-            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-              (*substitutions.StringOrSubstitution)({
-                StringValue: (*string)((len=4) "true"),
-                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+        LinkSelector: (*schema.LinkSelector)(<nil>),
+        Spec: (*core.MappingNode)({
+          Literal: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=2) {
+            (string) (len=7) "handler": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(<nil>),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)((len=19) "handlers.Authoriser"),
                 SourceMeta: (*source.Meta)({
-                  Line: (int) 92,
-                  Column: (int) 21
+                  Line: (int) 102,
+                  Column: (int) 16
                 })
-              })
-            },
-            SourceMeta: (*source.Meta)({
-              Line: (int) 92,
-              Column: (int) 21
-            })
-          }),
-          (string) (len=26) "authoriser.identity.header": (*substitutions.StringOrSubstitutions)({
-            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-              (*substitutions.StringOrSubstitution)({
-                StringValue: (*string)((len=18) "MyCustomAuthHeader"),
-                SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                SourceMeta: (*source.Meta)({
-                  Line: (int) 96,
-                  Column: (int) 37
-                })
-              })
-            },
-            SourceMeta: (*source.Meta)({
-              Line: (int) 96,
-              Column: (int) 37
-            })
-          }),
-          (string) (len=36) "authoriser.identity.reauthoriseEvery": (*substitutions.StringOrSubstitutions)({
-            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-              (*substitutions.StringOrSubstitution)({
-                StringValue: (*string)((len=2) "20"),
-                SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                SourceMeta: (*source.Meta)({
-                  Line: (int) 98,
-                  Column: (int) 47
-                })
-              })
-            },
-            SourceMeta: (*source.Meta)({
-              Line: (int) 98,
-              Column: (int) 47
-            })
-          }),
-          (string) (len=40) "authoriser.identity.validationExpression": (*substitutions.StringOrSubstitutions)({
-            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-              (*substitutions.StringOrSubstitution)({
-                StringValue: (*string)((len=9) "Bearer .*"),
-                SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                SourceMeta: (*source.Meta)({
-                  Line: (int) 97,
-                  Column: (int) 51
-                })
-              })
-            },
-            SourceMeta: (*source.Meta)({
-              Line: (int) 97,
-              Column: (int) 51
-            })
-          })
-        },
-        Labels: (map[string]string) (len=1) {
-          (string) (len=3) "app": (string) (len=8) "orderApi"
-        },
-        Custom: (*core.MappingNode)(<nil>),
-        SourceMeta: (*source.Meta)({
-          Line: (int) 87,
-          Column: (int) 7
-        })
-      }),
-      LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) (len=2) {
-          (string) (len=7) "handler": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=19) "handlers.Authoriser"),
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 102,
                 Column: (int) 16
               })
             }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 102,
-              Column: (int) 16
-            })
-          }),
-          (string) (len=7) "timeout": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(120),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)(<nil>),
-              SourceMeta: (*source.Meta)({
-                Line: (int) 103,
-                Column: (int) 16
-              })
-            }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 103,
-              Column: (int) 16
-            })
-          })
-        },
-        Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-        SourceMeta: (*source.Meta)({
-          Line: (int) 102,
-          Column: (int) 7
-        })
-      }),
-      SourceMeta: (*source.Meta)({
-        Line: (int) 85,
-        Column: (int) 5
-      })
-    }),
-    (string) (len=16) "getOrdersHandler": (*schema.Resource)({
-      Type: (string) (len=16) "celerity/handler",
-      Description: (*substitutions.StringOrSubstitutions)(<nil>),
-      Metadata: (*schema.Metadata)({
-        DisplayName: (*substitutions.StringOrSubstitutions)({
-          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-            (*substitutions.StringOrSubstitution)({
-              StringValue: (*string)((len=18) "Get Orders Handler"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)({
-                Line: (int) 108,
-                Column: (int) 20
-              })
-            })
-          },
-          SourceMeta: (*source.Meta)({
-            Line: (int) 108,
-            Column: (int) 20
-          })
-        }),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Labels: (map[string]string) (len=1) {
-          (string) (len=3) "app": (string) (len=8) "orderApi"
-        },
-        Custom: (*core.MappingNode)(<nil>),
-        SourceMeta: (*source.Meta)({
-          Line: (int) 108,
-          Column: (int) 7
-        })
-      }),
-      LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) (len=3) {
-          (string) (len=8) "endpoint": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)(<nil>),
-            Fields: (map[string]*core.MappingNode) (len=3) {
-              (string) (len=10) "authoriser": (*core.MappingNode)({
-                Literal: (*core.ScalarValue)(<nil>),
-                Fields: (map[string]*core.MappingNode) <nil>,
-                Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
-                  Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                    (*substitutions.StringOrSubstitution)({
-                      StringValue: (*string)(<nil>),
-                      SubstitutionValue: (*substitutions.Substitution)({
-                        Function: (*substitutions.SubstitutionFunction)(<nil>),
-                        Variable: (*substitutions.SubstitutionVariable)(<nil>),
-                        DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
-                        ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
-                          ResourceName: (string) (len=10) "authoriser",
-                          Path: ([]*substitutions.SubstitutionPathItem) {
-                          },
-                          SourceMeta: (*source.Meta)({
-                            Line: (int) 117,
-                            Column: (int) 23
-                          })
-                        }),
-                        Child: (*substitutions.SubstitutionChild)(<nil>),
-                        StringValue: (*string)(<nil>),
-                        IntValue: (*int64)(<nil>),
-                        FloatValue: (*float64)(<nil>),
-                        BoolValue: (*bool)(<nil>),
-                        SourceMeta: (*source.Meta)({
-                          Line: (int) 117,
-                          Column: (int) 23
-                        })
-                      }),
-                      SourceMeta: (*source.Meta)({
-                        Line: (int) 117,
-                        Column: (int) 21
-                      })
-                    })
-                  },
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 117,
-                    Column: (int) 21
-                  })
-                }),
+            (string) (len=7) "timeout": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(120),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)(<nil>),
                 SourceMeta: (*source.Meta)({
-                  Line: (int) 117,
-                  Column: (int) 21
+                  Line: (int) 103,
+                  Column: (int) 16
                 })
               }),
-              (string) (len=6) "method": (*core.MappingNode)({
-                Literal: (*core.ScalarValue)({
-                  IntValue: (*int)(<nil>),
-                  BoolValue: (*bool)(<nil>),
-                  FloatValue: (*float64)(<nil>),
-                  StringValue: (*string)((len=3) "get"),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 115,
-                    Column: (int) 17
-                  })
-                }),
-                Fields: (map[string]*core.MappingNode) <nil>,
-                Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                SourceMeta: (*source.Meta)({
-                  Line: (int) 115,
-                  Column: (int) 17
-                })
-              }),
-              (string) (len=4) "path": (*core.MappingNode)({
-                Literal: (*core.ScalarValue)({
-                  IntValue: (*int)(<nil>),
-                  BoolValue: (*bool)(<nil>),
-                  FloatValue: (*float64)(<nil>),
-                  StringValue: (*string)((len=7) "/orders"),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 116,
-                    Column: (int) 15
-                  })
-                }),
-                Fields: (map[string]*core.MappingNode) <nil>,
-                Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                SourceMeta: (*source.Meta)({
-                  Line: (int) 116,
-                  Column: (int) 15
-                })
-              })
-            },
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 115,
-              Column: (int) 9
-            })
-          }),
-          (string) (len=7) "handler": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=18) "handlers.GetOrders"),
-              SourceMeta: (*source.Meta)({
-                Line: (int) 112,
-                Column: (int) 16
-              })
-            }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 112,
-              Column: (int) 16
-            })
-          }),
-          (string) (len=7) "timeout": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(120),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)(<nil>),
-              SourceMeta: (*source.Meta)({
-                Line: (int) 113,
-                Column: (int) 16
-              })
-            }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 113,
-              Column: (int) 16
-            })
-          })
-        },
-        Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-        SourceMeta: (*source.Meta)({
-          Line: (int) 112,
-          Column: (int) 7
-        })
-      }),
-      SourceMeta: (*source.Meta)({
-        Line: (int) 106,
-        Column: (int) 5
-      })
-    }),
-    (string) (len=8) "orderApi": (*schema.Resource)({
-      Type: (string) (len=12) "celerity/api",
-      Description: (*substitutions.StringOrSubstitutions)(<nil>),
-      Metadata: (*schema.Metadata)({
-        DisplayName: (*substitutions.StringOrSubstitutions)({
-          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-            (*substitutions.StringOrSubstitution)({
-              StringValue: (*string)((len=9) "Order API"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)({
-                Line: (int) 42,
-                Column: (int) 20
-              })
-            })
-          },
-          SourceMeta: (*source.Meta)({
-            Line: (int) 42,
-            Column: (int) 20
-          })
-        }),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Labels: (map[string]string) (len=1) {
-          (string) (len=3) "app": (string) (len=8) "orderApi"
-        },
-        Custom: (*core.MappingNode)({
-          Literal: (*core.ScalarValue)(<nil>),
-          Fields: (map[string]*core.MappingNode) (len=1) {
-            (string) (len=6) "visual": (*core.MappingNode)({
-              Literal: (*core.ScalarValue)(<nil>),
-              Fields: (map[string]*core.MappingNode) (len=4) {
-                (string) (len=6) "height": (*core.MappingNode)({
-                  Literal: (*core.ScalarValue)({
-                    IntValue: (*int)(50),
-                    BoolValue: (*bool)(<nil>),
-                    FloatValue: (*float64)(<nil>),
-                    StringValue: (*string)(<nil>),
-                    SourceMeta: (*source.Meta)({
-                      Line: (int) 49,
-                      Column: (int) 19
-                    })
-                  }),
-                  Fields: (map[string]*core.MappingNode) <nil>,
-                  Items: ([]*core.MappingNode) <nil>,
-                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 49,
-                    Column: (int) 19
-                  })
-                }),
-                (string) (len=9) "linkPorts": (*core.MappingNode)({
-                  Literal: (*core.ScalarValue)(<nil>),
-                  Fields: (map[string]*core.MappingNode) <nil>,
-                  Items: ([]*core.MappingNode) (len=1) {
-                    (*core.MappingNode)({
-                      Literal: (*core.ScalarValue)(<nil>),
-                      Fields: (map[string]*core.MappingNode) (len=3) {
-                        (string) (len=10) "annotation": (*core.MappingNode)({
-                          Literal: (*core.ScalarValue)({
-                            IntValue: (*int)(<nil>),
-                            BoolValue: (*bool)(<nil>),
-                            FloatValue: (*float64)(<nil>),
-                            StringValue: (*string)((len=10) "Orders API"),
-                            SourceMeta: (*source.Meta)({
-                              Line: (int) 53,
-                              Column: (int) 27
-                            })
-                          }),
-                          Fields: (map[string]*core.MappingNode) <nil>,
-                          Items: ([]*core.MappingNode) <nil>,
-                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                          SourceMeta: (*source.Meta)({
-                            Line: (int) 53,
-                            Column: (int) 27
-                          })
-                        }),
-                        (string) (len=9) "connectAt": (*core.MappingNode)({
-                          Literal: (*core.ScalarValue)({
-                            IntValue: (*int)(<nil>),
-                            BoolValue: (*bool)(<nil>),
-                            FloatValue: (*float64)(<nil>),
-                            StringValue: (*string)((len=6) "70 100"),
-                            SourceMeta: (*source.Meta)({
-                              Line: (int) 52,
-                              Column: (int) 26
-                            })
-                          }),
-                          Fields: (map[string]*core.MappingNode) <nil>,
-                          Items: ([]*core.MappingNode) <nil>,
-                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                          SourceMeta: (*source.Meta)({
-                            Line: (int) 52,
-                            Column: (int) 26
-                          })
-                        }),
-                        (string) (len=6) "linkTo": (*core.MappingNode)({
-                          Literal: (*core.ScalarValue)({
-                            IntValue: (*int)(<nil>),
-                            BoolValue: (*bool)(<nil>),
-                            FloatValue: (*float64)(<nil>),
-                            StringValue: (*string)((len=16) "getOrderEndpoint"),
-                            SourceMeta: (*source.Meta)({
-                              Line: (int) 51,
-                              Column: (int) 23
-                            })
-                          }),
-                          Fields: (map[string]*core.MappingNode) <nil>,
-                          Items: ([]*core.MappingNode) <nil>,
-                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                          SourceMeta: (*source.Meta)({
-                            Line: (int) 51,
-                            Column: (int) 23
-                          })
-                        })
-                      },
-                      Items: ([]*core.MappingNode) <nil>,
-                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                      SourceMeta: (*source.Meta)({
-                        Line: (int) 51,
-                        Column: (int) 15
-                      })
-                    })
-                  },
-                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 51,
-                    Column: (int) 13
-                  })
-                }),
-                (string) (len=5) "point": (*core.MappingNode)({
-                  Literal: (*core.ScalarValue)({
-                    IntValue: (*int)(<nil>),
-                    BoolValue: (*bool)(<nil>),
-                    FloatValue: (*float64)(<nil>),
-                    StringValue: (*string)((len=6) "20 100"),
-                    SourceMeta: (*source.Meta)({
-                      Line: (int) 47,
-                      Column: (int) 18
-                    })
-                  }),
-                  Fields: (map[string]*core.MappingNode) <nil>,
-                  Items: ([]*core.MappingNode) <nil>,
-                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 47,
-                    Column: (int) 18
-                  })
-                }),
-                (string) (len=5) "width": (*core.MappingNode)({
-                  Literal: (*core.ScalarValue)({
-                    IntValue: (*int)(50),
-                    BoolValue: (*bool)(<nil>),
-                    FloatValue: (*float64)(<nil>),
-                    StringValue: (*string)(<nil>),
-                    SourceMeta: (*source.Meta)({
-                      Line: (int) 48,
-                      Column: (int) 18
-                    })
-                  }),
-                  Fields: (map[string]*core.MappingNode) <nil>,
-                  Items: ([]*core.MappingNode) <nil>,
-                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 48,
-                    Column: (int) 18
-                  })
-                })
-              },
+              Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
-                Line: (int) 47,
-                Column: (int) 11
+                Line: (int) 103,
+                Column: (int) 16
               })
             })
           },
           Items: ([]*core.MappingNode) <nil>,
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
-            Line: (int) 46,
-            Column: (int) 9
+            Line: (int) 102,
+            Column: (int) 7
           })
         }),
         SourceMeta: (*source.Meta)({
-          Line: (int) 42,
-          Column: (int) 7
+          Line: (int) 85,
+          Column: (int) 5
         })
       }),
-      LinkSelector: (*schema.LinkSelector)({
-        ByLabel: (map[string]string) (len=1) {
-          (string) (len=3) "app": (string) (len=8) "orderApi"
-        },
+      (string) (len=16) "getOrdersHandler": (*schema.Resource)({
+        Type: (string) (len=16) "celerity/handler",
+        Description: (*substitutions.StringOrSubstitutions)(<nil>),
+        Metadata: (*schema.Metadata)({
+          DisplayName: (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=18) "Get Orders Handler"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 108,
+                  Column: (int) 20
+                })
+              })
+            },
+            SourceMeta: (*source.Meta)({
+              Line: (int) 108,
+              Column: (int) 20
+            })
+          }),
+          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
+          Labels: (map[string]string) (len=1) {
+            (string) (len=3) "app": (string) (len=8) "orderApi"
+          },
+          Custom: (*core.MappingNode)(<nil>),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 108,
+            Column: (int) 7
+          })
+        }),
+        LinkSelector: (*schema.LinkSelector)(<nil>),
+        Spec: (*core.MappingNode)({
+          Literal: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=3) {
+            (string) (len=8) "endpoint": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=3) {
+                (string) (len=10) "authoriser": (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)(<nil>),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
+                    Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                      (*substitutions.StringOrSubstitution)({
+                        StringValue: (*string)(<nil>),
+                        SubstitutionValue: (*substitutions.Substitution)({
+                          Function: (*substitutions.SubstitutionFunction)(<nil>),
+                          Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                          DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                          ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
+                            ResourceName: (string) (len=10) "authoriser",
+                            Path: ([]*substitutions.SubstitutionPathItem) {
+                            },
+                            SourceMeta: (*source.Meta)({
+                              Line: (int) 117,
+                              Column: (int) 23
+                            })
+                          }),
+                          Child: (*substitutions.SubstitutionChild)(<nil>),
+                          StringValue: (*string)(<nil>),
+                          IntValue: (*int64)(<nil>),
+                          FloatValue: (*float64)(<nil>),
+                          BoolValue: (*bool)(<nil>),
+                          SourceMeta: (*source.Meta)({
+                            Line: (int) 117,
+                            Column: (int) 23
+                          })
+                        }),
+                        SourceMeta: (*source.Meta)({
+                          Line: (int) 117,
+                          Column: (int) 21
+                        })
+                      })
+                    },
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 117,
+                      Column: (int) 21
+                    })
+                  }),
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 117,
+                    Column: (int) 21
+                  })
+                }),
+                (string) (len=6) "method": (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=3) "get"),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 115,
+                      Column: (int) 17
+                    })
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 115,
+                    Column: (int) 17
+                  })
+                }),
+                (string) (len=4) "path": (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=7) "/orders"),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 116,
+                      Column: (int) 15
+                    })
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 116,
+                    Column: (int) 15
+                  })
+                })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)({
+                Line: (int) 115,
+                Column: (int) 9
+              })
+            }),
+            (string) (len=7) "handler": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(<nil>),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)((len=18) "handlers.GetOrders"),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 112,
+                  Column: (int) 16
+                })
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)({
+                Line: (int) 112,
+                Column: (int) 16
+              })
+            }),
+            (string) (len=7) "timeout": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(120),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 113,
+                  Column: (int) 16
+                })
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)({
+                Line: (int) 113,
+                Column: (int) 16
+              })
+            })
+          },
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 112,
+            Column: (int) 7
+          })
+        }),
         SourceMeta: (*source.Meta)({
-          Line: (int) 55,
-          Column: (int) 7
+          Line: (int) 106,
+          Column: (int) 5
         })
       }),
-      Spec: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) (len=3) {
-          (string) (len=11) "environment": (*core.MappingNode)({
+      (string) (len=8) "orderApi": (*schema.Resource)({
+        Type: (string) (len=12) "celerity/api",
+        Description: (*substitutions.StringOrSubstitutions)(<nil>),
+        Metadata: (*schema.Metadata)({
+          DisplayName: (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=9) "Order API"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 42,
+                  Column: (int) 20
+                })
+              })
+            },
+            SourceMeta: (*source.Meta)({
+              Line: (int) 42,
+              Column: (int) 20
+            })
+          }),
+          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
+          Labels: (map[string]string) (len=1) {
+            (string) (len=3) "app": (string) (len=8) "orderApi"
+          },
+          Custom: (*core.MappingNode)({
             Literal: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) (len=1) {
-              (string) (len=9) "variables": (*core.MappingNode)({
+              (string) (len=6) "visual": (*core.MappingNode)({
                 Literal: (*core.ScalarValue)(<nil>),
-                Fields: (map[string]*core.MappingNode) (len=1) {
-                  (string) (len=14) "DYNAMODB_TABLE": (*core.MappingNode)({
-                    Literal: (*core.ScalarValue)(<nil>),
+                Fields: (map[string]*core.MappingNode) (len=4) {
+                  (string) (len=6) "height": (*core.MappingNode)({
+                    Literal: (*core.ScalarValue)({
+                      IntValue: (*int)(50),
+                      BoolValue: (*bool)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      StringValue: (*string)(<nil>),
+                      SourceMeta: (*source.Meta)({
+                        Line: (int) 49,
+                        Column: (int) 19
+                      })
+                    }),
                     Fields: (map[string]*core.MappingNode) <nil>,
                     Items: ([]*core.MappingNode) <nil>,
-                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
-                      Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                        (*substitutions.StringOrSubstitution)({
-                          StringValue: (*string)(<nil>),
-                          SubstitutionValue: (*substitutions.Substitution)({
-                            Function: (*substitutions.SubstitutionFunction)(<nil>),
-                            Variable: (*substitutions.SubstitutionVariable)(<nil>),
-                            DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
-                            ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
-                            Child: (*substitutions.SubstitutionChild)({
-                              ChildName: (string) (len=9) "coreInfra",
-                              Path: ([]*substitutions.SubstitutionPathItem) (len=1) {
-                                (*substitutions.SubstitutionPathItem)({
-                                  FieldName: (string) (len=13) "dynamoDBTable",
-                                  PrimitiveArrIndex: (*int64)(<nil>)
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 49,
+                      Column: (int) 19
+                    })
+                  }),
+                  (string) (len=9) "linkPorts": (*core.MappingNode)({
+                    Literal: (*core.ScalarValue)(<nil>),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) (len=1) {
+                      (*core.MappingNode)({
+                        Literal: (*core.ScalarValue)(<nil>),
+                        Fields: (map[string]*core.MappingNode) (len=3) {
+                          (string) (len=10) "annotation": (*core.MappingNode)({
+                            Literal: (*core.ScalarValue)({
+                              IntValue: (*int)(<nil>),
+                              BoolValue: (*bool)(<nil>),
+                              FloatValue: (*float64)(<nil>),
+                              StringValue: (*string)((len=10) "Orders API"),
+                              SourceMeta: (*source.Meta)({
+                                Line: (int) 53,
+                                Column: (int) 27
+                              })
+                            }),
+                            Fields: (map[string]*core.MappingNode) <nil>,
+                            Items: ([]*core.MappingNode) <nil>,
+                            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                            SourceMeta: (*source.Meta)({
+                              Line: (int) 53,
+                              Column: (int) 27
+                            })
+                          }),
+                          (string) (len=9) "connectAt": (*core.MappingNode)({
+                            Literal: (*core.ScalarValue)({
+                              IntValue: (*int)(<nil>),
+                              BoolValue: (*bool)(<nil>),
+                              FloatValue: (*float64)(<nil>),
+                              StringValue: (*string)((len=6) "70 100"),
+                              SourceMeta: (*source.Meta)({
+                                Line: (int) 52,
+                                Column: (int) 26
+                              })
+                            }),
+                            Fields: (map[string]*core.MappingNode) <nil>,
+                            Items: ([]*core.MappingNode) <nil>,
+                            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                            SourceMeta: (*source.Meta)({
+                              Line: (int) 52,
+                              Column: (int) 26
+                            })
+                          }),
+                          (string) (len=6) "linkTo": (*core.MappingNode)({
+                            Literal: (*core.ScalarValue)({
+                              IntValue: (*int)(<nil>),
+                              BoolValue: (*bool)(<nil>),
+                              FloatValue: (*float64)(<nil>),
+                              StringValue: (*string)((len=16) "getOrderEndpoint"),
+                              SourceMeta: (*source.Meta)({
+                                Line: (int) 51,
+                                Column: (int) 23
+                              })
+                            }),
+                            Fields: (map[string]*core.MappingNode) <nil>,
+                            Items: ([]*core.MappingNode) <nil>,
+                            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                            SourceMeta: (*source.Meta)({
+                              Line: (int) 51,
+                              Column: (int) 23
+                            })
+                          })
+                        },
+                        Items: ([]*core.MappingNode) <nil>,
+                        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                        SourceMeta: (*source.Meta)({
+                          Line: (int) 51,
+                          Column: (int) 15
+                        })
+                      })
+                    },
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 51,
+                      Column: (int) 13
+                    })
+                  }),
+                  (string) (len=5) "point": (*core.MappingNode)({
+                    Literal: (*core.ScalarValue)({
+                      IntValue: (*int)(<nil>),
+                      BoolValue: (*bool)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      StringValue: (*string)((len=6) "20 100"),
+                      SourceMeta: (*source.Meta)({
+                        Line: (int) 47,
+                        Column: (int) 18
+                      })
+                    }),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) <nil>,
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 47,
+                      Column: (int) 18
+                    })
+                  }),
+                  (string) (len=5) "width": (*core.MappingNode)({
+                    Literal: (*core.ScalarValue)({
+                      IntValue: (*int)(50),
+                      BoolValue: (*bool)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      StringValue: (*string)(<nil>),
+                      SourceMeta: (*source.Meta)({
+                        Line: (int) 48,
+                        Column: (int) 18
+                      })
+                    }),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) <nil>,
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 48,
+                      Column: (int) 18
+                    })
+                  })
+                },
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 47,
+                  Column: (int) 11
+                })
+              })
+            },
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)({
+              Line: (int) 46,
+              Column: (int) 9
+            })
+          }),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 42,
+            Column: (int) 7
+          })
+        }),
+        LinkSelector: (*schema.LinkSelector)({
+          ByLabel: (map[string]string) (len=1) {
+            (string) (len=3) "app": (string) (len=8) "orderApi"
+          },
+          SourceMeta: (*source.Meta)({
+            Line: (int) 55,
+            Column: (int) 7
+          })
+        }),
+        Spec: (*core.MappingNode)({
+          Literal: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=3) {
+            (string) (len=11) "environment": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=1) {
+                (string) (len=9) "variables": (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)(<nil>),
+                  Fields: (map[string]*core.MappingNode) (len=1) {
+                    (string) (len=14) "DYNAMODB_TABLE": (*core.MappingNode)({
+                      Literal: (*core.ScalarValue)(<nil>),
+                      Fields: (map[string]*core.MappingNode) <nil>,
+                      Items: ([]*core.MappingNode) <nil>,
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
+                        Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                          (*substitutions.StringOrSubstitution)({
+                            StringValue: (*string)(<nil>),
+                            SubstitutionValue: (*substitutions.Substitution)({
+                              Function: (*substitutions.SubstitutionFunction)(<nil>),
+                              Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                              DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                              ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
+                              Child: (*substitutions.SubstitutionChild)({
+                                ChildName: (string) (len=9) "coreInfra",
+                                Path: ([]*substitutions.SubstitutionPathItem) (len=1) {
+                                  (*substitutions.SubstitutionPathItem)({
+                                    FieldName: (string) (len=13) "dynamoDBTable",
+                                    PrimitiveArrIndex: (*int64)(<nil>)
+                                  })
+                                },
+                                SourceMeta: (*source.Meta)({
+                                  Line: (int) 69,
+                                  Column: (int) 29
                                 })
-                              },
+                              }),
+                              StringValue: (*string)(<nil>),
+                              IntValue: (*int64)(<nil>),
+                              FloatValue: (*float64)(<nil>),
+                              BoolValue: (*bool)(<nil>),
                               SourceMeta: (*source.Meta)({
                                 Line: (int) 69,
                                 Column: (int) 29
                               })
                             }),
-                            StringValue: (*string)(<nil>),
-                            IntValue: (*int64)(<nil>),
-                            FloatValue: (*float64)(<nil>),
-                            BoolValue: (*bool)(<nil>),
                             SourceMeta: (*source.Meta)({
                               Line: (int) 69,
-                              Column: (int) 29
+                              Column: (int) 27
                             })
-                          }),
-                          SourceMeta: (*source.Meta)({
-                            Line: (int) 69,
-                            Column: (int) 27
                           })
+                        },
+                        SourceMeta: (*source.Meta)({
+                          Line: (int) 69,
+                          Column: (int) 27
                         })
-                      },
+                      }),
                       SourceMeta: (*source.Meta)({
                         Line: (int) 69,
                         Column: (int) 27
                       })
-                    }),
-                    SourceMeta: (*source.Meta)({
-                      Line: (int) 69,
-                      Column: (int) 27
                     })
+                  },
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 69,
+                    Column: (int) 11
                   })
-                },
-                Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                SourceMeta: (*source.Meta)({
-                  Line: (int) 69,
-                  Column: (int) 11
                 })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)({
+                Line: (int) 68,
+                Column: (int) 9
               })
-            },
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 68,
-              Column: (int) 9
-            })
-          }),
-          (string) (len=7) "runtime": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=5) "go1.x"),
+            }),
+            (string) (len=7) "runtime": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(<nil>),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)((len=5) "go1.x"),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 74,
+                  Column: (int) 16
+                })
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 74,
                 Column: (int) 16
               })
             }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 74,
-              Column: (int) 16
-            })
-          }),
-          (string) (len=14) "tracingEnabled": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(true),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)(<nil>),
+            (string) (len=14) "tracingEnabled": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(<nil>),
+                BoolValue: (*bool)(true),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 77,
+                  Column: (int) 23
+                })
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 77,
                 Column: (int) 23
               })
-            }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 77,
-              Column: (int) 23
-            })
-          })
-        },
-        Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-        SourceMeta: (*source.Meta)({
-          Line: (int) 67,
-          Column: (int) 7
-        })
-      }),
-      SourceMeta: (*source.Meta)({
-        Line: (int) 40,
-        Column: (int) 5
-      })
-    }),
-    (string) (len=11) "orderPubSub": (*schema.Resource)({
-      Type: (string) (len=15) "celerity/pubsub",
-      Description: (*substitutions.StringOrSubstitutions)(<nil>),
-      Metadata: (*schema.Metadata)({
-        DisplayName: (*substitutions.StringOrSubstitutions)({
-          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-            (*substitutions.StringOrSubstitution)({
-              StringValue: (*string)((len=13) "Order Pub/Sub"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)({
-                Line: (int) 166,
-                Column: (int) 20
-              })
             })
           },
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
-            Line: (int) 166,
-            Column: (int) 20
+            Line: (int) 67,
+            Column: (int) 7
           })
         }),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Labels: (map[string]string) (len=1) {
-          (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-        },
-        Custom: (*core.MappingNode)(<nil>),
         SourceMeta: (*source.Meta)({
-          Line: (int) 166,
-          Column: (int) 7
+          Line: (int) 40,
+          Column: (int) 5
         })
       }),
-      LinkSelector: (*schema.LinkSelector)({
-        ByLabel: (map[string]string) (len=1) {
-          (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-        },
-        SourceMeta: (*source.Meta)({
-          Line: (int) 170,
-          Column: (int) 7
-        })
-      }),
-      Spec: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) (len=1) {
-          (string) (len=9) "topicName": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)(<nil>),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)(<nil>),
-                  SubstitutionValue: (*substitutions.Substitution)({
-                    Function: (*substitutions.SubstitutionFunction)(<nil>),
-                    Variable: (*substitutions.SubstitutionVariable)({
-                      VariableName: (string) (len=15) "ordersTopicName",
+      (string) (len=11) "orderPubSub": (*schema.Resource)({
+        Type: (string) (len=15) "celerity/pubsub",
+        Description: (*substitutions.StringOrSubstitutions)(<nil>),
+        Metadata: (*schema.Metadata)({
+          DisplayName: (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=13) "Order Pub/Sub"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 166,
+                  Column: (int) 20
+                })
+              })
+            },
+            SourceMeta: (*source.Meta)({
+              Line: (int) 166,
+              Column: (int) 20
+            })
+          }),
+          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
+          Labels: (map[string]string) (len=1) {
+            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+          },
+          Custom: (*core.MappingNode)(<nil>),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 166,
+            Column: (int) 7
+          })
+        }),
+        LinkSelector: (*schema.LinkSelector)({
+          ByLabel: (map[string]string) (len=1) {
+            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+          },
+          SourceMeta: (*source.Meta)({
+            Line: (int) 170,
+            Column: (int) 7
+          })
+        }),
+        Spec: (*core.MappingNode)({
+          Literal: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=1) {
+            (string) (len=9) "topicName": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)(<nil>),
+                    SubstitutionValue: (*substitutions.Substitution)({
+                      Function: (*substitutions.SubstitutionFunction)(<nil>),
+                      Variable: (*substitutions.SubstitutionVariable)({
+                        VariableName: (string) (len=15) "ordersTopicName",
+                        SourceMeta: (*source.Meta)({
+                          Line: (int) 173,
+                          Column: (int) 20
+                        })
+                      }),
+                      DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                      ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
+                      Child: (*substitutions.SubstitutionChild)(<nil>),
+                      StringValue: (*string)(<nil>),
+                      IntValue: (*int64)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      BoolValue: (*bool)(<nil>),
                       SourceMeta: (*source.Meta)({
                         Line: (int) 173,
                         Column: (int) 20
                       })
                     }),
-                    DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
-                    ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
-                    Child: (*substitutions.SubstitutionChild)(<nil>),
-                    StringValue: (*string)(<nil>),
-                    IntValue: (*int64)(<nil>),
-                    FloatValue: (*float64)(<nil>),
-                    BoolValue: (*bool)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Line: (int) 173,
-                      Column: (int) 20
+                      Column: (int) 18
                     })
-                  }),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 173,
-                    Column: (int) 18
                   })
+                },
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 173,
+                  Column: (int) 18
                 })
-              },
+              }),
               SourceMeta: (*source.Meta)({
                 Line: (int) 173,
                 Column: (int) 18
               })
-            }),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 173,
-              Column: (int) 18
-            })
-          })
-        },
-        Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-        SourceMeta: (*source.Meta)({
-          Line: (int) 173,
-          Column: (int) 7
-        })
-      }),
-      SourceMeta: (*source.Meta)({
-        Line: (int) 164,
-        Column: (int) 5
-      })
-    }),
-    (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
-      Type: (string) (len=21) "celerity/layerVersion",
-      Description: (*substitutions.StringOrSubstitutions)(<nil>),
-      Metadata: (*schema.Metadata)({
-        DisplayName: (*substitutions.StringOrSubstitutions)({
-          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-            (*substitutions.StringOrSubstitution)({
-              StringValue: (*string)((len=21) "Shared Packages Layer"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)({
-                Line: (int) 150,
-                Column: (int) 20
-              })
             })
           },
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
-            Line: (int) 150,
-            Column: (int) 20
+            Line: (int) 173,
+            Column: (int) 7
           })
         }),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Labels: (map[string]string) (len=2) {
-          (string) (len=3) "app": (string) (len=8) "orderApi",
-          (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-        },
-        Custom: (*core.MappingNode)(<nil>),
         SourceMeta: (*source.Meta)({
-          Line: (int) 150,
-          Column: (int) 7
+          Line: (int) 164,
+          Column: (int) 5
         })
       }),
-      LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) (len=3) {
-          (string) (len=18) "compatibleRuntimes": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)(<nil>),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) (len=1) {
-              (*core.MappingNode)({
-                Literal: (*core.ScalarValue)({
-                  IntValue: (*int)(<nil>),
-                  BoolValue: (*bool)(<nil>),
-                  FloatValue: (*float64)(<nil>),
-                  StringValue: (*string)((len=5) "go1.x"),
+      (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
+        Type: (string) (len=21) "celerity/layerVersion",
+        Description: (*substitutions.StringOrSubstitutions)(<nil>),
+        Metadata: (*schema.Metadata)({
+          DisplayName: (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=21) "Shared Packages Layer"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 150,
+                  Column: (int) 20
+                })
+              })
+            },
+            SourceMeta: (*source.Meta)({
+              Line: (int) 150,
+              Column: (int) 20
+            })
+          }),
+          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
+          Labels: (map[string]string) (len=2) {
+            (string) (len=3) "app": (string) (len=8) "orderApi",
+            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+          },
+          Custom: (*core.MappingNode)(<nil>),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 150,
+            Column: (int) 7
+          })
+        }),
+        LinkSelector: (*schema.LinkSelector)(<nil>),
+        Spec: (*core.MappingNode)({
+          Literal: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=3) {
+            (string) (len=18) "compatibleRuntimes": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) (len=1) {
+                (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=5) "go1.x"),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 155,
+                      Column: (int) 28
+                    })
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Line: (int) 155,
                     Column: (int) 28
                   })
-                }),
-                Fields: (map[string]*core.MappingNode) <nil>,
-                Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                SourceMeta: (*source.Meta)({
-                  Line: (int) 155,
-                  Column: (int) 28
                 })
+              },
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)({
+                Line: (int) 155,
+                Column: (int) 27
               })
-            },
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 155,
-              Column: (int) 27
-            })
-          }),
-          (string) (len=7) "content": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=27) "build/shared-packages-layer"),
+            }),
+            (string) (len=7) "content": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(<nil>),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)((len=27) "build/shared-packages-layer"),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 158,
+                  Column: (int) 16
+                })
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 158,
                 Column: (int) 16
               })
             }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 158,
-              Column: (int) 16
-            })
-          }),
-          (string) (len=9) "layerName": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=19) "sharedPackagesLayer"),
+            (string) (len=9) "layerName": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(<nil>),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)((len=19) "sharedPackagesLayer"),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 159,
+                  Column: (int) 18
+                })
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 159,
                 Column: (int) 18
               })
-            }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 159,
-              Column: (int) 18
-            })
-          })
-        },
-        Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-        SourceMeta: (*source.Meta)({
-          Line: (int) 155,
-          Column: (int) 7
-        })
-      }),
-      SourceMeta: (*source.Meta)({
-        Line: (int) 148,
-        Column: (int) 5
-      })
-    }),
-    (string) (len=19) "updateOrderFunction": (*schema.Resource)({
-      Type: (string) (len=16) "celerity/handler",
-      Description: (*substitutions.StringOrSubstitutions)(<nil>),
-      Metadata: (*schema.Metadata)({
-        DisplayName: (*substitutions.StringOrSubstitutions)({
-          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-            (*substitutions.StringOrSubstitution)({
-              StringValue: (*string)((len=21) "Update Order Function"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)({
-                Line: (int) 123,
-                Column: (int) 20
-              })
             })
           },
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
-            Line: (int) 123,
-            Column: (int) 20
+            Line: (int) 155,
+            Column: (int) 7
           })
         }),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Labels: (map[string]string) (len=2) {
-          (string) (len=10) "pubsubType": (string) (len=8) "consumer",
-          (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-        },
-        Custom: (*core.MappingNode)(<nil>),
         SourceMeta: (*source.Meta)({
-          Line: (int) 123,
-          Column: (int) 7
+          Line: (int) 148,
+          Column: (int) 5
         })
       }),
-      LinkSelector: (*schema.LinkSelector)(<nil>),
-      Spec: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) (len=3) {
-          (string) (len=6) "events": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)(<nil>),
-            Fields: (map[string]*core.MappingNode) (len=1) {
-              (string) (len=10) "orderEvent": (*core.MappingNode)({
-                Literal: (*core.ScalarValue)(<nil>),
-                Fields: (map[string]*core.MappingNode) (len=2) {
-                  (string) (len=9) "batchSize": (*core.MappingNode)({
-                    Literal: (*core.ScalarValue)({
-                      IntValue: (*int)(10),
-                      BoolValue: (*bool)(<nil>),
-                      FloatValue: (*float64)(<nil>),
-                      StringValue: (*string)(<nil>),
+      (string) (len=19) "updateOrderFunction": (*schema.Resource)({
+        Type: (string) (len=16) "celerity/handler",
+        Description: (*substitutions.StringOrSubstitutions)(<nil>),
+        Metadata: (*schema.Metadata)({
+          DisplayName: (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=21) "Update Order Function"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 123,
+                  Column: (int) 20
+                })
+              })
+            },
+            SourceMeta: (*source.Meta)({
+              Line: (int) 123,
+              Column: (int) 20
+            })
+          }),
+          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
+          Labels: (map[string]string) (len=2) {
+            (string) (len=10) "pubsubType": (string) (len=8) "consumer",
+            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+          },
+          Custom: (*core.MappingNode)(<nil>),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 123,
+            Column: (int) 7
+          })
+        }),
+        LinkSelector: (*schema.LinkSelector)(<nil>),
+        Spec: (*core.MappingNode)({
+          Literal: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=3) {
+            (string) (len=6) "events": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=1) {
+                (string) (len=10) "orderEvent": (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)(<nil>),
+                  Fields: (map[string]*core.MappingNode) (len=2) {
+                    (string) (len=9) "batchSize": (*core.MappingNode)({
+                      Literal: (*core.ScalarValue)({
+                        IntValue: (*int)(10),
+                        BoolValue: (*bool)(<nil>),
+                        FloatValue: (*float64)(<nil>),
+                        StringValue: (*string)(<nil>),
+                        SourceMeta: (*source.Meta)({
+                          Line: (int) 139,
+                          Column: (int) 22
+                        })
+                      }),
+                      Fields: (map[string]*core.MappingNode) <nil>,
+                      Items: ([]*core.MappingNode) <nil>,
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                       SourceMeta: (*source.Meta)({
                         Line: (int) 139,
                         Column: (int) 22
                       })
                     }),
-                    Fields: (map[string]*core.MappingNode) <nil>,
-                    Items: ([]*core.MappingNode) <nil>,
-                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                    SourceMeta: (*source.Meta)({
-                      Line: (int) 139,
-                      Column: (int) 22
-                    })
-                  }),
-                  (string) (len=4) "type": (*core.MappingNode)({
-                    Literal: (*core.ScalarValue)({
-                      IntValue: (*int)(<nil>),
-                      BoolValue: (*bool)(<nil>),
-                      FloatValue: (*float64)(<nil>),
-                      StringValue: (*string)((len=6) "pubsub"),
+                    (string) (len=4) "type": (*core.MappingNode)({
+                      Literal: (*core.ScalarValue)({
+                        IntValue: (*int)(<nil>),
+                        BoolValue: (*bool)(<nil>),
+                        FloatValue: (*float64)(<nil>),
+                        StringValue: (*string)((len=6) "pubsub"),
+                        SourceMeta: (*source.Meta)({
+                          Line: (int) 136,
+                          Column: (int) 17
+                        })
+                      }),
+                      Fields: (map[string]*core.MappingNode) <nil>,
+                      Items: ([]*core.MappingNode) <nil>,
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                       SourceMeta: (*source.Meta)({
                         Line: (int) 136,
                         Column: (int) 17
                       })
-                    }),
-                    Fields: (map[string]*core.MappingNode) <nil>,
-                    Items: ([]*core.MappingNode) <nil>,
-                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                    SourceMeta: (*source.Meta)({
-                      Line: (int) 136,
-                      Column: (int) 17
                     })
+                  },
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)({
+                    Line: (int) 136,
+                    Column: (int) 11
                   })
-                },
-                Items: ([]*core.MappingNode) <nil>,
-                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                SourceMeta: (*source.Meta)({
-                  Line: (int) 136,
-                  Column: (int) 11
                 })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)({
+                Line: (int) 135,
+                Column: (int) 9
               })
-            },
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 135,
-              Column: (int) 9
-            })
-          }),
-          (string) (len=7) "handler": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=20) "handlers.UpdateOrder"),
+            }),
+            (string) (len=7) "handler": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(<nil>),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)((len=20) "handlers.UpdateOrder"),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 132,
+                  Column: (int) 16
+                })
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 132,
                 Column: (int) 16
               })
             }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 132,
-              Column: (int) 16
-            })
-          }),
-          (string) (len=7) "timeout": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(120),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)(<nil>),
+            (string) (len=7) "timeout": (*core.MappingNode)({
+              Literal: (*core.ScalarValue)({
+                IntValue: (*int)(120),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 133,
+                  Column: (int) 16
+                })
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 133,
                 Column: (int) 16
               })
-            }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 133,
-              Column: (int) 16
             })
+          },
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 132,
+            Column: (int) 7
           })
-        },
-        Items: ([]*core.MappingNode) <nil>,
-        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        }),
         SourceMeta: (*source.Meta)({
-          Line: (int) 132,
-          Column: (int) 7
+          Line: (int) 121,
+          Column: (int) 5
         })
-      }),
-      SourceMeta: (*source.Meta)({
-        Line: (int) 121,
-        Column: (int) 5
       })
-    })
-  },
+    },
+    SourceMeta: (map[string]*source.Meta) (len=6) {
+      (string) (len=10) "authoriser": (*source.Meta)({
+        Line: (int) 84,
+        Column: (int) 3
+      }),
+      (string) (len=16) "getOrdersHandler": (*source.Meta)({
+        Line: (int) 105,
+        Column: (int) 3
+      }),
+      (string) (len=8) "orderApi": (*source.Meta)({
+        Line: (int) 37,
+        Column: (int) 3
+      }),
+      (string) (len=11) "orderPubSub": (*source.Meta)({
+        Line: (int) 160,
+        Column: (int) 3
+      }),
+      (string) (len=19) "sharedPackagesLayer": (*source.Meta)({
+        Line: (int) 141,
+        Column: (int) 3
+      }),
+      (string) (len=19) "updateOrderFunction": (*source.Meta)({
+        Line: (int) 120,
+        Column: (int) 3
+      })
+    }
+  }),
   DataSources: (map[string]*schema.DataSource) (len=1) {
     (string) (len=7) "network": (*schema.DataSource)({
       Type: (string) (len=7) "aws/vpc",

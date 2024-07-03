@@ -20,7 +20,7 @@ func ValidateBlueprint(ctx context.Context, blueprint *schema.Blueprint) error {
 		return errBlueprintUnsupportedVersion(blueprint.Version)
 	}
 
-	if blueprint.Resources == nil || len(blueprint.Resources) == 0 {
+	if blueprint.Resources == nil || len(blueprint.Resources.Values) == 0 {
 		return errBlueprintMissingResources()
 	}
 

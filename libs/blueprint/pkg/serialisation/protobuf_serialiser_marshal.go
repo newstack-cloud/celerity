@@ -130,9 +130,13 @@ func toIncludesPB(includes *schema.IncludeMap) (map[string]*schemapb.Include, er
 	return includesPB, nil
 }
 
-func toResourcesPB(resources map[string]*schema.Resource) (map[string]*schemapb.Resource, error) {
+func toResourcesPB(resources *schema.ResourceMap) (map[string]*schemapb.Resource, error) {
+	if resources == nil {
+		return nil, nil
+	}
+
 	resourcesPB := make(map[string]*schemapb.Resource)
-	for k, v := range resources {
+	for k, v := range resources.Values {
 		resourcePB, err := toResourcePB(v)
 		if err != nil {
 			return nil, err

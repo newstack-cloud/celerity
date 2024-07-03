@@ -38,7 +38,12 @@ type ResourceWithNameAndSelectors struct {
 func GroupResourcesBySelector(spec speccore.BlueprintSpec) map[string]*SelectGroup {
 	groupedResources := map[string]*SelectGroup{}
 	intermediaryResources := map[string]*ResourceWithNameAndSelectors{}
-	for name, resource := range spec.Schema().Resources {
+	resources := map[string]*schema.Resource{}
+	if spec.Schema().Resources != nil {
+		resources = spec.Schema().Resources.Values
+	}
+
+	for name, resource := range resources {
 		if resource.LinkSelector != nil && resource.LinkSelector.ByLabel != nil {
 			// Labels used to select other resources that imply links.
 			selectorLabels := extractSelectorLabelsForGrouping(resource.LinkSelector.ByLabel)

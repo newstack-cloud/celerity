@@ -49,77 +49,79 @@ func assertResourcesMatchIgnoreOrder(c *C, obtained []*ResourceWithNameAndSelect
 }
 
 var testBlueprintSchema1 = &schema.Blueprint{
-	Resources: map[string]*schema.Resource{
-		"orderApi": {
-			Type: "aws/apigateway",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderApi",
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"orderApi": {
+				Type: "aws/apigateway",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderApi",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"app": "orderApi",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"app": "orderApi",
+			"orderQueue": {
+				Type: "aws/sqs/queue",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderWorkflow",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"app": "orderWorkflow",
+					},
 				},
 			},
-		},
-		"orderQueue": {
-			Type: "aws/sqs/queue",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderWorkflow",
+			"processOrdersFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderWorkflow",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"app": "orderWorkflow",
+			"createOrderFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderApi",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-		},
-		"processOrdersFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderWorkflow",
+			"getOrdersFunction": {
+				Type: "aws/lambda/function",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"app": "orderApi",
+					},
+				},
+				LinkSelector: &schema.LinkSelector{
+					ByLabel: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
-				},
-			},
-		},
-		"createOrderFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderApi",
-				},
-			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
-				},
-			},
-		},
-		"getOrdersFunction": {
-			Type: "aws/lambda/function",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"app": "orderApi",
-				},
-			},
-			LinkSelector: &schema.LinkSelector{
-				ByLabel: map[string]string{
-					"system": "orders",
-				},
-			},
-		},
-		"ordersTable": {
-			Type: "aws/dynamodb/table",
-			Metadata: &schema.Metadata{
-				Labels: map[string]string{
-					"system": "orders",
+			"ordersTable": {
+				Type: "aws/dynamodb/table",
+				Metadata: &schema.Metadata{
+					Labels: map[string]string{
+						"system": "orders",
+					},
 				},
 			},
 		},
@@ -131,7 +133,7 @@ var expectedGroupedResources1 = map[string]*SelectGroup{
 		SelectorResources: []*ResourceWithNameAndSelectors{
 			{
 				Name:      "orderApi",
-				Resource:  testBlueprintSchema1.Resources["orderApi"],
+				Resource:  testBlueprintSchema1.Resources.Values["orderApi"],
 				Selectors: []string{"label::app:orderApi"},
 			},
 		},
@@ -139,17 +141,17 @@ var expectedGroupedResources1 = map[string]*SelectGroup{
 			// orderApi is also a candidate for selection as it has the app:orderApi label.
 			{
 				Name:      "orderApi",
-				Resource:  testBlueprintSchema1.Resources["orderApi"],
+				Resource:  testBlueprintSchema1.Resources.Values["orderApi"],
 				Selectors: []string{"label::app:orderApi"},
 			},
 			{
 				Name:      "createOrderFunction",
-				Resource:  testBlueprintSchema1.Resources["createOrderFunction"],
+				Resource:  testBlueprintSchema1.Resources.Values["createOrderFunction"],
 				Selectors: []string{"label::system:orders"},
 			},
 			{
 				Name:      "getOrdersFunction",
-				Resource:  testBlueprintSchema1.Resources["getOrdersFunction"],
+				Resource:  testBlueprintSchema1.Resources.Values["getOrdersFunction"],
 				Selectors: []string{"label::system:orders"},
 			},
 		},
@@ -158,7 +160,7 @@ var expectedGroupedResources1 = map[string]*SelectGroup{
 		SelectorResources: []*ResourceWithNameAndSelectors{
 			{
 				Name:      "orderQueue",
-				Resource:  testBlueprintSchema1.Resources["orderQueue"],
+				Resource:  testBlueprintSchema1.Resources.Values["orderQueue"],
 				Selectors: []string{"label::app:orderWorkflow"},
 			},
 		},
@@ -166,12 +168,12 @@ var expectedGroupedResources1 = map[string]*SelectGroup{
 			// orderQueue is also a candidate for selection as it has the app:orderWorkflow label.
 			{
 				Name:      "orderQueue",
-				Resource:  testBlueprintSchema1.Resources["orderQueue"],
+				Resource:  testBlueprintSchema1.Resources.Values["orderQueue"],
 				Selectors: []string{"label::app:orderWorkflow"},
 			},
 			{
 				Name:      "processOrdersFunction",
-				Resource:  testBlueprintSchema1.Resources["processOrdersFunction"],
+				Resource:  testBlueprintSchema1.Resources.Values["processOrdersFunction"],
 				Selectors: []string{"label::system:orders"},
 			},
 		},
@@ -180,24 +182,24 @@ var expectedGroupedResources1 = map[string]*SelectGroup{
 		SelectorResources: []*ResourceWithNameAndSelectors{
 			{
 				Name:      "createOrderFunction",
-				Resource:  testBlueprintSchema1.Resources["createOrderFunction"],
+				Resource:  testBlueprintSchema1.Resources.Values["createOrderFunction"],
 				Selectors: []string{"label::system:orders"},
 			},
 			{
 				Name:      "getOrdersFunction",
-				Resource:  testBlueprintSchema1.Resources["getOrdersFunction"],
+				Resource:  testBlueprintSchema1.Resources.Values["getOrdersFunction"],
 				Selectors: []string{"label::system:orders"},
 			},
 			{
 				Name:      "processOrdersFunction",
-				Resource:  testBlueprintSchema1.Resources["processOrdersFunction"],
+				Resource:  testBlueprintSchema1.Resources.Values["processOrdersFunction"],
 				Selectors: []string{"label::system:orders"},
 			},
 		},
 		CandidateResourcesForSelection: []*ResourceWithNameAndSelectors{
 			{
 				Name:      "ordersTable",
-				Resource:  testBlueprintSchema1.Resources["ordersTable"],
+				Resource:  testBlueprintSchema1.Resources.Values["ordersTable"],
 				Selectors: []string{},
 			},
 		},
@@ -205,24 +207,26 @@ var expectedGroupedResources1 = map[string]*SelectGroup{
 }
 
 var testBlueprintSchema2 = &schema.Blueprint{
-	Resources: map[string]*schema.Resource{
-		"orderApi": {
-			Type: "aws/apigateway",
-		},
-		"orderQueue": {
-			Type: "aws/sqs/queue",
-		},
-		"processOrdersFunction": {
-			Type: "aws/lambda/function",
-		},
-		"createOrderFunction": {
-			Type: "aws/lambda/function",
-		},
-		"getOrdersFunction": {
-			Type: "aws/lambda/function",
-		},
-		"ordersTable": {
-			Type: "aws/dynamodb/table",
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"orderApi": {
+				Type: "aws/apigateway",
+			},
+			"orderQueue": {
+				Type: "aws/sqs/queue",
+			},
+			"processOrdersFunction": {
+				Type: "aws/lambda/function",
+			},
+			"createOrderFunction": {
+				Type: "aws/lambda/function",
+			},
+			"getOrdersFunction": {
+				Type: "aws/lambda/function",
+			},
+			"ordersTable": {
+				Type: "aws/dynamodb/table",
+			},
 		},
 	},
 }

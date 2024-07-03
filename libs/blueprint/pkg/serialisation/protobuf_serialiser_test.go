@@ -176,22 +176,24 @@ var testTracingEnabled = true
 
 var fixtureMissingScalarField = &schema.Blueprint{
 	Version: "2021-12-18",
-	Resources: map[string]*schema.Resource{
-		"orderApi": {
-			Type: "celerity/api",
-			Spec: &core.MappingNode{
-				Fields: map[string]*core.MappingNode{
-					"environment": {
-						Fields: map[string]*core.MappingNode{
-							"variables": {
-								Fields: map[string]*core.MappingNode{
-									"DYNAMODB_TABLE": {
-										StringWithSubstitutions: &substitutions.StringOrSubstitutions{
-											Values: []*substitutions.StringOrSubstitution{
-												{
-													SubstitutionValue: &substitutions.Substitution{
-														Variable: &substitutions.SubstitutionVariable{
-															VariableName: "dynamoDBTable",
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"orderApi": {
+				Type: "celerity/api",
+				Spec: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"environment": {
+							Fields: map[string]*core.MappingNode{
+								"variables": {
+									Fields: map[string]*core.MappingNode{
+										"DYNAMODB_TABLE": {
+											StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+												Values: []*substitutions.StringOrSubstitution{
+													{
+														SubstitutionValue: &substitutions.Substitution{
+															Variable: &substitutions.SubstitutionVariable{
+																VariableName: "dynamoDBTable",
+															},
 														},
 													},
 												},
@@ -201,15 +203,15 @@ var fixtureMissingScalarField = &schema.Blueprint{
 								},
 							},
 						},
-					},
-					"runtime": {
-						Literal: &core.ScalarValue{
-							// A scalar value is missing here.
+						"runtime": {
+							Literal: &core.ScalarValue{
+								// A scalar value is missing here.
+							},
 						},
-					},
-					"tracingEnabled": {
-						Literal: &core.ScalarValue{
-							BoolValue: &testTracingEnabled,
+						"tracingEnabled": {
+							Literal: &core.ScalarValue{
+								BoolValue: &testTracingEnabled,
+							},
 						},
 					},
 				},
@@ -220,20 +222,22 @@ var fixtureMissingScalarField = &schema.Blueprint{
 
 var fixtureMissingStringOrSubstitutionField = &schema.Blueprint{
 	Version: "2021-12-18",
-	Resources: map[string]*schema.Resource{
-		"orderApi": {
-			Type: "celerity/api",
-			Spec: &core.MappingNode{
-				Fields: map[string]*core.MappingNode{
-					"environment": {
-						Fields: map[string]*core.MappingNode{
-							"variables": {
-								Fields: map[string]*core.MappingNode{
-									"DYNAMODB_TABLE": {
-										StringWithSubstitutions: &substitutions.StringOrSubstitutions{
-											Values: []*substitutions.StringOrSubstitution{
-												{
-													// A string or substitution value is missing here.
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"orderApi": {
+				Type: "celerity/api",
+				Spec: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"environment": {
+							Fields: map[string]*core.MappingNode{
+								"variables": {
+									Fields: map[string]*core.MappingNode{
+										"DYNAMODB_TABLE": {
+											StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+												Values: []*substitutions.StringOrSubstitution{
+													{
+														// A string or substitution value is missing here.
+													},
 												},
 											},
 										},
@@ -241,15 +245,15 @@ var fixtureMissingStringOrSubstitutionField = &schema.Blueprint{
 								},
 							},
 						},
-					},
-					"runtime": {
-						Literal: &core.ScalarValue{
-							StringValue: &testRuntime,
+						"runtime": {
+							Literal: &core.ScalarValue{
+								StringValue: &testRuntime,
+							},
 						},
-					},
-					"tracingEnabled": {
-						Literal: &core.ScalarValue{
-							BoolValue: &testTracingEnabled,
+						"tracingEnabled": {
+							Literal: &core.ScalarValue{
+								BoolValue: &testTracingEnabled,
+							},
 						},
 					},
 				},
@@ -260,21 +264,23 @@ var fixtureMissingStringOrSubstitutionField = &schema.Blueprint{
 
 var fixtureMissingSubstitutionField = &schema.Blueprint{
 	Version: "2021-12-18",
-	Resources: map[string]*schema.Resource{
-		"orderApi": {
-			Type: "celerity/api",
-			Spec: &core.MappingNode{
-				Fields: map[string]*core.MappingNode{
-					"environment": {
-						Fields: map[string]*core.MappingNode{
-							"variables": {
-								Fields: map[string]*core.MappingNode{
-									"DYNAMODB_TABLE": {
-										StringWithSubstitutions: &substitutions.StringOrSubstitutions{
-											Values: []*substitutions.StringOrSubstitution{
-												{
-													SubstitutionValue: &substitutions.Substitution{
-														// A substitution value is missing here.
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"orderApi": {
+				Type: "celerity/api",
+				Spec: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"environment": {
+							Fields: map[string]*core.MappingNode{
+								"variables": {
+									Fields: map[string]*core.MappingNode{
+										"DYNAMODB_TABLE": {
+											StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+												Values: []*substitutions.StringOrSubstitution{
+													{
+														SubstitutionValue: &substitutions.Substitution{
+															// A substitution value is missing here.
+														},
 													},
 												},
 											},
@@ -283,15 +289,15 @@ var fixtureMissingSubstitutionField = &schema.Blueprint{
 								},
 							},
 						},
-					},
-					"runtime": {
-						Literal: &core.ScalarValue{
-							StringValue: &testRuntime,
+						"runtime": {
+							Literal: &core.ScalarValue{
+								StringValue: &testRuntime,
+							},
 						},
-					},
-					"tracingEnabled": {
-						Literal: &core.ScalarValue{
-							BoolValue: &testTracingEnabled,
+						"tracingEnabled": {
+							Literal: &core.ScalarValue{
+								BoolValue: &testTracingEnabled,
+							},
 						},
 					},
 				},
@@ -302,25 +308,27 @@ var fixtureMissingSubstitutionField = &schema.Blueprint{
 
 var fixtureMissingSubstitutionPathItemField = &schema.Blueprint{
 	Version: "2021-12-18",
-	Resources: map[string]*schema.Resource{
-		"orderApi": {
-			Type: "celerity/api",
-			Spec: &core.MappingNode{
-				Fields: map[string]*core.MappingNode{
-					"environment": {
-						Fields: map[string]*core.MappingNode{
-							"variables": {
-								Fields: map[string]*core.MappingNode{
-									"DYNAMODB_TABLE": {
-										StringWithSubstitutions: &substitutions.StringOrSubstitutions{
-											Values: []*substitutions.StringOrSubstitution{
-												{
-													SubstitutionValue: &substitutions.Substitution{
-														ResourceProperty: &substitutions.SubstitutionResourceProperty{
-															ResourceName: "dynamoDBTable",
-															Path: []*substitutions.SubstitutionPathItem{
-																{
-																	// A substitution path item is missing here.
+	Resources: &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"orderApi": {
+				Type: "celerity/api",
+				Spec: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"environment": {
+							Fields: map[string]*core.MappingNode{
+								"variables": {
+									Fields: map[string]*core.MappingNode{
+										"DYNAMODB_TABLE": {
+											StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+												Values: []*substitutions.StringOrSubstitution{
+													{
+														SubstitutionValue: &substitutions.Substitution{
+															ResourceProperty: &substitutions.SubstitutionResourceProperty{
+																ResourceName: "dynamoDBTable",
+																Path: []*substitutions.SubstitutionPathItem{
+																	{
+																		// A substitution path item is missing here.
+																	},
 																},
 															},
 														},
@@ -332,15 +340,15 @@ var fixtureMissingSubstitutionPathItemField = &schema.Blueprint{
 								},
 							},
 						},
-					},
-					"runtime": {
-						Literal: &core.ScalarValue{
-							StringValue: &testRuntime,
+						"runtime": {
+							Literal: &core.ScalarValue{
+								StringValue: &testRuntime,
+							},
 						},
-					},
-					"tracingEnabled": {
-						Literal: &core.ScalarValue{
-							BoolValue: &testTracingEnabled,
+						"tracingEnabled": {
+							Literal: &core.ScalarValue{
+								BoolValue: &testTracingEnabled,
+							},
 						},
 					},
 				},
