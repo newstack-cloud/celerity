@@ -621,94 +621,97 @@
     },
     SourceMeta: (map[string]*source.Meta) <nil>
   }),
-  DataSources: (map[string]*schema.DataSource) (len=1) {
-    (string) (len=7) "network": (*schema.DataSource)({
-      Type: (string) (len=7) "aws/vpc",
-      DataSourceMetadata: (*schema.DataSourceMetadata)({
-        DisplayName: (*substitutions.StringOrSubstitutions)({
-          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-            (*substitutions.StringOrSubstitution)({
-              StringValue: (*string)((len=14) "Network source"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
-            })
-          },
+  DataSources: (*schema.DataSourceMap)({
+    Values: (map[string]*schema.DataSource) (len=1) {
+      (string) (len=7) "network": (*schema.DataSource)({
+        Type: (string) (len=7) "aws/vpc",
+        DataSourceMetadata: (*schema.DataSourceMetadata)({
+          DisplayName: (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=14) "Network source"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>)
+              })
+            },
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
+          Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Custom: (*core.MappingNode)(<nil>),
-        SourceMeta: (*source.Meta)(<nil>)
-      }),
-      Filter: (*schema.DataSourceFilter)({
-        Field: (string) (len=4) "tags",
-        Operator: (*schema.DataSourceFilterOperatorWrapper)({
-          Value: (schema.DataSourceFilterOperator) (len=7) "has key",
-          SourceMeta: (*source.Meta)(<nil>)
-        }),
-        Search: (*schema.DataSourceFilterSearch)({
-          Values: ([]*substitutions.StringOrSubstitutions) (len=1) {
-            (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)(<nil>),
-                  SubstitutionValue: (*substitutions.Substitution)({
-                    Function: (*substitutions.SubstitutionFunction)(<nil>),
-                    Variable: (*substitutions.SubstitutionVariable)({
-                      VariableName: (string) (len=11) "environment",
+        Filter: (*schema.DataSourceFilter)({
+          Field: (string) (len=4) "tags",
+          Operator: (*schema.DataSourceFilterOperatorWrapper)({
+            Value: (schema.DataSourceFilterOperator) (len=7) "has key",
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          Search: (*schema.DataSourceFilterSearch)({
+            Values: ([]*substitutions.StringOrSubstitutions) (len=1) {
+              (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)(<nil>),
+                    SubstitutionValue: (*substitutions.Substitution)({
+                      Function: (*substitutions.SubstitutionFunction)(<nil>),
+                      Variable: (*substitutions.SubstitutionVariable)({
+                        VariableName: (string) (len=11) "environment",
+                        SourceMeta: (*source.Meta)(<nil>)
+                      }),
+                      DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                      ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
+                      Child: (*substitutions.SubstitutionChild)(<nil>),
+                      StringValue: (*string)(<nil>),
+                      IntValue: (*int64)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      BoolValue: (*bool)(<nil>),
                       SourceMeta: (*source.Meta)(<nil>)
                     }),
-                    DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
-                    ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
-                    Child: (*substitutions.SubstitutionChild)(<nil>),
-                    StringValue: (*string)(<nil>),
-                    IntValue: (*int64)(<nil>),
-                    FloatValue: (*float64)(<nil>),
-                    BoolValue: (*bool)(<nil>),
                     SourceMeta: (*source.Meta)(<nil>)
-                  }),
-                  SourceMeta: (*source.Meta)(<nil>)
-                })
-              },
+                  })
+                },
+                SourceMeta: (*source.Meta)(<nil>)
+              })
+            },
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
+          (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
+            Type: (*schema.DataSourceFieldTypeWrapper)({
+              Value: (schema.DataSourceFieldType) (len=5) "array",
               SourceMeta: (*source.Meta)(<nil>)
-            })
-          },
-          SourceMeta: (*source.Meta)(<nil>)
-        }),
+            }),
+            AliasFor: (string) "",
+            Description: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
+            Type: (*schema.DataSourceFieldTypeWrapper)({
+              Value: (schema.DataSourceFieldType) (len=5) "array",
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            AliasFor: (string) "",
+            Description: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
+            Type: (*schema.DataSourceFieldTypeWrapper)({
+              Value: (schema.DataSourceFieldType) (len=6) "string",
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            AliasFor: (string) "",
+            Description: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>)
+          })
+        },
+        Description: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
-      }),
-      Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
-        (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
-          Type: (*schema.DataSourceFieldTypeWrapper)({
-            Value: (schema.DataSourceFieldType) (len=5) "array",
-            SourceMeta: (*source.Meta)(<nil>)
-          }),
-          AliasFor: (string) "",
-          Description: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
-        }),
-        (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
-          Type: (*schema.DataSourceFieldTypeWrapper)({
-            Value: (schema.DataSourceFieldType) (len=5) "array",
-            SourceMeta: (*source.Meta)(<nil>)
-          }),
-          AliasFor: (string) "",
-          Description: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
-        }),
-        (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
-          Type: (*schema.DataSourceFieldTypeWrapper)({
-            Value: (schema.DataSourceFieldType) (len=6) "string",
-            SourceMeta: (*source.Meta)(<nil>)
-          }),
-          AliasFor: (string) "",
-          Description: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
-        })
-      },
-      Description: (*substitutions.StringOrSubstitutions)(<nil>),
-      SourceMeta: (*source.Meta)(<nil>)
-    })
-  },
+      })
+    },
+    SourceMeta: (map[string]*source.Meta) <nil>
+  }),
   Exports: (map[string]*schema.Export) <nil>,
   Metadata: (*core.MappingNode)(<nil>)
 })

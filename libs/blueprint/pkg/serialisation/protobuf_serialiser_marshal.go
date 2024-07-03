@@ -147,9 +147,13 @@ func toResourcesPB(resources *schema.ResourceMap) (map[string]*schemapb.Resource
 	return resourcesPB, nil
 }
 
-func toDataSourcesPB(dataSources map[string]*schema.DataSource) (map[string]*schemapb.DataSource, error) {
+func toDataSourcesPB(dataSources *schema.DataSourceMap) (map[string]*schemapb.DataSource, error) {
+	if dataSources == nil {
+		return nil, nil
+	}
+
 	dataSourcesPB := make(map[string]*schemapb.DataSource)
-	for k, v := range dataSources {
+	for k, v := range dataSources.Values {
 		dataSourcePB, err := toDataSourcePB(v)
 		if err != nil {
 			return nil, err

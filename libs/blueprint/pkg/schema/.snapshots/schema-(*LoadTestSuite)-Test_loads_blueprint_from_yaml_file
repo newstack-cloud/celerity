@@ -1103,145 +1103,153 @@
       })
     }
   }),
-  DataSources: (map[string]*schema.DataSource) (len=1) {
-    (string) (len=7) "network": (*schema.DataSource)({
-      Type: (string) (len=7) "aws/vpc",
-      DataSourceMetadata: (*schema.DataSourceMetadata)({
-        DisplayName: (*substitutions.StringOrSubstitutions)({
-          Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-            (*substitutions.StringOrSubstitution)({
-              StringValue: (*string)((len=14) "Network source"),
-              SubstitutionValue: (*substitutions.Substitution)(<nil>),
-              SourceMeta: (*source.Meta)({
-                Line: (int) 18,
-                Column: (int) 20
+  DataSources: (*schema.DataSourceMap)({
+    Values: (map[string]*schema.DataSource) (len=1) {
+      (string) (len=7) "network": (*schema.DataSource)({
+        Type: (string) (len=7) "aws/vpc",
+        DataSourceMetadata: (*schema.DataSourceMetadata)({
+          DisplayName: (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=14) "Network source"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 18,
+                  Column: (int) 20
+                })
               })
+            },
+            SourceMeta: (*source.Meta)({
+              Line: (int) 18,
+              Column: (int) 20
             })
-          },
+          }),
+          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
+          Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Line: (int) 18,
-            Column: (int) 20
+            Column: (int) 7
           })
         }),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Custom: (*core.MappingNode)(<nil>),
-        SourceMeta: (*source.Meta)({
-          Line: (int) 18,
-          Column: (int) 7
-        })
-      }),
-      Filter: (*schema.DataSourceFilter)({
-        Field: (string) (len=4) "tags",
-        Operator: (*schema.DataSourceFilterOperatorWrapper)({
-          Value: (schema.DataSourceFilterOperator) (len=7) "has key",
-          SourceMeta: (*source.Meta)({
-            Line: (int) 21,
-            Column: (int) 17
-          })
-        }),
-        Search: (*schema.DataSourceFilterSearch)({
-          Values: ([]*substitutions.StringOrSubstitutions) (len=1) {
-            (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)(<nil>),
-                  SubstitutionValue: (*substitutions.Substitution)({
-                    Function: (*substitutions.SubstitutionFunction)(<nil>),
-                    Variable: (*substitutions.SubstitutionVariable)({
-                      VariableName: (string) (len=11) "environment",
+        Filter: (*schema.DataSourceFilter)({
+          Field: (string) (len=4) "tags",
+          Operator: (*schema.DataSourceFilterOperatorWrapper)({
+            Value: (schema.DataSourceFilterOperator) (len=7) "has key",
+            SourceMeta: (*source.Meta)({
+              Line: (int) 21,
+              Column: (int) 17
+            })
+          }),
+          Search: (*schema.DataSourceFilterSearch)({
+            Values: ([]*substitutions.StringOrSubstitutions) (len=1) {
+              (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)(<nil>),
+                    SubstitutionValue: (*substitutions.Substitution)({
+                      Function: (*substitutions.SubstitutionFunction)(<nil>),
+                      Variable: (*substitutions.SubstitutionVariable)({
+                        VariableName: (string) (len=11) "environment",
+                        SourceMeta: (*source.Meta)({
+                          Line: (int) 22,
+                          Column: (int) 17
+                        })
+                      }),
+                      DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                      ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
+                      Child: (*substitutions.SubstitutionChild)(<nil>),
+                      StringValue: (*string)(<nil>),
+                      IntValue: (*int64)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      BoolValue: (*bool)(<nil>),
                       SourceMeta: (*source.Meta)({
                         Line: (int) 22,
                         Column: (int) 17
                       })
                     }),
-                    DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
-                    ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
-                    Child: (*substitutions.SubstitutionChild)(<nil>),
-                    StringValue: (*string)(<nil>),
-                    IntValue: (*int64)(<nil>),
-                    FloatValue: (*float64)(<nil>),
-                    BoolValue: (*bool)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Line: (int) 22,
-                      Column: (int) 17
+                      Column: (int) 15
                     })
-                  }),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 22,
-                    Column: (int) 15
                   })
+                },
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 22,
+                  Column: (int) 15
                 })
-              },
+              })
+            },
+            SourceMeta: (*source.Meta)({
+              Line: (int) 22,
+              Column: (int) 15
+            })
+          }),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 20,
+            Column: (int) 7
+          })
+        }),
+        Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
+          (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
+            Type: (*schema.DataSourceFieldTypeWrapper)({
+              Value: (schema.DataSourceFieldType) (len=5) "array",
               SourceMeta: (*source.Meta)({
-                Line: (int) 22,
+                Line: (int) 27,
                 Column: (int) 15
               })
-            })
-          },
-          SourceMeta: (*source.Meta)({
-            Line: (int) 22,
-            Column: (int) 15
-          })
-        }),
-        SourceMeta: (*source.Meta)({
-          Line: (int) 20,
-          Column: (int) 7
-        })
-      }),
-      Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
-        (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
-          Type: (*schema.DataSourceFieldTypeWrapper)({
-            Value: (schema.DataSourceFieldType) (len=5) "array",
+            }),
+            AliasFor: (string) "",
+            Description: (*substitutions.StringOrSubstitutions)(<nil>),
             SourceMeta: (*source.Meta)({
               Line: (int) 27,
-              Column: (int) 15
+              Column: (int) 9
             })
           }),
-          AliasFor: (string) "",
-          Description: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)({
-            Line: (int) 27,
-            Column: (int) 9
-          })
-        }),
-        (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
-          Type: (*schema.DataSourceFieldTypeWrapper)({
-            Value: (schema.DataSourceFieldType) (len=5) "array",
+          (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
+            Type: (*schema.DataSourceFieldTypeWrapper)({
+              Value: (schema.DataSourceFieldType) (len=5) "array",
+              SourceMeta: (*source.Meta)({
+                Line: (int) 25,
+                Column: (int) 15
+              })
+            }),
+            AliasFor: (string) "",
+            Description: (*substitutions.StringOrSubstitutions)(<nil>),
             SourceMeta: (*source.Meta)({
               Line: (int) 25,
-              Column: (int) 15
+              Column: (int) 9
             })
           }),
-          AliasFor: (string) "",
-          Description: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)({
-            Line: (int) 25,
-            Column: (int) 9
-          })
-        }),
-        (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
-          Type: (*schema.DataSourceFieldTypeWrapper)({
-            Value: (schema.DataSourceFieldType) (len=6) "string",
+          (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
+            Type: (*schema.DataSourceFieldTypeWrapper)({
+              Value: (schema.DataSourceFieldType) (len=6) "string",
+              SourceMeta: (*source.Meta)({
+                Line: (int) 29,
+                Column: (int) 15
+              })
+            }),
+            AliasFor: (string) "",
+            Description: (*substitutions.StringOrSubstitutions)(<nil>),
             SourceMeta: (*source.Meta)({
               Line: (int) 29,
-              Column: (int) 15
+              Column: (int) 9
             })
-          }),
-          AliasFor: (string) "",
-          Description: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)({
-            Line: (int) 29,
-            Column: (int) 9
           })
+        },
+        Description: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)({
+          Line: (int) 16,
+          Column: (int) 5
         })
-      },
-      Description: (*substitutions.StringOrSubstitutions)(<nil>),
-      SourceMeta: (*source.Meta)({
-        Line: (int) 16,
-        Column: (int) 5
       })
-    })
-  },
+    },
+    SourceMeta: (map[string]*source.Meta) (len=1) {
+      (string) (len=7) "network": (*source.Meta)({
+        Line: (int) 15,
+        Column: (int) 3
+      })
+    }
+  }),
   Exports: (map[string]*schema.Export) <nil>,
   Metadata: (*core.MappingNode)(<nil>)
 })
