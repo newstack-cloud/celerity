@@ -92,9 +92,13 @@ func toVariablesPB(variables *schema.VariableMap) (map[string]*schemapb.Variable
 	return variablesPB, nil
 }
 
-func toIncludesPB(includes map[string]*schema.Include) (map[string]*schemapb.Include, error) {
+func toIncludesPB(includes *schema.IncludeMap) (map[string]*schemapb.Include, error) {
+	if includes == nil {
+		return nil, nil
+	}
+
 	var includesPB = make(map[string]*schemapb.Include)
-	for k, v := range includes {
+	for k, v := range includes.Values {
 		path, err := toStringOrSubstitutionsPB(v.Path, false)
 		if err != nil {
 			return nil, err

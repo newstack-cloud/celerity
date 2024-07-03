@@ -97,7 +97,7 @@ func fromVariablesPB(variablesPB map[string]*schemapb.Variable) (*schema.Variabl
 	}, nil
 }
 
-func fromIncludesPB(includesPB map[string]*schemapb.Include) (map[string]*schema.Include, error) {
+func fromIncludesPB(includesPB map[string]*schemapb.Include) (*schema.IncludeMap, error) {
 	if includesPB == nil {
 		return nil, nil
 	}
@@ -132,7 +132,9 @@ func fromIncludesPB(includesPB map[string]*schemapb.Include) (map[string]*schema
 		}
 	}
 
-	return includes, nil
+	return &schema.IncludeMap{
+		Values: includes,
+	}, nil
 }
 
 func fromResourcesPB(resourcesPB map[string]*schemapb.Resource) (map[string]*schema.Resource, error) {
