@@ -47,7 +47,12 @@ func (s *DataSourceValidationTestSuite) Test_succeeds_without_any_issues_for_a_v
 			},
 		},
 	}
-	err := ValidateDataSource(context.Background(), "vpc", dataSource)
+	dataSourceMap := &schema.DataSourceMap{
+		Values: map[string]*schema.DataSource{
+			"vpc": dataSource,
+		},
+	}
+	err := ValidateDataSource(context.Background(), "vpc", dataSource, dataSourceMap)
 	c.Assert(err, IsNil)
 }
 
@@ -64,8 +69,13 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_is_missi
 			},
 		},
 	}
+	dataSourceMap := &schema.DataSourceMap{
+		Values: map[string]*schema.DataSource{
+			"vmInstance": dataSource,
+		},
+	}
 
-	err := ValidateDataSource(context.Background(), "vmInstance", dataSource)
+	err := ValidateDataSource(context.Background(), "vmInstance", dataSource, dataSourceMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -117,8 +127,13 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 			},
 		},
 	}
+	dataSourceMap := &schema.DataSourceMap{
+		Values: map[string]*schema.DataSource{
+			"vmInstance": dataSource,
+		},
+	}
 
-	err := ValidateDataSource(context.Background(), "vmInstance", dataSource)
+	err := ValidateDataSource(context.Background(), "vmInstance", dataSource, dataSourceMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -150,8 +165,13 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_i
 			},
 		},
 	}
+	dataSourceMap := &schema.DataSourceMap{
+		Values: map[string]*schema.DataSource{
+			"vmInstance": dataSource,
+		},
+	}
 
-	err := ValidateDataSource(context.Background(), "vmInstance", dataSource)
+	err := ValidateDataSource(context.Background(), "vmInstance", dataSource, dataSourceMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -190,8 +210,13 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_no_exported_fie
 			// No exports provided for the data source.
 		},
 	}
+	dataSourceMap := &schema.DataSourceMap{
+		Values: map[string]*schema.DataSource{
+			"vmInstance": dataSource,
+		},
+	}
 
-	err := ValidateDataSource(context.Background(), "vmInstance", dataSource)
+	err := ValidateDataSource(context.Background(), "vmInstance", dataSource, dataSourceMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

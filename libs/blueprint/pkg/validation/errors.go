@@ -481,7 +481,8 @@ func errIncludeEmptyPath(includeName string, varSourceMeta *source.Meta) error {
 	}
 }
 
-func errDataSourceMissingFilter(dataSourceName string) error {
+func errDataSourceMissingFilter(dataSourceName string, dataSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(dataSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSource,
 		Err: fmt.Errorf(
@@ -489,10 +490,13 @@ func errDataSourceMissingFilter(dataSourceName string) error {
 				"data source \"%s\", every data source must have a filter",
 			dataSourceName,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
-func errDataSourceMissingFilterField(dataSourceName string) error {
+func errDataSourceMissingFilterField(dataSourceName string, dataSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(dataSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSource,
 		Err: fmt.Errorf(
@@ -500,10 +504,13 @@ func errDataSourceMissingFilterField(dataSourceName string) error {
 				"data source \"%s\", field must be set for a data source filter",
 			dataSourceName,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
-func errDataSourceMissingFilterSearch(dataSourceName string) error {
+func errDataSourceMissingFilterSearch(dataSourceName string, dataSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(dataSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSource,
 		Err: fmt.Errorf(
@@ -511,10 +518,13 @@ func errDataSourceMissingFilterSearch(dataSourceName string) error {
 				"data source \"%s\", at least one search value must be provided for a filter",
 			dataSourceName,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
-func errDataSourceMissingExports(dataSourceName string) error {
+func errDataSourceMissingExports(dataSourceName string, dataSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(dataSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSource,
 		Err: fmt.Errorf(
@@ -522,6 +532,8 @@ func errDataSourceMissingExports(dataSourceName string) error {
 				"data source \"%s\", at least one field must be exported for a data source",
 			dataSourceName,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
