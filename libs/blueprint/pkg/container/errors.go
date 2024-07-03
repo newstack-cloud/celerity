@@ -42,6 +42,13 @@ const (
 	// errors which can be used for reporting useful information
 	// about issues with the spec.
 	ErrorReasonCodeVariableValidationErrors errors.ErrorReasonCode = "variable_validation_errors"
+	// ErrorReasonCodeIncludeValidationErrors is provided
+	// when the reason for a blueprint spec load error is due to
+	// a collection of errors for one or more includes in the spec.
+	// This should be used for a wrapper error that holds more specific
+	// errors which can be used for reporting useful information
+	// about issues with the spec.
+	ErrorReasonCodeIncludeValidationErrors errors.ErrorReasonCode = "include_validation_errors"
 	// ErrorReasonCodeResourceValidationErrors is provided
 	// when the reason for a blueprint spec load error is due to
 	// a collection of errors for one or more variables in the spec.
@@ -98,6 +105,15 @@ func errVariableValidationError(errorMap map[string]error) error {
 	return &errors.LoadError{
 		ReasonCode:  ErrorReasonCodeVariableValidationErrors,
 		Err:         fmt.Errorf("validation failed due to issues with %d variables in the spec", errCount),
+		ChildErrors: core.MapToSlice(errorMap),
+	}
+}
+
+func errIncludeValidationError(errorMap map[string]error) error {
+	errCount := len(errorMap)
+	return &errors.LoadError{
+		ReasonCode:  ErrorReasonCodeIncludeValidationErrors,
+		Err:         fmt.Errorf("validation failed due to issues with %d includes in the spec", errCount),
 		ChildErrors: core.MapToSlice(errorMap),
 	}
 }

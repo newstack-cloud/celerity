@@ -192,6 +192,11 @@ func (l *defaultLoader) loadSpec(
 		return nil, err
 	}
 
+	err = l.validateIncludes(ctx, blueprintSchema)
+	if err != nil {
+		return nil, err
+	}
+
 	err = l.validateExports(ctx, blueprintSchema)
 	if err != nil {
 		return nil, err
@@ -300,6 +305,30 @@ func (l *defaultLoader) validateVariables(
 
 	if len(variableErrors) > 0 {
 		return errVariableValidationError(variableErrors)
+	}
+
+	return nil
+}
+
+func (l *defaultLoader) validateIncludes(
+	ctx context.Context,
+	bpSchema *schema.Blueprint,
+) error {
+	if bpSchema.Include == nil {
+		return nil
+	}
+
+	// We'll collect and report issues for all the problematic includes.
+	includeErrors := map[string]error{}
+	for name, includeSchema := range bpSchema.Include.Values {
+		err := validation.ValidateInclude(ctx, name, includeSchema, bpSchema.Include)
+		if err != nil {
+			includeErrors[name] = err
+		}
+	}
+
+	if len(includeErrors) > 0 {
+		return errIncludeValidationError(includeErrors)
 	}
 
 	return nil

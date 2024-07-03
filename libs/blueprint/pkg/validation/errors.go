@@ -468,13 +468,16 @@ func errInvalidReferencePattern(reference string, context string, referenceableT
 	}
 }
 
-func errIncludeEmptyPath(includeName string) error {
+func errIncludeEmptyPath(includeName string, varSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidInclude,
 		Err: fmt.Errorf(
 			"validation failed due to an empty path being provided for include \"%s\"",
 			includeName,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 

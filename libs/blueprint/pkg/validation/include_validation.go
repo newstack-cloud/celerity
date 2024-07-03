@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 )
 
@@ -20,7 +21,7 @@ func ValidateInclude(
 	ctx context.Context,
 	includeName string,
 	includeSchema *schema.Include,
-	variables map[string]*schema.Variable,
+	includeMap *schema.IncludeMap,
 ) error {
 	includeSubContext := fmt.Sprintf("include.%s", includeName)
 
@@ -29,12 +30,12 @@ func ValidateInclude(
 		return err
 	}
 
-	return validatePathFormat(includeName, formatted)
+	return validatePathFormat(includeName, formatted, includeMap)
 }
 
-func validatePathFormat(includeName, path string) error {
+func validatePathFormat(includeName, path string, includeMap *schema.IncludeMap) error {
 	if strings.TrimSpace(path) == "" {
-		return errIncludeEmptyPath(includeName)
+		return errIncludeEmptyPath(includeName, getIncludeSourceMeta(includeMap, includeName))
 	}
 
 	// Beyond checking if it is empty,
@@ -43,4 +44,12 @@ func validatePathFormat(includeName, path string) error {
 	// The include file resolver will report issues with the path.
 
 	return nil
+}
+
+func getIncludeSourceMeta(includeMap *schema.IncludeMap, varName string) *source.Meta {
+	if includeMap == nil {
+		return nil
+	}
+
+	return includeMap.SourceMeta[varName]
 }

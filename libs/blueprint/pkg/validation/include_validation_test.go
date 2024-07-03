@@ -31,7 +31,7 @@ func (s *IncludeValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_ch
 		},
 		Variables: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
-				"databaseName": &core.MappingNode{
+				"databaseName": {
 					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -44,7 +44,7 @@ func (s *IncludeValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_ch
 		},
 		Metadata: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
-				"sourceType": &core.MappingNode{
+				"sourceType": {
 					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -53,7 +53,7 @@ func (s *IncludeValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_ch
 						},
 					},
 				},
-				"bucket": &core.MappingNode{
+				"bucket": {
 					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -62,7 +62,7 @@ func (s *IncludeValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_ch
 						},
 					},
 				},
-				"region": &core.MappingNode{
+				"region": {
 					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -81,12 +81,12 @@ func (s *IncludeValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_ch
 			},
 		},
 	}
-	variables := map[string]*schema.Variable{
-		"databaseName": {
-			Type: schema.VariableTypeString,
+	includeMap := &schema.IncludeMap{
+		Values: map[string]*schema.Include{
+			"coreInfra": includeSchema,
 		},
 	}
-	err := ValidateInclude(context.Background(), "coreInfra", includeSchema, variables)
+	err := ValidateInclude(context.Background(), "coreInfra", includeSchema, includeMap)
 	c.Assert(err, IsNil)
 }
 
@@ -107,7 +107,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_for_a_child_blueprint_in
 		},
 		Variables: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
-				"databaseName": &core.MappingNode{
+				"databaseName": {
 					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -120,7 +120,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_for_a_child_blueprint_in
 		},
 		Metadata: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
-				"sourceType": &core.MappingNode{
+				"sourceType": {
 					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -129,7 +129,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_for_a_child_blueprint_in
 						},
 					},
 				},
-				"bucket": &core.MappingNode{
+				"bucket": {
 					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -138,7 +138,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_for_a_child_blueprint_in
 						},
 					},
 				},
-				"region": &core.MappingNode{
+				"region": {
 					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -157,12 +157,12 @@ func (s *IncludeValidationTestSuite) Test_reports_error_for_a_child_blueprint_in
 			},
 		},
 	}
-	variables := map[string]*schema.Variable{
-		"databaseName": {
-			Type: schema.VariableTypeString,
+	includeMap := &schema.IncludeMap{
+		Values: map[string]*schema.Include{
+			"coreInfra": includeSchema,
 		},
 	}
-	err := ValidateInclude(context.Background(), "coreInfra", includeSchema, variables)
+	err := ValidateInclude(context.Background(), "coreInfra", includeSchema, includeMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
