@@ -32,6 +32,7 @@ func ValidateCustomVariable(
 			varSchema.Type,
 			varName,
 			varSchema.Default,
+			varSchema,
 		)
 	}
 
@@ -48,6 +49,7 @@ func ValidateCustomVariable(
 			varSchema.Type,
 			varName,
 			*varSchema.Default.StringValue,
+			varSchema,
 		)
 	}
 
@@ -71,6 +73,7 @@ func ValidateCustomVariable(
 		return errVariableEmptyValue(
 			varSchema.Type,
 			varName,
+			varSchema,
 		)
 	}
 
@@ -80,6 +83,7 @@ func ValidateCustomVariable(
 			varSchema.Type,
 			varName,
 			finalValue,
+			varSchema,
 			usingDefault,
 		)
 	}
@@ -91,6 +95,7 @@ func ValidateCustomVariable(
 			varName,
 			finalValue,
 			varSchema.AllowedValues,
+			varSchema,
 			usingDefault,
 		)
 	}
@@ -151,6 +156,7 @@ func validateCustomVariableAllowedValues(
 			err := errVariableInvalidAllowedValue(
 				varSchema.Type,
 				allowedValue,
+				varSchema,
 			)
 			invalidAllowedValueErrors = append(invalidAllowedValueErrors, err)
 		}
@@ -169,6 +175,7 @@ func validateCustomVariableAllowedValues(
 			varSchema.Type,
 			varName,
 			invalidOptions,
+			varSchema,
 		)
 	}
 

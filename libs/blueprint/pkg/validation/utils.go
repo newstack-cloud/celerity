@@ -8,15 +8,15 @@ import (
 )
 
 func deriveVarType(value *bpcore.ScalarValue) schema.VariableType {
-	if value.IntValue != nil {
+	if value != nil && value.IntValue != nil {
 		return schema.VariableTypeInteger
 	}
 
-	if value.FloatValue != nil {
+	if value != nil && value.FloatValue != nil {
 		return schema.VariableTypeFloat
 	}
 
-	if value.BoolValue != nil {
+	if value != nil && value.BoolValue != nil {
 		return schema.VariableTypeBoolean
 	}
 
@@ -27,19 +27,19 @@ func deriveVarType(value *bpcore.ScalarValue) schema.VariableType {
 }
 
 func deriveScalarValueAsString(value *bpcore.ScalarValue) string {
-	if value.IntValue != nil {
+	if value != nil && value.IntValue != nil {
 		return fmt.Sprintf("%d", *value.IntValue)
 	}
 
-	if value.FloatValue != nil {
+	if value != nil && value.FloatValue != nil {
 		return fmt.Sprintf("%.2f", *value.FloatValue)
 	}
 
-	if value.BoolValue != nil {
+	if value != nil && value.BoolValue != nil {
 		return fmt.Sprintf("%t", *value.BoolValue)
 	}
 
-	if value.StringValue != nil {
+	if value != nil && value.StringValue != nil {
 		return *value.StringValue
 	}
 

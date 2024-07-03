@@ -450,8 +450,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 	c.Assert(loadErr.ChildErrors, HasLen, 2)
 
 	expectedErrorMessages := []string{
-		"an invalid allowed value was provided, a boolean with the value \"true\" was provided when only strings are allowed",
-		"an invalid allowed value was provided, a float with the value \"9115.82\" was provided when only strings are allowed",
+		"blueprint load error: an invalid allowed value was provided, a boolean with the value \"true\" was provided when only strings are allowed",
+		"blueprint load error: an invalid allowed value was provided, a float with the value \"9115.82\" was provided when only strings are allowed",
 	}
 
 	c.Assert(
@@ -501,8 +501,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 	c.Assert(loadErr.ChildErrors, HasLen, 2)
 
 	expectedErrorMessages := []string{
-		"an invalid allowed value was provided, a string with the value \"Not an integer\" was provided when only integers are allowed",
-		"an invalid allowed value was provided, a boolean with the value \"false\" was provided when only integers are allowed",
+		"blueprint load error: an invalid allowed value was provided, a string with the value \"Not an integer\" was provided when only integers are allowed",
+		"blueprint load error: an invalid allowed value was provided, a boolean with the value \"false\" was provided when only integers are allowed",
 	}
 
 	c.Assert(
@@ -559,8 +559,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 	c.Assert(loadErr.ChildErrors, HasLen, 2)
 
 	expectedErrorMessages := []string{
-		"an invalid allowed value was provided, a string with the value \"Not a float\" was provided when only floats are allowed",
-		"an invalid allowed value was provided, an integer with the value \"540\" was provided when only floats are allowed",
+		"blueprint load error: an invalid allowed value was provided, a string with the value \"Not a float\" was provided when only floats are allowed",
+		"blueprint load error: an invalid allowed value was provided, an integer with the value \"540\" was provided when only floats are allowed",
 	}
 
 	c.Assert(

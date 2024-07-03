@@ -155,8 +155,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 	c.Assert(loadErr.ChildErrors, HasLen, 2)
 
 	expectedErrorMessages := []string{
-		"an invalid allowed value was provided, an integer with the value \"324\" was provided when only aws/ec2/instanceTypes are allowed",
-		"an invalid allowed value was provided, a boolean with the value \"false\" was provided when only aws/ec2/instanceTypes are allowed",
+		"blueprint load error: an invalid allowed value was provided, an integer with the value \"324\" was provided when only aws/ec2/instanceTypes are allowed",
+		"blueprint load error: an invalid allowed value was provided, a boolean with the value \"false\" was provided when only aws/ec2/instanceTypes are allowed",
 	}
 
 	c.Assert(

@@ -100,6 +100,7 @@ func validateCoreStringVariable(
 		return errVariableEmptyValue(
 			schema.VariableTypeString,
 			varName,
+			varSchema,
 		)
 	}
 
@@ -123,10 +124,11 @@ func validateCoreStringVariableAllowedValues(
 	// speed up the debugging process.
 	invalidAllowedValueErrors := []error{}
 	for _, allowedValue := range varSchema.AllowedValues {
-		if allowedValue.StringValue == nil {
+		if allowedValue == nil || allowedValue.StringValue == nil {
 			err := errVariableInvalidAllowedValue(
 				schema.VariableTypeString,
 				allowedValue,
+				varSchema,
 			)
 			invalidAllowedValueErrors = append(invalidAllowedValueErrors, err)
 		}
@@ -212,6 +214,7 @@ func validateCoreIntegerVariableAllowedValues(
 			err := errVariableInvalidAllowedValue(
 				schema.VariableTypeInteger,
 				allowedValue,
+				varSchema,
 			)
 			invalidAllowedValueErrors = append(invalidAllowedValueErrors, err)
 		}
@@ -297,6 +300,7 @@ func validateCoreFloatVariableAllowedValues(
 			err := errVariableInvalidAllowedValue(
 				schema.VariableTypeFloat,
 				allowedValue,
+				varSchema,
 			)
 			invalidAllowedValueErrors = append(invalidAllowedValueErrors, err)
 		}
@@ -323,6 +327,7 @@ func validateCoreBooleanVariable(
 		return errVariableInvalidAllowedValuesNotSupported(
 			schema.VariableTypeBoolean,
 			varName,
+			varSchema,
 		)
 	}
 
@@ -379,6 +384,7 @@ func validateValueInAllowedList(
 			varName,
 			finalValue,
 			varSchema.AllowedValues,
+			varSchema,
 			usingDefault,
 		)
 	}
