@@ -181,18 +181,24 @@ func errSerialiseSubstitutionInvalidPathItem(pathItem *SubstitutionPathItem) err
 	}
 }
 
-func errLexUnexpectedEndOfInput(line int, column int, evaluatingTokenType string) error {
+func errLexUnexpectedEndOfInput(
+	line int,
+	column int,
+	columnAccuracy ColumnAccuracy,
+	evaluatingTokenType string,
+) error {
 	message := fmt.Sprintf(
 		"validation failed due to an unexpected end of input having "+
 			"been encountered in a reference substitution when evaluating \"%s\"",
 		evaluatingTokenType,
 	)
-	return errLexError(message, line, column)
+	return errLexError(message, line, column, columnAccuracy)
 }
 
 func errLexUnexpectedChar(
 	line int,
 	column int,
+	columnAccuracy ColumnAccuracy,
 	char rune,
 ) error {
 	message := fmt.Sprintf(
@@ -200,7 +206,7 @@ func errLexUnexpectedChar(
 			"been encountered in a reference substitution",
 		string(char),
 	)
-	return errLexError(message, line, column)
+	return errLexError(message, line, column, columnAccuracy)
 }
 
 // ParseError is an error that is returned
@@ -210,6 +216,9 @@ type ParseError struct {
 	message string
 	Line    int
 	Column  int
+	// ColumnAccuracy gives a hint as to how accurate the column numbers
+	// are likely to be in a host document that contains reference substitutions.
+	ColumnAccuracy ColumnAccuracy
 }
 
 func (e *ParseError) Error() string {
@@ -222,12 +231,13 @@ func (e *ParseError) Error() string {
 	return errStr
 }
 
-func errParseError(t *token, message string, line int, col int) error {
+func errParseError(t *token, message string, line int, col int, colAccuracy ColumnAccuracy) error {
 	return &ParseError{
-		token:   t,
-		message: message,
-		Line:    line,
-		Column:  col,
+		token:          t,
+		message:        message,
+		Line:           line,
+		Column:         col,
+		ColumnAccuracy: colAccuracy,
 	}
 }
 
@@ -278,16 +288,33 @@ type LexError struct {
 	message string
 	Line    int
 	Column  int
+	// ColumnAccuracy gives a hint as to how accurate the column numbers
+	// are likely to be in a host document that contains reference substitutions.
+	ColumnAccuracy ColumnAccuracy
 }
 
 func (e *LexError) Error() string {
 	return fmt.Sprintf("lex error at column %d: %s", e.Column, e.message)
 }
 
-func errLexError(message string, line int, col int) error {
+func errLexError(message string, line int, col int, colAccuracy ColumnAccuracy) error {
 	return &LexError{
-		message: message,
-		Line:    line,
-		Column:  col,
+		message:        message,
+		Line:           line,
+		Column:         col,
+		ColumnAccuracy: colAccuracy,
 	}
 }
+
+// ColumnAccuracy is an enum that describes the accuracy of column numbers
+// in a host document that contains reference substitutions.
+// This is used to give a hint to the user as to how accurate the column numbers
+// are likely to be in a host document for diagnostics that will be displayed to a user.
+type ColumnAccuracy int
+
+const (
+	// ColumnAccuracyExact indicates that column numbers are accurate.
+	ColumnAccuracyExact ColumnAccuracy = 1
+	// ColumnAccuracyApproximate indicates that column numbers are approximate.
+	ColumnAccuracyApproximate ColumnAccuracy = 2
+)

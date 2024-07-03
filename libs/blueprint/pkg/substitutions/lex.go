@@ -19,6 +19,9 @@ type lexState struct {
 	// the parent source context will have to suffice for mapping
 	// locations to lex errors.
 	relativeLineInfo *source.Meta
+	// Used to ignore the parent source column when calculating
+	// the absolute column for a token.
+	ignoreParentColumn bool
 }
 
 type tokenType string
@@ -40,6 +43,7 @@ const (
 	tokenKeywordDatasources tokenType = "keywordDatasources"
 	tokenKeywordResources   tokenType = "keywordResources"
 	tokenKeywordChildren    tokenType = "keywordChildren"
+	tokenEOF                tokenType = "eof"
 )
 
 type token struct {
@@ -126,8 +130,11 @@ func lex(sequence string, parentSourceStart *source.Meta) ([]*token, error) {
 		col := toAbsColumn(
 			lexState.parentSourceStart.Column,
 			lexState.relativeLineInfo.Column,
+			lexState.relativeLineInfo.Line == 0,
+			lexState.ignoreParentColumn,
 		)
-		errors = append(errors, errLexUnexpectedChar(line, col, char))
+		colAccuracy := determineLexColumnAccuracy(lexState)
+		errors = append(errors, errLexUnexpectedChar(line, col, colAccuracy, char))
 		i += 1
 	}
 
@@ -337,8 +344,11 @@ func takeStringLiteral(state *lexState, sequence string, startPos int) (int, err
 		col := toAbsColumn(
 			state.parentSourceStart.Column,
 			state.relativeLineInfo.Column,
+			state.relativeLineInfo.Line == 0,
+			state.ignoreParentColumn,
 		)
-		return i - startPos, errLexUnexpectedEndOfInput(line, col, "string literal")
+		colAccuracy := determineLexColumnAccuracy(state)
+		return i - startPos, errLexUnexpectedEndOfInput(line, col, colAccuracy, "string literal")
 	}
 
 	// Differentiate between a string literal and a name string literal
@@ -426,4 +436,18 @@ func lexUpdateLine(state *lexState, char rune) {
 		state.relativeLineInfo.Line += 1
 		state.relativeLineInfo.Column = 1
 	}
+}
+
+func determineLexColumnAccuracy(state *lexState) ColumnAccuracy {
+	if state.ignoreParentColumn {
+		// when we are ignoring the parent column, it is usually due to the
+		// lack of precision in determining the column number of a token.
+		// An example of this is when a YAML scalar node is a block style literal
+		// in the host document and the yaml.v3 library does not provide the
+		// starting column number of the beginning of the literal value,
+		// only the literal symbol "|" or ">" on the line above the literal value.
+		return ColumnAccuracyApproximate
+	}
+
+	return ColumnAccuracyExact
 }

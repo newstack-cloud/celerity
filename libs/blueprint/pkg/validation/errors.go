@@ -2,8 +2,6 @@ package validation
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
@@ -80,10 +78,15 @@ func errBlueprintUnsupportedVersion(version string) error {
 	}
 }
 
-func errVariableInvalidDefaultValue(varType schema.VariableType, varName string, defaultValue *bpcore.ScalarValue) error {
+func errVariableInvalidDefaultValue(
+	varType schema.VariableType,
+	varName string,
+	defaultValue *bpcore.ScalarValue,
+	varSourceMeta *source.Meta,
+) error {
 	defaultVarType := deriveVarType(defaultValue)
 
-	line, col := source.PositionFromSourceMeta(defaultValue.SourceMeta)
+	line, col := positionFromScalarValue(defaultValue, varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -97,8 +100,8 @@ func errVariableInvalidDefaultValue(varType schema.VariableType, varName string,
 	}
 }
 
-func errVariableEmptyDefaultValue(varType schema.VariableType, varName string, varSchema *schema.Variable) error {
-	line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+func errVariableEmptyDefaultValue(varType schema.VariableType, varName string, varSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -115,11 +118,11 @@ func errVariableInvalidOrMissing(
 	varType schema.VariableType,
 	varName string,
 	value *bpcore.ScalarValue,
-	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 ) error {
 	actualVarType := deriveOptionalVarType(value)
 	if actualVarType == nil {
-		line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+		line, col := source.PositionFromSourceMeta(varSourceMeta)
 		return &errors.LoadError{
 			ReasonCode: ErrorReasonCodeInvalidVariable,
 			Err: fmt.Errorf(
@@ -132,7 +135,7 @@ func errVariableInvalidOrMissing(
 		}
 	}
 
-	line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -150,9 +153,9 @@ func errVariableInvalidOrMissing(
 func errVariableEmptyValue(
 	varType schema.VariableType,
 	varName string,
-	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 ) error {
-	line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -169,20 +172,35 @@ func errVariableEmptyValue(
 func errVariableInvalidAllowedValue(
 	varType schema.VariableType,
 	allowedValue *bpcore.ScalarValue,
-	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 ) error {
 	allowedValueVarType := deriveVarType(allowedValue)
 	scalarValueStr := deriveScalarValueAsString(allowedValue)
 
-	l := log.New(os.Stderr, "", 0)
-	l.Printf("errVariableInvalidAllowedValue: allowedValue: %+v\n", allowedValue)
-	line, col := positionFromScalarValue(allowedValue, varSchema.SourceMeta)
+	line, col := positionFromScalarValue(allowedValue, varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
 			"an invalid allowed value was provided, %s with the value \"%s\" was provided when only %ss are allowed",
 			varTypeToUnit(allowedValueVarType),
 			scalarValueStr,
+			varType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errVariableNullAllowedValue(
+	varType schema.VariableType,
+	allowedValue *bpcore.ScalarValue,
+	varSourceMeta *source.Meta,
+) error {
+	line, col := positionFromScalarValue(allowedValue, varSourceMeta)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"null was provided for an allowed value, a valid %s must be provided",
 			varType,
 		),
 		Line:   line,
@@ -207,9 +225,9 @@ func errVariableInvalidAllowedValues(
 func errVariableInvalidAllowedValuesNotSupported(
 	varType schema.VariableType,
 	varName string,
-	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 ) error {
-	line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -229,11 +247,11 @@ func errVariableValueNotAllowed(
 	varName string,
 	value *bpcore.ScalarValue,
 	allowedValues []*bpcore.ScalarValue,
-	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 	usingDefault bool,
 ) error {
 	valueLabel := deriveValueLabel(value, usingDefault)
-	line, col := positionFromScalarValue(value, varSchema.SourceMeta)
+	line, col := positionFromScalarValue(value, varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -253,11 +271,11 @@ func errCustomVariableValueNotInOptions(
 	varType schema.VariableType,
 	varName string,
 	value *bpcore.ScalarValue,
-	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 	usingDefault bool,
 ) error {
 	valueLabel := deriveValueLabel(value, usingDefault)
-	line, col := positionFromScalarValue(value, varSchema.SourceMeta)
+	line, col := positionFromScalarValue(value, varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -273,8 +291,8 @@ func errCustomVariableValueNotInOptions(
 	}
 }
 
-func errRequiredVariableMissing(varName string, varSchema *schema.Variable) error {
-	line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+func errRequiredVariableMissing(varName string, varSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -290,9 +308,10 @@ func errRequiredVariableMissing(varName string, varSchema *schema.Variable) erro
 func errCustomVariableOptions(
 	varName string,
 	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 	err error,
 ) error {
-	line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -309,8 +328,9 @@ func errCustomVariableOptions(
 func errCustomVariableMixedTypes(
 	varName string,
 	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 ) error {
-	line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -328,10 +348,10 @@ func errCustomVariableInvalidDefaultValueType(
 	varType schema.VariableType,
 	varName string,
 	defaultValue *bpcore.ScalarValue,
-	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 ) error {
 	defaultVarType := deriveVarType(defaultValue)
-	line, col := positionFromScalarValue(defaultValue, varSchema.SourceMeta)
+	line, col := positionFromScalarValue(defaultValue, varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -350,9 +370,9 @@ func errCustomVariableAllowedValuesNotInOptions(
 	varType schema.VariableType,
 	varName string,
 	invalidOptions []string,
-	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 ) error {
-	line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -371,9 +391,9 @@ func errCustomVariableDefaultValueNotInOptions(
 	varType schema.VariableType,
 	varName string,
 	defaultValue string,
-	varSchema *schema.Variable,
+	varSourceMeta *source.Meta,
 ) error {
-	line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(

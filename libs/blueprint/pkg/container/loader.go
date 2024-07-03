@@ -136,6 +136,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	if err != nil {
 		return nil, err
 	}
+	// spew.Fdump(os.Stderr, blueprintSpec)
 	resourceProviderMap := l.createResourceProviderMap(blueprintSpec)
 	linkInfo, err := links.NewDefaultLinkInfoProvider(resourceProviderMap, blueprintSpec)
 	if err != nil {
@@ -284,13 +285,13 @@ func (l *defaultLoader) validateVariables(
 	for name, varSchema := range bpSchema.Variables.Values {
 		if core.SliceContains(schema.CoreVariableTypes, varSchema.Type) {
 			err := validation.ValidateCoreVariable(
-				ctx, name, varSchema, params, l.validateRuntimeValues,
+				ctx, name, varSchema, bpSchema.Variables, params, l.validateRuntimeValues,
 			)
 			if err != nil {
 				variableErrors[name] = err
 			}
 		} else {
-			err := l.validateCustomVariableType(ctx, name, varSchema, params)
+			err := l.validateCustomVariableType(ctx, name, varSchema, bpSchema.Variables, params)
 			if err != nil {
 				variableErrors[name] = err
 			}
@@ -328,13 +329,14 @@ func (l *defaultLoader) validateCustomVariableType(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	variables *schema.VariableMap,
 	params bpcore.BlueprintParams,
 ) error {
 	providerCustomVarType, err := l.deriveProviderCustomVarType(varSchema.Type)
 	if err != nil {
 		return err
 	}
-	return validation.ValidateCustomVariable(ctx, varName, varSchema, params, providerCustomVarType)
+	return validation.ValidateCustomVariable(ctx, varName, varSchema, variables, params, providerCustomVarType)
 }
 
 func (l *defaultLoader) deriveProviderCustomVarType(variableType schema.VariableType) (provider.CustomVariableType, error) {

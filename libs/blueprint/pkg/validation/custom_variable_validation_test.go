@@ -6,6 +6,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	. "gopkg.in/check.v1"
 )
 
@@ -29,7 +30,18 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_v
 		Type:        schema.VariableType("aws/ec2/instanceType"),
 		Description: "The type of Amazon EC2 instance to deploy.",
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"instanceType": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"instanceType": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, IsNil)
 }
 
@@ -48,7 +60,18 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_when_va
 			StringValue: &defaultInstanceType,
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"instanceType": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"instanceType": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, IsNil)
 }
 
@@ -68,7 +91,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_errors_when_multiple_va
 		Type:        schema.VariableType("aws/ec2/instanceType"),
 		Description: "The type of Amazon EC2 instance to deploy.",
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"instanceType": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"instanceType": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -98,7 +132,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_there_is_a_f
 		Type:        schema.VariableType("aws/ec2/instanceType"),
 		Description: "The type of Amazon EC2 instance to deploy.",
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"instanceType": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"instanceType": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -143,7 +188,19 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"instanceType": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"instanceType": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+
+	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -196,7 +253,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"instanceType": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"instanceType": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -231,7 +299,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 			IntValue: &invalidDefault,
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"instanceType": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"instanceType": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -264,7 +343,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 			StringValue: &unsupportedOptionDefault,
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"instanceType": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"instanceType": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -305,7 +395,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 			StringValue: &supportedDefaultNotInAllowedValues,
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"instanceType": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"instanceType": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -329,7 +430,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_no_value_is_
 		Type:        schema.VariableType("aws/region"),
 		Description: "The region to deploy the application to.",
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -358,7 +470,19 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 		Type:        schema.VariableType("aws/region"),
 		Description: "The region to deploy the application to.",
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+
+	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -386,7 +510,19 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 			StringValue: &emptyDefaultRegion,
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+
+	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -415,7 +551,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 		Type:        schema.VariableType("aws/region"),
 		Description: "The region to deploy the application to.",
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -444,7 +591,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 		Type:        schema.VariableType("aws/region"),
 		Description: "The region to deploy the application to.",
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -487,7 +645,18 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, params, customVariableType)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

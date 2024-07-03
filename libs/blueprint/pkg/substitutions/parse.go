@@ -15,20 +15,27 @@ type Parser struct {
 	// A stack of positions in the sequence where a token
 	// evaluation started, this allows for state.pos updates
 	// to be reverted when a token evaluation fails.
-	startPosStack     []int
-	tokens            []*token
-	parentSourceStart *source.Meta
-	outputLineInfo    bool
+	startPosStack      []int
+	tokens             []*token
+	parentSourceStart  *source.Meta
+	outputLineInfo     bool
+	ignoreParentColumn bool
 }
 
 // NewParser creates a new substitution parser.
-func NewParser(tokens []*token, parentSourceStart *source.Meta, outputLineInfo bool) *Parser {
+func NewParser(
+	tokens []*token,
+	parentSourceStart *source.Meta,
+	outputLineInfo bool,
+	ignoreParentColumn bool,
+) *Parser {
 	return &Parser{
-		pos:               0,
-		startPosStack:     []int{},
-		tokens:            tokens,
-		parentSourceStart: parentSourceStart,
-		outputLineInfo:    outputLineInfo,
+		pos:                0,
+		startPosStack:      []int{},
+		tokens:             tokens,
+		parentSourceStart:  parentSourceStart,
+		outputLineInfo:     outputLineInfo,
+		ignoreParentColumn: ignoreParentColumn,
 	}
 }
 
@@ -148,15 +155,17 @@ func (p *Parser) substitition() (*Substitution, error) {
 	}
 
 	col := token.relativeCol + 1
-	if p.parentSourceStart != nil {
+	if !p.ignoreParentColumn && p.parentSourceStart != nil {
 		col = token.relativeCol + p.parentSourceStart.Column
 	}
 
+	colAccuracy := p.determineColumnAccuracy()
 	return nil, errParseError(
 		token,
 		"failed to parse substitution, found unexpected or missing token",
 		line,
 		col,
+		colAccuracy,
 	)
 }
 
@@ -241,7 +250,8 @@ func (p *Parser) childReference() (*SubstitutionChild, error) {
 	if childBlueprintName == nil {
 		return nil, p.error(
 			p.peek(),
-			"expected a valid name accessor (i.e. [\"{name}\"] or .{name}) after children keyword",
+			"expected a valid name accessor (i.e. [\"{name}\"] or .{name}) after children keyword, "+
+				"e.g. children[\"networking\"] or children.networking",
 		)
 	}
 
@@ -249,7 +259,8 @@ func (p *Parser) childReference() (*SubstitutionChild, error) {
 	if exportedFieldName == nil {
 		return nil, p.error(
 			p.peek(),
-			"expected a valid name accessor (i.e. [\"{name}\"] or .{name}) for child blueprint exported field name",
+			"expected a valid name accessor (i.e. [\"{name}\"] or .{name}) for child blueprint exported field name, "+
+				"e.g. children[\"networking\"][\"vpc\"] or children.networking.vpc",
 		)
 	}
 
@@ -304,7 +315,8 @@ func (p *Parser) resourceName() (*string, error) {
 		if name == nil {
 			return nil, p.error(
 				p.peek(),
-				"expected a valid name accessor (i.e. [\"{name}\"] or .{name}) after resources keyword",
+				"expected a valid name accessor (i.e. [\"{name}\"] or .{name}) after resources keyword, "+
+					"e.g. resources[\"vpc\"] or resources.vpc",
 			)
 		}
 
@@ -559,11 +571,12 @@ func (p *Parser) error(t *token, message string) error {
 	}
 
 	col := t.relativeCol + 1
-	if p.parentSourceStart != nil {
+	if !p.ignoreParentColumn && p.parentSourceStart != nil && t.relativeLine == 0 {
 		col = t.relativeCol + p.parentSourceStart.Column
 	}
 
-	return errParseError(t, message, line, col)
+	colAccuracy := p.determineColumnAccuracy()
+	return errParseError(t, message, line, col, colAccuracy)
 }
 
 func (p *Parser) check(tokenType tokenType) bool {
@@ -581,6 +594,9 @@ func (p *Parser) advance() *token {
 }
 
 func (p *Parser) peek() *token {
+	if p.isAtEnd() {
+		return &token{tokenType: tokenEOF}
+	}
 	return p.tokens[p.pos]
 }
 
@@ -636,7 +652,7 @@ func (p *Parser) sourceMeta(token *token) *source.Meta {
 	}
 
 	col := token.relativeCol + 1
-	if p.parentSourceStart != nil {
+	if !p.ignoreParentColumn && p.parentSourceStart != nil && token.relativeLine == 0 {
 		col = token.relativeCol + p.parentSourceStart.Column
 	}
 
@@ -644,4 +660,18 @@ func (p *Parser) sourceMeta(token *token) *source.Meta {
 		Line:   line,
 		Column: col,
 	}
+}
+
+func (p *Parser) determineColumnAccuracy() ColumnAccuracy {
+	if p.ignoreParentColumn {
+		// when we are ignoring the parent column, it is usually due to the
+		// lack of precision in determining the column number of a token.
+		// An example of this is when a YAML scalar node is a block style literal
+		// in the host document and the yaml.v3 library does not provide the
+		// starting column number of the beginning of the literal value,
+		// only the literal symbol "|" or ">" on the line above the literal value.
+		return ColumnAccuracyApproximate
+	}
+
+	return ColumnAccuracyExact
 }

@@ -29,6 +29,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_multip
 			Column: 100,
 		},
 		true,
+		false,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 4)
@@ -129,7 +130,8 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_data
 		"",
 		`${datasources["coreInfra.v1"]["topic.v2"][0]}`,
 		nil,
-		true,
+		true,  // outputLineInfo
+		false, // ignoreParentColumn
 	)
 	index := int64(0)
 	c.Assert(err, IsNil)
@@ -163,6 +165,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_data
 		"${datasources.coreInfra1.topics[1]}",
 		nil,
 		true,
+		false,
 	)
 	index := int64(1)
 	c.Assert(err, IsNil)
@@ -196,6 +199,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_chil
 		`${children["core-infrastructure.v1"].cacheNodes[].host}`,
 		nil,
 		true,
+		false,
 	)
 	index := int64(0)
 	c.Assert(err, IsNil)
@@ -238,6 +242,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 		`${resources.saveOrderFunction.metadata.annotations["annotationKey.v1"]}`,
 		nil,
 		true,
+		false,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -279,6 +284,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 		`${resources["save-order-function.v1"].state.functionArn}`,
 		nil,
 		true,
+		false,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -317,6 +323,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 		`${saveOrderFunction}`,
 		nil,
 		true,
+		false,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -348,6 +355,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 		`${  "This is a \"string\" literal"    }`,
 		nil,
 		true,
+		false,
 	)
 	expectedStrVal := "This is a \"string\" literal"
 	c.Assert(err, IsNil)
@@ -373,6 +381,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 		`${  substr(trim("This is a \"string\" literal"), 0, 3)    }`,
 		nil,
 		true,
+		false,
 	)
 	trimArg := "This is a \"string\" literal"
 	arg2 := int64(0)
@@ -444,6 +453,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 		`${  trim("This is a \"string\" literal", true)    }`,
 		nil,
 		true,
+		false,
 	)
 	arg1 := "This is a \"string\" literal"
 	arg2 := true
@@ -498,6 +508,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 			Column: 50,
 		},
 		true,
+		false,
 	)
 	arg := 25.40932102
 	c.Assert(err, IsNil)
@@ -545,6 +556,7 @@ func (s *ParseSubstitutionsTestSuite) Test_fails_to_parse_susbstitution_reportin
 			Column: 50,
 		},
 		true,
+		false,
 	)
 	c.Assert(err, NotNil)
 
@@ -587,6 +599,7 @@ func (s *ParseSubstitutionsTestSuite) Test_fails_to_parse_susbstitution_reportin
 			Column: 70,
 		},
 		true,
+		false,
 	)
 	c.Assert(err, NotNil)
 

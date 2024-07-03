@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 	"gopkg.in/yaml.v3"
 )
@@ -133,7 +134,11 @@ func wrapErrorWithLineInfo(underlyingError error, parent *yaml.Node) error {
 		return underlyingError
 	}
 
-	if _, isScalarError := underlyingError.(*bpcore.Error); isScalarError {
+	if _, isCoreError := underlyingError.(*bpcore.Error); isCoreError {
+		return underlyingError
+	}
+
+	if _, isLoadError := underlyingError.(*errors.LoadError); isLoadError {
 		return underlyingError
 	}
 

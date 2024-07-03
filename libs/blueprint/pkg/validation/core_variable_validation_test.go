@@ -6,6 +6,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	. "gopkg.in/check.v1"
 )
 
@@ -27,7 +28,18 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 		Type:        schema.VariableTypeInteger,
 		Description: "Maximum number of retries for interacting with the core API.",
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"maxRetries": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"maxRetries": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -45,7 +57,18 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 		Type:        schema.VariableTypeFloat,
 		Description: "The timeout for the requests for the core API.",
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"timeoutInSeconds": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"timeoutInSeconds": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -76,7 +99,18 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 			StringValue: &allowedValue1,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -94,7 +128,18 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 		Type:        schema.VariableTypeBoolean,
 		Description: "Whether or not the application should include experimental features.",
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"experimentalFeatures": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"experimentalFeatures": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -121,7 +166,18 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			StringValue: &defaultRegion,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -138,7 +194,18 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			IntValue: &defaultMaxRetries,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"maxRetries": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"maxRetries": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -156,7 +223,18 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			FloatValue: &defaultTimeoutInSeconds,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"timeoutInSeconds": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"timeoutInSeconds": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -174,7 +252,18 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			BoolValue: &defaultExperimentalFeatures,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"experimentalFeatures": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"experimentalFeatures": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -192,7 +281,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_strin
 		Type:        schema.VariableTypeString,
 		Description: "The region to deploy the blueprint resources to.",
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -219,7 +319,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_integ
 		Type:        schema.VariableTypeInteger,
 		Description: "The maximum number of retries when calling the core API.",
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"maxRetries": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"maxRetries": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -246,7 +357,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_float
 		Type:        schema.VariableTypeFloat,
 		Description: "The timeout when calling the core API.",
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"timeoutInSeconds": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"timeoutInSeconds": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -273,7 +395,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_bool_
 		Type:        schema.VariableTypeBoolean,
 		Description: "Whether or not experimental features should be enabled.",
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"experimentalFeatures": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"experimentalFeatures": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -304,7 +437,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			BoolValue: &invalidValue,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -335,7 +479,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			StringValue: &invalidValue,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"maxRetries": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"maxRetries": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -366,7 +521,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			BoolValue: &invalidValue,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"timeoutInSeconds": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"timeoutInSeconds": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -397,7 +563,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			FloatValue: &invalidValue,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"experimentalFeatures": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"experimentalFeatures": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -438,7 +615,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 			StringValue: &validDefaultRegion,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -489,7 +677,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 			IntValue: &validDefaultMaxRetries,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"maxRetries": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"maxRetries": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -547,7 +746,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 			FloatValue: &validDefaultTimeoutInSeconds,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"timeoutInSeconds": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"timeoutInSeconds": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -600,7 +810,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_allowed_value
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"experimentalFeatures": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"experimentalFeatures": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -638,7 +859,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -675,7 +907,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"maxRetries": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"maxRetries": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -712,7 +955,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"timeoutInSeconds": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"timeoutInSeconds": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -748,7 +1002,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 			StringValue: &defaultRegion,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -785,7 +1050,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 			IntValue: &defaultBatchSize,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxBatchSize", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"maxBatchSize": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"maxBatchSize": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxBatchSize", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -821,7 +1097,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 			FloatValue: &defaultSampleRate,
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "sampleRate", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"sampleRate": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"sampleRate": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "sampleRate", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -849,7 +1136,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_string_variab
 		Description:   "The region to deploy the application to.",
 		AllowedValues: []*core.ScalarValue{},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -872,7 +1170,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_string_variabl
 		Description:   "The region to deploy the application to.",
 		AllowedValues: []*core.ScalarValue{},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"region": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"region": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -895,7 +1204,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_integer_variab
 		Description:   "The maximum number of retries allowed when calling the core API.",
 		AllowedValues: []*core.ScalarValue{},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"maxRetries": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"maxRetries": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -918,7 +1238,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_float_variable
 		Description:   "The timeout in seconds used when calling the core API.",
 		AllowedValues: []*core.ScalarValue{},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"timeoutInSeconds": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"timeoutInSeconds": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -941,7 +1272,18 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_boolean_variab
 		Description:   "Whether or not to enable experimental features in the app.",
 		AllowedValues: []*core.ScalarValue{},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, params, true)
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"experimentalFeatures": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"experimentalFeatures": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

@@ -6,6 +6,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 )
 
 // ValidateCoreVariable deals with validating a blueprint variable
@@ -15,30 +16,31 @@ func ValidateCoreVariable(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
 ) error {
 	if varSchema.Type == schema.VariableTypeString {
 		return validateCoreStringVariable(
-			ctx, varName, varSchema, params, validateRuntimeParams,
+			ctx, varName, varSchema, varMap, params, validateRuntimeParams,
 		)
 	}
 
 	if varSchema.Type == schema.VariableTypeInteger {
 		return validateCoreIntegerVariable(
-			ctx, varName, varSchema, params, validateRuntimeParams,
+			ctx, varName, varSchema, varMap, params, validateRuntimeParams,
 		)
 	}
 
 	if varSchema.Type == schema.VariableTypeFloat {
 		return validateCoreFloatVariable(
-			ctx, varName, varSchema, params, validateRuntimeParams,
+			ctx, varName, varSchema, varMap, params, validateRuntimeParams,
 		)
 	}
 
 	if varSchema.Type == schema.VariableTypeBoolean {
 		return validateCoreBooleanVariable(
-			ctx, varName, varSchema, params, validateRuntimeParams,
+			ctx, varName, varSchema, varMap, params, validateRuntimeParams,
 		)
 	}
 
@@ -49,12 +51,13 @@ func validateCoreStringVariable(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
 ) error {
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCoreStringVariableAllowedValues(
-			ctx, varName, varSchema, params,
+			ctx, varName, varSchema, varMap, params,
 		)
 
 		if err != nil {
@@ -69,6 +72,7 @@ func validateCoreStringVariable(
 			schema.VariableTypeString,
 			varName,
 			varSchema.Default,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -76,7 +80,7 @@ func validateCoreStringVariable(
 		return errVariableEmptyDefaultValue(
 			schema.VariableTypeString,
 			varName,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -84,7 +88,7 @@ func validateCoreStringVariable(
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
 	if validateRuntimeParams && finalValue == nil {
-		return errRequiredVariableMissing(varName, varSchema)
+		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if validateRuntimeParams && finalValue.StringValue == nil {
@@ -92,7 +96,7 @@ func validateCoreStringVariable(
 			schema.VariableTypeString,
 			varName,
 			finalValue,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -100,12 +104,13 @@ func validateCoreStringVariable(
 		return errVariableEmptyValue(
 			schema.VariableTypeString,
 			varName,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
 	return validateValueInAllowedList(
 		varSchema,
+		varMap,
 		schema.VariableTypeString,
 		finalValue,
 		userProvidedValue,
@@ -118,18 +123,29 @@ func validateCoreStringVariableAllowedValues(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 ) error {
 	// Collect all invalid allowed values in one go to help
 	// speed up the debugging process.
 	invalidAllowedValueErrors := []error{}
 	for _, allowedValue := range varSchema.AllowedValues {
-		if allowedValue == nil || allowedValue.StringValue == nil {
-			err := errVariableInvalidAllowedValue(
+		var err error
+		if allowedValue == nil || scalarAllNil(allowedValue) {
+			err = errVariableNullAllowedValue(
 				schema.VariableTypeString,
 				allowedValue,
-				varSchema,
+				getVarSourceMeta(varMap, varName),
 			)
+		} else if allowedValue.StringValue == nil {
+			err = errVariableInvalidAllowedValue(
+				schema.VariableTypeString,
+				allowedValue,
+				getVarSourceMeta(varMap, varName),
+			)
+		}
+
+		if err != nil {
 			invalidAllowedValueErrors = append(invalidAllowedValueErrors, err)
 		}
 	}
@@ -148,12 +164,13 @@ func validateCoreIntegerVariable(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
 ) error {
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCoreIntegerVariableAllowedValues(
-			ctx, varName, varSchema, params,
+			ctx, varName, varSchema, varMap, params,
 		)
 
 		if err != nil {
@@ -168,6 +185,7 @@ func validateCoreIntegerVariable(
 			schema.VariableTypeInteger,
 			varName,
 			varSchema.Default,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -178,7 +196,7 @@ func validateCoreIntegerVariable(
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
 	if validateRuntimeParams && finalValue == nil {
-		return errRequiredVariableMissing(varName, varSchema)
+		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if validateRuntimeParams && finalValue.IntValue == nil {
@@ -186,12 +204,13 @@ func validateCoreIntegerVariable(
 			schema.VariableTypeInteger,
 			varName,
 			finalValue,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
 	return validateValueInAllowedList(
 		varSchema,
+		varMap,
 		schema.VariableTypeInteger,
 		finalValue,
 		userProvidedValue,
@@ -204,18 +223,29 @@ func validateCoreIntegerVariableAllowedValues(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 ) error {
 	// Collect all invalid allowed values in one go to help
 	// speed up the debugging process.
 	invalidAllowedValueErrors := []error{}
 	for _, allowedValue := range varSchema.AllowedValues {
-		if allowedValue.IntValue == nil {
-			err := errVariableInvalidAllowedValue(
+		var err error
+		if allowedValue == nil || scalarAllNil(allowedValue) {
+			err = errVariableNullAllowedValue(
 				schema.VariableTypeInteger,
 				allowedValue,
-				varSchema,
+				getVarSourceMeta(varMap, varName),
 			)
+		} else if allowedValue.IntValue == nil {
+			err = errVariableInvalidAllowedValue(
+				schema.VariableTypeInteger,
+				allowedValue,
+				getVarSourceMeta(varMap, varName),
+			)
+		}
+
+		if err != nil {
 			invalidAllowedValueErrors = append(invalidAllowedValueErrors, err)
 		}
 	}
@@ -234,12 +264,13 @@ func validateCoreFloatVariable(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
 ) error {
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCoreFloatVariableAllowedValues(
-			ctx, varName, varSchema, params,
+			ctx, varName, varSchema, varMap, params,
 		)
 
 		if err != nil {
@@ -254,6 +285,7 @@ func validateCoreFloatVariable(
 			schema.VariableTypeFloat,
 			varName,
 			varSchema.Default,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -264,7 +296,7 @@ func validateCoreFloatVariable(
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
 	if validateRuntimeParams && finalValue == nil {
-		return errRequiredVariableMissing(varName, varSchema)
+		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if validateRuntimeParams && finalValue.FloatValue == nil {
@@ -272,12 +304,13 @@ func validateCoreFloatVariable(
 			schema.VariableTypeFloat,
 			varName,
 			finalValue,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
 	return validateValueInAllowedList(
 		varSchema,
+		varMap,
 		schema.VariableTypeFloat,
 		finalValue,
 		userProvidedValue,
@@ -290,18 +323,29 @@ func validateCoreFloatVariableAllowedValues(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 ) error {
 	// Collect all invalid allowed values in one go to help
 	// speed up the debugging process.
 	invalidAllowedValueErrors := []error{}
 	for _, allowedValue := range varSchema.AllowedValues {
-		if allowedValue.FloatValue == nil {
-			err := errVariableInvalidAllowedValue(
+		var err error
+		if allowedValue == nil || scalarAllNil(allowedValue) {
+			err = errVariableNullAllowedValue(
 				schema.VariableTypeFloat,
 				allowedValue,
-				varSchema,
+				getVarSourceMeta(varMap, varName),
 			)
+		} else if allowedValue.FloatValue == nil {
+			err = errVariableInvalidAllowedValue(
+				schema.VariableTypeFloat,
+				allowedValue,
+				getVarSourceMeta(varMap, varName),
+			)
+		}
+
+		if err != nil {
 			invalidAllowedValueErrors = append(invalidAllowedValueErrors, err)
 		}
 	}
@@ -320,6 +364,7 @@ func validateCoreBooleanVariable(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
 ) error {
@@ -327,7 +372,7 @@ func validateCoreBooleanVariable(
 		return errVariableInvalidAllowedValuesNotSupported(
 			schema.VariableTypeBoolean,
 			varName,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -338,6 +383,7 @@ func validateCoreBooleanVariable(
 			schema.VariableTypeBoolean,
 			varName,
 			varSchema.Default,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -350,7 +396,7 @@ func validateCoreBooleanVariable(
 	}
 
 	if validateRuntimeParams && value == nil {
-		return errRequiredVariableMissing(varName, varSchema)
+		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if validateRuntimeParams && value.BoolValue == nil {
@@ -358,7 +404,7 @@ func validateCoreBooleanVariable(
 			schema.VariableTypeBoolean,
 			varName,
 			value,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -367,6 +413,7 @@ func validateCoreBooleanVariable(
 
 func validateValueInAllowedList(
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	varType schema.VariableType,
 	finalValue *bpcore.ScalarValue,
 	userProvidedValue *bpcore.ScalarValue,
@@ -384,7 +431,7 @@ func validateValueInAllowedList(
 			varName,
 			finalValue,
 			varSchema.AllowedValues,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 			usingDefault,
 		)
 	}
@@ -397,4 +444,16 @@ func fallbackToDefault(value *bpcore.ScalarValue, defaultValue *bpcore.ScalarVal
 		return defaultValue
 	}
 	return value
+}
+
+func getVarSourceMeta(varMap *schema.VariableMap, varName string) *source.Meta {
+	if varMap == nil {
+		return nil
+	}
+
+	return varMap.SourceMeta[varName]
+}
+
+func scalarAllNil(scalar *bpcore.ScalarValue) bool {
+	return scalar.StringValue == nil && scalar.IntValue == nil && scalar.FloatValue == nil && scalar.BoolValue == nil
 }

@@ -17,10 +17,13 @@ func ValidateCustomVariable(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	customVariableType provider.CustomVariableType,
 ) error {
-	optionLabels, err := validateCustomVariableOptions(ctx, varName, varSchema, params, customVariableType)
+	optionLabels, err := validateCustomVariableOptions(
+		ctx, varName, varSchema, varMap, params, customVariableType,
+	)
 	if err != nil {
 		return err
 	}
@@ -32,7 +35,7 @@ func ValidateCustomVariable(
 			varSchema.Type,
 			varName,
 			varSchema.Default,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -40,7 +43,7 @@ func ValidateCustomVariable(
 		return errVariableEmptyDefaultValue(
 			varSchema.Type,
 			varName,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -49,7 +52,7 @@ func ValidateCustomVariable(
 			varSchema.Type,
 			varName,
 			*varSchema.Default.StringValue,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -57,7 +60,7 @@ func ValidateCustomVariable(
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
 	if finalValue == nil {
-		return errRequiredVariableMissing(varName, varSchema)
+		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if finalValue.StringValue == nil {
@@ -65,7 +68,7 @@ func ValidateCustomVariable(
 			varSchema.Type,
 			varName,
 			finalValue,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -73,7 +76,7 @@ func ValidateCustomVariable(
 		return errVariableEmptyValue(
 			varSchema.Type,
 			varName,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
@@ -83,7 +86,7 @@ func ValidateCustomVariable(
 			varSchema.Type,
 			varName,
 			finalValue,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 			usingDefault,
 		)
 	}
@@ -95,7 +98,7 @@ func ValidateCustomVariable(
 			varName,
 			finalValue,
 			varSchema.AllowedValues,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 			usingDefault,
 		)
 	}
@@ -107,6 +110,7 @@ func validateCustomVariableOptions(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	customVariableType provider.CustomVariableType,
 ) ([]string, error) {
@@ -115,6 +119,7 @@ func validateCustomVariableOptions(
 		return nil, errCustomVariableOptions(
 			varName,
 			varSchema,
+			getVarSourceMeta(varMap, varName),
 			err,
 		)
 	}
@@ -124,13 +129,14 @@ func validateCustomVariableOptions(
 		return nil, errCustomVariableMixedTypes(
 			varName,
 			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 
 	optionLabels := keysToSlice(options)
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCustomVariableAllowedValues(
-			ctx, varName, varSchema, params, optionLabels,
+			ctx, varName, varSchema, varMap, params, optionLabels,
 		)
 
 		if err != nil {
@@ -145,6 +151,7 @@ func validateCustomVariableAllowedValues(
 	ctx context.Context,
 	varName string,
 	varSchema *schema.Variable,
+	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	optionLabels []string,
 ) error {
@@ -152,12 +159,22 @@ func validateCustomVariableAllowedValues(
 	// speed up the debugging process.
 	invalidAllowedValueErrors := []error{}
 	for _, allowedValue := range varSchema.AllowedValues {
-		if allowedValue.StringValue == nil {
-			err := errVariableInvalidAllowedValue(
+		var err error
+		if allowedValue == nil || scalarAllNil(allowedValue) {
+			err = errVariableNullAllowedValue(
 				varSchema.Type,
 				allowedValue,
-				varSchema,
+				getVarSourceMeta(varMap, varName),
 			)
+		} else if allowedValue.StringValue == nil {
+			err = errVariableInvalidAllowedValue(
+				varSchema.Type,
+				allowedValue,
+				getVarSourceMeta(varMap, varName),
+			)
+		}
+
+		if err != nil {
 			invalidAllowedValueErrors = append(invalidAllowedValueErrors, err)
 		}
 	}
@@ -175,7 +192,7 @@ func validateCustomVariableAllowedValues(
 			varSchema.Type,
 			varName,
 			invalidOptions,
-			varSchema,
+			getVarSourceMeta(varMap, varName),
 		)
 	}
 

@@ -2,8 +2,6 @@ package container
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
@@ -97,8 +95,6 @@ func errUnsupportedSpecFileExtension(filePath string) error {
 
 func errVariableValidationError(errorMap map[string]error) error {
 	errCount := len(errorMap)
-	l := log.New(os.Stderr, "", 0)
-	l.Printf("errVariableValidationError: errorMap: %+v\n", errorMap)
 	return &errors.LoadError{
 		ReasonCode:  ErrorReasonCodeVariableValidationErrors,
 		Err:         fmt.Errorf("validation failed due to issues with %d variables in the spec", errCount),

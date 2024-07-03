@@ -106,9 +106,27 @@ func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 		Line:   node.Line,
 		Column: node.Column,
 	}
-	strSubs, err := substitutions.ParseSubstitutionValues("", node.Value, sourceMeta, true)
-	// Parse literal value if there are no substitutions.
-	if err != nil || len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
+
+	isBlockStyle := node.Style == yaml.LiteralStyle || node.Style == yaml.FoldedStyle
+	sourceStartMeta := substitutions.DetermineYAMLSourceStartMeta(node, sourceMeta)
+	strSubs, err := substitutions.ParseSubstitutionValues(
+		"", // substitutionContext
+		node.Value,
+		sourceStartMeta,
+		true, // outputLineInfo
+		// Due to the difficulty involved in getting the precise starting column
+		// of a "folded" or "literal" style block in a mapping or sequence,
+		// the column number should be ignored until the difficulty of doing so changes.
+		isBlockStyle, // ignoreParentColumn
+	)
+	if err != nil {
+		// When substitutions are present but invalid, we must return an error to provide
+		// the best possible user experience when debugging issues with a blueprint,
+		// silently ignoring invalid substitutions and falling back to string literals
+		// would make it harder to debug.
+		return err
+	} else if len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
+		// Parse literal value if there are no substitutions.
 		m.Literal = &ScalarValue{}
 		return m.Literal.UnmarshalYAML(node)
 	}
@@ -173,9 +191,16 @@ func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {
 	if len(dataStr) >= 2 && dataStr[0] == '"' && dataStr[len(dataStr)-1] == '"' {
 		normalised = dataStr[1 : len(dataStr)-1]
 	}
-	strSubs, err := substitutions.ParseSubstitutionValues("", normalised, nil, false)
-	// Parse literal value if there are no substitutions.
-	if err != nil || len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
+	strSubs, err := substitutions.ParseSubstitutionValues("", normalised, nil, false, true)
+
+	if err != nil {
+		// When substitutions are present but invalid, we must return an error to provide
+		// the best possible user experience when debugging issues with a blueprint,
+		// silently ignoring invalid substitutions and falling back to string literals
+		// would make it harder to debug.
+		return err
+	} else if len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
+		// Parse literal value if there are no substitutions.
 		m.Literal = &ScalarValue{}
 		return m.Literal.UnmarshalJSON(data)
 	}

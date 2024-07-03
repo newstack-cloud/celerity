@@ -36,10 +36,21 @@ func (s *StringOrSubstitutions) UnmarshalYAML(node *yaml.Node) error {
 		Column: node.Column,
 	}
 
+	isBlockStyle := node.Style == yaml.LiteralStyle || node.Style == yaml.FoldedStyle
+	sourceStartMeta := DetermineYAMLSourceStartMeta(node, s.SourceMeta)
 	// During deserialisation, there is no way of knowing the context
 	// (i.e. the key or field name) in which the substitutions are being used.
 	// This is why an empty string is passed as the substitution context.
-	parsedValues, err := ParseSubstitutionValues("", node.Value, s.SourceMeta, true)
+	parsedValues, err := ParseSubstitutionValues(
+		"", // substitutionContext
+		node.Value,
+		sourceStartMeta,
+		true, // outputLineInfo
+		// Due to the difficulty involved in getting the precise starting column
+		// of a "folded" or "literal" style block in a mapping or sequence,
+		// the column number should be ignored until the difficulty of doing so changes.
+		isBlockStyle, // ignoreParentColumn
+	)
 	if err != nil {
 		return err
 	}
@@ -77,7 +88,7 @@ func (s *StringOrSubstitutions) UnmarshalJSON(data []byte) error {
 	// During deserialisation, there is no way of knowing the context
 	// (i.e. the key or field name) in which the substitutions are being used.
 	// This is why an empty string is passed as the substitution context.
-	parsedValues, err := ParseSubstitutionValues("", quotesStripped, nil, false)
+	parsedValues, err := ParseSubstitutionValues("", quotesStripped, nil, false, true)
 	if err != nil {
 		return err
 	}

@@ -19,6 +19,7 @@ type interpolationParseState struct {
 	prevChar           rune
 	errors             []error
 	outputLineInfo     bool
+	ignoreParentColumn bool
 }
 
 // ParseSubstitutionValues parses a string that can contain interpolated
@@ -27,6 +28,7 @@ func ParseSubstitutionValues(
 	substitutionContext, value string,
 	parentSourceStart *source.Meta,
 	outputLineInfo bool,
+	ignoreParentColumn bool,
 ) ([]*StringOrSubstitution, error) {
 	// This is hand-rolled to account for the fact that string literals
 	// are supported in the spec for substitutions and they can contain
@@ -65,6 +67,7 @@ func ParseSubstitutionValues(
 		potentialNonSubStr: "",
 		prevChar:           ' ',
 		outputLineInfo:     outputLineInfo,
+		ignoreParentColumn: ignoreParentColumn,
 	}
 
 	i := 0
@@ -100,8 +103,13 @@ func ParseSubstitutionValues(
 		sourceMeta := (*source.Meta)(nil)
 		if state.outputLineInfo {
 			sourceMeta = &source.Meta{
-				Line:   toAbsLine(parentLine, state.relativeLineInfo.Line),
-				Column: toAbsColumn(parentColumn, state.relativeLineInfo.Column-len(state.potentialNonSubStr)),
+				Line: toAbsLine(parentLine, state.relativeLineInfo.Line),
+				Column: toAbsColumn(
+					parentColumn,
+					state.relativeLineInfo.Column-len(state.potentialNonSubStr),
+					state.relativeLineInfo.Line == 0,
+					state.ignoreParentColumn,
+				),
 			}
 		}
 
@@ -138,7 +146,7 @@ func prepareSubstitutionErrors(substitutionContext string, state *interpolationP
 func updateLineInfo(state *interpolationParseState, value rune) {
 	if value == '\n' {
 		state.relativeLineInfo.Line += 1
-		state.relativeLineInfo.Column = 1
+		state.relativeLineInfo.Column = 0
 	} else {
 		state.relativeLineInfo.Column += 1
 	}
@@ -187,6 +195,8 @@ func createStringValSourceMeta(state *interpolationParseState, stringVal string)
 		// indicating a potential start of a substitution that leads
 		// to us taking the previous string value as a string literal.
 		state.relativeLineInfo.Column-len(stringVal)-1,
+		state.relativeLineInfo.Line == 0,
+		state.ignoreParentColumn,
 	)
 
 	return &source.Meta{
@@ -207,12 +217,17 @@ func checkCloseSubBracket(state *interpolationParseState, value string, i int, s
 	isCloseSubBracket := char == '}' && state.inPossibleSub && !state.inStringLiteral
 	if isCloseSubBracket {
 		// End of a substitution
-		subSourceStart := toAbsSourceMeta(state.parentSourceStart, state.relativeSubStart)
+		subSourceStart := toAbsSourceMeta(
+			state.parentSourceStart,
+			state.relativeSubStart,
+			state.ignoreParentColumn,
+		)
 		parsedSub, err := ParseSubstitution(
 			substitutionContext,
 			state.potentialSub,
 			subSourceStart,
 			state.outputLineInfo,
+			state.ignoreParentColumn,
 		)
 		if err != nil {
 			state.errors = append(state.errors, err)
@@ -253,12 +268,17 @@ func createSubstitutionSourceMeta(state *interpolationParseState) *source.Meta {
 	}
 
 	return &source.Meta{
-		Line:   toAbsLine(parentLine, state.relativeSubStart.Line),
-		Column: toAbsColumn(parentCol, state.relativeSubStart.Column),
+		Line: toAbsLine(parentLine, state.relativeSubStart.Line),
+		Column: toAbsColumn(
+			parentCol,
+			state.relativeSubStart.Column,
+			state.relativeSubStart.Line == 0,
+			state.ignoreParentColumn,
+		),
 	}
 }
 
-func toAbsSourceMeta(parentSourceStart, relativeSubStart *source.Meta) *source.Meta {
+func toAbsSourceMeta(parentSourceStart, relativeSubStart *source.Meta, ignoreParentColumn bool) *source.Meta {
 	if parentSourceStart == nil {
 		return &source.Meta{
 			Line:   relativeSubStart.Line + 1,
@@ -267,13 +287,31 @@ func toAbsSourceMeta(parentSourceStart, relativeSubStart *source.Meta) *source.M
 	}
 
 	return &source.Meta{
-		Line:   toAbsLine(parentSourceStart.Line, relativeSubStart.Line),
-		Column: toAbsColumn(parentSourceStart.Column, relativeSubStart.Column),
+		Line: toAbsLine(parentSourceStart.Line, relativeSubStart.Line),
+		Column: toAbsColumn(
+			parentSourceStart.Column,
+			relativeSubStart.Column,
+			relativeSubStart.Line == 0,
+			ignoreParentColumn,
+		),
 	}
 }
 
-func toAbsColumn(parentColumn, relativeColumn int) int {
-	return parentColumn + relativeColumn
+func toAbsColumn(
+	parentColumn,
+	relativeColumn int,
+	sameLineAsParent bool,
+	ignoreParentColumn bool,
+) int {
+	if ignoreParentColumn {
+		return relativeColumn
+	}
+
+	if sameLineAsParent {
+		return parentColumn + relativeColumn
+
+	}
+	return relativeColumn
 }
 
 func toAbsLine(parentLine, relativeLine int) int {
@@ -287,12 +325,13 @@ func ParseSubstitution(
 	substitutionInput string,
 	parentSourceStart *source.Meta,
 	outputLineInfo bool,
+	ignoreParentColumn bool,
 ) (*Substitution, error) {
 	tokens, err := lex(substitutionInput, parentSourceStart)
 	if err != nil {
 		return nil, err
 	}
 
-	parser := NewParser(tokens, parentSourceStart, outputLineInfo)
+	parser := NewParser(tokens, parentSourceStart, outputLineInfo, ignoreParentColumn)
 	return parser.Parse()
 }
