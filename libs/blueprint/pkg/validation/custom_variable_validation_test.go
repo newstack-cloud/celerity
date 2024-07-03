@@ -314,7 +314,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 		loadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to an invalid default value being provided for "+
-			"variable \"instanceType\", only the following values are supported: t2.nano, t2.micro",
+			"aws/ec2/instanceType variable \"instanceType\", only the following values are supported: t2.nano, t2.micro",
 	)
 }
 
@@ -496,6 +496,6 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 		loadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to an invalid value being provided for "+
-			"variable \"region\", only the following values are supported: us-east-1, us-west-2, eu-west-1",
+			"aws/region variable \"region\", only the following values are supported: us-east-1, us-west-2, eu-west-1",
 	)
 }

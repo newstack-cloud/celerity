@@ -66,10 +66,11 @@ func (s *internalBlueprintSpec) Schema() *schema.Blueprint {
 }
 
 type defaultLoader struct {
-	providers        map[string]provider.Provider
-	specTransformers map[string]transform.SpecTransformer
-	stateContainer   state.Container
-	updateChan       chan Update
+	providers             map[string]provider.Provider
+	specTransformers      map[string]transform.SpecTransformer
+	stateContainer        state.Container
+	updateChan            chan Update
+	validateRuntimeValues bool
 }
 
 // NewDefaultLoader creates a new instance of the default
@@ -80,17 +81,25 @@ type defaultLoader struct {
 // "aws/" to the AWS provider.
 // If there is no provider for the prefix of a resource type in a
 // blueprint, it will fail.
+//
+// You can set validateRuntimeValues to false if you don't want to check
+// the runtime values such as variables when loading blueprints.
+// This is useful when you want to validate a blueprint spec without
+// associating it with an instance.
+// (e.g. validation for code editors or CLI dry runs)
 func NewDefaultLoader(
 	providers map[string]provider.Provider,
 	specTransformers map[string]transform.SpecTransformer,
 	stateContainer state.Container,
 	updateChan chan Update,
+	validateRuntimeValues bool,
 ) Loader {
 	return &defaultLoader{
 		providers,
 		specTransformers,
 		stateContainer,
 		updateChan,
+		validateRuntimeValues,
 	}
 }
 
@@ -241,7 +250,9 @@ func (l *defaultLoader) validateVariables(
 	variableErrors := map[string]error{}
 	for name, varSchema := range bpSchema.Variables {
 		if core.SliceContains(schema.CoreVariableTypes, varSchema.Type) {
-			err := validation.ValidateCoreVariable(ctx, name, varSchema, params)
+			err := validation.ValidateCoreVariable(
+				ctx, name, varSchema, params, l.validateRuntimeValues,
+			)
 			if err != nil {
 				variableErrors[name] = err
 			}

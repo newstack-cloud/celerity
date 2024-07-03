@@ -39,6 +39,7 @@ func ValidateCustomVariable(
 		return errVariableEmptyDefaultValue(
 			varSchema.Type,
 			varName,
+			varSchema,
 		)
 	}
 
@@ -54,7 +55,7 @@ func ValidateCustomVariable(
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
 	if finalValue == nil {
-		return errRequiredVariableMissing(varName)
+		return errRequiredVariableMissing(varName, varSchema)
 	}
 
 	if finalValue.StringValue == nil {
@@ -86,7 +87,7 @@ func ValidateCustomVariable(
 	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefault := userProvidedValue == nil
 		return errVariableValueNotAllowed(
-			schema.VariableTypeString,
+			varSchema.Type,
 			varName,
 			finalValue,
 			varSchema.AllowedValues,

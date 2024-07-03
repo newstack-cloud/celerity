@@ -16,21 +16,30 @@ func ValidateCoreVariable(
 	varName string,
 	varSchema *schema.Variable,
 	params bpcore.BlueprintParams,
+	validateRuntimeParams bool,
 ) error {
 	if varSchema.Type == schema.VariableTypeString {
-		return validateCoreStringVariable(ctx, varName, varSchema, params)
+		return validateCoreStringVariable(
+			ctx, varName, varSchema, params, validateRuntimeParams,
+		)
 	}
 
 	if varSchema.Type == schema.VariableTypeInteger {
-		return validateCoreIntegerVariable(ctx, varName, varSchema, params)
+		return validateCoreIntegerVariable(
+			ctx, varName, varSchema, params, validateRuntimeParams,
+		)
 	}
 
 	if varSchema.Type == schema.VariableTypeFloat {
-		return validateCoreFloatVariable(ctx, varName, varSchema, params)
+		return validateCoreFloatVariable(
+			ctx, varName, varSchema, params, validateRuntimeParams,
+		)
 	}
 
 	if varSchema.Type == schema.VariableTypeBoolean {
-		return validateCoreBooleanVariable(ctx, varName, varSchema, params)
+		return validateCoreBooleanVariable(
+			ctx, varName, varSchema, params, validateRuntimeParams,
+		)
 	}
 
 	return nil
@@ -41,6 +50,7 @@ func validateCoreStringVariable(
 	varName string,
 	varSchema *schema.Variable,
 	params bpcore.BlueprintParams,
+	validateRuntimeParams bool,
 ) error {
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCoreStringVariableAllowedValues(
@@ -66,17 +76,18 @@ func validateCoreStringVariable(
 		return errVariableEmptyDefaultValue(
 			schema.VariableTypeString,
 			varName,
+			varSchema,
 		)
 	}
 
 	userProvidedValue := params.BlueprintVariable(varName)
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
-	if finalValue == nil {
-		return errRequiredVariableMissing(varName)
+	if validateRuntimeParams && finalValue == nil {
+		return errRequiredVariableMissing(varName, varSchema)
 	}
 
-	if finalValue.StringValue == nil {
+	if validateRuntimeParams && finalValue.StringValue == nil {
 		return errVariableInvalidOrMissing(
 			schema.VariableTypeString,
 			varName,
@@ -85,25 +96,21 @@ func validateCoreStringVariable(
 		)
 	}
 
-	if strings.TrimSpace(*finalValue.StringValue) == "" {
+	if validateRuntimeParams && strings.TrimSpace(*finalValue.StringValue) == "" {
 		return errVariableEmptyValue(
 			schema.VariableTypeString,
 			varName,
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
-		usingDefault := userProvidedValue == nil
-		return errVariableValueNotAllowed(
-			schema.VariableTypeString,
-			varName,
-			finalValue,
-			varSchema.AllowedValues,
-			usingDefault,
-		)
-	}
-
-	return nil
+	return validateValueInAllowedList(
+		varSchema,
+		schema.VariableTypeString,
+		finalValue,
+		userProvidedValue,
+		varName,
+		validateRuntimeParams,
+	)
 }
 
 func validateCoreStringVariableAllowedValues(
@@ -140,6 +147,7 @@ func validateCoreIntegerVariable(
 	varName string,
 	varSchema *schema.Variable,
 	params bpcore.BlueprintParams,
+	validateRuntimeParams bool,
 ) error {
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCoreIntegerVariableAllowedValues(
@@ -167,11 +175,11 @@ func validateCoreIntegerVariable(
 	userProvidedValue := params.BlueprintVariable(varName)
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
-	if finalValue == nil {
-		return errRequiredVariableMissing(varName)
+	if validateRuntimeParams && finalValue == nil {
+		return errRequiredVariableMissing(varName, varSchema)
 	}
 
-	if finalValue.IntValue == nil {
+	if validateRuntimeParams && finalValue.IntValue == nil {
 		return errVariableInvalidOrMissing(
 			schema.VariableTypeInteger,
 			varName,
@@ -180,18 +188,14 @@ func validateCoreIntegerVariable(
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
-		usingDefault := userProvidedValue == nil
-		return errVariableValueNotAllowed(
-			schema.VariableTypeInteger,
-			varName,
-			finalValue,
-			varSchema.AllowedValues,
-			usingDefault,
-		)
-	}
-
-	return nil
+	return validateValueInAllowedList(
+		varSchema,
+		schema.VariableTypeInteger,
+		finalValue,
+		userProvidedValue,
+		varName,
+		validateRuntimeParams,
+	)
 }
 
 func validateCoreIntegerVariableAllowedValues(
@@ -228,6 +232,7 @@ func validateCoreFloatVariable(
 	varName string,
 	varSchema *schema.Variable,
 	params bpcore.BlueprintParams,
+	validateRuntimeParams bool,
 ) error {
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCoreFloatVariableAllowedValues(
@@ -255,11 +260,11 @@ func validateCoreFloatVariable(
 	userProvidedValue := params.BlueprintVariable(varName)
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
-	if finalValue == nil {
-		return errRequiredVariableMissing(varName)
+	if validateRuntimeParams && finalValue == nil {
+		return errRequiredVariableMissing(varName, varSchema)
 	}
 
-	if finalValue.FloatValue == nil {
+	if validateRuntimeParams && finalValue.FloatValue == nil {
 		return errVariableInvalidOrMissing(
 			schema.VariableTypeFloat,
 			varName,
@@ -268,18 +273,14 @@ func validateCoreFloatVariable(
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
-		usingDefualt := userProvidedValue == nil
-		return errVariableValueNotAllowed(
-			schema.VariableTypeFloat,
-			varName,
-			finalValue,
-			varSchema.AllowedValues,
-			usingDefualt,
-		)
-	}
-
-	return nil
+	return validateValueInAllowedList(
+		varSchema,
+		schema.VariableTypeFloat,
+		finalValue,
+		userProvidedValue,
+		varName,
+		validateRuntimeParams,
+	)
 }
 
 func validateCoreFloatVariableAllowedValues(
@@ -316,6 +317,7 @@ func validateCoreBooleanVariable(
 	varName string,
 	varSchema *schema.Variable,
 	params bpcore.BlueprintParams,
+	validateRuntimeParams bool,
 ) error {
 	if len(varSchema.AllowedValues) > 0 {
 		return errVariableInvalidAllowedValuesNotSupported(
@@ -342,16 +344,42 @@ func validateCoreBooleanVariable(
 		value = varSchema.Default
 	}
 
-	if value == nil {
-		return errRequiredVariableMissing(varName)
+	if validateRuntimeParams && value == nil {
+		return errRequiredVariableMissing(varName, varSchema)
 	}
 
-	if value.BoolValue == nil {
+	if validateRuntimeParams && value.BoolValue == nil {
 		return errVariableInvalidOrMissing(
 			schema.VariableTypeBoolean,
 			varName,
 			value,
 			varSchema,
+		)
+	}
+
+	return nil
+}
+
+func validateValueInAllowedList(
+	varSchema *schema.Variable,
+	varType schema.VariableType,
+	finalValue *bpcore.ScalarValue,
+	userProvidedValue *bpcore.ScalarValue,
+	varName string,
+	validateRuntimeParams bool,
+) error {
+	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
+		usingDefault := userProvidedValue == nil
+		if usingDefault && !validateRuntimeParams {
+			return nil
+		}
+
+		return errVariableValueNotAllowed(
+			varType,
+			varName,
+			finalValue,
+			varSchema.AllowedValues,
+			usingDefault,
 		)
 	}
 

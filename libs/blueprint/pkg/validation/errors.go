@@ -7,6 +7,7 @@ import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
 
@@ -80,6 +81,7 @@ func errBlueprintUnsupportedVersion(version string) error {
 func errVariableInvalidDefaultValue(varType schema.VariableType, varName string, defaultValue *bpcore.ScalarValue) error {
 	defaultVarType := deriveVarType(defaultValue)
 
+	line, col := positionFromSourceMeta(defaultValue.SourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -88,10 +90,13 @@ func errVariableInvalidDefaultValue(varType schema.VariableType, varName string,
 			defaultVarType,
 			varType,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
-func errVariableEmptyDefaultValue(varType schema.VariableType, varName string) error {
+func errVariableEmptyDefaultValue(varType schema.VariableType, varName string, varSchema *schema.Variable) error {
+	line, col := positionFromSourceMeta(varSchema.SourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -99,6 +104,8 @@ func errVariableEmptyDefaultValue(varType schema.VariableType, varName string) e
 			varType,
 			varName,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
@@ -203,9 +210,10 @@ func errVariableValueNotAllowed(
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
-			"validation failed due to an invalid %s being provided for variable \"%s\","+
+			"validation failed due to an invalid %s being provided for %s variable \"%s\","+
 				" only the following values are supported: %s",
 			valueLabel,
+			varType,
 			varName,
 			scalarListToString(allowedValues),
 		),
@@ -232,7 +240,8 @@ func errCustomVariableValueNotInOptions(
 	}
 }
 
-func errRequiredVariableMissing(varName string) error {
+func errRequiredVariableMissing(varName string, varSchema *schema.Variable) error {
+	line, col := positionFromSourceMeta(varSchema.SourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
 		Err: fmt.Errorf(
@@ -240,6 +249,8 @@ func errRequiredVariableMissing(varName string) error {
 				"required variable \"%s\", as it does not have a default",
 			varName,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
@@ -468,4 +479,12 @@ func deriveValueLabel(value *bpcore.ScalarValue, usingDefault bool) string {
 	}
 
 	return "value"
+}
+
+func positionFromSourceMeta(sourceMeta *source.Meta) (line *int, column *int) {
+	if sourceMeta == nil {
+		return nil, nil
+	}
+
+	return &sourceMeta.Line, &sourceMeta.Column
 }
