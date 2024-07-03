@@ -35,6 +35,9 @@ func setupLogger() (*zap.Logger, *os.File, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	cfg := zap.NewProductionEncoderConfig()
+	cfg.EncodeTime = zapcore.ISO8601TimeEncoder
+
 	writerSync := zapcore.NewMultiWriteSyncer(
 		// stdout and stdin are used for communication with the client
 		// and should not be logged to.
@@ -42,7 +45,7 @@ func setupLogger() (*zap.Logger, *os.File, error) {
 		zapcore.AddSync(logFileHandle),
 	)
 	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.NewConsoleEncoder(cfg),
 		writerSync,
 		zap.DebugLevel,
 	)

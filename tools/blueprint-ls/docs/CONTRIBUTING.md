@@ -21,6 +21,12 @@ go mod download
 bash ./scripts/run-tests.sh
 ```
 
+## Building the language server binary
+
+```bash
+go build -o blueprint-language-server ./cmd/main.go
+```
+
 ## Releasing
 
 To release a new version of the server, you need to create a new tag and push it to the repository.

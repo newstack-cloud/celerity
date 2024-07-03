@@ -25,8 +25,9 @@ func (a *Application) Setup() {
 		lsp.WithInitializeHandler(a.handleInitialise),
 		lsp.WithInitializedHandler(a.handleInitialised),
 		lsp.WithShutdownHandler(a.handleShutdown),
+		lsp.WithTextDocumentDidOpenHandler(a.handleTextDocumentDidOpen),
+		lsp.WithTextDocumentDidCloseHandler(a.handleTextDocumentDidClose),
 		lsp.WithTextDocumentDidChangeHandler(a.handleTextDocumentDidChange),
-		lsp.WithCompletionHandler(a.handleTextDocumentCompletion),
 		lsp.WithSetTraceHandler(a.traceService.CreateSetTraceHandler()),
 	)
 }
