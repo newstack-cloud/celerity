@@ -216,20 +216,22 @@ func (l *defaultSpecLinkInfo) addResourceChainToChains(
 	l.linkMap[resource.Name] = chainLink
 	resourceLinkCount := 0
 
-	for key, value := range resource.Resource.Metadata.Labels {
-		lookUpSelectorName := fmt.Sprintf("label::%s:%s", key, value)
-		selectGroup, exists := selectGroupMappings[lookUpSelectorName]
-		if exists {
-			// When this resource is linked to by other resources using a selector
-			// let's make sure we add it in the right places in the chains.
-			selectorChainLinks := l.collectSelectorChainLinks(selectGroup, resource)
-			if len(selectorChainLinks) > 0 {
-				resourceLinkCount += 1
-			}
+	if resource.Resource.Metadata.Labels != nil {
+		for key, value := range resource.Resource.Metadata.Labels.Values {
+			lookUpSelectorName := fmt.Sprintf("label::%s:%s", key, value)
+			selectGroup, exists := selectGroupMappings[lookUpSelectorName]
+			if exists {
+				// When this resource is linked to by other resources using a selector
+				// let's make sure we add it in the right places in the chains.
+				selectorChainLinks := l.collectSelectorChainLinks(selectGroup, resource)
+				if len(selectorChainLinks) > 0 {
+					resourceLinkCount += 1
+				}
 
-			err := l.addLinkInChainsIfMissing(chainLink, selectorChainLinks, lookUpSelectorName)
-			if err != nil {
-				return nil, err
+				err := l.addLinkInChainsIfMissing(chainLink, selectorChainLinks, lookUpSelectorName)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

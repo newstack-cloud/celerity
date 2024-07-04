@@ -54,73 +54,95 @@ var testBlueprintSchema1 = &schema.Blueprint{
 			"orderApi": {
 				Type: "aws/apigateway",
 				Metadata: &schema.Metadata{
-					Labels: map[string]string{
-						"app": "orderApi",
+					Labels: &schema.StringMap{
+						Values: map[string]string{
+							"app": "orderApi",
+						},
 					},
 				},
 				LinkSelector: &schema.LinkSelector{
-					ByLabel: map[string]string{
-						"app": "orderApi",
+					ByLabel: &schema.StringMap{
+						Values: map[string]string{
+							"app": "orderApi",
+						},
 					},
 				},
 			},
 			"orderQueue": {
 				Type: "aws/sqs/queue",
 				Metadata: &schema.Metadata{
-					Labels: map[string]string{
-						"app": "orderWorkflow",
+					Labels: &schema.StringMap{
+						Values: map[string]string{
+							"app": "orderWorkflow",
+						},
 					},
 				},
 				LinkSelector: &schema.LinkSelector{
-					ByLabel: map[string]string{
-						"app": "orderWorkflow",
+					ByLabel: &schema.StringMap{
+						Values: map[string]string{
+							"app": "orderWorkflow",
+						},
 					},
 				},
 			},
 			"processOrdersFunction": {
 				Type: "aws/lambda/function",
 				Metadata: &schema.Metadata{
-					Labels: map[string]string{
-						"app": "orderWorkflow",
+					Labels: &schema.StringMap{
+						Values: map[string]string{
+							"app": "orderWorkflow",
+						},
 					},
 				},
 				LinkSelector: &schema.LinkSelector{
-					ByLabel: map[string]string{
-						"system": "orders",
+					ByLabel: &schema.StringMap{
+						Values: map[string]string{
+							"system": "orders",
+						},
 					},
 				},
 			},
 			"createOrderFunction": {
 				Type: "aws/lambda/function",
 				Metadata: &schema.Metadata{
-					Labels: map[string]string{
-						"app": "orderApi",
+					Labels: &schema.StringMap{
+						Values: map[string]string{
+							"app": "orderApi",
+						},
 					},
 				},
 				LinkSelector: &schema.LinkSelector{
-					ByLabel: map[string]string{
-						"system": "orders",
+					ByLabel: &schema.StringMap{
+						Values: map[string]string{
+							"system": "orders",
+						},
 					},
 				},
 			},
 			"getOrdersFunction": {
 				Type: "aws/lambda/function",
 				Metadata: &schema.Metadata{
-					Labels: map[string]string{
-						"app": "orderApi",
+					Labels: &schema.StringMap{
+						Values: map[string]string{
+							"app": "orderApi",
+						},
 					},
 				},
 				LinkSelector: &schema.LinkSelector{
-					ByLabel: map[string]string{
-						"system": "orders",
+					ByLabel: &schema.StringMap{
+						Values: map[string]string{
+							"system": "orders",
+						},
 					},
 				},
 			},
 			"ordersTable": {
 				Type: "aws/dynamodb/table",
 				Metadata: &schema.Metadata{
-					Labels: map[string]string{
-						"system": "orders",
+					Labels: &schema.StringMap{
+						Values: map[string]string{
+							"system": "orders",
+						},
 					},
 				},
 			},

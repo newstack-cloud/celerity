@@ -33,7 +33,7 @@ func ValidateDataSource(
 		)
 	}
 
-	if dataSource.Exports == nil || len(dataSource.Exports) == 0 {
+	if dataSource.Exports == nil || len(dataSource.Exports.Values) == 0 {
 		return errDataSourceMissingExports(
 			name, getDataSourceMeta(dataSourceMap, name),
 		)

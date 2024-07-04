@@ -44,11 +44,11 @@ func (r *Resource) UnmarshalYAML(value *yaml.Node) error {
 // and annotations that can be used to configure
 // instances and used for link selections.
 type Metadata struct {
-	DisplayName *substitutions.StringOrSubstitutions            `yaml:"displayName" json:"displayName"`
-	Annotations map[string]*substitutions.StringOrSubstitutions `yaml:"annotations,omitempty" json:"annotations,omitempty"`
-	Labels      map[string]string                               `yaml:"labels,omitempty" json:"labels,omitempty"`
-	Custom      *core.MappingNode                               `yaml:"custom,omitempty" json:"custom,omitempty"`
-	SourceMeta  *source.Meta                                    `yaml:"-" json:"-"`
+	DisplayName *substitutions.StringOrSubstitutions `yaml:"displayName" json:"displayName"`
+	Annotations *StringOrSubstitutionsMap            `yaml:"annotations,omitempty" json:"annotations,omitempty"`
+	Labels      *StringMap                           `yaml:"labels,omitempty" json:"labels,omitempty"`
+	Custom      *core.MappingNode                    `yaml:"custom,omitempty" json:"custom,omitempty"`
+	SourceMeta  *source.Meta                         `yaml:"-" json:"-"`
 }
 
 func (m *Metadata) UnmarshalYAML(value *yaml.Node) error {
@@ -74,8 +74,8 @@ func (m *Metadata) UnmarshalYAML(value *yaml.Node) error {
 // LinkSelector allows a resource to select other resources
 // to link to by label.
 type LinkSelector struct {
-	ByLabel    map[string]string `yaml:"byLabel" json:"byLabel"`
-	SourceMeta *source.Meta      `yaml:"-" json:"-"`
+	ByLabel    *StringMap   `yaml:"byLabel" json:"byLabel"`
+	SourceMeta *source.Meta `yaml:"-" json:"-"`
 }
 
 func (s *LinkSelector) UnmarshalYAML(value *yaml.Node) error {

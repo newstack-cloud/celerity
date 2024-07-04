@@ -85,75 +85,103 @@
               Column: (int) 20
             })
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) (len=4) {
-            (string) (len=10) "authoriser": (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=4) "true"),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 89,
-                    Column: (int) 21
+          Annotations: (*schema.StringOrSubstitutionsMap)({
+            Values: (map[string]*substitutions.StringOrSubstitutions) (len=4) {
+              (string) (len=10) "authoriser": (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)((len=4) "true"),
+                    SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 89,
+                      Column: (int) 21
+                    })
                   })
+                },
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 89,
+                  Column: (int) 21
                 })
-              },
-              SourceMeta: (*source.Meta)({
+              }),
+              (string) (len=26) "authoriser.identity.header": (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)((len=18) "MyCustomAuthHeader"),
+                    SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 93,
+                      Column: (int) 37
+                    })
+                  })
+                },
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 93,
+                  Column: (int) 37
+                })
+              }),
+              (string) (len=36) "authoriser.identity.reauthoriseEvery": (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)((len=2) "20"),
+                    SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 95,
+                      Column: (int) 47
+                    })
+                  })
+                },
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 95,
+                  Column: (int) 47
+                })
+              }),
+              (string) (len=40) "authoriser.identity.validationExpression": (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)((len=9) "Bearer .*"),
+                    SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                    SourceMeta: (*source.Meta)({
+                      Line: (int) 94,
+                      Column: (int) 51
+                    })
+                  })
+                },
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 94,
+                  Column: (int) 51
+                })
+              })
+            },
+            SourceMeta: (map[string]*source.Meta) (len=4) {
+              (string) (len=10) "authoriser": (*source.Meta)({
                 Line: (int) 89,
-                Column: (int) 21
-              })
-            }),
-            (string) (len=26) "authoriser.identity.header": (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=18) "MyCustomAuthHeader"),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 93,
-                    Column: (int) 37
-                  })
-                })
-              },
-              SourceMeta: (*source.Meta)({
+                Column: (int) 9
+              }),
+              (string) (len=26) "authoriser.identity.header": (*source.Meta)({
                 Line: (int) 93,
-                Column: (int) 37
-              })
-            }),
-            (string) (len=36) "authoriser.identity.reauthoriseEvery": (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=2) "20"),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 95,
-                    Column: (int) 47
-                  })
-                })
-              },
-              SourceMeta: (*source.Meta)({
+                Column: (int) 9
+              }),
+              (string) (len=36) "authoriser.identity.reauthoriseEvery": (*source.Meta)({
                 Line: (int) 95,
-                Column: (int) 47
-              })
-            }),
-            (string) (len=40) "authoriser.identity.validationExpression": (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=9) "Bearer .*"),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                  SourceMeta: (*source.Meta)({
-                    Line: (int) 94,
-                    Column: (int) 51
-                  })
-                })
-              },
-              SourceMeta: (*source.Meta)({
+                Column: (int) 9
+              }),
+              (string) (len=40) "authoriser.identity.validationExpression": (*source.Meta)({
                 Line: (int) 94,
-                Column: (int) 51
+                Column: (int) 9
               })
-            })
-          },
-          Labels: (map[string]string) (len=1) {
-            (string) (len=3) "app": (string) (len=8) "orderApi"
-          },
+            }
+          }),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=3) "app": (string) (len=8) "orderApi"
+            },
+            SourceMeta: (map[string]*source.Meta) (len=1) {
+              (string) (len=3) "app": (*source.Meta)({
+                Line: (int) 97,
+                Column: (int) 9
+              })
+            }
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Line: (int) 84,
@@ -247,10 +275,18 @@
               Column: (int) 20
             })
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=1) {
-            (string) (len=3) "app": (string) (len=8) "orderApi"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=3) "app": (string) (len=8) "orderApi"
+            },
+            SourceMeta: (map[string]*source.Meta) (len=1) {
+              (string) (len=3) "app": (*source.Meta)({
+                Line: (int) 107,
+                Column: (int) 9
+              })
+            }
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Line: (int) 105,
@@ -461,10 +497,18 @@
               Column: (int) 20
             })
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=1) {
-            (string) (len=3) "app": (string) (len=8) "orderApi"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=3) "app": (string) (len=8) "orderApi"
+            },
+            SourceMeta: (map[string]*source.Meta) (len=1) {
+              (string) (len=3) "app": (*source.Meta)({
+                Line: (int) 41,
+                Column: (int) 9
+              })
+            }
+          }),
           Custom: (*core.MappingNode)({
             Literal: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) (len=1) {
@@ -674,9 +718,17 @@
           })
         }),
         LinkSelector: (*schema.LinkSelector)({
-          ByLabel: (map[string]string) (len=1) {
-            (string) (len=3) "app": (string) (len=8) "orderApi"
-          },
+          ByLabel: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=3) "app": (string) (len=8) "orderApi"
+            },
+            SourceMeta: (map[string]*source.Meta) (len=1) {
+              (string) (len=3) "app": (*source.Meta)({
+                Line: (int) 53,
+                Column: (int) 9
+              })
+            }
+          }),
           SourceMeta: (*source.Meta)({
             Line: (int) 52,
             Column: (int) 7
@@ -852,10 +904,18 @@
               Column: (int) 20
             })
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=1) {
-            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+            },
+            SourceMeta: (map[string]*source.Meta) (len=1) {
+              (string) (len=8) "workflow": (*source.Meta)({
+                Line: (int) 165,
+                Column: (int) 9
+              })
+            }
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Line: (int) 163,
@@ -863,9 +923,17 @@
           })
         }),
         LinkSelector: (*schema.LinkSelector)({
-          ByLabel: (map[string]string) (len=1) {
-            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-          },
+          ByLabel: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+            },
+            SourceMeta: (map[string]*source.Meta) (len=1) {
+              (string) (len=8) "workflow": (*source.Meta)({
+                Line: (int) 168,
+                Column: (int) 9
+              })
+            }
+          }),
           SourceMeta: (*source.Meta)({
             Line: (int) 167,
             Column: (int) 7
@@ -959,11 +1027,23 @@
               Column: (int) 20
             })
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=2) {
-            (string) (len=3) "app": (string) (len=8) "orderApi",
-            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=2) {
+              (string) (len=3) "app": (string) (len=8) "orderApi",
+              (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+            },
+            SourceMeta: (map[string]*source.Meta) (len=2) {
+              (string) (len=3) "app": (*source.Meta)({
+                Line: (int) 150,
+                Column: (int) 9
+              }),
+              (string) (len=8) "workflow": (*source.Meta)({
+                Line: (int) 149,
+                Column: (int) 9
+              })
+            }
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Line: (int) 147,
@@ -1093,11 +1173,23 @@
               Column: (int) 20
             })
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=2) {
-            (string) (len=10) "pubsubType": (string) (len=8) "consumer",
-            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=2) {
+              (string) (len=10) "pubsubType": (string) (len=8) "consumer",
+              (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+            },
+            SourceMeta: (map[string]*source.Meta) (len=2) {
+              (string) (len=10) "pubsubType": (*source.Meta)({
+                Line: (int) 127,
+                Column: (int) 9
+              }),
+              (string) (len=8) "workflow": (*source.Meta)({
+                Line: (int) 122,
+                Column: (int) 9
+              })
+            }
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Line: (int) 120,
@@ -1302,7 +1394,7 @@
               Column: (int) 20
             })
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Line: (int) 18,
@@ -1367,53 +1459,69 @@
             Column: (int) 7
           })
         }),
-        Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
-          (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
-            Type: (*schema.DataSourceFieldTypeWrapper)({
-              Value: (schema.DataSourceFieldType) (len=5) "array",
+        Exports: (*schema.DataSourceFieldExportMap)({
+          Values: (map[string]*schema.DataSourceFieldExport) (len=3) {
+            (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
+              Type: (*schema.DataSourceFieldTypeWrapper)({
+                Value: (schema.DataSourceFieldType) (len=5) "array",
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 27,
+                  Column: (int) 15
+                })
+              }),
+              AliasFor: (string) "",
+              Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 27,
-                Column: (int) 15
+                Column: (int) 9
               })
             }),
-            AliasFor: (string) "",
-            Description: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 27,
-              Column: (int) 9
-            })
-          }),
-          (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
-            Type: (*schema.DataSourceFieldTypeWrapper)({
-              Value: (schema.DataSourceFieldType) (len=5) "array",
+            (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
+              Type: (*schema.DataSourceFieldTypeWrapper)({
+                Value: (schema.DataSourceFieldType) (len=5) "array",
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 25,
+                  Column: (int) 15
+                })
+              }),
+              AliasFor: (string) "",
+              Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 25,
-                Column: (int) 15
+                Column: (int) 9
               })
             }),
-            AliasFor: (string) "",
-            Description: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 25,
-              Column: (int) 9
-            })
-          }),
-          (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
-            Type: (*schema.DataSourceFieldTypeWrapper)({
-              Value: (schema.DataSourceFieldType) (len=6) "string",
+            (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
+              Type: (*schema.DataSourceFieldTypeWrapper)({
+                Value: (schema.DataSourceFieldType) (len=6) "string",
+                SourceMeta: (*source.Meta)({
+                  Line: (int) 29,
+                  Column: (int) 15
+                })
+              }),
+              AliasFor: (string) "",
+              Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 29,
-                Column: (int) 15
+                Column: (int) 9
               })
-            }),
-            AliasFor: (string) "",
-            Description: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)({
-              Line: (int) 29,
-              Column: (int) 9
             })
-          })
-        },
+          },
+          SourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=14) "securityGroups": (*source.Meta)({
+              Line: (int) 26,
+              Column: (int) 7
+            }),
+            (string) (len=7) "subnets": (*source.Meta)({
+              Line: (int) 24,
+              Column: (int) 7
+            }),
+            (string) (len=3) "vpc": (*source.Meta)({
+              Line: (int) 28,
+              Column: (int) 7
+            })
+          }
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)({
           Line: (int) 16,

@@ -129,6 +129,23 @@ func errInvalidMap(value *yaml.Node, field string) error {
 	}
 }
 
+func errInvalidGeneralMap(value *yaml.Node) error {
+	innerError := fmt.Errorf("an invalid value has been provided, expected a mapping")
+	if value == nil {
+		return &Error{
+			ReasonCode: ErrorSchemaReasonCodeInvalidMap,
+			Err:        innerError,
+		}
+	}
+
+	return &Error{
+		ReasonCode:   ErrorSchemaReasonCodeInvalidMap,
+		Err:          innerError,
+		SourceLine:   &value.Line,
+		SourceColumn: &value.Column,
+	}
+}
+
 func wrapErrorWithLineInfo(underlyingError error, parent *yaml.Node) error {
 	if _, isSchemaError := underlyingError.(*Error); isSchemaError {
 		return underlyingError

@@ -46,13 +46,13 @@ func GroupResourcesBySelector(spec speccore.BlueprintSpec) map[string]*SelectGro
 	for name, resource := range resources {
 		if resource.LinkSelector != nil && resource.LinkSelector.ByLabel != nil {
 			// Labels used to select other resources that imply links.
-			selectorLabels := extractSelectorLabelsForGrouping(resource.LinkSelector.ByLabel)
+			selectorLabels := extractSelectorLabelsForGrouping(resource.LinkSelector.ByLabel.Values)
 			addResourceAsSelectors(groupedResources, selectorLabels, name, resource, intermediaryResources)
 		}
 
 		if resource.Metadata != nil && resource.Metadata.Labels != nil {
 			// Labels that allow other resources to select this resource.
-			labels := extractSelectorLabelsForGrouping(resource.Metadata.Labels)
+			labels := extractSelectorLabelsForGrouping(resource.Metadata.Labels.Values)
 			addResourceAsSelectionCandidates(groupedResources, labels, name, resource, intermediaryResources)
 		}
 	}

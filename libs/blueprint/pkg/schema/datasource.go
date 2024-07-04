@@ -21,7 +21,7 @@ type DataSource struct {
 	Type               string                               `yaml:"type" json:"type"`
 	DataSourceMetadata *DataSourceMetadata                  `yaml:"metadata" json:"metadata"`
 	Filter             *DataSourceFilter                    `yaml:"filter" json:"filter"`
-	Exports            map[string]*DataSourceFieldExport    `yaml:"exports" json:"exports"`
+	Exports            *DataSourceFieldExportMap            `yaml:"exports" json:"exports"`
 	Description        *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 	SourceMeta         *source.Meta                         `yaml:"-" json:"-"`
 }
@@ -44,6 +44,65 @@ func (s *DataSource) UnmarshalYAML(value *yaml.Node) error {
 	s.Exports = alias.Exports
 	s.Description = alias.Description
 
+	return nil
+}
+
+// DataSourceFieldExportMap provides a mapping of names to
+// data source field exports.
+// This includes extra information about the locations of
+// the keys in the original source being unmarshalled.
+// This information will not always be present, it is populated
+// when unmarshalling from YAML source documents.
+type DataSourceFieldExportMap struct {
+	Values map[string]*DataSourceFieldExport
+	// Mapping of exported field names to their source locations.
+	SourceMeta map[string]*source.Meta
+}
+
+func (m *DataSourceFieldExportMap) MarshalYAML() (interface{}, error) {
+	return m.Values, nil
+}
+
+func (m *DataSourceFieldExportMap) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind != yaml.MappingNode {
+		return errInvalidMap(value, "exports")
+	}
+
+	m.Values = make(map[string]*DataSourceFieldExport)
+	m.SourceMeta = make(map[string]*source.Meta)
+	for i := 0; i < len(value.Content); i += 2 {
+		key := value.Content[i]
+		val := value.Content[i+1]
+
+		m.SourceMeta[key.Value] = &source.Meta{
+			Line:   key.Line,
+			Column: key.Column,
+		}
+
+		var export DataSourceFieldExport
+		err := val.Decode(&export)
+		if err != nil {
+			return err
+		}
+
+		m.Values[key.Value] = &export
+	}
+
+	return nil
+}
+
+func (m *DataSourceFieldExportMap) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.Values)
+}
+
+func (m *DataSourceFieldExportMap) UnmarshalJSON(data []byte) error {
+	values := make(map[string]*DataSourceFieldExport)
+	err := json.Unmarshal(data, &values)
+	if err != nil {
+		return err
+	}
+
+	m.Values = values
 	return nil
 }
 
@@ -297,10 +356,10 @@ func (e *DataSourceFieldExport) UnmarshalYAML(value *yaml.Node) error {
 // annotations that are used to configure data sources when fetching data
 // from the data source provider.
 type DataSourceMetadata struct {
-	DisplayName *substitutions.StringOrSubstitutions            `yaml:"displayName" json:"displayName"`
-	Annotations map[string]*substitutions.StringOrSubstitutions `yaml:"annotations,omitempty" json:"annotations,omitempty"`
-	Custom      *bpcore.MappingNode                             `yaml:"custom,omitempty" json:"custom,omitempty"`
-	SourceMeta  *source.Meta                                    `yaml:"-" json:"-"`
+	DisplayName *substitutions.StringOrSubstitutions `yaml:"displayName" json:"displayName"`
+	Annotations *StringOrSubstitutionsMap            `yaml:"annotations,omitempty" json:"annotations,omitempty"`
+	Custom      *bpcore.MappingNode                  `yaml:"custom,omitempty" json:"custom,omitempty"`
+	SourceMeta  *source.Meta                         `yaml:"-" json:"-"`
 }
 
 func (m *DataSourceMetadata) UnmarshalYAML(value *yaml.Node) error {

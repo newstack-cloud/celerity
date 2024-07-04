@@ -272,7 +272,7 @@ func (m *ExportMap) MarshalYAML() (interface{}, error) {
 
 func (m *ExportMap) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind != yaml.MappingNode {
-		return errInvalidMap(value, "datasources")
+		return errInvalidMap(value, "exports")
 	}
 
 	m.Values = make(map[string]*Export)

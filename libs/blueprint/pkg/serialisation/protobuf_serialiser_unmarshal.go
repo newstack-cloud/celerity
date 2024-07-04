@@ -265,7 +265,11 @@ func fromDataSourceFilterSearchPB(
 
 func fromDataSourceFieldExports(
 	exportsPB map[string]*schemapb.DataSourceFieldExport,
-) (map[string]*schema.DataSourceFieldExport, error) {
+) (*schema.DataSourceFieldExportMap, error) {
+	if exportsPB == nil {
+		return nil, nil
+	}
+
 	exports := make(map[string]*schema.DataSourceFieldExport)
 	for k, v := range exportsPB {
 		export, err := fromDataSourceFieldExportPB(v)
@@ -276,7 +280,9 @@ func fromDataSourceFieldExports(
 		exports[k] = export
 	}
 
-	return exports, nil
+	return &schema.DataSourceFieldExportMap{
+		Values: exports,
+	}, nil
 }
 
 func fromDataSourceFieldExportPB(
@@ -341,17 +347,28 @@ func fromResourceMetadataPB(metadataPB *schemapb.ResourceMetadata) (*schema.Meta
 		return nil, err
 	}
 
+	labels := (*schema.StringMap)(nil)
+	if metadataPB.Labels != nil {
+		labels = &schema.StringMap{
+			Values: metadataPB.Labels,
+		}
+	}
+
 	return &schema.Metadata{
 		DisplayName: displayName,
 		Annotations: annotations,
-		Labels:      metadataPB.Labels,
+		Labels:      labels,
 		Custom:      custom,
 	}, nil
 }
 
 func fromAnnotationsPB(
 	annotationsPB map[string]*schemapb.StringOrSubstitutions,
-) (map[string]*substitutions.StringOrSubstitutions, error) {
+) (*schema.StringOrSubstitutionsMap, error) {
+	if annotationsPB == nil {
+		return nil, nil
+	}
+
 	annotations := make(map[string]*substitutions.StringOrSubstitutions)
 	for k, v := range annotationsPB {
 		stringOrSubs, err := fromStringOrSubstitutionsPB(v, false)
@@ -362,7 +379,9 @@ func fromAnnotationsPB(
 		annotations[k] = stringOrSubs
 	}
 
-	return annotations, nil
+	return &schema.StringOrSubstitutionsMap{
+		Values: annotations,
+	}, nil
 }
 
 func fromExportsPB(exportsPB map[string]*schemapb.Export) (*schema.ExportMap, error) {
@@ -391,7 +410,9 @@ func fromLinkSelectorPB(linkSelectorPB *schemapb.LinkSelector) *schema.LinkSelec
 	}
 
 	return &schema.LinkSelector{
-		ByLabel: linkSelectorPB.ByLabel,
+		ByLabel: &schema.StringMap{
+			Values: linkSelectorPB.ByLabel,
+		},
 	}
 }
 

@@ -249,10 +249,14 @@ func toDataSourceFilterSearchPB(
 }
 
 func toDataSourceFieldExports(
-	exports map[string]*schema.DataSourceFieldExport,
+	exports *schema.DataSourceFieldExportMap,
 ) (map[string]*schemapb.DataSourceFieldExport, error) {
+	if exports == nil {
+		return nil, nil
+	}
+
 	exportsPB := make(map[string]*schemapb.DataSourceFieldExport)
-	for k, v := range exports {
+	for k, v := range exports.Values {
 		exportPB, err := toDataSourceFieldExportPB(v)
 		if err != nil {
 			return nil, err
@@ -336,12 +340,12 @@ func toExportPB(export *schema.Export) (*schemapb.Export, error) {
 }
 
 func toLinkSelectorPB(linkSelector *schema.LinkSelector) *schemapb.LinkSelector {
-	if linkSelector == nil {
+	if linkSelector == nil || linkSelector.ByLabel == nil {
 		return nil
 	}
 
 	return &schemapb.LinkSelector{
-		ByLabel: linkSelector.ByLabel,
+		ByLabel: linkSelector.ByLabel.Values,
 	}
 }
 
@@ -365,19 +369,28 @@ func toResourceMetadataPB(metadata *schema.Metadata) (*schemapb.ResourceMetadata
 		return nil, err
 	}
 
+	labels := (map[string]string)(nil)
+	if metadata.Labels != nil {
+		labels = metadata.Labels.Values
+	}
+
 	return &schemapb.ResourceMetadata{
 		DisplayName: displayNamePB,
 		Annotations: annotationsPB,
-		Labels:      metadata.Labels,
+		Labels:      labels,
 		Custom:      customPB,
 	}, nil
 }
 
 func toAnnotationsPB(
-	annotations map[string]*substitutions.StringOrSubstitutions,
+	annotations *schema.StringOrSubstitutionsMap,
 ) (map[string]*schemapb.StringOrSubstitutions, error) {
+	if annotations == nil {
+		return nil, nil
+	}
+
 	annotationsPB := make(map[string]*schemapb.StringOrSubstitutions)
-	for k, v := range annotations {
+	for k, v := range annotations.Values {
 		stringOrSubsPB, err := toStringOrSubstitutionsPB(v, false)
 		if err != nil {
 			return nil, err

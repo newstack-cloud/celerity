@@ -23,6 +23,36 @@ func NormaliseSchema(bpSchema *Blueprint) {
 		}
 		bpSchema.Variables.SourceMeta = nil
 	}
+
+	if bpSchema.Include != nil && bpSchema.Include.Values != nil {
+		for _, include := range bpSchema.Include.Values {
+			NormaliseInclude(include)
+		}
+		bpSchema.Include.SourceMeta = nil
+	}
+
+	if bpSchema.Resources != nil && bpSchema.Resources.Values != nil {
+		for _, resource := range bpSchema.Resources.Values {
+			NormaliseResource(resource)
+		}
+		bpSchema.Resources.SourceMeta = nil
+	}
+
+	if bpSchema.DataSources != nil && bpSchema.DataSources.Values != nil {
+		for _, dataSource := range bpSchema.DataSources.Values {
+			NormaliseDataSource(dataSource)
+		}
+		bpSchema.DataSources.SourceMeta = nil
+	}
+
+	if bpSchema.Exports != nil && bpSchema.Exports.Values != nil {
+		for _, export := range bpSchema.Exports.Values {
+			NormaliseExport(export)
+		}
+		bpSchema.Exports.SourceMeta = nil
+	}
+
+	NormaliseMappingNode(bpSchema.Metadata)
 }
 
 // NormaliseTransform strips the source meta information from a transform
@@ -84,8 +114,10 @@ func NormaliseResourceMetadata(metadata *Metadata) {
 
 	NormaliseStringOrSubstitutions(metadata.DisplayName)
 
-	for _, annotation := range metadata.Annotations {
-		NormaliseStringOrSubstitutions(annotation)
+	if metadata.Annotations != nil && metadata.Annotations.Values != nil {
+		for _, annotation := range metadata.Annotations.Values {
+			NormaliseStringOrSubstitutions(annotation)
+		}
 	}
 
 	NormaliseMappingNode(metadata.Custom)
@@ -112,8 +144,10 @@ func NormaliseDataSource(dataSource *DataSource) {
 	NormaliseDataSourceMetadata(dataSource.DataSourceMetadata)
 	NormaliseDataSourceFilter(dataSource.Filter)
 
-	for _, export := range dataSource.Exports {
-		NormaliseDataSourceFieldExport(export)
+	if dataSource.Exports != nil && dataSource.Exports.Values != nil {
+		for _, export := range dataSource.Exports.Values {
+			NormaliseDataSourceFieldExport(export)
+		}
 	}
 
 	NormaliseStringOrSubstitutions(dataSource.Description)
@@ -129,8 +163,10 @@ func NormaliseDataSourceMetadata(dataSourceMetadata *DataSourceMetadata) {
 
 	NormaliseStringOrSubstitutions(dataSourceMetadata.DisplayName)
 
-	for _, annotation := range dataSourceMetadata.Annotations {
-		NormaliseStringOrSubstitutions(annotation)
+	if dataSourceMetadata.Annotations != nil && dataSourceMetadata.Annotations.Values != nil {
+		for _, export := range dataSourceMetadata.Annotations.Values {
+			NormaliseStringOrSubstitutions(export)
+		}
 	}
 
 	NormaliseMappingNode(dataSourceMetadata.Custom)

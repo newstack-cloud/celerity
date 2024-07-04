@@ -38,12 +38,14 @@ func (s *DataSourceValidationTestSuite) Test_succeeds_without_any_issues_for_a_v
 				},
 			},
 		},
-		Exports: map[string]*schema.DataSourceFieldExport{
-			"instanceId": {
-				Type: &schema.DataSourceFieldTypeWrapper{
-					Value: schema.DataSourceFieldTypeString,
+		Exports: &schema.DataSourceFieldExportMap{
+			Values: map[string]*schema.DataSourceFieldExport{
+				"instanceId": {
+					Type: &schema.DataSourceFieldTypeWrapper{
+						Value: schema.DataSourceFieldTypeString,
+					},
+					AliasFor: "instanceConfig.id",
 				},
-				AliasFor: "instanceConfig.id",
 			},
 		},
 	}
@@ -60,12 +62,14 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_is_missi
 	dataSource := &schema.DataSource{
 		Type: "aws/ec2/instance",
 		// Filter omitted.
-		Exports: map[string]*schema.DataSourceFieldExport{
-			"instanceId": {
-				Type: &schema.DataSourceFieldTypeWrapper{
-					Value: schema.DataSourceFieldTypeString,
+		Exports: &schema.DataSourceFieldExportMap{
+			Values: map[string]*schema.DataSourceFieldExport{
+				"instanceId": {
+					Type: &schema.DataSourceFieldTypeWrapper{
+						Value: schema.DataSourceFieldTypeString,
+					},
+					AliasFor: "instanceConfig.id",
 				},
-				AliasFor: "instanceConfig.id",
 			},
 		},
 	}
@@ -118,12 +122,14 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 				},
 			},
 		},
-		Exports: map[string]*schema.DataSourceFieldExport{
-			"instanceId": {
-				Type: &schema.DataSourceFieldTypeWrapper{
-					Value: schema.DataSourceFieldTypeString,
+		Exports: &schema.DataSourceFieldExportMap{
+			Values: map[string]*schema.DataSourceFieldExport{
+				"instanceId": {
+					Type: &schema.DataSourceFieldTypeWrapper{
+						Value: schema.DataSourceFieldTypeString,
+					},
+					AliasFor: "instanceConfig.id",
 				},
-				AliasFor: "instanceConfig.id",
 			},
 		},
 	}
@@ -156,12 +162,14 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_i
 			},
 			// Search omitted.
 		},
-		Exports: map[string]*schema.DataSourceFieldExport{
-			"instanceId": {
-				Type: &schema.DataSourceFieldTypeWrapper{
-					Value: schema.DataSourceFieldTypeString,
+		Exports: &schema.DataSourceFieldExportMap{
+			Values: map[string]*schema.DataSourceFieldExport{
+				"instanceId": {
+					Type: &schema.DataSourceFieldTypeWrapper{
+						Value: schema.DataSourceFieldTypeString,
+					},
+					AliasFor: "instanceConfig.id",
 				},
-				AliasFor: "instanceConfig.id",
 			},
 		},
 	}
@@ -206,8 +214,10 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_no_exported_fie
 				},
 			},
 		},
-		Exports: map[string]*schema.DataSourceFieldExport{
-			// No exports provided for the data source.
+		Exports: &schema.DataSourceFieldExportMap{
+			Values: map[string]*schema.DataSourceFieldExport{
+				// No exports provided for the data source.
+			},
 		},
 	}
 	dataSourceMap := &schema.DataSourceMap{

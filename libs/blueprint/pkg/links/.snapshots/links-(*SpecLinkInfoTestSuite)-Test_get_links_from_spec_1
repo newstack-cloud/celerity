@@ -6,17 +6,23 @@
       Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Labels: (map[string]string) (len=1) {
-          (string) (len=3) "app": (string) (len=8) "orderApi"
-        },
+        Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+        Labels: (*schema.StringMap)({
+          Values: (map[string]string) (len=1) {
+            (string) (len=3) "app": (string) (len=8) "orderApi"
+          },
+          SourceMeta: (map[string]*source.Meta) <nil>
+        }),
         Custom: (*core.MappingNode)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)({
-        ByLabel: (map[string]string) (len=1) {
-          (string) (len=3) "app": (string) (len=8) "orderApi"
-        },
+        ByLabel: (*schema.StringMap)({
+          Values: (map[string]string) (len=1) {
+            (string) (len=3) "app": (string) (len=8) "orderApi"
+          },
+          SourceMeta: (map[string]*source.Meta) <nil>
+        }),
         SourceMeta: (*source.Meta)(<nil>)
       }),
       Spec: (*core.MappingNode)(<nil>),
@@ -42,17 +48,23 @@
           Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)({
             DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-            Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-            Labels: (map[string]string) (len=1) {
-              (string) (len=3) "app": (string) (len=8) "orderApi"
-            },
+            Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+            Labels: (*schema.StringMap)({
+              Values: (map[string]string) (len=1) {
+                (string) (len=3) "app": (string) (len=8) "orderApi"
+              },
+              SourceMeta: (map[string]*source.Meta) <nil>
+            }),
             Custom: (*core.MappingNode)(<nil>),
             SourceMeta: (*source.Meta)(<nil>)
           }),
           LinkSelector: (*schema.LinkSelector)({
-            ByLabel: (map[string]string) (len=1) {
-              (string) (len=6) "system": (string) (len=6) "orders"
-            },
+            ByLabel: (*schema.StringMap)({
+              Values: (map[string]string) (len=1) {
+                (string) (len=6) "system": (string) (len=6) "orders"
+              },
+              SourceMeta: (map[string]*source.Meta) <nil>
+            }),
             SourceMeta: (*source.Meta)(<nil>)
           }),
           Spec: (*core.MappingNode)(<nil>),
@@ -75,17 +87,23 @@
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               Metadata: (*schema.Metadata)({
                 DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-                Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-                Labels: (map[string]string) (len=1) {
-                  (string) (len=6) "system": (string) (len=6) "orders"
-                },
+                Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+                Labels: (*schema.StringMap)({
+                  Values: (map[string]string) (len=1) {
+                    (string) (len=6) "system": (string) (len=6) "orders"
+                  },
+                  SourceMeta: (map[string]*source.Meta) <nil>
+                }),
                 Custom: (*core.MappingNode)(<nil>),
                 SourceMeta: (*source.Meta)(<nil>)
               }),
               LinkSelector: (*schema.LinkSelector)({
-                ByLabel: (map[string]string) (len=1) {
-                  (string) (len=6) "system": (string) (len=6) "orders"
-                },
+                ByLabel: (*schema.StringMap)({
+                  Values: (map[string]string) (len=1) {
+                    (string) (len=6) "system": (string) (len=6) "orders"
+                  },
+                  SourceMeta: (map[string]*source.Meta) <nil>
+                }),
                 SourceMeta: (*source.Meta)(<nil>)
               }),
               Spec: (*core.MappingNode)(<nil>),
@@ -108,17 +126,23 @@
                   Description: (*substitutions.StringOrSubstitutions)(<nil>),
                   Metadata: (*schema.Metadata)({
                     DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-                    Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-                    Labels: (map[string]string) (len=1) {
-                      (string) (len=6) "system": (string) (len=6) "orders"
-                    },
+                    Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+                    Labels: (*schema.StringMap)({
+                      Values: (map[string]string) (len=1) {
+                        (string) (len=6) "system": (string) (len=6) "orders"
+                      },
+                      SourceMeta: (map[string]*source.Meta) <nil>
+                    }),
                     Custom: (*core.MappingNode)(<nil>),
                     SourceMeta: (*source.Meta)(<nil>)
                   }),
                   LinkSelector: (*schema.LinkSelector)({
-                    ByLabel: (map[string]string) (len=1) {
-                      (string) (len=8) "workflow": (string) (len=10) "orderStats"
-                    },
+                    ByLabel: (*schema.StringMap)({
+                      Values: (map[string]string) (len=1) {
+                        (string) (len=8) "workflow": (string) (len=10) "orderStats"
+                      },
+                      SourceMeta: (map[string]*source.Meta) <nil>
+                    }),
                     SourceMeta: (*source.Meta)(<nil>)
                   }),
                   Spec: (*core.MappingNode)(<nil>),
@@ -141,10 +165,13 @@
                       Description: (*substitutions.StringOrSubstitutions)(<nil>),
                       Metadata: (*schema.Metadata)({
                         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-                        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-                        Labels: (map[string]string) (len=1) {
-                          (string) (len=8) "workflow": (string) (len=10) "orderStats"
-                        },
+                        Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+                        Labels: (*schema.StringMap)({
+                          Values: (map[string]string) (len=1) {
+                            (string) (len=8) "workflow": (string) (len=10) "orderStats"
+                          },
+                          SourceMeta: (map[string]*source.Meta) <nil>
+                        }),
                         Custom: (*core.MappingNode)(<nil>),
                         SourceMeta: (*source.Meta)(<nil>)
                       }),
@@ -204,17 +231,23 @@
           Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)({
             DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-            Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-            Labels: (map[string]string) (len=1) {
-              (string) (len=3) "app": (string) (len=8) "orderApi"
-            },
+            Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+            Labels: (*schema.StringMap)({
+              Values: (map[string]string) (len=1) {
+                (string) (len=3) "app": (string) (len=8) "orderApi"
+              },
+              SourceMeta: (map[string]*source.Meta) <nil>
+            }),
             Custom: (*core.MappingNode)(<nil>),
             SourceMeta: (*source.Meta)(<nil>)
           }),
           LinkSelector: (*schema.LinkSelector)({
-            ByLabel: (map[string]string) (len=1) {
-              (string) (len=6) "system": (string) (len=6) "orders"
-            },
+            ByLabel: (*schema.StringMap)({
+              Values: (map[string]string) (len=1) {
+                (string) (len=6) "system": (string) (len=6) "orders"
+              },
+              SourceMeta: (map[string]*source.Meta) <nil>
+            }),
             SourceMeta: (*source.Meta)(<nil>)
           }),
           Spec: (*core.MappingNode)(<nil>),
@@ -237,17 +270,23 @@
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               Metadata: (*schema.Metadata)({
                 DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-                Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-                Labels: (map[string]string) (len=1) {
-                  (string) (len=6) "system": (string) (len=6) "orders"
-                },
+                Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+                Labels: (*schema.StringMap)({
+                  Values: (map[string]string) (len=1) {
+                    (string) (len=6) "system": (string) (len=6) "orders"
+                  },
+                  SourceMeta: (map[string]*source.Meta) <nil>
+                }),
                 Custom: (*core.MappingNode)(<nil>),
                 SourceMeta: (*source.Meta)(<nil>)
               }),
               LinkSelector: (*schema.LinkSelector)({
-                ByLabel: (map[string]string) (len=1) {
-                  (string) (len=6) "system": (string) (len=6) "orders"
-                },
+                ByLabel: (*schema.StringMap)({
+                  Values: (map[string]string) (len=1) {
+                    (string) (len=6) "system": (string) (len=6) "orders"
+                  },
+                  SourceMeta: (map[string]*source.Meta) <nil>
+                }),
                 SourceMeta: (*source.Meta)(<nil>)
               }),
               Spec: (*core.MappingNode)(<nil>),
@@ -270,17 +309,23 @@
                   Description: (*substitutions.StringOrSubstitutions)(<nil>),
                   Metadata: (*schema.Metadata)({
                     DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-                    Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-                    Labels: (map[string]string) (len=1) {
-                      (string) (len=6) "system": (string) (len=6) "orders"
-                    },
+                    Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+                    Labels: (*schema.StringMap)({
+                      Values: (map[string]string) (len=1) {
+                        (string) (len=6) "system": (string) (len=6) "orders"
+                      },
+                      SourceMeta: (map[string]*source.Meta) <nil>
+                    }),
                     Custom: (*core.MappingNode)(<nil>),
                     SourceMeta: (*source.Meta)(<nil>)
                   }),
                   LinkSelector: (*schema.LinkSelector)({
-                    ByLabel: (map[string]string) (len=1) {
-                      (string) (len=8) "workflow": (string) (len=10) "orderStats"
-                    },
+                    ByLabel: (*schema.StringMap)({
+                      Values: (map[string]string) (len=1) {
+                        (string) (len=8) "workflow": (string) (len=10) "orderStats"
+                      },
+                      SourceMeta: (map[string]*source.Meta) <nil>
+                    }),
                     SourceMeta: (*source.Meta)(<nil>)
                   }),
                   Spec: (*core.MappingNode)(<nil>),
@@ -303,10 +348,13 @@
                       Description: (*substitutions.StringOrSubstitutions)(<nil>),
                       Metadata: (*schema.Metadata)({
                         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-                        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-                        Labels: (map[string]string) (len=1) {
-                          (string) (len=8) "workflow": (string) (len=10) "orderStats"
-                        },
+                        Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+                        Labels: (*schema.StringMap)({
+                          Values: (map[string]string) (len=1) {
+                            (string) (len=8) "workflow": (string) (len=10) "orderStats"
+                          },
+                          SourceMeta: (map[string]*source.Meta) <nil>
+                        }),
                         Custom: (*core.MappingNode)(<nil>),
                         SourceMeta: (*source.Meta)(<nil>)
                       }),
@@ -372,17 +420,23 @@
       Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Labels: (map[string]string) (len=1) {
-          (string) (len=3) "app": (string) (len=13) "orderWorkflow"
-        },
+        Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+        Labels: (*schema.StringMap)({
+          Values: (map[string]string) (len=1) {
+            (string) (len=3) "app": (string) (len=13) "orderWorkflow"
+          },
+          SourceMeta: (map[string]*source.Meta) <nil>
+        }),
         Custom: (*core.MappingNode)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
       }),
       LinkSelector: (*schema.LinkSelector)({
-        ByLabel: (map[string]string) (len=1) {
-          (string) (len=3) "app": (string) (len=13) "orderWorkflow"
-        },
+        ByLabel: (*schema.StringMap)({
+          Values: (map[string]string) (len=1) {
+            (string) (len=3) "app": (string) (len=13) "orderWorkflow"
+          },
+          SourceMeta: (map[string]*source.Meta) <nil>
+        }),
         SourceMeta: (*source.Meta)(<nil>)
       }),
       Spec: (*core.MappingNode)(<nil>),
@@ -405,17 +459,23 @@
           Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)({
             DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-            Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-            Labels: (map[string]string) (len=1) {
-              (string) (len=3) "app": (string) (len=13) "orderWorkflow"
-            },
+            Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+            Labels: (*schema.StringMap)({
+              Values: (map[string]string) (len=1) {
+                (string) (len=3) "app": (string) (len=13) "orderWorkflow"
+              },
+              SourceMeta: (map[string]*source.Meta) <nil>
+            }),
             Custom: (*core.MappingNode)(<nil>),
             SourceMeta: (*source.Meta)(<nil>)
           }),
           LinkSelector: (*schema.LinkSelector)({
-            ByLabel: (map[string]string) (len=1) {
-              (string) (len=6) "system": (string) (len=6) "orders"
-            },
+            ByLabel: (*schema.StringMap)({
+              Values: (map[string]string) (len=1) {
+                (string) (len=6) "system": (string) (len=6) "orders"
+              },
+              SourceMeta: (map[string]*source.Meta) <nil>
+            }),
             SourceMeta: (*source.Meta)(<nil>)
           }),
           Spec: (*core.MappingNode)(<nil>),
@@ -438,17 +498,23 @@
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               Metadata: (*schema.Metadata)({
                 DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-                Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-                Labels: (map[string]string) (len=1) {
-                  (string) (len=6) "system": (string) (len=6) "orders"
-                },
+                Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+                Labels: (*schema.StringMap)({
+                  Values: (map[string]string) (len=1) {
+                    (string) (len=6) "system": (string) (len=6) "orders"
+                  },
+                  SourceMeta: (map[string]*source.Meta) <nil>
+                }),
                 Custom: (*core.MappingNode)(<nil>),
                 SourceMeta: (*source.Meta)(<nil>)
               }),
               LinkSelector: (*schema.LinkSelector)({
-                ByLabel: (map[string]string) (len=1) {
-                  (string) (len=6) "system": (string) (len=6) "orders"
-                },
+                ByLabel: (*schema.StringMap)({
+                  Values: (map[string]string) (len=1) {
+                    (string) (len=6) "system": (string) (len=6) "orders"
+                  },
+                  SourceMeta: (map[string]*source.Meta) <nil>
+                }),
                 SourceMeta: (*source.Meta)(<nil>)
               }),
               Spec: (*core.MappingNode)(<nil>),
@@ -471,17 +537,23 @@
                   Description: (*substitutions.StringOrSubstitutions)(<nil>),
                   Metadata: (*schema.Metadata)({
                     DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-                    Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-                    Labels: (map[string]string) (len=1) {
-                      (string) (len=6) "system": (string) (len=6) "orders"
-                    },
+                    Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+                    Labels: (*schema.StringMap)({
+                      Values: (map[string]string) (len=1) {
+                        (string) (len=6) "system": (string) (len=6) "orders"
+                      },
+                      SourceMeta: (map[string]*source.Meta) <nil>
+                    }),
                     Custom: (*core.MappingNode)(<nil>),
                     SourceMeta: (*source.Meta)(<nil>)
                   }),
                   LinkSelector: (*schema.LinkSelector)({
-                    ByLabel: (map[string]string) (len=1) {
-                      (string) (len=8) "workflow": (string) (len=10) "orderStats"
-                    },
+                    ByLabel: (*schema.StringMap)({
+                      Values: (map[string]string) (len=1) {
+                        (string) (len=8) "workflow": (string) (len=10) "orderStats"
+                      },
+                      SourceMeta: (map[string]*source.Meta) <nil>
+                    }),
                     SourceMeta: (*source.Meta)(<nil>)
                   }),
                   Spec: (*core.MappingNode)(<nil>),
@@ -504,10 +576,13 @@
                       Description: (*substitutions.StringOrSubstitutions)(<nil>),
                       Metadata: (*schema.Metadata)({
                         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-                        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-                        Labels: (map[string]string) (len=1) {
-                          (string) (len=8) "workflow": (string) (len=10) "orderStats"
-                        },
+                        Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+                        Labels: (*schema.StringMap)({
+                          Values: (map[string]string) (len=1) {
+                            (string) (len=8) "workflow": (string) (len=10) "orderStats"
+                          },
+                          SourceMeta: (map[string]*source.Meta) <nil>
+                        }),
                         Custom: (*core.MappingNode)(<nil>),
                         SourceMeta: (*source.Meta)(<nil>)
                       }),
@@ -573,8 +648,8 @@
       Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
-        Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-        Labels: (map[string]string) <nil>,
+        Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+        Labels: (*schema.StringMap)(<nil>),
         Custom: (*core.MappingNode)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
       }),

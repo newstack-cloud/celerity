@@ -162,51 +162,57 @@
             },
             SourceMeta: (*source.Meta)(<nil>)
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) (len=4) {
-            (string) (len=10) "authoriser": (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=4) "true"),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
-                })
-              },
-              SourceMeta: (*source.Meta)(<nil>)
-            }),
-            (string) (len=26) "authoriser.identity.header": (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=18) "MyCustomAuthHeader"),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
-                })
-              },
-              SourceMeta: (*source.Meta)(<nil>)
-            }),
-            (string) (len=36) "authoriser.identity.reauthoriseEvery": (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=2) "20"),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
-                })
-              },
-              SourceMeta: (*source.Meta)(<nil>)
-            }),
-            (string) (len=40) "authoriser.identity.validationExpression": (*substitutions.StringOrSubstitutions)({
-              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                (*substitutions.StringOrSubstitution)({
-                  StringValue: (*string)((len=9) "Bearer .*"),
-                  SubstitutionValue: (*substitutions.Substitution)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
-                })
-              },
-              SourceMeta: (*source.Meta)(<nil>)
-            })
-          },
-          Labels: (map[string]string) (len=1) {
-            (string) (len=3) "app": (string) (len=8) "orderApi"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)({
+            Values: (map[string]*substitutions.StringOrSubstitutions) (len=4) {
+              (string) (len=10) "authoriser": (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)((len=4) "true"),
+                    SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  })
+                },
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
+              (string) (len=26) "authoriser.identity.header": (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)((len=18) "MyCustomAuthHeader"),
+                    SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  })
+                },
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
+              (string) (len=36) "authoriser.identity.reauthoriseEvery": (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)((len=2) "20"),
+                    SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  })
+                },
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
+              (string) (len=40) "authoriser.identity.validationExpression": (*substitutions.StringOrSubstitutions)({
+                Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                  (*substitutions.StringOrSubstitution)({
+                    StringValue: (*string)((len=9) "Bearer .*"),
+                    SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  })
+                },
+                SourceMeta: (*source.Meta)(<nil>)
+              })
+            },
+            SourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=3) "app": (string) (len=8) "orderApi"
+            },
+            SourceMeta: (map[string]*source.Meta) <nil>
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
@@ -264,10 +270,13 @@
             },
             SourceMeta: (*source.Meta)(<nil>)
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=1) {
-            (string) (len=3) "app": (string) (len=8) "orderApi"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=3) "app": (string) (len=8) "orderApi"
+            },
+            SourceMeta: (map[string]*source.Meta) <nil>
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
@@ -395,17 +404,23 @@
             },
             SourceMeta: (*source.Meta)(<nil>)
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=1) {
-            (string) (len=3) "app": (string) (len=8) "orderApi"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=3) "app": (string) (len=8) "orderApi"
+            },
+            SourceMeta: (map[string]*source.Meta) <nil>
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
         LinkSelector: (*schema.LinkSelector)({
-          ByLabel: (map[string]string) (len=1) {
-            (string) (len=3) "app": (string) (len=8) "orderApi"
-          },
+          ByLabel: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=3) "app": (string) (len=8) "orderApi"
+            },
+            SourceMeta: (map[string]*source.Meta) <nil>
+          }),
           SourceMeta: (*source.Meta)(<nil>)
         }),
         Spec: (*core.MappingNode)({
@@ -516,17 +531,23 @@
             },
             SourceMeta: (*source.Meta)(<nil>)
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=1) {
-            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+            },
+            SourceMeta: (map[string]*source.Meta) <nil>
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
         LinkSelector: (*schema.LinkSelector)({
-          ByLabel: (map[string]string) (len=1) {
-            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-          },
+          ByLabel: (*schema.StringMap)({
+            Values: (map[string]string) (len=1) {
+              (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+            },
+            SourceMeta: (map[string]*source.Meta) <nil>
+          }),
           SourceMeta: (*source.Meta)(<nil>)
         }),
         Spec: (*core.MappingNode)({
@@ -585,11 +606,14 @@
             },
             SourceMeta: (*source.Meta)(<nil>)
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=2) {
-            (string) (len=3) "app": (string) (len=8) "orderApi",
-            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=2) {
+              (string) (len=3) "app": (string) (len=8) "orderApi",
+              (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+            },
+            SourceMeta: (map[string]*source.Meta) <nil>
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
@@ -670,11 +694,14 @@
             },
             SourceMeta: (*source.Meta)(<nil>)
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
-          Labels: (map[string]string) (len=2) {
-            (string) (len=10) "pubsubType": (string) (len=8) "consumer",
-            (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
-          },
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Labels: (*schema.StringMap)({
+            Values: (map[string]string) (len=2) {
+              (string) (len=10) "pubsubType": (string) (len=8) "consumer",
+              (string) (len=8) "workflow": (string) (len=11) "orderPubSub"
+            },
+            SourceMeta: (map[string]*source.Meta) <nil>
+          }),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
@@ -782,40 +809,43 @@
             },
             SourceMeta: (*source.Meta)(<nil>)
           }),
-          Annotations: (map[string]*substitutions.StringOrSubstitutions) <nil>,
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
         Filter: (*schema.DataSourceFilter)(<nil>),
-        Exports: (map[string]*schema.DataSourceFieldExport) (len=3) {
-          (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
-            Type: (*schema.DataSourceFieldTypeWrapper)({
-              Value: (schema.DataSourceFieldType) (len=5) "array",
+        Exports: (*schema.DataSourceFieldExportMap)({
+          Values: (map[string]*schema.DataSourceFieldExport) (len=3) {
+            (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({
+              Type: (*schema.DataSourceFieldTypeWrapper)({
+                Value: (schema.DataSourceFieldType) (len=5) "array",
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
+              AliasFor: (string) "",
+              Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)(<nil>)
             }),
-            AliasFor: (string) "",
-            Description: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)(<nil>)
-          }),
-          (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
-            Type: (*schema.DataSourceFieldTypeWrapper)({
-              Value: (schema.DataSourceFieldType) (len=5) "array",
+            (string) (len=7) "subnets": (*schema.DataSourceFieldExport)({
+              Type: (*schema.DataSourceFieldTypeWrapper)({
+                Value: (schema.DataSourceFieldType) (len=5) "array",
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
+              AliasFor: (string) "",
+              Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)(<nil>)
             }),
-            AliasFor: (string) "",
-            Description: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)(<nil>)
-          }),
-          (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
-            Type: (*schema.DataSourceFieldTypeWrapper)({
-              Value: (schema.DataSourceFieldType) (len=6) "string",
+            (string) (len=3) "vpc": (*schema.DataSourceFieldExport)({
+              Type: (*schema.DataSourceFieldTypeWrapper)({
+                Value: (schema.DataSourceFieldType) (len=6) "string",
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
+              AliasFor: (string) "",
+              Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)(<nil>)
-            }),
-            AliasFor: (string) "",
-            Description: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)(<nil>)
-          })
-        },
+            })
+          },
+          SourceMeta: (map[string]*source.Meta) <nil>
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
       })
