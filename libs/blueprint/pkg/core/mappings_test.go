@@ -158,6 +158,11 @@ func assertFieldsNodeYAML(c *C, actual *MappingNode) {
 			},
 		},
 		SourceMeta: &source.Meta{Line: 2, Column: 9},
+		FieldsSourceMeta: map[string]*source.Meta{
+			"key1": {Line: 2, Column: 9},
+			"key2": {Line: 3, Column: 9},
+			"key3": {Line: 4, Column: 9},
+		},
 	})
 }
 
@@ -372,6 +377,9 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 					},
 				},
 				SourceMeta: &source.Meta{Line: 4, Column: 13},
+				FieldsSourceMeta: map[string]*source.Meta{
+					"key3": {Line: 4, Column: 13},
+				},
 			},
 			"key4": {
 				Items: []*MappingNode{
@@ -416,6 +424,12 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 			},
 		},
 		SourceMeta: &source.Meta{Line: 2, Column: 11},
+		FieldsSourceMeta: map[string]*source.Meta{
+			"key1": {Line: 2, Column: 11},
+			"key2": {Line: 3, Column: 11},
+			"key4": {Line: 5, Column: 11},
+			"key5": {Line: 8, Column: 11},
+		},
 	})
 }
 

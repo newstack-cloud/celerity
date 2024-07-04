@@ -31,12 +31,17 @@ type MappingNode struct {
 	// StringWithSubstitutions is a slice of strings and substitutions
 	// where substitutions are a representation of placeholders for variables,
 	// resource properties, data source properties and child blueprint properties
-	// or function calls wrapped contained within ${..}.
+	// or function calls contained within ${..}.
 	StringWithSubstitutions *substitutions.StringOrSubstitutions
 	// SourceMeta is the source metadata for the mapping node,
 	// this is optional and may or may not be set depending on the context
 	// and the source blueprint.
 	SourceMeta *source.Meta
+	// FieldsSourceMeta is a map of field names to source metadata
+	// used to store the source location of fields in the original source.
+	// This is optional and may or may not be set depending on the context
+	// and the source blueprint.
+	FieldsSourceMeta map[string]*source.Meta
 }
 
 // MarshalYAML fulfils the yaml.Marshaler interface
@@ -86,6 +91,7 @@ func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
 
 	if node.Kind == yaml.MappingNode {
 		m.Fields = make(map[string]*MappingNode)
+		m.FieldsSourceMeta = make(map[string]*source.Meta)
 		for i := 0; i < len(node.Content); i += 2 {
 			key := node.Content[i]
 			value := node.Content[i+1]
@@ -93,6 +99,10 @@ func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
 			m.Fields[key.Value] = &MappingNode{}
 			if err := m.Fields[key.Value].UnmarshalYAML(value); err != nil {
 				return err
+			}
+			m.FieldsSourceMeta[key.Value] = &source.Meta{
+				Line:   key.Line,
+				Column: key.Column,
 			}
 		}
 		return nil

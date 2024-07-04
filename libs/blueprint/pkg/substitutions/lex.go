@@ -443,7 +443,7 @@ func determineLexColumnAccuracy(state *lexState) ColumnAccuracy {
 		// when we are ignoring the parent column, it is usually due to the
 		// lack of precision in determining the column number of a token.
 		// An example of this is when a YAML scalar node is a block style literal
-		// in the host document and the yaml.v3 library does not provide the
+		// or folded string in the host document and the yaml.v3 library does not provide the
 		// starting column number of the beginning of the literal value,
 		// only the literal symbol "|" or ">" on the line above the literal value.
 		return ColumnAccuracyApproximate

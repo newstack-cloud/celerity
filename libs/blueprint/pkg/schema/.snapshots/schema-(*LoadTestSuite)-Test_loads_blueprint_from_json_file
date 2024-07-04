@@ -115,7 +115,8 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "timeout": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -128,12 +129,14 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
         }),
         SourceMeta: (*source.Meta)(<nil>)
       }),
@@ -195,7 +198,8 @@
                     },
                     SourceMeta: (*source.Meta)(<nil>)
                   }),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 }),
                 (string) (len=6) "method": (*core.MappingNode)({
                   Literal: (*core.ScalarValue)({
@@ -208,7 +212,8 @@
                   Fields: (map[string]*core.MappingNode) <nil>,
                   Items: ([]*core.MappingNode) <nil>,
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 }),
                 (string) (len=4) "path": (*core.MappingNode)({
                   Literal: (*core.ScalarValue)({
@@ -221,12 +226,14 @@
                   Fields: (map[string]*core.MappingNode) <nil>,
                   Items: ([]*core.MappingNode) <nil>,
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 })
               },
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "handler": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -239,7 +246,8 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "timeout": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -252,12 +260,14 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
         }),
         SourceMeta: (*source.Meta)(<nil>)
       }),
@@ -325,17 +335,20 @@
                         },
                         SourceMeta: (*source.Meta)(<nil>)
                       }),
-                      SourceMeta: (*source.Meta)(<nil>)
+                      SourceMeta: (*source.Meta)(<nil>),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
                     })
                   },
                   Items: ([]*core.MappingNode) <nil>,
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 })
               },
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "runtime": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -348,7 +361,8 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=14) "tracingEnabled": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -361,12 +375,14 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
         }),
         SourceMeta: (*source.Meta)(<nil>)
       }),
@@ -428,12 +444,14 @@
                 },
                 SourceMeta: (*source.Meta)(<nil>)
               }),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
         }),
         SourceMeta: (*source.Meta)(<nil>)
       }),
@@ -478,11 +496,13 @@
                   Fields: (map[string]*core.MappingNode) <nil>,
                   Items: ([]*core.MappingNode) <nil>,
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 })
               },
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "content": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -495,7 +515,8 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=9) "layerName": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -508,12 +529,14 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
         }),
         SourceMeta: (*source.Meta)(<nil>)
       }),
@@ -560,7 +583,8 @@
                       Fields: (map[string]*core.MappingNode) <nil>,
                       Items: ([]*core.MappingNode) <nil>,
                       StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                      SourceMeta: (*source.Meta)(<nil>)
+                      SourceMeta: (*source.Meta)(<nil>),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
                     }),
                     (string) (len=4) "type": (*core.MappingNode)({
                       Literal: (*core.ScalarValue)({
@@ -573,17 +597,20 @@
                       Fields: (map[string]*core.MappingNode) <nil>,
                       Items: ([]*core.MappingNode) <nil>,
                       StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                      SourceMeta: (*source.Meta)(<nil>)
+                      SourceMeta: (*source.Meta)(<nil>),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
                     })
                   },
                   Items: ([]*core.MappingNode) <nil>,
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-                  SourceMeta: (*source.Meta)(<nil>)
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 })
               },
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "handler": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -596,7 +623,8 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "timeout": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -609,12 +637,14 @@
               Fields: (map[string]*core.MappingNode) <nil>,
               Items: ([]*core.MappingNode) <nil>,
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
         }),
         SourceMeta: (*source.Meta)(<nil>)
       })

@@ -112,7 +112,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 16,
                 Column: (int) 18
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
@@ -120,7 +121,13 @@
           SourceMeta: (*source.Meta)({
             Line: (int) 16,
             Column: (int) 7
-          })
+          }),
+          FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+            (string) (len=9) "tableName": (*source.Meta)({
+              Line: (int) 16,
+              Column: (int) 7
+            })
+          }
         }),
         Metadata: (*core.MappingNode)({
           Literal: (*core.ScalarValue)(<nil>),
@@ -142,7 +149,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 19,
                 Column: (int) 15
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=6) "region": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -161,7 +169,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 20,
                 Column: (int) 15
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=10) "sourceType": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -180,7 +189,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 18,
                 Column: (int) 19
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
@@ -188,7 +198,21 @@
           SourceMeta: (*source.Meta)({
             Line: (int) 18,
             Column: (int) 7
-          })
+          }),
+          FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=6) "bucket": (*source.Meta)({
+              Line: (int) 19,
+              Column: (int) 7
+            }),
+            (string) (len=6) "region": (*source.Meta)({
+              Line: (int) 20,
+              Column: (int) 7
+            }),
+            (string) (len=10) "sourceType": (*source.Meta)({
+              Line: (int) 18,
+              Column: (int) 7
+            })
+          }
         }),
         Description: (*substitutions.StringOrSubstitutions)({
           Values: ([]*substitutions.StringOrSubstitution) (len=1) {
@@ -337,7 +361,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 102,
                 Column: (int) 16
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "timeout": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -356,7 +381,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 103,
                 Column: (int) 16
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
@@ -364,7 +390,17 @@
           SourceMeta: (*source.Meta)({
             Line: (int) 102,
             Column: (int) 7
-          })
+          }),
+          FieldsSourceMeta: (map[string]*source.Meta) (len=2) {
+            (string) (len=7) "handler": (*source.Meta)({
+              Line: (int) 102,
+              Column: (int) 7
+            }),
+            (string) (len=7) "timeout": (*source.Meta)({
+              Line: (int) 103,
+              Column: (int) 7
+            })
+          }
         }),
         SourceMeta: (*source.Meta)({
           Line: (int) 85,
@@ -453,7 +489,8 @@
                   SourceMeta: (*source.Meta)({
                     Line: (int) 117,
                     Column: (int) 21
-                  })
+                  }),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 }),
                 (string) (len=6) "method": (*core.MappingNode)({
                   Literal: (*core.ScalarValue)({
@@ -472,7 +509,8 @@
                   SourceMeta: (*source.Meta)({
                     Line: (int) 115,
                     Column: (int) 17
-                  })
+                  }),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 }),
                 (string) (len=4) "path": (*core.MappingNode)({
                   Literal: (*core.ScalarValue)({
@@ -491,7 +529,8 @@
                   SourceMeta: (*source.Meta)({
                     Line: (int) 116,
                     Column: (int) 15
-                  })
+                  }),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 })
               },
               Items: ([]*core.MappingNode) <nil>,
@@ -499,7 +538,21 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 115,
                 Column: (int) 9
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+                (string) (len=10) "authoriser": (*source.Meta)({
+                  Line: (int) 117,
+                  Column: (int) 9
+                }),
+                (string) (len=6) "method": (*source.Meta)({
+                  Line: (int) 115,
+                  Column: (int) 9
+                }),
+                (string) (len=4) "path": (*source.Meta)({
+                  Line: (int) 116,
+                  Column: (int) 9
+                })
+              }
             }),
             (string) (len=7) "handler": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -518,7 +571,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 112,
                 Column: (int) 16
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "timeout": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -537,7 +591,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 113,
                 Column: (int) 16
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
@@ -545,7 +600,21 @@
           SourceMeta: (*source.Meta)({
             Line: (int) 112,
             Column: (int) 7
-          })
+          }),
+          FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=8) "endpoint": (*source.Meta)({
+              Line: (int) 114,
+              Column: (int) 7
+            }),
+            (string) (len=7) "handler": (*source.Meta)({
+              Line: (int) 112,
+              Column: (int) 7
+            }),
+            (string) (len=7) "timeout": (*source.Meta)({
+              Line: (int) 113,
+              Column: (int) 7
+            })
+          }
         }),
         SourceMeta: (*source.Meta)({
           Line: (int) 106,
@@ -599,7 +668,8 @@
                     SourceMeta: (*source.Meta)({
                       Line: (int) 49,
                       Column: (int) 19
-                    })
+                    }),
+                    FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   (string) (len=9) "linkPorts": (*core.MappingNode)({
                     Literal: (*core.ScalarValue)(<nil>),
@@ -625,7 +695,8 @@
                             SourceMeta: (*source.Meta)({
                               Line: (int) 53,
                               Column: (int) 27
-                            })
+                            }),
+                            FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           }),
                           (string) (len=9) "connectAt": (*core.MappingNode)({
                             Literal: (*core.ScalarValue)({
@@ -644,7 +715,8 @@
                             SourceMeta: (*source.Meta)({
                               Line: (int) 52,
                               Column: (int) 26
-                            })
+                            }),
+                            FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           }),
                           (string) (len=6) "linkTo": (*core.MappingNode)({
                             Literal: (*core.ScalarValue)({
@@ -663,7 +735,8 @@
                             SourceMeta: (*source.Meta)({
                               Line: (int) 51,
                               Column: (int) 23
-                            })
+                            }),
+                            FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           })
                         },
                         Items: ([]*core.MappingNode) <nil>,
@@ -671,14 +744,29 @@
                         SourceMeta: (*source.Meta)({
                           Line: (int) 51,
                           Column: (int) 15
-                        })
+                        }),
+                        FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+                          (string) (len=10) "annotation": (*source.Meta)({
+                            Line: (int) 53,
+                            Column: (int) 15
+                          }),
+                          (string) (len=9) "connectAt": (*source.Meta)({
+                            Line: (int) 52,
+                            Column: (int) 15
+                          }),
+                          (string) (len=6) "linkTo": (*source.Meta)({
+                            Line: (int) 51,
+                            Column: (int) 15
+                          })
+                        }
                       })
                     },
                     StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Line: (int) 51,
                       Column: (int) 13
-                    })
+                    }),
+                    FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   (string) (len=5) "point": (*core.MappingNode)({
                     Literal: (*core.ScalarValue)({
@@ -697,7 +785,8 @@
                     SourceMeta: (*source.Meta)({
                       Line: (int) 47,
                       Column: (int) 18
-                    })
+                    }),
+                    FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   (string) (len=5) "width": (*core.MappingNode)({
                     Literal: (*core.ScalarValue)({
@@ -716,7 +805,8 @@
                     SourceMeta: (*source.Meta)({
                       Line: (int) 48,
                       Column: (int) 18
-                    })
+                    }),
+                    FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   })
                 },
                 Items: ([]*core.MappingNode) <nil>,
@@ -724,7 +814,25 @@
                 SourceMeta: (*source.Meta)({
                   Line: (int) 47,
                   Column: (int) 11
-                })
+                }),
+                FieldsSourceMeta: (map[string]*source.Meta) (len=4) {
+                  (string) (len=6) "height": (*source.Meta)({
+                    Line: (int) 49,
+                    Column: (int) 11
+                  }),
+                  (string) (len=9) "linkPorts": (*source.Meta)({
+                    Line: (int) 50,
+                    Column: (int) 11
+                  }),
+                  (string) (len=5) "point": (*source.Meta)({
+                    Line: (int) 47,
+                    Column: (int) 11
+                  }),
+                  (string) (len=5) "width": (*source.Meta)({
+                    Line: (int) 48,
+                    Column: (int) 11
+                  })
+                }
               })
             },
             Items: ([]*core.MappingNode) <nil>,
@@ -732,7 +840,13 @@
             SourceMeta: (*source.Meta)({
               Line: (int) 46,
               Column: (int) 9
-            })
+            }),
+            FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+              (string) (len=6) "visual": (*source.Meta)({
+                Line: (int) 46,
+                Column: (int) 9
+              })
+            }
           }),
           SourceMeta: (*source.Meta)({
             Line: (int) 42,
@@ -806,7 +920,8 @@
                       SourceMeta: (*source.Meta)({
                         Line: (int) 69,
                         Column: (int) 27
-                      })
+                      }),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
                     })
                   },
                   Items: ([]*core.MappingNode) <nil>,
@@ -814,7 +929,13 @@
                   SourceMeta: (*source.Meta)({
                     Line: (int) 69,
                     Column: (int) 11
-                  })
+                  }),
+                  FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+                    (string) (len=14) "DYNAMODB_TABLE": (*source.Meta)({
+                      Line: (int) 69,
+                      Column: (int) 11
+                    })
+                  }
                 })
               },
               Items: ([]*core.MappingNode) <nil>,
@@ -822,7 +943,13 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 68,
                 Column: (int) 9
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+                (string) (len=9) "variables": (*source.Meta)({
+                  Line: (int) 68,
+                  Column: (int) 9
+                })
+              }
             }),
             (string) (len=7) "runtime": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -841,7 +968,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 74,
                 Column: (int) 16
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=14) "tracingEnabled": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -860,7 +988,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 77,
                 Column: (int) 23
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
@@ -868,7 +997,21 @@
           SourceMeta: (*source.Meta)({
             Line: (int) 67,
             Column: (int) 7
-          })
+          }),
+          FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=11) "environment": (*source.Meta)({
+              Line: (int) 67,
+              Column: (int) 7
+            }),
+            (string) (len=7) "runtime": (*source.Meta)({
+              Line: (int) 74,
+              Column: (int) 7
+            }),
+            (string) (len=14) "tracingEnabled": (*source.Meta)({
+              Line: (int) 77,
+              Column: (int) 7
+            })
+          }
         }),
         SourceMeta: (*source.Meta)({
           Line: (int) 40,
@@ -960,7 +1103,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 173,
                 Column: (int) 18
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
@@ -968,7 +1112,13 @@
           SourceMeta: (*source.Meta)({
             Line: (int) 173,
             Column: (int) 7
-          })
+          }),
+          FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+            (string) (len=9) "topicName": (*source.Meta)({
+              Line: (int) 173,
+              Column: (int) 7
+            })
+          }
         }),
         SourceMeta: (*source.Meta)({
           Line: (int) 164,
@@ -1031,14 +1181,16 @@
                   SourceMeta: (*source.Meta)({
                     Line: (int) 155,
                     Column: (int) 28
-                  })
+                  }),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
                 })
               },
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 155,
                 Column: (int) 27
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "content": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -1057,7 +1209,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 158,
                 Column: (int) 16
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=9) "layerName": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -1076,7 +1229,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 159,
                 Column: (int) 18
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
@@ -1084,7 +1238,21 @@
           SourceMeta: (*source.Meta)({
             Line: (int) 155,
             Column: (int) 7
-          })
+          }),
+          FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=18) "compatibleRuntimes": (*source.Meta)({
+              Line: (int) 155,
+              Column: (int) 7
+            }),
+            (string) (len=7) "content": (*source.Meta)({
+              Line: (int) 158,
+              Column: (int) 7
+            }),
+            (string) (len=9) "layerName": (*source.Meta)({
+              Line: (int) 159,
+              Column: (int) 7
+            })
+          }
         }),
         SourceMeta: (*source.Meta)({
           Line: (int) 148,
@@ -1149,7 +1317,8 @@
                       SourceMeta: (*source.Meta)({
                         Line: (int) 139,
                         Column: (int) 22
-                      })
+                      }),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
                     }),
                     (string) (len=4) "type": (*core.MappingNode)({
                       Literal: (*core.ScalarValue)({
@@ -1168,7 +1337,8 @@
                       SourceMeta: (*source.Meta)({
                         Line: (int) 136,
                         Column: (int) 17
-                      })
+                      }),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
                     })
                   },
                   Items: ([]*core.MappingNode) <nil>,
@@ -1176,7 +1346,17 @@
                   SourceMeta: (*source.Meta)({
                     Line: (int) 136,
                     Column: (int) 11
-                  })
+                  }),
+                  FieldsSourceMeta: (map[string]*source.Meta) (len=2) {
+                    (string) (len=9) "batchSize": (*source.Meta)({
+                      Line: (int) 139,
+                      Column: (int) 11
+                    }),
+                    (string) (len=4) "type": (*source.Meta)({
+                      Line: (int) 136,
+                      Column: (int) 11
+                    })
+                  }
                 })
               },
               Items: ([]*core.MappingNode) <nil>,
@@ -1184,7 +1364,13 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 135,
                 Column: (int) 9
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+                (string) (len=10) "orderEvent": (*source.Meta)({
+                  Line: (int) 135,
+                  Column: (int) 9
+                })
+              }
             }),
             (string) (len=7) "handler": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -1203,7 +1389,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 132,
                 Column: (int) 16
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             }),
             (string) (len=7) "timeout": (*core.MappingNode)({
               Literal: (*core.ScalarValue)({
@@ -1222,7 +1409,8 @@
               SourceMeta: (*source.Meta)({
                 Line: (int) 133,
                 Column: (int) 16
-              })
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           },
           Items: ([]*core.MappingNode) <nil>,
@@ -1230,7 +1418,21 @@
           SourceMeta: (*source.Meta)({
             Line: (int) 132,
             Column: (int) 7
-          })
+          }),
+          FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=6) "events": (*source.Meta)({
+              Line: (int) 134,
+              Column: (int) 7
+            }),
+            (string) (len=7) "handler": (*source.Meta)({
+              Line: (int) 132,
+              Column: (int) 7
+            }),
+            (string) (len=7) "timeout": (*source.Meta)({
+              Line: (int) 133,
+              Column: (int) 7
+            })
+          }
         }),
         SourceMeta: (*source.Meta)({
           Line: (int) 121,
