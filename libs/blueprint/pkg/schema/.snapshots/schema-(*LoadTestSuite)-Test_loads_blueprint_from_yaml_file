@@ -1250,6 +1250,6 @@
       })
     }
   }),
-  Exports: (map[string]*schema.Export) <nil>,
+  Exports: (*schema.ExportMap)(<nil>),
   Metadata: (*core.MappingNode)(<nil>)
 })

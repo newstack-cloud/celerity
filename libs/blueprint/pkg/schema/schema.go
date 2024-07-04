@@ -17,7 +17,7 @@ type Blueprint struct {
 	Include     *IncludeMap            `yaml:"include,omitempty" json:"include,omitempty"`
 	Resources   *ResourceMap           `yaml:"resources" json:"resources"`
 	DataSources *DataSourceMap         `yaml:"datasources,omitempty" json:"datasources,omitempty"`
-	Exports     map[string]*Export     `yaml:"exports,omitempty" json:"exports,omitempty"`
+	Exports     *ExportMap             `yaml:"exports,omitempty" json:"exports,omitempty"`
 	Metadata    *core.MappingNode      `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 }
 
@@ -246,6 +246,64 @@ func (m *DataSourceMap) MarshalJSON() ([]byte, error) {
 
 func (m *DataSourceMap) UnmarshalJSON(data []byte) error {
 	values := make(map[string]*DataSource)
+	err := json.Unmarshal(data, &values)
+	if err != nil {
+		return err
+	}
+
+	m.Values = values
+	return nil
+}
+
+// ExportMap provides a mapping of names to exports.
+// This includes extra information about the locations of
+// the keys in the original source being unmarshalled.
+// This information will not always be present, it is populated
+// when unmarshalling from YAML source documents.
+type ExportMap struct {
+	Values map[string]*Export
+	// Mapping of export names to their source locations.
+	SourceMeta map[string]*source.Meta
+}
+
+func (m *ExportMap) MarshalYAML() (interface{}, error) {
+	return m.Values, nil
+}
+
+func (m *ExportMap) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind != yaml.MappingNode {
+		return errInvalidMap(value, "datasources")
+	}
+
+	m.Values = make(map[string]*Export)
+	m.SourceMeta = make(map[string]*source.Meta)
+	for i := 0; i < len(value.Content); i += 2 {
+		key := value.Content[i]
+		val := value.Content[i+1]
+
+		m.SourceMeta[key.Value] = &source.Meta{
+			Line:   key.Line,
+			Column: key.Column,
+		}
+
+		var export Export
+		err := val.Decode(&export)
+		if err != nil {
+			return err
+		}
+
+		m.Values[key.Value] = &export
+	}
+
+	return nil
+}
+
+func (m *ExportMap) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.Values)
+}
+
+func (m *ExportMap) UnmarshalJSON(data []byte) error {
+	values := make(map[string]*Export)
 	err := json.Unmarshal(data, &values)
 	if err != nil {
 		return err

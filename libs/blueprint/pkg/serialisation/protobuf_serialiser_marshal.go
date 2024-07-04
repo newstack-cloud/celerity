@@ -304,9 +304,13 @@ func toResourcePB(resource *schema.Resource) (*schemapb.Resource, error) {
 	}, nil
 }
 
-func toExportsPB(exports map[string]*schema.Export) (map[string]*schemapb.Export, error) {
+func toExportsPB(exports *schema.ExportMap) (map[string]*schemapb.Export, error) {
+	if exports == nil {
+		return nil, nil
+	}
+
 	exportsPB := make(map[string]*schemapb.Export)
-	for k, v := range exports {
+	for k, v := range exports.Values {
 		exportPB, err := toExportPB(v)
 		if err != nil {
 			return nil, err

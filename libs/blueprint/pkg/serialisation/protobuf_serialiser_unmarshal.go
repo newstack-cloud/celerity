@@ -365,7 +365,7 @@ func fromAnnotationsPB(
 	return annotations, nil
 }
 
-func fromExportsPB(exportsPB map[string]*schemapb.Export) (map[string]*schema.Export, error) {
+func fromExportsPB(exportsPB map[string]*schemapb.Export) (*schema.ExportMap, error) {
 	if exportsPB == nil {
 		return nil, nil
 	}
@@ -380,7 +380,9 @@ func fromExportsPB(exportsPB map[string]*schemapb.Export) (map[string]*schema.Ex
 		exports[k] = export
 	}
 
-	return exports, nil
+	return &schema.ExportMap{
+		Values: exports,
+	}, nil
 }
 
 func fromLinkSelectorPB(linkSelectorPB *schemapb.LinkSelector) *schema.LinkSelector {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
 
@@ -14,25 +15,41 @@ import (
 // This does not validate that the field of the export can not be resolved,
 // as this export validation should be carried out
 // before staging changes or deploying a blueprint.
-func ValidateExport(ctx context.Context, exportName string, exportSchema *schema.Export) error {
-	err := validateExportType(exportSchema.Type, exportName)
+func ValidateExport(
+	ctx context.Context,
+	exportName string,
+	exportSchema *schema.Export,
+	exportMap *schema.ExportMap,
+) error {
+	err := validateExportType(exportSchema.Type, exportName, exportMap)
 	if err != nil {
 		return err
 	}
 
-	return validateExportFieldFormat(exportSchema.Field, exportName)
+	return validateExportFieldFormat(exportSchema.Field, exportName, exportMap)
 }
 
-func validateExportType(exportType schema.ExportType, exportName string) error {
+func validateExportType(
+	exportType schema.ExportType,
+	exportName string,
+	exportMap *schema.ExportMap,
+) error {
 	if !core.SliceContainsComparable(schema.ExportTypes, exportType) {
-		return errInvalidExportType(exportType, exportName)
+		return errInvalidExportType(
+			exportType,
+			exportName,
+			getExportSourceMeta(exportMap, exportName),
+		)
 	}
 	return nil
 }
 
-func validateExportFieldFormat(exportField, exportName string) error {
+func validateExportFieldFormat(exportField, exportName string, exportMap *schema.ExportMap) error {
 	if exportField == "" {
-		return errEmptyExportField(exportName)
+		return errEmptyExportField(
+			exportName,
+			getExportSourceMeta(exportMap, exportName),
+		)
 	}
 
 	context := fmt.Sprintf("exports.%s", exportName)
@@ -48,3 +65,11 @@ var (
 		ReferenceableResource,
 	}
 )
+
+func getExportSourceMeta(exportMap *schema.ExportMap, varName string) *source.Meta {
+	if exportMap == nil {
+		return nil
+	}
+
+	return exportMap.SourceMeta[varName]
+}

@@ -26,7 +26,12 @@ func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_exp
 		},
 		Field: "resources.cacheCluster.state.cacheNodes.endpoints",
 	}
-	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema)
+	exportMap := &schema.ExportMap{
+		Values: map[string]*schema.Export{
+			"cacheEndpointInfo": exportSchema,
+		},
+	}
+	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
 	c.Assert(err, IsNil)
 }
 
@@ -44,7 +49,12 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_expor
 		},
 		Field: "resources.cacheCluster.state.cacheNodes.endpoints",
 	}
-	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema)
+	exportMap := &schema.ExportMap{
+		Values: map[string]*schema.Export{
+			"cacheEndpointInfo": exportSchema,
+		},
+	}
+	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -71,7 +81,12 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_fiel
 		},
 		Field: "",
 	}
-	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema)
+	exportMap := &schema.ExportMap{
+		Values: map[string]*schema.Export{
+			"cacheEndpointInfo": exportSchema,
+		},
+	}
+	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -97,7 +112,12 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_incorrect_referen
 		// Missing a valid attribute that can be extracted from a resource.
 		Field: "resources.cacheCluster.",
 	}
-	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema)
+	exportMap := &schema.ExportMap{
+		Values: map[string]*schema.Export{
+			"cacheEndpointInfo": exportSchema,
+		},
+	}
+	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

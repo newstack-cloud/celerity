@@ -408,7 +408,7 @@ func errCustomVariableDefaultValueNotInOptions(
 	}
 }
 
-func errInvalidExportType(exportType schema.ExportType, exportName string) error {
+func errInvalidExportType(exportType schema.ExportType, exportName string, exportSourceMeta *source.Meta) error {
 	validExportTypes := strings.Join(
 		core.Map(
 			schema.ExportTypes,
@@ -418,6 +418,7 @@ func errInvalidExportType(exportType schema.ExportType, exportName string) error
 		),
 		", ",
 	)
+	line, col := source.PositionFromSourceMeta(exportSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidExport,
 		Err: fmt.Errorf(
@@ -427,16 +428,21 @@ func errInvalidExportType(exportType schema.ExportType, exportName string) error
 			exportName,
 			validExportTypes,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
-func errEmptyExportField(exportName string) error {
+func errEmptyExportField(exportName string, exportSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(exportSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidExport,
 		Err: fmt.Errorf(
 			"validation failed due to an empty field string being provided for export \"%s\"",
 			exportName,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 

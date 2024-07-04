@@ -712,6 +712,6 @@
     },
     SourceMeta: (map[string]*source.Meta) <nil>
   }),
-  Exports: (map[string]*schema.Export) <nil>,
+  Exports: (*schema.ExportMap)(<nil>),
   Metadata: (*core.MappingNode)(<nil>)
 })

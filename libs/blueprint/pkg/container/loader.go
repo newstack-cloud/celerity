@@ -343,10 +343,14 @@ func (l *defaultLoader) validateExports(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
 ) error {
+	if bpSchema.Exports == nil {
+		return nil
+	}
+
 	// We'll collect and report issues for all the problematic exports.
 	exportErrors := map[string]error{}
-	for name, exportSchema := range bpSchema.Exports {
-		err := validation.ValidateExport(ctx, name, exportSchema)
+	for name, exportSchema := range bpSchema.Exports.Values {
+		err := validation.ValidateExport(ctx, name, exportSchema, bpSchema.Exports)
 		if err != nil {
 			exportErrors[name] = err
 		}
