@@ -20,6 +20,10 @@ const (
 	// for a blueprint spec load error is due to an invalid version
 	// of the spec being provided.
 	ErrorReasonCodeInvalidVersion errors.ErrorReasonCode = "invalid_version"
+	// ErrorReasonCodeInvalidResource is provided when the reason
+	// for a blueprint spec load error is due to one or more resources
+	// being invalid.
+	ErrorReasonCodeInvalidResource errors.ErrorReasonCode = "invalid_resource"
 	// ErrorReasonCodeMissingResources is provided when the reason
 	// for a blueprint spec load error is due to an empty map of resources being
 	// provided or where the resources property is omitted.
@@ -78,16 +82,20 @@ func errBlueprintUnsupportedVersion(version string) error {
 	}
 }
 
-func errVariableNameContainsSubstitution(
-	varName string,
+func errMappingNameContainsSubstitution(
+	mappingName string,
+	mappingType string,
+	reasonCode errors.ErrorReasonCode,
 	varSourceMeta *source.Meta,
 ) error {
 	line, col := source.PositionFromSourceMeta(varSourceMeta)
 	return &errors.LoadError{
-		ReasonCode: ErrorReasonCodeInvalidVariable,
+		ReasonCode: reasonCode,
 		Err: fmt.Errorf(
-			"${..} substitutions can not be used in variable names, found in variable \"%s\"",
-			varName,
+			"${..} substitutions can not be used in %s names, found in %s \"%s\"",
+			mappingType,
+			mappingType,
+			mappingName,
 		),
 		Line:   line,
 		Column: col,

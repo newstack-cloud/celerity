@@ -111,6 +111,17 @@ func errVariableValidationError(errorMap map[string][]error) error {
 	}
 }
 
+func errResourceValidationError(errorMap map[string][]error) error {
+	errs := flattenErrorMap(errorMap)
+	errCount := len(errs)
+
+	return &errors.LoadError{
+		ReasonCode:  ErrorReasonCodeResourceValidationErrors,
+		Err:         fmt.Errorf("validation failed due to issues with %d resources in the spec", errCount),
+		ChildErrors: errs,
+	}
+}
+
 func errIncludeValidationError(errorMap map[string]error) error {
 	errCount := len(errorMap)
 	return &errors.LoadError{

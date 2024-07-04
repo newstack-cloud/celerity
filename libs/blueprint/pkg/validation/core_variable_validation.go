@@ -15,8 +15,10 @@ import (
 // as per the spec.
 func ValidateVariableName(mappingName string, varMap *schema.VariableMap) error {
 	if substitutions.ContainsSubstitution(mappingName) {
-		return errVariableNameContainsSubstitution(
+		return errMappingNameContainsSubstitution(
 			mappingName,
+			"variable",
+			ErrorReasonCodeInvalidVariable,
 			getVarSourceMeta(varMap, mappingName),
 		)
 	}

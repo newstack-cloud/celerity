@@ -399,27 +399,7 @@ func (l *defaultLoader) validateVariables(
 	// report issues for all the problematic variables.
 	variableErrors := map[string][]error{}
 	for name, varSchema := range bpSchema.Variables.Values {
-		currentVarErrs := []error{}
-		err := validation.ValidateVariableName(name, bpSchema.Variables)
-		if err != nil {
-			currentVarErrs = append(currentVarErrs, err)
-		}
-		if core.SliceContains(schema.CoreVariableTypes, varSchema.Type) {
-			coreVarDiagnostics, err := validation.ValidateCoreVariable(
-				ctx, name, varSchema, bpSchema.Variables, params, l.validateRuntimeValues,
-			)
-			if err != nil {
-				currentVarErrs = append(currentVarErrs, err)
-			}
-			diagnostics = append(diagnostics, coreVarDiagnostics...)
-		} else {
-			customVarDiagnostics, err := l.validateCustomVariableType(ctx, name, varSchema, bpSchema.Variables, params)
-			if err != nil {
-				currentVarErrs = append(currentVarErrs, err)
-			}
-			diagnostics = append(diagnostics, customVarDiagnostics...)
-		}
-
+		currentVarErrs := l.validateVariable(ctx, &diagnostics, name, varSchema, bpSchema, params)
 		if len(currentVarErrs) > 0 {
 			variableErrors[name] = currentVarErrs
 		}
@@ -430,6 +410,37 @@ func (l *defaultLoader) validateVariables(
 	}
 
 	return diagnostics, nil
+}
+
+func (l *defaultLoader) validateVariable(
+	ctx context.Context,
+	diagnostics *[]*bpcore.Diagnostic,
+	name string,
+	varSchema *schema.Variable,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+) []error {
+	currentVarErrs := []error{}
+	err := validation.ValidateVariableName(name, bpSchema.Variables)
+	if err != nil {
+		currentVarErrs = append(currentVarErrs, err)
+	}
+	if core.SliceContains(schema.CoreVariableTypes, varSchema.Type) {
+		coreVarDiagnostics, err := validation.ValidateCoreVariable(
+			ctx, name, varSchema, bpSchema.Variables, params, l.validateRuntimeValues,
+		)
+		if err != nil {
+			currentVarErrs = append(currentVarErrs, err)
+		}
+		*diagnostics = append(*diagnostics, coreVarDiagnostics...)
+	} else {
+		customVarDiagnostics, err := l.validateCustomVariableType(ctx, name, varSchema, bpSchema.Variables, params)
+		if err != nil {
+			currentVarErrs = append(currentVarErrs, err)
+		}
+		*diagnostics = append(*diagnostics, customVarDiagnostics...)
+	}
+	return currentVarErrs
 }
 
 func (l *defaultLoader) validateIncludes(
@@ -526,13 +537,23 @@ func (l *defaultLoader) deriveProviderCustomVarType(variableType schema.Variable
 
 func (l *defaultLoader) validateResources(
 	ctx context.Context,
-	blueprintSchema *schema.Blueprint,
+	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
+	if bpSchema.Resources == nil {
+		return diagnostics, nil
+	}
 	// To be as useful as possible, we'll collect and
 	// report issues for all the problematic resources.
-	// resourceErrors := map[string]error{}
+	resourceErrors := map[string][]error{}
+	for name, resourceSchema := range bpSchema.Resources.Values {
+		currentResouceErrs := l.validateResource(ctx, &diagnostics, name, resourceSchema, bpSchema)
+		if len(currentResouceErrs) > 0 {
+			resourceErrors[name] = currentResouceErrs
+		}
+	}
+
 	// internalResourceSpecs := map[string]speccore.ResourceSchemaSpec{}
 	// for name, resourceSchema := range blueprintSchema.Resources {
 	// 	resourceConcreteSpec, err := l.validateResource(ctx, resourceSchema, params)
@@ -546,12 +567,26 @@ func (l *defaultLoader) validateResources(
 	// 	}
 	// }
 
-	// if len(resourceErrors) > 0 {
-	// 	return nil, errResourceValidationError(resourceErrors)
-	// }
+	if len(resourceErrors) > 0 {
+		return diagnostics, errResourceValidationError(resourceErrors)
+	}
 
-	// return internalResourceSpecs, nil
 	return diagnostics, nil
+}
+
+func (l *defaultLoader) validateResource(
+	ctx context.Context,
+	diagnostics *[]*bpcore.Diagnostic,
+	name string,
+	resourceSchema *schema.Resource,
+	bpSchema *schema.Blueprint,
+) []error {
+	currentResouceErrs := []error{}
+	err := validation.ValidateResourceName(name, bpSchema.Resources)
+	if err != nil {
+		currentResouceErrs = append(currentResouceErrs, err)
+	}
+	return currentResouceErrs
 }
 
 // func (l *defaultLoader) validateResource(
