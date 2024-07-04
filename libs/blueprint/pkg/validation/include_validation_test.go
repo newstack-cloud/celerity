@@ -86,7 +86,7 @@ func (s *IncludeValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_ch
 			"coreInfra": includeSchema,
 		},
 	}
-	err := ValidateInclude(context.Background(), "coreInfra", includeSchema, includeMap)
+	_, err := ValidateInclude(context.Background(), "coreInfra", includeSchema, includeMap)
 	c.Assert(err, IsNil)
 }
 
@@ -162,7 +162,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_for_a_child_blueprint_in
 			"coreInfra": includeSchema,
 		},
 	}
-	err := ValidateInclude(context.Background(), "coreInfra", includeSchema, includeMap)
+	_, err := ValidateInclude(context.Background(), "coreInfra", includeSchema, includeMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

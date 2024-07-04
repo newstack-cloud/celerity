@@ -41,7 +41,7 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_v
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, IsNil)
 }
 
@@ -71,7 +71,7 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_when_va
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, IsNil)
 }
 
@@ -102,7 +102,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_errors_when_multiple_va
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -143,7 +143,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_there_is_a_f
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -200,7 +200,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 		},
 	}
 
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -264,7 +264,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -310,7 +310,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -354,7 +354,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -406,7 +406,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -441,7 +441,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_no_value_is_
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -482,7 +482,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 		},
 	}
 
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -522,7 +522,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 		},
 	}
 
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -562,7 +562,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -602,7 +602,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -656,7 +656,7 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 			},
 		},
 	}
-	err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
+	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

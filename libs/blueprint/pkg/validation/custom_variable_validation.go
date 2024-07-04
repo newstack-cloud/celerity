@@ -20,18 +20,19 @@ func ValidateCustomVariable(
 	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	customVariableType provider.CustomVariableType,
-) error {
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
 	optionLabels, err := validateCustomVariableOptions(
 		ctx, varName, varSchema, varMap, params, customVariableType,
 	)
 	if err != nil {
-		return err
+		return diagnostics, err
 	}
 
 	// Values for custom variables must be the string labels for the options
 	// provided by the custom type.
 	if varSchema.Default != nil && varSchema.Default.StringValue == nil {
-		return errCustomVariableInvalidDefaultValueType(
+		return diagnostics, errCustomVariableInvalidDefaultValueType(
 			varSchema.Type,
 			varName,
 			varSchema.Default,
@@ -40,7 +41,7 @@ func ValidateCustomVariable(
 	}
 
 	if varSchema.Default != nil && strings.TrimSpace(*varSchema.Default.StringValue) == "" {
-		return errVariableEmptyDefaultValue(
+		return diagnostics, errVariableEmptyDefaultValue(
 			varSchema.Type,
 			varName,
 			getVarSourceMeta(varMap, varName),
@@ -48,7 +49,7 @@ func ValidateCustomVariable(
 	}
 
 	if varSchema.Default != nil && !core.SliceContainsComparable(optionLabels, *varSchema.Default.StringValue) {
-		return errCustomVariableDefaultValueNotInOptions(
+		return diagnostics, errCustomVariableDefaultValueNotInOptions(
 			varSchema.Type,
 			varName,
 			*varSchema.Default.StringValue,
@@ -60,11 +61,11 @@ func ValidateCustomVariable(
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
 	if finalValue == nil {
-		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
+		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if finalValue.StringValue == nil {
-		return errVariableInvalidOrMissing(
+		return diagnostics, errVariableInvalidOrMissing(
 			varSchema.Type,
 			varName,
 			finalValue,
@@ -73,7 +74,7 @@ func ValidateCustomVariable(
 	}
 
 	if strings.TrimSpace(*finalValue.StringValue) == "" {
-		return errVariableEmptyValue(
+		return diagnostics, errVariableEmptyValue(
 			varSchema.Type,
 			varName,
 			getVarSourceMeta(varMap, varName),
@@ -82,7 +83,7 @@ func ValidateCustomVariable(
 
 	if !core.SliceContainsComparable(optionLabels, *finalValue.StringValue) {
 		usingDefault := userProvidedValue == nil
-		return errCustomVariableValueNotInOptions(
+		return diagnostics, errCustomVariableValueNotInOptions(
 			varSchema.Type,
 			varName,
 			finalValue,
@@ -93,7 +94,7 @@ func ValidateCustomVariable(
 
 	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefault := userProvidedValue == nil
-		return errVariableValueNotAllowed(
+		return diagnostics, errVariableValueNotAllowed(
 			varSchema.Type,
 			varName,
 			finalValue,
@@ -103,7 +104,7 @@ func ValidateCustomVariable(
 		)
 	}
 
-	return nil
+	return diagnostics, nil
 }
 
 func validateCustomVariableOptions(

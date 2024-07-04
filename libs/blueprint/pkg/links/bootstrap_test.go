@@ -111,8 +111,8 @@ func (r *testApiGatewayResource) StageChanges(
 }
 
 // Validate is not used for spec link info!
-func (r *testApiGatewayResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
-	return nil
+func (r *testApiGatewayResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) ([]*core.Diagnostic, error) {
+	return []*core.Diagnostic{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -154,8 +154,8 @@ func (r *testSQSQueueResource) StageChanges(
 }
 
 // Validate is not used for spec link info!
-func (r *testSQSQueueResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
-	return nil
+func (r *testSQSQueueResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) ([]*core.Diagnostic, error) {
+	return []*core.Diagnostic{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -200,8 +200,8 @@ func (r *testLambdaFunctionResource) StageChanges(
 }
 
 // Validate is not used for spec link info!
-func (r *testLambdaFunctionResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
-	return nil
+func (r *testLambdaFunctionResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) ([]*core.Diagnostic, error) {
+	return []*core.Diagnostic{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -243,8 +243,8 @@ func (r *testStratosLambdaFunctionResource) StageChanges(
 }
 
 // Validate is not used for spec link info!
-func (r *testStratosLambdaFunctionResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
-	return nil
+func (r *testStratosLambdaFunctionResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) ([]*core.Diagnostic, error) {
+	return []*core.Diagnostic{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -286,8 +286,8 @@ func (r *testDynamoDBTableResource) StageChanges(
 }
 
 // Validate is not used for spec link info!
-func (r *testDynamoDBTableResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
-	return nil
+func (r *testDynamoDBTableResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) ([]*core.Diagnostic, error) {
+	return []*core.Diagnostic{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -329,8 +329,8 @@ func (r *testDynamoDBStreamResource) StageChanges(
 }
 
 // Validate is not used for spec link info!
-func (r *testDynamoDBStreamResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
-	return nil
+func (r *testDynamoDBStreamResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) ([]*core.Diagnostic, error) {
+	return []*core.Diagnostic{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -373,8 +373,8 @@ func (r *testIAMRoleResource) StageChanges(
 }
 
 // Validate is not used for spec link info!
-func (r *testIAMRoleResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
-	return nil
+func (r *testIAMRoleResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) ([]*core.Diagnostic, error) {
+	return []*core.Diagnostic{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -416,8 +416,8 @@ func (r *testStratosIAMRoleResource) StageChanges(
 }
 
 // Validate is not used for spec link info!
-func (r *testStratosIAMRoleResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error {
-	return nil
+func (r *testStratosIAMRoleResource) Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) ([]*core.Diagnostic, error) {
+	return []*core.Diagnostic{}, nil
 }
 
 // Deploy is not used for spec link info!

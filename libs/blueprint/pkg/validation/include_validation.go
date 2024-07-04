@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
@@ -22,15 +23,16 @@ func ValidateInclude(
 	includeName string,
 	includeSchema *schema.Include,
 	includeMap *schema.IncludeMap,
-) error {
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
 	includeSubContext := fmt.Sprintf("include.%s", includeName)
 
 	formatted, err := substitutions.SubstitutionsToString(includeSubContext, includeSchema.Path)
 	if err != nil {
-		return err
+		return diagnostics, err
 	}
 
-	return validatePathFormat(includeName, formatted, includeMap)
+	return diagnostics, validatePathFormat(includeName, formatted, includeMap)
 }
 
 func validatePathFormat(includeName, path string, includeMap *schema.IncludeMap) error {

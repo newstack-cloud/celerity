@@ -39,7 +39,7 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -68,7 +68,7 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -110,7 +110,7 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -139,7 +139,7 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -177,7 +177,7 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -205,7 +205,7 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -234,7 +234,7 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -263,7 +263,7 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, IsNil)
 }
 
@@ -292,7 +292,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_strin
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -330,7 +330,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_integ
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -368,7 +368,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_float
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -406,7 +406,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_bool_
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -448,7 +448,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -490,7 +490,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -532,7 +532,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -574,7 +574,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -626,7 +626,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -688,7 +688,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -757,7 +757,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -821,7 +821,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_allowed_value
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -870,7 +870,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -918,7 +918,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -966,7 +966,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -1013,7 +1013,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -1061,7 +1061,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxBatchSize", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "maxBatchSize", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -1108,7 +1108,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "sampleRate", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "sampleRate", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -1147,7 +1147,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_string_variab
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -1181,7 +1181,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_string_variabl
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -1215,7 +1215,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_integer_variab
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -1249,7 +1249,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_float_variable
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -1283,7 +1283,7 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_boolean_variab
 			},
 		},
 	}
-	err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
+	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

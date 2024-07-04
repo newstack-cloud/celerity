@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
@@ -20,13 +21,14 @@ func ValidateExport(
 	exportName string,
 	exportSchema *schema.Export,
 	exportMap *schema.ExportMap,
-) error {
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
 	err := validateExportType(exportSchema.Type, exportName, exportMap)
 	if err != nil {
-		return err
+		return diagnostics, err
 	}
 
-	return validateExportFieldFormat(exportSchema.Field, exportName, exportMap)
+	return diagnostics, validateExportFieldFormat(exportSchema.Field, exportName, exportMap)
 }
 
 func validateExportType(

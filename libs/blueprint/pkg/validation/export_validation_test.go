@@ -31,7 +31,7 @@ func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_exp
 			"cacheEndpointInfo": exportSchema,
 		},
 	}
-	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
+	_, err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
 	c.Assert(err, IsNil)
 }
 
@@ -54,7 +54,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_expor
 			"cacheEndpointInfo": exportSchema,
 		},
 	}
-	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
+	_, err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -86,7 +86,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_fiel
 			"cacheEndpointInfo": exportSchema,
 		},
 	}
-	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
+	_, err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -117,7 +117,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_incorrect_referen
 			"cacheEndpointInfo": exportSchema,
 		},
 	}
-	err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
+	_, err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

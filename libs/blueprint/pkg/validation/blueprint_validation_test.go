@@ -35,7 +35,7 @@ func (s *BlueprintValidationTestSuite) Test_succeeds_without_any_issues_for_a_va
 			},
 		},
 	}
-	err := ValidateBlueprint(context.Background(), blueprint)
+	_, err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, IsNil)
 }
 
@@ -60,7 +60,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_n
 		},
 	}
 
-	err := ValidateBlueprint(context.Background(), blueprint)
+	_, err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -95,7 +95,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_i
 			},
 		},
 	}
-	err := ValidateBlueprint(context.Background(), blueprint)
+	_, err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -112,7 +112,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_resources_pr
 	blueprint := &schema.Blueprint{
 		Version: Version2023_04_20,
 	}
-	err := ValidateBlueprint(context.Background(), blueprint)
+	_, err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -129,7 +129,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_no_resources_are
 		Version:   Version2023_04_20,
 		Resources: &schema.ResourceMap{},
 	}
-	err := ValidateBlueprint(context.Background(), blueprint)
+	_, err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

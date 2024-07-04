@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	"github.com/two-hundred/celerity/libs/common/pkg/core"
 )
@@ -11,20 +12,21 @@ import (
 // ValidateBlueprint ensures that the required top-level properties
 // of a blueprint are populated.
 // (When they are populated the schema takes care of the structure)
-func ValidateBlueprint(ctx context.Context, blueprint *schema.Blueprint) error {
+func ValidateBlueprint(ctx context.Context, blueprint *schema.Blueprint) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
 	if strings.TrimSpace(blueprint.Version) == "" {
-		return errBlueprintMissingVersion()
+		return diagnostics, errBlueprintMissingVersion()
 	}
 
 	if !core.SliceContainsComparable(SupportedVersions, blueprint.Version) {
-		return errBlueprintUnsupportedVersion(blueprint.Version)
+		return diagnostics, errBlueprintUnsupportedVersion(blueprint.Version)
 	}
 
 	if blueprint.Resources == nil || len(blueprint.Resources.Values) == 0 {
-		return errBlueprintMissingResources()
+		return diagnostics, errBlueprintMissingResources()
 	}
 
-	return nil
+	return diagnostics, nil
 }
 
 const (

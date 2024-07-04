@@ -36,6 +36,13 @@ type BlueprintContainer interface {
 	// SpecLinkInfo provides the chain link and warnings for potential issues
 	// with links provided in the given specification.
 	SpecLinkInfo() links.SpecLinkInfo
+	// Diagnostics returns warning and informational diagnostics for the loaded blueprint
+	// that point out potential issues that may occur when executing
+	// a blueprint.
+	// These diagnostics do not contain errors, the error returned on failure to load a blueprint
+	// should be unpacked to get the precise location and information about the reason loading the
+	// blueprint failed.
+	Diagnostics() []*core.Diagnostic
 }
 
 // BlueprintChanges provides a mapping of resource name
@@ -80,6 +87,7 @@ type defaultBlueprintContainer struct {
 	resourceProviders map[string]provider.Provider
 	spec              speccore.BlueprintSpec
 	linkInfo          links.SpecLinkInfo
+	diagnostics       []*core.Diagnostic
 	// The channel to send deployment and change-staging updates to.
 	updateChan chan Update
 }
@@ -93,6 +101,7 @@ func NewDefaultBlueprintContainer(
 	resourceProviders map[string]provider.Provider,
 	spec speccore.BlueprintSpec,
 	linkInfo links.SpecLinkInfo,
+	diagnostics []*core.Diagnostic,
 	updateChan chan Update,
 ) BlueprintContainer {
 	return &defaultBlueprintContainer{
@@ -100,6 +109,7 @@ func NewDefaultBlueprintContainer(
 		resourceProviders,
 		spec,
 		linkInfo,
+		diagnostics,
 		updateChan,
 	}
 }
@@ -230,14 +240,18 @@ func (c *defaultBlueprintContainer) Deploy(ctx context.Context, instanceID strin
 	return "", nil
 }
 
-func (c *defaultBlueprintContainer) SpecLinkInfo() links.SpecLinkInfo {
-	return c.linkInfo
-}
-
 func (c *defaultBlueprintContainer) Rollback(ctx context.Context, instanceID string, revisionIDToRollback string, prevRevisionID string) error {
 	return nil
 }
 
 func (c *defaultBlueprintContainer) Destroy(ctx context.Context, instanceID string, revisionID string) error {
 	return nil
+}
+
+func (c *defaultBlueprintContainer) SpecLinkInfo() links.SpecLinkInfo {
+	return c.linkInfo
+}
+
+func (c *defaultBlueprintContainer) Diagnostics() []*core.Diagnostic {
+	return []*core.Diagnostic{}
 }

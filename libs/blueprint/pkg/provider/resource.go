@@ -32,7 +32,7 @@ type ResourceInfo struct {
 // transforming, linking and deploying a resource.
 type Resource interface {
 	// Validate a resource's specification.
-	Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error
+	Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) ([]*core.Diagnostic, error)
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
 	CanLinkTo() []string

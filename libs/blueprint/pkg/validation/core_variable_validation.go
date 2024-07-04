@@ -19,7 +19,8 @@ func ValidateCoreVariable(
 	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
-) error {
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
 	if varSchema.Type == schema.VariableTypeString {
 		return validateCoreStringVariable(
 			ctx, varName, varSchema, varMap, params, validateRuntimeParams,
@@ -44,7 +45,7 @@ func ValidateCoreVariable(
 		)
 	}
 
-	return nil
+	return diagnostics, nil
 }
 
 func validateCoreStringVariable(
@@ -54,21 +55,22 @@ func validateCoreStringVariable(
 	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
-) error {
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCoreStringVariableAllowedValues(
 			ctx, varName, varSchema, varMap, params,
 		)
 
 		if err != nil {
-			return err
+			return diagnostics, err
 		}
 	}
 
 	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
 	if varSchema.Default != nil && varSchema.Default.StringValue == nil {
-		return errVariableInvalidDefaultValue(
+		return diagnostics, errVariableInvalidDefaultValue(
 			schema.VariableTypeString,
 			varName,
 			varSchema.Default,
@@ -77,7 +79,7 @@ func validateCoreStringVariable(
 	}
 
 	if varSchema.Default != nil && strings.TrimSpace(*varSchema.Default.StringValue) == "" {
-		return errVariableEmptyDefaultValue(
+		return diagnostics, errVariableEmptyDefaultValue(
 			schema.VariableTypeString,
 			varName,
 			getVarSourceMeta(varMap, varName),
@@ -88,11 +90,11 @@ func validateCoreStringVariable(
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
 	if validateRuntimeParams && finalValue == nil {
-		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
+		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if validateRuntimeParams && finalValue.StringValue == nil {
-		return errVariableInvalidOrMissing(
+		return diagnostics, errVariableInvalidOrMissing(
 			schema.VariableTypeString,
 			varName,
 			finalValue,
@@ -101,14 +103,14 @@ func validateCoreStringVariable(
 	}
 
 	if validateRuntimeParams && strings.TrimSpace(*finalValue.StringValue) == "" {
-		return errVariableEmptyValue(
+		return diagnostics, errVariableEmptyValue(
 			schema.VariableTypeString,
 			varName,
 			getVarSourceMeta(varMap, varName),
 		)
 	}
 
-	return validateValueInAllowedList(
+	return diagnostics, validateValueInAllowedList(
 		varSchema,
 		varMap,
 		schema.VariableTypeString,
@@ -167,21 +169,22 @@ func validateCoreIntegerVariable(
 	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
-) error {
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCoreIntegerVariableAllowedValues(
 			ctx, varName, varSchema, varMap, params,
 		)
 
 		if err != nil {
-			return err
+			return diagnostics, err
 		}
 	}
 
 	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
 	if varSchema.Default != nil && varSchema.Default.IntValue == nil {
-		return errVariableInvalidDefaultValue(
+		return diagnostics, errVariableInvalidDefaultValue(
 			schema.VariableTypeInteger,
 			varName,
 			varSchema.Default,
@@ -196,11 +199,11 @@ func validateCoreIntegerVariable(
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
 	if validateRuntimeParams && finalValue == nil {
-		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
+		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if validateRuntimeParams && finalValue.IntValue == nil {
-		return errVariableInvalidOrMissing(
+		return diagnostics, errVariableInvalidOrMissing(
 			schema.VariableTypeInteger,
 			varName,
 			finalValue,
@@ -208,7 +211,7 @@ func validateCoreIntegerVariable(
 		)
 	}
 
-	return validateValueInAllowedList(
+	return diagnostics, validateValueInAllowedList(
 		varSchema,
 		varMap,
 		schema.VariableTypeInteger,
@@ -267,21 +270,22 @@ func validateCoreFloatVariable(
 	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
-) error {
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCoreFloatVariableAllowedValues(
 			ctx, varName, varSchema, varMap, params,
 		)
 
 		if err != nil {
-			return err
+			return diagnostics, err
 		}
 	}
 
 	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
 	if varSchema.Default != nil && varSchema.Default.FloatValue == nil {
-		return errVariableInvalidDefaultValue(
+		return diagnostics, errVariableInvalidDefaultValue(
 			schema.VariableTypeFloat,
 			varName,
 			varSchema.Default,
@@ -296,11 +300,11 @@ func validateCoreFloatVariable(
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
 	if validateRuntimeParams && finalValue == nil {
-		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
+		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if validateRuntimeParams && finalValue.FloatValue == nil {
-		return errVariableInvalidOrMissing(
+		return diagnostics, errVariableInvalidOrMissing(
 			schema.VariableTypeFloat,
 			varName,
 			finalValue,
@@ -308,7 +312,7 @@ func validateCoreFloatVariable(
 		)
 	}
 
-	return validateValueInAllowedList(
+	return diagnostics, validateValueInAllowedList(
 		varSchema,
 		varMap,
 		schema.VariableTypeFloat,
@@ -367,9 +371,10 @@ func validateCoreBooleanVariable(
 	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	validateRuntimeParams bool,
-) error {
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
 	if len(varSchema.AllowedValues) > 0 {
-		return errVariableInvalidAllowedValuesNotSupported(
+		return diagnostics, errVariableInvalidAllowedValuesNotSupported(
 			schema.VariableTypeBoolean,
 			varName,
 			getVarSourceMeta(varMap, varName),
@@ -379,7 +384,7 @@ func validateCoreBooleanVariable(
 	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
 	if varSchema.Default != nil && varSchema.Default.BoolValue == nil {
-		return errVariableInvalidDefaultValue(
+		return diagnostics, errVariableInvalidDefaultValue(
 			schema.VariableTypeBoolean,
 			varName,
 			varSchema.Default,
@@ -396,11 +401,11 @@ func validateCoreBooleanVariable(
 	}
 
 	if validateRuntimeParams && value == nil {
-		return errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
+		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
 	if validateRuntimeParams && value.BoolValue == nil {
-		return errVariableInvalidOrMissing(
+		return diagnostics, errVariableInvalidOrMissing(
 			schema.VariableTypeBoolean,
 			varName,
 			value,
@@ -408,7 +413,7 @@ func validateCoreBooleanVariable(
 		)
 	}
 
-	return nil
+	return diagnostics, nil
 }
 
 func validateValueInAllowedList(

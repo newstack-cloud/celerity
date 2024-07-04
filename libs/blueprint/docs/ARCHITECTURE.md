@@ -28,6 +28,8 @@ and should be implemented by applications or other helper libraries that extend 
 
 Authentication and authorisation is out of scope for this library and should be implemented by applications or helper libraries that extend the blueprint framework.
 
+_The following sections are interfaces for the high level components of the blueprint framework, you can find deeper documentation about lower level components like "Resource" or "CustomVariableType" in the [go docs](https://pkg.go.dev/github.com/two-hundred/celerity/libs/blueprint) and in the [Celerity docs](https://www.celerityframework.com/docs/blueprint/intro)._
+
 ## Loader (container.Loader)
 
 ```go
@@ -43,7 +45,7 @@ type Loader interface {
         ctx context.Context,
         blueprintSpecFile string,
         params bpcore.BlueprintParams,
-    ) (links.SpecLinkInfo, error)
+    ) (links.SpecLinkInfo, []*core.Diagnostic, error)
 
     LoadString(
         ctx context.Context,
@@ -57,7 +59,7 @@ type Loader interface {
         blueprintSpec string,
         inputFormat schema.SpecFormat,
         params bpcore.BlueprintParams,
-    ) (links.SpecLinkInfo, error)
+    ) (links.SpecLinkInfo, []*core.Diagnostic, error)
 
     LoadFromSchema(
         ctx context.Context,
@@ -69,7 +71,7 @@ type Loader interface {
         ctx context.Context,
         blueprintSchema *schema.Blueprint,
         params bpcore.BlueprintParams,
-    ) (links.SpecLinkInfo, error)
+    ) (links.SpecLinkInfo, []*core.Diagnostic, error)
 }
 ```
 
@@ -109,6 +111,8 @@ type BlueprintContainer interface {
     ) error
 
     SpecLinkInfo() links.SpecLinkInfo
+
+    Diagnostics() []*core.Diagnostic
 }
 ```
 
