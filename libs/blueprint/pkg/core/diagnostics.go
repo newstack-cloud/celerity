@@ -1,6 +1,9 @@
 package core
 
-import "github.com/two-hundred/celerity/libs/blueprint/pkg/source"
+import (
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
+)
 
 // Diagnostic provides a warning or informational diagnostic for a blueprint.
 type Diagnostic struct {
@@ -19,6 +22,12 @@ type Diagnostic struct {
 type DiagnosticLevel int
 
 const (
+	// DiagnosticLevelError should be used for diagnostics that point out
+	// errors in a blueprint.
+	// This is not solely used as a source of errors, this should be combined
+	// with unpacking a returned error to produce a set of error diagnostics
+	// for tools that report diagnostics. (e.g. language servers)
+	DiagnosticLevelError DiagnosticLevel = 1
 	// DiagnosticLevelWarning should be used for diagnostics that point out
 	// potential issues that may occur when executing a blueprint.
 	DiagnosticLevelWarning DiagnosticLevel = 2
@@ -34,4 +43,10 @@ const (
 type DiagnosticRange struct {
 	Start *source.Meta
 	End   *source.Meta
+	// When the diagnostic is concerning contents of a ${..} substitution,
+	// depending on the context, the column may not be accurate,
+	// this gives you the option to ignore approximate columns in contexts
+	// where they are likely to cause confusion for the end-user.
+	// (e.g. language server diagnostics for a code editor)
+	ColumnAccuracy *substitutions.ColumnAccuracy
 }

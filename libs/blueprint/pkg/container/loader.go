@@ -65,10 +65,10 @@ type Loader interface {
 	// Provider and blueprint variables can be provided for enhanced
 	// validation that also checks variables.
 	//
-	// This also returns validation diagnostics for warning and info level
+	// This also returns validation diagnostics for error, warning and info level
 	// diagnostics that point out potential issues that may occur when executing
-	// a blueprint. Diagnostics do not include errors, errors should be unpacked from
-	// the returned error.
+	// a blueprint. Diagnostics do not include all errors, errors should be unpacked from
+	// the returned error in addition to the diagnostics.
 	ValidateString(
 		ctx context.Context,
 		blueprintSpec string,
@@ -95,10 +95,10 @@ type Loader interface {
 	// Provider and blueprint variables can be provided for enhanced
 	// validation that also checks variables.
 	//
-	// This also returns validation diagnostics for warning and info level
+	// This also returns validation diagnostics for error, warning and info level
 	// diagnostics that point out potential issues that may occur when executing
-	// a blueprint. Diagnostics do not include errors, errors should be unpacked from
-	// the returned error.
+	// a blueprint. Diagnostics do not include all errors, errors should be unpacked from
+	// the returned error in addition to the diagnostics.
 	ValidateFromSchema(
 		ctx context.Context,
 		blueprintSchema *schema.Blueprint,
@@ -304,9 +304,14 @@ func (l *defaultLoader) loadSpec(
 		return nil, diagnostics, err
 	}
 
-	// todo: if !l.transformSpec, instead of collecting transformers,
-	// apply some validation to get diagnostics about non-standard transformers
+	// Apply some validation to get diagnostics about non-standard transformers
 	// that may not be present at runtime.
+	var transformDiagnostics []*bpcore.Diagnostic
+	transformDiagnostics, err = l.validateTransforms(ctx, blueprintSchema)
+	diagnostics = append(diagnostics, transformDiagnostics...)
+	if err != nil {
+		return nil, diagnostics, err
+	}
 
 	if !l.transformSpec {
 		return &internalBlueprintSpec{
@@ -374,6 +379,10 @@ func (l *defaultLoader) collectTransformers(schema *schema.Blueprint) ([]transfo
 
 func (l *defaultLoader) validateBlueprint(ctx context.Context, bpSchema *schema.Blueprint) ([]*bpcore.Diagnostic, error) {
 	return validation.ValidateBlueprint(ctx, bpSchema)
+}
+
+func (l *defaultLoader) validateTransforms(ctx context.Context, bpSchema *schema.Blueprint) ([]*bpcore.Diagnostic, error) {
+	return validation.ValidateTransforms(ctx, bpSchema, l.transformSpec)
 }
 
 func (l *defaultLoader) validateVariables(
@@ -589,7 +598,7 @@ func (l *defaultLoader) ValidateString(
 	if err != nil {
 		return nil, nil, err
 	}
-	return container.SpecLinkInfo(), []*bpcore.Diagnostic{}, nil
+	return container.SpecLinkInfo(), container.Diagnostics(), nil
 }
 
 func (l *defaultLoader) LoadFromSchema(

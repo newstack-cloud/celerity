@@ -39,8 +39,8 @@ type BlueprintContainer interface {
 	// Diagnostics returns warning and informational diagnostics for the loaded blueprint
 	// that point out potential issues that may occur when executing
 	// a blueprint.
-	// These diagnostics do not contain errors, the error returned on failure to load a blueprint
-	// should be unpacked to get the precise location and information about the reason loading the
+	// These diagnostics can contain errors, however, the error returned on failure to load a blueprint
+	// should also be unpacked to get the precise location and information about the reason loading the
 	// blueprint failed.
 	Diagnostics() []*core.Diagnostic
 }
@@ -253,5 +253,5 @@ func (c *defaultBlueprintContainer) SpecLinkInfo() links.SpecLinkInfo {
 }
 
 func (c *defaultBlueprintContainer) Diagnostics() []*core.Diagnostic {
-	return []*core.Diagnostic{}
+	return c.diagnostics
 }
