@@ -7,7 +7,21 @@ import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
+	"github.com/two-hundred/celerity/libs/blueprint/pkg/substitutions"
 )
+
+// ValidateVariableName checks the validity of a variable name,
+// primarily making sure that it does not contain any substitutions
+// as per the spec.
+func ValidateVariableName(mappingName string, varMap *schema.VariableMap) error {
+	if substitutions.ContainsSubstitution(mappingName) {
+		return errVariableNameContainsSubstitution(
+			mappingName,
+			getVarSourceMeta(varMap, mappingName),
+		)
+	}
+	return nil
+}
 
 // ValidateCoreVariable deals with validating a blueprint variable
 // against the supported core scalar variable types in the blueprint

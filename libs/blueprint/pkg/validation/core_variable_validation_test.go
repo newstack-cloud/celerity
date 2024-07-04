@@ -267,6 +267,35 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 	c.Assert(err, IsNil)
 }
 
+func (s *CoreVariableValidationTestSuite) Test_reports_error_when_substitution_provided_in_variable_name(c *C) {
+	variableSchema := &schema.Variable{
+		Type:        schema.VariableTypeString,
+		Description: "The region to deploy the blueprint resources to.",
+	}
+	varMap := &schema.VariableMap{
+		Values: map[string]*schema.Variable{
+			"${variables.region}": variableSchema,
+		},
+		SourceMeta: map[string]*source.Meta{
+			"${variables.region}": {
+				Line:   1,
+				Column: 1,
+			},
+		},
+	}
+	err := ValidateVariableName("${variables.region}", varMap)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVariable)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: ${..} substitutions can not be used in variable names, "+
+			"found in variable \"${variables.region}\"",
+	)
+}
+
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_string_value_is_provided(c *C) {
 	invalidValue := 4391
 	params := &testBlueprintParams{

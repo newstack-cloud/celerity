@@ -109,7 +109,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_error_for_sub_usage_in_trans
 	c.Assert(diagnostics, DeepEquals, []*core.Diagnostic{
 		{
 			Level:   core.DiagnosticLevelError,
-			Message: "A ${..} substitution can not be used in a transform.",
+			Message: "${..} substitutions can not be used in a transform.",
 			Range: &core.DiagnosticRange{
 				Start: &source.Meta{
 					Line:   2,

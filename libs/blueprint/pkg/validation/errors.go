@@ -78,6 +78,22 @@ func errBlueprintUnsupportedVersion(version string) error {
 	}
 }
 
+func errVariableNameContainsSubstitution(
+	varName string,
+	varSourceMeta *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(varSourceMeta)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidVariable,
+		Err: fmt.Errorf(
+			"${..} substitutions can not be used in variable names, found in variable \"%s\"",
+			varName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errVariableInvalidDefaultValue(
 	varType schema.VariableType,
 	varName string,

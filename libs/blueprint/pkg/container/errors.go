@@ -100,12 +100,14 @@ func errUnsupportedSpecFileExtension(filePath string) error {
 // 	}
 // }
 
-func errVariableValidationError(errorMap map[string]error) error {
-	errCount := len(errorMap)
+func errVariableValidationError(errorMap map[string][]error) error {
+	errs := flattenErrorMap(errorMap)
+	errCount := len(errs)
+
 	return &errors.LoadError{
 		ReasonCode:  ErrorReasonCodeVariableValidationErrors,
 		Err:         fmt.Errorf("validation failed due to issues with %d variables in the spec", errCount),
-		ChildErrors: core.MapToSlice(errorMap),
+		ChildErrors: errs,
 	}
 }
 
@@ -148,4 +150,12 @@ func errTransformerMissing(transformer string, line *int, column *int) error {
 		Line:   line,
 		Column: column,
 	}
+}
+
+func flattenErrorMap(errorMap map[string][]error) []error {
+	errs := []error{}
+	for _, errSlice := range errorMap {
+		errs = append(errs, errSlice...)
+	}
+	return errs
 }

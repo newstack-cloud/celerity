@@ -397,22 +397,31 @@ func (l *defaultLoader) validateVariables(
 
 	// To be as useful as possible, we'll collect and
 	// report issues for all the problematic variables.
-	variableErrors := map[string]error{}
+	variableErrors := map[string][]error{}
 	for name, varSchema := range bpSchema.Variables.Values {
+		currentVarErrs := []error{}
+		err := validation.ValidateVariableName(name, bpSchema.Variables)
+		if err != nil {
+			currentVarErrs = append(currentVarErrs, err)
+		}
 		if core.SliceContains(schema.CoreVariableTypes, varSchema.Type) {
 			coreVarDiagnostics, err := validation.ValidateCoreVariable(
 				ctx, name, varSchema, bpSchema.Variables, params, l.validateRuntimeValues,
 			)
 			if err != nil {
-				variableErrors[name] = err
+				currentVarErrs = append(currentVarErrs, err)
 			}
 			diagnostics = append(diagnostics, coreVarDiagnostics...)
 		} else {
 			customVarDiagnostics, err := l.validateCustomVariableType(ctx, name, varSchema, bpSchema.Variables, params)
 			if err != nil {
-				variableErrors[name] = err
+				currentVarErrs = append(currentVarErrs, err)
 			}
 			diagnostics = append(diagnostics, customVarDiagnostics...)
+		}
+
+		if len(currentVarErrs) > 0 {
+			variableErrors[name] = currentVarErrs
 		}
 	}
 

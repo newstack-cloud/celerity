@@ -50,7 +50,7 @@ func validateTransform(
 	if substitutions.ContainsSubstitution(transform) {
 		*diagnostics = append(*diagnostics, &bpcore.Diagnostic{
 			Level:   bpcore.DiagnosticLevelError,
-			Message: "A ${..} substitution can not be used in a transform.",
+			Message: "${..} substitutions can not be used in a transform.",
 			Range:   diagnosticRangeFromTransform(transformIndex, blueprint),
 		})
 		return
