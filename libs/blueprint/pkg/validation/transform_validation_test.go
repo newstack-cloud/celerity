@@ -54,7 +54,6 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_and_warnings_for_inva
 	}
 	diagnostics, err := ValidateTransforms(context.Background(), blueprint, false)
 	c.Assert(err, IsNil)
-	c.Assert(diagnostics, HasLen, 2)
 	c.Assert(diagnostics, DeepEquals, []*core.Diagnostic{
 		{
 			Level:   core.DiagnosticLevelError,
@@ -81,6 +80,43 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_and_warnings_for_inva
 				},
 				End: &source.Meta{
 					Line:   4,
+					Column: 1,
+				},
+			},
+		},
+	})
+}
+
+func (s *BlueprintValidationTestSuite) Test_reports_error_for_sub_usage_in_transform(c *C) {
+	blueprint := &schema.Blueprint{
+		Version: Version2023_04_20,
+		Transform: &schema.TransformValueWrapper{
+			Values: []string{TransformCelerity2024_09_01, "${variables.transform1}"},
+			SourceMeta: []*source.Meta{
+				{
+					Line:   1,
+					Column: 1,
+				},
+				{
+					Line:   2,
+					Column: 1,
+				},
+			},
+		},
+	}
+	diagnostics, err := ValidateTransforms(context.Background(), blueprint, false)
+	c.Assert(err, IsNil)
+	c.Assert(diagnostics, DeepEquals, []*core.Diagnostic{
+		{
+			Level:   core.DiagnosticLevelError,
+			Message: "A ${..} substitution can not be used in a transform.",
+			Range: &core.DiagnosticRange{
+				Start: &source.Meta{
+					Line:   2,
+					Column: 1,
+				},
+				End: &source.Meta{
+					Line:   3,
 					Column: 1,
 				},
 			},

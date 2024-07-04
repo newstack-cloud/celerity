@@ -1,6 +1,8 @@
 package substitutions
 
 import (
+	"strings"
+
 	"github.com/two-hundred/celerity/libs/blueprint/pkg/source"
 	"gopkg.in/yaml.v3"
 )
@@ -11,7 +13,6 @@ import (
 //
 // For "literal" style blocks, "|\s*\n" must be accounted for.
 // For "folded" style blocks, ">\s*\n" must be accounted for.
-
 func DetermineYAMLSourceStartMeta(node *yaml.Node, sourceMeta *source.Meta) *source.Meta {
 	if node.Kind != yaml.ScalarNode {
 		return sourceMeta
@@ -32,4 +33,11 @@ func DetermineYAMLSourceStartMeta(node *yaml.Node, sourceMeta *source.Meta) *sou
 	}
 
 	return sourceMeta
+}
+
+// ContainsSubstitution checks if a string contains a ${..} substitution.
+func ContainsSubstitution(str string) bool {
+	openIndex := strings.Index(str, "${")
+	closeIndex := strings.Index(str, "}")
+	return openIndex > -1 && closeIndex > openIndex
 }
