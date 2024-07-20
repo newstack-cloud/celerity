@@ -32,12 +32,11 @@ lint_project tools/blueprint-ls
 lint_project apps/api
 lint_project apps/cli
 
-lint_project runtime/core
-lint_project runtime/go
-lint_project runtime/java
-lint_project runtime/nodejs
-lint_project runtime/python
-lint_project runtime/rust
+lint_project apps/runtime/core
+lint_project apps/runtime/csharp
+lint_project apps/runtime/java
+lint_project apps/runtime/nodejs
+lint_project apps/runtime/python
 
 lint_project validators/go
 lint_project validators/java
