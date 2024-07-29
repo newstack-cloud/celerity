@@ -26,8 +26,22 @@ jobs:
         run: rustup update stable
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Use Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip' # caching pip dependencies
+      # Python dependencies are required to run test service_test_tools.py script
+      # that runs the integration tests.
+      - run: pip install -r requirements.txt
+        working-directory: ${{env.working-directory}}
       - name: Run tests
-        run: PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps
+        run: |
+          set -o allexport
+          source .env.test
+          set +o allexport
+          python scripts/package-test-tools.py --localdeps
+        working-directory: ${{env.working-directory}}
       - name: Upload coverage to Codecov for `runtime-lib-blueprint-config-parser`
         uses: codecov/codecov-action@v3
         with:
