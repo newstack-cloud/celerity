@@ -44,6 +44,15 @@ Copy `.vscode/settings.json.example` to `.vscode/settings.json` and set `python.
 PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps
 ```
 
+## Test harness dependencies
+
+Every time the dependencies in the Pipfile or Pipfile.lock are updated, the test harness `requirements.txt` file must be updated to reflect these changes.
+This is because Pipenv is not used in the CI environments.
+
+```bash
+pipenv requirements > requirements.txt
+```
+
 ## Releasing
 
 To release a new version of the library, you need to create a new tag and push it to the repository.
