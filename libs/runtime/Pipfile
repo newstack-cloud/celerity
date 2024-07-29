@@ -8,8 +8,6 @@ boto3 = "*"
 boto3-type-annotations = "*"
 aws-xray-sdk = "*"
 nanoid = "*"
-
-[dev-packages]
 pylint = "*"
 autopep8 = "*"
 mypy = "*"
