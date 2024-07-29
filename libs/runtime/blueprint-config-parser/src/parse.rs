@@ -1,5 +1,6 @@
 use std::fmt;
 use std::fs::read_to_string;
+use std::marker::PhantomData;
 use std::num::ParseFloatError;
 use std::{fs::File, io::BufReader};
 
@@ -58,6 +59,40 @@ where
         ));
     }
     Ok(version.to_string())
+}
+
+/// Deserializes a string or an array of strings.
+/// This is required for blueprint config fields such as transform
+/// which can be a string or an array of strings in its serialized form.
+pub fn deserialize_optional_string_or_vec<'de, D>(d: D) -> Result<Option<Vec<String>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct StringOrVec(PhantomData<Vec<String>>);
+
+    impl<'de> de::Visitor<'de> for StringOrVec {
+        type Value = Vec<String>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a string or an array of strings")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(vec![value.to_string()])
+        }
+
+        fn visit_seq<S>(self, visitor: S) -> Result<Self::Value, S::Error>
+        where
+            S: de::SeqAccess<'de>,
+        {
+            Deserialize::deserialize(de::value::SeqAccessDeserializer::new(visitor))
+        }
+    }
+
+    d.deserialize_any(StringOrVec(PhantomData)).map(Some)
 }
 
 /// Provides an error type for parsing

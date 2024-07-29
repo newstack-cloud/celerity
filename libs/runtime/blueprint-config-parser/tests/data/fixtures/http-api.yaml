@@ -26,7 +26,7 @@ resources:
         maxAge: 3600
       domain:
         domainName: "api.example.com"
-        basePath:
+        basePaths:
           - "/"
         normalizeBasePath: false
         certificateId: "${variables.certificateId}"

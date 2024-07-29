@@ -23,6 +23,7 @@ pub const CELERITY_HANDLER_RESOURCE_TYPE: &str = "celerity/handler";
 pub struct BlueprintConfig {
     #[serde(deserialize_with = "crate::parse::deserialize_version")]
     pub version: String,
+    #[serde(deserialize_with = "crate::parse::deserialize_optional_string_or_vec")]
     pub transform: Option<Vec<String>>,
     pub variables: Option<HashMap<String, BlueprintVariable>>,
     pub resources: HashMap<String, RuntimeBlueprintResource>,
@@ -87,7 +88,7 @@ pub enum BlueprintScalarValue {
 /// that are used in the blueprint configuration.
 /// Resource types that are not recognised by the runtime
 /// will be ignored.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct RuntimeBlueprintResource {
     #[serde(rename = "type")]
     pub resource_type: CelerityResourceType,
@@ -171,6 +172,7 @@ impl Default for BlueprintLinkSelector {
 /// This is specific to resource types recognised
 /// by the Celerity runtime.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(untagged)]
 pub enum CelerityResourceSpec {
     Handler(CelerityHandlerSpec),
     Api(CelerityApiSpec),
@@ -293,6 +295,7 @@ pub enum CelerityApiProtocol {
 /// CORS configuration for a Celerity API resource which can be
 /// a string or detailed configuration.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(untagged)]
 pub enum CelerityApiCors {
     Str(String),
     CorsConfiguration(CelerityApiCorsConfiguration),
@@ -426,6 +429,7 @@ pub enum CelerityApiAuthGuardType {
 /// in a Celerity API resource.
 /// A value would be an API key or JWT.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(untagged)]
 pub enum CelerityApiAuthGuardValueSource {
     Str(String),
     ValueSourceConfiguration(ValueSourceConfiguration),

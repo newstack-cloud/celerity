@@ -209,7 +209,6 @@ fn validate_resource_definition(
     resource_name: &str,
     value_map: &yaml_rust2::yaml::Hash,
 ) -> Result<RuntimeBlueprintResource, BlueprintParseError> {
-    println!("Resource name: {}", resource_name);
     let mut blueprint_resource = RuntimeBlueprintResource::default();
 
     // Make sure the resource type is known before validating the spec.
@@ -228,8 +227,6 @@ fn validate_resource_definition(
             resource_name,
         )))?;
     }
-
-    println!("Resource type valid {:?}", blueprint_resource);
 
     for (key, value) in value_map {
         if let yaml_rust2::Yaml::String(key_str) = key {
@@ -976,7 +973,7 @@ fn validate_celerity_api_domain(
                         )))?
                     }
                 }
-                "basePath" => {
+                "basePaths" => {
                     if let yaml_rust2::Yaml::Array(value_arr) = value {
                         let mut base_paths = Vec::new();
                         for item in value_arr {
