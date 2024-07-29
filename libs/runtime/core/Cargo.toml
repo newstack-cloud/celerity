@@ -1,0 +1,8 @@
+[package]
+name = "celerity_runtime_core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.81"
+tokio = { version = "1.38.1", features = ["full"] }
