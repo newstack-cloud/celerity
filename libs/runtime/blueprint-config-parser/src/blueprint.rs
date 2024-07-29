@@ -399,7 +399,7 @@ pub struct CelerityApiAuthGuard {
 impl Default for CelerityApiAuthGuard {
     fn default() -> Self {
         CelerityApiAuthGuard {
-            guard_type: CelerityApiAuthGuardType::Jwt,
+            guard_type: CelerityApiAuthGuardType::NoGuardType,
             issuer: None,
             token_source: None,
             audience: None,
@@ -418,6 +418,8 @@ pub enum CelerityApiAuthGuardType {
     ApiKey,
     #[serde(rename = "custom")]
     Custom,
+    #[serde(rename = "noGuardType")]
+    NoGuardType,
 }
 
 /// Value source for authorization configuration

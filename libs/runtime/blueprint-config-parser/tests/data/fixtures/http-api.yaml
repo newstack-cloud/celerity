@@ -36,6 +36,7 @@ resources:
         defaultGuard: "jwt"
         guards:
           jwt:
+            type: jwt
             issuer: "https://identity.twohundred.cloud/oauth2/v1/"
             tokenSource: "$.headers.Authorization"
             audience:

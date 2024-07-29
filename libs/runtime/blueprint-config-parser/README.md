@@ -1,5 +1,7 @@
 # celerity blueprint config parser
 
+[![codecov](https://codecov.io/gh/two-hundred/celerity/graph/badge.svg?token=u1SKOg58yo&flag=runtime-lib-blueprint-config-parser)](https://codecov.io/gh/two-hundred/celerity)
+
 This package provides a Rust parser runtime-specific configuration represented by a subset of a Celerity [blueprint](https://www.celerityframework.com/docs/blueprint/specification).
 
 This implementation is not an exact implementation of the blueprint specification but a simplified version that can be used to parse YAML or JSON blueprint files.

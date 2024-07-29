@@ -12,3 +12,4 @@ yaml-rust2 = "0.8.1"
 
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
+pretty_assertions = "1.4.0"

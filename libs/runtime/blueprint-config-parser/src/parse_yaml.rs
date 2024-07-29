@@ -895,7 +895,7 @@ fn validate_celerity_api_cors_config(
     for (key, value) in value_map {
         if let yaml_rust2::Yaml::String(key_str) = key {
             match key_str.as_str() {
-                "allow_credentials" => {
+                "allowCredentials" => {
                     if let yaml_rust2::Yaml::Boolean(value_bool) = value {
                         cors_config.allow_credentials = Some(*value_bool)
                     } else {
@@ -905,17 +905,27 @@ fn validate_celerity_api_cors_config(
                         )))?
                     }
                 }
-                "allow_origins" => {
+                "allowOrigins" => {
                     cors_config.allow_origins = validate_cors_item_array(value, "allow_origins")?
                 }
-                "allow_methods" => {
+                "allowMethods" => {
                     cors_config.allow_methods = validate_cors_item_array(value, "allow_methods")?
                 }
-                "allow_headers" => {
-                    cors_config.allow_methods = validate_cors_item_array(value, "allow_headers")?
+                "allowHeaders" => {
+                    cors_config.allow_headers = validate_cors_item_array(value, "allow_headers")?
                 }
-                "expose_headers" => {
+                "exposeHeaders" => {
                     cors_config.expose_headers = validate_cors_item_array(value, "expose_headers")?
+                }
+                "maxAge" => {
+                    if let yaml_rust2::Yaml::Integer(value_int) = value {
+                        cors_config.max_age = Some(*value_int)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected an integer for maxAge, found {:?}",
+                            value,
+                        )))?
+                    }
                 }
                 _ => (),
             }
@@ -1126,13 +1136,13 @@ fn validate_celerity_api_auth_guard(
     for (key, value) in value_map {
         if let yaml_rust2::Yaml::String(key_str) = key {
             match key_str.as_str() {
-                "guardType" => {
+                "type" => {
                     if let yaml_rust2::Yaml::String(value_str) = value {
                         guard.guard_type =
                             validate_celerity_api_auth_guard_type(value_str.clone())?;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for guardType, found {:?}",
+                            "expected a string for type, found {:?}",
                             value,
                         )))?
                     }
@@ -1206,6 +1216,13 @@ fn validate_celerity_api_auth_guard(
             }
         }
     }
+
+    if guard.guard_type == CelerityApiAuthGuardType::NoGuardType {
+        return Err(BlueprintParseError::YamlFormatError(
+            "type must be defined for an auth guard".to_string(),
+        ));
+    }
+
     Ok(guard)
 }
 
