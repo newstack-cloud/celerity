@@ -1,7 +1,7 @@
 use core::fmt;
 
 use serde::{
-    de::{self, MapAccess, SeqAccess, Visitor},
+    de::{self, MapAccess, Visitor},
     Deserialize, Deserializer,
 };
 
@@ -33,42 +33,6 @@ impl<'de> Deserialize<'de> for RuntimeBlueprintResource {
 struct ResourceVisitor;
 
 impl<'de> ResourceVisitor {
-    fn spec_from_resource_type_seq<V>(
-        &self,
-        resource_type: &CelerityResourceType,
-        seq: &mut V,
-    ) -> Result<CelerityResourceSpec, V::Error>
-    where
-        V: SeqAccess<'de>,
-    {
-        match resource_type {
-            CelerityResourceType::CelerityApi => {
-                let api_spec = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(2, self))?;
-                Ok(CelerityResourceSpec::Api(api_spec))
-            }
-            CelerityResourceType::CelerityConsumer => {
-                let consumer_spec = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(2, self))?;
-                Ok(CelerityResourceSpec::Consumer(consumer_spec))
-            }
-            CelerityResourceType::CeleritySchedule => {
-                let schedule_spec = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(2, self))?;
-                Ok(CelerityResourceSpec::Schedule(schedule_spec))
-            }
-            CelerityResourceType::CelerityHandler => {
-                let handler_spec = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(2, self))?;
-                Ok(CelerityResourceSpec::Handler(handler_spec))
-            }
-        }
-    }
-
     fn spec_from_resource_type_map<V>(
         &self,
         resource_type: &CelerityResourceType,
@@ -103,33 +67,6 @@ impl<'de> Visitor<'de> for ResourceVisitor {
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("struct RuntimeBlueprintResource")
-    }
-
-    fn visit_seq<V>(self, mut seq: V) -> Result<RuntimeBlueprintResource, V::Error>
-    where
-        V: SeqAccess<'de>,
-    {
-        let resource_type = seq
-            .next_element()?
-            .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-        let metadata = seq
-            .next_element()?
-            .ok_or_else(|| de::Error::invalid_length(1, &self))?;
-        let spec = self.spec_from_resource_type_seq(&resource_type, &mut seq)?;
-        let description = seq
-            .next_element()?
-            .ok_or_else(|| de::Error::invalid_length(3, &self))?;
-        let link_selector = seq
-            .next_element()?
-            .ok_or_else(|| de::Error::invalid_length(4, &self))?;
-
-        Ok(RuntimeBlueprintResource {
-            resource_type,
-            metadata,
-            spec,
-            description,
-            link_selector,
-        })
     }
 
     fn visit_map<V>(self, mut map: V) -> Result<RuntimeBlueprintResource, V::Error>
