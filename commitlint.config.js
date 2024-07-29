@@ -33,6 +33,7 @@ module.exports = {
         "runtime-java",
         "runtime-nodejs",
         "runtime-python",
+        "runtime-libs",
         "lib-rt-core",
         "lib-rt-adaptor-sls-funcs",
         "lib-rt-adaptor-sls-ws",
