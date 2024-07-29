@@ -1,0 +1,44 @@
+# This is the CI workflow for the Rust runtime libraries.
+name: Runtime Libraries CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the main branch
+on:
+  push:
+    branches: [ main ]
+    paths: 'libs/runtime/**'
+  pull_request:
+    branches: [ main ]
+    paths: 'libs/runtime/**'
+  workflow_dispatch:
+    inputs: {}
+
+jobs:
+  integrate:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./libs/runtime
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: rustup update stable
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Run tests
+        run: PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps
+      - name: Upload coverage to Codecov for `runtime-lib-blueprint-config-parser`
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: codecov.json
+          fail_ci_if_error: true
+          flags: runtime-lib-blueprint-config-parser
+      - name: Upload coverage to Codecov for `runtime-lib-core`
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: codecov.json
+          fail_ci_if_error: true
+          flags: runtime-lib-core
