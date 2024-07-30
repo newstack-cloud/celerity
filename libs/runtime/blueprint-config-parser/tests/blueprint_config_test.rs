@@ -240,11 +240,70 @@ fn produce_expected_error_for_invalid_variable_description_in_yaml_blueprint_con
 fn produce_expected_error_for_invalid_variable_description_in_json_blueprint_config() {
     let result =
         BlueprintConfig::from_json_file("tests/data/fixtures/invalid-variable-description.json");
-    println!("{:?}", result);
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err)) if err.to_string().contains(
             "invalid type: sequence, expected a string"
         )
     ));
+}
+
+#[test_log::test]
+fn produce_expected_error_for_invalid_secret_in_yaml_blueprint_config() {
+    let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-secret.yaml");
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::YamlFormatError(msg)) if msg == "expected a boolean for variable secret field, \
+        found String(\"Invalid secret value, boolean expected\")"
+    ));
+}
+
+#[test_log::test]
+fn produce_expected_error_for_invalid_secret_in_json_blueprint_config() {
+    let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-secret.json");
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::JsonError(err)) if err.to_string().contains(
+            "invalid type: string \"Invalid secret value, boolean expected\", expected a boolean"
+        )
+    ));
+}
+
+#[test_log::test]
+fn produce_expected_error_for_empty_variable_type_in_yaml_blueprint_config() {
+    let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/empty-variable-type.yaml");
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::YamlFormatError(msg)) if msg == "type must be provided in \\\"secretStoreId\\\" variable definition"
+    ));
+}
+
+#[test_log::test]
+fn produce_expected_error_for_empty_variable_type_in_json_blueprint_config() {
+    let result = BlueprintConfig::from_json_file("tests/data/fixtures/empty-variable-type.json");
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::ValidationError(msg))
+        if msg == "type must be provided in \\\"secretStoreId\\\" variable definition"
+    ));
+}
+
+#[test_log::test]
+fn skips_parsing_resource_due_to_invalid_resource_type_in_yaml_blueprint_config() {
+    let blueprint_config =
+        BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-resource-type.yaml").unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
+
+#[test_log::test]
+fn skips_parsing_resource_due_to_invalid_resource_type_in_json_blueprint_config() {
+    let blueprint_config =
+        BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-resource-type.json").unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
 }

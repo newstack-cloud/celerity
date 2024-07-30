@@ -7,6 +7,7 @@ use yaml_rust2::YamlLoader;
 
 use crate::blueprint::BlueprintConfig;
 use crate::parse_yaml::build_blueprint_config_from_yaml;
+use crate::validate_parsed::validate_blueprint_config;
 
 impl BlueprintConfig {
     /// Parses a Runtime-specific Blueprint
@@ -41,16 +42,6 @@ impl BlueprintConfig {
         let doc = &docs[0];
         build_blueprint_config_from_yaml(doc)
     }
-}
-
-fn validate_blueprint_config(blueprint: &BlueprintConfig) -> Result<(), BlueprintParseError> {
-    if blueprint.resources.is_empty() {
-        return Err(BlueprintParseError::ValidationError(
-            "at least one resource must be provided for a blueprint".to_string(),
-        ));
-    }
-
-    Ok(())
 }
 
 /// Provides an error type for parsing

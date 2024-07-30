@@ -13,6 +13,18 @@ variables:
     type: string
     description: "The ID of the event source for order events."
 
+  invoiceBucket:
+    type: string
+    description: "The name of the bucket to use for storing invoices."
+
+  orderDBStreamId:
+    type: string
+    description: "The ID of the database stream for order data."
+
+  invoiceEventStreamId:
+    type: string
+    description: "The ID of the data stream for invoice events."
+
 resources:
   ordersApi:
     type: "celerity/api"
@@ -110,3 +122,73 @@ resources:
       environmentVariables:
         LOG_LEVEL: "INFO"
         SECRET_STORE_ID: "${variables.secretStoreId}"
+
+  invoiceUploadHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Invoice Upload Handler
+    spec:
+      handlerName: Orders-InvoiceUploadHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.upload_invoice"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 60
+      tracingEnabled: true
+      environmentVariables:
+        LOG_LEVEL: "INFO"
+        SECRET_STORE_ID: "${variables.secretStoreId}"
+      events:
+        invoiceUpload:
+          sourceType: "objectStorage"
+          sourceConfiguration:
+            events: ["created"]
+            bucket: "${variables.invoiceBucket}"
+
+  orderDBStreamProcessor:
+    type: "celerity/handler"
+    metadata:
+      displayName: Order DB Stream Processor
+    spec:
+      handlerName: Orders-OrderDBStreamProcessor-v1
+      codeLocation: "./orders"
+      handler: "handlers.process_order_db_stream"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 60
+      tracingEnabled: true
+      environmentVariables:
+        LOG_LEVEL: "INFO"
+        SECRET_STORE_ID: "${variables.secretStoreId}"
+      events:
+        orderStream:
+          sourceType: "dbStream"
+          sourceConfiguration:
+            dbStreamId: "${variables.orderDBStreamId}"
+            batchSize: 10
+            partialFailures: true
+            startFromBeginning: false
+
+  invoiceEventStreamProcessor:
+    type: "celerity/handler"
+    metadata:
+      displayName: Invoice Event Stream Processor
+    spec:
+      handlerName: Orders-InvoiceEventStreamProcessor-v1
+      codeLocation: "./orders"
+      handler: "handlers.process_invoice_event_stream"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 60
+      tracingEnabled: true
+      environmentVariables:
+        LOG_LEVEL: "INFO"
+        SECRET_STORE_ID: "${variables.secretStoreId}"
+      events:
+        invoiceEventStream:
+          sourceType: "dataStream"
+          sourceConfiguration:
+            dataStreamId: "${variables.invoiceEventStreamId}"
+            batchSize: 10
+            partialFailures: true
+            startFromBeginning: false

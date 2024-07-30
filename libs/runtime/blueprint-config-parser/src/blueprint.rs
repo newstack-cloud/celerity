@@ -499,6 +499,7 @@ pub enum EventSourceType {
 /// This can be a configuration for an object storage,
 /// database stream or a data stream.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(untagged)]
 pub enum EventSourceConfiguration {
     ObjectStorage(ObjectStorageEventSourceConfiguration),
     DatabaseStream(DatabaseStreamSourceConfiguration),

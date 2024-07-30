@@ -12,6 +12,18 @@ expression: blueprint_config
       "type": "string",
       "description": "The ID of the certificate to use for the API domain."
     },
+    "invoiceBucket": {
+      "type": "string",
+      "description": "The name of the bucket to use for storing invoices."
+    },
+    "invoiceEventStreamId": {
+      "type": "string",
+      "description": "The ID of the data stream for invoice events."
+    },
+    "orderDBStreamId": {
+      "type": "string",
+      "description": "The ID of the database stream for order data."
+    },
     "orderEventsSourceId": {
       "type": "string",
       "description": "The ID of the event source for order events."
@@ -46,6 +58,66 @@ expression: blueprint_config
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
           "SECRET_STORE_ID": "${variables.secretStoreId}"
+        }
+      }
+    },
+    "invoiceEventStreamProcessor": {
+      "type": "celerity/handler",
+      "metadata": {
+        "displayName": "Invoice Event Stream Processor"
+      },
+      "spec": {
+        "handlerName": "Orders-InvoiceEventStreamProcessor-v1",
+        "codeLocation": "./orders",
+        "handler": "handlers.process_invoice_event_stream",
+        "runtime": "python3.12.x",
+        "memory": 1024,
+        "timeout": 60,
+        "tracingEnabled": true,
+        "environmentVariables": {
+          "LOG_LEVEL": "INFO",
+          "SECRET_STORE_ID": "${variables.secretStoreId}"
+        },
+        "events": {
+          "invoiceEventStream": {
+            "sourceType": "dataStream",
+            "sourceConfiguration": {
+              "batchSize": 10,
+              "dataStreamId": "${variables.invoiceEventStreamId}",
+              "partialFailures": true,
+              "startFromBeginning": false
+            }
+          }
+        }
+      }
+    },
+    "invoiceUploadHandler": {
+      "type": "celerity/handler",
+      "metadata": {
+        "displayName": "Invoice Upload Handler"
+      },
+      "spec": {
+        "handlerName": "Orders-InvoiceUploadHandler-v1",
+        "codeLocation": "./orders",
+        "handler": "handlers.upload_invoice",
+        "runtime": "python3.12.x",
+        "memory": 1024,
+        "timeout": 60,
+        "tracingEnabled": true,
+        "environmentVariables": {
+          "LOG_LEVEL": "INFO",
+          "SECRET_STORE_ID": "${variables.secretStoreId}"
+        },
+        "events": {
+          "invoiceUpload": {
+            "sourceType": "objectStorage",
+            "sourceConfiguration": {
+              "bucket": "${variables.invoiceBucket}",
+              "events": [
+                "created"
+              ]
+            }
+          }
         }
       }
     },
