@@ -35,6 +35,9 @@ jobs:
       # that runs the integration tests.
       - run: pip install -r requirements.txt
         working-directory: ${{env.working-directory}}
+      - name: Linting
+        run: ./scripts/lint.sh
+        working-directory: ${{env.working-directory}}
       - name: Run tests
         run: |
           set -o allexport
