@@ -99,14 +99,14 @@ resources:
         application: "orders"
       annotations:
         celerity.handler.consumer: true
-      spec:
-        handlerName: Orders-OrderEventsProcessor-v1
-        codeLocation: "./orders"
-        handler: "handlers.process_order_events"
-        runtime: "python3.12.x"
-        memory: 1024
-        timeout: 60
-        tracingEnabled: true
-        environmentVariables:
-          LOG_LEVEL: "INFO"
-          SECRET_STORE_ID: "${variables.secretStoreId}"
+    spec:
+      handlerName: Orders-OrderEventsProcessor-v1
+      codeLocation: "./orders"
+      handler: "handlers.process_order_events"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 60
+      tracingEnabled: true
+      environmentVariables:
+        LOG_LEVEL: "INFO"
+        SECRET_STORE_ID: "${variables.secretStoreId}"

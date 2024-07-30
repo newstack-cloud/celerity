@@ -12,10 +12,6 @@ expression: blueprint_config
       "type": "string",
       "description": "The ID of the certificate to use for the API domain."
     },
-    "orderEventsSourceId": {
-      "type": "string",
-      "description": "The ID of the event source for order events."
-    },
     "secretStoreId": {
       "type": "string",
       "description": "The ID of the secret store to use for storing secrets."
@@ -49,39 +45,23 @@ expression: blueprint_config
         }
       }
     },
-    "orderEvents": {
-      "type": "celerity/consumer",
-      "metadata": {
-        "displayName": "Order Events Consumer"
-      },
-      "spec": {
-        "sourceId": "${variables.orderEventsSourceId}",
-        "batchSize": 10,
-        "visibilityTimeout": 30,
-        "waitTimeSeconds": 2,
-        "partialFailures": true
-      },
-      "linkSelector": {
-        "byLabel": {
-          "application": "orders"
-        }
-      }
-    },
-    "orderEventsProcessor": {
+    "orderStreamHandler": {
       "type": "celerity/handler",
       "metadata": {
-        "displayName": "Order Events Processor",
+        "displayName": "Order Stream Handler",
         "annotations": {
-          "celerity.handler.consumer": true
+          "celerity.handler.guard.protectedBy": "jwtWebSocket",
+          "celerity.handler.websocket": true,
+          "celerity.handler.websocket.routeKey": "stream"
         },
         "labels": {
           "application": "orders"
         }
       },
       "spec": {
-        "handlerName": "Orders-OrderEventsProcessor-v1",
+        "handlerName": "Orders-OrderStreamHandler-v1",
         "codeLocation": "./orders",
-        "handler": "handlers.process_order_events",
+        "handler": "handlers.order_stream",
         "runtime": "python3.12.x",
         "memory": 1024,
         "timeout": 60,
@@ -99,7 +79,8 @@ expression: blueprint_config
       },
       "spec": {
         "protocols": [
-          "http"
+          "http",
+          "websocket"
         ],
         "cors": {
           "allowCredentials": true,
@@ -123,19 +104,40 @@ expression: blueprint_config
         "domain": {
           "domainName": "api.example.com",
           "basePaths": [
-            "/"
+            {
+              "protocol": "http",
+              "basePath": "/api"
+            },
+            {
+              "protocol": "websocket",
+              "basePath": "/ws"
+            }
           ],
           "normalizeBasePath": false,
           "certificateId": "${variables.certificateId}",
           "securityPolicy": "TLS_1_2"
         },
         "auth": {
-          "defaultGuard": "jwt",
+          "defaultGuard": "jwtHttp",
           "guards": {
-            "jwt": {
+            "jwtHttp": {
               "type": "jwt",
               "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
-              "tokenSource": "$.headers.Authorization",
+              "tokenSource": {
+                "protocol": "http",
+                "source": "$.headers.Authorization"
+              },
+              "audience": [
+                "https://identity.twohundred.cloud/api/manage/v1/"
+              ]
+            },
+            "jwtWebSocket": {
+              "type": "jwt",
+              "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
+              "tokenSource": {
+                "protocol": "websocket",
+                "source": "$.data.token"
+              },
               "audience": [
                 "https://identity.twohundred.cloud/api/manage/v1/"
               ]

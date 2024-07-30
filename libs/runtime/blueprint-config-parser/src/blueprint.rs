@@ -363,7 +363,7 @@ pub struct CelerityApiDomain {
     #[serde(rename = "domainName")]
     pub domain_name: String,
     #[serde(rename = "basePaths")]
-    pub base_paths: Vec<String>,
+    pub base_paths: Vec<CelerityApiBasePath>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "normalizeBasePath")]
     pub normalize_base_path: Option<bool>,
@@ -382,6 +382,34 @@ impl Default for CelerityApiDomain {
             normalize_base_path: None,
             certificate_id: "".to_string(),
             security_policy: None,
+        };
+    }
+}
+
+/// Base path configuration for a Celerity API resource which can be
+/// a string or detailed configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(untagged)]
+pub enum CelerityApiBasePath {
+    Str(String),
+    BasePathConfiguration(CelerityApiBasePathConfiguration),
+}
+
+/// Base path configuration for a Celerity API resource.
+/// This allows you to configure a base path for a specific
+/// protocol for an API.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct CelerityApiBasePathConfiguration {
+    pub protocol: CelerityApiProtocol,
+    #[serde(rename = "basePath")]
+    pub base_path: String,
+}
+
+impl Default for CelerityApiBasePathConfiguration {
+    fn default() -> Self {
+        return CelerityApiBasePathConfiguration {
+            protocol: CelerityApiProtocol::Http,
+            base_path: "".to_string(),
         };
     }
 }

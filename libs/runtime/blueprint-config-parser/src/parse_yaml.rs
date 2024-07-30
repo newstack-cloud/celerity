@@ -7,8 +7,9 @@ use crate::{
     blueprint::{
         BlueprintConfig, BlueprintLinkSelector, BlueprintResourceMetadata, BlueprintScalarValue,
         BlueprintVariable, CelerityApiAuth, CelerityApiAuthGuard, CelerityApiAuthGuardType,
-        CelerityApiAuthGuardValueSource, CelerityApiCors, CelerityApiCorsConfiguration,
-        CelerityApiDomain, CelerityApiDomainSecurityPolicy, CelerityApiProtocol, CelerityApiSpec,
+        CelerityApiAuthGuardValueSource, CelerityApiBasePath, CelerityApiBasePathConfiguration,
+        CelerityApiCors, CelerityApiCorsConfiguration, CelerityApiDomain,
+        CelerityApiDomainSecurityPolicy, CelerityApiProtocol, CelerityApiSpec,
         CelerityConsumerSpec, CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType,
         CelerityScheduleSpec, DataStreamSourceConfiguration, DatabaseStreamSourceConfiguration,
         EventConfiguration, EventSourceConfiguration, EventSourceType,
@@ -978,10 +979,14 @@ fn validate_celerity_api_domain(
                         let mut base_paths = Vec::new();
                         for item in value_arr {
                             if let yaml_rust2::Yaml::String(value_str) = item {
-                                base_paths.push(value_str.clone());
+                                base_paths.push(CelerityApiBasePath::Str(value_str.clone()));
+                            } else if let yaml_rust2::Yaml::Hash(value_map) = item {
+                                base_paths.push(CelerityApiBasePath::BasePathConfiguration(
+                                    validate_celerity_api_base_path_config(value_map)?,
+                                ));
                             } else {
                                 Err(BlueprintParseError::YamlFormatError(format!(
-                                    "expected a string for base path, found {:?}",
+                                    "expected a string or mapping for base path, found {:?}",
                                     item,
                                 )))?
                             }
@@ -1267,6 +1272,49 @@ fn validate_celerity_api_auth_value_source_config(
         }
     }
     Ok(value_source_config)
+}
+
+fn validate_celerity_api_base_path_config(
+    value_map: &yaml_rust2::yaml::Hash,
+) -> Result<CelerityApiBasePathConfiguration, BlueprintParseError> {
+    let mut base_path_config = CelerityApiBasePathConfiguration::default();
+    for (key, value) in value_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "protocol" => {
+                    if let yaml_rust2::Yaml::String(val_str) = value {
+                        match val_str.as_str() {
+                            "http" => base_path_config.protocol = CelerityApiProtocol::Http,
+                            "websocket" => {
+                                base_path_config.protocol = CelerityApiProtocol::WebSocket
+                            }
+                            _ => Err(BlueprintParseError::YamlFormatError(format!(
+                                "expected \\\"http\\\" or \\\"websocket\\\" for base path protocol, found {:?}",
+                                value,
+                            )))?,
+                        }
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected \\\"http\\\" or \\\"websocket\\\" for base path protocol, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "basePath" => {
+                    if let yaml_rust2::Yaml::String(val_str) = value {
+                        base_path_config.base_path = val_str.clone()
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for base path, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+    Ok(base_path_config)
 }
 
 fn validate_celerity_api_auth_guard_type(

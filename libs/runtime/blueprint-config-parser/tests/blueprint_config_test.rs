@@ -82,3 +82,13 @@ fn parses_combined_app_blueprint_config_from_json_file() {
         assert_json_snapshot!(blueprint_config);
     })
 }
+
+#[test_log::test]
+fn parses_hybrid_api_blueprint_config_from_yaml_file() {
+    let blueprint_config =
+        BlueprintConfig::from_yaml_file("tests/data/fixtures/hybrid-api.yaml").unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
