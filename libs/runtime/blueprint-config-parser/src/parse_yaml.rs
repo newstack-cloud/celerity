@@ -155,7 +155,7 @@ fn validate_variable_definition(
                 }
                 "secret" => {
                     if let yaml_rust2::Yaml::Boolean(value_bool) = value {
-                        blueprint_var.secret = Some(value_bool.clone())
+                        blueprint_var.secret = Some(*value_bool)
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
                             "expected a boolean for variable secret field, found {:?}",

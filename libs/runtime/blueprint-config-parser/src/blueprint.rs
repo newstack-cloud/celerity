@@ -164,18 +164,10 @@ impl Default for BlueprintResourceMetadata {
 
 /// This holds the configuration
 /// for a link selector in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct BlueprintLinkSelector {
     #[serde(rename = "byLabel")]
     pub by_label: HashMap<String, String>,
-}
-
-impl Default for BlueprintLinkSelector {
-    fn default() -> Self {
-        BlueprintLinkSelector {
-            by_label: HashMap::new(),
-        }
-    }
 }
 
 /// This holds the specification
@@ -235,7 +227,7 @@ impl Default for CelerityHandlerSpec {
 
 /// This holds the specification
 /// for an API resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityApiSpec {
     pub protocols: Vec<CelerityApiProtocol>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -247,18 +239,6 @@ pub struct CelerityApiSpec {
     #[serde(rename = "tracingEnabled")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tracing_enabled: Option<bool>,
-}
-
-impl Default for CelerityApiSpec {
-    fn default() -> Self {
-        CelerityApiSpec {
-            protocols: vec![],
-            cors: None,
-            domain: None,
-            auth: None,
-            tracing_enabled: None,
-        }
-    }
 }
 
 /// This holds the specification
@@ -328,7 +308,7 @@ pub enum CelerityApiCors {
 
 /// Detailed CORS configuration
 /// for a Celerity API resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityApiCorsConfiguration {
     #[serde(rename = "allowCredentials")]
     pub allow_credentials: Option<bool>,
@@ -344,21 +324,8 @@ pub struct CelerityApiCorsConfiguration {
     pub max_age: Option<i64>,
 }
 
-impl Default for CelerityApiCorsConfiguration {
-    fn default() -> Self {
-        CelerityApiCorsConfiguration {
-            allow_credentials: None,
-            allow_origins: None,
-            allow_methods: None,
-            allow_headers: None,
-            expose_headers: None,
-            max_age: None,
-        }
-    }
-}
-
 /// Domain configuration for a Celerity API resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityApiDomain {
     #[serde(rename = "domainName")]
     pub domain_name: String,
@@ -372,18 +339,6 @@ pub struct CelerityApiDomain {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "securityPolicy")]
     pub security_policy: Option<CelerityApiDomainSecurityPolicy>,
-}
-
-impl Default for CelerityApiDomain {
-    fn default() -> Self {
-        return CelerityApiDomain {
-            domain_name: "".to_string(),
-            base_paths: vec![],
-            normalize_base_path: None,
-            certificate_id: "".to_string(),
-            security_policy: None,
-        };
-    }
 }
 
 /// Base path configuration for a Celerity API resource which can be
@@ -407,10 +362,10 @@ pub struct CelerityApiBasePathConfiguration {
 
 impl Default for CelerityApiBasePathConfiguration {
     fn default() -> Self {
-        return CelerityApiBasePathConfiguration {
+        CelerityApiBasePathConfiguration {
             protocol: CelerityApiProtocol::Http,
             base_path: "".to_string(),
-        };
+        }
     }
 }
 
@@ -424,21 +379,12 @@ pub enum CelerityApiDomainSecurityPolicy {
 }
 
 /// Authentication configuration for a Celerity API resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityApiAuth {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "defaultGuard")]
     pub default_guard: Option<String>,
     pub guards: HashMap<String, CelerityApiAuthGuard>,
-}
-
-impl Default for CelerityApiAuth {
-    fn default() -> Self {
-        CelerityApiAuth {
-            default_guard: None,
-            guards: HashMap::new(),
-        }
-    }
 }
 
 /// Guard configuration that provides access control
@@ -505,10 +451,10 @@ pub struct ValueSourceConfiguration {
 
 impl Default for ValueSourceConfiguration {
     fn default() -> Self {
-        return ValueSourceConfiguration {
+        ValueSourceConfiguration {
             protocol: CelerityApiProtocol::Http,
             source: "".to_string(),
-        };
+        }
     }
 }
 
