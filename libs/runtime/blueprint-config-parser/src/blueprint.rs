@@ -74,6 +74,7 @@ impl Default for BlueprintVariable {
 /// This is used to define allowed and default values
 /// for a variable.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(untagged)]
 pub enum BlueprintScalarValue {
     Str(String),
     Int(i64),
@@ -187,7 +188,7 @@ pub enum CelerityResourceSpec {
 pub struct CelerityHandlerSpec {
     #[serde(rename = "handlerName")]
     pub handler_name: Option<String>,
-    #[serde(rename = "handlerType")]
+    #[serde(rename = "codeLocation")]
     pub code_location: String,
     pub handler: String,
     pub runtime: String,

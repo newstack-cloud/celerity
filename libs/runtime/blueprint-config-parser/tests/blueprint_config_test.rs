@@ -2,11 +2,11 @@ use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 
 use celerity_blueprint_config_parser::blueprint::{
-    BlueprintConfig, BlueprintLinkSelector, BlueprintResourceMetadata, CelerityApiAuth,
-    CelerityApiAuthGuard, CelerityApiAuthGuardType, CelerityApiAuthGuardValueSource,
-    CelerityApiCors, CelerityApiCorsConfiguration, CelerityApiDomain,
-    CelerityApiDomainSecurityPolicy, CelerityApiProtocol, CelerityApiSpec, CelerityResourceSpec,
-    CelerityResourceType, RuntimeBlueprintResource,
+    BlueprintConfig, BlueprintLinkSelector, BlueprintResourceMetadata, BlueprintScalarValue,
+    BlueprintVariable, CelerityApiAuth, CelerityApiAuthGuard, CelerityApiAuthGuardType,
+    CelerityApiAuthGuardValueSource, CelerityApiCors, CelerityApiCorsConfiguration,
+    CelerityApiDomain, CelerityApiDomainSecurityPolicy, CelerityApiProtocol, CelerityApiSpec,
+    CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType, RuntimeBlueprintResource,
 };
 
 #[test_log::test]
@@ -45,68 +45,145 @@ fn expected_http_api_blueprint_config() -> BlueprintConfig {
     return BlueprintConfig {
         version: "2023-04-20".to_string(),
         transform: Some(vec!["celerity-2024-07-22".to_string()]),
-        variables: None,
-        resources: HashMap::from([(
-            "ordersApi".to_string(),
-            RuntimeBlueprintResource {
-                resource_type: CelerityResourceType::CelerityApi,
-                metadata: BlueprintResourceMetadata {
-                    display_name: "Orders API".to_string(),
-                    annotations: None,
-                    labels: None,
+        variables: Some(HashMap::from([
+            (
+                "certificateId".to_string(),
+                BlueprintVariable {
+                    var_type: "string".to_string(),
+                    description: Some(
+                        "The ID of the certificate to use for the API domain.".to_string(),
+                    ),
+                    allowed_values: None,
+                    default: None,
+                    secret: None,
                 },
-                description: None,
-                link_selector: Some(BlueprintLinkSelector {
-                    by_label: HashMap::from([("application".to_string(), "orders".to_string())]),
-                }),
-                spec: CelerityResourceSpec::Api(CelerityApiSpec {
-                    protocols: vec![CelerityApiProtocol::Http],
-                    cors: Some(CelerityApiCors::CorsConfiguration(
-                        CelerityApiCorsConfiguration {
-                            allow_credentials: Some(true),
-                            allow_origins: Some(vec![
-                                "https://example.com".to_string(),
-                                "https://another.example.com".to_string(),
-                            ]),
-                            allow_methods: Some(vec!["GET".to_string(), "POST".to_string()]),
-                            allow_headers: Some(vec![
-                                "Content-Type".to_string(),
-                                "Authorization".to_string(),
-                            ]),
-                            expose_headers: Some(vec!["Content-Length".to_string()]),
-                            max_age: Some(3600),
-                        },
-                    )),
-                    domain: Some(CelerityApiDomain {
-                        domain_name: "api.example.com".to_string(),
-                        base_paths: vec!["/".to_string()],
-                        normalize_base_path: Some(false),
-                        certificate_id: "${variables.certificateId}".to_string(),
-                        security_policy: Some(CelerityApiDomainSecurityPolicy::Tls1_2),
-                    }),
-                    tracing_enabled: Some(true),
-                    auth: Some(CelerityApiAuth {
-                        default_guard: Some("jwt".to_string()),
-                        guards: HashMap::from([(
-                            "jwt".to_string(),
-                            CelerityApiAuthGuard {
-                                guard_type: CelerityApiAuthGuardType::Jwt,
-                                issuer: Some(
-                                    "https://identity.twohundred.cloud/oauth2/v1/".to_string(),
-                                ),
-                                token_source: Some(CelerityApiAuthGuardValueSource::Str(
-                                    "$.headers.Authorization".to_string(),
-                                )),
-                                audience: Some(vec![
-                                    "https://identity.twohundred.cloud/api/manage/v1/".to_string(),
-                                ]),
-                                api_key_source: None,
-                            },
+            ),
+            (
+                "secretStoreId".to_string(),
+                BlueprintVariable {
+                    var_type: "string".to_string(),
+                    description: Some(
+                        "The ID of the secret store to use for storing secrets.".to_string(),
+                    ),
+                    allowed_values: None,
+                    default: None,
+                    secret: None,
+                },
+            ),
+        ])),
+        resources: HashMap::from([
+            (
+                "ordersApi".to_string(),
+                RuntimeBlueprintResource {
+                    resource_type: CelerityResourceType::CelerityApi,
+                    metadata: BlueprintResourceMetadata {
+                        display_name: "Orders API".to_string(),
+                        annotations: None,
+                        labels: None,
+                    },
+                    description: None,
+                    link_selector: Some(BlueprintLinkSelector {
+                        by_label: HashMap::from([(
+                            "application".to_string(),
+                            "orders".to_string(),
                         )]),
                     }),
-                }),
-            },
-        )]),
+                    spec: CelerityResourceSpec::Api(CelerityApiSpec {
+                        protocols: vec![CelerityApiProtocol::Http],
+                        cors: Some(CelerityApiCors::CorsConfiguration(
+                            CelerityApiCorsConfiguration {
+                                allow_credentials: Some(true),
+                                allow_origins: Some(vec![
+                                    "https://example.com".to_string(),
+                                    "https://another.example.com".to_string(),
+                                ]),
+                                allow_methods: Some(vec!["GET".to_string(), "POST".to_string()]),
+                                allow_headers: Some(vec![
+                                    "Content-Type".to_string(),
+                                    "Authorization".to_string(),
+                                ]),
+                                expose_headers: Some(vec!["Content-Length".to_string()]),
+                                max_age: Some(3600),
+                            },
+                        )),
+                        domain: Some(CelerityApiDomain {
+                            domain_name: "api.example.com".to_string(),
+                            base_paths: vec!["/".to_string()],
+                            normalize_base_path: Some(false),
+                            certificate_id: "${variables.certificateId}".to_string(),
+                            security_policy: Some(CelerityApiDomainSecurityPolicy::Tls1_2),
+                        }),
+                        tracing_enabled: Some(true),
+                        auth: Some(CelerityApiAuth {
+                            default_guard: Some("jwt".to_string()),
+                            guards: HashMap::from([(
+                                "jwt".to_string(),
+                                CelerityApiAuthGuard {
+                                    guard_type: CelerityApiAuthGuardType::Jwt,
+                                    issuer: Some(
+                                        "https://identity.twohundred.cloud/oauth2/v1/".to_string(),
+                                    ),
+                                    token_source: Some(CelerityApiAuthGuardValueSource::Str(
+                                        "$.headers.Authorization".to_string(),
+                                    )),
+                                    audience: Some(vec![
+                                        "https://identity.twohundred.cloud/api/manage/v1/"
+                                            .to_string(),
+                                    ]),
+                                    api_key_source: None,
+                                },
+                            )]),
+                        }),
+                    }),
+                },
+            ),
+            (
+                "getOrderHandler".to_string(),
+                RuntimeBlueprintResource {
+                    resource_type: CelerityResourceType::CelerityHandler,
+                    metadata: BlueprintResourceMetadata {
+                        display_name: "Get Order Handler".to_string(),
+                        labels: Some(HashMap::from([(
+                            "application".to_string(),
+                            "orders".to_string(),
+                        )])),
+                        annotations: Some(HashMap::from([
+                            (
+                                "celerity.handler.http".to_string(),
+                                BlueprintScalarValue::Bool(true),
+                            ),
+                            (
+                                "celerity.handler.http.method".to_string(),
+                                BlueprintScalarValue::Str("GET".to_string()),
+                            ),
+                            (
+                                "celerity.handler.http.path".to_string(),
+                                BlueprintScalarValue::Str("/orders/{orderId}".to_string()),
+                            ),
+                        ])),
+                    },
+                    spec: CelerityResourceSpec::Handler(CelerityHandlerSpec {
+                        handler_name: Some("Orders-GetOrderHandler-v1".to_string()),
+                        code_location: "./orders".to_string(),
+                        handler: "handlers.get_order".to_string(),
+                        runtime: "python3.12.x".to_string(),
+                        memory: Some(1024),
+                        timeout: Some(60),
+                        tracing_enabled: Some(true),
+                        environment_variables: Some(HashMap::from([
+                            ("LOG_LEVEL".to_string(), "INFO".to_string()),
+                            (
+                                "SECRET_STORE_ID".to_string(),
+                                "${variables.secretStoreId}".to_string(),
+                            ),
+                        ])),
+                        events: None,
+                    }),
+                    link_selector: None,
+                    description: None,
+                },
+            ),
+        ]),
     };
 }
 
