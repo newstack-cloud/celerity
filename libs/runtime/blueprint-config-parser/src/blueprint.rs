@@ -21,10 +21,12 @@ pub const CELERITY_HANDLER_RESOURCE_TYPE: &str = "celerity/handler";
 /// for the Celerity runtime in the form a blueprint.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct BlueprintConfig {
-    #[serde(deserialize_with = "crate::parse::deserialize_version")]
+    #[serde(deserialize_with = "crate::parse_helpers::deserialize_version")]
     pub version: String,
-    #[serde(deserialize_with = "crate::parse::deserialize_optional_string_or_vec")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(deserialize_with = "crate::parse_helpers::deserialize_optional_string_or_vec")]
     pub transform: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub variables: Option<HashMap<String, BlueprintVariable>>,
     pub resources: HashMap<String, RuntimeBlueprintResource>,
 }
@@ -49,10 +51,14 @@ impl Default for BlueprintConfig {
 pub struct BlueprintVariable {
     #[serde(rename = "type")]
     pub var_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "allowedValues")]
     pub allowed_values: Option<Vec<BlueprintScalarValue>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<BlueprintScalarValue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub secret: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 
@@ -95,7 +101,9 @@ pub struct RuntimeBlueprintResource {
     pub resource_type: CelerityResourceType,
     pub metadata: BlueprintResourceMetadata,
     pub spec: CelerityResourceSpec,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "linkSelector")]
     pub link_selector: Option<BlueprintLinkSelector>,
 }
@@ -138,7 +146,9 @@ pub enum CelerityResourceType {
 pub struct BlueprintResourceMetadata {
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<HashMap<String, BlueprintScalarValue>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub labels: Option<HashMap<String, String>>,
 }
 
@@ -186,18 +196,24 @@ pub enum CelerityResourceSpec {
 /// for a handler resource in the blueprint configuration.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CelerityHandlerSpec {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "handlerName")]
     pub handler_name: Option<String>,
     #[serde(rename = "codeLocation")]
     pub code_location: String,
     pub handler: String,
     pub runtime: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub memory: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "tracingEnabled")]
     pub tracing_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "environmentVariables")]
     pub environment_variables: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub events: Option<HashMap<String, EventConfiguration>>,
 }
 
@@ -222,10 +238,14 @@ impl Default for CelerityHandlerSpec {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CelerityApiSpec {
     pub protocols: Vec<CelerityApiProtocol>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cors: Option<CelerityApiCors>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub domain: Option<CelerityApiDomain>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub auth: Option<CelerityApiAuth>,
     #[serde(rename = "tracingEnabled")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tracing_enabled: Option<bool>,
 }
 
@@ -247,12 +267,16 @@ impl Default for CelerityApiSpec {
 pub struct CelerityConsumerSpec {
     #[serde(rename = "sourceId")]
     pub source_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "batchSize")]
     pub batch_size: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "visibilityTimeout")]
     pub visibility_timeout: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "waitTimeSeconds")]
     pub wait_time_seconds: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "partialFailures")]
     pub partial_failures: Option<bool>,
 }
@@ -340,10 +364,12 @@ pub struct CelerityApiDomain {
     pub domain_name: String,
     #[serde(rename = "basePaths")]
     pub base_paths: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "normalizeBasePath")]
     pub normalize_base_path: Option<bool>,
     #[serde(rename = "certificateId")]
     pub certificate_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "securityPolicy")]
     pub security_policy: Option<CelerityApiDomainSecurityPolicy>,
 }
@@ -372,6 +398,7 @@ pub enum CelerityApiDomainSecurityPolicy {
 /// Authentication configuration for a Celerity API resource.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CelerityApiAuth {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "defaultGuard")]
     pub default_guard: Option<String>,
     pub guards: HashMap<String, CelerityApiAuthGuard>,
@@ -392,10 +419,14 @@ impl Default for CelerityApiAuth {
 pub struct CelerityApiAuthGuard {
     #[serde(rename = "type")]
     pub guard_type: CelerityApiAuthGuardType,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub issuer: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "tokenSource")]
     pub token_source: Option<CelerityApiAuthGuardValueSource>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub audience: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "apiKeySource")]
     pub api_key_source: Option<CelerityApiAuthGuardValueSource>,
 }
@@ -532,12 +563,15 @@ pub enum ObjectStorageEventType {
 /// for a handler resource.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct DatabaseStreamSourceConfiguration {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "batchSize")]
     pub batch_size: Option<i64>,
     #[serde(rename = "dbStreamId")]
     pub db_stream_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "partialFailures")]
     pub partial_failures: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "startFromBeginning")]
     pub start_from_beginning: Option<bool>,
 }
@@ -557,12 +591,15 @@ impl Default for DatabaseStreamSourceConfiguration {
 /// for a handler resource.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct DataStreamSourceConfiguration {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "batchSize")]
     pub batch_size: Option<i64>,
     #[serde(rename = "dataStreamId")]
     pub data_stream_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "partialFailures")]
     pub partial_failures: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "startFromBeginning")]
     pub start_from_beginning: Option<bool>,
 }

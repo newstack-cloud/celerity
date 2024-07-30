@@ -7,7 +7,8 @@
 - [Pipenv](https://pypi.org/project/pipenv/) >=2022.8.5 - Python package manager for integration test harness
 - Docker Engine >=25.0.3 - For running integration test dependencies (Comes with Docker Desktop)
 - Docker Compose >=2.24.6 - For running integration test dependencies (Comes with Docker Desktop)
-- [grcov](https://crates.io/crates/cargo-llvm-cov) >=0.6.11 - For generating code coverage reports
+- [cargo-llvm-cov](https://crates.io/crates/cargo-llvm-cov) >=0.6.11 - For generating code coverage reports
+- [cargo-insta](https://crates.io/crates/cargo-insta) - For snapshot test reviews
 
 Package dependencies are managed with cargo and will be installed automatically when you first
 run tests.
@@ -34,6 +35,14 @@ This tool is used to generate accurate code coverage reports when running tests.
 cargo install cargo-llvm-cov
 ```
 
+### Install cargo-insta for snapshot test reviews
+
+This tool is used to provide an improved snapshot test review experience.
+
+```bash
+cargo install cargo-insta
+```
+
 ### VSCode settings (Skip if not using VSCode)
 
 Copy `.vscode/settings.json.example` to `.vscode/settings.json` and set `python.defaultInterpreterPath` to the absolute path of python in the virtualenv created by pipenv for running integration tests.
@@ -42,6 +51,15 @@ Copy `.vscode/settings.json.example` to `.vscode/settings.json` and set `python.
 
 ```bash
 PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps
+```
+
+### Reviewing snapshot tests
+
+When snapshot tests fail due to changes that you have made, you need to carefully review the changes before accepting them.
+`cargo-insta` provides a tool to review the changes and accept them if they are correct, this is to be used after a test run that failed due to snapshot changes.
+
+```bash
+cargo insta review
 ```
 
 ## Test harness dependencies
