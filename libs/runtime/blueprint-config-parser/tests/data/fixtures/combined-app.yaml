@@ -79,6 +79,8 @@ resources:
 
   orderEvents:
     type: "celerity/consumer"
+    metadata:
+      displayName: Order Events Consumer
     linkSelector:
       byLabel:
         application: "orders"

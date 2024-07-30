@@ -1,11 +1,13 @@
+---
+source: blueprint-config-parser/tests/blueprint_config_test.rs
+expression: blueprint_config
+---
 {
   "version": "2023-04-20",
-  "transform": "celerity-2024-07-22",
+  "transform": [
+    "celerity-2024-07-22"
+  ],
   "variables": {
-    "secretStoreId": {
-      "type": "string",
-      "description": "The ID of the secret store to use for storing secrets."
-    },
     "certificateId": {
       "type": "string",
       "description": "The ID of the certificate to use for the API domain."
@@ -13,64 +15,24 @@
     "orderEventsSourceId": {
       "type": "string",
       "description": "The ID of the event source for order events."
+    },
+    "secretStoreId": {
+      "type": "string",
+      "description": "The ID of the secret store to use for storing secrets."
     }
   },
   "resources": {
-    "ordersApi": {
-      "type": "celerity/api",
-      "metadata": {
-        "displayName": "Orders API"
-      },
-      "linkSelector": {
-        "byLabel": {
-          "application": "orders"
-        }
-      },
-      "spec": {
-        "protocols": ["http"],
-        "cors": {
-          "allowCredentials": true,
-          "allowOrigins": [
-            "https://example.com",
-            "https://another.example.com"
-          ],
-          "allowMethods": ["GET", "POST"],
-          "allowHeaders": ["Content-Type", "Authorization"],
-          "exposeHeaders": ["Content-Length"],
-          "maxAge": 3600
-        },
-        "domain": {
-          "domainName": "api.example.com",
-          "basePaths": ["/"],
-          "normalizeBasePath": false,
-          "certificateId": "${variables.certificateId}",
-          "securityPolicy": "TLS_1_2"
-        },
-        "tracingEnabled": true,
-        "auth": {
-          "defaultGuard": "jwt",
-          "guards": {
-            "jwt": {
-              "type": "jwt",
-              "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
-              "tokenSource": "$.headers.Authorization",
-              "audience": ["https://identity.twohundred.cloud/api/manage/v1/"]
-            }
-          }
-        }
-      }
-    },
     "getOrderHandler": {
       "type": "celerity/handler",
       "metadata": {
         "displayName": "Get Order Handler",
-        "labels": {
-          "application": "orders"
-        },
         "annotations": {
           "celerity.handler.http": true,
           "celerity.handler.http.method": "GET",
           "celerity.handler.http.path": "/orders/{orderId}"
+        },
+        "labels": {
+          "application": "orders"
         }
       },
       "spec": {
@@ -92,28 +54,28 @@
       "metadata": {
         "displayName": "Order Events Consumer"
       },
-      "linkSelector": {
-        "byLabel": {
-          "application": "orders"
-        }
-      },
       "spec": {
         "sourceId": "${variables.orderEventsSourceId}",
         "batchSize": 10,
         "visibilityTimeout": 30,
         "waitTimeSeconds": 2,
         "partialFailures": true
+      },
+      "linkSelector": {
+        "byLabel": {
+          "application": "orders"
+        }
       }
     },
     "orderEventsProcessor": {
       "type": "celerity/handler",
       "metadata": {
         "displayName": "Order Events Processor",
-        "labels": {
-          "application": "orders"
-        },
         "annotations": {
           "celerity.handler.consumer": true
+        },
+        "labels": {
+          "application": "orders"
         }
       },
       "spec": {
@@ -127,6 +89,64 @@
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
           "SECRET_STORE_ID": "${variables.secretStoreId}"
+        }
+      }
+    },
+    "ordersApi": {
+      "type": "celerity/api",
+      "metadata": {
+        "displayName": "Orders API"
+      },
+      "spec": {
+        "protocols": [
+          "http"
+        ],
+        "cors": {
+          "allowCredentials": true,
+          "allowOrigins": [
+            "https://example.com",
+            "https://another.example.com"
+          ],
+          "allowMethods": [
+            "GET",
+            "POST"
+          ],
+          "allowHeaders": [
+            "Content-Type",
+            "Authorization"
+          ],
+          "exposeHeaders": [
+            "Content-Length"
+          ],
+          "maxAge": 3600
+        },
+        "domain": {
+          "domainName": "api.example.com",
+          "basePaths": [
+            "/"
+          ],
+          "normalizeBasePath": false,
+          "certificateId": "${variables.certificateId}",
+          "securityPolicy": "TLS_1_2"
+        },
+        "auth": {
+          "defaultGuard": "jwt",
+          "guards": {
+            "jwt": {
+              "type": "jwt",
+              "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
+              "tokenSource": "$.headers.Authorization",
+              "audience": [
+                "https://identity.twohundred.cloud/api/manage/v1/"
+              ]
+            }
+          }
+        },
+        "tracingEnabled": true
+      },
+      "linkSelector": {
+        "byLabel": {
+          "application": "orders"
         }
       }
     }
