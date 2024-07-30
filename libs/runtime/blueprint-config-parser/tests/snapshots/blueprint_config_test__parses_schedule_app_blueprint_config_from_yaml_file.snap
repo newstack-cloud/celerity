@@ -1,30 +1,22 @@
+---
+source: blueprint-config-parser/tests/blueprint_config_test.rs
+expression: blueprint_config
+---
 {
   "version": "2023-04-20",
-  "transform": "celerity-2024-07-22",
+  "transform": [
+    "celerity-2024-07-22"
+  ],
   "resources": {
-    "jobSchedule": {
-      "type": "celerity/schedule",
-      "metadata": {
-        "displayName": "Job Schedule"
-      },
-      "linkSelector": {
-        "byLabel": {
-          "application": "jobs"
-        }
-      },
-      "spec": {
-        "schedule": "rate(1 hour)"
-      }
-    },
     "jobHandler": {
       "type": "celerity/handler",
       "metadata": {
         "displayName": "Job Handler",
-        "labels": {
-          "application": "jobs"
-        },
         "annotations": {
           "celerity.handler.schedule": true
+        },
+        "labels": {
+          "application": "jobs"
         }
       },
       "spec": {
@@ -37,6 +29,20 @@
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "INFO"
+        }
+      }
+    },
+    "jobSchedule": {
+      "type": "celerity/schedule",
+      "metadata": {
+        "displayName": "Job Schedule"
+      },
+      "spec": {
+        "schedule": "rate(1 hour)"
+      },
+      "linkSelector": {
+        "byLabel": {
+          "application": "jobs"
         }
       }
     }
