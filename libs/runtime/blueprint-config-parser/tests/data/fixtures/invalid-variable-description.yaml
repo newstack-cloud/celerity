@@ -3,7 +3,8 @@ transform: celerity-2024-07-22
 variables:
   secretStoreId:
     type: string
-    description: "The ID of the secret store to use for storing secrets."
+    description:
+      - "Invalid description, array not expected."
 
   certificateId:
     type: string

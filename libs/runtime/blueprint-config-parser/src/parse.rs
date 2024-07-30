@@ -21,6 +21,7 @@ impl BlueprintConfig {
         let file = File::open(file_path)?;
         let reader = BufReader::new(file);
         let blueprint: BlueprintConfig = serde_json::from_reader(reader)?;
+        validate_blueprint_config(&blueprint)?;
         Ok(blueprint)
     }
 
@@ -42,12 +43,23 @@ impl BlueprintConfig {
     }
 }
 
+fn validate_blueprint_config(blueprint: &BlueprintConfig) -> Result<(), BlueprintParseError> {
+    if blueprint.resources.is_empty() {
+        return Err(BlueprintParseError::ValidationError(
+            "at least one resource must be provided for a blueprint".to_string(),
+        ));
+    }
+
+    Ok(())
+}
+
 /// Provides an error type for parsing
 /// Blueprint configuration.
 #[derive(Debug)]
 pub enum BlueprintParseError {
     IoError(std::io::Error),
     JsonError(serde_json::Error),
+    ValidationError(String),
     YamlScanError(yaml_rust2::ScanError),
     YamlFormatError(String),
 }
@@ -63,6 +75,7 @@ impl fmt::Display for BlueprintParseError {
             BlueprintParseError::YamlFormatError(error) => {
                 write!(f, "parsing yaml failed: {}", error)
             }
+            BlueprintParseError::ValidationError(error) => write!(f, "validation error: {}", error),
         }
     }
 }
