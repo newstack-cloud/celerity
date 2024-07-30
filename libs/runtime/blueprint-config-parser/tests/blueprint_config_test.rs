@@ -92,3 +92,13 @@ fn parses_hybrid_api_blueprint_config_from_yaml_file() {
         assert_json_snapshot!(blueprint_config);
     })
 }
+
+#[test_log::test]
+fn parses_hybrid_api_blueprint_config_from_json_file() {
+    let blueprint_config =
+        BlueprintConfig::from_json_file("tests/data/fixtures/hybrid-api.json").unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
