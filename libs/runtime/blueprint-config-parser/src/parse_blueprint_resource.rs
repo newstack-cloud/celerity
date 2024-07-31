@@ -113,9 +113,9 @@ impl<'de> Visitor<'de> for ResourceVisitor {
                                     // serde produces a generic "expected value" error,
                                     // so we need to provide a more specific error message
                                     // to provide a better user experience.
-                                    return Err(de::Error::custom(format!(
-                                        "invalid data type provided for resource type"
-                                    )));
+                                    return Err(de::Error::custom(
+                                        "invalid data type provided for resource type",
+                                    ));
                                 }
                             }
                         }

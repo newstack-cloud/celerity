@@ -293,15 +293,15 @@ fn validate_resource_definition(
 }
 
 fn validate_resource_type(
-    resource_type: &String,
+    resource_type: &str,
 ) -> Result<CelerityResourceType, BlueprintParseError> {
-    match resource_type.as_str() {
+    match resource_type {
         CELERITY_API_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityApi),
         CELERITY_CONSUMER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityConsumer),
         CELERITY_SCHEDULE_RESOURCE_TYPE => Ok(CelerityResourceType::CeleritySchedule),
         CELERITY_HANDLER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandler),
         _ => Err(BlueprintParseError::UnsupportedResourceType(
-            resource_type.clone(),
+            resource_type.to_string(),
         )),
     }
 }
