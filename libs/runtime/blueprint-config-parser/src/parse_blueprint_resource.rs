@@ -4,7 +4,6 @@ use serde::{
     de::{self, MapAccess, Visitor},
     Deserialize, Deserializer,
 };
-use serde_json::error;
 
 use crate::blueprint::{
     BlueprintResourceMetadata, CelerityResourceSpec, CelerityResourceType, RuntimeBlueprintResource,

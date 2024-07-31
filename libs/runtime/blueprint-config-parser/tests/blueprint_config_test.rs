@@ -351,3 +351,29 @@ fn skips_parsing_resource_for_unsupported_resource_type_in_json_blueprint_config
         assert_json_snapshot!(blueprint_config);
     })
 }
+
+#[test_log::test]
+fn produces_expected_error_for_invalid_resource_metadata_in_yaml_blueprint_config() {
+    let result =
+        BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-resource-metadata.yaml");
+
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::YamlFormatError(msg))
+        if msg == "expected a mapping for resource metadata, found Array([String(\"Array not expected here\")])"
+    ));
+}
+
+#[test_log::test]
+fn produces_expected_error_for_invalid_resource_metadata_in_json_blueprint_config() {
+    let result =
+        BlueprintConfig::from_json_file("tests/data/fixtures/invalid-resource-metadata.json");
+
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::JsonError(err))
+        if err.to_string().contains(
+            "expected struct BlueprintResourceMetadata"
+        )
+    ));
+}
