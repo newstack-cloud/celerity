@@ -29,9 +29,9 @@ This runtime interfaces with handlers through in-process FFI calls through bindi
 Developers should make use of the Celerity Java SDK for a smoother development experience where interactions with the runtime are taken care of and a useful plugin/middleware system provides standard functionality such as loading secrets and dependency injection.
 
 
-## [node runtime](./node/README.md)
+## [node.js runtime](./nodejs/README.md)
 
-The Node runtime is for applications where the handlers need to be written in JavaScript or TypeScript.
+The Node.js runtime is for applications where the handlers need to be written in JavaScript or TypeScript.
 This runtime interfaces with handlers through in-process FFI calls through bindings wrapped in the Celerity Node SDK.
 
 Developers should make use of the Celerity Node SDK for a smoother development experience where interactions with the runtime are taken care of and a useful plugin/middleware system provides standard functionality such as loading secrets and dependency injection.
