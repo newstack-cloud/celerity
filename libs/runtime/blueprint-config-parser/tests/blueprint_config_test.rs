@@ -148,7 +148,7 @@ fn produces_expected_error_for_invalid_json_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_missing_version_in_yaml_blueprint_config() {
+fn produces_expected_error_for_missing_version_in_yaml_blueprint_config() {
     let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/missing-version.yaml");
     assert!(matches!(
         result,
@@ -157,7 +157,7 @@ fn produce_expected_error_for_missing_version_in_yaml_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_missing_version_in_json_blueprint_config() {
+fn produces_expected_error_for_missing_version_in_json_blueprint_config() {
     let result = BlueprintConfig::from_json_file("tests/data/fixtures/missing-version.json");
     assert!(matches!(
         result,
@@ -166,7 +166,7 @@ fn produce_expected_error_for_missing_version_in_json_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_no_resources_in_yaml_blueprint_config() {
+fn produces_expected_error_for_no_resources_in_yaml_blueprint_config() {
     let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/no-resources.yaml");
     assert!(matches!(
         result,
@@ -175,7 +175,7 @@ fn produce_expected_error_for_no_resources_in_yaml_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_no_resources_in_json_blueprint_config() {
+fn produces_expected_error_for_no_resources_in_json_blueprint_config() {
     let result = BlueprintConfig::from_json_file("tests/data/fixtures/no-resources.json");
     assert!(matches!(
         result,
@@ -184,7 +184,7 @@ fn produce_expected_error_for_no_resources_in_json_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_invalid_version_in_yaml_blueprint_config() {
+fn produces_expected_error_for_invalid_version_in_yaml_blueprint_config() {
     let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-version.yaml");
     assert!(matches!(
         result,
@@ -194,7 +194,7 @@ fn produce_expected_error_for_invalid_version_in_yaml_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_invalid_version_in_json_blueprint_config() {
+fn produces_expected_error_for_invalid_version_in_json_blueprint_config() {
     let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-version.json");
     assert!(matches!(
         result,
@@ -205,7 +205,7 @@ fn produce_expected_error_for_invalid_version_in_json_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_invalid_variable_type_in_yaml_blueprint_config() {
+fn produces_expected_error_for_invalid_variable_type_in_yaml_blueprint_config() {
     let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-variable-type.yaml");
     assert!(matches!(
         result,
@@ -215,7 +215,7 @@ fn produce_expected_error_for_invalid_variable_type_in_yaml_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_invalid_variable_type_in_json_blueprint_config() {
+fn produces_expected_error_for_invalid_variable_type_in_json_blueprint_config() {
     let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-variable-type.json");
     assert!(matches!(
         result,
@@ -226,7 +226,7 @@ fn produce_expected_error_for_invalid_variable_type_in_json_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_invalid_variable_description_in_yaml_blueprint_config() {
+fn produces_expected_error_for_invalid_variable_description_in_yaml_blueprint_config() {
     let result =
         BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-variable-description.yaml");
     assert!(matches!(
@@ -237,7 +237,7 @@ fn produce_expected_error_for_invalid_variable_description_in_yaml_blueprint_con
 }
 
 #[test_log::test]
-fn produce_expected_error_for_invalid_variable_description_in_json_blueprint_config() {
+fn produces_expected_error_for_invalid_variable_description_in_json_blueprint_config() {
     let result =
         BlueprintConfig::from_json_file("tests/data/fixtures/invalid-variable-description.json");
     assert!(matches!(
@@ -249,7 +249,7 @@ fn produce_expected_error_for_invalid_variable_description_in_json_blueprint_con
 }
 
 #[test_log::test]
-fn produce_expected_error_for_invalid_secret_in_yaml_blueprint_config() {
+fn produces_expected_error_for_invalid_secret_in_yaml_blueprint_config() {
     let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-secret.yaml");
     assert!(matches!(
         result,
@@ -259,7 +259,7 @@ fn produce_expected_error_for_invalid_secret_in_yaml_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_invalid_secret_in_json_blueprint_config() {
+fn produces_expected_error_for_invalid_secret_in_json_blueprint_config() {
     let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-secret.json");
     assert!(matches!(
         result,
@@ -270,7 +270,7 @@ fn produce_expected_error_for_invalid_secret_in_json_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_empty_variable_type_in_yaml_blueprint_config() {
+fn produces_expected_error_for_empty_variable_type_in_yaml_blueprint_config() {
     let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/empty-variable-type.yaml");
     assert!(matches!(
         result,
@@ -279,7 +279,7 @@ fn produce_expected_error_for_empty_variable_type_in_yaml_blueprint_config() {
 }
 
 #[test_log::test]
-fn produce_expected_error_for_empty_variable_type_in_json_blueprint_config() {
+fn produces_expected_error_for_empty_variable_type_in_json_blueprint_config() {
     let result = BlueprintConfig::from_json_file("tests/data/fixtures/empty-variable-type.json");
     assert!(matches!(
         result,
@@ -289,9 +289,52 @@ fn produce_expected_error_for_empty_variable_type_in_json_blueprint_config() {
 }
 
 #[test_log::test]
-fn skips_parsing_resource_due_to_invalid_resource_type_in_yaml_blueprint_config() {
+fn produces_expected_error_for_invalid_resource_type_in_yaml_blueprint_config() {
+    let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-resource-type.yaml");
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::YamlFormatError(msg))
+        if msg == "expected a string for resource type, found Array([String(\"invalid/type in array\")])"
+    ));
+}
+
+#[test_log::test]
+fn produces_expected_error_for_invalid_resource_type_in_json_blueprint_config() {
+    let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-resource-type.json");
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::JsonError(err))
+        if err.to_string().contains("invalid data type provided for resource type")
+    ));
+}
+
+#[test_log::test]
+fn produces_expected_error_for_missing_resource_type_in_yaml_blueprint_config() {
+    let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/missing-resource-type.yaml");
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::YamlFormatError(msg))
+        if msg == "resource type must be defined for the \\\"getOrderHandler\\\" resource definition"
+    ));
+}
+
+#[test_log::test]
+fn produces_expected_error_for_missing_resource_type_in_json_blueprint_config() {
+    let result = BlueprintConfig::from_json_file("tests/data/fixtures/missing-resource-type.json");
+    assert!(matches!(
+        result,
+        Err(BlueprintParseError::JsonError(err))
+        if err.to_string().contains(
+            "spec must come after type in resource, type is either defined after spec or is missing"
+        )
+    ));
+}
+
+#[test_log::test]
+fn skips_parsing_resource_for_unsupported_resource_type_in_yaml_blueprint_config() {
     let blueprint_config =
-        BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-resource-type.yaml").unwrap();
+        BlueprintConfig::from_yaml_file("tests/data/fixtures/unsupported-resource-type.yaml")
+            .unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);
@@ -299,9 +342,10 @@ fn skips_parsing_resource_due_to_invalid_resource_type_in_yaml_blueprint_config(
 }
 
 #[test_log::test]
-fn skips_parsing_resource_due_to_invalid_resource_type_in_json_blueprint_config() {
+fn skips_parsing_resource_for_unsupported_resource_type_in_json_blueprint_config() {
     let blueprint_config =
-        BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-resource-type.json").unwrap();
+        BlueprintConfig::from_json_file("tests/data/fixtures/unsupported-resource-type.json")
+            .unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);

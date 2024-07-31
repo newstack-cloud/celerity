@@ -102,6 +102,13 @@ expression: blueprint_config
         "auth": {
           "defaultGuard": "jwt",
           "guards": {
+            "apiKey": {
+              "type": "apiKey",
+              "apiKeySource": "$.headers.X-API-Key"
+            },
+            "customGuard": {
+              "type": "custom"
+            },
             "jwt": {
               "type": "jwt",
               "issuer": "https://identity.twohundred.cloud/oauth2/v1/",

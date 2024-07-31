@@ -35,20 +35,7 @@ resources:
         application: "orders"
     spec:
       protocols: ["http"]
-      cors:
-        allowCredentials: true
-        allowOrigins:
-          - "https://example.com"
-          - "https://another.example.com"
-        allowMethods:
-          - "GET"
-          - "POST"
-        allowHeaders:
-          - "Content-Type"
-          - "Authorization"
-        exposeHeaders:
-          - "Content-Length"
-        maxAge: 3600
+      cors: "*"
       domain:
         domainName: "api.example.com"
         basePaths:
@@ -123,14 +110,14 @@ resources:
         LOG_LEVEL: "INFO"
         SECRET_STORE_ID: "${variables.secretStoreId}"
 
-  invoiceUploadHandler:
+  invoiceFileEventHandler:
     type: "celerity/handler"
     metadata:
-      displayName: Invoice Upload Handler
+      displayName: Invoice File Event Handler
     spec:
-      handlerName: Orders-InvoiceUploadHandler-v1
+      handlerName: Orders-InvoiceFileEventHandler-v1
       codeLocation: "./orders"
-      handler: "handlers.upload_invoice"
+      handler: "handlers.invoice_file_event"
       runtime: "python3.12.x"
       memory: 1024
       timeout: 60
@@ -139,10 +126,13 @@ resources:
         LOG_LEVEL: "INFO"
         SECRET_STORE_ID: "${variables.secretStoreId}"
       events:
-        invoiceUpload:
+        invoiceFileEvent:
           sourceType: "objectStorage"
           sourceConfiguration:
-            events: ["created"]
+            events:
+              - created
+              - deleted
+              - metadataUpdated
             bucket: "${variables.invoiceBucket}"
 
   orderDBStreamProcessor:

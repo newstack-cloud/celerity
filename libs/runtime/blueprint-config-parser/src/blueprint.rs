@@ -28,6 +28,7 @@ pub struct BlueprintConfig {
     pub transform: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub variables: Option<HashMap<String, BlueprintVariable>>,
+    #[serde(deserialize_with = "crate::parse_helpers::deserialize_resource_map")]
     pub resources: HashMap<String, RuntimeBlueprintResource>,
 }
 

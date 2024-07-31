@@ -1,9 +1,9 @@
-use std::fmt;
 use std::marker::PhantomData;
+use std::{collections::HashMap, fmt};
 
 use serde::{de, Deserialize, Deserializer};
 
-use crate::blueprint::CELERITY_BLUEPRINT_V2023_04_20;
+use crate::blueprint::{RuntimeBlueprintResource, CELERITY_BLUEPRINT_V2023_04_20};
 
 /// Deserializes a blueprint version string and makes
 /// sure it is a valid version.
@@ -54,4 +54,53 @@ where
     }
 
     d.deserialize_any(StringOrVec(PhantomData)).map(Some)
+}
+
+/// Deserializes a blueprint resource map, making sure that resources
+/// with unsupported types are skipped without causing blueprint deserialization
+/// to completely fail.
+pub fn deserialize_resource_map<'de, D>(
+    d: D,
+) -> Result<HashMap<String, RuntimeBlueprintResource>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct ResourceMapVisitor;
+
+    impl<'de> de::Visitor<'de> for ResourceMapVisitor {
+        type Value = HashMap<String, RuntimeBlueprintResource>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a map of blueprint resources")
+        }
+
+        fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::MapAccess<'de>,
+        {
+            let mut resources = HashMap::new();
+            while let Some(key) = map.next_key::<String>()? {
+                match map.next_value() {
+                    Ok(Some(value)) => {
+                        resources.insert(key, value);
+                    }
+                    Ok(None) => {}
+                    Err(err) => {
+                        // Skip unsupported resource types, as there is no reason
+                        // for them to cause the entire blueprint deserialization to fail.
+                        // Blueprints are expected to have a mix of Celerity-specific resources
+                        // and other resources representing infrastructure that the Celerity
+                        // runtime doesn't need to know about.
+                        if !err.to_string().starts_with("unsupported resource type:") {
+                            return Err(err);
+                        }
+                    }
+                }
+            }
+
+            Ok(resources)
+        }
+    }
+
+    d.deserialize_map(ResourceMapVisitor)
 }

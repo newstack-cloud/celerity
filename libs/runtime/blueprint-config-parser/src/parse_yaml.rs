@@ -191,12 +191,16 @@ fn validate_populate_resources(
                         resources.insert(key_str.clone(), blueprint_resource);
                     }
                     Err(err) => {
-                        debug!(
-                            error = err.to_string(),
-                            "skipping resource \\\"{}\\\" as it is either invalid \
-                            or not a supported celerity runtime resource",
-                            key_str,
-                        );
+                        if let BlueprintParseError::UnsupportedResourceType(_) = err {
+                            debug!(
+                                error = err.to_string(),
+                                "skipping resource \\\"{}\\\" as it is \
+                                not a supported celerity runtime resource",
+                                key_str,
+                            );
+                        } else {
+                            return Err(err);
+                        }
                     }
                 }
             }
@@ -296,10 +300,9 @@ fn validate_resource_type(
         CELERITY_CONSUMER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityConsumer),
         CELERITY_SCHEDULE_RESOURCE_TYPE => Ok(CelerityResourceType::CeleritySchedule),
         CELERITY_HANDLER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandler),
-        _ => Err(BlueprintParseError::YamlFormatError(format!(
-            "expected a supported resource type, found {}",
-            resource_type
-        ))),
+        _ => Err(BlueprintParseError::UnsupportedResourceType(
+            resource_type.clone(),
+        )),
     }
 }
 
@@ -697,7 +700,7 @@ fn validate_event_source_type(
 ) -> Result<EventSourceType, BlueprintParseError> {
     match source_type.as_str() {
         "objectStorage" => Ok(EventSourceType::ObjectStorage),
-        "databaseStream" => Ok(EventSourceType::DatabaseStream),
+        "dbStream" => Ok(EventSourceType::DatabaseStream),
         "dataStream" => Ok(EventSourceType::DataStream),
         _ => Err(BlueprintParseError::YamlFormatError(format!(
             "expected a supported event source type, found {}",

@@ -24,7 +24,7 @@
   },
   "resources": {
     "ordersApi": {
-      "type": "celerity/api",
+      "type": "aws/serverless/api",
       "description": "The Orders API that provides access to order data.",
       "metadata": {
         "displayName": "Orders API"

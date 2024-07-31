@@ -73,7 +73,6 @@ resources:
             type: custom
 
   getOrderHandler:
-    type: "celerity/handler"
     metadata:
       displayName: Get Order Handler
       labels:
