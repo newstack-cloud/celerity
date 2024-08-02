@@ -10,7 +10,7 @@ The runtime is responsible for processing incoming requests, messages/events, an
 ## [core runtime](./core/README.md)
 
 The core runtime is for applications where the handlers need to be written in a language that is compiled ahead of time, such as Rust, C, C++ or Go.
-This runtime interfaces with handlers through binary execution and API calls.
+This runtime interfaces with handlers by exposing a HTTP API.
 
 Developers can make use of the Celerity SDKs for Rust and Go for a smoother development experience where interactions with the runtime are taken care of and a useful plugin/middleware system provides standard functionality such as loading secrets and dependency injection.
 
