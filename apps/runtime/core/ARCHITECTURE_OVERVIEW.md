@@ -2,7 +2,9 @@
 
 The core runtime is an application that acts as a HTTP server, WebSocket server and a message queue consumer. It is responsible for processing incoming requests, messages/events, and routing them to the appropriate handlers defined by developers.
 
-The core runtime is a Rust application that interacts with handlers via binary execution and API calls. This means that it doesn't matter what language the handlers are written in, as long as they can be executed and communicate with the local runtime API over HTTP.
+The core runtime is a Rust application that interacts with handlers by exposing a HTTP API. This means that it doesn't matter what language the handlers are written in, as long as they can be executed and communicate with the local runtime API over HTTP.
+
+When using the core runtime there are two processes that are started, the main runtime process and the process for your compiled binary that contains your application's handlers. The process containing your handlers will contain a loop that reads requests/messages from the runtime via a HTTP API and executes the appropriate handler.
 
 The core runtime is best suited for applications where the handlers need to be written in a language that is compiled ahead of time, such as Rust, C, C++ or Go.
 
@@ -14,19 +16,19 @@ The core runtime has a plugin system that can be called at the "pre-handle" and 
 
 The following diagram provides a relatively high level view of how it works at run-time on receiving a request or a batch of messages from a queue or similar:
 
-![Celerity Runtime Core](./resources/celerity-runtime-core.png)
+![Celerity Core Runtime](./resources/celerity-runtime-core.png)
 
 ## Startup process
 
 The following diagram provides an overview of the process of starting up the core runtime:
 
-![Celerity Runtime Core Startup](./resources/celerity-runtime-core-startup.png)
+![Celerity Core Runtime Startup](./resources/celerity-runtime-core-startup.png)
 
 ## Run-time flow in AWS
 
 The following diagram provides a look at how it works at run-time in an AWS environment:
 
-![Celerity Runtime Core AWS](./resources/celerity-runtime-core-aws.png)
+![Celerity Core Runtime AWS](./resources/celerity-runtime-core-aws.png)
 
 This is high-level and doesn't cover the specifics of all the components involved in deploying the runtime in AWS such as ALBs, VPCs, etc.
 
