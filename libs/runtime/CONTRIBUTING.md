@@ -10,6 +10,8 @@
 - Docker Compose >=2.24.6 - For running integration test dependencies (Comes with Docker Desktop)
 - [cargo-llvm-cov](https://crates.io/crates/cargo-llvm-cov) >=0.6.11 - For generating code coverage reports
 - [cargo-insta](https://crates.io/crates/cargo-insta) - For snapshot test reviews
+- _Optional_ - [dotnet](https://dotnet.microsoft.com/download) >=8.0.7 - For building the C#/.NET runtime SDK and running tests
+- _Optional_ - [java development kit](https://www.oracle.com/uk/java/technologies/downloads/) >=21.0.1 - For building the Java runtime SDK and running tests
 
 Package dependencies are managed with cargo and will be installed automatically when you first
 run tests.
@@ -70,6 +72,16 @@ This is because Pipenv is not used in the CI environments.
 
 ```bash
 pipenv requirements > requirements.txt
+```
+
+## SDK Generation and Testing (Java and C#)
+
+[oo_bindgen](https://github.com/stepfunc/oo_bindgen) is used for generating the Java and C# runtime SDKs from the Rust runtime packages.
+
+To build the SDKs and run the accompanying tests, you can run the following script:
+
+```bash
+./scripts/build-test-sdk-bindgen.sh
 ```
 
 ## Releasing

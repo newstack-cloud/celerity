@@ -1,3 +1,12 @@
 [workspace]
 
-members = ["core", "blueprint-config-parser", "sdk/node", "sdk/python"]
+members = [
+    "core",
+    "blueprint-config-parser",
+    "sdk/node",
+    "sdk/python",
+    "sdk/bindgen-ffi",
+    "sdk/bindgen-schema",
+    "sdk/bindgen-ffi-java",
+    "sdk/runtime-bindings",
+]
