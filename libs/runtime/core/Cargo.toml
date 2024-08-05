@@ -5,4 +5,17 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.81"
+axum = "0.7.5"
 tokio = { version = "1.38.1", features = ["full"] }
+tower = "0.4.13"
+tracing = "0.1.40"
+
+
+[dependencies.celerity_blueprint_config_parser]
+path = "../blueprint-config-parser"
+
+[dev-dependencies]
+test-log = { version = "0.2.16", features = ["log", "trace"] }
+pretty_assertions = "1.4.0"
+hyper-util = { version = "0.1.6", features = ["client", "client-legacy"] }
+http-body-util = "0.1.2"
