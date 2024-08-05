@@ -7,8 +7,6 @@ on:
   push:
     branches: [ main ]
     paths: 'libs/runtime/**'
-    paths-ignore:
-      - 'libs/runtime/sdk/node/**'
   pull_request:
     branches: [ main ]
     paths: 'libs/runtime/**'
