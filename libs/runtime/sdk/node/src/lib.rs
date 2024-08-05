@@ -323,6 +323,7 @@ impl CoreRuntimeApplication {
     Ok(())
   }
 
+  #[allow(clippy::missing_safety_doc)]
   #[napi]
   pub async unsafe fn run(&mut self) -> Result<()> {
     self.inner.run().await.map_err(|err| {
