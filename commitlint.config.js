@@ -47,6 +47,7 @@ module.exports = {
         "lib-rt-sdk-ffi",
         "lib-rt-sdk-schema",
         "lib-rt-sdk-node",
+        "lib-rt-sdk-python",
         "api",
         "cli",
         "tool-releaser",
