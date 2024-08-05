@@ -46,6 +46,7 @@ module.exports = {
         "lib-rt-plugin-cors",
         "lib-rt-sdk-ffi",
         "lib-rt-sdk-schema",
+        "lib-rt-sdk-node",
         "api",
         "cli",
         "tool-releaser",
