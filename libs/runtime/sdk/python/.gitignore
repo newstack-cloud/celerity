@@ -66,8 +66,7 @@ docs/_build/
 .idea/
 
 # VSCode
-.vscode/
-!.vscode/settings.example.json
+.vscode/settings.json
 
 # Pyenv
 .python-version
