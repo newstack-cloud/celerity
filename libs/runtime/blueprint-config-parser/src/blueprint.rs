@@ -89,6 +89,17 @@ pub enum BlueprintScalarValue {
     Bool(bool),
 }
 
+impl ToString for BlueprintScalarValue {
+    fn to_string(&self) -> String {
+        match self {
+            BlueprintScalarValue::Str(val) => val.to_string(),
+            BlueprintScalarValue::Int(val) => val.to_string(),
+            BlueprintScalarValue::Float(val) => val.to_string(),
+            BlueprintScalarValue::Bool(val) => val.to_string(),
+        }
+    }
+}
+
 /// This is a struct that holds the configuration
 /// for a resource in the blueprint configuration.
 /// This is a type specific to the runtime configuration
