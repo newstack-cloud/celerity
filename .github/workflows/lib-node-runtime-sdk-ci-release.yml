@@ -13,13 +13,13 @@ permissions:
       - main
     tags-ignore:
       - '**'
-    paths: 'libs/runtime/sdk/node/**'
-    paths-ignore:
-      - '**/*.md'
-      - LICENSE
-      - '**/*.gitignore'
-      - .editorconfig
-      - docs/**
+    paths: 
+      - 'libs/runtime/sdk/node/**'
+      - '!**/*.md'
+      - '!LICENSE'
+      - '!**/*.gitignore'
+      - '!.editorconfig'
+      - '!docs/**'
   pull_request: null
 jobs:
   build:
