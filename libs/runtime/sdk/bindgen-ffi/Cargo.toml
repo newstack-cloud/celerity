@@ -1,0 +1,17 @@
+[package]
+name = "celerity_runtime_bindgen_ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+oo-bindgen = "0.8.7"
+
+[dependencies.celerity_runtime_core]
+path = "../../core"
+
+[build-dependencies]
+celerity_runtime_bindgen_schema = { path = "../bindgen-schema" }
+oo-bindgen = "0.8.7"
