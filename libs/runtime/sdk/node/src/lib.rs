@@ -125,7 +125,7 @@ impl IntoResponse for Response {
     }
     builder = builder.status(self.status);
     builder
-      .body(Body::from(self.body.unwrap_or_else(|| "".to_string())))
+      .body(Body::from(self.body.unwrap_or_default()))
       .unwrap()
   }
 }
@@ -215,16 +215,17 @@ impl JsRequestWrapper {
   }
 
   /// The body of the request, either as a string or `null` if the body is empty.
+  #[allow(clippy::missing_safety_doc)]
   #[napi]
   pub async unsafe fn body(&mut self) -> Result<Option<String>> {
     match &mut self.inner_body {
       JsRequestWrapperBody::Bytes(bytes) => {
-        return Ok(String::from_utf8(bytes.to_vec()).map(Some).map_err(|err| {
+        String::from_utf8(bytes.to_vec()).map(Some).map_err(|err| {
           Error::new(
             Status::GenericFailure,
             format!("failed to parse request body, {}", err),
           )
-        })?)
+        })
       }
       JsRequestWrapperBody::InnerSourceBody(body_opt) => {
         // todo: set size constraints
