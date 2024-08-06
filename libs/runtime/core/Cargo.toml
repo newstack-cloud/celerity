@@ -19,3 +19,4 @@ test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
 hyper-util = { version = "0.1.6", features = ["client", "client-legacy"] }
 http-body-util = "0.1.2"
+coverage-helper = "0.2.2"

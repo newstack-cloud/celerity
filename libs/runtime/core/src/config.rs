@@ -70,3 +70,32 @@ pub enum RuntimeCallMode {
     // from the runtime and send a response back to the runtime.
     ExecHttp,
 }
+
+#[derive(Debug)]
+pub struct HttpHandlerDefinition {
+    pub path: String,
+    pub method: String,
+    pub location: String,
+    pub handler: String,
+    // Timeout in seconds.
+    pub timeout: i64,
+}
+
+#[derive(Debug)]
+pub struct AppConfig {
+    pub api: Option<ApiConfig>,
+}
+
+#[derive(Debug)]
+pub struct ApiConfig {
+    pub http: Option<HttpConfig>,
+    pub websocket: Option<WebsocketConfig>,
+}
+
+#[derive(Debug)]
+pub struct HttpConfig {
+    pub handlers: Vec<HttpHandlerDefinition>,
+}
+
+#[derive(Debug)]
+pub struct WebsocketConfig {}

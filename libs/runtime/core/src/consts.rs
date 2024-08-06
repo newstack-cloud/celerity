@@ -6,3 +6,6 @@ pub const CELERITY_HTTP_METHOD_ANNOTATION_NAME: &str = "celerity.handler.http.me
 
 // The annotation name that holds the HTTP path for a handler.
 pub const CELERITY_HTTP_PATH_ANNOTATION_NAME: &str = "celerity.handler.http.path";
+
+// The maximum timeout for a handler in seconds.
+pub const MAX_HANDLER_TIMEOUT: i64 = 3600;
