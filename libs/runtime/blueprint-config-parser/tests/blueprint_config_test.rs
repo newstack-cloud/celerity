@@ -44,6 +44,26 @@ fn parses_http_api_blueprint_config_from_json_file() {
 }
 
 #[test_log::test]
+fn parses_shared_handler_config_blueprint_config_from_yaml_file() {
+    let blueprint_config =
+        BlueprintConfig::from_yaml_file("tests/data/fixtures/shared-handler-config.yaml").unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
+
+#[test_log::test]
+fn parses_shared_handler_config_blueprint_config_from_json_file() {
+    let blueprint_config =
+        BlueprintConfig::from_json_file("tests/data/fixtures/shared-handler-config.json").unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
+
+#[test_log::test]
 fn parses_websocket_api_blueprint_config_from_yaml_file() {
     let blueprint_config =
         BlueprintConfig::from_yaml_file("tests/data/fixtures/websocket-api.yaml").unwrap();

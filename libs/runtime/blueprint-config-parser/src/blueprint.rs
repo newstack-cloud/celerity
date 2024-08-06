@@ -30,6 +30,8 @@ pub struct BlueprintConfig {
     pub variables: Option<HashMap<String, BlueprintVariable>>,
     #[serde(deserialize_with = "crate::parse_helpers::deserialize_resource_map")]
     pub resources: HashMap<String, RuntimeBlueprintResource>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<BlueprintMetadata>,
 }
 
 impl Default for BlueprintConfig {
@@ -39,6 +41,7 @@ impl Default for BlueprintConfig {
             transform: None,
             variables: None,
             resources: HashMap::new(),
+            metadata: None,
         }
     }
 }
@@ -204,9 +207,11 @@ pub struct CelerityHandlerSpec {
     #[serde(rename = "handlerName")]
     pub handler_name: Option<String>,
     #[serde(rename = "codeLocation")]
-    pub code_location: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code_location: Option<String>,
     pub handler: String,
-    pub runtime: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub runtime: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub memory: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -225,9 +230,9 @@ impl Default for CelerityHandlerSpec {
     fn default() -> Self {
         CelerityHandlerSpec {
             handler_name: None,
-            code_location: "".to_string(),
+            code_location: None,
             handler: "".to_string(),
-            runtime: "".to_string(),
+            runtime: None,
             memory: None,
             timeout: None,
             tracing_enabled: None,
@@ -600,4 +605,37 @@ impl Default for DataStreamSourceConfiguration {
             start_from_beginning: None,
         }
     }
+}
+
+/// Metadata for a blueprint.
+/// For the purpose of the runtime, this is strongly
+/// typed to expect an optional `sharedHandlerConfig`
+/// object that provides shared defaults for all handlers
+/// declared in a blueprint.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct BlueprintMetadata {
+    #[serde(rename = "sharedHandlerConfig")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub shared_handler_config: Option<SharedHandlerConfig>,
+}
+
+/// Provides shared defaults
+/// for all handlers declared in a blueprint.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct SharedHandlerConfig {
+    #[serde(rename = "codeLocation")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code_location: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub runtime: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub memory: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeout: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "tracingEnabled")]
+    pub tracing_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "environmentVariables")]
+    pub environment_variables: Option<HashMap<String, String>>,
 }

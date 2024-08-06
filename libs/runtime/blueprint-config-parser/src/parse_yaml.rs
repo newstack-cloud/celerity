@@ -5,18 +5,18 @@ use tracing::debug;
 
 use crate::{
     blueprint::{
-        BlueprintConfig, BlueprintLinkSelector, BlueprintResourceMetadata, BlueprintScalarValue,
-        BlueprintVariable, CelerityApiAuth, CelerityApiAuthGuard, CelerityApiAuthGuardType,
-        CelerityApiAuthGuardValueSource, CelerityApiBasePath, CelerityApiBasePathConfiguration,
-        CelerityApiCors, CelerityApiCorsConfiguration, CelerityApiDomain,
-        CelerityApiDomainSecurityPolicy, CelerityApiProtocol, CelerityApiSpec,
+        BlueprintConfig, BlueprintLinkSelector, BlueprintMetadata, BlueprintResourceMetadata,
+        BlueprintScalarValue, BlueprintVariable, CelerityApiAuth, CelerityApiAuthGuard,
+        CelerityApiAuthGuardType, CelerityApiAuthGuardValueSource, CelerityApiBasePath,
+        CelerityApiBasePathConfiguration, CelerityApiCors, CelerityApiCorsConfiguration,
+        CelerityApiDomain, CelerityApiDomainSecurityPolicy, CelerityApiProtocol, CelerityApiSpec,
         CelerityConsumerSpec, CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType,
         CelerityScheduleSpec, DataStreamSourceConfiguration, DatabaseStreamSourceConfiguration,
         EventConfiguration, EventSourceConfiguration, EventSourceType,
         ObjectStorageEventSourceConfiguration, ObjectStorageEventType, RuntimeBlueprintResource,
-        ValueSourceConfiguration, CELERITY_API_RESOURCE_TYPE, CELERITY_BLUEPRINT_V2023_04_20,
-        CELERITY_CONSUMER_RESOURCE_TYPE, CELERITY_HANDLER_RESOURCE_TYPE,
-        CELERITY_SCHEDULE_RESOURCE_TYPE,
+        SharedHandlerConfig, ValueSourceConfiguration, CELERITY_API_RESOURCE_TYPE,
+        CELERITY_BLUEPRINT_V2023_04_20, CELERITY_CONSUMER_RESOURCE_TYPE,
+        CELERITY_HANDLER_RESOURCE_TYPE, CELERITY_SCHEDULE_RESOURCE_TYPE,
     },
     parse::BlueprintParseError,
 };
@@ -49,6 +49,9 @@ pub fn build_blueprint_config_from_yaml(
                                 }
                                 "resources" => {
                                     validate_populate_resources(value_map, &mut blueprint)?
+                                }
+                                "metadata" => {
+                                    validate_populate_blueprint_metadata(value_map, &mut blueprint)?
                                 }
                                 _ => (),
                             }
@@ -345,7 +348,7 @@ fn validate_celerity_handler_spec(
                 }
                 "codeLocation" => {
                     if let yaml_rust2::Yaml::String(value_str) = value {
-                        celerity_handler_spec.code_location = value_str.clone()
+                        celerity_handler_spec.code_location = Some(value_str.clone())
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
                             "expected a string for codeLocation, found {:?}",
@@ -365,7 +368,7 @@ fn validate_celerity_handler_spec(
                 }
                 "runtime" => {
                     if let yaml_rust2::Yaml::String(value_str) = value {
-                        celerity_handler_spec.runtime = value_str.clone()
+                        celerity_handler_spec.runtime = Some(value_str.clone())
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
                             "expected a string for runtime, found {:?}",
@@ -1454,4 +1457,100 @@ fn extract_scalar_value(
             field, value
         ))),
     }
+}
+
+fn validate_populate_blueprint_metadata(
+    value_map: &yaml_rust2::yaml::Hash,
+    blueprint: &mut BlueprintConfig,
+) -> Result<(), BlueprintParseError> {
+    for (key, value) in value_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "sharedHandlerConfig" => {
+                    if let yaml_rust2::Yaml::Hash(value_map) = value {
+                        blueprint.metadata = Some(BlueprintMetadata {
+                            shared_handler_config: Some(validate_shared_handler_config(value_map)?),
+                        });
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_shared_handler_config(
+    value_map: &yaml_rust2::yaml::Hash,
+) -> Result<SharedHandlerConfig, BlueprintParseError> {
+    let mut shared_handler_config = SharedHandlerConfig::default();
+    for (key, value) in value_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "codeLocation" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        shared_handler_config.code_location = Some(value_str.clone());
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for codeLocation, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "runtime" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        shared_handler_config.runtime = Some(value_str.clone());
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for runtime, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "memory" => {
+                    if let yaml_rust2::Yaml::Integer(value_int) = value {
+                        shared_handler_config.memory = Some(*value_int);
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected an integer for memory, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "timeout" => {
+                    if let yaml_rust2::Yaml::Integer(value_int) = value {
+                        shared_handler_config.timeout = Some(*value_int);
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected an integer for timeout, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "tracingEnabled" => {
+                    if let yaml_rust2::Yaml::Boolean(value_bool) = value {
+                        shared_handler_config.tracing_enabled = Some(*value_bool)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a boolean for tracingEnabled, found {:?}",
+                            value
+                        )))?
+                    }
+                }
+                "environmentVariables" => {
+                    if let yaml_rust2::Yaml::Hash(value_map) = value {
+                        shared_handler_config.environment_variables =
+                            Some(validate_map_of_strings(value_map)?);
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a mapping for environmentVariables, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+    Ok(shared_handler_config)
 }
