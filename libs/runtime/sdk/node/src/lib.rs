@@ -8,10 +8,11 @@ use axum::{
   response::IntoResponse,
 };
 use celerity_runtime_core::{
-  application::{
-    ApiConfig, AppConfig, Application, HttpConfig, HttpHandlerDefinition, WebsocketConfig,
+  application::Application,
+  config::{
+    ApiConfig, AppConfig, HttpConfig, HttpHandlerDefinition, RuntimeCallMode, RuntimeConfig,
+    WebsocketConfig,
   },
-  config::{RuntimeCallMode, RuntimeConfig},
 };
 use napi::{
   bindgen_prelude::*,
