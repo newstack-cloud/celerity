@@ -17,6 +17,9 @@ pub const CELERITY_SCHEDULE_RESOURCE_TYPE: &str = "celerity/schedule";
 /// The resource type identifier for a Celerity Handler.
 pub const CELERITY_HANDLER_RESOURCE_TYPE: &str = "celerity/handler";
 
+/// The resource type identifier a Celerity Handler Config (shared config).
+pub const CELERITY_HANDLER_CONFIG_RESOURCE_TYPE: &str = "celerity/handlerConfig";
+
 /// This is a struct that holds the configuration
 /// for the Celerity runtime in the form a blueprint.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -153,6 +156,8 @@ pub enum CelerityResourceType {
     CelerityConsumer,
     #[serde(rename = "celerity/schedule")]
     CeleritySchedule,
+    #[serde(rename = "celerity/handlerConfig")]
+    CelerityHandlerConfig,
 }
 
 /// This holds the metadata
@@ -196,6 +201,7 @@ pub enum CelerityResourceSpec {
     Api(CelerityApiSpec),
     Consumer(CelerityConsumerSpec),
     Schedule(CelerityScheduleSpec),
+    HandlerConfig(SharedHandlerConfig),
     NoSpec,
 }
 

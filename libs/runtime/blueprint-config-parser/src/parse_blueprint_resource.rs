@@ -58,6 +58,10 @@ impl<'de> ResourceVisitor {
                 let handler_spec = map.next_value()?;
                 Ok(CelerityResourceSpec::Handler(handler_spec))
             }
+            CelerityResourceType::CelerityHandlerConfig => {
+                let handler_config_spec = map.next_value()?;
+                Ok(CelerityResourceSpec::HandlerConfig(handler_config_spec))
+            }
         }
     }
 }

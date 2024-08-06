@@ -16,7 +16,8 @@ use crate::{
         ObjectStorageEventSourceConfiguration, ObjectStorageEventType, RuntimeBlueprintResource,
         SharedHandlerConfig, ValueSourceConfiguration, CELERITY_API_RESOURCE_TYPE,
         CELERITY_BLUEPRINT_V2023_04_20, CELERITY_CONSUMER_RESOURCE_TYPE,
-        CELERITY_HANDLER_RESOURCE_TYPE, CELERITY_SCHEDULE_RESOURCE_TYPE,
+        CELERITY_HANDLER_CONFIG_RESOURCE_TYPE, CELERITY_HANDLER_RESOURCE_TYPE,
+        CELERITY_SCHEDULE_RESOURCE_TYPE,
     },
     parse::BlueprintParseError,
 };
@@ -303,6 +304,7 @@ fn validate_resource_type(
         CELERITY_CONSUMER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityConsumer),
         CELERITY_SCHEDULE_RESOURCE_TYPE => Ok(CelerityResourceType::CeleritySchedule),
         CELERITY_HANDLER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandler),
+        CELERITY_HANDLER_CONFIG_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandlerConfig),
         _ => Err(BlueprintParseError::UnsupportedResourceType(
             resource_type.to_string(),
         )),
@@ -325,6 +327,9 @@ fn validate_resource_spec(
         )),
         CelerityResourceType::CelerityHandler => Ok(CelerityResourceSpec::Handler(
             validate_celerity_handler_spec(spec_map)?,
+        )),
+        CelerityResourceType::CelerityHandlerConfig => Ok(CelerityResourceSpec::HandlerConfig(
+            validate_shared_handler_config(spec_map)?,
         )),
     }
 }
