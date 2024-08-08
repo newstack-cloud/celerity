@@ -36,3 +36,4 @@ This package provides an [oo-bindgen](https://github.com/stepfunc/oo_bindgen) sc
 ## Additional documentation
 
 - [Contributing](CONTRIBUTING.md)
+- [HTTP API Docs](./api-docs/README.md) - API docs for the Local Runtime and Handler Invoke APIs
