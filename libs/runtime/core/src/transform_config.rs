@@ -1,15 +1,16 @@
 use std::cmp::max;
 
 use celerity_blueprint_config_parser::blueprint::{
-    BlueprintConfig, BlueprintLinkSelector, BlueprintScalarValue, CelerityResourceSpec,
-    CelerityResourceType, RuntimeBlueprintResource,
+    BlueprintConfig, BlueprintLinkSelector, BlueprintMetadata, BlueprintScalarValue,
+    CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType, RuntimeBlueprintResource,
 };
 
 use crate::{
     config::{ApiConfig, HttpConfig, HttpHandlerDefinition},
     consts::{
         CELERITY_HTTP_HANDLER_ANNOTATION_NAME, CELERITY_HTTP_METHOD_ANNOTATION_NAME,
-        CELERITY_HTTP_PATH_ANNOTATION_NAME, MAX_HANDLER_TIMEOUT,
+        CELERITY_HTTP_PATH_ANNOTATION_NAME, DEFAULT_HANDLER_TIMEOUT, DEFAULT_TRACING_ENABLED,
+        MAX_HANDLER_TIMEOUT,
     },
     errors::ConfigError,
 };
@@ -20,6 +21,9 @@ pub(crate) fn collect_api_config(
     let mut api_config = ApiConfig {
         http: None,
         websocket: None,
+        auth: None,
+        cors: None,
+        tracing_enabled: false,
     };
     // Find the first API resource in the blueprint.
     let (_, api) = blueprint_config
@@ -52,23 +56,20 @@ pub(crate) fn collect_api_config(
 
                         if let CelerityResourceSpec::Handler(handler_spec) = &handler.resource.spec
                         {
-                            if let Some(location) = &handler_spec.code_location {
-                                candidate_http_handlers.push(HttpHandlerDefinition {
-                                    path: to_axum_path(path.clone()),
-                                    method,
-                                    location: location.clone(),
-                                    handler: handler.name,
-                                    timeout: handler_spec
-                                        .timeout
-                                        .map(|timeout| max(timeout, MAX_HANDLER_TIMEOUT))
-                                        .unwrap_or(MAX_HANDLER_TIMEOUT),
-                                });
-                            } else {
-                                return Err(ConfigError::Api(format!(
-                                    "handler {} is missing location",
-                                    handler.name
-                                )));
-                            }
+                            let handler_configs = select_resources(
+                                &handler.resource.link_selector,
+                                &blueprint_config,
+                                CelerityResourceType::CelerityHandlerConfig,
+                            )?;
+                            let handler_definition = apply_http_handler_configurations(
+                                handler.name,
+                                handler_spec,
+                                handler_configs,
+                                blueprint_config.metadata.as_ref(),
+                                method,
+                                path,
+                            )?;
+                            candidate_http_handlers.push(handler_definition);
                         } else {
                             return Err(ConfigError::Api(format!(
                                 "handler {} is missing spec or resource is not a handler",
@@ -84,17 +85,145 @@ pub(crate) fn collect_api_config(
     if candidate_http_handlers.len() > 0 {
         api_config.http = Some(HttpConfig {
             handlers: candidate_http_handlers,
+            base_paths: vec![],
         });
     }
 
     Ok(api_config)
 }
 
+fn apply_http_handler_configurations(
+    handler_name: String,
+    handler_spec: &CelerityHandlerSpec,
+    handler_configs: Vec<ResourceWithName>,
+    blueprint_metadata: Option<&BlueprintMetadata>,
+    method: String,
+    path: String,
+) -> Result<HttpHandlerDefinition, ConfigError> {
+    let mut handler_definition = HttpHandlerDefinition::default();
+    handler_definition.handler = handler_name.clone();
+    handler_definition.path = to_axum_path(path);
+    handler_definition.method = method;
+
+    // Handler spec takes precedence, then handler config
+    // resources and then global `sharedHandlerConfig`
+    // in the blueprint metadata.
+    //
+    // Only consider the first handler config resource to avoid complexity
+    // involved in merging multiple handler configs and determining precedence.
+    let handler_config = handler_configs.get(0);
+
+    handler_definition.location = resolve_handler_location(
+        handler_name,
+        handler_spec,
+        handler_config,
+        blueprint_metadata,
+    )?;
+
+    handler_definition.timeout =
+        resolve_handler_timeout(handler_spec, handler_config, blueprint_metadata);
+
+    handler_definition.tracing_enabled =
+        resolve_tracing_enabled(handler_spec, handler_config, blueprint_metadata);
+
+    Ok(handler_definition)
+}
+
+fn resolve_handler_location<'a>(
+    handler_name: String,
+    handler_spec: &'a CelerityHandlerSpec,
+    handler_config: Option<&'a ResourceWithName>,
+    blueprint_metadata: Option<&'a BlueprintMetadata>,
+) -> Result<String, ConfigError> {
+    let final_location = handler_spec.code_location.as_ref().or_else(|| {
+        handler_config
+            .and_then(|config| match &config.resource.spec {
+                CelerityResourceSpec::HandlerConfig(handler_config) => {
+                    handler_config.code_location.as_ref()
+                }
+                _ => None,
+            })
+            .or_else(|| {
+                blueprint_metadata.and_then(|metadata| {
+                    metadata
+                        .shared_handler_config
+                        .as_ref()
+                        .and_then(|config| config.code_location.as_ref())
+                })
+            })
+    });
+
+    if let Some(location) = final_location {
+        Ok(location.clone())
+    } else {
+        Err(ConfigError::Api(format!(
+            "handler {} is missing code location, define it in the \
+            handler spec or one of the supported handler config locations",
+            handler_name
+        )))
+    }
+}
+
+fn resolve_handler_timeout(
+    handler_spec: &CelerityHandlerSpec,
+    handler_config: Option<&ResourceWithName>,
+    blueprint_metadata: Option<&BlueprintMetadata>,
+) -> i64 {
+    handler_spec
+        .timeout
+        .map(|timeout| max(timeout, MAX_HANDLER_TIMEOUT))
+        .or_else(|| {
+            handler_config
+                .and_then(|config| match &config.resource.spec {
+                    CelerityResourceSpec::HandlerConfig(handler_config) => handler_config.timeout,
+                    _ => None,
+                })
+                .map(|timeout| max(timeout, MAX_HANDLER_TIMEOUT))
+        })
+        .or_else(|| {
+            blueprint_metadata.and_then(|metadata| {
+                metadata
+                    .shared_handler_config
+                    .as_ref()
+                    .and_then(|config| config.timeout)
+            })
+        })
+        // We can safely fallback to a reasonable default timeout when one is not supplied.
+        .unwrap_or(DEFAULT_HANDLER_TIMEOUT)
+}
+
+fn resolve_tracing_enabled(
+    handler_spec: &CelerityHandlerSpec,
+    handler_config: Option<&ResourceWithName>,
+    blueprint_metadata: Option<&BlueprintMetadata>,
+) -> bool {
+    handler_spec
+        .tracing_enabled
+        .or_else(|| {
+            handler_config
+                .and_then(|config| match &config.resource.spec {
+                    CelerityResourceSpec::HandlerConfig(handler_config) => {
+                        handler_config.tracing_enabled
+                    }
+                    _ => None,
+                })
+                .or_else(|| {
+                    blueprint_metadata.and_then(|metadata| {
+                        metadata
+                            .shared_handler_config
+                            .as_ref()
+                            .and_then(|config| config.tracing_enabled)
+                    })
+                })
+        })
+        .unwrap_or(DEFAULT_TRACING_ENABLED)
+}
+
 // Converts a Celerity path to an Axum path.
 // Celerity paths are in the form of `/path/{param1}/{param2}`.
 // Axum paths are in the form of `/path/:param1/:param2`.
-// Celerity wildcards are of the form `/{param+}` like with
-// Amazon API Gateway. Axum wildcards are of the form `/*param`.
+// Celerity wildcards are of the form `/{param+}`.
+// Axum wildcards are of the form `/*param`.
 fn to_axum_path(celerity_path: String) -> String {
     celerity_path
         .split('/')
@@ -162,7 +291,7 @@ mod tests {
     fn test_to_axum_path() {
         assert_eq!(to_axum_path("/path".to_string()), "/path");
         assert_eq!(to_axum_path("/path/{param}".to_string()), "/path/:param");
-        assert_eq!(to_axum_path("/path/{param+}".to_string()), "/path/*param");
+        assert_eq!(to_axum_path("/path/{proxy+}".to_string()), "/path/*proxy");
         assert_eq!(
             to_axum_path("/path/{param}/{param2}".to_string()),
             "/path/:param/:param2"

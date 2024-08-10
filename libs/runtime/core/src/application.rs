@@ -1,9 +1,15 @@
-use std::{cmp::max, net::SocketAddr};
+use std::{
+    cmp::max,
+    collections::{HashMap, VecDeque},
+    net::SocketAddr,
+    sync::{Arc, Mutex},
+};
 
 use axum::{
+    extract::ws::WebSocket,
     handler::Handler,
     routing::{get, post},
-    Router,
+    Json, Router,
 };
 use celerity_blueprint_config_parser::{
     blueprint::{
@@ -12,16 +18,22 @@ use celerity_blueprint_config_parser::{
     },
     parse::BlueprintParseError,
 };
-use tokio::net::TcpListener;
+use serde::{Deserialize, Serialize};
+use tokio::{net::TcpListener, task::JoinHandle};
 
 use crate::{
-    config::{AppConfig, RuntimeConfig},
+    config::{AppConfig, RuntimeCallMode, RuntimeConfig},
     consts::{
         CELERITY_HTTP_HANDLER_ANNOTATION_NAME, CELERITY_HTTP_METHOD_ANNOTATION_NAME,
-        CELERITY_HTTP_PATH_ANNOTATION_NAME, MAX_HANDLER_TIMEOUT,
+        CELERITY_HTTP_PATH_ANNOTATION_NAME, DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
+        MAX_HANDLER_TIMEOUT,
     },
     errors::{ApplicationStartError, ConfigError},
+    runtime_local_api::create_runtime_local_api,
     transform_config::collect_api_config,
+    types::{EventData, EventTuple},
+    utils::get_epoch_seconds,
+    wsconn_registry::WebSocketConnRegistry,
 };
 
 /// Provides an application that can run a HTTP server, WebSocket server,
@@ -30,7 +42,12 @@ use crate::{
 pub struct Application {
     runtime_config: RuntimeConfig,
     http_server_app: Option<Router>,
+    runtime_local_api: Option<Router>,
+    event_queue: Option<Arc<Mutex<VecDeque<EventTuple>>>>,
+    processing_events_map: Option<Arc<Mutex<HashMap<String, EventTuple>>>>,
+    ws_connections: Option<WebSocketConnRegistry>,
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
+    local_api_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
 }
 
 impl Application {
@@ -39,50 +56,86 @@ impl Application {
             runtime_config,
             http_server_app: None,
             server_shutdown_signal: None,
+            runtime_local_api: None,
+            local_api_shutdown_signal: None,
+            event_queue: None,
+            processing_events_map: None,
+            ws_connections: None,
         }
     }
 
     pub fn setup(&mut self) -> Result<AppConfig, ApplicationStartError> {
         let blueprint_config = self.load_and_parse_blueprint()?;
-        let mut app_config = AppConfig { api: None };
+        let mut app_config = AppConfig {
+            api: None,
+            consumers: None,
+            schedules: None,
+            cloud_events: None,
+        };
         match collect_api_config(blueprint_config) {
             Ok(api_config) => {
                 app_config.api = Some(api_config);
-                self.http_server_app = Some(Router::new());
+                // todo: attach health check endpoint if runtime_config.use_custom_health_check is false or None
+                self.http_server_app = Some(self.setup_http_server_app());
             }
             Err(ConfigError::ApiMissing) => (),
             Err(err) => return Err(ApplicationStartError::Config(err)),
         }
+        if self.runtime_config.runtime_call_mode == RuntimeCallMode::Http {
+            self.runtime_local_api = Some(self.setup_runtime_local_api()?);
+        }
         Ok(app_config)
     }
 
-    pub async fn run(&mut self) -> Result<AppInfo, ApplicationStartError> {
-        if let Some(http_app_unwrapped) = self.http_server_app.clone() {
-            println!("About to bind listener!");
-            let port = self.runtime_config.server_port;
-            let host = if self.runtime_config.server_loopback_only.unwrap_or(true) {
-                "127.0.0.1"
-            } else {
-                "0.0.0.0"
-            };
-            let listener = TcpListener::bind(format!("{host}:{port}")).await.unwrap();
-            let listener_addr = listener.local_addr().unwrap();
-            println!("About to spawn server!");
-            let (tx, rx) = tokio::sync::oneshot::channel::<()>();
-            tokio::spawn(async move {
-                axum::serve(listener, http_app_unwrapped)
-                    .with_graceful_shutdown(async {
-                        rx.await.ok();
-                    })
-                    .await
-                    .unwrap();
-            });
-            println!("Server spawned!");
-            self.server_shutdown_signal = Some(tx);
+    fn setup_http_server_app(&self) -> Router {
+        let mut http_server_app = Router::new();
+        if let Some(use_custom_health_check) = self.runtime_config.use_custom_health_check {
+            if !use_custom_health_check {
+                http_server_app = http_server_app.route(
+                    DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
+                    get(|()| async {
+                        Json(HealthCheckResponse {
+                            timestamp: get_epoch_seconds(),
+                        })
+                    }),
+                );
+            }
+        }
+        http_server_app
+    }
 
-            return Ok(AppInfo {
-                http_server_address: Some(listener_addr),
-            });
+    fn setup_runtime_local_api(&mut self) -> Result<Router, ApplicationStartError> {
+        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
+        self.event_queue = Some(event_queue.clone());
+        let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
+        self.processing_events_map = Some(processing_events_map.clone());
+        create_runtime_local_api(&self.runtime_config, event_queue, processing_events_map)
+    }
+
+    pub async fn run(&mut self, block: bool) -> Result<AppInfo, ApplicationStartError> {
+        let mut server_task = None;
+        let mut local_api_task = None;
+        let mut server_address = None;
+        if let Some(http_app_unwrapped) = self.http_server_app.clone() {
+            let (task, addr) = self.run_http_server_app(http_app_unwrapped).await;
+            server_task = Some(task);
+            server_address = Some(addr);
+        }
+
+        if let Some(runtime_local_api_unwrapped) = self.runtime_local_api.clone() {
+            let task = self
+                .start_runtime_local_api(runtime_local_api_unwrapped)
+                .await;
+            local_api_task = Some(task);
+        }
+
+        if block {
+            if let Some(task) = server_task {
+                task.await?;
+            }
+            if let Some(task) = local_api_task {
+                task.await?;
+            }
         }
 
         // 2. Determine what kinds of apps to run based on blueprint and env vars.
@@ -92,9 +145,53 @@ impl Application {
         //      Can run a hybrid app that serves both HTTP and WebSocket.
         // 3. Set up apps with routes and middleware/plugins?!?
         // 4. Start apps in separate tokio tasks.
-        Err(ApplicationStartError::Environment(
-            "no HTTP server app provided".to_string(),
-        ))
+        Ok(AppInfo {
+            http_server_address: server_address,
+        })
+    }
+
+    async fn start_runtime_local_api(&mut self, runtime_local_api: Router) -> JoinHandle<()> {
+        let port = self.runtime_config.local_api_port;
+        // Bind on loopback only as this API must not be exposed to the outside world.
+        let listener = TcpListener::bind(format!("127.0.0.1:{port}"))
+            .await
+            .unwrap();
+        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+        let task = tokio::spawn(async move {
+            axum::serve(listener, runtime_local_api)
+                .with_graceful_shutdown(async {
+                    rx.await.ok();
+                })
+                .await
+                .unwrap();
+        });
+        self.local_api_shutdown_signal = Some(tx);
+        task
+    }
+
+    async fn run_http_server_app(&mut self, http_app: Router) -> (JoinHandle<()>, SocketAddr) {
+        println!("About to bind listener!");
+        let port = self.runtime_config.server_port;
+        let host = if self.runtime_config.server_loopback_only.unwrap_or(true) {
+            "127.0.0.1"
+        } else {
+            "0.0.0.0"
+        };
+        let listener = TcpListener::bind(format!("{host}:{port}")).await.unwrap();
+        let listener_addr = listener.local_addr().unwrap();
+        println!("About to spawn server!");
+        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+        let task = tokio::spawn(async move {
+            axum::serve(listener, http_app)
+                .with_graceful_shutdown(async {
+                    rx.await.ok();
+                })
+                .await
+                .unwrap();
+        });
+        println!("Server spawned!");
+        self.server_shutdown_signal = Some(tx);
+        (task, listener_addr)
     }
 
     fn load_and_parse_blueprint(&self) -> Result<BlueprintConfig, BlueprintParseError> {
@@ -151,7 +248,12 @@ impl Application {
 
     pub fn shutdown(&mut self) {
         if let Some(tx) = self.server_shutdown_signal.take() {
-            tx.send(()).expect("failed to send shutdown signal");
+            tx.send(())
+                .expect("failed to send shutdown signal to http server");
+        }
+        if let Some(tx) = self.local_api_shutdown_signal.take() {
+            tx.send(())
+                .expect("failed to send shutdown signal to local api server");
         }
     }
 }
@@ -159,4 +261,9 @@ impl Application {
 #[derive(Debug)]
 pub struct AppInfo {
     pub http_server_address: Option<SocketAddr>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct HealthCheckResponse {
+    pub timestamp: u64,
 }

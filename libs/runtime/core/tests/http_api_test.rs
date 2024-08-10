@@ -5,7 +5,7 @@ use http_body_util::BodyExt;
 mod common;
 
 #[test_log::test(tokio::test)]
-async fn sets_up_and_runs_http_server_application() {
+async fn sets_up_and_runs_http_server_application_in_ffi_mode() {
     let env_vars = common::MockEnvVars::new(Some(
         vec![
             (
@@ -24,7 +24,7 @@ async fn sets_up_and_runs_http_server_application() {
     let _ = app.setup().unwrap();
 
     app.register_http_handler("/hello", "GET", hello_handler);
-    let app_info = app.run().await.unwrap();
+    let app_info = app.run(false).await.unwrap();
 
     let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
         .build_http();
