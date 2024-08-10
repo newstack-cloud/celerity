@@ -17,6 +17,8 @@ pub unsafe fn application_create(value: u32) -> *mut Application {
             runtime_call_mode: RuntimeCallMode::Ffi,
             server_port: 3000,
             server_loopback_only: Some(true),
+            local_api_port: 3001,
+            use_custom_health_check: Some(false),
         }),
     });
     Box::into_raw(application)
