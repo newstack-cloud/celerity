@@ -271,6 +271,8 @@ impl CoreRuntimeApplication {
       runtime_call_mode: RuntimeCallMode::Ffi,
       server_loopback_only: runtime_config.server_loopback_only,
       server_port: runtime_config.server_port,
+      local_api_port: 8259,
+      use_custom_health_check: None,
     };
     let inner = Application::new(native_runtime_config);
     CoreRuntimeApplication {
@@ -327,8 +329,8 @@ impl CoreRuntimeApplication {
 
   #[allow(clippy::missing_safety_doc)]
   #[napi]
-  pub async unsafe fn run(&mut self) -> Result<()> {
-    self.inner.run().await.map_err(|err| {
+  pub async unsafe fn run(&mut self, block: bool) -> Result<()> {
+    self.inner.run(block).await.map_err(|err| {
       Error::new(
         Status::GenericFailure,
         format!("failed to start core runtime, {}", err),
