@@ -9,3 +9,4 @@ The CLI for managing Celerity applications.
 ## Additional documentation
 
 - [Contributing](docs/CONTRIBUTING.md)
+- [Architecture](docs/ARCHITECTURE.md)
