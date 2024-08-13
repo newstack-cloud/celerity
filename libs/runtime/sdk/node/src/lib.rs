@@ -11,7 +11,7 @@ use celerity_runtime_core::{
   application::Application,
   config::{
     ApiConfig, AppConfig, HttpConfig, HttpHandlerDefinition, RuntimeCallMode, RuntimeConfig,
-    WebsocketConfig,
+    WebSocketConfig,
   },
 };
 use napi::{
@@ -86,8 +86,8 @@ impl From<HttpConfig> for CoreHttpConfig {
 #[napi(object)]
 pub struct CoreWebsocketConfig {}
 
-impl From<WebsocketConfig> for CoreWebsocketConfig {
-  fn from(_: WebsocketConfig) -> Self {
+impl From<WebSocketConfig> for CoreWebsocketConfig {
+  fn from(_: WebSocketConfig) -> Self {
     Self {}
   }
 }
