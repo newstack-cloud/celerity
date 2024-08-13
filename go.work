@@ -6,4 +6,5 @@ use (
 	./libs/build-engine
 	./tools/blueprint-ls
 	./apps/cli
+	./apps/api
 )
