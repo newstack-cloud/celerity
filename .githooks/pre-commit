@@ -31,7 +31,7 @@ lint_project libs/runtime
 lint_project tools/blueprint-ls
 
 # lint_project apps/api
-# lint_project apps/cli
+lint_project apps/cli
 
 # lint_project apps/runtime/core
 # lint_project apps/runtime/csharp
