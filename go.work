@@ -4,4 +4,5 @@ use (
 	./libs/blueprint
 	./libs/common
 	./tools/blueprint-ls
+	./apps/cli
 )
