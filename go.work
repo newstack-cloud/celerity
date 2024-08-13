@@ -3,6 +3,7 @@ go 1.22.2
 use (
 	./libs/blueprint
 	./libs/common
+	./libs/build-engine
 	./tools/blueprint-ls
 	./apps/cli
 )
