@@ -1,4 +1,6 @@
-use celerity_blueprint_config_parser::blueprint::{CelerityApiAuth, CelerityApiCorsConfiguration};
+use celerity_blueprint_config_parser::blueprint::{
+    CelerityApiAuth, CelerityApiCors, CelerityApiCorsConfiguration,
+};
 
 use crate::{consts::DEFAULT_LOCAL_API_PORT, env::EnvVars};
 
@@ -112,15 +114,15 @@ pub struct AppConfig {
     pub api: Option<ApiConfig>,
     pub consumers: Option<ConsumersConfig>,
     pub schedules: Option<SchedulesConfig>,
-    pub cloud_events: Option<CloudEventsConfig>,
+    pub events: Option<EventsConfig>,
 }
 
 #[derive(Debug)]
 pub struct ApiConfig {
     pub http: Option<HttpConfig>,
-    pub websocket: Option<WebsocketConfig>,
+    pub websocket: Option<WebSocketConfig>,
     pub auth: Option<CelerityApiAuth>,
-    pub cors: Option<CelerityApiCorsConfiguration>,
+    pub cors: Option<CelerityApiCors>,
     pub tracing_enabled: bool,
 }
 
@@ -135,6 +137,7 @@ pub struct HttpConfig {
 
 #[derive(Debug, Default)]
 pub struct HttpHandlerDefinition {
+    pub name: String,
     pub path: String,
     pub method: String,
     pub location: String,
@@ -145,11 +148,21 @@ pub struct HttpHandlerDefinition {
 }
 
 #[derive(Debug)]
-pub struct WebsocketConfig {
+pub struct WebSocketConfig {
+    pub handlers: Vec<WebSocketHandlerDefinition>,
     // Base paths are used by the runtime to only route requests
     // with a certain base path prefix to the WebSocket API in a hybrid API
     // context.
     pub base_paths: Vec<String>,
+}
+
+#[derive(Debug, Default)]
+pub struct WebSocketHandlerDefinition {
+    pub name: String,
+    pub route_key: String,
+    pub route: String,
+    pub timeout: i64,
+    pub tracing_enabled: bool,
 }
 
 #[derive(Debug)]
@@ -176,6 +189,7 @@ pub struct ConsumerConfig {
 
 #[derive(Debug, Default)]
 pub struct EventHandlerDefinition {
+    pub name: String,
     pub location: String,
     pub handler: String,
     // Timeout in seconds.
@@ -215,17 +229,25 @@ pub struct ScheduleConfig {
 }
 
 #[derive(Debug)]
-pub struct CloudEventsConfig {
-    pub cloud_events: Vec<CloudEventConfig>,
+pub struct EventsConfig {
+    pub events: Vec<EventConfig>,
 }
 
 #[derive(Debug)]
-pub struct CloudEventConfig {
+pub enum EventConfig {
+    // An event trigger (e.g. file uploaded to Amazon S3)
+    EventTrigger(EventTriggerConfig),
+    // A stream of events or data into the runtime.
+    Stream(StreamConfig),
+}
+
+#[derive(Debug)]
+pub struct EventTriggerConfig {
     // The event type provided in messages polled from the
-    // cloud events message queue.
+    // events message queue.
     pub event_type: String,
-    // The ID or URL of the queue to which cloud event messages
-    // are sent.
+    // The ID or URL of the queue from which event messages
+    // are consumed.
     pub queue_id: String,
     // Depending on the deployment environment,
     // this may be overridden if the provided
@@ -235,6 +257,21 @@ pub struct CloudEventConfig {
     // this may not be used.
     pub visibility_timeout: Option<i64>,
     pub wait_time_seconds: Option<i64>,
+    // Depending on the deployment environment,
+    // this may not be used.
+    pub partial_failures: Option<bool>,
+    pub handlers: Vec<EventHandlerDefinition>,
+}
+
+#[derive(Debug)]
+pub struct StreamConfig {
+    // The ID of the stream from which event messages
+    // are consumed.
+    pub stream_id: String,
+    // Depending on the deployment environment,
+    // this may be overridden if the provided
+    // value is not within the allowed range.
+    pub batch_size: Option<i64>,
     // Depending on the deployment environment,
     // this may not be used.
     pub partial_failures: Option<bool>,

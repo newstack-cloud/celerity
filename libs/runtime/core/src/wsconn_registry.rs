@@ -1,8 +1,10 @@
 use std::{
     collections::HashMap,
+    fmt::{Debug, Display},
     sync::{Arc, RwLock},
 };
 
+use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
 use tokio::sync::{
     mpsc::{Receiver, Sender},
@@ -10,9 +12,19 @@ use tokio::sync::{
 };
 use tracing::{debug, info};
 
-use crate::types::WebSocketMessage;
+use crate::{errors::WebSocketConnError, types::WebSocketMessage};
 
-#[derive(Debug, Clone)]
+#[async_trait]
+/// Provides a trait for sending messages to WebSocket connections.
+pub trait WebSocketRegistrySend: Send + Sync + Display + Debug {
+    async fn send_message(
+        &self,
+        connection_id: String,
+        message: String,
+    ) -> Result<(), WebSocketConnError>;
+}
+
+#[derive(Clone)]
 /// Provides a registry for WebSocket connections.
 /// This allows for sending messages to WebSocket connections
 /// in the current runtime instance and on other nodes in a cluster.
@@ -81,11 +93,28 @@ impl WebSocketConnRegistry {
         conn
     }
 
+    /// Returns an iterable vector of connections in the registry.
+    pub fn get_connections(&self) -> Vec<(String, Arc<Mutex<WebSocket>>)> {
+        self.connections
+            .read()
+            .unwrap()
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect()
+    }
+}
+
+#[async_trait]
+impl WebSocketRegistrySend for WebSocketConnRegistry {
     /// Send a message to a specific connection that may be on the same instance
     /// or on another node in the cluster.
     /// This will broadcast the message to all other nodes in the cluster if the
     /// connection is not found in the local registry.
-    pub async fn send_message(&self, connection_id: String, message: String) {
+    async fn send_message(
+        &self,
+        connection_id: String,
+        message: String,
+    ) -> Result<(), WebSocketConnError> {
         if let Some(connection) = self.get_connection(connection_id.clone()) {
             debug!(
                 connection_id = %connection_id,
@@ -94,7 +123,7 @@ impl WebSocketConnRegistry {
             );
             let mut connection = connection.lock().await;
             debug!(connection_id = %connection_id, "sending message to connection: {}", connection_id);
-            connection.send(Message::Text(message)).await.unwrap();
+            connection.send(Message::Text(message)).await?;
         } else if let Some(broadcaster) = &self.broadcaster {
             debug!(connection_id = %connection_id, "connection not found locally, sending message to broadcaster");
             broadcaster
@@ -102,19 +131,24 @@ impl WebSocketConnRegistry {
                     connection_id: connection_id.to_string(),
                     message,
                 })
-                .await
-                .unwrap();
+                .await?;
         }
+        Ok(())
     }
+}
 
-    /// Returns an iterable vector of connections in the registry.
-    pub fn get_collections(&self) -> Vec<(String, Arc<Mutex<WebSocket>>)> {
-        self.connections
-            .read()
-            .unwrap()
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect()
+impl Display for WebSocketConnRegistry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "WebSocketConnRegistry")
+    }
+}
+
+impl Debug for WebSocketConnRegistry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WebSocketConnRegistry")
+            .field("connections", &self.connections)
+            .field("broadcaster", &self.broadcaster)
+            .finish()
     }
 }
 
@@ -177,13 +211,13 @@ mod tests {
                                 if let Message::Text(msg) = msg {
                                     // Broadcast received message to other connection.
                                     if let Some(other_connection_id) = &other_connection_id {
-                                        registry
+                                        let _ = registry
                                             .send_message(other_connection_id.clone(), msg)
                                             .await;
                                     } else {
                                         // When "other connection" is not statically set,
                                         // broadcast to all other connections.
-                                        for (id, conn) in registry.get_collections().iter() {
+                                        for (id, conn) in registry.get_connections().iter() {
                                             if *id != connection_id {
                                                 let mut conn = conn.lock().await;
                                                 conn.send(Message::Text(msg.clone())).await.unwrap();

@@ -76,6 +76,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EventResultResponse"
+        "404":
+          description: |
+            The event with the provided ID was not found in the runtime.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventNotFoundErrorResponse"
         "500":
           description: |
             A server error occurred when trying to process the event result.
@@ -113,6 +120,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PostWebSocketMessagesResponse"
+        "403":
+          description: |
+            The WebSockets feature is not enabled for the current application. This will be returned when the blueprint configuration for the current application does not specify support for the `websocket` protocol.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostWebSocketMessagesNotEnabledResponse"
         "500":
           description: |
             A server error occurred when trying to send websocket messages.
@@ -163,6 +177,8 @@ requestBodies:
                 - $ref: "#/components/schemas/HttpRequestEventResultPayload"
                 - $ref: "#/components/schemas/MessageProcessingEventResultPayload"
                 - $ref: "#/components/schemas/WebSocketMessageEventResultPayload"
+                - $ref: "#/components/schemas/ScheduleEventResultPayload"
+                - $ref: "#/components/schemas/EventTriggerResultPayload"
             context:
               type: object
               description: |
@@ -203,6 +219,12 @@ components:
           $ref: "#/components/schemas/HttpConfiguration"
         websocket:
           $ref: "#/components/schemas/WebSocketConfiguration"
+        consumer:
+          $ref: "#/components/schemas/ConsumerConfiguration"
+        schedule:
+          $ref: "#/components/schemas/ScheduleConfiguration"
+        events:
+          $ref: "#/components/schemas/EventsConfiguration"
 
     HttpConfiguration:
       type: object
@@ -217,12 +239,17 @@ components:
     HttpHandlerConfiguration:
       type: object
       required:
+        - handlerName
         - handlerTag
         - path
         - method
         - timeout
         - tracingEnabled
       properties:
+        handlerName:
+          type: string
+          description: The unique name of the handler in this application.
+          examples: ["Orders-GetOrder-v1"]
         handlerTag:
           type: string
           description: |
@@ -262,11 +289,16 @@ components:
     WebSocketHandlerConfiguration:
       type: object
       required:
+        - handlerName
         - handlerTag
         - routeKey
         - timeout
         - tracingEnabled
       properties:
+        handlerName:
+          type: string
+          description: The unique name of the handler in this application.
+          examples: ["Orders-GetOrder-v1"]
         handlerTag:
           type: string
           description: |
@@ -275,6 +307,131 @@ components:
         routeKey:
           type: string
           examples: ["action"]
+        route:
+          type: string
+          examples: ["myAction"]
+        timeout:
+          type: integer
+          description: The maximum time in seconds that the handler is allowed to process the message.
+        tracingEnabled:
+          type: boolean
+          description: Whether or not tracing is enabled for the handler.
+
+    ConsumerConfiguration:
+      type: object
+      required:
+        - handlers
+      properties:
+        handlers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConsumerHandlerConfiguration"
+
+    ConsumerHandlerConfiguration:
+      type: object
+      required:
+        - handlerName
+        - handlerTag
+        - routeKey
+        - timeout
+        - tracingEnabled
+      properties:
+        handlerName:
+          type: string
+          description: The unique name of the handler in this application.
+          examples: ["Orders-GetOrder-v1"]
+        handlerTag:
+          type: string
+          description: |
+            The unique tag assigned to the handler derived from the source queue or message broker.
+          examples: ["source::arn:aws:sqs:us-east-2:444455556666:queue1"]
+        sourceId:
+          type: string
+          examples: ["arn:aws:sqs:us-east-2:444455556666:queue1"]
+        timeout:
+          type: integer
+          description: The maximum time in seconds that the handler is allowed to process the message.
+        tracingEnabled:
+          type: boolean
+          description: Whether or not tracing is enabled for the handler.
+
+    ScheduleConfiguration:
+      type: object
+      required:
+        - handlers
+      properties:
+        handlers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScheduleHandlerConfiguration"
+
+    ScheduleHandlerConfiguration:
+      type: object
+      required:
+        - handlerName
+        - handlerTag
+        - schedule
+        - timeout
+        - tracingEnabled
+      properties:
+        handlerName:
+          type: string
+          description: The unique name of the handler in this application.
+          examples: ["Orders-Summarise-v1"]
+        handlerTag:
+          type: string
+          description: |
+            The unique tag assigned to the handler derived from the queue that scheduled cloud events are forwarded to and the handler name.
+          examples:
+            [
+              "source::arn:aws:sqs:us-east-2:444455556666:schedule-events-queue::Orders-Summarise-v1",
+            ]
+        schedule:
+          type: string
+          examples: ["rate(1h)"]
+        timeout:
+          type: integer
+          description: The maximum time in seconds that the handler is allowed to process the message.
+        tracingEnabled:
+          type: boolean
+          description: Whether or not tracing is enabled for the handler.
+
+    EventsConfiguration:
+      type: object
+      required:
+        - handlers
+      properties:
+        handlers:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventHandlerConfiguration"
+
+    EventHandlerConfiguration:
+      type: object
+      required:
+        - handlerName
+        - handlerTag
+        - timeout
+        - tracingEnabled
+      properties:
+        handlerName:
+          type: string
+          description: The unique name of the handler in this application.
+          examples: ["Orders-Invoice-Upload-v1"]
+        handlerTag:
+          type: string
+          description: |
+            The unique tag assigned to the handler derived from the queue that configured cloud service (or other) events are forwarded to and the handler name.
+
+            This could also be a data stream source ID that is directly consumed by the runtime.
+          examples:
+            [
+              "source::arn:aws:sqs:us-east-2:444455556666:cloud-events-queue::objectCreated",
+            ]
+        event:
+          type: string
+          description: The event type that the handler responds to, this is only present when a queue is the point of interaction for the runtime.
+          examples: ["objectCreated"]
         timeout:
           type: integer
           description: The maximum time in seconds that the handler is allowed to process the message.
@@ -326,6 +483,32 @@ components:
           nullable: true
           description: A message containing the reason processing the message failed.
 
+    ScheduleEventResultPayload:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: Whether or not the scheduled event handler was successful.
+        errorMessage:
+          type: string
+          nullable: true
+          description: A message containing the reason why the scheduled handler failed.
+
+    EventTriggerResultPayload:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: Whether or not the event handler was successful in processing an event (cloud or otherwise).
+        errorMessage:
+          type: string
+          nullable: true
+          description: A message containing the reason why the event handler failed.
+
     MessageProcessingEventResultPayload:
       type: object
       required:
@@ -373,13 +556,13 @@ components:
           type: string
           description: |
             The type of event.
-            Can be one of `httpRequest`, `wsMessage`, `consumerMessage`, `scheduleMessage` or `cloudEventMessage`.
+            Can be one of `httpRequest`, `wsMessage`, `consumerMessage`, `scheduleMessage` or `eventMessage`.
           enum:
             - httpRequest
             - wsMessage
             - consumerMessage
             - scheduleMessage
-            - cloudEventMessage
+            - eventMessage
           examples: ["httpRequest"]
         handlerTag:
           type: string
@@ -397,6 +580,8 @@ components:
             - $ref: "#/components/schemas/HttpRequestEventData"
             - $ref: "#/components/schemas/WebSocketMessageEventData"
             - $ref: "#/components/schemas/QueueConsumerMessagesEventData"
+            - $ref: "#/components/schemas/ScheduleEventData"
+            - $ref: "#/components/schemas/OtherEventData"
         context:
           type: object
           description: |
@@ -412,7 +597,7 @@ components:
       properties:
         message:
           type: string
-          examples: ["The result has been processed"]
+          examples: ["The result has been successfully processed"]
 
     PostWebSocketMessagesResponse:
       type: object
@@ -515,12 +700,13 @@ components:
           type: string
           examples: ["e9c9d01c-64a0-4127-8c5c-9745a4d05840"]
         message:
-          type: object
-          additionalProperties: true
+          type: string
+          description: |
+            A serialised JSON object that is expected
+            to contain the property used for the routeKey
+            to route the message to the correct handler.
           examples:
-            - action: myAction
-              data:
-                text: A new message for myAction
+            - '{"action":"myAction","text":"A new message for myAction"}'
 
     QueueConsumerMessagesEventData:
       type: object
@@ -566,9 +752,77 @@ components:
           description: Vendor-specific information associated with the message.
           additionalProperties: true
 
+    ScheduleEventData:
+      type: object
+      required:
+        - scheduleId
+        - messageId
+        - schedule
+        - vendor
+      properties:
+        scheduleId:
+          type: string
+          description: |
+            The unique identifier of the scheduled event trigger.
+        messageId:
+          type: string
+          description: The queue message that the scheduled event trigger created to trigger the handler in the runtime.
+          examples: ["e9c9d01c-64a0-4127-8c5c-9745a4d05840"]
+        schedule:
+          type: string
+          examples: ["rate(1h)"]
+        vendor:
+          type: object
+          description: Vendor-specific information associated with the event trigger message.
+          additionalProperties: true
+
+    OtherEventData:
+      type: object
+      required:
+        - body
+        - source
+        - vendor
+      properties:
+        body:
+          type: string
+          description: The message or stream event body.
+        source:
+          type: string
+          description: The unique identifier of the message or stream source.
+          examples:
+            - "arn:aws:sqs:us-east-2:444455556666:queue1"
+        messageId:
+          type: string
+          description: The queue message that the event trigger created to trigger the handler in the runtime.
+          examples: ["e9c9d01c-64a0-4127-8c5c-9745a4d05840"]
+        messageAttributes:
+          type: object
+          description: |
+            A collection of attributes associated with the message that should be treated as metadata for the message.
+            An example use-case would be to propogate trace information from the context that sent the message to the queue or message broker.
+          additionalProperties: true
+        vendor:
+          type: object
+          description: Vendor-specific information associated with the message/stream record.
+          additionalProperties: true
+
     ServerErrorResponse:
       type: object
       properties:
         message:
           type: string
           examples: ["An unexpected error occurred"]
+
+    PostWebSocketMessagesNotEnabledResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          examples: ["WebSockets are not enabled for the current application"]
+
+    EventNotFoundErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          examples: ["Event with provided ID was not found"]

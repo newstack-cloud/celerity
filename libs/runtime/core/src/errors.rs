@@ -6,7 +6,7 @@ use axum::{
     Json,
 };
 use celerity_blueprint_config_parser::parse::BlueprintParseError;
-use tokio::{task::JoinError, time::error::Elapsed};
+use tokio::{sync::mpsc::error::SendError, task::JoinError, time::error::Elapsed};
 
 use crate::types::ResponseMessage;
 
@@ -125,5 +125,49 @@ impl IntoResponse for EventResultError {
             ),
         };
         resp_tuple.into_response()
+    }
+}
+
+#[derive(Debug)]
+pub enum WebSocketsMessageError {
+    NotEnabled,
+    UnexpectedError,
+}
+
+impl IntoResponse for WebSocketsMessageError {
+    fn into_response(self) -> Response {
+        let resp_tuple = match self {
+            WebSocketsMessageError::NotEnabled => (
+                StatusCode::FORBIDDEN,
+                Json(ResponseMessage {
+                    message: "WebSockets are not enabled for the current application".to_string(),
+                }),
+            ),
+            WebSocketsMessageError::UnexpectedError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ResponseMessage {
+                    message: "An unexpected error occurred".to_string(),
+                }),
+            ),
+        };
+        resp_tuple.into_response()
+    }
+}
+
+#[derive(Debug)]
+pub enum WebSocketConnError {
+    SendMessageError(String),
+    BroadcastMessageError(String),
+}
+
+impl From<axum::Error> for WebSocketConnError {
+    fn from(error: axum::Error) -> Self {
+        WebSocketConnError::SendMessageError(error.to_string())
+    }
+}
+
+impl<T> From<SendError<T>> for WebSocketConnError {
+    fn from(error: SendError<T>) -> Self {
+        WebSocketConnError::BroadcastMessageError(error.to_string())
     }
 }

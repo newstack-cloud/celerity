@@ -33,7 +33,7 @@ use crate::{
     transform_config::collect_api_config,
     types::{EventData, EventTuple},
     utils::get_epoch_seconds,
-    wsconn_registry::WebSocketConnRegistry,
+    wsconn_registry::{WebSocketConnRegistry, WebSocketRegistrySend},
 };
 
 /// Provides an application that can run a HTTP server, WebSocket server,
@@ -45,7 +45,7 @@ pub struct Application {
     runtime_local_api: Option<Router>,
     event_queue: Option<Arc<Mutex<VecDeque<EventTuple>>>>,
     processing_events_map: Option<Arc<Mutex<HashMap<String, EventTuple>>>>,
-    ws_connections: Option<WebSocketConnRegistry>,
+    ws_connections: Option<Arc<dyn WebSocketRegistrySend + 'static>>,
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     local_api_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
 }
@@ -70,7 +70,7 @@ impl Application {
             api: None,
             consumers: None,
             schedules: None,
-            cloud_events: None,
+            events: None,
         };
         match collect_api_config(blueprint_config) {
             Ok(api_config) => {
@@ -82,7 +82,7 @@ impl Application {
             Err(err) => return Err(ApplicationStartError::Config(err)),
         }
         if self.runtime_config.runtime_call_mode == RuntimeCallMode::Http {
-            self.runtime_local_api = Some(self.setup_runtime_local_api()?);
+            self.runtime_local_api = Some(self.setup_runtime_local_api(&app_config)?);
         }
         Ok(app_config)
     }
@@ -104,12 +104,20 @@ impl Application {
         http_server_app
     }
 
-    fn setup_runtime_local_api(&mut self) -> Result<Router, ApplicationStartError> {
+    fn setup_runtime_local_api(
+        &mut self,
+        app_config: &AppConfig,
+    ) -> Result<Router, ApplicationStartError> {
         let event_queue = Arc::new(Mutex::new(VecDeque::new()));
         self.event_queue = Some(event_queue.clone());
         let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
         self.processing_events_map = Some(processing_events_map.clone());
-        create_runtime_local_api(&self.runtime_config, event_queue, processing_events_map)
+        create_runtime_local_api(
+            app_config,
+            event_queue,
+            processing_events_map,
+            self.ws_connections.clone(),
+        )
     }
 
     pub async fn run(&mut self, block: bool) -> Result<AppInfo, ApplicationStartError> {
