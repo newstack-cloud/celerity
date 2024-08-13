@@ -3,14 +3,16 @@ package languageserver
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"go.uber.org/zap"
 
-	"github.com/two-hundred/celerity/libs/blueprint/pkg/container"
-	"github.com/two-hundred/celerity/libs/blueprint/pkg/core"
-	"github.com/two-hundred/celerity/libs/blueprint/pkg/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/pkg/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/pkg/transform"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/two-hundred/celerity/libs/blueprint/container"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/transform"
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
 	common "github.com/two-hundred/ls-builder/common"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
@@ -20,7 +22,6 @@ func (a *Application) handleInitialise(ctx *common.LSPContext, params *lsp.Initi
 	a.logger.Debug("Initialising server...")
 	clientCapabilities := params.Capabilities
 	capabilities := a.handler.CreateServerCapabilities()
-	capabilities.CompletionProvider = &lsp.CompletionOptions{}
 	// Take the first position encoding as the one with the highest priority as per the spec.
 	// this language server supports all three position encodings. (UTF-16, UTF-8, UTF-32)
 	capabilities.PositionEncoding = params.Capabilities.General.PositionEncodings[0]
@@ -208,7 +209,7 @@ func ValidateTextDocument(
 		// Disable spec transformation as it is not needed for diagnostics.
 		false,
 	)
-	_, err := loader.ValidateString(
+	_, bpDiagnostics, err := loader.ValidateString(
 		context.Context,
 		*content,
 		schema.YAMLSpecFormat,
@@ -218,9 +219,13 @@ func ValidateTextDocument(
 			map[string]*core.ScalarValue{},
 		),
 	)
+	logger.Info("Blueprint diagnostics: ")
+	spew.Fdump(os.Stderr, bpDiagnostics)
+	diagnostics = append(diagnostics, lspDiagnosticsFromBlueprintDiagnostics(bpDiagnostics)...)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error loading blueprint: %v", err))
-		return blueprintErrorToDiagnostics(err, logger)
+		errDiagnostics := blueprintErrorToDiagnostics(err, logger)
+		diagnostics = append(diagnostics, errDiagnostics...)
 	}
 
 	return diagnostics

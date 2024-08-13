@@ -1,6 +1,6 @@
 package blueprint
 
-import "github.com/two-hundred/celerity/libs/blueprint/pkg/core"
+import "github.com/two-hundred/celerity/libs/blueprint/core"
 
 // Params provides an implementation of the blueprint
 // core.BlueprintParams interface to supply parameters when
