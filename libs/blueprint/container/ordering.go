@@ -1,10 +1,12 @@
 package container
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/common/core"
@@ -64,8 +66,9 @@ import (
 // What matters in the output is that resources are ordered by the priority
 // definition of the links, the order of items that have no direct or transitive
 // relationship are irrelevant.
-func OrderLinksForDeployment(chains []*links.ChainLink) []*links.ChainLink {
+func OrderLinksForDeployment(ctx context.Context, chains []*links.ChainLink, params bpcore.BlueprintParams) ([]*links.ChainLink, error) {
 	flattened := flattenChains(chains, []*links.ChainLink{})
+	var sortErr error
 	sort.Slice(flattened, func(i, j int) bool {
 		linkA := flattened[i]
 		linkB := flattened[j]
@@ -85,13 +88,19 @@ func OrderLinksForDeployment(chains []*links.ChainLink) []*links.ChainLink {
 		// 2, if at least one of the direct children of link B
 		// (for which link A is a descendant) is the priority resource type
 		// in the link relationship.
-		isParentWithPriority := len(core.Filter(directParentsOfLinkB, hasPriorityOver(linkB))) > 0
-		isChildWithPriority := len(core.Filter(linkB.LinksTo, hasPriorityOver(linkB))) > 0
+		isParentWithPriority := len(core.Filter(directParentsOfLinkB, hasPriorityOver(ctx, linkB, params, &sortErr))) > 0
+		if sortErr != nil {
+			return false
+		}
+		isChildWithPriority := len(core.Filter(linkB.LinksTo, hasPriorityOver(ctx, linkB, params, &sortErr))) > 0
+		if sortErr != nil {
+			return false
+		}
 		linkAHasPriority := isParentWithPriority || isChildWithPriority
 
 		return (linkAIsAncestor || linkAIsDescendant) && linkAHasPriority
 	})
-	return flattened
+	return flattened, sortErr
 }
 
 func isResourceAncestor(resourceName string) func(string, int) bool {
@@ -116,7 +125,12 @@ func isLastInPath(link *links.ChainLink) func(string, int) bool {
 	}
 }
 
-func hasPriorityOver(otherLink *links.ChainLink) func(*links.ChainLink, int) bool {
+func hasPriorityOver(
+	ctx context.Context,
+	otherLink *links.ChainLink,
+	params bpcore.BlueprintParams,
+	captureError *error,
+) func(*links.ChainLink, int) bool {
 	return func(candidatePriorityLink *links.ChainLink, index int) bool {
 		linkImplementation, hasLinkImplementation := candidatePriorityLink.LinkImplementations[otherLink.ResourceName]
 		if !hasLinkImplementation {
@@ -131,9 +145,26 @@ func hasPriorityOver(otherLink *links.ChainLink) func(*links.ChainLink, int) boo
 			return false
 		}
 
-		priorityResourceType := linkImplementation.PriorityResourceType()
-		isHardLink := linkImplementation.Type() == provider.LinkTypeHard
-		return priorityResourceType == candidatePriorityLink.Resource.Type && isHardLink
+		priorityResourceTypeOutput, err := linkImplementation.GetPriorityResourceType(
+			ctx,
+			&provider.LinkGetPriorityResourceTypeInput{
+				Params: params,
+			},
+		)
+		if err != nil {
+			*captureError = err
+			return false
+		}
+
+		kindOutput, err := linkImplementation.GetKind(ctx, &provider.LinkGetKindInput{
+			Params: params,
+		})
+		if err != nil {
+			*captureError = err
+			return false
+		}
+		isHardLink := kindOutput.Kind == provider.LinkKindHard
+		return priorityResourceTypeOutput.PriorityResourceType == candidatePriorityLink.Resource.Type && isHardLink
 	}
 }
 

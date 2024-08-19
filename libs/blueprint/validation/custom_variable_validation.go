@@ -115,7 +115,9 @@ func validateCustomVariableOptions(
 	params bpcore.BlueprintParams,
 	customVariableType provider.CustomVariableType,
 ) ([]string, error) {
-	options, err := customVariableType.Options(ctx, params)
+	optionsOutput, err := customVariableType.Options(ctx, &provider.CustomVariableTypeOptionsInput{
+		Params: params,
+	})
 	if err != nil {
 		return nil, errCustomVariableOptions(
 			varName,
@@ -125,7 +127,7 @@ func validateCustomVariableOptions(
 		)
 	}
 
-	optionsSlice := optionsMapToSlice(options)
+	optionsSlice := optionsMapToSlice(optionsOutput.Options)
 	if hasMixedTypes(optionsSlice) {
 		return nil, errCustomVariableMixedTypes(
 			varName,
@@ -134,7 +136,7 @@ func validateCustomVariableOptions(
 		)
 	}
 
-	optionLabels := keysToSlice(options)
+	optionLabels := keysToSlice(optionsOutput.Options)
 	if len(varSchema.AllowedValues) > 0 {
 		err := validateCustomVariableAllowedValues(
 			ctx, varName, varSchema, varMap, params, optionLabels,

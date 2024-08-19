@@ -64,9 +64,13 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_n
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
-	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMissingVersion)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMultipleValidationErrors)
+
+	childLoadErr, isChildLoadErr := loadErr.ChildErrors[0].(*errors.LoadError)
+	c.Assert(isChildLoadErr, Equals, true)
+	c.Assert(childLoadErr.ReasonCode, Equals, ErrorReasonCodeMissingVersion)
 	c.Assert(
-		loadErr.Error(),
+		childLoadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to a version not being provided, version is a required property",
 	)
@@ -99,9 +103,13 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_i
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
-	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVersion)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMultipleValidationErrors)
+
+	childLoadErr, isChildLoadErr := loadErr.ChildErrors[0].(*errors.LoadError)
+	c.Assert(isChildLoadErr, Equals, true)
+	c.Assert(childLoadErr.ReasonCode, Equals, ErrorReasonCodeInvalidVersion)
 	c.Assert(
-		loadErr.Error(),
+		childLoadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to an unsupported version \"2023-09-15\" being provided. "+
 			"supported versions include: 2023-04-20",
@@ -116,9 +124,13 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_resources_pr
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
-	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMissingResources)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMultipleValidationErrors)
+
+	childLoadErr, isChildLoadErr := loadErr.ChildErrors[0].(*errors.LoadError)
+	c.Assert(isChildLoadErr, Equals, true)
+	c.Assert(childLoadErr.ReasonCode, Equals, ErrorReasonCodeMissingResources)
 	c.Assert(
-		loadErr.Error(),
+		childLoadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to an empty set of resources, at least one resource must be defined in a blueprint",
 	)
@@ -133,9 +145,13 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_no_resources_are
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
-	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMissingResources)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMultipleValidationErrors)
+
+	childLoadErr, isChildLoadErr := loadErr.ChildErrors[0].(*errors.LoadError)
+	c.Assert(isChildLoadErr, Equals, true)
+	c.Assert(childLoadErr.ReasonCode, Equals, ErrorReasonCodeMissingResources)
 	c.Assert(
-		loadErr.Error(),
+		childLoadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to an empty set of resources, at least one resource must be defined in a blueprint",
 	)

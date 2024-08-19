@@ -1,6 +1,8 @@
 package container
 
 import (
+	"context"
+
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
@@ -33,7 +35,8 @@ func (s *OrderingTestSuite) SetUpSuite(c *C) {
 }
 
 func (s *OrderingTestSuite) Test_order_links_for_deployment_with_circular_links(c *C) {
-	orderedLinks := OrderLinksForDeployment(orderFixture1.inputChains)
+	orderedLinks, err := OrderLinksForDeployment(context.TODO(), orderFixture1.inputChains, nil)
+	c.Assert(err, IsNil)
 	c.Assert(len(orderedLinks), Equals, len(orderFixture1.expectedPresent))
 	c.Assert(
 		len(
@@ -49,7 +52,8 @@ func (s *OrderingTestSuite) Test_order_links_for_deployment_with_circular_links(
 }
 
 func (s *OrderingTestSuite) Test_order_links_for_deployment_without_circular_links(c *C) {
-	orderedLinks := OrderLinksForDeployment(orderFixture2.inputChains)
+	orderedLinks, err := OrderLinksForDeployment(context.TODO(), orderFixture2.inputChains, nil)
+	c.Assert(err, IsNil)
 	c.Assert(len(orderedLinks), Equals, len(orderFixture2.expectedPresent))
 	c.Assert(
 		len(
@@ -109,7 +113,7 @@ var orderFixture1 = orderChainLinkFixture{
 }
 
 func orderFixture1Chains() []*links.ChainLink {
-	apiGatewayLambdaLinkImpl := testProviderImpl.Link("aws/apigateway/api", "aws/lambda/function")
+	apiGatewayLambdaLinkImpl, _ := testProviderImpl.Link(context.TODO(), "aws/apigateway/api", "aws/lambda/function")
 	orderApi := &links.ChainLink{
 		ResourceName: "orderApi",
 		Resource: &schema.Resource{
@@ -125,7 +129,7 @@ func orderFixture1Chains() []*links.ChainLink {
 		LinksTo:    []*links.ChainLink{},
 	}
 
-	lambdaDynamoDBTableLink := testProviderImpl.Link("aws/lambda/function", "aws/dynamodb/table")
+	lambdaDynamoDBTableLink, _ := testProviderImpl.Link(context.TODO(), "aws/lambda/function", "aws/dynamodb/table")
 	getOrdersFunction := &links.ChainLink{
 		ResourceName: "getOrdersFunction",
 		Resource: &schema.Resource{
@@ -166,7 +170,7 @@ func orderFixture1Chains() []*links.ChainLink {
 		},
 	}
 
-	dynamoDBTableStreamLink := testProviderImpl.Link("aws/dynamodb/table", "aws/dynamodb/stream")
+	dynamoDBTableStreamLink, _ := testProviderImpl.Link(context.TODO(), "aws/dynamodb/table", "aws/dynamodb/stream")
 	// The only hard link in this chain is between the orders table
 	// and the orders stream.
 	ordersTable := &links.ChainLink{
@@ -187,7 +191,7 @@ func orderFixture1Chains() []*links.ChainLink {
 		},
 	}
 
-	dynamoDBStreamLambdaLink := testProviderImpl.Link("aws/dynamodb/stream", "aws/lambda/function")
+	dynamoDBStreamLambdaLink, _ := testProviderImpl.Link(context.TODO(), "aws/dynamodb/stream", "aws/lambda/function")
 	ordersStream := &links.ChainLink{
 		ResourceName: "ordersStream",
 		Resource: &schema.Resource{
@@ -294,8 +298,8 @@ var orderFixture2 = orderChainLinkFixture{
 }
 
 func orderFixture2Chain() []*links.ChainLink {
-	routeRouteTableLink := testProviderImpl.Link("aws/ec2/route", "aws/ec2/routeTable")
-	routeIGWLink := testProviderImpl.Link("aws/ec2/route", "aws/ec2/internetGateway")
+	routeRouteTableLink, _ := testProviderImpl.Link(context.TODO(), "aws/ec2/route", "aws/ec2/routeTable")
+	routeIGWLink, _ := testProviderImpl.Link(context.TODO(), "aws/ec2/route", "aws/ec2/internetGateway")
 	route := &links.ChainLink{
 		ResourceName: "route1",
 		Resource: &schema.Resource{
@@ -310,7 +314,7 @@ func orderFixture2Chain() []*links.ChainLink {
 		LinksTo:    []*links.ChainLink{},
 	}
 
-	routeTableVPCLink := testProviderImpl.Link("aws/ec2/routeTable", "aws/ec2/vpc")
+	routeTableVPCLink, _ := testProviderImpl.Link(context.TODO(), "aws/ec2/routeTable", "aws/ec2/vpc")
 	routeTable := &links.ChainLink{
 		ResourceName: "routeTable1",
 		Resource: &schema.Resource{
@@ -343,7 +347,7 @@ func orderFixture2Chain() []*links.ChainLink {
 		LinksTo: []*links.ChainLink{},
 	}
 
-	subnetVPCLink := testProviderImpl.Link("aws/ec2/subnet", "aws/ec2/vpc")
+	subnetVPCLink, _ := testProviderImpl.Link(context.TODO(), "aws/ec2/subnet", "aws/ec2/vpc")
 	subnet := &links.ChainLink{
 		ResourceName: "subnet1",
 		Resource: &schema.Resource{
@@ -357,7 +361,7 @@ func orderFixture2Chain() []*links.ChainLink {
 		LinksTo:    []*links.ChainLink{},
 	}
 
-	securityGroupLink := testProviderImpl.Link("aws/ec2/securityGroup", "aws/ec2/vpc")
+	securityGroupLink, _ := testProviderImpl.Link(context.TODO(), "aws/ec2/securityGroup", "aws/ec2/vpc")
 	securityGroup := &links.ChainLink{
 		ResourceName: "sg1",
 		Resource: &schema.Resource{

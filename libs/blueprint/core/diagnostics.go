@@ -5,17 +5,20 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 )
 
-// Diagnostic provides a warning or informational diagnostic for a blueprint.
+// Diagnostic provides error, warning or informational diagnostic for a blueprint.
+// Blueprint validation will not use this for errors, but instead return an error,
+// tools that use the blueprint framework can transform these errors into diagnostics,
+// see the Blueprint Language Server or the Build Engine for examples.
 type Diagnostic struct {
 	// The level of this diagnostic.
-	Level DiagnosticLevel
+	Level DiagnosticLevel `json:"level"`
 	// The message of this diagnostic.
-	Message string
+	Message string `json:"message"`
 	// An optional text range in the source blueprint
 	// that the diagnostic applies to.
 	// This will only be present when the source format is YAML,
 	// but can be nil for some diagnostics from a YAML source input.
-	Range *DiagnosticRange
+	Range *DiagnosticRange `json:"range,omitempty"`
 }
 
 // DiagnosticLevel provides the level of a diagnostic.
@@ -41,12 +44,12 @@ const (
 // This will only be used for source formats that allow position tracking of parsed nodes
 // (i.e. YAML source documents).
 type DiagnosticRange struct {
-	Start *source.Meta
-	End   *source.Meta
+	Start *source.Meta `json:"start,omitempty"`
+	End   *source.Meta `json:"end,omitempty"`
 	// When the diagnostic is concerning contents of a ${..} substitution,
 	// depending on the context, the column may not be accurate,
 	// this gives you the option to ignore approximate columns in contexts
 	// where they are likely to cause confusion for the end-user.
 	// (e.g. language server diagnostics for a code editor)
-	ColumnAccuracy *substitutions.ColumnAccuracy
+	ColumnAccuracy *substitutions.ColumnAccuracy `json:"columnAccuracy,omitempty"`
 }

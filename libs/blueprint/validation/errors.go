@@ -54,6 +54,9 @@ const (
 	// ErrorReasonCodeInvalidMapKey is provided when the reason
 	// for a blueprint spec load error is due to an invalid map key.
 	ErrorReasonCodeInvalidMapKey errors.ErrorReasonCode = "invalid_map_key"
+	// ErrorReasonCodeMultipleValidationErrors is provided when the reason
+	// for a blueprint spec load error is due to multiple validation errors.
+	ErrorReasonCodeMultipleValidationErrors errors.ErrorReasonCode = "multiple_validation_errors"
 )
 
 func errBlueprintMissingVersion() error {
@@ -581,6 +584,17 @@ func errResourceSpecPreValidationFailed(errs []error, resourceName string, resou
 		ChildErrors: errs,
 		Line:        line,
 		Column:      col,
+	}
+}
+
+// errMultipleValidationErrors is used to wrap multiple errors that occurred during validation.
+// The idea is to collect and surface as many validation errors to the user as possible
+// to provide them the full picture of issues in the blueprint instead of just the first error.
+func ErrMultipleValidationErrors(errs []error) error {
+	return &errors.LoadError{
+		ReasonCode:  ErrorReasonCodeMultipleValidationErrors,
+		Err:         fmt.Errorf("validation failed due to multiple errors"),
+		ChildErrors: errs,
 	}
 }
 

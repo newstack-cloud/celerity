@@ -37,7 +37,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_1(c *C) {
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
 		s.resourceProviders, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema1,
-		})
+		}, nil)
 	if err != nil {
 		c.Error(err)
 		c.FailNow()
@@ -64,7 +64,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_2(c *C) {
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
 		s.resourceProviders, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema2,
-		})
+		}, nil)
 	if err != nil {
 		c.Error(err)
 		c.FailNow()
@@ -91,7 +91,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_for_a_blueprint_with_ci
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
 		s.resourceProviders, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema5,
-		})
+		}, nil)
 	if err != nil {
 		c.Error(err)
 		c.FailNow()
@@ -115,7 +115,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_fails_when_a_link_implementation_
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
 		s.resourceProviders, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema3,
-		})
+		}, nil)
 	if err != nil {
 		c.Error(err)
 		c.FailNow()
@@ -145,7 +145,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_fails_when_circular_hard_links_ar
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
 		s.resourceProviders, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema4,
-		})
+		}, nil)
 	if err != nil {
 		c.Error(err)
 		c.FailNow()
@@ -201,7 +201,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_link_warnings_from_spec_for_a_blueprint
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
 		s.resourceProviders, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema1,
-		})
+		}, nil)
 	if err != nil {
 		c.Error(err)
 		c.FailNow()

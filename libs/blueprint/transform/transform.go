@@ -20,8 +20,11 @@ import (
 // Spec transformers are called straight after a schema has been successfully
 // parsed and variables have been validated.
 type SpecTransformer interface {
-	Transform(ctx context.Context, inputBlueprint *schema.Blueprint) (*schema.Blueprint, error)
-	AbstractResource(resourceType string) AbstractResource
+	// Transform a blueprint by expanding abstract resources
+	// into their final form along with any other transformations
+	// that are required.
+	Transform(ctx context.Context, input *SpecTransformerTransformInput) (*SpecTransformerTransformOutput, error)
+	AbstractResource(ctx context.Context, resourceType string) (AbstractResource, error)
 }
 
 // AbstractResource is the interface for an abstract resource
@@ -29,5 +32,30 @@ type SpecTransformer interface {
 // an abstract resource before transformation.
 type AbstractResource interface {
 	// Validate a schema for an abstract resource that will be transformed.
-	Validate(ctx context.Context, schemaResource *schema.Resource, params core.BlueprintParams) error
+	Validate(ctx context.Context, input *AbstractResourceValidateInput) (*AbstractResourceValidateOutput, error)
+}
+
+// SpecTransformerTransformInput provides the input required to transform
+// a blueprint.
+type SpecTransformerTransformInput struct {
+	InputBlueprint *schema.Blueprint
+}
+
+// SpecTransformerTransformOutput provides the output from transforming a blueprint
+// which includes the expanded blueprint.
+type SpecTransformerTransformOutput struct {
+	TransformedBlueprint *schema.Blueprint
+}
+
+// AbstractResourceValidateInput provides the input required to validate
+// an abstract resource before transformation.
+type AbstractResourceValidateInput struct {
+	SchemaResource *schema.Resource
+	Params         core.BlueprintParams
+}
+
+// AbstractResourceValidateOutput provides the output from validating an abstract resource
+// which includes a list of diagnostics that detail issues with the abstract resource.
+type AbstractResourceValidateOutput struct {
+	Diagnostics []*core.Diagnostic
 }

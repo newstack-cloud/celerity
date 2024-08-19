@@ -39,7 +39,7 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 3. Run the following command from the `libs/blueprint` directory to generate the protobuf code:
 
 ```bash
-protoc --go_out=./pkg ./schema.proto
+protoc --go_out=. ./schema.proto
 ```
 
 ## Releasing

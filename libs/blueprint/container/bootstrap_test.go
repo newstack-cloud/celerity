@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
 	. "gopkg.in/check.v1"
 )
 
@@ -39,352 +37,509 @@ func newTestAWSProvider() provider.Provider {
 	}
 }
 
-func (p *testAWSProvider) Resource(resourceType string) provider.Resource {
-	return p.resources[resourceType]
+func (p *testAWSProvider) Namespace(ctx context.Context) (string, error) {
+	return "aws", nil
 }
 
-func (p *testAWSProvider) Link(resourceTypeA string, resourceTypeB string) provider.Link {
+func (p *testAWSProvider) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {
+	return p.resources[resourceType], nil
+}
+
+func (p *testAWSProvider) Link(ctx context.Context, resourceTypeA string, resourceTypeB string) (provider.Link, error) {
 	linkKey := fmt.Sprintf("%s::%s", resourceTypeA, resourceTypeB)
-	return p.links[linkKey]
+	return p.links[linkKey], nil
 }
 
-func (p *testAWSProvider) DataSource(dataSourceType string) provider.DataSource {
-	return nil
+func (p *testAWSProvider) DataSource(ctx context.Context, dataSourceType string) (provider.DataSource, error) {
+	return nil, nil
 }
 
-func (p *testAWSProvider) CustomVariableType(customVariableType string) provider.CustomVariableType {
-	return nil
+func (p *testAWSProvider) CustomVariableType(ctx context.Context, customVariableType string) (provider.CustomVariableType, error) {
+	return nil, nil
 }
 
 type testApiGatewayLambdaLink struct{}
 
 func (l *testApiGatewayLambdaLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (provider.LinkChanges, error) {
-	return provider.LinkChanges{}, nil
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testApiGatewayLambdaLink) PriorityResourceType() string {
-	return "aws/lambda/function"
+func (l *testApiGatewayLambdaLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/lambda/function",
+	}, nil
 }
 
-func (l *testApiGatewayLambdaLink) Type() provider.LinkType {
-	return provider.LinkTypeSoft
+func (l *testApiGatewayLambdaLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/apigateway/api::aws/lambda/function",
+	}, nil
 }
 
-func (l *testApiGatewayLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testApiGatewayLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindSoft,
+	}, nil
+}
+
+func (l *testApiGatewayLambdaLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
-func (l *testApiGatewayLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testApiGatewayLambdaLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
 func (l *testApiGatewayLambdaLink) Deploy(
 	ctx context.Context,
-	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (state.ResourceState, error) {
-	return state.ResourceState{}, nil
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
 }
 
 type testLambdaDynamoDBTableLink struct{}
 
 func (l *testLambdaDynamoDBTableLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (provider.LinkChanges, error) {
-	return provider.LinkChanges{}, nil
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testLambdaDynamoDBTableLink) PriorityResourceType() string {
-	return "aws/dynamodb/table"
+func (l *testLambdaDynamoDBTableLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/dynamodb/table",
+	}, nil
 }
 
-func (l *testLambdaDynamoDBTableLink) Type() provider.LinkType {
-	return provider.LinkTypeSoft
+func (l *testLambdaDynamoDBTableLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/lambda/function::aws/dynamodb/table",
+	}, nil
 }
 
-func (l *testLambdaDynamoDBTableLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testLambdaDynamoDBTableLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindSoft,
+	}, nil
+}
+
+func (l *testLambdaDynamoDBTableLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
-func (l *testLambdaDynamoDBTableLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testLambdaDynamoDBTableLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
 func (l *testLambdaDynamoDBTableLink) Deploy(
 	ctx context.Context,
-	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (state.ResourceState, error) {
-	return state.ResourceState{}, nil
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
 }
 
 type testDynamoDBTableStreamLink struct{}
 
 func (l *testDynamoDBTableStreamLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (provider.LinkChanges, error) {
-	return provider.LinkChanges{}, nil
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testDynamoDBTableStreamLink) PriorityResourceType() string {
-	return "aws/dynamodb/table"
+func (l *testDynamoDBTableStreamLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/dynamodb/table",
+	}, nil
 }
 
-func (l *testDynamoDBTableStreamLink) Type() provider.LinkType {
-	return provider.LinkTypeHard
+func (l *testDynamoDBTableStreamLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/dynamodb/table::aws/dynamodb/stream",
+	}, nil
 }
 
-func (l *testDynamoDBTableStreamLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testDynamoDBTableStreamLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testDynamoDBTableStreamLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
-func (l *testDynamoDBTableStreamLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testDynamoDBTableStreamLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
 func (l *testDynamoDBTableStreamLink) Deploy(
 	ctx context.Context,
-	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (state.ResourceState, error) {
-	return state.ResourceState{}, nil
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
 }
 
 type testDynamoDBStreamLambdaLink struct{}
 
 func (l *testDynamoDBStreamLambdaLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (provider.LinkChanges, error) {
-	return provider.LinkChanges{}, nil
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testDynamoDBStreamLambdaLink) PriorityResourceType() string {
-	return "aws/lambda/function"
+func (l *testDynamoDBStreamLambdaLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/lambda/function",
+	}, nil
 }
 
-func (l *testDynamoDBStreamLambdaLink) Type() provider.LinkType {
-	return provider.LinkTypeSoft
+func (l *testDynamoDBStreamLambdaLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/dynamodb/stream::aws/lambda/function",
+	}, nil
 }
 
-func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testDynamoDBStreamLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindSoft,
+	}, nil
+}
+
+func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
-func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
 func (l *testDynamoDBStreamLambdaLink) Deploy(
 	ctx context.Context,
-	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (state.ResourceState, error) {
-	return state.ResourceState{}, nil
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
 }
 
 type testSubnetVPCLink struct{}
 
 func (l *testSubnetVPCLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (provider.LinkChanges, error) {
-	return provider.LinkChanges{}, nil
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testSubnetVPCLink) PriorityResourceType() string {
-	return "aws/ec2/vpc"
+func (l *testSubnetVPCLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/ec2/vpc",
+	}, nil
 }
 
-func (l *testSubnetVPCLink) Type() provider.LinkType {
-	return provider.LinkTypeHard
+func (l *testSubnetVPCLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/ec2/subnet::aws/ec2/vpc",
+	}, nil
 }
 
-func (l *testSubnetVPCLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testSubnetVPCLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testSubnetVPCLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
-func (l *testSubnetVPCLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testSubnetVPCLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
 func (l *testSubnetVPCLink) Deploy(
 	ctx context.Context,
-	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (state.ResourceState, error) {
-	return state.ResourceState{}, nil
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
 }
 
 type testSecurityGroupVPCLink struct{}
 
 func (l *testSecurityGroupVPCLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (provider.LinkChanges, error) {
-	return provider.LinkChanges{}, nil
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testSecurityGroupVPCLink) PriorityResourceType() string {
-	return "aws/ec2/vpc"
+func (l *testSecurityGroupVPCLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/ec2/vpc",
+	}, nil
 }
 
-func (l *testSecurityGroupVPCLink) Type() provider.LinkType {
-	return provider.LinkTypeHard
+func (l *testSecurityGroupVPCLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/ec2/securityGroup::aws/ec2/vpc",
+	}, nil
 }
 
-func (l *testSecurityGroupVPCLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testSecurityGroupVPCLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testSecurityGroupVPCLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
-func (l *testSecurityGroupVPCLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testSecurityGroupVPCLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
 func (l *testSecurityGroupVPCLink) Deploy(
 	ctx context.Context,
-	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (state.ResourceState, error) {
-	return state.ResourceState{}, nil
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
 }
 
 type testRouteTableVPCLink struct{}
 
 func (l *testRouteTableVPCLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (provider.LinkChanges, error) {
-	return provider.LinkChanges{}, nil
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testRouteTableVPCLink) PriorityResourceType() string {
-	return "aws/ec2/vpc"
+func (l *testRouteTableVPCLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/ec2/vpc",
+	}, nil
 }
 
-func (l *testRouteTableVPCLink) Type() provider.LinkType {
-	return provider.LinkTypeHard
+func (l *testRouteTableVPCLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/ec2/routeTable::aws/ec2/vpc",
+	}, nil
 }
 
-func (l *testRouteTableVPCLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testRouteTableVPCLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testRouteTableVPCLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
-func (l *testRouteTableVPCLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testRouteTableVPCLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
 func (l *testRouteTableVPCLink) Deploy(
 	ctx context.Context,
-	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (state.ResourceState, error) {
-	return state.ResourceState{}, nil
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
 }
 
 type testRouteRouteTableLink struct{}
 
 func (l *testRouteRouteTableLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (provider.LinkChanges, error) {
-	return provider.LinkChanges{}, nil
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testRouteRouteTableLink) PriorityResourceType() string {
-	return "aws/ec2/routeTable"
+func (l *testRouteRouteTableLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/ec2/routeTable",
+	}, nil
 }
 
-func (l *testRouteRouteTableLink) Type() provider.LinkType {
-	return provider.LinkTypeHard
+func (l *testRouteRouteTableLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/ec2/route::aws/ec2/routeTable",
+	}, nil
 }
 
-func (l *testRouteRouteTableLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testRouteRouteTableLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testRouteRouteTableLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
-func (l *testRouteRouteTableLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testRouteRouteTableLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
 func (l *testRouteRouteTableLink) Deploy(
 	ctx context.Context,
-	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (state.ResourceState, error) {
-	return state.ResourceState{}, nil
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
 }
 
 type testRouteInternetGatewayLink struct{}
 
 func (l *testRouteInternetGatewayLink) StageChanges(
 	ctx context.Context,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (provider.LinkChanges, error) {
-	return provider.LinkChanges{}, nil
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testRouteInternetGatewayLink) PriorityResourceType() string {
-	return "aws/ec2/internetGateway"
+func (l *testRouteInternetGatewayLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/ec2/internetGateway",
+	}, nil
 }
 
-func (l *testRouteInternetGatewayLink) Type() provider.LinkType {
-	return provider.LinkTypeHard
+func (l *testRouteInternetGatewayLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/ec2/route::aws/ec2/internetGateway",
+	}, nil
 }
 
-func (l *testRouteInternetGatewayLink) HandleResourceTypeAError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testRouteInternetGatewayLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testRouteInternetGatewayLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
-func (l *testRouteInternetGatewayLink) HandleResourceTypeBError(ctx context.Context, resourceInfo *provider.ResourceInfo) error {
+func (l *testRouteInternetGatewayLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
 	return nil
 }
 
 func (l *testRouteInternetGatewayLink) Deploy(
 	ctx context.Context,
-	changes provider.LinkChanges,
-	resourceAInfo *provider.ResourceInfo,
-	resourceBInfo *provider.ResourceInfo,
-	params core.BlueprintParams,
-) (state.ResourceState, error) {
-	return state.ResourceState{}, nil
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
 }

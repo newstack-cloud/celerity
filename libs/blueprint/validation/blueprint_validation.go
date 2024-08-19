@@ -14,16 +14,22 @@ import (
 // (When they are populated the schema takes care of the structure)
 func ValidateBlueprint(ctx context.Context, blueprint *schema.Blueprint) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
-	if strings.TrimSpace(blueprint.Version) == "" {
-		return diagnostics, errBlueprintMissingVersion()
+	errors := []error{}
+	isVersionEmpty := strings.TrimSpace(blueprint.Version) == ""
+	if isVersionEmpty {
+		errors = append(errors, errBlueprintMissingVersion())
 	}
 
-	if !core.SliceContainsComparable(SupportedVersions, blueprint.Version) {
-		return diagnostics, errBlueprintUnsupportedVersion(blueprint.Version)
+	if !isVersionEmpty && !core.SliceContainsComparable(SupportedVersions, blueprint.Version) {
+		errors = append(errors, errBlueprintUnsupportedVersion(blueprint.Version))
 	}
 
 	if blueprint.Resources == nil || len(blueprint.Resources.Values) == 0 {
-		return diagnostics, errBlueprintMissingResources()
+		errors = append(errors, errBlueprintMissingResources())
+	}
+
+	if len(errors) > 0 {
+		return diagnostics, ErrMultipleValidationErrors(errors)
 	}
 
 	return diagnostics, nil

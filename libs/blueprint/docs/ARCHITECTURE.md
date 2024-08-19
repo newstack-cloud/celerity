@@ -231,13 +231,15 @@ The library does NOT come with any state container implementations, you must imp
 ```go
 type Provider interface {
 
-    Resource(resourceType string) Resource
+	Namespace(ctx context.Context) (string, error)
 
-    DataSource(dataSourceType string) DataSource
+    Resource(ctx context.Context, resourceType string) (Resource, error)
 
-    Link(resourceTypeA string, resourceTypeB string) Link
+    DataSource(ctx context.Context, dataSourceType string) (DataSource, error)
 
-    CustomVariableType(customVariableType string) CustomVariableType
+    Link(ctx context.Context, resourceTypeA string, resourceTypeB string) (Link, error)
+
+    CustomVariableType(ctx context.Context, customVariableType string) (CustomVariableType, error)
 }
 ```
 
@@ -254,6 +256,8 @@ Finally, a provider is also responsible for implementing link implementations fo
 
 In the case where there are links between resources that span multiple providers (e.g. AWS and Google Cloud), a provider needs to be implemented that represents the relationship between providers. In most cases this would be an abstraction that fulfils the provider interface that internally holds multiple providers. This will have it's own set of link implementations for resource types across providers.
 
+The interface for a provider includes `context.Context` and returns an `error` to allow for provider implementations over the network boundary like with an RPC-based plugin system.
+
 The library does NOT come with any provider implementations, you must implement them yourself or use a library that extends the blueprint framework.
 
 ## SpecTransformer (transformer.SpecTransformer)
@@ -262,10 +266,18 @@ The library does NOT come with any provider implementations, you must implement 
 type SpecTransformer interface {
     Transform(
         ctx context.Context,
-        inputBlueprint *schema.Blueprint,
-    ) (*schema.Blueprint, error)
+        input *SpecTransformerTransformInput,
+    ) (*SpecTransformerTransformOutput, error)
 
-    AbstractResource(resourceType string) AbstractResource
+    AbstractResource(ctx context.Context, resourceType string) (AbstractResource, error)
+}
+
+type SpecTransformerTransformInput struct {
+	InputBlueprint *schema.Blueprint
+}
+
+type SpecTransformerTransformOutput struct {
+	TransformedBlueprint *schema.Blueprint
 }
 ```
 
@@ -273,15 +285,25 @@ A spec transformer transforms a blueprint spec into an expanded form.
 The primary purpose of a transformer is to allow users to define more concise specifications where a lot of detail can be abstracted away
 during the blueprint development process and then expanded into a more detailed form for deployment.
 
+The interface for a transformer includes `context.Context` and returns an `error` to allow for transformer implementations over the network boundary like with an RPC-based plugin system.
+
 ## AbstractResource (transformer.AbstractResource)
 
 ```go
 type AbstractResource interface {
     Validate(
         ctx context.Context,
-        schemaResource *schema.Resource,
-        params core.BlueprintParams,
-    ) error
+        input *AbstractResourceValidateInput,
+    ) (*AbstractResourceValidateOutput, error)
+}
+
+type AbstractResourceValidateInput struct {
+	SchemaResource *schema.Resource
+	Params         core.BlueprintParams
+}
+
+type AbstractResourceValidateOutput struct {
+	Diagnostics []*core.Diagnostic
 }
 ```
 

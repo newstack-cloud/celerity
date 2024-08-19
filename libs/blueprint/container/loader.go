@@ -174,7 +174,8 @@ func NewDefaultLoader(
 }
 
 func (l *defaultLoader) Load(ctx context.Context, blueprintSpecFile string, params bpcore.BlueprintParams) (BlueprintContainer, error) {
-	return l.loadSpecAndLinkInfo(ctx, blueprintSpecFile, params, schema.Load, deriveSpecFormat)
+	container, _, err := l.loadSpecAndLinkInfo(ctx, blueprintSpecFile, params, schema.Load, deriveSpecFormat)
+	return container, err
 }
 
 func (l *defaultLoader) Validate(
@@ -182,9 +183,9 @@ func (l *defaultLoader) Validate(
 	blueprintSpecFile string,
 	params bpcore.BlueprintParams,
 ) (links.SpecLinkInfo, []*bpcore.Diagnostic, error) {
-	container, err := l.loadSpecAndLinkInfo(ctx, blueprintSpecFile, params, schema.Load, deriveSpecFormat)
+	container, diagnostics, err := l.loadSpecAndLinkInfo(ctx, blueprintSpecFile, params, schema.Load, deriveSpecFormat)
 	if err != nil {
-		return nil, nil, err
+		return nil, diagnostics, err
 	}
 	return container.SpecLinkInfo(), []*bpcore.Diagnostic{}, nil
 }
@@ -195,15 +196,15 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	params bpcore.BlueprintParams,
 	schemaLoader schema.Loader,
 	formatLoader func(string) (schema.SpecFormat, error),
-) (BlueprintContainer, error) {
+) (BlueprintContainer, []*bpcore.Diagnostic, error) {
 	blueprintSpec, diagnostics, err := l.loadSpec(ctx, blueprintSpecOrFilePath, params, schemaLoader, formatLoader)
 	if err != nil {
-		return nil, err
+		return nil, diagnostics, err
 	}
 	resourceProviderMap := l.createResourceProviderMap(blueprintSpec)
-	linkInfo, err := links.NewDefaultLinkInfoProvider(resourceProviderMap, blueprintSpec)
+	linkInfo, err := links.NewDefaultLinkInfoProvider(resourceProviderMap, blueprintSpec, params)
 	if err != nil {
-		return nil, err
+		return nil, diagnostics, err
 	}
 
 	// Once we have loaded the link information,
@@ -213,7 +214,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	// a link and the other resource references a property of the first resource.
 	err = l.checkForInvalidReferencePlaceholders(blueprintSpec, linkInfo)
 	if err != nil {
-		return nil, err
+		return nil, diagnostics, err
 	}
 
 	return NewDefaultBlueprintContainer(
@@ -223,7 +224,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		linkInfo,
 		diagnostics,
 		l.updateChan,
-	), nil
+	), diagnostics, nil
 }
 
 func (l *defaultLoader) checkForInvalidReferencePlaceholders(blueprintSpec speccore.BlueprintSpec, linkInfo links.SpecLinkInfo) error {
@@ -264,31 +265,32 @@ func (l *defaultLoader) loadSpec(
 	}
 
 	var bpValidationDiagnostics []*bpcore.Diagnostic
+	validationErrors := []error{}
 	bpValidationDiagnostics, err = l.validateBlueprint(ctx, blueprintSchema)
 	diagnostics = append(diagnostics, bpValidationDiagnostics...)
 	if err != nil {
-		return nil, diagnostics, err
+		validationErrors = append(validationErrors, err)
 	}
 
 	var variableDiagnostics []*bpcore.Diagnostic
 	variableDiagnostics, err = l.validateVariables(ctx, blueprintSchema, params)
 	diagnostics = append(diagnostics, variableDiagnostics...)
 	if err != nil {
-		return nil, diagnostics, err
+		validationErrors = append(validationErrors, err)
 	}
 
 	var includeDiagnostics []*bpcore.Diagnostic
 	includeDiagnostics, err = l.validateIncludes(ctx, blueprintSchema)
 	diagnostics = append(diagnostics, includeDiagnostics...)
 	if err != nil {
-		return nil, diagnostics, err
+		validationErrors = append(validationErrors, err)
 	}
 
 	var exportDiagnostics []*bpcore.Diagnostic
 	exportDiagnostics, err = l.validateExports(ctx, blueprintSchema)
 	diagnostics = append(diagnostics, exportDiagnostics...)
 	if err != nil {
-		return nil, diagnostics, err
+		validationErrors = append(validationErrors, err)
 	}
 
 	// todo: change l.validateResources to l.validateAbstractResources
@@ -301,7 +303,7 @@ func (l *defaultLoader) loadSpec(
 	resourceDiagnostics, err = l.validateResources(ctx, blueprintSchema, params)
 	diagnostics = append(diagnostics, resourceDiagnostics...)
 	if err != nil {
-		return nil, diagnostics, err
+		validationErrors = append(validationErrors, err)
 	}
 
 	// Apply some validation to get diagnostics about non-standard transformers
@@ -310,22 +312,31 @@ func (l *defaultLoader) loadSpec(
 	transformDiagnostics, err = l.validateTransforms(ctx, blueprintSchema)
 	diagnostics = append(diagnostics, transformDiagnostics...)
 	if err != nil {
-		return nil, diagnostics, err
+		validationErrors = append(validationErrors, err)
 	}
 
 	if !l.transformSpec {
-		return &internalBlueprintSpec{
+		spec := &internalBlueprintSpec{
 			schema: blueprintSchema,
-		}, diagnostics, nil
+		}
+		if len(validationErrors) > 0 {
+			return spec, diagnostics, validation.ErrMultipleValidationErrors(validationErrors)
+		}
+		return spec, diagnostics, nil
 	}
 
 	transformers, err := l.collectTransformers(blueprintSchema)
 	if err != nil {
+		// todo: combine with validation errors
 		return nil, diagnostics, err
 	}
 	for _, transformer := range transformers {
-		blueprintSchema, err = transformer.Transform(ctx, blueprintSchema)
+		output, err := transformer.Transform(ctx, &transform.SpecTransformerTransformInput{
+			InputBlueprint: blueprintSchema,
+		})
+		blueprintSchema = output.TransformedBlueprint
 		if err != nil {
+			// todo: combine with validation errors
 			return nil, diagnostics, err
 		}
 	}
@@ -338,8 +349,12 @@ func (l *defaultLoader) loadSpec(
 		resourceDiagnostics, err = l.validateResources(ctx, blueprintSchema, params)
 		diagnostics = append(diagnostics, resourceDiagnostics...)
 		if err != nil {
-			return nil, diagnostics, err
+			validationErrors = append(validationErrors, err)
 		}
+	}
+
+	if len(validationErrors) > 0 {
+		return nil, diagnostics, validation.ErrMultipleValidationErrors(validationErrors)
 	}
 
 	return &internalBlueprintSpec{
@@ -502,14 +517,14 @@ func (l *defaultLoader) validateCustomVariableType(
 	variables *schema.VariableMap,
 	params bpcore.BlueprintParams,
 ) ([]*bpcore.Diagnostic, error) {
-	providerCustomVarType, err := l.deriveProviderCustomVarType(varSchema.Type)
+	providerCustomVarType, err := l.deriveProviderCustomVarType(ctx, varSchema.Type)
 	if err != nil {
 		return []*bpcore.Diagnostic{}, err
 	}
 	return validation.ValidateCustomVariable(ctx, varName, varSchema, variables, params, providerCustomVarType)
 }
 
-func (l *defaultLoader) deriveProviderCustomVarType(variableType schema.VariableType) (provider.CustomVariableType, error) {
+func (l *defaultLoader) deriveProviderCustomVarType(ctx context.Context, variableType schema.VariableType) (provider.CustomVariableType, error) {
 	// The provider should be keyed exactly by \w+\/ which is the custom type prefix.
 	// Avoid using a regular expression as it is more efficient to split the string.
 	parts := strings.SplitAfter(string(variableType), "/")
@@ -526,10 +541,9 @@ func (l *defaultLoader) deriveProviderCustomVarType(variableType schema.Variable
 		return nil, nil
 	}
 
-	customVarType := provider.CustomVariableType(string(variableType))
-	if !ok {
-		// return nil, errMissingCustomVariableType(providerKey, variableType)
-		return nil, nil
+	customVarType, err := provider.CustomVariableType(ctx, string(variableType))
+	if err != nil {
+		return nil, err
 	}
 
 	return customVarType, nil
@@ -632,7 +646,8 @@ func (l *defaultLoader) LoadString(
 	inputFormat schema.SpecFormat,
 	params bpcore.BlueprintParams,
 ) (BlueprintContainer, error) {
-	return l.loadSpecAndLinkInfo(ctx, blueprintSpec, params, schema.LoadString, predefinedFormatFactory(inputFormat))
+	container, _, err := l.loadSpecAndLinkInfo(ctx, blueprintSpec, params, schema.LoadString, predefinedFormatFactory(inputFormat))
+	return container, err
 }
 
 func (l *defaultLoader) ValidateString(
@@ -641,10 +656,9 @@ func (l *defaultLoader) ValidateString(
 	inputFormat schema.SpecFormat,
 	params bpcore.BlueprintParams,
 ) (links.SpecLinkInfo, []*bpcore.Diagnostic, error) {
-
-	container, err := l.loadSpecAndLinkInfo(ctx, blueprintSpec, params, schema.LoadString, predefinedFormatFactory(inputFormat))
+	container, diagnostics, err := l.loadSpecAndLinkInfo(ctx, blueprintSpec, params, schema.LoadString, predefinedFormatFactory(inputFormat))
 	if err != nil {
-		return nil, nil, err
+		return nil, diagnostics, err
 	}
 	return container.SpecLinkInfo(), container.Diagnostics(), nil
 }

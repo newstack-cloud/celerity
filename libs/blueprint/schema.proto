@@ -1,7 +1,7 @@
 syntax = "proto3";
 package schema;
 
-option go_package = "./schemapb";
+option go_package = "github.com/two-hundred/celerity/libs/blueprint/schemapb";
 
 message Blueprint {
     string version = 1;
