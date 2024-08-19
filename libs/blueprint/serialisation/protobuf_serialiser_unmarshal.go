@@ -50,7 +50,7 @@ func fromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
 	}
 
 	transform := (*schema.TransformValueWrapper)(nil)
-	if blueprintPB.Transform != nil && len(blueprintPB.Transform) > 0 {
+	if len(blueprintPB.Transform) > 0 {
 		transform = &schema.TransformValueWrapper{Values: blueprintPB.Transform}
 	}
 
