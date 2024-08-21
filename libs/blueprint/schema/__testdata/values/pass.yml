@@ -1,0 +1,4 @@
+type: boolean
+value: ${resources.exampleResource.state.enabled}
+description: This is an example boolean value
+secret: false

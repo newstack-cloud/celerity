@@ -35,6 +35,7 @@
     },
     SourceMeta: (map[string]*source.Meta) <nil>
   }),
+  Values: (*schema.ValueMap)(<nil>),
   Include: (*schema.IncludeMap)(<nil>),
   Resources: (*schema.ResourceMap)({
     Values: (map[string]*schema.Resource) (len=6) {
@@ -188,6 +189,7 @@
                         SubstitutionValue: (*substitutions.Substitution)({
                           Function: (*substitutions.SubstitutionFunction)(<nil>),
                           Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                          ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                           DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                           ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
                             ResourceName: (string) (len=10) "authoriser",
@@ -336,6 +338,7 @@
                                 VariableName: (string) (len=13) "dynamoDBTable",
                                 SourceMeta: (*source.Meta)(<nil>)
                               }),
+                              ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                               DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                               ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                               Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -451,6 +454,7 @@
                         VariableName: (string) (len=15) "ordersTopicName",
                         SourceMeta: (*source.Meta)(<nil>)
                       }),
+                      ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -715,6 +719,7 @@
                         VariableName: (string) (len=11) "environment",
                         SourceMeta: (*source.Meta)(<nil>)
                       }),
+                      ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),

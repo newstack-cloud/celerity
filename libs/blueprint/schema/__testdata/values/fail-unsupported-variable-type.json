@@ -1,0 +1,6 @@
+{
+  "type": "set",
+  "description": "This is an invalid value (set is not a supported type)",
+  "secret": false,
+  "value": "${resources.exampleResource.state.enabled}"
+}

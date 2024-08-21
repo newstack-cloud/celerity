@@ -349,6 +349,121 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 	})
 }
 
+func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_value_ref_sub_1(c *C) {
+	parsed, err := ParseSubstitutionValues(
+		"",
+		`${values.s3Bucket.info["objectConfig"][3]}`,
+		nil,
+		true,
+		false,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(parsed), Equals, 1)
+	arrIndex := int64(3)
+	c.Assert(parsed[0], DeepEquals, &StringOrSubstitution{
+		SubstitutionValue: &Substitution{
+			ValueReference: &SubstitutionValueReference{
+				ValueName: "s3Bucket",
+				Path: []*SubstitutionPathItem{
+					{
+						FieldName: "info",
+					},
+					{
+						FieldName: "objectConfig",
+					},
+					{
+						PrimitiveArrIndex: &arrIndex,
+					},
+				},
+				SourceMeta: &source.Meta{
+					Line:   1,
+					Column: 3,
+				},
+			},
+			SourceMeta: &source.Meta{
+				Line:   1,
+				Column: 3,
+			},
+		},
+		SourceMeta: &source.Meta{
+			Line:   1,
+			Column: 3,
+		},
+	})
+}
+
+func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_value_ref_sub_2(c *C) {
+	parsed, err := ParseSubstitutionValues(
+		"",
+		`${values.googleCloudBuckets[1].name}`,
+		nil,
+		true,
+		false,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(parsed), Equals, 1)
+	arrIndex := int64(1)
+	c.Assert(parsed[0], DeepEquals, &StringOrSubstitution{
+		SubstitutionValue: &Substitution{
+			ValueReference: &SubstitutionValueReference{
+				ValueName: "googleCloudBuckets",
+				Path: []*SubstitutionPathItem{
+					{
+						PrimitiveArrIndex: &arrIndex,
+					},
+					{
+						FieldName: "name",
+					},
+				},
+				SourceMeta: &source.Meta{
+					Line:   1,
+					Column: 3,
+				},
+			},
+			SourceMeta: &source.Meta{
+				Line:   1,
+				Column: 3,
+			},
+		},
+		SourceMeta: &source.Meta{
+			Line:   1,
+			Column: 3,
+		},
+	})
+}
+
+func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_value_ref_sub_3(c *C) {
+	parsed, err := ParseSubstitutionValues(
+		"",
+		`${values.queueUrl}`,
+		nil,
+		true,
+		false,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(parsed), Equals, 1)
+	c.Assert(parsed[0], DeepEquals, &StringOrSubstitution{
+		SubstitutionValue: &Substitution{
+			ValueReference: &SubstitutionValueReference{
+				ValueName: "queueUrl",
+				Path:      []*SubstitutionPathItem{},
+				SourceMeta: &source.Meta{
+					Line:   1,
+					Column: 3,
+				},
+			},
+			SourceMeta: &source.Meta{
+				Line:   1,
+				Column: 3,
+			},
+		},
+		SourceMeta: &source.Meta{
+			Line:   1,
+			Column: 3,
+		},
+	})
+}
+
 func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_string_literal(c *C) {
 	parsed, err := ParseSubstitutionValues(
 		"",

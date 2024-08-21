@@ -47,6 +47,7 @@
       })
     }
   }),
+  Values: (*schema.ValueMap)(<nil>),
   Include: (*schema.IncludeMap)({
     Values: (map[string]*schema.Include) (len=1) {
       (string) (len=9) "coreInfra": (*schema.Include)({
@@ -86,6 +87,7 @@
                           Column: (int) 20
                         })
                       }),
+                      ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -491,6 +493,7 @@
                         SubstitutionValue: (*substitutions.Substitution)({
                           Function: (*substitutions.SubstitutionFunction)(<nil>),
                           Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                          ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                           DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                           ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
                             ResourceName: (string) (len=10) "authoriser",
@@ -934,6 +937,7 @@
                             SubstitutionValue: (*substitutions.Substitution)({
                               Function: (*substitutions.SubstitutionFunction)(<nil>),
                               Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                              ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                               DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                               ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                               Child: (*substitutions.SubstitutionChild)({
@@ -1145,6 +1149,7 @@
                           Column: (int) 20
                         })
                       }),
+                      ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),

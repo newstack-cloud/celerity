@@ -62,6 +62,7 @@
       })
     }
   }),
+  Values: (*schema.ValueMap)(<nil>),
   Include: (*schema.IncludeMap)(<nil>),
   Resources: (*schema.ResourceMap)({
     Values: (map[string]*schema.Resource) (len=6) {
@@ -311,6 +312,7 @@
                         SubstitutionValue: (*substitutions.Substitution)({
                           Function: (*substitutions.SubstitutionFunction)(<nil>),
                           Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                          ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                           DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                           ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
                             ResourceName: (string) (len=10) "authoriser",
@@ -760,6 +762,7 @@
                                   Column: (int) 29
                                 })
                               }),
+                              ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                               DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                               ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                               Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -959,6 +962,7 @@
                           Column: (int) 20
                         })
                       }),
+                      ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -1425,6 +1429,7 @@
                           Column: (int) 17
                         })
                       }),
+                      ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),

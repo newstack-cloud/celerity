@@ -43,7 +43,7 @@ func (p *Parser) Parse() (*Substitution, error) {
 	return p.substitition()
 }
 
-// substitution = functionCall | variableRef | datasourceRef | childRef | resourceRef | literal ;
+// substitution = functionCall | variableRef | valueRef | datasourceRef | childRef | resourceRef | literal ;
 func (p *Parser) substitition() (*Substitution, error) {
 	var err error
 	var funcCall *SubstitutionFunction
@@ -74,6 +74,17 @@ func (p *Parser) substitition() (*Substitution, error) {
 	// variable reference; because of this, we know there is definitely a parse
 	// error when the subsequent tokens do not match the rule as there are no other
 	// possible symbols that can follow "variables".
+	if err != nil {
+		return nil, err
+	}
+
+	var valRef *SubstitutionValueReference
+	if valRef, err = p.valueReference(); valRef != nil {
+		return &Substitution{
+			ValueReference: valRef,
+			SourceMeta:     valRef.SourceMeta,
+		}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -187,6 +198,61 @@ func (p *Parser) variableReference() (*SubstitutionVariable, error) {
 	return &SubstitutionVariable{
 		VariableName: *name,
 		SourceMeta:   p.sourceMeta(varKeywordToken),
+	}, nil
+}
+
+// valueRef = "values" , nameAccessor , [ ( nameAccessor , { namAccessor | indexAccessor } ) ] ;
+func (p *Parser) valueReference() (*SubstitutionValueReference, error) {
+	valuesKeywordToken, err := p.consume(
+		tokenKeywordValues,
+		"expected values keyword",
+	)
+	if err != nil {
+		return nil, nil
+	}
+
+	valueName := p.nameAccessor()
+	if valueName == nil {
+		return nil, p.error(
+			p.peek(),
+			"expected a valid name accessor (i.e. [\"{name}\"] or .{name}) after values keyword",
+		)
+	}
+
+	firstPropName := p.nameAccessor()
+	var firstIndex *int64
+	if firstPropName == nil {
+		firstIndex, err = p.indexAccessor()
+		if err != nil {
+			return nil, err
+		}
+
+		// If there is no name accessor or index accessor after the value name,
+		// then we have a valid value reference with no path. (e.g values.buckets)
+		if firstIndex == nil {
+			return &SubstitutionValueReference{
+				ValueName:  *valueName,
+				Path:       []*SubstitutionPathItem{},
+				SourceMeta: p.sourceMeta(valuesKeywordToken),
+			}, nil
+		}
+	}
+
+	var errors []error
+	var path []*SubstitutionPathItem
+	if firstPropName != nil {
+		path, errors = p.propertyPath(firstPropName)
+	} else {
+		path, errors = p.propertyPathIndexParent(firstIndex)
+	}
+	if len(errors) > 0 {
+		return nil, errParseErrorMultiple("failed to parse value reference", errors)
+	}
+
+	return &SubstitutionValueReference{
+		ValueName:  *valueName,
+		Path:       path,
+		SourceMeta: p.sourceMeta(valuesKeywordToken),
 	}, nil
 }
 
@@ -326,6 +392,18 @@ func (p *Parser) resourceName() (*string, error) {
 	return p.name(), nil
 }
 
+func (p *Parser) propertyPathIndexParent(topLevelIndex *int64) ([]*SubstitutionPathItem, []error) {
+	path := []*SubstitutionPathItem{}
+	if topLevelIndex != nil {
+		path = append(path, &SubstitutionPathItem{
+			PrimitiveArrIndex: topLevelIndex,
+		})
+	}
+
+	errors := p.restOfPropertyPath(&path)
+	return path, errors
+}
+
 func (p *Parser) propertyPath(topLevelName *string) ([]*SubstitutionPathItem, []error) {
 	path := []*SubstitutionPathItem{}
 	if topLevelName != nil {
@@ -334,12 +412,17 @@ func (p *Parser) propertyPath(topLevelName *string) ([]*SubstitutionPathItem, []
 		})
 	}
 
+	errors := p.restOfPropertyPath(&path)
+	return path, errors
+}
+
+func (p *Parser) restOfPropertyPath(targetPath *[]*SubstitutionPathItem) []error {
 	errors := []error{}
 	isValidPathItem := true
 	for isValidPathItem && !p.isAtEnd() {
 		name := p.nameAccessor()
 		if name != nil {
-			path = append(path, &SubstitutionPathItem{
+			*targetPath = append(*targetPath, &SubstitutionPathItem{
 				FieldName: *name,
 			})
 			continue
@@ -350,14 +433,14 @@ func (p *Parser) propertyPath(topLevelName *string) ([]*SubstitutionPathItem, []
 			errors = append(errors, err)
 		}
 		if index != nil {
-			path = append(path, &SubstitutionPathItem{
+			*targetPath = append(*targetPath, &SubstitutionPathItem{
 				PrimitiveArrIndex: index,
 			})
 		} else {
 			isValidPathItem = false
 		}
 	}
-	return path, errors
+	return errors
 }
 
 // indexAccessor = "[" , [ intLiteral ] , "]" ;

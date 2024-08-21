@@ -16,6 +16,7 @@ type StringOrSubstitution struct {
 type Substitution struct {
 	Function           *SubstitutionFunction
 	Variable           *SubstitutionVariable
+	ValueReference     *SubstitutionValueReference
 	DataSourceProperty *SubstitutionDataSourceProperty
 	ResourceProperty   *SubstitutionResourceProperty
 	Child              *SubstitutionChild
@@ -29,6 +30,12 @@ type Substitution struct {
 type SubstitutionVariable struct {
 	VariableName string
 	SourceMeta   *source.Meta
+}
+
+type SubstitutionValueReference struct {
+	ValueName  string
+	Path       []*SubstitutionPathItem
+	SourceMeta *source.Meta
 }
 
 type SubstitutionDataSourceProperty struct {

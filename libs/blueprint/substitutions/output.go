@@ -3,8 +3,6 @@ package substitutions
 import (
 	"fmt"
 	"strings"
-
-	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 // SubstitutionsToString converts a representation of a string as a sequence
@@ -68,10 +66,6 @@ func SubstitutionToString(substitutionContext string, substitution *Substitution
 func subFunctionToString(substitutionContext string, function *SubstitutionFunction) (string, error) {
 	var b strings.Builder
 
-	if !isSupportedSubstitutionFunction(function.FunctionName) {
-		return "", errSerialiseSubstitutionUnsupportedFunction(function.FunctionName)
-	}
-
 	b.WriteString(string(function.FunctionName))
 	b.WriteString("(")
 
@@ -115,10 +109,6 @@ func writeFunctionArgument(substitutionContext string, b *strings.Builder, arg *
 	}
 
 	return nil
-}
-
-func isSupportedSubstitutionFunction(functionName SubstitutionFunctionName) bool {
-	return core.SliceContainsComparable(SubstitutionFunctions, functionName)
 }
 
 func subVariableToString(variable *SubstitutionVariable) (string, error) {

@@ -117,9 +117,13 @@ const (
 )
 
 var (
-	// SubstitutionFunctions provides a slice of all the supported
+	// CoreSubstitutionFunctions provides a slice of all the core
 	// functions that can be called in a substitution within ${..}.
-	SubstitutionFunctions = []SubstitutionFunctionName{
+	// Providers can add their own functions, this list is used as a
+	// reference to provide a better user experience in giving prompts
+	// to make sure the user is aware when a function is not a core function,
+	// so they can check that a provider is correctly configured.
+	CoreSubstitutionFunctions = []SubstitutionFunctionName{
 		SubstitutionFunctionFromJSON,
 		SubstitutionFunctionJSONDecode,
 		SubstitutionFunctionLen,

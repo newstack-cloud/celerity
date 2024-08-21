@@ -40,6 +40,7 @@ const (
 	tokenNameStringLiteral  tokenType = "nameStringLiteral"
 	tokenIdent              tokenType = "identifier"
 	tokenKeywordVariables   tokenType = "keywordVariables"
+	tokenKeywordValues      tokenType = "keywordValues"
 	tokenKeywordDatasources tokenType = "keywordDatasources"
 	tokenKeywordResources   tokenType = "keywordResources"
 	tokenKeywordChildren    tokenType = "keywordChildren"
@@ -405,6 +406,8 @@ func deriveIdentOrKeywordTokenType(value string) tokenType {
 	switch value {
 	case "variables":
 		return tokenKeywordVariables
+	case "values":
+		return tokenKeywordValues
 	case "datasources":
 		return tokenKeywordDatasources
 	case "resources":

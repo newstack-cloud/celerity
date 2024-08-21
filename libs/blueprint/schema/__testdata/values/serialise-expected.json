@@ -1,0 +1,6 @@
+{
+  "type": "string",
+  "description": "The AWS region to connect to AWS services with",
+  "secret": true,
+  "value": "${resources.awsAccount.state.region}"
+}

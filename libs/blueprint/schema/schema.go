@@ -14,6 +14,7 @@ type Blueprint struct {
 	Version     string                 `yaml:"version" json:"version"`
 	Transform   *TransformValueWrapper `yaml:"transform,omitempty" json:"transform,omitempty"`
 	Variables   *VariableMap           `yaml:"variables,omitempty" json:"variables,omitempty"`
+	Values      *ValueMap              `yaml:"values,omitempty" json:"values,omitempty"`
 	Include     *IncludeMap            `yaml:"include,omitempty" json:"include,omitempty"`
 	Resources   *ResourceMap           `yaml:"resources" json:"resources"`
 	DataSources *DataSourceMap         `yaml:"datasources,omitempty" json:"datasources,omitempty"`
@@ -71,6 +72,65 @@ func (m *VariableMap) MarshalJSON() ([]byte, error) {
 
 func (m *VariableMap) UnmarshalJSON(data []byte) error {
 	values := make(map[string]*Variable)
+	err := json.Unmarshal(data, &values)
+	if err != nil {
+		return err
+	}
+
+	m.Values = values
+	return nil
+}
+
+// ValueMap provides a mapping of names to value definitions
+// in a blueprint.
+// This includes extra information about the locations of
+// the keys in the original source being unmarshalled.
+// This information will not always be present, it is populated
+// when unmarshalling from YAML source documents.
+type ValueMap struct {
+	Values map[string]*Value
+	// Mapping of value names to their source locations.
+	SourceMeta map[string]*source.Meta
+}
+
+func (m *ValueMap) MarshalYAML() (interface{}, error) {
+	return m.Values, nil
+}
+
+func (m *ValueMap) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind != yaml.MappingNode {
+		return errInvalidMap(value, "values")
+	}
+
+	m.Values = make(map[string]*Value)
+	m.SourceMeta = make(map[string]*source.Meta)
+	for i := 0; i < len(value.Content); i += 2 {
+		key := value.Content[i]
+		val := value.Content[i+1]
+
+		m.SourceMeta[key.Value] = &source.Meta{
+			Line:   key.Line,
+			Column: key.Column,
+		}
+
+		var valDef Value
+		err := val.Decode(&valDef)
+		if err != nil {
+			return err
+		}
+
+		m.Values[key.Value] = &valDef
+	}
+
+	return nil
+}
+
+func (m *ValueMap) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.Values)
+}
+
+func (m *ValueMap) UnmarshalJSON(data []byte) error {
+	values := make(map[string]*Value)
 	err := json.Unmarshal(data, &values)
 	if err != nil {
 		return err

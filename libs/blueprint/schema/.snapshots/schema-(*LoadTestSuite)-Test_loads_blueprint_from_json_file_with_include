@@ -27,6 +27,7 @@
     },
     SourceMeta: (map[string]*source.Meta) <nil>
   }),
+  Values: (*schema.ValueMap)(<nil>),
   Include: (*schema.IncludeMap)({
     Values: (map[string]*schema.Include) (len=1) {
       (string) (len=9) "coreInfra": (*schema.Include)({
@@ -57,6 +58,7 @@
                         VariableName: (string) (len=13) "dynamoDBTable",
                         SourceMeta: (*source.Meta)(<nil>)
                       }),
+                      ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -298,6 +300,7 @@
                         SubstitutionValue: (*substitutions.Substitution)({
                           Function: (*substitutions.SubstitutionFunction)(<nil>),
                           Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                          ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                           DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                           ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
                             ResourceName: (string) (len=10) "authoriser",
@@ -443,6 +446,7 @@
                             SubstitutionValue: (*substitutions.Substitution)({
                               Function: (*substitutions.SubstitutionFunction)(<nil>),
                               Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                              ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                               DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                               ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                               Child: (*substitutions.SubstitutionChild)({
@@ -567,6 +571,7 @@
                         VariableName: (string) (len=15) "ordersTopicName",
                         SourceMeta: (*source.Meta)(<nil>)
                       }),
+                      ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),
