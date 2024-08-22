@@ -528,19 +528,6 @@ func toStringOrSubstitutionPB(
 	return nil, errMissingStringOrSubstitutionValue()
 }
 
-func toSubstitutionsPB(substitutions []*substitutions.Substitution) ([]*schemapb.Substitution, error) {
-	var substitutionsPB = make([]*schemapb.Substitution, len(substitutions))
-	for i, s := range substitutions {
-		substitutionPB, err := toSubstitutionPB(s)
-		if err != nil {
-			return nil, err
-		}
-
-		substitutionsPB[i] = substitutionPB
-	}
-	return substitutionsPB, nil
-}
-
 func toSubstitutionPB(substitution *substitutions.Substitution) (*schemapb.Substitution, error) {
 	if substitution.Function != nil {
 		return toSubstitutionFunctionPB(substitution.Function)
@@ -697,20 +684,49 @@ func toSubstitutionChildPB(
 }
 
 func toSubstitutionFunctionPB(
-	substitutionFunction *substitutions.SubstitutionFunction,
+	substitutionFunction *substitutions.SubstitutionFunctionExpr,
 ) (*schemapb.Substitution, error) {
-	arguments, err := toSubstitutionsPB(substitutionFunction.Arguments)
+	arguments, err := toSubstitutionFunctionArgsPB(substitutionFunction.Arguments)
 	if err != nil {
 		return nil, err
 	}
 
 	return &schemapb.Substitution{
-		Sub: &schemapb.Substitution_Function{
-			Function: &schemapb.SubstitutionFunction{
+		Sub: &schemapb.Substitution_FunctionExpr{
+			FunctionExpr: &schemapb.SubstitutionFunctionExpr{
 				FunctionName: string(substitutionFunction.FunctionName),
 				Arguments:    arguments,
 			},
 		},
+	}, nil
+}
+
+func toSubstitutionFunctionArgsPB(
+	substitutionFunctionArgs []*substitutions.SubstitutionFunctionArg,
+) ([]*schemapb.SubstitutionFunctionArg, error) {
+	var substitutionFunctionArgsPB = make([]*schemapb.SubstitutionFunctionArg, len(substitutionFunctionArgs))
+	for i, arg := range substitutionFunctionArgs {
+		argPB, err := toSubstitutionFunctionArgPB(arg)
+		if err != nil {
+			return nil, err
+		}
+
+		substitutionFunctionArgsPB[i] = argPB
+	}
+	return substitutionFunctionArgsPB, nil
+}
+
+func toSubstitutionFunctionArgPB(
+	substitutionFunctionArg *substitutions.SubstitutionFunctionArg,
+) (*schemapb.SubstitutionFunctionArg, error) {
+	valuePB, err := toSubstitutionPB(substitutionFunctionArg.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	return &schemapb.SubstitutionFunctionArg{
+		Name:  &substitutionFunctionArg.Name,
+		Value: valuePB,
 	}, nil
 }
 

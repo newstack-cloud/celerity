@@ -333,13 +333,13 @@ func NormaliseSubstitution(substitution *substitutions.Substitution) {
 
 // NormaliseSubstitutionFunction strips the source meta information from a substitution function
 // to make it comparable in a way that ignores line and column numbers.
-func NormaliseSubstitutionFunction(substitutionFunction *substitutions.SubstitutionFunction) {
+func NormaliseSubstitutionFunction(substitutionFunction *substitutions.SubstitutionFunctionExpr) {
 	if substitutionFunction == nil {
 		return
 	}
 
 	for _, argument := range substitutionFunction.Arguments {
-		NormaliseSubstitution(argument)
+		NormaliseSubstitution(argument.Value)
 	}
 	substitutionFunction.SourceMeta = nil
 }

@@ -90,6 +90,16 @@ func (p *testAWSProvider) CustomVariableType(ctx context.Context, customVariable
 	return nil, nil
 }
 
+// ListFunctions is not used for spec link info!
+func (p *testAWSProvider) ListFunctions(ctx context.Context) ([]string, error) {
+	return nil, nil
+}
+
+// Function is not used for spec link info!
+func (p *testAWSProvider) Function(ctx context.Context, functionName string) (provider.Function, error) {
+	return nil, nil
+}
+
 type testApiGatewayResource struct{}
 
 func (r *testApiGatewayResource) CanLinkTo(

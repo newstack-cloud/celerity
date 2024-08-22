@@ -29,4 +29,16 @@ type Provider interface {
 	// These custom variable types should not be used for dynamically sourced values
 	// external to a blueprint, data sources exist for that purpose.
 	CustomVariableType(ctx context.Context, customVariableType string) (CustomVariableType, error)
+	// ListFunctions retrieves a list of all the function names that are provided by the
+	// provider. This is primarily used to assign the correct provider to a function
+	// as functions are globally named. When multiple providers provide the same function,
+	// an error should be reported during initialisation.
+	ListFunctions(ctx context.Context) ([]string, error)
+	// Function retrieves a function plugin that provides custom pure functions for blueprint
+	// substitutions "${..}".
+	// Functions are global and which providers are to be used for which functions
+	// should be configured during initialisation of an application using the framework.
+	// The core functions that are defined in the blueprint specification can not be overridden
+	// by a provider.
+	Function(ctx context.Context, functionName string) (Function, error)
 }

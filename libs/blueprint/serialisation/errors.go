@@ -35,6 +35,10 @@ const (
 	// for an expanded blueprint spec serialisation error is due to
 	// the string or substitutions being nil.
 	ErrorReasonCodeStringOrSubsIsNil errors.ErrorReasonCode = "expanded_blueprint_serialise_string_or_subs_is_nil"
+	// ErrorReasonCodeMissingSubFuncArgValue is provided when the reason
+	// for an expanded blueprint spec serialisation error is due to
+	// a missing substitution function argument value.
+	ErrorReasonCodeMissingSubFuncArgValue errors.ErrorReasonCode = "expanded_blueprint_serialise_missing_sub_func_arg_value"
 )
 
 func errMissingScalarValue() error {
@@ -83,5 +87,12 @@ func errStringOrSubstitutionsIsNil() error {
 	return &errors.ExpandedSerialiseError{
 		ReasonCode: ErrorReasonCodeStringOrSubsIsNil,
 		Err:        fmt.Errorf("string or substitutions is nil"),
+	}
+}
+
+func errMissingSubstitutionFunctionArgValue() error {
+	return &errors.ExpandedSerialiseError{
+		ReasonCode: ErrorReasonCodeMissingSubFuncArgValue,
+		Err:        fmt.Errorf("missing substitution function argument value"),
 	}
 }

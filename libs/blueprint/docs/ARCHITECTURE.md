@@ -240,6 +240,10 @@ type Provider interface {
     Link(ctx context.Context, resourceTypeA string, resourceTypeB string) (Link, error)
 
     CustomVariableType(ctx context.Context, customVariableType string) (CustomVariableType, error)
+
+	ListFunctions(ctx context.Context) ([]string, error)
+
+	Function(ctx context.Context, functionName string) (Function, error)
 }
 ```
 
@@ -251,6 +255,8 @@ A provider is also responsible for implementing data sources that allows for dep
 _In the architecture diagram above, you will see the data source provider is a separate entity from the resource/link provider. This is purely like this to provide a clearer visualisation of the architecture and in code, data sources are a part of resource providers._
 
 A provider can also provide custom variable types which are enum variable types with a fixed set of possible values; these are useful for a type of value with a large set of fixed possible values.
+
+A provider can provide global pure functions that can be used in blueprint `${..}` substitutions.
 
 Finally, a provider is also responsible for implementing link implementations for links between resources.
 

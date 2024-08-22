@@ -310,7 +310,7 @@
                       (*substitutions.StringOrSubstitution)({
                         StringValue: (*string)(<nil>),
                         SubstitutionValue: (*substitutions.Substitution)({
-                          Function: (*substitutions.SubstitutionFunction)(<nil>),
+                          Function: (*substitutions.SubstitutionFunctionExpr)(<nil>),
                           Variable: (*substitutions.SubstitutionVariable)(<nil>),
                           ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
                           DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
@@ -754,7 +754,7 @@
                           (*substitutions.StringOrSubstitution)({
                             StringValue: (*string)(<nil>),
                             SubstitutionValue: (*substitutions.Substitution)({
-                              Function: (*substitutions.SubstitutionFunction)(<nil>),
+                              Function: (*substitutions.SubstitutionFunctionExpr)(<nil>),
                               Variable: (*substitutions.SubstitutionVariable)({
                                 VariableName: (string) (len=13) "dynamoDBTable",
                                 SourceMeta: (*source.Meta)({
@@ -954,7 +954,7 @@
                   (*substitutions.StringOrSubstitution)({
                     StringValue: (*string)(<nil>),
                     SubstitutionValue: (*substitutions.Substitution)({
-                      Function: (*substitutions.SubstitutionFunction)(<nil>),
+                      Function: (*substitutions.SubstitutionFunctionExpr)(<nil>),
                       Variable: (*substitutions.SubstitutionVariable)({
                         VariableName: (string) (len=15) "ordersTopicName",
                         SourceMeta: (*source.Meta)({
@@ -1421,7 +1421,7 @@
                   (*substitutions.StringOrSubstitution)({
                     StringValue: (*string)(<nil>),
                     SubstitutionValue: (*substitutions.Substitution)({
-                      Function: (*substitutions.SubstitutionFunction)(<nil>),
+                      Function: (*substitutions.SubstitutionFunctionExpr)(<nil>),
                       Variable: (*substitutions.SubstitutionVariable)({
                         VariableName: (string) (len=11) "environment",
                         SourceMeta: (*source.Meta)({
