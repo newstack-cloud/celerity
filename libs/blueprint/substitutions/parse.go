@@ -573,9 +573,20 @@ func (p *Parser) functionCallExpr() (*SubstitutionFunctionExpr, error) {
 		return nil, errParseErrorMultiple("failed to parse function call", errors)
 	}
 
+	path := []*SubstitutionPathItem{}
+	p.savePos()
+	errors = p.restOfPropertyPath(&path)
+	if len(errors) > 0 {
+		// Backtrack as a function call without a property accessor path
+		// is perfectly valid and preceding tokens may be used in another rule.
+		p.backtrack()
+	}
+	p.popPos()
+
 	return &SubstitutionFunctionExpr{
 		FunctionName: SubstitutionFunctionName(funcNameToken.value),
 		Arguments:    args,
+		Path:         path,
 		SourceMeta:   p.sourceMeta(funcNameToken),
 	}, nil
 }
