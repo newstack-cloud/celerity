@@ -31,6 +31,7 @@ const (
 	tokenCloseBracket       tokenType = "closeBracket"
 	tokenOpenParen          tokenType = "openParen"
 	tokenCloseParen         tokenType = "closeParen"
+	tokenEquals             tokenType = "equals"
 	tokenComma              tokenType = "comma"
 	tokenPeriod             tokenType = "period"
 	tokenIntLiteral         tokenType = "intLiteral"
@@ -192,6 +193,14 @@ func checkPunctuation(char string, state *lexState) bool {
 		state.tokens = append(state.tokens, &token{
 			tokenType:    tokenPeriod,
 			value:        ".",
+			relativeLine: state.relativeLineInfo.Line,
+			relativeCol:  state.relativeLineInfo.Column,
+		})
+		return true
+	case "=":
+		state.tokens = append(state.tokens, &token{
+			tokenType:    tokenEquals,
+			value:        "=",
 			relativeLine: state.relativeLineInfo.Line,
 			relativeCol:  state.relativeLineInfo.Column,
 		})

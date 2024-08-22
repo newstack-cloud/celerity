@@ -54,18 +54,6 @@ func errSubstitutionsMessage(substitutionContext string) error {
 	)
 }
 
-func errSerialiseSubstitutionUnsupportedFunction(
-	functionName SubstitutionFunctionName,
-) error {
-	return &errors.SerialiseError{
-		ReasonCode: ErrorReasonCodeInvalidReferenceSub,
-		Err: fmt.Errorf(
-			"validation failed due to unsupported function \"%s\" having been provided in a reference substitution",
-			functionName,
-		),
-	}
-}
-
 func errSerialiseSubstitutionInvalidVariableName(
 	variableName string,
 ) error {
@@ -177,6 +165,15 @@ func errSerialiseSubstitutionInvalidPathItem(pathItem *SubstitutionPathItem) err
 		Err: fmt.Errorf(
 			"validation failed due to invalid index accessor path item [\"%d\"] having been provided in a reference substitution",
 			*pathItem.PrimitiveArrIndex,
+		),
+	}
+}
+
+func errSerialiseSubstitutionFunctionArgValueMissing() error {
+	return &errors.SerialiseError{
+		ReasonCode: ErrorReasonCodeInvalidReferenceSub,
+		Err: fmt.Errorf(
+			"validation failed due to a missing function argument value having been provided in a reference substitution",
 		),
 	}
 }

@@ -43,14 +43,14 @@ func (p *Parser) Parse() (*Substitution, error) {
 	return p.substitition()
 }
 
-// substitution = functionCall | variableRef | valueRef | datasourceRef | childRef | resourceRef | literal ;
+// substitution = functionCallExpr | variableRef | valueRef | datasourceRef | childRef | resourceRef | literal ;
 func (p *Parser) substitition() (*Substitution, error) {
 	var err error
-	var funcCall *SubstitutionFunction
-	if funcCall, err = p.functionCall(); funcCall != nil {
+	var funcCallExpr *SubstitutionFunctionExpr
+	if funcCallExpr, err = p.functionCallExpr(); funcCallExpr != nil {
 		return &Substitution{
-			Function:   funcCall,
-			SourceMeta: funcCall.SourceMeta,
+			Function:   funcCallExpr,
+			SourceMeta: funcCallExpr.SourceMeta,
 		}, nil
 	}
 	if err != nil {
@@ -511,8 +511,8 @@ func (p *Parser) boolLiteral() *bool {
 	return nil
 }
 
-// functionCall = name , "(" , [ substitution , { "," , substitution } ] , ")" ;
-func (p *Parser) functionCall() (*SubstitutionFunction, error) {
+// functionCallExpr = name , "(" , [ ( named function arg | substitution ) , { "," , ( named function arg | substitution ) } ] , ")" ;
+func (p *Parser) functionCallExpr() (*SubstitutionFunctionExpr, error) {
 	// As a function call is not the only rule that can start with an identifier,
 	// we need to save the current position in the sequence so that we can revert
 	// to it if the identifier is not followed by an open parenthesis.
@@ -532,7 +532,7 @@ func (p *Parser) functionCall() (*SubstitutionFunction, error) {
 		return nil, nil
 	}
 
-	args := []*Substitution{}
+	args := []*SubstitutionFunctionArg{}
 	errors := []error{}
 	hasMoreFuncArgs := true
 	i := 0
@@ -549,10 +549,12 @@ func (p *Parser) functionCall() (*SubstitutionFunction, error) {
 			)
 			if err != nil {
 				errors = append(errors, err)
+				hasMoreFuncArgs = false
+				continue
 			}
 		}
 
-		arg, err := p.substitition()
+		arg, err := p.functionArg()
 		if err != nil {
 			errors = append(errors, err)
 			hasMoreFuncArgs = false
@@ -571,10 +573,43 @@ func (p *Parser) functionCall() (*SubstitutionFunction, error) {
 		return nil, errParseErrorMultiple("failed to parse function call", errors)
 	}
 
-	return &SubstitutionFunction{
+	return &SubstitutionFunctionExpr{
 		FunctionName: SubstitutionFunctionName(funcNameToken.value),
 		Arguments:    args,
 		SourceMeta:   p.sourceMeta(funcNameToken),
+	}, nil
+}
+
+// function arg = [ name , "=" ] , substitution ;
+func (p *Parser) functionArg() (*SubstitutionFunctionArg, error) {
+	p.savePos()
+	if p.match(tokenIdent) {
+		nameToken := p.previous()
+		_, err := p.consume(tokenEquals, "expected an equals sign after function argument name")
+		if err == nil {
+			substitution, err := p.substitition()
+			if err != nil {
+				return nil, err
+			}
+
+			return &SubstitutionFunctionArg{
+				Name:       nameToken.value,
+				Value:      substitution,
+				SourceMeta: p.sourceMeta(nameToken),
+			}, nil
+		} else {
+			p.backtrack()
+		}
+	}
+
+	substitution, err := p.substitition()
+	if err != nil {
+		return nil, err
+	}
+
+	return &SubstitutionFunctionArg{
+		Value:      substitution,
+		SourceMeta: substitution.SourceMeta,
 	}, nil
 }
 

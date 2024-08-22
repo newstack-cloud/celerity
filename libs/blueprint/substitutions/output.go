@@ -63,7 +63,7 @@ func SubstitutionToString(substitutionContext string, substitution *Substitution
 	return "", nil
 }
 
-func subFunctionToString(substitutionContext string, function *SubstitutionFunction) (string, error) {
+func subFunctionToString(substitutionContext string, function *SubstitutionFunctionExpr) (string, error) {
 	var b strings.Builder
 
 	b.WriteString(string(function.FunctionName))
@@ -89,19 +89,27 @@ func subFunctionToString(substitutionContext string, function *SubstitutionFunct
 	return b.String(), nil
 }
 
-func writeFunctionArgument(substitutionContext string, b *strings.Builder, arg *Substitution) error {
-	if arg.StringValue != nil {
+func writeFunctionArgument(substitutionContext string, b *strings.Builder, arg *SubstitutionFunctionArg) error {
+	if arg.Value == nil {
+		return errSerialiseSubstitutionFunctionArgValueMissing()
+	}
+
+	if arg.Name != "" {
+		b.WriteString(fmt.Sprintf("%s = ", arg.Name))
+	}
+
+	if arg.Value.StringValue != nil {
 		// String literals in the context of a function call
 		// are always wrapped in double quotes.
-		b.WriteString(fmt.Sprintf("\"%s\"", *arg.StringValue))
-	} else if arg.IntValue != nil {
-		b.WriteString(fmt.Sprintf("%d", *arg.IntValue))
-	} else if arg.FloatValue != nil {
-		b.WriteString(fmt.Sprintf("%f", *arg.FloatValue))
-	} else if arg.BoolValue != nil {
-		b.WriteString(fmt.Sprintf("%t", *arg.BoolValue))
+		b.WriteString(fmt.Sprintf("\"%s\"", *arg.Value.StringValue))
+	} else if arg.Value.IntValue != nil {
+		b.WriteString(fmt.Sprintf("%d", *arg.Value.IntValue))
+	} else if arg.Value.FloatValue != nil {
+		b.WriteString(fmt.Sprintf("%f", *arg.Value.FloatValue))
+	} else if arg.Value.BoolValue != nil {
+		b.WriteString(fmt.Sprintf("%t", *arg.Value.BoolValue))
 	} else {
-		substitutionStr, err := SubstitutionToString(substitutionContext, arg)
+		substitutionStr, err := SubstitutionToString(substitutionContext, arg.Value)
 		if err != nil {
 			return err
 		}

@@ -14,7 +14,7 @@ type StringOrSubstitution struct {
 // Substitution is a representation of a placeholder provided
 // with the ${..} syntax.
 type Substitution struct {
-	Function           *SubstitutionFunction
+	Function           *SubstitutionFunctionExpr
 	Variable           *SubstitutionVariable
 	ValueReference     *SubstitutionValueReference
 	DataSourceProperty *SubstitutionDataSourceProperty
@@ -62,10 +62,19 @@ type SubstitutionChild struct {
 	SourceMeta *source.Meta
 }
 
-type SubstitutionFunction struct {
+type SubstitutionFunctionExpr struct {
 	FunctionName SubstitutionFunctionName
-	Arguments    []*Substitution
-	SourceMeta   *source.Meta
+	Arguments    []*SubstitutionFunctionArg
+	// Path for values accessed from the function result
+	// when the return value is an array or object.
+	Path       []*SubstitutionPathItem
+	SourceMeta *source.Meta
+}
+
+type SubstitutionFunctionArg struct {
+	Name       string
+	Value      *Substitution
+	SourceMeta *source.Meta
 }
 
 // SubstitutionFunctionName is a type alias reserved for names
