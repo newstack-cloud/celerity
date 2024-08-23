@@ -21,6 +21,13 @@ func (f *functionCallArgsMock) Get(ctx context.Context, position int) (any, erro
 
 func (f *functionCallArgsMock) GetVar(ctx context.Context, position int, target any) error {
 	val := reflect.ValueOf(target)
+	if position >= len(f.args) {
+		return function.NewFuncCallError(
+			fmt.Sprintf("argument at index %d not found", position),
+			function.FuncCallErrorCodeFunctionCall,
+			f.callCtx.CallStackSnapshot(),
+		)
+	}
 	val.Elem().Set(reflect.ValueOf(f.args[position]))
 	return nil
 }

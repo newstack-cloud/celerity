@@ -43,6 +43,8 @@ type Parameter interface {
 	// GetAllowNullValue returns whether or
 	// not an argument passed in for this parameter can be null.
 	GetAllowNullValue() bool
+	// GetOptional determines whether or not the value can be omitted.
+	GetOptional() bool
 }
 
 // ScalarParameter is a parameter type definition for primitive types.
@@ -68,6 +70,8 @@ type ScalarParameter struct {
 	// AllowNullValue determines whether or not an argument
 	// passed in for this parameter can be null.
 	AllowNullValue bool
+	// Optional determines whether or not the value can be omitted.
+	Optional bool
 }
 
 func (p *ScalarParameter) GetName() string {
@@ -94,6 +98,10 @@ func (p *ScalarParameter) GetAllowNullValue() bool {
 	return p.AllowNullValue
 }
 
+func (p *ScalarParameter) GetOptional() bool {
+	return p.Optional
+}
+
 // ListParameter is a parameter type definition for lists of values.
 type ListParameter struct {
 	// Name is the name of the parameter for functions that support named arguments.
@@ -117,6 +125,8 @@ type ListParameter struct {
 	// AllowNullValue determines whether or not an argument
 	// passed in for this parameter can be null.
 	AllowNullValue bool
+	// Optional determines whether or not the value can be omitted.
+	Optional bool
 }
 
 func (p *ListParameter) GetName() string {
@@ -143,6 +153,10 @@ func (p *ListParameter) GetAllowNullValue() bool {
 	return p.AllowNullValue
 }
 
+func (p *ListParameter) GetOptional() bool {
+	return p.Optional
+}
+
 // MapParameter is a parameter type definition for a mapping of strings to values.
 type MapParameter struct {
 	// Name is the name of the parameter for functions that support named arguments.
@@ -166,6 +180,8 @@ type MapParameter struct {
 	// AllowNullValue determines whether or not an argument
 	// passed in for this parameter can be null.
 	AllowNullValue bool
+	// Optional determines whether or not the value can be omitted.
+	Optional bool
 }
 
 func (p *MapParameter) GetName() string {
@@ -192,6 +208,10 @@ func (p *MapParameter) GetAllowNullValue() bool {
 	return p.AllowNullValue
 }
 
+func (p *MapParameter) GetOptional() bool {
+	return p.Optional
+}
+
 // ObjectParameter is a parameter type definition for a predefined object structure
 // with known attributes.
 type ObjectParameter struct {
@@ -216,6 +236,8 @@ type ObjectParameter struct {
 	// AllowNullValue determines whether or not an argument
 	// passed in for this parameter can be null.
 	AllowNullValue bool
+	// Optional determines whether or not the value can be omitted.
+	Optional bool
 }
 
 func (p *ObjectParameter) GetName() string {
@@ -242,6 +264,10 @@ func (p *ObjectParameter) GetAllowNullValue() bool {
 	return p.AllowNullValue
 }
 
+func (p *ObjectParameter) GetOptional() bool {
+	return p.Optional
+}
+
 // FunctionParameter is a parameter type definition for a function that can be passed
 // into another function.
 type FunctionParameter struct {
@@ -266,6 +292,8 @@ type FunctionParameter struct {
 	// AllowNullValue determines whether or not an argument
 	// passed in for this parameter can be null.
 	AllowNullValue bool
+	// Optional determines whether or not the value can be omitted.
+	Optional bool
 }
 
 func (p *FunctionParameter) GetName() string {
@@ -290,6 +318,10 @@ func (p *FunctionParameter) GetFormattedDescription() string {
 
 func (p *FunctionParameter) GetAllowNullValue() bool {
 	return p.AllowNullValue
+}
+
+func (p *FunctionParameter) GetOptional() bool {
+	return p.Optional
 }
 
 // VariadicParameter is a parameter type definition for variadic parameters
@@ -347,6 +379,10 @@ func (p *VariadicParameter) GetAllowNullValue() bool {
 	return p.AllowNullValue
 }
 
+func (p *VariadicParameter) GetOptional() bool {
+	return true
+}
+
 // AnyParameter is a parameter type definition for any value.
 // This can be used for union types as well as parameters that
 // can accept any type.
@@ -374,6 +410,8 @@ type AnyParameter struct {
 	// AllowNullValue determines whether or not an argument
 	// passed in for this parameter can be null.
 	AllowNullValue bool
+	// Optional determines whether or not the value can be omitted.
+	Optional bool
 }
 
 func (p *AnyParameter) GetName() string {
@@ -398,6 +436,10 @@ func (p *AnyParameter) GetFormattedDescription() string {
 
 func (p *AnyParameter) GetAllowNullValue() bool {
 	return p.AllowNullValue
+}
+
+func (p *AnyParameter) GetOptional() bool {
+	return p.Optional
 }
 
 // Return is a return type definition for the return value of a function.
