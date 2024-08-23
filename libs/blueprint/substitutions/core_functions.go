@@ -189,6 +189,10 @@ const (
 	// This is useful when you want to map a two-dimensional array to an array
 	// of values of a specific element.
 	SubstitutionFunctionGetElem SubstitutionFunctionName = "getelem"
+
+	// SubstitutionFunctionLink is a function that is used to retrieve the state
+	// of a link between two resources in the current blueprint.
+	SubstitutionFunctionLink SubstitutionFunctionName = "link"
 )
 
 var (
@@ -238,5 +242,6 @@ var (
 		SubstitutionFunctionPipe,
 		SubstitutionFunctionGetAttr,
 		SubstitutionFunctionGetElem,
+		SubstitutionFunctionLink,
 	}
 )

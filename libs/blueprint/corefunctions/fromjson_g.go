@@ -29,14 +29,6 @@ func NewFromJSON_G_Function() provider.Function {
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
 					Type: &function.ValueTypeDefinitionScalar{
-						Label: "JSON string",
-						Type:  function.ValueTypeString,
-						Description: "A valid string literal, reference or function" +
-							" call yielding the json string to extract values from",
-					},
-				},
-				&function.ScalarParameter{
-					Type: &function.ValueTypeDefinitionScalar{
 						Label:       "JSON pointer",
 						Type:        function.ValueTypeString,
 						Description: "A valid json pointer expression to extract the value from the json string.",
@@ -47,7 +39,23 @@ func NewFromJSON_G_Function() provider.Function {
 			},
 			Return: &function.FunctionReturn{
 				FunctionType: &function.ValueTypeDefinitionFunction{
-					Definition: function.Definition{},
+					Definition: function.Definition{
+						Parameters: []function.Parameter{
+							&function.ScalarParameter{
+								Type: &function.ValueTypeDefinitionScalar{
+									Label: "JSON string",
+									Type:  function.ValueTypeString,
+									Description: "A valid string literal, reference or function" +
+										" call yielding the json string to extract values from",
+								},
+							},
+						},
+						Return: &function.AnyReturn{
+							Type: function.ValueTypeAny,
+							Description: "The value extracted from the json string. " +
+								"This can be a primitive value, an array, mapping or object",
+						},
+					},
 				},
 				Description: "A function that takes a json string and extracts a value from it using " +
 					"the pre-configured json pointer expression.",
@@ -76,7 +84,7 @@ func (f *FromJSON_G_Function) Call(
 	}
 
 	return &provider.FunctionCallOutput{
-		FunctionInfo: provider.FunctionReturnInfo{
+		FunctionInfo: provider.FunctionRuntimeInfo{
 			FunctionName: "fromjson",
 			PartialArgs:  []interface{}{jsonPtr},
 			// The JSON string is passed as the first argument to the fromjson function.

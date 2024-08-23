@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/function"
@@ -80,12 +82,23 @@ func (f *FromJSONFunction) Call(
 	decoded := make(map[string]interface{})
 	err = json.Unmarshal([]byte(jsonStr), &decoded)
 	if err != nil {
-		return nil, err
+		return nil, function.NewFuncCallError(
+			fmt.Sprintf("unable to decode json string: %s", err.Error()),
+			function.FuncCallErrorCodeInvalidInput,
+			input.CallContext.CallStackSnapshot(),
+		)
 	}
 
-	value, ok := extractJSONValueWithPointer(decoded, jsonPtr)
-	if !ok {
-		return nil, fmt.Errorf("unable to extract value from json string using pointer %s", jsonPtr)
+	value, found := extractJSONValueWithPointer(decoded, jsonPtr)
+	if !found {
+		return nil, function.NewFuncCallError(
+			fmt.Sprintf(
+				"unable to extract value from json string using pointer \"%s\"",
+				jsonPtr,
+			),
+			function.FuncCallErrorCodeInvalidInput,
+			input.CallContext.CallStackSnapshot(),
+		)
 	}
 
 	return &provider.FunctionCallOutput{
@@ -94,18 +107,91 @@ func (f *FromJSONFunction) Call(
 }
 
 func extractJSONValueWithPointer(data map[string]interface{}, pointer string) (interface{}, bool) {
-	if pointer == "" {
+	normalisedPointer := pointer
+	// Allow for URI fragment representation.
+	if strings.HasPrefix(pointer, "#") {
+		normalisedPointer = pointer[1:]
+	}
+
+	if normalisedPointer == "" {
 		return data, true
 	}
 
-	pointerParts := strings.Split(pointer, "/")
-	current := data
+	if !strings.HasPrefix(normalisedPointer, "/") {
+		return data, false
+	}
+
+	referenceTokens := strings.Split(normalisedPointer[1:], "/")
+	var current interface{}
+	current = data
 	found := false
+	invalid := false
 
 	i := 0
-	for !found && i < len(pointerParts) {
+	for !found && !invalid && i < len(referenceTokens) {
+		decodedToken := decodeJSONPointerToken(referenceTokens[i])
+
+		currentKind := reflect.TypeOf(current).Kind()
+		if currentKind == reflect.Map {
+			currentMap, ok := current.(map[string]interface{})
+			if !ok {
+				invalid = true
+			} else {
+				value, exists := currentMap[decodedToken]
+				if exists {
+					current = value
+					found = i == len(referenceTokens)-1
+				} else {
+					invalid = true
+				}
+			}
+		} else if currentKind == reflect.Slice || currentKind == reflect.Array {
+			currentSlice, ok := current.([]interface{})
+			if !ok {
+				invalid = true
+			} else {
+				index, err := parseJSONPointerTokenIndex(decodedToken, len(currentSlice))
+				if err != nil {
+					invalid = true
+				} else {
+					current = currentSlice[index]
+					found = i == len(referenceTokens)-1
+				}
+			}
+		} else {
+			// We have reached a leaf node,
+			// we can't traverse further so the pointer is invalid.
+			invalid = true
+		}
 		i += 1
 	}
 
 	return current, found
+}
+
+func decodeJSONPointerToken(referenceToken string) string {
+	return strings.ReplaceAll(
+		strings.ReplaceAll(referenceToken, "~1", "/"),
+		"~0",
+		"~",
+	)
+}
+
+func parseJSONPointerTokenIndex(referenceToken string, maxIndex int) (int, error) {
+	if referenceToken == "-" {
+		// As per the spec, "-" is a special token that refers to the nonexistent
+		// element after the last.
+		return 0, fmt.Errorf("index out of bounds")
+	}
+
+	index, err := strconv.Atoi(referenceToken)
+	if err != nil {
+		return 0, err
+	}
+
+	if index < 0 || index >= maxIndex {
+		return 0, fmt.Errorf("index out of bounds")
+	}
+
+	return index, nil
 }

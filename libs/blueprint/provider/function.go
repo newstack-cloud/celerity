@@ -39,7 +39,8 @@ type FunctionGetDefinitionOutput struct {
 // FunctionCallInput provides the input data needed for a substitution function
 // to be called.
 type FunctionCallInput struct {
-	Arguments FunctionCallArguments
+	Arguments   FunctionCallArguments
+	CallContext FunctionCallContext
 }
 
 // FunctionCallArguments provides a way to fetch the arguments passed
@@ -55,23 +56,58 @@ type FunctionCallArguments interface {
 	GetMultipleVars(ctx context.Context, targets ...any) error
 }
 
+// FunctionCallContext provides useful context for functions
+// that allow access to "global" blueprint params and the ability
+// to call other functions loaded into the provider.
+// Functions should not be able to access directly access state,
+// values from state should be resolved before calling a function.
+type FunctionCallContext interface {
+	// Registry retrieves the function registry that can be used to
+	// call other functions from within a function.
+	// This would be akin to importing functions from a module
+	// to be called in a typical programming language.
+	Registry() FunctionRegistry
+	// Params retrieves the current context blueprint params
+	// treated like global data from the perspective of function
+	// implementations.
+	Params() core.BlueprintParams
+	// NewCallArgs creates a new instance of FunctionCallArguments
+	// to be passed into a function call.
+	NewCallArgs(args ...any) FunctionCallArguments
+	// CallStackSnapshot provides a snapshot of the current call stack
+	// to be used in error messages.
+	CallStackSnapshot() []*function.Call
+}
+
+// FunctionRegistry provides a way to retrieve function plugins
+// to call from other functions.
+// Instead of returning a function directly, a registry allows
+// calling functions through the registry as a proxy to allow
+// for adding calls to a stack along with other context-specific
+// enhancements that may be needed.
+type FunctionRegistry interface {
+	// Call allows calling a function in the registry by name.
+	Call(ctx context.Context, functionName string, input *FunctionCallInput) (*FunctionCallOutput, error)
+}
+
 // FunctionCallOutput provides the output data from a substitution function
 // call.
 type FunctionCallOutput struct {
 	ResponseData any
-	FunctionInfo FunctionReturnInfo
+	FunctionInfo FunctionRuntimeInfo
 }
 
-// FunctionReturnInfo provides information about a function returned from a function.
+// FunctionRuntimeInfo provides information about a function to be passed
+// between functions.
 // The blueprint function framework is designed to work across process boundaries
-// so an actual function in memory can not be returned, Instead, a function
-// return info is return that contains the function name to be called and pre-configured
+// so an actual function in memory can not be passed around, Instead, a function
+// runtime info is used , this contains the function name to be called and pre-configured
 // arguments that can be used when the function is eventually called.
 //
 // Higher-order functions can only use named functions for the return value
 // as the function name is used to look up the function definition and combine
 // the pre-configured arguments with the arguments passed to the function.
-type FunctionReturnInfo struct {
+type FunctionRuntimeInfo struct {
 	FunctionName string
 	PartialArgs  []any
 	// Specify the offset of the arguments in the partial arguments.

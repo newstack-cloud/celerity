@@ -70,6 +70,7 @@ type LinkDeployInput struct {
 type LinkDeployOutput struct {
 	ResourceAState *state.ResourceState
 	ResourceBState *state.ResourceState
+	LinkState      *state.LinkState
 }
 
 // LinkPriorityResourceTypeOutput provides the input for retrieving
@@ -139,4 +140,15 @@ type LinkChanges struct {
 	ResourceTypeBNewFields       []string
 	ResourceTypeBRemovedFields   []string
 	ResourceTypeBUnchangedFields []string
+	IntermediaryResourceChanges  []LinkIntermediaryResourceChanges
+}
+
+// LinkIntermediaryResourceChanges provides a set of modified fields
+// for an intermediary resource in a link relationship.
+type LinkIntermediaryResourceChanges struct {
+	ResourceType    string
+	ModifiedFields  []string
+	NewFields       []string
+	RemovedFields   []string
+	UnchangedFields []string
 }

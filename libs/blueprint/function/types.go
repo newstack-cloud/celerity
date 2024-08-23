@@ -376,8 +376,8 @@ type ScalarReturn struct {
 	FormattedDescription string
 }
 
-func (r *ScalarReturn) GetType() ValueTypeDefinition {
-	return r.Type
+func (r *ScalarReturn) GetType() ValueType {
+	return r.Type.GetType()
 }
 
 func (r *ScalarReturn) GetDescription() string {
@@ -740,6 +740,42 @@ func (v *ValueTypeDefinitionFunction) GetDescription() string {
 }
 
 func (v *ValueTypeDefinitionFunction) GetFormattedDescription() string {
+	return v.FormattedDescription
+}
+
+// ValueTypeDefinitionAny is a value type definition
+// for an argument or return value that can have any type.
+type ValueTypeDefinitionAny struct {
+	// Type is the value type name for an any type.
+	Type ValueType
+	// Label is the usage name for the value type.
+	// This will appear in logs and in tooling such as
+	// the language server.
+	Label string
+	// Description is a human-readable description of
+	// the value type. This will appear in logs and in
+	// tooling such as the language server.
+	Description string
+	// FormattedDescription is a human-readable description of
+	// the value type that is formatted with markdown.
+	// This will appear in usage documentation, logs and in
+	// tooling such as the language server.
+	FormattedDescription string
+}
+
+func (v *ValueTypeDefinitionAny) GetType() ValueType {
+	return ValueTypeAny
+}
+
+func (v *ValueTypeDefinitionAny) GetLabel() string {
+	return v.Label
+}
+
+func (v *ValueTypeDefinitionAny) GetDescription() string {
+	return v.Description
+}
+
+func (v *ValueTypeDefinitionAny) GetFormattedDescription() string {
 	return v.FormattedDescription
 }
 

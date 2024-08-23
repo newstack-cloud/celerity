@@ -180,6 +180,19 @@ type Container interface {
         resourceID string,
     ) (ResourceState, error)
 
+	GetLink(
+        ctx context.Context,
+        instanceID string,
+        linkID string,
+    ) (LinkState, error)
+
+	GetLinkForRevision(
+        ctx context.Context,
+        instanceID string,
+        revisionID string,
+        linkID string,
+    ) (LinkState, error)
+
     GetInstance(
         ctx context.Context,
         instanceID string,
