@@ -3,6 +3,7 @@ package substitutions
 import (
 	"fmt"
 
+	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"gopkg.in/yaml.v3"
 )
@@ -66,7 +67,8 @@ func (v *StringOrSubstitutions) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []byte(fmt.Sprintf("\"%s\"", str)), nil
+	escaped := jsonutils.EscapeJSONString(str)
+	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
 }
 
 // UnmarshalJSON fulfils the json.Unmarshaler interface
