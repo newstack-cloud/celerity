@@ -24,6 +24,11 @@ func fromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
 		return nil, err
 	}
 
+	values, err := fromValuesPB(blueprintPB.Values)
+	if err != nil {
+		return nil, err
+	}
+
 	includes, err := fromIncludesPB(blueprintPB.Include)
 	if err != nil {
 		return nil, err
@@ -58,6 +63,7 @@ func fromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
 		Version:     blueprintPB.Version,
 		Transform:   transform,
 		Variables:   variables,
+		Values:      values,
 		Include:     includes,
 		Resources:   resources,
 		DataSources: dataSources,
@@ -94,6 +100,37 @@ func fromVariablesPB(variablesPB map[string]*schemapb.Variable) (*schema.Variabl
 
 	return &schema.VariableMap{
 		Values: variables,
+	}, nil
+}
+
+func fromValuesPB(valuesPB map[string]*schemapb.Value) (*schema.ValueMap, error) {
+	if valuesPB == nil {
+		return nil, nil
+	}
+
+	var values = make(map[string]*schema.Value)
+	for k, v := range valuesPB {
+
+		value, err := fromStringOrSubstitutionsPB(v.Value, false)
+		if err != nil {
+			return nil, err
+		}
+
+		description, err := fromStringOrSubstitutionsPB(v.Description, true)
+		if err != nil {
+			return nil, err
+		}
+
+		values[k] = &schema.Value{
+			Type:        schema.ValueType(v.Type),
+			Value:       value,
+			Description: description,
+			Secret:      v.Secret,
+		}
+	}
+
+	return &schema.ValueMap{
+		Values: values,
 	}, nil
 }
 

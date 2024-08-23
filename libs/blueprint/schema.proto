@@ -7,11 +7,12 @@ message Blueprint {
     string version = 1;
     repeated string transform = 2;
     map<string, Variable> variables = 3;
-    map<string, Include> include = 4;
-    map<string, Resource> resources = 5;
-    map<string, DataSource> data_sources = 6;
-    map<string, Export> exports = 7;
-    optional MappingNode metadata = 8;
+    map<string, Value> values = 4;
+    map<string, Include> include = 5;
+    map<string, Resource> resources = 6;
+    map<string, DataSource> data_sources = 7;
+    map<string, Export> exports = 8;
+    optional MappingNode metadata = 9;
 }
 
 message Export {
@@ -26,6 +27,13 @@ message Variable {
     bool secret = 3;
     ScalarValue default = 4;
     repeated ScalarValue allowed_values = 5;
+}
+
+message Value {
+    string type = 1;
+    StringOrSubstitutions value = 2;
+    optional StringOrSubstitutions description = 3;
+    bool secret = 4;
 }
 
 message ScalarValue {

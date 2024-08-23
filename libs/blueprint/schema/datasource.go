@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"github.com/two-hundred/celerity/libs/common/core"
@@ -247,7 +248,8 @@ func (w *DataSourceFilterOperatorWrapper) MarshalJSON() ([]byte, error) {
 	if !core.SliceContains(DataSourceFilterOperators, w.Value) {
 		return nil, errInvalidDataSourceFilterOperator(w.Value, nil, nil)
 	}
-	return []byte(fmt.Sprintf("\"%s\"", w.Value)), nil
+	escaped := jsonutils.EscapeJSONString(string(w.Value))
+	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
 }
 
 func (w *DataSourceFilterOperatorWrapper) UnmarshalJSON(data []byte) error {
@@ -421,7 +423,8 @@ func (t *DataSourceFieldTypeWrapper) MarshalJSON() ([]byte, error) {
 	if !core.SliceContains(DataSourceFieldTypes, t.Value) {
 		return nil, errInvalidDataSourceFieldType(t.Value, nil, nil)
 	}
-	return []byte(fmt.Sprintf("\"%s\"", t.Value)), nil
+	escaped := jsonutils.EscapeJSONString(string(t.Value))
+	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
 }
 
 func (t *DataSourceFieldTypeWrapper) UnmarshalJSON(data []byte) error {

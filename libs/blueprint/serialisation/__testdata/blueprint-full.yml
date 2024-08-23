@@ -12,6 +12,13 @@ variables:
     type: string
     description: A custom region
     allowedValues: ["eu-west-1", "us-west-2"]
+
+values:
+  subnetIds:
+    type: array
+    description: The IDs of the subnets extracted from the vpc.
+    value: |
+      ${map(datasources.network.subnets, getattr("id"))}
 include:
   coreInfra:
     path: core-infra.yaml

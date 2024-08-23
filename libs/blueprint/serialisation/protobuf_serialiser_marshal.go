@@ -22,6 +22,11 @@ func toSchemaPB(blueprint *schema.Blueprint) (*schemapb.Blueprint, error) {
 		return nil, err
 	}
 
+	values, err := toValuesPB(blueprint.Values)
+	if err != nil {
+		return nil, err
+	}
+
 	includes, err := toIncludesPB(blueprint.Include)
 	if err != nil {
 		return nil, err
@@ -56,6 +61,7 @@ func toSchemaPB(blueprint *schema.Blueprint) (*schemapb.Blueprint, error) {
 		Version:     blueprint.Version,
 		Transform:   transform,
 		Variables:   variables,
+		Values:      values,
 		Include:     includes,
 		Resources:   resources,
 		DataSources: dataSources,
@@ -90,6 +96,35 @@ func toVariablesPB(variables *schema.VariableMap) (map[string]*schemapb.Variable
 		}
 	}
 	return variablesPB, nil
+}
+
+func toValuesPB(values *schema.ValueMap) (map[string]*schemapb.Value, error) {
+	if values == nil {
+		return nil, nil
+	}
+
+	var valuesPB = make(map[string]*schemapb.Value)
+	for k, v := range values.Values {
+
+		valuePB, err := toStringOrSubstitutionsPB(v.Value, false)
+		if err != nil {
+			return nil, err
+		}
+
+		descriptionPB, err := toStringOrSubstitutionsPB(v.Description, true)
+		if err != nil {
+			return nil, err
+		}
+
+		valuesPB[k] = &schemapb.Value{
+			Type:        string(v.Type),
+			Value:       valuePB,
+			Description: descriptionPB,
+			Secret:      v.Secret,
+		}
+	}
+
+	return valuesPB, nil
 }
 
 func toIncludesPB(includes *schema.IncludeMap) (map[string]*schemapb.Include, error) {
