@@ -60,6 +60,18 @@ func (f *functionCallArgsMock) GetMultipleVars(ctx context.Context, targets ...a
 			targetVal.Elem().Set(argVal)
 		}
 	}
+
+	if len(targets) > len(f.args) {
+		return function.NewFuncCallError(
+			fmt.Sprintf(
+				"%d arguments expected, but only %d arguments were passed into function",
+				len(targets),
+				len(f.args),
+			),
+			function.FuncCallErrorCodeFunctionCall,
+			f.callCtx.CallStackSnapshot(),
+		)
+	}
 	return nil
 }
 
