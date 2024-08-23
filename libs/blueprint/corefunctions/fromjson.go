@@ -25,10 +25,11 @@ func NewFromJSONFunction() provider.Function {
 		definition: &function.Definition{
 			Description: "Extracts a value from a serialised JSON string. " +
 				"This uses json pointer notation to allow for the extraction of values from complex " +
-				"serialised structures.",
+				"serialised structures. This only works for extracting values when the root of the json string is an object.",
 			FormattedDescription: "Extracts a value from a serialised JSON string. " +
 				"This uses [json pointer notation](https://datatracker.ietf.org/doc/rfc6901/) " +
-				"to allow for the extraction of values from complex serialised structures.\n\n" +
+				"to allow for the extraction of values from complex serialised structures." +
+				" **This only works for extracting values when the root of the json string is an object.**\n\n" +
 				"**Examples:**\n\n" +
 				"```\n${fromjson(variables.cacheClusterConfig, \"/host\")}\n```",
 			Parameters: []function.Parameter{
