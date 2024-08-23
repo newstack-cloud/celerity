@@ -347,6 +347,59 @@ func (p *VariadicParameter) GetAllowNullValue() bool {
 	return p.AllowNullValue
 }
 
+// AnyParameter is a parameter type definition for any value.
+// This can be used for union types as well as parameters that
+// can accept any type.
+type AnyParameter struct {
+	// Name is the name of the parameter for functions that support named arguments.
+	Name string
+	// Label is the usage name for the parameter.
+	// This will appear in logs and in tooling such as
+	// the language server.
+	Label string
+	// UnionTypes is a list of value type definitions that are allowed
+	// for the parameter.
+	// When provided, an any parameter type is expected to be validated
+	// as a union type where the argument must match one of the types
+	UnionTypes []ValueTypeDefinition
+	// Description is a human-readable description of
+	// the parameter. This will appear in logs and in
+	// tooling such as the language server.
+	Description string
+	// FormattedDescription is a human-readable description of
+	// the parameter that is formatted with markdown.
+	// This will appear in usage documentation, logs and in
+	// tooling such as the language server.
+	FormattedDescription string
+	// AllowNullValue determines whether or not an argument
+	// passed in for this parameter can be null.
+	AllowNullValue bool
+}
+
+func (p *AnyParameter) GetName() string {
+	return p.Name
+}
+
+func (p *AnyParameter) GetLabel() string {
+	return p.Label
+}
+
+func (p *AnyParameter) GetType() ValueType {
+	return ValueTypeAny
+}
+
+func (p *AnyParameter) GetDescription() string {
+	return p.Description
+}
+
+func (p *AnyParameter) GetFormattedDescription() string {
+	return p.FormattedDescription
+}
+
+func (p *AnyParameter) GetAllowNullValue() bool {
+	return p.AllowNullValue
+}
+
 // Return is a return type definition for the return value of a function.
 type Return interface {
 	// GetType retrieves the type name of the return value.

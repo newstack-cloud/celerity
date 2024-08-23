@@ -22,7 +22,7 @@ func NewTrimPrefixFunction() provider.Function {
 			Description: "Removes a prefix from a string.",
 			FormattedDescription: "Removes a prefix from a string.\n\n" +
 				"**Examples:**\n\n" +
-				"```\n${trimprefix(variables.cacheClusterConfig.host, \"http://\")}\n```",
+				"```\n${trimprefix(values.cacheClusterConfig.host, \"http://\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
 					Type: &function.ValueTypeDefinitionScalar{
