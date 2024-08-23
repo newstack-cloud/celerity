@@ -18,7 +18,7 @@ type FromJSON_G_Function struct {
 func NewFromJSON_G_Function() provider.Function {
 	return &FromJSON_G_Function{
 		definition: &function.Definition{
-			Description: "A composable version of the fromjson \"function\" that extracts a value from a serialised JSON string. " +
+			Description: "A composable version of the \"fromjson\" function that extracts a value from a serialised JSON string. " +
 				"This uses json pointer notation to allow for the extraction of values from complex " +
 				"serialised structures.",
 			FormattedDescription: "A composable version of the `fromjson` function that extracts a value from a serialised JSON string. " +
