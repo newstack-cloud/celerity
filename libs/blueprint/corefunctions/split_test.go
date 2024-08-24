@@ -8,14 +8,14 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type ReplaceFunctionTestSuite struct {
+type SplitFunctionTestSuite struct {
 	callStack   function.Stack
 	callContext *functionCallContextMock
 }
 
-var _ = Suite(&ReplaceFunctionTestSuite{})
+var _ = Suite(&SplitFunctionTestSuite{})
 
-func (s *ReplaceFunctionTestSuite) SetUpTest(c *C) {
+func (s *SplitFunctionTestSuite) SetUpTest(c *C) {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -27,17 +27,16 @@ func (s *ReplaceFunctionTestSuite) SetUpTest(c *C) {
 	}
 }
 
-func (s *ReplaceFunctionTestSuite) Test_replaces_all_occurrences_of_substring(c *C) {
-	replaceFunc := NewReplaceFunction()
+func (s *SplitFunctionTestSuite) Test_splits_string_by_delimiter(c *C) {
+	splitFunc := NewSplitFunction()
 	s.callStack.Push(&function.Call{
-		FunctionName: "replace",
+		FunctionName: "split",
 	})
-	output, err := replaceFunc.Call(context.TODO(), &provider.FunctionCallInput{
+	output, err := splitFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
 			args: []any{
-				"https://example1.com, https://example2.com, https://example3.com, https://example4.com",
-				"https://",
-				"www.",
+				"https://example1.com,https://example2.com,https://example3.com,https://example4.com",
+				",",
 			},
 			callCtx: s.callContext,
 		},
@@ -45,22 +44,26 @@ func (s *ReplaceFunctionTestSuite) Test_replaces_all_occurrences_of_substring(c 
 	})
 
 	c.Assert(err, IsNil)
-	outputStr, isStr := output.ResponseData.(string)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, "www.example1.com, www.example2.com, www.example3.com, www.example4.com")
+	outputStrSlice, isStrSlice := output.ResponseData.([]string)
+	c.Assert(isStrSlice, Equals, true)
+	c.Assert(outputStrSlice, DeepEquals, []string{
+		"https://example1.com",
+		"https://example2.com",
+		"https://example3.com",
+		"https://example4.com",
+	})
 }
 
-func (s *ReplaceFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) {
-	replaceFunc := NewReplaceFunction()
+func (s *SplitFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) {
+	splitFunc := NewSplitFunction()
 	s.callStack.Push(&function.Call{
-		FunctionName: "replace",
+		FunctionName: "split",
 	})
-	_, err := replaceFunc.Call(context.TODO(), &provider.FunctionCallInput{
+	_, err := splitFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
 			args: []any{
-				"https://example.com",
-				"https://",
-				// Missing the "replaceWith" string.
+				"https://example.com,https://example2.com",
+				// Missing the delimiter.
 			},
 			callCtx: s.callContext,
 		},
@@ -70,10 +73,10 @@ func (s *ReplaceFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *
 	c.Assert(err, NotNil)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
 	c.Assert(isFuncErr, Equals, true)
-	c.Assert(funcErr.Message, Equals, "3 arguments expected, but 2 arguments were passed into function")
+	c.Assert(funcErr.Message, Equals, "2 arguments expected, but 1 argument was passed into function")
 	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
 		{
-			FunctionName: "replace",
+			FunctionName: "split",
 		},
 	})
 	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeFunctionCall)

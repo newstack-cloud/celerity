@@ -88,11 +88,20 @@ func (f *functionCallArgsMock) GetMultipleVars(ctx context.Context, targets ...a
 	}
 
 	if len(targets) > len(f.args) {
+		expectedText := fmt.Sprintf("%d arguments expected", len(targets))
+		if len(targets) == 1 {
+			expectedText = "1 argument expected"
+		}
+		argsText := fmt.Sprintf(", but %d arguments were passed into function", len(f.args))
+		if len(f.args) == 1 {
+			argsText = ", but 1 argument was passed into function"
+		}
+
 		return function.NewFuncCallError(
 			fmt.Sprintf(
-				"%d arguments expected, but only %d arguments were passed into function",
-				len(targets),
-				len(f.args),
+				"%s%s",
+				expectedText,
+				argsText,
 			),
 			function.FuncCallErrorCodeFunctionCall,
 			f.callCtx.CallStackSnapshot(),
