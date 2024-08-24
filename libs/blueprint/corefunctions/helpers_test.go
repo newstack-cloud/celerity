@@ -28,6 +28,32 @@ func (f *functionCallArgsMock) GetVar(ctx context.Context, position int, target 
 			f.callCtx.CallStackSnapshot(),
 		)
 	}
+
+	targetVal := reflect.ValueOf(target)
+	if targetVal.Kind() != reflect.Ptr {
+		return function.NewFuncCallError(
+			"target to read argument into is not a pointer",
+			function.FuncCallErrorCodeInvalidArgumentType,
+			f.callCtx.CallStackSnapshot(),
+		)
+	}
+
+	argVal := reflect.ValueOf(f.args[position])
+	// Allow interface{} as a target type so that the caller can carry out type assertions
+	// when an argument can be of multiple types.
+	if targetVal.Elem().Kind() != reflect.Interface && targetVal.Elem().Kind() != argVal.Kind() {
+		return function.NewFuncCallError(
+			fmt.Sprintf(
+				"argument at index %d is of type %s, but target is of type %s",
+				position,
+				argVal.Kind(),
+				targetVal.Elem().Kind(),
+			),
+			function.FuncCallErrorCodeInvalidArgumentType,
+			f.callCtx.CallStackSnapshot(),
+		)
+	}
+
 	val.Elem().Set(reflect.ValueOf(f.args[position]))
 	return nil
 }
