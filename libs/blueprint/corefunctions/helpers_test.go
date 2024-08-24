@@ -71,7 +71,9 @@ func (f *functionCallArgsMock) GetMultipleVars(ctx context.Context, targets ...a
 			}
 
 			argVal := reflect.ValueOf(f.args[i])
-			if targetVal.Elem().Kind() != argVal.Kind() {
+			// Allow interface{} as a target type so that the caller can carry out type assertions
+			// when an argument can be of multiple types.
+			if targetVal.Elem().Kind() != reflect.Interface && targetVal.Elem().Kind() != argVal.Kind() {
 				return function.NewFuncCallError(
 					fmt.Sprintf(
 						"argument at index %d is of type %s, but target is of type %s",
@@ -177,4 +179,14 @@ func (f *functionRegistryMock) Call(
 	output, err := fnc.Call(ctx, input)
 	f.callStack.Pop()
 	return output, err
+}
+
+type comparableInt int
+
+func (c comparableInt) Equal(other any) bool {
+	otherInt, ok := other.(comparableInt)
+	if !ok {
+		return false
+	}
+	return c == otherInt
 }
