@@ -54,7 +54,8 @@ func (s *stackImpl) Pop() *Call {
 func (s *stackImpl) Snapshot() []*Call {
 	snapshot := make([]*Call, len(s.calls))
 	// Reverse the backing slice so the first call is at the top of the stack,
-	// stack traces in errors will be printed in the order of the snapshot.
+	// stack traces in errors will be printed in the order of the snapshot,
+	// from top to bottom.
 	for i := len(s.calls) - 1; i >= 0; i -= 1 {
 		snapshot[len(s.calls)-1-i] = s.calls[i]
 	}
