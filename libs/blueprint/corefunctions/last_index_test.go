@@ -1,0 +1,79 @@
+package corefunctions
+
+import (
+	"context"
+
+	"github.com/two-hundred/celerity/libs/blueprint/function"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	. "gopkg.in/check.v1"
+)
+
+type LastIndexFunctionTestSuite struct {
+	callStack   function.Stack
+	callContext *functionCallContextMock
+}
+
+var _ = Suite(&LastIndexFunctionTestSuite{})
+
+func (s *LastIndexFunctionTestSuite) SetUpTest(c *C) {
+	s.callStack = function.NewStack()
+	s.callContext = &functionCallContextMock{
+		params: &blueprintParamsMock{},
+		registry: &functionRegistryMock{
+			functions: map[string]provider.Function{},
+			callStack: s.callStack,
+		},
+		callStack: s.callStack,
+	}
+}
+
+func (s *LastIndexFunctionTestSuite) Test_finds_index_of_last_substring(c *C) {
+	lastIndexFunc := NewLastIndexFunction()
+	s.callStack.Push(&function.Call{
+		FunctionName: "last_index",
+	})
+	output, err := lastIndexFunc.Call(context.TODO(), &provider.FunctionCallInput{
+		Arguments: &functionCallArgsMock{
+			args: []any{
+				"This is a test string for testing",
+				"test",
+			},
+			callCtx: s.callContext,
+		},
+		CallContext: s.callContext,
+	})
+
+	c.Assert(err, IsNil)
+	outputStr, isStr := output.ResponseData.(int64)
+	c.Assert(isStr, Equals, true)
+	c.Assert(outputStr, Equals, int64(26))
+}
+
+func (s *LastIndexFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) {
+	lastIndexFunc := NewLastIndexFunction()
+	s.callStack.Push(&function.Call{
+		FunctionName: "last_index",
+	})
+	_, err := lastIndexFunc.Call(context.TODO(), &provider.FunctionCallInput{
+		Arguments: &functionCallArgsMock{
+			args: []any{
+				// Expected a string, not an integer.
+				403928322,
+				",",
+			},
+			callCtx: s.callContext,
+		},
+		CallContext: s.callContext,
+	})
+
+	c.Assert(err, NotNil)
+	funcErr, isFuncErr := err.(*function.FuncCallError)
+	c.Assert(isFuncErr, Equals, true)
+	c.Assert(funcErr.Message, Equals, "argument at index 0 is of type int, but target is of type string")
+	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
+		{
+			FunctionName: "last_index",
+		},
+	})
+	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidArgumentType)
+}
