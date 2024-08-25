@@ -13,6 +13,8 @@ type Resource struct {
 	Type         string                               `yaml:"type" json:"type"`
 	Description  *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 	Metadata     *Metadata                            `yaml:"metadata,omitempty" json:"metadata,omitempty"`
+	Condition    *Condition                           `yaml:"condition,omitempty" json:"condition,omitempty"`
+	Each         *substitutions.StringOrSubstitutions `yaml:"each,omitempty" json:"each,omitempty"`
 	LinkSelector *LinkSelector                        `yaml:"linkSelector,omitempty" json:"linkSelector,omitempty"`
 	Spec         *core.MappingNode                    `yaml:"spec" json:"spec"`
 	SourceMeta   *source.Meta                         `yaml:"-" json:"-"`
@@ -33,6 +35,8 @@ func (r *Resource) UnmarshalYAML(value *yaml.Node) error {
 	r.Type = alias.Type
 	r.Description = alias.Description
 	r.Metadata = alias.Metadata
+	r.Condition = alias.Condition
+	r.Each = alias.Each
 	r.LinkSelector = alias.LinkSelector
 	r.Spec = alias.Spec
 

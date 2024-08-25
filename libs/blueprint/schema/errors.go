@@ -56,6 +56,10 @@ const (
 	// for a blueprint schema load error is due to an invalid map
 	// being provided.
 	ErrorSchemaReasonCodeInvalidMap ErrorSchemaReasonCode = "invalid_map"
+	// ErrorSchemaReasonCodeInvalidResourceCondition is provided
+	// when the reason for a blueprint schema load error is due
+	// to an invalid resource condition being provided.
+	ErrorSchemaReasonCodeInvalidResourceCondition ErrorSchemaReasonCode = "invalid_resource_condition"
 	// ErrorSchemaReasonCodeGeneral is provided when the reason
 	// for a blueprint schema load error is not specific,
 	// primarily used for errors wrapped with parent scope line information.
@@ -140,6 +144,25 @@ func errInvalidGeneralMap(value *yaml.Node) error {
 
 	return &Error{
 		ReasonCode:   ErrorSchemaReasonCodeInvalidMap,
+		Err:          innerError,
+		SourceLine:   &value.Line,
+		SourceColumn: &value.Column,
+	}
+}
+
+func errInvalidResourceCondition(value *yaml.Node) error {
+	innerError := fmt.Errorf(
+		"an invalid resource condition has been provided, only one of \"and\", \"or\" or \"not\" can be set",
+	)
+	if value == nil {
+		return &Error{
+			ReasonCode: ErrorSchemaReasonCodeInvalidResourceCondition,
+			Err:        innerError,
+		}
+	}
+
+	return &Error{
+		ReasonCode:   ErrorSchemaReasonCodeInvalidResourceCondition,
 		Err:          innerError,
 		SourceLine:   &value.Line,
 		SourceColumn: &value.Column,

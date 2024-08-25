@@ -24,6 +24,13 @@ func NormaliseSchema(bpSchema *Blueprint) {
 		bpSchema.Variables.SourceMeta = nil
 	}
 
+	if bpSchema.Values != nil && bpSchema.Values.Values != nil {
+		for _, value := range bpSchema.Values.Values {
+			NormaliseValue(value)
+		}
+		bpSchema.Values.SourceMeta = nil
+	}
+
 	if bpSchema.Include != nil && bpSchema.Include.Values != nil {
 		for _, include := range bpSchema.Include.Values {
 			NormaliseInclude(include)
@@ -77,6 +84,18 @@ func NormaliseVariable(variable *Variable) {
 	variable.SourceMeta = nil
 }
 
+// NormaliseValue strips the source meta information from a value
+// to make it comparable in a way that ignores line and column numbers.
+func NormaliseValue(value *Value) {
+	if value == nil {
+		return
+	}
+
+	NormaliseStringOrSubstitutions(value.Value)
+	NormaliseStringOrSubstitutions(value.Description)
+	value.SourceMeta = nil
+}
+
 // NormaliseInclude strips the source meta information from an include
 // to make it comparable in a way that ignores line and column numbers.
 func NormaliseInclude(include *Include) {
@@ -101,6 +120,8 @@ func NormaliseResource(resource *Resource) {
 	NormaliseStringOrSubstitutions(resource.Description)
 	NormaliseResourceMetadata(resource.Metadata)
 	NormaliseLinkSelector(resource.LinkSelector)
+	NormaliseCondition(resource.Condition)
+	NormaliseStringOrSubstitutions(resource.Each)
 	NormaliseMappingNode(resource.Spec)
 	resource.SourceMeta = nil
 }
@@ -122,6 +143,33 @@ func NormaliseResourceMetadata(metadata *Metadata) {
 
 	NormaliseMappingNode(metadata.Custom)
 	metadata.SourceMeta = nil
+}
+
+// NormaliseCondition strips the source meta information from a condition
+// to make it comparable in a way that ignores line and column numbers.
+func NormaliseCondition(condition *Condition) {
+	if condition == nil {
+		return
+	}
+
+	if condition.And != nil {
+		for _, and := range condition.And {
+			NormaliseCondition(and)
+		}
+	}
+
+	if condition.Or != nil {
+		for _, or := range condition.Or {
+			NormaliseCondition(or)
+		}
+	}
+
+	if condition.Not != nil {
+		NormaliseCondition(condition.Not)
+	}
+
+	NormaliseStringOrSubstitutions(condition.StringValue)
+	condition.SourceMeta = nil
 }
 
 // NormaliseLinkSelector strips the source meta information from a link selector
@@ -340,6 +388,7 @@ func NormaliseSubstitutionFunction(substitutionFunction *substitutions.Substitut
 
 	for _, argument := range substitutionFunction.Arguments {
 		NormaliseSubstitution(argument.Value)
+		argument.SourceMeta = nil
 	}
 	substitutionFunction.SourceMeta = nil
 }
