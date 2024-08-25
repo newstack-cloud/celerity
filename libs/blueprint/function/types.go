@@ -353,6 +353,12 @@ type VariadicParameter struct {
 	// AllowNullValue determines whether or not an argument
 	// passed in for these parameters can be null.
 	AllowNullValue bool
+	// Named determines whether or not the variadic parameters
+	// are named arguments.
+	// Named and positional arguments cannot be mixed.
+	// If they are named arguments, all arguments do not need to be
+	// of the same type.
+	Named bool
 }
 
 func (p *VariadicParameter) GetName() string {
