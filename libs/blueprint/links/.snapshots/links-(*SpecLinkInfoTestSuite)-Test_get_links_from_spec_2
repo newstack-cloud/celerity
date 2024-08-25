@@ -16,6 +16,8 @@
         Custom: (*core.MappingNode)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
       }),
+      Condition: (*schema.Condition)(<nil>),
+      Each: (*substitutions.StringOrSubstitutions)(<nil>),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)(<nil>),
       SourceMeta: (*source.Meta)(<nil>)
@@ -48,6 +50,8 @@
         Custom: (*core.MappingNode)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
       }),
+      Condition: (*schema.Condition)(<nil>),
+      Each: (*substitutions.StringOrSubstitutions)(<nil>),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)(<nil>),
       SourceMeta: (*source.Meta)(<nil>)
@@ -75,6 +79,8 @@
         Custom: (*core.MappingNode)(<nil>),
         SourceMeta: (*source.Meta)(<nil>)
       }),
+      Condition: (*schema.Condition)(<nil>),
+      Each: (*substitutions.StringOrSubstitutions)(<nil>),
       LinkSelector: (*schema.LinkSelector)(<nil>),
       Spec: (*core.MappingNode)(<nil>),
       SourceMeta: (*source.Meta)(<nil>)
