@@ -18,10 +18,10 @@ type ListFunction struct {
 func NewListFunction() provider.Function {
 	return &ListFunction{
 		definition: &function.Definition{
-			Description: "Checks if a string contains a given substring or if an array contains a given value.",
-			FormattedDescription: "Checks if a string contains a given substring or if an array contains a given value.\n\n" +
+			Description: "Creates a list of values from arguments of the same type.",
+			FormattedDescription: "Creates a list of values from arguments of the same type.\n\n" +
 				"**Examples:**\n\n" +
-				"```\n${contains(values.cacheClusterConfig.host, \"celerityframework.com\")}\n```",
+				"```\n${list(\"item1\",\"item2\",\"item3\",\"item4\")}\n```",
 			Parameters: []function.Parameter{
 				&function.VariadicParameter{
 					Type: &function.ValueTypeDefinitionAny{
