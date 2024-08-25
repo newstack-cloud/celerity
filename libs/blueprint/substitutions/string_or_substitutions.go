@@ -86,11 +86,15 @@ func (s *StringOrSubstitutions) UnmarshalJSON(data []byte) error {
 		)
 	}
 	quotesStripped := dataStr[1 : len(dataStr)-1]
+	// Ensure that all JSON special characters are unescaped, otherwise
+	// the parser will fail for substitutions that contains characters that are special
+	// in JSON like '"'.
+	unescaped := jsonutils.UnescapeJSONString(quotesStripped)
 
 	// During deserialisation, there is no way of knowing the context
 	// (i.e. the key or field name) in which the substitutions are being used.
 	// This is why an empty string is passed as the substitution context.
-	parsedValues, err := ParseSubstitutionValues("", quotesStripped, nil, false, true)
+	parsedValues, err := ParseSubstitutionValues("", unescaped, nil, false, true)
 	if err != nil {
 		return err
 	}
