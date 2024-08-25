@@ -17,6 +17,8 @@ type Substitution struct {
 	Function           *SubstitutionFunctionExpr
 	Variable           *SubstitutionVariable
 	ValueReference     *SubstitutionValueReference
+	ElemReference      *SubstitutionElemReference
+	ElemIndexReference *SubstitutionElemIndexReference
 	DataSourceProperty *SubstitutionDataSourceProperty
 	ResourceProperty   *SubstitutionResourceProperty
 	Child              *SubstitutionChild
@@ -35,6 +37,15 @@ type SubstitutionVariable struct {
 type SubstitutionValueReference struct {
 	ValueName  string
 	Path       []*SubstitutionPathItem
+	SourceMeta *source.Meta
+}
+
+type SubstitutionElemReference struct {
+	Path       []*SubstitutionPathItem
+	SourceMeta *source.Meta
+}
+
+type SubstitutionElemIndexReference struct {
 	SourceMeta *source.Meta
 }
 

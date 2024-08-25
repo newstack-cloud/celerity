@@ -317,6 +317,8 @@
                           Function: (*substitutions.SubstitutionFunctionExpr)(<nil>),
                           Variable: (*substitutions.SubstitutionVariable)(<nil>),
                           ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
+                          ElemReference: (*substitutions.SubstitutionElemReference)(<nil>),
+                          ElemIndexReference: (*substitutions.SubstitutionElemIndexReference)(<nil>),
                           DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                           ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
                             ResourceName: (string) (len=10) "authoriser",
@@ -769,6 +771,8 @@
                                 })
                               }),
                               ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
+                              ElemReference: (*substitutions.SubstitutionElemReference)(<nil>),
+                              ElemIndexReference: (*substitutions.SubstitutionElemIndexReference)(<nil>),
                               DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                               ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                               Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -971,6 +975,8 @@
                         })
                       }),
                       ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
+                      ElemReference: (*substitutions.SubstitutionElemReference)(<nil>),
+                      ElemIndexReference: (*substitutions.SubstitutionElemIndexReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -1442,6 +1448,8 @@
                         })
                       }),
                       ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
+                      ElemReference: (*substitutions.SubstitutionElemReference)(<nil>),
+                      ElemIndexReference: (*substitutions.SubstitutionElemIndexReference)(<nil>),
                       DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                       ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                       Child: (*substitutions.SubstitutionChild)(<nil>),

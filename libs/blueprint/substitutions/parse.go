@@ -89,6 +89,28 @@ func (p *Parser) substitition() (*Substitution, error) {
 		return nil, err
 	}
 
+	var elemRef *SubstitutionElemReference
+	if elemRef, err = p.elemReference(); elemRef != nil {
+		return &Substitution{
+			ElemReference: elemRef,
+			SourceMeta:    elemRef.SourceMeta,
+		}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var elemIndexRef *SubstitutionElemIndexReference
+	if elemIndexRef, err = p.elemIndexReference(); elemIndexRef != nil {
+		return &Substitution{
+			ElemIndexReference: elemIndexRef,
+			SourceMeta:         elemIndexRef.SourceMeta,
+		}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	var datasourceRef *SubstitutionDataSourceProperty
 	if datasourceRef, err = p.datasourceReference(); datasourceRef != nil {
 		return &Substitution{
@@ -253,6 +275,43 @@ func (p *Parser) valueReference() (*SubstitutionValueReference, error) {
 		ValueName:  *valueName,
 		Path:       path,
 		SourceMeta: p.sourceMeta(valuesKeywordToken),
+	}, nil
+}
+
+// elemRef = "elem" , [ { namAccessor | indexAccessor } ] ;
+func (p *Parser) elemReference() (*SubstitutionElemReference, error) {
+	elemKeywordToken, err := p.consume(
+		tokenKeywordElem,
+		"expected elem keyword",
+	)
+	if err != nil {
+		return nil, nil
+	}
+
+	path := []*SubstitutionPathItem{}
+	errors := p.restOfPropertyPath(&path)
+	if len(errors) > 0 {
+		return nil, errParseErrorMultiple("failed to parse elem reference", errors)
+	}
+
+	return &SubstitutionElemReference{
+		Path:       path,
+		SourceMeta: p.sourceMeta(elemKeywordToken),
+	}, nil
+}
+
+// elemIndexRef = "i" ;
+func (p *Parser) elemIndexReference() (*SubstitutionElemIndexReference, error) {
+	elemIndexKeyword, err := p.consume(
+		tokenKeywordI,
+		"expected i keyword",
+	)
+	if err != nil {
+		return nil, nil
+	}
+
+	return &SubstitutionElemIndexReference{
+		SourceMeta: p.sourceMeta(elemIndexKeyword),
 	}, nil
 }
 

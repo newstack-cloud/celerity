@@ -483,6 +483,71 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_valu
 	})
 }
 
+func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_current_elem_ref(c *C) {
+	parsed, err := ParseSubstitutionValues(
+		"",
+		`${elem.queueUrl}`,
+		nil,
+		true,
+		false,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(parsed), Equals, 1)
+	c.Assert(parsed[0], DeepEquals, &StringOrSubstitution{
+		SubstitutionValue: &Substitution{
+			ElemReference: &SubstitutionElemReference{
+				Path: []*SubstitutionPathItem{
+					{
+						FieldName: "queueUrl",
+					},
+				},
+				SourceMeta: &source.Meta{
+					Line:   1,
+					Column: 3,
+				},
+			},
+			SourceMeta: &source.Meta{
+				Line:   1,
+				Column: 3,
+			},
+		},
+		SourceMeta: &source.Meta{
+			Line:   1,
+			Column: 3,
+		},
+	})
+}
+
+func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_current_elem_index_ref(c *C) {
+	parsed, err := ParseSubstitutionValues(
+		"",
+		`${i}`,
+		nil,
+		true,
+		false,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(parsed), Equals, 1)
+	c.Assert(parsed[0], DeepEquals, &StringOrSubstitution{
+		SubstitutionValue: &Substitution{
+			ElemIndexReference: &SubstitutionElemIndexReference{
+				SourceMeta: &source.Meta{
+					Line:   1,
+					Column: 3,
+				},
+			},
+			SourceMeta: &source.Meta{
+				Line:   1,
+				Column: 3,
+			},
+		},
+		SourceMeta: &source.Meta{
+			Line:   1,
+			Column: 3,
+		},
+	})
+}
+
 func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_string_literal(c *C) {
 	parsed, err := ParseSubstitutionValues(
 		"",

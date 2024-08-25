@@ -45,6 +45,8 @@ const (
 	tokenKeywordDatasources tokenType = "keywordDatasources"
 	tokenKeywordResources   tokenType = "keywordResources"
 	tokenKeywordChildren    tokenType = "keywordChildren"
+	tokenKeywordElem        tokenType = "keywordElem"
+	tokenKeywordI           tokenType = "keywordI"
 	tokenEOF                tokenType = "eof"
 )
 
@@ -423,6 +425,10 @@ func deriveIdentOrKeywordTokenType(value string) tokenType {
 		return tokenKeywordResources
 	case "children":
 		return tokenKeywordChildren
+	case "elem":
+		return tokenKeywordElem
+	case "i":
+		return tokenKeywordI
 	default:
 		return tokenIdent
 	}
