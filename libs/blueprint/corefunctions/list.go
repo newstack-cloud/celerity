@@ -1,0 +1,71 @@
+package corefunctions
+
+import (
+	"context"
+
+	"github.com/two-hundred/celerity/libs/blueprint/function"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+)
+
+// ListFunction provides the implementation of
+// a function that checks if a string has a suffix.
+type ListFunction struct {
+	definition *function.Definition
+}
+
+// NewListFunction creates a new instance of the ListFunction with
+// a complete function definition.
+func NewListFunction() provider.Function {
+	return &ListFunction{
+		definition: &function.Definition{
+			Description: "Checks if a string contains a given substring or if an array contains a given value.",
+			FormattedDescription: "Checks if a string contains a given substring or if an array contains a given value.\n\n" +
+				"**Examples:**\n\n" +
+				"```\n${contains(values.cacheClusterConfig.host, \"celerityframework.com\")}\n```",
+			Parameters: []function.Parameter{
+				&function.VariadicParameter{
+					Type: &function.ValueTypeDefinitionAny{
+						Type:  function.ValueTypeAny,
+						Label: "any",
+					},
+					Description: "N arguments of the same type that will be used to create a list.",
+				},
+			},
+			Return: &function.ListReturn{
+				ElementType: &function.ValueTypeDefinitionAny{
+					Label: "any",
+					Type:  function.ValueTypeAny,
+				},
+				Description: "An array of values that have been passed as arguments.",
+			},
+		},
+	}
+}
+
+func (f *ListFunction) GetDefinition(
+	ctx context.Context,
+	input *provider.FunctionGetDefinitionInput,
+) (*provider.FunctionGetDefinitionOutput, error) {
+	return &provider.FunctionGetDefinitionOutput{
+		Definition: f.definition,
+	}, nil
+}
+
+func (f *ListFunction) Call(
+	ctx context.Context,
+	input *provider.FunctionCallInput,
+) (*provider.FunctionCallOutput, error) {
+	var params []interface{}
+	if err := input.Arguments.GetVar(ctx, 0, &params); err != nil {
+		return nil, err
+	}
+
+	return &provider.FunctionCallOutput{
+		// Make a copy of the params slice.
+		// Operationally, the `list` function does not do anything special,
+		// it provides a way to create a list of values from the end-user perspective,
+		// variadic arguments are already passed as a slice of values to the function instead of
+		// individual arguments as there is no way of knowing how many arguments will be passed.
+		ResponseData: append([]interface{}{}, params...),
+	}, nil
+}
