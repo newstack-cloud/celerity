@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
@@ -189,4 +190,37 @@ func (c comparableInt) Equal(other any) bool {
 		return false
 	}
 	return c == otherInt
+}
+
+func sortIfaceSlice(slice []interface{}) {
+	slices.SortFunc(slice, func(a, b interface{}) int {
+		// Normalise to a string for comparison,
+		// This is only used in tests so the actual ordering
+		// doesn't matter, only that it is consistent.
+		aStr := fmt.Sprintf("%v", a)
+		bStr := fmt.Sprintf("%v", b)
+		if aStr < bStr {
+			return -1
+		}
+
+		if aStr > bStr {
+			return 1
+		}
+
+		return 0
+	})
+}
+
+func sortStrSlice(slice []string) {
+	slices.SortFunc(slice, func(a, b string) int {
+		if a < b {
+			return -1
+		}
+
+		if a > b {
+			return 1
+		}
+
+		return 0
+	})
 }

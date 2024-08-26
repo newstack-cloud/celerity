@@ -8,14 +8,14 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type KeysFunctionTestSuite struct {
+type ValsFunctionTestSuite struct {
 	callStack   function.Stack
 	callContext *functionCallContextMock
 }
 
-var _ = Suite(&KeysFunctionTestSuite{})
+var _ = Suite(&ValsFunctionTestSuite{})
 
-func (s *KeysFunctionTestSuite) SetUpTest(c *C) {
+func (s *ValsFunctionTestSuite) SetUpTest(c *C) {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -27,10 +27,10 @@ func (s *KeysFunctionTestSuite) SetUpTest(c *C) {
 	}
 }
 
-func (s *KeysFunctionTestSuite) Test_extracts_keys_from_map(c *C) {
-	keysFunc := NewKeysFunction()
+func (s *ValsFunctionTestSuite) Test_extracts_keys_from_map(c *C) {
+	keysFunc := NewValsFunction()
 	s.callStack.Push(&function.Call{
-		FunctionName: "keys",
+		FunctionName: "vals",
 	})
 	output, err := keysFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
@@ -39,6 +39,7 @@ func (s *KeysFunctionTestSuite) Test_extracts_keys_from_map(c *C) {
 					"key1": "value1",
 					"key2": "value2",
 					"key3": "value3",
+					"key4": 403212,
 				},
 			},
 			callCtx: s.callContext,
@@ -47,24 +48,24 @@ func (s *KeysFunctionTestSuite) Test_extracts_keys_from_map(c *C) {
 	})
 
 	c.Assert(err, IsNil)
-	outputSlice, isSlice := output.ResponseData.([]string)
+	outputSlice, isSlice := output.ResponseData.([]interface{})
 	c.Assert(isSlice, Equals, true)
-	expected := []string{"key1", "key2", "key3"}
-	sortStrSlice(expected)
-	sortStrSlice(outputSlice)
+	expected := []interface{}{"value1", "value2", "value3", 403212}
+	sortIfaceSlice(expected)
+	sortIfaceSlice(outputSlice)
 	c.Assert(outputSlice, DeepEquals, expected)
 }
 
-func (s *KeysFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) {
-	keysFunc := NewKeysFunction()
+func (s *ValsFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) {
+	keysFunc := NewValsFunction()
 	s.callStack.Push(&function.Call{
-		FunctionName: "keys",
+		FunctionName: "vals",
 	})
 	_, err := keysFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
 			args: []any{
 				// Expected a map of strings to interfaces, not an integer.
-				213426322,
+				913826325,
 			},
 			callCtx: s.callContext,
 		},
@@ -77,7 +78,7 @@ func (s *KeysFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) 
 	c.Assert(funcErr.Message, Equals, "argument at index 0 is of type int, but target is of type map")
 	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
 		{
-			FunctionName: "keys",
+			FunctionName: "vals",
 		},
 	})
 	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidArgumentType)
