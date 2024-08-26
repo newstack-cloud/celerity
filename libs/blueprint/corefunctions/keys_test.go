@@ -8,14 +8,14 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type IndexFunctionTestSuite struct {
+type KeysFunctionTestSuite struct {
 	callStack   function.Stack
 	callContext *functionCallContextMock
 }
 
-var _ = Suite(&IndexFunctionTestSuite{})
+var _ = Suite(&KeysFunctionTestSuite{})
 
-func (s *IndexFunctionTestSuite) SetUpTest(c *C) {
+func (s *KeysFunctionTestSuite) SetUpTest(c *C) {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -27,16 +27,19 @@ func (s *IndexFunctionTestSuite) SetUpTest(c *C) {
 	}
 }
 
-func (s *IndexFunctionTestSuite) Test_finds_index_of_first_substring(c *C) {
-	indexFunc := NewIndexFunction()
+func (s *KeysFunctionTestSuite) Test_extracts_keys_from_map(c *C) {
+	keysFunc := NewKeysFunction()
 	s.callStack.Push(&function.Call{
-		FunctionName: "index",
+		FunctionName: "keys",
 	})
-	output, err := indexFunc.Call(context.TODO(), &provider.FunctionCallInput{
+	output, err := keysFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
 			args: []any{
-				"This is a test string for testing",
-				"test",
+				map[string]interface{}{
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "value3",
+				},
 			},
 			callCtx: s.callContext,
 		},
@@ -44,22 +47,21 @@ func (s *IndexFunctionTestSuite) Test_finds_index_of_first_substring(c *C) {
 	})
 
 	c.Assert(err, IsNil)
-	outputInt, isInt := output.ResponseData.(int64)
-	c.Assert(isInt, Equals, true)
-	c.Assert(outputInt, Equals, int64(10))
+	outputStr, isStr := output.ResponseData.([]string)
+	c.Assert(isStr, Equals, true)
+	c.Assert(outputStr, DeepEquals, []string{"key1", "key2", "key3"})
 }
 
-func (s *IndexFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) {
-	indexFunc := NewIndexFunction()
+func (s *KeysFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) {
+	keysFunc := NewKeysFunction()
 	s.callStack.Push(&function.Call{
-		FunctionName: "index",
+		FunctionName: "keys",
 	})
-	_, err := indexFunc.Call(context.TODO(), &provider.FunctionCallInput{
+	_, err := keysFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
 			args: []any{
-				// Expected a string, not an integer.
-				403928322,
-				",",
+				// Expected a map of strings to interfaces, not an integer.
+				213426322,
 			},
 			callCtx: s.callContext,
 		},
@@ -69,10 +71,10 @@ func (s *IndexFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C)
 	c.Assert(err, NotNil)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
 	c.Assert(isFuncErr, Equals, true)
-	c.Assert(funcErr.Message, Equals, "argument at index 0 is of type int, but target is of type string")
+	c.Assert(funcErr.Message, Equals, "argument at index 0 is of type int, but target is of type map")
 	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
 		{
-			FunctionName: "index",
+			FunctionName: "keys",
 		},
 	})
 	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidArgumentType)

@@ -44,9 +44,9 @@ func (s *LastIndexFunctionTestSuite) Test_finds_index_of_last_substring(c *C) {
 	})
 
 	c.Assert(err, IsNil)
-	outputStr, isStr := output.ResponseData.(int64)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, int64(26))
+	outputInt, isInt := output.ResponseData.(int64)
+	c.Assert(isInt, Equals, true)
+	c.Assert(outputInt, Equals, int64(26))
 }
 
 func (s *LastIndexFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) {
