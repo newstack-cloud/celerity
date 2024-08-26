@@ -35,6 +35,10 @@ const (
 	// arguments. (e.g. an invalid JSON string passed into "jsondecode" or "fromjson")
 	FuncCallErrorCodeInvalidInput
 
+	// FuncCallErrorCodeInvalidReturnType is an error code that indicates
+	// that the return type of a function is invalid.
+	FuncCallErrorCodeInvalidReturnType
+
 	// FuncCallErrorCodeSystem is an error code that indicates an error
 	// with the function call system.
 	FuncCallErrorCodeSystem
@@ -105,6 +109,10 @@ func getErrorCodeLabel(code FuncCallErrorCode) string {
 		return "System"
 	case FuncCallErrorCodeFunctionNotFound:
 		return "FunctionNotFound"
+	case FuncCallErrorCodeInvalidInput:
+		return "InvalidInput"
+	case FuncCallErrorCodeInvalidReturnType:
+		return "InvalidReturnType"
 	default:
 		return "Unknown"
 	}
