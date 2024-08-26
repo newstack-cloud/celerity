@@ -9,7 +9,7 @@ import (
 )
 
 // FilterFunction provides the implementation of the
-// core "map" function defined in the blueprint specification.
+// core "filter" function defined in the blueprint specification.
 type FilterFunction struct {
 	definition *function.Definition
 }
