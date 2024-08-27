@@ -9,6 +9,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
 type functionCallArgsMock struct {
@@ -223,4 +224,16 @@ func sortStrSlice(slice []string) {
 
 		return 0
 	})
+}
+
+type linkStateRetrieverMock struct {
+	linkState map[string]state.LinkState
+}
+
+func (s *linkStateRetrieverMock) GetLink(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
+	linkState, ok := s.linkState[fmt.Sprintf("%s::%s", instanceID, linkID)]
+	if !ok {
+		return state.LinkState{}, fmt.Errorf("link state not found")
+	}
+	return linkState, nil
 }
