@@ -71,8 +71,9 @@ func (f *SplitFunction) Call(
 	}
 
 	split := strings.Split(inputStr, delimiter)
+	splitInterfaceSlice := intoInterfaceSlice(split)
 
 	return &provider.FunctionCallOutput{
-		ResponseData: split,
+		ResponseData: splitInterfaceSlice,
 	}, nil
 }

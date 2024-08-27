@@ -8,21 +8,21 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
-// MapFunction provides the implementation of the
-// core "map" function defined in the blueprint specification.
-type MapFunction struct {
+// FlatMapFunction provides the implementation of the
+// core "flatmap" function defined in the blueprint specification.
+type FlatMapFunction struct {
 	definition *function.Definition
 }
 
-// NewMapFunction creates a new instance of the MapFunction with
+// NewFlatMapFunction creates a new instance of the FlatMapFunction with
 // a complete function definition.
-func NewMapFunction() provider.Function {
-	return &MapFunction{
+func NewFlatMapFunction() provider.Function {
+	return &FlatMapFunction{
 		definition: &function.Definition{
-			Description: "Maps a list of values to a new list of values using a provided function.",
-			FormattedDescription: "Maps a list of values to a new list of values using a provided function.\n\n" +
+			Description: "Maps a list of values to a new list of values using a function and flattens the result.",
+			FormattedDescription: "Maps a list of values to a new list of values using a function and flattens the result.\n\n" +
 				"**Examples:**\n\n" +
-				"```\n${map(\n  datasources.network.subnets,\n  compose(to_upper, getattr(\"id\")\n)}\n```",
+				"```\n${flatmap(\n  values.hosts,\n  split_g(\",\")\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.ListParameter{
 					ElementType: &function.ValueTypeDefinitionAny{
@@ -33,7 +33,7 @@ func NewMapFunction() provider.Function {
 					Description: "An array of items where all items are of the same type to map.",
 				},
 				&function.FunctionParameter{
-					Label: "func<Item, NewItem>(Item, integer?) -> NewItem",
+					Label: "func<Item, NewItem extends array>(Item, integer?) -> NewItem",
 					FunctionType: &function.ValueTypeDefinitionFunction{
 						Definition: function.Definition{
 							Parameters: []function.Parameter{
@@ -52,7 +52,7 @@ func NewMapFunction() provider.Function {
 							},
 							Return: &function.AnyReturn{
 								Type:        function.ValueTypeAny,
-								Description: "The transformed item.",
+								Description: "The transformed item as a list that will be flattened.",
 							},
 						},
 					},
@@ -65,13 +65,13 @@ func NewMapFunction() provider.Function {
 					Type:        function.ValueTypeAny,
 					Description: "A value of any type, every element in the returned list must be of the same type.",
 				},
-				Description: "The list of values after applying the mapping function.",
+				Description: "The flattened list of values after applying the mapping function and flattening results.",
 			},
 		},
 	}
 }
 
-func (f *MapFunction) GetDefinition(
+func (f *FlatMapFunction) GetDefinition(
 	ctx context.Context,
 	input *provider.FunctionGetDefinitionInput,
 ) (*provider.FunctionGetDefinitionOutput, error) {
@@ -80,13 +80,13 @@ func (f *MapFunction) GetDefinition(
 	}, nil
 }
 
-func (f *MapFunction) Call(
+func (f *FlatMapFunction) Call(
 	ctx context.Context,
 	input *provider.FunctionCallInput,
 ) (*provider.FunctionCallOutput, error) {
 	var items []interface{}
-	var mapFuncInfo provider.FunctionRuntimeInfo
-	if err := input.Arguments.GetMultipleVars(ctx, &items, &mapFuncInfo); err != nil {
+	var flatMapFuncInfo provider.FunctionRuntimeInfo
+	if err := input.Arguments.GetMultipleVars(ctx, &items, &flatMapFuncInfo); err != nil {
 		return nil, err
 	}
 
@@ -94,25 +94,25 @@ func (f *MapFunction) Call(
 	// at this stage, so we will pass each item to the provided function
 	// and trust the function will check the type and return an error
 	// when it encounters an item of the wrong type.
-	newItems := make([]interface{}, len(items))
+	newItems := []interface{}{}
 	for i, item := range items {
 		callArgs := []interface{}{item}
-		if mapFuncInfo.ArgsOffset == 1 {
-			callArgs = append(callArgs, mapFuncInfo.PartialArgs...)
-		} else if mapFuncInfo.ArgsOffset > 1 {
+		if flatMapFuncInfo.ArgsOffset == 1 {
+			callArgs = append(callArgs, flatMapFuncInfo.PartialArgs...)
+		} else if flatMapFuncInfo.ArgsOffset > 1 {
 			return nil, function.NewFuncCallError(
 				fmt.Sprintf(
 					"invalid args offset defined for "+
 						"the partially applied \"%s\" function, "+
 						"this is an issue with the function used to "+
-						"create the function value passed into map",
-					mapFuncInfo.FunctionName,
+						"create the function value passed into flatmap",
+					flatMapFuncInfo.FunctionName,
 				),
 				function.FuncCallErrorCodeInvalidArgsOffset,
 				input.CallContext.CallStackSnapshot(),
 			)
 		} else {
-			callArgs = append(mapFuncInfo.PartialArgs, callArgs...)
+			callArgs = append(flatMapFuncInfo.PartialArgs, callArgs...)
 		}
 
 		// Add the index of the current item to the end of the call arguments.
@@ -121,7 +121,7 @@ func (f *MapFunction) Call(
 
 		output, err := input.CallContext.Registry().Call(
 			ctx,
-			mapFuncInfo.FunctionName,
+			flatMapFuncInfo.FunctionName,
 			&provider.FunctionCallInput{
 				Arguments:   input.CallContext.NewCallArgs(callArgs...),
 				CallContext: input.CallContext,
@@ -131,7 +131,20 @@ func (f *MapFunction) Call(
 			return nil, err
 		}
 
-		newItems[i] = output.ResponseData
+		itemSlice, isItemSlice := output.ResponseData.([]interface{})
+		if !isItemSlice {
+			return nil, function.NewFuncCallError(
+				fmt.Sprintf(
+					"expected the function \"%s\" to return a list of items, but got a value of type %T",
+					flatMapFuncInfo.FunctionName,
+					output.ResponseData,
+				),
+				function.FuncCallErrorCodeInvalidReturnType,
+				input.CallContext.CallStackSnapshot(),
+			)
+		}
+
+		newItems = append(newItems, itemSlice...)
 	}
 
 	return &provider.FunctionCallOutput{

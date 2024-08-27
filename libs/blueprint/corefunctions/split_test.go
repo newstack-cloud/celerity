@@ -44,9 +44,9 @@ func (s *SplitFunctionTestSuite) Test_splits_string_by_delimiter(c *C) {
 	})
 
 	c.Assert(err, IsNil)
-	outputStrSlice, isStrSlice := output.ResponseData.([]string)
+	outputStrSlice, isStrSlice := output.ResponseData.([]interface{})
 	c.Assert(isStrSlice, Equals, true)
-	c.Assert(outputStrSlice, DeepEquals, []string{
+	c.Assert(outputStrSlice, DeepEquals, []interface{}{
 		"https://example1.com",
 		"https://example2.com",
 		"https://example3.com",
