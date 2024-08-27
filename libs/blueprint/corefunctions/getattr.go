@@ -29,7 +29,8 @@ func NewGetAttrFunction() provider.Function {
 				"**Examples:**\n\n" +
 				"```\n${map(\ndatasources.network.subnets,\ncompose(getattr(\"id\"), getattr(\"definition\"))\n)}\n```\n" +
 				"This example would take a list of subnets that would be of the following form:\n" +
-				"```\n[\n{ \"definition\": { \"id\": \"subnet-1234\" }},\n{ \"definition\": { \"id\": \"subnet-5678\" }}\n]\n```\n",
+				"```\n[\n{ \"definition\": { \"id\": \"subnet-1234\" }},\n{ \"definition\": { \"id\": \"subnet-5678\" }}\n]\n```\n" +
+				"And return a list of IDs:\n```\n[\"subnet-1234\", \"subnet-5678\"]```\n",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
 					Type: &function.ValueTypeDefinitionScalar{
