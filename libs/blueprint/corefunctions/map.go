@@ -123,7 +123,8 @@ func (f *MapFunction) Call(
 			ctx,
 			mapFuncInfo.FunctionName,
 			&provider.FunctionCallInput{
-				Arguments: input.CallContext.NewCallArgs(callArgs...),
+				Arguments:   input.CallContext.NewCallArgs(callArgs...),
+				CallContext: input.CallContext,
 			},
 		)
 		if err != nil {
