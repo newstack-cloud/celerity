@@ -30,7 +30,7 @@ func (s *Contains_G_FunctionTestSuite) SetUpTest(c *C) {
 func (s *Contains_G_FunctionTestSuite) Test_returns_function_runtime_info_with_partial_args(c *C) {
 	contains_G_Func := NewContains_G_Function()
 	s.callStack.Push(&function.Call{
-		FunctionName: "contains",
+		FunctionName: "contains_g",
 	})
 	output, err := contains_G_Func.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{

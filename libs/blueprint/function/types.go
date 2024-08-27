@@ -22,6 +22,12 @@ type Definition struct {
 	// this especially useful for function composition and partial application
 	// of functions used in mapping over arrays or similar operations.
 	Return Return
+	// Internal determines whether or not the function is an internal function
+	// that should not be exposed to end-users.
+	// Some internal functions are required to enable capabilities such as
+	// function composition, piping and a small collection of other higher-order
+	// functions.
+	Internal bool
 }
 
 // Parameter is a parameter type definition for arguments
