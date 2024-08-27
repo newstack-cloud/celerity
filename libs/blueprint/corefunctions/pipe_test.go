@@ -115,7 +115,7 @@ func (s *PipeFunctionTestSuite) Test_piped_execution_fails_for_invalid_args_offs
 	)
 	c.Assert(err, IsNil)
 
-	// 26 is not a valid args offset, _pipe_exec expects 1 or 0.
+	// 25 is not a valid args offset, _pipe_exec expects 1 or 0.
 	getAttrFuncOutput.FunctionInfo.ArgsOffset = 25
 	output, err := pipeFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
