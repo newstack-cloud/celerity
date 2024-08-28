@@ -46,7 +46,7 @@ func NewLinkFunction(linkStateRetriever LinkStateRetriever, blueprintInstanceID 
 						&function.ValueTypeDefinitionObject{
 							Label: "ResourceRef",
 							AttributeTypes: map[string]function.AttributeType{
-								"name": function.AttributeType{
+								"name": {
 									Type: &function.ValueTypeDefinitionScalar{
 										Type: function.ValueTypeString,
 									},

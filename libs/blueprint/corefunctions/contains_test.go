@@ -44,9 +44,9 @@ func (s *ContainsFunctionTestSuite) Test_string_contains_substring(c *C) {
 	})
 
 	c.Assert(err, IsNil)
-	outputStr, isStr := output.ResponseData.(bool)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, true)
+	outputBool, isBool := output.ResponseData.(bool)
+	c.Assert(isBool, Equals, true)
+	c.Assert(outputBool, Equals, true)
 }
 
 func (s *ContainsFunctionTestSuite) Test_array_contains_element_primitive(c *C) {
@@ -66,9 +66,9 @@ func (s *ContainsFunctionTestSuite) Test_array_contains_element_primitive(c *C) 
 	})
 
 	c.Assert(err, IsNil)
-	outputStr, isStr := output.ResponseData.(bool)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, true)
+	outputBool, isBool := output.ResponseData.(bool)
+	c.Assert(isBool, Equals, true)
+	c.Assert(outputBool, Equals, true)
 }
 
 func (s *ContainsFunctionTestSuite) Test_array_contains_element_comparable(c *C) {
@@ -88,9 +88,9 @@ func (s *ContainsFunctionTestSuite) Test_array_contains_element_comparable(c *C)
 	})
 
 	c.Assert(err, IsNil)
-	outputStr, isStr := output.ResponseData.(bool)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, true)
+	outputBool, isBool := output.ResponseData.(bool)
+	c.Assert(isBool, Equals, true)
+	c.Assert(outputBool, Equals, true)
 }
 
 func (s *ContainsFunctionTestSuite) Test_returns_func_error_for_invalid_input_string_search(c *C) {

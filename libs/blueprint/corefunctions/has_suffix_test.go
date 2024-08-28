@@ -44,9 +44,9 @@ func (s *HasSuffixFunctionTestSuite) Test_has_prefix(c *C) {
 	})
 
 	c.Assert(err, IsNil)
-	outputStr, isStr := output.ResponseData.(bool)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, true)
+	outputBool, isBool := output.ResponseData.(bool)
+	c.Assert(isBool, Equals, true)
+	c.Assert(outputBool, Equals, true)
 }
 
 func (s *HasSuffixFunctionTestSuite) Test_returns_func_error_for_invalid_input(c *C) {
