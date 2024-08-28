@@ -7,21 +7,21 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
-// GtFunction provides the implementation of
-// a function that checks if a number is greater than another.
-type GtFunction struct {
+// GeFunction provides the implementation of
+// a function that checks if a number is greater than or equal to another.
+type GeFunction struct {
 	definition *function.Definition
 }
 
-// NewGtFunction creates a new instance of the GtFunction with
+// NewGeFunction creates a new instance of the GeFunction with
 // a complete function definition.
-func NewGtFunction() provider.Function {
-	return &GtFunction{
+func NewGeFunction() provider.Function {
+	return &GeFunction{
 		definition: &function.Definition{
-			Description: "A function that determines whether a number is greater than another number.",
-			FormattedDescription: "A function that determines whether a number is greater than another number.\n\n" +
+			Description: "A function that determines whether a number is greater than or equal to another number.",
+			FormattedDescription: "A function that determines whether a number is greater than or equal to another number.\n\n" +
 				"**Examples:**\n\n" +
-				"```\n${gt(len(datasources.network.subnets), 10)}\n```",
+				"```\n${ge(len(datasources.network.subnets), 10)}\n```",
 			Parameters: []function.Parameter{
 				&function.AnyParameter{
 					Label: "a",
@@ -33,7 +33,7 @@ func NewGtFunction() provider.Function {
 							Type: function.ValueTypeFloat64,
 						},
 					},
-					Description: "\"a\" in the expression \"a > b\".",
+					Description: "\"a\" in the expression \"a >= b\".",
 				},
 				&function.AnyParameter{
 					Label: "b",
@@ -45,7 +45,7 @@ func NewGtFunction() provider.Function {
 							Type: function.ValueTypeFloat64,
 						},
 					},
-					Description: "\"b\" in the expression \"a > b\".",
+					Description: "\"b\" in the expression \"a >= b\".",
 				},
 			},
 			Return: &function.ScalarReturn{
@@ -53,13 +53,13 @@ func NewGtFunction() provider.Function {
 					Label: "boolean",
 					Type:  function.ValueTypeBool,
 				},
-				Description: "True, if the first number is greater than the second number, false otherwise.",
+				Description: "True, if the first number is greater than or equal to the second number, false otherwise.",
 			},
 		},
 	}
 }
 
-func (f *GtFunction) GetDefinition(
+func (f *GeFunction) GetDefinition(
 	ctx context.Context,
 	input *provider.FunctionGetDefinitionInput,
 ) (*provider.FunctionGetDefinitionOutput, error) {
@@ -68,7 +68,7 @@ func (f *GtFunction) GetDefinition(
 	}, nil
 }
 
-func (f *GtFunction) Call(
+func (f *GeFunction) Call(
 	ctx context.Context,
 	input *provider.FunctionCallInput,
 ) (*provider.FunctionCallOutput, error) {
@@ -85,23 +85,23 @@ func (f *GtFunction) Call(
 
 	if info.lhs.intVal != nil && info.rhs.intVal != nil {
 		return &provider.FunctionCallOutput{
-			ResponseData: *info.lhs.intVal > *info.rhs.intVal,
+			ResponseData: *info.lhs.intVal >= *info.rhs.intVal,
 		}, nil
 	}
 
 	if info.lhs.floatVal != nil && info.rhs.floatVal != nil {
 		return &provider.FunctionCallOutput{
-			ResponseData: *info.lhs.floatVal > *info.rhs.floatVal,
+			ResponseData: *info.lhs.floatVal >= *info.rhs.floatVal,
 		}, nil
 	}
 
 	if info.lhs.intVal != nil && info.rhs.floatVal != nil {
 		return &provider.FunctionCallOutput{
-			ResponseData: float64(*info.lhs.intVal) > *info.rhs.floatVal,
+			ResponseData: float64(*info.lhs.intVal) >= *info.rhs.floatVal,
 		}, nil
 	}
 
 	return &provider.FunctionCallOutput{
-		ResponseData: *info.lhs.floatVal > float64(*info.rhs.intVal),
+		ResponseData: *info.lhs.floatVal >= float64(*info.rhs.intVal),
 	}, nil
 }
