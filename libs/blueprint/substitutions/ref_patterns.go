@@ -76,6 +76,22 @@ var (
 		`^variables` + nameAccessorPattern(0) + `$`,
 	)
 
+	// ValueReferencePattern is the pattern that a value
+	// reference must match.
+	//
+	// Some examples that match the data source pattern are:
+	// - values.buckets[].name
+	// - values.secretId
+	// - values["common.config.v1.name"]
+	// - values.clusterConfig.endpoints[].host
+	// - values.clusterConfig.nodes[1].endpoint
+	//
+	// Values must be referenced with the "values" prefix.
+	// Values can be primitives, arrays or objects.
+	ValueReferencePattern = regexp.MustCompile(
+		`^values` + nameAccessorPattern(0) + `(` + nameAccessorPattern(1) + `|\[\d*\])*$`,
+	)
+
 	// DataSourceReferencePattern is the pattern that a data source
 	// reference must match.
 	//

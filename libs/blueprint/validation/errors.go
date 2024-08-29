@@ -35,6 +35,10 @@ const (
 	// a missing required variable (one without a default value),
 	// an invalid default value, invalid allowed values or an incorrect variable type.
 	ErrorReasonCodeInvalidVariable errors.ErrorReasonCode = "invalid_variable"
+	// ErrorReasonCodeInvalidValue is provided when the reason
+	// for a blueprint spec load error is due to an invalid value
+	// being provided.
+	ErrorReasonCodeInvalidValue errors.ErrorReasonCode = "invalid_value"
 	// ErrorReasonCodeInvalidExport is provided when the reason
 	// for a blueprint spec load error is due to one or more exports
 	// being invalid.

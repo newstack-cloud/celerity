@@ -61,10 +61,14 @@ func validateExportFieldFormat(exportField, exportName string, exportMap *schema
 var (
 	// ExportCanReference is a list of objects that can be referenced
 	// by an export.
-	// In the current version of the specification, only resources can be referenced
-	// from an export.
+	// In the current version of the specification, resources, data sources,
+	// variables, values and child blueprints can be referenced by an export.
 	ExportCanReference = []Referenceable{
 		ReferenceableResource,
+		ReferenceableDataSource,
+		ReferenceableVariable,
+		ReferenceableValue,
+		ReferenceableChild,
 	}
 )
 

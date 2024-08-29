@@ -13,16 +13,20 @@ import (
 // as this validation will normally be carried out at an early stage before information
 // is available about what resources, variables, data sources or child blueprints are available.
 func ValidateReference(reference string, context string, hasAccessTo []Referenceable) error {
-	if strings.HasPrefix(reference, "variables.") {
+	if strings.HasPrefix(reference, "variables.") || strings.HasPrefix(reference, "variables[") {
 		return validateVariableReference(reference, context, hasAccessTo)
 	}
 
-	if strings.HasPrefix(reference, "datasources.") {
+	if strings.HasPrefix(reference, "datasources.") || strings.HasPrefix(reference, "datasources[") {
 		return validateDataSourceReference(reference, context, hasAccessTo)
 	}
 
-	if strings.HasPrefix(reference, "children.") {
+	if strings.HasPrefix(reference, "children.") || strings.HasPrefix(reference, "children[") {
 		return validateChildBlueprintReference(reference, context, hasAccessTo)
+	}
+
+	if strings.HasPrefix(reference, "values.") || strings.HasPrefix(reference, "values[") {
+		return validateValueReference(reference, context, hasAccessTo)
 	}
 
 	// Resource references are used for all other cases as they can be made
@@ -37,6 +41,18 @@ func validateVariableReference(reference string, context string, hasAccessTo []R
 
 	if !substitutions.VariableReferencePattern.MatchString(reference) {
 		return errInvalidReferencePattern(reference, context, ReferenceableVariable)
+	}
+
+	return nil
+}
+
+func validateValueReference(reference string, context string, hasAccessTo []Referenceable) error {
+	if !core.SliceContainsComparable(hasAccessTo, ReferenceableValue) {
+		return errReferenceContextAccess(reference, context, ReferenceableValue)
+	}
+
+	if !substitutions.ValueReferencePattern.MatchString(reference) {
+		return errInvalidReferencePattern(reference, context, ReferenceableValue)
 	}
 
 	return nil
@@ -88,6 +104,9 @@ const (
 	// ReferenceableVariable signifies that a variable
 	// can be referenced for a given context in a blueprint.
 	ReferenceableVariable Referenceable = "variable"
+	// ReferenceableValue signifies that a value
+	// can be referenced for a given context in a blueprint.
+	ReferenceableValue Referenceable = "value"
 	// ReferenceableDataSource signifies that a data source
 	// can be referenced for a given context in a blueprint.
 	ReferenceableDataSource Referenceable = "datasource"
@@ -102,6 +121,8 @@ func referenceableLabel(referenceable Referenceable) string {
 		return "resource"
 	case ReferenceableVariable:
 		return "variable"
+	case ReferenceableValue:
+		return "local value"
 	case ReferenceableDataSource:
 		return "data source"
 	case ReferenceableChild:

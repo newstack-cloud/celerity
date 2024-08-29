@@ -48,6 +48,21 @@ func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of
 	}
 }
 
+func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of_valid_value_references(c *C) {
+	references := []string{
+		"values.buckets[].name",
+		"values.secretId",
+		"values[\"common.config.v1.name\"]",
+		"values.clusterConfig.endpoints[].host",
+		"values.clusterConfig.nodes[1].endpoint",
+	}
+
+	for _, reference := range references {
+		err := ValidateReference(reference, "test.otherField", []Referenceable{ReferenceableValue})
+		c.Assert(err, IsNil)
+	}
+}
+
 func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of_valid_data_source_references(c *C) {
 	references := []string{
 		"datasources.network.vpc",
@@ -134,6 +149,32 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_v
 			Equals,
 			fmt.Sprintf(
 				"blueprint load error: validation failed due to an incorrectly formed reference to a variable (\"%s\") "+
+					"in \"test.field\". See the spec documentation for examples and rules for references",
+				reference,
+			),
+		)
+	}
+}
+
+func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_value_references(c *C) {
+	references := []string{
+		// Values names should not start with numbers.
+		"values.42301some-derived-config",
+		// Missing value name.
+		"values.",
+	}
+
+	for _, reference := range references {
+		err := ValidateReference(reference, "test.field", []Referenceable{ReferenceableValue})
+		c.Assert(err, NotNil)
+		loadErr, isLoadErr := err.(*errors.LoadError)
+		c.Assert(isLoadErr, Equals, true)
+		c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidReference)
+		c.Assert(
+			loadErr.Error(),
+			Equals,
+			fmt.Sprintf(
+				"blueprint load error: validation failed due to an incorrectly formed reference to a local value (\"%s\") "+
 					"in \"test.field\". See the spec documentation for examples and rules for references",
 				reference,
 			),
