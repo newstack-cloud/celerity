@@ -345,6 +345,16 @@ func fromResourcePB(resourcePB *schemapb.Resource) (*schema.Resource, error) {
 		return nil, err
 	}
 
+	each, err := fromStringOrSubstitutionsPB(resourcePB.Each, true)
+	if err != nil {
+		return nil, err
+	}
+
+	condition, err := fromConditionPB(resourcePB.Condition)
+	if err != nil {
+		return nil, err
+	}
+
 	resourceMetadata, err := fromResourceMetadataPB(resourcePB.Metadata)
 	if err != nil {
 		return nil, err
@@ -358,10 +368,57 @@ func fromResourcePB(resourcePB *schemapb.Resource) (*schema.Resource, error) {
 	return &schema.Resource{
 		Type:         resourcePB.Type,
 		Description:  description,
+		Each:         each,
+		Condition:    condition,
 		Metadata:     resourceMetadata,
 		LinkSelector: fromLinkSelectorPB(resourcePB.LinkSelector),
 		Spec:         spec,
 	}, nil
+}
+
+func fromConditionPB(conditionPB *schemapb.ResourceCondition) (*schema.Condition, error) {
+	if conditionPB == nil {
+		return nil, nil
+	}
+
+	stringVal, err := fromStringOrSubstitutionsPB(conditionPB.StringValue, true)
+	if err != nil {
+		return nil, err
+	}
+
+	and, err := fromConditionsPB(conditionPB.And)
+	if err != nil {
+		return nil, err
+	}
+
+	or, err := fromConditionsPB(conditionPB.Or)
+	if err != nil {
+		return nil, err
+	}
+
+	not, err := fromConditionPB(conditionPB.Not)
+	if err != nil {
+		return nil, err
+	}
+	return &schema.Condition{
+		StringValue: stringVal,
+		And:         and,
+		Or:          or,
+		Not:         not,
+	}, nil
+}
+
+func fromConditionsPB(conditionsPB []*schemapb.ResourceCondition) ([]*schema.Condition, error) {
+	var conditions = make([]*schema.Condition, len(conditionsPB))
+	for i, v := range conditionsPB {
+		condition, err := fromConditionPB(v)
+		if err != nil {
+			return nil, err
+		}
+
+		conditions[i] = condition
+	}
+	return conditions, nil
 }
 
 func fromResourceMetadataPB(metadataPB *schemapb.ResourceMetadata) (*schema.Metadata, error) {
@@ -597,6 +654,18 @@ func fromSubstitutionPB(substitution *schemapb.Substitution) (*substitutions.Sub
 		return fromSubstitutionVariablePB(varVal.Variable)
 	}
 
+	if val, isVal := substitution.Sub.(*schemapb.Substitution_Value); isVal {
+		return fromSubstitutionValuePB(val.Value)
+	}
+
+	if elem, isElem := substitution.Sub.(*schemapb.Substitution_Elem); isElem {
+		return fromSubstitutionElemPB(elem.Elem)
+	}
+
+	if _, isElemIndex := substitution.Sub.(*schemapb.Substitution_ElemIndex); isElemIndex {
+		return fromSubstitutionElemIndexPB()
+	}
+
 	if dataSourceProp, isDataSourceProp := substitution.Sub.(*schemapb.Substitution_DataSourceProperty); isDataSourceProp {
 		return fromSubstitutionDataSourcePropertyPB(dataSourceProp.DataSourceProperty)
 	}
@@ -643,6 +712,43 @@ func fromSubstitutionVariablePB(
 		Variable: &substitutions.SubstitutionVariable{
 			VariableName: substitutionVariablePB.VariableName,
 		},
+	}, nil
+}
+
+func fromSubstitutionValuePB(
+	substitutionValuePB *schemapb.SubstitutionValue,
+) (*substitutions.Substitution, error) {
+	path, err := fromSubstitutionPathItemsPB(substitutionValuePB.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &substitutions.Substitution{
+		ValueReference: &substitutions.SubstitutionValueReference{
+			ValueName: substitutionValuePB.ValueName,
+			Path:      path,
+		},
+	}, nil
+}
+
+func fromSubstitutionElemPB(
+	substitutionElemPB *schemapb.SubstitutionElem,
+) (*substitutions.Substitution, error) {
+	path, err := fromSubstitutionPathItemsPB(substitutionElemPB.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &substitutions.Substitution{
+		ElemReference: &substitutions.SubstitutionElemReference{
+			Path: path,
+		},
+	}, nil
+}
+
+func fromSubstitutionElemIndexPB() (*substitutions.Substitution, error) {
+	return &substitutions.Substitution{
+		ElemIndexReference: &substitutions.SubstitutionElemIndexReference{},
 	}, nil
 }
 

@@ -56,8 +56,10 @@ message Resource {
     string type = 1;
     optional StringOrSubstitutions description = 2;
     ResourceMetadata metadata = 3;
-    optional LinkSelector link_selector = 4;
-    MappingNode spec = 5;
+    optional ResourceCondition condition = 4;
+    optional StringOrSubstitutions each = 5;
+    optional LinkSelector link_selector = 6;
+    MappingNode spec = 7;
 }
 
 message LinkSelector {
@@ -69,6 +71,13 @@ message ResourceMetadata {
     map<string, StringOrSubstitutions> annotations = 2;
     map<string, string> labels = 3;
     optional MappingNode custom = 4;
+}
+
+message ResourceCondition {
+    StringOrSubstitutions string_value = 1;
+    repeated ResourceCondition and = 2;
+    repeated ResourceCondition or = 3;
+    ResourceCondition not = 4;
 }
 
 message DataSource {
@@ -126,13 +135,16 @@ message Substitution {
     oneof sub {
         SubstitutionFunctionExpr function_expr = 1;
         SubstitutionVariable variable = 2;
-        SubstitutionDataSourceProperty data_source_property = 3;
-        SubstitutionResourceProperty resource_property = 4;
-        SubstitutionChild child = 5;
-        string string_value = 6;
-        int64 int_value = 7;
-        double float_value = 8;
-        bool bool_value = 9;
+        SubstitutionValue value = 3;
+        SubstitutionElem elem = 4;
+        SubstitutionElemIndex elem_index = 5;
+        SubstitutionDataSourceProperty data_source_property = 6;
+        SubstitutionResourceProperty resource_property = 7;
+        SubstitutionChild child = 8;
+        string string_value = 9;
+        int64 int_value = 10;
+        double float_value = 11;
+        bool bool_value = 12;
     }
 }
 
@@ -148,6 +160,19 @@ message SubstitutionFunctionArg {
 
 message SubstitutionVariable {
     string variable_name = 1;
+}
+
+message SubstitutionValue {
+    string value_name = 1;
+    repeated SubstitutionPathItem path = 2;
+}
+
+message SubstitutionElem {
+    repeated SubstitutionPathItem path = 1;
+}
+
+message SubstitutionElemIndex {
+    bool is_index = 1;
 }
 
 message SubstitutionDataSourceProperty {
