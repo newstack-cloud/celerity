@@ -2,6 +2,7 @@ package schema
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -20,10 +21,12 @@ var _ = Suite(&ValueTestSuite{})
 func (s *ValueTestSuite) SetUpSuite(c *C) {
 	s.specFixtures = make(map[string][]byte)
 	fixturesToLoad := map[string]string{
-		"passYAML":              "__testdata/values/pass.yml",
-		"serialiseExpectedYAML": "__testdata/values/serialise-expected.yml",
-		"passJSON":              "__testdata/values/pass.json",
-		"serialiseExpectedJSON": "__testdata/values/serialise-expected.json",
+		"passYAML":                     "__testdata/values/pass.yml",
+		"serialiseExpectedYAML":        "__testdata/values/serialise-expected.yml",
+		"failUnsupportedValueTypeYAML": "__testdata/values/fail-unsupported-value-type.yml",
+		"passJSON":                     "__testdata/values/pass.json",
+		"serialiseExpectedJSON":        "__testdata/values/serialise-expected.json",
+		"failUnsupportedValueTypeJSON": "__testdata/values/fail-unsupported-value-type.json",
 	}
 
 	for name, filePath := range fixturesToLoad {
@@ -61,7 +64,10 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 		},
 	})
 	c.Assert(targetVal.Secret, Equals, false)
-	c.Assert(targetVal.Type, Equals, ValueType("boolean"))
+	c.Assert(targetVal.Type, DeepEquals, &ValueTypeWrapper{
+		Value:      ValueTypeBoolean,
+		SourceMeta: &source.Meta{Line: 1, Column: 7},
+	})
 	c.Assert(targetVal.Value, DeepEquals, &substitutions.StringOrSubstitutions{
 		Values: []*substitutions.StringOrSubstitution{
 			{
@@ -102,6 +108,21 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 	c.Assert(targetVal.SourceMeta.Column, Equals, 1)
 }
 
+func (s *ValueTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_value_type(c *C) {
+	targetValue := &Value{}
+	err := yaml.Unmarshal([]byte(s.specFixtures["failUnsupportedValueTypeYAML"]), targetValue)
+	if err == nil {
+		c.Error(errors.New("expected to fail deserialisation due to unsupported value type"))
+		c.FailNow()
+	}
+
+	schemaError, isSchemaError := err.(*Error)
+	c.Assert(isSchemaError, Equals, true)
+	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidValueType)
+	c.Assert(*schemaError.SourceLine, Equals, 1)
+	c.Assert(*schemaError.SourceColumn, Equals, 7)
+}
+
 func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 	expected := &Value{}
 	err := yaml.Unmarshal([]byte(s.specFixtures["serialiseExpectedYAML"]), expected)
@@ -113,7 +134,9 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 	region := "eu-west-2"
 	descriptionStrVal := "The AWS region to connect to AWS services with"
 	serialisedBytes, err := yaml.Marshal(&Value{
-		Type: ValueTypeString,
+		Type: &ValueTypeWrapper{
+			Value: ValueTypeString,
+		},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -142,7 +165,10 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 		c.FailNow()
 	}
 
-	c.Assert(targetVal.Type, Equals, expected.Type)
+	c.Assert(targetVal.Type, DeepEquals, &ValueTypeWrapper{
+		Value:      expected.Type.Value,
+		SourceMeta: &source.Meta{Line: 1, Column: 7},
+	})
 	c.Assert(targetVal.Description, DeepEquals, &substitutions.StringOrSubstitutions{
 		Values: []*substitutions.StringOrSubstitution{
 			{
@@ -174,6 +200,42 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 			Column: 8,
 		},
 	})
+}
+
+func (s *ValueTestSuite) Test_fails_to_serialise_yaml_due_to_unsupported_value_type(c *C) {
+	description := "The description for a computed value"
+	_, err := yaml.Marshal(&Value{
+		Type: &ValueTypeWrapper{
+			// "unknown" is not a valid vaue type.
+			Value: ValueType("unknown"),
+		},
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
+		Value: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					SubstitutionValue: &substitutions.Substitution{
+						ResourceProperty: &substitutions.SubstitutionResourceProperty{
+							ResourceName: "contentBucket",
+						},
+					},
+				},
+			},
+		},
+	})
+	if err == nil {
+		c.Error(errors.New("expected to fail serialisation due to unsupported value type"))
+		c.FailNow()
+	}
+
+	schemaError, isSchemaError := err.(*Error)
+	c.Assert(isSchemaError, Equals, true)
+	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidValueType)
 }
 
 func (s *ValueTestSuite) Test_parses_valid_value_json_input(c *C) {
@@ -212,7 +274,22 @@ func (s *ValueTestSuite) Test_parses_valid_value_json_input(c *C) {
 		},
 	})
 	c.Assert(targetVal.Secret, Equals, false)
-	c.Assert(targetVal.Type, Equals, ValueType("integer"))
+	c.Assert(targetVal.Type, DeepEquals, &ValueTypeWrapper{
+		Value: ValueTypeInteger,
+	})
+}
+
+func (s *ValueTestSuite) Test_fails_to_parse_json_due_to_unsupported_value_type(c *C) {
+	value := &Value{}
+	err := json.Unmarshal([]byte(s.specFixtures["failUnsupportedValueTypeJSON"]), value)
+	if err == nil {
+		c.Error(errors.New("expected to fail deserialisation due to unsupported value type"))
+		c.FailNow()
+	}
+
+	schemaError, isSchemaError := err.(*Error)
+	c.Assert(isSchemaError, Equals, true)
+	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidValueType)
 }
 
 func (s *ValueTestSuite) Test_serialise_valid_value_json_input(c *C) {
@@ -225,7 +302,9 @@ func (s *ValueTestSuite) Test_serialise_valid_value_json_input(c *C) {
 
 	description := "The AWS region to connect to AWS services with"
 	serialisedBytes, err := json.Marshal(&Value{
-		Type: ValueTypeString,
+		Type: &ValueTypeWrapper{
+			Value: ValueTypeString,
+		},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -266,8 +345,50 @@ func (s *ValueTestSuite) Test_serialise_valid_value_json_input(c *C) {
 		c.FailNow()
 	}
 
-	c.Assert(targetVal.Type, Equals, expected.Type)
+	c.Assert(targetVal.Type, DeepEquals, &ValueTypeWrapper{
+		Value: expected.Type.Value,
+	})
 	c.Assert(targetVal.Description, DeepEquals, expected.Description)
 	c.Assert(targetVal.Secret, Equals, expected.Secret)
 	c.Assert(targetVal.Value, DeepEquals, expected.Value)
+}
+
+func (s *ValueTestSuite) Test_fails_to_serialise_json_due_to_unsupported_value_type(c *C) {
+	description := "The description for a computed value"
+	_, err := json.Marshal(&Value{
+		Type: &ValueTypeWrapper{
+			// "unknown" is not a valid vaue type.
+			Value: ValueType("unknown"),
+		},
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
+		Value: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					SubstitutionValue: &substitutions.Substitution{
+						ResourceProperty: &substitutions.SubstitutionResourceProperty{
+							ResourceName: "contentBucket",
+						},
+					},
+				},
+			},
+		},
+	})
+	if err == nil {
+		c.Error(errors.New("expected to fail serialisation due to unsupported value type"))
+		c.FailNow()
+	}
+
+	marshalError, isMarshalError := err.(*json.MarshalerError)
+	c.Assert(isMarshalError, Equals, true)
+	internalError := marshalError.Unwrap()
+
+	schemaError, isSchemaError := internalError.(*Error)
+	c.Assert(isSchemaError, Equals, true)
+	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidValueType)
 }

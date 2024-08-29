@@ -93,6 +93,7 @@ func NormaliseValue(value *Value) {
 
 	NormaliseStringOrSubstitutions(value.Value)
 	NormaliseStringOrSubstitutions(value.Description)
+	value.Type.SourceMeta = nil
 	value.SourceMeta = nil
 }
 

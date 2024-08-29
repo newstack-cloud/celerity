@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -157,6 +158,34 @@ func errTransformerMissing(transformer string, line *int, column *int) error {
 		ReasonCode: ErrorReasonMissingTransformers,
 		Err: fmt.Errorf(
 			"the following transformer is missing from the blueprint loader: %s", transformer,
+		),
+		Line:   line,
+		Column: column,
+	}
+}
+
+func errInvalidCustomVariableType(variableName string, variableType schema.VariableType, line *int, column *int) error {
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeVariableValidationErrors,
+		Err: fmt.Errorf(
+			"invalid custom variable type %s for variable %s", variableType, variableName,
+		),
+		Line:   line,
+		Column: column,
+	}
+}
+
+func errMissingProviderForCustomVarType(
+	providerKey string,
+	variableName string,
+	variableType schema.VariableType,
+	line *int,
+	column *int,
+) error {
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeVariableValidationErrors,
+		Err: fmt.Errorf(
+			"missing provider %s for custom variable type %s in variable %s", providerKey, variableType, variableName,
 		),
 		Line:   line,
 		Column: column,

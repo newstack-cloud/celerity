@@ -122,7 +122,7 @@ func fromValuesPB(valuesPB map[string]*schemapb.Value) (*schema.ValueMap, error)
 		}
 
 		values[k] = &schema.Value{
-			Type:        schema.ValueType(v.Type),
+			Type:        &schema.ValueTypeWrapper{Value: schema.ValueType(v.Type)},
 			Value:       value,
 			Description: description,
 			Secret:      v.Secret,

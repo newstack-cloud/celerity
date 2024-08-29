@@ -1,15 +1,20 @@
 package schema
 
 import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/two-hundred/celerity/libs/common/core"
 	"gopkg.in/yaml.v3"
 )
 
 // Value provides the definition of a value
 // that can be used in a blueprint.
 type Value struct {
-	Type        ValueType                            `yaml:"type" json:"type"`
+	Type        *ValueTypeWrapper                    `yaml:"type" json:"type"`
 	Value       *substitutions.StringOrSubstitutions `yaml:"value" json:"value"`
 	Description *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 	Secret      bool                                 `yaml:"secret" json:"secret"`
@@ -32,6 +37,65 @@ func (t *Value) UnmarshalYAML(value *yaml.Node) error {
 	t.Description = alias.Description
 	t.Secret = alias.Secret
 	t.Value = alias.Value
+
+	return nil
+}
+
+// ValueTypeWrapper provides a struct that holds a value type.
+// The reason that this exists is to allow more fine-grained control
+// when serialising and deserialising values in a blueprint
+// so we can check precise value types.
+type ValueTypeWrapper struct {
+	Value      ValueType
+	SourceMeta *source.Meta
+}
+
+func (t *ValueTypeWrapper) MarshalYAML() (interface{}, error) {
+	if !core.SliceContains(ValueTypes, t.Value) {
+		return nil, errInvalidValueType(t.Value, nil, nil)
+	}
+
+	return t.Value, nil
+}
+
+func (t *ValueTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
+	t.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+	valueType := ValueType(value.Value)
+	if !core.SliceContains(ValueTypes, valueType) {
+		return errInvalidValueType(
+			valueType,
+			&value.Line,
+			&value.Column,
+		)
+	}
+
+	t.Value = valueType
+	return nil
+}
+
+func (t *ValueTypeWrapper) MarshalJSON() ([]byte, error) {
+	if !core.SliceContains(ValueTypes, t.Value) {
+		return nil, errInvalidValueType(t.Value, nil, nil)
+	}
+	escaped := jsonutils.EscapeJSONString(string(t.Value))
+	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
+}
+
+func (t *ValueTypeWrapper) UnmarshalJSON(data []byte) error {
+	var typeVal string
+	err := json.Unmarshal(data, &typeVal)
+	if err != nil {
+		return err
+	}
+
+	valueType := ValueType(typeVal)
+	if !core.SliceContains(ValueTypes, valueType) {
+		return errInvalidValueType(valueType, nil, nil)
+	}
+	t.Value = valueType
 
 	return nil
 }
@@ -64,4 +128,18 @@ const (
 	// ValueTypeObject is for an object value
 	// in a blueprint.
 	ValueTypeObject ValueType = "object"
+)
+
+var (
+	// ValueTypes provides a slice of all the supported
+	// value types to be used for validation of
+	// local value types in a blueprint.
+	ValueTypes = []ValueType{
+		ValueTypeString,
+		ValueTypeInteger,
+		ValueTypeFloat,
+		ValueTypeBoolean,
+		ValueTypeArray,
+		ValueTypeObject,
+	}
 )

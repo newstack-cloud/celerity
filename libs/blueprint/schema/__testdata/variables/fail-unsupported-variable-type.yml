@@ -1,4 +1,0 @@
-type: object
-description: This is an invalid variable (object is not a supported type)
-secret: false
-default: true

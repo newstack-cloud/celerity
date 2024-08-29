@@ -117,7 +117,7 @@ func toValuesPB(values *schema.ValueMap) (map[string]*schemapb.Value, error) {
 		}
 
 		valuesPB[k] = &schemapb.Value{
-			Type:        string(v.Type),
+			Type:        string(v.Type.Value),
 			Value:       valuePB,
 			Description: descriptionPB,
 			Secret:      v.Secret,

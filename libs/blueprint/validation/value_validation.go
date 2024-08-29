@@ -32,14 +32,15 @@ func ValidateValue(
 	valName string,
 	valSchema *schema.Value,
 	valMap *schema.ValueMap,
+	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
-	// if valSchema.Type == schema.ValueTypeString {
-	// 	return validateStringValue(
-	// 		ctx, valName, valSchema, valMap, params,
-	// 	)
-	// }
+	if valSchema.Type.Value == schema.ValueTypeString {
+		return validateStringValue(
+			ctx, valName, valSchema, valMap, bpSchema, params,
+		)
+	}
 
 	// if valSchema.Type == schema.ValueTypeInteger {
 	// 	return validateIntegerValue(
@@ -72,6 +73,17 @@ func ValidateValue(
 	// }
 
 	return diagnostics, nil
+}
+
+func validateStringValue(
+	ctx context.Context,
+	valName string,
+	valSchema *schema.Value,
+	valMap *schema.ValueMap,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+) ([]*bpcore.Diagnostic, error) {
+	return []*bpcore.Diagnostic{}, nil
 }
 
 func getValSourceMeta(valMap *schema.ValueMap, varName string) *source.Meta {

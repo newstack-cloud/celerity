@@ -137,12 +137,14 @@ type defaultLoader struct {
 
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
-// The map of providers must be a map of provider resource type prefix
-// to a provider.
+// The map of providers must be a map of provider namespaces
+// to the implementation.
 // For example, for all resource types "aws/*" you would have a mapping
-// "aws/" to the AWS provider.
-// If there is no provider for the prefix of a resource type in a
-// blueprint, it will fail.
+// namespace "aws" to the AWS provider.
+// The namespace must be the prefix of resource, data source and custom
+// variable types defined by the provider.
+// If there is no provider for the prefix of a resource, data source or
+// custom variable type in a blueprint, it will fail.
 //
 // You can set validateRuntimeValues to false if you don't want to check
 // the runtime values such as variable values when loading blueprints.
@@ -275,6 +277,13 @@ func (l *defaultLoader) loadSpec(
 	var variableDiagnostics []*bpcore.Diagnostic
 	variableDiagnostics, err = l.validateVariables(ctx, blueprintSchema, params)
 	diagnostics = append(diagnostics, variableDiagnostics...)
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
+
+	var valueDiagnostics []*bpcore.Diagnostic
+	valueDiagnostics, err = l.validateValues(ctx, blueprintSchema, params)
+	diagnostics = append(diagnostics, valueDiagnostics...)
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	}
@@ -458,6 +467,56 @@ func (l *defaultLoader) validateVariable(
 	return currentVarErrs
 }
 
+func (l *defaultLoader) validateValues(
+	ctx context.Context,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+	if bpSchema.Values == nil {
+		return diagnostics, nil
+	}
+
+	valueErrors := map[string][]error{}
+	for name, valSchema := range bpSchema.Values.Values {
+		currentValErrs := l.validateValue(ctx, &diagnostics, name, valSchema, bpSchema, params)
+		if len(currentValErrs) > 0 {
+			valueErrors[name] = currentValErrs
+		}
+	}
+
+	if len(valueErrors) > 0 {
+		return diagnostics, errVariableValidationError(valueErrors)
+	}
+
+	return diagnostics, nil
+}
+
+func (l *defaultLoader) validateValue(
+	ctx context.Context,
+	diagnostics *[]*bpcore.Diagnostic,
+	name string,
+	valSchema *schema.Value,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+) []error {
+	currentValErrs := []error{}
+	err := validation.ValidateValueName(name, bpSchema.Values)
+	if err != nil {
+		currentValErrs = append(currentValErrs, err)
+	}
+
+	resultDiagnostics, err := validation.ValidateValue(
+		ctx, name, valSchema, bpSchema.Values, bpSchema, params,
+	)
+	if err != nil {
+		currentValErrs = append(currentValErrs, err)
+	}
+	*diagnostics = append(*diagnostics, resultDiagnostics...)
+
+	return currentValErrs
+}
+
 func (l *defaultLoader) validateIncludes(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
@@ -517,31 +576,31 @@ func (l *defaultLoader) validateCustomVariableType(
 	variables *schema.VariableMap,
 	params bpcore.BlueprintParams,
 ) ([]*bpcore.Diagnostic, error) {
-	providerCustomVarType, err := l.deriveProviderCustomVarType(ctx, varSchema.Type)
+	providerCustomVarType, err := l.deriveProviderCustomVarType(ctx, varName, varSchema)
 	if err != nil {
 		return []*bpcore.Diagnostic{}, err
 	}
 	return validation.ValidateCustomVariable(ctx, varName, varSchema, variables, params, providerCustomVarType)
 }
 
-func (l *defaultLoader) deriveProviderCustomVarType(ctx context.Context, variableType schema.VariableType) (provider.CustomVariableType, error) {
+func (l *defaultLoader) deriveProviderCustomVarType(ctx context.Context, varName string, varSchema *schema.Variable) (provider.CustomVariableType, error) {
 	// The provider should be keyed exactly by \w+\/ which is the custom type prefix.
 	// Avoid using a regular expression as it is more efficient to split the string.
-	parts := strings.SplitAfter(string(variableType), "/")
+	parts := strings.SplitAfter(string(varSchema.Type), "/")
 	if len(parts) == 0 {
-		// return nil, errInvalidCustomVariableType(resourceType)
-		return nil, nil
+		line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+		return nil, errInvalidCustomVariableType(varName, varSchema.Type, line, col)
 	}
 
 	providerKey := parts[0]
 
 	provider, ok := l.providers[providerKey]
 	if !ok {
-		// return nil, errMissingProviderForCustomVarType(providerKey, variableType)
-		return nil, nil
+		line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+		return nil, errMissingProviderForCustomVarType(providerKey, varName, varSchema.Type, line, col)
 	}
 
-	customVarType, err := provider.CustomVariableType(ctx, string(variableType))
+	customVarType, err := provider.CustomVariableType(ctx, string(varSchema.Type))
 	if err != nil {
 		return nil, err
 	}

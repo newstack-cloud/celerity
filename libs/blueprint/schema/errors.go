@@ -36,14 +36,14 @@ func (e *Error) Error() string {
 type ErrorSchemaReasonCode string
 
 const (
-	// ErrorSchemaReasonCodeInvalidVariableType is provided
-	// when the reason for a blueprint schema load error is due
-	// to an invalid variable type.
-	ErrorSchemaReasonCodeInvalidVariableType ErrorSchemaReasonCode = "invalid_variable_type"
 	// ErrorSchemaReasonCodeInvalidDataSourceFieldType is provided
 	// when the reason for a blueprint schema load error is due
 	// to an invalid data source exported field type.
 	ErrorSchemaReasonCodeInvalidDataSourceFieldType ErrorSchemaReasonCode = "invalid_data_source_field_type"
+	// ErrorSchemaReasonCodeInvalidValueType is provided
+	// when the reason for a blueprint schema load error is due
+	// to an invalid value type.
+	ErrorSchemaReasonCodeInvalidValueType ErrorSchemaReasonCode = "invalid_value_type"
 	// ErrorSchemaReasonCodeInvalidDataSourceFilterOperator is provided
 	// when the reason for a blueprint schema load error is due
 	// to an invalid data source filter operator being provided.
@@ -65,6 +65,22 @@ const (
 	// primarily used for errors wrapped with parent scope line information.
 	ErrorSchemaReasonCodeGeneral ErrorSchemaReasonCode = "general"
 )
+
+func errInvalidValueType(
+	valueType ValueType,
+	line *int,
+	column *int,
+) error {
+	return &Error{
+		ReasonCode: ErrorSchemaReasonCodeInvalidValueType,
+		Err: fmt.Errorf(
+			"unsupported value type %s has been provided, you can choose from string, integer, float, boolean, object and array",
+			valueType,
+		),
+		SourceLine:   line,
+		SourceColumn: column,
+	}
+}
 
 func errInvalidDataSourceFieldType(
 	dataSourceFieldType DataSourceFieldType,
