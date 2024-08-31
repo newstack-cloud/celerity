@@ -401,7 +401,7 @@ func (p *Parser) childReference() (*SubstitutionChild, error) {
 	}, nil
 }
 
-// resourceRef = resourceName , [ ( nameAccessor , { namAccessor | indexAccessor } ) ] ;
+// resourceRef = resourceName , [ { namAccessor | indexAccessor } ] ;
 func (p *Parser) resourceReference() (*SubstitutionResourceProperty, error) {
 	firstPartToken := p.currentToken()
 	resourceName, err := p.resourceName()
@@ -410,6 +410,11 @@ func (p *Parser) resourceReference() (*SubstitutionResourceProperty, error) {
 	}
 	if resourceName == nil {
 		return nil, nil
+	}
+
+	eachTemplateIndex, err := p.indexAccessor()
+	if err != nil {
+		return nil, err
 	}
 
 	propName := p.nameAccessor()
@@ -427,9 +432,10 @@ func (p *Parser) resourceReference() (*SubstitutionResourceProperty, error) {
 	}
 
 	return &SubstitutionResourceProperty{
-		ResourceName: *resourceName,
-		Path:         path,
-		SourceMeta:   p.sourceMeta(firstPartToken),
+		ResourceName:              *resourceName,
+		ResourceEachTemplateIndex: eachTemplateIndex,
+		Path:                      path,
+		SourceMeta:                p.sourceMeta(firstPartToken),
 	}, nil
 }
 
@@ -513,7 +519,7 @@ func (p *Parser) indexAccessor() (*int64, error) {
 
 		if !p.match(tokenCloseBracket) {
 			// The next token could be a name string literal, so we can't return
-			// an error here and we need to trackback to allow another rule (e.g. name accessor)
+			// an error here and we need to backtrack to allow another rule (e.g. name accessor)
 			// to match on the opening bracket.
 			p.backtrack()
 			return nil, nil

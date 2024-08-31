@@ -183,7 +183,8 @@ message SubstitutionDataSourceProperty {
 
 message SubstitutionResourceProperty {
     string resource_name = 1;
-    repeated SubstitutionPathItem path = 2;
+    optional int64 each_template_index = 2;
+    repeated SubstitutionPathItem path = 3;
 }
 
 message SubstitutionChild {

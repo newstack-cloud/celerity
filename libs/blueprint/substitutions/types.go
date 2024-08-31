@@ -57,9 +57,10 @@ type SubstitutionDataSourceProperty struct {
 }
 
 type SubstitutionResourceProperty struct {
-	ResourceName string
-	Path         []*SubstitutionPathItem
-	SourceMeta   *source.Meta
+	ResourceName              string
+	ResourceEachTemplateIndex *int64
+	Path                      []*SubstitutionPathItem
+	SourceMeta                *source.Meta
 }
 
 type SubstitutionPathItem struct {
@@ -91,3 +92,35 @@ type SubstitutionFunctionArg struct {
 // SubstitutionFunctionName is a type alias reserved for names
 // of functions that can be called in a substitution.
 type SubstitutionFunctionName string
+
+// ResolvedSubExprType represents a type of a resolved
+// substitution expression defined in a blueprint.
+// Can be one of "string", "integer", "float", "boolean", "array" or "object".
+type ResolvedSubExprType string
+
+const (
+	// ResolvedSubExprTypeString is for a substitution
+	// expression that resolves to a string.
+	ResolvedSubExprTypeString ResolvedSubExprType = "string"
+	// ResolvedSubExprTypeInteger is for a substitution
+	// expression that resolves to an integer.
+	ResolvedSubExprTypeInteger ResolvedSubExprType = "integer"
+	// ResolvedSubExprTypeFloat is for a substitution
+	// expression that resolves to a float.
+	ResolvedSubExprTypeFloat ResolvedSubExprType = "float"
+	// ResolvedSubExprTypeBoolean is for a substitution
+	// expression that resolves to a boolean.
+	ResolvedSubExprTypeBoolean ResolvedSubExprType = "boolean"
+	// ResolvedSubExprTypeArray is for a substitution
+	// expression that resolves to an array.
+	ResolvedSubExprTypeArray ResolvedSubExprType = "array"
+	// ResolvedSubExprTypeObject is for a substitution
+	// expression that resolves to an object.
+	ResolvedSubExprTypeObject ResolvedSubExprType = "object"
+	// ResolvedSubExprTypeFunction is for a substitution
+	// expression that resolves to a function.
+	ResolvedSubExprTypeFunction ResolvedSubExprType = "function"
+	// ResolvedSubExprTypeAny is for a substitution
+	// expression that resolves to any type.
+	ResolvedSubExprTypeAny ResolvedSubExprType = "any"
+)

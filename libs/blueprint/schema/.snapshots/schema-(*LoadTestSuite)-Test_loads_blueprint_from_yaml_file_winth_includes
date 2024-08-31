@@ -505,6 +505,7 @@
                           DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                           ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
                             ResourceName: (string) (len=10) "authoriser",
+                            ResourceEachTemplateIndex: (*int64)(<nil>),
                             Path: ([]*substitutions.SubstitutionPathItem) {
                             },
                             SourceMeta: (*source.Meta)({

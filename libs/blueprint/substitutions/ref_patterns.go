@@ -11,9 +11,32 @@ import (
 // sequential character processing state machine.
 
 const (
-	namePattern              = `[A-Za-z_][A-Za-z0-9_-]+`
-	stringLiteralNamePattern = `([A-Za-z0-9_-]|\.)+`
+	namePattern                        = `[A-Za-z_][A-Za-z0-9_-]+`
+	stringLiteralNamePattern           = `([A-Za-z0-9_-]|\.)+`
+	resourceMetadataPrefixPattern      = `(\.metadata|\["metadata"\])`
+	resourceMetadataDisplayNamePattern = `(\.displayName|\["displayName"\])`
+	resourceStatePattern               = `\.state|\["state"\]`
+	resourceSpecPattern                = `\.spec|\["spec"\]`
+	resourceMetadataPattern            = `(\.metadata|\["metadata"\])(\.labels|\["labels"\]|\.custom|\["custom"\]|\.annotations|\["annotations"\])`
 )
+
+func resourceStateSpecMetadataPattern() string {
+	return fmt.Sprintf(
+		`(%s|%s|%s)`,
+		resourceStatePattern,
+		resourceSpecPattern,
+		resourceMetadataPattern,
+	)
+}
+
+func resourcePathPrefixPattern() string {
+	return fmt.Sprintf(
+		`(%s%s)|(%s`,
+		resourceMetadataPrefixPattern,
+		resourceMetadataDisplayNamePattern,
+		resourceStateSpecMetadataPattern(),
+	)
+}
 
 func nameAccessorPattern(index int) string {
 	return fmt.Sprintf(`((\.(?P<Name%d>%s))|(\["(?P<NameInLiteral%d>%s)"\]))`, index, namePattern, index, stringLiteralNamePattern)
@@ -51,14 +74,17 @@ var (
 	// - resources.saveOrderFunction.metadata.annotations["annotationKey.v1"]
 	// - resources.saveOrderFunction.state["stateValue.v1"].value
 	// - resources["save-order-function.v1"].state.functionArn
+	// - resources.s3Buckets[].state.bucketArn
+	// - resources.s3Buckets[1].spec.bucketName
+	// - resources["s3-buckets.v1"][2]["spec"].bucketName
 	//
 	// Resources do not have to be referenced with the "resources" prefix,
 	// but using the prefix is recommended to avoid ambiguity.
 	// All other referenced types must be referenced with the prefix.
 	ResourceReferencePattern = regexp.MustCompile(
-		`^((resources` + nameAccessorPattern(0) + `)|(?P<NameWithoutNamespace>` + namePattern + `))` +
-			`(?P<Path>\.(metadata\.displayName|((state|spec|metadata\.(labels|custom|annotations))` + nameAccessorPattern(1) +
-			`(` + nameAccessorPattern(2) + `|\[\d*\])*)))?$`,
+		`^((resources` + nameAccessorPattern(0) + `)|(?P<NameWithoutNamespace>` + namePattern + `))(\[\d*\])?` +
+			`(?P<Path>` + resourcePathPrefixPattern() + nameAccessorPattern(1) +
+			`(` + nameAccessorPattern(2) + `|\[\d*\])*))?$`,
 	)
 
 	// VariableReferencePattern is the pattern that a variable

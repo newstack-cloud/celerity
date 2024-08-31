@@ -3,6 +3,7 @@ package substitutions
 import (
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	. "gopkg.in/check.v1"
@@ -351,6 +352,48 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 			ResourceProperty: &SubstitutionResourceProperty{
 				ResourceName: "saveOrderFunction",
 				Path:         []*SubstitutionPathItem{},
+				SourceMeta: &source.Meta{
+					Line:   1,
+					Column: 3,
+				},
+			},
+			SourceMeta: &source.Meta{
+				Line:   1,
+				Column: 3,
+			},
+		},
+		SourceMeta: &source.Meta{
+			Line:   1,
+			Column: 3,
+		},
+	})
+}
+
+func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_resource_ref_sub_4(c *C) {
+	parsed, err := ParseSubstitutionValues(
+		"",
+		`${resources.contentBuckets[2].state.bucketArn}`,
+		nil,
+		true,
+		false,
+	)
+	spew.Dump(parsed)
+	templateIndex := int64(2)
+	c.Assert(err, IsNil)
+	c.Assert(len(parsed), Equals, 1)
+	c.Assert(parsed[0], DeepEquals, &StringOrSubstitution{
+		SubstitutionValue: &Substitution{
+			ResourceProperty: &SubstitutionResourceProperty{
+				ResourceName:              "contentBuckets",
+				ResourceEachTemplateIndex: &templateIndex,
+				Path: []*SubstitutionPathItem{
+					{
+						FieldName: "state",
+					},
+					{
+						FieldName: "bucketArn",
+					},
+				},
 				SourceMeta: &source.Meta{
 					Line:   1,
 					Column: 3,

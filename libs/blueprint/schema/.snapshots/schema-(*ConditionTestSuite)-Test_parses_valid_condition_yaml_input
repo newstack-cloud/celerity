@@ -29,6 +29,7 @@
                             DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                             ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
                               ResourceName: (string) (len=8) "s3Bucket",
+                              ResourceEachTemplateIndex: (*int64)(<nil>),
                               Path: ([]*substitutions.SubstitutionPathItem) (len=1) {
                                 (*substitutions.SubstitutionPathItem)({
                                   FieldName: (string) (len=10) "bucketName",
@@ -149,6 +150,7 @@
                           DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                           ResourceProperty: (*substitutions.SubstitutionResourceProperty)({
                             ResourceName: (string) (len=8) "s3Bucket",
+                            ResourceEachTemplateIndex: (*int64)(<nil>),
                             Path: ([]*substitutions.SubstitutionPathItem) (len=1) {
                               (*substitutions.SubstitutionPathItem)({
                                 FieldName: (string) (len=10) "bucketName",
