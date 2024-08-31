@@ -183,6 +183,27 @@ func (f *functionRegistryMock) Call(
 	return output, err
 }
 
+func (f *functionRegistryMock) GetDefinition(
+	ctx context.Context,
+	functionName string,
+	input *provider.FunctionGetDefinitionInput,
+) (*provider.FunctionGetDefinitionOutput, error) {
+	fnc, ok := f.functions[functionName]
+	if !ok {
+		return nil, fmt.Errorf("function %s not found", functionName)
+	}
+	defOutput, err := fnc.GetDefinition(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
+}
+
+func (f *functionRegistryMock) HasFunction(ctx context.Context, functionName string) (bool, error) {
+	_, ok := f.functions[functionName]
+	return ok, nil
+}
+
 type comparableInt int
 
 func (c comparableInt) Equal(other any) bool {

@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -47,6 +48,10 @@ const (
 	// for a blueprint spec load error is due to one or more references
 	// being invalid.
 	ErrorReasonCodeInvalidReference errors.ErrorReasonCode = "invalid_reference"
+	// ErrorReasonCodeInvalidSubstitution is provided when the reason
+	// for a blueprint spec load error is due to one or more substitutions
+	// being invalid.
+	ErrorReasonCodeInvalidSubstitution errors.ErrorReasonCode = "invalid_substitution"
 	// ErrorReasonCodeInvalidInclude is provided when the reason
 	// for a blueprint spec load error is due to one or more includes
 	// being invalid.
@@ -620,6 +625,278 @@ func errMappingNodeKeyContainsSubstitution(
 		),
 		Line:   line,
 		Column: col,
+	}
+}
+
+func errSubFuncInvalidNumberOfArgs(
+	expectedParamCount int,
+	passedArgCount int,
+	subFunc *substitutions.SubstitutionFunctionExpr,
+) error {
+	line, col := source.PositionFromSourceMeta(subFunc.SourceMeta)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid number of arguments "+
+				"being provided for substitution function \"%s\", expected %d but got %d",
+			subFunc.FunctionName,
+			expectedParamCount,
+			passedArgCount,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubFuncArgTypeMismatch(
+	argIndex int,
+	expectedType string,
+	actualType string,
+	funcName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid argument type being provided for substitution function \"%s\", "+
+				"expected argument %d to be of type %s but got %s",
+			funcName,
+			argIndex,
+			expectedType,
+			actualType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubFuncNamedArgsNotAllowed(
+	argName string,
+	funcName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to named arguments being provided for substitution function \"%s\", "+
+				"found named argument \"%s\", named arguments are only supported in the \"%s\" function",
+			funcName,
+			argName,
+			substitutions.SubstitutionFunctionObject,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubVarNotFound(
+	varName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the variable \"%s\" not existing in the blueprint",
+			varName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubValSelfReference(
+	valName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the value \"%s\" referencing itself",
+			valName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubValNotFound(
+	valName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the value \"%s\" not existing in the blueprint",
+			valName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubElemRefNotInResource(
+	elemRefType string,
+	location *source.Meta,
+) error {
+	elemRefTypeLabel := deriveElemRefTypeLabel(elemRefType)
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an %s reference being used outside of a resource",
+			elemRefTypeLabel,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubElemRefResourceNotFound(
+	elemRefType string,
+	resourceName string,
+	location *source.Meta,
+) error {
+	elemRefTypeLabel := deriveElemRefTypeLabel(elemRefType)
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the resource \"%s\" for %s reference not existing in the blueprint",
+			resourceName,
+			elemRefTypeLabel,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubElemRefResourceNotEach(
+	elemRefType string,
+	resourceName string,
+	location *source.Meta,
+) error {
+	elemRefTypeLabel := deriveElemRefTypeLabel(elemRefType)
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the resource \"%s\" for %s reference not "+
+				"being a resource template, a resource template must have the `each` property defined",
+			resourceName,
+			elemRefTypeLabel,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceNotFound(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the resource \"%s\" not existing in the blueprint",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceSelfReference(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the resource \"%s\" referencing itself",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubDataSourceNotFound(
+	dataSourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the data source \"%s\" not existing in the blueprint",
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubDataSourceSelfReference(
+	dataSourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the data source \"%s\" referencing itself",
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubChildBlueprintNotFound(
+	childName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the child blueprint \"%s\" not existing in the blueprint",
+			childName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubChildBlueprintSelfReference(
+	childName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the child blueprint \"%s\" referencing itself",
+			childName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func deriveElemRefTypeLabel(elemRefType string) string {
+	switch elemRefType {
+	case "index":
+		return "element index"
+	default:
+		return "element"
 	}
 }
 

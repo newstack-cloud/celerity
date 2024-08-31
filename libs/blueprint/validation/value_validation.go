@@ -83,6 +83,7 @@ func validateStringValue(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 ) ([]*bpcore.Diagnostic, error) {
+
 	return []*bpcore.Diagnostic{}, nil
 }
 

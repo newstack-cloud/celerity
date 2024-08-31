@@ -26,6 +26,9 @@ func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of
 		"resources.save-order-function.metadata.custom.apiEndpoint",
 		"resources.save-order-function.metadata.displayName",
 		"resources.saveOrderFunction.state.confgiruations[0][1].concurrency",
+		"resources.s3Buckets[].state.bucketArn",
+		"resources.s3Buckets[1].spec.bucketName",
+		"resources[\"s3-buckets.v1\"][2][\"spec\"].bucketName",
 	}
 
 	for _, reference := range references {

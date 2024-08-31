@@ -855,6 +855,11 @@ func (v *ValueTypeDefinitionFunction) GetFormattedDescription() string {
 type ValueTypeDefinitionAny struct {
 	// Type is the value type name for an any type.
 	Type ValueType
+	// UnionTypes is a list of value type definitions that are allowed
+	// for the value.
+	// When provided, an any value type will be validated as a union type
+	// where the return value must match one of the types in the union.
+	UnionTypes []ValueTypeDefinition
 	// Label is the usage name for the value type.
 	// This will appear in logs and in tooling such as
 	// the language server.

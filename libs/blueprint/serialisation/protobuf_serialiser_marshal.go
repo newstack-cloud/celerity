@@ -758,8 +758,9 @@ func toSubstitutionResourcePropertyPB(
 	return &schemapb.Substitution{
 		Sub: &schemapb.Substitution_ResourceProperty{
 			ResourceProperty: &schemapb.SubstitutionResourceProperty{
-				ResourceName: substitutionResourceProperty.ResourceName,
-				Path:         path,
+				ResourceName:      substitutionResourceProperty.ResourceName,
+				EachTemplateIndex: substitutionResourceProperty.ResourceEachTemplateIndex,
+				Path:              path,
 			},
 		},
 	}, nil

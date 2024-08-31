@@ -88,6 +88,15 @@ type FunctionCallContext interface {
 type FunctionRegistry interface {
 	// Call allows calling a function in the registry by name.
 	Call(ctx context.Context, functionName string, input *FunctionCallInput) (*FunctionCallOutput, error)
+	// GetDefinition returns the definition of a function
+	// in the registry that includes allowed parameters and return types.
+	GetDefinition(
+		ctx context.Context,
+		functionName string,
+		input *FunctionGetDefinitionInput,
+	) (*FunctionGetDefinitionOutput, error)
+	// HasFunction checks if a function is available in the registry.
+	HasFunction(ctx context.Context, functionName string) (bool, error)
 }
 
 // FunctionCallOutput provides the output data from a substitution function

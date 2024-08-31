@@ -5,6 +5,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
 
 func deriveVarType(value *bpcore.ScalarValue) schema.VariableType {
@@ -58,5 +59,39 @@ func varTypeToUnit(varType schema.VariableType) string {
 		return "a string"
 	default:
 		return "an unknown type"
+	}
+}
+
+func toDiagnosticRange(
+	start *source.Meta,
+	nextLocation *source.Meta,
+) *bpcore.DiagnosticRange {
+	if start == nil {
+		return &bpcore.DiagnosticRange{
+			Start: &source.Meta{
+				Line:   1,
+				Column: 1,
+			},
+			End: &source.Meta{
+				Line:   1,
+				Column: 1,
+			},
+		}
+	}
+
+	endSourceMeta := &source.Meta{
+		Line:   start.Line + 1,
+		Column: 1,
+	}
+	if nextLocation != nil {
+		endSourceMeta = &source.Meta{
+			Line:   nextLocation.Line,
+			Column: nextLocation.Column,
+		}
+	}
+
+	return &bpcore.DiagnosticRange{
+		Start: start,
+		End:   endSourceMeta,
 	}
 }
