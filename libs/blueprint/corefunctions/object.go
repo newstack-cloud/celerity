@@ -41,10 +41,7 @@ func NewObjectFunction() provider.Function {
 						"When no arguments are passed, an empty object should be returned.",
 				},
 			},
-			Return: &function.ListReturn{
-				ElementType: &function.ValueTypeDefinitionObject{
-					Label: "object",
-				},
+			Return: &function.ObjectReturn{
 				Description: "An object containing attributes that have been passed as named arguments.",
 			},
 		},

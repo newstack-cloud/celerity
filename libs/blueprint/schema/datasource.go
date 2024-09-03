@@ -468,9 +468,6 @@ const (
 	// DataSourceFieldTypeArray is for an exported
 	// array field from a data source in a blueprint.
 	DataSourceFieldTypeArray DataSourceFieldType = "array"
-	// DataSourceFieldTypeObject is for an exported
-	// array field from a data source in a blueprint.
-	DataSourceFieldTypeObject DataSourceFieldType = "object"
 )
 
 var (
@@ -483,6 +480,5 @@ var (
 		DataSourceFieldTypeFloat,
 		DataSourceFieldTypeBoolean,
 		DataSourceFieldTypeArray,
-		DataSourceFieldTypeObject,
 	}
 )

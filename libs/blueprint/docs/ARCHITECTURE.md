@@ -314,6 +314,11 @@ type AbstractResource interface {
         ctx context.Context,
         input *AbstractResourceValidateInput,
     ) (*AbstractResourceValidateOutput, error)
+
+	GetSpecDefinition(
+		ctx context.Context,
+		input *AbstractResourceGetSpecDefinitionInput,
+	) (*AbstractResourceGetSpecDefinitionOutput, error)
 }
 
 type AbstractResourceValidateInput struct {
@@ -323,6 +328,14 @@ type AbstractResourceValidateInput struct {
 
 type AbstractResourceValidateOutput struct {
 	Diagnostics []*core.Diagnostic
+}
+
+type AbstractResourceGetSpecDefinitionInput struct {
+	Params core.BlueprintParams
+}
+
+type AbstractResourceGetSpecDefinitionOutput struct {
+	SpecDefinition *provider.ResourceSpecDefinition
 }
 ```
 
@@ -361,7 +374,7 @@ type BlueprintCache interface {
 The blueprint cache allows for the caching of expanded blueprint schemas to make loading blueprints that have been previously loaded without modifications more efficient.
 For implementations that require a serialised form of the blueprint spec to store in a scalable cache, the `schema.Blueprint` struct can be serialised as a [Protocol Buffer](http://protobuf.dev/) using the built-in [ExpandedBlueprintSerialiser](#expandedblueprintserialiser-serialisationexpandedblueprintserialiser) and stored in the cache. _JSON and YAML serialisation can be used but will not store the blueprint in its expanded form so the primary benefits of caching will be lost. This is because the JSON and YAML serialisation will collapse `${..}` substitutions into strings and deserialisation will expand `${..}` substitutions._
 
-The library does NOT come with any provider implementations, you must implement them yourself or use a library that extends the blueprint framework.
+The library does NOT come with any cache implementations, you must implement them yourself or use a library that extends the blueprint framework.
 
 ## ExpandedBlueprintSerialiser (serialisation.ExpandedBlueprintSerialiser)
 

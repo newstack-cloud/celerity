@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 )
 
@@ -24,6 +25,8 @@ type SpecTransformer interface {
 	// into their final form along with any other transformations
 	// that are required.
 	Transform(ctx context.Context, input *SpecTransformerTransformInput) (*SpecTransformerTransformOutput, error)
+	// AbstractResources returns the abstract resource implementation
+	// for a given resource type.
 	AbstractResource(ctx context.Context, resourceType string) (AbstractResource, error)
 }
 
@@ -33,6 +36,14 @@ type SpecTransformer interface {
 type AbstractResource interface {
 	// Validate a schema for an abstract resource that will be transformed.
 	Validate(ctx context.Context, input *AbstractResourceValidateInput) (*AbstractResourceValidateOutput, error)
+	// GetSpecDefinition retrieves the spec definition for an abstract resource,
+	// this is the first line of validation for a resource in a blueprint and is also
+	// useful for validating references to an abstract resource instance
+	// in a blueprint and for providing definitions for docs and tooling.
+	GetSpecDefinition(
+		ctx context.Context,
+		input *AbstractResourceGetSpecDefinitionInput,
+	) (*AbstractResourceGetSpecDefinitionOutput, error)
 }
 
 // SpecTransformerTransformInput provides the input required to transform
@@ -58,4 +69,16 @@ type AbstractResourceValidateInput struct {
 // which includes a list of diagnostics that detail issues with the abstract resource.
 type AbstractResourceValidateOutput struct {
 	Diagnostics []*core.Diagnostic
+}
+
+// AbstractResourceGetSpecDefinitionInput provides the input from providing a spec definition
+// for an abstract resource.
+type AbstractResourceGetSpecDefinitionInput struct {
+	Params core.BlueprintParams
+}
+
+// AbstractResourceGetSpecDefinitionOutput provides the output from providing a spec definition
+// for an abstract resource.
+type AbstractResourceGetSpecDefinitionOutput struct {
+	SpecDefinition *provider.ResourceSpecDefinition
 }

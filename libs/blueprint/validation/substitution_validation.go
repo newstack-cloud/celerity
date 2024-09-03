@@ -22,6 +22,8 @@ import (
 // For example, "values.myValue" or "resources.myResource"
 //
 // funcRegistry provides a registry of functions that can be used in the substitution.
+// resourceRegistry provides a registry of resource types that are used to check accessed
+// attributes against the resource spec.
 //
 // This returns a string containing the type of the resolved value for the substitution
 // where it can be determined, an empty string otherwise.
@@ -37,6 +39,7 @@ func ValidateSubstitution(
 	usedIn string,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector *RefChainCollector,
+	resourceRegistry provider.ResourceRegistry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if sub == nil {
@@ -52,6 +55,7 @@ func ValidateSubstitution(
 			usedIn,
 			funcRegistry,
 			refChainCollector,
+			resourceRegistry,
 		)
 	}
 
@@ -99,10 +103,13 @@ func ValidateSubstitution(
 
 	if sub.ResourceProperty != nil {
 		return validateResourcePropertySubstitution(
+			ctx,
 			sub.ResourceProperty,
 			bpSchema,
 			usedIn,
 			refChainCollector,
+			resourceRegistry,
+			nextLocation,
 		)
 	}
 
@@ -128,6 +135,11 @@ func validateVariableSubstitution(
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	varName := subVar.VariableName
+
+	if bpSchema.Variables == nil || bpSchema.Variables.Values == nil {
+		return "", diagnostics, errSubVarNotFound(varName, subVar.SourceMeta)
+	}
+
 	varSchema, hasVar := bpSchema.Variables.Values[varName]
 	if !hasVar {
 		return "", diagnostics, errSubVarNotFound(varName, subVar.SourceMeta)
@@ -149,6 +161,11 @@ func validateValueSubstitution(
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	valName := subVal.ValueName
+
+	if bpSchema.Values == nil || bpSchema.Values.Values == nil {
+		return "", diagnostics, errSubValNotFound(valName, subVal.SourceMeta)
+	}
+
 	valSchema, hasVal := bpSchema.Values.Values[valName]
 	if !hasVal {
 		return "", diagnostics, errSubValNotFound(valName, subVal.SourceMeta)
@@ -156,6 +173,15 @@ func validateValueSubstitution(
 
 	if usedIn == fmt.Sprintf("values.%s", valName) {
 		return "", diagnostics, errSubValSelfReference(valName, subVal.SourceMeta)
+	}
+
+	if len(subVal.Path) >= 1 {
+		// At this point, we can't know the exact type of the value reference without
+		// inspecting the contents of the value definition, this could be quite an expensive operation
+		// traversing through multiple levels of references and definitions.
+		// When a nested attribute or index is accessed from a value, at validation time
+		// we return any to account for all possible types.
+		return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
 	}
 
 	refChainCollector.Collect(usedIn, fmt.Sprintf("values.%s", valName), valSchema)
@@ -175,6 +201,10 @@ func validateElemReferenceSubstitution(
 		return "", diagnostics, errSubElemRefNotInResource(elemRefType, location)
 	}
 
+	if bpSchema.Resources == nil || bpSchema.Resources.Values == nil {
+		return "", diagnostics, errBlueprintMissingResources()
+	}
+
 	resourceName := usedIn[10:]
 	resource, hasResource := bpSchema.Resources.Values[resourceName]
 	if !hasResource {
@@ -190,7 +220,7 @@ func validateElemReferenceSubstitution(
 	// this is because elements are a reference to a local value that is only
 	// scoped to the resource where the `each` property is defined.
 
-	// The type of element references isn't known until runtime
+	// The type of an element reference isn't known until runtime
 	// as it dependent on the `each` property of the resource.
 	resolvedType := string(substitutions.ResolvedSubExprTypeAny)
 	if elemRefType == "index" {
@@ -200,13 +230,21 @@ func validateElemReferenceSubstitution(
 }
 
 func validateResourcePropertySubstitution(
+	ctx context.Context,
 	subResourceProp *substitutions.SubstitutionResourceProperty,
 	bpSchema *schema.Blueprint,
 	usedIn string,
 	refChainCollector *RefChainCollector,
+	resourceRegistry provider.ResourceRegistry,
+	nextLocation *source.Meta,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	resourceName := subResourceProp.ResourceName
+
+	if bpSchema.Resources == nil || bpSchema.Resources.Values == nil {
+		return "", diagnostics, errBlueprintMissingResources()
+	}
+
 	resourceSchema, hasResource := bpSchema.Resources.Values[resourceName]
 	if !hasResource {
 		return "", diagnostics, errSubResourceNotFound(resourceName, subResourceProp.SourceMeta)
@@ -216,12 +254,346 @@ func validateResourcePropertySubstitution(
 		return "", diagnostics, errSubResourceSelfReference(resourceName, subResourceProp.SourceMeta)
 	}
 
-	// TODO: Check `.spec.*` and `.metadata.*` paths against the resource spec.
-	// Resolve the type of the property being referenced if under spec or metadata.
+	if subResourceProp.ResourceEachTemplateIndex != nil && resourceSchema.Each == nil {
+		return "", diagnostics, errSubResourceNotEach(
+			resourceName,
+			subResourceProp.ResourceEachTemplateIndex,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	if subResourceProp.Path[0].FieldName == "spec" {
+		return validateResourcePropertySubSpec(
+			ctx,
+			subResourceProp,
+			resourceSchema.Type,
+			resourceRegistry,
+			nextLocation,
+		)
+	}
+
+	if subResourceProp.Path[0].FieldName == "metadata" {
+		return validateResourcePropertySubMetadata(
+			subResourceProp,
+			resourceSchema,
+		)
+	}
 
 	refChainCollector.Collect(usedIn, fmt.Sprintf("resources.%s", resourceName), resourceSchema)
 
 	return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
+}
+
+func validateResourcePropertySubSpec(
+	ctx context.Context,
+	subResourceProp *substitutions.SubstitutionResourceProperty,
+	resourceType string,
+	resourceRegistry provider.ResourceRegistry,
+	nextLocation *source.Meta,
+) (string, []*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+
+	if len(subResourceProp.Path) < 2 {
+		return "", diagnostics, errSubResourceSpecInvalidRef(
+			subResourceProp.ResourceName,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	hasResType, err := resourceRegistry.HasResourceType(ctx, resourceType)
+	if err != nil {
+		return "", diagnostics, err
+	}
+
+	if !hasResType {
+		// If the resource type has not been loaded,
+		// we can't know whether or not the accessed property of the
+		// resource spec is valid.
+		// We return any to account for all possible types and a warning
+		// to indicate that the resource type has not been loaded
+		// and it will need to be loaded for change staging and deployment.
+		diagnostics = append(
+			diagnostics,
+			&bpcore.Diagnostic{
+				Level: bpcore.DiagnosticLevelWarning,
+				Message: fmt.Sprintf(
+					"Resource type %q is not currently loaded, when staging changes and deploying,"+
+						" you will need to make sure the provider for the resource type is loaded.",
+					resourceType,
+				),
+				Range: toDiagnosticRange(subResourceProp.SourceMeta, nextLocation),
+			},
+		)
+
+		return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
+	}
+
+	specDefOutput, err := resourceRegistry.GetSpecDefinition(
+		ctx,
+		resourceType,
+		&provider.ResourceGetSpecDefinitionInput{},
+	)
+	if err != nil {
+		return "", diagnostics, err
+	}
+
+	if specDefOutput.SpecDefinition == nil {
+		return "", diagnostics, errResourceTypeMissingSpecDefinition(
+			subResourceProp.ResourceName,
+			resourceType,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	return validateResourcePropertySubSpecPath(
+		subResourceProp,
+		resourceType,
+		specDefOutput.SpecDefinition,
+	)
+}
+
+func validateResourcePropertySubSpecPath(
+	subResourceProp *substitutions.SubstitutionResourceProperty,
+	resourceType string,
+	definition *provider.ResourceSpecDefinition,
+) (string, []*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+	resolvedType := ""
+	propertyMatches := true
+	currentSchema := definition.Schema
+	if currentSchema == nil {
+		return "", diagnostics, errResourceTypeSpecDefMissingSchema(
+			subResourceProp.ResourceName,
+			resourceType,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	// At this point we already know the first element in the path is "spec".
+	i := 1
+	for propertyMatches && i < len(subResourceProp.Path) {
+		property := subResourceProp.Path[i]
+		if property.FieldName != "" && len(currentSchema.Attributes) > 0 {
+			var attrMatches bool
+			var attrType string
+			attrMatches, attrType, currentSchema = checkSubResourcePropertyAttr(
+				subResourceProp,
+				currentSchema,
+				property,
+				i,
+			)
+			if !attrMatches {
+				propertyMatches = false
+			}
+			if i == len(subResourceProp.Path)-1 {
+				resolvedType = attrType
+			}
+		} else if property.PrimitiveArrIndex != nil && currentSchema.Type == provider.ResourceSpecTypeArray {
+			currentSchema = currentSchema.Items
+			if i == len(subResourceProp.Path)-1 {
+				resolvedType = string(substitutions.ResolvedSubExprTypeArray)
+			}
+		} else {
+			propertyMatches = false
+		}
+		i += 1
+	}
+
+	if !propertyMatches {
+		return "", diagnostics, errSubResourcePropertyNotFound(
+			subResourceProp.ResourceName,
+			subResourceProp.Path,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	return resolvedType, diagnostics, nil
+}
+
+func validateResourcePropertySubMetadata(
+	subResourceProp *substitutions.SubstitutionResourceProperty,
+	blueprintResource *schema.Resource,
+) (string, []*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+	if len(subResourceProp.Path) < 2 {
+		return "", diagnostics, errSubResourceMetadataInvalidRef(
+			subResourceProp.ResourceName,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	if !isResourceMetadataProperty(subResourceProp.Path[1].FieldName) {
+		return "", diagnostics, errSubResourceMetadataInvalidProperty(
+			subResourceProp.ResourceName,
+			subResourceProp.Path[1].FieldName,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	if subResourceProp.Path[1].FieldName == "displayName" {
+		if len(subResourceProp.Path) > 2 {
+			return "", diagnostics, errSubResourceMetadataInvalidDisplayNameRef(
+				subResourceProp.ResourceName,
+				subResourceProp.SourceMeta,
+			)
+		}
+
+		return string(substitutions.ResolvedSubExprTypeString), diagnostics, nil
+	}
+
+	if subResourceProp.Path[1].FieldName == "annotations" {
+		err := validateResourcePropertySubMetadataAnnotations(
+			subResourceProp,
+			blueprintResource,
+		)
+		if err != nil {
+			return "", diagnostics, err
+		}
+
+		// To get a precise type for each annotation, we would need to traverse
+		// substitution trees, which was deemed more effort than it was worth
+		// in the initial version.
+		// Runtime checks for the types of annotations will have to suffice.
+		return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
+	}
+
+	if subResourceProp.Path[1].FieldName == "labels" {
+		err := validateResourcePropertySubMetadataLabels(
+			subResourceProp,
+			blueprintResource,
+		)
+		if err != nil {
+			return "", diagnostics, err
+		}
+
+		return string(substitutions.ResolvedSubExprTypeString), diagnostics, nil
+	}
+
+	// Custom metadata is a free-form object, at the time of implementation,
+	// deep validation wasn't deemed necessary due to the likelihood of `metadata.custom`
+	// being used in substitution references being low.
+	// This judgement was made as custom metadata is primarily used for storing information
+	// to be used by external systems.
+	return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
+}
+
+func validateResourcePropertySubMetadataAnnotations(
+	subResourceProp *substitutions.SubstitutionResourceProperty,
+	blueprintResource *schema.Resource,
+) error {
+	if len(subResourceProp.Path) != 3 {
+		return errSubResourceMetadataInvalidAnnotationsRef(
+			subResourceProp.ResourceName,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	hasAnnotation := checkResourceHasAnnotation(
+		subResourceProp.Path[2].FieldName,
+		blueprintResource,
+	)
+
+	if !hasAnnotation {
+		return errSubResourceMetadataMissingAnnotation(
+			subResourceProp.ResourceName,
+			subResourceProp.Path[2].FieldName,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	return nil
+}
+
+func checkResourceHasAnnotation(fieldName string, blueprintResource *schema.Resource) bool {
+	if blueprintResource.Metadata == nil {
+		return false
+	}
+
+	if blueprintResource.Metadata.Annotations == nil {
+		return false
+	}
+
+	if blueprintResource.Metadata.Annotations.Values == nil {
+		return false
+	}
+
+	_, hasAnnotation := blueprintResource.Metadata.Annotations.Values[fieldName]
+	return hasAnnotation
+}
+
+func validateResourcePropertySubMetadataLabels(
+	subResourceProp *substitutions.SubstitutionResourceProperty,
+	blueprintResource *schema.Resource,
+) error {
+	if len(subResourceProp.Path) != 3 {
+		return errSubResourceMetadataInvalidLabelsRef(
+			subResourceProp.ResourceName,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	hasLabel := checkResourceHasLabel(
+		subResourceProp.Path[2].FieldName,
+		blueprintResource,
+	)
+
+	if !hasLabel {
+		return errSubResourceMetadataMissingLabel(
+			subResourceProp.ResourceName,
+			subResourceProp.Path[2].FieldName,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	return nil
+}
+
+func checkResourceHasLabel(fieldName string, blueprintResource *schema.Resource) bool {
+	if blueprintResource.Metadata == nil {
+		return false
+	}
+
+	if blueprintResource.Metadata.Labels == nil {
+		return false
+	}
+
+	if blueprintResource.Metadata.Labels.Values == nil {
+		return false
+	}
+
+	_, hasLabel := blueprintResource.Metadata.Labels.Values[fieldName]
+	return hasLabel
+}
+
+func isResourceMetadataProperty(fieldName string) bool {
+	return fieldName == "displayName" ||
+		fieldName == "annotations" ||
+		fieldName == "labels" ||
+		fieldName == "custom"
+}
+
+func checkSubResourcePropertyAttr(
+	subResourceProp *substitutions.SubstitutionResourceProperty,
+	currentSchema *provider.ResourceSpecSchema,
+	property *substitutions.SubstitutionPathItem,
+	index int,
+) (bool, string, *provider.ResourceSpecSchema) {
+	attrSchema, hasAttr := currentSchema.Attributes[property.FieldName]
+	if hasAttr {
+		if index < len(subResourceProp.Path)-1 && !isComplexResourceSpecSchemaType(attrSchema.Type) {
+			// Path is trying to access properties of a primitive type.
+			return false, "", nil
+		}
+		return true, subResourceSpecSchemaType(attrSchema.Type), attrSchema
+	}
+
+	return false, "", nil
+}
+
+func isComplexResourceSpecSchemaType(schemaType provider.ResourceSpecSchemaType) bool {
+	return schemaType == provider.ResourceSpecTypeObject ||
+		schemaType == provider.ResourceSpecTypeArray ||
+		schemaType == provider.ResourceSpecTypeMap
 }
 
 func validateDataSourcePropertySubstitution(
@@ -232,6 +604,10 @@ func validateDataSourcePropertySubstitution(
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	dataSourceName := subDataSourceProp.DataSourceName
+	if bpSchema.DataSources == nil || bpSchema.DataSources.Values == nil {
+		return "", diagnostics, errSubDataSourceNotFound(dataSourceName, subDataSourceProp.SourceMeta)
+	}
+
 	dataSourceSchema, hasDataSource := bpSchema.DataSources.Values[dataSourceName]
 	if !hasDataSource {
 		return "", diagnostics, errSubDataSourceNotFound(dataSourceName, subDataSourceProp.SourceMeta)
@@ -241,12 +617,55 @@ func validateDataSourcePropertySubstitution(
 		return "", diagnostics, errSubDataSourceSelfReference(dataSourceName, subDataSourceProp.SourceMeta)
 	}
 
-	// TODO: Check `.*` paths against the data source exported fields.
-	// Resolve the type of the property being referenced.
+	resolveType, err := validateDataSourcePropertyField(subDataSourceProp, dataSourceSchema)
+	if err != nil {
+		return "", diagnostics, err
+	}
 
 	refChainCollector.Collect(usedIn, fmt.Sprintf("datasources.%s", dataSourceName), dataSourceSchema)
 
-	return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
+	return resolveType, diagnostics, nil
+}
+
+func validateDataSourcePropertyField(
+	subDataSourceProp *substitutions.SubstitutionDataSourceProperty,
+	dataSourceSchema *schema.DataSource,
+) (string, error) {
+	if dataSourceSchema.Exports == nil {
+		return "", errSubDataSourceNoExportedFields(
+			subDataSourceProp.DataSourceName,
+			subDataSourceProp.SourceMeta,
+		)
+	}
+
+	field, hasField := dataSourceSchema.Exports.Values[subDataSourceProp.FieldName]
+	if !hasField {
+		return "", errSubDataSourceFieldNotExported(
+			subDataSourceProp.DataSourceName,
+			subDataSourceProp.FieldName,
+			subDataSourceProp.SourceMeta,
+		)
+	}
+
+	if field.Type == nil {
+		return "", errSubDataSourceFieldMissingType(
+			subDataSourceProp.DataSourceName,
+			subDataSourceProp.FieldName,
+			subDataSourceProp.SourceMeta,
+		)
+	}
+
+	if subDataSourceProp.PrimitiveArrIndex != nil &&
+		field.Type.Value != schema.DataSourceFieldTypeArray {
+		return "", errSubDataSourceFieldNotArray(
+			subDataSourceProp.DataSourceName,
+			subDataSourceProp.FieldName,
+			*subDataSourceProp.PrimitiveArrIndex,
+			subDataSourceProp.SourceMeta,
+		)
+	}
+
+	return subDataSourceFieldType(field.Type.Value), nil
 }
 
 func validateChildSubstitution(
@@ -281,6 +700,7 @@ func validateFunctionSubstitution(
 	usedIn string,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector *RefChainCollector,
+	resourceRegistry provider.ResourceRegistry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	funcName := string(subFunc.FunctionName)
@@ -344,6 +764,7 @@ func validateFunctionSubstitution(
 			funcName,
 			funcRegistry,
 			refChainCollector,
+			resourceRegistry,
 		)
 		diagnostics = append(diagnostics, argDiagnostics...)
 		if err != nil {
@@ -407,7 +828,10 @@ func checkSubFuncArgType(
 		return nil
 	}
 
-	if string(param.GetType()) != resolveType {
+	// In some cases we can't know exactly what the resolved type is during the validation
+	// stage, to account for these situations and reduce noise, the any resolved type is acceptable
+	// for all function arguments.
+	if string(param.GetType()) != resolveType && resolveType != string(substitutions.ResolvedSubExprTypeAny) {
 		return errSubFuncArgTypeMismatch(
 			argIndex,
 			string(param.GetType()),
@@ -462,6 +886,7 @@ func validateSubFuncArgument(
 	funcName string,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector *RefChainCollector,
+	resourceRegistry provider.ResourceRegistry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if arg == nil {
@@ -484,6 +909,7 @@ func validateSubFuncArgument(
 		usedIn,
 		funcRegistry,
 		refChainCollector,
+		resourceRegistry,
 	)
 }
 
@@ -553,6 +979,38 @@ func subValType(valType schema.ValueType) string {
 	case schema.ValueTypeArray:
 		return string(substitutions.ResolvedSubExprTypeArray)
 	case schema.ValueTypeObject:
+		return string(substitutions.ResolvedSubExprTypeObject)
+	default:
+		return string(substitutions.ResolvedSubExprTypeString)
+	}
+}
+
+func subDataSourceFieldType(fieldType schema.DataSourceFieldType) string {
+	switch fieldType {
+	case schema.DataSourceFieldTypeInteger:
+		return string(substitutions.ResolvedSubExprTypeInteger)
+	case schema.DataSourceFieldTypeFloat:
+		return string(substitutions.ResolvedSubExprTypeFloat)
+	case schema.DataSourceFieldTypeBoolean:
+		return string(substitutions.ResolvedSubExprTypeBoolean)
+	case schema.DataSourceFieldTypeArray:
+		return string(substitutions.ResolvedSubExprTypeArray)
+	default:
+		return string(substitutions.ResolvedSubExprTypeString)
+	}
+}
+
+func subResourceSpecSchemaType(schemaType provider.ResourceSpecSchemaType) string {
+	switch schemaType {
+	case provider.ResourceSpecTypeInteger:
+		return string(substitutions.ResolvedSubExprTypeInteger)
+	case provider.ResourceSpecTypeFloat:
+		return string(substitutions.ResolvedSubExprTypeFloat)
+	case provider.ResourceSpecTypeBoolean:
+		return string(substitutions.ResolvedSubExprTypeBoolean)
+	case provider.ResourceSpecTypeArray:
+		return string(substitutions.ResolvedSubExprTypeArray)
+	case provider.ResourceSpecTypeObject, provider.ResourceSpecTypeMap:
 		return string(substitutions.ResolvedSubExprTypeObject)
 	default:
 		return string(substitutions.ResolvedSubExprTypeString)

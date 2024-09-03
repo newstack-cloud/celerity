@@ -420,9 +420,10 @@ func (p *Parser) resourceReference() (*SubstitutionResourceProperty, error) {
 	propName := p.nameAccessor()
 	if propName == nil {
 		return &SubstitutionResourceProperty{
-			ResourceName: *resourceName,
-			Path:         []*SubstitutionPathItem{},
-			SourceMeta:   p.sourceMeta(firstPartToken),
+			ResourceName:              *resourceName,
+			ResourceEachTemplateIndex: eachTemplateIndex,
+			Path:                      []*SubstitutionPathItem{},
+			SourceMeta:                p.sourceMeta(firstPartToken),
 		}, nil
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/function"
+	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	. "gopkg.in/check.v1"
 )
@@ -19,12 +20,12 @@ func (s *ReduceFunctionTestSuite) SetUpTest(c *C) {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
-		registry: &functionRegistryMock{
-			functions: map[string]provider.Function{
+		registry: &internal.FunctionRegistryMock{
+			Functions: map[string]provider.Function{
 				"extract_crucial_network_info":         newExtractCrucialNetworkInfoFunction(),
 				"invalid_extract_crucial_network_info": newInvalidExtractCrucialNetworkInfoFunction(),
 			},
-			callStack: s.callStack,
+			CallStack: s.callStack,
 		},
 		callStack: s.callStack,
 	}

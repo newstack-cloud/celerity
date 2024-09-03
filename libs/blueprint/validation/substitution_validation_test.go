@@ -1,0 +1,1578 @@
+package validation
+
+import (
+	"context"
+
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
+	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/internal"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	. "gopkg.in/check.v1"
+	"gopkg.in/yaml.v3"
+)
+
+type SubstitutionValidationTestSuite struct {
+	functionRegistry  provider.FunctionRegistry
+	refChainCollector *RefChainCollector
+	resourceRegistry  provider.ResourceRegistry
+}
+
+var _ = Suite(&SubstitutionValidationTestSuite{})
+
+func (s *SubstitutionValidationTestSuite) SetUpTest(c *C) {
+	s.functionRegistry = &internal.FunctionRegistryMock{
+		Functions: map[string]provider.Function{
+			"trim":   corefunctions.NewTrimFunction(),
+			"list":   corefunctions.NewListFunction(),
+			"object": corefunctions.NewObjectFunction(),
+		},
+	}
+	s.refChainCollector = NewRefChainCollector()
+	s.resourceRegistry = &internal.ResourceRegistryMock{
+		Resources: map[string]provider.Resource{
+			"exampleResource":                      &testExampleResource{},
+			"exampleResourceMissingSpecDefinition": &testExampleResourceMissingSpecDefinition{},
+			"exampleResourceMissingSpecSchema":     &testExampleResourceMissingSpecSchema{},
+		},
+	}
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_1(c *C) {
+	subInputStr := "${trim(\"  hello world  \")}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		/* bpSchema */ nil,
+		"resources.exampleResource",
+		s.functionRegistry,
+		/* refChainCollector */ nil,
+		/* resourceRegistry */ nil,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeString))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_2(c *C) {
+	subInputStr := "${list(resources.exampleResource.name, datasources.exampleDataSource.name)}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource": {
+					Type: "celerity/exampleResource",
+				},
+			},
+		},
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"exampleDataSource": {
+					Type: "celerity/exampleDataSource",
+					Exports: &schema.DataSourceFieldExportMap{
+						Values: map[string]*schema.DataSourceFieldExport{
+							"name": {
+								Type: &schema.DataSourceFieldTypeWrapper{
+									Value: schema.DataSourceFieldTypeString,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"exports.example",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeArray))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_3(c *C) {
+	subInputStr := "${variables.environment}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"environment": {
+					Type: schema.VariableTypeInteger,
+				},
+			},
+		},
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeInteger))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_4(c *C) {
+	subInputStr := "${values.contentBuckets[0].name}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		Values: &schema.ValueMap{
+			Values: map[string]*schema.Value{
+				"contentBuckets": {
+					Type: &schema.ValueTypeWrapper{
+						Value: schema.ValueTypeArray,
+					},
+				},
+			},
+		},
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeAny))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_5(c *C) {
+	subInputStr := "${values.contentBuckets}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		Values: &schema.ValueMap{
+			Values: map[string]*schema.Value{
+				"contentBuckets": {
+					Type: &schema.ValueTypeWrapper{
+						Value: schema.ValueTypeArray,
+					},
+				},
+			},
+		},
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeArray))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_6(c *C) {
+	subInputStr := "${object(position = 5, total = 5403.43, enabled = true)}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		/* blueprint */ nil,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeObject))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_7(c *C) {
+	subInputStr := "${elem.config.enabled}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource1"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource": {
+					Type: "celerity/exampleResource",
+					Each: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								SubstitutionValue: &substitutions.Substitution{
+									ValueReference: &substitutions.SubstitutionValueReference{
+										ValueName: "bucketConfig",
+									},
+								},
+							},
+						},
+					},
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeAny))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_8(c *C) {
+	subInputStr := "${i}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource2"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource2": {
+					Type: "celerity/exampleResource",
+					Each: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								SubstitutionValue: &substitutions.Substitution{
+									ValueReference: &substitutions.SubstitutionValueReference{
+										ValueName: "bucketConfig",
+									},
+								},
+							},
+						},
+					},
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource2",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeInteger))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_9(c *C) {
+	subInputStr := "${children.networking.vpcId}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	networkingBlueprintPath := "networking.blueprint.yml"
+	blueprint := &schema.Blueprint{
+		Include: &schema.IncludeMap{
+			Values: map[string]*schema.Include{
+				"networking": {
+					Path: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &networkingBlueprintPath,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource3",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeAny))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_10(c *C) {
+	subInputStr := "${resources.exampleResource1.spec.ids[].name}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource1"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource": {
+					Type: "exampleResource",
+				},
+				"exampleResource1": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"ids": {
+								Items: []*core.MappingNode{
+									{
+										Literal: &core.ScalarValue{
+											StringValue: &exampleResourceID,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeString))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_var_ref_in_blueprint_without_variables(c *C) {
+	subInputStr := "${variables.environment}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the variable \"environment\" not existing in the blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_var_ref_is_missing_variable(c *C) {
+	subInputStr := "${variables.versionName}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"environment": {
+					Type: schema.VariableTypeString,
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the variable \"versionName\" not existing in the blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_val_ref_in_blueprint_without_values(c *C) {
+	subInputStr := "${values.bucketConfig}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the value \"bucketConfig\" not existing in the blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_val_ref_is_missing_value(c *C) {
+	subInputStr := "${values.functions}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		Values: &schema.ValueMap{
+			Values: map[string]*schema.Value{
+				"bucketConfig": {
+					Type: &schema.ValueTypeWrapper{
+						Value: schema.ValueTypeObject,
+					},
+					Value: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								SubstitutionValue: &substitutions.Substitution{
+									DataSourceProperty: &substitutions.SubstitutionDataSourceProperty{
+										DataSourceName: "buckets",
+										FieldName:      "config",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the value \"functions\" not existing in the blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referencing_value(c *C) {
+	subInputStr := "${values.bucketConfig}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		Values: &schema.ValueMap{
+			Values: map[string]*schema.Value{
+				"bucketConfig": {
+					Type: &schema.ValueTypeWrapper{
+						Value: schema.ValueTypeObject,
+					},
+					Value: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								SubstitutionValue: &substitutions.Substitution{
+									DataSourceProperty: &substitutions.SubstitutionDataSourceProperty{
+										DataSourceName: "buckets",
+										FieldName:      "config",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"values.bucketConfig",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the value \"bucketConfig\" referencing itself",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_outside_of_resource(c *C) {
+	subInputStr := "${elem}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		/* blueprint */ nil,
+		"datasources.networking",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to an element reference being used outside of a resource",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_blueprint_without_resources(c *C) {
+	subInputStr := "${elem}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to an empty set of resources, "+
+			"at least one resource must be defined in a blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_missing_resource(c *C) {
+	subInputStr := "${elem}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource2"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource2": {
+					Type: "celerity/exampleResource",
+					Each: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								SubstitutionValue: &substitutions.Substitution{
+									ValueReference: &substitutions.SubstitutionValueReference{
+										ValueName: "bucketConfig",
+									},
+								},
+							},
+						},
+					},
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource1",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the resource \"exampleResource1\" for element reference "+
+			"not existing in the blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_resource_without_each(c *C) {
+	subInputStr := "${elem}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource3"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource3": {
+					Type: "celerity/exampleResource",
+					// Missing "Each" property, this isn't a valid resource template,
+					// therefore "elem" cannot be used.
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource3",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the resource \"exampleResource3\" for element reference "+
+			"not being a resource template, a resource template must have the `each` property defined",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_resource_prop_ref_for_blueprint_with_no_resources(c *C) {
+	// Global identifiers are treated as resources if no functions are found
+	// with the same name.
+	subInputStr := "${exampleResource1.state.id}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource2",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to an empty set of resources, "+
+			"at least one resource must be defined in a blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_resource_prop_ref_for_missing_resource(c *C) {
+	// Global identifiers are treated as resources if no functions are found
+	// with the same name.
+	subInputStr := "${exampleResource1.spec.id}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource3"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource3": {
+					Type: "celerity/exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource2",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the resource \"exampleResource1\" not existing in the blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referencing_resource(c *C) {
+	subInputStr := "${resources.exampleResource2.spec.id}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource2"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource2": {
+					Type: "celerity/exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource2",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the resource \"exampleResource2\" referencing itself",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referencing_a_resource_index_for_a_non_template_resource(c *C) {
+	subInputStr := "${resources.exampleResource3[0]}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource3"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource3": {
+					Type: "celerity/exampleResource",
+					// Missing "Each" property, this isn't a valid resource template,
+					// therefore "resources.exampleResources[0]" cannot be used.
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource2",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the index 0 is accessed for resource \"exampleResource3\" which is not "+
+			"a resource template, a resource template must have the `each` property defined",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_referencing_a_resource_using_an_unknown_type(c *C) {
+	subInputStr := "${resources.exampleResource1.spec[\"id\"]}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource1"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource1": {
+					Type: "celerity/unknown",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, diagnostics, _ := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource2",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 1)
+	c.Assert(diagnostics[0].Level, Equals, core.DiagnosticLevelWarning)
+	c.Assert(
+		diagnostics[0].Message,
+		Equals,
+		"Resource type \"celerity/unknown\" is not currently loaded, "+
+			"when staging changes and deploying, you will need to make sure"+
+			" the provider for the resource type is loaded.",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_resource_type_missing_spec(c *C) {
+	subInputStr := "${resources.exampleResource1.spec[\"id\"]}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource1"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource1": {
+					Type: "exampleResourceMissingSpecDefinition",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource3",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to a missing spec definition for resource \"exampleResource1\" "+
+			"of type \"exampleResourceMissingSpecDefinition\" referenced in substitution",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_resource_type_missing_spec_schema(c *C) {
+	subInputStr := "${resources.exampleResource1.spec[\"id\"]}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceID := "exampleResource1"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource1": {
+					Type: "exampleResourceMissingSpecSchema",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"id": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceID,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource3",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to a missing spec definition schema for resource \"exampleResource1\" "+
+			"of type \"exampleResourceMissingSpecSchema\" referenced in substitution",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_invalid_property_in_resource_spec_1(c *C) {
+	subInputStr := "${resources.exampleResource1.spec[\"name\"].id}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceName := "exampleResource1"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource1": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"name": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource3",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as [\"spec\"][\"name\"][\"id\"] is not valid for resource \"exampleResource1\"",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_invalid_property_in_resource_spec_2(c *C) {
+	// spec without child properties is not a valid resource spec reference.
+	subInputStr := "${resources.exampleResource1.spec}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceName := "exampleResource1"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource1": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"name": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource3",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the spec reference for resource \"exampleResource1\" is not valid",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_invalid_property_in_resource_metadata_1(c *C) {
+	subInputStr := "${resources.exampleResource1.metadata}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceName := "exampleResource1"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource1": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"name": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource3",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the metadata reference for resource \"exampleResource1\" is not valid",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_invalid_property_in_resource_metadata_2(c *C) {
+	subInputStr := "${resources.exampleResource10.metadata[\"id\"]}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceName := "exampleResource10"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource10": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"name": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource9",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the metadata property \"id\" provided "+
+			"for resource \"exampleResource10\" is not valid",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_property_of_display_name_in_resource_metadata_3(c *C) {
+	subInputStr := "${resources.exampleResource8.metadata.displayName.id}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceName := "exampleResource8"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource8": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"name": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource9",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the metadata display name reference for resource \"exampleResource8\" "+
+			"provided can not have children",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_invalid_resource_metadata_annotation(c *C) {
+	subInputStr := "${resources.exampleResource12.metadata.annotations[\"http.v1\"].id}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceName := "exampleResource12"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource12": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"name": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource11",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the metadata annotations reference for resource \"exampleResource12\" was invalid, "+
+			"must be of the form `metadata.annotations.<key>` or `metadata.annotations[\"<key>\"]`",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_missing_resource_metadata_annotation(c *C) {
+	subInputStr := "${resources.exampleResource15.metadata.annotations[\"http.handler.v1\"]}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceName := "exampleResource15"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource15": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"name": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource14",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the metadata annotation \"http.handler.v1\""+
+			" for resource \"exampleResource15\" was not found",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_invalid_resource_metadata_label(c *C) {
+	subInputStr := "${resources.exampleResource10.metadata.labels[\"app\"].config.id}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceName := "exampleResource10"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource10": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"name": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource9",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the metadata labels reference for resource \"exampleResource10\" was invalid, "+
+			"must be of the form `metadata.labels.<key>` or `metadata.labels[\"<key>\"]`",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_missing_resource_metadata_label(c *C) {
+	subInputStr := "${resources.exampleResource12.metadata.labels[\"app\"]}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	exampleResourceName := "exampleResource12"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource12": {
+					Type: "exampleResource",
+					Spec: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"name": {
+								Literal: &core.ScalarValue{
+									StringValue: &exampleResourceName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource11",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the metadata label \"app\""+
+			" for resource \"exampleResource12\" was not found",
+	)
+}

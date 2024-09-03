@@ -31,8 +31,14 @@ type ResourceInfo struct {
 // that a provider can contain which includes logic for validating,
 // transforming, linking and deploying a resource.
 type Resource interface {
-	// Validate a resource's specification.
-	Validate(ctx context.Context, input *ResourceValidateInput) (*ResourceValidateOutput, error)
+	// CustomValidate provides support for custom validation that goes beyond
+	// the spec schema validation provided by the resource's spec definition.
+	CustomValidate(ctx context.Context, input *ResourceValidateInput) (*ResourceValidateOutput, error)
+	// GetSpecDefinition retrieves the spec definition for a resource,
+	// this is the first line of validation for a resource in a blueprint and is also
+	// useful for validating references to a resource instance
+	// in a blueprint and for providing definitions for docs and tooling.
+	GetSpecDefinition(ctx context.Context, input *ResourceGetSpecDefinitionInput) (*ResourceGetSpecDefinitionOutput, error)
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
 	CanLinkTo(ctx context.Context, input *ResourceCanLinkToInput) (*ResourceCanLinkToOutput, error)
@@ -67,6 +73,20 @@ type Resource interface {
 	Destroy(ctx context.Context, input *ResourceDestroyInput) error
 }
 
+// ResourceRegistry provides a way to retrieve resource plugins
+// across multiple providers for tasks such as resource spec validation.
+type ResourceRegistry interface {
+	// GetSpecDefinition returns the definition of a resource spec
+	// in the registry that includes allowed parameters and return types.
+	GetSpecDefinition(
+		ctx context.Context,
+		resourceType string,
+		input *ResourceGetSpecDefinitionInput,
+	) (*ResourceGetSpecDefinitionOutput, error)
+	// HasResourceType checks if a resource type is available in the registry.
+	HasResourceType(ctx context.Context, resourceType string) (bool, error)
+}
+
 // ResourceValidateParams provides the input data needed for a resource to
 // be validated.
 type ResourceValidateInput struct {
@@ -78,6 +98,18 @@ type ResourceValidateInput struct {
 // which includes a list of diagnostics that detail issues with the resource.
 type ResourceValidateOutput struct {
 	Diagnostics []*core.Diagnostic
+}
+
+// ResourceGetSpecDefinitionInput provides the input data needed for a resource to
+// provide a spec definition.
+type ResourceGetSpecDefinitionInput struct {
+	Params core.BlueprintParams
+}
+
+// ResourceGetSpecDefinitionOutput provides the output data from providing a spec definition
+// for a resource.
+type ResourceGetSpecDefinitionOutput struct {
+	SpecDefinition *ResourceSpecDefinition
 }
 
 // ResourceCanLinkToInput provides the input data needed for a resource to
@@ -181,3 +213,67 @@ type Changes struct {
 	// that will be made to the link.
 	OutboundLinkChanges map[string]*LinkChanges
 }
+
+// ResourceSpecDefinition provides a definition for a resource spec
+// that can be used for validation, docs and tooling.
+type ResourceSpecDefinition struct {
+	// Schema holds the schema for the resource
+	// specification.
+	Schema *ResourceSpecSchema
+}
+
+// ResourceSpecSchema provides a schema that can be used to validate
+// a resource spec.
+type ResourceSpecSchema struct {
+	// Type holds the type of the resource spec.
+	Type ResourceSpecSchemaType
+	// Label holds a human-readable label for the resource spec.
+	Label string
+	// Description holds a human-readable description for the resource spec
+	// without any formatting.
+	Description string
+	// FormattedDescription holds a human-readable description for the resource spec
+	// that is formatted with markdown.
+	FormattedDescription string
+	// Attributes holds a mapping of the attribute types for a resource spec
+	// schema object.
+	Attributes map[string]*ResourceSpecSchema
+	// Items holds the schema for the items in a resource spec schema array.
+	Items *ResourceSpecSchema
+	// MapValues holds the schema for the values in a resource spec schema map.
+	// Keys are always strings.
+	MapValues *ResourceSpecSchema
+	// Required holds a list of required attributes for a resource spec schema object.
+	Required []string
+	// Nullable specifies whether the resource spec schema can be null.
+	Nullable bool
+	// Default holds the default value for a resource spec schema,
+	// this will be populated in the `Resource.Spec` mapping node
+	// if the resource spec is missing a value
+	// for a specific attribute or item in the spec.
+	// The default value will not be used if the attribute is nil
+	// and the schema is nullable, a nil pointer should not be used
+	// for an empty value, pointers should be set when you want to explicitly
+	// set a value to nil.
+	Default interface{}
+}
+
+// ResourceSpecSchemaType holds the type of a resource schema.
+type ResourceSpecSchemaType string
+
+const (
+	// ResourceSpecTypeString is for a schema string.
+	ResourceSpecTypeString ResourceSpecSchemaType = "string"
+	// ResourceSpecTypeInteger is for a schema integer.
+	ResourceSpecTypeInteger ResourceSpecSchemaType = "integer"
+	// ResourceSpecTypeFloat is for a schema float.
+	ResourceSpecTypeFloat ResourceSpecSchemaType = "float"
+	// ResourceSpecTypeBoolean is for a schema boolean.
+	ResourceSpecTypeBoolean ResourceSpecSchemaType = "boolean"
+	// ResourceSpecTypeMap is for a schema map.
+	ResourceSpecTypeMap ResourceSpecSchemaType = "map"
+	// ResourceSpecTypeObject is for a schema object.
+	ResourceSpecTypeObject ResourceSpecSchemaType = "object"
+	// ResourceSpecTypeArray is for a schema array.
+	ResourceSpecTypeArray ResourceSpecSchemaType = "array"
+)

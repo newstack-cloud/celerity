@@ -3,7 +3,6 @@ package substitutions
 import (
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	. "gopkg.in/check.v1"
@@ -377,7 +376,6 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 		true,
 		false,
 	)
-	spew.Dump(parsed)
 	templateIndex := int64(2)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)

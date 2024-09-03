@@ -289,7 +289,7 @@ func errVariableValueNotAllowed(
 	varSourceMeta *source.Meta,
 	usingDefault bool,
 ) error {
-	valueLabel := deriveValueLabel(value, usingDefault)
+	valueLabel := deriveValueLabel(usingDefault)
 	line, col := positionFromScalarValue(value, varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
@@ -313,7 +313,7 @@ func errCustomVariableValueNotInOptions(
 	varSourceMeta *source.Meta,
 	usingDefault bool,
 ) error {
-	valueLabel := deriveValueLabel(value, usingDefault)
+	valueLabel := deriveValueLabel(usingDefault)
 	line, col := positionFromScalarValue(value, varSourceMeta)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidVariable,
@@ -891,6 +891,299 @@ func errSubChildBlueprintSelfReference(
 	}
 }
 
+func errSubResourceNotEach(
+	resourceName string,
+	indexAccessed *int64,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the index %d is accessed for resource \"%s\""+
+				" which is not a resource template, "+
+				"a resource template must have the `each` property defined",
+			*indexAccessed,
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubDataSourceNoExportedFields(
+	dataSourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to no fields being exported for data source \"%s\" "+
+				"referenced in substitution",
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubDataSourceFieldNotExported(
+	dataSourceName string,
+	field string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the field \"%s\" referenced in the substitution"+
+				" not being an exported field for data source \"%s\"",
+			field,
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubDataSourceFieldMissingType(
+	dataSourceName string,
+	field string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to the field \"%s\" referenced in the substitution"+
+				" not having a type defined for data source \"%s\"",
+			field,
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubDataSourceFieldNotArray(
+	dataSourceName string,
+	field string,
+	indexAccessed int64,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the field \"%s\" being referenced with index \"%d\" in the substitution"+
+				" is not an array for data source \"%s\"",
+			field,
+			indexAccessed,
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceTypeMissingSpecDefinition(
+	resourceName string,
+	resourceType string,
+	resourceSourceMeta *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(resourceSourceMeta)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing spec definition for resource \"%s\" "+
+				"of type \"%s\" referenced in substitution",
+			resourceName,
+			resourceType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceTypeSpecDefMissingSchema(
+	resourceName string,
+	resourceType string,
+	resourceSourceMeta *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(resourceSourceMeta)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing spec definition schema for resource \"%s\" "+
+				"of type \"%s\" referenced in substitution",
+			resourceName,
+			resourceType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceSpecInvalidRef(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the spec reference for resource \"%s\" is not valid",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceMetadataInvalidRef(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the metadata reference for resource \"%s\" is not valid",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceMetadataInvalidProperty(
+	resourceName string,
+	property string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the metadata property \"%s\" provided for resource \"%s\" is not valid",
+			property,
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceMetadataInvalidDisplayNameRef(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the metadata display name reference for "+
+				"resource \"%s\" provided can not have children",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceMetadataInvalidAnnotationsRef(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the metadata annotations reference for "+
+				"resource \"%s\" was invalid, must be of the form "+
+				"`metadata.annotations.<key>` or `metadata.annotations[\"<key>\"]`",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceMetadataMissingAnnotation(
+	resourceName string,
+	annotationKey string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the metadata annotation \"%s\" for "+
+				"resource \"%s\" was not found",
+			annotationKey,
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceMetadataInvalidLabelsRef(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the metadata labels reference for "+
+				"resource \"%s\" was invalid, must be of the form "+
+				"`metadata.labels.<key>` or `metadata.labels[\"<key>\"]`",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceMetadataMissingLabel(
+	resourceName string,
+	labelKey string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the metadata label \"%s\" for "+
+				"resource \"%s\" was not found",
+			labelKey,
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourcePropertyNotFound(
+	resourceName string,
+	path []*substitutions.SubstitutionPathItem,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as %s is not valid for resource \"%s\"",
+			subPathToString(path),
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func deriveElemRefTypeLabel(elemRefType string) string {
 	switch elemRefType {
 	case "index":
@@ -933,7 +1226,7 @@ func scalarListToString(scalars []*bpcore.ScalarValue) string {
 	return strings.Join(scalarStrings, ", ")
 }
 
-func deriveValueLabel(value *bpcore.ScalarValue, usingDefault bool) string {
+func deriveValueLabel(usingDefault bool) string {
 	if usingDefault {
 		return "default value"
 	}
@@ -950,4 +1243,19 @@ func positionFromScalarValue(value *bpcore.ScalarValue, parentSourceMeta *source
 	}
 
 	return source.PositionFromSourceMeta(value.SourceMeta)
+}
+
+func subPathToString(path []*substitutions.SubstitutionPathItem) string {
+	sb := strings.Builder{}
+	for _, item := range path {
+		if item.FieldName != "" {
+			fieldStr := fmt.Sprintf("[\"%s\"]", item.FieldName)
+			sb.WriteString(fieldStr)
+		} else {
+			pathStr := fmt.Sprintf("[%d]", *item.PrimitiveArrIndex)
+			sb.WriteString(pathStr)
+		}
+	}
+
+	return sb.String()
 }

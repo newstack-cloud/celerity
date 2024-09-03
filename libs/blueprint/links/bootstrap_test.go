@@ -137,14 +137,22 @@ func (r *testApiGatewayResource) StageChanges(
 	return &provider.ResourceStageChangesOutput{}, nil
 }
 
-// Validate is not used for spec link info!
-func (r *testApiGatewayResource) Validate(
+// CustomValidate is not used for spec link info!
+func (r *testApiGatewayResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
 ) (*provider.ResourceValidateOutput, error) {
 	return &provider.ResourceValidateOutput{
 		Diagnostics: []*core.Diagnostic{},
 	}, nil
+}
+
+// GetSpecDefinition is not used for spec link info!
+func (r *testApiGatewayResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -208,14 +216,22 @@ func (r *testSQSQueueResource) StageChanges(
 	return &provider.ResourceStageChangesOutput{}, nil
 }
 
-// Validate is not used for spec link info!
-func (r *testSQSQueueResource) Validate(
+// CustomValidate is not used for spec link info!
+func (r *testSQSQueueResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
 ) (*provider.ResourceValidateOutput, error) {
 	return &provider.ResourceValidateOutput{
 		Diagnostics: []*core.Diagnostic{},
 	}, nil
+}
+
+// GetSpecDefinition is not used for spec link info!
+func (r *testSQSQueueResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -282,14 +298,22 @@ func (r *testLambdaFunctionResource) StageChanges(
 	return &provider.ResourceStageChangesOutput{}, nil
 }
 
-// Validate is not used for spec link info!
-func (r *testLambdaFunctionResource) Validate(
+// CustomValidate is not used for spec link info!
+func (r *testLambdaFunctionResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
 ) (*provider.ResourceValidateOutput, error) {
 	return &provider.ResourceValidateOutput{
 		Diagnostics: []*core.Diagnostic{},
 	}, nil
+}
+
+// GetSpecDefinition is not used for spec link info!
+func (r *testLambdaFunctionResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -353,14 +377,22 @@ func (r *testStratosLambdaFunctionResource) StageChanges(
 	return &provider.ResourceStageChangesOutput{}, nil
 }
 
-// Validate is not used for spec link info!
-func (r *testStratosLambdaFunctionResource) Validate(
+// CustomValidate is not used for spec link info!
+func (r *testStratosLambdaFunctionResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
 ) (*provider.ResourceValidateOutput, error) {
 	return &provider.ResourceValidateOutput{
 		Diagnostics: []*core.Diagnostic{},
 	}, nil
+}
+
+// GetSpecDefinition is not used for spec link info!
+func (r *testStratosLambdaFunctionResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -424,14 +456,22 @@ func (r *testDynamoDBTableResource) StageChanges(
 	return &provider.ResourceStageChangesOutput{}, nil
 }
 
-// Validate is not used for spec link info!
-func (r *testDynamoDBTableResource) Validate(
+// CustomValidate is not used for spec link info!
+func (r *testDynamoDBTableResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
 ) (*provider.ResourceValidateOutput, error) {
 	return &provider.ResourceValidateOutput{
 		Diagnostics: []*core.Diagnostic{},
 	}, nil
+}
+
+// GetSpecDefinition is not used for spec link info!
+func (r *testDynamoDBTableResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -495,14 +535,22 @@ func (r *testDynamoDBStreamResource) StageChanges(
 	return &provider.ResourceStageChangesOutput{}, nil
 }
 
-// Validate is not used for spec link info!
-func (r *testDynamoDBStreamResource) Validate(
+// CustomValidate is not used for spec link info!
+func (r *testDynamoDBStreamResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
 ) (*provider.ResourceValidateOutput, error) {
 	return &provider.ResourceValidateOutput{
 		Diagnostics: []*core.Diagnostic{},
 	}, nil
+}
+
+// GetSpecDefinition is not used for spec link info!
+func (r *testDynamoDBStreamResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -567,14 +615,22 @@ func (r *testIAMRoleResource) StageChanges(
 	return &provider.ResourceStageChangesOutput{}, nil
 }
 
-// Validate is not used for spec link info!
-func (r *testIAMRoleResource) Validate(
+// CustomValidate is not used for spec link info!
+func (r *testIAMRoleResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
 ) (*provider.ResourceValidateOutput, error) {
 	return &provider.ResourceValidateOutput{
 		Diagnostics: []*core.Diagnostic{},
 	}, nil
+}
+
+// GetSpecDefinition is not used for spec link info!
+func (r *testIAMRoleResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -639,14 +695,22 @@ func (r *testStratosIAMRoleResource) StageChanges(
 	return &provider.ResourceStageChangesOutput{}, nil
 }
 
-// Validate is not used for spec link info!
-func (r *testStratosIAMRoleResource) Validate(
+// CustomValidate is not used for spec link info!
+func (r *testStratosIAMRoleResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
 ) (*provider.ResourceValidateOutput, error) {
 	return &provider.ResourceValidateOutput{
 		Diagnostics: []*core.Diagnostic{},
 	}, nil
+}
+
+// GetSpecDefinition is not used for spec link info!
+func (r *testStratosIAMRoleResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!

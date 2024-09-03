@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/function"
+	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	. "gopkg.in/check.v1"
 )
@@ -19,11 +20,11 @@ func (s *GetElemFunctionTestSuite) SetUpTest(c *C) {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
-		registry: &functionRegistryMock{
-			functions: map[string]provider.Function{
+		registry: &internal.FunctionRegistryMock{
+			Functions: map[string]provider.Function{
 				"_getelem_exec": NewGetElemExecFunction(),
 			},
-			callStack: s.callStack,
+			CallStack: s.callStack,
 		},
 		callStack: s.callStack,
 	}
