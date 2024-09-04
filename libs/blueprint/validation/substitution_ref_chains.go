@@ -36,6 +36,8 @@ func NewRefChainCollector() *RefChainCollector {
 	}
 }
 
-// Collect adds a new reference to the service chain(s) to be used for cycle detection.
+// Collect adds a new reference to the service chain(s) to be used for cycle detection
+// and other use cases.
 func (s *RefChainCollector) Collect(referencedBy string, elementName string, element interface{}) {
+	// todo: complete collect and cycle detection implementation
 }

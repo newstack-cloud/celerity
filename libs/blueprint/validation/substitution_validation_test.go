@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
@@ -25,9 +26,10 @@ var _ = Suite(&SubstitutionValidationTestSuite{})
 func (s *SubstitutionValidationTestSuite) SetUpTest(c *C) {
 	s.functionRegistry = &internal.FunctionRegistryMock{
 		Functions: map[string]provider.Function{
-			"trim":   corefunctions.NewTrimFunction(),
-			"list":   corefunctions.NewListFunction(),
-			"object": corefunctions.NewObjectFunction(),
+			"trim":       corefunctions.NewTrimFunction(),
+			"trimprefix": corefunctions.NewTrimPrefixFunction(),
+			"list":       corefunctions.NewListFunction(),
+			"object":     corefunctions.NewObjectFunction(),
 		},
 	}
 	s.refChainCollector = NewRefChainCollector()
@@ -1040,6 +1042,54 @@ func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_
 	)
 }
 
+func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_referencing_a_non_core_function_not_in_registry(c *C) {
+	subInputStr := "${customFunction(datasources.networking.vpcId)}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"networking": {
+					Type: "celerity/exampleDataSource",
+					Exports: &schema.DataSourceFieldExportMap{
+						Values: map[string]*schema.DataSourceFieldExport{
+							"vpcId": {
+								Type: &schema.DataSourceFieldTypeWrapper{
+									Value: schema.DataSourceFieldTypeString,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, diagnostics, _ := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource2",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 1)
+	c.Assert(diagnostics[0].Level, Equals, core.DiagnosticLevelWarning)
+	c.Assert(
+		diagnostics[0].Message,
+		Equals,
+		"Function \"customFunction\" is not a core function, when staging changes and deploying, you "+
+			"will need to make sure the provider is loaded.",
+	)
+}
+
 func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_resource_type_missing_spec(c *C) {
 	subInputStr := "${resources.exampleResource1.spec[\"id\"]}"
 	stringOrSubs := &substitutions.StringOrSubstitutions{}
@@ -1574,5 +1624,339 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_mi
 		Equals,
 		"validation failed as the metadata label \"app\""+
 			" for resource \"exampleResource12\" was not found",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_an_incorrect_number_of_args_passed_to_function(c *C) {
+	subInputStr := "${trimprefix(\"[1]-hello\", \"[1]-\", \"unexpected\")}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource1",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	spew.Dump(err)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to an invalid number of arguments being provided for substitution function \"trimprefix\", "+
+			"expected 2 but got 3",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_ref_in_blueprint_without_data_sources(c *C) {
+	subInputStr := "${datasources.networking.vpc}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource1",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the data source \"networking\" not existing in the blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_ref_for_missing_data_source(c *C) {
+	subInputStr := "${datasources.networking2.vpc}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"networking": {
+					Type: "celerity/exampleDataSource",
+					Exports: &schema.DataSourceFieldExportMap{
+						Values: map[string]*schema.DataSourceFieldExport{
+							"vpcId": {
+								Type: &schema.DataSourceFieldTypeWrapper{
+									Value: schema.DataSourceFieldTypeString,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource1",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the data source \"networking2\" not existing in the blueprint",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referencing_data_source(c *C) {
+	subInputStr := "${datasources.networking.vpc}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"networking": {
+					Type: "celerity/exampleDataSource",
+					Exports: &schema.DataSourceFieldExportMap{
+						Values: map[string]*schema.DataSourceFieldExport{
+							"vpcId": {
+								Type: &schema.DataSourceFieldTypeWrapper{
+									Value: schema.DataSourceFieldTypeString,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"datasources.networking",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the data source \"networking\" referencing itself",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_ref_to_data_source_missing_exports(c *C) {
+	subInputStr := "${datasources.networking.vpc}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"networking": {
+					Type: "celerity/exampleDataSource",
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource1",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to no fields being exported for data source \"networking\" referenced in substitution",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_ref_to_data_source_missing_field_export(c *C) {
+	subInputStr := "${datasources.networking.vpc}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"networking": {
+					Type: "celerity/exampleDataSource",
+					Exports: &schema.DataSourceFieldExportMap{
+						Values: map[string]*schema.DataSourceFieldExport{
+							"vpcId": {
+								Type: &schema.DataSourceFieldTypeWrapper{
+									Value: schema.DataSourceFieldTypeString,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the field \"vpc\" referenced in the substitution "+
+			"not being an exported field for data source \"networking\"",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_ref_to_data_source_export_missing_type(c *C) {
+	subInputStr := "${datasources.networking.vpcId}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"networking": {
+					Type: "celerity/exampleDataSource",
+					Exports: &schema.DataSourceFieldExportMap{
+						Values: map[string]*schema.DataSourceFieldExport{
+							"vpcId": {},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to the field \"vpcId\" referenced in the substitution "+
+			"not having a type defined for data source \"networking\"",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_ref_array_accessor_for_string_field(c *C) {
+	subInputStr := "${datasources.networking.vpcId[1]}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"networking": {
+					Type: "celerity/exampleDataSource",
+					Exports: &schema.DataSourceFieldExportMap{
+						Values: map[string]*schema.DataSourceFieldExport{
+							"vpcId": {
+								Type: &schema.DataSourceFieldTypeWrapper{
+									Value: schema.DataSourceFieldTypeString,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource",
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed as the field \"vpcId\" being referenced with index \"1\" in the substitution "+
+			"is not an array for data source \"networking\"",
 	)
 }
