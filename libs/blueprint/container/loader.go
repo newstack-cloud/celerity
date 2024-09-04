@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
@@ -133,6 +134,9 @@ type defaultLoader struct {
 	updateChan            chan Update
 	validateRuntimeValues bool
 	transformSpec         bool
+	refChainCollector     validation.RefChainCollector
+	funcRegistry          provider.FunctionRegistry
+	resourceRegistry      provider.ResourceRegistry
 }
 
 // NewDefaultLoader creates a new instance of the default
@@ -164,7 +168,10 @@ func NewDefaultLoader(
 	updateChan chan Update,
 	validateRuntimeValues bool,
 	transformSpec bool,
+	refChainCollector validation.RefChainCollector,
 ) Loader {
+	resourceRegistry := provider.NewResourceRegistry(providers)
+	funcRegistry := provider.NewFunctionRegistry(providers)
 	return &defaultLoader{
 		providers,
 		specTransformers,
@@ -172,6 +179,9 @@ func NewDefaultLoader(
 		updateChan,
 		validateRuntimeValues,
 		transformSpec,
+		refChainCollector,
+		funcRegistry,
+		resourceRegistry,
 	}
 }
 
@@ -362,6 +372,8 @@ func (l *defaultLoader) loadSpec(
 		}
 	}
 
+	// todo: validate data sources
+
 	if len(validationErrors) > 0 {
 		return nil, diagnostics, validation.ErrMultipleValidationErrors(validationErrors)
 	}
@@ -464,6 +476,8 @@ func (l *defaultLoader) validateVariable(
 		}
 		*diagnostics = append(*diagnostics, customVarDiagnostics...)
 	}
+
+	l.refChainCollector.Collect(fmt.Sprintf("variables.%s", name), varSchema, "")
 	return currentVarErrs
 }
 
@@ -507,13 +521,21 @@ func (l *defaultLoader) validateValue(
 	}
 
 	resultDiagnostics, err := validation.ValidateValue(
-		ctx, name, valSchema, bpSchema.Values, bpSchema, params,
+		ctx,
+		name,
+		valSchema,
+		bpSchema,
+		params,
+		l.funcRegistry,
+		l.refChainCollector,
+		l.resourceRegistry,
 	)
 	if err != nil {
 		currentValErrs = append(currentValErrs, err)
 	}
 	*diagnostics = append(*diagnostics, resultDiagnostics...)
 
+	l.refChainCollector.Collect(fmt.Sprintf("values.%s", name), valSchema, "")
 	return currentValErrs
 }
 
@@ -663,6 +685,8 @@ func (l *defaultLoader) validateResource(
 	if err != nil {
 		currentResouceErrs = append(currentResouceErrs, err)
 	}
+
+	l.refChainCollector.Collect(fmt.Sprintf("resources.%s", name), resourceSchema, "")
 	return currentResouceErrs
 }
 
