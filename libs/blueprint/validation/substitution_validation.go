@@ -37,6 +37,7 @@ func ValidateSubstitution(
 	nextLocation *source.Meta,
 	bpSchema *schema.Blueprint,
 	usedIn string,
+	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
 	resourceRegistry provider.ResourceRegistry,
@@ -53,6 +54,7 @@ func ValidateSubstitution(
 			nextLocation,
 			bpSchema,
 			usedIn,
+			params,
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
@@ -107,6 +109,7 @@ func ValidateSubstitution(
 			sub.ResourceProperty,
 			bpSchema,
 			usedIn,
+			params,
 			refChainCollector,
 			resourceRegistry,
 			nextLocation,
@@ -234,6 +237,7 @@ func validateResourcePropertySubstitution(
 	subResourceProp *substitutions.SubstitutionResourceProperty,
 	bpSchema *schema.Blueprint,
 	usedIn string,
+	params bpcore.BlueprintParams,
 	refChainCollector RefChainCollector,
 	resourceRegistry provider.ResourceRegistry,
 	nextLocation *source.Meta,
@@ -269,6 +273,7 @@ func validateResourcePropertySubstitution(
 			resourceSchema.Type,
 			resourceRegistry,
 			nextLocation,
+			params,
 		)
 	}
 
@@ -290,6 +295,7 @@ func validateResourcePropertySubSpec(
 	resourceType string,
 	resourceRegistry provider.ResourceRegistry,
 	nextLocation *source.Meta,
+	params bpcore.BlueprintParams,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -331,7 +337,9 @@ func validateResourcePropertySubSpec(
 	specDefOutput, err := resourceRegistry.GetSpecDefinition(
 		ctx,
 		resourceType,
-		&provider.ResourceGetSpecDefinitionInput{},
+		&provider.ResourceGetSpecDefinitionInput{
+			Params: params,
+		},
 	)
 	if err != nil {
 		return "", diagnostics, err
@@ -698,6 +706,7 @@ func validateFunctionSubstitution(
 	nextLocation *source.Meta,
 	bpSchema *schema.Blueprint,
 	usedIn string,
+	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
 	resourceRegistry provider.ResourceRegistry,
@@ -733,7 +742,9 @@ func validateFunctionSubstitution(
 	defOutput, err := funcRegistry.GetDefinition(
 		ctx,
 		funcName,
-		&provider.FunctionGetDefinitionInput{},
+		&provider.FunctionGetDefinitionInput{
+			Params: params,
+		},
 	)
 	if err != nil {
 		return "", diagnostics, err
@@ -762,6 +773,7 @@ func validateFunctionSubstitution(
 			bpSchema,
 			usedIn,
 			funcName,
+			params,
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
@@ -884,6 +896,7 @@ func validateSubFuncArgument(
 	bpSchema *schema.Blueprint,
 	usedIn string,
 	funcName string,
+	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
 	resourceRegistry provider.ResourceRegistry,
@@ -907,6 +920,7 @@ func validateSubFuncArgument(
 		nextLocation,
 		bpSchema,
 		usedIn,
+		params,
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,

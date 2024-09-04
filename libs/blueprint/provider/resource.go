@@ -73,20 +73,6 @@ type Resource interface {
 	Destroy(ctx context.Context, input *ResourceDestroyInput) error
 }
 
-// ResourceRegistry provides a way to retrieve resource plugins
-// across multiple providers for tasks such as resource spec validation.
-type ResourceRegistry interface {
-	// GetSpecDefinition returns the definition of a resource spec
-	// in the registry that includes allowed parameters and return types.
-	GetSpecDefinition(
-		ctx context.Context,
-		resourceType string,
-		input *ResourceGetSpecDefinitionInput,
-	) (*ResourceGetSpecDefinitionOutput, error)
-	// HasResourceType checks if a resource type is available in the registry.
-	HasResourceType(ctx context.Context, resourceType string) (bool, error)
-}
-
 // ResourceValidateParams provides the input data needed for a resource to
 // be validated.
 type ResourceValidateInput struct {

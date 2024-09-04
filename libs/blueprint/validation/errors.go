@@ -1184,6 +1184,100 @@ func errSubResourcePropertyNotFound(
 	}
 }
 
+func errInvalidDescriptionSubType(
+	usedIn string,
+	resolvedType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid substitution found in %q, "+
+				"resolved type %q is not supported by descriptions, "+
+				"only values that resolve as strings are supported",
+			usedIn,
+			resolvedType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errMissingValueContent(
+	valueID string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidValue,
+		Err: fmt.Errorf(
+			"validation failed as an empty value was found in %q, "+
+				"values must be populated with a value that resolves to the defined value type",
+			valueID,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errValueIncorrectTypeInterpolatedString(
+	usedIn string,
+	valueType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidValue,
+		Err: fmt.Errorf(
+			"validation failed due to an interpolated string being used in %q, "+
+				"value type %q does not support interpolated strings",
+			usedIn,
+			valueType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errInvalidValueSubType(
+	usedIn string,
+	resolvedType string,
+	expectedResolvedType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidValue,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid substitution found in %q, "+
+				"resolved type %q is not supported by value of type %q",
+			usedIn,
+			resolvedType,
+			expectedResolvedType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errMissingValueType(
+	valName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidValue,
+		Err: fmt.Errorf(
+			"validation failed as the value %q is missing a type, "+
+				"all values must have a type defined",
+			valName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func deriveElemRefTypeLabel(elemRefType string) string {
 	switch elemRefType {
 	case "index":
