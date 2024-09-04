@@ -17,7 +17,7 @@ import (
 
 type SubstitutionValidationTestSuite struct {
 	functionRegistry  provider.FunctionRegistry
-	refChainCollector *RefChainCollector
+	refChainCollector RefChainCollector
 	resourceRegistry  provider.ResourceRegistry
 }
 

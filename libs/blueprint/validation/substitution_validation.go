@@ -38,7 +38,7 @@ func ValidateSubstitution(
 	bpSchema *schema.Blueprint,
 	usedIn string,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector *RefChainCollector,
+	refChainCollector RefChainCollector,
 	resourceRegistry provider.ResourceRegistry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -157,7 +157,7 @@ func validateValueSubstitution(
 	subVal *substitutions.SubstitutionValueReference,
 	bpSchema *schema.Blueprint,
 	usedIn string,
-	refChainCollector *RefChainCollector,
+	refChainCollector RefChainCollector,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	valName := subVal.ValueName
@@ -184,7 +184,7 @@ func validateValueSubstitution(
 		return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
 	}
 
-	refChainCollector.Collect(usedIn, fmt.Sprintf("values.%s", valName), valSchema)
+	refChainCollector.Collect(fmt.Sprintf("values.%s", valName), valSchema, usedIn)
 
 	return subValType(valSchema.Type.Value), diagnostics, nil
 }
@@ -234,7 +234,7 @@ func validateResourcePropertySubstitution(
 	subResourceProp *substitutions.SubstitutionResourceProperty,
 	bpSchema *schema.Blueprint,
 	usedIn string,
-	refChainCollector *RefChainCollector,
+	refChainCollector RefChainCollector,
 	resourceRegistry provider.ResourceRegistry,
 	nextLocation *source.Meta,
 ) (string, []*bpcore.Diagnostic, error) {
@@ -279,7 +279,7 @@ func validateResourcePropertySubstitution(
 		)
 	}
 
-	refChainCollector.Collect(usedIn, fmt.Sprintf("resources.%s", resourceName), resourceSchema)
+	refChainCollector.Collect(fmt.Sprintf("resources.%s", resourceName), resourceSchema, usedIn)
 
 	return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
 }
@@ -600,7 +600,7 @@ func validateDataSourcePropertySubstitution(
 	subDataSourceProp *substitutions.SubstitutionDataSourceProperty,
 	bpSchema *schema.Blueprint,
 	usedIn string,
-	refChainCollector *RefChainCollector,
+	refChainCollector RefChainCollector,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	dataSourceName := subDataSourceProp.DataSourceName
@@ -622,7 +622,7 @@ func validateDataSourcePropertySubstitution(
 		return "", diagnostics, err
 	}
 
-	refChainCollector.Collect(usedIn, fmt.Sprintf("datasources.%s", dataSourceName), dataSourceSchema)
+	refChainCollector.Collect(fmt.Sprintf("datasources.%s", dataSourceName), dataSourceSchema, usedIn)
 
 	return resolveType, diagnostics, nil
 }
@@ -672,7 +672,7 @@ func validateChildSubstitution(
 	subChild *substitutions.SubstitutionChild,
 	bpSchema *schema.Blueprint,
 	usedIn string,
-	refChainCollector *RefChainCollector,
+	refChainCollector RefChainCollector,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	childName := subChild.ChildName
@@ -685,7 +685,7 @@ func validateChildSubstitution(
 		return "", diagnostics, errSubChildBlueprintSelfReference(childName, subChild.SourceMeta)
 	}
 
-	refChainCollector.Collect(usedIn, fmt.Sprintf("children.%s", childName), childSchema)
+	refChainCollector.Collect(fmt.Sprintf("children.%s", childName), childSchema, usedIn)
 
 	// There is no way of knowing the exact type of the child blueprint exports
 	// until runtime, so we return any to account for all possible types.
@@ -699,7 +699,7 @@ func validateFunctionSubstitution(
 	bpSchema *schema.Blueprint,
 	usedIn string,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector *RefChainCollector,
+	refChainCollector RefChainCollector,
 	resourceRegistry provider.ResourceRegistry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -885,7 +885,7 @@ func validateSubFuncArgument(
 	usedIn string,
 	funcName string,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector *RefChainCollector,
+	refChainCollector RefChainCollector,
 	resourceRegistry provider.ResourceRegistry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
