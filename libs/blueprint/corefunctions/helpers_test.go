@@ -10,6 +10,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
@@ -116,9 +117,10 @@ func (f *functionCallArgsMock) GetMultipleVars(ctx context.Context, targets ...a
 }
 
 type functionCallContextMock struct {
-	params    *blueprintParamsMock
-	registry  *internal.FunctionRegistryMock
-	callStack function.Stack
+	params          *blueprintParamsMock
+	registry        *internal.FunctionRegistryMock
+	callStack       function.Stack
+	currentLocation *source.Meta
 }
 
 func (f *functionCallContextMock) Registry() provider.FunctionRegistry {
@@ -136,6 +138,14 @@ func (f *functionCallContextMock) NewCallArgs(args ...any) provider.FunctionCall
 func (f *functionCallContextMock) CallStackSnapshot() []*function.Call {
 	// Take a copy of the current call stack.
 	return f.callStack.Snapshot()
+}
+
+func (f *functionCallContextMock) CurrentLocation() *source.Meta {
+	return f.currentLocation
+}
+
+func (f *functionCallContextMock) SetCurrentLocation(location *source.Meta) {
+	f.currentLocation = location
 }
 
 type blueprintParamsMock struct {

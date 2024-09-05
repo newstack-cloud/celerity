@@ -28,8 +28,7 @@ func (f *FunctionRegistryMock) Call(
 	}
 	f.CallStack.Push(&function.Call{
 		FunctionName: functionName,
-		// todo: source location from parsed blueprint.
-		Location: nil,
+		Location:     nil,
 	})
 	output, err := fnc.Call(ctx, input)
 	f.CallStack.Pop()

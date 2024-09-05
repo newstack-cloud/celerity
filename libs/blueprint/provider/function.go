@@ -5,6 +5,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
 
 // Function is the interface for an implementation of a function
@@ -77,6 +78,15 @@ type FunctionCallContext interface {
 	// CallStackSnapshot provides a snapshot of the current call stack
 	// to be used in error messages.
 	CallStackSnapshot() []*function.Call
+	// CurrentLocation provides the current location in the blueprint
+	// where the function is being called.
+	// This can be used to associate a function call with a specific
+	// location in the source blueprint, this can and often will yield
+	// nil in situations where the location is not available.
+	CurrentLocation() *source.Meta
+	// SetCurrentLocation sets the current location in the blueprint
+	// where the function is being called.
+	SetCurrentLocation(location *source.Meta)
 }
 
 // FunctionCallOutput provides the output data from a substitution function

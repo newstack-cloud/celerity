@@ -9,6 +9,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 	. "gopkg.in/check.v1"
 )
 
@@ -274,9 +275,10 @@ func (f *functionCallArgsMock) GetMultipleVars(ctx context.Context, targets ...a
 }
 
 type functionCallContextMock struct {
-	params    *blueprintParamsMock
-	registry  FunctionRegistry
-	callStack function.Stack
+	params          *blueprintParamsMock
+	registry        FunctionRegistry
+	callStack       function.Stack
+	currentLocation *source.Meta
 }
 
 func (f *functionCallContextMock) Registry() FunctionRegistry {
@@ -294,6 +296,14 @@ func (f *functionCallContextMock) NewCallArgs(args ...any) FunctionCallArguments
 func (f *functionCallContextMock) CallStackSnapshot() []*function.Call {
 	// Take a copy of the current call stack.
 	return f.callStack.Snapshot()
+}
+
+func (f *functionCallContextMock) CurrentLocation() *source.Meta {
+	return f.currentLocation
+}
+
+func (f *functionCallContextMock) SetCurrentLocation(location *source.Meta) {
+	f.currentLocation = location
 }
 
 type blueprintParamsMock struct {

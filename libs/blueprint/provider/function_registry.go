@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/function"
 )
 
 // FunctionRegistry provides a way to retrieve function plugins
@@ -30,16 +31,20 @@ type functionRegistryFromProviders struct {
 	providers             map[string]Provider
 	functionProviderCache map[string]Provider
 	functionCache         map[string]Function
+	callStack             function.Stack
 }
 
 // NewFunctionRegistry creates a new FunctionRegistry from a map of providers,
 // matching against providers based on the the list of functions that a provider
 // exposes.
-func NewFunctionRegistry(providers map[string]Provider) FunctionRegistry {
+func NewFunctionRegistry(
+	providers map[string]Provider,
+) FunctionRegistry {
 	return &functionRegistryFromProviders{
 		providers:             providers,
 		functionProviderCache: map[string]Provider{},
 		functionCache:         map[string]Function{},
+		callStack:             function.NewStack(),
 	}
 }
 
@@ -53,7 +58,14 @@ func (r *functionRegistryFromProviders) Call(
 		return nil, err
 	}
 
-	return functionImpl.Call(ctx, input)
+	r.callStack.Push(&function.Call{
+		FunctionName: functionName,
+		Location:     input.CallContext.CurrentLocation(),
+	})
+
+	output, err := functionImpl.Call(ctx, input)
+	r.callStack.Pop()
+	return output, err
 }
 
 func (r *functionRegistryFromProviders) GetDefinition(

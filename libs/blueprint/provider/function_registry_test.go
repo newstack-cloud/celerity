@@ -32,6 +32,11 @@ func (s *FunctionRegistryTestSuite) SetUpTest(c *C) {
 }
 
 func (s *FunctionRegistryTestSuite) Test_call_function(c *C) {
+	callCtx := &functionCallContextMock{
+		registry:  s.funcRegistry,
+		callStack: function.NewStack(),
+	}
+
 	output, err := s.funcRegistry.Call(
 		context.TODO(),
 		"test_substr",
@@ -42,11 +47,9 @@ func (s *FunctionRegistryTestSuite) Test_call_function(c *C) {
 					int64(6),
 					int64(11),
 				},
-				callCtx: &functionCallContextMock{
-					registry:  s.funcRegistry,
-					callStack: function.NewStack(),
-				},
+				callCtx: callCtx,
 			},
+			CallContext: callCtx,
 		},
 	)
 	c.Assert(err, IsNil)
