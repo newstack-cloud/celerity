@@ -66,6 +66,11 @@ const (
 	// ErrorReasonCodeMultipleValidationErrors is provided when the reason
 	// for a blueprint spec load error is due to multiple validation errors.
 	ErrorReasonCodeMultipleValidationErrors errors.ErrorReasonCode = "multiple_validation_errors"
+	// ErrorReasonCodeReferenceCycle is provided when the reason
+	// for a blueprint spec load error is due to a reference cycle being detected.
+	// This error code is used to collect and surface reference cycle errors
+	// for pure substitution reference cycles and link <-> substitution reference cycles.
+	ErrorReasonCodeReferenceCycle errors.ErrorReasonCode = "reference_cycle"
 )
 
 func errBlueprintMissingVersion() error {
@@ -1276,6 +1281,25 @@ func errMissingValueType(
 		Line:   line,
 		Column: col,
 	}
+}
+
+// ErrReferenceCycles is used to wrap errors that occurred during reference cycle validation.
+// This error is used to collect and surface reference cycle errors for pure substitution reference
+// cycles and link <-> substitution reference cycles.
+func ErrReferenceCycles(rootRefChains []*ReferenceChain) error {
+	var errs []error
+	for _, refChain := range rootRefChains {
+		errs = append(errs, &errors.LoadError{
+			ReasonCode: ErrorReasonCodeReferenceCycle,
+			Err: fmt.Errorf(
+				"validation failed due to a reference cycle in the blueprint, "+
+					"the cycle started with element: %q, this could be due to explicit references between elements "+
+					"or an implicit link conflicting with an explicit item reference",
+				refChain.ElementName,
+			),
+		})
+	}
+	return ErrMultipleValidationErrors(errs)
 }
 
 func deriveElemRefTypeLabel(elemRefType string) string {

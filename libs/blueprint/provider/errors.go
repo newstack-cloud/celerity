@@ -24,16 +24,20 @@ const (
 	// reason for a blueprint spec load error is due to
 	// the function not being found in a specific provider.
 	ErrorReasonCodeProviderFunctionNotFound errors.ErrorReasonCode = "provider_function_not_found"
+	// ErrorReasonCodeFunctionAlreadyProvided is provided when the
+	// reason for a blueprint spec load error is due to
+	// the same function being provided by multiple providers.
+	ErrorReasonCodeFunctionAlreadyProvided errors.ErrorReasonCode = "function_already_provided"
 )
 
 func errResourceTypeProviderNotFound(
 	providerNamespace string,
 	resourceType string,
 ) error {
-	return &errors.LoadError{
+	return &errors.RunError{
 		ReasonCode: ErrorReasonCodeResourceTypeProviderNotFound,
 		Err: fmt.Errorf(
-			"load failed as the provider with namespace %q was not found for resource type %q",
+			"run failed as the provider with namespace %q was not found for resource type %q",
 			providerNamespace,
 			resourceType,
 		),
@@ -44,10 +48,10 @@ func errProviderResourceTypeNotFound(
 	resourceType string,
 	providerNamespace string,
 ) error {
-	return &errors.LoadError{
+	return &errors.RunError{
 		ReasonCode: ErrorReasonCodeProviderResourceTypeNotFound,
 		Err: fmt.Errorf(
-			"load failed as the provider with namespace %q does not have an implementation for resource type %q",
+			"run failed as the provider with namespace %q does not have an implementation for resource type %q",
 			providerNamespace,
 			resourceType,
 		),
@@ -57,10 +61,10 @@ func errProviderResourceTypeNotFound(
 func errFunctionNotFound(
 	functionName string,
 ) error {
-	return &errors.LoadError{
+	return &errors.RunError{
 		ReasonCode: ErrorReasonCodeFunctionNotFound,
 		Err: fmt.Errorf(
-			"load failed as the function %q was not found in any of the configured providers",
+			"run failed as the function %q was not found in any of the configured providers",
 			functionName,
 		),
 	}
@@ -70,10 +74,10 @@ func errFunctionNotFoundInProvider(
 	functionName string,
 	providerNamespace string,
 ) error {
-	return &errors.LoadError{
+	return &errors.RunError{
 		ReasonCode: ErrorReasonCodeProviderFunctionNotFound,
 		Err: fmt.Errorf(
-			"load failed as the function %q implementation was not found in the provider with namespace %q,"+
+			"run failed as the function %q implementation was not found in the provider with namespace %q,"+
 				" despite the provider listing it as a function it implements",
 			functionName,
 			providerNamespace,
@@ -86,10 +90,10 @@ func errFunctionAlreadyProvided(
 	providedBy string,
 	provider string,
 ) error {
-	return &errors.LoadError{
-		ReasonCode: ErrorReasonCodeProviderFunctionNotFound,
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeFunctionAlreadyProvided,
 		Err: fmt.Errorf(
-			"load failed as the function %q is already provided by the %q provider,"+
+			"run failed as the function %q is already provided by the %q provider,"+
 				" but is also implemented by the %q provider",
 			functionName,
 			providedBy,

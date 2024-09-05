@@ -29,6 +29,21 @@ func deriveErrorsLabel(errorCount int) string {
 	return "errors"
 }
 
+type RunError struct {
+	ReasonCode  ErrorReasonCode
+	Err         error
+	ChildErrors []error
+}
+
+func (e *RunError) Error() string {
+	childErrCount := len(e.ChildErrors)
+	if childErrCount == 0 {
+		return fmt.Sprintf("run error: %s", e.Err.Error())
+	}
+	errorsLabel := deriveErrorsLabel(childErrCount)
+	return fmt.Sprintf("run error (%d child %s): %s", childErrCount, errorsLabel, e.Err.Error())
+}
+
 type SerialiseError struct {
 	ReasonCode  ErrorReasonCode
 	Err         error

@@ -72,8 +72,9 @@ func (r *functionRegistryFromProviders) GetDefinition(
 func (r *functionRegistryFromProviders) HasFunction(ctx context.Context, functionName string) (bool, error) {
 	functionImpl, err := r.getFunction(ctx, functionName)
 	if err != nil {
-		if loadErr, isLoadErr := err.(*errors.LoadError); isLoadErr {
-			if loadErr.ReasonCode == ErrorReasonCodeProviderFunctionNotFound {
+		if runErr, isRunErr := err.(*errors.RunError); isRunErr {
+			if runErr.ReasonCode == ErrorReasonCodeProviderFunctionNotFound ||
+				runErr.ReasonCode == ErrorReasonCodeFunctionNotFound {
 				return false, nil
 			}
 		}

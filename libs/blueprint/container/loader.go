@@ -220,13 +220,17 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	}
 
 	// Once we have loaded the link information,
-	// we can check for invalid ${..} reference placeholders
-	// throughout the blueprint.
-	// This includes cyclic links introduced where a resource selects another through
+	// we can capture links as references to include in checks
+	// for reference/link cycles to catch the case where a resource selects another through
 	// a link and the other resource references a property of the first resource.
-	err = l.checkForInvalidReferencePlaceholders(blueprintSpec, linkInfo)
+	err = l.collectLinksAsReferences(ctx, linkInfo)
 	if err != nil {
 		return nil, diagnostics, err
+	}
+
+	refCycleRoots := l.refChainCollector.FindCircularReferences()
+	if len(refCycleRoots) > 0 {
+		return nil, diagnostics, validation.ErrReferenceCycles(refCycleRoots)
 	}
 
 	return NewDefaultBlueprintContainer(
@@ -239,7 +243,46 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	), diagnostics, nil
 }
 
-func (l *defaultLoader) checkForInvalidReferencePlaceholders(blueprintSpec speccore.BlueprintSpec, linkInfo links.SpecLinkInfo) error {
+func (l *defaultLoader) collectLinksAsReferences(
+	ctx context.Context,
+	linkInfo links.SpecLinkInfo,
+) error {
+	chains, err := linkInfo.Links(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, chain := range chains {
+		err = l.collectLinksFromChain(ctx, chain)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (l *defaultLoader) collectLinksFromChain(
+	ctx context.Context,
+	chain *links.ChainLink,
+) error {
+	referencedByResourceID := fmt.Sprintf("resources.%s", chain.ResourceName)
+	for _, link := range chain.LinksTo {
+		resourceID := fmt.Sprintf("resources.%s", link.ResourceName)
+		err := l.refChainCollector.Collect(resourceID, link, referencedByResourceID)
+		if err != nil {
+			return err
+		}
+		for _, childChain := range link.LinksTo {
+			// There is no risk of infinite recursion due to cyclic links as at this point,
+			// any pure link cycles have been detected and reported.
+			err = l.collectLinksFromChain(ctx, childChain)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 

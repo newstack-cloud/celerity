@@ -39,6 +39,11 @@ func ValidateDataSource(
 		)
 	}
 
+	// todo: validate metadata
+	// todo: validate description
+	// todo: validate filter
+	// todo: valid exports
+
 	return nil
 }
 

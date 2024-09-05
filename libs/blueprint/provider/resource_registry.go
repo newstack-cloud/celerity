@@ -50,8 +50,8 @@ func (r *resourceRegistryFromProviders) GetSpecDefinition(
 func (r *resourceRegistryFromProviders) HasResourceType(ctx context.Context, resourceType string) (bool, error) {
 	resourceImpl, err := r.getResourceType(ctx, resourceType)
 	if err != nil {
-		if loadErr, isLoadErr := err.(*errors.LoadError); isLoadErr {
-			if loadErr.ReasonCode == ErrorReasonCodeProviderResourceTypeNotFound {
+		if runErr, isRunErr := err.(*errors.RunError); isRunErr {
+			if runErr.ReasonCode == ErrorReasonCodeProviderResourceTypeNotFound {
 				return false, nil
 			}
 		}
