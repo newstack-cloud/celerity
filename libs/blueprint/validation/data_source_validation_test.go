@@ -6,15 +6,38 @@ package validation
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/internal"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
 )
 
-type DataSourceValidationTestSuite struct{}
+type DataSourceValidationTestSuite struct {
+	funcRegistry      provider.FunctionRegistry
+	refChainCollector RefChainCollector
+	resourceRegistry  provider.ResourceRegistry
+}
 
 var _ = Suite(&DataSourceValidationTestSuite{})
+
+func (s *DataSourceValidationTestSuite) SetUpTest(c *C) {
+	s.funcRegistry = &internal.FunctionRegistryMock{
+		Functions: map[string]provider.Function{
+			"trim":       corefunctions.NewTrimFunction(),
+			"trimprefix": corefunctions.NewTrimPrefixFunction(),
+			"list":       corefunctions.NewListFunction(),
+			"object":     corefunctions.NewObjectFunction(),
+			"jsondecode": corefunctions.NewJSONDecodeFunction(),
+		},
+	}
+	s.refChainCollector = NewRefChainCollector()
+	s.resourceRegistry = &internal.ResourceRegistryMock{
+		Resources: map[string]provider.Resource{},
+	}
+}
 
 func (s *DataSourceValidationTestSuite) Test_succeeds_without_any_issues_for_a_valid_data_source(c *C) {
 	search := "Production"
@@ -54,7 +77,23 @@ func (s *DataSourceValidationTestSuite) Test_succeeds_without_any_issues_for_a_v
 			"vpc": dataSource,
 		},
 	}
-	err := ValidateDataSource(context.Background(), "vpc", dataSource, dataSourceMap)
+
+	blueprint := &schema.Blueprint{
+		DataSources: dataSourceMap,
+	}
+
+	diagnostics, err := ValidateDataSource(
+		context.Background(),
+		"vpc",
+		dataSource,
+		dataSourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, IsNil)
 }
 
@@ -79,7 +118,22 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_is_missi
 		},
 	}
 
-	err := ValidateDataSource(context.Background(), "vmInstance", dataSource, dataSourceMap)
+	blueprint := &schema.Blueprint{
+		DataSources: dataSourceMap,
+	}
+
+	diagnostics, err := ValidateDataSource(
+		context.Background(),
+		"vmInstance",
+		dataSource,
+		dataSourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -139,7 +193,22 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 		},
 	}
 
-	err := ValidateDataSource(context.Background(), "vmInstance", dataSource, dataSourceMap)
+	blueprint := &schema.Blueprint{
+		DataSources: dataSourceMap,
+	}
+
+	diagnostics, err := ValidateDataSource(
+		context.Background(),
+		"vmInstance",
+		dataSource,
+		dataSourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -179,7 +248,22 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_i
 		},
 	}
 
-	err := ValidateDataSource(context.Background(), "vmInstance", dataSource, dataSourceMap)
+	blueprint := &schema.Blueprint{
+		DataSources: dataSourceMap,
+	}
+
+	diagnostics, err := ValidateDataSource(
+		context.Background(),
+		"vmInstance",
+		dataSource,
+		dataSourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -226,7 +310,22 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_no_exported_fie
 		},
 	}
 
-	err := ValidateDataSource(context.Background(), "vmInstance", dataSource, dataSourceMap)
+	blueprint := &schema.Blueprint{
+		DataSources: dataSourceMap,
+	}
+
+	diagnostics, err := ValidateDataSource(
+		context.Background(),
+		"vmInstance",
+		dataSource,
+		dataSourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

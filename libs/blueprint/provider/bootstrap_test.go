@@ -18,9 +18,10 @@ func Test(t *testing.T) {
 }
 
 type testProvider struct {
-	functions map[string]Function
-	resources map[string]Resource
-	namespace string
+	functions   map[string]Function
+	resources   map[string]Resource
+	dataSources map[string]DataSource
+	namespace   string
 }
 
 func (p *testProvider) Namespace(ctx context.Context) (string, error) {
@@ -30,13 +31,17 @@ func (p *testProvider) Namespace(ctx context.Context) (string, error) {
 func (p *testProvider) Resource(ctx context.Context, resourceType string) (Resource, error) {
 	resource, ok := p.resources[resourceType]
 	if !ok {
-		return nil, errors.New("function not found")
+		return nil, errors.New("resource not found")
 	}
 	return resource, nil
 }
 
 func (p *testProvider) DataSource(ctx context.Context, dataSourceType string) (DataSource, error) {
-	return nil, nil
+	dataSource, ok := p.dataSources[dataSourceType]
+	if !ok {
+		return nil, errors.New("data source not found")
+	}
+	return dataSource, nil
 }
 
 func (p *testProvider) Link(ctx context.Context, resourceTypeA string, resourceTypeB string) (Link, error) {
@@ -429,4 +434,56 @@ func (r *testExampleResource) Destroy(
 	input *ResourceDestroyInput,
 ) error {
 	return nil
+}
+
+type testExampleDataSource struct {
+	definition *DataSourceSpecDefinition
+}
+
+func newTestExampleDataSource() DataSource {
+	return &testExampleDataSource{
+		definition: &DataSourceSpecDefinition{
+			Fields: map[string]*DataSourceSpecSchema{
+				"name": {
+					Type: DataSourceSpecTypeString,
+				},
+			},
+		},
+	}
+}
+
+func (d *testExampleDataSource) GetSpecDefinition(
+	ctx context.Context,
+	input *DataSourceGetSpecDefinitionInput,
+) (*DataSourceGetSpecDefinitionOutput, error) {
+	return &DataSourceGetSpecDefinitionOutput{
+		SpecDefinition: d.definition,
+	}, nil
+}
+
+func (d *testExampleDataSource) Fetch(
+	ctx context.Context,
+	input *DataSourceFetchInput,
+) (*DataSourceFetchOutput, error) {
+	return &DataSourceFetchOutput{
+		Data: map[string]interface{}{},
+	}, nil
+}
+
+func (d *testExampleDataSource) GetType(
+	ctx context.Context,
+	input *DataSourceGetTypeInput,
+) (*DataSourceGetTypeOutput, error) {
+	return &DataSourceGetTypeOutput{
+		Type: "test/exampleDataSource",
+	}, nil
+}
+
+func (d *testExampleDataSource) CustomValidate(
+	ctx context.Context,
+	input *DataSourceValidateInput,
+) (*DataSourceValidateOutput, error) {
+	return &DataSourceValidateOutput{
+		Diagnostics: []*core.Diagnostic{},
+	}, nil
 }

@@ -7,15 +7,21 @@ import (
 )
 
 const (
-	// ErrorReasonCodeResourceTypeProviderNotFound is provided when the
+	// ErrorReasonCodeItemTypeProviderNotFound is provided when the
 	// reason for a blueprint spec load error is due to
-	// there being no provider for a specific resource type.
-	ErrorReasonCodeResourceTypeProviderNotFound errors.ErrorReasonCode = "provider_not_found"
+	// there being no provider for a specific resource or data source
+	// type.
+	ErrorReasonCodeItemTypeProviderNotFound errors.ErrorReasonCode = "provider_not_found"
 	// ErrorReasonCodeProviderResourceTypeNotFound is provided when the
 	// reason for a blueprint spec load error is due to
 	// the resource provider missing an implementation for a
 	// specific resource type.
 	ErrorReasonCodeProviderResourceTypeNotFound errors.ErrorReasonCode = "resource_type_not_found"
+	// ErrorReasonCodeProviderDataSourceTypeNotFound is provided when the
+	// reason for a blueprint spec load error is due to
+	// the data source provider missing an implementation for a
+	// specific data source type.
+	ErrorReasonCodeProviderDataSourceTypeNotFound errors.ErrorReasonCode = "data_source_type_not_found"
 	// ErrorReasonCodeFunctionNotFound is provided when the
 	// reason for a blueprint spec load error is due to
 	// the function not being found in any of the configured providers.
@@ -35,7 +41,7 @@ func errResourceTypeProviderNotFound(
 	resourceType string,
 ) error {
 	return &errors.RunError{
-		ReasonCode: ErrorReasonCodeResourceTypeProviderNotFound,
+		ReasonCode: ErrorReasonCodeItemTypeProviderNotFound,
 		Err: fmt.Errorf(
 			"run failed as the provider with namespace %q was not found for resource type %q",
 			providerNamespace,
@@ -54,6 +60,34 @@ func errProviderResourceTypeNotFound(
 			"run failed as the provider with namespace %q does not have an implementation for resource type %q",
 			providerNamespace,
 			resourceType,
+		),
+	}
+}
+
+func errDataSourceTypeProviderNotFound(
+	providerNamespace string,
+	resourceType string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeItemTypeProviderNotFound,
+		Err: fmt.Errorf(
+			"run failed as the provider with namespace %q was not found for data source type %q",
+			providerNamespace,
+			resourceType,
+		),
+	}
+}
+
+func errProviderDataSourceTypeNotFound(
+	dataSourceType string,
+	providerNamespace string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeProviderDataSourceTypeNotFound,
+		Err: fmt.Errorf(
+			"run failed as the provider with namespace %q does not have an implementation for data source type %q",
+			providerNamespace,
+			dataSourceType,
 		),
 	}
 }

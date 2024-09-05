@@ -6,6 +6,7 @@ import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 )
 
 func deriveVarType(value *bpcore.ScalarValue) schema.VariableType {
@@ -93,5 +94,36 @@ func toDiagnosticRange(
 	return &bpcore.DiagnosticRange{
 		Start: start,
 		End:   endSourceMeta,
+	}
+}
+
+func isSubPrimitiveType(subType string) bool {
+	switch substitutions.ResolvedSubExprType(subType) {
+	case substitutions.ResolvedSubExprTypeString,
+		substitutions.ResolvedSubExprTypeInteger,
+		substitutions.ResolvedSubExprTypeFloat,
+		substitutions.ResolvedSubExprTypeBoolean:
+		return true
+	default:
+		return false
+	}
+}
+
+func getSubNextLocation(i int, values []*substitutions.StringOrSubstitution) *source.Meta {
+	if i+1 < len(values) {
+		return values[i+1].SourceMeta
+	}
+
+	return nil
+}
+
+func getEndLocation(location *source.Meta) *source.Meta {
+	if location == nil {
+		return nil
+	}
+
+	return &source.Meta{
+		Line:   location.Line + 1,
+		Column: location.Column,
 	}
 }

@@ -64,7 +64,7 @@ func (s *ResourceRegistryTestSuite) Test_produces_error_for_missing_provider(c *
 	c.Assert(err, NotNil)
 	runErr, isRunErr := err.(*errors.RunError)
 	c.Assert(isRunErr, Equals, true)
-	c.Assert(runErr.ReasonCode, Equals, ErrorReasonCodeResourceTypeProviderNotFound)
+	c.Assert(runErr.ReasonCode, Equals, ErrorReasonCodeItemTypeProviderNotFound)
 	c.Assert(runErr.Error(), Equals, "run error: run failed as the provider with namespace \"otherProvider\" "+
 		"was not found for resource type \"otherProvider/otherResource\"")
 }

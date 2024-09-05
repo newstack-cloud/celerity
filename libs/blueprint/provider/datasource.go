@@ -13,9 +13,16 @@ import (
 type DataSource interface {
 	// GetType deals with retrieving the namespaced type for a data source in a blueprint.
 	GetType(ctx context.Context, input *DataSourceGetTypeInput) (*DataSourceGetTypeOutput, error)
-	// Validate deals with ensuring all the exported fields
-	// defined by a user in the spec are supported.
-	Validate(ctx context.Context, input *DataSourceValidateInput) (*DataSourceValidateOutput, error)
+	// CustomValidate provides support for custom validation that goes beyond
+	// the spec schema validation provided by the data source's spec definition.
+	CustomValidate(ctx context.Context, input *DataSourceValidateInput) (*DataSourceValidateOutput, error)
+	// GetSpecDefinition retrieves the spec definition for a data source.
+	// This definition specifies all the fields that can be exported from a data source
+	// to be used in a blueprint.
+	// This is the first line of validation for a data source in a blueprint and is also
+	// useful for validating references to a data source instance
+	// in a blueprint and for providing definitions for docs and tooling.
+	GetSpecDefinition(ctx context.Context, input *DataSourceGetSpecDefinitionInput) (*DataSourceGetSpecDefinitionOutput, error)
 	// Fetch deals with loading the data from the upstream data source
 	// and returning the exported fields defined in the spec.
 	Fetch(ctx context.Context, input *DataSourceFetchInput) (*DataSourceFetchOutput, error)
@@ -58,3 +65,70 @@ type DataSourceGetTypeInput struct {
 type DataSourceGetTypeOutput struct {
 	Type string
 }
+
+// DataSourceGetSpecDefinitionInput provides the input data needed for a data source to
+// provide a spec definition.
+type DataSourceGetSpecDefinitionInput struct {
+	Params core.BlueprintParams
+}
+
+// DataSourceGetSpecDefinitionOutput provides the output data from providing a spec definition
+// for a data source.
+type DataSourceGetSpecDefinitionOutput struct {
+	SpecDefinition *DataSourceSpecDefinition
+}
+
+// DataSourceSpecDefinition provides a definition for a data source spec
+// that can be used for validation, docs and tooling.
+type DataSourceSpecDefinition struct {
+	// Fields holds a mapping of schemas for
+	// fields that can be exported from a data source.
+	// Unlike resource specs, data source specs are restricted
+	// in that they only support primitives or arrays of primitives.
+	Fields map[string]*DataSourceSpecSchema
+}
+
+// DataSourceSpecSchema provides a schema that can be used to validate
+// a data source spec.
+type DataSourceSpecSchema struct {
+	// Type holds the type of the data source spec.
+	Type DataSourceSpecSchemaType
+	// Label holds a human-readable label for the data source spec.
+	Label string
+	// Description holds a human-readable description for the data source spec
+	// without any formatting.
+	Description string
+	// FormattedDescription holds a human-readable description for the data source spec
+	// that is formatted with markdown.
+	FormattedDescription string
+	// Items holds the schema for the items in a data source spec schema array.
+	// Items are expected to be of a primitive type, if an array type is provided here,
+	// an error will occur.
+	Items *DataSourceSpecSchema
+	// OneOf holds a list of possible schemas for a data source spec item.
+	// This is to be used with the "union" type.
+	OneOf []*DataSourceSpecSchema
+	// Nullable specifies whether the data source spec schema can be null.
+	// This essentially means that the data source implementation can provide
+	// a null value for the field.
+	Nullable bool
+}
+
+// DataSourceSpecSchemaType holds the type of a data suource schema.
+type DataSourceSpecSchemaType string
+
+const (
+	// DataSourceSpecTypeString is for a schema string.
+	DataSourceSpecTypeString DataSourceSpecSchemaType = "string"
+	// DataSourceSpecTypeInteger is for a schema integer.
+	DataSourceSpecTypeInteger DataSourceSpecSchemaType = "integer"
+	// DataSourceSpecTypeFloat is for a schema float.
+	DataSourceSpecTypeFloat DataSourceSpecSchemaType = "float"
+	// DataSourceSpecTypeBoolean is for a schema boolean.
+	DataSourceSpecTypeBoolean DataSourceSpecSchemaType = "boolean"
+	// DataSourceSpecTypeArray is for a schema array.
+	DataSourceSpecTypeArray DataSourceSpecSchemaType = "array"
+	// DataSourceSpecTypeUnion is for an element that can be one of
+	// multiple schemas.
+	DataSourceSpecTypeUnion ResourceSpecSchemaType = "union"
+)

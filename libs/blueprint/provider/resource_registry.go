@@ -66,7 +66,7 @@ func (r *resourceRegistryFromProviders) getResourceType(ctx context.Context, res
 		return resource, nil
 	}
 
-	providerNamespace := ExtractProviderFromResourceType(resourceType)
+	providerNamespace := ExtractProviderFromItemType(resourceType)
 	provider, ok := r.providers[providerNamespace]
 	if !ok {
 		return nil, errResourceTypeProviderNotFound(providerNamespace, resourceType)

@@ -229,6 +229,9 @@ type ResourceSpecSchema struct {
 	// MapValues holds the schema for the values in a resource spec schema map.
 	// Keys are always strings.
 	MapValues *ResourceSpecSchema
+	// OneOf holds a list of possible schemas for a resource spec item.
+	// This is to be used with the "union" type.
+	OneOf []*ResourceSpecSchema
 	// Required holds a list of required attributes for a resource spec schema object.
 	Required []string
 	// Nullable specifies whether the resource spec schema can be null.
@@ -262,4 +265,7 @@ const (
 	ResourceSpecTypeObject ResourceSpecSchemaType = "object"
 	// ResourceSpecTypeArray is for a schema array.
 	ResourceSpecTypeArray ResourceSpecSchemaType = "array"
+	// ResourceSpecTypeUnion is for an element that can be one of
+	// multiple schemas.
+	ResourceSpecTypeUnion ResourceSpecSchemaType = "union"
 )

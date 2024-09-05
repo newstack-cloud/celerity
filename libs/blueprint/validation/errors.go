@@ -71,6 +71,9 @@ const (
 	// This error code is used to collect and surface reference cycle errors
 	// for pure substitution reference cycles and link <-> substitution reference cycles.
 	ErrorReasonCodeReferenceCycle errors.ErrorReasonCode = "reference_cycle"
+	// ErrorReasonCodeInvalidMappingNode is provided when the reason
+	// for a blueprint spec load error is due to an invalid mapping node.
+	ErrorReasonCodeInvalidMappingNode errors.ErrorReasonCode = "invalid_mapping_node"
 )
 
 func errBlueprintMissingVersion() error {
@@ -1209,6 +1212,46 @@ func errInvalidDescriptionSubType(
 	}
 }
 
+func errInvalidDisplayNameSubType(
+	usedIn string,
+	resolvedType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid substitution found in %q, "+
+				"resolved type %q is not supported by display names, "+
+				"only values that resolve as strings are supported",
+			usedIn,
+			resolvedType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errInvalidAnnotationSubType(
+	usedIn string,
+	resolvedType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid substitution found in %q, "+
+				"resolved type %q is not supported by annotations, "+
+				"only values that resolve as primitives are supported",
+			usedIn,
+			resolvedType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errMissingValueContent(
 	valueID string,
 	location *source.Meta,
@@ -1300,6 +1343,24 @@ func ErrReferenceCycles(rootRefChains []*ReferenceChain) error {
 		})
 	}
 	return ErrMultipleValidationErrors(errs)
+}
+
+func errMissingMappingNodeValue(
+	context string,
+	propertyPath string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidMappingNode,
+		Err: fmt.Errorf(
+			"validation failed due to a missing value for property %q in %q",
+			propertyPath,
+			context,
+		),
+		Line:   line,
+		Column: col,
+	}
 }
 
 func deriveElemRefTypeLabel(elemRefType string) string {

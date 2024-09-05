@@ -2,9 +2,10 @@ package provider
 
 import "strings"
 
-// ExtractProviderFromResourceType extracts the provider namespace from a resource type.
-func ExtractProviderFromResourceType(resourceType string) string {
-	parts := strings.Split(resourceType, "/")
+// ExtractProviderFromItemType extracts the provider namespace from a resource type
+// or data source type.
+func ExtractProviderFromItemType(itemType string) string {
+	parts := strings.Split(itemType, "/")
 	if len(parts) == 0 {
 		return ""
 	}
