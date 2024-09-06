@@ -1033,6 +1033,63 @@ func errResourceTypeSpecDefMissingSchema(
 	}
 }
 
+func errDataSourceTypeMissingSpecDefinition(
+	dataSourceName string,
+	dataSourceType string,
+	dataSourceLocation *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(dataSourceLocation)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing spec definition for data source \"%s\" "+
+				"of type \"%s\"",
+			dataSourceName,
+			dataSourceType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceTypeMissingFields(
+	dataSourceName string,
+	dataSourceType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing fields definition for data source \"%s\" "+
+				"of type \"%s\"",
+			dataSourceName,
+			dataSourceType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceFilterFieldNotSupported(
+	dataSourceName string,
+	field string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to the field \"%s\" in the filter for data source \"%s\" "+
+				"not being supported",
+			field,
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errSubResourceSpecInvalidRef(
 	resourceName string,
 	location *source.Meta,
@@ -1232,8 +1289,9 @@ func errInvalidDisplayNameSubType(
 	}
 }
 
-func errInvalidAnnotationSubType(
+func errInvalidSubType(
 	usedIn string,
+	valueContext string,
 	resolvedType string,
 	location *source.Meta,
 ) error {
@@ -1242,10 +1300,11 @@ func errInvalidAnnotationSubType(
 		ReasonCode: ErrorReasonCodeInvalidSubstitution,
 		Err: fmt.Errorf(
 			"validation failed due to an invalid substitution found in %q, "+
-				"resolved type %q is not supported by annotations, "+
+				"resolved type %q is not supported by %ss, "+
 				"only values that resolve as primitives are supported",
 			usedIn,
 			resolvedType,
+			valueContext,
 		),
 		Line:   line,
 		Column: col,
@@ -1357,6 +1416,90 @@ func errMissingMappingNodeValue(
 			"validation failed due to a missing value for property %q in %q",
 			propertyPath,
 			context,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceExportFieldNotSupported(
+	dataSourceName string,
+	dataSourceType string,
+	exportAlias string,
+	exportedSourceField string,
+	wrapperLocation *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(wrapperLocation)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to the exported field %q in data source %q not being supported, "+
+				"the exported field %q is not present for data source type %q",
+			exportAlias,
+			dataSourceName,
+			exportedSourceField,
+			dataSourceType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceExportFieldTypeMismatch(
+	dataSourceName string,
+	exportAlias string,
+	dataSourceField string,
+	dataSourceFieldType string,
+	exportedFieldType string,
+	wrapperLocation *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(wrapperLocation)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to the exported field %q in data source %q having an unexpected type, "+
+				"the data source field %q has a type of %q, but the exported type is %q",
+			exportAlias,
+			dataSourceName,
+			dataSourceField,
+			dataSourceFieldType,
+			exportedFieldType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceExportEmpty(
+	dataSourceName string,
+	exportName string,
+	wrapperLocation *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(wrapperLocation)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to the exported field %q in data source %q having an empty value",
+			exportName,
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceExportTypeMissing(
+	dataSourceName string,
+	exportName string,
+	wrapperLocation *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(wrapperLocation)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to export %q in data source %q missing a type",
+			exportName,
+			dataSourceName,
 		),
 		Line:   line,
 		Column: col,

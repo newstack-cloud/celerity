@@ -465,3 +465,217 @@ func (r *testExampleResourceMissingSpecSchema) Destroy(
 ) error {
 	return nil
 }
+
+type testEC2InstanceDataSource struct{}
+
+func newTestEC2InstanceDataSource() provider.DataSource {
+	return &testEC2InstanceDataSource{}
+}
+
+func (d *testEC2InstanceDataSource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.DataSourceGetSpecDefinitionInput,
+) (*provider.DataSourceGetSpecDefinitionOutput, error) {
+	return &provider.DataSourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.DataSourceSpecDefinition{
+			Fields: map[string]*provider.DataSourceSpecSchema{
+				"instanceConfigId": {
+					Type: provider.DataSourceSpecTypeString,
+				},
+			},
+		},
+	}, nil
+}
+
+func (d *testEC2InstanceDataSource) Fetch(
+	ctx context.Context,
+	input *provider.DataSourceFetchInput,
+) (*provider.DataSourceFetchOutput, error) {
+	return &provider.DataSourceFetchOutput{
+		Data: map[string]interface{}{},
+	}, nil
+}
+
+func (d *testEC2InstanceDataSource) GetType(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeInput,
+) (*provider.DataSourceGetTypeOutput, error) {
+	return &provider.DataSourceGetTypeOutput{
+		Type: "aws/ec2/instance",
+	}, nil
+}
+
+func (d *testEC2InstanceDataSource) GetFilterFields(
+	ctx context.Context,
+	input *provider.DataSourceGetFilterFieldsInput,
+) (*provider.DataSourceGetFilterFieldsOutput, error) {
+	return &provider.DataSourceGetFilterFieldsOutput{
+		Fields: []string{"instanceConfigId", "tags"},
+	}, nil
+}
+
+func (d *testEC2InstanceDataSource) CustomValidate(
+	ctx context.Context,
+	input *provider.DataSourceValidateInput,
+) (*provider.DataSourceValidateOutput, error) {
+	return &provider.DataSourceValidateOutput{}, nil
+}
+
+type testVPCDataSource struct{}
+
+func newTestVPCDataSource() provider.DataSource {
+	return &testVPCDataSource{}
+}
+
+func (d *testVPCDataSource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.DataSourceGetSpecDefinitionInput,
+) (*provider.DataSourceGetSpecDefinitionOutput, error) {
+	return &provider.DataSourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.DataSourceSpecDefinition{
+			Fields: map[string]*provider.DataSourceSpecSchema{
+				"instanceConfigId": {
+					Type: provider.DataSourceSpecTypeString,
+				},
+			},
+		},
+	}, nil
+}
+
+func (d *testVPCDataSource) Fetch(
+	ctx context.Context,
+	input *provider.DataSourceFetchInput,
+) (*provider.DataSourceFetchOutput, error) {
+	return &provider.DataSourceFetchOutput{
+		Data: map[string]interface{}{},
+	}, nil
+}
+
+func (d *testVPCDataSource) GetType(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeInput,
+) (*provider.DataSourceGetTypeOutput, error) {
+	return &provider.DataSourceGetTypeOutput{
+		Type: "aws/vpc",
+	}, nil
+}
+
+func (d *testVPCDataSource) GetFilterFields(
+	ctx context.Context,
+	input *provider.DataSourceGetFilterFieldsInput,
+) (*provider.DataSourceGetFilterFieldsOutput, error) {
+	return &provider.DataSourceGetFilterFieldsOutput{
+		Fields: []string{"instanceConfigId", "tags"},
+	}, nil
+}
+
+func (d *testVPCDataSource) CustomValidate(
+	ctx context.Context,
+	input *provider.DataSourceValidateInput,
+) (*provider.DataSourceValidateOutput, error) {
+	return &provider.DataSourceValidateOutput{}, nil
+}
+
+type testVPC2DataSource struct{}
+
+func newTestVPC2DataSource() provider.DataSource {
+	return &testVPC2DataSource{}
+}
+
+func (d *testVPC2DataSource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.DataSourceGetSpecDefinitionInput,
+) (*provider.DataSourceGetSpecDefinitionOutput, error) {
+	return &provider.DataSourceGetSpecDefinitionOutput{
+		SpecDefinition: nil,
+	}, nil
+}
+
+func (d *testVPC2DataSource) Fetch(
+	ctx context.Context,
+	input *provider.DataSourceFetchInput,
+) (*provider.DataSourceFetchOutput, error) {
+	return &provider.DataSourceFetchOutput{
+		Data: map[string]interface{}{},
+	}, nil
+}
+
+func (d *testVPC2DataSource) GetType(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeInput,
+) (*provider.DataSourceGetTypeOutput, error) {
+	return &provider.DataSourceGetTypeOutput{
+		Type: "aws/vpc",
+	}, nil
+}
+
+func (d *testVPC2DataSource) GetFilterFields(
+	ctx context.Context,
+	input *provider.DataSourceGetFilterFieldsInput,
+) (*provider.DataSourceGetFilterFieldsOutput, error) {
+	return &provider.DataSourceGetFilterFieldsOutput{
+		Fields: []string{"instanceConfigId", "tags"},
+	}, nil
+}
+
+func (d *testVPC2DataSource) CustomValidate(
+	ctx context.Context,
+	input *provider.DataSourceValidateInput,
+) (*provider.DataSourceValidateOutput, error) {
+	return &provider.DataSourceValidateOutput{}, nil
+}
+
+type testVPC3DataSource struct{}
+
+func newTestVPC3DataSource() provider.DataSource {
+	return &testVPC3DataSource{}
+}
+
+func (d *testVPC3DataSource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.DataSourceGetSpecDefinitionInput,
+) (*provider.DataSourceGetSpecDefinitionOutput, error) {
+	return &provider.DataSourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.DataSourceSpecDefinition{
+			Fields: map[string]*provider.DataSourceSpecSchema{
+				"instanceConfigId": {
+					Type: provider.DataSourceSpecTypeString,
+				},
+			},
+		},
+	}, nil
+}
+
+func (d *testVPC3DataSource) Fetch(
+	ctx context.Context,
+	input *provider.DataSourceFetchInput,
+) (*provider.DataSourceFetchOutput, error) {
+	return &provider.DataSourceFetchOutput{
+		Data: map[string]interface{}{},
+	}, nil
+}
+
+func (d *testVPC3DataSource) GetType(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeInput,
+) (*provider.DataSourceGetTypeOutput, error) {
+	return &provider.DataSourceGetTypeOutput{
+		Type: "aws/vpc",
+	}, nil
+}
+
+func (d *testVPC3DataSource) GetFilterFields(
+	ctx context.Context,
+	input *provider.DataSourceGetFilterFieldsInput,
+) (*provider.DataSourceGetFilterFieldsOutput, error) {
+	return &provider.DataSourceGetFilterFieldsOutput{
+		Fields: []string{},
+	}, nil
+}
+
+func (d *testVPC3DataSource) CustomValidate(
+	ctx context.Context,
+	input *provider.DataSourceValidateInput,
+) (*provider.DataSourceValidateOutput, error) {
+	return &provider.DataSourceValidateOutput{}, nil
+}

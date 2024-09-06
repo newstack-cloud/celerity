@@ -137,6 +137,7 @@ type defaultLoader struct {
 	refChainCollector     validation.RefChainCollector
 	funcRegistry          provider.FunctionRegistry
 	resourceRegistry      provider.ResourceRegistry
+	dataSourceRegistry    provider.DataSourceRegistry
 }
 
 // NewDefaultLoader creates a new instance of the default
@@ -172,6 +173,7 @@ func NewDefaultLoader(
 ) Loader {
 	resourceRegistry := provider.NewResourceRegistry(providers)
 	funcRegistry := provider.NewFunctionRegistry(providers)
+	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
 	return &defaultLoader{
 		providers,
 		specTransformers,
@@ -182,6 +184,7 @@ func NewDefaultLoader(
 		refChainCollector,
 		funcRegistry,
 		resourceRegistry,
+		dataSourceRegistry,
 	}
 }
 
@@ -351,6 +354,13 @@ func (l *defaultLoader) loadSpec(
 	var exportDiagnostics []*bpcore.Diagnostic
 	exportDiagnostics, err = l.validateExports(ctx, blueprintSchema)
 	diagnostics = append(diagnostics, exportDiagnostics...)
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
+
+	var dataSourceDiagnostics []*bpcore.Diagnostic
+	dataSourceDiagnostics, err = l.validateDataSources(ctx, blueprintSchema, params)
+	diagnostics = append(diagnostics, dataSourceDiagnostics...)
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	}
@@ -671,6 +681,70 @@ func (l *defaultLoader) deriveProviderCustomVarType(ctx context.Context, varName
 	}
 
 	return customVarType, nil
+}
+
+func (l *defaultLoader) validateDataSources(
+	ctx context.Context,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+	if bpSchema.DataSources == nil {
+		return diagnostics, nil
+	}
+	// To be as useful as possible, we'll collect and
+	// report issues for all the problematic resources.
+	dataSourceErrors := map[string][]error{}
+	for name, dataSourceSchema := range bpSchema.DataSources.Values {
+		currentDataSourceErrs := l.validateDataSource(
+			ctx, &diagnostics, name, dataSourceSchema, bpSchema, params,
+		)
+		if len(currentDataSourceErrs) > 0 {
+			dataSourceErrors[name] = currentDataSourceErrs
+		}
+	}
+
+	if len(dataSourceErrors) > 0 {
+		return diagnostics, errDataSourceValidationError(dataSourceErrors)
+	}
+
+	return diagnostics, nil
+}
+
+func (l *defaultLoader) validateDataSource(
+	ctx context.Context,
+	diagnostics *[]*bpcore.Diagnostic,
+	name string,
+	dataSourceSchema *schema.DataSource,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+) []error {
+	currentDataSourceErrs := []error{}
+	err := validation.ValidateDataSourceName(name, bpSchema.DataSources)
+	if err != nil {
+		currentDataSourceErrs = append(currentDataSourceErrs, err)
+	}
+
+	var validateDataSourceDiagnostics []*bpcore.Diagnostic
+	validateDataSourceDiagnostics, err = validation.ValidateDataSource(
+		ctx,
+		name,
+		dataSourceSchema,
+		bpSchema.DataSources,
+		bpSchema,
+		params,
+		l.funcRegistry,
+		l.refChainCollector,
+		l.resourceRegistry,
+		l.dataSourceRegistry,
+	)
+	*diagnostics = append(*diagnostics, validateDataSourceDiagnostics...)
+	if err != nil {
+		currentDataSourceErrs = append(currentDataSourceErrs, err)
+	}
+
+	l.refChainCollector.Collect(fmt.Sprintf("datasources.%s", name), dataSourceSchema, "")
+	return currentDataSourceErrs
 }
 
 func (l *defaultLoader) validateResources(

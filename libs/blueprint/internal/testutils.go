@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
@@ -79,4 +80,71 @@ func (r *ResourceRegistryMock) GetSpecDefinition(
 		return nil, err
 	}
 	return defOutput, nil
+}
+
+type DataSourceRegistryMock struct {
+	DataSources map[string]provider.DataSource
+}
+
+func (r *DataSourceRegistryMock) HasDataSourceType(ctx context.Context, dataSourceType string) (bool, error) {
+	_, ok := r.DataSources[dataSourceType]
+	return ok, nil
+}
+
+func (r *DataSourceRegistryMock) GetSpecDefinition(
+	ctx context.Context,
+	dataSourceType string,
+	input *provider.DataSourceGetSpecDefinitionInput,
+) (*provider.DataSourceGetSpecDefinitionOutput, error) {
+	res, ok := r.DataSources[dataSourceType]
+	if !ok {
+		return nil, fmt.Errorf("data source %s not found", dataSourceType)
+	}
+	defOutput, err := res.GetSpecDefinition(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
+}
+
+func (r *DataSourceRegistryMock) GetFilterFields(
+	ctx context.Context,
+	dataSourceType string,
+	input *provider.DataSourceGetFilterFieldsInput,
+) (*provider.DataSourceGetFilterFieldsOutput, error) {
+	res, ok := r.DataSources[dataSourceType]
+	if !ok {
+		return nil, fmt.Errorf("data source %s not found", dataSourceType)
+	}
+	defOutput, err := res.GetFilterFields(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
+}
+
+func (r *DataSourceRegistryMock) CustomValidate(
+	ctx context.Context,
+	dataSourceType string,
+	input *provider.DataSourceValidateInput,
+) (*provider.DataSourceValidateOutput, error) {
+	res, ok := r.DataSources[dataSourceType]
+	if !ok {
+		return nil, fmt.Errorf("data source %s not found", dataSourceType)
+	}
+	defOutput, err := res.CustomValidate(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
+}
+
+// UnpackLoadError recursively unpacks a LoadError that can contain child errors.
+// This will recursively unpack the first child error until it reaches the last child error.
+func UnpackLoadError(err error) (*errors.LoadError, bool) {
+	loadErr, ok := err.(*errors.LoadError)
+	if ok && len(loadErr.ChildErrors) > 0 {
+		return UnpackLoadError(loadErr.ChildErrors[0])
+	}
+	return loadErr, ok
 }

@@ -23,6 +23,8 @@ type DataSource interface {
 	// useful for validating references to a data source instance
 	// in a blueprint and for providing definitions for docs and tooling.
 	GetSpecDefinition(ctx context.Context, input *DataSourceGetSpecDefinitionInput) (*DataSourceGetSpecDefinitionOutput, error)
+	// GetFilterFields provides the fields that can be used in a filter for a data source.
+	GetFilterFields(ctx context.Context, input *DataSourceGetFilterFieldsInput) (*DataSourceGetFilterFieldsOutput, error)
 	// Fetch deals with loading the data from the upstream data source
 	// and returning the exported fields defined in the spec.
 	Fetch(ctx context.Context, input *DataSourceFetchInput) (*DataSourceFetchOutput, error)
@@ -66,6 +68,18 @@ type DataSourceGetTypeOutput struct {
 	Type string
 }
 
+// DataSourceGetFilterFieldsOutput provides the output from retrieving the fields
+// that can be used in a filter for a data source.
+type DataSourceGetFilterFieldsInput struct {
+	Params core.BlueprintParams
+}
+
+// DataSourceGetFilterFieldsOutput provides the output from retrieving the fields
+// that can be used in a filter for a data source.
+type DataSourceGetFilterFieldsOutput struct {
+	Fields []string
+}
+
 // DataSourceGetSpecDefinitionInput provides the input data needed for a data source to
 // provide a spec definition.
 type DataSourceGetSpecDefinitionInput struct {
@@ -105,9 +119,6 @@ type DataSourceSpecSchema struct {
 	// Items are expected to be of a primitive type, if an array type is provided here,
 	// an error will occur.
 	Items *DataSourceSpecSchema
-	// OneOf holds a list of possible schemas for a data source spec item.
-	// This is to be used with the "union" type.
-	OneOf []*DataSourceSpecSchema
 	// Nullable specifies whether the data source spec schema can be null.
 	// This essentially means that the data source implementation can provide
 	// a null value for the field.
@@ -128,7 +139,4 @@ const (
 	DataSourceSpecTypeBoolean DataSourceSpecSchemaType = "boolean"
 	// DataSourceSpecTypeArray is for a schema array.
 	DataSourceSpecTypeArray DataSourceSpecSchemaType = "array"
-	// DataSourceSpecTypeUnion is for an element that can be one of
-	// multiple schemas.
-	DataSourceSpecTypeUnion ResourceSpecSchemaType = "union"
 )

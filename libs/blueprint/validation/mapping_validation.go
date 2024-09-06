@@ -28,6 +28,10 @@ func ValidateMappingNode(
 	refChainCollector RefChainCollector,
 	resourceRegistry provider.ResourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
+	if mappingNode == nil {
+		return nil, nil
+	}
+
 	return validateMappingNode(
 		ctx,
 		usedIn,

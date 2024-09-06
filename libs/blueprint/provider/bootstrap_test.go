@@ -437,7 +437,8 @@ func (r *testExampleResource) Destroy(
 }
 
 type testExampleDataSource struct {
-	definition *DataSourceSpecDefinition
+	definition   *DataSourceSpecDefinition
+	filterFields []string
 }
 
 func newTestExampleDataSource() DataSource {
@@ -449,6 +450,7 @@ func newTestExampleDataSource() DataSource {
 				},
 			},
 		},
+		filterFields: []string{"metadata.id"},
 	}
 }
 
@@ -479,11 +481,25 @@ func (d *testExampleDataSource) GetType(
 	}, nil
 }
 
+func (d *testExampleDataSource) GetFilterFields(
+	ctx context.Context,
+	input *DataSourceGetFilterFieldsInput,
+) (*DataSourceGetFilterFieldsOutput, error) {
+	return &DataSourceGetFilterFieldsOutput{
+		Fields: d.filterFields,
+	}, nil
+}
+
 func (d *testExampleDataSource) CustomValidate(
 	ctx context.Context,
 	input *DataSourceValidateInput,
 ) (*DataSourceValidateOutput, error) {
 	return &DataSourceValidateOutput{
-		Diagnostics: []*core.Diagnostic{},
+		Diagnostics: []*core.Diagnostic{
+			{
+				Level:   core.DiagnosticLevelError,
+				Message: "This is a test diagnostic.",
+			},
+		},
 	}, nil
 }

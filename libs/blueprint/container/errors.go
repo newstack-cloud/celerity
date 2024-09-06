@@ -36,6 +36,13 @@ const (
 	// errors which can be used for reporting useful information
 	// about issues with the spec.
 	ErrorReasonCodeResourceValidationErrors errors.ErrorReasonCode = "resource_validation_errors"
+	// ErrorReasonCodeDataSourceValidationErrors is provided
+	// when the reason for a blueprint spec load error is due to
+	// a collection of errors for one or more data sources in the spec.
+	// This should be used for a wrapper error that holds more specific
+	// errors which can be used for reporting useful information
+	// about issues with the spec.
+	ErrorReasonCodeDataSourceValidationErrors errors.ErrorReasonCode = "data_source_validation_errors"
 	// ErrorReasonCodeResourceValidationErrors is provided
 	// when the reason for a blueprint spec load error is due to
 	// a collection of errors for one or more variables in the spec.
@@ -119,6 +126,17 @@ func errResourceValidationError(errorMap map[string][]error) error {
 	return &errors.LoadError{
 		ReasonCode:  ErrorReasonCodeResourceValidationErrors,
 		Err:         fmt.Errorf("validation failed due to issues with %d resources in the spec", errCount),
+		ChildErrors: errs,
+	}
+}
+
+func errDataSourceValidationError(errorMap map[string][]error) error {
+	errs := flattenErrorMap(errorMap)
+	errCount := len(errs)
+
+	return &errors.LoadError{
+		ReasonCode:  ErrorReasonCodeDataSourceValidationErrors,
+		Err:         fmt.Errorf("validation failed due to issues with %d data sources in the spec", errCount),
 		ChildErrors: errs,
 	}
 }

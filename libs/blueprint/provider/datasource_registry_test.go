@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	. "gopkg.in/check.v1"
 )
@@ -47,6 +48,31 @@ func (s *DataSourceRegistryTestSuite) Test_get_definition(c *C) {
 	)
 	c.Assert(err, IsNil)
 	c.Assert(output.SpecDefinition, DeepEquals, s.testDataSource.definition)
+}
+
+func (s *DataSourceRegistryTestSuite) Test_get_filter_fields(c *C) {
+	output, err := s.dataSourceRegistry.GetFilterFields(
+		context.TODO(),
+		"test/exampleDataSource",
+		&DataSourceGetFilterFieldsInput{},
+	)
+	c.Assert(err, IsNil)
+	c.Assert(output.Fields, DeepEquals, s.testDataSource.filterFields)
+}
+
+func (s *DataSourceRegistryTestSuite) Test_custom_validate(c *C) {
+	output, err := s.dataSourceRegistry.CustomValidate(
+		context.TODO(),
+		"test/exampleDataSource",
+		&DataSourceValidateInput{},
+	)
+	c.Assert(err, IsNil)
+	c.Assert(output.Diagnostics, DeepEquals, []*core.Diagnostic{
+		{
+			Level:   core.DiagnosticLevelError,
+			Message: "This is a test diagnostic.",
+		},
+	})
 }
 
 func (s *DataSourceRegistryTestSuite) Test_has_resource_type(c *C) {
