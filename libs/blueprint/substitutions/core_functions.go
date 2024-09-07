@@ -193,6 +193,46 @@ const (
 	// SubstitutionFunctionLink is a function that is used to retrieve the state
 	// of a link between two resources in the current blueprint.
 	SubstitutionFunctionLink SubstitutionFunctionName = "link"
+
+	// SubstitutionFunctionAnd is a function that is used to perform a logical AND
+	// operation on two boolean values.
+	SubstitutionFunctionAnd SubstitutionFunctionName = "and"
+
+	// SubstitutionFunctionOr is a function that is used to perform a logical OR
+	// operation on two boolean values.
+	SubstitutionFunctionOr SubstitutionFunctionName = "or"
+
+	// SubstitutionFunctionNot is a function that is used to perform a negation
+	// on a boolean value.
+	SubstitutionFunctionNot SubstitutionFunctionName = "not"
+
+	// SubstitutionFunctionEq is a function that is used to perform an equality
+	// comparison on two values.
+	SubstitutionFunctionEq SubstitutionFunctionName = "eq"
+
+	// substitutionFunctionGT is a function that is used to perform a greater than
+	// comparison on two values.
+	SubstitutionFunctionGT SubstitutionFunctionName = "gt"
+
+	// SubstitutionFunctionGE is a function that is used to perform a greater than
+	// or equal to comparison on two values.
+	SubstitutionFunctionGE SubstitutionFunctionName = "ge"
+
+	// SubstitutionFunctionLT is a function that is used to perform a less than
+	// comparison on two values.
+	SubstitutionFunctionLT SubstitutionFunctionName = "lt"
+
+	// SubstitutionFunctionLE is a function that is used to perform a less than
+	// or equal to comparison on two values.
+	SubstitutionFunctionLE SubstitutionFunctionName = "le"
+
+	// SubstituionFunctionCWD is a function that is used to get the current working
+	// directory of the user executing or validating a blueprint.
+	SubstitutionFunctionCWD SubstitutionFunctionName = "cwd"
+
+	// SubstitutionFunctionDateTime is a function that is used to get the current
+	// date and time in a specific format.
+	SubstitutionFunctionDateTime SubstitutionFunctionName = "datetime"
 )
 
 var (
@@ -243,5 +283,15 @@ var (
 		SubstitutionFunctionGetAttr,
 		SubstitutionFunctionGetElem,
 		SubstitutionFunctionLink,
+		SubstitutionFunctionAnd,
+		SubstitutionFunctionOr,
+		SubstitutionFunctionNot,
+		SubstitutionFunctionEq,
+		SubstitutionFunctionGT,
+		SubstitutionFunctionGE,
+		SubstitutionFunctionLT,
+		SubstitutionFunctionLE,
+		SubstitutionFunctionCWD,
+		SubstitutionFunctionDateTime,
 	}
 )
