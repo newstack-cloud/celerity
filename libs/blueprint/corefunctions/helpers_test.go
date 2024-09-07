@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
-	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
@@ -220,13 +219,4 @@ func (s *linkStateRetrieverMock) GetLink(ctx context.Context, instanceID string,
 		return state.LinkState{}, fmt.Errorf("link state not found")
 	}
 	return linkState, nil
-}
-
-// Thursday, 7th September 2023 14:43:44
-const testCurrentTimeUnix int64 = 1694097824
-
-type testClock struct{}
-
-func (c *testClock) Now() time.Time {
-	return time.Unix(testCurrentTimeUnix, 0)
 }

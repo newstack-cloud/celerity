@@ -345,7 +345,7 @@ func (l *defaultLoader) loadSpec(
 	}
 
 	var includeDiagnostics []*bpcore.Diagnostic
-	includeDiagnostics, err = l.validateIncludes(ctx, blueprintSchema)
+	includeDiagnostics, err = l.validateIncludes(ctx, blueprintSchema, params)
 	diagnostics = append(diagnostics, includeDiagnostics...)
 	if err != nil {
 		validationErrors = append(validationErrors, err)
@@ -595,6 +595,7 @@ func (l *defaultLoader) validateValue(
 func (l *defaultLoader) validateIncludes(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if bpSchema.Include == nil {
@@ -604,7 +605,17 @@ func (l *defaultLoader) validateIncludes(
 	// We'll collect and report issues for all the problematic includes.
 	includeErrors := map[string]error{}
 	for name, includeSchema := range bpSchema.Include.Values {
-		includeDiagnostics, err := validation.ValidateInclude(ctx, name, includeSchema, bpSchema.Include)
+		includeDiagnostics, err := validation.ValidateInclude(
+			ctx,
+			name,
+			includeSchema,
+			bpSchema.Include,
+			bpSchema,
+			params,
+			l.funcRegistry,
+			l.refChainCollector,
+			l.resourceRegistry,
+		)
 		if err != nil {
 			includeErrors[name] = err
 		}

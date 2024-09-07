@@ -1,15 +1,18 @@
 package validation
 
 import (
+	"context"
 	"fmt"
+	"strings"
 
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 )
 
-func deriveVarType(value *bpcore.ScalarValue) schema.VariableType {
+func deriveVarType(value *core.ScalarValue) schema.VariableType {
 	if value != nil && value.IntValue != nil {
 		return schema.VariableTypeInteger
 	}
@@ -28,7 +31,7 @@ func deriveVarType(value *bpcore.ScalarValue) schema.VariableType {
 	return schema.VariableTypeString
 }
 
-func deriveScalarValueAsString(value *bpcore.ScalarValue) string {
+func deriveScalarValueAsString(value *core.ScalarValue) string {
 	if value != nil && value.IntValue != nil {
 		return fmt.Sprintf("%d", *value.IntValue)
 	}
@@ -66,9 +69,9 @@ func varTypeToUnit(varType schema.VariableType) string {
 func toDiagnosticRange(
 	start *source.Meta,
 	nextLocation *source.Meta,
-) *bpcore.DiagnosticRange {
+) *core.DiagnosticRange {
 	if start == nil {
-		return &bpcore.DiagnosticRange{
+		return &core.DiagnosticRange{
 			Start: &source.Meta{
 				Line:   1,
 				Column: 1,
@@ -91,7 +94,7 @@ func toDiagnosticRange(
 		}
 	}
 
-	return &bpcore.DiagnosticRange{
+	return &core.DiagnosticRange{
 		Start: start,
 		End:   endSourceMeta,
 	}
@@ -107,6 +110,79 @@ func isSubPrimitiveType(subType string) bool {
 	default:
 		return false
 	}
+}
+
+func isEmptyStringWithSubstitutions(stringWithSubs *substitutions.StringOrSubstitutions) bool {
+	if stringWithSubs.Values == nil {
+		return true
+	}
+
+	i := 0
+	hasContent := false
+	for !hasContent && i < len(stringWithSubs.Values) {
+		if stringWithSubs.Values[i].SubstitutionValue != nil {
+			hasContent = true
+		} else {
+			strVal := stringWithSubs.Values[i].StringValue
+			hasContent = strVal != nil && strings.TrimSpace(*strVal) != ""
+		}
+		i += 1
+	}
+
+	return !hasContent
+}
+
+func validateDescription(
+	ctx context.Context,
+	usedIn string,
+	description *substitutions.StringOrSubstitutions,
+	bpSchema *schema.Blueprint,
+	params core.BlueprintParams,
+	funcRegistry provider.FunctionRegistry,
+	refChainCollector RefChainCollector,
+	resourceRegistry provider.ResourceRegistry,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	if description == nil {
+		return diagnostics, nil
+	}
+
+	errs := []error{}
+
+	for _, stringOrSub := range description.Values {
+		if stringOrSub.SubstitutionValue != nil {
+			resolvedType, subDiagnostics, err := ValidateSubstitution(
+				ctx,
+				stringOrSub.SubstitutionValue,
+				nil,
+				bpSchema,
+				usedIn,
+				params,
+				funcRegistry,
+				refChainCollector,
+				resourceRegistry,
+			)
+			if err != nil {
+				errs = append(errs, err)
+			} else {
+				diagnostics = append(diagnostics, subDiagnostics...)
+				if resolvedType != string(substitutions.ResolvedSubExprTypeString) {
+					errs = append(errs, errInvalidDescriptionSubType(
+						usedIn,
+						resolvedType,
+						stringOrSub.SourceMeta,
+					))
+				}
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return diagnostics, ErrMultipleValidationErrors(errs)
+	}
+
+	return diagnostics, nil
 }
 
 func getSubNextLocation(i int, values []*substitutions.StringOrSubstitution) *source.Meta {

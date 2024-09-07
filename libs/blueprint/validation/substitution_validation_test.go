@@ -29,6 +29,7 @@ func (s *SubstitutionValidationTestSuite) SetUpTest(c *C) {
 			"trimprefix": corefunctions.NewTrimPrefixFunction(),
 			"list":       corefunctions.NewListFunction(),
 			"object":     corefunctions.NewObjectFunction(),
+			"datetime":   corefunctions.NewDateTimeFunction(&internal.ClockMock{}),
 		},
 	}
 	s.refChainCollector = NewRefChainCollector()
@@ -1691,6 +1692,39 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_an_incorrect
 		Equals,
 		"validation failed due to an invalid number of arguments being provided for substitution function \"trimprefix\", "+
 			"expected 2 but got 3",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_an_incorrect_string_choice_for_function_arg(c *C) {
+	subInputStr := "${datetime(\"rfc3339nano\")}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource1",
+		&testBlueprintParams{},
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to an invalid argument value being provided for substitution function "+
+			"\"datetime\", expected argument 0 to be one of the following choices: unix, rfc3339, tag, tagcompact "+
+			"but got \"rfc3339nano\"",
 	)
 }
 

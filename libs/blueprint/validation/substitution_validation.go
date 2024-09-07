@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
@@ -784,7 +785,7 @@ func validateFunctionSubstitution(
 		}
 
 		if err == nil {
-			err = checkSubFuncArgType(defOutput.Definition, i, resolveType, funcName, arg.SourceMeta)
+			err = checkSubFuncArgType(defOutput.Definition, i, arg.Value, resolveType, funcName, arg.SourceMeta)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -801,6 +802,7 @@ func validateFunctionSubstitution(
 func checkSubFuncArgType(
 	definition *function.Definition,
 	argIndex int,
+	argVal *substitutions.Substitution,
 	resolveType string,
 	funcName string,
 	location *source.Meta,
@@ -851,6 +853,14 @@ func checkSubFuncArgType(
 			funcName,
 			location,
 		)
+	}
+
+	if string(param.GetType()) == resolveType &&
+		resolveType == string(substitutions.ResolvedSubExprTypeString) {
+		err := checkStringChoices(param, argIndex, argVal, funcName, location)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -925,6 +935,45 @@ func validateSubFuncArgument(
 		refChainCollector,
 		resourceRegistry,
 	)
+}
+
+func checkStringChoices(
+	param function.Parameter,
+	argIndex int,
+	argVal *substitutions.Substitution,
+	funcName string,
+	location *source.Meta,
+) error {
+	if argVal.StringValue == nil {
+		// If the argument is not a string literal, skip checking choices.
+		return nil
+	}
+
+	scalarParam, isScalar := param.(*function.ScalarParameter)
+	if !isScalar {
+		return nil
+	}
+
+	scalarTypeDef, isScalarTypeDef := scalarParam.Type.(*function.ValueTypeDefinitionScalar)
+	if !isScalarTypeDef {
+		return nil
+	}
+
+	if len(scalarTypeDef.StringChoices) == 0 {
+		return nil
+	}
+
+	if !slices.Contains(scalarTypeDef.StringChoices, *argVal.StringValue) {
+		return errSubFuncArgInvalidStringChoice(
+			argIndex,
+			scalarTypeDef.StringChoices,
+			*argVal.StringValue,
+			funcName,
+			location,
+		)
+	}
+
+	return nil
 }
 
 func subFuncTakesVariadicArgs(def *function.Definition) bool {

@@ -54,12 +54,20 @@ func NewDateTimeFunction(clock core.Clock) provider.Function {
 				"(e.g. Docker image tags, S3 object keys, etc.)\n\n" +
 				"**Examples:**\n\n" +
 				"```\n${datetime(\"tag\")}\n```",
-			Parameters: []function.Parameter{},
+			Parameters: []function.Parameter{
+				&function.ScalarParameter{
+					Type: &function.ValueTypeDefinitionScalar{
+						Label:         "string",
+						Type:          function.ValueTypeString,
+						StringChoices: SupportedDateTimeFormats,
+					},
+					Description: "The date/time format to return the current date/time in.",
+				},
+			},
 			Return: &function.ScalarReturn{
 				Type: &function.ValueTypeDefinitionScalar{
-					Label:         "string",
-					Type:          function.ValueTypeString,
-					StringChoices: SupportedDateTimeFormats,
+					Label: "string",
+					Type:  function.ValueTypeString,
 				},
 				Description: "A string representing the current time in the requested format.",
 			},

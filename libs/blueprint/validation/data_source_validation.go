@@ -63,7 +63,7 @@ func ValidateDataSource(
 		errs = append(errs, validateMetadataErr)
 	}
 
-	validateDescriptionDiagnostics, validateDescErr := validateDataSourceDescription(
+	validateDescriptionDiagnostics, validateDescErr := validateDescription(
 		ctx,
 		fmt.Sprintf("datasources.%s", name),
 		dataSource.Description,
@@ -358,59 +358,6 @@ func validateDataSourceMetadataAnnotation(
 					&diagnostics,
 					&errs,
 				)
-			}
-		}
-	}
-
-	if len(errs) > 0 {
-		return diagnostics, ErrMultipleValidationErrors(errs)
-	}
-
-	return diagnostics, nil
-}
-
-func validateDataSourceDescription(
-	ctx context.Context,
-	usedIn string,
-	description *substitutions.StringOrSubstitutions,
-	bpSchema *schema.Blueprint,
-	params bpcore.BlueprintParams,
-	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
-) ([]*bpcore.Diagnostic, error) {
-	diagnostics := []*bpcore.Diagnostic{}
-
-	if description == nil {
-		return diagnostics, nil
-	}
-
-	errs := []error{}
-
-	for _, stringOrSub := range description.Values {
-		if stringOrSub.SubstitutionValue != nil {
-			resolvedType, subDiagnostics, err := ValidateSubstitution(
-				ctx,
-				stringOrSub.SubstitutionValue,
-				nil,
-				bpSchema,
-				usedIn,
-				params,
-				funcRegistry,
-				refChainCollector,
-				resourceRegistry,
-			)
-			if err != nil {
-				errs = append(errs, err)
-			} else {
-				diagnostics = append(diagnostics, subDiagnostics...)
-				if resolvedType != string(substitutions.ResolvedSubExprTypeString) {
-					errs = append(errs, errInvalidDescriptionSubType(
-						usedIn,
-						resolvedType,
-						stringOrSub.SourceMeta,
-					))
-				}
 			}
 		}
 	}
@@ -773,7 +720,7 @@ func validateDataSourceExport(
 		)
 	}
 
-	diagnostics, err := validateDataSourceDescription(
+	diagnostics, err := validateDescription(
 		ctx,
 		fmt.Sprintf("datasources.%s.exports.%s", dataSourceName, exportName),
 		export.Description,

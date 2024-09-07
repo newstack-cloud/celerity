@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
@@ -147,4 +148,13 @@ func UnpackLoadError(err error) (*errors.LoadError, bool) {
 		return UnpackLoadError(loadErr.ChildErrors[0])
 	}
 	return loadErr, ok
+}
+
+// Thursday, 7th September 2023 14:43:44
+const CurrentTimeUnixMock int64 = 1694097824
+
+type ClockMock struct{}
+
+func (c *ClockMock) Now() time.Time {
+	return time.Unix(CurrentTimeUnixMock, 0)
 }

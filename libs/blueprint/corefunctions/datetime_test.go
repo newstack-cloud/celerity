@@ -30,7 +30,7 @@ func (s *DateTimeFunctionTestSuite) SetUpTest(c *C) {
 		},
 		callStack: s.callStack,
 	}
-	s.clock = &testClock{}
+	s.clock = &internal.ClockMock{}
 }
 
 func (s *DateTimeFunctionTestSuite) Test_gets_current_time_unix_format(c *C) {
@@ -51,7 +51,7 @@ func (s *DateTimeFunctionTestSuite) Test_gets_current_time_unix_format(c *C) {
 	c.Assert(err, IsNil)
 	outputStr, isStr := output.ResponseData.(string)
 	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, fmt.Sprintf("%d", testCurrentTimeUnix))
+	c.Assert(outputStr, Equals, fmt.Sprintf("%d", internal.CurrentTimeUnixMock))
 }
 
 func (s *DateTimeFunctionTestSuite) Test_gets_current_time_rfc3339_format(c *C) {

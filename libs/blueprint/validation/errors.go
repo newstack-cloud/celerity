@@ -679,6 +679,29 @@ func errSubFuncArgTypeMismatch(
 	}
 }
 
+func errSubFuncArgInvalidStringChoice(
+	argIndex int,
+	expectedChoices []string,
+	actualValue string,
+	funcName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid argument value being provided for substitution function \"%s\", "+
+				"expected argument %d to be one of the following choices: %s but got \"%s\"",
+			funcName,
+			argIndex,
+			strings.Join(expectedChoices, ", "),
+			actualValue,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errSubFuncNamedArgsNotAllowed(
 	argName string,
 	funcName string,
@@ -1260,6 +1283,26 @@ func errInvalidDescriptionSubType(
 		Err: fmt.Errorf(
 			"validation failed due to an invalid substitution found in %q, "+
 				"resolved type %q is not supported by descriptions, "+
+				"only values that resolve as strings are supported",
+			usedIn,
+			resolvedType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errInvalidIncludePathSubType(
+	usedIn string,
+	resolvedType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid substitution found in %q, "+
+				"resolved type %q is not supported by include paths, "+
 				"only values that resolve as strings are supported",
 			usedIn,
 			resolvedType,
