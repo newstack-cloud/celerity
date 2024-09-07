@@ -38,11 +38,11 @@ func (s *CWDFunctionTestSuite) SetUpTest(c *C) {
 }
 
 func (s *CWDFunctionTestSuite) Test_gets_current_working_directory(c *C) {
-	notFunc := NewCWDFunction(s.getWorkingDir)
+	cwdFunc := NewCWDFunction(s.getWorkingDir)
 	s.callStack.Push(&function.Call{
 		FunctionName: "cwd",
 	})
-	output, err := notFunc.Call(context.TODO(), &provider.FunctionCallInput{
+	output, err := cwdFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
 			args:    []any{},
 			callCtx: s.callContext,
@@ -57,11 +57,11 @@ func (s *CWDFunctionTestSuite) Test_gets_current_working_directory(c *C) {
 }
 
 func (s *CWDFunctionTestSuite) Test_returns_func_error_on_failure_to_get_current_working_directory(c *C) {
-	notFunc := NewCWDFunction(s.getWorkingDirFail)
+	cwdFunc := NewCWDFunction(s.getWorkingDirFail)
 	s.callStack.Push(&function.Call{
 		FunctionName: "cwd",
 	})
-	_, err := notFunc.Call(context.TODO(), &provider.FunctionCallInput{
+	_, err := cwdFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
 			args:    []any{},
 			callCtx: s.callContext,

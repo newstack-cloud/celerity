@@ -685,6 +685,10 @@ type ValueTypeDefinitionScalar struct {
 	// This will appear in usage documentation, logs and in
 	// tooling such as the language server.
 	FormattedDescription string
+	// StringChoices is a list of string values that are allowed
+	// for the value.
+	// This is only taken into account when typeDef.Type is ValueTypeString.
+	StringChoices []string
 }
 
 func (v *ValueTypeDefinitionScalar) GetType() ValueType {
