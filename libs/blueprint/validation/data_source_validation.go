@@ -48,7 +48,19 @@ func ValidateDataSource(
 
 	var errs []error
 
-	validateDiagnostics, validateMetadataErr := validateDataSourceMetadata(
+	validateTypeDiagnostics, validateTypeErr := validateDataSourceType(
+		ctx,
+		name,
+		dataSource.Type,
+		dataSourceMap,
+		dataSourceRegistry,
+	)
+	diagnostics = append(diagnostics, validateTypeDiagnostics...)
+	if validateTypeErr != nil {
+		errs = append(errs, validateTypeErr)
+	}
+
+	validateMetadataDiagnostics, validateMetadataErr := validateDataSourceMetadata(
 		ctx,
 		name,
 		dataSource.DataSourceMetadata,
@@ -58,7 +70,7 @@ func ValidateDataSource(
 		refChainCollector,
 		resourceRegistry,
 	)
-	diagnostics = append(diagnostics, validateDiagnostics...)
+	diagnostics = append(diagnostics, validateMetadataDiagnostics...)
 	if validateMetadataErr != nil {
 		errs = append(errs, validateMetadataErr)
 	}
@@ -144,6 +156,31 @@ func ValidateDataSource(
 
 	if len(errs) > 0 {
 		return diagnostics, ErrMultipleValidationErrors(errs)
+	}
+
+	return diagnostics, nil
+}
+
+func validateDataSourceType(
+	ctx context.Context,
+	dataSourceName string,
+	dataSourceType string,
+	dataSourceMap *schema.DataSourceMap,
+	dataSourceRegistry provider.DataSourceRegistry,
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+
+	hasType, err := dataSourceRegistry.HasDataSourceType(ctx, dataSourceType)
+	if err != nil {
+		return diagnostics, err
+	}
+
+	if !hasType {
+		return diagnostics, errDataSourceTypeNotSupported(
+			dataSourceName,
+			dataSourceType,
+			getDataSourceMeta(dataSourceMap, dataSourceName),
+		)
 	}
 
 	return diagnostics, nil

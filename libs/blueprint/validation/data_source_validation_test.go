@@ -241,6 +241,82 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 	)
 }
 
+func (s *DataSourceValidationTestSuite) Test_reports_errors_when_data_source_type_is_not_supported(c *C) {
+	name1 := "Processor-Dev"
+	name2 := "Processor-Prod"
+
+	dataSource := &schema.DataSource{
+		Type: "aws/ec2/unknown",
+		Filter: &schema.DataSourceFilter{
+			Field: "instanceConfigId",
+			Operator: &schema.DataSourceFilterOperatorWrapper{
+				Value: schema.DataSourceFilterOperatorIn,
+			},
+			Search: &schema.DataSourceFilterSearch{
+				Values: []*substitutions.StringOrSubstitutions{
+					{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &name1,
+							},
+						},
+					},
+					{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &name2,
+							},
+						},
+					},
+				},
+			},
+		},
+		Exports: &schema.DataSourceFieldExportMap{
+			Values: map[string]*schema.DataSourceFieldExport{
+				"instanceId": {
+					Type: &schema.DataSourceFieldTypeWrapper{
+						Value: schema.DataSourceFieldTypeString,
+					},
+					AliasFor: "instanceConfigId",
+				},
+			},
+		},
+	}
+	dataSourceMap := &schema.DataSourceMap{
+		Values: map[string]*schema.DataSource{
+			"vmInstance": dataSource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: dataSourceMap,
+	}
+
+	diagnostics, err := ValidateDataSource(
+		context.Background(),
+		"vmInstance",
+		dataSource,
+		dataSourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		s.dataSourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidDataSource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to data source \"vmInstance\" having an "+
+			"unsupported type \"aws/ec2/unknown\", this type is not made available by any of the loaded providers",
+	)
+}
+
 func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_is_empty(c *C) {
 	dataSource := &schema.DataSource{
 		Type: "aws/ec2/instance",

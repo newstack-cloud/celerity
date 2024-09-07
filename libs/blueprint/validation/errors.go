@@ -1549,6 +1549,25 @@ func errDataSourceExportTypeMissing(
 	}
 }
 
+func errDataSourceTypeNotSupported(
+	dataSourceName string,
+	dataSourceType string,
+	wrapperLocation *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(wrapperLocation)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to data source %q having an unsupported type %q,"+
+				" this type is not made available by any of the loaded providers",
+			dataSourceName,
+			dataSourceType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func deriveElemRefTypeLabel(elemRefType string) string {
 	switch elemRefType {
 	case "index":
