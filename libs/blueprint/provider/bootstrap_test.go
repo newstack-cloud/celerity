@@ -337,18 +337,18 @@ func newTestExampleResource() Resource {
 	return &testExampleResource{
 		definition: &ResourceSpecDefinition{
 			Schema: &ResourceSpecSchema{
-				Type: ResourceSpecTypeObject,
+				Type: ResourceSpecSchemaTypeObject,
 				Attributes: map[string]*ResourceSpecSchema{
 					"name": {
-						Type: ResourceSpecTypeString,
+						Type: ResourceSpecSchemaTypeString,
 					},
 					"ids": {
-						Type: ResourceSpecTypeArray,
+						Type: ResourceSpecSchemaTypeArray,
 						Items: &ResourceSpecSchema{
-							Type: ResourceSpecTypeObject,
+							Type: ResourceSpecSchemaTypeObject,
 							Attributes: map[string]*ResourceSpecSchema{
 								"name": {
-									Type: ResourceSpecTypeString,
+									Type: ResourceSpecSchemaTypeString,
 								},
 							},
 						},

@@ -350,6 +350,7 @@ func validateResourcePropertySubSpec(
 		return "", diagnostics, errResourceTypeMissingSpecDefinition(
 			subResourceProp.ResourceName,
 			resourceType,
+			/* inSubstitution */ true,
 			subResourceProp.SourceMeta,
 		)
 	}
@@ -374,6 +375,7 @@ func validateResourcePropertySubSpecPath(
 		return "", diagnostics, errResourceTypeSpecDefMissingSchema(
 			subResourceProp.ResourceName,
 			resourceType,
+			/* inSubstitution */ true,
 			subResourceProp.SourceMeta,
 		)
 	}
@@ -397,7 +399,8 @@ func validateResourcePropertySubSpecPath(
 			if i == len(subResourceProp.Path)-1 {
 				resolvedType = attrType
 			}
-		} else if property.PrimitiveArrIndex != nil && currentSchema.Type == provider.ResourceSpecTypeArray {
+		} else if property.PrimitiveArrIndex != nil &&
+			currentSchema.Type == provider.ResourceSpecSchemaTypeArray {
 			currentSchema = currentSchema.Items
 			if i == len(subResourceProp.Path)-1 {
 				resolvedType = string(substitutions.ResolvedSubExprTypeArray)
@@ -600,9 +603,9 @@ func checkSubResourcePropertyAttr(
 }
 
 func isComplexResourceSpecSchemaType(schemaType provider.ResourceSpecSchemaType) bool {
-	return schemaType == provider.ResourceSpecTypeObject ||
-		schemaType == provider.ResourceSpecTypeArray ||
-		schemaType == provider.ResourceSpecTypeMap
+	return schemaType == provider.ResourceSpecSchemaTypeObject ||
+		schemaType == provider.ResourceSpecSchemaTypeArray ||
+		schemaType == provider.ResourceSpecSchemaTypeMap
 }
 
 func validateDataSourcePropertySubstitution(
@@ -878,11 +881,11 @@ func validateSubFuncArgAnyType(
 		return nil
 	}
 
-	matchesUnionType := true
+	matchesUnionType := false
 	i := 0
-	for matchesUnionType && i < len(unionTypes) {
+	for !matchesUnionType && i < len(unionTypes) {
 		if string(unionTypes[i].GetType()) != resolveType {
-			matchesUnionType = false
+			matchesUnionType = true
 		}
 		i += 1
 	}
@@ -1065,15 +1068,15 @@ func subDataSourceFieldType(fieldType schema.DataSourceFieldType) string {
 
 func subResourceSpecSchemaType(schemaType provider.ResourceSpecSchemaType) string {
 	switch schemaType {
-	case provider.ResourceSpecTypeInteger:
+	case provider.ResourceSpecSchemaTypeInteger:
 		return string(substitutions.ResolvedSubExprTypeInteger)
-	case provider.ResourceSpecTypeFloat:
+	case provider.ResourceSpecSchemaTypeFloat:
 		return string(substitutions.ResolvedSubExprTypeFloat)
-	case provider.ResourceSpecTypeBoolean:
+	case provider.ResourceSpecSchemaTypeBoolean:
 		return string(substitutions.ResolvedSubExprTypeBoolean)
-	case provider.ResourceSpecTypeArray:
+	case provider.ResourceSpecSchemaTypeArray:
 		return string(substitutions.ResolvedSubExprTypeArray)
-	case provider.ResourceSpecTypeObject, provider.ResourceSpecTypeMap:
+	case provider.ResourceSpecSchemaTypeObject, provider.ResourceSpecSchemaTypeMap:
 		return string(substitutions.ResolvedSubExprTypeObject)
 	default:
 		return string(substitutions.ResolvedSubExprTypeString)

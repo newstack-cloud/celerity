@@ -203,3 +203,53 @@ func getEndLocation(location *source.Meta) *source.Meta {
 		Column: location.Column,
 	}
 }
+
+func isMappingNodeEmpty(node *core.MappingNode) bool {
+	return node == nil || (node.Literal == nil && node.Fields == nil &&
+		node.Items == nil && node.StringWithSubstitutions == nil)
+}
+
+func deriveMappingNodeResourceSpecType(node *core.MappingNode) provider.ResourceSpecSchemaType {
+	if node.Literal != nil && node.Literal.BoolValue != nil {
+		return provider.ResourceSpecSchemaTypeBoolean
+	}
+
+	if node.Literal != nil && node.Literal.StringValue != nil {
+		return provider.ResourceSpecSchemaTypeString
+	}
+
+	if node.Literal != nil && node.Literal.IntValue != nil {
+		return provider.ResourceSpecSchemaTypeInteger
+	}
+
+	if node.Literal != nil && node.Literal.FloatValue != nil {
+		return provider.ResourceSpecSchemaTypeFloat
+	}
+
+	if node.Fields != nil {
+		return provider.ResourceSpecSchemaTypeObject
+	}
+
+	if node.Items != nil {
+		return provider.ResourceSpecSchemaTypeArray
+	}
+
+	if node.StringWithSubstitutions != nil {
+		return provider.ResourceSpecSchemaTypeString
+	}
+
+	return ""
+}
+
+func resourceSpecUnionTypeToString(unionSchema []*provider.ResourceSpecSchema) string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	for i, schema := range unionSchema {
+		sb.WriteString(string(schema.Type))
+		if i < len(unionSchema)-1 {
+			sb.WriteString(" | ")
+		}
+	}
+	sb.WriteString(")")
+	return sb.String()
+}

@@ -260,18 +260,18 @@ func (r *testExampleResource) GetSpecDefinition(
 	return &provider.ResourceGetSpecDefinitionOutput{
 		SpecDefinition: &provider.ResourceSpecDefinition{
 			Schema: &provider.ResourceSpecSchema{
-				Type: provider.ResourceSpecTypeObject,
+				Type: provider.ResourceSpecSchemaTypeObject,
 				Attributes: map[string]*provider.ResourceSpecSchema{
 					"name": {
-						Type: provider.ResourceSpecTypeString,
+						Type: provider.ResourceSpecSchemaTypeString,
 					},
 					"ids": {
-						Type: provider.ResourceSpecTypeArray,
+						Type: provider.ResourceSpecSchemaTypeArray,
 						Items: &provider.ResourceSpecSchema{
-							Type: provider.ResourceSpecTypeObject,
+							Type: provider.ResourceSpecSchemaTypeObject,
 							Attributes: map[string]*provider.ResourceSpecSchema{
 								"name": {
-									Type: provider.ResourceSpecTypeString,
+									Type: provider.ResourceSpecSchemaTypeString,
 								},
 							},
 						},
@@ -479,7 +479,7 @@ func (d *testEC2InstanceDataSource) GetSpecDefinition(
 	return &provider.DataSourceGetSpecDefinitionOutput{
 		SpecDefinition: &provider.DataSourceSpecDefinition{
 			Fields: map[string]*provider.DataSourceSpecSchema{
-				"instanceConfigId": {
+				"serviceName": {
 					Type: provider.DataSourceSpecTypeString,
 				},
 			},
@@ -678,4 +678,96 @@ func (d *testVPC3DataSource) CustomValidate(
 	input *provider.DataSourceValidateInput,
 ) (*provider.DataSourceValidateOutput, error) {
 	return &provider.DataSourceValidateOutput{}, nil
+}
+
+type testECSServiceResource struct{}
+
+func newTestECSServiceResource() provider.Resource {
+	return &testECSServiceResource{}
+}
+
+// CanLinkTo is not used for validation!
+func (r *testECSServiceResource) CanLinkTo(
+	ctx context.Context,
+	input *provider.ResourceCanLinkToInput,
+) (*provider.ResourceCanLinkToOutput, error) {
+	return &provider.ResourceCanLinkToOutput{}, nil
+}
+
+// IsCommonTerminal is not used for validation!
+func (r *testECSServiceResource) IsCommonTerminal(
+	ctx context.Context,
+	input *provider.ResourceIsCommonTerminalInput,
+) (*provider.ResourceIsCommonTerminalOutput, error) {
+	return &provider.ResourceIsCommonTerminalOutput{
+		IsCommonTerminal: false,
+	}, nil
+}
+
+func (r *testECSServiceResource) GetType(
+	ctx context.Context,
+	input *provider.ResourceGetTypeInput,
+) (*provider.ResourceGetTypeOutput, error) {
+	return &provider.ResourceGetTypeOutput{
+		Type: "celerity/exampleResource",
+	}, nil
+}
+
+// StageChanges is not used for validation!
+func (r *testECSServiceResource) StageChanges(
+	ctx context.Context,
+	input *provider.ResourceStageChangesInput,
+) (*provider.ResourceStageChangesOutput, error) {
+	return &provider.ResourceStageChangesOutput{}, nil
+}
+
+func (r *testECSServiceResource) CustomValidate(
+	ctx context.Context,
+	input *provider.ResourceValidateInput,
+) (*provider.ResourceValidateOutput, error) {
+	return &provider.ResourceValidateOutput{
+		Diagnostics: []*core.Diagnostic{},
+	}, nil
+}
+
+func (r *testECSServiceResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.ResourceSpecDefinition{
+			Schema: &provider.ResourceSpecSchema{
+				Type: provider.ResourceSpecSchemaTypeObject,
+				Attributes: map[string]*provider.ResourceSpecSchema{
+					"serviceName": {
+						Type: provider.ResourceSpecSchemaTypeString,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
+// Deploy is not used for validation!
+func (r *testECSServiceResource) Deploy(
+	ctx context.Context,
+	input *provider.ResourceDeployInput,
+) (*provider.ResourceDeployOutput, error) {
+	return &provider.ResourceDeployOutput{}, nil
+}
+
+// GetExternalState is not used for validation!
+func (r *testECSServiceResource) GetExternalState(
+	ctx context.Context,
+	input *provider.ResourceGetExternalStateInput,
+) (*provider.ResourceGetExternalStateOutput, error) {
+	return &provider.ResourceGetExternalStateOutput{}, nil
+}
+
+// Destroy is not used for validation!
+func (r *testECSServiceResource) Destroy(
+	ctx context.Context,
+	input *provider.ResourceDestroyInput,
+) error {
+	return nil
 }

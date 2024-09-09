@@ -34,6 +34,10 @@ const (
 	// reason for a blueprint spec load error is due to
 	// the same function being provided by multiple providers.
 	ErrorReasonCodeFunctionAlreadyProvided errors.ErrorReasonCode = "function_already_provided"
+	// ErrorReasonCodeInvalidResourceSpecDefinition is provided when the
+	// reason for a blueprint spec load error is due to
+	// an unknown resource spec schema type being used in the schema definition.
+	ErrorReasonCodeInvalidResourceSpecDefinition errors.ErrorReasonCode = "invalid_resource_spec_def"
 )
 
 func errResourceTypeProviderNotFound(
@@ -132,6 +136,23 @@ func errFunctionAlreadyProvided(
 			functionName,
 			providedBy,
 			provider,
+		),
+	}
+}
+
+// ErrUnknownResourceSpecType is returned when the schema definition for a resource type
+// contains an unknown resource spec schema type.
+func ErrUnknownResourceSpecType(
+	specType ResourceSpecSchemaType,
+	resourceType string,
+) error {
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResourceSpecDefinition,
+		Err: fmt.Errorf(
+			"validation failed due to an unknown resource spec schema type %q "+
+				"used in the schema definition for resource type %q",
+			specType,
+			resourceType,
 		),
 	}
 }

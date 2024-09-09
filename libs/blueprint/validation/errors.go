@@ -1021,16 +1021,22 @@ func errSubDataSourceFieldNotArray(
 func errResourceTypeMissingSpecDefinition(
 	resourceName string,
 	resourceType string,
+	inSubstitution bool,
 	resourceSourceMeta *source.Meta,
 ) error {
 	line, col := source.PositionFromSourceMeta(resourceSourceMeta)
+	contextInfo := ""
+	if inSubstitution {
+		contextInfo = " referenced in substitution"
+	}
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
 			"validation failed due to a missing spec definition for resource \"%s\" "+
-				"of type \"%s\" referenced in substitution",
+				"of type \"%s\"%s",
 			resourceName,
 			resourceType,
+			contextInfo,
 		),
 		Line:   line,
 		Column: col,
@@ -1040,16 +1046,22 @@ func errResourceTypeMissingSpecDefinition(
 func errResourceTypeSpecDefMissingSchema(
 	resourceName string,
 	resourceType string,
+	inSubstitution bool,
 	resourceSourceMeta *source.Meta,
 ) error {
 	line, col := source.PositionFromSourceMeta(resourceSourceMeta)
+	contextInfo := ""
+	if inSubstitution {
+		contextInfo = " referenced in substitution"
+	}
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
 			"validation failed due to a missing spec definition schema for resource \"%s\" "+
-				"of type \"%s\" referenced in substitution",
+				"of type \"%s\"%s",
 			resourceName,
 			resourceType,
+			contextInfo,
 		),
 		Line:   line,
 		Column: col,
@@ -1354,6 +1366,50 @@ func errInvalidSubType(
 	}
 }
 
+func errInvalidSubTypeNotBoolean(
+	usedIn string,
+	valueContext string,
+	resolvedType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid substitution found in %q, "+
+				"resolved type %q is not supported by %ss, "+
+				"only values that resolve as booleans are supported",
+			usedIn,
+			resolvedType,
+			valueContext,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errInvalidSubTypeNotArray(
+	usedIn string,
+	valueContext string,
+	resolvedType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to an invalid substitution found in %q, "+
+				"resolved type %q is not supported in %s, "+
+				"only values that resolve as arrays are supported",
+			usedIn,
+			resolvedType,
+			valueContext,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errMissingValueContent(
 	valueID string,
 	location *source.Meta,
@@ -1562,6 +1618,162 @@ func errDataSourceTypeNotSupported(
 				" this type is not made available by any of the loaded providers",
 			dataSourceName,
 			dataSourceType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceAnnotationKeyContainsSubstitution(
+	dataSourceName string,
+	annotationKey string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to an annotation key containing a substitution in data source %q, "+
+				"the annotation key %q can not contain substitutions",
+			dataSourceName,
+			annotationKey,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceTypeNotSupported(
+	resourceName string,
+	resourceType string,
+	wrapperLocation *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(wrapperLocation)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to resource %q having an unsupported type %q,"+
+				" this type is not made available by any of the loaded providers",
+			resourceName,
+			resourceType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errLabelKeyContainsSubstitution(
+	resourceName string,
+	labelKey string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a label key containing a substitution in resource %q, "+
+				"the label key %q can not contain substitutions",
+			resourceName,
+			labelKey,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errLabelValueContainsSubstitution(
+	resourceName string,
+	labelKey string,
+	labelValue string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a label value containing a substitution in resource %q, "+
+				"the label %q with value %q can not contain substitutions",
+			resourceName,
+			labelKey,
+			labelValue,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errLinkSelectorKeyContainsSubstitution(
+	resourceName string,
+	linkSelectorKey string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a link selector \"byLabel\" key containing a "+
+				"substitution in resource %q, "+
+				"the link selector label key %q can not contain substitutions",
+			resourceName,
+			linkSelectorKey,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errLinkSelectorValueContainsSubstitution(
+	resourceName string,
+	linkSelectorKey string,
+	linkSelectorValue string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a link selector \"byLabel\" value containing a "+
+				"substitution in resource %q, "+
+				"the link selector label %q with value %q can not contain substitutions",
+			resourceName,
+			linkSelectorKey,
+			linkSelectorValue,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errAnnotationKeyContainsSubstitution(
+	resourceName string,
+	annotationKey string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to an annotation key containing a substitution in resource %q, "+
+				"the annotation key %q can not contain substitutions",
+			resourceName,
+			annotationKey,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errNestedResourceConditionEmpty(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a nested condition for resource %q being empty, "+
+				"all nested conditions must have a value defined",
+			resourceName,
 		),
 		Line:   line,
 		Column: col,

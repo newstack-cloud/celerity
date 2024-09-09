@@ -326,8 +326,16 @@ func validateDataSourceMetadataAnnotations(
 	dataSourceIdentifier := fmt.Sprintf("datasources.%s", dataSourceName)
 	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
-	for _, annotation := range metadataSchema.Annotations.Values {
-		annotationDiagnostics, err := validateDataSourceMetadataAnnotation(
+	for key, annotation := range metadataSchema.Annotations.Values {
+		if substitutions.ContainsSubstitution(key) {
+			errs = append(errs, errDataSourceAnnotationKeyContainsSubstitution(
+				dataSourceName,
+				key,
+				annotation.SourceMeta,
+			))
+		}
+
+		annotationDiagnostics, err := validateMetadataAnnotation(
 			ctx,
 			dataSourceIdentifier,
 			annotation,
@@ -350,9 +358,9 @@ func validateDataSourceMetadataAnnotations(
 	return diagnostics, nil
 }
 
-func validateDataSourceMetadataAnnotation(
+func validateMetadataAnnotation(
 	ctx context.Context,
-	dataSourceIdentifier string,
+	itemIdentifier string,
 	annotation *substitutions.StringOrSubstitutions,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -375,7 +383,7 @@ func validateDataSourceMetadataAnnotation(
 				stringOrSub.SubstitutionValue,
 				nil,
 				bpSchema,
-				dataSourceIdentifier,
+				itemIdentifier,
 				params,
 				funcRegistry,
 				refChainCollector,
@@ -387,7 +395,7 @@ func validateDataSourceMetadataAnnotation(
 				diagnostics = append(diagnostics, subDiagnostics...)
 				handleResolvedTypeExpectingPrimitive(
 					resolvedType,
-					dataSourceIdentifier,
+					itemIdentifier,
 					stringOrSub,
 					annotation,
 					"annotation",

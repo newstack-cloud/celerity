@@ -18,6 +18,12 @@ type ResourceRegistry interface {
 	) (*ResourceGetSpecDefinitionOutput, error)
 	// HasResourceType checks if a resource type is available in the registry.
 	HasResourceType(ctx context.Context, resourceType string) (bool, error)
+	// CustomValidate allows for custom validation of a resource of a given type.
+	CustomValidate(
+		ctx context.Context,
+		resourceType string,
+		input *ResourceValidateInput,
+	) (*ResourceValidateOutput, error)
 }
 
 type resourceRegistryFromProviders struct {
@@ -58,6 +64,19 @@ func (r *resourceRegistryFromProviders) HasResourceType(ctx context.Context, res
 		return false, err
 	}
 	return resourceImpl != nil, nil
+}
+
+func (r *resourceRegistryFromProviders) CustomValidate(
+	ctx context.Context,
+	resourceType string,
+	input *ResourceValidateInput,
+) (*ResourceValidateOutput, error) {
+	resourceImpl, err := r.getResourceType(ctx, resourceType)
+	if err != nil {
+		return nil, err
+	}
+
+	return resourceImpl.CustomValidate(ctx, input)
 }
 
 func (r *resourceRegistryFromProviders) getResourceType(ctx context.Context, resourceType string) (Resource, error) {

@@ -83,6 +83,22 @@ func (r *ResourceRegistryMock) GetSpecDefinition(
 	return defOutput, nil
 }
 
+func (r *ResourceRegistryMock) CustomValidate(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceValidateInput,
+) (*provider.ResourceValidateOutput, error) {
+	res, ok := r.Resources[resourceType]
+	if !ok {
+		return nil, fmt.Errorf("resource %s not found", resourceType)
+	}
+	defOutput, err := res.CustomValidate(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
+}
+
 type DataSourceRegistryMock struct {
 	DataSources map[string]provider.DataSource
 }
@@ -148,6 +164,16 @@ func UnpackLoadError(err error) (*errors.LoadError, bool) {
 		return UnpackLoadError(loadErr.ChildErrors[0])
 	}
 	return loadErr, ok
+}
+
+// UnpackError recursively unpacks a LoadError that can contain child errors.
+// This is to be used when the terminating error is not a LoadError.
+func UnpackError(err error) (error, bool) {
+	loadErr, ok := err.(*errors.LoadError)
+	if ok && len(loadErr.ChildErrors) > 0 {
+		return UnpackLoadError(loadErr.ChildErrors[0])
+	}
+	return err, ok
 }
 
 // Thursday, 7th September 2023 14:43:44

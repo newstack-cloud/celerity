@@ -251,21 +251,21 @@ type ResourceSpecSchema struct {
 type ResourceSpecSchemaType string
 
 const (
-	// ResourceSpecTypeString is for a schema string.
-	ResourceSpecTypeString ResourceSpecSchemaType = "string"
-	// ResourceSpecTypeInteger is for a schema integer.
-	ResourceSpecTypeInteger ResourceSpecSchemaType = "integer"
-	// ResourceSpecTypeFloat is for a schema float.
-	ResourceSpecTypeFloat ResourceSpecSchemaType = "float"
-	// ResourceSpecTypeBoolean is for a schema boolean.
-	ResourceSpecTypeBoolean ResourceSpecSchemaType = "boolean"
-	// ResourceSpecTypeMap is for a schema map.
-	ResourceSpecTypeMap ResourceSpecSchemaType = "map"
-	// ResourceSpecTypeObject is for a schema object.
-	ResourceSpecTypeObject ResourceSpecSchemaType = "object"
-	// ResourceSpecTypeArray is for a schema array.
-	ResourceSpecTypeArray ResourceSpecSchemaType = "array"
-	// ResourceSpecTypeUnion is for an element that can be one of
+	// ResourceSpecSchemaTypeString is for a schema string.
+	ResourceSpecSchemaTypeString ResourceSpecSchemaType = "string"
+	// ResourceSpecSchemaTypeInteger is for a schema integer.
+	ResourceSpecSchemaTypeInteger ResourceSpecSchemaType = "integer"
+	// ResourceSpecSchemaTypeFloat is for a schema float.
+	ResourceSpecSchemaTypeFloat ResourceSpecSchemaType = "float"
+	// ResourceSpecSchemaTypeBoolean is for a schema boolean.
+	ResourceSpecSchemaTypeBoolean ResourceSpecSchemaType = "boolean"
+	// ResourceSpecSchemaTypeMap is for a schema map.
+	ResourceSpecSchemaTypeMap ResourceSpecSchemaType = "map"
+	// ResourceSpecSchemaTypeObject is for a schema object.
+	ResourceSpecSchemaTypeObject ResourceSpecSchemaType = "object"
+	// ResourceSpecSchemaTypeArray is for a schema array.
+	ResourceSpecSchemaTypeArray ResourceSpecSchemaType = "array"
+	// ResourceSpecSchemaTypeUnion is for an element that can be one of
 	// multiple schemas.
-	ResourceSpecTypeUnion ResourceSpecSchemaType = "union"
+	ResourceSpecSchemaTypeUnion ResourceSpecSchemaType = "union"
 )
