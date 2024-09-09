@@ -402,6 +402,13 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
+	var metadataDiagnostics []*bpcore.Diagnostic
+	metadataDiagnostics, err = l.validateMetadata(ctx, blueprintSchema, params)
+	diagnostics = append(diagnostics, metadataDiagnostics...)
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
+
 	var dataSourceDiagnostics []*bpcore.Diagnostic
 	dataSourceDiagnostics, err = l.validateDataSources(ctx, blueprintSchema, params)
 	diagnostics = append(diagnostics, dataSourceDiagnostics...)
@@ -702,6 +709,28 @@ func (l *defaultLoader) validateExports(
 	}
 
 	return diagnostics, nil
+}
+
+func (l *defaultLoader) validateMetadata(
+	ctx context.Context,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+) ([]*bpcore.Diagnostic, error) {
+	if bpSchema.Metadata == nil {
+		return []*bpcore.Diagnostic{}, nil
+	}
+
+	return validation.ValidateMappingNode(
+		ctx,
+		"root",
+		"metadata",
+		bpSchema.Metadata,
+		bpSchema,
+		params,
+		l.funcRegistry,
+		l.refChainCollector,
+		l.resourceRegistry,
+	)
 }
 
 func (l *defaultLoader) validateCustomVariableType(
