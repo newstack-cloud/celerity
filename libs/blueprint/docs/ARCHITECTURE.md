@@ -320,6 +320,11 @@ type AbstractResource interface {
 		input *AbstractResourceGetSpecDefinitionInput,
 	) (*AbstractResourceGetSpecDefinitionOutput, error)
 
+	GetStateDefinition(
+		ctx context.Context,
+		input *AbstractResourceGetStateDefinitionInput,
+	) (*AbstractResourceGetStateDefinitionOutput, error)
+
 	CanLinkTo(ctx context.Context, input *AbstractResourceCanLinkToInput) (*AbstractResourceCanLinkToOutput, error)
 
 	IsCommonTerminal(
