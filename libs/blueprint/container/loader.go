@@ -3,11 +3,14 @@ package container
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -145,6 +148,8 @@ type defaultLoader struct {
 	funcRegistry           provider.FunctionRegistry
 	resourceRegistry       resourcehelpers.Registry
 	dataSourceRegistry     provider.DataSourceRegistry
+	clock                  bpcore.Clock
+	resolveWorkingDir      corefunctions.WorkingDirResolver
 }
 
 type LoaderOption func(loader *defaultLoader)
@@ -188,6 +193,25 @@ func WithLoaderTransformSpec(transformSpec bool) LoaderOption {
 	}
 }
 
+// WithLoaderClock sets the clock to be used by the loader.
+//
+// When this option is not provided, the default value is the system clock.
+func WithLoaderClock(clock bpcore.Clock) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.clock = clock
+	}
+}
+
+// WithLoaderResolveWorkingDir sets the function to resolve the working directory
+// to be used by the loader.
+//
+// When this option is not provided, the default value is os.Getwd.
+func WithLoaderResolveWorkingDir(resolveWorkingDir corefunctions.WorkingDirResolver) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.resolveWorkingDir = resolveWorkingDir
+	}
+}
+
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
 // The map of providers must be a map of provider namespaces
@@ -208,6 +232,7 @@ func NewDefaultLoader(
 	stateContainer state.Container,
 	updateChan chan Update,
 	refChainCollector validation.RefChainCollector,
+	blueprintInstanceID string,
 	opts ...LoaderOption,
 ) Loader {
 	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers)
@@ -222,11 +247,20 @@ func NewDefaultLoader(
 		funcRegistry:       funcRegistry,
 		resourceRegistry:   resourceRegistry,
 		dataSourceRegistry: dataSourceRegistry,
+		clock:              &systemClock{},
+		resolveWorkingDir:  os.Getwd,
 	}
 
 	for _, opt := range opts {
 		opt(loader)
 	}
+
+	providers["core"] = providerhelpers.NewCoreProvider(
+		stateContainer,
+		blueprintInstanceID,
+		loader.resolveWorkingDir,
+		loader.clock,
+	)
 
 	return loader
 }

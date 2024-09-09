@@ -2,6 +2,7 @@ package container
 
 import (
 	"strings"
+	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 )
@@ -27,4 +28,10 @@ func predefinedFormatFactory(predefinedFormat schema.SpecFormat) func(input stri
 	return func(input string) (schema.SpecFormat, error) {
 		return predefinedFormat, nil
 	}
+}
+
+type systemClock struct{}
+
+func (d systemClock) Now() time.Time {
+	return time.Now()
 }
