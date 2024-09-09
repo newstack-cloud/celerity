@@ -41,54 +41,54 @@ func (s *ExportValidationTestSuite) SetUpTest(c *C) {
 	}
 }
 
-// func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_export(c *C) {
-// 	description := "The endpoint information to be used to connect to a cache cluster."
-// 	exportSchema := &schema.Export{
-// 		Type: schema.ExportTypeObject,
-// 		Description: &substitutions.StringOrSubstitutions{
-// 			Values: []*substitutions.StringOrSubstitution{
-// 				{
-// 					StringValue: &description,
-// 				},
-// 			},
-// 		},
-// 		Field: "resources.cacheCluster.state.cacheNodes.endpoints",
-// 	}
-// 	exportMap := &schema.ExportMap{
-// 		Values: map[string]*schema.Export{
-// 			"cacheEndpointInfo": exportSchema,
-// 		},
-// 	}
-// 	serviceName := "cache-cluster"
-// 	blueprint := &schema.Blueprint{
-// 		Resources: &schema.ResourceMap{
-// 			Values: map[string]*schema.Resource{
-// 				"cacheCluster": {
-// 					Type: "aws/ecs/service",
-// 					Spec: &core.MappingNode{
-// 						Literal: &core.ScalarValue{
-// 							StringValue: &serviceName,
-// 						},
-// 					},
-// 				},
-// 			},
-// 		},
-// 		Exports: exportMap,
-// 	}
-// 	diagnostics, err := ValidateExport(
-// 		context.Background(),
-// 		"cacheEndpointInfo",
-// 		exportSchema,
-// 		exportMap,
-// 		blueprint,
-// 		&testBlueprintParams{},
-// 		s.funcRegistry,
-// 		s.refChainCollector,
-// 		s.resourceRegistry,
-// 	)
-// 	c.Assert(diagnostics, HasLen, 0)
-// 	c.Assert(err, IsNil)
-// }
+func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_export(c *C) {
+	description := "The endpoint information to be used to connect to a cache cluster."
+	exportSchema := &schema.Export{
+		Type: schema.ExportTypeString,
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
+		Field: "resources.cacheCluster.state.id",
+	}
+	exportMap := &schema.ExportMap{
+		Values: map[string]*schema.Export{
+			"cacheEndpointInfo": exportSchema,
+		},
+	}
+	serviceName := "cache-cluster"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"cacheCluster": {
+					Type: "aws/ecs/service",
+					Spec: &core.MappingNode{
+						Literal: &core.ScalarValue{
+							StringValue: &serviceName,
+						},
+					},
+				},
+			},
+		},
+		Exports: exportMap,
+	}
+	diagnostics, err := ValidateExport(
+		context.Background(),
+		"cacheEndpointInfo",
+		exportSchema,
+		exportMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, IsNil)
+}
 
 func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_export_type_is_provided(c *C) {
 	description := "The endpoint information to be used to connect to a cache cluster."

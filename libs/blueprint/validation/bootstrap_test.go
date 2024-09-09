@@ -287,7 +287,16 @@ func (r *testExampleResource) GetStateDefinition(
 	input *provider.ResourceGetStateDefinitionInput,
 ) (*provider.ResourceGetStateDefinitionOutput, error) {
 	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: nil,
+		StateDefinition: &provider.ResourceStateDefinition{
+			Schema: &provider.ResourceDefinitionsSchema{
+				Type: provider.ResourceDefinitionsSchemaTypeObject,
+				Attributes: map[string]*provider.ResourceDefinitionsSchema{
+					"name": {
+						Type: provider.ResourceDefinitionsSchemaTypeString,
+					},
+				},
+			},
+		},
 	}, nil
 }
 
@@ -487,6 +496,94 @@ func (r *testExampleResourceMissingSpecSchema) GetExternalState(
 
 // Destroy is not used for validation!
 func (r *testExampleResourceMissingSpecSchema) Destroy(
+	ctx context.Context,
+	input *provider.ResourceDestroyInput,
+) error {
+	return nil
+}
+
+type testExampleResourceMissingStateDefinition struct{}
+
+// CanLinkTo is not used for validation!
+func (r *testExampleResourceMissingStateDefinition) CanLinkTo(
+	ctx context.Context,
+	input *provider.ResourceCanLinkToInput,
+) (*provider.ResourceCanLinkToOutput, error) {
+	return &provider.ResourceCanLinkToOutput{}, nil
+}
+
+// IsCommonTerminal is not used for validation!
+func (r *testExampleResourceMissingStateDefinition) IsCommonTerminal(
+	ctx context.Context,
+	input *provider.ResourceIsCommonTerminalInput,
+) (*provider.ResourceIsCommonTerminalOutput, error) {
+	return &provider.ResourceIsCommonTerminalOutput{
+		IsCommonTerminal: false,
+	}, nil
+}
+
+func (r *testExampleResourceMissingStateDefinition) GetType(
+	ctx context.Context,
+	input *provider.ResourceGetTypeInput,
+) (*provider.ResourceGetTypeOutput, error) {
+	return &provider.ResourceGetTypeOutput{
+		Type: "celerity/exampleResource",
+	}, nil
+}
+
+// StageChanges is not used for validation!
+func (r *testExampleResourceMissingStateDefinition) StageChanges(
+	ctx context.Context,
+	input *provider.ResourceStageChangesInput,
+) (*provider.ResourceStageChangesOutput, error) {
+	return &provider.ResourceStageChangesOutput{}, nil
+}
+
+func (r *testExampleResourceMissingStateDefinition) CustomValidate(
+	ctx context.Context,
+	input *provider.ResourceValidateInput,
+) (*provider.ResourceValidateOutput, error) {
+	return &provider.ResourceValidateOutput{
+		Diagnostics: []*core.Diagnostic{},
+	}, nil
+}
+
+func (r *testExampleResourceMissingStateDefinition) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{
+		SpecDefinition: nil,
+	}, nil
+}
+
+func (r *testExampleResourceMissingStateDefinition) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{
+		StateDefinition: nil,
+	}, nil
+}
+
+// Deploy is not used for validation!
+func (r *testExampleResourceMissingStateDefinition) Deploy(
+	ctx context.Context,
+	input *provider.ResourceDeployInput,
+) (*provider.ResourceDeployOutput, error) {
+	return &provider.ResourceDeployOutput{}, nil
+}
+
+// GetExternalState is not used for validation!
+func (r *testExampleResourceMissingStateDefinition) GetExternalState(
+	ctx context.Context,
+	input *provider.ResourceGetExternalStateInput,
+) (*provider.ResourceGetExternalStateOutput, error) {
+	return &provider.ResourceGetExternalStateOutput{}, nil
+}
+
+// Destroy is not used for validation!
+func (r *testExampleResourceMissingStateDefinition) Destroy(
 	ctx context.Context,
 	input *provider.ResourceDestroyInput,
 ) error {

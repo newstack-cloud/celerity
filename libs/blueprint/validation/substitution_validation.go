@@ -279,6 +279,17 @@ func validateResourcePropertySubstitution(
 		)
 	}
 
+	if subResourceProp.Path[0].FieldName == "state" {
+		return validateResourcePropertySubState(
+			ctx,
+			subResourceProp,
+			resourceSchema.Type,
+			resourceRegistry,
+			nextLocation,
+			params,
+		)
+	}
+
 	if subResourceProp.Path[0].FieldName == "metadata" {
 		return validateResourcePropertySubMetadata(
 			subResourceProp,
@@ -308,32 +319,19 @@ func validateResourcePropertySubSpec(
 		)
 	}
 
-	hasResType, err := resourceRegistry.HasResourceType(ctx, resourceType)
+	earlyResolveType, err := checkResourceType(
+		ctx,
+		resourceType,
+		resourceRegistry,
+		subResourceProp,
+		nextLocation,
+		&diagnostics,
+	)
 	if err != nil {
 		return "", diagnostics, err
 	}
-
-	if !hasResType {
-		// If the resource type has not been loaded,
-		// we can't know whether or not the accessed property of the
-		// resource spec is valid.
-		// We return any to account for all possible types and a warning
-		// to indicate that the resource type has not been loaded
-		// and it will need to be loaded for change staging and deployment.
-		diagnostics = append(
-			diagnostics,
-			&bpcore.Diagnostic{
-				Level: bpcore.DiagnosticLevelWarning,
-				Message: fmt.Sprintf(
-					"Resource type %q is not currently loaded, when staging changes and deploying,"+
-						" you will need to make sure the provider for the resource type is loaded.",
-					resourceType,
-				),
-				Range: toDiagnosticRange(subResourceProp.SourceMeta, nextLocation),
-			},
-		)
-
-		return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
+	if earlyResolveType != "" {
+		return earlyResolveType, diagnostics, nil
 	}
 
 	specDefOutput, err := resourceRegistry.GetSpecDefinition(
@@ -356,22 +354,22 @@ func validateResourcePropertySubSpec(
 		)
 	}
 
-	return validateResourcePropertySubSpecPath(
+	return validateResourcePropertySubDefinitionsPath(
 		subResourceProp,
 		resourceType,
-		specDefOutput.SpecDefinition,
+		specDefOutput.SpecDefinition.Schema,
 	)
 }
 
-func validateResourcePropertySubSpecPath(
+func validateResourcePropertySubDefinitionsPath(
 	subResourceProp *substitutions.SubstitutionResourceProperty,
 	resourceType string,
-	definition *provider.ResourceSpecDefinition,
+	definitionSchema *provider.ResourceDefinitionsSchema,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	resolvedType := ""
 	propertyMatches := true
-	currentSchema := definition.Schema
+	currentSchema := definitionSchema
 	if currentSchema == nil {
 		return "", diagnostics, errResourceTypeSpecDefMissingSchema(
 			subResourceProp.ResourceName,
@@ -421,6 +419,104 @@ func validateResourcePropertySubSpecPath(
 	}
 
 	return resolvedType, diagnostics, nil
+}
+
+func validateResourcePropertySubState(
+	ctx context.Context,
+	subResourceProp *substitutions.SubstitutionResourceProperty,
+	resourceType string,
+	resourceRegistry resourcehelpers.Registry,
+	nextLocation *source.Meta,
+	params bpcore.BlueprintParams,
+) (string, []*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+
+	if len(subResourceProp.Path) < 2 {
+		return "", diagnostics, errSubResourceStateInvalidRef(
+			subResourceProp.ResourceName,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	earlyResolveType, err := checkResourceType(
+		ctx,
+		resourceType,
+		resourceRegistry,
+		subResourceProp,
+		nextLocation,
+		&diagnostics,
+	)
+	if err != nil {
+		return "", diagnostics, err
+	}
+	if earlyResolveType != "" {
+		return earlyResolveType, diagnostics, nil
+	}
+
+	stateDefOutput, err := resourceRegistry.GetStateDefinition(
+		ctx,
+		resourceType,
+		&provider.ResourceGetStateDefinitionInput{
+			Params: params,
+		},
+	)
+	if err != nil {
+		return "", diagnostics, err
+	}
+
+	if stateDefOutput.StateDefinition == nil {
+		return "", diagnostics, errResourceTypeMissingStateDefinition(
+			subResourceProp.ResourceName,
+			resourceType,
+			/* inSubstitution */ true,
+			subResourceProp.SourceMeta,
+		)
+	}
+
+	return validateResourcePropertySubDefinitionsPath(
+		subResourceProp,
+		resourceType,
+		stateDefOutput.StateDefinition.Schema,
+	)
+}
+
+func checkResourceType(
+	ctx context.Context,
+	resourceType string,
+	resourceRegistry resourcehelpers.Registry,
+	subResourceProp *substitutions.SubstitutionResourceProperty,
+	nextLocation *source.Meta,
+	diagnostics *[]*bpcore.Diagnostic,
+) (string, error) {
+	hasResType, err := resourceRegistry.HasResourceType(ctx, resourceType)
+	if err != nil {
+		return "", err
+	}
+
+	if !hasResType {
+		// If the resource type has not been loaded,
+		// we can't know whether or not the accessed property of the
+		// resource state is valid.
+		// We return any to account for all possible types and a warning
+		// to indicate that the resource type has not been loaded
+		// and it will need to be loaded for change staging and deployment.
+		*diagnostics = append(
+			*diagnostics,
+			&bpcore.Diagnostic{
+				Level: bpcore.DiagnosticLevelWarning,
+				Message: fmt.Sprintf(
+					"Resource type %q is not currently loaded, when staging changes and deploying,"+
+						" you will need to make sure the provider for the resource type is loaded.",
+					resourceType,
+				),
+				Range: toDiagnosticRange(subResourceProp.SourceMeta, nextLocation),
+			},
+		)
+
+		return string(substitutions.ResolvedSubExprTypeAny), nil
+	}
+
+	return "", nil
 }
 
 func validateResourcePropertySubMetadata(

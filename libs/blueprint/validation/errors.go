@@ -1043,6 +1043,31 @@ func errResourceTypeMissingSpecDefinition(
 	}
 }
 
+func errResourceTypeMissingStateDefinition(
+	resourceName string,
+	resourceType string,
+	inSubstitution bool,
+	resourceSourceMeta *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(resourceSourceMeta)
+	contextInfo := ""
+	if inSubstitution {
+		contextInfo = " referenced in substitution"
+	}
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing state definition for resource \"%s\" "+
+				"of type \"%s\"%s",
+			resourceName,
+			resourceType,
+			contextInfo,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errResourceTypeSpecDefMissingSchema(
 	resourceName string,
 	resourceType string,
@@ -1134,6 +1159,22 @@ func errSubResourceSpecInvalidRef(
 		ReasonCode: ErrorReasonCodeInvalidSubstitution,
 		Err: fmt.Errorf(
 			"validation failed as the spec reference for resource \"%s\" is not valid",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubResourceStateInvalidRef(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed as the state reference for resource \"%s\" is not valid",
 			resourceName,
 		),
 		Line:   line,
