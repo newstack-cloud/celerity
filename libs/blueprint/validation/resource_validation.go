@@ -6,6 +6,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -63,7 +64,7 @@ func ValidateResource(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -180,7 +181,7 @@ func validateResourceType(
 	resourceName string,
 	resourceType string,
 	resourceMap *schema.ResourceMap,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -208,7 +209,7 @@ func validateResourceMetadata(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -288,7 +289,7 @@ func validateResourceMetadataDisplayName(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.DisplayName == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -376,7 +377,7 @@ func validateResourceMetadataAnnotations(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.Annotations == nil || metadataSchema.Annotations.Values == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -425,7 +426,7 @@ func validateResourceCondition(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 	depth int,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -531,7 +532,7 @@ func validateConditionValue(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if conditionValue == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -639,7 +640,7 @@ func validateResourceEach(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if each == nil {
 		return []*bpcore.Diagnostic{}, nil

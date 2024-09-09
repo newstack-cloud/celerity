@@ -7,6 +7,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
@@ -15,7 +16,7 @@ import (
 type ResourceSpecValidationTestSuite struct {
 	funcRegistry      provider.FunctionRegistry
 	refChainCollector RefChainCollector
-	resourceRegistry  provider.ResourceRegistry
+	resourceRegistry  resourcehelpers.Registry
 }
 
 var _ = Suite(&ResourceSpecValidationTestSuite{})
@@ -219,7 +220,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an empty resource spec item at path "+
+		"blueprint load error: validation failed due to an empty resource item at path "+
 			"\"resources.testHandler.spec\" where the object type was expected",
 	)
 }
@@ -320,7 +321,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an empty resource spec item at path "+
+		"blueprint load error: validation failed due to an empty resource item at path "+
 			"\"resources.testHandler.spec.map\" where the map type was expected",
 	)
 }
@@ -357,7 +358,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an empty resource spec item at path "+
+		"blueprint load error: validation failed due to an empty resource item at path "+
 			"\"resources.testHandler.spec.array\" where the array type was expected",
 	)
 }
@@ -400,7 +401,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an empty resource spec item at path "+
+		"blueprint load error: validation failed due to an empty resource item at path "+
 			"\"resources.testHandler.spec.map.item1.id\" where the string type was expected",
 	)
 }
@@ -445,7 +446,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an empty resource spec item at path "+
+		"blueprint load error: validation failed due to an empty resource item at path "+
 			"\"resources.testHandler.spec.map.item1.id\" where the string type was expected",
 	)
 }
@@ -491,7 +492,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_type_fo
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an invalid resource spec item at path "+
+		"blueprint load error: validation failed due to an invalid resource item at path "+
 			"\"resources.testHandler.spec.map.item1.id\" where the string type was expected, but integer was found",
 	)
 }
@@ -555,7 +556,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_union_invalid_s
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an invalid resource spec item found at path "+
+		"blueprint load error: validation failed due to an invalid resource item found at path "+
 			"\"resources.testHandler.spec.array[0]\" where one of the types (float | integer | boolean | object)"+
 			" was expected",
 	)
@@ -598,7 +599,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an invalid resource spec item at path "+
+		"blueprint load error: validation failed due to an invalid resource item at path "+
 			"\"resources.testHandler.spec\" where the object type was expected, but string was found",
 	)
 }
@@ -640,7 +641,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an invalid resource spec item at path "+
+		"blueprint load error: validation failed due to an invalid resource item at path "+
 			"\"resources.testHandler.spec.map\" where the map type was expected, but string was found",
 	)
 }
@@ -682,7 +683,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 	c.Assert(
 		loadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an invalid resource spec item at path "+
+		"blueprint load error: validation failed due to an invalid resource item at path "+
 			"\"resources.testHandler.spec.array\" where the array type was expected, but string was found",
 	)
 }
@@ -847,6 +848,15 @@ func (r *testResourceMissingSpecDef) GetSpecDefinition(
 	}, nil
 }
 
+func (r *testResourceMissingSpecDef) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{
+		StateDefinition: nil,
+	}, nil
+}
+
 // Deploy is not used for validation!
 func (r *testResourceMissingSpecDef) Deploy(
 	ctx context.Context,
@@ -932,6 +942,15 @@ func (r *testResourceMissingSchema) GetSpecDefinition(
 	}, nil
 }
 
+func (r *testResourceMissingSchema) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{
+		StateDefinition: nil,
+	}, nil
+}
+
 // Deploy is not used for validation!
 func (r *testResourceMissingSchema) Deploy(
 	ctx context.Context,
@@ -1012,41 +1031,41 @@ func (r *specValidationTestExampleResource) GetSpecDefinition(
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
 	return &provider.ResourceGetSpecDefinitionOutput{
 		SpecDefinition: &provider.ResourceSpecDefinition{
-			Schema: &provider.ResourceSpecSchema{
-				Type:     provider.ResourceSpecSchemaTypeObject,
+			Schema: &provider.ResourceDefinitionsSchema{
+				Type:     provider.ResourceDefinitionsSchemaTypeObject,
 				Required: []string{"map", "array"},
-				Attributes: map[string]*provider.ResourceSpecSchema{
+				Attributes: map[string]*provider.ResourceDefinitionsSchema{
 					"map": {
-						Type: provider.ResourceSpecSchemaTypeMap,
-						MapValues: &provider.ResourceSpecSchema{
-							Type:     provider.ResourceSpecSchemaTypeObject,
+						Type: provider.ResourceDefinitionsSchemaTypeMap,
+						MapValues: &provider.ResourceDefinitionsSchema{
+							Type:     provider.ResourceDefinitionsSchemaTypeObject,
 							Required: []string{"id"},
-							Attributes: map[string]*provider.ResourceSpecSchema{
+							Attributes: map[string]*provider.ResourceDefinitionsSchema{
 								"id": {
-									Type: provider.ResourceSpecSchemaTypeString,
+									Type: provider.ResourceDefinitionsSchemaTypeString,
 								},
 							},
 						},
 					},
 					"array": {
-						Type: provider.ResourceSpecSchemaTypeArray,
-						Items: &provider.ResourceSpecSchema{
-							Type: provider.ResourceSpecSchemaTypeUnion,
-							OneOf: []*provider.ResourceSpecSchema{
+						Type: provider.ResourceDefinitionsSchemaTypeArray,
+						Items: &provider.ResourceDefinitionsSchema{
+							Type: provider.ResourceDefinitionsSchemaTypeUnion,
+							OneOf: []*provider.ResourceDefinitionsSchema{
 								{
-									Type: provider.ResourceSpecSchemaTypeFloat,
+									Type: provider.ResourceDefinitionsSchemaTypeFloat,
 								},
 								{
-									Type: provider.ResourceSpecSchemaTypeInteger,
+									Type: provider.ResourceDefinitionsSchemaTypeInteger,
 								},
 								{
-									Type: provider.ResourceSpecSchemaTypeBoolean,
+									Type: provider.ResourceDefinitionsSchemaTypeBoolean,
 								},
 								{
-									Type: provider.ResourceSpecSchemaTypeObject,
-									Attributes: map[string]*provider.ResourceSpecSchema{
+									Type: provider.ResourceDefinitionsSchemaTypeObject,
+									Attributes: map[string]*provider.ResourceDefinitionsSchema{
 										"value": {
-											Type: provider.ResourceSpecSchemaTypeInteger,
+											Type: provider.ResourceDefinitionsSchemaTypeInteger,
 										},
 									},
 								},
@@ -1054,15 +1073,24 @@ func (r *specValidationTestExampleResource) GetSpecDefinition(
 						},
 					},
 					"optionalString": {
-						Type: provider.ResourceSpecSchemaTypeString,
+						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
 					"nullable": {
-						Type:     provider.ResourceSpecSchemaTypeString,
+						Type:     provider.ResourceDefinitionsSchemaTypeString,
 						Nullable: true,
 					},
 				},
 			},
 		},
+	}, nil
+}
+
+func (r *specValidationTestExampleResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{
+		StateDefinition: nil,
 	}, nil
 }
 

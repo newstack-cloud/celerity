@@ -8,6 +8,7 @@ import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
@@ -107,6 +108,11 @@ type Loader interface {
 	) (links.SpecLinkInfo, []*bpcore.Diagnostic, error)
 }
 
+type loadBlueprintInfo struct {
+	specOrFilePath  string
+	preloadedSchema *schema.Blueprint
+}
+
 // Stores the full blueprint schema and direct access to the
 // mapping of resource names to their schemas for convenience.
 // This is structure of the spec encapsulated by the blueprint container.
@@ -128,16 +134,58 @@ func (s *internalBlueprintSpec) Schema() *schema.Blueprint {
 }
 
 type defaultLoader struct {
-	providers             map[string]provider.Provider
-	specTransformers      map[string]transform.SpecTransformer
-	stateContainer        state.Container
-	updateChan            chan Update
-	validateRuntimeValues bool
-	transformSpec         bool
-	refChainCollector     validation.RefChainCollector
-	funcRegistry          provider.FunctionRegistry
-	resourceRegistry      provider.ResourceRegistry
-	dataSourceRegistry    provider.DataSourceRegistry
+	providers              map[string]provider.Provider
+	specTransformers       map[string]transform.SpecTransformer
+	stateContainer         state.Container
+	updateChan             chan Update
+	validateRuntimeValues  bool
+	validateAfterTransform bool
+	transformSpec          bool
+	refChainCollector      validation.RefChainCollector
+	funcRegistry           provider.FunctionRegistry
+	resourceRegistry       resourcehelpers.Registry
+	dataSourceRegistry     provider.DataSourceRegistry
+}
+
+type LoaderOption func(loader *defaultLoader)
+
+// WithLoaderValidateRuntimeValues sets the flag to determine whether
+// runtime values should be validated when loading blueprints.
+// This is useful when you want to validate a blueprint spec without
+// associating it with an instance.
+// (e.g. validation for code editors or CLI dry runs)
+//
+// When this option is not provided, the default value is false.
+func WithLoaderValidateRuntimeValues(validateRuntimeValues bool) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.validateRuntimeValues = validateRuntimeValues
+	}
+}
+
+// WithLoaderValidateAfterTransform sets the flag to determine whether
+// resource validation should be performed after applying transformers to the
+// blueprint spec.
+// This is useful when you want to catch potential bugs in transformer implementations
+// at the load/validate stage.
+//
+// When this option is not provided, the default value is false.
+func WithLoaderValidateAfterTransform(validateAfterTransform bool) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.validateAfterTransform = validateAfterTransform
+	}
+}
+
+// WithLoaderTransformSpec sets the flag to determine whether transformers should be applied
+// to the blueprint spec when loading blueprints.
+// This is useful when you want to validate a blueprint spec without
+// applying any transformations.
+// (e.g. validation for code editors or CLI dry runs)
+//
+// When this option is not provided, the default value is true.
+func WithLoaderTransformSpec(transformSpec bool) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.transformSpec = transformSpec
+	}
 }
 
 // NewDefaultLoader creates a new instance of the default
@@ -151,45 +199,43 @@ type defaultLoader struct {
 // If there is no provider for the prefix of a resource, data source or
 // custom variable type in a blueprint, it will fail.
 //
-// You can set validateRuntimeValues to false if you don't want to check
-// the runtime values such as variable values when loading blueprints.
-// This is useful when you want to validate a blueprint spec without
-// associating it with an instance.
-// (e.g. validation for code editors or CLI dry runs)
-//
-// You can set transformSpec to false if you don't want to apply
-// transformers to the blueprint spec.
-// This is useful when you want to validate a blueprint spec without
-// applying any transformations.
-// (e.g. validation for code editors or CLI dry runs)
+// You can provide options for multiple flags that can be set to determine
+// how the loader should behave, such as whether to validate runtime values
+// or validate after transformation when loading blueprints.
 func NewDefaultLoader(
 	providers map[string]provider.Provider,
 	specTransformers map[string]transform.SpecTransformer,
 	stateContainer state.Container,
 	updateChan chan Update,
-	validateRuntimeValues bool,
-	transformSpec bool,
 	refChainCollector validation.RefChainCollector,
+	opts ...LoaderOption,
 ) Loader {
-	resourceRegistry := provider.NewResourceRegistry(providers)
+	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers)
 	funcRegistry := provider.NewFunctionRegistry(providers)
 	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
-	return &defaultLoader{
-		providers,
-		specTransformers,
-		stateContainer,
-		updateChan,
-		validateRuntimeValues,
-		transformSpec,
-		refChainCollector,
-		funcRegistry,
-		resourceRegistry,
-		dataSourceRegistry,
+	loader := &defaultLoader{
+		providers:          providers,
+		specTransformers:   specTransformers,
+		stateContainer:     stateContainer,
+		updateChan:         updateChan,
+		refChainCollector:  refChainCollector,
+		funcRegistry:       funcRegistry,
+		resourceRegistry:   resourceRegistry,
+		dataSourceRegistry: dataSourceRegistry,
 	}
+
+	for _, opt := range opts {
+		opt(loader)
+	}
+
+	return loader
 }
 
 func (l *defaultLoader) Load(ctx context.Context, blueprintSpecFile string, params bpcore.BlueprintParams) (BlueprintContainer, error) {
-	container, _, err := l.loadSpecAndLinkInfo(ctx, blueprintSpecFile, params, schema.Load, deriveSpecFormat)
+	loadInfo := &loadBlueprintInfo{
+		specOrFilePath: blueprintSpecFile,
+	}
+	container, _, err := l.loadSpecAndLinkInfo(ctx, loadInfo, params, schema.Load, deriveSpecFormat)
 	return container, err
 }
 
@@ -198,7 +244,10 @@ func (l *defaultLoader) Validate(
 	blueprintSpecFile string,
 	params bpcore.BlueprintParams,
 ) (links.SpecLinkInfo, []*bpcore.Diagnostic, error) {
-	container, diagnostics, err := l.loadSpecAndLinkInfo(ctx, blueprintSpecFile, params, schema.Load, deriveSpecFormat)
+	loadInfo := &loadBlueprintInfo{
+		specOrFilePath: blueprintSpecFile,
+	}
+	container, diagnostics, err := l.loadSpecAndLinkInfo(ctx, loadInfo, params, schema.Load, deriveSpecFormat)
 	if err != nil {
 		return nil, diagnostics, err
 	}
@@ -207,12 +256,12 @@ func (l *defaultLoader) Validate(
 
 func (l *defaultLoader) loadSpecAndLinkInfo(
 	ctx context.Context,
-	blueprintSpecOrFilePath string,
+	loadInfo *loadBlueprintInfo,
 	params bpcore.BlueprintParams,
 	schemaLoader schema.Loader,
 	formatLoader func(string) (schema.SpecFormat, error),
 ) (BlueprintContainer, []*bpcore.Diagnostic, error) {
-	blueprintSpec, diagnostics, err := l.loadSpec(ctx, blueprintSpecOrFilePath, params, schemaLoader, formatLoader)
+	blueprintSpec, diagnostics, err := l.loadSpec(ctx, loadInfo, params, schemaLoader, formatLoader)
 	if err != nil {
 		return nil, diagnostics, err
 	}
@@ -305,21 +354,16 @@ func (l *defaultLoader) createResourceProviderMap(blueprintSpec speccore.Bluepri
 
 func (l *defaultLoader) loadSpec(
 	ctx context.Context,
-	specOrFilePath string,
+	loadInfo *loadBlueprintInfo,
 	params bpcore.BlueprintParams,
 	loader schema.Loader,
 	formatLoader func(string) (schema.SpecFormat, error),
 ) (*internalBlueprintSpec, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
-	format, err := formatLoader(specOrFilePath)
+	blueprintSchema, err := loadBlueprintSpec(loadInfo, formatLoader, loader)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	blueprintSchema, err := loader(specOrFilePath, format)
-	if err != nil {
-		return nil, nil, err
+		return nil, diagnostics, err
 	}
 
 	var bpValidationDiagnostics []*bpcore.Diagnostic
@@ -352,7 +396,7 @@ func (l *defaultLoader) loadSpec(
 	}
 
 	var exportDiagnostics []*bpcore.Diagnostic
-	exportDiagnostics, err = l.validateExports(ctx, blueprintSchema)
+	exportDiagnostics, err = l.validateExports(ctx, blueprintSchema, params)
 	diagnostics = append(diagnostics, exportDiagnostics...)
 	if err != nil {
 		validationErrors = append(validationErrors, err)
@@ -365,12 +409,6 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
-	// todo: change l.validateResources to l.validateAbstractResources
-	// to limit pre-transform validation to abstract resources provided by
-	// transformers only.
-
-	// Validate before transformations to include validation of high level
-	// resources that are expanded by transformers.
 	var resourceDiagnostics []*bpcore.Diagnostic
 	resourceDiagnostics, err = l.validateResources(ctx, blueprintSchema, params)
 	diagnostics = append(diagnostics, resourceDiagnostics...)
@@ -399,8 +437,9 @@ func (l *defaultLoader) loadSpec(
 
 	transformers, err := l.collectTransformers(blueprintSchema)
 	if err != nil {
-		// todo: combine with validation errors
-		return nil, diagnostics, err
+		return nil, diagnostics, validation.ErrMultipleValidationErrors(
+			append(validationErrors, err),
+		)
 	}
 	for _, transformer := range transformers {
 		output, err := transformer.Transform(ctx, &transform.SpecTransformerTransformInput{
@@ -408,12 +447,13 @@ func (l *defaultLoader) loadSpec(
 		})
 		blueprintSchema = output.TransformedBlueprint
 		if err != nil {
-			// todo: combine with validation errors
-			return nil, diagnostics, err
+			return nil, diagnostics, validation.ErrMultipleValidationErrors(
+				append(validationErrors, err),
+			)
 		}
 	}
 
-	if len(transformers) > 0 {
+	if l.validateAfterTransform && len(transformers) > 0 {
 		// Validate after transformations to help with catching bugs in transformer implementations.
 		// This ultimately prevents transformers from expanding their abstractions into invalid
 		// representations of the lower level resources.
@@ -424,8 +464,6 @@ func (l *defaultLoader) loadSpec(
 			validationErrors = append(validationErrors, err)
 		}
 	}
-
-	// todo: validate data sources
 
 	if len(validationErrors) > 0 {
 		return nil, diagnostics, validation.ErrMultipleValidationErrors(validationErrors)
@@ -632,6 +670,7 @@ func (l *defaultLoader) validateIncludes(
 func (l *defaultLoader) validateExports(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if bpSchema.Exports == nil {
@@ -641,7 +680,17 @@ func (l *defaultLoader) validateExports(
 	// We'll collect and report issues for all the problematic exports.
 	exportErrors := map[string]error{}
 	for name, exportSchema := range bpSchema.Exports.Values {
-		exportDiagnostics, err := validation.ValidateExport(ctx, name, exportSchema, bpSchema.Exports)
+		exportDiagnostics, err := validation.ValidateExport(
+			ctx,
+			name,
+			exportSchema,
+			bpSchema.Exports,
+			bpSchema,
+			params,
+			l.funcRegistry,
+			l.refChainCollector,
+			l.resourceRegistry,
+		)
 		if err != nil {
 			exportErrors[name] = err
 		}
@@ -771,24 +820,13 @@ func (l *defaultLoader) validateResources(
 	// report issues for all the problematic resources.
 	resourceErrors := map[string][]error{}
 	for name, resourceSchema := range bpSchema.Resources.Values {
-		currentResouceErrs := l.validateResource(ctx, &diagnostics, name, resourceSchema, bpSchema)
+		currentResouceErrs := l.validateResource(
+			ctx, &diagnostics, name, resourceSchema, bpSchema, params,
+		)
 		if len(currentResouceErrs) > 0 {
 			resourceErrors[name] = currentResouceErrs
 		}
 	}
-
-	// internalResourceSpecs := map[string]speccore.ResourceSchemaSpec{}
-	// for name, resourceSchema := range blueprintSchema.Resources {
-	// 	resourceConcreteSpec, err := l.validateResource(ctx, resourceSchema, params)
-	// 	if err != nil {
-	// 		resourceErrors[name] = err
-	// 	} else {
-	// 		internalResourceSpecs[name] = speccore.ResourceSchemaSpec{
-	// 			Schema: resourceSchema,
-	// 			Spec:   resourceConcreteSpec,
-	// 		}
-	// 	}
-	// }
 
 	if len(resourceErrors) > 0 {
 		return diagnostics, errResourceValidationError(resourceErrors)
@@ -803,6 +841,7 @@ func (l *defaultLoader) validateResource(
 	name string,
 	resourceSchema *schema.Resource,
 	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
 ) []error {
 	currentResouceErrs := []error{}
 	err := validation.ValidateResourceName(name, bpSchema.Resources)
@@ -814,42 +853,26 @@ func (l *defaultLoader) validateResource(
 		currentResouceErrs = append(currentResouceErrs, err)
 	}
 
+	var validateResourceDiagnostics []*bpcore.Diagnostic
+	validateResourceDiagnostics, err = validation.ValidateResource(
+		ctx,
+		name,
+		resourceSchema,
+		bpSchema.Resources,
+		bpSchema,
+		params,
+		l.funcRegistry,
+		l.refChainCollector,
+		l.resourceRegistry,
+	)
+	*diagnostics = append(*diagnostics, validateResourceDiagnostics...)
+	if err != nil {
+		currentResouceErrs = append(currentResouceErrs, err)
+	}
+
 	l.refChainCollector.Collect(fmt.Sprintf("resources.%s", name), resourceSchema, "")
 	return currentResouceErrs
 }
-
-// func (l *defaultLoader) validateResource(
-// 	ctx context.Context, resourceSchema *schema.Resource, params bpcore.BlueprintParams,
-// ) error {
-// 	providerResource, err := l.deriveProviderResource(resourceSchema.Type)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return providerResource.Validate(ctx, resourceSchema, params)
-// }
-
-// func (l *defaultLoader) deriveProviderResource(resourceType string) (provider.Resource, error) {
-// 	// The provider should be keyed exactly by \w+\/ which is the resource prefix.
-// 	// Avoid using a regular expression as it is more efficient to split the string.
-// 	parts := strings.SplitAfter(resourceType, "/")
-// 	if len(parts) == 0 {
-// 		return nil, errInvalidResourceType(resourceType)
-// 	}
-
-// 	providerKey := parts[0]
-
-// 	provider, ok := l.providers[providerKey]
-// 	if !ok {
-// 		return nil, errMissingProvider(providerKey, resourceType)
-// 	}
-
-// 	providerResource := provider.Resource(resourceType)
-// 	if !ok {
-// 		return nil, errMissingResource(providerKey, resourceType)
-// 	}
-
-// 	return providerResource, nil
-// }
 
 func (l *defaultLoader) LoadString(
 	ctx context.Context,
@@ -857,7 +880,10 @@ func (l *defaultLoader) LoadString(
 	inputFormat schema.SpecFormat,
 	params bpcore.BlueprintParams,
 ) (BlueprintContainer, error) {
-	container, _, err := l.loadSpecAndLinkInfo(ctx, blueprintSpec, params, schema.LoadString, predefinedFormatFactory(inputFormat))
+	loadInfo := &loadBlueprintInfo{
+		specOrFilePath: blueprintSpec,
+	}
+	container, _, err := l.loadSpecAndLinkInfo(ctx, loadInfo, params, schema.LoadString, predefinedFormatFactory(inputFormat))
 	return container, err
 }
 
@@ -867,7 +893,10 @@ func (l *defaultLoader) ValidateString(
 	inputFormat schema.SpecFormat,
 	params bpcore.BlueprintParams,
 ) (links.SpecLinkInfo, []*bpcore.Diagnostic, error) {
-	container, diagnostics, err := l.loadSpecAndLinkInfo(ctx, blueprintSpec, params, schema.LoadString, predefinedFormatFactory(inputFormat))
+	loadInfo := &loadBlueprintInfo{
+		specOrFilePath: blueprintSpec,
+	}
+	container, diagnostics, err := l.loadSpecAndLinkInfo(ctx, loadInfo, params, schema.LoadString, predefinedFormatFactory(inputFormat))
 	if err != nil {
 		return nil, diagnostics, err
 	}
@@ -879,7 +908,17 @@ func (l *defaultLoader) LoadFromSchema(
 	blueprintSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 ) (BlueprintContainer, error) {
-	return nil, nil
+	loadInfo := &loadBlueprintInfo{
+		preloadedSchema: blueprintSchema,
+	}
+	container, _, err := l.loadSpecAndLinkInfo(
+		ctx,
+		loadInfo,
+		params,
+		/* schemaLoader */ nil,
+		/* formatLoader */ nil,
+	)
+	return container, err
 }
 
 func (l *defaultLoader) ValidateFromSchema(
@@ -887,5 +926,35 @@ func (l *defaultLoader) ValidateFromSchema(
 	blueprintSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 ) (links.SpecLinkInfo, []*bpcore.Diagnostic, error) {
-	return nil, nil, nil
+	loadInfo := &loadBlueprintInfo{
+		preloadedSchema: blueprintSchema,
+	}
+	container, diagnostics, err := l.loadSpecAndLinkInfo(
+		ctx,
+		loadInfo,
+		params,
+		/* schemaLoader */ nil,
+		/* formatLoader */ nil,
+	)
+	if err != nil {
+		return nil, diagnostics, err
+	}
+	return container.SpecLinkInfo(), container.Diagnostics(), nil
+}
+
+func loadBlueprintSpec(
+	loadInfo *loadBlueprintInfo,
+	formatLoader func(string) (schema.SpecFormat, error),
+	loader schema.Loader,
+) (*schema.Blueprint, error) {
+	if loadInfo.preloadedSchema != nil {
+		return loadInfo.preloadedSchema, nil
+	}
+
+	format, err := formatLoader(loadInfo.specOrFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return loader(loadInfo.specOrFilePath, format)
 }

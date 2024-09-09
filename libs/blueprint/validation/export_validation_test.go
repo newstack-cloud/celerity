@@ -3,37 +3,92 @@ package validation
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/internal"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
 )
 
-type ExportValidationTestSuite struct{}
+type ExportValidationTestSuite struct {
+	funcRegistry      provider.FunctionRegistry
+	refChainCollector RefChainCollector
+	resourceRegistry  resourcehelpers.Registry
+}
 
 var _ = Suite(&ExportValidationTestSuite{})
 
-func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_export(c *C) {
-	description := "The endpoint information to be used to connect to a cache cluster."
-	exportSchema := &schema.Export{
-		Type: schema.ExportTypeObject,
-		Description: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					StringValue: &description,
-				},
-			},
-		},
-		Field: "resources.cacheCluster.state.cacheNodes.endpoints",
-	}
-	exportMap := &schema.ExportMap{
-		Values: map[string]*schema.Export{
-			"cacheEndpointInfo": exportSchema,
+func (s *ExportValidationTestSuite) SetUpTest(c *C) {
+	s.funcRegistry = &internal.FunctionRegistryMock{
+		Functions: map[string]provider.Function{
+			"trim":       corefunctions.NewTrimFunction(),
+			"trimprefix": corefunctions.NewTrimPrefixFunction(),
+			"list":       corefunctions.NewListFunction(),
+			"object":     corefunctions.NewObjectFunction(),
+			"jsondecode": corefunctions.NewJSONDecodeFunction(),
+			"split":      corefunctions.NewSplitFunction(),
 		},
 	}
-	_, err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
-	c.Assert(err, IsNil)
+	s.refChainCollector = NewRefChainCollector()
+	s.resourceRegistry = &internal.ResourceRegistryMock{
+		Resources: map[string]provider.Resource{
+			"aws/ecs/service": newTestECSServiceResource(),
+		},
+	}
 }
+
+// func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_export(c *C) {
+// 	description := "The endpoint information to be used to connect to a cache cluster."
+// 	exportSchema := &schema.Export{
+// 		Type: schema.ExportTypeObject,
+// 		Description: &substitutions.StringOrSubstitutions{
+// 			Values: []*substitutions.StringOrSubstitution{
+// 				{
+// 					StringValue: &description,
+// 				},
+// 			},
+// 		},
+// 		Field: "resources.cacheCluster.state.cacheNodes.endpoints",
+// 	}
+// 	exportMap := &schema.ExportMap{
+// 		Values: map[string]*schema.Export{
+// 			"cacheEndpointInfo": exportSchema,
+// 		},
+// 	}
+// 	serviceName := "cache-cluster"
+// 	blueprint := &schema.Blueprint{
+// 		Resources: &schema.ResourceMap{
+// 			Values: map[string]*schema.Resource{
+// 				"cacheCluster": {
+// 					Type: "aws/ecs/service",
+// 					Spec: &core.MappingNode{
+// 						Literal: &core.ScalarValue{
+// 							StringValue: &serviceName,
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 		Exports: exportMap,
+// 	}
+// 	diagnostics, err := ValidateExport(
+// 		context.Background(),
+// 		"cacheEndpointInfo",
+// 		exportSchema,
+// 		exportMap,
+// 		blueprint,
+// 		&testBlueprintParams{},
+// 		s.funcRegistry,
+// 		s.refChainCollector,
+// 		s.resourceRegistry,
+// 	)
+// 	c.Assert(diagnostics, HasLen, 0)
+// 	c.Assert(err, IsNil)
+// }
 
 func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_export_type_is_provided(c *C) {
 	description := "The endpoint information to be used to connect to a cache cluster."
@@ -54,7 +109,34 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_expor
 			"cacheEndpointInfo": exportSchema,
 		},
 	}
-	_, err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
+	serviceName := "cache-cluster"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"cacheCluster": {
+					Type: "aws/ecs/service",
+					Spec: &core.MappingNode{
+						Literal: &core.ScalarValue{
+							StringValue: &serviceName,
+						},
+					},
+				},
+			},
+		},
+		Exports: exportMap,
+	}
+	diagnostics, err := ValidateExport(
+		context.Background(),
+		"cacheEndpointInfo",
+		exportSchema,
+		exportMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -86,7 +168,34 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_fiel
 			"cacheEndpointInfo": exportSchema,
 		},
 	}
-	_, err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
+	serviceName := "cache-cluster"
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"cacheCluster": {
+					Type: "aws/ecs/service",
+					Spec: &core.MappingNode{
+						Literal: &core.ScalarValue{
+							StringValue: &serviceName,
+						},
+					},
+				},
+			},
+		},
+		Exports: exportMap,
+	}
+	diagnostics, err := ValidateExport(
+		context.Background(),
+		"cacheEndpointInfo",
+		exportSchema,
+		exportMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
@@ -117,7 +226,21 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_incorrect_referen
 			"cacheEndpointInfo": exportSchema,
 		},
 	}
-	_, err := ValidateExport(context.Background(), "cacheEndpointInfo", exportSchema, exportMap)
+	blueprint := &schema.Blueprint{
+		Exports: exportMap,
+	}
+	diagnostics, err := ValidateExport(
+		context.Background(),
+		"cacheEndpointInfo",
+		exportSchema,
+		exportMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)

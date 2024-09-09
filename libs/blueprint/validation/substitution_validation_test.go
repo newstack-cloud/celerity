@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
@@ -17,7 +18,7 @@ import (
 type SubstitutionValidationTestSuite struct {
 	functionRegistry  provider.FunctionRegistry
 	refChainCollector RefChainCollector
-	resourceRegistry  provider.ResourceRegistry
+	resourceRegistry  resourcehelpers.Registry
 }
 
 var _ = Suite(&SubstitutionValidationTestSuite{})

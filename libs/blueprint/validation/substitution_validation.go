@@ -10,6 +10,7 @@ import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -41,7 +42,7 @@ func ValidateSubstitution(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if sub == nil {
@@ -240,7 +241,7 @@ func validateResourcePropertySubstitution(
 	usedIn string,
 	params bpcore.BlueprintParams,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 	nextLocation *source.Meta,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -294,7 +295,7 @@ func validateResourcePropertySubSpec(
 	ctx context.Context,
 	subResourceProp *substitutions.SubstitutionResourceProperty,
 	resourceType string,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 	nextLocation *source.Meta,
 	params bpcore.BlueprintParams,
 ) (string, []*bpcore.Diagnostic, error) {
@@ -400,7 +401,7 @@ func validateResourcePropertySubSpecPath(
 				resolvedType = attrType
 			}
 		} else if property.PrimitiveArrIndex != nil &&
-			currentSchema.Type == provider.ResourceSpecSchemaTypeArray {
+			currentSchema.Type == provider.ResourceDefinitionsSchemaTypeArray {
 			currentSchema = currentSchema.Items
 			if i == len(subResourceProp.Path)-1 {
 				resolvedType = string(substitutions.ResolvedSubExprTypeArray)
@@ -586,26 +587,26 @@ func isResourceMetadataProperty(fieldName string) bool {
 
 func checkSubResourcePropertyAttr(
 	subResourceProp *substitutions.SubstitutionResourceProperty,
-	currentSchema *provider.ResourceSpecSchema,
+	currentSchema *provider.ResourceDefinitionsSchema,
 	property *substitutions.SubstitutionPathItem,
 	index int,
-) (bool, string, *provider.ResourceSpecSchema) {
+) (bool, string, *provider.ResourceDefinitionsSchema) {
 	attrSchema, hasAttr := currentSchema.Attributes[property.FieldName]
 	if hasAttr {
-		if index < len(subResourceProp.Path)-1 && !isComplexResourceSpecSchemaType(attrSchema.Type) {
+		if index < len(subResourceProp.Path)-1 && !isComplexResourceDefinitionsSchemaType(attrSchema.Type) {
 			// Path is trying to access properties of a primitive type.
 			return false, "", nil
 		}
-		return true, subResourceSpecSchemaType(attrSchema.Type), attrSchema
+		return true, subResourceDefinitionsSchemaType(attrSchema.Type), attrSchema
 	}
 
 	return false, "", nil
 }
 
-func isComplexResourceSpecSchemaType(schemaType provider.ResourceSpecSchemaType) bool {
-	return schemaType == provider.ResourceSpecSchemaTypeObject ||
-		schemaType == provider.ResourceSpecSchemaTypeArray ||
-		schemaType == provider.ResourceSpecSchemaTypeMap
+func isComplexResourceDefinitionsSchemaType(schemaType provider.ResourceDefinitionsSchemaType) bool {
+	return schemaType == provider.ResourceDefinitionsSchemaTypeObject ||
+		schemaType == provider.ResourceDefinitionsSchemaTypeArray ||
+		schemaType == provider.ResourceDefinitionsSchemaTypeMap
 }
 
 func validateDataSourcePropertySubstitution(
@@ -713,7 +714,7 @@ func validateFunctionSubstitution(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	funcName := string(subFunc.FunctionName)
@@ -912,7 +913,7 @@ func validateSubFuncArgument(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if arg == nil {
@@ -1066,17 +1067,17 @@ func subDataSourceFieldType(fieldType schema.DataSourceFieldType) string {
 	}
 }
 
-func subResourceSpecSchemaType(schemaType provider.ResourceSpecSchemaType) string {
+func subResourceDefinitionsSchemaType(schemaType provider.ResourceDefinitionsSchemaType) string {
 	switch schemaType {
-	case provider.ResourceSpecSchemaTypeInteger:
+	case provider.ResourceDefinitionsSchemaTypeInteger:
 		return string(substitutions.ResolvedSubExprTypeInteger)
-	case provider.ResourceSpecSchemaTypeFloat:
+	case provider.ResourceDefinitionsSchemaTypeFloat:
 		return string(substitutions.ResolvedSubExprTypeFloat)
-	case provider.ResourceSpecSchemaTypeBoolean:
+	case provider.ResourceDefinitionsSchemaTypeBoolean:
 		return string(substitutions.ResolvedSubExprTypeBoolean)
-	case provider.ResourceSpecSchemaTypeArray:
+	case provider.ResourceDefinitionsSchemaTypeArray:
 		return string(substitutions.ResolvedSubExprTypeArray)
-	case provider.ResourceSpecSchemaTypeObject, provider.ResourceSpecSchemaTypeMap:
+	case provider.ResourceDefinitionsSchemaTypeObject, provider.ResourceDefinitionsSchemaTypeMap:
 		return string(substitutions.ResolvedSubExprTypeObject)
 	default:
 		return string(substitutions.ResolvedSubExprTypeString)

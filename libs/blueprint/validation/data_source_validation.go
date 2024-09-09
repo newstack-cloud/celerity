@@ -7,6 +7,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -41,7 +42,7 @@ func ValidateDataSource(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -194,7 +195,7 @@ func validateDataSourceMetadata(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -265,7 +266,7 @@ func validateDataSourceMetadataDisplayName(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.DisplayName == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -317,7 +318,7 @@ func validateDataSourceMetadataAnnotations(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.Annotations == nil || metadataSchema.Annotations.Values == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -366,7 +367,7 @@ func validateMetadataAnnotation(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if annotation == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -454,7 +455,7 @@ func validateDataSourceFilter(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -534,7 +535,7 @@ func validateDataSourceFilterSearch(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 
 	dataSourceIdentifier := fmt.Sprintf("datasources.%s", dataSourceName)
@@ -572,7 +573,7 @@ func validateDataSourceFilterSearchValue(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if searchValue == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -667,7 +668,7 @@ func validateDataSourceExports(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 	specDefinition *provider.DataSourceSpecDefinition,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -718,7 +719,7 @@ func validateDataSourceExport(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 	specDefinition *provider.DataSourceSpecDefinition,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}

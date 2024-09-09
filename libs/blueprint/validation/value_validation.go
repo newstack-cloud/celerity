@@ -6,6 +6,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -37,7 +38,7 @@ func ValidateValue(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if valSchema.Type == nil {
@@ -68,7 +69,7 @@ func validateValue(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	descriptionDiagnostics, err := validateValueDescription(
@@ -113,7 +114,7 @@ func validateValueDescription(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if valSchema.Description == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -166,7 +167,7 @@ func validateValueContent(
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if valSchema.Value == nil {
 		return []*bpcore.Diagnostic{}, errMissingValueContent(valName, valSchema.SourceMeta)

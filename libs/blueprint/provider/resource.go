@@ -39,6 +39,13 @@ type Resource interface {
 	// useful for validating references to a resource instance
 	// in a blueprint and for providing definitions for docs and tooling.
 	GetSpecDefinition(ctx context.Context, input *ResourceGetSpecDefinitionInput) (*ResourceGetSpecDefinitionOutput, error)
+	// GetStateDefinition retrieves the output state definition for a resource,
+	// This exposes the attributes made available by the resource provider from a deployed
+	// resource instance.
+	GetStateDefinition(
+		ctx context.Context,
+		input *ResourceGetStateDefinitionInput,
+	) (*ResourceGetStateDefinitionOutput, error)
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
 	CanLinkTo(ctx context.Context, input *ResourceCanLinkToInput) (*ResourceCanLinkToOutput, error)
@@ -96,6 +103,18 @@ type ResourceGetSpecDefinitionInput struct {
 // for a resource.
 type ResourceGetSpecDefinitionOutput struct {
 	SpecDefinition *ResourceSpecDefinition
+}
+
+// ResourceGetStateDefinitionInput provides the input data needed for a resource to
+// provide an output state definition.
+type ResourceGetStateDefinitionInput struct {
+	Params core.BlueprintParams
+}
+
+// ResourceGetStateDefinitionOutput provides the output data from providing a state definition
+// for a resource.
+type ResourceGetStateDefinitionOutput struct {
+	StateDefinition *ResourceStateDefinition
 }
 
 // ResourceCanLinkToInput provides the input data needed for a resource to
@@ -205,36 +224,44 @@ type Changes struct {
 type ResourceSpecDefinition struct {
 	// Schema holds the schema for the resource
 	// specification.
-	Schema *ResourceSpecSchema
+	Schema *ResourceDefinitionsSchema
 }
 
-// ResourceSpecSchema provides a schema that can be used to validate
-// a resource spec.
-type ResourceSpecSchema struct {
-	// Type holds the type of the resource spec.
-	Type ResourceSpecSchemaType
-	// Label holds a human-readable label for the resource spec.
+// ResourceStateDefinition provides a definition for a resource's output state
+// that can be used for validation, docs and tooling.
+type ResourceStateDefinition struct {
+	// Schema holds the schema for the resource
+	// state.
+	Schema *ResourceDefinitionsSchema
+}
+
+// ResourceDefinitionsSchema provides a schema that can be used to validate
+// a resource spec or output state.
+type ResourceDefinitionsSchema struct {
+	// Type holds the type of the resource definition.
+	Type ResourceDefinitionsSchemaType
+	// Label holds a human-readable label for the resource definition.
 	Label string
-	// Description holds a human-readable description for the resource spec
+	// Description holds a human-readable description for the resource definition
 	// without any formatting.
 	Description string
-	// FormattedDescription holds a human-readable description for the resource spec
+	// FormattedDescription holds a human-readable description for the resource definition
 	// that is formatted with markdown.
 	FormattedDescription string
-	// Attributes holds a mapping of the attribute types for a resource spec
+	// Attributes holds a mapping of the attribute types for a resource definition
 	// schema object.
-	Attributes map[string]*ResourceSpecSchema
-	// Items holds the schema for the items in a resource spec schema array.
-	Items *ResourceSpecSchema
-	// MapValues holds the schema for the values in a resource spec schema map.
+	Attributes map[string]*ResourceDefinitionsSchema
+	// Items holds the schema for the items in a resource definition schema array.
+	Items *ResourceDefinitionsSchema
+	// MapValues holds the schema for the values in a resource definition schema map.
 	// Keys are always strings.
-	MapValues *ResourceSpecSchema
-	// OneOf holds a list of possible schemas for a resource spec item.
+	MapValues *ResourceDefinitionsSchema
+	// OneOf holds a list of possible schemas for a resource definition item.
 	// This is to be used with the "union" type.
-	OneOf []*ResourceSpecSchema
-	// Required holds a list of required attributes for a resource spec schema object.
+	OneOf []*ResourceDefinitionsSchema
+	// Required holds a list of required attributes for a resource definition schema object.
 	Required []string
-	// Nullable specifies whether the resource spec schema can be null.
+	// Nullable specifies whether the resource definition schema can be null.
 	Nullable bool
 	// Default holds the default value for a resource spec schema,
 	// this will be populated in the `Resource.Spec` mapping node
@@ -244,28 +271,32 @@ type ResourceSpecSchema struct {
 	// and the schema is nullable, a nil pointer should not be used
 	// for an empty value, pointers should be set when you want to explicitly
 	// set a value to nil.
+	//
+	// This should not be used for defining the output state schema for a resource,
+	// the resource provider must make sure required fields are populated
+	// in the output state.
 	Default interface{}
 }
 
-// ResourceSpecSchemaType holds the type of a resource schema.
-type ResourceSpecSchemaType string
+// ResourceDefinitionsSchemaType holds the type of a resource schema.
+type ResourceDefinitionsSchemaType string
 
 const (
-	// ResourceSpecSchemaTypeString is for a schema string.
-	ResourceSpecSchemaTypeString ResourceSpecSchemaType = "string"
-	// ResourceSpecSchemaTypeInteger is for a schema integer.
-	ResourceSpecSchemaTypeInteger ResourceSpecSchemaType = "integer"
-	// ResourceSpecSchemaTypeFloat is for a schema float.
-	ResourceSpecSchemaTypeFloat ResourceSpecSchemaType = "float"
-	// ResourceSpecSchemaTypeBoolean is for a schema boolean.
-	ResourceSpecSchemaTypeBoolean ResourceSpecSchemaType = "boolean"
-	// ResourceSpecSchemaTypeMap is for a schema map.
-	ResourceSpecSchemaTypeMap ResourceSpecSchemaType = "map"
-	// ResourceSpecSchemaTypeObject is for a schema object.
-	ResourceSpecSchemaTypeObject ResourceSpecSchemaType = "object"
-	// ResourceSpecSchemaTypeArray is for a schema array.
-	ResourceSpecSchemaTypeArray ResourceSpecSchemaType = "array"
-	// ResourceSpecSchemaTypeUnion is for an element that can be one of
+	// ResourceDefinitionsSchemaTypeString is for a schema string.
+	ResourceDefinitionsSchemaTypeString ResourceDefinitionsSchemaType = "string"
+	// ResourceDefinitionsSchemaTypeInteger is for a schema integer.
+	ResourceDefinitionsSchemaTypeInteger ResourceDefinitionsSchemaType = "integer"
+	// ResourceDefinitionsSchemaTypeFloat is for a schema float.
+	ResourceDefinitionsSchemaTypeFloat ResourceDefinitionsSchemaType = "float"
+	// ResourceDefinitionsSchemaTypeBoolean is for a schema boolean.
+	ResourceDefinitionsSchemaTypeBoolean ResourceDefinitionsSchemaType = "boolean"
+	// ResourceDefinitionsSchemaTypeMap is for a schema map.
+	ResourceDefinitionsSchemaTypeMap ResourceDefinitionsSchemaType = "map"
+	// ResourceDefinitionsSchemaTypeObject is for a schema object.
+	ResourceDefinitionsSchemaTypeObject ResourceDefinitionsSchemaType = "object"
+	// ResourceDefinitionsSchemaTypeArray is for a schema array.
+	ResourceDefinitionsSchemaTypeArray ResourceDefinitionsSchemaType = "array"
+	// ResourceDefinitionsSchemaTypeUnion is for an element that can be one of
 	// multiple schemas.
-	ResourceSpecSchemaTypeUnion ResourceSpecSchemaType = "union"
+	ResourceDefinitionsSchemaTypeUnion ResourceDefinitionsSchemaType = "union"
 )

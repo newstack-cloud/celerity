@@ -259,19 +259,19 @@ func (r *testExampleResource) GetSpecDefinition(
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
 	return &provider.ResourceGetSpecDefinitionOutput{
 		SpecDefinition: &provider.ResourceSpecDefinition{
-			Schema: &provider.ResourceSpecSchema{
-				Type: provider.ResourceSpecSchemaTypeObject,
-				Attributes: map[string]*provider.ResourceSpecSchema{
+			Schema: &provider.ResourceDefinitionsSchema{
+				Type: provider.ResourceDefinitionsSchemaTypeObject,
+				Attributes: map[string]*provider.ResourceDefinitionsSchema{
 					"name": {
-						Type: provider.ResourceSpecSchemaTypeString,
+						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
 					"ids": {
-						Type: provider.ResourceSpecSchemaTypeArray,
-						Items: &provider.ResourceSpecSchema{
-							Type: provider.ResourceSpecSchemaTypeObject,
-							Attributes: map[string]*provider.ResourceSpecSchema{
+						Type: provider.ResourceDefinitionsSchemaTypeArray,
+						Items: &provider.ResourceDefinitionsSchema{
+							Type: provider.ResourceDefinitionsSchemaTypeObject,
+							Attributes: map[string]*provider.ResourceDefinitionsSchema{
 								"name": {
-									Type: provider.ResourceSpecSchemaTypeString,
+									Type: provider.ResourceDefinitionsSchemaTypeString,
 								},
 							},
 						},
@@ -279,6 +279,15 @@ func (r *testExampleResource) GetSpecDefinition(
 				},
 			},
 		},
+	}, nil
+}
+
+func (r *testExampleResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{
+		StateDefinition: nil,
 	}, nil
 }
 
@@ -361,6 +370,15 @@ func (r *testExampleResourceMissingSpecDefinition) GetSpecDefinition(
 	}, nil
 }
 
+func (r *testExampleResourceMissingSpecDefinition) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{
+		StateDefinition: nil,
+	}, nil
+}
+
 // Deploy is not used for validation!
 func (r *testExampleResourceMissingSpecDefinition) Deploy(
 	ctx context.Context,
@@ -439,6 +457,15 @@ func (r *testExampleResourceMissingSpecSchema) GetSpecDefinition(
 		SpecDefinition: &provider.ResourceSpecDefinition{
 			Schema: nil,
 		},
+	}, nil
+}
+
+func (r *testExampleResourceMissingSpecSchema) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{
+		StateDefinition: nil,
 	}, nil
 }
 
@@ -736,11 +763,29 @@ func (r *testECSServiceResource) GetSpecDefinition(
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
 	return &provider.ResourceGetSpecDefinitionOutput{
 		SpecDefinition: &provider.ResourceSpecDefinition{
-			Schema: &provider.ResourceSpecSchema{
-				Type: provider.ResourceSpecSchemaTypeObject,
-				Attributes: map[string]*provider.ResourceSpecSchema{
+			Schema: &provider.ResourceDefinitionsSchema{
+				Type: provider.ResourceDefinitionsSchemaTypeObject,
+				Attributes: map[string]*provider.ResourceDefinitionsSchema{
 					"serviceName": {
-						Type: provider.ResourceSpecSchemaTypeString,
+						Type: provider.ResourceDefinitionsSchemaTypeString,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
+func (r *testECSServiceResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{
+		StateDefinition: &provider.ResourceStateDefinition{
+			Schema: &provider.ResourceDefinitionsSchema{
+				Type: provider.ResourceDefinitionsSchemaTypeObject,
+				Attributes: map[string]*provider.ResourceDefinitionsSchema{
+					"id": {
+						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
 				},
 			},

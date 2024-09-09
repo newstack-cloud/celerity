@@ -6,6 +6,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -43,7 +44,7 @@ func ValidateInclude(
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
 	var errs []error
@@ -134,7 +135,7 @@ func validateIncludePath(
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*core.Diagnostic, error) {
 	if includeSchema.Path == nil {
 		return []*core.Diagnostic{}, nil

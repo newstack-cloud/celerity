@@ -310,7 +310,7 @@ The interface for a transformer includes `context.Context` and returns an `error
 
 ```go
 type AbstractResource interface {
-    Validate(
+    CustomValidate(
         ctx context.Context,
         input *AbstractResourceValidateInput,
     ) (*AbstractResourceValidateOutput, error)
@@ -319,23 +319,15 @@ type AbstractResource interface {
 		ctx context.Context,
 		input *AbstractResourceGetSpecDefinitionInput,
 	) (*AbstractResourceGetSpecDefinitionOutput, error)
-}
 
-type AbstractResourceValidateInput struct {
-	SchemaResource *schema.Resource
-	Params         core.BlueprintParams
-}
+	CanLinkTo(ctx context.Context, input *AbstractResourceCanLinkToInput) (*AbstractResourceCanLinkToOutput, error)
 
-type AbstractResourceValidateOutput struct {
-	Diagnostics []*core.Diagnostic
-}
+	IsCommonTerminal(
+		ctx context.Context,
+		input *AbstractResourceIsCommonTerminalInput,
+	) (*AbstractResourceIsCommonTerminalOutput, error)
 
-type AbstractResourceGetSpecDefinitionInput struct {
-	Params core.BlueprintParams
-}
-
-type AbstractResourceGetSpecDefinitionOutput struct {
-	SpecDefinition *provider.ResourceSpecDefinition
+	GetType(ctx context.Context, input *AbstractResourceGetTypeInput) (*AbstractResourceGetTypeOutput, error)
 }
 ```
 

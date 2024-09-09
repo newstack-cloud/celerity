@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -26,7 +27,7 @@ var (
 type ResourceValidationTestSuite struct {
 	funcRegistry      provider.FunctionRegistry
 	refChainCollector RefChainCollector
-	resourceRegistry  provider.ResourceRegistry
+	resourceRegistry  resourcehelpers.Registry
 }
 
 var _ = Suite(&ResourceValidationTestSuite{})

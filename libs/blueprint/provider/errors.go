@@ -12,11 +12,6 @@ const (
 	// there being no provider for a specific resource or data source
 	// type.
 	ErrorReasonCodeItemTypeProviderNotFound errors.ErrorReasonCode = "provider_not_found"
-	// ErrorReasonCodeProviderResourceTypeNotFound is provided when the
-	// reason for a blueprint spec load error is due to
-	// the resource provider missing an implementation for a
-	// specific resource type.
-	ErrorReasonCodeProviderResourceTypeNotFound errors.ErrorReasonCode = "resource_type_not_found"
 	// ErrorReasonCodeProviderDataSourceTypeNotFound is provided when the
 	// reason for a blueprint spec load error is due to
 	// the data source provider missing an implementation for a
@@ -39,34 +34,6 @@ const (
 	// an unknown resource spec schema type being used in the schema definition.
 	ErrorReasonCodeInvalidResourceSpecDefinition errors.ErrorReasonCode = "invalid_resource_spec_def"
 )
-
-func errResourceTypeProviderNotFound(
-	providerNamespace string,
-	resourceType string,
-) error {
-	return &errors.RunError{
-		ReasonCode: ErrorReasonCodeItemTypeProviderNotFound,
-		Err: fmt.Errorf(
-			"run failed as the provider with namespace %q was not found for resource type %q",
-			providerNamespace,
-			resourceType,
-		),
-	}
-}
-
-func errProviderResourceTypeNotFound(
-	resourceType string,
-	providerNamespace string,
-) error {
-	return &errors.RunError{
-		ReasonCode: ErrorReasonCodeProviderResourceTypeNotFound,
-		Err: fmt.Errorf(
-			"run failed as the provider with namespace %q does not have an implementation for resource type %q",
-			providerNamespace,
-			resourceType,
-		),
-	}
-}
 
 func errDataSourceTypeProviderNotFound(
 	providerNamespace string,
@@ -140,16 +107,16 @@ func errFunctionAlreadyProvided(
 	}
 }
 
-// ErrUnknownResourceSpecType is returned when the schema definition for a resource type
-// contains an unknown resource spec schema type.
-func ErrUnknownResourceSpecType(
-	specType ResourceSpecSchemaType,
+// ErrUnknownResourceDefSchemaType is returned when the schema definition for a resource type
+// contains an unknown resource definition schema type.
+func ErrUnknownResourceDefSchemaType(
+	specType ResourceDefinitionsSchemaType,
 	resourceType string,
 ) error {
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidResourceSpecDefinition,
 		Err: fmt.Errorf(
-			"validation failed due to an unknown resource spec schema type %q "+
+			"validation failed due to an unknown resource definitions schema type %q "+
 				"used in the schema definition for resource type %q",
 			specType,
 			resourceType,

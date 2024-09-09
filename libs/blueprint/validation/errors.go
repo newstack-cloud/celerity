@@ -1780,6 +1780,29 @@ func errNestedResourceConditionEmpty(
 	}
 }
 
+func errExportTypeMismatch(
+	exportType schema.ExportType,
+	resolvedType string,
+	exportName string,
+	field string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidExport,
+		Err: fmt.Errorf(
+			"validation failed due to a type mismatch in export %q, "+
+				"the expected export type %s does not match the resolved type %s for field %q",
+			exportName,
+			exportType,
+			resolvedType,
+			field,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func deriveElemRefTypeLabel(elemRefType string) string {
 	switch elemRefType {
 	case "index":

@@ -5,8 +5,11 @@ import (
 	"fmt"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -21,6 +24,11 @@ func ValidateExport(
 	exportName string,
 	exportSchema *schema.Export,
 	exportMap *schema.ExportMap,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+	funcRegistry provider.FunctionRegistry,
+	refChainCollector RefChainCollector,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	err := validateExportType(exportSchema.Type, exportName, exportMap)
@@ -28,7 +36,90 @@ func ValidateExport(
 		return diagnostics, err
 	}
 
-	return diagnostics, validateExportFieldFormat(exportSchema.Field, exportName, exportMap)
+	err = validateExportFieldFormat(exportSchema.Field, exportName, exportMap)
+	if err != nil {
+		return diagnostics, err
+	}
+
+	// Ensure the export field is present in the blueprint and that the resolved
+	// type matches the export type.
+
+	exportFieldAsSub, err := substitutions.ParseSubstitution(
+		"exports",
+		exportSchema.Field,
+		/* parentSourceStart */ &source.Meta{},
+		/* outputLineInfo */ false,
+		/* ignoreParentColumn */ true,
+	)
+	if err != nil {
+		return diagnostics, err
+	}
+
+	exportIdentifier := fmt.Sprintf("exports.%s", exportName)
+	resolvedType, subDiagnostics, err := ValidateSubstitution(
+		ctx,
+		exportFieldAsSub,
+		nil,
+		bpSchema,
+		exportIdentifier,
+		params,
+		funcRegistry,
+		refChainCollector,
+		resourceRegistry,
+	)
+	diagnostics = append(diagnostics, subDiagnostics...)
+	if err != nil {
+		return diagnostics, err
+	}
+
+	var errs []error
+	if resolvedType != subTypeFromExportType(exportSchema.Type) &&
+		resolvedType != string(substitutions.ResolvedSubExprTypeAny) {
+		errs = append(errs, errExportTypeMismatch(
+			exportSchema.Type,
+			resolvedType,
+			exportName,
+			exportSchema.Field,
+			getExportSourceMeta(exportMap, exportName),
+		))
+	} else if resolvedType == string(substitutions.ResolvedSubExprTypeAny) {
+		// Any type will produce a warning diagnostic as any could match an array,
+		// an error will occur at runtime if the resolved value is not an array.
+		diagnostics = append(
+			diagnostics,
+			&bpcore.Diagnostic{
+				Level: bpcore.DiagnosticLevelWarning,
+				Message: fmt.Sprintf(
+					"Export referenced field returns \"any\" type, this may produce "+
+						"unexpected output in %s, a value with the %s type is expected",
+					exportIdentifier,
+					exportSchema.Type,
+				),
+				Range: toDiagnosticRange(getExportSourceMeta(exportMap, exportName), nil),
+			},
+		)
+	}
+
+	descriptionDiagnostics, err := validateDescription(
+		ctx,
+		exportIdentifier,
+		exportSchema.Description,
+		bpSchema,
+		params,
+		funcRegistry,
+		refChainCollector,
+		resourceRegistry,
+	)
+	diagnostics = append(diagnostics, descriptionDiagnostics...)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return diagnostics, ErrMultipleValidationErrors(errs)
+	}
+
+	return diagnostics, nil
 }
 
 func validateExportType(
@@ -78,4 +169,21 @@ func getExportSourceMeta(exportMap *schema.ExportMap, varName string) *source.Me
 	}
 
 	return exportMap.SourceMeta[varName]
+}
+
+func subTypeFromExportType(exportType schema.ExportType) string {
+	switch exportType {
+	case schema.ExportTypeInteger:
+		return string(substitutions.ResolvedSubExprTypeInteger)
+	case schema.ExportTypeFloat:
+		return string(substitutions.ResolvedSubExprTypeFloat)
+	case schema.ExportTypeBoolean:
+		return string(substitutions.ResolvedSubExprTypeBoolean)
+	case schema.ExportTypeArray:
+		return string(substitutions.ResolvedSubExprTypeArray)
+	case schema.ExportTypeObject:
+		return string(substitutions.ResolvedSubExprTypeObject)
+	default:
+		return string(substitutions.ResolvedSubExprTypeString)
+	}
 }

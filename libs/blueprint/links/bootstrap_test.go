@@ -155,6 +155,14 @@ func (r *testApiGatewayResource) GetSpecDefinition(
 	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
+// GetStateDefinition is not used for spec link info!
+func (r *testApiGatewayResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{}, nil
+}
+
 // Deploy is not used for spec link info!
 func (r *testApiGatewayResource) Deploy(
 	ctx context.Context,
@@ -232,6 +240,14 @@ func (r *testSQSQueueResource) GetSpecDefinition(
 	input *provider.ResourceGetSpecDefinitionInput,
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
 	return &provider.ResourceGetSpecDefinitionOutput{}, nil
+}
+
+// GetStateDefinition is not used for spec link info!
+func (r *testSQSQueueResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -316,6 +332,14 @@ func (r *testLambdaFunctionResource) GetSpecDefinition(
 	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
+// GetStateDefinition is not used for spec link info!
+func (r *testLambdaFunctionResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{}, nil
+}
+
 // Deploy is not used for spec link info!
 func (r *testLambdaFunctionResource) Deploy(
 	ctx context.Context,
@@ -393,6 +417,14 @@ func (r *testStratosLambdaFunctionResource) GetSpecDefinition(
 	input *provider.ResourceGetSpecDefinitionInput,
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
 	return &provider.ResourceGetSpecDefinitionOutput{}, nil
+}
+
+// GetStateDefinition is not used for spec link info!
+func (r *testStratosLambdaFunctionResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -474,6 +506,14 @@ func (r *testDynamoDBTableResource) GetSpecDefinition(
 	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
+// GetStateDefinition is not used for spec link info!
+func (r *testDynamoDBTableResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{}, nil
+}
+
 // Deploy is not used for spec link info!
 func (r *testDynamoDBTableResource) Deploy(
 	ctx context.Context,
@@ -551,6 +591,14 @@ func (r *testDynamoDBStreamResource) GetSpecDefinition(
 	input *provider.ResourceGetSpecDefinitionInput,
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
 	return &provider.ResourceGetSpecDefinitionOutput{}, nil
+}
+
+// GetStateDefinition is not used for spec link info!
+func (r *testDynamoDBStreamResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!
@@ -633,6 +681,14 @@ func (r *testIAMRoleResource) GetSpecDefinition(
 	return &provider.ResourceGetSpecDefinitionOutput{}, nil
 }
 
+// GetStateDefinition is not used for spec link info!
+func (r *testIAMRoleResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{}, nil
+}
+
 // Deploy is not used for spec link info!
 func (r *testIAMRoleResource) Deploy(
 	ctx context.Context,
@@ -711,6 +767,14 @@ func (r *testStratosIAMRoleResource) GetSpecDefinition(
 	input *provider.ResourceGetSpecDefinitionInput,
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
 	return &provider.ResourceGetSpecDefinitionOutput{}, nil
+}
+
+// GetStateDefinition is not used for spec link info!
+func (r *testStratosIAMRoleResource) GetStateDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetStateDefinitionInput,
+) (*provider.ResourceGetStateDefinitionOutput, error) {
+	return &provider.ResourceGetStateDefinitionOutput{}, nil
 }
 
 // Deploy is not used for spec link info!

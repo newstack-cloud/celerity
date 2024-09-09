@@ -8,16 +8,16 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
 
-func errResourceSpecItemEmpty(
+func errResourceDefItemEmpty(
 	path string,
-	resourceSpecType provider.ResourceSpecSchemaType,
+	resourceSpecType provider.ResourceDefinitionsSchemaType,
 	location *source.Meta,
 ) error {
 	line, col := source.PositionFromSourceMeta(location)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
-			"validation failed due to an empty resource spec item "+
+			"validation failed due to an empty resource item "+
 				"at path %q where the %s type was expected",
 			path,
 			resourceSpecType,
@@ -27,17 +27,17 @@ func errResourceSpecItemEmpty(
 	}
 }
 
-func errResourceSpecInvalidType(
+func errResourceDefInvalidType(
 	path string,
-	foundType provider.ResourceSpecSchemaType,
-	expectedType provider.ResourceSpecSchemaType,
+	foundType provider.ResourceDefinitionsSchemaType,
+	expectedType provider.ResourceDefinitionsSchemaType,
 	location *source.Meta,
 ) error {
 	line, col := source.PositionFromSourceMeta(location)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
-			"validation failed due to an invalid resource spec item "+
+			"validation failed due to an invalid resource item "+
 				"at path %q where the %s type was expected, but %s was found",
 			path,
 			expectedType,
@@ -48,10 +48,10 @@ func errResourceSpecInvalidType(
 	}
 }
 
-func errResourceSpecMissingRequiredField(
+func errResourceDefMissingRequiredField(
 	path string,
 	field string,
-	fieldType provider.ResourceSpecSchemaType,
+	fieldType provider.ResourceDefinitionsSchemaType,
 	location *source.Meta,
 ) error {
 	line, col := source.PositionFromSourceMeta(location)
@@ -69,7 +69,7 @@ func errResourceSpecMissingRequiredField(
 	}
 }
 
-func errInvalidResourceSpecSubType(
+func errInvalidResourceDefSubType(
 	resolvedType string,
 	path string,
 	expectedResolvedType string,
@@ -79,7 +79,7 @@ func errInvalidResourceSpecSubType(
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
-			"validation failed due to an invalid resource spec item "+
+			"validation failed due to an invalid resource item "+
 				"at path %q where a value of type %s was expected, but type %s was found",
 			path,
 			expectedResolvedType,
@@ -90,17 +90,17 @@ func errInvalidResourceSpecSubType(
 	}
 }
 
-func errResourceSpecUnionItemEmpty(
+func errResourceDefUnionItemEmpty(
 	path string,
-	unionSchema []*provider.ResourceSpecSchema,
+	unionSchema []*provider.ResourceDefinitionsSchema,
 	location *source.Meta,
 ) error {
 	line, col := source.PositionFromSourceMeta(location)
-	unionType := resourceSpecUnionTypeToString(unionSchema)
+	unionType := resourceDefinitionsUnionTypeToString(unionSchema)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
-			"validation failed due to an empty resource spec item "+
+			"validation failed due to an empty resource item "+
 				"at path %s where one of the types %s was expected",
 			path,
 			unionType,
@@ -110,17 +110,17 @@ func errResourceSpecUnionItemEmpty(
 	}
 }
 
-func errResourceSpecUnionInvalidType(
+func errResourceDefUnionInvalidType(
 	path string,
-	unionSchema []*provider.ResourceSpecSchema,
+	unionSchema []*provider.ResourceDefinitionsSchema,
 	location *source.Meta,
 ) error {
 	line, col := source.PositionFromSourceMeta(location)
-	unionType := resourceSpecUnionTypeToString(unionSchema)
+	unionType := resourceDefinitionsUnionTypeToString(unionSchema)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
-			"validation failed due to an invalid resource spec item found "+
+			"validation failed due to an invalid resource item found "+
 				"at path %q where one of the types %s was expected",
 			path,
 			unionType,

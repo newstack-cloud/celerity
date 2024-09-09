@@ -7,6 +7,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -140,7 +141,7 @@ func validateDescription(
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
-	resourceRegistry provider.ResourceRegistry,
+	resourceRegistry resourcehelpers.Registry,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
 
@@ -209,39 +210,39 @@ func isMappingNodeEmpty(node *core.MappingNode) bool {
 		node.Items == nil && node.StringWithSubstitutions == nil)
 }
 
-func deriveMappingNodeResourceSpecType(node *core.MappingNode) provider.ResourceSpecSchemaType {
+func deriveMappingNodeResourceDefinitionsType(node *core.MappingNode) provider.ResourceDefinitionsSchemaType {
 	if node.Literal != nil && node.Literal.BoolValue != nil {
-		return provider.ResourceSpecSchemaTypeBoolean
+		return provider.ResourceDefinitionsSchemaTypeBoolean
 	}
 
 	if node.Literal != nil && node.Literal.StringValue != nil {
-		return provider.ResourceSpecSchemaTypeString
+		return provider.ResourceDefinitionsSchemaTypeString
 	}
 
 	if node.Literal != nil && node.Literal.IntValue != nil {
-		return provider.ResourceSpecSchemaTypeInteger
+		return provider.ResourceDefinitionsSchemaTypeInteger
 	}
 
 	if node.Literal != nil && node.Literal.FloatValue != nil {
-		return provider.ResourceSpecSchemaTypeFloat
+		return provider.ResourceDefinitionsSchemaTypeFloat
 	}
 
 	if node.Fields != nil {
-		return provider.ResourceSpecSchemaTypeObject
+		return provider.ResourceDefinitionsSchemaTypeObject
 	}
 
 	if node.Items != nil {
-		return provider.ResourceSpecSchemaTypeArray
+		return provider.ResourceDefinitionsSchemaTypeArray
 	}
 
 	if node.StringWithSubstitutions != nil {
-		return provider.ResourceSpecSchemaTypeString
+		return provider.ResourceDefinitionsSchemaTypeString
 	}
 
 	return ""
 }
 
-func resourceSpecUnionTypeToString(unionSchema []*provider.ResourceSpecSchema) string {
+func resourceDefinitionsUnionTypeToString(unionSchema []*provider.ResourceDefinitionsSchema) string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	for i, schema := range unionSchema {
