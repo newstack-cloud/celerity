@@ -45,7 +45,7 @@ type Loader interface {
         ctx context.Context,
         blueprintSpecFile string,
         params bpcore.BlueprintParams,
-    ) (links.SpecLinkInfo, []*core.Diagnostic, error)
+    ) (*ValidationResult, error)
 
     LoadString(
         ctx context.Context,
@@ -59,7 +59,7 @@ type Loader interface {
         blueprintSpec string,
         inputFormat schema.SpecFormat,
         params bpcore.BlueprintParams,
-    ) (links.SpecLinkInfo, []*core.Diagnostic, error)
+    ) (*ValidationResult, error)
 
     LoadFromSchema(
         ctx context.Context,
@@ -71,7 +71,7 @@ type Loader interface {
         ctx context.Context,
         blueprintSchema *schema.Blueprint,
         params bpcore.BlueprintParams,
-    ) (links.SpecLinkInfo, []*core.Diagnostic, error)
+    ) (*ValidationResult, error)
 }
 ```
 

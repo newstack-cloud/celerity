@@ -12,9 +12,10 @@ import (
 )
 
 type LinkFunctionTestSuite struct {
-	callStack      function.Stack
-	callContext    *functionCallContextMock
-	stateRetriever *linkStateRetrieverMock
+	callStack           function.Stack
+	callContext         *functionCallContextMock
+	stateRetriever      *linkStateRetrieverMock
+	instanceIDRetriever func(context.Context) (string, error)
 }
 
 var _ = Suite(&LinkFunctionTestSuite{})
@@ -50,10 +51,13 @@ func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 			},
 		},
 	}
+	s.instanceIDRetriever = func(ctx context.Context) (string, error) {
+		return "test-blueprint-1", nil
+	}
 }
 
 func (s *LinkFunctionTestSuite) Test_gets_link_state(c *C) {
-	linkFunc := NewLinkFunction(s.stateRetriever, "test-blueprint-1")
+	linkFunc := NewLinkFunction(s.stateRetriever, s.instanceIDRetriever)
 	s.callStack.Push(&function.Call{
 		FunctionName: "link",
 	})
@@ -93,7 +97,7 @@ func (s *LinkFunctionTestSuite) Test_gets_link_state(c *C) {
 }
 
 func (s *LinkFunctionTestSuite) Test_returns_func_error_for_missing_link_state(c *C) {
-	linkFunc := NewLinkFunction(s.stateRetriever, "test-blueprint-1")
+	linkFunc := NewLinkFunction(s.stateRetriever, s.instanceIDRetriever)
 	s.callStack.Push(&function.Call{
 		FunctionName: "link",
 	})
@@ -121,7 +125,7 @@ func (s *LinkFunctionTestSuite) Test_returns_func_error_for_missing_link_state(c
 }
 
 func (s *LinkFunctionTestSuite) Test_returns_func_error_for_invalid_resource_name_argument(c *C) {
-	linkFunc := NewLinkFunction(s.stateRetriever, "test-blueprint-1")
+	linkFunc := NewLinkFunction(s.stateRetriever, s.instanceIDRetriever)
 	s.callStack.Push(&function.Call{
 		FunctionName: "link",
 	})

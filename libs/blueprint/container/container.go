@@ -36,6 +36,10 @@ type BlueprintContainer interface {
 	// SpecLinkInfo provides the chain link and warnings for potential issues
 	// with links provided in the given specification.
 	SpecLinkInfo() links.SpecLinkInfo
+	// BlueprintSpec returns the specification for the loaded blueprint
+	// including the parsed schema and a convenience method to get resource
+	// schemas by name.
+	BlueprintSpec() speccore.BlueprintSpec
 	// Diagnostics returns warning and informational diagnostics for the loaded blueprint
 	// that point out potential issues that may occur when executing
 	// a blueprint.
@@ -250,6 +254,10 @@ func (c *defaultBlueprintContainer) Destroy(ctx context.Context, instanceID stri
 
 func (c *defaultBlueprintContainer) SpecLinkInfo() links.SpecLinkInfo {
 	return c.linkInfo
+}
+
+func (c *defaultBlueprintContainer) BlueprintSpec() speccore.BlueprintSpec {
+	return c.spec
 }
 
 func (c *defaultBlueprintContainer) Diagnostics() []*core.Diagnostic {

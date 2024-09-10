@@ -19,7 +19,7 @@ type coreProvider struct {
 // specification.
 func NewCoreProvider(
 	linkStateRetriever corefunctions.LinkStateRetriever,
-	blueprintInstanceID string,
+	blueprintInstanceIDRetriever corefunctions.BlueprintInstanceIDRetriever,
 	resolveWorkingDir corefunctions.WorkingDirResolver,
 	clock core.Clock,
 ) provider.Provider {
@@ -65,7 +65,7 @@ func NewCoreProvider(
 		"getelem":      corefunctions.NewGetElemFunction(),
 		"link": corefunctions.NewLinkFunction(
 			linkStateRetriever,
-			blueprintInstanceID,
+			blueprintInstanceIDRetriever,
 		),
 		"and":      corefunctions.NewAndFunction(),
 		"or":       corefunctions.NewOrFunction(),

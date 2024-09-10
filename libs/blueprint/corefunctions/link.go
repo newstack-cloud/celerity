@@ -12,21 +12,30 @@ import (
 // LinkFunction provides the implementation of the
 // core "link" function defined in the blueprint specification.
 type LinkFunction struct {
-	definition          *function.Definition
-	linkStateRetriever  LinkStateRetriever
-	blueprintInstanceID string
+	definition                   *function.Definition
+	linkStateRetriever           LinkStateRetriever
+	blueprintInstanceIDRetriever BlueprintInstanceIDRetriever
 }
+
+// BlueprintInstanceIDRetriever is a function that can be used to
+// retrieve the instance ID for the current blueprint execution environment.
+type BlueprintInstanceIDRetriever func(ctx context.Context) (string, error)
 
 // NewLinkFunction creates a new instance of the LinkFunction with
 // a complete function definition.
 // This function takes a state container for the current blueprint execution
 // environment as a parameter to allow the link function to retrieve
 // and return the state of a link between two resources.
-// This also requires the instance ID for the current blueprint.
-func NewLinkFunction(linkStateRetriever LinkStateRetriever, blueprintInstanceID string) provider.Function {
+// This also requires a function that resolves a blueprint instance ID
+// for the current blueprint execution environment for the blueprint in
+// which the link function is called.
+func NewLinkFunction(
+	linkStateRetriever LinkStateRetriever,
+	blueprintInstanceIDRetriever BlueprintInstanceIDRetriever,
+) provider.Function {
 	return &LinkFunction{
-		linkStateRetriever:  linkStateRetriever,
-		blueprintInstanceID: blueprintInstanceID,
+		linkStateRetriever:           linkStateRetriever,
+		blueprintInstanceIDRetriever: blueprintInstanceIDRetriever,
 		definition: &function.Definition{
 			Description: "A function to retrieve the state of a link between two resources.",
 			FormattedDescription: "A function to retrieve the state of a link between two resources.\n\n" +
@@ -113,9 +122,18 @@ func (f *LinkFunction) Call(
 		return nil, err
 	}
 
+	instanceId, err := f.blueprintInstanceIDRetriever(ctx)
+	if err != nil {
+		return nil, function.NewFuncCallError(
+			"failed to retrieve current blueprint instance ID",
+			function.FuncCallErrorCodeFunctionCall,
+			input.CallContext.CallStackSnapshot(),
+		)
+	}
+
 	linkState, err := f.linkStateRetriever.GetLink(
 		ctx,
-		f.blueprintInstanceID,
+		instanceId,
 		fmt.Sprintf("%s::%s", resourceAStr, resourceBStr),
 	)
 

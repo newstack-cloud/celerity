@@ -51,7 +51,7 @@ type Loader interface {
 		ctx context.Context,
 		blueprintSpecFile string,
 		params bpcore.BlueprintParams,
-	) (links.SpecLinkInfo, []*bpcore.Diagnostic, error)
+	) (*ValidationResult, error)
 
 	// LoadString deals with loading a blueprint specification from a string
 	// along with provider and blueprint variables.
@@ -79,7 +79,7 @@ type Loader interface {
 		blueprintSpec string,
 		inputFormat schema.SpecFormat,
 		params bpcore.BlueprintParams,
-	) (links.SpecLinkInfo, []*bpcore.Diagnostic, error)
+	) (*ValidationResult, error)
 
 	// LoadFromSchema deals with loading a blueprint specification from a schema
 	// that has already been parsed along with provider and blueprint variables.
@@ -108,7 +108,18 @@ type Loader interface {
 		ctx context.Context,
 		blueprintSchema *schema.Blueprint,
 		params bpcore.BlueprintParams,
-	) (links.SpecLinkInfo, []*bpcore.Diagnostic, error)
+	) (*ValidationResult, error)
+}
+
+// ValidationResult provides information about the result of validating
+// a blueprint.
+type ValidationResult struct {
+	// Collected diagnostics from the validation process.
+	Diagnostics []*bpcore.Diagnostic
+	// The link information that was collected during validation.
+	LinkInfo links.SpecLinkInfo
+	// The parsed blueprint schema that was validated.
+	Schema *schema.Blueprint
 }
 
 type loadBlueprintInfo struct {
@@ -232,7 +243,6 @@ func NewDefaultLoader(
 	stateContainer state.Container,
 	updateChan chan Update,
 	refChainCollector validation.RefChainCollector,
-	blueprintInstanceID string,
 	opts ...LoaderOption,
 ) Loader {
 	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers)
@@ -257,7 +267,7 @@ func NewDefaultLoader(
 
 	providers["core"] = providerhelpers.NewCoreProvider(
 		stateContainer,
-		blueprintInstanceID,
+		bpcore.BlueprintInstanceIDFromContext,
 		loader.resolveWorkingDir,
 		loader.clock,
 	)
@@ -277,15 +287,21 @@ func (l *defaultLoader) Validate(
 	ctx context.Context,
 	blueprintSpecFile string,
 	params bpcore.BlueprintParams,
-) (links.SpecLinkInfo, []*bpcore.Diagnostic, error) {
+) (*ValidationResult, error) {
 	loadInfo := &loadBlueprintInfo{
 		specOrFilePath: blueprintSpecFile,
 	}
 	container, diagnostics, err := l.loadSpecAndLinkInfo(ctx, loadInfo, params, schema.Load, deriveSpecFormat)
 	if err != nil {
-		return nil, diagnostics, err
+		return &ValidationResult{
+			Diagnostics: diagnostics,
+		}, err
 	}
-	return container.SpecLinkInfo(), []*bpcore.Diagnostic{}, nil
+	return &ValidationResult{
+		Diagnostics: diagnostics,
+		Schema:      container.BlueprintSpec().Schema(),
+		LinkInfo:    container.SpecLinkInfo(),
+	}, nil
 }
 
 func (l *defaultLoader) loadSpecAndLinkInfo(
@@ -955,15 +971,22 @@ func (l *defaultLoader) ValidateString(
 	blueprintSpec string,
 	inputFormat schema.SpecFormat,
 	params bpcore.BlueprintParams,
-) (links.SpecLinkInfo, []*bpcore.Diagnostic, error) {
+) (*ValidationResult, error) {
 	loadInfo := &loadBlueprintInfo{
 		specOrFilePath: blueprintSpec,
 	}
 	container, diagnostics, err := l.loadSpecAndLinkInfo(ctx, loadInfo, params, schema.LoadString, predefinedFormatFactory(inputFormat))
 	if err != nil {
-		return nil, diagnostics, err
+		return &ValidationResult{
+			Diagnostics: diagnostics,
+		}, err
 	}
-	return container.SpecLinkInfo(), container.Diagnostics(), nil
+
+	return &ValidationResult{
+		Diagnostics: diagnostics,
+		Schema:      container.BlueprintSpec().Schema(),
+		LinkInfo:    container.SpecLinkInfo(),
+	}, nil
 }
 
 func (l *defaultLoader) LoadFromSchema(
@@ -988,7 +1011,7 @@ func (l *defaultLoader) ValidateFromSchema(
 	ctx context.Context,
 	blueprintSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-) (links.SpecLinkInfo, []*bpcore.Diagnostic, error) {
+) (*ValidationResult, error) {
 	loadInfo := &loadBlueprintInfo{
 		preloadedSchema: blueprintSchema,
 	}
@@ -1000,9 +1023,15 @@ func (l *defaultLoader) ValidateFromSchema(
 		/* formatLoader */ nil,
 	)
 	if err != nil {
-		return nil, diagnostics, err
+		return &ValidationResult{
+			Diagnostics: diagnostics,
+		}, err
 	}
-	return container.SpecLinkInfo(), container.Diagnostics(), nil
+	return &ValidationResult{
+		Diagnostics: diagnostics,
+		Schema:      container.BlueprintSpec().Schema(),
+		LinkInfo:    container.SpecLinkInfo(),
+	}, nil
 }
 
 func loadBlueprintSpec(
