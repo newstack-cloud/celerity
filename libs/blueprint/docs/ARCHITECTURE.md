@@ -112,6 +112,8 @@ type BlueprintContainer interface {
 
     SpecLinkInfo() links.SpecLinkInfo
 
+    BlueprintSpec() speccore.BlueprintSpec
+
     Diagnostics() []*core.Diagnostic
 }
 ```
