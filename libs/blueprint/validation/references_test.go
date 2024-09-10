@@ -32,7 +32,12 @@ func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.field", []Referenceable{ReferenceableResource})
+		err := ValidateReference(
+			reference,
+			"test.field",
+			[]Referenceable{ReferenceableResource},
+			nil,
+		)
 		c.Assert(err, IsNil)
 	}
 }
@@ -46,7 +51,12 @@ func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.field", []Referenceable{ReferenceableVariable})
+		err := ValidateReference(
+			reference,
+			"test.field",
+			[]Referenceable{ReferenceableVariable},
+			nil,
+		)
 		c.Assert(err, IsNil)
 	}
 }
@@ -61,7 +71,12 @@ func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.otherField", []Referenceable{ReferenceableValue})
+		err := ValidateReference(
+			reference,
+			"test.otherField",
+			[]Referenceable{ReferenceableValue},
+			nil,
+		)
 		c.Assert(err, IsNil)
 	}
 }
@@ -76,7 +91,12 @@ func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.otherField", []Referenceable{ReferenceableDataSource})
+		err := ValidateReference(
+			reference,
+			"test.otherField",
+			[]Referenceable{ReferenceableDataSource},
+			nil,
+		)
 		c.Assert(err, IsNil)
 	}
 }
@@ -93,7 +113,12 @@ func (s *ReferenceValidationTestSuite) Test_succeeds_with_no_errors_for_a_set_of
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.alternativeField", []Referenceable{ReferenceableChild})
+		err := ValidateReference(
+			reference,
+			"test.alternativeField",
+			[]Referenceable{ReferenceableChild},
+			nil,
+		)
 		c.Assert(err, IsNil)
 	}
 }
@@ -112,7 +137,12 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_r
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.field", []Referenceable{ReferenceableResource})
+		err := ValidateReference(
+			reference,
+			"test.field",
+			[]Referenceable{ReferenceableResource},
+			nil,
+		)
 		c.Assert(err, NotNil)
 		loadErr, isLoadErr := err.(*errors.LoadError)
 		c.Assert(isLoadErr, Equals, true)
@@ -142,7 +172,12 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_v
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.field", []Referenceable{ReferenceableVariable})
+		err := ValidateReference(
+			reference,
+			"test.field",
+			[]Referenceable{ReferenceableVariable},
+			nil,
+		)
 		c.Assert(err, NotNil)
 		loadErr, isLoadErr := err.(*errors.LoadError)
 		c.Assert(isLoadErr, Equals, true)
@@ -168,7 +203,12 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_v
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.field", []Referenceable{ReferenceableValue})
+		err := ValidateReference(
+			reference,
+			"test.field",
+			[]Referenceable{ReferenceableValue},
+			nil,
+		)
 		c.Assert(err, NotNil)
 		loadErr, isLoadErr := err.(*errors.LoadError)
 		c.Assert(isLoadErr, Equals, true)
@@ -198,7 +238,12 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_d
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.otherField", []Referenceable{ReferenceableDataSource})
+		err := ValidateReference(
+			reference,
+			"test.otherField",
+			[]Referenceable{ReferenceableDataSource},
+			nil,
+		)
 		c.Assert(err, NotNil)
 		loadErr, isLoadErr := err.(*errors.LoadError)
 		c.Assert(isLoadErr, Equals, true)
@@ -226,7 +271,12 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_set_of_invalid_c
 	}
 
 	for _, reference := range references {
-		err := ValidateReference(reference, "test.alternativeField", []Referenceable{ReferenceableChild})
+		err := ValidateReference(
+			reference,
+			"test.alternativeField",
+			[]Referenceable{ReferenceableChild},
+			nil,
+		)
 		c.Assert(err, NotNil)
 		loadErr, isLoadErr := err.(*errors.LoadError)
 		c.Assert(isLoadErr, Equals, true)
@@ -254,6 +304,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_resource_referen
 			ReferenceableChild,
 			ReferenceableDataSource,
 		},
+		nil,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -278,6 +329,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_variable_referen
 			ReferenceableChild,
 			ReferenceableDataSource,
 		},
+		nil,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -302,6 +354,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_data_source_refe
 			// ReferenceableDataSource is not included in the list of referenceable objects
 			// for the given context.
 		},
+		nil,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -326,6 +379,7 @@ func (s *ReferenceValidationTestSuite) Test_reports_error_for_a_child_blueprint_
 			// ReferenceableChild is not included in the list of referenceable objects
 			// for the given context.
 		},
+		nil,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)

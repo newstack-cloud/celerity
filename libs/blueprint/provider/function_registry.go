@@ -132,6 +132,7 @@ func (r *functionRegistryFromProviders) registerProviderFunctions(ctx context.Co
 		if err != nil {
 			return err
 		}
+
 		for _, functionName := range functions {
 			if providedBy, alreadyProvided := r.functionProviderCache[functionName]; alreadyProvided {
 				err := handleFunctionProviderConflict(ctx, functionName, providedBy, provider)

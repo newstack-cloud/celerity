@@ -104,6 +104,8 @@ func ValidateCustomVariable(
 		)
 	}
 
+	checkVarDescription(varName, varMap, varSchema.Description, &diagnostics)
+
 	return diagnostics, nil
 }
 

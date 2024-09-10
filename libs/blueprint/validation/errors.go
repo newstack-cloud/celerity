@@ -493,8 +493,9 @@ func errEmptyExportField(exportName string, exportSourceMeta *source.Meta) error
 	}
 }
 
-func errReferenceContextAccess(reference string, context string, referenceableType Referenceable) error {
+func errReferenceContextAccess(reference string, context string, referenceableType Referenceable, location *source.Meta) error {
 	referencedObjectLabel := referenceableLabel(referenceableType)
+	line, col := source.PositionFromSourceMeta(location)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidReference,
 		Err: fmt.Errorf(
@@ -505,10 +506,18 @@ func errReferenceContextAccess(reference string, context string, referenceableTy
 			context,
 			referencedObjectLabel,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
-func errInvalidReferencePattern(reference string, context string, referenceableType Referenceable) error {
+func errInvalidReferencePattern(
+	reference string,
+	context string,
+	referenceableType Referenceable,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidReference,
 		Err: fmt.Errorf(
@@ -518,6 +527,8 @@ func errInvalidReferencePattern(reference string, context string, referenceableT
 			reference,
 			context,
 		),
+		Line:   line,
+		Column: col,
 	}
 }
 
@@ -716,6 +727,24 @@ func errSubFuncNamedArgsNotAllowed(
 			funcName,
 			argName,
 			substitutions.SubstitutionFunctionObject,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubFailedToLoadFunctionDefintion(
+	funcName string,
+	location *source.Meta,
+	errInfo string,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"validation failed due to failure to load function definition for substitution function \"%s\": %s",
+			funcName,
+			errInfo,
 		),
 		Line:   line,
 		Column: col,
@@ -1023,6 +1052,7 @@ func errResourceTypeMissingSpecDefinition(
 	resourceType string,
 	inSubstitution bool,
 	resourceSourceMeta *source.Meta,
+	extraDetails string,
 ) error {
 	line, col := source.PositionFromSourceMeta(resourceSourceMeta)
 	contextInfo := ""
@@ -1033,10 +1063,11 @@ func errResourceTypeMissingSpecDefinition(
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
 			"validation failed due to a missing spec definition for resource \"%s\" "+
-				"of type \"%s\"%s",
+				"of type \"%s\"%s: %s",
 			resourceName,
 			resourceType,
 			contextInfo,
+			extraDetails,
 		),
 		Line:   line,
 		Column: col,
@@ -1048,6 +1079,7 @@ func errResourceTypeMissingStateDefinition(
 	resourceType string,
 	inSubstitution bool,
 	resourceSourceMeta *source.Meta,
+	extraDetails string,
 ) error {
 	line, col := source.PositionFromSourceMeta(resourceSourceMeta)
 	contextInfo := ""
@@ -1058,10 +1090,11 @@ func errResourceTypeMissingStateDefinition(
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
 			"validation failed due to a missing state definition for resource \"%s\" "+
-				"of type \"%s\"%s",
+				"of type \"%s\"%s: %s",
 			resourceName,
 			resourceType,
 			contextInfo,
+			extraDetails,
 		),
 		Line:   line,
 		Column: col,

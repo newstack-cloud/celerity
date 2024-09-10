@@ -342,7 +342,13 @@ func validateResourcePropertySubSpec(
 		},
 	)
 	if err != nil {
-		return "", diagnostics, err
+		return "", diagnostics, errResourceTypeMissingSpecDefinition(
+			subResourceProp.ResourceName,
+			resourceType,
+			/* inSubstitution */ true,
+			subResourceProp.SourceMeta,
+			"failed to load spec definition",
+		)
 	}
 
 	if specDefOutput.SpecDefinition == nil {
@@ -351,6 +357,7 @@ func validateResourcePropertySubSpec(
 			resourceType,
 			/* inSubstitution */ true,
 			subResourceProp.SourceMeta,
+			"spec definition is nil",
 		)
 	}
 
@@ -461,7 +468,13 @@ func validateResourcePropertySubState(
 		},
 	)
 	if err != nil {
-		return "", diagnostics, err
+		return "", diagnostics, errResourceTypeMissingStateDefinition(
+			subResourceProp.ResourceName,
+			resourceType,
+			/* inSubstitution */ true,
+			subResourceProp.SourceMeta,
+			"failed to load state definition",
+		)
 	}
 
 	if stateDefOutput.StateDefinition == nil {
@@ -470,6 +483,7 @@ func validateResourcePropertySubState(
 			resourceType,
 			/* inSubstitution */ true,
 			subResourceProp.SourceMeta,
+			"state definition is nil",
 		)
 	}
 
@@ -848,7 +862,11 @@ func validateFunctionSubstitution(
 		},
 	)
 	if err != nil {
-		return "", diagnostics, err
+		return "", diagnostics, errSubFailedToLoadFunctionDefintion(
+			funcName,
+			subFunc.SourceMeta,
+			"the function may not be configured with the loaded providers",
+		)
 	}
 
 	if len(subFunc.Arguments) != len(defOutput.Definition.Parameters) &&

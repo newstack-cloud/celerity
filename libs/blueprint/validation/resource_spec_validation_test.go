@@ -125,7 +125,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 		loadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to a missing spec definition for resource \"testHandler\" "+
-			"of type \"test/missingSpecDef\"",
+			"of type \"test/missingSpecDef\": spec definition is nil",
 	)
 }
 

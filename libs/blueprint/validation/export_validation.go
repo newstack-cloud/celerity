@@ -51,6 +51,10 @@ func ValidateExport(
 		/* outputLineInfo */ false,
 		/* ignoreParentColumn */ true,
 	)
+	// As the substitution is derived and not user provided, we'll use the position
+	// of the export field in the exports map as the source location to provide
+	// a close enough location in errors and diagnostics.
+	populateSubSourceMeta(exportFieldAsSub, exportMap.SourceMeta[exportName])
 	if err != nil {
 		return diagnostics, err
 	}
@@ -146,7 +150,12 @@ func validateExportFieldFormat(exportField, exportName string, exportMap *schema
 	}
 
 	context := fmt.Sprintf("exports.%s", exportName)
-	return ValidateReference(exportField, context, ExportCanReference)
+	return ValidateReference(
+		exportField,
+		context,
+		ExportCanReference,
+		getExportSourceMeta(exportMap, exportName),
+	)
 }
 
 var (
@@ -185,5 +194,79 @@ func subTypeFromExportType(exportType schema.ExportType) string {
 		return string(substitutions.ResolvedSubExprTypeObject)
 	default:
 		return string(substitutions.ResolvedSubExprTypeString)
+	}
+}
+
+func populateSubSourceMeta(sub *substitutions.Substitution, sourceMeta *source.Meta) {
+	if sourceMeta == nil {
+		return
+	}
+
+	sub.SourceMeta = &source.Meta{
+		Line:   sourceMeta.Line,
+		Column: sourceMeta.Column,
+	}
+
+	if sub.Function != nil {
+		sub.Function.SourceMeta = &source.Meta{
+			Line:   sourceMeta.Line,
+			Column: sourceMeta.Column,
+		}
+		for _, arg := range sub.Function.Arguments {
+			arg.SourceMeta = &source.Meta{
+				Line:   sourceMeta.Line,
+				Column: sourceMeta.Column,
+			}
+			populateSubSourceMeta(arg.Value, sourceMeta)
+		}
+	}
+
+	if sub.ElemIndexReference != nil {
+		sub.ElemIndexReference.SourceMeta = &source.Meta{
+			Line:   sourceMeta.Line,
+			Column: sourceMeta.Column,
+		}
+	}
+
+	if sub.ElemReference != nil {
+		sub.ElemReference.SourceMeta = &source.Meta{
+			Line:   sourceMeta.Line,
+			Column: sourceMeta.Column,
+		}
+	}
+
+	if sub.Child != nil {
+		sub.Child.SourceMeta = &source.Meta{
+			Line:   sourceMeta.Line,
+			Column: sourceMeta.Column,
+		}
+	}
+
+	if sub.DataSourceProperty != nil {
+		sub.DataSourceProperty.SourceMeta = &source.Meta{
+			Line:   sourceMeta.Line,
+			Column: sourceMeta.Column,
+		}
+	}
+
+	if sub.ResourceProperty != nil {
+		sub.ResourceProperty.SourceMeta = &source.Meta{
+			Line:   sourceMeta.Line,
+			Column: sourceMeta.Column,
+		}
+	}
+
+	if sub.ValueReference != nil {
+		sub.ValueReference.SourceMeta = &source.Meta{
+			Line:   sourceMeta.Line,
+			Column: sourceMeta.Column,
+		}
+	}
+
+	if sub.Variable != nil {
+		sub.Variable.SourceMeta = &source.Meta{
+			Line:   sourceMeta.Line,
+			Column: sourceMeta.Column,
+		}
 	}
 }

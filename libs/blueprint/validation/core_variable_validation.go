@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
@@ -125,6 +126,8 @@ func validateCoreStringVariable(
 			getVarSourceMeta(varMap, varName),
 		)
 	}
+
+	checkVarDescription(varName, varMap, varSchema.Description, &diagnostics)
 
 	return diagnostics, validateValueInAllowedList(
 		varSchema,
@@ -475,4 +478,24 @@ func getVarSourceMeta(varMap *schema.VariableMap, varName string) *source.Meta {
 
 func scalarAllNil(scalar *bpcore.ScalarValue) bool {
 	return scalar.StringValue == nil && scalar.IntValue == nil && scalar.FloatValue == nil && scalar.BoolValue == nil
+}
+
+func checkVarDescription(
+	varName string,
+	varMap *schema.VariableMap,
+	description string,
+	diagnostics *[]*bpcore.Diagnostic,
+) {
+	if description != "" && substitutions.ContainsSubstitution(description) {
+		*diagnostics = append(*diagnostics, &bpcore.Diagnostic{
+			Level: bpcore.DiagnosticLevelWarning,
+			Message: fmt.Sprintf(
+				"${..} substitutions can not be used in variable descriptions, "+
+					"found one or more instances of ${..} in the description of variable \"%s\", "+
+					"the value will not be substituted",
+				varName,
+			),
+			Range: toDiagnosticRange(varMap.SourceMeta[varName], nil),
+		})
+	}
 }

@@ -3,6 +3,7 @@ package validation
 import (
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
@@ -12,83 +13,88 @@ import (
 // This validation does not validate that the reference can be resolved,
 // as this validation will normally be carried out at an early stage before information
 // is available about what resources, variables, data sources or child blueprints are available.
-func ValidateReference(reference string, context string, hasAccessTo []Referenceable) error {
+func ValidateReference(
+	reference string,
+	context string,
+	hasAccessTo []Referenceable,
+	location *source.Meta,
+) error {
 	if strings.HasPrefix(reference, "variables.") || strings.HasPrefix(reference, "variables[") {
-		return validateVariableReference(reference, context, hasAccessTo)
+		return validateVariableReference(reference, context, hasAccessTo, location)
 	}
 
 	if strings.HasPrefix(reference, "datasources.") || strings.HasPrefix(reference, "datasources[") {
-		return validateDataSourceReference(reference, context, hasAccessTo)
+		return validateDataSourceReference(reference, context, hasAccessTo, location)
 	}
 
 	if strings.HasPrefix(reference, "children.") || strings.HasPrefix(reference, "children[") {
-		return validateChildBlueprintReference(reference, context, hasAccessTo)
+		return validateChildBlueprintReference(reference, context, hasAccessTo, location)
 	}
 
 	if strings.HasPrefix(reference, "values.") || strings.HasPrefix(reference, "values[") {
-		return validateValueReference(reference, context, hasAccessTo)
+		return validateValueReference(reference, context, hasAccessTo, location)
 	}
 
 	// Resource references are used for all other cases as they can be made
 	// with or without the "resources." prefix.
-	return validateResourceReference(reference, context, hasAccessTo)
+	return validateResourceReference(reference, context, hasAccessTo, location)
 }
 
-func validateVariableReference(reference string, context string, hasAccessTo []Referenceable) error {
+func validateVariableReference(reference string, context string, hasAccessTo []Referenceable, location *source.Meta) error {
 	if !core.SliceContainsComparable(hasAccessTo, ReferenceableVariable) {
-		return errReferenceContextAccess(reference, context, ReferenceableVariable)
+		return errReferenceContextAccess(reference, context, ReferenceableVariable, location)
 	}
 
 	if !substitutions.VariableReferencePattern.MatchString(reference) {
-		return errInvalidReferencePattern(reference, context, ReferenceableVariable)
+		return errInvalidReferencePattern(reference, context, ReferenceableVariable, location)
 	}
 
 	return nil
 }
 
-func validateValueReference(reference string, context string, hasAccessTo []Referenceable) error {
+func validateValueReference(reference string, context string, hasAccessTo []Referenceable, location *source.Meta) error {
 	if !core.SliceContainsComparable(hasAccessTo, ReferenceableValue) {
-		return errReferenceContextAccess(reference, context, ReferenceableValue)
+		return errReferenceContextAccess(reference, context, ReferenceableValue, location)
 	}
 
 	if !substitutions.ValueReferencePattern.MatchString(reference) {
-		return errInvalidReferencePattern(reference, context, ReferenceableValue)
+		return errInvalidReferencePattern(reference, context, ReferenceableValue, location)
 	}
 
 	return nil
 }
 
-func validateDataSourceReference(reference string, context string, hasAccessTo []Referenceable) error {
+func validateDataSourceReference(reference string, context string, hasAccessTo []Referenceable, location *source.Meta) error {
 	if !core.SliceContainsComparable(hasAccessTo, ReferenceableDataSource) {
-		return errReferenceContextAccess(reference, context, ReferenceableDataSource)
+		return errReferenceContextAccess(reference, context, ReferenceableDataSource, location)
 	}
 
 	if !substitutions.DataSourceReferencePattern.MatchString(reference) {
-		return errInvalidReferencePattern(reference, context, ReferenceableDataSource)
+		return errInvalidReferencePattern(reference, context, ReferenceableDataSource, location)
 	}
 
 	return nil
 }
 
-func validateChildBlueprintReference(reference string, context string, hasAccessTo []Referenceable) error {
+func validateChildBlueprintReference(reference string, context string, hasAccessTo []Referenceable, location *source.Meta) error {
 	if !core.SliceContainsComparable(hasAccessTo, ReferenceableChild) {
-		return errReferenceContextAccess(reference, context, ReferenceableChild)
+		return errReferenceContextAccess(reference, context, ReferenceableChild, location)
 	}
 
 	if !substitutions.ChildReferencePattern.MatchString(reference) {
-		return errInvalidReferencePattern(reference, context, ReferenceableChild)
+		return errInvalidReferencePattern(reference, context, ReferenceableChild, location)
 	}
 
 	return nil
 }
 
-func validateResourceReference(reference string, context string, hasAccessTo []Referenceable) error {
+func validateResourceReference(reference string, context string, hasAccessTo []Referenceable, location *source.Meta) error {
 	if !core.SliceContainsComparable(hasAccessTo, ReferenceableResource) {
-		return errReferenceContextAccess(reference, context, ReferenceableResource)
+		return errReferenceContextAccess(reference, context, ReferenceableResource, location)
 	}
 
 	if !substitutions.ResourceReferencePattern.MatchString(reference) {
-		return errInvalidReferencePattern(reference, context, ReferenceableResource)
+		return errInvalidReferencePattern(reference, context, ReferenceableResource, location)
 	}
 
 	return nil

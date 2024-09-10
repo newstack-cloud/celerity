@@ -1163,7 +1163,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 		loadErr.Err.Error(),
 		Equals,
 		"validation failed due to a missing spec definition for resource \"exampleResource1\" "+
-			"of type \"exampleResourceMissingSpecDefinition\" referenced in substitution",
+			"of type \"exampleResourceMissingSpecDefinition\" referenced in substitution: spec definition is nil",
 	)
 }
 
@@ -1362,7 +1362,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 		loadErr.Err.Error(),
 		Equals,
 		"validation failed due to a missing state definition for resource \"exampleResource1\" "+
-			"of type \"exampleResourceMissingStateDefinition\" referenced in substitution",
+			"of type \"exampleResourceMissingStateDefinition\" referenced in substitution: state definition is nil",
 	)
 }
 
