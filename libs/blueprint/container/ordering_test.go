@@ -117,7 +117,7 @@ func orderFixture1Chains() []*links.ChainLink {
 	orderApi := &links.ChainLink{
 		ResourceName: "orderApi",
 		Resource: &schema.Resource{
-			Type: "aws/apigateway/api",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/apigateway/api"},
 		},
 		Paths: []string{},
 		LinkImplementations: map[string]provider.Link{
@@ -133,7 +133,7 @@ func orderFixture1Chains() []*links.ChainLink {
 	getOrdersFunction := &links.ChainLink{
 		ResourceName: "getOrdersFunction",
 		Resource: &schema.Resource{
-			Type: "aws/lambda/function",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 		},
 		Paths: []string{"/orderApi"},
 		LinkImplementations: map[string]provider.Link{
@@ -146,7 +146,7 @@ func orderFixture1Chains() []*links.ChainLink {
 	createOrderFunction := &links.ChainLink{
 		ResourceName: "createOrderFunction",
 		Resource: &schema.Resource{
-			Type: "aws/lambda/function",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 		},
 		LinkImplementations: map[string]provider.Link{
 			"ordersTable": lambdaDynamoDBTableLink,
@@ -159,7 +159,7 @@ func orderFixture1Chains() []*links.ChainLink {
 	updateOrderFunction := &links.ChainLink{
 		ResourceName: "updateOrderFunction",
 		Resource: &schema.Resource{
-			Type: "aws/lambda/function",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 		},
 		LinkImplementations: map[string]provider.Link{
 			"ordersTable": lambdaDynamoDBTableLink,
@@ -176,7 +176,7 @@ func orderFixture1Chains() []*links.ChainLink {
 	ordersTable := &links.ChainLink{
 		ResourceName: "ordersTable",
 		Resource: &schema.Resource{
-			Type: "aws/dynamodb/table",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/table"},
 		},
 		LinkImplementations: map[string]provider.Link{
 			"ordersStream": dynamoDBTableStreamLink,
@@ -195,7 +195,7 @@ func orderFixture1Chains() []*links.ChainLink {
 	ordersStream := &links.ChainLink{
 		ResourceName: "ordersStream",
 		Resource: &schema.Resource{
-			Type: "aws/dynamodb/stream",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/stream"},
 		},
 		Paths: []string{
 			"/orderApi/getOrdersFunction/ordersTable",
@@ -217,7 +217,7 @@ func orderFixture1Chains() []*links.ChainLink {
 	statsAccumulatorFunction := &links.ChainLink{
 		ResourceName: "statsAccumulatorFunction",
 		Resource: &schema.Resource{
-			Type: "aws/lambda/function",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 		},
 		Paths: []string{
 			"/orderApi/getOrdersFunction/ordersTable/ordersStream",
@@ -235,7 +235,7 @@ func orderFixture1Chains() []*links.ChainLink {
 	resourceWithMissingLinkImplementation := &links.ChainLink{
 		ResourceName: "secondaryOrdersDB",
 		Resource: &schema.Resource{
-			Type: "aws/rds/dbInstance",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/rds/dbInstance"},
 		},
 		Paths: []string{
 			"/orderApi/getOrdersFunction/ordersTable/ordersStream/statsAccumulator",
@@ -303,7 +303,7 @@ func orderFixture2Chain() []*links.ChainLink {
 	route := &links.ChainLink{
 		ResourceName: "route1",
 		Resource: &schema.Resource{
-			Type: "aws/ec2/route",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/ec2/route"},
 		},
 		Paths: []string{},
 		LinkImplementations: map[string]provider.Link{
@@ -318,7 +318,7 @@ func orderFixture2Chain() []*links.ChainLink {
 	routeTable := &links.ChainLink{
 		ResourceName: "routeTable1",
 		Resource: &schema.Resource{
-			Type: "aws/ec2/routeTable",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/ec2/routeTable"},
 		},
 		Paths: []string{
 			"/route1",
@@ -335,7 +335,7 @@ func orderFixture2Chain() []*links.ChainLink {
 	internetGateway := &links.ChainLink{
 		ResourceName: "igw1",
 		Resource: &schema.Resource{
-			Type: "aws/ec2/internetGateway",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/ec2/internetGateway"},
 		},
 		Paths: []string{
 			"/route1",
@@ -351,7 +351,7 @@ func orderFixture2Chain() []*links.ChainLink {
 	subnet := &links.ChainLink{
 		ResourceName: "subnet1",
 		Resource: &schema.Resource{
-			Type: "aws/ec2/subnet",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/ec2/subnet"},
 		},
 		Paths: []string{},
 		LinkImplementations: map[string]provider.Link{
@@ -365,7 +365,7 @@ func orderFixture2Chain() []*links.ChainLink {
 	securityGroup := &links.ChainLink{
 		ResourceName: "sg1",
 		Resource: &schema.Resource{
-			Type: "aws/ec2/securityGroup",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/ec2/securityGroup"},
 		},
 		Paths: []string{},
 		LinkImplementations: map[string]provider.Link{
@@ -378,7 +378,7 @@ func orderFixture2Chain() []*links.ChainLink {
 	vpc := &links.ChainLink{
 		ResourceName: "vpc1",
 		Resource: &schema.Resource{
-			Type: "aws/ec2/vpc",
+			Type: &schema.ResourceTypeWrapper{Value: "aws/ec2/vpc"},
 		},
 		Paths: []string{
 			"/route1/routeTable1",

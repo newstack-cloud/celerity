@@ -110,7 +110,7 @@ func (s *RefChainCollectorTestSuite) Test_produces_error_when_referencing_elemen
 
 func createTestResource(id string) *schema.Resource {
 	return &schema.Resource{
-		Type: "celerity/example",
+		Type: &schema.ResourceTypeWrapper{Value: "celerity/example"},
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"id": {

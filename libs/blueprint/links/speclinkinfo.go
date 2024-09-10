@@ -308,13 +308,15 @@ func (l *defaultSpecLinkInfo) checkCanLinkTo(
 	linkFromResource *ResourceWithNameAndSelectors,
 	linkToResource *ResourceWithNameAndSelectors,
 ) (*linkCheckInfo, error) {
-	resourceProvider, rpExists := l.resourceProviders[linkFromResource.Resource.Type]
+	linkFromResourceType := linkFromResource.Resource.Type.Value
+	linkToResourceType := linkToResource.Resource.Type.Value
+	resourceProvider, rpExists := l.resourceProviders[linkFromResourceType]
 	if rpExists {
-		linkImplementation, err := resourceProvider.Link(ctx, linkFromResource.Resource.Type, linkToResource.Resource.Type)
+		linkImplementation, err := resourceProvider.Link(ctx, linkFromResourceType, linkToResourceType)
 		if err != nil {
 			return nil, err
 		}
-		linkFromResourceType, err := resourceProvider.Resource(ctx, linkFromResource.Resource.Type)
+		linkFromResourceType, err := resourceProvider.Resource(ctx, linkFromResourceType)
 		if err != nil {
 			return nil, err
 		}
@@ -324,7 +326,7 @@ func (l *defaultSpecLinkInfo) checkCanLinkTo(
 		if err != nil {
 			return nil, err
 		}
-		linkAllowed := core.SliceContainsComparable(linkFromResourceOutput.CanLinkTo, linkToResource.Resource.Type)
+		linkAllowed := core.SliceContainsComparable(linkFromResourceOutput.CanLinkTo, linkToResourceType)
 		return &linkCheckInfo{
 			linkImplementation: linkImplementation,
 			canLinkTo:          linkAllowed,
@@ -578,10 +580,11 @@ func (l *defaultSpecLinkInfo) collectWarnings(
 	// types and is not a "common terminal resource".
 	for _, currentLink := range chainLinks {
 		if len(currentLink.LinksTo) == 0 {
-			resourceProvider, rpExists := l.resourceProviders[currentLink.Resource.Type]
+			currentLinkResourceType := currentLink.Resource.Type.Value
+			resourceProvider, rpExists := l.resourceProviders[currentLinkResourceType]
 			if rpExists {
 
-				canLinkTo, isCommonTerminal, err := l.getResourceLinkInfo(ctx, resourceProvider, currentLink.Resource.Type)
+				canLinkTo, isCommonTerminal, err := l.getResourceLinkInfo(ctx, resourceProvider, currentLinkResourceType)
 				if err != nil {
 					return []string{}, []string{}, err
 				}
@@ -593,8 +596,8 @@ func (l *defaultSpecLinkInfo) collectWarnings(
 						"resource \"%s\" of type \"%s\" does not link out to any other"+
 							" resources where in most use-cases a resource of type \"%s\" is expected to link to other resources",
 						currentLink.ResourceName,
-						currentLink.Resource.Type,
-						currentLink.Resource.Type,
+						currentLink.Resource.Type.Value,
+						currentLink.Resource.Type.Value,
 					))
 					allCollectedResourceNamesSoFar = append(allCollectedResourceNamesSoFar, currentLink.ResourceName)
 				}

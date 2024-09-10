@@ -6,6 +6,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -176,6 +177,18 @@ func errTransformerMissing(transformer string, line *int, column *int) error {
 		ReasonCode: ErrorReasonMissingTransformers,
 		Err: fmt.Errorf(
 			"the following transformer is missing from the blueprint loader: %s", transformer,
+		),
+		Line:   line,
+		Column: column,
+	}
+}
+
+func errMissingVariableType(variableName string, location *source.Meta) error {
+	line, column := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeVariableValidationErrors,
+		Err: fmt.Errorf(
+			"variable type missing for variable %s", variableName,
 		),
 		Line:   line,
 		Column: column,

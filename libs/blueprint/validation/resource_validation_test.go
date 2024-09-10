@@ -54,7 +54,7 @@ func (s *ResourceValidationTestSuite) SetUpTest(c *C) {
 func (s *ResourceValidationTestSuite) Test_reports_error_when_substitution_provided_in_resource_name(c *C) {
 	description := "EC2 instance for the application"
 	resourceSchema := &schema.Resource{
-		Type: "${variables.awsEC2InstanceName}",
+		Type: &schema.ResourceTypeWrapper{Value: "${variables.awsEC2InstanceName}"},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -90,7 +90,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_substitution_provi
 func (s *ResourceValidationTestSuite) Test_reports_errors_when_substitutions_used_in_spec_mapping_keys(c *C) {
 	version := "1.0.0"
 	resourceSchema := &schema.Resource{
-		Type: "celerity/api",
+		Type: &schema.ResourceTypeWrapper{Value: "celerity/api"},
 		Spec: &core.MappingNode{
 			Items: []*core.MappingNode{
 				{
@@ -135,7 +135,7 @@ func (s *ResourceValidationTestSuite) Test_reports_errors_when_resource_type_is_
 	handler := "unknown.handler"
 
 	resource := &schema.Resource{
-		Type: "aws/lambda/unknown",
+		Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/unknown"},
 		Metadata: &schema.Metadata{
 			DisplayName: &substitutions.StringOrSubstitutions{
 				Values: []*substitutions.StringOrSubstitution{
@@ -708,7 +708,7 @@ func newTestValidResource() *schema.Resource {
 	strToSplit := "a,b,c,d"
 	delimiter := ","
 	return &schema.Resource{
-		Type: "aws/ecs/service",
+		Type: &schema.ResourceTypeWrapper{Value: "aws/ecs/service"},
 		Metadata: &schema.Metadata{
 			DisplayName: &substitutions.StringOrSubstitutions{
 				Values: []*substitutions.StringOrSubstitution{
@@ -835,7 +835,7 @@ func newTestInvalidDisplayNameResource() *schema.Resource {
 	serviceName := "testService"
 	displayNamePrefix := "Service-"
 	return &schema.Resource{
-		Type: "aws/ecs/service",
+		Type: &schema.ResourceTypeWrapper{Value: "aws/ecs/service"},
 		Metadata: &schema.Metadata{
 			DisplayName: &substitutions.StringOrSubstitutions{
 				Values: []*substitutions.StringOrSubstitution{
@@ -871,7 +871,7 @@ func newTestInvalidDescriptionResource() *schema.Resource {
 	serviceName := "testService"
 	displayName := "Test Service"
 	return &schema.Resource{
-		Type: "aws/ecs/service",
+		Type: &schema.ResourceTypeWrapper{Value: "aws/ecs/service"},
 		Metadata: &schema.Metadata{
 			DisplayName: &substitutions.StringOrSubstitutions{
 				Values: []*substitutions.StringOrSubstitution{

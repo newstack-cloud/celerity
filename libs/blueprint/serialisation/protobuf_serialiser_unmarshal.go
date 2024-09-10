@@ -54,13 +54,18 @@ func fromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
 		return nil, err
 	}
 
+	version, err := fromScalarValuePB(blueprintPB.Version, false)
+	if err != nil {
+		return nil, err
+	}
+
 	transform := (*schema.TransformValueWrapper)(nil)
 	if len(blueprintPB.Transform) > 0 {
 		transform = &schema.TransformValueWrapper{Values: blueprintPB.Transform}
 	}
 
 	return &schema.Blueprint{
-		Version:     blueprintPB.Version,
+		Version:     version,
 		Transform:   transform,
 		Variables:   variables,
 		Values:      values,
@@ -89,10 +94,20 @@ func fromVariablesPB(variablesPB map[string]*schemapb.Variable) (*schema.Variabl
 			return nil, err
 		}
 
+		description, err := fromScalarValuePB(v.Description, true)
+		if err != nil {
+			return nil, err
+		}
+
+		secret, err := fromScalarValuePB(v.Secret, true)
+		if err != nil {
+			return nil, err
+		}
+
 		variables[k] = &schema.Variable{
-			Type:          schema.VariableType(v.Type),
-			Description:   *v.Description,
-			Secret:        v.Secret,
+			Type:          &schema.VariableTypeWrapper{Value: schema.VariableType(v.Type)},
+			Description:   description,
+			Secret:        secret,
 			Default:       defaultValue,
 			AllowedValues: allowedValues,
 		}
@@ -121,11 +136,16 @@ func fromValuesPB(valuesPB map[string]*schemapb.Value) (*schema.ValueMap, error)
 			return nil, err
 		}
 
+		secret, err := fromScalarValuePB(v.Secret, true)
+		if err != nil {
+			return nil, err
+		}
+
 		values[k] = &schema.Value{
 			Type:        &schema.ValueTypeWrapper{Value: schema.ValueType(v.Type)},
 			Value:       value,
 			Description: description,
-			Secret:      v.Secret,
+			Secret:      secret,
 		}
 	}
 
@@ -236,7 +256,7 @@ func fromDataSourcePB(dataSourcePB *schemapb.DataSource) (*schema.DataSource, er
 	}
 
 	return &schema.DataSource{
-		Type:               dataSourcePB.Type,
+		Type:               &schema.DataSourceTypeWrapper{Value: dataSourcePB.Type},
 		DataSourceMetadata: metadata,
 		Filter:             filter,
 		Exports:            exports,
@@ -273,8 +293,13 @@ func fromDataSourceFilterPB(filterPB *schemapb.DataSourceFilter) (*schema.DataSo
 		return nil, err
 	}
 
+	field, err := fromScalarValuePB(filterPB.Field, false)
+	if err != nil {
+		return nil, err
+	}
+
 	return &schema.DataSourceFilter{
-		Field: filterPB.Field,
+		Field: field,
 		Operator: &schema.DataSourceFilterOperatorWrapper{
 			Value: schema.DataSourceFilterOperator(filterPB.Operator),
 		},
@@ -330,11 +355,16 @@ func fromDataSourceFieldExportPB(
 		return nil, err
 	}
 
+	aliasFor, err := fromScalarValuePB(exportPB.AliasFor, true)
+	if err != nil {
+		return nil, err
+	}
+
 	return &schema.DataSourceFieldExport{
 		Type: &schema.DataSourceFieldTypeWrapper{
 			Value: schema.DataSourceFieldType(exportPB.Type),
 		},
-		AliasFor:    exportPB.AliasFor,
+		AliasFor:    aliasFor,
 		Description: description,
 	}, nil
 }
@@ -366,7 +396,7 @@ func fromResourcePB(resourcePB *schemapb.Resource) (*schema.Resource, error) {
 	}
 
 	return &schema.Resource{
-		Type:         resourcePB.Type,
+		Type:         &schema.ResourceTypeWrapper{Value: resourcePB.Type},
 		Description:  description,
 		Each:         each,
 		Condition:    condition,
@@ -516,9 +546,14 @@ func fromExportPB(exportPB *schemapb.Export) (*schema.Export, error) {
 		return nil, err
 	}
 
+	field, err := fromScalarValuePB(exportPB.Field, false)
+	if err != nil {
+		return nil, err
+	}
+
 	return &schema.Export{
-		Type:        schema.ExportType(exportPB.Type),
-		Field:       exportPB.Field,
+		Type:        &schema.ExportTypeWrapper{Value: schema.ExportType(exportPB.Type)},
+		Field:       field,
 		Description: description,
 	}, nil
 }

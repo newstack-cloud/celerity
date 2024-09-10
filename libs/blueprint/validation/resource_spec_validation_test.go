@@ -75,7 +75,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 	handler := "test.handler"
 
 	resource := &schema.Resource{
-		Type: "test/missingSpecDef",
+		Type: &schema.ResourceTypeWrapper{Value: "test/missingSpecDef"},
 		Metadata: &schema.Metadata{
 			DisplayName: &substitutions.StringOrSubstitutions{
 				Values: []*substitutions.StringOrSubstitution{
@@ -134,7 +134,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 	handler := "test.handler"
 
 	resource := &schema.Resource{
-		Type: "test/missingSchema",
+		Type: &schema.ResourceTypeWrapper{Value: "test/missingSchema"},
 		Metadata: &schema.Metadata{
 			DisplayName: &substitutions.StringOrSubstitutions{
 				Values: []*substitutions.StringOrSubstitution{
@@ -700,7 +700,7 @@ func createTestValidResource() *schema.Resource {
 	testIntVal := 504982
 
 	return &schema.Resource{
-		Type: "test/exampleResource",
+		Type: &schema.ResourceTypeWrapper{Value: "test/exampleResource"},
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"map": {

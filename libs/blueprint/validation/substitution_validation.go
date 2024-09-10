@@ -256,6 +256,10 @@ func validateResourcePropertySubstitution(
 		return "", diagnostics, errSubResourceNotFound(resourceName, subResourceProp.SourceMeta)
 	}
 
+	if resourceSchema.Type == nil {
+		return "", diagnostics, errResourceMissingType(resourceName, subResourceProp.SourceMeta)
+	}
+
 	if usedIn == fmt.Sprintf("resources.%s", resourceName) {
 		return "", diagnostics, errSubResourceSelfReference(resourceName, subResourceProp.SourceMeta)
 	}
@@ -272,7 +276,7 @@ func validateResourcePropertySubstitution(
 		return validateResourcePropertySubSpec(
 			ctx,
 			subResourceProp,
-			resourceSchema.Type,
+			resourceSchema.Type.Value,
 			resourceRegistry,
 			nextLocation,
 			params,
@@ -283,7 +287,7 @@ func validateResourcePropertySubstitution(
 		return validateResourcePropertySubState(
 			ctx,
 			subResourceProp,
-			resourceSchema.Type,
+			resourceSchema.Type.Value,
 			resourceRegistry,
 			nextLocation,
 			params,
@@ -1135,8 +1139,12 @@ func subFunctionValueType(valueType function.ValueType) string {
 	}
 }
 
-func subVarType(varType schema.VariableType) string {
-	switch varType {
+func subVarType(varType *schema.VariableTypeWrapper) string {
+	if varType == nil {
+		return string(substitutions.ResolvedSubExprTypeAny)
+	}
+
+	switch varType.Value {
 	case schema.VariableTypeInteger:
 		return string(substitutions.ResolvedSubExprTypeInteger)
 	case schema.VariableTypeFloat:

@@ -52,7 +52,7 @@ var testBlueprintSchema1 = &schema.Blueprint{
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"orderApi": {
-				Type: "aws/apigateway",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/apigateway"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -69,7 +69,7 @@ var testBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"orderQueue": {
-				Type: "aws/sqs/queue",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/sqs/queue"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -86,7 +86,7 @@ var testBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"processOrdersFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -103,7 +103,7 @@ var testBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"createOrderFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -120,7 +120,7 @@ var testBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"getOrdersFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -137,7 +137,7 @@ var testBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"ordersTable": {
-				Type: "aws/dynamodb/table",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/table"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -232,22 +232,22 @@ var testBlueprintSchema2 = &schema.Blueprint{
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"orderApi": {
-				Type: "aws/apigateway",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/apigateway"},
 			},
 			"orderQueue": {
-				Type: "aws/sqs/queue",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/sqs/queue"},
 			},
 			"processOrdersFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 			},
 			"createOrderFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 			},
 			"getOrdersFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 			},
 			"ordersTable": {
-				Type: "aws/dynamodb/table",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/table"},
 			},
 		},
 	},

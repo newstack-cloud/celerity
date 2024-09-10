@@ -356,7 +356,7 @@ var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"orderApi": {
-				Type: "aws/apigateway/api",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/apigateway/api"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -373,7 +373,7 @@ var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"orderQueue": {
-				Type: "aws/sqs/queue",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/sqs/queue"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -390,7 +390,7 @@ var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"processOrdersFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -407,7 +407,7 @@ var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"createOrderFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -424,7 +424,7 @@ var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"getOrdersFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -441,7 +441,7 @@ var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"ordersTable": {
-				Type: "aws/dynamodb/table",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/table"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -458,7 +458,7 @@ var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"ordersStream": {
-				Type: "aws/dynamodb/stream",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/stream"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -475,7 +475,7 @@ var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"statsAccumulatorFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -485,7 +485,7 @@ var testSpecLinkInfoBlueprintSchema1 = &schema.Blueprint{
 				},
 			},
 			"standaloneRole": {
-				Type:     "aws/iam/role",
+				Type:     &schema.ResourceTypeWrapper{Value: "aws/iam/role"},
 				Metadata: &schema.Metadata{},
 			},
 		},
@@ -497,7 +497,7 @@ var testSpecLinkInfoBlueprintSchema2 = &schema.Blueprint{
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"exchangeRateFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -507,7 +507,7 @@ var testSpecLinkInfoBlueprintSchema2 = &schema.Blueprint{
 				},
 			},
 			"refreshExchangeRatesFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -517,7 +517,7 @@ var testSpecLinkInfoBlueprintSchema2 = &schema.Blueprint{
 				},
 			},
 			"standaloneRole2": {
-				Type:     "aws/iam/role",
+				Type:     &schema.ResourceTypeWrapper{Value: "aws/iam/role"},
 				Metadata: &schema.Metadata{},
 			},
 		},
@@ -532,7 +532,7 @@ var testSpecLinkInfoBlueprintSchema3 = &schema.Blueprint{
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"exchangeRatesFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -549,7 +549,7 @@ var testSpecLinkInfoBlueprintSchema3 = &schema.Blueprint{
 				},
 			},
 			"saveExchangeRatesFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -573,7 +573,7 @@ var testSpecLinkInfoBlueprintSchema4 = &schema.Blueprint{
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"ordersTable": {
-				Type: "aws/dynamodb/table",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/table"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -590,7 +590,7 @@ var testSpecLinkInfoBlueprintSchema4 = &schema.Blueprint{
 				},
 			},
 			"ordersStream": {
-				Type: "aws/dynamodb/stream",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/stream"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -607,7 +607,7 @@ var testSpecLinkInfoBlueprintSchema4 = &schema.Blueprint{
 				},
 			},
 			"statsAccumulatorFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -627,7 +627,7 @@ var testSpecLinkInfoBlueprintSchema4 = &schema.Blueprint{
 				},
 			},
 			"statsRetrieverFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -644,7 +644,7 @@ var testSpecLinkInfoBlueprintSchema4 = &schema.Blueprint{
 				},
 			},
 			"lambdaExecutionRole": {
-				Type: "aws/iam/role",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/iam/role"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -674,7 +674,7 @@ var testSpecLinkInfoBlueprintSchema5 = &schema.Blueprint{
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"ordersTable": {
-				Type: "aws/dynamodb/table",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/table"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -691,7 +691,7 @@ var testSpecLinkInfoBlueprintSchema5 = &schema.Blueprint{
 				},
 			},
 			"ordersStream": {
-				Type: "aws/dynamodb/stream",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/stream"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -710,7 +710,7 @@ var testSpecLinkInfoBlueprintSchema5 = &schema.Blueprint{
 			"statsAccumulatorFunction": {
 				// Represents a theoretical stratos abstraction
 				// of an aws lambda function.
-				Type: "stratosaws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "stratosaws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -730,7 +730,7 @@ var testSpecLinkInfoBlueprintSchema5 = &schema.Blueprint{
 				},
 			},
 			"statsRetrieverFunction": {
-				Type: "aws/lambda/function",
+				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{
@@ -749,7 +749,7 @@ var testSpecLinkInfoBlueprintSchema5 = &schema.Blueprint{
 			"lambdaExecutionRole": {
 				// Represents a theoretical stratos abstraction
 				// of an aws iam role.
-				Type: "stratosaws/iam/role",
+				Type: &schema.ResourceTypeWrapper{Value: "stratosaws/iam/role"},
 				Metadata: &schema.Metadata{
 					Labels: &schema.StringMap{
 						Values: map[string]string{

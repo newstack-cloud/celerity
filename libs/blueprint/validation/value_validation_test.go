@@ -116,7 +116,7 @@ func (s *ValueValidationTestSuite) Test_passes_validation_for_a_valid_value(c *C
 		Variables: &schema.VariableMap{
 			Values: map[string]*schema.Variable{
 				"regions": {
-					Type: schema.VariableTypeString,
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
 				},
 			},
 		},
@@ -181,7 +181,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_for_invalid_sub_in_descrip
 		Variables: &schema.VariableMap{
 			Values: map[string]*schema.Variable{
 				"regions": {
-					Type: schema.VariableTypeString,
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
 				},
 			},
 		},
@@ -298,7 +298,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_for_interpolated_string_fo
 		Variables: &schema.VariableMap{
 			Values: map[string]*schema.Variable{
 				"regions": {
-					Type: schema.VariableTypeString,
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
 				},
 			},
 		},
@@ -349,7 +349,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_string_literal_is_pro
 		Variables: &schema.VariableMap{
 			Values: map[string]*schema.Variable{
 				"regions": {
-					Type: schema.VariableTypeString,
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
 				},
 			},
 		},
@@ -415,7 +415,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_sub_that_resolves_to_
 		Variables: &schema.VariableMap{
 			Values: map[string]*schema.Variable{
 				"regions": {
-					Type: schema.VariableTypeString,
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
 				},
 			},
 		},

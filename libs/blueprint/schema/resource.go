@@ -1,7 +1,11 @@
 package schema
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"gopkg.in/yaml.v3"
@@ -10,7 +14,7 @@ import (
 // Resource represents a blueprint
 // resource in the specification.
 type Resource struct {
-	Type         string                               `yaml:"type" json:"type"`
+	Type         *ResourceTypeWrapper                 `yaml:"type" json:"type"`
 	Description  *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 	Metadata     *Metadata                            `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 	Condition    *Condition                           `yaml:"condition,omitempty" json:"condition,omitempty"`
@@ -39,6 +43,44 @@ func (r *Resource) UnmarshalYAML(value *yaml.Node) error {
 	r.Each = alias.Each
 	r.LinkSelector = alias.LinkSelector
 	r.Spec = alias.Spec
+
+	return nil
+}
+
+// ResourceTypeWrapper provides a struct that holds a resource type
+// value.
+type ResourceTypeWrapper struct {
+	Value      string
+	SourceMeta *source.Meta
+}
+
+func (t *ResourceTypeWrapper) MarshalYAML() (interface{}, error) {
+	return t.Value, nil
+}
+
+func (t *ResourceTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
+	t.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	t.Value = value.Value
+	return nil
+}
+
+func (t *ResourceTypeWrapper) MarshalJSON() ([]byte, error) {
+	escaped := jsonutils.EscapeJSONString(string(t.Value))
+	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
+}
+
+func (t *ResourceTypeWrapper) UnmarshalJSON(data []byte) error {
+	var typeVal string
+	err := json.Unmarshal(data, &typeVal)
+	if err != nil {
+		return err
+	}
+
+	t.Value = typeVal
 
 	return nil
 }

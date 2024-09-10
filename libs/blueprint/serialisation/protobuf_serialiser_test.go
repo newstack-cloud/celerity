@@ -170,16 +170,17 @@ func (s *ProtobufSerialiserTestSuite) Test_fails_to_marshal_blueprint_fixture_wi
 
 var testRuntime = "go1.x"
 var testTracingEnabled = true
+var version = "2021-12-18"
 
 // Error fixtures are initialised in-memory as JSON and YAML versions can not get to these
 // error states, these errors reveal code errors and not user input errors.
 
 var fixtureMissingScalarField = &schema.Blueprint{
-	Version: "2021-12-18",
+	Version: &core.ScalarValue{StringValue: &version},
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"orderApi": {
-				Type: "celerity/api",
+				Type: &schema.ResourceTypeWrapper{Value: "celerity/api"},
 				Spec: &core.MappingNode{
 					Fields: map[string]*core.MappingNode{
 						"environment": {
@@ -221,11 +222,11 @@ var fixtureMissingScalarField = &schema.Blueprint{
 }
 
 var fixtureMissingStringOrSubstitutionField = &schema.Blueprint{
-	Version: "2021-12-18",
+	Version: &core.ScalarValue{StringValue: &version},
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"orderApi": {
-				Type: "celerity/api",
+				Type: &schema.ResourceTypeWrapper{Value: "celerity/api"},
 				Spec: &core.MappingNode{
 					Fields: map[string]*core.MappingNode{
 						"environment": {
@@ -263,11 +264,11 @@ var fixtureMissingStringOrSubstitutionField = &schema.Blueprint{
 }
 
 var fixtureMissingSubstitutionField = &schema.Blueprint{
-	Version: "2021-12-18",
+	Version: &core.ScalarValue{StringValue: &version},
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"orderApi": {
-				Type: "celerity/api",
+				Type: &schema.ResourceTypeWrapper{Value: "celerity/api"},
 				Spec: &core.MappingNode{
 					Fields: map[string]*core.MappingNode{
 						"environment": {
@@ -307,11 +308,11 @@ var fixtureMissingSubstitutionField = &schema.Blueprint{
 }
 
 var fixtureMissingSubstitutionPathItemField = &schema.Blueprint{
-	Version: "2021-12-18",
+	Version: &core.ScalarValue{StringValue: &version},
 	Resources: &schema.ResourceMap{
 		Values: map[string]*schema.Resource{
 			"orderApi": {
-				Type: "celerity/api",
+				Type: &schema.ResourceTypeWrapper{Value: "celerity/api"},
 				Spec: &core.MappingNode{
 					Fields: map[string]*core.MappingNode{
 						"environment": {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
@@ -63,7 +64,7 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 			Column: 14,
 		},
 	})
-	c.Assert(targetVal.Secret, Equals, false)
+	c.Assert(*targetVal.Secret.BoolValue, Equals, false)
 	c.Assert(targetVal.Type, DeepEquals, &ValueTypeWrapper{
 		Value:      ValueTypeBoolean,
 		SourceMeta: &source.Meta{Line: 1, Column: 7},
@@ -132,6 +133,7 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 	}
 
 	region := "eu-west-2"
+	secret := false
 	descriptionStrVal := "The AWS region to connect to AWS services with"
 	serialisedBytes, err := yaml.Marshal(&Value{
 		Type: &ValueTypeWrapper{
@@ -151,7 +153,7 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 				},
 			},
 		},
-		Secret: false,
+		Secret: &core.ScalarValue{BoolValue: &secret},
 	})
 	if err != nil {
 		c.Error(err)
@@ -184,7 +186,7 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 			Column: 14,
 		},
 	})
-	c.Assert(targetVal.Secret, Equals, expected.Secret)
+	c.Assert(*targetVal.Secret.BoolValue, Equals, *expected.Secret.BoolValue)
 	c.Assert(targetVal.Value, DeepEquals, &substitutions.StringOrSubstitutions{
 		Values: []*substitutions.StringOrSubstitution{
 			{
@@ -273,7 +275,7 @@ func (s *ValueTestSuite) Test_parses_valid_value_json_input(c *C) {
 			},
 		},
 	})
-	c.Assert(targetVal.Secret, Equals, false)
+	c.Assert(*targetVal.Secret.BoolValue, Equals, false)
 	c.Assert(targetVal.Type, DeepEquals, &ValueTypeWrapper{
 		Value: ValueTypeInteger,
 	})
@@ -300,6 +302,7 @@ func (s *ValueTestSuite) Test_serialise_valid_value_json_input(c *C) {
 		c.FailNow()
 	}
 
+	secret := true
 	description := "The AWS region to connect to AWS services with"
 	serialisedBytes, err := json.Marshal(&Value{
 		Type: &ValueTypeWrapper{
@@ -312,7 +315,7 @@ func (s *ValueTestSuite) Test_serialise_valid_value_json_input(c *C) {
 				},
 			},
 		},
-		Secret: true,
+		Secret: &core.ScalarValue{BoolValue: &secret},
 		Value: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -349,7 +352,7 @@ func (s *ValueTestSuite) Test_serialise_valid_value_json_input(c *C) {
 		Value: expected.Type.Value,
 	})
 	c.Assert(targetVal.Description, DeepEquals, expected.Description)
-	c.Assert(targetVal.Secret, Equals, expected.Secret)
+	c.Assert(*targetVal.Secret.BoolValue, Equals, *expected.Secret.BoolValue)
 	c.Assert(targetVal.Value, DeepEquals, expected.Value)
 }
 

@@ -24,9 +24,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 		},
 	}
 
+	description := "Maximum number of retries for interacting with the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeInteger,
-		Description: "Maximum number of retries for interacting with the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -53,9 +54,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 		},
 	}
 
+	description := "The timeout for the requests for the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeFloat,
-		Description: "The timeout for the requests for the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -84,9 +86,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 
 	allowedValue1 := "us-east-1"
 	allowedValue2 := "us-west-1"
+	description := "The region to deploy the blueprint resources to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeString,
-		Description: "The region to deploy the blueprint resources to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &allowedValue1,
@@ -124,9 +127,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 		},
 	}
 
+	description := "Whether or not the application should include experimental features."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeBoolean,
-		Description: "Whether or not the application should include experimental features.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeBoolean},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -151,9 +155,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 	allowedValue1 := "us-east-1"
 	allowedValue2 := "us-west-1"
 	defaultRegion := allowedValue1
+	description := "The region to deploy the blueprint resources to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeString,
-		Description: "The region to deploy the blueprint resources to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &allowedValue1,
@@ -187,9 +192,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 	}
 
 	defaultMaxRetries := 5
+	description := "Maximum number of retries for interacting with the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeInteger,
-		Description: "Maximum number of retries for interacting with the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			IntValue: &defaultMaxRetries,
 		},
@@ -216,9 +222,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 	}
 
 	defaultTimeoutInSeconds := 43.21
+	description := "The timeout for the requests for the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeFloat,
-		Description: "The timeout for the requests for the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			FloatValue: &defaultTimeoutInSeconds,
 		},
@@ -245,9 +252,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 	}
 
 	defaultExperimentalFeatures := true
+	description := "Whether or not the application should include experimental features."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeBoolean,
-		Description: "Whether or not the application should include experimental features.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeBoolean},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			BoolValue: &defaultExperimentalFeatures,
 		},
@@ -268,9 +276,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 }
 
 func (s *CoreVariableValidationTestSuite) Test_reports_error_when_substitution_provided_in_variable_name(c *C) {
+	description := "The region to deploy the blueprint resources to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeString,
-		Description: "The region to deploy the blueprint resources to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -306,9 +315,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_strin
 		},
 	}
 
+	description := "The region to deploy the blueprint resources to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeString,
-		Description: "The region to deploy the blueprint resources to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -344,9 +354,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_integ
 		},
 	}
 
+	description := "The maximum number of retries when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeInteger,
-		Description: "The maximum number of retries when calling the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -382,9 +393,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_float
 		},
 	}
 
+	description := "The timeout when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeFloat,
-		Description: "The timeout when calling the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -420,9 +432,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_bool_
 		},
 	}
 
+	description := "Whether or not experimental features should be enabled."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeBoolean,
-		Description: "Whether or not experimental features should be enabled.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeBoolean},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -459,9 +472,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 	}
 
 	invalidValue := true
+	description := "The region to deploy blueprint resources to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeString,
-		Description: "The region to deploy blueprint resources to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			BoolValue: &invalidValue,
 		},
@@ -501,9 +515,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 	}
 
 	invalidValue := "experiments"
+	description := "The maximum number of retries when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeInteger,
-		Description: "The maximum number of retries when calling the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			StringValue: &invalidValue,
 		},
@@ -543,9 +558,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 	}
 
 	invalidValue := false
+	description := "The timeout when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeFloat,
-		Description: "The timeout when calling the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			BoolValue: &invalidValue,
 		},
@@ -585,9 +601,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 	}
 
 	invalidValue := 9205.29
+	description := "Whether or not experimental features should be enabled."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeBoolean,
-		Description: "Whether or not experimental features should be enabled.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeBoolean},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			FloatValue: &invalidValue,
 		},
@@ -629,9 +646,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 	validDefaultRegion := "eu-west-2"
 	invalidValue1 := true
 	invalidValue2 := 9115.82
+	description := "The region to deploy blueprint resources to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeString,
-		Description: "The region to deploy blueprint resources to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				BoolValue: &invalidValue1,
@@ -691,9 +709,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 	validDefaultMaxRetries := 3
 	invalidValue1 := "Not an integer"
 	invalidValue2 := false
+	description := "The maximum number of retries when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeInteger,
-		Description: "The maximum number of retries when calling the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &invalidValue1,
@@ -760,9 +779,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 	// Generally speaking, use cases for floats as variables are likely to be rare.
 	invalidValue2 := 540
 
+	description := "The timeout to use when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeFloat,
-		Description: "The timeout to use when calling the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &invalidValue1,
@@ -824,9 +844,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_allowed_value
 
 	allowedValue1 := true
 	allowedValue2 := false
+	description := "Whether or not experimental features are enabled."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeBoolean,
-		Description: "Whether or not experimental features are enabled.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeBoolean},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			BoolValue: &experimentalFeatures,
 		},
@@ -876,9 +897,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 
 	allowedValue1 := "eu-west-1"
 	allowedValue2 := "us-east-1"
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeString,
-		Description: "The region to deploy the application to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &allowedValue1,
@@ -924,9 +946,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 
 	allowedValue1 := 15
 	allowedValue2 := 30
+	description := "The maximum number of retries allowed when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeInteger,
-		Description: "The maximum number of retries allowed when calling the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				IntValue: &allowedValue1,
@@ -972,9 +995,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 
 	allowedValue1 := 30.5
 	allowedValue2 := 32.6
+	description := "The maximum number of retries allowed when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeFloat,
-		Description: "The maximum number of retries allowed when calling the core API.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				FloatValue: &allowedValue1,
@@ -1016,9 +1040,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 	defaultRegion := "us-north-3"
 	allowedValue1 := "eu-west-1"
 	allowedValue2 := "us-east-1"
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeString,
-		Description: "The region to deploy the application to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &allowedValue1,
@@ -1064,9 +1089,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 	defaultBatchSize := 50000
 	allowedValue1 := 10
 	allowedValue2 := 25
+	description := "The maximum size for a batch events streamed to order processing."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeInteger,
-		Description: "The maximum size for a batch events streamed to order processing.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				IntValue: &allowedValue1,
@@ -1111,9 +1137,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 	defaultSampleRate := 0.5
 	allowedValue1 := 0.1
 	allowedValue2 := 0.3
+	description := "Sample rate for distributed traces in the app."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableTypeFloat,
-		Description: "Sample rate for distributed traces in the app.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				FloatValue: &allowedValue1,
@@ -1160,9 +1187,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_string_variab
 		},
 	}
 
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:          schema.VariableTypeString,
-		Description:   "The region to deploy the application to.",
+		Type:          &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description:   &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{},
 	}
 	varMap := &schema.VariableMap{
@@ -1194,9 +1222,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_string_variabl
 		blueprintVariables: map[string]*core.ScalarValue{},
 	}
 
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:          schema.VariableTypeString,
-		Description:   "The region to deploy the application to.",
+		Type:          &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+		Description:   &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{},
 	}
 	varMap := &schema.VariableMap{
@@ -1228,9 +1257,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_integer_variab
 		blueprintVariables: map[string]*core.ScalarValue{},
 	}
 
+	description := "The maximum number of retries allowed when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:          schema.VariableTypeInteger,
-		Description:   "The maximum number of retries allowed when calling the core API.",
+		Type:          &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
+		Description:   &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{},
 	}
 	varMap := &schema.VariableMap{
@@ -1262,9 +1292,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_float_variable
 		blueprintVariables: map[string]*core.ScalarValue{},
 	}
 
+	description := "The timeout in seconds used when calling the core API."
 	variableSchema := &schema.Variable{
-		Type:          schema.VariableTypeFloat,
-		Description:   "The timeout in seconds used when calling the core API.",
+		Type:          &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+		Description:   &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{},
 	}
 	varMap := &schema.VariableMap{
@@ -1296,9 +1327,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_boolean_variab
 		blueprintVariables: map[string]*core.ScalarValue{},
 	}
 
+	description := "Whether or not to enable experimental features in the app."
 	variableSchema := &schema.Variable{
-		Type:          schema.VariableTypeBoolean,
-		Description:   "Whether or not to enable experimental features in the app.",
+		Type:          &schema.VariableTypeWrapper{Value: schema.VariableTypeBoolean},
+		Description:   &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{},
 	}
 	varMap := &schema.VariableMap{

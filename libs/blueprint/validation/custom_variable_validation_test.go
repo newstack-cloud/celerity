@@ -26,9 +26,10 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_v
 
 	customVariableType := &testEC2InstanceTypeCustomVariableType{}
 
+	description := "The type of Amazon EC2 instance to deploy."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/ec2/instanceType"),
-		Description: "The type of Amazon EC2 instance to deploy.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/ec2/instanceType")},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -53,9 +54,10 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_when_va
 	customVariableType := &testEC2InstanceTypeCustomVariableType{}
 
 	defaultInstanceType := "t2.large"
+	description := "The type of Amazon EC2 instance to deploy."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/ec2/instanceType"),
-		Description: "The type of Amazon EC2 instance to deploy.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/ec2/instanceType")},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			StringValue: &defaultInstanceType,
 		},
@@ -86,10 +88,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_errors_when_multiple_va
 	}
 
 	customVariableType := &testInvalidEC2InstanceTypeCustomVariableType{}
-
+	description := "The type of Amazon EC2 instance to deploy."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/ec2/instanceType"),
-		Description: "The type of Amazon EC2 instance to deploy.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/ec2/instanceType")},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -128,9 +130,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_there_is_a_f
 
 	customVariableType := &testFailToLoadOptionsCustomVariableType{}
 
+	description := "The type of Amazon EC2 instance to deploy."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/ec2/instanceType"),
-		Description: "The type of Amazon EC2 instance to deploy.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/ec2/instanceType")},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -173,9 +176,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 	validOption := "t2.micro"
 	invalidOption1 := 324
 	invalidOption2 := false
+	description := "The type of Amazon EC2 instance to deploy."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/ec2/instanceType"),
-		Description: "The type of Amazon EC2 instance to deploy.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/ec2/instanceType")},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &validOption,
@@ -238,9 +242,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 	validOption := "t2.medium"
 	invalidOption1 := "z4.large"
 	invalidOption2 := "y7.medium"
+	description := "The type of Amazon EC2 instance to deploy."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/ec2/instanceType"),
-		Description: "The type of Amazon EC2 instance to deploy.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/ec2/instanceType")},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &validOption,
@@ -292,9 +297,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 	customVariableType := &testEC2InstanceTypeCustomVariableType{}
 
 	invalidDefault := 3109
+	description := "The type of Amazon EC2 instance to deploy."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/ec2/instanceType"),
-		Description: "The type of Amazon EC2 instance to deploy.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/ec2/instanceType")},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			IntValue: &invalidDefault,
 		},
@@ -336,9 +342,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 	customVariableType := &testEC2InstanceTypeCustomVariableType{}
 
 	unsupportedOptionDefault := "z4.large"
+	description := "The type of Amazon EC2 instance to deploy."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/ec2/instanceType"),
-		Description: "The type of Amazon EC2 instance to deploy.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/ec2/instanceType")},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			StringValue: &unsupportedOptionDefault,
 		},
@@ -380,9 +387,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 	supportedDefaultNotInAllowedValues := "t2.xlarge"
 	allowedValue1 := "t2.nano"
 	allowedValue2 := "t2.micro"
+	description := "The type of Amazon EC2 instance to deploy."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/ec2/instanceType"),
-		Description: "The type of Amazon EC2 instance to deploy.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/ec2/instanceType")},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &allowedValue1,
@@ -426,9 +434,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_no_value_is_
 
 	customVariableType := &testRegionCustomVariableType{}
 
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/region"),
-		Description: "The region to deploy the application to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/region")},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -466,9 +475,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 
 	customVariableType := &testRegionCustomVariableType{}
 
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/region"),
-		Description: "The region to deploy the application to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/region")},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -503,9 +513,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 	customVariableType := &testRegionCustomVariableType{}
 
 	emptyDefaultRegion := ""
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/region"),
-		Description: "The region to deploy the application to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/region")},
+		Description: &core.ScalarValue{StringValue: &description},
 		Default: &core.ScalarValue{
 			StringValue: &emptyDefaultRegion,
 		},
@@ -547,9 +558,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 
 	customVariableType := &testRegionCustomVariableType{}
 
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/region"),
-		Description: "The region to deploy the application to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/region")},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -587,9 +599,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 
 	customVariableType := &testRegionCustomVariableType{}
 
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/region"),
-		Description: "The region to deploy the application to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/region")},
+		Description: &core.ScalarValue{StringValue: &description},
 	}
 	varMap := &schema.VariableMap{
 		Values: map[string]*schema.Variable{
@@ -630,9 +643,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 	allowedValue1 := "us-east-1"
 	allowedValue2 := "us-west-2"
 	allowedValue3 := "eu-west-1"
+	description := "The region to deploy the application to."
 	variableSchema := &schema.Variable{
-		Type:        schema.VariableType("aws/region"),
-		Description: "The region to deploy the application to.",
+		Type:        &schema.VariableTypeWrapper{Value: schema.VariableType("aws/region")},
+		Description: &core.ScalarValue{StringValue: &description},
 		AllowedValues: []*core.ScalarValue{
 			{
 				StringValue: &allowedValue1,

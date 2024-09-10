@@ -1,5 +1,14 @@
 (*schema.Blueprint)({
-  Version: (string) (len=10) "2021-12-18",
+  Version: (*core.ScalarValue)({
+    IntValue: (*int)(<nil>),
+    BoolValue: (*bool)(<nil>),
+    FloatValue: (*float64)(<nil>),
+    StringValue: (*string)((len=10) "2021-12-18"),
+    SourceMeta: (*source.Meta)({
+      Line: (int) 1,
+      Column: (int) 10
+    })
+  }),
   Transform: (*schema.TransformValueWrapper)({
     Values: ([]string) (len=1) {
       (string) (len=19) "celerity-2022-01-22"
@@ -14,9 +23,24 @@
   Variables: (*schema.VariableMap)({
     Values: (map[string]*schema.Variable) (len=2) {
       (string) (len=13) "dynamoDBTable": (*schema.Variable)({
-        Type: (schema.VariableType) (len=6) "string",
-        Description: (string) (len=25) "The Orders DynamoDB Table",
-        Secret: (bool) false,
+        Type: (*schema.VariableTypeWrapper)({
+          Value: (schema.VariableType) (len=6) "string",
+          SourceMeta: (*source.Meta)({
+            Line: (int) 6,
+            Column: (int) 11
+          })
+        }),
+        Description: (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=25) "The Orders DynamoDB Table"),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 7,
+            Column: (int) 18
+          })
+        }),
+        Secret: (*core.ScalarValue)(<nil>),
         Default: (*core.ScalarValue)(<nil>),
         AllowedValues: ([]*core.ScalarValue) <nil>,
         SourceMeta: (*source.Meta)({
@@ -25,9 +49,24 @@
         })
       }),
       (string) (len=15) "ordersTopicName": (*schema.Variable)({
-        Type: (schema.VariableType) (len=6) "string",
-        Description: (string) (len=22) "The Orders Event Topic",
-        Secret: (bool) false,
+        Type: (*schema.VariableTypeWrapper)({
+          Value: (schema.VariableType) (len=6) "string",
+          SourceMeta: (*source.Meta)({
+            Line: (int) 9,
+            Column: (int) 11
+          })
+        }),
+        Description: (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=22) "The Orders Event Topic"),
+          SourceMeta: (*source.Meta)({
+            Line: (int) 10,
+            Column: (int) 18
+          })
+        }),
+        Secret: (*core.ScalarValue)(<nil>),
         Default: (*core.ScalarValue)(<nil>),
         AllowedValues: ([]*core.ScalarValue) <nil>,
         SourceMeta: (*source.Meta)({
@@ -250,7 +289,13 @@
   Resources: (*schema.ResourceMap)({
     Values: (map[string]*schema.Resource) (len=6) {
       (string) (len=10) "authoriser": (*schema.Resource)({
-        Type: (string) (len=16) "celerity/handler",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=16) "celerity/handler",
+          SourceMeta: (*source.Meta)({
+            Line: (int) 85,
+            Column: (int) 11
+          })
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -442,7 +487,13 @@
         })
       }),
       (string) (len=16) "getOrdersHandler": (*schema.Resource)({
-        Type: (string) (len=16) "celerity/handler",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=16) "celerity/handler",
+          SourceMeta: (*source.Meta)({
+            Line: (int) 106,
+            Column: (int) 11
+          })
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -670,7 +721,13 @@
         })
       }),
       (string) (len=8) "orderApi": (*schema.Resource)({
-        Type: (string) (len=12) "celerity/api",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=12) "celerity/api",
+          SourceMeta: (*source.Meta)({
+            Line: (int) 40,
+            Column: (int) 11
+          })
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -1088,7 +1145,13 @@
         })
       }),
       (string) (len=11) "orderPubSub": (*schema.Resource)({
-        Type: (string) (len=15) "celerity/pubsub",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=15) "celerity/pubsub",
+          SourceMeta: (*source.Meta)({
+            Line: (int) 164,
+            Column: (int) 11
+          })
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -1216,7 +1279,13 @@
         })
       }),
       (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
-        Type: (string) (len=21) "celerity/layerVersion",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=21) "celerity/layerVersion",
+          SourceMeta: (*source.Meta)({
+            Line: (int) 148,
+            Column: (int) 11
+          })
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -1364,7 +1433,13 @@
         })
       }),
       (string) (len=19) "updateOrderFunction": (*schema.Resource)({
-        Type: (string) (len=16) "celerity/handler",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=16) "celerity/handler",
+          SourceMeta: (*source.Meta)({
+            Line: (int) 121,
+            Column: (int) 11
+          })
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -1588,7 +1663,13 @@
   DataSources: (*schema.DataSourceMap)({
     Values: (map[string]*schema.DataSource) (len=1) {
       (string) (len=7) "network": (*schema.DataSource)({
-        Type: (string) (len=7) "aws/vpc",
+        Type: (*schema.DataSourceTypeWrapper)({
+          Value: (string) (len=7) "aws/vpc",
+          SourceMeta: (*source.Meta)({
+            Line: (int) 23,
+            Column: (int) 11
+          })
+        }),
         DataSourceMetadata: (*schema.DataSourceMetadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
@@ -1624,7 +1705,7 @@
                   Column: (int) 15
                 })
               }),
-              AliasFor: (string) "",
+              AliasFor: (*core.ScalarValue)(<nil>),
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 30,
@@ -1639,7 +1720,7 @@
                   Column: (int) 15
                 })
               }),
-              AliasFor: (string) "",
+              AliasFor: (*core.ScalarValue)(<nil>),
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 28,
@@ -1654,7 +1735,7 @@
                   Column: (int) 15
                 })
               }),
-              AliasFor: (string) "",
+              AliasFor: (*core.ScalarValue)(<nil>),
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Line: (int) 32,

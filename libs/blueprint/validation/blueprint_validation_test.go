@@ -16,12 +16,13 @@ var _ = Suite(&BlueprintValidationTestSuite{})
 func (s *BlueprintValidationTestSuite) Test_succeeds_without_any_issues_for_a_valid_blueprint(c *C) {
 
 	instanceType := "t2.micro"
+	version := Version2023_04_20
 	blueprint := &schema.Blueprint{
-		Version: Version2023_04_20,
+		Version: &core.ScalarValue{StringValue: &version},
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"resource1": {
-					Type: "aws/ec2/instance",
+					Type: &schema.ResourceTypeWrapper{Value: "aws/ec2/instance"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"instanceType": {
@@ -45,7 +46,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_n
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"resource1": {
-					Type: "aws/ec2/instance",
+					Type: &schema.ResourceTypeWrapper{Value: "aws/ec2/instance"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"instanceType": {
@@ -80,12 +81,13 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_i
 	// In the intial version of blueprint framework, only version
 	// 2023-04-20 of the spec is supported.
 	instanceType := "t2.micro"
+	version := "2023-09-15"
 	blueprint := &schema.Blueprint{
-		Version: "2023-09-15",
+		Version: &core.ScalarValue{StringValue: &version},
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"resource1": {
-					Type: "aws/ec2/instance",
+					Type: &schema.ResourceTypeWrapper{Value: "aws/ec2/instance"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"instanceType": {
@@ -117,8 +119,9 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_i
 }
 
 func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_resources_property_is_missing(c *C) {
+	version := Version2023_04_20
 	blueprint := &schema.Blueprint{
-		Version: Version2023_04_20,
+		Version: &core.ScalarValue{StringValue: &version},
 	}
 	_, err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
@@ -137,8 +140,9 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_resources_pr
 }
 
 func (s *BlueprintValidationTestSuite) Test_reports_errors_when_no_resources_are_provided(c *C) {
+	version := Version2023_04_20
 	blueprint := &schema.Blueprint{
-		Version:   Version2023_04_20,
+		Version:   &core.ScalarValue{StringValue: &version},
 		Resources: &schema.ResourceMap{},
 	}
 	_, err := ValidateBlueprint(context.Background(), blueprint)

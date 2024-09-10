@@ -52,13 +52,18 @@ func toSchemaPB(blueprint *schema.Blueprint) (*schemapb.Blueprint, error) {
 		return nil, err
 	}
 
+	version, err := toScalarValuePB(blueprint.Version, false)
+	if err != nil {
+		return nil, err
+	}
+
 	transform := []string{}
 	if blueprint.Transform != nil {
 		transform = blueprint.Transform.Values
 	}
 
 	return &schemapb.Blueprint{
-		Version:     blueprint.Version,
+		Version:     version,
 		Transform:   transform,
 		Variables:   variables,
 		Values:      values,
@@ -87,10 +92,20 @@ func toVariablesPB(variables *schema.VariableMap) (map[string]*schemapb.Variable
 			return nil, err
 		}
 
+		description, err := toScalarValuePB(v.Description, true)
+		if err != nil {
+			return nil, err
+		}
+
+		secret, err := toScalarValuePB(v.Secret, true)
+		if err != nil {
+			return nil, err
+		}
+
 		variablesPB[k] = &schemapb.Variable{
-			Type:          string(v.Type),
-			Description:   &v.Description,
-			Secret:        v.Secret,
+			Type:          string(v.Type.Value),
+			Description:   description,
+			Secret:        secret,
 			Default:       defaultValue,
 			AllowedValues: allowedValues,
 		}
@@ -116,11 +131,16 @@ func toValuesPB(values *schema.ValueMap) (map[string]*schemapb.Value, error) {
 			return nil, err
 		}
 
+		secretPB, err := toScalarValuePB(v.Secret, true)
+		if err != nil {
+			return nil, err
+		}
+
 		valuesPB[k] = &schemapb.Value{
 			Type:        string(v.Type.Value),
 			Value:       valuePB,
 			Description: descriptionPB,
-			Secret:      v.Secret,
+			Secret:      secretPB,
 		}
 	}
 
@@ -221,7 +241,7 @@ func toDataSourcePB(dataSource *schema.DataSource) (*schemapb.DataSource, error)
 	}
 
 	return &schemapb.DataSource{
-		Type:        string(dataSource.Type),
+		Type:        string(dataSource.Type.Value),
 		Metadata:    metadataPB,
 		Filter:      filterPB,
 		Exports:     exportsPB,
@@ -258,8 +278,13 @@ func toDataSourceFilterPB(filter *schema.DataSourceFilter) (*schemapb.DataSource
 		return nil, err
 	}
 
+	fieldPB, err := toScalarValuePB(filter.Field, false)
+	if err != nil {
+		return nil, err
+	}
+
 	return &schemapb.DataSourceFilter{
-		Field:    filter.Field,
+		Field:    fieldPB,
 		Operator: string(filter.Operator.Value),
 		Search:   searchPB,
 	}, nil
@@ -311,9 +336,14 @@ func toDataSourceFieldExportPB(
 		return nil, err
 	}
 
+	aliasForPB, err := toScalarValuePB(export.AliasFor, true)
+	if err != nil {
+		return nil, err
+	}
+
 	return &schemapb.DataSourceFieldExport{
 		Type:        string(export.Type.Value),
-		AliasFor:    export.AliasFor,
+		AliasFor:    aliasForPB,
 		Description: descriptionPB,
 	}, nil
 }
@@ -345,7 +375,7 @@ func toResourcePB(resource *schema.Resource) (*schemapb.Resource, error) {
 	}
 
 	return &schemapb.Resource{
-		Type:         string(resource.Type),
+		Type:         string(resource.Type.Value),
 		Description:  descriptionPB,
 		Condition:    conditionPB,
 		Each:         eachPB,
@@ -379,9 +409,14 @@ func toExportPB(export *schema.Export) (*schemapb.Export, error) {
 		return nil, err
 	}
 
+	field, err := toScalarValuePB(export.Field, false)
+	if err != nil {
+		return nil, err
+	}
+
 	return &schemapb.Export{
-		Type:        string(export.Type),
-		Field:       export.Field,
+		Type:        string(export.Type.Value),
+		Field:       field,
 		Description: descriptionPB,
 	}, nil
 }

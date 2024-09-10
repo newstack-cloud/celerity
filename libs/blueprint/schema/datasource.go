@@ -19,7 +19,7 @@ import (
 // For example, you would access a data source called network with an exported
 // vpc field via ${datasources.network.vpc}.
 type DataSource struct {
-	Type               string                               `yaml:"type" json:"type"`
+	Type               *DataSourceTypeWrapper               `yaml:"type" json:"type"`
 	DataSourceMetadata *DataSourceMetadata                  `yaml:"metadata" json:"metadata"`
 	Filter             *DataSourceFilter                    `yaml:"filter" json:"filter"`
 	Exports            *DataSourceFieldExportMap            `yaml:"exports" json:"exports"`
@@ -44,6 +44,44 @@ func (s *DataSource) UnmarshalYAML(value *yaml.Node) error {
 	s.Filter = alias.Filter
 	s.Exports = alias.Exports
 	s.Description = alias.Description
+
+	return nil
+}
+
+// DataSourceTypeWrapper provides a struct that holds a data source type
+// value.
+type DataSourceTypeWrapper struct {
+	Value      string
+	SourceMeta *source.Meta
+}
+
+func (t *DataSourceTypeWrapper) MarshalYAML() (interface{}, error) {
+	return t.Value, nil
+}
+
+func (t *DataSourceTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
+	t.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	t.Value = value.Value
+	return nil
+}
+
+func (t *DataSourceTypeWrapper) MarshalJSON() ([]byte, error) {
+	escaped := jsonutils.EscapeJSONString(string(t.Value))
+	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
+}
+
+func (t *DataSourceTypeWrapper) UnmarshalJSON(data []byte) error {
+	var typeVal string
+	err := json.Unmarshal(data, &typeVal)
+	if err != nil {
+		return err
+	}
+
+	t.Value = typeVal
 
 	return nil
 }
@@ -110,7 +148,7 @@ func (m *DataSourceFieldExportMap) UnmarshalJSON(data []byte) error {
 // DataSourceFilter provides the definition of a filter
 // used to select a specific data source instance from a provider.
 type DataSourceFilter struct {
-	Field      string                           `yaml:"field" json:"field"`
+	Field      *bpcore.ScalarValue              `yaml:"field" json:"field"`
 	Operator   *DataSourceFilterOperatorWrapper `yaml:"operator" json:"operator"`
 	Search     *DataSourceFilterSearch          `yaml:"search" json:"search"`
 	SourceMeta *source.Meta                     `yaml:"-" json:"-"`
@@ -329,7 +367,7 @@ var (
 // from a data source in a blueprint.
 type DataSourceFieldExport struct {
 	Type        *DataSourceFieldTypeWrapper          `yaml:"type" json:"type"`
-	AliasFor    string                               `yaml:"aliasFor" json:"aliasFor"`
+	AliasFor    *bpcore.ScalarValue                  `yaml:"aliasFor" json:"aliasFor"`
 	Description *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 	SourceMeta  *source.Meta                         `yaml:"-" json:"-"`
 }

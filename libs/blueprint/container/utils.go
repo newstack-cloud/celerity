@@ -2,8 +2,8 @@ package container
 
 import (
 	"strings"
-	"time"
 
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 )
 
@@ -30,8 +30,10 @@ func predefinedFormatFactory(predefinedFormat schema.SpecFormat) func(input stri
 	}
 }
 
-type systemClock struct{}
-
-func (d systemClock) Now() time.Time {
-	return time.Now()
+func copyProviderMap(m map[string]provider.Provider) map[string]provider.Provider {
+	copy := make(map[string]provider.Provider, len(m))
+	for k, v := range m {
+		copy[k] = v
+	}
+	return copy
 }

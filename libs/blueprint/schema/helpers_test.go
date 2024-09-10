@@ -287,6 +287,10 @@ func NormaliseExport(export *Export) {
 	}
 
 	NormaliseStringOrSubstitutions(export.Description)
+	NormaliseScalarValue(export.Field)
+	if export.Type != nil {
+		export.Type.SourceMeta = nil
+	}
 	export.SourceMeta = nil
 }
 

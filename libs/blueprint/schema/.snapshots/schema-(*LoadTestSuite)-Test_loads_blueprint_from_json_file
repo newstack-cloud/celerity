@@ -1,5 +1,11 @@
 (*schema.Blueprint)({
-  Version: (string) (len=10) "2021-12-18",
+  Version: (*core.ScalarValue)({
+    IntValue: (*int)(<nil>),
+    BoolValue: (*bool)(<nil>),
+    FloatValue: (*float64)(<nil>),
+    StringValue: (*string)((len=10) "2021-12-18"),
+    SourceMeta: (*source.Meta)(<nil>)
+  }),
   Transform: (*schema.TransformValueWrapper)({
     Values: ([]string) (len=1) {
       (string) (len=19) "celerity-2022-01-22"
@@ -9,25 +15,52 @@
   Variables: (*schema.VariableMap)({
     Values: (map[string]*schema.Variable) (len=3) {
       (string) (len=13) "dynamoDBTable": (*schema.Variable)({
-        Type: (schema.VariableType) (len=6) "string",
-        Description: (string) (len=25) "The Orders DynamoDB Table",
-        Secret: (bool) false,
+        Type: (*schema.VariableTypeWrapper)({
+          Value: (schema.VariableType) (len=6) "string",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Description: (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=25) "The Orders DynamoDB Table"),
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Secret: (*core.ScalarValue)(<nil>),
         Default: (*core.ScalarValue)(<nil>),
         AllowedValues: ([]*core.ScalarValue) <nil>,
         SourceMeta: (*source.Meta)(<nil>)
       }),
       (string) (len=11) "environment": (*schema.Variable)({
-        Type: (schema.VariableType) (len=6) "string",
-        Description: (string) (len=28) "The environment to deploy to",
-        Secret: (bool) false,
+        Type: (*schema.VariableTypeWrapper)({
+          Value: (schema.VariableType) (len=6) "string",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Description: (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=28) "The environment to deploy to"),
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Secret: (*core.ScalarValue)(<nil>),
         Default: (*core.ScalarValue)(<nil>),
         AllowedValues: ([]*core.ScalarValue) <nil>,
         SourceMeta: (*source.Meta)(<nil>)
       }),
       (string) (len=15) "ordersTopicName": (*schema.Variable)({
-        Type: (schema.VariableType) (len=6) "string",
-        Description: (string) (len=22) "The Orders Event Topic",
-        Secret: (bool) false,
+        Type: (*schema.VariableTypeWrapper)({
+          Value: (schema.VariableType) (len=6) "string",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Description: (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=22) "The Orders Event Topic"),
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Secret: (*core.ScalarValue)(<nil>),
         Default: (*core.ScalarValue)(<nil>),
         AllowedValues: ([]*core.ScalarValue) <nil>,
         SourceMeta: (*source.Meta)(<nil>)
@@ -40,7 +73,10 @@
   Resources: (*schema.ResourceMap)({
     Values: (map[string]*schema.Resource) (len=6) {
       (string) (len=10) "authoriser": (*schema.Resource)({
-        Type: (string) (len=16) "celerity/handler",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=16) "celerity/handler",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -150,7 +186,10 @@
         SourceMeta: (*source.Meta)(<nil>)
       }),
       (string) (len=16) "getOrdersHandler": (*schema.Resource)({
-        Type: (string) (len=16) "celerity/handler",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=16) "celerity/handler",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -290,7 +329,10 @@
         SourceMeta: (*source.Meta)(<nil>)
       }),
       (string) (len=8) "orderApi": (*schema.Resource)({
-        Type: (string) (len=12) "celerity/api",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=12) "celerity/api",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -416,7 +458,10 @@
         SourceMeta: (*source.Meta)(<nil>)
       }),
       (string) (len=11) "orderPubSub": (*schema.Resource)({
-        Type: (string) (len=15) "celerity/pubsub",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=15) "celerity/pubsub",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -496,7 +541,10 @@
         SourceMeta: (*source.Meta)(<nil>)
       }),
       (string) (len=19) "sharedPackagesLayer": (*schema.Resource)({
-        Type: (string) (len=21) "celerity/layerVersion",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=21) "celerity/layerVersion",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -586,7 +634,10 @@
         SourceMeta: (*source.Meta)(<nil>)
       }),
       (string) (len=19) "updateOrderFunction": (*schema.Resource)({
-        Type: (string) (len=16) "celerity/handler",
+        Type: (*schema.ResourceTypeWrapper)({
+          Value: (string) (len=16) "celerity/handler",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
         Description: (*substitutions.StringOrSubstitutions)(<nil>),
         Metadata: (*schema.Metadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
@@ -704,7 +755,10 @@
   DataSources: (*schema.DataSourceMap)({
     Values: (map[string]*schema.DataSource) (len=1) {
       (string) (len=7) "network": (*schema.DataSource)({
-        Type: (string) (len=7) "aws/vpc",
+        Type: (*schema.DataSourceTypeWrapper)({
+          Value: (string) (len=7) "aws/vpc",
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
         DataSourceMetadata: (*schema.DataSourceMetadata)({
           DisplayName: (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
@@ -721,7 +775,13 @@
           SourceMeta: (*source.Meta)(<nil>)
         }),
         Filter: (*schema.DataSourceFilter)({
-          Field: (string) (len=4) "tags",
+          Field: (*core.ScalarValue)({
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=4) "tags"),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
           Operator: (*schema.DataSourceFilterOperatorWrapper)({
             Value: (schema.DataSourceFilterOperator) (len=7) "has key",
             SourceMeta: (*source.Meta)(<nil>)
@@ -767,7 +827,7 @@
                 Value: (schema.DataSourceFieldType) (len=5) "array",
                 SourceMeta: (*source.Meta)(<nil>)
               }),
-              AliasFor: (string) "",
+              AliasFor: (*core.ScalarValue)(<nil>),
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)(<nil>)
             }),
@@ -776,7 +836,7 @@
                 Value: (schema.DataSourceFieldType) (len=5) "array",
                 SourceMeta: (*source.Meta)(<nil>)
               }),
-              AliasFor: (string) "",
+              AliasFor: (*core.ScalarValue)(<nil>),
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)(<nil>)
             }),
@@ -785,7 +845,7 @@
                 Value: (schema.DataSourceFieldType) (len=6) "string",
                 SourceMeta: (*source.Meta)(<nil>)
               }),
-              AliasFor: (string) "",
+              AliasFor: (*core.ScalarValue)(<nil>),
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)(<nil>)
             })

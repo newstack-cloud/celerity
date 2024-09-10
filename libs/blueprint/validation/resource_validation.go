@@ -140,7 +140,7 @@ func ValidateResource(
 	validateSpecDiagnostics, validateSpecErr := ValidateResourceSpec(
 		ctx,
 		name,
-		resource.Type,
+		resource.Type.Value,
 		resource,
 		resourceMap.SourceMeta[name],
 		bpSchema,
@@ -179,13 +179,20 @@ func ValidateResource(
 func validateResourceType(
 	ctx context.Context,
 	resourceName string,
-	resourceType string,
+	resourceType *schema.ResourceTypeWrapper,
 	resourceMap *schema.ResourceMap,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
-	hasType, err := resourceRegistry.HasResourceType(ctx, resourceType)
+	if resourceType == nil {
+		return diagnostics, errResourceMissingType(
+			resourceName,
+			getResourceSourceMeta(resourceMap, resourceName),
+		)
+	}
+
+	hasType, err := resourceRegistry.HasResourceType(ctx, resourceType.Value)
 	if err != nil {
 		return diagnostics, err
 	}
@@ -193,7 +200,7 @@ func validateResourceType(
 	if !hasType {
 		return diagnostics, errResourceTypeNotSupported(
 			resourceName,
-			resourceType,
+			resourceType.Value,
 			getResourceSourceMeta(resourceMap, resourceName),
 		)
 	}

@@ -4,7 +4,7 @@ package schema;
 option go_package = "github.com/two-hundred/celerity/libs/blueprint/schemapb";
 
 message Blueprint {
-    string version = 1;
+    ScalarValue version = 1;
     repeated string transform = 2;
     map<string, Variable> variables = 3;
     map<string, Value> values = 4;
@@ -17,14 +17,14 @@ message Blueprint {
 
 message Export {
     string type = 1;
-    string field = 2;
+    ScalarValue field = 2;
     optional StringOrSubstitutions description = 3;
 }
 
 message Variable {
     string type = 1;
-    optional string description = 2;
-    bool secret = 3;
+    optional ScalarValue description = 2;
+    ScalarValue secret = 3;
     ScalarValue default = 4;
     repeated ScalarValue allowed_values = 5;
 }
@@ -33,7 +33,7 @@ message Value {
     string type = 1;
     StringOrSubstitutions value = 2;
     optional StringOrSubstitutions description = 3;
-    bool secret = 4;
+    ScalarValue secret = 4;
 }
 
 message ScalarValue {
@@ -95,7 +95,7 @@ message DataSourceMetadata {
 }
 
 message DataSourceFilter {
-    string field = 1;
+    ScalarValue field = 1;
     string operator = 2;
     DataSourceFilterSearch search = 3;
 }
@@ -106,7 +106,7 @@ message DataSourceFilterSearch {
 
 message DataSourceFieldExport {
     string type = 1;
-    string alias_for = 2;
+    ScalarValue alias_for = 2;
     optional StringOrSubstitutions description = 3;
 }
 

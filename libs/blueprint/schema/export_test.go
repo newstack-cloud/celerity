@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
@@ -44,9 +45,16 @@ func (s *ExportTestSuite) Test_parses_valid_string_export_yaml_input(c *C) {
 		c.FailNow()
 	}
 
+	field := "resources.orderQueue.state.arn"
 	description := "The arn of the queue used to send order workloads to"
 	c.Assert(targetExport, DeepEquals, &Export{
-		Type: ExportTypeString,
+		Type: &ExportTypeWrapper{
+			Value: ExportTypeString,
+			SourceMeta: &source.Meta{
+				Line:   1,
+				Column: 7,
+			},
+		},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -62,7 +70,13 @@ func (s *ExportTestSuite) Test_parses_valid_string_export_yaml_input(c *C) {
 				Column: 14,
 			},
 		},
-		Field: "resources.orderQueue.state.arn",
+		Field: &core.ScalarValue{
+			StringValue: &field,
+			SourceMeta: &source.Meta{
+				Line:   3,
+				Column: 8,
+			},
+		},
 		SourceMeta: &source.Meta{
 			Line:   1,
 			Column: 1,
@@ -79,8 +93,9 @@ func (s *ExportTestSuite) Test_serialise_valid_export_yaml_input(c *C) {
 	}
 
 	description := "The ARN of the function used to save orders to the system."
+	field := "resources.saveOrdersFunction.state.functionArn"
 	serialisedBytes, err := yaml.Marshal(&Export{
-		Type: ExportTypeString,
+		Type: &ExportTypeWrapper{Value: ExportTypeString},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -88,7 +103,7 @@ func (s *ExportTestSuite) Test_serialise_valid_export_yaml_input(c *C) {
 				},
 			},
 		},
-		Field: "resources.saveOrdersFunction.state.functionArn",
+		Field: &core.ScalarValue{StringValue: &field},
 	})
 	if err != nil {
 		c.Error(err)
@@ -116,8 +131,9 @@ func (s *ExportTestSuite) Test_parses_valid_export_json_input(c *C) {
 	}
 
 	description := "The arn of the queue used to send order workloads to"
+	field := "resources.orderQueue.state.arn"
 	c.Assert(targetExport, DeepEquals, &Export{
-		Type: ExportTypeString,
+		Type: &ExportTypeWrapper{Value: ExportTypeString},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -125,7 +141,7 @@ func (s *ExportTestSuite) Test_parses_valid_export_json_input(c *C) {
 				},
 			},
 		},
-		Field: "resources.orderQueue.state.arn",
+		Field: &core.ScalarValue{StringValue: &field},
 	})
 }
 
@@ -138,8 +154,9 @@ func (s *ExportTestSuite) Test_serialise_valid_export_json_input(c *C) {
 	}
 
 	description := "The ARN of the function used to save orders to the system."
+	field := "resources.saveOrdersFunction.state.functionArn"
 	serialisedBytes, err := json.Marshal(&Export{
-		Type: ExportTypeString,
+		Type: &ExportTypeWrapper{Value: ExportTypeString},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -147,7 +164,7 @@ func (s *ExportTestSuite) Test_serialise_valid_export_json_input(c *C) {
 				},
 			},
 		},
-		Field: "resources.saveOrdersFunction.state.functionArn",
+		Field: &core.ScalarValue{StringValue: &field},
 	})
 	if err != nil {
 		c.Error(err)

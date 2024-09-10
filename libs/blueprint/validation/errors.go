@@ -364,7 +364,7 @@ func errCustomVariableOptions(
 		Err: fmt.Errorf(
 			"validation failed due to an error when loading options for variable \"%s\" of custom type \"%s\"",
 			varName,
-			varSchema.Type,
+			varSchema.Type.Value,
 		),
 		ChildErrors: []error{err},
 		Line:        line,
@@ -383,7 +383,7 @@ func errCustomVariableMixedTypes(
 		Err: fmt.Errorf(
 			"validation failed due to mixed types provided as options for variable type \"%s\" used in variable \"%s\", "+
 				"all options must be of the same scalar type",
-			varSchema.Type,
+			varSchema.Type.Value,
 			varName,
 		),
 		Line:   line,
@@ -449,6 +449,19 @@ func errCustomVariableDefaultValueNotInOptions(
 			varName,
 			varType,
 			defaultValue,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errMissingExportType(exportName string, exportSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(exportSourceMeta)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidExport,
+		Err: fmt.Errorf(
+			"validation failed due to a missing export type for export \"%s\"",
+			exportName,
 		),
 		Line:   line,
 		Column: col,
@@ -1047,6 +1060,19 @@ func errSubDataSourceFieldNotArray(
 	}
 }
 
+func errResourceMissingType(resourceName string, location *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing type for resource \"%s\"",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errResourceTypeMissingSpecDefinition(
 	resourceName string,
 	resourceType string,
@@ -1176,6 +1202,19 @@ func errDataSourceFilterFieldNotSupported(
 			"validation failed due to the field \"%s\" in the filter for data source \"%s\" "+
 				"not being supported",
 			field,
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceMissingType(dataSourceName string, location *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to a missing type for data source \"%s\"",
 			dataSourceName,
 		),
 		Line:   line,

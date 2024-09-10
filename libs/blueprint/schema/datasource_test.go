@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
@@ -257,7 +258,7 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c 
 		c.FailNow()
 	}
 
-	c.Assert(targetFilter.Field, Equals, "tags")
+	c.Assert(*targetFilter.Field.StringValue, Equals, "tags")
 	c.Assert(targetFilter.Operator.Value, Equals, DataSourceFilterOperatorHasKey)
 	c.Assert(
 		targetFilter.Search.Values,
@@ -318,8 +319,9 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_yaml_input
 	}
 
 	searchFor := "ACTIVE"
+	field := "configuration.status"
 	serialisedBytes, err := yaml.Marshal(&DataSourceFilter{
-		Field: "configuration.status",
+		Field: &core.ScalarValue{StringValue: &field},
 		Operator: &DataSourceFilterOperatorWrapper{
 			Value: DataSourceFilterOperatorEquals,
 		},
@@ -347,15 +349,16 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_yaml_input
 		c.FailNow()
 	}
 
-	c.Assert(targetFilter.Field, Equals, expected.Field)
+	c.Assert(*targetFilter.Field.StringValue, Equals, *expected.Field.StringValue)
 	c.Assert(targetFilter.Operator.Value, Equals, expected.Operator.Value)
 	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, *expected.Search.Values[0].Values[0].StringValue)
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_serialise_yaml_due_to_unsupported_data_source_filter_operator(c *C) {
 	search := "test-"
+	field := "name"
 	_, err := yaml.Marshal(&DataSourceFilter{
-		Field: "name",
+		Field: &core.ScalarValue{StringValue: &field},
 		Operator: &DataSourceFilterOperatorWrapper{
 			// "unknown" is not a valid filter operator.
 			Value: DataSourceFilterOperator("unknown"),
@@ -390,7 +393,7 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_json_input(c 
 		c.FailNow()
 	}
 
-	c.Assert(targetFilter.Field, Equals, "tags")
+	c.Assert(*targetFilter.Field.StringValue, Equals, "tags")
 	c.Assert(targetFilter.Operator.Value, Equals, DataSourceFilterOperatorHasKey)
 	c.Assert(
 		targetFilter.Search.Values,
@@ -433,8 +436,9 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_json_input
 	}
 
 	searchFor := "ACTIVE"
+	field := "configuration.status"
 	serialisedBytes, err := yaml.Marshal(&DataSourceFilter{
-		Field: "configuration.status",
+		Field: &core.ScalarValue{StringValue: &field},
 		Operator: &DataSourceFilterOperatorWrapper{
 			Value: DataSourceFilterOperatorEquals,
 		},
@@ -462,15 +466,16 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_json_input
 		c.FailNow()
 	}
 
-	c.Assert(targetFilter.Field, Equals, expected.Field)
+	c.Assert(*targetFilter.Field.StringValue, Equals, *expected.Field.StringValue)
 	c.Assert(targetFilter.Operator.Value, Equals, expected.Operator.Value)
 	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, *expected.Search.Values[0].Values[0].StringValue)
 }
 
 func (s *DataSourceTestSuite) Test_fails_to_serialise_json_due_to_unsupported_data_source_filter_operator(c *C) {
 	search := "test-"
+	field := "name"
 	_, err := json.Marshal(&DataSourceFilter{
-		Field: "name",
+		Field: &core.ScalarValue{StringValue: &field},
 		Operator: &DataSourceFilterOperatorWrapper{
 			// "unknown" is not a valid filter operator.
 			Value: DataSourceFilterOperator("unknown"),

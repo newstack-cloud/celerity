@@ -49,9 +49,9 @@ func (s *VariableTestSuite) Test_parses_valid_variable_yaml_input(c *C) {
 	}
 
 	c.Assert(*targetVar.Default.BoolValue, Equals, true)
-	c.Assert(targetVar.Description, Equals, "This is an example boolean variable")
-	c.Assert(targetVar.Secret, Equals, false)
-	c.Assert(targetVar.Type, Equals, VariableType("boolean"))
+	c.Assert(*targetVar.Description.StringValue, Equals, "This is an example boolean variable")
+	c.Assert(*targetVar.Secret.BoolValue, Equals, false)
+	c.Assert(targetVar.Type.Value, Equals, VariableType("boolean"))
 	c.Assert(targetVar.SourceMeta, NotNil)
 	c.Assert(targetVar.SourceMeta.Line, Equals, 1)
 	c.Assert(targetVar.SourceMeta.Column, Equals, 1)
@@ -66,10 +66,12 @@ func (s *VariableTestSuite) Test_serialise_valid_variable_yaml_input(c *C) {
 	}
 
 	region := "eu-west-2"
+	secret := false
+	description := "The AWS region to connect to AWS services with"
 	serialisedBytes, err := yaml.Marshal(&Variable{
-		Type:        VariableTypeString,
-		Description: "The AWS region to connect to AWS services with",
-		Secret:      false,
+		Type:        &VariableTypeWrapper{Value: VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
+		Secret:      &core.ScalarValue{BoolValue: &secret},
 		Default: &core.ScalarValue{
 			StringValue: &region,
 		},
@@ -86,9 +88,9 @@ func (s *VariableTestSuite) Test_serialise_valid_variable_yaml_input(c *C) {
 		c.FailNow()
 	}
 
-	c.Assert(targetVar.Type, Equals, expected.Type)
-	c.Assert(targetVar.Description, Equals, expected.Description)
-	c.Assert(targetVar.Secret, Equals, expected.Secret)
+	c.Assert(targetVar.Type.Value, Equals, expected.Type.Value)
+	c.Assert(*targetVar.Description.StringValue, Equals, *expected.Description.StringValue)
+	c.Assert(*targetVar.Secret.BoolValue, Equals, *expected.Secret.BoolValue)
 	c.Assert(*targetVar.Default.StringValue, Equals, *expected.Default.StringValue)
 }
 
@@ -101,9 +103,9 @@ func (s *VariableTestSuite) Test_parses_valid_variable_json_input(c *C) {
 	}
 
 	c.Assert(*targetVar.Default.IntValue, Equals, 3423)
-	c.Assert(targetVar.Description, Equals, "This is an example integer variable")
-	c.Assert(targetVar.Secret, Equals, false)
-	c.Assert(targetVar.Type, Equals, VariableType("integer"))
+	c.Assert(*targetVar.Description.StringValue, Equals, "This is an example integer variable")
+	c.Assert(*targetVar.Secret.BoolValue, Equals, false)
+	c.Assert(targetVar.Type.Value, Equals, VariableType("integer"))
 }
 
 func (s *VariableTestSuite) Test_serialise_valid_variable_json_input(c *C) {
@@ -115,10 +117,12 @@ func (s *VariableTestSuite) Test_serialise_valid_variable_json_input(c *C) {
 	}
 
 	region := "eu-west-1"
+	description := "The AWS region to connect to AWS services with"
+	secret := true
 	serialisedBytes, err := json.Marshal(&Variable{
-		Type:        VariableTypeString,
-		Description: "The AWS region to connect to AWS services with",
-		Secret:      true,
+		Type:        &VariableTypeWrapper{Value: VariableTypeString},
+		Description: &core.ScalarValue{StringValue: &description},
+		Secret:      &core.ScalarValue{BoolValue: &secret},
 		Default: &core.ScalarValue{
 			StringValue: &region,
 		},
@@ -135,8 +139,8 @@ func (s *VariableTestSuite) Test_serialise_valid_variable_json_input(c *C) {
 		c.FailNow()
 	}
 
-	c.Assert(targetVar.Type, Equals, expected.Type)
-	c.Assert(targetVar.Description, Equals, expected.Description)
-	c.Assert(targetVar.Secret, Equals, expected.Secret)
+	c.Assert(targetVar.Type.Value, Equals, expected.Type.Value)
+	c.Assert(*targetVar.Description.StringValue, Equals, *expected.Description.StringValue)
+	c.Assert(*targetVar.Secret.BoolValue, Equals, *expected.Secret.BoolValue)
 	c.Assert(*targetVar.Default.StringValue, Equals, *expected.Default.StringValue)
 }

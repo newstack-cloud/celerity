@@ -43,8 +43,9 @@ func (s *ExportValidationTestSuite) SetUpTest(c *C) {
 
 func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_export(c *C) {
 	description := "The endpoint information to be used to connect to a cache cluster."
+	field := "resources.cacheCluster.state.id"
 	exportSchema := &schema.Export{
-		Type: schema.ExportTypeString,
+		Type: &schema.ExportTypeWrapper{Value: schema.ExportTypeString},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -52,7 +53,7 @@ func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_exp
 				},
 			},
 		},
-		Field: "resources.cacheCluster.state.id",
+		Field: &core.ScalarValue{StringValue: &field},
 	}
 	exportMap := &schema.ExportMap{
 		Values: map[string]*schema.Export{
@@ -64,7 +65,7 @@ func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_exp
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"cacheCluster": {
-					Type: "aws/ecs/service",
+					Type: &schema.ResourceTypeWrapper{Value: "aws/ecs/service"},
 					Spec: &core.MappingNode{
 						Literal: &core.ScalarValue{
 							StringValue: &serviceName,
@@ -92,9 +93,10 @@ func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_exp
 
 func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_export_type_is_provided(c *C) {
 	description := "The endpoint information to be used to connect to a cache cluster."
+	field := "resources.cacheCluster.state.cacheNodes.endpoints"
 	exportSchema := &schema.Export{
 		// mapping[string, integer] is not a supported export type.
-		Type: schema.ExportType("mapping[string, integer]"),
+		Type: &schema.ExportTypeWrapper{Value: schema.ExportType("mapping[string, integer]")},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -102,7 +104,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_expor
 				},
 			},
 		},
-		Field: "resources.cacheCluster.state.cacheNodes.endpoints",
+		Field: &core.ScalarValue{StringValue: &field},
 	}
 	exportMap := &schema.ExportMap{
 		Values: map[string]*schema.Export{
@@ -114,7 +116,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_expor
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"cacheCluster": {
-					Type: "aws/ecs/service",
+					Type: &schema.ResourceTypeWrapper{Value: "aws/ecs/service"},
 					Spec: &core.MappingNode{
 						Literal: &core.ScalarValue{
 							StringValue: &serviceName,
@@ -153,7 +155,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_expor
 func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_field_is_provided(c *C) {
 	description := "The endpoint information to be used to connect to a cache cluster."
 	exportSchema := &schema.Export{
-		Type: schema.ExportTypeObject,
+		Type: &schema.ExportTypeWrapper{Value: schema.ExportTypeObject},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -161,7 +163,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_fiel
 				},
 			},
 		},
-		Field: "",
+		Field: &core.ScalarValue{},
 	}
 	exportMap := &schema.ExportMap{
 		Values: map[string]*schema.Export{
@@ -173,7 +175,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_fiel
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"cacheCluster": {
-					Type: "aws/ecs/service",
+					Type: &schema.ResourceTypeWrapper{Value: "aws/ecs/service"},
 					Spec: &core.MappingNode{
 						Literal: &core.ScalarValue{
 							StringValue: &serviceName,
@@ -209,8 +211,9 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_fiel
 
 func (s *ExportValidationTestSuite) Test_reports_error_when_an_incorrect_reference_is_provided(c *C) {
 	description := "The endpoint information to be used to connect to a cache cluster."
+	field := "resources.cacheCluster."
 	exportSchema := &schema.Export{
-		Type: schema.ExportTypeObject,
+		Type: &schema.ExportTypeWrapper{Value: schema.ExportTypeObject},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -219,7 +222,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_incorrect_referen
 			},
 		},
 		// Missing a valid attribute that can be extracted from a resource.
-		Field: "resources.cacheCluster.",
+		Field: &core.ScalarValue{StringValue: &field},
 	}
 	exportMap := &schema.ExportMap{
 		Values: map[string]*schema.Export{

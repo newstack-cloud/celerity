@@ -164,7 +164,7 @@ func hasPriorityOver(
 			return false
 		}
 		isHardLink := kindOutput.Kind == provider.LinkKindHard
-		return priorityResourceTypeOutput.PriorityResourceType == candidatePriorityLink.Resource.Type && isHardLink
+		return priorityResourceTypeOutput.PriorityResourceType == candidatePriorityLink.Resource.Type.Value && isHardLink
 	}
 }
 

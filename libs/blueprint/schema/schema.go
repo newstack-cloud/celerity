@@ -11,7 +11,7 @@ import (
 // Blueprint provides the type for a blueprint
 // specification loaded into memory.
 type Blueprint struct {
-	Version     string                 `yaml:"version" json:"version"`
+	Version     *core.ScalarValue      `yaml:"version" json:"version"`
 	Transform   *TransformValueWrapper `yaml:"transform,omitempty" json:"transform,omitempty"`
 	Variables   *VariableMap           `yaml:"variables,omitempty" json:"variables,omitempty"`
 	Values      *ValueMap              `yaml:"values,omitempty" json:"values,omitempty"`

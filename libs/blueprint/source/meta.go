@@ -19,3 +19,11 @@ func PositionFromSourceMeta(sourceMeta *Meta) (line *int, column *int) {
 
 	return &sourceMeta.Line, &sourceMeta.Column
 }
+
+// Range represents a range in the source code of a blueprint.
+// Start and End could also hold additional information provided
+// in the Meta struct.
+type Range struct {
+	Start *Meta
+	End   *Meta
+}

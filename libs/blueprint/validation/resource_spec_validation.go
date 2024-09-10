@@ -35,7 +35,7 @@ func ValidateResourceSpec(
 
 	specDefinition, err := loadResourceSpecDefinition(
 		ctx,
-		resource.Type,
+		resource.Type.Value,
 		name,
 		resource.SourceMeta,
 		params,

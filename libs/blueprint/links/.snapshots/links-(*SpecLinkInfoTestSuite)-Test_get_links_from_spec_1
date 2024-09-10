@@ -2,7 +2,10 @@
   (*links.snapshotChainLink)({
     ResourceName: (string) (len=8) "orderApi",
     Resource: (*schema.Resource)({
-      Type: (string) (len=18) "aws/apigateway/api",
+      Type: (*schema.ResourceTypeWrapper)({
+        Value: (string) (len=18) "aws/apigateway/api",
+        SourceMeta: (*source.Meta)(<nil>)
+      }),
       Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -46,7 +49,10 @@
       (*links.snapshotChainLink)({
         ResourceName: (string) (len=19) "createOrderFunction",
         Resource: (*schema.Resource)({
-          Type: (string) (len=19) "aws/lambda/function",
+          Type: (*schema.ResourceTypeWrapper)({
+            Value: (string) (len=19) "aws/lambda/function",
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
           Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)({
             DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -87,7 +93,10 @@
           (*links.snapshotChainLink)({
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
-              Type: (string) (len=18) "aws/dynamodb/table",
+              Type: (*schema.ResourceTypeWrapper)({
+                Value: (string) (len=18) "aws/dynamodb/table",
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               Metadata: (*schema.Metadata)({
                 DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -128,7 +137,10 @@
               (*links.snapshotChainLink)({
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
-                  Type: (string) (len=19) "aws/dynamodb/stream",
+                  Type: (*schema.ResourceTypeWrapper)({
+                    Value: (string) (len=19) "aws/dynamodb/stream",
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
                   Description: (*substitutions.StringOrSubstitutions)(<nil>),
                   Metadata: (*schema.Metadata)({
                     DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -169,7 +181,10 @@
                   (*links.snapshotChainLink)({
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
-                      Type: (string) (len=19) "aws/lambda/function",
+                      Type: (*schema.ResourceTypeWrapper)({
+                        Value: (string) (len=19) "aws/lambda/function",
+                        SourceMeta: (*source.Meta)(<nil>)
+                      }),
                       Description: (*substitutions.StringOrSubstitutions)(<nil>),
                       Metadata: (*schema.Metadata)({
                         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -237,7 +252,10 @@
       (*links.snapshotChainLink)({
         ResourceName: (string) (len=17) "getOrdersFunction",
         Resource: (*schema.Resource)({
-          Type: (string) (len=19) "aws/lambda/function",
+          Type: (*schema.ResourceTypeWrapper)({
+            Value: (string) (len=19) "aws/lambda/function",
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
           Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)({
             DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -278,7 +296,10 @@
           (*links.snapshotChainLink)({
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
-              Type: (string) (len=18) "aws/dynamodb/table",
+              Type: (*schema.ResourceTypeWrapper)({
+                Value: (string) (len=18) "aws/dynamodb/table",
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               Metadata: (*schema.Metadata)({
                 DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -319,7 +340,10 @@
               (*links.snapshotChainLink)({
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
-                  Type: (string) (len=19) "aws/dynamodb/stream",
+                  Type: (*schema.ResourceTypeWrapper)({
+                    Value: (string) (len=19) "aws/dynamodb/stream",
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
                   Description: (*substitutions.StringOrSubstitutions)(<nil>),
                   Metadata: (*schema.Metadata)({
                     DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -360,7 +384,10 @@
                   (*links.snapshotChainLink)({
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
-                      Type: (string) (len=19) "aws/lambda/function",
+                      Type: (*schema.ResourceTypeWrapper)({
+                        Value: (string) (len=19) "aws/lambda/function",
+                        SourceMeta: (*source.Meta)(<nil>)
+                      }),
                       Description: (*substitutions.StringOrSubstitutions)(<nil>),
                       Metadata: (*schema.Metadata)({
                         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -434,7 +461,10 @@
   (*links.snapshotChainLink)({
     ResourceName: (string) (len=10) "orderQueue",
     Resource: (*schema.Resource)({
-      Type: (string) (len=13) "aws/sqs/queue",
+      Type: (*schema.ResourceTypeWrapper)({
+        Value: (string) (len=13) "aws/sqs/queue",
+        SourceMeta: (*source.Meta)(<nil>)
+      }),
       Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -475,7 +505,10 @@
       (*links.snapshotChainLink)({
         ResourceName: (string) (len=21) "processOrdersFunction",
         Resource: (*schema.Resource)({
-          Type: (string) (len=19) "aws/lambda/function",
+          Type: (*schema.ResourceTypeWrapper)({
+            Value: (string) (len=19) "aws/lambda/function",
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
           Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)({
             DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -516,7 +549,10 @@
           (*links.snapshotChainLink)({
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
-              Type: (string) (len=18) "aws/dynamodb/table",
+              Type: (*schema.ResourceTypeWrapper)({
+                Value: (string) (len=18) "aws/dynamodb/table",
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
               Description: (*substitutions.StringOrSubstitutions)(<nil>),
               Metadata: (*schema.Metadata)({
                 DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -557,7 +593,10 @@
               (*links.snapshotChainLink)({
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
-                  Type: (string) (len=19) "aws/dynamodb/stream",
+                  Type: (*schema.ResourceTypeWrapper)({
+                    Value: (string) (len=19) "aws/dynamodb/stream",
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
                   Description: (*substitutions.StringOrSubstitutions)(<nil>),
                   Metadata: (*schema.Metadata)({
                     DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -598,7 +637,10 @@
                   (*links.snapshotChainLink)({
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
-                      Type: (string) (len=19) "aws/lambda/function",
+                      Type: (*schema.ResourceTypeWrapper)({
+                        Value: (string) (len=19) "aws/lambda/function",
+                        SourceMeta: (*source.Meta)(<nil>)
+                      }),
                       Description: (*substitutions.StringOrSubstitutions)(<nil>),
                       Metadata: (*schema.Metadata)({
                         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -672,7 +714,10 @@
   (*links.snapshotChainLink)({
     ResourceName: (string) (len=14) "standaloneRole",
     Resource: (*schema.Resource)({
-      Type: (string) (len=12) "aws/iam/role",
+      Type: (*schema.ResourceTypeWrapper)({
+        Value: (string) (len=12) "aws/iam/role",
+        SourceMeta: (*source.Meta)(<nil>)
+      }),
       Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),

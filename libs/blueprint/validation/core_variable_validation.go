@@ -38,25 +38,25 @@ func ValidateCoreVariable(
 	validateRuntimeParams bool,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
-	if varSchema.Type == schema.VariableTypeString {
+	if varSchema.Type.Value == schema.VariableTypeString {
 		return validateCoreStringVariable(
 			ctx, varName, varSchema, varMap, params, validateRuntimeParams,
 		)
 	}
 
-	if varSchema.Type == schema.VariableTypeInteger {
+	if varSchema.Type.Value == schema.VariableTypeInteger {
 		return validateCoreIntegerVariable(
 			ctx, varName, varSchema, varMap, params, validateRuntimeParams,
 		)
 	}
 
-	if varSchema.Type == schema.VariableTypeFloat {
+	if varSchema.Type.Value == schema.VariableTypeFloat {
 		return validateCoreFloatVariable(
 			ctx, varName, varSchema, varMap, params, validateRuntimeParams,
 		)
 	}
 
-	if varSchema.Type == schema.VariableTypeBoolean {
+	if varSchema.Type.Value == schema.VariableTypeBoolean {
 		return validateCoreBooleanVariable(
 			ctx, varName, varSchema, varMap, params, validateRuntimeParams,
 		)
@@ -483,10 +483,15 @@ func scalarAllNil(scalar *bpcore.ScalarValue) bool {
 func checkVarDescription(
 	varName string,
 	varMap *schema.VariableMap,
-	description string,
+	description *bpcore.ScalarValue,
 	diagnostics *[]*bpcore.Diagnostic,
 ) {
-	if description != "" && substitutions.ContainsSubstitution(description) {
+	if description == nil || description.StringValue == nil {
+		return
+	}
+
+	descrStringVal := *description.StringValue
+	if descrStringVal != "" && substitutions.ContainsSubstitution(descrStringVal) {
 		*diagnostics = append(*diagnostics, &bpcore.Diagnostic{
 			Level: bpcore.DiagnosticLevelWarning,
 			Message: fmt.Sprintf(

@@ -1,6 +1,11 @@
 package schema
 
 import (
+	"encoding/json"
+	"fmt"
+
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"gopkg.in/yaml.v3"
@@ -13,8 +18,8 @@ import (
 // via an API, an include reference or as a field in a "blueprint" resource.
 // (The latter of the three options would require an implementation of blueprint resource provider)
 type Export struct {
-	Type        ExportType                           `yaml:"type" json:"type"`
-	Field       string                               `yaml:"field" json:"field"`
+	Type        *ExportTypeWrapper                   `yaml:"type" json:"type"`
+	Field       *bpcore.ScalarValue                  `yaml:"field" json:"field"`
 	Description *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 	SourceMeta  *source.Meta                         `yaml:"-" json:"-"`
 }
@@ -34,6 +39,44 @@ func (e *Export) UnmarshalYAML(value *yaml.Node) error {
 	e.Type = alias.Type
 	e.Field = alias.Field
 	e.Description = alias.Description
+
+	return nil
+}
+
+// ExportTypeWrapper provides a struct that holds an export type
+// value.
+type ExportTypeWrapper struct {
+	Value      ExportType
+	SourceMeta *source.Meta
+}
+
+func (t *ExportTypeWrapper) MarshalYAML() (interface{}, error) {
+	return t.Value, nil
+}
+
+func (t *ExportTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
+	t.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	t.Value = ExportType(value.Value)
+	return nil
+}
+
+func (t *ExportTypeWrapper) MarshalJSON() ([]byte, error) {
+	escaped := jsonutils.EscapeJSONString(string(t.Value))
+	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
+}
+
+func (t *ExportTypeWrapper) UnmarshalJSON(data []byte) error {
+	var typeVal string
+	err := json.Unmarshal(data, &typeVal)
+	if err != nil {
+		return err
+	}
+
+	t.Value = ExportType(typeVal)
 
 	return nil
 }

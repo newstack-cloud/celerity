@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -17,7 +18,7 @@ type Value struct {
 	Type        *ValueTypeWrapper                    `yaml:"type" json:"type"`
 	Value       *substitutions.StringOrSubstitutions `yaml:"value" json:"value"`
 	Description *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
-	Secret      bool                                 `yaml:"secret" json:"secret"`
+	Secret      *bpcore.ScalarValue                  `yaml:"secret" json:"secret"`
 	SourceMeta  *source.Meta                         `yaml:"-" json:"-"`
 }
 

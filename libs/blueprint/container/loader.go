@@ -248,8 +248,10 @@ func NewDefaultLoader(
 	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers)
 	funcRegistry := provider.NewFunctionRegistry(providers)
 	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
+	internalProviders := copyProviderMap(providers)
+
 	loader := &defaultLoader{
-		providers:          providers,
+		providers:          internalProviders,
 		specTransformers:   specTransformers,
 		stateContainer:     stateContainer,
 		updateChan:         updateChan,
@@ -257,7 +259,7 @@ func NewDefaultLoader(
 		funcRegistry:       funcRegistry,
 		resourceRegistry:   resourceRegistry,
 		dataSourceRegistry: dataSourceRegistry,
-		clock:              &systemClock{},
+		clock:              &bpcore.SystemClock{},
 		resolveWorkingDir:  os.Getwd,
 	}
 
@@ -265,12 +267,14 @@ func NewDefaultLoader(
 		opt(loader)
 	}
 
-	providers["core"] = providerhelpers.NewCoreProvider(
-		stateContainer,
-		bpcore.BlueprintInstanceIDFromContext,
-		loader.resolveWorkingDir,
-		loader.clock,
-	)
+	if _, hasCore := internalProviders["core"]; !hasCore {
+		internalProviders["core"] = providerhelpers.NewCoreProvider(
+			stateContainer,
+			bpcore.BlueprintInstanceIDFromContext,
+			loader.resolveWorkingDir,
+			loader.clock,
+		)
+	}
 
 	return loader
 }
@@ -609,7 +613,13 @@ func (l *defaultLoader) validateVariable(
 	if err != nil {
 		currentVarErrs = append(currentVarErrs, err)
 	}
-	if core.SliceContains(schema.CoreVariableTypes, varSchema.Type) {
+
+	if varSchema.Type == nil {
+		currentVarErrs = append(currentVarErrs, errMissingVariableType(name, varSchema.SourceMeta))
+		return currentVarErrs
+	}
+
+	if core.SliceContains(schema.CoreVariableTypes, varSchema.Type.Value) {
 		coreVarDiagnostics, err := validation.ValidateCoreVariable(
 			ctx, name, varSchema, bpSchema.Variables, params, l.validateRuntimeValues,
 		)
@@ -800,10 +810,10 @@ func (l *defaultLoader) validateCustomVariableType(
 func (l *defaultLoader) deriveProviderCustomVarType(ctx context.Context, varName string, varSchema *schema.Variable) (provider.CustomVariableType, error) {
 	// The provider should be keyed exactly by \w+\/ which is the custom type prefix.
 	// Avoid using a regular expression as it is more efficient to split the string.
-	parts := strings.SplitAfter(string(varSchema.Type), "/")
+	parts := strings.SplitAfter(string(varSchema.Type.Value), "/")
 	if len(parts) == 0 {
 		line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
-		return nil, errInvalidCustomVariableType(varName, varSchema.Type, line, col)
+		return nil, errInvalidCustomVariableType(varName, varSchema.Type.Value, line, col)
 	}
 
 	providerKey := parts[0]
@@ -811,10 +821,10 @@ func (l *defaultLoader) deriveProviderCustomVarType(ctx context.Context, varName
 	provider, ok := l.providers[providerKey]
 	if !ok {
 		line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
-		return nil, errMissingProviderForCustomVarType(providerKey, varName, varSchema.Type, line, col)
+		return nil, errMissingProviderForCustomVarType(providerKey, varName, varSchema.Type.Value, line, col)
 	}
 
-	customVarType, err := provider.CustomVariableType(ctx, string(varSchema.Type))
+	customVarType, err := provider.CustomVariableType(ctx, string(varSchema.Type.Value))
 	if err != nil {
 		return nil, err
 	}

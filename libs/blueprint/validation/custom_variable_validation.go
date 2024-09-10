@@ -33,7 +33,7 @@ func ValidateCustomVariable(
 	// provided by the custom type.
 	if varSchema.Default != nil && varSchema.Default.StringValue == nil {
 		return diagnostics, errCustomVariableInvalidDefaultValueType(
-			varSchema.Type,
+			varSchema.Type.Value,
 			varName,
 			varSchema.Default,
 			getVarSourceMeta(varMap, varName),
@@ -42,7 +42,7 @@ func ValidateCustomVariable(
 
 	if varSchema.Default != nil && strings.TrimSpace(*varSchema.Default.StringValue) == "" {
 		return diagnostics, errVariableEmptyDefaultValue(
-			varSchema.Type,
+			varSchema.Type.Value,
 			varName,
 			getVarSourceMeta(varMap, varName),
 		)
@@ -50,7 +50,7 @@ func ValidateCustomVariable(
 
 	if varSchema.Default != nil && !core.SliceContainsComparable(optionLabels, *varSchema.Default.StringValue) {
 		return diagnostics, errCustomVariableDefaultValueNotInOptions(
-			varSchema.Type,
+			varSchema.Type.Value,
 			varName,
 			*varSchema.Default.StringValue,
 			getVarSourceMeta(varMap, varName),
@@ -66,7 +66,7 @@ func ValidateCustomVariable(
 
 	if finalValue.StringValue == nil {
 		return diagnostics, errVariableInvalidOrMissing(
-			varSchema.Type,
+			varSchema.Type.Value,
 			varName,
 			finalValue,
 			getVarSourceMeta(varMap, varName),
@@ -75,7 +75,7 @@ func ValidateCustomVariable(
 
 	if strings.TrimSpace(*finalValue.StringValue) == "" {
 		return diagnostics, errVariableEmptyValue(
-			varSchema.Type,
+			varSchema.Type.Value,
 			varName,
 			getVarSourceMeta(varMap, varName),
 		)
@@ -84,7 +84,7 @@ func ValidateCustomVariable(
 	if !core.SliceContainsComparable(optionLabels, *finalValue.StringValue) {
 		usingDefault := userProvidedValue == nil
 		return diagnostics, errCustomVariableValueNotInOptions(
-			varSchema.Type,
+			varSchema.Type.Value,
 			varName,
 			finalValue,
 			getVarSourceMeta(varMap, varName),
@@ -95,7 +95,7 @@ func ValidateCustomVariable(
 	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefault := userProvidedValue == nil
 		return diagnostics, errVariableValueNotAllowed(
-			varSchema.Type,
+			varSchema.Type.Value,
 			varName,
 			finalValue,
 			varSchema.AllowedValues,
@@ -167,13 +167,13 @@ func validateCustomVariableAllowedValues(
 		var err error
 		if allowedValue == nil || scalarAllNil(allowedValue) {
 			err = errVariableNullAllowedValue(
-				varSchema.Type,
+				varSchema.Type.Value,
 				allowedValue,
 				getVarSourceMeta(varMap, varName),
 			)
 		} else if allowedValue.StringValue == nil {
 			err = errVariableInvalidAllowedValue(
-				varSchema.Type,
+				varSchema.Type.Value,
 				allowedValue,
 				getVarSourceMeta(varMap, varName),
 			)
@@ -194,7 +194,7 @@ func validateCustomVariableAllowedValues(
 	invalidOptions := getInvalidOptions(varSchema.AllowedValues, optionLabels)
 	if len(invalidOptions) > 0 {
 		return errCustomVariableAllowedValuesNotInOptions(
-			varSchema.Type,
+			varSchema.Type.Value,
 			varName,
 			invalidOptions,
 			getVarSourceMeta(varMap, varName),

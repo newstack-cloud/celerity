@@ -15,13 +15,18 @@ import (
 func ValidateBlueprint(ctx context.Context, blueprint *schema.Blueprint) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	errors := []error{}
-	isVersionEmpty := strings.TrimSpace(blueprint.Version) == ""
-	if isVersionEmpty {
-		errors = append(errors, errBlueprintMissingVersion())
-	}
 
-	if !isVersionEmpty && !core.SliceContainsComparable(SupportedVersions, blueprint.Version) {
-		errors = append(errors, errBlueprintUnsupportedVersion(blueprint.Version))
+	if blueprint.Version == nil || blueprint.Version.StringValue == nil {
+		errors = append(errors, errBlueprintMissingVersion())
+	} else {
+		isVersionEmpty := strings.TrimSpace(*blueprint.Version.StringValue) == ""
+		if isVersionEmpty {
+			errors = append(errors, errBlueprintMissingVersion())
+		}
+
+		if !isVersionEmpty && !core.SliceContainsComparable(SupportedVersions, *blueprint.Version.StringValue) {
+			errors = append(errors, errBlueprintUnsupportedVersion(*blueprint.Version.StringValue))
+		}
 	}
 
 	if blueprint.Resources == nil || len(blueprint.Resources.Values) == 0 {

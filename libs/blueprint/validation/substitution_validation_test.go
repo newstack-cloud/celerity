@@ -80,14 +80,14 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource": {
-					Type: "celerity/exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
 				},
 			},
 		},
 		DataSources: &schema.DataSourceMap{
 			Values: map[string]*schema.DataSource{
 				"exampleDataSource": {
-					Type: "celerity/exampleDataSource",
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
 					Exports: &schema.DataSourceFieldExportMap{
 						Values: map[string]*schema.DataSourceFieldExport{
 							"name": {
@@ -130,7 +130,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		Variables: &schema.VariableMap{
 			Values: map[string]*schema.Variable{
 				"environment": {
-					Type: schema.VariableTypeInteger,
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
 				},
 			},
 		},
@@ -261,7 +261,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource": {
-					Type: "celerity/exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
 					Each: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -316,7 +316,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource2": {
-					Type: "celerity/exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
 					Each: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -412,10 +412,10 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 				},
 				"exampleResource1": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"ids": {
@@ -493,7 +493,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_var_ref_is
 		Variables: &schema.VariableMap{
 			Values: map[string]*schema.Variable{
 				"environment": {
-					Type: schema.VariableTypeString,
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
 				},
 			},
 		},
@@ -731,7 +731,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource2": {
-					Type: "celerity/exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
 					Each: &substitutions.StringOrSubstitutions{
 						Values: []*substitutions.StringOrSubstitution{
 							{
@@ -792,7 +792,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource3": {
-					Type: "celerity/exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
 					// Missing "Each" property, this isn't a valid resource template,
 					// therefore "elem" cannot be used.
 					Spec: &core.MappingNode{
@@ -880,7 +880,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_resource_pro
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource3": {
-					Type: "celerity/exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
@@ -929,7 +929,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource2": {
-					Type: "celerity/exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
@@ -978,7 +978,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referencing_
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource3": {
-					Type: "celerity/exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
 					// Missing "Each" property, this isn't a valid resource template,
 					// therefore "resources.exampleResources[0]" cannot be used.
 					Spec: &core.MappingNode{
@@ -1030,7 +1030,7 @@ func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource1": {
-					Type: "celerity/unknown",
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/unknown"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
@@ -1080,7 +1080,7 @@ func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_
 		DataSources: &schema.DataSourceMap{
 			Values: map[string]*schema.DataSource{
 				"networking": {
-					Type: "celerity/exampleDataSource",
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
 					Exports: &schema.DataSourceFieldExportMap{
 						Values: map[string]*schema.DataSourceFieldExport{
 							"vpcId": {
@@ -1130,7 +1130,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource1": {
-					Type: "exampleResourceMissingSpecDefinition",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResourceMissingSpecDefinition"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
@@ -1180,7 +1180,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource1": {
-					Type: "exampleResourceMissingSpecSchema",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResourceMissingSpecSchema"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
@@ -1230,7 +1230,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource1": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1280,7 +1280,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource1": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1329,7 +1329,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource1": {
-					Type: "exampleResourceMissingStateDefinition",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResourceMissingStateDefinition"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
@@ -1379,7 +1379,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource1": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1429,7 +1429,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource1": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1478,7 +1478,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource1": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1527,7 +1527,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource10": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1577,7 +1577,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_pr
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource8": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1627,7 +1627,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource12": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1677,7 +1677,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_mi
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource15": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1727,7 +1727,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource10": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1777,7 +1777,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_mi
 		Resources: &schema.ResourceMap{
 			Values: map[string]*schema.Resource{
 				"exampleResource12": {
-					Type: "exampleResource",
+					Type: &schema.ResourceTypeWrapper{Value: "exampleResource"},
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
@@ -1922,7 +1922,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		DataSources: &schema.DataSourceMap{
 			Values: map[string]*schema.DataSource{
 				"networking": {
-					Type: "celerity/exampleDataSource",
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
 					Exports: &schema.DataSourceFieldExportMap{
 						Values: map[string]*schema.DataSourceFieldExport{
 							"vpcId": {
@@ -1970,7 +1970,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 		DataSources: &schema.DataSourceMap{
 			Values: map[string]*schema.DataSource{
 				"networking": {
-					Type: "celerity/exampleDataSource",
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
 					Exports: &schema.DataSourceFieldExportMap{
 						Values: map[string]*schema.DataSourceFieldExport{
 							"vpcId": {
@@ -2018,7 +2018,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		DataSources: &schema.DataSourceMap{
 			Values: map[string]*schema.DataSource{
 				"networking": {
-					Type: "celerity/exampleDataSource",
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
 				},
 			},
 		},
@@ -2057,7 +2057,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		DataSources: &schema.DataSourceMap{
 			Values: map[string]*schema.DataSource{
 				"networking": {
-					Type: "celerity/exampleDataSource",
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
 					Exports: &schema.DataSourceFieldExportMap{
 						Values: map[string]*schema.DataSourceFieldExport{
 							"vpcId": {
@@ -2106,7 +2106,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		DataSources: &schema.DataSourceMap{
 			Values: map[string]*schema.DataSource{
 				"networking": {
-					Type: "celerity/exampleDataSource",
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
 					Exports: &schema.DataSourceFieldExportMap{
 						Values: map[string]*schema.DataSourceFieldExport{
 							"vpcId": {},
@@ -2151,7 +2151,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		DataSources: &schema.DataSourceMap{
 			Values: map[string]*schema.DataSource{
 				"networking": {
-					Type: "celerity/exampleDataSource",
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
 					Exports: &schema.DataSourceFieldExportMap{
 						Values: map[string]*schema.DataSourceFieldExport{
 							"vpcId": {

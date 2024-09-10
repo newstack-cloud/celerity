@@ -1,7 +1,11 @@
 package schema
 
 import (
+	"encoding/json"
+	"fmt"
+
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"gopkg.in/yaml.v3"
 )
@@ -9,9 +13,9 @@ import (
 // Variable provides the definition of a variable
 // that can be used in a blueprint.
 type Variable struct {
-	Type          VariableType          `yaml:"type" json:"type"`
-	Description   string                `yaml:"description,omitempty" json:"description,omitempty"`
-	Secret        bool                  `yaml:"secret" json:"secret"`
+	Type          *VariableTypeWrapper  `yaml:"type" json:"type"`
+	Description   *bpcore.ScalarValue   `yaml:"description,omitempty" json:"description,omitempty"`
+	Secret        *bpcore.ScalarValue   `yaml:"secret" json:"secret"`
 	Default       *bpcore.ScalarValue   `yaml:"default,omitempty" json:"default,omitempty"`
 	AllowedValues []*bpcore.ScalarValue `yaml:"allowedValues,omitempty" json:"allowedValues,omitempty"`
 	SourceMeta    *source.Meta          `yaml:"-" json:"-"`
@@ -34,6 +38,44 @@ func (t *Variable) UnmarshalYAML(value *yaml.Node) error {
 	t.Secret = alias.Secret
 	t.Default = alias.Default
 	t.AllowedValues = alias.AllowedValues
+
+	return nil
+}
+
+// VariableTypeWrapper provides a struct that holds a variable type
+// value.
+type VariableTypeWrapper struct {
+	Value      VariableType
+	SourceMeta *source.Meta
+}
+
+func (t *VariableTypeWrapper) MarshalYAML() (interface{}, error) {
+	return t.Value, nil
+}
+
+func (t *VariableTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
+	t.SourceMeta = &source.Meta{
+		Line:   value.Line,
+		Column: value.Column,
+	}
+
+	t.Value = VariableType(value.Value)
+	return nil
+}
+
+func (t *VariableTypeWrapper) MarshalJSON() ([]byte, error) {
+	escaped := jsonutils.EscapeJSONString(string(t.Value))
+	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
+}
+
+func (t *VariableTypeWrapper) UnmarshalJSON(data []byte) error {
+	var typeVal string
+	err := json.Unmarshal(data, &typeVal)
+	if err != nil {
+		return err
+	}
+
+	t.Value = VariableType(typeVal)
 
 	return nil
 }

@@ -46,7 +46,7 @@ func ValidateExport(
 
 	exportFieldAsSub, err := substitutions.ParseSubstitution(
 		"exports",
-		exportSchema.Field,
+		*exportSchema.Field.StringValue,
 		/* parentSourceStart */ &source.Meta{},
 		/* outputLineInfo */ false,
 		/* ignoreParentColumn */ true,
@@ -77,13 +77,13 @@ func ValidateExport(
 	}
 
 	var errs []error
-	if resolvedType != subTypeFromExportType(exportSchema.Type) &&
+	if resolvedType != subTypeFromExportType(exportSchema.Type.Value) &&
 		resolvedType != string(substitutions.ResolvedSubExprTypeAny) {
 		errs = append(errs, errExportTypeMismatch(
-			exportSchema.Type,
+			exportSchema.Type.Value,
 			resolvedType,
 			exportName,
-			exportSchema.Field,
+			*exportSchema.Field.StringValue,
 			getExportSourceMeta(exportMap, exportName),
 		))
 	} else if resolvedType == string(substitutions.ResolvedSubExprTypeAny) {
@@ -97,7 +97,7 @@ func ValidateExport(
 					"Export referenced field returns \"any\" type, this may produce "+
 						"unexpected output in %s, a value with the %s type is expected",
 					exportIdentifier,
-					exportSchema.Type,
+					exportSchema.Type.Value,
 				),
 				Range: toDiagnosticRange(getExportSourceMeta(exportMap, exportName), nil),
 			},
@@ -127,13 +127,20 @@ func ValidateExport(
 }
 
 func validateExportType(
-	exportType schema.ExportType,
+	exportType *schema.ExportTypeWrapper,
 	exportName string,
 	exportMap *schema.ExportMap,
 ) error {
-	if !core.SliceContainsComparable(schema.ExportTypes, exportType) {
+	if exportType == nil {
+		return errMissingExportType(
+			exportName,
+			getExportSourceMeta(exportMap, exportName),
+		)
+	}
+
+	if !core.SliceContainsComparable(schema.ExportTypes, exportType.Value) {
 		return errInvalidExportType(
-			exportType,
+			exportType.Value,
 			exportName,
 			getExportSourceMeta(exportMap, exportName),
 		)
@@ -141,8 +148,8 @@ func validateExportType(
 	return nil
 }
 
-func validateExportFieldFormat(exportField, exportName string, exportMap *schema.ExportMap) error {
-	if exportField == "" {
+func validateExportFieldFormat(exportField *bpcore.ScalarValue, exportName string, exportMap *schema.ExportMap) error {
+	if exportField == nil || exportField.StringValue == nil || *exportField.StringValue == "" {
 		return errEmptyExportField(
 			exportName,
 			getExportSourceMeta(exportMap, exportName),
@@ -151,7 +158,7 @@ func validateExportFieldFormat(exportField, exportName string, exportMap *schema
 
 	context := fmt.Sprintf("exports.%s", exportName)
 	return ValidateReference(
-		exportField,
+		*exportField.StringValue,
 		context,
 		ExportCanReference,
 		getExportSourceMeta(exportMap, exportName),

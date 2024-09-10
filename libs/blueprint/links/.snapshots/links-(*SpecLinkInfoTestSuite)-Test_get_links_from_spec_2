@@ -2,7 +2,10 @@
   (*links.snapshotChainLink)({
     ResourceName: (string) (len=20) "exchangeRateFunction",
     Resource: (*schema.Resource)({
-      Type: (string) (len=19) "aws/lambda/function",
+      Type: (*schema.ResourceTypeWrapper)({
+        Value: (string) (len=19) "aws/lambda/function",
+        SourceMeta: (*source.Meta)(<nil>)
+      }),
       Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -36,7 +39,10 @@
   (*links.snapshotChainLink)({
     ResourceName: (string) (len=28) "refreshExchangeRatesFunction",
     Resource: (*schema.Resource)({
-      Type: (string) (len=19) "aws/lambda/function",
+      Type: (*schema.ResourceTypeWrapper)({
+        Value: (string) (len=19) "aws/lambda/function",
+        SourceMeta: (*source.Meta)(<nil>)
+      }),
       Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),
@@ -70,7 +76,10 @@
   (*links.snapshotChainLink)({
     ResourceName: (string) (len=15) "standaloneRole2",
     Resource: (*schema.Resource)({
-      Type: (string) (len=12) "aws/iam/role",
+      Type: (*schema.ResourceTypeWrapper)({
+        Value: (string) (len=12) "aws/iam/role",
+        SourceMeta: (*source.Meta)(<nil>)
+      }),
       Description: (*substitutions.StringOrSubstitutions)(<nil>),
       Metadata: (*schema.Metadata)({
         DisplayName: (*substitutions.StringOrSubstitutions)(<nil>),

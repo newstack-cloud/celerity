@@ -94,7 +94,7 @@ func ValidateDataSource(
 	validateFilterDiagnostics, validateFilterErr := validateDataSourceFilter(
 		ctx,
 		name,
-		dataSource.Type,
+		dataSource.Type.Value,
 		dataSource.Filter,
 		dataSourceMap,
 		bpSchema,
@@ -111,7 +111,7 @@ func ValidateDataSource(
 
 	specDefinition, specDefErr := loadDataSourceSpecDefinition(
 		ctx,
-		dataSource.Type,
+		dataSource.Type.Value,
 		name,
 		dataSource.SourceMeta,
 		params,
@@ -125,7 +125,7 @@ func ValidateDataSource(
 	validateExportsDiagnostics, validateExportsErr := validateDataSourceExports(
 		ctx,
 		name,
-		dataSource.Type,
+		dataSource.Type.Value,
 		dataSource.Exports,
 		dataSourceMap,
 		bpSchema,
@@ -142,7 +142,7 @@ func ValidateDataSource(
 
 	customValidateOutput, err := dataSourceRegistry.CustomValidate(
 		ctx,
-		dataSource.Type,
+		dataSource.Type.Value,
 		&provider.DataSourceValidateInput{
 			SchemaDataSource: dataSource,
 			Params:           params,
@@ -165,13 +165,20 @@ func ValidateDataSource(
 func validateDataSourceType(
 	ctx context.Context,
 	dataSourceName string,
-	dataSourceType string,
+	dataSourceType *schema.DataSourceTypeWrapper,
 	dataSourceMap *schema.DataSourceMap,
 	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
-	hasType, err := dataSourceRegistry.HasDataSourceType(ctx, dataSourceType)
+	if dataSourceType == nil {
+		return diagnostics, errDataSourceMissingType(
+			dataSourceName,
+			getDataSourceMeta(dataSourceMap, dataSourceName),
+		)
+	}
+
+	hasType, err := dataSourceRegistry.HasDataSourceType(ctx, dataSourceType.Value)
 	if err != nil {
 		return diagnostics, err
 	}
@@ -179,7 +186,7 @@ func validateDataSourceType(
 	if !hasType {
 		return diagnostics, errDataSourceTypeNotSupported(
 			dataSourceName,
-			dataSourceType,
+			dataSourceType.Value,
 			getDataSourceMeta(dataSourceMap, dataSourceName),
 		)
 	}
@@ -466,7 +473,7 @@ func validateDataSourceFilter(
 		)
 	}
 
-	if filter.Field == "" {
+	if filter.Field == nil || filter.Field.StringValue == nil || *filter.Field.StringValue == "" {
 		return diagnostics, errDataSourceMissingFilterField(
 			name, getDataSourceMeta(dataSourceMap, name),
 		)
@@ -501,10 +508,10 @@ func validateDataSourceFilter(
 		)
 	}
 
-	if !slices.Contains(filterFieldsOutput.Fields, filter.Field) {
+	if !slices.Contains(filterFieldsOutput.Fields, *filter.Field.StringValue) {
 		return diagnostics, errDataSourceFilterFieldNotSupported(
 			name,
-			filter.Field,
+			*filter.Field.StringValue,
 			filter.SourceMeta,
 		)
 	}
@@ -732,8 +739,10 @@ func validateDataSourceExport(
 	}
 
 	finalExportName := exportName
-	if export.AliasFor != "" {
-		finalExportName = export.AliasFor
+	if export.AliasFor != nil &&
+		export.AliasFor.StringValue != nil &&
+		*export.AliasFor.StringValue != "" {
+		finalExportName = *export.AliasFor.StringValue
 	}
 	fieldSchema, hasField := specDefinition.Fields[finalExportName]
 	// Field schema may incorrectly set to nil by the data source provider.

@@ -54,7 +54,7 @@ func (s *DataSourceValidationTestSuite) SetUpTest(c *C) {
 func (s *DataSourceValidationTestSuite) Test_reports_error_when_substitution_provided_in_data_source_name(c *C) {
 	description := "EC2 instance for the application"
 	dataSourceSchema := &schema.DataSource{
-		Type: "aws/ec2/instance",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -117,8 +117,9 @@ func (s *DataSourceValidationTestSuite) Test_succeeds_without_any_issues_for_a_v
 }
 
 func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_is_missing(c *C) {
+	aliasFor := "instanceConfigId"
 	dataSource := &schema.DataSource{
-		Type: "aws/ec2/instance",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
 		// Filter omitted.
 		Exports: &schema.DataSourceFieldExportMap{
 			Values: map[string]*schema.DataSourceFieldExport{
@@ -126,7 +127,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_is_missi
 					Type: &schema.DataSourceFieldTypeWrapper{
 						Value: schema.DataSourceFieldTypeString,
 					},
-					AliasFor: "instanceConfigId",
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 				},
 			},
 		},
@@ -169,9 +170,9 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_is_missi
 func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(c *C) {
 	name1 := "Processor-Dev"
 	name2 := "Processor-Prod"
-
+	aliasFor := "instanceConfigId"
 	dataSource := &schema.DataSource{
-		Type: "aws/ec2/instance",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
 		Filter: &schema.DataSourceFilter{
 			// Field omitted.
 			Operator: &schema.DataSourceFilterOperatorWrapper{
@@ -202,7 +203,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 					Type: &schema.DataSourceFieldTypeWrapper{
 						Value: schema.DataSourceFieldTypeString,
 					},
-					AliasFor: "instanceConfigId",
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 				},
 			},
 		},
@@ -245,11 +246,13 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 func (s *DataSourceValidationTestSuite) Test_reports_errors_when_data_source_type_is_not_supported(c *C) {
 	name1 := "Processor-Dev"
 	name2 := "Processor-Prod"
+	dataSourceField := "instanceConfigId"
+	aliasFor := "instanceConfigId"
 
 	dataSource := &schema.DataSource{
-		Type: "aws/ec2/unknown",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/unknown"},
 		Filter: &schema.DataSourceFilter{
-			Field: "instanceConfigId",
+			Field: &core.ScalarValue{StringValue: &dataSourceField},
 			Operator: &schema.DataSourceFilterOperatorWrapper{
 				Value: schema.DataSourceFilterOperatorIn,
 			},
@@ -278,7 +281,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_data_source_typ
 					Type: &schema.DataSourceFieldTypeWrapper{
 						Value: schema.DataSourceFieldTypeString,
 					},
-					AliasFor: "instanceConfigId",
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 				},
 			},
 		},
@@ -319,10 +322,12 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_data_source_typ
 }
 
 func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_is_empty(c *C) {
+	field := "instanceConfigId"
+	aliasFor := "instanceConfigId"
 	dataSource := &schema.DataSource{
-		Type: "aws/ec2/instance",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
 		Filter: &schema.DataSourceFilter{
-			Field: "instanceConfigId",
+			Field: &core.ScalarValue{StringValue: &field},
 			Operator: &schema.DataSourceFilterOperatorWrapper{
 				Value: schema.DataSourceFilterOperatorIn,
 			},
@@ -334,7 +339,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_i
 					Type: &schema.DataSourceFieldTypeWrapper{
 						Value: schema.DataSourceFieldTypeString,
 					},
-					AliasFor: "instanceConfigId",
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 				},
 			},
 		},
@@ -376,11 +381,12 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_i
 
 func (s *DataSourceValidationTestSuite) Test_reports_errors_when_no_exported_fields_are_provided(c *C) {
 	search := "Production"
+	field := "instanceConfigId"
 
 	dataSource := &schema.DataSource{
-		Type: "aws/ec2/instance",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
 		Filter: &schema.DataSourceFilter{
-			Field: "instanceConfigId",
+			Field: &core.ScalarValue{StringValue: &field},
 			Operator: &schema.DataSourceFilterOperatorWrapper{
 				Value: schema.DataSourceFilterOperatorIn,
 			},
@@ -591,7 +597,8 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_no_filter_fields
 
 func (s *DataSourceValidationTestSuite) Test_reports_error_when_filter_field_is_not_supported(c *C) {
 	dataSource := newTestValidDataSource()
-	dataSource.Filter.Field = "unknownField"
+	field := "unknownField"
+	dataSource.Filter.Field = &core.ScalarValue{StringValue: &field}
 
 	dataSourceMap := &schema.DataSourceMap{
 		Values: map[string]*schema.DataSource{
@@ -715,11 +722,12 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_empty_field_expo
 
 func (s *DataSourceValidationTestSuite) Test_reports_error_when_exported_field_is_missing(c *C) {
 	dataSource := newTestValidDataSource()
+	aliasFor := "missingField"
 	dataSource.Exports.Values["missingFieldAlias"] = &schema.DataSourceFieldExport{
 		Type: &schema.DataSourceFieldTypeWrapper{
 			Value: schema.DataSourceFieldTypeString,
 		},
-		AliasFor: "missingField",
+		AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 	}
 
 	dataSourceMap := &schema.DataSourceMap{
@@ -759,9 +767,10 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_exported_field_i
 
 func (s *DataSourceValidationTestSuite) Test_reports_error_when_exported_field_has_missing_type(c *C) {
 	dataSource := newTestValidDataSource()
+	aliasFor := "instanceConfigId"
 	dataSource.Exports.Values["instanceIdAlias"] = &schema.DataSourceFieldExport{
 		// Missing field type.
-		AliasFor: "instanceConfigId",
+		AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 	}
 
 	dataSourceMap := &schema.DataSourceMap{
@@ -801,11 +810,12 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_exported_field_h
 
 func (s *DataSourceValidationTestSuite) Test_reports_error_for_exported_field_type_mismatch(c *C) {
 	dataSource := newTestValidDataSource()
+	aliasFor := "instanceConfigId"
 	dataSource.Exports.Values["instanceIdAlias"] = &schema.DataSourceFieldExport{
 		Type: &schema.DataSourceFieldTypeWrapper{
 			Value: schema.DataSourceFieldTypeInteger,
 		},
-		AliasFor: "instanceConfigId",
+		AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 	}
 
 	dataSourceMap := &schema.DataSourceMap{
@@ -852,8 +862,10 @@ func newTestValidDataSource() *schema.DataSource {
 	extrasEnabled := true
 	x := 10
 	y := 20
+	filterField := "tags"
+	aliasFor := "instanceConfigId"
 	return &schema.DataSource{
-		Type: "aws/vpc",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/vpc"},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -864,7 +876,7 @@ func newTestValidDataSource() *schema.DataSource {
 			},
 		},
 		Filter: &schema.DataSourceFilter{
-			Field: "tags",
+			Field: &core.ScalarValue{StringValue: &filterField},
 			Operator: &schema.DataSourceFilterOperatorWrapper{
 				Value: schema.DataSourceFilterOperatorHasKey,
 			},
@@ -930,7 +942,7 @@ func newTestValidDataSource() *schema.DataSource {
 					Type: &schema.DataSourceFieldTypeWrapper{
 						Value: schema.DataSourceFieldTypeString,
 					},
-					AliasFor: "instanceConfigId",
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 				},
 			},
 		},
@@ -941,10 +953,12 @@ func newTestInvalidDisplayNameDataSource() *schema.DataSource {
 	search := "Production"
 
 	displayNamePrefix := "VPC"
+	filterField := "tags"
+	aliasFor := "instanceConfigId"
 	return &schema.DataSource{
-		Type: "aws/vpc",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/vpc"},
 		Filter: &schema.DataSourceFilter{
-			Field: "tags",
+			Field: &core.ScalarValue{StringValue: &filterField},
 			Operator: &schema.DataSourceFilterOperatorWrapper{
 				Value: schema.DataSourceFilterOperatorHasKey,
 			},
@@ -985,7 +999,7 @@ func newTestInvalidDisplayNameDataSource() *schema.DataSource {
 					Type: &schema.DataSourceFieldTypeWrapper{
 						Value: schema.DataSourceFieldTypeString,
 					},
-					AliasFor: "instanceConfigId",
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 				},
 			},
 		},
@@ -994,9 +1008,11 @@ func newTestInvalidDisplayNameDataSource() *schema.DataSource {
 
 func newTestInvalidDescriptionDataSource() *schema.DataSource {
 	search := "Production"
+	filterField := "tags"
+	aliasFor := "instanceConfigId"
 
 	return &schema.DataSource{
-		Type: "aws/vpc",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/vpc"},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -1010,7 +1026,7 @@ func newTestInvalidDescriptionDataSource() *schema.DataSource {
 			},
 		},
 		Filter: &schema.DataSourceFilter{
-			Field: "tags",
+			Field: &core.ScalarValue{StringValue: &filterField},
 			Operator: &schema.DataSourceFilterOperatorWrapper{
 				Value: schema.DataSourceFilterOperatorHasKey,
 			},
@@ -1032,7 +1048,7 @@ func newTestInvalidDescriptionDataSource() *schema.DataSource {
 					Type: &schema.DataSourceFieldTypeWrapper{
 						Value: schema.DataSourceFieldTypeString,
 					},
-					AliasFor: "instanceConfigId",
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 				},
 			},
 		},
@@ -1042,11 +1058,13 @@ func newTestInvalidDescriptionDataSource() *schema.DataSource {
 func newTestInvalidSearchValuesDataSource() *schema.DataSource {
 	search := "Production"
 	jsonToDecode := "{\"key\": \"value\"}"
+	filterField := "tags"
+	aliasFor := "instanceConfigId"
 
 	return &schema.DataSource{
-		Type: "aws/vpc",
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/vpc"},
 		Filter: &schema.DataSourceFilter{
-			Field: "tags",
+			Field: &core.ScalarValue{StringValue: &filterField},
 			Operator: &schema.DataSourceFilterOperatorWrapper{
 				Value: schema.DataSourceFilterOperatorHasKey,
 			},
@@ -1092,7 +1110,7 @@ func newTestInvalidSearchValuesDataSource() *schema.DataSource {
 					Type: &schema.DataSourceFieldTypeWrapper{
 						Value: schema.DataSourceFieldTypeString,
 					},
-					AliasFor: "instanceConfigId",
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 				},
 			},
 		},
@@ -1107,8 +1125,10 @@ func newBaseVPCTestDataSource(dataSourceType string) *schema.DataSource {
 	extrasEnabled := true
 	x := 10
 	y := 20
+	filterField := "tags"
+	aliasFor := "instanceConfigId"
 	return &schema.DataSource{
-		Type: dataSourceType,
+		Type: &schema.DataSourceTypeWrapper{Value: dataSourceType},
 		Description: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -1119,7 +1139,7 @@ func newBaseVPCTestDataSource(dataSourceType string) *schema.DataSource {
 			},
 		},
 		Filter: &schema.DataSourceFilter{
-			Field: "tags",
+			Field: &core.ScalarValue{StringValue: &filterField},
 			Operator: &schema.DataSourceFilterOperatorWrapper{
 				Value: schema.DataSourceFilterOperatorHasKey,
 			},
@@ -1183,7 +1203,7 @@ func newBaseVPCTestDataSource(dataSourceType string) *schema.DataSource {
 					Type: &schema.DataSourceFieldTypeWrapper{
 						Value: schema.DataSourceFieldTypeString,
 					},
-					AliasFor: "instanceConfigId",
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
 				},
 			},
 		},
