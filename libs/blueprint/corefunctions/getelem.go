@@ -24,8 +24,6 @@ func NewGetElemFunction() provider.Function {
 				"\"datasources.network.subnets[2]\" is more concise and readable than \"getelem(2)(datasources.network.subnets)\"",
 			FormattedDescription: "A higher-order function that returns a function that extracts an array of values of a specific element.\n" +
 				"This is useful in situations where you want to map a two-dimensional array to an array of values of a specific element.\n\n" +
-				"It can also be used to extract a values from an array but the `[]` notation is more appropriate for this use case.\n" +
-				"\n```datasources.network.subnets[2]```\n is more concise and readable than: \n```getelem(2)(datasources.network.subnets)```\n" +
 				"**Examples:**\n\n" +
 				"```\n${map(\ndatasources.network.subnets,\ncompose(getattr(\"id\"), getelem(0))\n)}\n```\n" +
 				"This example would take a list of subnets that would be of the following form:\n" +

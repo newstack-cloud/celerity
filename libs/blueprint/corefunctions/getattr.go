@@ -24,8 +24,6 @@ func NewGetAttrFunction() provider.Function {
 				"\"datasources.network.subnets[].id\" is more concise and readable than \"getattr(\\\"id\\\")(datasources.network.subnets[])\"",
 			FormattedDescription: "A higher-order function that returns a function that extracts a named attribute from an object or a mapping.\n" +
 				"This is useful in situations where you want to map an array of objects to an array of values of a specific attribute such as IDs.\n\n" +
-				"It can also be used to extract a named attribute from a mapping but the `.` or `[]` notation is more appropriate for this use case.\n" +
-				"\n```datasources.network.subnets[].id```\n is more concise and readable than: \n```getattr(\\\"id\\\")(datasources.network.subnets[])```\n" +
 				"**Examples:**\n\n" +
 				"```\n${map(\ndatasources.network.subnets,\ncompose(getattr(\"id\"), getattr(\"definition\"))\n)}\n```\n" +
 				"This example would take a list of subnets that would be of the following form:\n" +

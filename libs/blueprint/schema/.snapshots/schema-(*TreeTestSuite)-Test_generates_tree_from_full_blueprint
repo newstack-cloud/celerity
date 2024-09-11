@@ -81,12 +81,12 @@
       Children: ([]*schema.TreeNode) (len=5) {
         (*schema.TreeNode)({
           Label: (string) (len=13) "dynamoDBTable",
-          Path: (string) (len=14) "/dynamoDBTable",
+          Path: (string) (len=24) "/variables/dynamoDBTable",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=2) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=19) "/dynamoDBTable/type",
+              Path: (string) (len=29) "/variables/dynamoDBTable/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.VariableTypeWrapper)({
@@ -109,7 +109,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=11) "description",
-              Path: (string) (len=26) "/dynamoDBTable/description",
+              Path: (string) (len=36) "/variables/dynamoDBTable/description",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -173,12 +173,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=15) "ordersTopicName",
-          Path: (string) (len=16) "/ordersTopicName",
+          Path: (string) (len=26) "/variables/ordersTopicName",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=2) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=21) "/ordersTopicName/type",
+              Path: (string) (len=31) "/variables/ordersTopicName/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.VariableTypeWrapper)({
@@ -201,7 +201,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=11) "description",
-              Path: (string) (len=28) "/ordersTopicName/description",
+              Path: (string) (len=38) "/variables/ordersTopicName/description",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -265,12 +265,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=11) "environment",
-          Path: (string) (len=12) "/environment",
+          Path: (string) (len=22) "/variables/environment",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=2) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=17) "/environment/type",
+              Path: (string) (len=27) "/variables/environment/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.VariableTypeWrapper)({
@@ -293,7 +293,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=11) "description",
-              Path: (string) (len=24) "/environment/description",
+              Path: (string) (len=34) "/variables/environment/description",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -357,12 +357,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=6) "region",
-          Path: (string) (len=7) "/region",
+          Path: (string) (len=17) "/variables/region",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=4) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=12) "/region/type",
+              Path: (string) (len=22) "/variables/region/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.VariableTypeWrapper)({
@@ -385,7 +385,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=11) "description",
-              Path: (string) (len=19) "/region/description",
+              Path: (string) (len=29) "/variables/region/description",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -411,7 +411,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=6) "secret",
-              Path: (string) (len=14) "/region/secret",
+              Path: (string) (len=24) "/variables/region/secret",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -437,7 +437,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=7) "default",
-              Path: (string) (len=15) "/region/default",
+              Path: (string) (len=25) "/variables/region/default",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -519,12 +519,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=12) "instanceType",
-          Path: (string) (len=13) "/instanceType",
+          Path: (string) (len=23) "/variables/instanceType",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=5) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=18) "/instanceType/type",
+              Path: (string) (len=28) "/variables/instanceType/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.VariableTypeWrapper)({
@@ -547,7 +547,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=11) "description",
-              Path: (string) (len=25) "/instanceType/description",
+              Path: (string) (len=35) "/variables/instanceType/description",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -573,7 +573,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=6) "secret",
-              Path: (string) (len=20) "/instanceType/secret",
+              Path: (string) (len=30) "/variables/instanceType/secret",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -599,7 +599,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=7) "default",
-              Path: (string) (len=21) "/instanceType/default",
+              Path: (string) (len=31) "/variables/instanceType/default",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -625,12 +625,12 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=13) "allowedValues",
-              Path: (string) (len=27) "/instanceType/allowedValues",
+              Path: (string) (len=37) "/variables/instanceType/allowedValues",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=4) {
                 (*schema.TreeNode)({
                   Label: (string) (len=1) "0",
-                  Path: (string) (len=29) "/instanceType/allowedValues/0",
+                  Path: (string) (len=39) "/variables/instanceType/allowedValues/0",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (*core.ScalarValue)({
@@ -656,7 +656,7 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=1) "1",
-                  Path: (string) (len=29) "/instanceType/allowedValues/1",
+                  Path: (string) (len=39) "/variables/instanceType/allowedValues/1",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (*core.ScalarValue)({
@@ -682,7 +682,7 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=1) "2",
-                  Path: (string) (len=29) "/instanceType/allowedValues/2",
+                  Path: (string) (len=39) "/variables/instanceType/allowedValues/2",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (*core.ScalarValue)({
@@ -708,7 +708,7 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=1) "3",
-                  Path: (string) (len=29) "/instanceType/allowedValues/3",
+                  Path: (string) (len=39) "/variables/instanceType/allowedValues/3",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (*core.ScalarValue)({
@@ -1094,12 +1094,12 @@
       Children: ([]*schema.TreeNode) (len=1) {
         (*schema.TreeNode)({
           Label: (string) (len=12) "computedInfo",
-          Path: (string) (len=13) "/computedInfo",
+          Path: (string) (len=20) "/values/computedInfo",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=4) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=18) "/computedInfo/type",
+              Path: (string) (len=25) "/values/computedInfo/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.ValueTypeWrapper)({
@@ -1122,22 +1122,22 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=5) "value",
-              Path: (string) (len=19) "/computedInfo/value",
+              Path: (string) (len=26) "/values/computedInfo/value",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "object",
-                  Path: (string) (len=39) "/computedInfo/value/functionCall/object",
+                  Path: (string) (len=46) "/values/computedInfo/value/functionCall/object",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=2) {
                     (*schema.TreeNode)({
                       Label: (string) (len=1) "0",
-                      Path: (string) (len=45) "/computedInfo/value/functionCall/object/arg/0",
+                      Path: (string) (len=52) "/values/computedInfo/value/functionCall/object/arg/0",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=13) "dynamoDBTable",
-                          Path: (string) (len=60) "/computedInfo/value/functionCall/object/varRef/dynamoDBTable",
+                          Path: (string) (len=67) "/values/computedInfo/value/functionCall/object/varRef/dynamoDBTable",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionVariable)({
@@ -1203,12 +1203,12 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=1) "1",
-                      Path: (string) (len=45) "/computedInfo/value/functionCall/object/arg/1",
+                      Path: (string) (len=52) "/values/computedInfo/value/functionCall/object/arg/1",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=15) "ordersTopicName",
-                          Path: (string) (len=62) "/computedInfo/value/functionCall/object/varRef/ordersTopicName",
+                          Path: (string) (len=69) "/values/computedInfo/value/functionCall/object/varRef/ordersTopicName",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionVariable)({
@@ -1476,12 +1476,12 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=11) "description",
-              Path: (string) (len=25) "/computedInfo/description",
+              Path: (string) (len=32) "/values/computedInfo/description",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "string",
-                  Path: (string) (len=32) "/computedInfo/description/string",
+                  Path: (string) (len=39) "/values/computedInfo/description/string",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (string) (len=16) "A computed value",
@@ -1526,7 +1526,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=6) "secret",
-              Path: (string) (len=20) "/computedInfo/secret",
+              Path: (string) (len=27) "/values/computedInfo/secret",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -1879,17 +1879,17 @@
       Children: ([]*schema.TreeNode) (len=1) {
         (*schema.TreeNode)({
           Label: (string) (len=10) "networking",
-          Path: (string) (len=11) "/networking",
+          Path: (string) (len=20) "/includes/networking",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=4) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "path",
-              Path: (string) (len=16) "/networking/path",
+              Path: (string) (len=25) "/includes/networking/path",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "string",
-                  Path: (string) (len=23) "/networking/path/string",
+                  Path: (string) (len=32) "/includes/networking/path/string",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (string) (len=24) "networking.blueprint.yml",
@@ -1934,12 +1934,12 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=11) "description",
-              Path: (string) (len=23) "/networking/description",
+              Path: (string) (len=32) "/includes/networking/description",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "string",
-                  Path: (string) (len=30) "/networking/description/string",
+                  Path: (string) (len=39) "/includes/networking/description/string",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (string) (len=35) "The networking blueprint to include",
@@ -1984,22 +1984,22 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=9) "variables",
-              Path: (string) (len=21) "/networking/variables",
+              Path: (string) (len=30) "/includes/networking/variables",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "environment",
-                  Path: (string) (len=33) "/networking/variables/environment",
+                  Path: (string) (len=42) "/includes/networking/variables/environment",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "stringSubs",
-                      Path: (string) (len=44) "/networking/variables/environment/stringSubs",
+                      Path: (string) (len=53) "/includes/networking/variables/environment/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=11) "environment",
-                          Path: (string) (len=63) "/networking/variables/environment/stringSubs/varRef/environment",
+                          Path: (string) (len=72) "/includes/networking/variables/environment/stringSubs/varRef/environment",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionVariable)({
@@ -2134,17 +2134,17 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "region",
-                  Path: (string) (len=28) "/networking/variables/region",
+                  Path: (string) (len=37) "/includes/networking/variables/region",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "stringSubs",
-                      Path: (string) (len=39) "/networking/variables/region/stringSubs",
+                      Path: (string) (len=48) "/includes/networking/variables/region/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "region",
-                          Path: (string) (len=53) "/networking/variables/region/stringSubs/varRef/region",
+                          Path: (string) (len=62) "/includes/networking/variables/region/stringSubs/varRef/region",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionVariable)({
@@ -2410,17 +2410,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=8) "metadata",
-              Path: (string) (len=20) "/networking/metadata",
+              Path: (string) (len=29) "/includes/networking/metadata",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=10) "sourceType",
-                  Path: (string) (len=31) "/networking/metadata/sourceType",
+                  Path: (string) (len=40) "/includes/networking/metadata/sourceType",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=38) "/networking/metadata/sourceType/scalar",
+                      Path: (string) (len=47) "/includes/networking/metadata/sourceType/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -2478,12 +2478,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "bucket",
-                  Path: (string) (len=27) "/networking/metadata/bucket",
+                  Path: (string) (len=36) "/includes/networking/metadata/bucket",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=34) "/networking/metadata/bucket/scalar",
+                      Path: (string) (len=43) "/includes/networking/metadata/bucket/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -2541,17 +2541,17 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "region",
-                  Path: (string) (len=27) "/networking/metadata/region",
+                  Path: (string) (len=36) "/includes/networking/metadata/region",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "stringSubs",
-                      Path: (string) (len=38) "/networking/metadata/region/stringSubs",
+                      Path: (string) (len=47) "/includes/networking/metadata/region/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "region",
-                          Path: (string) (len=52) "/networking/metadata/region/stringSubs/varRef/region",
+                          Path: (string) (len=61) "/includes/networking/metadata/region/stringSubs/varRef/region",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionVariable)({
@@ -3393,12 +3393,12 @@
       Children: ([]*schema.TreeNode) (len=1) {
         (*schema.TreeNode)({
           Label: (string) (len=7) "network",
-          Path: (string) (len=8) "/network",
+          Path: (string) (len=20) "/datasources/network",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=4) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=13) "/network/type",
+              Path: (string) (len=25) "/datasources/network/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.DataSourceTypeWrapper)({
@@ -3421,17 +3421,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=8) "metadata",
-              Path: (string) (len=17) "/network/metadata",
+              Path: (string) (len=29) "/datasources/network/metadata",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=29) "/network/metadata/displayName",
+                  Path: (string) (len=41) "/datasources/network/metadata/displayName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=36) "/network/metadata/displayName/string",
+                      Path: (string) (len=48) "/datasources/network/metadata/displayName/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=14) "Network source",
@@ -3512,12 +3512,12 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=6) "filter",
-              Path: (string) (len=15) "/network/filter",
+              Path: (string) (len=27) "/datasources/network/filter",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=5) "field",
-                  Path: (string) (len=21) "/network/filter/field",
+                  Path: (string) (len=33) "/datasources/network/filter/field",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (*core.ScalarValue)({
@@ -3543,12 +3543,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=8) "operator",
-                  Path: (string) (len=24) "/network/filter/operator",
+                  Path: (string) (len=36) "/datasources/network/filter/operator",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=7) "has key",
-                      Path: (string) (len=32) "/network/filter/operator/has key",
+                      Path: (string) (len=44) "/datasources/network/filter/operator/has key",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (schema.DataSourceFilterOperator) (len=7) "has key",
@@ -3584,17 +3584,17 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "search",
-                  Path: (string) (len=22) "/network/filter/search",
+                  Path: (string) (len=34) "/datasources/network/filter/search",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=1) "0",
-                      Path: (string) (len=24) "/network/filter/search/0",
+                      Path: (string) (len=36) "/datasources/network/filter/search/0",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=11) "environment",
-                          Path: (string) (len=43) "/network/filter/search/0/varRef/environment",
+                          Path: (string) (len=55) "/datasources/network/filter/search/0/varRef/environment",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionVariable)({
@@ -3809,17 +3809,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=7) "exports",
-              Path: (string) (len=16) "/network/exports",
+              Path: (string) (len=28) "/datasources/network/exports",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "subnets",
-                  Path: (string) (len=16) "/network/subnets",
+                  Path: (string) (len=28) "/datasources/network/subnets",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=4) "type",
-                      Path: (string) (len=21) "/network/subnets/type",
+                      Path: (string) (len=33) "/datasources/network/subnets/type",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*schema.DataSourceFieldTypeWrapper)({
@@ -3869,12 +3869,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=14) "securityGroups",
-                  Path: (string) (len=23) "/network/securityGroups",
+                  Path: (string) (len=35) "/datasources/network/securityGroups",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=4) "type",
-                      Path: (string) (len=28) "/network/securityGroups/type",
+                      Path: (string) (len=40) "/datasources/network/securityGroups/type",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*schema.DataSourceFieldTypeWrapper)({
@@ -3924,12 +3924,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=3) "vpc",
-                  Path: (string) (len=12) "/network/vpc",
+                  Path: (string) (len=24) "/datasources/network/vpc",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=4) "type",
-                      Path: (string) (len=17) "/network/vpc/type",
+                      Path: (string) (len=29) "/datasources/network/vpc/type",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*schema.DataSourceFieldTypeWrapper)({
@@ -4435,12 +4435,12 @@
       Children: ([]*schema.TreeNode) (len=7) {
         (*schema.TreeNode)({
           Label: (string) (len=8) "orderApi",
-          Path: (string) (len=9) "/orderApi",
+          Path: (string) (len=19) "/resources/orderApi",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=6) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=14) "/orderApi/type",
+              Path: (string) (len=24) "/resources/orderApi/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.ResourceTypeWrapper)({
@@ -4463,12 +4463,12 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=11) "description",
-              Path: (string) (len=21) "/orderApi/description",
+              Path: (string) (len=31) "/resources/orderApi/description",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "string",
-                  Path: (string) (len=28) "/orderApi/description/string",
+                  Path: (string) (len=38) "/resources/orderApi/description/string",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (string) (len=28) "The API for the order system",
@@ -4513,57 +4513,57 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=9) "condition",
-              Path: (string) (len=19) "/orderApi/condition",
+              Path: (string) (len=29) "/resources/orderApi/condition",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=3) "and",
-                  Path: (string) (len=23) "/orderApi/condition/and",
+                  Path: (string) (len=33) "/resources/orderApi/condition/and",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=1) "0",
-                      Path: (string) (len=25) "/orderApi/condition/and/0",
+                      Path: (string) (len=35) "/resources/orderApi/condition/and/0",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=3) "not",
-                          Path: (string) (len=29) "/orderApi/condition/and/0/not",
+                          Path: (string) (len=39) "/resources/orderApi/condition/and/0/not",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=1) "0",
-                              Path: (string) (len=31) "/orderApi/condition/and/0/not/0",
+                              Path: (string) (len=41) "/resources/orderApi/condition/and/0/not/0",
                               Type: (schema.TreeNodeType) 0,
                               Children: ([]*schema.TreeNode) (len=1) {
                                 (*schema.TreeNode)({
                                   Label: (string) (len=4) "expr",
-                                  Path: (string) (len=36) "/orderApi/condition/and/0/not/0/expr",
+                                  Path: (string) (len=46) "/resources/orderApi/condition/and/0/not/0/expr",
                                   Type: (schema.TreeNodeType) 0,
                                   Children: ([]*schema.TreeNode) (len=1) {
                                     (*schema.TreeNode)({
                                       Label: (string) (len=2) "eq",
-                                      Path: (string) (len=52) "/orderApi/condition/and/0/not/0/expr/functionCall/eq",
+                                      Path: (string) (len=62) "/resources/orderApi/condition/and/0/not/0/expr/functionCall/eq",
                                       Type: (schema.TreeNodeType) 0,
                                       Children: ([]*schema.TreeNode) (len=2) {
                                         (*schema.TreeNode)({
                                           Label: (string) (len=1) "0",
-                                          Path: (string) (len=58) "/orderApi/condition/and/0/not/0/expr/functionCall/eq/arg/0",
+                                          Path: (string) (len=68) "/resources/orderApi/condition/and/0/not/0/expr/functionCall/eq/arg/0",
                                           Type: (schema.TreeNodeType) 0,
                                           Children: ([]*schema.TreeNode) (len=1) {
                                             (*schema.TreeNode)({
                                               Label: (string) (len=3) "len",
-                                              Path: (string) (len=69) "/orderApi/condition/and/0/not/0/expr/functionCall/eq/functionCall/len",
+                                              Path: (string) (len=79) "/resources/orderApi/condition/and/0/not/0/expr/functionCall/eq/functionCall/len",
                                               Type: (schema.TreeNodeType) 0,
                                               Children: ([]*schema.TreeNode) (len=1) {
                                                 (*schema.TreeNode)({
                                                   Label: (string) (len=1) "0",
-                                                  Path: (string) (len=75) "/orderApi/condition/and/0/not/0/expr/functionCall/eq/functionCall/len/arg/0",
+                                                  Path: (string) (len=85) "/resources/orderApi/condition/and/0/not/0/expr/functionCall/eq/functionCall/len/arg/0",
                                                   Type: (schema.TreeNodeType) 0,
                                                   Children: ([]*schema.TreeNode) (len=1) {
                                                     (*schema.TreeNode)({
                                                       Label: (string) (len=7) "network",
-                                                      Path: (string) (len=91) "/orderApi/condition/and/0/not/0/expr/functionCall/eq/functionCall/len/datasourceRef/network",
+                                                      Path: (string) (len=101) "/resources/orderApi/condition/and/0/not/0/expr/functionCall/eq/functionCall/len/datasourceRef/network",
                                                       Type: (schema.TreeNodeType) 1,
                                                       Children: ([]*schema.TreeNode) <nil>,
                                                       SchemaElement: (*substitutions.SubstitutionDataSourceProperty)({
@@ -4769,12 +4769,12 @@
                                         }),
                                         (*schema.TreeNode)({
                                           Label: (string) (len=1) "1",
-                                          Path: (string) (len=58) "/orderApi/condition/and/0/not/0/expr/functionCall/eq/arg/1",
+                                          Path: (string) (len=68) "/resources/orderApi/condition/and/0/not/0/expr/functionCall/eq/arg/1",
                                           Type: (schema.TreeNodeType) 0,
                                           Children: ([]*schema.TreeNode) (len=1) {
                                             (*schema.TreeNode)({
                                               Label: (string) (len=3) "int",
-                                              Path: (string) (len=56) "/orderApi/condition/and/0/not/0/expr/functionCall/eq/int",
+                                              Path: (string) (len=66) "/resources/orderApi/condition/and/0/not/0/expr/functionCall/eq/int",
                                               Type: (schema.TreeNodeType) 1,
                                               Children: ([]*schema.TreeNode) <nil>,
                                               SchemaElement: (int64) 10,
@@ -5917,17 +5917,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=8) "metadata",
-              Path: (string) (len=18) "/orderApi/metadata",
+              Path: (string) (len=28) "/resources/orderApi/metadata",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=30) "/orderApi/metadata/displayName",
+                  Path: (string) (len=40) "/resources/orderApi/metadata/displayName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=37) "/orderApi/metadata/displayName/string",
+                      Path: (string) (len=47) "/resources/orderApi/metadata/displayName/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=9) "Order API",
@@ -5972,12 +5972,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "labels",
-                  Path: (string) (len=25) "/orderApi/metadata/labels",
+                  Path: (string) (len=35) "/resources/orderApi/metadata/labels",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=32) "/orderApi/metadata/labels/string",
+                      Path: (string) (len=42) "/resources/orderApi/metadata/labels/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
@@ -6017,22 +6017,22 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "custom",
-                  Path: (string) (len=25) "/orderApi/metadata/custom",
+                  Path: (string) (len=35) "/resources/orderApi/metadata/custom",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "visual",
-                      Path: (string) (len=32) "/orderApi/metadata/custom/visual",
+                      Path: (string) (len=42) "/resources/orderApi/metadata/custom/visual",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=4) {
                         (*schema.TreeNode)({
                           Label: (string) (len=5) "point",
-                          Path: (string) (len=38) "/orderApi/metadata/custom/visual/point",
+                          Path: (string) (len=48) "/resources/orderApi/metadata/custom/visual/point",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=6) "scalar",
-                              Path: (string) (len=45) "/orderApi/metadata/custom/visual/point/scalar",
+                              Path: (string) (len=55) "/resources/orderApi/metadata/custom/visual/point/scalar",
                               Type: (schema.TreeNodeType) 1,
                               Children: ([]*schema.TreeNode) <nil>,
                               SchemaElement: (*core.ScalarValue)({
@@ -6090,12 +6090,12 @@
                         }),
                         (*schema.TreeNode)({
                           Label: (string) (len=5) "width",
-                          Path: (string) (len=38) "/orderApi/metadata/custom/visual/width",
+                          Path: (string) (len=48) "/resources/orderApi/metadata/custom/visual/width",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=6) "scalar",
-                              Path: (string) (len=45) "/orderApi/metadata/custom/visual/width/scalar",
+                              Path: (string) (len=55) "/resources/orderApi/metadata/custom/visual/width/scalar",
                               Type: (schema.TreeNodeType) 1,
                               Children: ([]*schema.TreeNode) <nil>,
                               SchemaElement: (*core.ScalarValue)({
@@ -6153,12 +6153,12 @@
                         }),
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "height",
-                          Path: (string) (len=39) "/orderApi/metadata/custom/visual/height",
+                          Path: (string) (len=49) "/resources/orderApi/metadata/custom/visual/height",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=6) "scalar",
-                              Path: (string) (len=46) "/orderApi/metadata/custom/visual/height/scalar",
+                              Path: (string) (len=56) "/resources/orderApi/metadata/custom/visual/height/scalar",
                               Type: (schema.TreeNodeType) 1,
                               Children: ([]*schema.TreeNode) <nil>,
                               SchemaElement: (*core.ScalarValue)({
@@ -6216,22 +6216,22 @@
                         }),
                         (*schema.TreeNode)({
                           Label: (string) (len=9) "linkPorts",
-                          Path: (string) (len=42) "/orderApi/metadata/custom/visual/linkPorts",
+                          Path: (string) (len=52) "/resources/orderApi/metadata/custom/visual/linkPorts",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=1) "0",
-                              Path: (string) (len=44) "/orderApi/metadata/custom/visual/linkPorts/0",
+                              Path: (string) (len=54) "/resources/orderApi/metadata/custom/visual/linkPorts/0",
                               Type: (schema.TreeNodeType) 0,
                               Children: ([]*schema.TreeNode) (len=3) {
                                 (*schema.TreeNode)({
                                   Label: (string) (len=6) "linkTo",
-                                  Path: (string) (len=51) "/orderApi/metadata/custom/visual/linkPorts/0/linkTo",
+                                  Path: (string) (len=61) "/resources/orderApi/metadata/custom/visual/linkPorts/0/linkTo",
                                   Type: (schema.TreeNodeType) 0,
                                   Children: ([]*schema.TreeNode) (len=1) {
                                     (*schema.TreeNode)({
                                       Label: (string) (len=6) "scalar",
-                                      Path: (string) (len=58) "/orderApi/metadata/custom/visual/linkPorts/0/linkTo/scalar",
+                                      Path: (string) (len=68) "/resources/orderApi/metadata/custom/visual/linkPorts/0/linkTo/scalar",
                                       Type: (schema.TreeNodeType) 1,
                                       Children: ([]*schema.TreeNode) <nil>,
                                       SchemaElement: (*core.ScalarValue)({
@@ -6289,12 +6289,12 @@
                                 }),
                                 (*schema.TreeNode)({
                                   Label: (string) (len=9) "connectAt",
-                                  Path: (string) (len=54) "/orderApi/metadata/custom/visual/linkPorts/0/connectAt",
+                                  Path: (string) (len=64) "/resources/orderApi/metadata/custom/visual/linkPorts/0/connectAt",
                                   Type: (schema.TreeNodeType) 0,
                                   Children: ([]*schema.TreeNode) (len=1) {
                                     (*schema.TreeNode)({
                                       Label: (string) (len=6) "scalar",
-                                      Path: (string) (len=61) "/orderApi/metadata/custom/visual/linkPorts/0/connectAt/scalar",
+                                      Path: (string) (len=71) "/resources/orderApi/metadata/custom/visual/linkPorts/0/connectAt/scalar",
                                       Type: (schema.TreeNodeType) 1,
                                       Children: ([]*schema.TreeNode) <nil>,
                                       SchemaElement: (*core.ScalarValue)({
@@ -6352,12 +6352,12 @@
                                 }),
                                 (*schema.TreeNode)({
                                   Label: (string) (len=10) "annotation",
-                                  Path: (string) (len=55) "/orderApi/metadata/custom/visual/linkPorts/0/annotation",
+                                  Path: (string) (len=65) "/resources/orderApi/metadata/custom/visual/linkPorts/0/annotation",
                                   Type: (schema.TreeNodeType) 0,
                                   Children: ([]*schema.TreeNode) (len=1) {
                                     (*schema.TreeNode)({
                                       Label: (string) (len=6) "scalar",
-                                      Path: (string) (len=62) "/orderApi/metadata/custom/visual/linkPorts/0/annotation/scalar",
+                                      Path: (string) (len=72) "/resources/orderApi/metadata/custom/visual/linkPorts/0/annotation/scalar",
                                       Type: (schema.TreeNodeType) 1,
                                       Children: ([]*schema.TreeNode) <nil>,
                                       SchemaElement: (*core.ScalarValue)({
@@ -7283,17 +7283,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=12) "linkSelector",
-              Path: (string) (len=22) "/orderApi/linkSelector",
+              Path: (string) (len=32) "/resources/orderApi/linkSelector",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "byLabel",
-                  Path: (string) (len=30) "/orderApi/linkSelector/byLabel",
+                  Path: (string) (len=40) "/resources/orderApi/linkSelector/byLabel",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=37) "/orderApi/linkSelector/byLabel/string",
+                      Path: (string) (len=47) "/resources/orderApi/linkSelector/byLabel/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
@@ -7362,32 +7362,32 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=4) "spec",
-              Path: (string) (len=14) "/orderApi/spec",
+              Path: (string) (len=24) "/resources/orderApi/spec",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "environment",
-                  Path: (string) (len=26) "/orderApi/spec/environment",
+                  Path: (string) (len=36) "/resources/orderApi/spec/environment",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=9) "variables",
-                      Path: (string) (len=36) "/orderApi/spec/environment/variables",
+                      Path: (string) (len=46) "/resources/orderApi/spec/environment/variables",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=14) "DYNAMODB_TABLE",
-                          Path: (string) (len=51) "/orderApi/spec/environment/variables/DYNAMODB_TABLE",
+                          Path: (string) (len=61) "/resources/orderApi/spec/environment/variables/DYNAMODB_TABLE",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=10) "stringSubs",
-                              Path: (string) (len=62) "/orderApi/spec/environment/variables/DYNAMODB_TABLE/stringSubs",
+                              Path: (string) (len=72) "/resources/orderApi/spec/environment/variables/DYNAMODB_TABLE/stringSubs",
                               Type: (schema.TreeNodeType) 0,
                               Children: ([]*schema.TreeNode) (len=1) {
                                 (*schema.TreeNode)({
                                   Label: (string) (len=13) "dynamoDBTable",
-                                  Path: (string) (len=83) "/orderApi/spec/environment/variables/DYNAMODB_TABLE/stringSubs/varRef/dynamoDBTable",
+                                  Path: (string) (len=93) "/resources/orderApi/spec/environment/variables/DYNAMODB_TABLE/stringSubs/varRef/dynamoDBTable",
                                   Type: (schema.TreeNodeType) 1,
                                   Children: ([]*schema.TreeNode) <nil>,
                                   SchemaElement: (*substitutions.SubstitutionVariable)({
@@ -7695,12 +7695,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "runtime",
-                  Path: (string) (len=22) "/orderApi/spec/runtime",
+                  Path: (string) (len=32) "/resources/orderApi/spec/runtime",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=29) "/orderApi/spec/runtime/scalar",
+                      Path: (string) (len=39) "/resources/orderApi/spec/runtime/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -7758,12 +7758,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=14) "tracingEnabled",
-                  Path: (string) (len=29) "/orderApi/spec/tracingEnabled",
+                  Path: (string) (len=39) "/resources/orderApi/spec/tracingEnabled",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=36) "/orderApi/spec/tracingEnabled/scalar",
+                      Path: (string) (len=46) "/resources/orderApi/spec/tracingEnabled/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -8590,12 +8590,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=10) "authoriser",
-          Path: (string) (len=11) "/authoriser",
+          Path: (string) (len=21) "/resources/authoriser",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=3) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=16) "/authoriser/type",
+              Path: (string) (len=26) "/resources/authoriser/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.ResourceTypeWrapper)({
@@ -8618,17 +8618,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=8) "metadata",
-              Path: (string) (len=20) "/authoriser/metadata",
+              Path: (string) (len=30) "/resources/authoriser/metadata",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=32) "/authoriser/metadata/displayName",
+                  Path: (string) (len=42) "/resources/authoriser/metadata/displayName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=39) "/authoriser/metadata/displayName/string",
+                      Path: (string) (len=49) "/resources/authoriser/metadata/displayName/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=10) "Authoriser",
@@ -8673,17 +8673,17 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "annotations",
-                  Path: (string) (len=32) "/authoriser/metadata/annotations",
+                  Path: (string) (len=42) "/resources/authoriser/metadata/annotations",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=4) {
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "authoriser",
-                      Path: (string) (len=43) "/authoriser/metadata/annotations/authoriser",
+                      Path: (string) (len=53) "/resources/authoriser/metadata/annotations/authoriser",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "string",
-                          Path: (string) (len=50) "/authoriser/metadata/annotations/authoriser/string",
+                          Path: (string) (len=60) "/resources/authoriser/metadata/annotations/authoriser/string",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=4) "true",
@@ -8728,12 +8728,12 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=26) "authoriser.identity.header",
-                      Path: (string) (len=59) "/authoriser/metadata/annotations/authoriser.identity.header",
+                      Path: (string) (len=69) "/resources/authoriser/metadata/annotations/authoriser.identity.header",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "string",
-                          Path: (string) (len=66) "/authoriser/metadata/annotations/authoriser.identity.header/string",
+                          Path: (string) (len=76) "/resources/authoriser/metadata/annotations/authoriser.identity.header/string",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=18) "MyCustomAuthHeader",
@@ -8778,12 +8778,12 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=40) "authoriser.identity.validationExpression",
-                      Path: (string) (len=73) "/authoriser/metadata/annotations/authoriser.identity.validationExpression",
+                      Path: (string) (len=83) "/resources/authoriser/metadata/annotations/authoriser.identity.validationExpression",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "string",
-                          Path: (string) (len=80) "/authoriser/metadata/annotations/authoriser.identity.validationExpression/string",
+                          Path: (string) (len=90) "/resources/authoriser/metadata/annotations/authoriser.identity.validationExpression/string",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=9) "Bearer .*",
@@ -8828,12 +8828,12 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=36) "authoriser.identity.reauthoriseEvery",
-                      Path: (string) (len=69) "/authoriser/metadata/annotations/authoriser.identity.reauthoriseEvery",
+                      Path: (string) (len=79) "/resources/authoriser/metadata/annotations/authoriser.identity.reauthoriseEvery",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "string",
-                          Path: (string) (len=76) "/authoriser/metadata/annotations/authoriser.identity.reauthoriseEvery/string",
+                          Path: (string) (len=86) "/resources/authoriser/metadata/annotations/authoriser.identity.reauthoriseEvery/string",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=2) "20",
@@ -8976,12 +8976,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "labels",
-                  Path: (string) (len=27) "/authoriser/metadata/labels",
+                  Path: (string) (len=37) "/resources/authoriser/metadata/labels",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=34) "/authoriser/metadata/labels/string",
+                      Path: (string) (len=44) "/resources/authoriser/metadata/labels/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
@@ -9153,17 +9153,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=4) "spec",
-              Path: (string) (len=16) "/authoriser/spec",
+              Path: (string) (len=26) "/resources/authoriser/spec",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "handler",
-                  Path: (string) (len=24) "/authoriser/spec/handler",
+                  Path: (string) (len=34) "/resources/authoriser/spec/handler",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=31) "/authoriser/spec/handler/scalar",
+                      Path: (string) (len=41) "/resources/authoriser/spec/handler/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -9221,12 +9221,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "timeout",
-                  Path: (string) (len=24) "/authoriser/spec/timeout",
+                  Path: (string) (len=34) "/resources/authoriser/spec/timeout",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=31) "/authoriser/spec/timeout/scalar",
+                      Path: (string) (len=41) "/resources/authoriser/spec/timeout/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -9567,12 +9567,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=16) "getOrdersHandler",
-          Path: (string) (len=17) "/getOrdersHandler",
+          Path: (string) (len=27) "/resources/getOrdersHandler",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=3) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=22) "/getOrdersHandler/type",
+              Path: (string) (len=32) "/resources/getOrdersHandler/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.ResourceTypeWrapper)({
@@ -9595,17 +9595,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=8) "metadata",
-              Path: (string) (len=26) "/getOrdersHandler/metadata",
+              Path: (string) (len=36) "/resources/getOrdersHandler/metadata",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=38) "/getOrdersHandler/metadata/displayName",
+                  Path: (string) (len=48) "/resources/getOrdersHandler/metadata/displayName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=45) "/getOrdersHandler/metadata/displayName/string",
+                      Path: (string) (len=55) "/resources/getOrdersHandler/metadata/displayName/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=18) "Get Orders Handler",
@@ -9650,12 +9650,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "labels",
-                  Path: (string) (len=33) "/getOrdersHandler/metadata/labels",
+                  Path: (string) (len=43) "/resources/getOrdersHandler/metadata/labels",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=40) "/getOrdersHandler/metadata/labels/string",
+                      Path: (string) (len=50) "/resources/getOrdersHandler/metadata/labels/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
@@ -9742,17 +9742,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=4) "spec",
-              Path: (string) (len=22) "/getOrdersHandler/spec",
+              Path: (string) (len=32) "/resources/getOrdersHandler/spec",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "handler",
-                  Path: (string) (len=30) "/getOrdersHandler/spec/handler",
+                  Path: (string) (len=40) "/resources/getOrdersHandler/spec/handler",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=37) "/getOrdersHandler/spec/handler/scalar",
+                      Path: (string) (len=47) "/resources/getOrdersHandler/spec/handler/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -9810,12 +9810,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "timeout",
-                  Path: (string) (len=30) "/getOrdersHandler/spec/timeout",
+                  Path: (string) (len=40) "/resources/getOrdersHandler/spec/timeout",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=37) "/getOrdersHandler/spec/timeout/scalar",
+                      Path: (string) (len=47) "/resources/getOrdersHandler/spec/timeout/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -9873,17 +9873,17 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=8) "endpoint",
-                  Path: (string) (len=31) "/getOrdersHandler/spec/endpoint",
+                  Path: (string) (len=41) "/resources/getOrdersHandler/spec/endpoint",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=3) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "method",
-                      Path: (string) (len=38) "/getOrdersHandler/spec/endpoint/method",
+                      Path: (string) (len=48) "/resources/getOrdersHandler/spec/endpoint/method",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "scalar",
-                          Path: (string) (len=45) "/getOrdersHandler/spec/endpoint/method/scalar",
+                          Path: (string) (len=55) "/resources/getOrdersHandler/spec/endpoint/method/scalar",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*core.ScalarValue)({
@@ -9941,12 +9941,12 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=4) "path",
-                      Path: (string) (len=36) "/getOrdersHandler/spec/endpoint/path",
+                      Path: (string) (len=46) "/resources/getOrdersHandler/spec/endpoint/path",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "scalar",
-                          Path: (string) (len=43) "/getOrdersHandler/spec/endpoint/path/scalar",
+                          Path: (string) (len=53) "/resources/getOrdersHandler/spec/endpoint/path/scalar",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*core.ScalarValue)({
@@ -10004,17 +10004,17 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "authoriser",
-                      Path: (string) (len=42) "/getOrdersHandler/spec/endpoint/authoriser",
+                      Path: (string) (len=52) "/resources/getOrdersHandler/spec/endpoint/authoriser",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=10) "stringSubs",
-                          Path: (string) (len=53) "/getOrdersHandler/spec/endpoint/authoriser/stringSubs",
+                          Path: (string) (len=63) "/resources/getOrdersHandler/spec/endpoint/authoriser/stringSubs",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=10) "authoriser",
-                              Path: (string) (len=76) "/getOrdersHandler/spec/endpoint/authoriser/stringSubs/resourceRef/authoriser",
+                              Path: (string) (len=86) "/resources/getOrdersHandler/spec/endpoint/authoriser/stringSubs/resourceRef/authoriser",
                               Type: (schema.TreeNodeType) 1,
                               Children: ([]*schema.TreeNode) <nil>,
                               SchemaElement: (*substitutions.SubstitutionResourceProperty)({
@@ -10727,12 +10727,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=19) "updateOrderFunction",
-          Path: (string) (len=20) "/updateOrderFunction",
+          Path: (string) (len=30) "/resources/updateOrderFunction",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=3) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=25) "/updateOrderFunction/type",
+              Path: (string) (len=35) "/resources/updateOrderFunction/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.ResourceTypeWrapper)({
@@ -10755,17 +10755,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=8) "metadata",
-              Path: (string) (len=29) "/updateOrderFunction/metadata",
+              Path: (string) (len=39) "/resources/updateOrderFunction/metadata",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=41) "/updateOrderFunction/metadata/displayName",
+                  Path: (string) (len=51) "/resources/updateOrderFunction/metadata/displayName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=48) "/updateOrderFunction/metadata/displayName/string",
+                      Path: (string) (len=58) "/resources/updateOrderFunction/metadata/displayName/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=21) "Update Order Function",
@@ -10810,12 +10810,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "labels",
-                  Path: (string) (len=36) "/updateOrderFunction/metadata/labels",
+                  Path: (string) (len=46) "/resources/updateOrderFunction/metadata/labels",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=2) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=43) "/updateOrderFunction/metadata/labels/string",
+                      Path: (string) (len=53) "/resources/updateOrderFunction/metadata/labels/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=11) "orderPubSub",
@@ -10832,7 +10832,7 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=43) "/updateOrderFunction/metadata/labels/string",
+                      Path: (string) (len=53) "/resources/updateOrderFunction/metadata/labels/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "consumer",
@@ -10929,17 +10929,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=4) "spec",
-              Path: (string) (len=25) "/updateOrderFunction/spec",
+              Path: (string) (len=35) "/resources/updateOrderFunction/spec",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "handler",
-                  Path: (string) (len=33) "/updateOrderFunction/spec/handler",
+                  Path: (string) (len=43) "/resources/updateOrderFunction/spec/handler",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=40) "/updateOrderFunction/spec/handler/scalar",
+                      Path: (string) (len=50) "/resources/updateOrderFunction/spec/handler/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -10997,12 +10997,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "timeout",
-                  Path: (string) (len=33) "/updateOrderFunction/spec/timeout",
+                  Path: (string) (len=43) "/resources/updateOrderFunction/spec/timeout",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=40) "/updateOrderFunction/spec/timeout/scalar",
+                      Path: (string) (len=50) "/resources/updateOrderFunction/spec/timeout/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -11060,22 +11060,22 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "events",
-                  Path: (string) (len=32) "/updateOrderFunction/spec/events",
+                  Path: (string) (len=42) "/resources/updateOrderFunction/spec/events",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "orderEvent",
-                      Path: (string) (len=43) "/updateOrderFunction/spec/events/orderEvent",
+                      Path: (string) (len=53) "/resources/updateOrderFunction/spec/events/orderEvent",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=2) {
                         (*schema.TreeNode)({
                           Label: (string) (len=4) "type",
-                          Path: (string) (len=48) "/updateOrderFunction/spec/events/orderEvent/type",
+                          Path: (string) (len=58) "/resources/updateOrderFunction/spec/events/orderEvent/type",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=6) "scalar",
-                              Path: (string) (len=55) "/updateOrderFunction/spec/events/orderEvent/type/scalar",
+                              Path: (string) (len=65) "/resources/updateOrderFunction/spec/events/orderEvent/type/scalar",
                               Type: (schema.TreeNodeType) 1,
                               Children: ([]*schema.TreeNode) <nil>,
                               SchemaElement: (*core.ScalarValue)({
@@ -11133,12 +11133,12 @@
                         }),
                         (*schema.TreeNode)({
                           Label: (string) (len=9) "batchSize",
-                          Path: (string) (len=53) "/updateOrderFunction/spec/events/orderEvent/batchSize",
+                          Path: (string) (len=63) "/resources/updateOrderFunction/spec/events/orderEvent/batchSize",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=6) "scalar",
-                              Path: (string) (len=60) "/updateOrderFunction/spec/events/orderEvent/batchSize/scalar",
+                              Path: (string) (len=70) "/resources/updateOrderFunction/spec/events/orderEvent/batchSize/scalar",
                               Type: (schema.TreeNodeType) 1,
                               Children: ([]*schema.TreeNode) <nil>,
                               SchemaElement: (*core.ScalarValue)({
@@ -11726,12 +11726,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=19) "sharedPackagesLayer",
-          Path: (string) (len=20) "/sharedPackagesLayer",
+          Path: (string) (len=30) "/resources/sharedPackagesLayer",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=3) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=25) "/sharedPackagesLayer/type",
+              Path: (string) (len=35) "/resources/sharedPackagesLayer/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.ResourceTypeWrapper)({
@@ -11754,17 +11754,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=8) "metadata",
-              Path: (string) (len=29) "/sharedPackagesLayer/metadata",
+              Path: (string) (len=39) "/resources/sharedPackagesLayer/metadata",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=41) "/sharedPackagesLayer/metadata/displayName",
+                  Path: (string) (len=51) "/resources/sharedPackagesLayer/metadata/displayName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=48) "/sharedPackagesLayer/metadata/displayName/string",
+                      Path: (string) (len=58) "/resources/sharedPackagesLayer/metadata/displayName/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=21) "Shared Packages Layer",
@@ -11809,12 +11809,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "labels",
-                  Path: (string) (len=36) "/sharedPackagesLayer/metadata/labels",
+                  Path: (string) (len=46) "/resources/sharedPackagesLayer/metadata/labels",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=2) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=43) "/sharedPackagesLayer/metadata/labels/string",
+                      Path: (string) (len=53) "/resources/sharedPackagesLayer/metadata/labels/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=11) "orderPubSub",
@@ -11831,7 +11831,7 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=43) "/sharedPackagesLayer/metadata/labels/string",
+                      Path: (string) (len=53) "/resources/sharedPackagesLayer/metadata/labels/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
@@ -11928,22 +11928,22 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=4) "spec",
-              Path: (string) (len=25) "/sharedPackagesLayer/spec",
+              Path: (string) (len=35) "/resources/sharedPackagesLayer/spec",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=18) "compatibleRuntimes",
-                  Path: (string) (len=44) "/sharedPackagesLayer/spec/compatibleRuntimes",
+                  Path: (string) (len=54) "/resources/sharedPackagesLayer/spec/compatibleRuntimes",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=1) "0",
-                      Path: (string) (len=46) "/sharedPackagesLayer/spec/compatibleRuntimes/0",
+                      Path: (string) (len=56) "/resources/sharedPackagesLayer/spec/compatibleRuntimes/0",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "scalar",
-                          Path: (string) (len=53) "/sharedPackagesLayer/spec/compatibleRuntimes/0/scalar",
+                          Path: (string) (len=63) "/resources/sharedPackagesLayer/spec/compatibleRuntimes/0/scalar",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*core.ScalarValue)({
@@ -12045,12 +12045,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "content",
-                  Path: (string) (len=33) "/sharedPackagesLayer/spec/content",
+                  Path: (string) (len=43) "/resources/sharedPackagesLayer/spec/content",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=40) "/sharedPackagesLayer/spec/content/scalar",
+                      Path: (string) (len=50) "/resources/sharedPackagesLayer/spec/content/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -12108,12 +12108,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=9) "layerName",
-                  Path: (string) (len=35) "/sharedPackagesLayer/spec/layerName",
+                  Path: (string) (len=45) "/resources/sharedPackagesLayer/spec/layerName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "scalar",
-                      Path: (string) (len=42) "/sharedPackagesLayer/spec/layerName/scalar",
+                      Path: (string) (len=52) "/resources/sharedPackagesLayer/spec/layerName/scalar",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (*core.ScalarValue)({
@@ -12446,12 +12446,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=11) "orderPubSub",
-          Path: (string) (len=12) "/orderPubSub",
+          Path: (string) (len=22) "/resources/orderPubSub",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=4) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=17) "/orderPubSub/type",
+              Path: (string) (len=27) "/resources/orderPubSub/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.ResourceTypeWrapper)({
@@ -12474,17 +12474,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=8) "metadata",
-              Path: (string) (len=21) "/orderPubSub/metadata",
+              Path: (string) (len=31) "/resources/orderPubSub/metadata",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=33) "/orderPubSub/metadata/displayName",
+                  Path: (string) (len=43) "/resources/orderPubSub/metadata/displayName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=40) "/orderPubSub/metadata/displayName/string",
+                      Path: (string) (len=50) "/resources/orderPubSub/metadata/displayName/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=13) "Order Pub/Sub",
@@ -12529,12 +12529,12 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "labels",
-                  Path: (string) (len=28) "/orderPubSub/metadata/labels",
+                  Path: (string) (len=38) "/resources/orderPubSub/metadata/labels",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=35) "/orderPubSub/metadata/labels/string",
+                      Path: (string) (len=45) "/resources/orderPubSub/metadata/labels/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=11) "orderPubSub",
@@ -12621,17 +12621,17 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=12) "linkSelector",
-              Path: (string) (len=25) "/orderPubSub/linkSelector",
+              Path: (string) (len=35) "/resources/orderPubSub/linkSelector",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=7) "byLabel",
-                  Path: (string) (len=33) "/orderPubSub/linkSelector/byLabel",
+                  Path: (string) (len=43) "/resources/orderPubSub/linkSelector/byLabel",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=40) "/orderPubSub/linkSelector/byLabel/string",
+                      Path: (string) (len=50) "/resources/orderPubSub/linkSelector/byLabel/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=11) "orderPubSub",
@@ -12700,22 +12700,22 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=4) "spec",
-              Path: (string) (len=17) "/orderPubSub/spec",
+              Path: (string) (len=27) "/resources/orderPubSub/spec",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=9) "topicName",
-                  Path: (string) (len=27) "/orderPubSub/spec/topicName",
+                  Path: (string) (len=37) "/resources/orderPubSub/spec/topicName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "stringSubs",
-                      Path: (string) (len=38) "/orderPubSub/spec/topicName/stringSubs",
+                      Path: (string) (len=48) "/resources/orderPubSub/spec/topicName/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=15) "ordersTopicName",
-                          Path: (string) (len=61) "/orderPubSub/spec/topicName/stringSubs/varRef/ordersTopicName",
+                          Path: (string) (len=71) "/resources/orderPubSub/spec/topicName/stringSubs/varRef/ordersTopicName",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionVariable)({
@@ -13074,12 +13074,12 @@
         }),
         (*schema.TreeNode)({
           Label: (string) (len=9) "s3Buckets",
-          Path: (string) (len=10) "/s3Buckets",
+          Path: (string) (len=20) "/resources/s3Buckets",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=3) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=15) "/s3Buckets/type",
+              Path: (string) (len=25) "/resources/s3Buckets/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.ResourceTypeWrapper)({
@@ -13102,12 +13102,12 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=4) "each",
-              Path: (string) (len=15) "/s3Buckets/each",
+              Path: (string) (len=25) "/resources/s3Buckets/each",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=15) "bucketsToCreate",
-                  Path: (string) (len=38) "/s3Buckets/each/valRef/bucketsToCreate",
+                  Path: (string) (len=48) "/resources/s3Buckets/each/valRef/bucketsToCreate",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (*substitutions.SubstitutionValueReference)({
@@ -13185,22 +13185,22 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=4) "spec",
-              Path: (string) (len=15) "/s3Buckets/spec",
+              Path: (string) (len=25) "/resources/s3Buckets/spec",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=10) "bucketName",
-                  Path: (string) (len=26) "/s3Buckets/spec/bucketName",
+                  Path: (string) (len=36) "/resources/s3Buckets/spec/bucketName",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "stringSubs",
-                      Path: (string) (len=37) "/s3Buckets/spec/bucketName/stringSubs",
+                      Path: (string) (len=47) "/resources/s3Buckets/spec/bucketName/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=7) "elemRef",
-                          Path: (string) (len=45) "/s3Buckets/spec/bucketName/stringSubs/elemRef",
+                          Path: (string) (len=55) "/resources/s3Buckets/spec/bucketName/stringSubs/elemRef",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionElemReference)({
@@ -13350,17 +13350,17 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=17) "objectLockEnabled",
-                  Path: (string) (len=33) "/s3Buckets/spec/objectLockEnabled",
+                  Path: (string) (len=43) "/resources/s3Buckets/spec/objectLockEnabled",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "stringSubs",
-                      Path: (string) (len=44) "/s3Buckets/spec/objectLockEnabled/stringSubs",
+                      Path: (string) (len=54) "/resources/s3Buckets/spec/objectLockEnabled/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=7) "elemRef",
-                          Path: (string) (len=52) "/s3Buckets/spec/objectLockEnabled/stringSubs/elemRef",
+                          Path: (string) (len=62) "/resources/s3Buckets/spec/objectLockEnabled/stringSubs/elemRef",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionElemReference)({
@@ -13510,22 +13510,22 @@
                 }),
                 (*schema.TreeNode)({
                   Label: (string) (len=4) "tags",
-                  Path: (string) (len=20) "/s3Buckets/spec/tags",
+                  Path: (string) (len=30) "/resources/s3Buckets/spec/tags",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=1) "0",
-                      Path: (string) (len=22) "/s3Buckets/spec/tags/0",
+                      Path: (string) (len=32) "/resources/s3Buckets/spec/tags/0",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=2) {
                         (*schema.TreeNode)({
                           Label: (string) (len=3) "key",
-                          Path: (string) (len=26) "/s3Buckets/spec/tags/0/key",
+                          Path: (string) (len=36) "/resources/s3Buckets/spec/tags/0/key",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=6) "scalar",
-                              Path: (string) (len=33) "/s3Buckets/spec/tags/0/key/scalar",
+                              Path: (string) (len=43) "/resources/s3Buckets/spec/tags/0/key/scalar",
                               Type: (schema.TreeNodeType) 1,
                               Children: ([]*schema.TreeNode) <nil>,
                               SchemaElement: (*core.ScalarValue)({
@@ -13583,17 +13583,17 @@
                         }),
                         (*schema.TreeNode)({
                           Label: (string) (len=5) "value",
-                          Path: (string) (len=28) "/s3Buckets/spec/tags/0/value",
+                          Path: (string) (len=38) "/resources/s3Buckets/spec/tags/0/value",
                           Type: (schema.TreeNodeType) 0,
                           Children: ([]*schema.TreeNode) (len=1) {
                             (*schema.TreeNode)({
                               Label: (string) (len=10) "stringSubs",
-                              Path: (string) (len=39) "/s3Buckets/spec/tags/0/value/stringSubs",
+                              Path: (string) (len=49) "/resources/s3Buckets/spec/tags/0/value/stringSubs",
                               Type: (schema.TreeNodeType) 0,
                               Children: ([]*schema.TreeNode) (len=2) {
                                 (*schema.TreeNode)({
                                   Label: (string) (len=6) "string",
-                                  Path: (string) (len=46) "/s3Buckets/spec/tags/0/value/stringSubs/string",
+                                  Path: (string) (len=56) "/resources/s3Buckets/spec/tags/0/value/stringSubs/string",
                                   Type: (schema.TreeNodeType) 1,
                                   Children: ([]*schema.TreeNode) <nil>,
                                   SchemaElement: (string) (len=7) "bucket-",
@@ -13610,7 +13610,7 @@
                                 }),
                                 (*schema.TreeNode)({
                                   Label: (string) (len=12) "elemIndexRef",
-                                  Path: (string) (len=52) "/s3Buckets/spec/tags/0/value/stringSubs/elemIndexRef",
+                                  Path: (string) (len=62) "/resources/s3Buckets/spec/tags/0/value/stringSubs/elemIndexRef",
                                   Type: (schema.TreeNodeType) 1,
                                   Children: ([]*schema.TreeNode) <nil>,
                                   SchemaElement: (*substitutions.SubstitutionElemIndexReference)({
@@ -16422,12 +16422,12 @@
       Children: ([]*schema.TreeNode) (len=1) {
         (*schema.TreeNode)({
           Label: (string) (len=13) "orderPubSubID",
-          Path: (string) (len=14) "/orderPubSubID",
+          Path: (string) (len=22) "/exports/orderPubSubID",
           Type: (schema.TreeNodeType) 0,
           Children: ([]*schema.TreeNode) (len=3) {
             (*schema.TreeNode)({
               Label: (string) (len=4) "type",
-              Path: (string) (len=19) "/orderPubSubID/type",
+              Path: (string) (len=27) "/exports/orderPubSubID/type",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*schema.ExportTypeWrapper)({
@@ -16450,7 +16450,7 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=5) "field",
-              Path: (string) (len=20) "/orderPubSubID/field",
+              Path: (string) (len=28) "/exports/orderPubSubID/field",
               Type: (schema.TreeNodeType) 1,
               Children: ([]*schema.TreeNode) <nil>,
               SchemaElement: (*core.ScalarValue)({
@@ -16476,12 +16476,12 @@
             }),
             (*schema.TreeNode)({
               Label: (string) (len=11) "description",
-              Path: (string) (len=26) "/orderPubSubID/description",
+              Path: (string) (len=34) "/exports/orderPubSubID/description",
               Type: (schema.TreeNodeType) 0,
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=6) "string",
-                  Path: (string) (len=33) "/orderPubSubID/description/string",
+                  Path: (string) (len=41) "/exports/orderPubSubID/description/string",
                   Type: (schema.TreeNodeType) 1,
                   Children: ([]*schema.TreeNode) <nil>,
                   SchemaElement: (string) (len=36) "The ID of the Order Pub/Sub resource",

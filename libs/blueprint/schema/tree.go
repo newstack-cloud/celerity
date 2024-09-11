@@ -223,7 +223,7 @@ func transformToVariablesNode(variables *VariableMap, parentPath string) *TreeNo
 		variableNode := transformToVariableNode(
 			varName,
 			variable,
-			parentPath,
+			variablesNode.Path,
 			variables.SourceMeta[varName],
 		)
 		if variableNode != nil {
@@ -334,7 +334,7 @@ func transformToValuesNode(values *ValueMap, parentPath string) *TreeNode {
 		valNode := transformToValueNode(
 			valName,
 			val,
-			parentPath,
+			valuesNode.Path,
 			values.SourceMeta[valName],
 		)
 		if valNode != nil {
@@ -436,7 +436,7 @@ func transformToIncludesNode(includes *IncludeMap, parentPath string) *TreeNode 
 		includeNode := transformToIncludeNode(
 			includeName,
 			val,
-			parentPath,
+			includesNode.Path,
 			includes.SourceMeta[includeName],
 		)
 		if includeNode != nil {
@@ -510,7 +510,7 @@ func transformToResourcesNode(resources *ResourceMap, parentPath string) *TreeNo
 		resourceNode := transformToResourceNode(
 			resourceName,
 			val,
-			parentPath,
+			resourcesNode.Path,
 			resources.SourceMeta[resourceName],
 		)
 		if resourceNode != nil {
@@ -794,7 +794,7 @@ func transformToDataSourcesNode(dataSources *DataSourceMap, parentPath string) *
 		dataSourceNode := transformToDataSourceNode(
 			dataSourceName,
 			val,
-			parentPath,
+			dataSourcesNode.Path,
 			dataSources.SourceMeta[dataSourceName],
 		)
 		if dataSourceNode != nil {
@@ -1121,7 +1121,7 @@ func transformToExportsNode(exports *ExportMap, parentPath string) *TreeNode {
 		exportNode := transformToExportNode(
 			exportName,
 			val,
-			parentPath,
+			exportsNode.Path,
 			exports.SourceMeta[exportName],
 		)
 		if exportNode != nil {
