@@ -34,6 +34,7 @@ func NewFromJSONFunction() provider.Function {
 				"```\n${fromjson(variables.cacheClusterConfig, \"/host\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "jsonString",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "JSON string",
 						Type:  function.ValueTypeString,
@@ -42,6 +43,7 @@ func NewFromJSONFunction() provider.Function {
 					},
 				},
 				&function.ScalarParameter{
+					Label: "jsonPointer",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label:       "JSON pointer",
 						Type:        function.ValueTypeString,

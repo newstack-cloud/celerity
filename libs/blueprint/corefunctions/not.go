@@ -24,6 +24,7 @@ func NewNotFunction() provider.Function {
 				"```\n${not(eq(variables.environment, \"prod\"))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "toNegate",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "boolean",
 						Type:  function.ValueTypeBool,

@@ -25,6 +25,7 @@ func NewHasPrefixFunction() provider.Function {
 				"```\n${has_prefix(values.cacheClusterConfig.host, \"http://\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "input",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -33,6 +34,7 @@ func NewHasPrefixFunction() provider.Function {
 						"representing the string to check.",
 				},
 				&function.ScalarParameter{
+					Label: "prefix",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

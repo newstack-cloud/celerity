@@ -26,6 +26,7 @@ func NewLenFunction() provider.Function {
 				"```\n${len(values.cacheClusterConfig.endpoints)}\n```",
 			Parameters: []function.Parameter{
 				&function.AnyParameter{
+					Label: "element",
 					UnionTypes: []function.ValueTypeDefinition{
 						&function.ValueTypeDefinitionScalar{
 							Label: "string",

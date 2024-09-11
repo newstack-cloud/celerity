@@ -25,6 +25,7 @@ func NewTrimSuffixFunction() provider.Function {
 				"```\n${trimsuffix(values.cacheClusterConfig.host, \":3000\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "input",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -33,6 +34,7 @@ func NewTrimSuffixFunction() provider.Function {
 						"representing the string to remove the suffix from.",
 				},
 				&function.ScalarParameter{
+					Label: "suffix",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

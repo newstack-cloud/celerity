@@ -30,6 +30,7 @@ func NewReduceFunction() provider.Function {
 				"```\n${reduce(\n  datasources.network.subnets,\n  extract_crucial_network_info,\n  object()\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.ListParameter{
+					Label: "items",
 					ElementType: &function.ValueTypeDefinitionAny{
 						Label:       "Any",
 						Type:        function.ValueTypeAny,
@@ -38,7 +39,7 @@ func NewReduceFunction() provider.Function {
 					Description: "An array of items where all items are of the same type to reduce over.",
 				},
 				&function.FunctionParameter{
-					Label: "func<Item, Accum>(Accum, Item, integer?) -> Accum",
+					Label: "reduceFunc",
 					FunctionType: &function.ValueTypeDefinitionFunction{
 						Definition: function.Definition{
 							Parameters: []function.Parameter{

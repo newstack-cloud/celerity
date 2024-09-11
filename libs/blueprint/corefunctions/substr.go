@@ -24,6 +24,7 @@ func NewSubstrFunction() provider.Function {
 				"```\n${substr(values.cacheClusterConfig.host, 0, 3)}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "input",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -32,6 +33,7 @@ func NewSubstrFunction() provider.Function {
 						"representing the string to extract the substring from.",
 				},
 				&function.ScalarParameter{
+					Label: "start",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "integer",
 						Type:  function.ValueTypeInt64,
@@ -39,6 +41,7 @@ func NewSubstrFunction() provider.Function {
 					Description: "The index of the first character to include in the substring.",
 				},
 				&function.ScalarParameter{
+					Label: "end",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "integer",
 						Type:  function.ValueTypeInt64,

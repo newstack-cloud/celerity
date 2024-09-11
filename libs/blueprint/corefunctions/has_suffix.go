@@ -25,6 +25,7 @@ func NewHasSuffixFunction() provider.Function {
 				"```\n${has_suffix(values.cacheClusterConfig.host, \"/config\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "input",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -33,6 +34,7 @@ func NewHasSuffixFunction() provider.Function {
 						"representing the string to check.",
 				},
 				&function.ScalarParameter{
+					Label: "suffix",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

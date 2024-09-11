@@ -32,6 +32,7 @@ func NewObjectFunction() provider.Function {
 				"```\n${object(id=\"subnet-1234\", label=\"Subnet 1234\")}\n```",
 			Parameters: []function.Parameter{
 				&function.VariadicParameter{
+					Label: "attributes",
 					Type: &function.ValueTypeDefinitionAny{
 						Type:  function.ValueTypeAny,
 						Label: "any",

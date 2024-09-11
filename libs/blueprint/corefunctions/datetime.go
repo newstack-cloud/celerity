@@ -56,6 +56,7 @@ func NewDateTimeFunction(clock core.Clock) provider.Function {
 				"```\n${datetime(\"tag\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "format",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label:         "string",
 						Type:          function.ValueTypeString,

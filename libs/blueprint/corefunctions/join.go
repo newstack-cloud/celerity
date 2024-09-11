@@ -26,6 +26,7 @@ func NewJoinFunction() provider.Function {
 				"```\n${join(values.cacheClusterConfig.hosts, \",\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ListParameter{
+					Label: "strings",
 					ElementType: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -34,6 +35,7 @@ func NewJoinFunction() provider.Function {
 						"representing an array of strings to join together.",
 				},
 				&function.ScalarParameter{
+					Label: "delimiter",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

@@ -26,7 +26,7 @@ func NewContains_G_Function() provider.Function {
 				"```\n${filter(\nvalues.cacheClusterConfig.hosts,\ncontains_g(\"celerityframework.com\")\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.AnyParameter{
-					Label:       "any",
+					Label:       "substring",
 					Description: "The substring or value to search for in the string or array.",
 				},
 			},

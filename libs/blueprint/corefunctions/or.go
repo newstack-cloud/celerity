@@ -24,6 +24,7 @@ func NewOrFunction() provider.Function {
 				"```\n${or(resources.orderApi.state.isDev, eq(variables.environment, \"dev\"))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "a",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "boolean",
 						Type:  function.ValueTypeBool,
@@ -31,6 +32,7 @@ func NewOrFunction() provider.Function {
 					Description: "The result of boolean expression A, the left-hand side of the OR operation.",
 				},
 				&function.ScalarParameter{
+					Label: "b",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "boolean",
 						Type:  function.ValueTypeBool,

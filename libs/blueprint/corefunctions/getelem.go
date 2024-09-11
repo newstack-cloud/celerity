@@ -34,10 +34,10 @@ func NewGetElemFunction() provider.Function {
 				"And return a list of IDs:\n```\n[\"subnet-1234\", \"subnet-5678\"]```\n",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "elemIndex",
 					Type: &function.ValueTypeDefinitionScalar{
 						Type: function.ValueTypeInt64,
 					},
-					Label:       "integer",
 					Description: "The index of the element to extract.",
 				},
 			},

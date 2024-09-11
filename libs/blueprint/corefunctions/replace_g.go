@@ -26,6 +26,7 @@ func NewReplace_G_Function() provider.Function {
 				"```\n${map(values.cacheClusterConfig.hosts, replace_g(\"http://\", \"https://\"))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "searchFor",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -33,6 +34,7 @@ func NewReplace_G_Function() provider.Function {
 					Description: "The \"search\" substring to replace.",
 				},
 				&function.ScalarParameter{
+					Label: "replaceWith",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

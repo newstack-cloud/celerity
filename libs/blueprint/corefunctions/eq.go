@@ -27,9 +27,11 @@ func NewEqFunction() provider.Function {
 				"```\n${eq(variables.environment, \"prod\")}\n```",
 			Parameters: []function.Parameter{
 				&function.AnyParameter{
+					Label:       "a",
 					Description: "The left-hand side of the equality comparison.",
 				},
 				&function.AnyParameter{
+					Label:       "b",
 					Description: "The right-hand side of the equality comparison.",
 				},
 			},

@@ -25,15 +25,16 @@ func NewFilterFunction() provider.Function {
 				"```\n${filter(\n  datasources.network.subnets,\n  has_prefix_g(\"subnet-402948-\")\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.ListParameter{
+					Label: "items",
 					ElementType: &function.ValueTypeDefinitionAny{
-						Label:       "Any",
+						Label:       "list",
 						Type:        function.ValueTypeAny,
 						Description: "A value of any type, every element in the containing list must be of the same type.",
 					},
 					Description: "An array of items where all items are of the same type to filter.",
 				},
 				&function.FunctionParameter{
-					Label: "func<Item>(Item, integer?) -> bool",
+					Label: "filterFunc",
 					FunctionType: &function.ValueTypeDefinitionFunction{
 						Definition: function.Definition{
 							Parameters: []function.Parameter{

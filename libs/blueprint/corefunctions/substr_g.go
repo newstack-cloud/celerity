@@ -26,6 +26,7 @@ func NewSubstr_G_Function() provider.Function {
 				"```\n${map(values.cacheClusterConfig.hosts, substr_g(0, 3))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "start",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "integer",
 						Type:  function.ValueTypeInt64,
@@ -33,6 +34,7 @@ func NewSubstr_G_Function() provider.Function {
 					Description: "The index of the first character to include in the substring.",
 				},
 				&function.ScalarParameter{
+					Label: "end",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "integer",
 						Type:  function.ValueTypeInt64,

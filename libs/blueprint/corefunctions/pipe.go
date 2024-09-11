@@ -28,6 +28,7 @@ func NewPipeFunction() provider.Function {
 				"```\n${map(\n  datasources.network.subnets,\n  pipe(getattr(\"id\"), to_upper)\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.VariadicParameter{
+					Label: "functions",
 					Type: &function.ValueTypeDefinitionFunction{
 						Definition: function.Definition{
 							Parameters: []function.Parameter{

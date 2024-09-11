@@ -48,6 +48,7 @@ func NewLinkFunction(
 				"```${link(\"orderApi\", \"deleteOrderFunction\")}```",
 			Parameters: []function.Parameter{
 				&function.AnyParameter{
+					Label: "resourceA",
 					UnionTypes: []function.ValueTypeDefinition{
 						&function.ValueTypeDefinitionScalar{
 							Type: function.ValueTypeString,
@@ -66,6 +67,7 @@ func NewLinkFunction(
 					Description: "Resource A in the relationship.",
 				},
 				&function.AnyParameter{
+					Label: "resourceB",
 					UnionTypes: []function.ValueTypeDefinition{
 						&function.ValueTypeDefinitionScalar{
 							Type: function.ValueTypeString,

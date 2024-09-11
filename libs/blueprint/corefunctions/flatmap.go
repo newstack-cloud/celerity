@@ -25,6 +25,7 @@ func NewFlatMapFunction() provider.Function {
 				"```\n${flatmap(\n  values.hosts,\n  split_g(\",\")\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.ListParameter{
+					Label: "items",
 					ElementType: &function.ValueTypeDefinitionAny{
 						Label:       "Any",
 						Type:        function.ValueTypeAny,
@@ -33,7 +34,7 @@ func NewFlatMapFunction() provider.Function {
 					Description: "An array of items where all items are of the same type to map.",
 				},
 				&function.FunctionParameter{
-					Label: "func<Item, NewItem extends array>(Item, integer?) -> NewItem",
+					Label: "mapFunc",
 					FunctionType: &function.ValueTypeDefinitionFunction{
 						Definition: function.Definition{
 							Parameters: []function.Parameter{

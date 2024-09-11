@@ -26,6 +26,7 @@ func NewIndexFunction() provider.Function {
 				"```\n${index(values.cacheClusterConfig.host, \":3000\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "searchIn",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -34,6 +35,7 @@ func NewIndexFunction() provider.Function {
 						"representing a string to search for the substring in.",
 				},
 				&function.ScalarParameter{
+					Label: "substring",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

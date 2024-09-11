@@ -25,6 +25,7 @@ func NewToUpperFunction() provider.Function {
 				"```\n${to_upper(values.cacheClusterConfig.hostName)}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "input",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

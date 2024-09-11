@@ -24,6 +24,7 @@ func NewListFunction() provider.Function {
 				"```\n${list(\"item1\",\"item2\",\"item3\",\"item4\")}\n```",
 			Parameters: []function.Parameter{
 				&function.VariadicParameter{
+					Label: "values",
 					Type: &function.ValueTypeDefinitionAny{
 						Type:  function.ValueTypeAny,
 						Label: "any",

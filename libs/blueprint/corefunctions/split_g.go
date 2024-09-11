@@ -26,6 +26,7 @@ func NewSplit_G_Function() provider.Function {
 				"```\n${flatmap(values.cacheClusterConfig.multiClusterHosts, split_g(\",\"))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "delimiter",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

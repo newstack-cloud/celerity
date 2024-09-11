@@ -26,6 +26,7 @@ func NewReplaceFunction() provider.Function {
 				"```\n${replace(values.cacheClusterConfig.host, \"http://\", \"https://\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "searchIn",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -34,6 +35,7 @@ func NewReplaceFunction() provider.Function {
 						"representing an input string that contains a substring that needs replacing.",
 				},
 				&function.ScalarParameter{
+					Label: "searchFor",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -41,6 +43,7 @@ func NewReplaceFunction() provider.Function {
 					Description: "The \"search\" substring to replace.",
 				},
 				&function.ScalarParameter{
+					Label: "replaceWith",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

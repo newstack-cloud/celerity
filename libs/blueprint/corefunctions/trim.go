@@ -26,6 +26,7 @@ func NewTrimFunction() provider.Function {
 				"```\n${trim(values.cacheClusterConfig.host)}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "input",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

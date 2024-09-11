@@ -25,6 +25,7 @@ func NewSplitFunction() provider.Function {
 				"```\n${split(values.cacheClusterConfig.hosts, \",\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "input",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -33,6 +34,7 @@ func NewSplitFunction() provider.Function {
 						"representing an input string to split.",
 				},
 				&function.ScalarParameter{
+					Label: "delimiter",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

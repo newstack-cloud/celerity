@@ -26,6 +26,7 @@ func NewTrimPrefix_G_Function() provider.Function {
 				"```\n${map(variables,cacheClusterConfig.hosts, trimprefix_g(\"http://\"))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "prefix",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

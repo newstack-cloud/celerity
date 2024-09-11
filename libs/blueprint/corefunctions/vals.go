@@ -26,6 +26,7 @@ func NewValsFunction() provider.Function {
 				"```\n${vals(datasources.network.subnets)}\n```",
 			Parameters: []function.Parameter{
 				&function.AnyParameter{
+					Label: "objectOrMap",
 					UnionTypes: []function.ValueTypeDefinition{
 						&function.ValueTypeDefinitionObject{
 							Label: "object",

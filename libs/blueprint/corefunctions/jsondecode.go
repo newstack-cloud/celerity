@@ -26,6 +26,7 @@ func NewJSONDecodeFunction() provider.Function {
 				"```\n${jsondecode(variables.cacheClusterConfig)}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "jsonString",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

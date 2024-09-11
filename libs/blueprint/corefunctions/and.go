@@ -24,6 +24,7 @@ func NewAndFunction() provider.Function {
 				"```\n${and(resources.orderApi.state.isProd, eq(variables.environment, \"prod\"))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "a",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "boolean",
 						Type:  function.ValueTypeBool,
@@ -31,6 +32,7 @@ func NewAndFunction() provider.Function {
 					Description: "The result of boolean expression A, the left-hand side of the AND operation.",
 				},
 				&function.ScalarParameter{
+					Label: "b",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "boolean",
 						Type:  function.ValueTypeBool,

@@ -32,6 +32,7 @@ func NewSortFunction() provider.Function {
 				"```\n${sort(\n  datasources.network.subnets,\n  compare_cidr_ranges\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.ListParameter{
+					Label: "items",
 					ElementType: &function.ValueTypeDefinitionAny{
 						Label:       "Any",
 						Type:        function.ValueTypeAny,
@@ -40,7 +41,7 @@ func NewSortFunction() provider.Function {
 					Description: "An array of items where all items are of the same type to sort.",
 				},
 				&function.FunctionParameter{
-					Label: "func<Item>(Item, Item) -> integer",
+					Label: "sortFunc",
 					FunctionType: &function.ValueTypeDefinitionFunction{
 						Definition: function.Definition{
 							Parameters: []function.Parameter{

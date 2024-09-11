@@ -33,7 +33,7 @@ func NewContainsFunction() provider.Function {
 							Type:  function.ValueTypeString,
 						},
 						&function.ValueTypeDefinitionList{
-							Label: "array",
+							Label: "substring",
 							ElementType: &function.ValueTypeDefinitionAny{
 								Label: "any",
 								Type:  function.ValueTypeAny,

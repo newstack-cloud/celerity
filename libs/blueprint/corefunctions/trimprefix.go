@@ -25,6 +25,7 @@ func NewTrimPrefixFunction() provider.Function {
 				"```\n${trimprefix(values.cacheClusterConfig.host, \"http://\")}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "input",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -33,6 +34,7 @@ func NewTrimPrefixFunction() provider.Function {
 						"representing the string to remove the prefix from.",
 				},
 				&function.ScalarParameter{
+					Label: "prefix",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

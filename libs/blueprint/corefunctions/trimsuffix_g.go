@@ -26,6 +26,7 @@ func NewTrimSuffix_G_Function() provider.Function {
 				"```\n${map(variables,cacheClusterConfig.hosts, trimsuffix_g(\"/config\"))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "suffix",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

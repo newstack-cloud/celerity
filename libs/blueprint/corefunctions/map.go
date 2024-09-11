@@ -25,6 +25,7 @@ func NewMapFunction() provider.Function {
 				"```\n${map(\n  datasources.network.subnets,\n  compose(to_upper, getattr(\"id\")\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.ListParameter{
+					Label: "items",
 					ElementType: &function.ValueTypeDefinitionAny{
 						Label:       "Any",
 						Type:        function.ValueTypeAny,
@@ -33,7 +34,7 @@ func NewMapFunction() provider.Function {
 					Description: "An array of items where all items are of the same type to map.",
 				},
 				&function.FunctionParameter{
-					Label: "func<Item, NewItem>(Item, integer?) -> NewItem",
+					Label: "mapFunc",
 					FunctionType: &function.ValueTypeDefinitionFunction{
 						Definition: function.Definition{
 							Parameters: []function.Parameter{

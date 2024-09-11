@@ -24,6 +24,7 @@ func NewKeysFunction() provider.Function {
 				"```\n${keys(datasources.network.subnets)}\n```",
 			Parameters: []function.Parameter{
 				&function.AnyParameter{
+					Label: "objectOrMap",
 					UnionTypes: []function.ValueTypeDefinition{
 						&function.ValueTypeDefinitionObject{
 							Label: "object",

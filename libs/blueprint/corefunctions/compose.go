@@ -26,6 +26,7 @@ func NewComposeFunction() provider.Function {
 				"```\n${map(\n  datasources.network.subnets,\n  compose(to_upper, getattr(\"id\"))\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.VariadicParameter{
+					Label: "functions",
 					Type: &function.ValueTypeDefinitionFunction{
 						Definition: function.Definition{
 							Parameters: []function.Parameter{

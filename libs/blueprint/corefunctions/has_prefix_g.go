@@ -26,6 +26,7 @@ func NewHasPrefix_G_Function() provider.Function {
 				"```\n${filter(\nvalues.cacheClusterConfig.hosts,\nhas_prefix_g(\"http://\")\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "prefix",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
@@ -38,6 +39,7 @@ func NewHasPrefix_G_Function() provider.Function {
 					Definition: function.Definition{
 						Parameters: []function.Parameter{
 							&function.ScalarParameter{
+								Label: "input",
 								Type: &function.ValueTypeDefinitionScalar{
 									Label: "string",
 									Type:  function.ValueTypeString,

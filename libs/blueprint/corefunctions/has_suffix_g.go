@@ -26,6 +26,7 @@ func NewHasSuffix_G_Function() provider.Function {
 				"```\n${filter(\nvalues.cacheClusterConfig.hosts,\nhas_suffix_g(\"/config\")\n)}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "suffix",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,

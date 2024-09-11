@@ -25,6 +25,7 @@ func NewToLowerFunction() provider.Function {
 				"```\n${to_lower(values.cacheClusterConfig.hostId)}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
+					Label: "input",
 					Type: &function.ValueTypeDefinitionScalar{
 						Label: "string",
 						Type:  function.ValueTypeString,
