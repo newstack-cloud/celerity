@@ -299,11 +299,12 @@ func (l *defaultLoader) Validate(
 	if err != nil {
 		return &ValidationResult{
 			Diagnostics: diagnostics,
+			Schema:      getSchemaFromContainer(container),
 		}, err
 	}
 	return &ValidationResult{
 		Diagnostics: diagnostics,
-		Schema:      container.BlueprintSpec().Schema(),
+		Schema:      getSchemaFromContainer(container),
 		LinkInfo:    container.SpecLinkInfo(),
 	}, nil
 }
@@ -317,13 +318,41 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 ) (BlueprintContainer, []*bpcore.Diagnostic, error) {
 	blueprintSpec, diagnostics, err := l.loadSpec(ctx, loadInfo, params, schemaLoader, formatLoader)
 	if err != nil {
-		return nil, diagnostics, err
+		// Ensure the spec is returned when parsing was successful
+		// but validation failed.
+		return NewDefaultBlueprintContainer(
+			l.stateContainer,
+			map[string]provider.Provider{},
+			blueprintSpec,
+			nil,
+			diagnostics,
+			l.updateChan,
+		), diagnostics, err
 	}
+
 	resourceProviderMap := l.createResourceProviderMap(blueprintSpec)
 	linkInfo, err := links.NewDefaultLinkInfoProvider(resourceProviderMap, blueprintSpec, params)
 	if err != nil {
-		return nil, diagnostics, err
+		// Ensure the spec is returned when parsing and
+		// validation was successful but loading link information failed.
+		return NewDefaultBlueprintContainer(
+			l.stateContainer,
+			map[string]provider.Provider{},
+			blueprintSpec,
+			nil,
+			diagnostics,
+			l.updateChan,
+		), diagnostics, err
 	}
+
+	container := NewDefaultBlueprintContainer(
+		l.stateContainer,
+		resourceProviderMap,
+		blueprintSpec,
+		linkInfo,
+		diagnostics,
+		l.updateChan,
+	)
 
 	// Once we have loaded the link information,
 	// we can capture links as references to include in checks
@@ -331,22 +360,15 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	// a link and the other resource references a property of the first resource.
 	err = l.collectLinksAsReferences(ctx, linkInfo)
 	if err != nil {
-		return nil, diagnostics, err
+		return container, diagnostics, err
 	}
 
 	refCycleRoots := l.refChainCollector.FindCircularReferences()
 	if len(refCycleRoots) > 0 {
-		return nil, diagnostics, validation.ErrReferenceCycles(refCycleRoots)
+		return container, diagnostics, validation.ErrReferenceCycles(refCycleRoots)
 	}
 
-	return NewDefaultBlueprintContainer(
-		l.stateContainer,
-		resourceProviderMap,
-		blueprintSpec,
-		linkInfo,
-		diagnostics,
-		l.updateChan,
-	), diagnostics, nil
+	return container, diagnostics, nil
 }
 
 func (l *defaultLoader) collectLinksAsReferences(
@@ -417,7 +439,7 @@ func (l *defaultLoader) loadSpec(
 
 	blueprintSchema, err := loadBlueprintSpec(loadInfo, formatLoader, loader)
 	if err != nil {
-		return nil, diagnostics, err
+		return &internalBlueprintSpec{}, diagnostics, err
 	}
 
 	var bpValidationDiagnostics []*bpcore.Diagnostic
@@ -498,7 +520,10 @@ func (l *defaultLoader) loadSpec(
 
 	transformers, err := l.collectTransformers(blueprintSchema)
 	if err != nil {
-		return nil, diagnostics, validation.ErrMultipleValidationErrors(
+		spec := &internalBlueprintSpec{
+			schema: blueprintSchema,
+		}
+		return spec, diagnostics, validation.ErrMultipleValidationErrors(
 			append(validationErrors, err),
 		)
 	}
@@ -508,7 +533,10 @@ func (l *defaultLoader) loadSpec(
 		})
 		blueprintSchema = output.TransformedBlueprint
 		if err != nil {
-			return nil, diagnostics, validation.ErrMultipleValidationErrors(
+			spec := &internalBlueprintSpec{
+				schema: blueprintSchema,
+			}
+			return spec, diagnostics, validation.ErrMultipleValidationErrors(
 				append(validationErrors, err),
 			)
 		}
@@ -527,7 +555,9 @@ func (l *defaultLoader) loadSpec(
 	}
 
 	if len(validationErrors) > 0 {
-		return nil, diagnostics, validation.ErrMultipleValidationErrors(validationErrors)
+		return &internalBlueprintSpec{
+			schema: blueprintSchema,
+		}, diagnostics, validation.ErrMultipleValidationErrors(validationErrors)
 	}
 
 	return &internalBlueprintSpec{
@@ -989,12 +1019,13 @@ func (l *defaultLoader) ValidateString(
 	if err != nil {
 		return &ValidationResult{
 			Diagnostics: diagnostics,
+			Schema:      getSchemaFromContainer(container),
 		}, err
 	}
 
 	return &ValidationResult{
 		Diagnostics: diagnostics,
-		Schema:      container.BlueprintSpec().Schema(),
+		Schema:      getSchemaFromContainer(container),
 		LinkInfo:    container.SpecLinkInfo(),
 	}, nil
 }
@@ -1035,6 +1066,7 @@ func (l *defaultLoader) ValidateFromSchema(
 	if err != nil {
 		return &ValidationResult{
 			Diagnostics: diagnostics,
+			Schema:      blueprintSchema,
 		}, err
 	}
 	return &ValidationResult{
@@ -1059,4 +1091,17 @@ func loadBlueprintSpec(
 	}
 
 	return loader(loadInfo.specOrFilePath, format)
+}
+
+func getSchemaFromContainer(
+	container BlueprintContainer,
+) *schema.Blueprint {
+	schema := (*schema.Blueprint)(nil)
+	if container != nil {
+		spec := container.BlueprintSpec()
+		if spec != nil {
+			schema = spec.Schema()
+		}
+	}
+	return schema
 }
