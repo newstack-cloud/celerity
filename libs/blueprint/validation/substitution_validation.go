@@ -272,7 +272,7 @@ func validateResourcePropertySubstitution(
 		)
 	}
 
-	if subResourceProp.Path[0].FieldName == "spec" {
+	if len(subResourceProp.Path) > 0 && subResourceProp.Path[0].FieldName == "spec" {
 		return validateResourcePropertySubSpec(
 			ctx,
 			subResourceProp,
@@ -283,7 +283,7 @@ func validateResourcePropertySubstitution(
 		)
 	}
 
-	if subResourceProp.Path[0].FieldName == "state" {
+	if len(subResourceProp.Path) > 0 && subResourceProp.Path[0].FieldName == "state" {
 		return validateResourcePropertySubState(
 			ctx,
 			subResourceProp,
@@ -294,7 +294,7 @@ func validateResourcePropertySubstitution(
 		)
 	}
 
-	if subResourceProp.Path[0].FieldName == "metadata" {
+	if len(subResourceProp.Path) > 0 && subResourceProp.Path[0].FieldName == "metadata" {
 		return validateResourcePropertySubMetadata(
 			subResourceProp,
 			resourceSchema,

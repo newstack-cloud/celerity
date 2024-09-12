@@ -114,7 +114,7 @@ func isSubPrimitiveType(subType string) bool {
 }
 
 func isEmptyStringWithSubstitutions(stringWithSubs *substitutions.StringOrSubstitutions) bool {
-	if stringWithSubs.Values == nil {
+	if stringWithSubs == nil || stringWithSubs.Values == nil {
 		return true
 	}
 
