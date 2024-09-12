@@ -181,20 +181,32 @@ func (p *Parser) substitition() (*Substitution, error) {
 		}, nil
 	}
 
-	token := p.currentToken()
-	line := token.relativeLine + 1
-	if p.parentSourceStart != nil {
-		line = token.relativeLine + p.parentSourceStart.Line
+	tkn := p.currentToken()
+	if tkn == nil {
+		return nil, errParseError(
+			&token{
+				tokenType: tokenEOF,
+			},
+			"failed to parse substitution, found unexpected or missing token",
+			0,
+			0,
+			ColumnAccuracyApproximate,
+		)
 	}
 
-	col := token.relativeCol + 1
+	line := tkn.relativeLine + 1
+	if p.parentSourceStart != nil {
+		line = tkn.relativeLine + p.parentSourceStart.Line
+	}
+
+	col := tkn.relativeCol + 1
 	if !p.ignoreParentColumn && p.parentSourceStart != nil {
-		col = token.relativeCol + p.parentSourceStart.Column
+		col = tkn.relativeCol + p.parentSourceStart.Column
 	}
 
 	colAccuracy := p.determineColumnAccuracy()
 	return nil, errParseError(
-		token,
+		tkn,
 		"failed to parse substitution, found unexpected or missing token",
 		line,
 		col,

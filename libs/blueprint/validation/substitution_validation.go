@@ -191,7 +191,7 @@ func validateValueSubstitution(
 
 	refChainCollector.Collect(fmt.Sprintf("values.%s", valName), valSchema, usedIn)
 
-	return subValType(valSchema.Type.Value), diagnostics, nil
+	return subValType(valSchema.Type), diagnostics, nil
 }
 
 func validateElemReferenceSubstitution(
@@ -1157,8 +1157,12 @@ func subVarType(varType *schema.VariableTypeWrapper) string {
 	}
 }
 
-func subValType(valType schema.ValueType) string {
-	switch valType {
+func subValType(valType *schema.ValueTypeWrapper) string {
+	if valType == nil {
+		return string(substitutions.ResolvedSubExprTypeAny)
+	}
+
+	switch valType.Value {
 	case schema.ValueTypeInteger:
 		return string(substitutions.ResolvedSubExprTypeInteger)
 	case schema.ValueTypeFloat:

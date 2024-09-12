@@ -45,7 +45,7 @@ func ValidateValue(
 		return diagnostics, errMissingValueType(valName, valSchema.SourceMeta)
 	}
 
-	expectedResolveType := subValType(valSchema.Type.Value)
+	expectedResolveType := subValType(valSchema.Type)
 
 	return validateValue(
 		ctx,
