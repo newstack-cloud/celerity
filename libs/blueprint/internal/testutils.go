@@ -99,6 +99,22 @@ func (r *ResourceRegistryMock) GetStateDefinition(
 	return defOutput, nil
 }
 
+func (r *ResourceRegistryMock) GetTypeDescription(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	res, ok := r.Resources[resourceType]
+	if !ok {
+		return nil, fmt.Errorf("resource %s not found", resourceType)
+	}
+	defOutput, err := res.GetTypeDescription(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
+}
+
 func (r *ResourceRegistryMock) CustomValidate(
 	ctx context.Context,
 	resourceType string,
@@ -134,6 +150,22 @@ func (r *DataSourceRegistryMock) GetSpecDefinition(
 		return nil, fmt.Errorf("data source %s not found", dataSourceType)
 	}
 	defOutput, err := res.GetSpecDefinition(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
+}
+
+func (r *DataSourceRegistryMock) GetTypeDescription(
+	ctx context.Context,
+	dataSourceType string,
+	input *provider.DataSourceGetTypeDescriptionInput,
+) (*provider.DataSourceGetTypeDescriptionOutput, error) {
+	res, ok := r.DataSources[dataSourceType]
+	if !ok {
+		return nil, fmt.Errorf("data source %s not found", dataSourceType)
+	}
+	defOutput, err := res.GetTypeDescription(ctx, input)
 	if err != nil {
 		return nil, err
 	}

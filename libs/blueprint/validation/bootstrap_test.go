@@ -236,6 +236,16 @@ func (r *testExampleResource) GetType(
 	}, nil
 }
 
+func (r *testExampleResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
+	}, nil
+}
+
 // StageChanges is not used for validation!
 func (r *testExampleResource) StageChanges(
 	ctx context.Context,
@@ -353,6 +363,16 @@ func (r *testExampleResourceMissingSpecDefinition) GetType(
 	}, nil
 }
 
+func (r *testExampleResourceMissingSpecDefinition) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
+	}, nil
+}
+
 // StageChanges is not used for validation!
 func (r *testExampleResourceMissingSpecDefinition) StageChanges(
 	ctx context.Context,
@@ -438,6 +458,16 @@ func (r *testExampleResourceMissingSpecSchema) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "celerity/exampleResource",
+	}, nil
+}
+
+func (r *testExampleResourceMissingSpecSchema) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
 	}, nil
 }
 
@@ -528,6 +558,16 @@ func (r *testExampleResourceMissingStateDefinition) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "celerity/exampleResource",
+	}, nil
+}
+
+func (r *testExampleResourceMissingStateDefinition) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
 	}, nil
 }
 
@@ -629,6 +669,16 @@ func (d *testEC2InstanceDataSource) GetType(
 	}, nil
 }
 
+func (d *testEC2InstanceDataSource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeDescriptionInput,
+) (*provider.DataSourceGetTypeDescriptionOutput, error) {
+	return &provider.DataSourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
+	}, nil
+}
+
 func (d *testEC2InstanceDataSource) GetFilterFields(
 	ctx context.Context,
 	input *provider.DataSourceGetFilterFieldsInput,
@@ -684,6 +734,16 @@ func (d *testVPCDataSource) GetType(
 	}, nil
 }
 
+func (d *testVPCDataSource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeDescriptionInput,
+) (*provider.DataSourceGetTypeDescriptionOutput, error) {
+	return &provider.DataSourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
+	}, nil
+}
+
 func (d *testVPCDataSource) GetFilterFields(
 	ctx context.Context,
 	input *provider.DataSourceGetFilterFieldsInput,
@@ -730,6 +790,16 @@ func (d *testVPC2DataSource) GetType(
 ) (*provider.DataSourceGetTypeOutput, error) {
 	return &provider.DataSourceGetTypeOutput{
 		Type: "aws/vpc",
+	}, nil
+}
+
+func (d *testVPC2DataSource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeDescriptionInput,
+) (*provider.DataSourceGetTypeDescriptionOutput, error) {
+	return &provider.DataSourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
 	}, nil
 }
 
@@ -788,6 +858,16 @@ func (d *testVPC3DataSource) GetType(
 	}, nil
 }
 
+func (d *testVPC3DataSource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeDescriptionInput,
+) (*provider.DataSourceGetTypeDescriptionOutput, error) {
+	return &provider.DataSourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
+	}, nil
+}
+
 func (d *testVPC3DataSource) GetFilterFields(
 	ctx context.Context,
 	input *provider.DataSourceGetFilterFieldsInput,
@@ -834,6 +914,16 @@ func (r *testECSServiceResource) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "celerity/exampleResource",
+	}, nil
+}
+
+func (r *testECSServiceResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
 	}, nil
 }
 

@@ -60,6 +60,10 @@ type Resource interface {
 	StageChanges(ctx context.Context, input *ResourceStageChangesInput) (*ResourceStageChangesOutput, error)
 	// GetType deals with retrieving the namespaced type for a resource in a blueprint spec.
 	GetType(ctx context.Context, input *ResourceGetTypeInput) (*ResourceGetTypeOutput, error)
+	// GetTypeDescription deals with retrieving the description for a resource type in a blueprint spec
+	// that can be used for documentation and tooling.
+	// Markdown and plain text formats are supported.
+	GetTypeDescription(ctx context.Context, input *ResourceGetTypeDescriptionInput) (*ResourceGetTypeDescriptionOutput, error)
 	// Deploy deals with deploying a resource with the upstream resource provider.
 	// The behaviour of deploy is completely down to the implementation of a resource provider and how long
 	// a resource is likely to take to deploy. The state will be synchronised periodically and will reflect the current
@@ -171,6 +175,19 @@ type ResourceGetTypeInput struct {
 // in a blueprint spec.
 type ResourceGetTypeOutput struct {
 	Type string
+}
+
+// ResourceGetTypeDescriptionInput provides the input data needed for a resource to
+// retrieve a description of the type of a resource in a blueprint spec.
+type ResourceGetTypeDescriptionInput struct {
+	Params core.BlueprintParams
+}
+
+// ResourceGetTypeDescriptionOutput provides the output data from retrieving a description
+// of the type of a resource in a blueprint spec.
+type ResourceGetTypeDescriptionOutput struct {
+	MarkdownDescription  string
+	PlainTextDescription string
 }
 
 // ResourceDeployOutput provides the output data from deploying a resource.

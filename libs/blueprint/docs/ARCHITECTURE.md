@@ -335,6 +335,11 @@ type AbstractResource interface {
 	) (*AbstractResourceIsCommonTerminalOutput, error)
 
 	GetType(ctx context.Context, input *AbstractResourceGetTypeInput) (*AbstractResourceGetTypeOutput, error)
+
+	GetTypeDescription(
+		ctx context.Context,
+		input *AbstractResourceGetTypeDescriptionInput,
+	) (*AbstractResourceGetTypeDescriptionOutput, error)
 }
 ```
 

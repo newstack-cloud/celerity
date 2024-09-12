@@ -50,6 +50,17 @@ func (s *DataSourceRegistryTestSuite) Test_get_definition(c *C) {
 	c.Assert(output.SpecDefinition, DeepEquals, s.testDataSource.definition)
 }
 
+func (s *DataSourceRegistryTestSuite) Test_get_type_description(c *C) {
+	output, err := s.dataSourceRegistry.GetTypeDescription(
+		context.TODO(),
+		"test/exampleDataSource",
+		&DataSourceGetTypeDescriptionInput{},
+	)
+	c.Assert(err, IsNil)
+	c.Assert(output.MarkdownDescription, Equals, s.testDataSource.markdownDescription)
+	c.Assert(output.PlainTextDescription, Equals, s.testDataSource.plainTextDescription)
+}
+
 func (s *DataSourceRegistryTestSuite) Test_get_filter_fields(c *C) {
 	output, err := s.dataSourceRegistry.GetFilterFields(
 		context.TODO(),

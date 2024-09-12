@@ -66,8 +66,10 @@ func (p *testProvider) Function(ctx context.Context, functionName string) (provi
 }
 
 type testExampleResource struct {
-	definition      *provider.ResourceSpecDefinition
-	stateDefinition *provider.ResourceStateDefinition
+	definition           *provider.ResourceSpecDefinition
+	stateDefinition      *provider.ResourceStateDefinition
+	markdownDescription  string
+	plainTextDescription string
 }
 
 func newTestExampleResource() provider.Resource {
@@ -96,6 +98,8 @@ func newTestExampleResource() provider.Resource {
 		stateDefinition: &provider.ResourceStateDefinition{
 			Schema: &provider.ResourceDefinitionsSchema{},
 		},
+		markdownDescription:  "## celerity/exampleResource\n\nThis is an example resource.",
+		plainTextDescription: "celerity/exampleResource\n\nThis is an example resource.",
 	}
 }
 
@@ -123,6 +127,16 @@ func (r *testExampleResource) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "celerity/exampleResource",
+	}, nil
+}
+
+func (r *testExampleResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		MarkdownDescription:  r.markdownDescription,
+		PlainTextDescription: r.plainTextDescription,
 	}, nil
 }
 

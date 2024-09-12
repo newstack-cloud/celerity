@@ -822,6 +822,16 @@ func (r *testResourceMissingSpecDef) GetType(
 	}, nil
 }
 
+func (r *testResourceMissingSpecDef) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
+	}, nil
+}
+
 // StageChanges is not used for validation!
 func (r *testResourceMissingSpecDef) StageChanges(
 	ctx context.Context,
@@ -911,6 +921,16 @@ func (r *testResourceMissingSchema) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "test/missingSchema",
+	}, nil
+}
+
+func (r *testResourceMissingSchema) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
 	}, nil
 }
 
@@ -1005,6 +1025,16 @@ func (r *specValidationTestExampleResource) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "test/exampleResource",
+	}, nil
+}
+
+func (r *specValidationTestExampleResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
 	}, nil
 }
 

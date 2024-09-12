@@ -330,8 +330,10 @@ func (b *blueprintParamsMock) BlueprintVariable(name string) *core.ScalarValue {
 }
 
 type testExampleDataSource struct {
-	definition   *DataSourceSpecDefinition
-	filterFields []string
+	definition           *DataSourceSpecDefinition
+	filterFields         []string
+	markdownDescription  string
+	plainTextDescription string
 }
 
 func newTestExampleDataSource() DataSource {
@@ -343,7 +345,9 @@ func newTestExampleDataSource() DataSource {
 				},
 			},
 		},
-		filterFields: []string{"metadata.id"},
+		filterFields:         []string{"metadata.id"},
+		markdownDescription:  "## test/exampleDataSource\n\nThis is a test data source.",
+		plainTextDescription: "test/exampleDataSource\n\nThis is a test data source.",
 	}
 }
 
@@ -371,6 +375,16 @@ func (d *testExampleDataSource) GetType(
 ) (*DataSourceGetTypeOutput, error) {
 	return &DataSourceGetTypeOutput{
 		Type: "test/exampleDataSource",
+	}, nil
+}
+
+func (d *testExampleDataSource) GetTypeDescription(
+	ctx context.Context,
+	input *DataSourceGetTypeDescriptionInput,
+) (*DataSourceGetTypeDescriptionOutput, error) {
+	return &DataSourceGetTypeDescriptionOutput{
+		MarkdownDescription:  d.markdownDescription,
+		PlainTextDescription: d.plainTextDescription,
 	}, nil
 }
 

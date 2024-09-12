@@ -129,6 +129,16 @@ func (r *testApiGatewayResource) GetType(
 	}, nil
 }
 
+func (r *testApiGatewayResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "",
+	}, nil
+}
+
 // StageChanges is not used for spec link info!
 func (r *testApiGatewayResource) StageChanges(
 	ctx context.Context,
@@ -213,6 +223,16 @@ func (r *testSQSQueueResource) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "aws/sqs/queue",
+	}, nil
+}
+
+func (r *testSQSQueueResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "",
 	}, nil
 }
 
@@ -306,6 +326,16 @@ func (r *testLambdaFunctionResource) GetType(
 	}, nil
 }
 
+func (r *testLambdaFunctionResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "",
+	}, nil
+}
+
 // StageChanges is not used for spec link info!
 func (r *testLambdaFunctionResource) StageChanges(
 	ctx context.Context,
@@ -390,6 +420,16 @@ func (r *testStratosLambdaFunctionResource) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "stratosaws/lambda/function",
+	}, nil
+}
+
+func (r *testStratosLambdaFunctionResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "",
 	}, nil
 }
 
@@ -480,6 +520,16 @@ func (r *testDynamoDBTableResource) GetType(
 	}, nil
 }
 
+func (r *testDynamoDBTableResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "",
+	}, nil
+}
+
 // StageChanges is not used for spec link info!
 func (r *testDynamoDBTableResource) StageChanges(
 	ctx context.Context,
@@ -564,6 +614,16 @@ func (r *testDynamoDBStreamResource) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "aws/dynamodb/stream",
+	}, nil
+}
+
+func (r *testDynamoDBStreamResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "",
 	}, nil
 }
 
@@ -655,6 +715,16 @@ func (r *testIAMRoleResource) GetType(
 	}, nil
 }
 
+func (r *testIAMRoleResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "",
+	}, nil
+}
+
 // StageChanges is not used for spec link info!
 func (r *testIAMRoleResource) StageChanges(
 	ctx context.Context,
@@ -740,6 +810,16 @@ func (r *testStratosIAMRoleResource) GetType(
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
 		Type: "stratosaws/iam/role",
+	}, nil
+}
+
+func (r *testStratosIAMRoleResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "",
 	}, nil
 }
 

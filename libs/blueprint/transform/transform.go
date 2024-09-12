@@ -66,6 +66,13 @@ type AbstractResource interface {
 	// GetType deals with retrieving the namespaced type for an abstract
 	// resource in a blueprint spec.
 	GetType(ctx context.Context, input *AbstractResourceGetTypeInput) (*AbstractResourceGetTypeOutput, error)
+	// GetTypeDescription deals with retrieving the description for a resource type in a blueprint spec
+	// that can be used for documentation and tooling.
+	// Markdown and plain text formats are supported.
+	GetTypeDescription(
+		ctx context.Context,
+		input *AbstractResourceGetTypeDescriptionInput,
+	) (*AbstractResourceGetTypeDescriptionOutput, error)
 }
 
 // SpecTransformerTransformInput provides the input required to transform
@@ -151,4 +158,17 @@ type AbstractResourceGetTypeInput struct {
 // abstract resource in a blueprint spec.
 type AbstractResourceGetTypeOutput struct {
 	Type string
+}
+
+// AbstractResourceGetTypeDescriptionInput provides the input data needed for a resource to
+// retrieve a description of the type of an abstract resource in a blueprint spec.
+type AbstractResourceGetTypeDescriptionInput struct {
+	Params core.BlueprintParams
+}
+
+// AbstractResourceGetTypeDescriptionOutput provides the output data from retrieving a description
+// of the type of am abstract resource in a blueprint spec.
+type AbstractResourceGetTypeDescriptionOutput struct {
+	MarkdownDescription  string
+	PlainTextDescription string
 }

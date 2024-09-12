@@ -17,14 +17,25 @@ type DataSourceRegistry interface {
 		dataSourceType string,
 		input *DataSourceGetSpecDefinitionInput,
 	) (*DataSourceGetSpecDefinitionOutput, error)
+
 	// GetFilterFields returns the fields that can be used in a filter for a data source.
 	GetFilterFields(
 		ctx context.Context,
 		dataSourceType string,
 		input *DataSourceGetFilterFieldsInput,
 	) (*DataSourceGetFilterFieldsOutput, error)
+
+	// GetTypeDescription returns the description of a data source type
+	// in the registry.
+	GetTypeDescription(
+		ctx context.Context,
+		dataSourceType string,
+		input *DataSourceGetTypeDescriptionInput,
+	) (*DataSourceGetTypeDescriptionOutput, error)
+
 	// HasDataSourceType checks if a data source type is available in the registry.
 	HasDataSourceType(ctx context.Context, dataSourceType string) (bool, error)
+
 	// CustomValidate allows for custom validation of a data source of a given type.
 	CustomValidate(
 		ctx context.Context,
@@ -58,6 +69,19 @@ func (r *dataSourceRegistryFromProviders) GetSpecDefinition(
 	}
 
 	return dataSourceImpl.GetSpecDefinition(ctx, input)
+}
+
+func (r *dataSourceRegistryFromProviders) GetTypeDescription(
+	ctx context.Context,
+	dataSourceType string,
+	input *DataSourceGetTypeDescriptionInput,
+) (*DataSourceGetTypeDescriptionOutput, error) {
+	dataSourceImpl, err := r.getDataSourceType(ctx, dataSourceType)
+	if err != nil {
+		return nil, err
+	}
+
+	return dataSourceImpl.GetTypeDescription(ctx, input)
 }
 
 func (r *dataSourceRegistryFromProviders) GetFilterFields(

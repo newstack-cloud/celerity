@@ -18,6 +18,7 @@ type Registry interface {
 		resourceType string,
 		input *provider.ResourceGetSpecDefinitionInput,
 	) (*provider.ResourceGetSpecDefinitionOutput, error)
+
 	// GetStateDefinition returns the definition of a resource's output state
 	// in the registry.
 	GetStateDefinition(
@@ -25,8 +26,18 @@ type Registry interface {
 		resourceType string,
 		input *provider.ResourceGetStateDefinitionInput,
 	) (*provider.ResourceGetStateDefinitionOutput, error)
+
+	// GetTypeDescription returns the description of a resource type
+	// in the registry.
+	GetTypeDescription(
+		ctx context.Context,
+		resourceType string,
+		input *provider.ResourceGetTypeDescriptionInput,
+	) (*provider.ResourceGetTypeDescriptionOutput, error)
+
 	// HasResourceType checks if a resource type is available in the registry.
 	HasResourceType(ctx context.Context, resourceType string) (bool, error)
+
 	// CustomValidate allows for custom validation of a resource of a given type.
 	CustomValidate(
 		ctx context.Context,
@@ -114,6 +125,37 @@ func (r *registryFromProviders) GetStateDefinition(
 	}
 
 	return resourceImpl.GetStateDefinition(ctx, input)
+}
+
+func (r *registryFromProviders) GetTypeDescription(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	resourceImpl, err := r.getResourceType(ctx, resourceType)
+	if err != nil {
+		abstractResourceImpl, abstractErr := r.getAbstractResourceType(ctx, resourceType)
+		if abstractErr != nil {
+			return nil, errMultipleRunErrors([]error{err, abstractErr})
+		}
+
+		output, err := abstractResourceImpl.GetTypeDescription(
+			ctx,
+			&transform.AbstractResourceGetTypeDescriptionInput{
+				Params: input.Params,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &provider.ResourceGetTypeDescriptionOutput{
+			MarkdownDescription:  output.MarkdownDescription,
+			PlainTextDescription: output.PlainTextDescription,
+		}, nil
+	}
+
+	return resourceImpl.GetTypeDescription(ctx, input)
 }
 
 func (r *registryFromProviders) HasResourceType(ctx context.Context, resourceType string) (bool, error) {

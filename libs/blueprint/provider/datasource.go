@@ -13,6 +13,10 @@ import (
 type DataSource interface {
 	// GetType deals with retrieving the namespaced type for a data source in a blueprint.
 	GetType(ctx context.Context, input *DataSourceGetTypeInput) (*DataSourceGetTypeOutput, error)
+	// GetTypeDescription deals with retrieving the description for a data source type in a blueprint spec
+	// that can be used for documentation and tooling.
+	// Markdown and plain text formats are supported.
+	GetTypeDescription(ctx context.Context, input *DataSourceGetTypeDescriptionInput) (*DataSourceGetTypeDescriptionOutput, error)
 	// CustomValidate provides support for custom validation that goes beyond
 	// the spec schema validation provided by the data source's spec definition.
 	CustomValidate(ctx context.Context, input *DataSourceValidateInput) (*DataSourceValidateOutput, error)
@@ -66,6 +70,19 @@ type DataSourceGetTypeInput struct {
 // for a data source in a blueprint.
 type DataSourceGetTypeOutput struct {
 	Type string
+}
+
+// DataSourceGetTypeDescriptionInput provides the input data needed for a data source to
+// retrieve a description of the type of a data source in a blueprint spec.
+type DataSourceGetTypeDescriptionInput struct {
+	Params core.BlueprintParams
+}
+
+// DataSourceGetTypeDescriptionOutput provides the output data from retrieving a description
+// of the type of a data source in a blueprint spec.
+type DataSourceGetTypeDescriptionOutput struct {
+	MarkdownDescription  string
+	PlainTextDescription string
 }
 
 // DataSourceGetFilterFieldsOutput provides the output from retrieving the fields

@@ -33,7 +33,7 @@ func (s *RegistryTestSuite) SetUpTest(c *C) {
 	s.resourceRegistry = NewRegistry(providers, transformers)
 }
 
-func (s *RegistryTestSuite) Test_get_definition(c *C) {
+func (s *RegistryTestSuite) Test_get_spec_definition(c *C) {
 	output, err := s.resourceRegistry.GetSpecDefinition(
 		context.TODO(),
 		"test/exampleResource",
@@ -60,6 +60,17 @@ func (s *RegistryTestSuite) Test_has_resource_type(c *C) {
 	hasResourceType, err = s.resourceRegistry.HasResourceType(context.TODO(), "test/otherResource")
 	c.Assert(err, IsNil)
 	c.Assert(hasResourceType, Equals, false)
+}
+
+func (s *RegistryTestSuite) Test_get_type_description(c *C) {
+	output, err := s.resourceRegistry.GetTypeDescription(
+		context.TODO(),
+		"test/exampleResource",
+		&provider.ResourceGetTypeDescriptionInput{},
+	)
+	c.Assert(err, IsNil)
+	c.Assert(output.MarkdownDescription, Equals, s.testResource.markdownDescription)
+	c.Assert(output.PlainTextDescription, Equals, s.testResource.plainTextDescription)
 }
 
 func (s *RegistryTestSuite) Test_produces_error_for_missing_provider(c *C) {
