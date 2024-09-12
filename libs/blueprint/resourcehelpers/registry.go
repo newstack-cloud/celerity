@@ -38,6 +38,9 @@ type Registry interface {
 	// HasResourceType checks if a resource type is available in the registry.
 	HasResourceType(ctx context.Context, resourceType string) (bool, error)
 
+	// ListResourceTypes returns a list of all resource types available in the registry.
+	ListResourceTypes(ctx context.Context) ([]string, error)
+
 	// CustomValidate allows for custom validation of a resource of a given type.
 	CustomValidate(
 		ctx context.Context,
@@ -51,6 +54,7 @@ type registryFromProviders struct {
 	transformers          map[string]transform.SpecTransformer
 	resourceCache         map[string]provider.Resource
 	abstractResourceCache map[string]transform.AbstractResource
+	resourceTypes         []string
 }
 
 // NewRegistry creates a new resource registry from a map of providers,
@@ -64,6 +68,7 @@ func NewRegistry(
 		transformers:          transformers,
 		resourceCache:         map[string]provider.Resource{},
 		abstractResourceCache: map[string]transform.AbstractResource{},
+		resourceTypes:         []string{},
 	}
 }
 
@@ -156,6 +161,35 @@ func (r *registryFromProviders) GetTypeDescription(
 	}
 
 	return resourceImpl.GetTypeDescription(ctx, input)
+}
+
+func (r *registryFromProviders) ListResourceTypes(ctx context.Context) ([]string, error) {
+	if len(r.resourceTypes) > 0 {
+		return r.resourceTypes, nil
+	}
+
+	resourceTypes := []string{}
+	for _, provider := range r.providers {
+		types, err := provider.ListResourceTypes(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		resourceTypes = append(resourceTypes, types...)
+	}
+
+	for _, transformer := range r.transformers {
+		abstractResourceTypes, err := transformer.ListAbstractResourceTypes(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		resourceTypes = append(resourceTypes, abstractResourceTypes...)
+	}
+
+	r.resourceTypes = resourceTypes
+
+	return resourceTypes, nil
 }
 
 func (r *registryFromProviders) HasResourceType(ctx context.Context, resourceType string) (bool, error) {

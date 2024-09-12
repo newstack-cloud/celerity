@@ -7,12 +7,17 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/transform"
 	. "gopkg.in/check.v1"
 )
 
 func Test(t *testing.T) {
 	TestingT(t)
 }
+
+// //////////////////////////////////////
+// Provider
+// //////////////////////////////////////
 
 type testProvider struct {
 	functions   map[string]provider.Function
@@ -47,6 +52,22 @@ func (p *testProvider) Link(ctx context.Context, resourceTypeA string, resourceT
 
 func (p *testProvider) CustomVariableType(ctx context.Context, customVariableType string) (provider.CustomVariableType, error) {
 	return nil, nil
+}
+
+func (p *testProvider) ListResourceTypes(ctx context.Context) ([]string, error) {
+	resourceTypes := []string{}
+	for resourceType := range p.resources {
+		resourceTypes = append(resourceTypes, resourceType)
+	}
+	return resourceTypes, nil
+}
+
+func (p *testProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {
+	dataSourceTypes := []string{}
+	for dataSourceType := range p.dataSources {
+		dataSourceTypes = append(dataSourceTypes, dataSourceType)
+	}
+	return dataSourceTypes, nil
 }
 
 func (p *testProvider) ListFunctions(ctx context.Context) ([]string, error) {
@@ -197,4 +218,103 @@ func (r *testExampleResource) Destroy(
 	input *provider.ResourceDestroyInput,
 ) error {
 	return nil
+}
+
+// //////////////////////////////////////
+// Spec transformer
+// //////////////////////////////////////
+
+type testSpecTransformer struct {
+	abstractResources map[string]transform.AbstractResource
+}
+
+func (t *testSpecTransformer) Transform(
+	ctx context.Context,
+	input *transform.SpecTransformerTransformInput,
+) (*transform.SpecTransformerTransformOutput, error) {
+	return &transform.SpecTransformerTransformOutput{
+		TransformedBlueprint: input.InputBlueprint,
+	}, nil
+}
+
+func (t *testSpecTransformer) AbstractResource(
+	ctx context.Context,
+	resourceType string,
+) (transform.AbstractResource, error) {
+	abstractResource, ok := t.abstractResources[resourceType]
+	if !ok {
+		return nil, errors.New("abstract resource not found")
+	}
+	return abstractResource, nil
+}
+
+func (t *testSpecTransformer) ListAbstractResourceTypes(
+	ctx context.Context,
+) ([]string, error) {
+	abstractResourceTypes := []string{}
+	for abstractResourceType := range t.abstractResources {
+		abstractResourceTypes = append(abstractResourceTypes, abstractResourceType)
+	}
+	return abstractResourceTypes, nil
+}
+
+type testExampleAbstractResource struct{}
+
+func newTestExampleAbstractResource() transform.AbstractResource {
+	return &testExampleAbstractResource{}
+}
+
+func (r *testExampleAbstractResource) GetType(
+	ctx context.Context,
+	input *transform.AbstractResourceGetTypeInput,
+) (*transform.AbstractResourceGetTypeOutput, error) {
+	return &transform.AbstractResourceGetTypeOutput{
+		Type: "test/exampleAbstractResource",
+	}, nil
+}
+
+func (r *testExampleAbstractResource) GetTypeDescription(
+	ctx context.Context,
+	input *transform.AbstractResourceGetTypeDescriptionInput,
+) (*transform.AbstractResourceGetTypeDescriptionOutput, error) {
+	return &transform.AbstractResourceGetTypeDescriptionOutput{}, nil
+}
+
+func (r *testExampleAbstractResource) CanLinkTo(
+	ctx context.Context,
+	input *transform.AbstractResourceCanLinkToInput,
+) (*transform.AbstractResourceCanLinkToOutput, error) {
+	return &transform.AbstractResourceCanLinkToOutput{}, nil
+}
+
+func (r *testExampleAbstractResource) IsCommonTerminal(
+	ctx context.Context,
+	input *transform.AbstractResourceIsCommonTerminalInput,
+) (*transform.AbstractResourceIsCommonTerminalOutput, error) {
+	return &transform.AbstractResourceIsCommonTerminalOutput{
+		IsCommonTerminal: false,
+	}, nil
+}
+
+func (r *testExampleAbstractResource) CustomValidate(
+	ctx context.Context,
+	input *transform.AbstractResourceValidateInput,
+) (*transform.AbstractResourceValidateOutput, error) {
+	return &transform.AbstractResourceValidateOutput{
+		Diagnostics: []*core.Diagnostic{},
+	}, nil
+}
+
+func (r *testExampleAbstractResource) GetSpecDefinition(
+	ctx context.Context,
+	input *transform.AbstractResourceGetSpecDefinitionInput,
+) (*transform.AbstractResourceGetSpecDefinitionOutput, error) {
+	return &transform.AbstractResourceGetSpecDefinitionOutput{}, nil
+}
+
+func (r *testExampleAbstractResource) GetStateDefinition(
+	ctx context.Context,
+	input *transform.AbstractResourceGetStateDefinitionInput,
+) (*transform.AbstractResourceGetStateDefinitionOutput, error) {
+	return &transform.AbstractResourceGetStateDefinitionOutput{}, nil
 }

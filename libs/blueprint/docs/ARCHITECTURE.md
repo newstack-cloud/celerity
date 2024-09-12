@@ -258,6 +258,10 @@ type Provider interface {
 
 	ListFunctions(ctx context.Context) ([]string, error)
 
+	ListResourceTypes(ctx context.Context) ([]string, error)
+
+	ListDataSourceTypes(ctx context.Context) ([]string, error)
+
 	Function(ctx context.Context, functionName string) (Function, error)
 }
 ```
@@ -289,6 +293,8 @@ type SpecTransformer interface {
         ctx context.Context,
         input *SpecTransformerTransformInput,
     ) (*SpecTransformerTransformOutput, error)
+
+	ListAbstractResourceTypes(ctx context.Context) ([]string, error)
 
     AbstractResource(ctx context.Context, resourceType string) (AbstractResource, error)
 }

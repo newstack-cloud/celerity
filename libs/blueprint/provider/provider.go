@@ -29,6 +29,14 @@ type Provider interface {
 	// These custom variable types should not be used for dynamically sourced values
 	// external to a blueprint, data sources exist for that purpose.
 	CustomVariableType(ctx context.Context, customVariableType string) (CustomVariableType, error)
+	// ListResourceTypes retrieves a list of all the resource types that are provided by the
+	// provider. This is primarily used in tools and documentation to provide a list of
+	// available resource types.
+	ListResourceTypes(ctx context.Context) ([]string, error)
+	// ListDataSourceTypes retrieves a list of all the data source types that are provided by the
+	// provider. This is primarily used in tools and documentation to provide a list of
+	// available data source types.
+	ListDataSourceTypes(ctx context.Context) ([]string, error)
 	// ListFunctions retrieves a list of all the function names that are provided by the
 	// provider. This is primarily used to assign the correct provider to a function
 	// as functions are globally named. When multiple providers provide the same function,

@@ -2,6 +2,7 @@ package resourcehelpers
 
 import (
 	"context"
+	"slices"
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -27,7 +28,16 @@ func (s *RegistryTestSuite) SetUpTest(c *C) {
 			namespace: "test",
 		},
 	}
-	transformers := map[string]transform.SpecTransformer{}
+
+	testAbstractRes := newTestExampleAbstractResource()
+
+	transformers := map[string]transform.SpecTransformer{
+		"celerity-test": &testSpecTransformer{
+			abstractResources: map[string]transform.AbstractResource{
+				"test/exampleAbstractResource": testAbstractRes,
+			},
+		},
+	}
 
 	s.testResource = testRes.(*testExampleResource)
 	s.resourceRegistry = NewRegistry(providers, transformers)
@@ -71,6 +81,43 @@ func (s *RegistryTestSuite) Test_get_type_description(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(output.MarkdownDescription, Equals, s.testResource.markdownDescription)
 	c.Assert(output.PlainTextDescription, Equals, s.testResource.plainTextDescription)
+}
+
+func (s *RegistryTestSuite) Test_list_resource_types(c *C) {
+	resourceTypes, err := s.resourceRegistry.ListResourceTypes(
+		context.TODO(),
+	)
+	c.Assert(err, IsNil)
+
+	containsTestExampleResource := slices.Contains(
+		resourceTypes,
+		"test/exampleResource",
+	)
+	c.Assert(containsTestExampleResource, Equals, true)
+
+	containsTestExampleAbstractResource := slices.Contains(
+		resourceTypes,
+		"test/exampleAbstractResource",
+	)
+	c.Assert(containsTestExampleAbstractResource, Equals, true)
+
+	// Second time should be cached and produce the same result.
+	resourceTypesCached, err := s.resourceRegistry.ListResourceTypes(
+		context.TODO(),
+	)
+	c.Assert(err, IsNil)
+
+	containsCachedTestExampleResource := slices.Contains(
+		resourceTypesCached,
+		"test/exampleResource",
+	)
+	c.Assert(containsCachedTestExampleResource, Equals, true)
+
+	containsCachedTestExampleAbstractResource := slices.Contains(
+		resourceTypesCached,
+		"test/exampleAbstractResource",
+	)
+	c.Assert(containsCachedTestExampleAbstractResource, Equals, true)
 }
 
 func (s *RegistryTestSuite) Test_produces_error_for_missing_provider(c *C) {

@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"slices"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
@@ -94,6 +95,31 @@ func (s *DataSourceRegistryTestSuite) Test_has_resource_type(c *C) {
 	hasDSType, err = s.dataSourceRegistry.HasDataSourceType(context.TODO(), "test/otherDataSource")
 	c.Assert(err, IsNil)
 	c.Assert(hasDSType, Equals, false)
+}
+
+func (s *DataSourceRegistryTestSuite) Test_list_data_source_types(c *C) {
+	dataSourceTypes, err := s.dataSourceRegistry.ListDataSourceTypes(
+		context.TODO(),
+	)
+	c.Assert(err, IsNil)
+
+	containsTestExampleDataSource := slices.Contains(
+		dataSourceTypes,
+		"test/exampleDataSource",
+	)
+	c.Assert(containsTestExampleDataSource, Equals, true)
+
+	// Second time should be cached and produce the same result.
+	dataSourceTypesCached, err := s.dataSourceRegistry.ListDataSourceTypes(
+		context.TODO(),
+	)
+	c.Assert(err, IsNil)
+
+	containsCachedTestExampleDataSource := slices.Contains(
+		dataSourceTypesCached,
+		"test/exampleDataSource",
+	)
+	c.Assert(containsCachedTestExampleDataSource, Equals, true)
 }
 
 func (s *DataSourceRegistryTestSuite) Test_produces_error_for_missing_provider(c *C) {

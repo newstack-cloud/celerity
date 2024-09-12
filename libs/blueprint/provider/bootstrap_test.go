@@ -60,6 +60,22 @@ func (p *testProvider) ListFunctions(ctx context.Context) ([]string, error) {
 	return functionNames, nil
 }
 
+func (p *testProvider) ListResourceTypes(ctx context.Context) ([]string, error) {
+	resourceTypes := []string{}
+	for resourceType := range p.resources {
+		resourceTypes = append(resourceTypes, resourceType)
+	}
+	return resourceTypes, nil
+}
+
+func (p *testProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {
+	dataSourceTypes := []string{}
+	for dataSourceType := range p.dataSources {
+		dataSourceTypes = append(dataSourceTypes, dataSourceType)
+	}
+	return dataSourceTypes, nil
+}
+
 func (p *testProvider) Function(ctx context.Context, functionName string) (Function, error) {
 	function, ok := p.functions[functionName]
 	if !ok {

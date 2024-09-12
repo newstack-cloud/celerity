@@ -63,6 +63,16 @@ func (p *testAWSProvider) ListFunctions(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
 
+// ListResourceTypes is not used for spec link info!
+func (p *testAWSProvider) ListResourceTypes(ctx context.Context) ([]string, error) {
+	return nil, nil
+}
+
+// ListDataSourceTypes is not used for spec link info!
+func (p *testAWSProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {
+	return nil, nil
+}
+
 func (p *testAWSProvider) Function(ctx context.Context, functionName string) (provider.Function, error) {
 	return nil, nil
 }

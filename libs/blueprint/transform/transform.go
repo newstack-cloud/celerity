@@ -28,6 +28,11 @@ type SpecTransformer interface {
 	// AbstractResources returns the abstract resource implementation
 	// for a given resource type.
 	AbstractResource(ctx context.Context, resourceType string) (AbstractResource, error)
+	// ListAbstractResourceTypes retrieves a list of all the abstract resource types
+	// that are provided by the provider.
+	// This is primarily used in tools and documentation to provide a list of
+	// available abstract resource types.
+	ListAbstractResourceTypes(ctx context.Context) ([]string, error)
 }
 
 // AbstractResource is the interface for an abstract resource

@@ -121,6 +121,14 @@ func (p *coreProvider) CustomVariableType(ctx context.Context, customVariableTyp
 	)
 }
 
+func (p *coreProvider) ListResourceTypes(ctx context.Context) ([]string, error) {
+	return []string{}, nil
+}
+
+func (p *coreProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {
+	return []string{}, nil
+}
+
 func (p *coreProvider) ListFunctions(ctx context.Context) ([]string, error) {
 	return p.functionList, nil
 }

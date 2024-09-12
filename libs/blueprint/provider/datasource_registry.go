@@ -36,6 +36,10 @@ type DataSourceRegistry interface {
 	// HasDataSourceType checks if a data source type is available in the registry.
 	HasDataSourceType(ctx context.Context, dataSourceType string) (bool, error)
 
+	// ListDataSourceTypes retrieves a list of all the data source types avaiable
+	// in the registry.
+	ListDataSourceTypes(ctx context.Context) ([]string, error)
+
 	// CustomValidate allows for custom validation of a data source of a given type.
 	CustomValidate(
 		ctx context.Context,
@@ -47,6 +51,7 @@ type DataSourceRegistry interface {
 type dataSourceRegistryFromProviders struct {
 	providers       map[string]Provider
 	dataSourceCache map[string]DataSource
+	dataSourceTypes []string
 }
 
 // NewDataSourceRegistry creates a new DataSourceRegistry from a map of providers,
@@ -55,6 +60,7 @@ func NewDataSourceRegistry(providers map[string]Provider) DataSourceRegistry {
 	return &dataSourceRegistryFromProviders{
 		providers:       providers,
 		dataSourceCache: map[string]DataSource{},
+		dataSourceTypes: []string{},
 	}
 }
 
@@ -108,6 +114,26 @@ func (r *dataSourceRegistryFromProviders) HasDataSourceType(ctx context.Context,
 		return false, err
 	}
 	return dataSourceImpl != nil, nil
+}
+
+func (r *dataSourceRegistryFromProviders) ListDataSourceTypes(ctx context.Context) ([]string, error) {
+	if len(r.dataSourceTypes) > 0 {
+		return r.dataSourceTypes, nil
+	}
+
+	dataSourceTypes := []string{}
+	for _, provider := range r.providers {
+		types, err := provider.ListDataSourceTypes(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		dataSourceTypes = append(dataSourceTypes, types...)
+	}
+
+	r.dataSourceTypes = dataSourceTypes
+
+	return dataSourceTypes, nil
 }
 
 func (r *dataSourceRegistryFromProviders) CustomValidate(

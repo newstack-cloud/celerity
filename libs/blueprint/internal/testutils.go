@@ -115,6 +115,16 @@ func (r *ResourceRegistryMock) GetTypeDescription(
 	return defOutput, nil
 }
 
+func (r *ResourceRegistryMock) ListResourceTypes(
+	ctx context.Context,
+) ([]string, error) {
+	resourceTypes := make([]string, 0, len(r.Resources))
+	for resourceType := range r.Resources {
+		resourceTypes = append(resourceTypes, resourceType)
+	}
+	return resourceTypes, nil
+}
+
 func (r *ResourceRegistryMock) CustomValidate(
 	ctx context.Context,
 	resourceType string,
@@ -186,6 +196,16 @@ func (r *DataSourceRegistryMock) GetFilterFields(
 		return nil, err
 	}
 	return defOutput, nil
+}
+
+func (r *DataSourceRegistryMock) ListDataSourceTypes(
+	ctx context.Context,
+) ([]string, error) {
+	dataSourceTypes := make([]string, 0, len(r.DataSources))
+	for dataSourceType := range r.DataSources {
+		dataSourceTypes = append(dataSourceTypes, dataSourceType)
+	}
+	return dataSourceTypes, nil
 }
 
 func (r *DataSourceRegistryMock) CustomValidate(
