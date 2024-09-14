@@ -91,6 +91,13 @@ func ValidateDataSource(
 		errs = append(errs, validateDescErr)
 	}
 
+	// All validation after this point requires a data source type,
+	// if one isn't set, we'll return the errors and diagnostics
+	// collected so far.
+	if dataSource.Type == nil {
+		return diagnostics, ErrMultipleValidationErrors(errs)
+	}
+
 	validateFilterDiagnostics, validateFilterErr := validateDataSourceFilter(
 		ctx,
 		name,

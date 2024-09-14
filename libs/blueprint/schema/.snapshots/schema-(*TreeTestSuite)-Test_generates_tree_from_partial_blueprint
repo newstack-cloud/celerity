@@ -459,12 +459,12 @@
               Children: ([]*schema.TreeNode) (len=1) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=41) "/datasources/network/metadata/displayName",
+                  Path: (string) (len=52) "/datasources/network/metadata/displayName/stringSubs",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=48) "/datasources/network/metadata/displayName/string",
+                      Path: (string) (len=59) "/datasources/network/metadata/displayName/stringSubs/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=14) "Network source",
@@ -622,12 +622,12 @@
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=1) "0",
-                      Path: (string) (len=36) "/datasources/network/filter/search/0",
+                      Path: (string) (len=47) "/datasources/network/filter/search/0/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=11) "environment",
-                          Path: (string) (len=55) "/datasources/network/filter/search/0/varRef/environment",
+                          Path: (string) (len=66) "/datasources/network/filter/search/0/stringSubs/varRef/environment",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (*substitutions.SubstitutionVariable)({
@@ -1501,12 +1501,12 @@
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=40) "/resources/orderApi/metadata/displayName",
+                  Path: (string) (len=51) "/resources/orderApi/metadata/displayName/stringSubs",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=47) "/resources/orderApi/metadata/displayName/string",
+                      Path: (string) (len=58) "/resources/orderApi/metadata/displayName/stringSubs/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=9) "Order API",
@@ -4023,12 +4023,12 @@
               Children: ([]*schema.TreeNode) (len=3) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=42) "/resources/authoriser/metadata/displayName",
+                  Path: (string) (len=53) "/resources/authoriser/metadata/displayName/stringSubs",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=49) "/resources/authoriser/metadata/displayName/string",
+                      Path: (string) (len=60) "/resources/authoriser/metadata/displayName/stringSubs/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=10) "Authoriser",
@@ -4078,12 +4078,12 @@
                   Children: ([]*schema.TreeNode) (len=4) {
                     (*schema.TreeNode)({
                       Label: (string) (len=10) "authoriser",
-                      Path: (string) (len=53) "/resources/authoriser/metadata/annotations/authoriser",
+                      Path: (string) (len=64) "/resources/authoriser/metadata/annotations/authoriser/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "string",
-                          Path: (string) (len=60) "/resources/authoriser/metadata/annotations/authoriser/string",
+                          Path: (string) (len=71) "/resources/authoriser/metadata/annotations/authoriser/stringSubs/string",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=4) "true",
@@ -4128,12 +4128,12 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=26) "authoriser.identity.header",
-                      Path: (string) (len=69) "/resources/authoriser/metadata/annotations/authoriser.identity.header",
+                      Path: (string) (len=80) "/resources/authoriser/metadata/annotations/authoriser.identity.header/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "string",
-                          Path: (string) (len=76) "/resources/authoriser/metadata/annotations/authoriser.identity.header/string",
+                          Path: (string) (len=87) "/resources/authoriser/metadata/annotations/authoriser.identity.header/stringSubs/string",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=18) "MyCustomAuthHeader",
@@ -4178,12 +4178,12 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=40) "authoriser.identity.validationExpression",
-                      Path: (string) (len=83) "/resources/authoriser/metadata/annotations/authoriser.identity.validationExpression",
+                      Path: (string) (len=94) "/resources/authoriser/metadata/annotations/authoriser.identity.validationExpression/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "string",
-                          Path: (string) (len=90) "/resources/authoriser/metadata/annotations/authoriser.identity.validationExpression/string",
+                          Path: (string) (len=101) "/resources/authoriser/metadata/annotations/authoriser.identity.validationExpression/stringSubs/string",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=9) "Bearer .*",
@@ -4228,12 +4228,12 @@
                     }),
                     (*schema.TreeNode)({
                       Label: (string) (len=36) "authoriser.identity.reauthoriseEvery",
-                      Path: (string) (len=79) "/resources/authoriser/metadata/annotations/authoriser.identity.reauthoriseEvery",
+                      Path: (string) (len=90) "/resources/authoriser/metadata/annotations/authoriser.identity.reauthoriseEvery/stringSubs",
                       Type: (schema.TreeNodeType) 0,
                       Children: ([]*schema.TreeNode) (len=1) {
                         (*schema.TreeNode)({
                           Label: (string) (len=6) "string",
-                          Path: (string) (len=86) "/resources/authoriser/metadata/annotations/authoriser.identity.reauthoriseEvery/string",
+                          Path: (string) (len=97) "/resources/authoriser/metadata/annotations/authoriser.identity.reauthoriseEvery/stringSubs/string",
                           Type: (schema.TreeNodeType) 1,
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=2) "20",
@@ -5000,12 +5000,12 @@
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=48) "/resources/getOrdersHandler/metadata/displayName",
+                  Path: (string) (len=59) "/resources/getOrdersHandler/metadata/displayName/stringSubs",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=55) "/resources/getOrdersHandler/metadata/displayName/string",
+                      Path: (string) (len=66) "/resources/getOrdersHandler/metadata/displayName/stringSubs/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=18) "Get Orders Handler",
@@ -6160,12 +6160,12 @@
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=51) "/resources/updateOrderFunction/metadata/displayName",
+                  Path: (string) (len=62) "/resources/updateOrderFunction/metadata/displayName/stringSubs",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=58) "/resources/updateOrderFunction/metadata/displayName/string",
+                      Path: (string) (len=69) "/resources/updateOrderFunction/metadata/displayName/stringSubs/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=21) "Update Order Function",
@@ -7159,12 +7159,12 @@
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=51) "/resources/sharedPackagesLayer/metadata/displayName",
+                  Path: (string) (len=62) "/resources/sharedPackagesLayer/metadata/displayName/stringSubs",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=58) "/resources/sharedPackagesLayer/metadata/displayName/string",
+                      Path: (string) (len=69) "/resources/sharedPackagesLayer/metadata/displayName/stringSubs/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=21) "Shared Packages Layer",
@@ -7879,12 +7879,12 @@
               Children: ([]*schema.TreeNode) (len=2) {
                 (*schema.TreeNode)({
                   Label: (string) (len=11) "displayName",
-                  Path: (string) (len=43) "/resources/orderPubSub/metadata/displayName",
+                  Path: (string) (len=54) "/resources/orderPubSub/metadata/displayName/stringSubs",
                   Type: (schema.TreeNodeType) 0,
                   Children: ([]*schema.TreeNode) (len=1) {
                     (*schema.TreeNode)({
                       Label: (string) (len=6) "string",
-                      Path: (string) (len=50) "/resources/orderPubSub/metadata/displayName/string",
+                      Path: (string) (len=61) "/resources/orderPubSub/metadata/displayName/stringSubs/string",
                       Type: (schema.TreeNodeType) 1,
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=13) "Order Pub/Sub",

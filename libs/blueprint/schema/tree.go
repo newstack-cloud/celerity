@@ -1379,9 +1379,11 @@ func transformToStringSubsNode(label string, subs *substitutions.StringOrSubstit
 		return nil
 	}
 
+	path := buildStringSubsNodePath(label, parentPath)
+
 	stringSubsNode := &TreeNode{
 		Label:         label,
-		Path:          fmt.Sprintf("%s/%s", parentPath, label),
+		Path:          path,
 		Type:          TreeNodeTypeNonTerminal,
 		SchemaElement: subs,
 		Range: &source.Range{
@@ -1785,4 +1787,11 @@ func minPosition(positions []*source.Meta) *source.Meta {
 	}
 
 	return min
+}
+
+func buildStringSubsNodePath(label, parentPath string) string {
+	if label == "stringSubs" {
+		return fmt.Sprintf("%s/%s", parentPath, label)
+	}
+	return fmt.Sprintf("%s/%s/stringSubs", parentPath, label)
 }

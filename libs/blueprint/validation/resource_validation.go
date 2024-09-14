@@ -137,21 +137,23 @@ func ValidateResource(
 		errs = append(errs, validateLSErr)
 	}
 
-	validateSpecDiagnostics, validateSpecErr := ValidateResourceSpec(
-		ctx,
-		name,
-		resource.Type.Value,
-		resource,
-		resourceMap.SourceMeta[name],
-		bpSchema,
-		params,
-		funcRegistry,
-		refChainCollector,
-		resourceRegistry,
-	)
-	diagnostics = append(diagnostics, validateSpecDiagnostics...)
-	if validateSpecErr != nil {
-		errs = append(errs, validateSpecErr)
+	if resource.Type != nil {
+		validateSpecDiagnostics, validateSpecErr := ValidateResourceSpec(
+			ctx,
+			name,
+			resource.Type.Value,
+			resource,
+			resourceMap.SourceMeta[name],
+			bpSchema,
+			params,
+			funcRegistry,
+			refChainCollector,
+			resourceRegistry,
+		)
+		diagnostics = append(diagnostics, validateSpecDiagnostics...)
+		if validateSpecErr != nil {
+			errs = append(errs, validateSpecErr)
+		}
 	}
 
 	validateDescriptionDiagnostics, validateDescErr := validateDescription(
