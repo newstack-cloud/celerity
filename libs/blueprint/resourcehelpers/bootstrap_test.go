@@ -20,10 +20,11 @@ func Test(t *testing.T) {
 // //////////////////////////////////////
 
 type testProvider struct {
-	functions   map[string]provider.Function
-	resources   map[string]provider.Resource
-	dataSources map[string]provider.DataSource
-	namespace   string
+	functions      map[string]provider.Function
+	resources      map[string]provider.Resource
+	dataSources    map[string]provider.DataSource
+	customVarTypes map[string]provider.CustomVariableType
+	namespace      string
 }
 
 func (p *testProvider) Namespace(ctx context.Context) (string, error) {
@@ -68,6 +69,14 @@ func (p *testProvider) ListDataSourceTypes(ctx context.Context) ([]string, error
 		dataSourceTypes = append(dataSourceTypes, dataSourceType)
 	}
 	return dataSourceTypes, nil
+}
+
+func (p *testProvider) ListCustomVariableTypes(ctx context.Context) ([]string, error) {
+	customVarTypes := []string{}
+	for customVarType := range p.customVarTypes {
+		customVarTypes = append(customVarTypes, customVarType)
+	}
+	return customVarTypes, nil
 }
 
 func (p *testProvider) ListFunctions(ctx context.Context) ([]string, error) {

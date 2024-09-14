@@ -89,6 +89,16 @@ func (t *testEC2InstanceTypeCustomVariableType) GetType(
 	}, nil
 }
 
+func (t *testEC2InstanceTypeCustomVariableType) GetDescription(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetDescriptionInput,
+) (*provider.CustomVariableTypeGetDescriptionOutput, error) {
+	return &provider.CustomVariableTypeGetDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
+	}, nil
+}
+
 type testInvalidEC2InstanceTypeCustomVariableType struct{}
 
 func (t *testInvalidEC2InstanceTypeCustomVariableType) Options(
@@ -139,6 +149,16 @@ func (t *testInvalidEC2InstanceTypeCustomVariableType) GetType(
 	}, nil
 }
 
+func (t *testInvalidEC2InstanceTypeCustomVariableType) GetDescription(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetDescriptionInput,
+) (*provider.CustomVariableTypeGetDescriptionOutput, error) {
+	return &provider.CustomVariableTypeGetDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
+	}, nil
+}
+
 type testFailToLoadOptionsCustomVariableType struct{}
 
 func (t *testFailToLoadOptionsCustomVariableType) Options(
@@ -154,6 +174,16 @@ func (t *testFailToLoadOptionsCustomVariableType) GetType(
 ) (*provider.CustomVariableTypeGetTypeOutput, error) {
 	return &provider.CustomVariableTypeGetTypeOutput{
 		Type: "aws/ec2/instanceType",
+	}, nil
+}
+
+func (t *testFailToLoadOptionsCustomVariableType) GetDescription(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetDescriptionInput,
+) (*provider.CustomVariableTypeGetDescriptionOutput, error) {
+	return &provider.CustomVariableTypeGetDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
 	}, nil
 }
 
@@ -204,6 +234,16 @@ func (t *testRegionCustomVariableType) GetType(
 ) (*provider.CustomVariableTypeGetTypeOutput, error) {
 	return &provider.CustomVariableTypeGetTypeOutput{
 		Type: "aws/region",
+	}, nil
+}
+
+func (t *testRegionCustomVariableType) GetDescription(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetDescriptionInput,
+) (*provider.CustomVariableTypeGetDescriptionOutput, error) {
+	return &provider.CustomVariableTypeGetDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
 	}, nil
 }
 

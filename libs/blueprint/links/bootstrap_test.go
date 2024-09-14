@@ -100,6 +100,11 @@ func (p *testAWSProvider) ListDataSourceTypes(ctx context.Context) ([]string, er
 	return nil, nil
 }
 
+// ListCustomVariableTypes is not used for spec link info!
+func (p *testAWSProvider) ListCustomVariableTypes(ctx context.Context) ([]string, error) {
+	return nil, nil
+}
+
 // ListFunctions is not used for spec link info!
 func (p *testAWSProvider) ListFunctions(ctx context.Context) ([]string, error) {
 	return nil, nil

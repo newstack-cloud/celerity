@@ -18,10 +18,11 @@ func Test(t *testing.T) {
 }
 
 type testProvider struct {
-	functions   map[string]Function
-	resources   map[string]Resource
-	dataSources map[string]DataSource
-	namespace   string
+	functions      map[string]Function
+	resources      map[string]Resource
+	dataSources    map[string]DataSource
+	customVarTypes map[string]CustomVariableType
+	namespace      string
 }
 
 func (p *testProvider) Namespace(ctx context.Context) (string, error) {
@@ -49,7 +50,11 @@ func (p *testProvider) Link(ctx context.Context, resourceTypeA string, resourceT
 }
 
 func (p *testProvider) CustomVariableType(ctx context.Context, customVariableType string) (CustomVariableType, error) {
-	return nil, nil
+	customVarType, ok := p.customVarTypes[customVariableType]
+	if !ok {
+		return nil, errors.New("custom variable type not found")
+	}
+	return customVarType, nil
 }
 
 func (p *testProvider) ListFunctions(ctx context.Context) ([]string, error) {
@@ -74,6 +79,14 @@ func (p *testProvider) ListDataSourceTypes(ctx context.Context) ([]string, error
 		dataSourceTypes = append(dataSourceTypes, dataSourceType)
 	}
 	return dataSourceTypes, nil
+}
+
+func (p *testProvider) ListCustomVariableTypes(ctx context.Context) ([]string, error) {
+	customVarTypes := []string{}
+	for customVarType := range p.customVarTypes {
+		customVarTypes = append(customVarTypes, customVarType)
+	}
+	return customVarTypes, nil
 }
 
 func (p *testProvider) Function(ctx context.Context, functionName string) (Function, error) {
@@ -424,5 +437,74 @@ func (d *testExampleDataSource) CustomValidate(
 				Message: "This is a test diagnostic.",
 			},
 		},
+	}, nil
+}
+
+type testEC2InstanceTypeCustomVariableType struct {
+	markdownDescription  string
+	plainTextDescription string
+}
+
+func newTestEC2InstanceCustomVarType() CustomVariableType {
+	return &testEC2InstanceTypeCustomVariableType{
+		markdownDescription:  "## aws/ec2/instanceType\n\nThis is a test custom variable type.",
+		plainTextDescription: "aws/ec2/instanceType\n\nThis is a test custom variable type.",
+	}
+}
+
+func (t *testEC2InstanceTypeCustomVariableType) Options(
+	ctx context.Context,
+	input *CustomVariableTypeOptionsInput,
+) (*CustomVariableTypeOptionsOutput, error) {
+	t2nano := "t2.nano"
+	t2micro := "t2.micro"
+	t2small := "t2.small"
+	t2medium := "t2.medium"
+	t2large := "t2.large"
+	t2xlarge := "t2.xlarge"
+	t22xlarge := "t2.2xlarge"
+	return &CustomVariableTypeOptionsOutput{
+		Options: map[string]*core.ScalarValue{
+			t2nano: {
+				StringValue: &t2nano,
+			},
+			t2micro: {
+				StringValue: &t2micro,
+			},
+			t2small: {
+				StringValue: &t2small,
+			},
+			t2medium: {
+				StringValue: &t2medium,
+			},
+			t2large: {
+				StringValue: &t2large,
+			},
+			t2xlarge: {
+				StringValue: &t2xlarge,
+			},
+			t22xlarge: {
+				StringValue: &t22xlarge,
+			},
+		},
+	}, nil
+}
+
+func (t *testEC2InstanceTypeCustomVariableType) GetType(
+	ctx context.Context,
+	input *CustomVariableTypeGetTypeInput,
+) (*CustomVariableTypeGetTypeOutput, error) {
+	return &CustomVariableTypeGetTypeOutput{
+		Type: "aws/ec2/instanceType",
+	}, nil
+}
+
+func (t *testEC2InstanceTypeCustomVariableType) GetDescription(
+	ctx context.Context,
+	input *CustomVariableTypeGetDescriptionInput,
+) (*CustomVariableTypeGetDescriptionOutput, error) {
+	return &CustomVariableTypeGetDescriptionOutput{
+		MarkdownDescription:  t.markdownDescription,
+		PlainTextDescription: t.plainTextDescription,
 	}, nil
 }

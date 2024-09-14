@@ -103,8 +103,8 @@ func (r *dataSourceRegistryFromProviders) GetFilterFields(
 	return dataSourceImpl.GetFilterFields(ctx, input)
 }
 
-func (r *dataSourceRegistryFromProviders) HasDataSourceType(ctx context.Context, resourceType string) (bool, error) {
-	dataSourceImpl, err := r.getDataSourceType(ctx, resourceType)
+func (r *dataSourceRegistryFromProviders) HasDataSourceType(ctx context.Context, dataSourceType string) (bool, error) {
+	dataSourceImpl, err := r.getDataSourceType(ctx, dataSourceType)
 	if err != nil {
 		if runErr, isRunErr := err.(*errors.RunError); isRunErr {
 			if runErr.ReasonCode == ErrorReasonCodeProviderDataSourceTypeNotFound {

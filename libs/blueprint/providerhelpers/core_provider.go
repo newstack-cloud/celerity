@@ -133,6 +133,10 @@ func (p *coreProvider) ListFunctions(ctx context.Context) ([]string, error) {
 	return p.functionList, nil
 }
 
+func (p *coreProvider) ListCustomVariableTypes(ctx context.Context) ([]string, error) {
+	return []string{}, nil
+}
+
 func (p *coreProvider) Function(ctx context.Context, functionName string) (provider.Function, error) {
 	function, ok := p.functions[functionName]
 	if !ok {

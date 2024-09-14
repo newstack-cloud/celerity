@@ -87,7 +87,7 @@ func (s *DataSourceRegistryTestSuite) Test_custom_validate(c *C) {
 	})
 }
 
-func (s *DataSourceRegistryTestSuite) Test_has_resource_type(c *C) {
+func (s *DataSourceRegistryTestSuite) Test_has_data_source_type(c *C) {
 	hasDSType, err := s.dataSourceRegistry.HasDataSourceType(context.TODO(), "test/exampleDataSource")
 	c.Assert(err, IsNil)
 	c.Assert(hasDSType, Equals, true)

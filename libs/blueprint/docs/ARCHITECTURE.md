@@ -256,13 +256,15 @@ type Provider interface {
 
     CustomVariableType(ctx context.Context, customVariableType string) (CustomVariableType, error)
 
+	Function(ctx context.Context, functionName string) (Function, error)
+
 	ListFunctions(ctx context.Context) ([]string, error)
 
 	ListResourceTypes(ctx context.Context) ([]string, error)
 
 	ListDataSourceTypes(ctx context.Context) ([]string, error)
 
-	Function(ctx context.Context, functionName string) (Function, error)
+    ListCustomVariableTypes(ctx context.Context) ([]string, error)
 }
 ```
 

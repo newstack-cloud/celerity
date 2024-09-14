@@ -33,18 +33,22 @@ const (
 	// reason for a blueprint spec load error is due to
 	// an unknown resource spec schema type being used in the schema definition.
 	ErrorReasonCodeInvalidResourceSpecDefinition errors.ErrorReasonCode = "invalid_resource_spec_def"
+	// ErrorReasonCodeCustomVariableTypeNotFound is provided when the
+	// reason for a blueprint spec load error is due to
+	// the custom variable type not being found in a specific provider.
+	ErrorReasonCodeProviderCustomVariableTypeNotFound errors.ErrorReasonCode = "custom_variable_type_not_found"
 )
 
 func errDataSourceTypeProviderNotFound(
 	providerNamespace string,
-	resourceType string,
+	dataSourceType string,
 ) error {
 	return &errors.RunError{
 		ReasonCode: ErrorReasonCodeItemTypeProviderNotFound,
 		Err: fmt.Errorf(
 			"run failed as the provider with namespace %q was not found for data source type %q",
 			providerNamespace,
-			resourceType,
+			dataSourceType,
 		),
 	}
 }
@@ -59,6 +63,34 @@ func errProviderDataSourceTypeNotFound(
 			"run failed as the provider with namespace %q does not have an implementation for data source type %q",
 			providerNamespace,
 			dataSourceType,
+		),
+	}
+}
+
+func errCustomVariableTypeProviderNotFound(
+	providerNamespace string,
+	customVariableType string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeItemTypeProviderNotFound,
+		Err: fmt.Errorf(
+			"run failed as the provider with namespace %q was not found for custom variable type %q",
+			providerNamespace,
+			customVariableType,
+		),
+	}
+}
+
+func errProviderCustomVariableTypeNotFound(
+	customVariableType string,
+	providerNamespace string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeProviderCustomVariableTypeNotFound,
+		Err: fmt.Errorf(
+			"run failed as the provider with namespace %q does not have an implementation for custom variable type %q",
+			providerNamespace,
+			customVariableType,
 		),
 	}
 }
