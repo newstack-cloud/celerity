@@ -1,4 +1,4 @@
-package languageserver
+package languageservices
 
 import (
 	"fmt"
@@ -13,39 +13,53 @@ import (
 	"go.uber.org/zap"
 )
 
+// SignatureService is a service that provides functionality
+// for function signature help.
+type SignatureService struct {
+	funcRegistry provider.FunctionRegistry
+	logger       *zap.Logger
+}
+
+// NewSignatureService creates a new service for function signature help.
+func NewSignatureService(
+	funcRegistry provider.FunctionRegistry,
+	logger *zap.Logger,
+) *SignatureService {
+	return &SignatureService{
+		funcRegistry,
+		logger,
+	}
+}
+
 // GetFunctionSignatures returns the function signatures for the given
 // blueprint and signature help parameters including the current position
 // in the source document.
-func GetFunctionSignatures(
+func (s *SignatureService) GetFunctionSignatures(
 	ctx *common.LSPContext,
 	tree *schema.TreeNode,
 	params *lsp.TextDocumentPositionParams,
-	funcRegistry provider.FunctionRegistry,
-	logger *zap.Logger,
 ) ([]*lsp.SignatureInformation, error) {
-	logger.Debug("Searching for function at position", zap.Any("position", params.Position))
-	subFunc := findFunctionAtPosition(tree, params.Position, logger)
+	s.logger.Debug("Searching for function at position", zap.Any("position", params.Position))
+	subFunc := findFunctionAtPosition(tree, params.Position, s.logger)
 	if subFunc == nil {
 		return []*lsp.SignatureInformation{}, nil
 	}
 
-	return signatureInfoFromFunction(subFunc, ctx, funcRegistry, logger)
+	return s.SignatureInfoFromFunction(subFunc, ctx)
 }
 
-func signatureInfoFromFunction(
+func (s *SignatureService) SignatureInfoFromFunction(
 	subFunc *substitutions.SubstitutionFunctionExpr,
 	ctx *common.LSPContext,
-	funcRegistry provider.FunctionRegistry,
-	logger *zap.Logger,
 ) ([]*lsp.SignatureInformation, error) {
 
-	defOutput, err := funcRegistry.GetDefinition(
+	defOutput, err := s.funcRegistry.GetDefinition(
 		ctx.Context,
 		string(subFunc.FunctionName),
 		&provider.FunctionGetDefinitionInput{},
 	)
 	if err != nil {
-		logger.Error("Failed to get function definition", zap.Error(err))
+		s.logger.Error("Failed to get function definition", zap.Error(err))
 		return []*lsp.SignatureInformation{}, nil
 	}
 
@@ -111,29 +125,6 @@ func createFuncDocumentation(def *function.Definition) any {
 	}
 
 	return def.Description
-}
-
-func customRenderSignatures(signatures []*lsp.SignatureInformation) string {
-	var sb strings.Builder
-	for i, sig := range signatures {
-		if i > 0 {
-			sb.WriteString("\n\n---\n\n")
-		}
-
-		sb.WriteString("```")
-		sb.WriteString(sig.Label)
-		sb.WriteString("```\n\n")
-		if docStr, isDocStr := sig.Documentation.(string); isDocStr {
-			sb.WriteString(docStr)
-		}
-		if docMarkup, isDocMarkup := sig.Documentation.(lsp.MarkupContent); isDocMarkup {
-			if docMarkup.Kind == lsp.MarkupKindMarkdown {
-				sb.WriteString(docMarkup.Value)
-			}
-		}
-	}
-
-	return sb.String()
 }
 
 func createLSPParams(labels []string, params []function.Parameter) []*lsp.ParameterInformation {

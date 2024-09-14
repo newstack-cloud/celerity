@@ -1,4 +1,4 @@
-package languageserver
+package helpinfo
 
 import (
 	"fmt"
@@ -9,7 +9,8 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 )
 
-func renderVariableInfo(varName string, variable *schema.Variable) string {
+// RenderVariableInfo renders variable information for use in help info.
+func RenderVariableInfo(varName string, variable *schema.Variable) string {
 	varType := "unknown"
 	if variable.Type != nil {
 		varType = string(variable.Type.Value)
@@ -29,7 +30,8 @@ func renderVariableInfo(varName string, variable *schema.Variable) string {
 	)
 }
 
-func renderValueInfo(valueName string, value *schema.Value) string {
+// RenderValueInfo renders value information for use in help info.
+func RenderValueInfo(valueName string, value *schema.Value) string {
 	valueType := "unknown"
 	if value.Type != nil {
 		valueType = string(value.Type.Value)
@@ -49,7 +51,8 @@ func renderValueInfo(valueName string, value *schema.Value) string {
 	)
 }
 
-func renderChildInfo(childName string, child *schema.Include) string {
+// RenderChildInfo renders child blueprint information for use in help info.
+func RenderChildInfo(childName string, child *schema.Include) string {
 	path := ""
 	if child.Path != nil {
 		path, _ = substitutions.SubstitutionsToString("", child.Path)
@@ -69,7 +72,9 @@ func renderChildInfo(childName string, child *schema.Include) string {
 	)
 }
 
-func renderBasicResourceInfo(resourceName string, resource *schema.Resource) string {
+// RenderBasicResourceInfo renders basic resource information
+// for use in help info.
+func RenderBasicResourceInfo(resourceName string, resource *schema.Resource) string {
 	description := ""
 	if resource.Description != nil {
 		description, _ = substitutions.SubstitutionsToString("", resource.Description)
@@ -89,13 +94,15 @@ func renderBasicResourceInfo(resourceName string, resource *schema.Resource) str
 	)
 }
 
-func renderResourceDefinitionFieldInfo(
+// RenderResourceDefinitionFieldInfo renders resource definition field information
+// for use in help info.
+func RenderResourceDefinitionFieldInfo(
 	resourceName string,
 	resource *schema.Resource,
 	resRef *substitutions.SubstitutionResourceProperty,
 	specFieldSchema *provider.ResourceDefinitionsSchema,
 ) string {
-	resourceInfo := renderBasicResourceInfo(resourceName, resource)
+	resourceInfo := RenderBasicResourceInfo(resourceName, resource)
 	if specFieldSchema == nil {
 		return resourceInfo
 	}
@@ -120,13 +127,15 @@ func renderResourceDefinitionFieldInfo(
 	)
 }
 
-func renderDataSourceFieldInfo(
+// RenderDataSourceFieldInfo renders data source field information
+// for use in help info.
+func RenderDataSourceFieldInfo(
 	dataSourceName string,
 	dataSource *schema.DataSource,
 	dataSourceRef *substitutions.SubstitutionDataSourceProperty,
 	dataSourceField *schema.DataSourceFieldExport,
 ) string {
-	dataSourceInfo := renderBasicDataSourceInfo(dataSourceName, dataSource)
+	dataSourceInfo := RenderBasicDataSourceInfo(dataSourceName, dataSource)
 
 	dataSourceFieldType := "unknown"
 	if dataSourceField.Type != nil {
@@ -175,7 +184,9 @@ func dataSourceFieldNameOrIndexAccessor(
 	return sb.String()
 }
 
-func renderBasicDataSourceInfo(
+// RenderBasicDataSourceInfo renders basic data source information
+// for use in help info.
+func RenderBasicDataSourceInfo(
 	dataSourceName string,
 	dataSource *schema.DataSource,
 ) string {
@@ -198,13 +209,15 @@ func renderBasicDataSourceInfo(
 	)
 }
 
-func renderElemRefInfo(
+// RenderElemRefInfo renders element reference information
+// for use in help info.
+func RenderElemRefInfo(
 	resourceName string,
 	resource *schema.Resource,
 	elemRef *substitutions.SubstitutionElemReference,
 ) string {
 
-	resourceInfo := renderBasicResourceInfo(resourceName, resource)
+	resourceInfo := RenderBasicResourceInfo(resourceName, resource)
 	fieldPath := fmt.Sprintf(".%s", renderFieldPath(elemRef.Path))
 	return fmt.Sprintf(
 		"`resources.%s[i]%s`\n\nnth element of resource template `resources.%s`\n\n"+
@@ -216,12 +229,14 @@ func renderElemRefInfo(
 	)
 }
 
-func renderElemIndexRefInfo(
+// RenderElemIndexRefInfo renders element index reference information
+// for use in help info.
+func RenderElemIndexRefInfo(
 	resourceName string,
 	resource *schema.Resource,
 ) string {
 
-	resourceInfo := renderBasicResourceInfo(resourceName, resource)
+	resourceInfo := RenderBasicResourceInfo(resourceName, resource)
 
 	return fmt.Sprintf(
 		"index of nth element in resource template `resources.%s`\n\n"+

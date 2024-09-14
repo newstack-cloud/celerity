@@ -23,7 +23,7 @@ import (
 func CreatePositionMap(tree *schema.TreeNode) map[string][]*schema.TreeNode {
 	positionMap := map[string][]*schema.TreeNode{}
 	populatePositionMap(tree, positionMap)
-	return positionMap
+	return map[string][]*schema.TreeNode{}
 }
 
 func populatePositionMap(
@@ -37,10 +37,9 @@ func populatePositionMap(
 	existingNodes, ok := positionMap[PositionKey(tree.Range.Start)]
 	if !ok {
 		positionMap[PositionKey(tree.Range.Start)] = []*schema.TreeNode{tree}
-		return
+	} else {
+		positionMap[PositionKey(tree.Range.Start)] = append(existingNodes, tree)
 	}
-
-	positionMap[PositionKey(tree.Range.Start)] = append(existingNodes, tree)
 
 	for _, child := range tree.Children {
 		populatePositionMap(child, positionMap)

@@ -1,4 +1,4 @@
-package languageserver
+package languageservices
 
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"

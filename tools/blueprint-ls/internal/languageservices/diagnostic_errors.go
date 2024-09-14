@@ -1,4 +1,4 @@
-package languageserver
+package languageservices
 
 import (
 	"reflect"
@@ -8,29 +8,45 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
 	"go.uber.org/zap"
 )
 
-func blueprintErrorToDiagnostics(
-	err error,
-	docURI lsp.URI,
+// DiagnosticErrorService is a service that provides functionality
+// for converting validation errors into LSP diagnostics.
+type DiagnosticErrorService struct {
+	state  *State
+	logger *zap.Logger
+}
+
+// NewDiagnosticErrorService creates a new service for
+// converting validation errors into LSP diagnostics.
+func NewDiagnosticErrorService(
 	state *State,
 	logger *zap.Logger,
+) *DiagnosticErrorService {
+	return &DiagnosticErrorService{
+		state,
+		logger,
+	}
+}
+
+func (s *DiagnosticErrorService) BlueprintErrorToDiagnostics(
+	err error,
+	docURI lsp.URI,
 ) []lsp.Diagnostic {
 	diagnostics := []lsp.Diagnostic{}
 
-	logger.Debug("blueprintErrorToDiagnostics, err type", zap.String("type", reflect.TypeOf(err).String()))
+	s.logger.Debug("blueprintErrorToDiagnostics, err type", zap.String("type", reflect.TypeOf(err).String()))
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	if isLoadErr {
-		collectLoadErrors(loadErr, &diagnostics, nil, docURI, state, logger)
+		s.collectLoadErrors(loadErr, &diagnostics, nil, docURI)
 		return diagnostics
 	}
 
 	schemaErr, isSchemaErr := err.(*schema.Error)
 	if isSchemaErr {
-		collectSchemaError(schemaErr, &diagnostics, docURI, state)
+		s.collectSchemaError(schemaErr, &diagnostics, docURI)
 		return diagnostics
 	}
 
@@ -65,52 +81,50 @@ func getGeneralErrorDiagnostics(err error) []lsp.Diagnostic {
 	}
 }
 
-func collectLoadErrors(
+func (s *DiagnosticErrorService) collectLoadErrors(
 	err *errors.LoadError,
 	diagnostics *[]lsp.Diagnostic,
 	parentLoadErr *errors.LoadError,
 	docURI lsp.URI,
-	state *State,
-	logger *zap.Logger,
 ) {
-	logger.Debug("load error", zap.String("error", err.Error()), zap.Int("child error count", len(err.ChildErrors)))
+	s.logger.Debug("load error", zap.String("error", err.Error()), zap.Int("child error count", len(err.ChildErrors)))
 	for _, childErr := range err.ChildErrors {
-		logger.Debug("child error type", zap.String("type", reflect.TypeOf(childErr).String()))
+		s.logger.Debug("child error type", zap.String("type", reflect.TypeOf(childErr).String()))
 		childLoadErr, isLoadErr := childErr.(*errors.LoadError)
 		if isLoadErr {
-			logger.Debug("child load error", zap.String("error", childLoadErr.Error()))
-			collectLoadErrors(childLoadErr, diagnostics, err, docURI, state, logger)
+			s.logger.Debug("child load error", zap.String("error", childLoadErr.Error()))
+			s.collectLoadErrors(childLoadErr, diagnostics, err, docURI)
 		}
 
 		childSchemaErr, isSchemaErr := childErr.(*schema.Error)
 		if isSchemaErr {
-			logger.Debug("child schema error", zap.String("error", childSchemaErr.Error()))
-			collectSchemaError(childSchemaErr, diagnostics, docURI, state)
+			s.logger.Debug("child schema error", zap.String("error", childSchemaErr.Error()))
+			s.collectSchemaError(childSchemaErr, diagnostics, docURI)
 		}
 
 		childParseErrs, isParseErrs := childErr.(*substitutions.ParseErrors)
 		if isParseErrs {
-			collectParseErrors(childParseErrs, diagnostics, err, docURI, state)
+			s.collectParseErrors(childParseErrs, diagnostics, err, docURI)
 		}
 
 		childParseErr, isParseErr := childErr.(*substitutions.ParseError)
 		if isParseErr {
-			collectParseError(childParseErr, diagnostics, docURI, state)
+			s.collectParseError(childParseErr, diagnostics, docURI)
 		}
 
 		childCoreErr, isCoreErr := childErr.(*core.Error)
 		if isCoreErr {
-			collectCoreError(childCoreErr, diagnostics, err, docURI, state)
+			s.collectCoreError(childCoreErr, diagnostics, err, docURI)
 		}
 
 		childLexErrors, isLexErrs := childErr.(*substitutions.LexErrors)
 		if isLexErrs {
-			collectLexErrors(childLexErrors, diagnostics, err, docURI, state)
+			s.collectLexErrors(childLexErrors, diagnostics, err, docURI)
 		}
 
 		childLexError, isLexErr := childErr.(*substitutions.LexError)
 		if isLexErr {
-			collectLexError(childLexError, diagnostics, docURI, state)
+			s.collectLexError(childLexError, diagnostics, docURI)
 		}
 
 		_, isRunErr := childErr.(*errors.RunError)
@@ -120,19 +134,18 @@ func collectLoadErrors(
 		// in loading provider and transformer plugins.
 		if !isRunErr && !isLoadErr && !isParseErrs && !isParseErr &&
 			!isCoreErr && !isLexErrs && !isLexErr {
-			collectGeneralError(childErr, diagnostics, err, docURI, state)
+			s.collectGeneralError(childErr, diagnostics, err, docURI)
 		}
 	}
 
 	if len(err.ChildErrors) == 0 {
-		logger.Debug("adding diagnostics for error", zap.String("error", err.Error()))
+		s.logger.Debug("adding diagnostics for error", zap.String("error", err.Error()))
 		severity := lsp.DiagnosticSeverityError
 		*diagnostics = append(*diagnostics, lsp.Diagnostic{
-			Range: rangeFromBlueprintErrorLocation(
+			Range: s.rangeFromBlueprintErrorLocation(
 				&blueprintErrorLocationLoadErr{err},
 				&blueprintErrorLocationLoadErr{parentLoadErr},
 				docURI,
-				state,
 			),
 			Severity: &severity,
 			Message:  err.Error(),
@@ -140,11 +153,10 @@ func collectLoadErrors(
 	}
 }
 
-func rangeFromBlueprintErrorLocation(
+func (s *DiagnosticErrorService) rangeFromBlueprintErrorLocation(
 	location blueprintErrorLocation,
 	parentLocation blueprintErrorLocation,
 	docURI lsp.URI,
-	state *State,
 ) lsp.Range {
 	errMissingLocation := location.Line() == nil && location.Column() == nil
 	parentMissingLocation := parentLocation == nil ||
@@ -164,53 +176,25 @@ func rangeFromBlueprintErrorLocation(
 	}
 
 	if errMissingLocation {
-		return rangeFromBlueprintErrorLocation(
+		return s.rangeFromBlueprintErrorLocation(
 			parentLocation,
 			nil,
 			docURI,
-			state,
 		)
 	}
 
 	startPos := getStartErrorLocation(location)
 
-	// Get accurate end position for the element that the error is associated with.
-	node := state.GetDocumentPositionMapSmallestNode(
-		docURI,
-		blueprint.PositionKey(startPos),
-	)
-
-	if node == nil || node.Range == nil || node.Range.Start == nil {
-		// LSP offsets are 0-based, the blueprint package uses 1-based offsets.
-		start := lsp.Position{
-			Line:      lsp.UInteger(startPos.Line - 1),
-			Character: lsp.UInteger(startPos.Column - 1),
-		}
-		return lsp.Range{
-			Start: start,
-			End: lsp.Position{
-				Line:      start.Line + 1,
-				Character: 0,
-			},
-		}
+	// LSP offsets are 0-based, the blueprint package uses 1-based offsets.
+	start := lsp.Position{
+		Line:      lsp.UInteger(startPos.Line - 1),
+		Character: lsp.UInteger(startPos.Column - 1),
 	}
-
-	endPos := node.Range.End
-	if endPos == nil {
-		endPos = &source.Meta{
-			Line:   node.Range.Start.Line + 1,
-			Column: 0,
-		}
-	}
-
 	return lsp.Range{
-		Start: lsp.Position{
-			Line:      lsp.UInteger(node.Range.Start.Line - 1),
-			Character: lsp.UInteger(node.Range.Start.Column - 1),
-		},
+		Start: start,
 		End: lsp.Position{
-			Line:      lsp.UInteger(endPos.Line - 1),
-			Character: lsp.UInteger(endPos.Column - 1),
+			Line:      start.Line + 1,
+			Character: 0,
 		},
 	}
 }
@@ -244,28 +228,26 @@ func getStartErrorLocation(location blueprintErrorLocation) *source.Meta {
 	}
 }
 
-func collectParseErrors(
+func (s *DiagnosticErrorService) collectParseErrors(
 	errs *substitutions.ParseErrors,
 	diagnostics *[]lsp.Diagnostic,
 	parentLoadErr *errors.LoadError,
 	docURI lsp.URI,
-	state *State,
 ) {
 	for _, childErr := range errs.ChildErrors {
 		childParseErr, isParseError := childErr.(*substitutions.ParseError)
 		if isParseError {
-			collectParseError(childParseErr, diagnostics, docURI, state)
+			s.collectParseError(childParseErr, diagnostics, docURI)
 		}
 	}
 
 	if len(errs.ChildErrors) == 0 {
 		severity := lsp.DiagnosticSeverityError
 		*diagnostics = append(*diagnostics, lsp.Diagnostic{
-			Range: rangeFromBlueprintErrorLocation(
+			Range: s.rangeFromBlueprintErrorLocation(
 				&blueprintErrorLocationLoadErr{parentLoadErr},
 				nil,
 				docURI,
-				state,
 			),
 			Severity: &severity,
 			Message:  errs.Error(),
@@ -273,67 +255,61 @@ func collectParseErrors(
 	}
 }
 
-func collectParseError(
+func (s *DiagnosticErrorService) collectParseError(
 	err *substitutions.ParseError,
 	diagnostics *[]lsp.Diagnostic,
 	docURI lsp.URI,
-	state *State,
 ) {
 	severity := lsp.DiagnosticSeverityError
 	*diagnostics = append(*diagnostics, lsp.Diagnostic{
-		Range: rangeFromBlueprintErrorLocation(
+		Range: s.rangeFromBlueprintErrorLocation(
 			&blueprintErrorLocationParseErr{err},
 			nil,
 			docURI,
-			state,
 		),
 		Severity: &severity,
 		Message:  err.Error(),
 	})
 }
 
-func collectCoreError(
+func (s *DiagnosticErrorService) collectCoreError(
 	err *core.Error,
 	diagnostics *[]lsp.Diagnostic,
 	parentLoadErr *errors.LoadError,
 	docURI lsp.URI,
-	state *State,
 ) {
 	severity := lsp.DiagnosticSeverityError
 	*diagnostics = append(*diagnostics, lsp.Diagnostic{
-		Range: rangeFromBlueprintErrorLocation(
+		Range: s.rangeFromBlueprintErrorLocation(
 			&blueprintErrorLocationCoreErr{err},
 			&blueprintErrorLocationLoadErr{parentLoadErr},
 			docURI,
-			state,
 		),
 		Severity: &severity,
 		Message:  err.Error(),
 	})
 }
 
-func collectLexErrors(
+func (s *DiagnosticErrorService) collectLexErrors(
 	errs *substitutions.LexErrors,
 	diagnostics *[]lsp.Diagnostic,
 	parentLoadErr *errors.LoadError,
 	docURI lsp.URI,
-	state *State,
 ) {
 	for _, childErr := range errs.ChildErrors {
 		childLexErr, isLexError := childErr.(*substitutions.LexError)
 		if isLexError {
-			collectLexError(childLexErr, diagnostics, docURI, state)
+			s.collectLexError(childLexErr, diagnostics, docURI)
 		}
 	}
 
 	if len(errs.ChildErrors) == 0 {
 		severity := lsp.DiagnosticSeverityError
 		*diagnostics = append(*diagnostics, lsp.Diagnostic{
-			Range: rangeFromBlueprintErrorLocation(
+			Range: s.rangeFromBlueprintErrorLocation(
 				&blueprintErrorLocationLoadErr{parentLoadErr},
 				nil,
 				docURI,
-				state,
 			),
 			Severity: &severity,
 			Message:  errs.Error(),
@@ -341,58 +317,52 @@ func collectLexErrors(
 	}
 }
 
-func collectLexError(
+func (s *DiagnosticErrorService) collectLexError(
 	err *substitutions.LexError,
 	diagnostics *[]lsp.Diagnostic,
 	docURI lsp.URI,
-	state *State,
 ) {
 	severity := lsp.DiagnosticSeverityError
 	*diagnostics = append(*diagnostics, lsp.Diagnostic{
-		Range: rangeFromBlueprintErrorLocation(
+		Range: s.rangeFromBlueprintErrorLocation(
 			&blueprintErrorLocationLexErr{err},
 			nil,
 			docURI,
-			state,
 		),
 		Severity: &severity,
 		Message:  err.Error(),
 	})
 }
 
-func collectSchemaError(
+func (s *DiagnosticErrorService) collectSchemaError(
 	err *schema.Error,
 	diagnostics *[]lsp.Diagnostic,
 	docURI lsp.URI,
-	state *State,
 ) {
 	severity := lsp.DiagnosticSeverityError
 	*diagnostics = append(*diagnostics, lsp.Diagnostic{
-		Range: rangeFromBlueprintErrorLocation(
+		Range: s.rangeFromBlueprintErrorLocation(
 			&blueprintErrorLocationSchemaErr{err},
 			nil,
 			docURI,
-			state,
 		),
 		Severity: &severity,
 		Message:  err.Error(),
 	})
 }
 
-func collectGeneralError(
+func (s *DiagnosticErrorService) collectGeneralError(
 	err error,
 	diagnostics *[]lsp.Diagnostic,
 	parentLoadError *errors.LoadError,
 	docURI lsp.URI,
-	state *State,
 ) {
 	severity := lsp.DiagnosticSeverityError
 	*diagnostics = append(*diagnostics, lsp.Diagnostic{
-		Range: rangeFromBlueprintErrorLocation(
+		Range: s.rangeFromBlueprintErrorLocation(
 			&blueprintErrorLocationLoadErr{parentLoadError},
 			nil,
 			docURI,
-			state,
 		),
 		Severity: &severity,
 		Message:  err.Error(),

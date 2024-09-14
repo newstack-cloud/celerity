@@ -1,4 +1,4 @@
-package languageserver
+package languageservices
 
 import (
 	"strings"
@@ -7,10 +7,37 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/helpinfo"
 	common "github.com/two-hundred/ls-builder/common"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
 	"go.uber.org/zap"
 )
+
+// HoverService is a service that provides functionality for hover messages.
+type HoverService struct {
+	funcRegistry       provider.FunctionRegistry
+	resourceRegistry   resourcehelpers.Registry
+	dataSourceRegistry provider.DataSourceRegistry
+	signatureService   *SignatureService
+	logger             *zap.Logger
+}
+
+// NewHoverService creates a new service for hover messages.
+func NewHoverService(
+	funcRegistry provider.FunctionRegistry,
+	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
+	signatureService *SignatureService,
+	logger *zap.Logger,
+) *HoverService {
+	return &HoverService{
+		funcRegistry,
+		resourceRegistry,
+		dataSourceRegistry,
+		signatureService,
+		logger,
+	}
+}
 
 // HoverContent represents the content for a hover message.
 type HoverContent struct {
@@ -20,41 +47,29 @@ type HoverContent struct {
 
 // GetHoverContent returns the hover content for the given position in the
 // source document.
-func GetHoverContent(
+func (s *HoverService) GetHoverContent(
 	ctx *common.LSPContext,
 	tree *schema.TreeNode,
 	blueprint *schema.Blueprint,
 	params *lsp.TextDocumentPositionParams,
-	funcRegistry provider.FunctionRegistry,
-	resourceRegistry resourcehelpers.Registry,
-	dataSourceRegistry provider.DataSourceRegistry,
-	logger *zap.Logger,
 ) (*HoverContent, error) {
 
 	// The last element in the collected list is the element with the shortest
 	// range that contains the position.
 	collected := []*schema.TreeNode{}
-	collectElementsAtPosition(tree, params.Position, logger, &collected)
+	collectElementsAtPosition(tree, params.Position, s.logger, &collected)
 
-	return getHoverElementContent(
+	return s.getHoverElementContent(
 		ctx,
 		blueprint,
 		collected,
-		funcRegistry,
-		resourceRegistry,
-		dataSourceRegistry,
-		logger,
 	)
 }
 
-func getHoverElementContent(
+func (s *HoverService) getHoverElementContent(
 	ctx *common.LSPContext,
 	blueprint *schema.Blueprint,
 	collected []*schema.TreeNode,
-	funcRegistry provider.FunctionRegistry,
-	resourceRegistry resourcehelpers.Registry,
-	dataSourceRegistry provider.DataSourceRegistry,
-	logger *zap.Logger,
 ) (*HoverContent, error) {
 
 	if len(collected) == 0 {
@@ -74,7 +89,7 @@ func getHoverElementContent(
 
 	switch elementType {
 	case "functionCall":
-		return getFunctionCallHoverContent(ctx, node, funcRegistry, logger)
+		return s.getFunctionCallHoverContent(ctx, node)
 	case "varRef":
 		return getVarRefHoverContent(node, blueprint)
 	case "valRef":
@@ -82,7 +97,7 @@ func getHoverElementContent(
 	case "childRef":
 		return getChildRefHoverContent(node, blueprint)
 	case "resourceRef":
-		return getResourceRefHoverContent(ctx, node, blueprint, resourceRegistry, logger)
+		return s.getResourceRefHoverContent(ctx, node, blueprint)
 	case "datasourceRef":
 		return getDataSourceRefHoverContent(node, blueprint)
 	case "elemRef":
@@ -90,12 +105,175 @@ func getHoverElementContent(
 	case "elemIndexRef":
 		return getElemIndexRefHoverContent(node, blueprint)
 	case "resourceType":
-		return getResourceTypeHoverContent(ctx, node, resourceRegistry, logger)
+		return s.getResourceTypeHoverContent(ctx, node)
 	case "dataSourceType":
-		return getDataSourceTypeHoverContent(ctx, node, dataSourceRegistry, logger)
+		return s.getDataSourceTypeHoverContent(ctx, node)
 	default:
 		return &HoverContent{}, nil
 	}
+}
+
+func (s *HoverService) getFunctionCallHoverContent(
+	ctx *common.LSPContext,
+	node *schema.TreeNode,
+) (*HoverContent, error) {
+
+	subFunc, isSubFunc := node.SchemaElement.(*substitutions.SubstitutionFunctionExpr)
+	if !isSubFunc {
+		return &HoverContent{}, nil
+	}
+
+	signatureInfo, err := s.signatureService.SignatureInfoFromFunction(subFunc, ctx)
+	if err != nil {
+		return &HoverContent{}, err
+	}
+
+	content := helpinfo.CustomRenderSignatures(signatureInfo)
+
+	return &HoverContent{
+		Value: content,
+		Range: rangeToLSPRange(node.Range),
+	}, nil
+}
+
+func (s *HoverService) getResourceRefHoverContent(
+	ctx *common.LSPContext,
+	node *schema.TreeNode,
+	blueprint *schema.Blueprint,
+) (*HoverContent, error) {
+	resRef, isResRef := node.SchemaElement.(*substitutions.SubstitutionResourceProperty)
+	if !isResRef {
+		return &HoverContent{}, nil
+	}
+
+	resource := getResource(blueprint, resRef.ResourceName)
+	if resource == nil || resource.Type == nil {
+		return &HoverContent{}, nil
+	}
+
+	if len(resRef.Path) == 0 {
+		return getBasicResourceHoverContent(node.Label, resource), nil
+	}
+
+	if len(resRef.Path) > 1 && resRef.Path[0].FieldName == "spec" {
+		s.logger.Debug(
+			"Fetching spec definition for hover content",
+			zap.String("resourceType", resource.Type.Value),
+		)
+		specDefOutput, err := s.resourceRegistry.GetSpecDefinition(
+			ctx.Context,
+			resource.Type.Value,
+			&provider.ResourceGetSpecDefinitionInput{},
+		)
+		if err != nil {
+			return &HoverContent{}, nil
+		}
+
+		return getResourceWithSpecHoverContent(
+			node,
+			resource,
+			resRef,
+			specDefOutput.SpecDefinition,
+		)
+	}
+
+	if len(resRef.Path) > 1 && resRef.Path[0].FieldName == "state" {
+		s.logger.Debug(
+			"Fetching state definition for hover content",
+			zap.String("resourceType", resource.Type.Value),
+		)
+		stateDefOutput, err := s.resourceRegistry.GetStateDefinition(
+			ctx.Context,
+			resource.Type.Value,
+			&provider.ResourceGetStateDefinitionInput{},
+		)
+		if err != nil {
+			return &HoverContent{}, err
+		}
+
+		return getResourceWithStateHoverContent(
+			node,
+			resource,
+			resRef,
+			stateDefOutput.StateDefinition,
+		)
+	}
+
+	return &HoverContent{}, nil
+}
+
+func (s *HoverService) getResourceTypeHoverContent(
+	ctx *common.LSPContext,
+	node *schema.TreeNode,
+) (*HoverContent, error) {
+	resType, isResType := node.SchemaElement.(*schema.ResourceTypeWrapper)
+	if !isResType || resType == nil {
+		return &HoverContent{}, nil
+	}
+
+	s.logger.Debug(
+		"Fetching resource type definition for hover content",
+		zap.String("resourceType", resType.Value),
+	)
+	descriptionOutput, err := s.resourceRegistry.GetTypeDescription(
+		ctx.Context,
+		resType.Value,
+		&provider.ResourceGetTypeDescriptionInput{},
+	)
+	if err != nil {
+		s.logger.Debug(
+			"Failed to fetch type description for resource type hover content",
+			zap.Error(err),
+		)
+		return &HoverContent{}, nil
+	}
+
+	description := descriptionOutput.MarkdownDescription
+	if description == "" {
+		description = descriptionOutput.PlainTextDescription
+	}
+
+	return &HoverContent{
+		Value: description,
+		Range: rangeToLSPRange(node.Range),
+	}, nil
+}
+
+func (s *HoverService) getDataSourceTypeHoverContent(
+	ctx *common.LSPContext,
+	node *schema.TreeNode,
+) (*HoverContent, error) {
+	dataSourceType, isDataSourceType := node.SchemaElement.(*schema.DataSourceTypeWrapper)
+	if !isDataSourceType || dataSourceType == nil {
+		return &HoverContent{}, nil
+	}
+
+	s.logger.Debug(
+		"Fetching data source type definition for hover content",
+		zap.String("dataSourceType", dataSourceType.Value),
+	)
+	descriptionOutput, err := s.dataSourceRegistry.GetTypeDescription(
+		ctx.Context,
+		dataSourceType.Value,
+		&provider.DataSourceGetTypeDescriptionInput{},
+	)
+	if err != nil {
+		s.logger.Debug(
+			"Failed to fetch type description for data source type hover content",
+			zap.Error(err),
+		)
+		return &HoverContent{}, nil
+	}
+
+	description := descriptionOutput.MarkdownDescription
+	if description == "" {
+		description = descriptionOutput.PlainTextDescription
+	}
+
+	return &HoverContent{
+		Value: description,
+		Range: rangeToLSPRange(node.Range),
+	}, nil
 }
 
 func matchHoverElement(
@@ -173,31 +351,6 @@ func isDataSourceTypePath(pathParts []string) bool {
 		pathParts[len(pathParts)-1] == "type"
 }
 
-func getFunctionCallHoverContent(
-	ctx *common.LSPContext,
-	node *schema.TreeNode,
-	funcRegistry provider.FunctionRegistry,
-	logger *zap.Logger,
-) (*HoverContent, error) {
-
-	subFunc, isSubFunc := node.SchemaElement.(*substitutions.SubstitutionFunctionExpr)
-	if !isSubFunc {
-		return &HoverContent{}, nil
-	}
-
-	signatureInfo, err := signatureInfoFromFunction(subFunc, ctx, funcRegistry, logger)
-	if err != nil {
-		return &HoverContent{}, err
-	}
-
-	content := customRenderSignatures(signatureInfo)
-
-	return &HoverContent{
-		Value: content,
-		Range: rangeToLSPRange(node.Range),
-	}, nil
-}
-
 func getVarRefHoverContent(
 	node *schema.TreeNode,
 	blueprint *schema.Blueprint,
@@ -213,7 +366,7 @@ func getVarRefHoverContent(
 		return &HoverContent{}, nil
 	}
 
-	content := renderVariableInfo(node.Label, variable)
+	content := helpinfo.RenderVariableInfo(node.Label, variable)
 
 	return &HoverContent{
 		Value: content,
@@ -236,7 +389,7 @@ func getValRefHoverContent(
 		return &HoverContent{}, nil
 	}
 
-	content := renderValueInfo(node.Label, value)
+	content := helpinfo.RenderValueInfo(node.Label, value)
 
 	return &HoverContent{
 		Value: content,
@@ -259,7 +412,7 @@ func getChildRefHoverContent(
 		return &HoverContent{}, nil
 	}
 
-	content := renderChildInfo(node.Label, child)
+	content := helpinfo.RenderChildInfo(node.Label, child)
 
 	return &HoverContent{
 		Value: content,
@@ -267,79 +420,11 @@ func getChildRefHoverContent(
 	}, nil
 }
 
-func getResourceRefHoverContent(
-	ctx *common.LSPContext,
-	node *schema.TreeNode,
-	blueprint *schema.Blueprint,
-	resourceRegistry resourcehelpers.Registry,
-	logger *zap.Logger,
-) (*HoverContent, error) {
-	resRef, isResRef := node.SchemaElement.(*substitutions.SubstitutionResourceProperty)
-	if !isResRef {
-		return &HoverContent{}, nil
-	}
-
-	resource := getResource(blueprint, resRef.ResourceName)
-	if resource == nil || resource.Type == nil {
-		return &HoverContent{}, nil
-	}
-
-	if len(resRef.Path) == 0 {
-		return getBasicResourceHoverContent(node.Label, resource), nil
-	}
-
-	if len(resRef.Path) > 1 && resRef.Path[0].FieldName == "spec" {
-		logger.Debug(
-			"Fetching spec definition for hover content",
-			zap.String("resourceType", resource.Type.Value),
-		)
-		specDefOutput, err := resourceRegistry.GetSpecDefinition(
-			ctx.Context,
-			resource.Type.Value,
-			&provider.ResourceGetSpecDefinitionInput{},
-		)
-		if err != nil {
-			return &HoverContent{}, err
-		}
-
-		return getResourceWithSpecHoverContent(
-			node,
-			resource,
-			resRef,
-			specDefOutput.SpecDefinition,
-		)
-	}
-
-	if len(resRef.Path) > 1 && resRef.Path[0].FieldName == "state" {
-		logger.Debug(
-			"Fetching state definition for hover content",
-			zap.String("resourceType", resource.Type.Value),
-		)
-		stateDefOutput, err := resourceRegistry.GetStateDefinition(
-			ctx.Context,
-			resource.Type.Value,
-			&provider.ResourceGetStateDefinitionInput{},
-		)
-		if err != nil {
-			return &HoverContent{}, err
-		}
-
-		return getResourceWithStateHoverContent(
-			node,
-			resource,
-			resRef,
-			stateDefOutput.StateDefinition,
-		)
-	}
-
-	return &HoverContent{}, nil
-}
-
 func getBasicResourceHoverContent(
 	resourceName string,
 	resource *schema.Resource,
 ) *HoverContent {
-	content := renderBasicResourceInfo(resourceName, resource)
+	content := helpinfo.RenderBasicResourceInfo(resourceName, resource)
 
 	return &HoverContent{
 		Value: content,
@@ -362,7 +447,7 @@ func getResourceWithSpecHoverContent(
 		return &HoverContent{}, err
 	}
 
-	content := renderResourceDefinitionFieldInfo(
+	content := helpinfo.RenderResourceDefinitionFieldInfo(
 		node.Label,
 		resource,
 		resRef,
@@ -390,7 +475,7 @@ func getResourceWithStateHoverContent(
 		return &HoverContent{}, err
 	}
 
-	content := renderResourceDefinitionFieldInfo(
+	content := helpinfo.RenderResourceDefinitionFieldInfo(
 		node.Label,
 		resource,
 		resRef,
@@ -421,12 +506,12 @@ func getDataSourceRefHoverContent(
 	dataSourceField := getDataSourceField(dataSource, dataSourceRef.FieldName)
 	if dataSourceField == nil {
 		return &HoverContent{
-			Value: renderBasicDataSourceInfo(node.Label, dataSource),
+			Value: helpinfo.RenderBasicDataSourceInfo(node.Label, dataSource),
 			Range: rangeToLSPRange(node.Range),
 		}, nil
 	}
 
-	content := renderDataSourceFieldInfo(node.Label, dataSource, dataSourceRef, dataSourceField)
+	content := helpinfo.RenderDataSourceFieldInfo(node.Label, dataSource, dataSourceRef, dataSourceField)
 
 	return &HoverContent{
 		Value: content,
@@ -450,7 +535,7 @@ func getElemRefHoverContent(
 		return &HoverContent{}, nil
 	}
 
-	content := renderElemRefInfo(resourceName, resource, elemRef)
+	content := helpinfo.RenderElemRefInfo(resourceName, resource, elemRef)
 
 	return &HoverContent{
 		Value: content,
@@ -469,102 +554,12 @@ func getElemIndexRefHoverContent(
 		return &HoverContent{}, nil
 	}
 
-	content := renderElemIndexRefInfo(resourceName, resource)
+	content := helpinfo.RenderElemIndexRefInfo(resourceName, resource)
 
 	return &HoverContent{
 		Value: content,
 		Range: rangeToLSPRange(node.Range),
 	}, nil
-}
-
-func getResourceTypeHoverContent(
-	ctx *common.LSPContext,
-	node *schema.TreeNode,
-	resourceRegistry resourcehelpers.Registry,
-	logger *zap.Logger,
-) (*HoverContent, error) {
-	resType, isResType := node.SchemaElement.(*schema.ResourceTypeWrapper)
-	if !isResType || resType == nil {
-		return &HoverContent{}, nil
-	}
-
-	logger.Debug(
-		"Fetching resource type definition for hover content",
-		zap.String("resourceType", resType.Value),
-	)
-	descriptionOutput, err := resourceRegistry.GetTypeDescription(
-		ctx.Context,
-		resType.Value,
-		&provider.ResourceGetTypeDescriptionInput{},
-	)
-	if err != nil {
-		return &HoverContent{}, err
-	}
-
-	description := descriptionOutput.MarkdownDescription
-	if description == "" {
-		description = descriptionOutput.PlainTextDescription
-	}
-
-	return &HoverContent{
-		Value: description,
-		Range: rangeToLSPRange(node.Range),
-	}, nil
-}
-
-func getDataSourceTypeHoverContent(
-	ctx *common.LSPContext,
-	node *schema.TreeNode,
-	dataSourceRegistry provider.DataSourceRegistry,
-	logger *zap.Logger,
-) (*HoverContent, error) {
-	dataSourceType, isDataSourceType := node.SchemaElement.(*schema.DataSourceTypeWrapper)
-	if !isDataSourceType || dataSourceType == nil {
-		return &HoverContent{}, nil
-	}
-
-	logger.Debug(
-		"Fetching data source type definition for hover content",
-		zap.String("dataSourceType", dataSourceType.Value),
-	)
-	descriptionOutput, err := dataSourceRegistry.GetTypeDescription(
-		ctx.Context,
-		dataSourceType.Value,
-		&provider.DataSourceGetTypeDescriptionInput{},
-	)
-	if err != nil {
-		return &HoverContent{}, err
-	}
-
-	description := descriptionOutput.MarkdownDescription
-	if description == "" {
-		description = descriptionOutput.PlainTextDescription
-	}
-
-	return &HoverContent{
-		Value: description,
-		Range: rangeToLSPRange(node.Range),
-	}, nil
-}
-
-func collectElementsAtPosition(
-	tree *schema.TreeNode,
-	pos lsp.Position,
-	logger *zap.Logger,
-	collected *[]*schema.TreeNode,
-) {
-	if tree == nil {
-		return
-	}
-
-	if containsLSPPoint(tree.Range, pos) {
-		*collected = append(*collected, tree)
-		i := 0
-		for i < len(tree.Children) {
-			collectElementsAtPosition(tree.Children[i], pos, logger, collected)
-			i += 1
-		}
-	}
 }
 
 func getVariable(blueprint *schema.Blueprint, name string) *schema.Variable {

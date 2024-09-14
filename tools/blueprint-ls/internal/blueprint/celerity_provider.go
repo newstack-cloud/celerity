@@ -9,8 +9,9 @@ import (
 )
 
 type celerityProvider struct {
-	resources   map[string]provider.Resource
-	dataSources map[string]provider.DataSource
+	resources       map[string]provider.Resource
+	dataSources     map[string]provider.DataSource
+	customVariables map[string]provider.CustomVariableType
 }
 
 func NewCelerityProvider() provider.Provider {
@@ -20,6 +21,9 @@ func NewCelerityProvider() provider.Provider {
 		},
 		dataSources: map[string]provider.DataSource{
 			"celerity/vpc": &celerityVPCDataSource{},
+		},
+		customVariables: map[string]provider.CustomVariableType{
+			"celerity/customVariable": &celerityCustomVariableType{},
 		},
 	}
 }
@@ -51,7 +55,39 @@ func (p *celerityProvider) Link(ctx context.Context, resourceTypeA string, resou
 }
 
 func (p *celerityProvider) CustomVariableType(ctx context.Context, customVariableType string) (provider.CustomVariableType, error) {
-	return nil, errors.New("custom var types not implemented")
+	customVarType, hasCustomVarType := p.customVariables[customVariableType]
+	if !hasCustomVarType {
+		return nil, errors.New("custom variable type not found")
+	}
+
+	return customVarType, nil
+}
+
+func (p *celerityProvider) ListResourceTypes(ctx context.Context) ([]string, error) {
+	resourceTypes := []string{}
+	for resourceType := range p.resources {
+		resourceTypes = append(resourceTypes, resourceType)
+	}
+
+	return resourceTypes, nil
+}
+
+func (p *celerityProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {
+	dataSourceTypes := []string{}
+	for dataSourceType := range p.dataSources {
+		dataSourceTypes = append(dataSourceTypes, dataSourceType)
+	}
+
+	return dataSourceTypes, nil
+}
+
+func (p *celerityProvider) ListCustomVariableTypes(ctx context.Context) ([]string, error) {
+	customVariableTypes := []string{}
+	for customVariableType := range p.customVariables {
+		customVariableTypes = append(customVariableTypes, customVariableType)
+	}
+
+	return customVariableTypes, nil
 }
 
 func (p *celerityProvider) ListFunctions(ctx context.Context) ([]string, error) {
@@ -242,7 +278,7 @@ func (d *celerityVPCDataSource) GetFilterFields(
 	input *provider.DataSourceGetFilterFieldsInput,
 ) (*provider.DataSourceGetFilterFieldsOutput, error) {
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: []string{},
+		Fields: []string{"tags", "vpcId"},
 	}, nil
 }
 
@@ -252,5 +288,64 @@ func (d *celerityVPCDataSource) CustomValidate(
 ) (*provider.DataSourceValidateOutput, error) {
 	return &provider.DataSourceValidateOutput{
 		Diagnostics: []*core.Diagnostic{},
+	}, nil
+}
+
+type celerityCustomVariableType struct{}
+
+func (t *celerityCustomVariableType) Options(
+	ctx context.Context,
+	input *provider.CustomVariableTypeOptionsInput,
+) (*provider.CustomVariableTypeOptionsOutput, error) {
+	t2nano := "t2.nano"
+	t2micro := "t2.micro"
+	t2small := "t2.small"
+	t2medium := "t2.medium"
+	t2large := "t2.large"
+	t2xlarge := "t2.xlarge"
+	t22xlarge := "t2.2xlarge"
+	return &provider.CustomVariableTypeOptionsOutput{
+		Options: map[string]*core.ScalarValue{
+			t2nano: {
+				StringValue: &t2nano,
+			},
+			t2micro: {
+				StringValue: &t2micro,
+			},
+			t2small: {
+				StringValue: &t2small,
+			},
+			t2medium: {
+				StringValue: &t2medium,
+			},
+			t2large: {
+				StringValue: &t2large,
+			},
+			t2xlarge: {
+				StringValue: &t2xlarge,
+			},
+			t22xlarge: {
+				StringValue: &t22xlarge,
+			},
+		},
+	}, nil
+}
+
+func (t *celerityCustomVariableType) GetType(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetTypeInput,
+) (*provider.CustomVariableTypeGetTypeOutput, error) {
+	return &provider.CustomVariableTypeGetTypeOutput{
+		Type: "celerity/customVariable",
+	}, nil
+}
+
+func (t *celerityCustomVariableType) GetDescription(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetDescriptionInput,
+) (*provider.CustomVariableTypeGetDescriptionOutput, error) {
+	return &provider.CustomVariableTypeGetDescriptionOutput{
+		MarkdownDescription:  "### Celerity Custom Variable\n\nA custom variable type for Celerity.",
+		PlainTextDescription: "Celerity Custom Variable\n\nA custom variable type for Celerity.",
 	}, nil
 }

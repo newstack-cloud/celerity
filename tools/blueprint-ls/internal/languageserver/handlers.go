@@ -3,13 +3,7 @@ package languageserver
 import (
 	"errors"
 	"fmt"
-	"os"
 
-	"go.uber.org/zap"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/two-hundred/celerity/libs/blueprint/container"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
 	common "github.com/two-hundred/ls-builder/common"
@@ -27,6 +21,10 @@ func (a *Application) handleInitialise(ctx *common.LSPContext, params *lsp.Initi
 
 	capabilities.SignatureHelpProvider = &lsp.SignatureHelpOptions{
 		TriggerCharacters: []string{"(", ","},
+	}
+	capabilities.CompletionProvider = &lsp.CompletionOptions{
+		TriggerCharacters: []string{"{", ",", "\"", "'", "(", "=", ".", " ", ":"},
+		ResolveProvider:   &lsp.True,
 	}
 
 	hasWorkspaceFolderCapability := clientCapabilities.Workspace != nil && clientCapabilities.Workspace.WorkspaceFolders != nil
@@ -90,15 +88,11 @@ func (a *Application) handleHover(ctx *common.LSPContext, params *lsp.HoverParam
 		return nil, errors.New("no schema found for document")
 	}
 
-	content, err := GetHoverContent(
+	content, err := a.hoverService.GetHoverContent(
 		ctx,
 		tree,
 		bpSchema,
 		&params.TextDocumentPositionParams,
-		a.functionRegistry,
-		a.resourceRegistry,
-		a.dataSourceRegistry,
-		a.logger,
 	)
 	if err != nil {
 		return nil, err
@@ -130,12 +124,10 @@ func (a *Application) handleSignatureHelp(ctx *common.LSPContext, params *lsp.Si
 		tree = a.state.GetDocumentTree(params.TextDocument.URI)
 	}
 
-	signatures, err := GetFunctionSignatures(
+	signatures, err := a.signatureService.GetFunctionSignatures(
 		ctx,
 		tree,
 		&params.TextDocumentPositionParams,
-		a.functionRegistry,
-		a.logger,
 	)
 	if err != nil {
 		return nil, err
@@ -151,8 +143,10 @@ func (a *Application) handleTextDocumentDidOpen(ctx *common.LSPContext, params *
 		Type:    lsp.MessageTypeInfo,
 		Message: "Text document opened (server received)",
 	})
+	dispatcher := lsp.NewDispatcher(ctx)
 	a.state.SetDocumentContent(params.TextDocument.URI, params.TextDocument.Text)
-	return nil
+	err := a.validateAndPublishDiagnostics(ctx, params.TextDocument.URI, dispatcher)
+	return err
 }
 
 func (a *Application) handleTextDocumentDidClose(ctx *common.LSPContext, params *lsp.DidCloseTextDocumentParams) error {
@@ -183,12 +177,23 @@ func (a *Application) validateAndPublishDiagnostics(
 	uri lsp.URI,
 	dispatcher *lsp.Dispatcher,
 ) error {
-	diagnostics, blueprint := ValidateTextDocument(ctx, a.state, uri, a.blueprintLoader, a.logger)
-	a.storeDocumentAndDerivedStructures(uri, blueprint)
+	content := a.getDocumentContent(uri, true)
+	diagnostics, blueprint, err := a.diagnosticService.ValidateTextDocument(
+		ctx,
+		uri,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = a.storeDocumentAndDerivedStructures(uri, blueprint, *content)
+	if err != nil {
+		return err
+	}
 
 	// We must push diagnostics even if there are no errors to clear the existing ones
 	// in the client.
-	err := dispatcher.PublishDiagnostics(lsp.PublishDiagnosticsParams{
+	err = dispatcher.PublishDiagnostics(lsp.PublishDiagnosticsParams{
 		URI:         uri,
 		Diagnostics: diagnostics,
 	})
@@ -198,20 +203,32 @@ func (a *Application) validateAndPublishDiagnostics(
 	return nil
 }
 
+func (a *Application) getDocumentContent(uri lsp.URI, fallbackToEmptyString bool) *string {
+	content := a.state.GetDocumentContent(uri)
+	if content == nil && fallbackToEmptyString {
+		empty := ""
+		return &empty
+	}
+	return content
+}
+
 func (a *Application) storeDocumentAndDerivedStructures(
 	uri lsp.URI,
 	parsed *schema.Blueprint,
-) {
+	content string,
+) error {
 	if parsed == nil {
-		return
+		return nil
 	}
 	a.state.SetDocumentSchema(uri, parsed)
 	tree := schema.SchemaToTree(parsed)
 	a.state.SetDocumentTree(uri, tree)
-	a.state.SetDocumentPositionMap(
-		uri,
-		blueprint.CreatePositionMap(tree),
-	)
+	yamlNode, err := blueprint.ParseYAMLNode(content)
+	if err != nil {
+		return err
+	}
+	a.state.SetDocumentYAMLNode(uri, yamlNode)
+	return nil
 }
 
 func (a *Application) saveDocumentContent(params *lsp.DidChangeTextDocumentParams, existingContent *string) error {
@@ -253,88 +270,72 @@ func (a *Application) saveDocumentContent(params *lsp.DidChangeTextDocumentParam
 	return nil
 }
 
-func GetDocumentSettings(context *common.LSPContext, state *State, uri string) *DocSettings {
-	state.lock.Lock()
-	defer state.lock.Unlock()
+func (a *Application) handleCompletion(
+	ctx *common.LSPContext,
+	params *lsp.CompletionParams,
+) (any, error) {
+	dispatcher := lsp.NewDispatcher(ctx)
 
-	if settings, ok := state.documentSettings[uri]; ok {
-		return settings
-	} else {
-		configResponse := []DocSettings{}
-		context.Call(lsp.MethodWorkspaceConfiguration, lsp.ConfigurationParams{
-			Items: []lsp.ConfigurationItem{
-				{
-					ScopeURI: &uri,
-					Section:  &ConfigSection,
-				},
-			},
-		}, &configResponse)
-		context.Notify("window/logMessage", &lsp.LogMessageParams{
-			Type:    lsp.MessageTypeInfo,
-			Message: "document workspace configuration (server received)",
-		})
-
-		if len(configResponse) > 0 {
-			state.documentSettings[uri] = &configResponse[0]
-			return &configResponse[0]
+	tree := a.state.GetDocumentTree(params.TextDocument.URI)
+	if tree == nil {
+		err := a.validateAndPublishDiagnostics(ctx, params.TextDocument.URI, dispatcher)
+		if err != nil {
+			return nil, err
 		}
+
+		tree = a.state.GetDocumentTree(params.TextDocument.URI)
+	}
+	content := a.getDocumentContent(params.TextDocument.URI, true)
+	bpSchema := a.state.GetDocumentSchema(params.TextDocument.URI)
+	if bpSchema == nil {
+		return nil, errors.New("no parsed blueprint found for document")
 	}
 
-	return &DocSettings{
-		Trace: DocTraceSettings{
-			Server: "off",
-		},
-		MaxNumberOfProblems: 100,
-	}
-}
-
-func ValidateTextDocument(
-	context *common.LSPContext,
-	state *State,
-	docURI lsp.URI,
-	loader container.Loader,
-	logger *zap.Logger,
-) ([]lsp.Diagnostic, *schema.Blueprint) {
-	diagnostics := []lsp.Diagnostic{}
-	settings := GetDocumentSettings(context, state, docURI)
-	logger.Debug(fmt.Sprintf("Settings: %v", settings))
-	content := state.GetDocumentContent(docURI)
-	if content == nil {
-		return diagnostics, nil
-	}
-
-	validationResult, err := loader.ValidateString(
-		context.Context,
+	completionItems, err := a.completionService.GetCompletionItems(
+		ctx,
 		*content,
-		schema.YAMLSpecFormat,
-		blueprint.NewParams(
-			map[string]map[string]*core.ScalarValue{},
-			map[string]*core.ScalarValue{},
-			map[string]*core.ScalarValue{},
-		),
-	)
-	logger.Info("Blueprint diagnostics: ")
-	spew.Fdump(os.Stderr, validationResult.Diagnostics)
-	diagnostics = append(
-		diagnostics,
-		lspDiagnosticsFromBlueprintDiagnostics(
-			docURI,
-			validationResult.Diagnostics,
-			state,
-		)...,
+		tree,
+		bpSchema,
+		&params.TextDocumentPositionParams,
 	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Error loading blueprint: %v", err))
-		errDiagnostics := blueprintErrorToDiagnostics(
-			err,
-			docURI,
-			state,
-			logger,
-		)
-		diagnostics = append(diagnostics, errDiagnostics...)
+		return nil, err
 	}
 
-	return diagnostics, validationResult.Schema
+	return completionItems, nil
+}
+
+func (a *Application) handleCompletionItemResolve(
+	ctx *common.LSPContext,
+	item *lsp.CompletionItem,
+) (*lsp.CompletionItem, error) {
+
+	dataMap, isDataMap := item.Data.(map[string]interface{})
+	if !isDataMap {
+		return item, nil
+	}
+
+	completionType, hasCompletionType := dataMap["completionType"].(string)
+	if !hasCompletionType {
+		return item, nil
+	}
+
+	return a.completionService.ResolveCompletionItem(ctx, item, completionType)
+}
+
+func (a *Application) handleDocumentSymbols(
+	ctx *common.LSPContext,
+	params *lsp.DocumentSymbolParams,
+) (any, error) {
+	content := a.state.GetDocumentContent(params.TextDocument.URI)
+	if content == nil {
+		return nil, errors.New("no content found for document")
+	}
+
+	// todo: check if client has hierarchical document symbol support
+	// return empty array if not supported
+
+	return a.symbolService.GetDocumentSymbols(params.TextDocument.URI, *content)
 }
 
 func (a *Application) handleShutdown(ctx *common.LSPContext) error {

@@ -5,11 +5,15 @@ import (
 	"log"
 	"os"
 
+	"github.com/sourcegraph/jsonrpc2"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/languageserver"
+	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/languageservices"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
 	"github.com/two-hundred/ls-builder/server"
 	"go.uber.org/zap"
@@ -23,7 +27,12 @@ func main() {
 	}
 	defer logFile.Close()
 
-	state := languageserver.NewState()
+	state := languageservices.NewState()
+	settingsService := languageservices.NewSettingsService(
+		state,
+		languageserver.ConfigSection,
+		logger,
+	)
 	traceService := lsp.NewTraceService(logger)
 
 	providers, err := blueprint.LoadProviders(context.TODO())
@@ -35,6 +44,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	functionRegistry := provider.NewFunctionRegistry(providers)
+	resourceRegistry := resourcehelpers.NewRegistry(providers, transformers)
+	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
+	customVarTypeRegistry := provider.NewCustomVariableTypeRegistry(providers)
+
+	completionService := languageservices.NewCompletionService(
+		resourceRegistry,
+		dataSourceRegistry,
+		customVarTypeRegistry,
+		state,
+		logger,
+	)
 
 	blueprintLoader := container.NewDefaultLoader(
 		providers,
@@ -49,12 +71,44 @@ func main() {
 		container.WithLoaderTransformSpec(false),
 	)
 
+	diagnosticErrorService := languageservices.NewDiagnosticErrorService(state, logger)
+	diagnosticService := languageservices.NewDiagnosticsService(
+		state,
+		settingsService,
+		diagnosticErrorService,
+		blueprintLoader,
+		logger,
+	)
+
+	signatureService := languageservices.NewSignatureService(
+		functionRegistry,
+		logger,
+	)
+	hoverService := languageservices.NewHoverService(
+		functionRegistry,
+		resourceRegistry,
+		dataSourceRegistry,
+		signatureService,
+		logger,
+	)
+	symbolService := languageservices.NewSymbolService(
+		state,
+		logger,
+	)
+
 	app := languageserver.NewApplication(
 		state,
+		settingsService,
 		traceService,
-		providers,
-		transformers,
+		functionRegistry,
+		resourceRegistry,
+		dataSourceRegistry,
 		blueprintLoader,
+		completionService,
+		diagnosticService,
+		signatureService,
+		hoverService,
+		symbolService,
 		logger,
 	)
 	app.Setup()
@@ -62,7 +116,16 @@ func main() {
 	srv := server.NewServer(app.Handler(), true, logger, nil)
 
 	stdio := server.Stdio{}
-	conn := server.NewStreamConnection(srv.NewHandler(), stdio)
+	conn := server.NewStreamConnection(
+		// Wrapping in async handler is essential to avoid a deadlock
+		// when the server sends a request to the client while it is handling
+		// a request from the client.
+		// For example, when handling the hover request, the server may fetch
+		// configuration settings from the client, without an async handler, this will
+		// block until the configured timeout is reached and the context is cancelled.
+		jsonrpc2.AsyncHandler(srv.NewHandler()),
+		stdio,
+	)
 	srv.Serve(conn, logger)
 }
 

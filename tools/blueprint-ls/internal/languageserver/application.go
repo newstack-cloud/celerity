@@ -4,43 +4,57 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
-	"github.com/two-hundred/celerity/libs/blueprint/transform"
+	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/languageservices"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
 	"go.uber.org/zap"
 )
 
 type Application struct {
 	handler            *lsp.Handler
-	state              *State
-	providers          map[string]provider.Provider
+	state              *languageservices.State
+	settingsService    *languageservices.SettingsService
 	functionRegistry   provider.FunctionRegistry
 	resourceRegistry   resourcehelpers.Registry
 	dataSourceRegistry provider.DataSourceRegistry
 	blueprintLoader    container.Loader
+	completionService  *languageservices.CompletionService
+	diagnosticService  *languageservices.DiagnosticsService
+	signatureService   *languageservices.SignatureService
+	hoverService       *languageservices.HoverService
+	symbolService      *languageservices.SymbolService
 	logger             *zap.Logger
 	traceService       *lsp.TraceService
 }
 
 func NewApplication(
-	state *State,
+	state *languageservices.State,
+	settingsService *languageservices.SettingsService,
 	traceService *lsp.TraceService,
-	providers map[string]provider.Provider,
-	transformers map[string]transform.SpecTransformer,
+	functionRegistry provider.FunctionRegistry,
+	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	blueprintLoader container.Loader,
+	completionService *languageservices.CompletionService,
+	diagnosticService *languageservices.DiagnosticsService,
+	signatureService *languageservices.SignatureService,
+	hoverService *languageservices.HoverService,
+	symbolService *languageservices.SymbolService,
 	logger *zap.Logger,
 ) *Application {
 	return &Application{
-		state:            state,
-		logger:           logger,
-		traceService:     traceService,
-		providers:        providers,
-		blueprintLoader:  blueprintLoader,
-		functionRegistry: provider.NewFunctionRegistry(providers),
-		resourceRegistry: resourcehelpers.NewRegistry(
-			providers,
-			transformers,
-		),
-		dataSourceRegistry: provider.NewDataSourceRegistry(providers),
+		state:              state,
+		settingsService:    settingsService,
+		traceService:       traceService,
+		functionRegistry:   functionRegistry,
+		resourceRegistry:   resourceRegistry,
+		dataSourceRegistry: dataSourceRegistry,
+		blueprintLoader:    blueprintLoader,
+		completionService:  completionService,
+		diagnosticService:  diagnosticService,
+		signatureService:   signatureService,
+		hoverService:       hoverService,
+		symbolService:      symbolService,
+		logger:             logger,
 	}
 }
 
@@ -55,6 +69,9 @@ func (a *Application) Setup() {
 		lsp.WithSetTraceHandler(a.traceService.CreateSetTraceHandler()),
 		lsp.WithHoverHandler(a.handleHover),
 		lsp.WithSignatureHelpHandler(a.handleSignatureHelp),
+		lsp.WithCompletionHandler(a.handleCompletion),
+		lsp.WithCompletionItemResolveHandler(a.handleCompletionItemResolve),
+		lsp.WithDocumentSymbolHandler(a.handleDocumentSymbols),
 	)
 }
 

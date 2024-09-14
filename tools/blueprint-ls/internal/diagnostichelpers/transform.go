@@ -1,19 +1,14 @@
-package languageserver
+package diagnostichelpers
 
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
 )
 
-func lspDiagnosticsFromBlueprintDiagnostics(
-	docURI lsp.URI,
-	bpDiagnostics []*core.Diagnostic,
-	state *State,
-) []lsp.Diagnostic {
+// BlueprintToLSP deals with transforming blueprint diagnostics to LSP diagnostics.
+func BlueprintToLSP(bpDiagnostics []*core.Diagnostic) []lsp.Diagnostic {
 	lspDiagnostics := []lsp.Diagnostic{}
 
 	for _, bpDiagnostic := range bpDiagnostics {
@@ -24,16 +19,11 @@ func lspDiagnosticsFromBlueprintDiagnostics(
 			severity = lsp.DiagnosticSeverityError
 		}
 
-		node := state.GetDocumentPositionMapSmallestNode(
-			docURI,
-			blueprint.PositionKey(bpDiagnostic.Range.Start),
-		)
-
 		lspDiagnostics = append(lspDiagnostics, lsp.Diagnostic{
 			Severity: &severity,
 			Message:  bpDiagnostic.Message,
 			Range: lspDiagnosticRangeFromBlueprintDiagnosticRange(
-				createFinalDiagnosticRange(node, bpDiagnostic.Range),
+				bpDiagnostic.Range,
 			),
 		})
 	}
@@ -97,18 +87,5 @@ func lspPositionFromSourceMeta(
 		// LSP offsets are 0-based, the blueprint package uses 1-based offsets.
 		Line:      lsp.UInteger(sourceMeta.Line - 1),
 		Character: lsp.UInteger(sourceMeta.Column - 1),
-	}
-}
-
-func createFinalDiagnosticRange(node *schema.TreeNode, bpRange *core.DiagnosticRange) *core.DiagnosticRange {
-	if node == nil || node.Range == nil || bpRange == nil {
-		return bpRange
-	}
-
-	return &core.DiagnosticRange{
-		Start: node.Range.Start,
-		End:   node.Range.End,
-		// Retain the column accuracy from the original diagnostic.
-		ColumnAccuracy: bpRange.ColumnAccuracy,
 	}
 }
