@@ -838,9 +838,9 @@ func (l *defaultLoader) validateCustomVariableType(
 }
 
 func (l *defaultLoader) deriveProviderCustomVarType(ctx context.Context, varName string, varSchema *schema.Variable) (provider.CustomVariableType, error) {
-	// The provider should be keyed exactly by \w+\/ which is the custom type prefix.
+	// The provider should be keyed exactly by \w+ which is the custom type prefix. (e.g. "aws" in "aws/ec2/instanceType")
 	// Avoid using a regular expression as it is more efficient to split the string.
-	parts := strings.SplitAfter(string(varSchema.Type.Value), "/")
+	parts := strings.Split(string(varSchema.Type.Value), "/")
 	if len(parts) == 0 {
 		line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
 		return nil, errInvalidCustomVariableType(varName, varSchema.Type.Value, line, col)

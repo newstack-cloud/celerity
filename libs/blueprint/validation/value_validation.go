@@ -10,6 +10,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 // ValidateValueName checks the validity of a value name,
@@ -41,8 +42,14 @@ func ValidateValue(
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
-	if valSchema.Type == nil {
-		return diagnostics, errMissingValueType(valName, valSchema.SourceMeta)
+
+	valueTypeDiagnostics, err := validateValueType(
+		valName,
+		valSchema,
+	)
+	diagnostics = append(diagnostics, valueTypeDiagnostics...)
+	if err != nil {
+		return diagnostics, err
 	}
 
 	expectedResolveType := subValType(valSchema.Type)
@@ -72,6 +79,7 @@ func validateValue(
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
+
 	descriptionDiagnostics, err := validateValueDescription(
 		ctx,
 		valName,
@@ -230,6 +238,27 @@ func validateValueContent(
 
 	if len(errs) > 0 {
 		return diagnostics, ErrMultipleValidationErrors(errs)
+	}
+
+	return diagnostics, nil
+}
+
+func validateValueType(
+	valName string,
+	valSchema *schema.Value,
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+
+	if valSchema.Type == nil || valSchema.Type.Value == "" {
+		return diagnostics, errMissingValueType(valName, valSchema.SourceMeta)
+	}
+
+	if !core.SliceContains(schema.ValueTypes, valSchema.Type.Value) {
+		return diagnostics, errInvalidValueType(
+			valName,
+			valSchema.Type,
+			valSchema.SourceMeta,
+		)
 	}
 
 	return diagnostics, nil

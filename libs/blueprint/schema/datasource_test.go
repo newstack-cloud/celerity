@@ -2,7 +2,6 @@ package schema
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -73,21 +72,6 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_field_yaml_input(c *
 	c.Assert(targetField.Type.Value, Equals, DataSourceFieldType("boolean"))
 }
 
-func (s *DataSourceTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_data_source_field_type(c *C) {
-	targetField := &DataSourceFieldExport{}
-	err := yaml.Unmarshal([]byte(s.specFixtures["fields-failUnsupportedDataSourceFieldTypeYAML"]), targetField)
-	if err == nil {
-		c.Error(errors.New("expected to fail deserialisation due to unsupported data source field type"))
-		c.FailNow()
-	}
-
-	schemaError, isSchemaError := err.(*Error)
-	c.Assert(isSchemaError, Equals, true)
-	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFieldType)
-	c.Assert(*schemaError.SourceLine, Equals, 1)
-	c.Assert(*schemaError.SourceColumn, Equals, 7)
-}
-
 func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_yaml_input(c *C) {
 	expected := &DataSourceFieldExport{}
 	err := yaml.Unmarshal([]byte(s.specFixtures["fields-serialiseExpectedYAML"]), expected)
@@ -127,31 +111,6 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_yaml_input(
 	c.Assert(targetField.Description, DeepEquals, expected.Description)
 }
 
-func (s *DataSourceTestSuite) Test_fails_to_serialise_yaml_due_to_unsupported_data_source_type(c *C) {
-	description := "The AWS region to connect to AWS services with"
-	_, err := yaml.Marshal(&DataSourceFieldExport{
-		Type: &DataSourceFieldTypeWrapper{
-			// "unknown" is not a valid data source field type.
-			Value: DataSourceFieldType("unknown"),
-		},
-		Description: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					StringValue: &description,
-				},
-			},
-		},
-	})
-	if err == nil {
-		c.Error(errors.New("expected to fail serialisation due to unsupported data source field type"))
-		c.FailNow()
-	}
-
-	schemaError, isSchemaError := err.(*Error)
-	c.Assert(isSchemaError, Equals, true)
-	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFieldType)
-}
-
 func (s *DataSourceTestSuite) Test_parses_valid_data_source_field_json_input(c *C) {
 	targetField := &DataSourceFieldExport{}
 	err := json.Unmarshal([]byte(s.specFixtures["fields-passJSON"]), targetField)
@@ -169,19 +128,6 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_field_json_input(c *
 		},
 	})
 	c.Assert(targetField.Type.Value, Equals, DataSourceFieldType("integer"))
-}
-
-func (s *DataSourceTestSuite) Test_fails_to_parse_json_due_to_unsupported_data_source_type(c *C) {
-	targetField := &DataSourceFieldExport{}
-	err := json.Unmarshal([]byte(s.specFixtures["fields-failUnsupportedDataSourceFieldTypeJSON"]), targetField)
-	if err == nil {
-		c.Error(errors.New("expected to fail deserialisation due to unsupported data source field type"))
-		c.FailNow()
-	}
-
-	schemaError, isSchemaError := err.(*Error)
-	c.Assert(isSchemaError, Equals, true)
-	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFieldType)
 }
 
 func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_json_input(c *C) {
@@ -219,35 +165,6 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_field_json_input(
 
 	c.Assert(targetField.Type.Value, Equals, expected.Type.Value)
 	c.Assert(targetField.Description, DeepEquals, expected.Description)
-}
-
-func (s *DataSourceTestSuite) Test_fails_to_serialise_json_due_to_unsupported_data_source_field_type(c *C) {
-	description := "The AWS region to connect to AWS services with"
-	_, err := json.Marshal(&DataSourceFieldExport{
-		Type: &DataSourceFieldTypeWrapper{
-			// "list" is not a valid data source field type.
-			Value: DataSourceFieldType("list"),
-		},
-		Description: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					StringValue: &description,
-				},
-			},
-		},
-	})
-	if err == nil {
-		c.Error(errors.New("expected to fail serialisation due to unsupported data source field type"))
-		c.FailNow()
-	}
-
-	marshalError, isMarshalError := err.(*json.MarshalerError)
-	c.Assert(isMarshalError, Equals, true)
-	internalError := marshalError.Unwrap()
-
-	schemaError, isSchemaError := internalError.(*Error)
-	c.Assert(isSchemaError, Equals, true)
-	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFieldType)
 }
 
 func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c *C) {
@@ -295,21 +212,6 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c 
 	)
 }
 
-func (s *DataSourceTestSuite) Test_fails_to_parse_yaml_due_to_unsupported_data_source_filter(c *C) {
-	targetFilter := &DataSourceFilter{}
-	err := yaml.Unmarshal([]byte(s.specFixtures["filters-failUnsupportedDataSourceFilterOperatorYAML"]), targetFilter)
-	if err == nil {
-		c.Error(errors.New("expected to fail deserialisation due to unsupported data source filter operator"))
-		c.FailNow()
-	}
-
-	schemaError, isSchemaError := err.(*Error)
-	c.Assert(isSchemaError, Equals, true)
-	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFilterOperator)
-	c.Assert(*schemaError.SourceLine, Equals, 2)
-	c.Assert(*schemaError.SourceColumn, Equals, 11)
-}
-
 func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_yaml_input(c *C) {
 	expected := &DataSourceFilter{}
 	err := yaml.Unmarshal([]byte(s.specFixtures["filters-serialiseExpectedYAML"]), expected)
@@ -354,37 +256,6 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_yaml_input
 	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, *expected.Search.Values[0].Values[0].StringValue)
 }
 
-func (s *DataSourceTestSuite) Test_fails_to_serialise_yaml_due_to_unsupported_data_source_filter_operator(c *C) {
-	search := "test-"
-	field := "name"
-	_, err := yaml.Marshal(&DataSourceFilter{
-		Field: &core.ScalarValue{StringValue: &field},
-		Operator: &DataSourceFilterOperatorWrapper{
-			// "unknown" is not a valid filter operator.
-			Value: DataSourceFilterOperator("unknown"),
-		},
-		Search: &DataSourceFilterSearch{
-			Values: []*substitutions.StringOrSubstitutions{
-				{
-					Values: []*substitutions.StringOrSubstitution{
-						{
-							StringValue: &search,
-						},
-					},
-				},
-			},
-		},
-	})
-	if err == nil {
-		c.Error(errors.New("expected to fail serialisation due to unsupported data source filter operator"))
-		c.FailNow()
-	}
-
-	schemaError, isSchemaError := err.(*Error)
-	c.Assert(isSchemaError, Equals, true)
-	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFilterOperator)
-}
-
 func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_json_input(c *C) {
 	targetFilter := &DataSourceFilter{}
 	err := json.Unmarshal([]byte(s.specFixtures["filters-passJSON"]), targetFilter)
@@ -412,19 +283,6 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_json_input(c 
 			},
 		},
 	)
-}
-
-func (s *DataSourceTestSuite) Test_fails_to_parse_json_due_to_unsupported_data_source_filter_operator(c *C) {
-	targetFilter := &DataSourceFilter{}
-	err := json.Unmarshal([]byte(s.specFixtures["filters-failUnsupportedDataSourceFilterOperatorJSON"]), targetFilter)
-	if err == nil {
-		c.Error(errors.New("expected to fail deserialisation due to unsupported data source filter operator"))
-		c.FailNow()
-	}
-
-	schemaError, isSchemaError := err.(*Error)
-	c.Assert(isSchemaError, Equals, true)
-	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFilterOperator)
 }
 
 func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_json_input(c *C) {
@@ -469,39 +327,4 @@ func (s *DataSourceTestSuite) Test_serialise_valid_data_source_filter_json_input
 	c.Assert(*targetFilter.Field.StringValue, Equals, *expected.Field.StringValue)
 	c.Assert(targetFilter.Operator.Value, Equals, expected.Operator.Value)
 	c.Assert(*targetFilter.Search.Values[0].Values[0].StringValue, Equals, *expected.Search.Values[0].Values[0].StringValue)
-}
-
-func (s *DataSourceTestSuite) Test_fails_to_serialise_json_due_to_unsupported_data_source_filter_operator(c *C) {
-	search := "test-"
-	field := "name"
-	_, err := json.Marshal(&DataSourceFilter{
-		Field: &core.ScalarValue{StringValue: &field},
-		Operator: &DataSourceFilterOperatorWrapper{
-			// "unknown" is not a valid filter operator.
-			Value: DataSourceFilterOperator("unknown"),
-		},
-		Search: &DataSourceFilterSearch{
-			Values: []*substitutions.StringOrSubstitutions{
-				{
-					Values: []*substitutions.StringOrSubstitution{
-						{
-							StringValue: &search,
-						},
-					},
-				},
-			},
-		},
-	})
-	if err == nil {
-		c.Error(errors.New("expected to fail serialisation due to unsupported data source filter operator"))
-		c.FailNow()
-	}
-
-	marshalError, isMarshalError := err.(*json.MarshalerError)
-	c.Assert(isMarshalError, Equals, true)
-	internalError := marshalError.Unwrap()
-
-	schemaError, isSchemaError := internalError.(*Error)
-	c.Assert(isSchemaError, Equals, true)
-	c.Assert(schemaError.ReasonCode, Equals, ErrorSchemaReasonCodeInvalidDataSourceFilterOperator)
 }

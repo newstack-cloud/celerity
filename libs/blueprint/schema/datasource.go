@@ -8,7 +8,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/common/core"
 	"gopkg.in/yaml.v3"
 )
 
@@ -257,10 +256,6 @@ type DataSourceFilterOperatorWrapper struct {
 }
 
 func (w *DataSourceFilterOperatorWrapper) MarshalYAML() (interface{}, error) {
-	if !core.SliceContains(DataSourceFilterOperators, w.Value) {
-		return nil, errInvalidDataSourceFilterOperator(w.Value, nil, nil)
-	}
-
 	return w.Value, nil
 }
 
@@ -270,22 +265,12 @@ func (w *DataSourceFilterOperatorWrapper) UnmarshalYAML(value *yaml.Node) error 
 		Column: value.Column,
 	}
 	valueFilterOperator := DataSourceFilterOperator(value.Value)
-	if !core.SliceContains(DataSourceFilterOperators, valueFilterOperator) {
-		return errInvalidDataSourceFilterOperator(
-			valueFilterOperator,
-			&value.Line,
-			&value.Column,
-		)
-	}
 
 	w.Value = valueFilterOperator
 	return nil
 }
 
 func (w *DataSourceFilterOperatorWrapper) MarshalJSON() ([]byte, error) {
-	if !core.SliceContains(DataSourceFilterOperators, w.Value) {
-		return nil, errInvalidDataSourceFilterOperator(w.Value, nil, nil)
-	}
 	escaped := jsonutils.EscapeJSONString(string(w.Value))
 	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
 }
@@ -298,9 +283,6 @@ func (w *DataSourceFilterOperatorWrapper) UnmarshalJSON(data []byte) error {
 	}
 
 	typeValDataSourceFilterOperator := DataSourceFilterOperator(typeVal)
-	if !core.SliceContains(DataSourceFilterOperators, typeValDataSourceFilterOperator) {
-		return errInvalidDataSourceFilterOperator(typeValDataSourceFilterOperator, nil, nil)
-	}
 	w.Value = typeValDataSourceFilterOperator
 
 	return nil
@@ -432,10 +414,6 @@ type DataSourceFieldTypeWrapper struct {
 }
 
 func (t *DataSourceFieldTypeWrapper) MarshalYAML() (interface{}, error) {
-	if !core.SliceContains(DataSourceFieldTypes, t.Value) {
-		return nil, errInvalidDataSourceFieldType(t.Value, nil, nil)
-	}
-
 	return t.Value, nil
 }
 
@@ -445,22 +423,12 @@ func (t *DataSourceFieldTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 		Column: value.Column,
 	}
 	valueDataSourceFieldType := DataSourceFieldType(value.Value)
-	if !core.SliceContains(DataSourceFieldTypes, valueDataSourceFieldType) {
-		return errInvalidDataSourceFieldType(
-			valueDataSourceFieldType,
-			&value.Line,
-			&value.Column,
-		)
-	}
 
 	t.Value = valueDataSourceFieldType
 	return nil
 }
 
 func (t *DataSourceFieldTypeWrapper) MarshalJSON() ([]byte, error) {
-	if !core.SliceContains(DataSourceFieldTypes, t.Value) {
-		return nil, errInvalidDataSourceFieldType(t.Value, nil, nil)
-	}
 	escaped := jsonutils.EscapeJSONString(string(t.Value))
 	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
 }
@@ -472,10 +440,6 @@ func (t *DataSourceFieldTypeWrapper) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	typeValDataSourceFieldType := DataSourceFieldType(typeVal)
-	if !core.SliceContains(DataSourceFieldTypes, typeValDataSourceFieldType) {
-		return errInvalidDataSourceFieldType(typeValDataSourceFieldType, nil, nil)
-	}
 	t.Value = DataSourceFieldType(typeVal)
 
 	return nil

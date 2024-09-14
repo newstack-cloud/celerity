@@ -265,6 +265,52 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_value_type_is_missing
 	)
 }
 
+func (s *ValueValidationTestSuite) Test_reports_error_when_unsupported_value_type_is_provided(c *C) {
+	description := "The collection of regions to deploy the blueprint to"
+	regions := "[\"eu-west-1\",\"eu-west-2\"]"
+	valueSchema := &schema.Value{
+		Type: &schema.ValueTypeWrapper{Value: schema.ValueType("unknown")},
+		Description: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &description,
+				},
+			},
+		},
+		Value: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &regions,
+				},
+			},
+		},
+	}
+
+	blueprint := &schema.Blueprint{}
+	params := &testBlueprintParams{}
+
+	_, err := ValidateValue(
+		context.TODO(),
+		"regions",
+		valueSchema,
+		blueprint,
+		params,
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidValueType)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed as an unsupported type \"unknown\" was provided for value \"regions\", "+
+			"you can choose from: string, integer, float, boolean, object and array",
+	)
+}
+
 func (s *ValueValidationTestSuite) Test_reports_error_for_interpolated_string_for_value(c *C) {
 	strVal := "This is a string"
 	valueSchema := &schema.Value{

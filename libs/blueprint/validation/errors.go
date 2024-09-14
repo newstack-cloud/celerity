@@ -40,6 +40,10 @@ const (
 	// for a blueprint spec load error is due to an invalid value
 	// being provided.
 	ErrorReasonCodeInvalidValue errors.ErrorReasonCode = "invalid_value"
+	// ErrorReasonCodeInvalidValueType is provided
+	// when the reason for a blueprint spec load error is due
+	// to an invalid value type.
+	ErrorReasonCodeInvalidValueType errors.ErrorReasonCode = "invalid_value_type"
 	// ErrorReasonCodeInvalidExport is provided when the reason
 	// for a blueprint spec load error is due to one or more exports
 	// being invalid.
@@ -60,6 +64,14 @@ const (
 	// for a blueprint spec load error is due to one or more data sources
 	// being invalid.
 	ErrorReasonCodeInvalidDataSource errors.ErrorReasonCode = "invalid_data_source"
+	// ErrorReasonCodeInvalidDataSourceFilterOperator is provided
+	// when the reason for a blueprint spec load error is due
+	// to an invalid data source filter operator being provided.
+	ErrorReasonCodeInvalidDataSourceFilterOperator errors.ErrorReasonCode = "invalid_data_source_filter_operator"
+	// ErrorReasonCodeInvalidDataSourceFieldType is provided
+	// when the reason for a blueprint spec load error is due
+	// to an invalid data source field type.
+	ErrorReasonCodeInvalidDataSourceFieldType errors.ErrorReasonCode = "invalid_data_source_field_type"
 	// ErrorReasonCodeInvalidMapKey is provided when the reason
 	// for a blueprint spec load error is due to an invalid map key.
 	ErrorReasonCodeInvalidMapKey errors.ErrorReasonCode = "invalid_map_key"
@@ -607,6 +619,68 @@ func errDataSourceMissingExports(dataSourceName string, dataSourceMeta *source.M
 		Err: fmt.Errorf(
 			"validation failed due to missing exports for "+
 				"data source \"%s\", at least one field must be exported for a data source",
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errInvalidDataSourceFilterOperator(
+	dataSourceName string,
+	dataSourceFilterOperator *schema.DataSourceFilterOperatorWrapper,
+) error {
+	line, col := source.PositionFromSourceMeta(dataSourceFilterOperator.SourceMeta)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSourceFilterOperator,
+		Err: fmt.Errorf(
+			"unsupported filter operator %q has been provided in data source %q, you can choose from %s",
+			dataSourceFilterOperator.Value,
+			dataSourceName,
+			strings.Join(
+				core.Map(schema.DataSourceFilterOperators, func(operator schema.DataSourceFilterOperator, index int) string {
+					return fmt.Sprintf("\"%s\"", operator)
+				}),
+				", ",
+			),
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceMissingFilterOperator(dataSourceName string, location *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSourceFilterOperator,
+		Err: fmt.Errorf(
+			"data source %q has an empty filter operator, you can choose from %s",
+			dataSourceName,
+			strings.Join(
+				core.Map(schema.DataSourceFilterOperators, func(operator schema.DataSourceFilterOperator, index int) string {
+					return fmt.Sprintf("\"%s\"", operator)
+				}),
+				", ",
+			),
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errInvalidDataSourceFieldType(
+	dataSourceName string,
+	exportName string,
+	dataSourceFieldType *schema.DataSourceFieldTypeWrapper,
+) error {
+	line, col := source.PositionFromSourceMeta(dataSourceFieldType.SourceMeta)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSourceFieldType,
+		Err: fmt.Errorf(
+			"unsupported field type %q has been provided for export %q in data source %q, "+
+				"you can choose from: string, integer, float, boolean and array",
+			dataSourceFieldType.Value,
+			exportName,
 			dataSourceName,
 		),
 		Line:   line,
@@ -1590,6 +1664,25 @@ func errMissingValueType(
 		Err: fmt.Errorf(
 			"validation failed as the value %q is missing a type, "+
 				"all values must have a type defined",
+			valName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errInvalidValueType(
+	valName string,
+	valType *schema.ValueTypeWrapper,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidValueType,
+		Err: fmt.Errorf(
+			"validation failed as an unsupported type %q was provided for value %q, "+
+				"you can choose from: string, integer, float, boolean, object and array",
+			valType.Value,
 			valName,
 		),
 		Line:   line,

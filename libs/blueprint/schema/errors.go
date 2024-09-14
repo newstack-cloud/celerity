@@ -2,11 +2,9 @@ package schema
 
 import (
 	"fmt"
-	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/common/core"
 	"gopkg.in/yaml.v3"
 )
 
@@ -40,14 +38,6 @@ const (
 	// when the reason for a blueprint schema load error is due
 	// to an invalid data source exported field type.
 	ErrorSchemaReasonCodeInvalidDataSourceFieldType ErrorSchemaReasonCode = "invalid_data_source_field_type"
-	// ErrorSchemaReasonCodeInvalidValueType is provided
-	// when the reason for a blueprint schema load error is due
-	// to an invalid value type.
-	ErrorSchemaReasonCodeInvalidValueType ErrorSchemaReasonCode = "invalid_value_type"
-	// ErrorSchemaReasonCodeInvalidDataSourceFilterOperator is provided
-	// when the reason for a blueprint schema load error is due
-	// to an invalid data source filter operator being provided.
-	ErrorSchemaReasonCodeInvalidDataSourceFilterOperator ErrorSchemaReasonCode = "invalid_data_source_filter_operator"
 	// ErrorSchemaReasonCodeInvalidTransformType is provided
 	// when the reason for a blueprint schema load error is due to
 	// an invalid transform field value being provided.
@@ -65,60 +55,6 @@ const (
 	// primarily used for errors wrapped with parent scope line information.
 	ErrorSchemaReasonCodeGeneral ErrorSchemaReasonCode = "general"
 )
-
-func errInvalidValueType(
-	valueType ValueType,
-	line *int,
-	column *int,
-) error {
-	return &Error{
-		ReasonCode: ErrorSchemaReasonCodeInvalidValueType,
-		Err: fmt.Errorf(
-			"unsupported value type %s has been provided, you can choose from string, integer, float, boolean, object and array",
-			valueType,
-		),
-		SourceLine:   line,
-		SourceColumn: column,
-	}
-}
-
-func errInvalidDataSourceFieldType(
-	dataSourceFieldType DataSourceFieldType,
-	line *int,
-	column *int,
-) error {
-	return &Error{
-		ReasonCode: ErrorSchemaReasonCodeInvalidDataSourceFieldType,
-		Err: fmt.Errorf(
-			"unsupported data source field type %s has been provided, you can choose from string, integer, float, boolean, object and array",
-			dataSourceFieldType,
-		),
-		SourceLine:   line,
-		SourceColumn: column,
-	}
-}
-
-func errInvalidDataSourceFilterOperator(
-	dataSourceFilterOperator DataSourceFilterOperator,
-	line *int,
-	column *int,
-) error {
-	return &Error{
-		ReasonCode: ErrorSchemaReasonCodeInvalidDataSourceFilterOperator,
-		Err: fmt.Errorf(
-			"unsupported data source filter operator %s has been provided, you can choose from %s",
-			dataSourceFilterOperator,
-			strings.Join(
-				core.Map(DataSourceFilterOperators, func(operator DataSourceFilterOperator, index int) string {
-					return string(operator)
-				}),
-				",",
-			),
-		),
-		SourceLine:   line,
-		SourceColumn: column,
-	}
-}
 
 func errInvalidTransformType(underlyingError error, line *int, column *int) error {
 	return &Error{

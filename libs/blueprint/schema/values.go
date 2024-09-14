@@ -8,7 +8,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/common/core"
 	"gopkg.in/yaml.v3"
 )
 
@@ -52,10 +51,6 @@ type ValueTypeWrapper struct {
 }
 
 func (t *ValueTypeWrapper) MarshalYAML() (interface{}, error) {
-	if !core.SliceContains(ValueTypes, t.Value) {
-		return nil, errInvalidValueType(t.Value, nil, nil)
-	}
-
 	return t.Value, nil
 }
 
@@ -65,22 +60,11 @@ func (t *ValueTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 		Column: value.Column,
 	}
 	valueType := ValueType(value.Value)
-	if !core.SliceContains(ValueTypes, valueType) {
-		return errInvalidValueType(
-			valueType,
-			&value.Line,
-			&value.Column,
-		)
-	}
-
 	t.Value = valueType
 	return nil
 }
 
 func (t *ValueTypeWrapper) MarshalJSON() ([]byte, error) {
-	if !core.SliceContains(ValueTypes, t.Value) {
-		return nil, errInvalidValueType(t.Value, nil, nil)
-	}
 	escaped := jsonutils.EscapeJSONString(string(t.Value))
 	return []byte(fmt.Sprintf("\"%s\"", escaped)), nil
 }
@@ -93,9 +77,6 @@ func (t *ValueTypeWrapper) UnmarshalJSON(data []byte) error {
 	}
 
 	valueType := ValueType(typeVal)
-	if !core.SliceContains(ValueTypes, valueType) {
-		return errInvalidValueType(valueType, nil, nil)
-	}
 	t.Value = valueType
 
 	return nil

@@ -11,6 +11,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 // ValidateDataSourceName checks the validity of a data source name,
@@ -28,11 +29,7 @@ func ValidateDataSourceName(mappingName string, dataSourceMap *schema.DataSource
 	return nil
 }
 
-// ValidateDataSource ensures that a given data source matches the specification
-// for all cases not handled during schema parsing.
-//
-// For example, operator validation is not handled by this function as
-// it will have already been carried out during schema parsing.
+// ValidateDataSource ensures that a given data source matches the specification.
 func ValidateDataSource(
 	ctx context.Context,
 	name string,
@@ -486,6 +483,12 @@ func validateDataSourceFilter(
 		)
 	}
 
+	if filter.Operator == nil || filter.Operator.Value == "" {
+		return diagnostics, errDataSourceMissingFilterOperator(
+			name, getDataSourceMeta(dataSourceMap, name),
+		)
+	}
+
 	if filter.Search == nil || len(filter.Search.Values) == 0 {
 		return diagnostics, errDataSourceMissingFilterSearch(
 			name, getDataSourceMeta(dataSourceMap, name),
@@ -523,6 +526,15 @@ func validateDataSourceFilter(
 		)
 	}
 
+	validateFilterOpDiagnostics, validateFilterOpErr := validateDataSourceFilterOperator(
+		name,
+		filter.Operator,
+	)
+	diagnostics = append(diagnostics, validateFilterOpDiagnostics...)
+	if validateFilterOpErr != nil {
+		return diagnostics, validateFilterOpErr
+	}
+
 	searchValidationDiagnostics, searchValidationErr := validateDataSourceFilterSearch(
 		ctx,
 		name,
@@ -536,6 +548,19 @@ func validateDataSourceFilter(
 	diagnostics = append(diagnostics, searchValidationDiagnostics...)
 	if searchValidationErr != nil {
 		return diagnostics, searchValidationErr
+	}
+
+	return diagnostics, nil
+}
+
+func validateDataSourceFilterOperator(
+	dataSourceName string,
+	operator *schema.DataSourceFilterOperatorWrapper,
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+
+	if !core.SliceContains(schema.DataSourceFilterOperators, operator.Value) {
+		return diagnostics, errInvalidDataSourceFilterOperator(dataSourceName, operator)
 	}
 
 	return diagnostics, nil
@@ -768,6 +793,14 @@ func validateDataSourceExport(
 			dataSourceName,
 			exportName,
 			wrapperLocation,
+		)
+	}
+
+	if !core.SliceContains(schema.DataSourceFieldTypes, export.Type.Value) {
+		return diagnostics, errInvalidDataSourceFieldType(
+			dataSourceName,
+			exportName,
+			export.Type,
 		)
 	}
 

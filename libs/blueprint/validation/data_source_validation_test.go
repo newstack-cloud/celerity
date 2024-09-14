@@ -379,6 +379,215 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_i
 	)
 }
 
+func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_operator_is_not_provided(c *C) {
+	field := "instanceConfigId"
+	aliasFor := "instanceConfigId"
+	search := "Production"
+	dataSource := &schema.DataSource{
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
+		Filter: &schema.DataSourceFilter{
+			Field:    &core.ScalarValue{StringValue: &field},
+			Operator: &schema.DataSourceFilterOperatorWrapper{
+				// Operator omitted.
+			},
+			Search: &schema.DataSourceFilterSearch{
+				Values: []*substitutions.StringOrSubstitutions{
+					{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &search,
+							},
+						},
+					},
+				},
+			},
+		},
+		Exports: &schema.DataSourceFieldExportMap{
+			Values: map[string]*schema.DataSourceFieldExport{
+				"instanceId": {
+					Type: &schema.DataSourceFieldTypeWrapper{
+						Value: schema.DataSourceFieldTypeString,
+					},
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
+				},
+			},
+		},
+	}
+	dataSourceMap := &schema.DataSourceMap{
+		Values: map[string]*schema.DataSource{
+			"vmInstance": dataSource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: dataSourceMap,
+	}
+
+	diagnostics, err := ValidateDataSource(
+		context.Background(),
+		"vmInstance",
+		dataSource,
+		dataSourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		s.dataSourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidDataSourceFilterOperator)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: data source \"vmInstance\" has an empty filter operator, "+
+			"you can choose from \"=\", \"!=\", \"in\", \"not in\", \"has key\", \"not has key\", \"contains\", "+
+			"\"not contains\", \"starts with\", \"not starts with\", \"ends with\", \"not ends with\"",
+	)
+}
+
+func (s *DataSourceValidationTestSuite) Test_reports_errors_when_unsupported_filter_operator_is_provided(c *C) {
+	field := "instanceConfigId"
+	aliasFor := "instanceConfigId"
+	search := "Production"
+	dataSource := &schema.DataSource{
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
+		Filter: &schema.DataSourceFilter{
+			Field: &core.ScalarValue{StringValue: &field},
+			Operator: &schema.DataSourceFilterOperatorWrapper{
+				Value: schema.DataSourceFilterOperator("unknown"),
+			},
+			Search: &schema.DataSourceFilterSearch{
+				Values: []*substitutions.StringOrSubstitutions{
+					{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &search,
+							},
+						},
+					},
+				},
+			},
+		},
+		Exports: &schema.DataSourceFieldExportMap{
+			Values: map[string]*schema.DataSourceFieldExport{
+				"instanceId": {
+					Type: &schema.DataSourceFieldTypeWrapper{
+						Value: schema.DataSourceFieldTypeString,
+					},
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
+				},
+			},
+		},
+	}
+	dataSourceMap := &schema.DataSourceMap{
+		Values: map[string]*schema.DataSource{
+			"vmInstance": dataSource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: dataSourceMap,
+	}
+
+	diagnostics, err := ValidateDataSource(
+		context.Background(),
+		"vmInstance",
+		dataSource,
+		dataSourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		s.dataSourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidDataSourceFilterOperator)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: unsupported filter operator \"unknown\" has been provided in data source "+
+			"\"vmInstance\", you can choose from \"=\", \"!=\", \"in\", \"not in\", \"has key\", \"not has key\", \"contains\", "+
+			"\"not contains\", \"starts with\", \"not starts with\", \"ends with\", \"not ends with\"",
+	)
+}
+
+func (s *DataSourceValidationTestSuite) Test_reports_errors_when_unsupported_exported_field_type_is_provided(c *C) {
+	searchField := "instanceConfigId"
+	aliasFor := "serviceName"
+	search := "Production"
+	dataSource := &schema.DataSource{
+		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
+		Filter: &schema.DataSourceFilter{
+			Field: &core.ScalarValue{StringValue: &searchField},
+			Operator: &schema.DataSourceFilterOperatorWrapper{
+				Value: schema.DataSourceFilterOperatorContains,
+			},
+			Search: &schema.DataSourceFilterSearch{
+				Values: []*substitutions.StringOrSubstitutions{
+					{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								StringValue: &search,
+							},
+						},
+					},
+				},
+			},
+		},
+		Exports: &schema.DataSourceFieldExportMap{
+			Values: map[string]*schema.DataSourceFieldExport{
+				"service": {
+					Type: &schema.DataSourceFieldTypeWrapper{
+						Value: schema.DataSourceFieldType("unknown"),
+					},
+					AliasFor: &core.ScalarValue{StringValue: &aliasFor},
+				},
+			},
+		},
+	}
+	dataSourceMap := &schema.DataSourceMap{
+		Values: map[string]*schema.DataSource{
+			"vmInstance": dataSource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: dataSourceMap,
+	}
+
+	diagnostics, err := ValidateDataSource(
+		context.Background(),
+		"vmInstance",
+		dataSource,
+		dataSourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		s.dataSourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidDataSourceFieldType)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: unsupported field type \"unknown\" has been provided for export \"service\" in data source "+
+			"\"vmInstance\", you can choose from: string, integer, float, boolean and array",
+	)
+}
+
 func (s *DataSourceValidationTestSuite) Test_reports_errors_when_no_exported_fields_are_provided(c *C) {
 	search := "Production"
 	field := "instanceConfigId"
