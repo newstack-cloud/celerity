@@ -28,8 +28,10 @@ type Include struct {
 
 func (i *Include) UnmarshalYAML(value *yaml.Node) error {
 	i.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type includeAlias Include

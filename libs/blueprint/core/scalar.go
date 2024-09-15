@@ -55,8 +55,11 @@ func (v *ScalarValue) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	v.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(value),
 	}
 
 	// Decode will read floating point numbers as integers

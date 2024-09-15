@@ -33,8 +33,11 @@ func (s *StringOrSubstitutions) MarshalYAML() (interface{}, error) {
 // references.
 func (s *StringOrSubstitutions) UnmarshalYAML(node *yaml.Node) error {
 	s.SourceMeta = &source.Meta{
-		Line:   node.Line,
-		Column: node.Column,
+		Position: source.Position{
+			Line:   node.Line,
+			Column: node.Column,
+		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(node),
 	}
 
 	isBlockStyle := node.Style == yaml.LiteralStyle || node.Style == yaml.FoldedStyle

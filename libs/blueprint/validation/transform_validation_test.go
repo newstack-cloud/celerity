@@ -20,10 +20,10 @@ func (s *TransformValidationTestSuite) Test_succeeds_without_any_issues_for_a_va
 		Transform: &schema.TransformValueWrapper{
 			Values: []string{TransformCelerity2024_09_01},
 			SourceMeta: []*source.Meta{
-				{
+				{Position: source.Position{
 					Line:   1,
 					Column: 1,
-				},
+				}},
 			},
 		},
 	}
@@ -39,18 +39,18 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_and_warnings_for_inva
 		Transform: &schema.TransformValueWrapper{
 			Values: []string{TransformCelerity2024_09_01, "", "non-core-transform"},
 			SourceMeta: []*source.Meta{
-				{
+				{Position: source.Position{
 					Line:   1,
 					Column: 1,
-				},
-				{
+				}},
+				{Position: source.Position{
 					Line:   2,
 					Column: 1,
-				},
-				{
+				}},
+				{Position: source.Position{
 					Line:   3,
 					Column: 1,
-				},
+				}},
 			},
 		},
 	}
@@ -61,14 +61,14 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_and_warnings_for_inva
 			Level:   core.DiagnosticLevelError,
 			Message: "A transform can not be empty.",
 			Range: &core.DiagnosticRange{
-				Start: &source.Meta{
+				Start: &source.Meta{Position: source.Position{
 					Line:   2,
 					Column: 1,
-				},
-				End: &source.Meta{
+				}},
+				End: &source.Meta{Position: source.Position{
 					Line:   3,
 					Column: 1,
-				},
+				}},
 			},
 		},
 		{
@@ -76,14 +76,14 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_and_warnings_for_inva
 			Message: "The transform \"non-core-transform\" is not a core transform," +
 				" you will need to make sure it is configured when deploying this blueprint.",
 			Range: &core.DiagnosticRange{
-				Start: &source.Meta{
+				Start: &source.Meta{Position: source.Position{
 					Line:   3,
 					Column: 1,
-				},
-				End: &source.Meta{
+				}},
+				End: &source.Meta{Position: source.Position{
 					Line:   4,
 					Column: 1,
-				},
+				}},
 			},
 		},
 	})
@@ -96,14 +96,14 @@ func (s *BlueprintValidationTestSuite) Test_reports_error_for_sub_usage_in_trans
 		Transform: &schema.TransformValueWrapper{
 			Values: []string{TransformCelerity2024_09_01, "${variables.transform1}"},
 			SourceMeta: []*source.Meta{
-				{
+				{Position: source.Position{
 					Line:   1,
 					Column: 1,
-				},
-				{
+				}},
+				{Position: source.Position{
 					Line:   2,
 					Column: 1,
-				},
+				}},
 			},
 		},
 	}
@@ -114,14 +114,14 @@ func (s *BlueprintValidationTestSuite) Test_reports_error_for_sub_usage_in_trans
 			Level:   core.DiagnosticLevelError,
 			Message: "${..} substitutions can not be used in a transform.",
 			Range: &core.DiagnosticRange{
-				Start: &source.Meta{
+				Start: &source.Meta{Position: source.Position{
 					Line:   2,
 					Column: 1,
-				},
-				End: &source.Meta{
+				}},
+				End: &source.Meta{Position: source.Position{
 					Line:   3,
 					Column: 1,
-				},
+				}},
 			},
 		},
 	})

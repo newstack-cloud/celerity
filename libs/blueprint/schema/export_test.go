@@ -51,8 +51,14 @@ func (s *ExportTestSuite) Test_parses_valid_string_export_yaml_input(c *C) {
 		Type: &ExportTypeWrapper{
 			Value: ExportTypeString,
 			SourceMeta: &source.Meta{
-				Line:   1,
-				Column: 7,
+				Position: source.Position{
+					Line:   1,
+					Column: 7,
+				},
+				EndPosition: &source.Position{
+					Line:   1,
+					Column: 13,
+				},
 			},
 		},
 		Description: &substitutions.StringOrSubstitutions{
@@ -60,26 +66,46 @@ func (s *ExportTestSuite) Test_parses_valid_string_export_yaml_input(c *C) {
 				{
 					StringValue: &description,
 					SourceMeta: &source.Meta{
-						Line:   2,
-						Column: 14,
+						Position: source.Position{
+							Line:   2,
+							Column: 14,
+						},
+						EndPosition: &source.Position{
+							Line:   2,
+							Column: 66,
+						},
 					},
 				},
 			},
 			SourceMeta: &source.Meta{
-				Line:   2,
-				Column: 14,
+				Position: source.Position{
+					Line:   2,
+					Column: 14,
+				},
+				EndPosition: &source.Position{
+					Line:   2,
+					Column: 66,
+				},
 			},
 		},
 		Field: &core.ScalarValue{
 			StringValue: &field,
 			SourceMeta: &source.Meta{
-				Line:   3,
-				Column: 8,
+				Position: source.Position{
+					Line:   3,
+					Column: 8,
+				},
+				EndPosition: &source.Position{
+					Line:   3,
+					Column: 38,
+				},
 			},
 		},
 		SourceMeta: &source.Meta{
-			Line:   1,
-			Column: 1,
+			Position: source.Position{
+				Line:   1,
+				Column: 1,
+			},
 		},
 	})
 }

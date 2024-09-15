@@ -34,10 +34,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 			"maxRetries": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"maxRetries": {
+			"maxRetries": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
@@ -64,10 +64,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 			"timeoutInSeconds": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"timeoutInSeconds": {
+			"timeoutInSeconds": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
@@ -107,10 +107,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
@@ -137,10 +137,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 			"experimentalFeatures": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"experimentalFeatures": {
+			"experimentalFeatures": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
@@ -176,10 +176,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
@@ -205,10 +205,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			"maxRetries": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"maxRetries": {
+			"maxRetries": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
@@ -235,10 +235,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			"timeoutInSeconds": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"timeoutInSeconds": {
+			"timeoutInSeconds": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
@@ -265,10 +265,10 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 			"experimentalFeatures": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"experimentalFeatures": {
+			"experimentalFeatures": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
@@ -286,10 +286,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_substitution_p
 			"${variables.region}": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"${variables.region}": {
+			"${variables.region}": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	err := ValidateVariableName("${variables.region}", varMap)
@@ -325,10 +325,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_strin
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
@@ -364,10 +364,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_integ
 			"maxRetries": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"maxRetries": {
+			"maxRetries": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
@@ -403,10 +403,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_float
 			"timeoutInSeconds": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"timeoutInSeconds": {
+			"timeoutInSeconds": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
@@ -442,10 +442,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_bool_
 			"experimentalFeatures": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"experimentalFeatures": {
+			"experimentalFeatures": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
@@ -485,10 +485,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
@@ -528,10 +528,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			"maxRetries": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"maxRetries": {
+			"maxRetries": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
@@ -571,10 +571,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			"timeoutInSeconds": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"timeoutInSeconds": {
+			"timeoutInSeconds": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
@@ -614,10 +614,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 			"experimentalFeatures": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"experimentalFeatures": {
+			"experimentalFeatures": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
@@ -667,10 +667,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
@@ -730,10 +730,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 			"maxRetries": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"maxRetries": {
+			"maxRetries": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
@@ -800,10 +800,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 			"timeoutInSeconds": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"timeoutInSeconds": {
+			"timeoutInSeconds": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
@@ -865,10 +865,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_allowed_value
 			"experimentalFeatures": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"experimentalFeatures": {
+			"experimentalFeatures": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)
@@ -915,10 +915,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
@@ -964,10 +964,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 			"maxRetries": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"maxRetries": {
+			"maxRetries": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
@@ -1013,10 +1013,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 			"timeoutInSeconds": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"timeoutInSeconds": {
+			"timeoutInSeconds": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
@@ -1061,10 +1061,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
@@ -1110,10 +1110,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 			"maxBatchSize": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"maxBatchSize": {
+			"maxBatchSize": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "maxBatchSize", variableSchema, varMap, params, true)
@@ -1158,10 +1158,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 			"sampleRate": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"sampleRate": {
+			"sampleRate": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "sampleRate", variableSchema, varMap, params, true)
@@ -1198,10 +1198,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_string_variab
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
@@ -1233,10 +1233,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_string_variabl
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "region", variableSchema, varMap, params, true)
@@ -1268,10 +1268,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_integer_variab
 			"maxRetries": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"maxRetries": {
+			"maxRetries": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "maxRetries", variableSchema, varMap, params, true)
@@ -1303,10 +1303,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_float_variable
 			"timeoutInSeconds": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"timeoutInSeconds": {
+			"timeoutInSeconds": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "timeoutInSeconds", variableSchema, varMap, params, true)
@@ -1338,10 +1338,10 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_boolean_variab
 			"experimentalFeatures": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"experimentalFeatures": {
+			"experimentalFeatures": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCoreVariable(context.Background(), "experimentalFeatures", variableSchema, varMap, params, true)

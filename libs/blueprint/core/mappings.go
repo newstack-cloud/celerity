@@ -70,8 +70,10 @@ func (m *MappingNode) MarshalYAML() (interface{}, error) {
 // to unmarshal a YAML representation into a mapping node.
 func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
 	m.SourceMeta = &source.Meta{
-		Line:   node.Line,
-		Column: node.Column,
+		Position: source.Position{
+			Line:   node.Line,
+			Column: node.Column,
+		},
 	}
 
 	if node.Kind == yaml.ScalarNode {
@@ -101,8 +103,10 @@ func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
 				return err
 			}
 			m.FieldsSourceMeta[key.Value] = &source.Meta{
-				Line:   key.Line,
-				Column: key.Column,
+				Position: source.Position{
+					Line:   key.Line,
+					Column: key.Column,
+				},
 			}
 		}
 		return nil
@@ -113,8 +117,10 @@ func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
 
 func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 	sourceMeta := &source.Meta{
-		Line:   node.Line,
-		Column: node.Column,
+		Position: source.Position{
+			Line:   node.Line,
+			Column: node.Column,
+		},
 	}
 
 	isBlockStyle := node.Style == yaml.LiteralStyle || node.Style == yaml.FoldedStyle
@@ -141,6 +147,7 @@ func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 		return m.Literal.UnmarshalYAML(node)
 	}
 
+	sourceMeta.EndPosition = source.EndSourcePositionFromYAMLScalarNode(node)
 	m.StringWithSubstitutions = &substitutions.StringOrSubstitutions{
 		Values:     strSubs,
 		SourceMeta: sourceMeta,

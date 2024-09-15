@@ -26,8 +26,10 @@ type Export struct {
 
 func (e *Export) UnmarshalYAML(value *yaml.Node) error {
 	e.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type exportAlias Export
@@ -56,8 +58,11 @@ func (t *ExportTypeWrapper) MarshalYAML() (interface{}, error) {
 
 func (t *ExportTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 	t.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(value),
 	}
 
 	t.Value = ExportType(value.Value)

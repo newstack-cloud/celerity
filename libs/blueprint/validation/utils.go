@@ -73,26 +73,26 @@ func toDiagnosticRange(
 ) *core.DiagnosticRange {
 	if start == nil {
 		return &core.DiagnosticRange{
-			Start: &source.Meta{
+			Start: &source.Meta{Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
-			End: &source.Meta{
+			}},
+			End: &source.Meta{Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		}
 	}
 
-	endSourceMeta := &source.Meta{
+	endSourceMeta := &source.Meta{Position: source.Position{
 		Line:   start.Line + 1,
 		Column: 1,
-	}
+	}}
 	if nextLocation != nil {
-		endSourceMeta = &source.Meta{
+		endSourceMeta = &source.Meta{Position: source.Position{
 			Line:   nextLocation.Line,
 			Column: nextLocation.Column,
-		}
+		}}
 	}
 
 	return &core.DiagnosticRange{
@@ -199,10 +199,10 @@ func getEndLocation(location *source.Meta) *source.Meta {
 		return nil
 	}
 
-	return &source.Meta{
+	return &source.Meta{Position: source.Position{
 		Line:   location.Line + 1,
 		Column: location.Column,
-	}
+	}}
 }
 
 func isMappingNodeEmpty(node *core.MappingNode) bool {

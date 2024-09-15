@@ -60,8 +60,10 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_substitution_provided
 		},
 		SourceMeta: map[string]*source.Meta{
 			"${variables.region}": {
-				Line:   1,
-				Column: 1,
+				Position: source.Position{
+					Line:   1,
+					Column: 1,
+				},
 			},
 		},
 	}

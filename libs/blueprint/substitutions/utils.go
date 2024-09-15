@@ -20,15 +20,19 @@ func DetermineYAMLSourceStartMeta(node *yaml.Node, sourceMeta *source.Meta) *sou
 
 	if node.Style == yaml.LiteralStyle {
 		return &source.Meta{
-			Line:   sourceMeta.Line + 1,
-			Column: sourceMeta.Column,
+			Position: source.Position{
+				Line:   sourceMeta.Line + 1,
+				Column: sourceMeta.Column,
+			},
 		}
 	}
 
 	if node.Style == yaml.FoldedStyle {
 		return &source.Meta{
-			Line:   sourceMeta.Line + 1,
-			Column: sourceMeta.Column,
+			Position: source.Position{
+				Line:   sourceMeta.Line + 1,
+				Column: sourceMeta.Column,
+			},
 		}
 	}
 

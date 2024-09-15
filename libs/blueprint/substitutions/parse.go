@@ -864,8 +864,10 @@ func (p *Parser) sourceMeta(token *token) *source.Meta {
 	}
 
 	return &source.Meta{
-		Line:   line,
-		Column: col,
+		Position: source.Position{
+			Line:   line,
+			Column: col,
+		},
 	}
 }
 

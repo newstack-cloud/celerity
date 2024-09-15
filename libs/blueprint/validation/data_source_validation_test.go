@@ -69,8 +69,10 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_substitution_pro
 		},
 		SourceMeta: map[string]*source.Meta{
 			"${variables.awsEC2InstanceName}": {
-				Line:   1,
-				Column: 1,
+				Position: source.Position{
+					Line:   1,
+					Column: 1,
+				},
 			},
 		},
 	}

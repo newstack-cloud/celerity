@@ -23,8 +23,10 @@ type Value struct {
 
 func (t *Value) UnmarshalYAML(value *yaml.Node) error {
 	t.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type valueAlias Value
@@ -56,8 +58,11 @@ func (t *ValueTypeWrapper) MarshalYAML() (interface{}, error) {
 
 func (t *ValueTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 	t.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(value),
 	}
 	valueType := ValueType(value.Value)
 	t.Value = valueType

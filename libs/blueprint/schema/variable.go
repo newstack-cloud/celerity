@@ -23,8 +23,10 @@ type Variable struct {
 
 func (t *Variable) UnmarshalYAML(value *yaml.Node) error {
 	t.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type variableAlias Variable
@@ -55,8 +57,11 @@ func (t *VariableTypeWrapper) MarshalYAML() (interface{}, error) {
 
 func (t *VariableTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 	t.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(value),
 	}
 
 	t.Value = VariableType(value.Value)

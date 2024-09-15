@@ -26,8 +26,10 @@ type Resource struct {
 
 func (r *Resource) UnmarshalYAML(value *yaml.Node) error {
 	r.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type resourceAlias Resource
@@ -60,8 +62,11 @@ func (t *ResourceTypeWrapper) MarshalYAML() (interface{}, error) {
 
 func (t *ResourceTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 	t.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(value),
 	}
 
 	t.Value = value.Value
@@ -99,8 +104,10 @@ type Metadata struct {
 
 func (m *Metadata) UnmarshalYAML(value *yaml.Node) error {
 	m.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type metadataAlias Metadata
@@ -126,8 +133,10 @@ type LinkSelector struct {
 
 func (s *LinkSelector) UnmarshalYAML(value *yaml.Node) error {
 	s.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type linkSelectorAlias LinkSelector

@@ -140,8 +140,10 @@ func SchemaToTree(blueprint *Blueprint) *TreeNode {
 
 	root.Range = &source.Range{
 		Start: &source.Meta{
-			Line:   1,
-			Column: 1,
+			Position: source.Position{
+				Line:   1,
+				Column: 1,
+			},
 		},
 		// Root node doesn't have an end location, the range for the very last leaf node
 		// will extend to the end of the document.

@@ -26,8 +26,10 @@ type Condition struct {
 
 func (c *Condition) UnmarshalYAML(value *yaml.Node) error {
 	c.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	if value.Kind == yaml.ScalarNode {

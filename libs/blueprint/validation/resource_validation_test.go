@@ -68,10 +68,10 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_substitution_provi
 			"${variables.awsEC2InstanceName}": resourceSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"${variables.awsEC2InstanceName}": {
+			"${variables.awsEC2InstanceName}": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	err := ValidateResourceName("${variables.awsEC2InstanceName}", resourceMap)
@@ -101,15 +101,15 @@ func (s *ResourceValidationTestSuite) Test_reports_errors_when_substitutions_use
 							},
 						},
 					},
-					SourceMeta: &source.Meta{
+					SourceMeta: &source.Meta{Position: source.Position{
 						Line:   1,
 						Column: 1,
-					},
+					}},
 					FieldsSourceMeta: map[string]*source.Meta{
-						"${variables.version}": {
+						"${variables.version}": {Position: source.Position{
 							Line:   1,
 							Column: 1,
-						},
+						}},
 					},
 				},
 			},
@@ -120,10 +120,10 @@ func (s *ResourceValidationTestSuite) Test_reports_errors_when_substitutions_use
 			"api": resourceSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"api": {
+			"api": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	err := PreValidateResourceSpec(context.TODO(), "api", resourceSchema, resourceMap)

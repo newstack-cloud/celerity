@@ -31,8 +31,10 @@ func (t *TransformValueWrapper) UnmarshalYAML(value *yaml.Node) error {
 		t.Values = []string{value.Value}
 		t.SourceMeta = []*source.Meta{
 			{
-				Line:   value.Line,
-				Column: value.Column,
+				Position: source.Position{
+					Line:   value.Line,
+					Column: value.Column,
+				},
 			},
 		}
 		return nil
@@ -103,8 +105,11 @@ func collectStringNodeValues(nodes []*yaml.Node) ([]string, []*source.Meta, erro
 		} else {
 			values = append(values, node.Value)
 			sourceMeta = append(sourceMeta, &source.Meta{
-				Line:   node.Line,
-				Column: node.Column,
+				Position: source.Position{
+					Line:   node.Line,
+					Column: node.Column,
+				},
+				EndPosition: source.EndSourcePositionFromYAMLScalarNode(node),
 			})
 		}
 	}

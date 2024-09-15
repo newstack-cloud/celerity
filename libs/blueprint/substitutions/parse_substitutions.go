@@ -57,10 +57,12 @@ func ParseSubstitutionValues(
 		parsed:            []*StringOrSubstitution{},
 		parentSourceStart: parentSourceStart,
 		relativeLineInfo: &source.Meta{
-			Line:   0,
-			Column: 0,
+			Position: source.Position{
+				Line:   0,
+				Column: 0,
+			},
 		},
-		relativeSubStart:   &source.Meta{},
+		relativeSubStart:   &source.Meta{Position: source.Position{}},
 		inPossibleSub:      false,
 		inStringLiteral:    false,
 		potentialSub:       "",
@@ -103,13 +105,15 @@ func ParseSubstitutionValues(
 		sourceMeta := (*source.Meta)(nil)
 		if state.outputLineInfo {
 			sourceMeta = &source.Meta{
-				Line: toAbsLine(parentLine, state.relativeLineInfo.Line),
-				Column: toAbsColumn(
-					parentColumn,
-					state.relativeLineInfo.Column-len(state.potentialNonSubStr),
-					state.relativeLineInfo.Line == 0,
-					state.ignoreParentColumn,
-				),
+				Position: source.Position{
+					Line: toAbsLine(parentLine, state.relativeLineInfo.Line),
+					Column: toAbsColumn(
+						parentColumn,
+						state.relativeLineInfo.Column-len(state.potentialNonSubStr),
+						state.relativeLineInfo.Line == 0,
+						state.ignoreParentColumn,
+					),
+				},
 			}
 		}
 
@@ -159,8 +163,10 @@ func checkOpenSubBracket(state *interpolationParseState, value string, i int) bo
 		// Start of a substitution
 		state.inPossibleSub = true
 		state.relativeSubStart = &source.Meta{
-			Line:   state.relativeLineInfo.Line,
-			Column: state.relativeLineInfo.Column + 1,
+			Position: source.Position{
+				Line:   state.relativeLineInfo.Line,
+				Column: state.relativeLineInfo.Column + 1,
+			},
 		}
 		nonSubStr := state.potentialNonSubStr[:len(state.potentialNonSubStr)-1]
 		if len(nonSubStr) > 0 {
@@ -200,8 +206,10 @@ func createStringValSourceMeta(state *interpolationParseState, stringVal string)
 	)
 
 	return &source.Meta{
-		Line:   toAbsLine(parentLine, state.relativeLineInfo.Line),
-		Column: column,
+		Position: source.Position{
+			Line:   toAbsLine(parentLine, state.relativeLineInfo.Line),
+			Column: column,
+		},
 	}
 }
 
@@ -268,32 +276,38 @@ func createSubstitutionSourceMeta(state *interpolationParseState) *source.Meta {
 	}
 
 	return &source.Meta{
-		Line: toAbsLine(parentLine, state.relativeSubStart.Line),
-		Column: toAbsColumn(
-			parentCol,
-			state.relativeSubStart.Column,
-			state.relativeSubStart.Line == 0,
-			state.ignoreParentColumn,
-		),
+		Position: source.Position{
+			Line: toAbsLine(parentLine, state.relativeSubStart.Line),
+			Column: toAbsColumn(
+				parentCol,
+				state.relativeSubStart.Column,
+				state.relativeSubStart.Line == 0,
+				state.ignoreParentColumn,
+			),
+		},
 	}
 }
 
 func toAbsSourceMeta(parentSourceStart, relativeSubStart *source.Meta, ignoreParentColumn bool) *source.Meta {
 	if parentSourceStart == nil {
 		return &source.Meta{
-			Line:   relativeSubStart.Line + 1,
-			Column: relativeSubStart.Column + 1,
+			Position: source.Position{
+				Line:   relativeSubStart.Line + 1,
+				Column: relativeSubStart.Column + 1,
+			},
 		}
 	}
 
 	return &source.Meta{
-		Line: toAbsLine(parentSourceStart.Line, relativeSubStart.Line),
-		Column: toAbsColumn(
-			parentSourceStart.Column,
-			relativeSubStart.Column,
-			relativeSubStart.Line == 0,
-			ignoreParentColumn,
-		),
+		Position: source.Position{
+			Line: toAbsLine(parentSourceStart.Line, relativeSubStart.Line),
+			Column: toAbsColumn(
+				parentSourceStart.Column,
+				relativeSubStart.Column,
+				relativeSubStart.Line == 0,
+				ignoreParentColumn,
+			),
+		},
 	}
 }
 

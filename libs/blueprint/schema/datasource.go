@@ -28,8 +28,10 @@ type DataSource struct {
 
 func (s *DataSource) UnmarshalYAML(value *yaml.Node) error {
 	s.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type dataSourceAlias DataSource
@@ -60,8 +62,11 @@ func (t *DataSourceTypeWrapper) MarshalYAML() (interface{}, error) {
 
 func (t *DataSourceTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 	t.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(value),
 	}
 
 	t.Value = value.Value
@@ -113,8 +118,10 @@ func (m *DataSourceFieldExportMap) UnmarshalYAML(value *yaml.Node) error {
 		val := value.Content[i+1]
 
 		m.SourceMeta[key.Value] = &source.Meta{
-			Line:   key.Line,
-			Column: key.Column,
+			Position: source.Position{
+				Line:   key.Line,
+				Column: key.Column,
+			},
 		}
 
 		var export DataSourceFieldExport
@@ -155,8 +162,10 @@ type DataSourceFilter struct {
 
 func (f *DataSourceFilter) UnmarshalYAML(value *yaml.Node) error {
 	f.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type dataSourceFilterAlias DataSourceFilter
@@ -192,8 +201,10 @@ func (s *DataSourceFilterSearch) MarshalYAML() (interface{}, error) {
 
 func (s *DataSourceFilterSearch) UnmarshalYAML(value *yaml.Node) error {
 	s.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	if value.Kind == yaml.SequenceNode {
@@ -261,8 +272,11 @@ func (w *DataSourceFilterOperatorWrapper) MarshalYAML() (interface{}, error) {
 
 func (w *DataSourceFilterOperatorWrapper) UnmarshalYAML(value *yaml.Node) error {
 	w.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(value),
 	}
 	valueFilterOperator := DataSourceFilterOperator(value.Value)
 
@@ -356,8 +370,10 @@ type DataSourceFieldExport struct {
 
 func (e *DataSourceFieldExport) UnmarshalYAML(value *yaml.Node) error {
 	e.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type dataSourceFieldExportAlias DataSourceFieldExport
@@ -386,8 +402,10 @@ type DataSourceMetadata struct {
 
 func (m *DataSourceMetadata) UnmarshalYAML(value *yaml.Node) error {
 	m.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
 	}
 
 	type dataSourceMetadataAlias DataSourceMetadata
@@ -419,8 +437,11 @@ func (t *DataSourceFieldTypeWrapper) MarshalYAML() (interface{}, error) {
 
 func (t *DataSourceFieldTypeWrapper) UnmarshalYAML(value *yaml.Node) error {
 	t.SourceMeta = &source.Meta{
-		Line:   value.Line,
-		Column: value.Column,
+		Position: source.Position{
+			Line:   value.Line,
+			Column: value.Column,
+		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(value),
 	}
 	valueDataSourceFieldType := DataSourceFieldType(value.Value)
 

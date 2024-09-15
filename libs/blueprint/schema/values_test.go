@@ -53,20 +53,35 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 			{
 				StringValue: &descriptionStrVal,
 				SourceMeta: &source.Meta{
-					Line:   3,
-					Column: 14,
+					Position: source.Position{
+						Line:   3,
+						Column: 14,
+					},
+					EndPosition: &source.Position{
+						Line:   3,
+						Column: 46,
+					},
 				},
 			},
 		},
 		SourceMeta: &source.Meta{
-			Line:   3,
-			Column: 14,
+			Position: source.Position{
+				Line:   3,
+				Column: 14,
+			},
+			EndPosition: &source.Position{
+				Line:   3,
+				Column: 46,
+			},
 		},
 	})
 	c.Assert(*targetVal.Secret.BoolValue, Equals, false)
 	c.Assert(targetVal.Type, DeepEquals, &ValueTypeWrapper{
-		Value:      ValueTypeBoolean,
-		SourceMeta: &source.Meta{Line: 1, Column: 7},
+		Value: ValueTypeBoolean,
+		SourceMeta: &source.Meta{
+			Position:    source.Position{Line: 1, Column: 7},
+			EndPosition: &source.Position{Line: 1, Column: 14},
+		},
 	})
 	c.Assert(targetVal.Value, DeepEquals, &substitutions.StringOrSubstitutions{
 		Values: []*substitutions.StringOrSubstitution{
@@ -82,25 +97,33 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 								FieldName: "enabled",
 							},
 						},
-						SourceMeta: &source.Meta{
+						SourceMeta: &source.Meta{Position: source.Position{
 							Line:   2,
 							Column: 10,
-						},
+						}},
 					},
-					SourceMeta: &source.Meta{
+					SourceMeta: &source.Meta{Position: source.Position{
 						Line:   2,
 						Column: 10,
-					},
+					}},
 				},
 				SourceMeta: &source.Meta{
-					Line:   2,
-					Column: 8,
+					Position: source.Position{
+						Line:   2,
+						Column: 8,
+					},
 				},
 			},
 		},
 		SourceMeta: &source.Meta{
-			Line:   2,
-			Column: 8,
+			Position: source.Position{
+				Line:   2,
+				Column: 8,
+			},
+			EndPosition: &source.Position{
+				Line:   2,
+				Column: 50,
+			},
 		},
 	})
 	c.Assert(targetVal.SourceMeta, NotNil)
@@ -152,22 +175,37 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 	}
 
 	c.Assert(targetVal.Type, DeepEquals, &ValueTypeWrapper{
-		Value:      expected.Type.Value,
-		SourceMeta: &source.Meta{Line: 1, Column: 7},
+		Value: expected.Type.Value,
+		SourceMeta: &source.Meta{
+			Position:    source.Position{Line: 1, Column: 7},
+			EndPosition: &source.Position{Line: 1, Column: 13},
+		},
 	})
 	c.Assert(targetVal.Description, DeepEquals, &substitutions.StringOrSubstitutions{
 		Values: []*substitutions.StringOrSubstitution{
 			{
 				StringValue: &descriptionStrVal,
 				SourceMeta: &source.Meta{
-					Line:   3,
-					Column: 14,
+					Position: source.Position{
+						Line:   3,
+						Column: 14,
+					},
+					EndPosition: &source.Position{
+						Line:   3,
+						Column: 60,
+					},
 				},
 			},
 		},
 		SourceMeta: &source.Meta{
-			Line:   3,
-			Column: 14,
+			Position: source.Position{
+				Line:   3,
+				Column: 14,
+			},
+			EndPosition: &source.Position{
+				Line:   3,
+				Column: 60,
+			},
 		},
 	})
 	c.Assert(*targetVal.Secret.BoolValue, Equals, *expected.Secret.BoolValue)
@@ -176,14 +214,26 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 			{
 				StringValue: &region,
 				SourceMeta: &source.Meta{
-					Line:   2,
-					Column: 8,
+					Position: source.Position{
+						Line:   2,
+						Column: 8,
+					},
+					EndPosition: &source.Position{
+						Line:   2,
+						Column: 17,
+					},
 				},
 			},
 		},
 		SourceMeta: &source.Meta{
-			Line:   2,
-			Column: 8,
+			Position: source.Position{
+				Line:   2,
+				Column: 8,
+			},
+			EndPosition: &source.Position{
+				Line:   2,
+				Column: 17,
+			},
 		},
 	})
 }

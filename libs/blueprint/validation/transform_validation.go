@@ -70,25 +70,33 @@ func diagnosticRangeFromTransform(transformIndex int, blueprint *schema.Blueprin
 	if len(blueprint.Transform.SourceMeta) == 0 {
 		return &bpcore.DiagnosticRange{
 			Start: &source.Meta{
-				Line:   1,
-				Column: 1,
+				Position: source.Position{
+					Line:   1,
+					Column: 1,
+				},
 			},
 			End: &source.Meta{
-				Line:   1,
-				Column: 1,
+				Position: source.Position{
+					Line:   1,
+					Column: 1,
+				},
 			},
 		}
 	}
 
 	transformSourceMeta := blueprint.Transform.SourceMeta[transformIndex]
 	endSourceMeta := &source.Meta{
-		Line:   transformSourceMeta.Line + 1,
-		Column: 1,
+		Position: source.Position{
+			Line:   transformSourceMeta.Line + 1,
+			Column: 1,
+		},
 	}
 	if transformIndex+1 < len(blueprint.Transform.SourceMeta) {
 		endSourceMeta = &source.Meta{
-			Line:   blueprint.Transform.SourceMeta[transformIndex+1].Line,
-			Column: 1,
+			Position: source.Position{
+				Line:   blueprint.Transform.SourceMeta[transformIndex+1].Line,
+				Column: 1,
+			},
 		}
 	}
 

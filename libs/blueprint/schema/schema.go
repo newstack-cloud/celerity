@@ -50,8 +50,10 @@ func (m *VariableMap) UnmarshalYAML(value *yaml.Node) error {
 		val := value.Content[i+1]
 
 		m.SourceMeta[key.Value] = &source.Meta{
-			Line:   key.Line,
-			Column: key.Column,
+			Position: source.Position{
+				Line:   key.Line,
+				Column: key.Column,
+			},
 		}
 
 		var variable Variable
@@ -109,8 +111,10 @@ func (m *ValueMap) UnmarshalYAML(value *yaml.Node) error {
 		val := value.Content[i+1]
 
 		m.SourceMeta[key.Value] = &source.Meta{
-			Line:   key.Line,
-			Column: key.Column,
+			Position: source.Position{
+				Line:   key.Line,
+				Column: key.Column,
+			},
 		}
 
 		var valDef Value
@@ -168,8 +172,10 @@ func (m *IncludeMap) UnmarshalYAML(value *yaml.Node) error {
 		val := value.Content[i+1]
 
 		m.SourceMeta[key.Value] = &source.Meta{
-			Line:   key.Line,
-			Column: key.Column,
+			Position: source.Position{
+				Line:   key.Line,
+				Column: key.Column,
+			},
 		}
 
 		var include Include
@@ -226,8 +232,10 @@ func (m *ResourceMap) UnmarshalYAML(value *yaml.Node) error {
 		val := value.Content[i+1]
 
 		m.SourceMeta[key.Value] = &source.Meta{
-			Line:   key.Line,
-			Column: key.Column,
+			Position: source.Position{
+				Line:   key.Line,
+				Column: key.Column,
+			},
 		}
 
 		var resource Resource
@@ -284,8 +292,10 @@ func (m *DataSourceMap) UnmarshalYAML(value *yaml.Node) error {
 		val := value.Content[i+1]
 
 		m.SourceMeta[key.Value] = &source.Meta{
-			Line:   key.Line,
-			Column: key.Column,
+			Position: source.Position{
+				Line:   key.Line,
+				Column: key.Column,
+			},
 		}
 
 		var dataSource DataSource
@@ -342,8 +352,10 @@ func (m *ExportMap) UnmarshalYAML(value *yaml.Node) error {
 		val := value.Content[i+1]
 
 		m.SourceMeta[key.Value] = &source.Meta{
-			Line:   key.Line,
-			Column: key.Column,
+			Position: source.Position{
+				Line:   key.Line,
+				Column: key.Column,
+			},
 		}
 
 		var export Export

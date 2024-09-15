@@ -70,9 +70,18 @@ func (s *TransformTestSuite) Test_parses_valid_string_list_transform_yaml_input(
 		"custom-transform-3",
 	})
 	c.Assert(targetTransform.SourceMeta, DeepEquals, []*source.Meta{
-		{Line: 1, Column: 3},
-		{Line: 2, Column: 3},
-		{Line: 3, Column: 3},
+		{
+			Position:    source.Position{Line: 1, Column: 3},
+			EndPosition: &source.Position{Line: 1, Column: 22},
+		},
+		{
+			Position:    source.Position{Line: 2, Column: 3},
+			EndPosition: &source.Position{Line: 2, Column: 21},
+		},
+		{
+			Position:    source.Position{Line: 3, Column: 3},
+			EndPosition: &source.Position{Line: 3, Column: 21},
+		},
 	})
 }
 

@@ -36,8 +36,10 @@ func (m *StringOrSubstitutionsMap) UnmarshalYAML(value *yaml.Node) error {
 		val := value.Content[i+1]
 
 		m.SourceMeta[key.Value] = &source.Meta{
-			Line:   key.Line,
-			Column: key.Column,
+			Position: source.Position{
+				Line:   key.Line,
+				Column: key.Column,
+			},
 		}
 
 		var stringOrSubs substitutions.StringOrSubstitutions
@@ -94,8 +96,10 @@ func (m *StringMap) UnmarshalYAML(value *yaml.Node) error {
 		val := value.Content[i+1]
 
 		m.SourceMeta[key.Value] = &source.Meta{
-			Line:   key.Line,
-			Column: key.Column,
+			Position: source.Position{
+				Line:   key.Line,
+				Column: key.Column,
+			},
 		}
 
 		var str string

@@ -59,14 +59,26 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_field_yaml_input(c *
 			{
 				StringValue: &description,
 				SourceMeta: &source.Meta{
-					Line:   2,
-					Column: 14,
+					Position: source.Position{
+						Line:   2,
+						Column: 14,
+					},
+					EndPosition: &source.Position{
+						Line:   2,
+						Column: 58,
+					},
 				},
 			},
 		},
 		SourceMeta: &source.Meta{
-			Line:   2,
-			Column: 14,
+			Position: source.Position{
+				Line:   2,
+				Column: 14,
+			},
+			EndPosition: &source.Position{
+				Line:   2,
+				Column: 58,
+			},
 		},
 	})
 	c.Assert(targetField.Type.Value, Equals, DataSourceFieldType("boolean"))
@@ -187,25 +199,31 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c 
 						SubstitutionValue: &substitutions.Substitution{
 							Variable: &substitutions.SubstitutionVariable{
 								VariableName: "environment",
-								SourceMeta: &source.Meta{
+								SourceMeta: &source.Meta{Position: source.Position{
 									Line:   3,
 									Column: 11,
-								},
+								}},
 							},
-							SourceMeta: &source.Meta{
+							SourceMeta: &source.Meta{Position: source.Position{
 								Line:   3,
 								Column: 11,
-							},
+							}},
 						},
-						SourceMeta: &source.Meta{
+						SourceMeta: &source.Meta{Position: source.Position{
 							Line:   3,
 							Column: 9,
-						},
+						}},
 					},
 				},
 				SourceMeta: &source.Meta{
-					Line:   3,
-					Column: 9,
+					Position: source.Position{
+						Line:   3,
+						Column: 9,
+					},
+					EndPosition: &source.Position{
+						Line:   3,
+						Column: 33,
+					},
 				},
 			},
 		},

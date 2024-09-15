@@ -36,10 +36,10 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_v
 			"instanceType": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"instanceType": {
+			"instanceType": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
@@ -67,10 +67,10 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_when_va
 			"instanceType": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"instanceType": {
+			"instanceType": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
@@ -98,10 +98,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_errors_when_multiple_va
 			"instanceType": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"instanceType": {
+			"instanceType": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
@@ -140,10 +140,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_there_is_a_f
 			"instanceType": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"instanceType": {
+			"instanceType": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
@@ -197,10 +197,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 			"instanceType": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"instanceType": {
+			"instanceType": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 
@@ -263,10 +263,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 			"instanceType": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"instanceType": {
+			"instanceType": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
@@ -310,10 +310,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 			"instanceType": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"instanceType": {
+			"instanceType": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
@@ -355,10 +355,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 			"instanceType": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"instanceType": {
+			"instanceType": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
@@ -408,10 +408,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 			"instanceType": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"instanceType": {
+			"instanceType": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "instanceType", variableSchema, varMap, params, customVariableType)
@@ -444,10 +444,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_no_value_is_
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
@@ -485,10 +485,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 
@@ -526,10 +526,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 
@@ -568,10 +568,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
@@ -609,10 +609,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)
@@ -664,10 +664,10 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 			"region": variableSchema,
 		},
 		SourceMeta: map[string]*source.Meta{
-			"region": {
+			"region": {Position: source.Position{
 				Line:   1,
 				Column: 1,
-			},
+			}},
 		},
 	}
 	_, err := ValidateCustomVariable(context.Background(), "region", variableSchema, varMap, params, customVariableType)

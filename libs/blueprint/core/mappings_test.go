@@ -53,22 +53,25 @@ func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml(c *C) {
 			Values: []*substitutions.StringOrSubstitution{
 				{
 					StringValue: &testStringValPart,
-					SourceMeta:  &source.Meta{Line: 1, Column: 1},
+					SourceMeta:  &source.Meta{Position: source.Position{Line: 1, Column: 1}},
 				},
 				{
 					SubstitutionValue: &substitutions.Substitution{
 						Variable: &substitutions.SubstitutionVariable{
 							VariableName: "environment",
-							SourceMeta:   &source.Meta{Line: 1, Column: 25},
+							SourceMeta:   &source.Meta{Position: source.Position{Line: 1, Column: 25}},
 						},
-						SourceMeta: &source.Meta{Line: 1, Column: 25},
+						SourceMeta: &source.Meta{Position: source.Position{Line: 1, Column: 25}},
 					},
-					SourceMeta: &source.Meta{Line: 1, Column: 23},
+					SourceMeta: &source.Meta{Position: source.Position{Line: 1, Column: 23}},
 				},
 			},
-			SourceMeta: &source.Meta{Line: 1, Column: 1},
+			SourceMeta: &source.Meta{
+				Position:    source.Position{Line: 1, Column: 1},
+				EndPosition: &source.Position{Line: 1, Column: 47},
+			},
 		},
-		SourceMeta: &source.Meta{Line: 1, Column: 1},
+		SourceMeta: &source.Meta{Position: source.Position{Line: 1, Column: 1}},
 	})
 }
 
@@ -123,45 +126,54 @@ func assertFieldsNodeYAML(c *C, actual *MappingNode) {
 			"key1": {
 				Literal: &ScalarValue{
 					StringValue: &expectedStrVal,
-					SourceMeta:  &source.Meta{Line: 2, Column: 15},
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 2, Column: 15},
+						EndPosition: &source.Position{Line: 2, Column: 23},
+					},
 				},
-				SourceMeta: &source.Meta{Line: 2, Column: 15},
+				SourceMeta: &source.Meta{Position: source.Position{Line: 2, Column: 15}},
 			},
 			"key2": {
 				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 					Values: []*substitutions.StringOrSubstitution{
 						{
 							StringValue: &expectedStrSubPrefix,
-							SourceMeta:  &source.Meta{Line: 3, Column: 15},
+							SourceMeta:  &source.Meta{Position: source.Position{Line: 3, Column: 15}},
 						},
 						{
 							SubstitutionValue: &substitutions.Substitution{
 								Variable: &substitutions.SubstitutionVariable{
 									VariableName: "environment",
-									SourceMeta:   &source.Meta{Line: 3, Column: 32},
+									SourceMeta:   &source.Meta{Position: source.Position{Line: 3, Column: 32}},
 								},
-								SourceMeta: &source.Meta{Line: 3, Column: 32},
+								SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 32}},
 							},
-							SourceMeta: &source.Meta{Line: 3, Column: 30},
+							SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 30}},
 						},
 					},
-					SourceMeta: &source.Meta{Line: 3, Column: 15},
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 3, Column: 15},
+						EndPosition: &source.Position{Line: 3, Column: 56},
+					},
 				},
-				SourceMeta: &source.Meta{Line: 3, Column: 15},
+				SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 15}},
 			},
 			"key3": {
 				Literal: &ScalarValue{
-					IntValue:   &expectedIntVal,
-					SourceMeta: &source.Meta{Line: 4, Column: 15},
+					IntValue: &expectedIntVal,
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 4, Column: 15},
+						EndPosition: &source.Position{Line: 4, Column: 23},
+					},
 				},
-				SourceMeta: &source.Meta{Line: 4, Column: 15},
+				SourceMeta: &source.Meta{Position: source.Position{Line: 4, Column: 15}},
 			},
 		},
-		SourceMeta: &source.Meta{Line: 2, Column: 9},
+		SourceMeta: &source.Meta{Position: source.Position{Line: 2, Column: 9}},
 		FieldsSourceMeta: map[string]*source.Meta{
-			"key1": {Line: 2, Column: 9},
-			"key2": {Line: 3, Column: 9},
-			"key3": {Line: 4, Column: 9},
+			"key1": {Position: source.Position{Line: 2, Column: 9}},
+			"key2": {Position: source.Position{Line: 3, Column: 9}},
+			"key3": {Position: source.Position{Line: 4, Column: 9}},
 		},
 	})
 }
@@ -219,41 +231,50 @@ func assertItemsNodeYAML(c *C, actual *MappingNode) {
 			{
 				Literal: &ScalarValue{
 					StringValue: &expectedStrVal,
-					SourceMeta:  &source.Meta{Line: 2, Column: 11},
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 2, Column: 11},
+						EndPosition: &source.Position{Line: 2, Column: 19},
+					},
 				},
-				SourceMeta: &source.Meta{Line: 2, Column: 11},
+				SourceMeta: &source.Meta{Position: source.Position{Line: 2, Column: 11}},
 			},
 			{
 				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 					Values: []*substitutions.StringOrSubstitution{
 						{
 							StringValue: &expectedStrSubPrefix,
-							SourceMeta:  &source.Meta{Line: 3, Column: 11},
+							SourceMeta:  &source.Meta{Position: source.Position{Line: 3, Column: 11}},
 						},
 						{
 							SubstitutionValue: &substitutions.Substitution{
 								Variable: &substitutions.SubstitutionVariable{
 									VariableName: "environment",
-									SourceMeta:   &source.Meta{Line: 3, Column: 28},
+									SourceMeta:   &source.Meta{Position: source.Position{Line: 3, Column: 28}},
 								},
-								SourceMeta: &source.Meta{Line: 3, Column: 28},
+								SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 28}},
 							},
-							SourceMeta: &source.Meta{Line: 3, Column: 26},
+							SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 26}},
 						},
 					},
-					SourceMeta: &source.Meta{Line: 3, Column: 11},
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 3, Column: 11},
+						EndPosition: &source.Position{Line: 3, Column: 52},
+					},
 				},
-				SourceMeta: &source.Meta{Line: 3, Column: 11},
+				SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 11}},
 			},
 			{
 				Literal: &ScalarValue{
-					IntValue:   &expectedIntVal,
-					SourceMeta: &source.Meta{Line: 4, Column: 11},
+					IntValue: &expectedIntVal,
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 4, Column: 11},
+						EndPosition: &source.Position{Line: 4, Column: 19},
+					},
 				},
-				SourceMeta: &source.Meta{Line: 4, Column: 11},
+				SourceMeta: &source.Meta{Position: source.Position{Line: 4, Column: 11}},
 			},
 		},
-		SourceMeta: &source.Meta{Line: 2, Column: 9},
+		SourceMeta: &source.Meta{Position: source.Position{Line: 2, Column: 9}},
 	})
 }
 
@@ -362,23 +383,31 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 			"key1": {
 				Literal: &ScalarValue{
 					StringValue: &expectedStrVal1,
-					SourceMeta:  &source.Meta{Line: 2, Column: 17},
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 2, Column: 17},
+						EndPosition: &source.Position{Line: 2, Column: 26},
+					},
 				},
-				SourceMeta: &source.Meta{Line: 2, Column: 17},
+				SourceMeta: &source.Meta{
+					Position: source.Position{Line: 2, Column: 17},
+				},
 			},
 			"key2": {
 				Fields: map[string]*MappingNode{
 					"key3": {
 						Literal: &ScalarValue{
 							StringValue: &expectedStrVal2,
-							SourceMeta:  &source.Meta{Line: 4, Column: 19},
+							SourceMeta: &source.Meta{
+								Position:    source.Position{Line: 4, Column: 19},
+								EndPosition: &source.Position{Line: 4, Column: 28},
+							},
 						},
-						SourceMeta: &source.Meta{Line: 4, Column: 19},
+						SourceMeta: &source.Meta{Position: source.Position{Line: 4, Column: 19}},
 					},
 				},
-				SourceMeta: &source.Meta{Line: 4, Column: 13},
+				SourceMeta: &source.Meta{Position: source.Position{Line: 4, Column: 13}},
 				FieldsSourceMeta: map[string]*source.Meta{
-					"key3": {Line: 4, Column: 13},
+					"key3": {Position: source.Position{Line: 4, Column: 13}},
 				},
 			},
 			"key4": {
@@ -386,49 +415,62 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 					{
 						Literal: &ScalarValue{
 							StringValue: &expectedStrVal3,
-							SourceMeta:  &source.Meta{Line: 6, Column: 14},
+							SourceMeta: &source.Meta{
+								Position:    source.Position{Line: 6, Column: 14},
+								EndPosition: &source.Position{Line: 6, Column: 23},
+							},
 						},
-						SourceMeta: &source.Meta{Line: 6, Column: 14},
+						SourceMeta: &source.Meta{
+							Position: source.Position{Line: 6, Column: 14},
+						},
 					},
 					{
 						StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 							Values: []*substitutions.StringOrSubstitution{
 								{
 									StringValue: &expectedStrSubPrefix,
-									SourceMeta:  &source.Meta{Line: 7, Column: 14},
+									SourceMeta:  &source.Meta{Position: source.Position{Line: 7, Column: 14}},
 								},
 								{
 									SubstitutionValue: &substitutions.Substitution{
 										Variable: &substitutions.SubstitutionVariable{
 											VariableName: "environment",
-											SourceMeta:   &source.Meta{Line: 7, Column: 33},
+											SourceMeta:   &source.Meta{Position: source.Position{Line: 7, Column: 33}},
 										},
-										SourceMeta: &source.Meta{Line: 7, Column: 33},
+										SourceMeta: &source.Meta{Position: source.Position{Line: 7, Column: 33}},
 									},
-									SourceMeta: &source.Meta{Line: 7, Column: 31},
+									SourceMeta: &source.Meta{Position: source.Position{Line: 7, Column: 31}},
 								},
 							},
-							SourceMeta: &source.Meta{Line: 7, Column: 14},
+							SourceMeta: &source.Meta{
+								Position:    source.Position{Line: 7, Column: 14},
+								EndPosition: &source.Position{Line: 7, Column: 57},
+							},
 						},
-						SourceMeta: &source.Meta{Line: 7, Column: 14},
+						SourceMeta: &source.Meta{Position: source.Position{Line: 7, Column: 14}},
 					},
 				},
-				SourceMeta: &source.Meta{Line: 6, Column: 12},
+				SourceMeta: &source.Meta{Position: source.Position{Line: 6, Column: 12}},
 			},
 			"key5": {
 				Literal: &ScalarValue{
-					IntValue:   &expectedIntVal,
-					SourceMeta: &source.Meta{Line: 8, Column: 17},
+					IntValue: &expectedIntVal,
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 8, Column: 17},
+						EndPosition: &source.Position{Line: 8, Column: 26},
+					},
 				},
-				SourceMeta: &source.Meta{Line: 8, Column: 17},
+				SourceMeta: &source.Meta{
+					Position: source.Position{Line: 8, Column: 17},
+				},
 			},
 		},
-		SourceMeta: &source.Meta{Line: 2, Column: 11},
+		SourceMeta: &source.Meta{Position: source.Position{Line: 2, Column: 11}},
 		FieldsSourceMeta: map[string]*source.Meta{
-			"key1": {Line: 2, Column: 11},
-			"key2": {Line: 3, Column: 11},
-			"key4": {Line: 5, Column: 11},
-			"key5": {Line: 8, Column: 11},
+			"key1": {Position: source.Position{Line: 2, Column: 11}},
+			"key2": {Position: source.Position{Line: 3, Column: 11}},
+			"key4": {Position: source.Position{Line: 5, Column: 11}},
+			"key5": {Position: source.Position{Line: 8, Column: 11}},
 		},
 	})
 }

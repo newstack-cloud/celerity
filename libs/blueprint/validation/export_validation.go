@@ -47,7 +47,7 @@ func ValidateExport(
 	exportFieldAsSub, err := substitutions.ParseSubstitution(
 		"exports",
 		*exportSchema.Field.StringValue,
-		/* parentSourceStart */ &source.Meta{},
+		/* parentSourceStart */ &source.Meta{Position: source.Position{}},
 		/* outputLineInfo */ false,
 		/* ignoreParentColumn */ true,
 	)
@@ -209,71 +209,71 @@ func populateSubSourceMeta(sub *substitutions.Substitution, sourceMeta *source.M
 		return
 	}
 
-	sub.SourceMeta = &source.Meta{
+	sub.SourceMeta = &source.Meta{Position: source.Position{
 		Line:   sourceMeta.Line,
 		Column: sourceMeta.Column,
-	}
+	}}
 
 	if sub.Function != nil {
-		sub.Function.SourceMeta = &source.Meta{
+		sub.Function.SourceMeta = &source.Meta{Position: source.Position{
 			Line:   sourceMeta.Line,
 			Column: sourceMeta.Column,
-		}
+		}}
 		for _, arg := range sub.Function.Arguments {
-			arg.SourceMeta = &source.Meta{
+			arg.SourceMeta = &source.Meta{Position: source.Position{
 				Line:   sourceMeta.Line,
 				Column: sourceMeta.Column,
-			}
+			}}
 			populateSubSourceMeta(arg.Value, sourceMeta)
 		}
 	}
 
 	if sub.ElemIndexReference != nil {
-		sub.ElemIndexReference.SourceMeta = &source.Meta{
+		sub.ElemIndexReference.SourceMeta = &source.Meta{Position: source.Position{
 			Line:   sourceMeta.Line,
 			Column: sourceMeta.Column,
-		}
+		}}
 	}
 
 	if sub.ElemReference != nil {
-		sub.ElemReference.SourceMeta = &source.Meta{
+		sub.ElemReference.SourceMeta = &source.Meta{Position: source.Position{
 			Line:   sourceMeta.Line,
 			Column: sourceMeta.Column,
-		}
+		}}
 	}
 
 	if sub.Child != nil {
-		sub.Child.SourceMeta = &source.Meta{
+		sub.Child.SourceMeta = &source.Meta{Position: source.Position{
 			Line:   sourceMeta.Line,
 			Column: sourceMeta.Column,
-		}
+		}}
 	}
 
 	if sub.DataSourceProperty != nil {
-		sub.DataSourceProperty.SourceMeta = &source.Meta{
+		sub.DataSourceProperty.SourceMeta = &source.Meta{Position: source.Position{
 			Line:   sourceMeta.Line,
 			Column: sourceMeta.Column,
-		}
+		}}
 	}
 
 	if sub.ResourceProperty != nil {
-		sub.ResourceProperty.SourceMeta = &source.Meta{
+		sub.ResourceProperty.SourceMeta = &source.Meta{Position: source.Position{
 			Line:   sourceMeta.Line,
 			Column: sourceMeta.Column,
-		}
+		}}
 	}
 
 	if sub.ValueReference != nil {
-		sub.ValueReference.SourceMeta = &source.Meta{
+		sub.ValueReference.SourceMeta = &source.Meta{Position: source.Position{
 			Line:   sourceMeta.Line,
 			Column: sourceMeta.Column,
-		}
+		}}
 	}
 
 	if sub.Variable != nil {
-		sub.Variable.SourceMeta = &source.Meta{
+		sub.Variable.SourceMeta = &source.Meta{Position: source.Position{
 			Line:   sourceMeta.Line,
 			Column: sourceMeta.Column,
-		}
+		}}
 	}
 }

@@ -70,8 +70,10 @@ func lex(sequence string, parentSourceStart *source.Meta) ([]*token, error) {
 		tokens:            []*token{},
 		parentSourceStart: parentSourceStart,
 		relativeLineInfo: &source.Meta{
-			Line:   0,
-			Column: 0,
+			Position: source.Position{
+				Line:   0,
+				Column: 0,
+			},
 		},
 	}
 
