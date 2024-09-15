@@ -63,7 +63,10 @@ func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml(c *C) {
 						},
 						SourceMeta: &source.Meta{Position: source.Position{Line: 1, Column: 25}},
 					},
-					SourceMeta: &source.Meta{Position: source.Position{Line: 1, Column: 23}},
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 1, Column: 23},
+						EndPosition: &source.Position{Line: 1, Column: 44},
+					},
 				},
 			},
 			SourceMeta: &source.Meta{
@@ -148,7 +151,10 @@ func assertFieldsNodeYAML(c *C, actual *MappingNode) {
 								},
 								SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 32}},
 							},
-							SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 30}},
+							SourceMeta: &source.Meta{
+								Position:    source.Position{Line: 3, Column: 30},
+								EndPosition: &source.Position{Line: 3, Column: 51},
+							},
 						},
 					},
 					SourceMeta: &source.Meta{
@@ -253,7 +259,10 @@ func assertItemsNodeYAML(c *C, actual *MappingNode) {
 								},
 								SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 28}},
 							},
-							SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 26}},
+							SourceMeta: &source.Meta{
+								Position:    source.Position{Line: 3, Column: 26},
+								EndPosition: &source.Position{Line: 3, Column: 47},
+							},
 						},
 					},
 					SourceMeta: &source.Meta{
@@ -439,7 +448,10 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 										},
 										SourceMeta: &source.Meta{Position: source.Position{Line: 7, Column: 33}},
 									},
-									SourceMeta: &source.Meta{Position: source.Position{Line: 7, Column: 31}},
+									SourceMeta: &source.Meta{
+										Position:    source.Position{Line: 7, Column: 31},
+										EndPosition: &source.Position{Line: 7, Column: 52},
+									},
 								},
 							},
 							SourceMeta: &source.Meta{

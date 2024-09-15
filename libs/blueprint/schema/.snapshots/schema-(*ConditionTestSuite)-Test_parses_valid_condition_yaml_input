@@ -131,7 +131,10 @@
                       Line: (int) 3,
                       Column: (int) 14
                     },
-                    EndPosition: (*source.Position)(<nil>)
+                    EndPosition: (*source.Position)({
+                      Line: (int) 3,
+                      Column: (int) 70
+                    })
                   })
                 })
               },
@@ -288,7 +291,10 @@
                     Line: (int) 4,
                     Column: (int) 9
                   },
-                  EndPosition: (*source.Position)(<nil>)
+                  EndPosition: (*source.Position)({
+                    Line: (int) 4,
+                    Column: (int) 62
+                  })
                 })
               })
             },
@@ -440,7 +446,10 @@
                 Line: (int) 5,
                 Column: (int) 5
               },
-              EndPosition: (*source.Position)(<nil>)
+              EndPosition: (*source.Position)({
+                Line: (int) 5,
+                Column: (int) 44
+              })
             })
           })
         },

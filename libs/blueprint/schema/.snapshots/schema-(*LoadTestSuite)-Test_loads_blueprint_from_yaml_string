@@ -606,7 +606,10 @@
                             Line: (int) 114,
                             Column: (int) 21
                           },
-                          EndPosition: (*source.Position)(<nil>)
+                          EndPosition: (*source.Position)({
+                            Line: (int) 114,
+                            Column: (int) 31
+                          })
                         })
                       })
                     },
@@ -1259,7 +1262,10 @@
                                 Line: (int) 66,
                                 Column: (int) 27
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 66,
+                                Column: (int) 50
+                              })
                             })
                           })
                         },
@@ -1562,7 +1568,10 @@
                         Line: (int) 170,
                         Column: (int) 18
                       },
-                      EndPosition: (*source.Position)(<nil>)
+                      EndPosition: (*source.Position)({
+                        Line: (int) 170,
+                        Column: (int) 43
+                      })
                     })
                   })
                 },
@@ -2305,7 +2314,10 @@
                         Line: (int) 22,
                         Column: (int) 15
                       },
-                      EndPosition: (*source.Position)(<nil>)
+                      EndPosition: (*source.Position)({
+                        Line: (int) 22,
+                        Column: (int) 36
+                      })
                     })
                   })
                 },

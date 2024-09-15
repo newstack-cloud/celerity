@@ -24,6 +24,7 @@ func DetermineYAMLSourceStartMeta(node *yaml.Node, sourceMeta *source.Meta) *sou
 				Line:   sourceMeta.Line + 1,
 				Column: sourceMeta.Column,
 			},
+			EndPosition: sourceMeta.EndPosition,
 		}
 	}
 
@@ -33,6 +34,7 @@ func DetermineYAMLSourceStartMeta(node *yaml.Node, sourceMeta *source.Meta) *sou
 				Line:   sourceMeta.Line + 1,
 				Column: sourceMeta.Column,
 			},
+			EndPosition: sourceMeta.EndPosition,
 		}
 	}
 

@@ -94,15 +94,23 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_multip
 					Column: 102,
 				}},
 			},
-			SourceMeta: &source.Meta{Position: source.Position{
-				Line:   200,
-				Column: 102,
-			}},
+			SourceMeta: &source.Meta{
+				Position: source.Position{
+					Line:   200,
+					Column: 102,
+				},
+			},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   200,
-			Column: 100,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   200,
+				Column: 100,
+			},
+			EndPosition: &source.Position{
+				Line:   200,
+				Column: 143,
+			},
+		},
 	})
 
 	pathSeparator := "/"
@@ -128,10 +136,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_multip
 				Column: 149,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   200,
-			Column: 147,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   200,
+				Column: 147,
+			},
+			EndPosition: &source.Position{
+				Line:   200,
+				Column: 164,
+			},
+		},
 	})
 
 	pathSuffix := "/app"
@@ -171,10 +185,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_data
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 45,
+			},
+		},
 	})
 }
 
@@ -205,10 +225,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_data
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 35,
+			},
+		},
 	})
 }
 
@@ -248,10 +274,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_chil
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 55,
+			},
+		},
 	})
 }
 
@@ -290,10 +322,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 71,
+			},
+		},
 	})
 }
 
@@ -329,10 +367,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 56,
+			},
+		},
 	})
 }
 
@@ -361,10 +405,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 20,
+			},
+		},
 	})
 }
 
@@ -402,10 +452,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 46,
+			},
+		},
 	})
 }
 
@@ -445,10 +501,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_valu
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 42,
+			},
+		},
 	})
 }
 
@@ -480,15 +542,23 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_valu
 					Column: 3,
 				}},
 			},
-			SourceMeta: &source.Meta{Position: source.Position{
+			SourceMeta: &source.Meta{
+				Position: source.Position{
+					Line:   1,
+					Column: 3,
+				},
+			},
+		},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
 				Line:   1,
 				Column: 3,
-			}},
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 36,
+			},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
 	})
 }
 
@@ -517,10 +587,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_valu
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 18,
+			},
+		},
 	})
 }
 
@@ -552,10 +628,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_curren
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 16,
+			},
+		},
 	})
 }
 
@@ -582,10 +664,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_curren
 				Column: 3,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 4,
+			},
+		},
 	})
 }
 
@@ -608,10 +696,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 				Column: 5,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 39,
+			},
+		},
 	})
 }
 
@@ -706,10 +800,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 				Column: 5,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 59,
+			},
+		},
 	})
 }
 
@@ -768,10 +868,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 				Column: 5,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   1,
-			Column: 3,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 3,
+			},
+			EndPosition: &source.Position{
+				Line:   1,
+				Column: 51,
+			},
+		},
 	})
 }
 
@@ -822,10 +928,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 				Column: 54,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   100,
-			Column: 50,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   100,
+				Column: 50,
+			},
+			EndPosition: &source.Position{
+				Line:   100,
+				Column: 74,
+			},
+		},
 	})
 }
 
@@ -907,10 +1019,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 				Column: 54,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   100,
-			Column: 50,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   100,
+				Column: 50,
+			},
+			EndPosition: &source.Position{
+				Line:   100,
+				Column: 113,
+			},
+		},
 	})
 }
 
@@ -982,10 +1100,16 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 				Column: 54,
 			}},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{
-			Line:   100,
-			Column: 50,
-		}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   100,
+				Column: 50,
+			},
+			EndPosition: &source.Position{
+				Line:   100,
+				Column: 110,
+			},
+		},
 	})
 }
 

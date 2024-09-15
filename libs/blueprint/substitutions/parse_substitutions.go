@@ -26,7 +26,7 @@ type interpolationParseState struct {
 // references.
 func ParseSubstitutionValues(
 	substitutionContext, value string,
-	parentSourceStart *source.Meta,
+	parentSourceMeta *source.Meta,
 	outputLineInfo bool,
 	ignoreParentColumn bool,
 ) ([]*StringOrSubstitution, error) {
@@ -43,7 +43,7 @@ func ParseSubstitutionValues(
 		return []*StringOrSubstitution{
 			{
 				StringValue: &value,
-				SourceMeta:  parentSourceStart,
+				SourceMeta:  parentSourceMeta,
 			},
 		}, nil
 	}
@@ -55,7 +55,7 @@ func ParseSubstitutionValues(
 		// values that can contain substitutions are not expected to be very long.
 		errors:            []error{},
 		parsed:            []*StringOrSubstitution{},
-		parentSourceStart: parentSourceStart,
+		parentSourceStart: parentSourceMeta,
 		relativeLineInfo: &source.Meta{
 			Position: source.Position{
 				Line:   0,
@@ -93,13 +93,13 @@ func ParseSubstitutionValues(
 
 	if len(state.potentialNonSubStr) > 0 {
 		parentLine := 0
-		if parentSourceStart != nil {
-			parentLine = parentSourceStart.Line
+		if parentSourceMeta != nil {
+			parentLine = parentSourceMeta.Line
 		}
 
 		parentColumn := 0
-		if parentSourceStart != nil {
-			parentColumn = parentSourceStart.Column
+		if parentSourceMeta != nil {
+			parentColumn = parentSourceMeta.Column
 		}
 
 		sourceMeta := (*source.Meta)(nil)
@@ -114,6 +114,7 @@ func ParseSubstitutionValues(
 						state.ignoreParentColumn,
 					),
 				},
+				EndPosition: parentSourceMeta.EndPosition,
 			}
 		}
 
@@ -282,6 +283,15 @@ func createSubstitutionSourceMeta(state *interpolationParseState) *source.Meta {
 				parentCol,
 				state.relativeSubStart.Column,
 				state.relativeSubStart.Line == 0,
+				state.ignoreParentColumn,
+			),
+		},
+		EndPosition: &source.Position{
+			Line: toAbsLine(parentLine, state.relativeLineInfo.Line),
+			Column: toAbsColumn(
+				parentCol,
+				state.relativeLineInfo.Column,
+				state.relativeLineInfo.Line == 0,
 				state.ignoreParentColumn,
 			),
 		},

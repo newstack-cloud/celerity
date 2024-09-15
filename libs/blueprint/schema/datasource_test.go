@@ -209,10 +209,16 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c 
 								Column: 11,
 							}},
 						},
-						SourceMeta: &source.Meta{Position: source.Position{
-							Line:   3,
-							Column: 9,
-						}},
+						SourceMeta: &source.Meta{
+							Position: source.Position{
+								Line:   3,
+								Column: 9,
+							},
+							EndPosition: &source.Position{
+								Line:   3,
+								Column: 30,
+							},
+						},
 					},
 				},
 				SourceMeta: &source.Meta{

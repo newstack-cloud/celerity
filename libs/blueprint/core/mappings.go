@@ -121,6 +121,7 @@ func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 			Line:   node.Line,
 			Column: node.Column,
 		},
+		EndPosition: source.EndSourcePositionFromYAMLScalarNode(node),
 	}
 
 	isBlockStyle := node.Style == yaml.LiteralStyle || node.Style == yaml.FoldedStyle
@@ -147,7 +148,6 @@ func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 		return m.Literal.UnmarshalYAML(node)
 	}
 
-	sourceMeta.EndPosition = source.EndSourcePositionFromYAMLScalarNode(node)
 	m.StringWithSubstitutions = &substitutions.StringOrSubstitutions{
 		Values:     strSubs,
 		SourceMeta: sourceMeta,
