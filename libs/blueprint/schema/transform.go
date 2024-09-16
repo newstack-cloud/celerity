@@ -35,6 +35,7 @@ func (t *TransformValueWrapper) UnmarshalYAML(value *yaml.Node) error {
 					Line:   value.Line,
 					Column: value.Column,
 				},
+				EndPosition: source.EndSourcePositionFromYAMLScalarNode(value),
 			},
 		}
 		return nil

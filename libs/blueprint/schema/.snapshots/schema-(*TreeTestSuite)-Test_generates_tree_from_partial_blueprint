@@ -25,25 +25,13 @@
         })
       }),
       Range: (*source.Range)({
-        Start: (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 1,
-            Column: (int) 10
-          },
-          EndPosition: (*source.Position)({
-            Line: (int) 1,
-            Column: (int) 20
-          })
+        Start: (*source.Position)({
+          Line: (int) 1,
+          Column: (int) 10
         }),
-        End: (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 3,
-            Column: (int) 5
-          },
-          EndPosition: (*source.Position)({
-            Line: (int) 3,
-            Column: (int) 24
-          })
+        End: (*source.Position)({
+          Line: (int) 1,
+          Column: (int) 20
         })
       })
     }),
@@ -59,22 +47,13 @@
           Children: ([]*schema.TreeNode) <nil>,
           SchemaElement: (string) (len=19) "celerity-2022-01-22",
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 3,
-                Column: (int) 5
-              },
-              EndPosition: (*source.Position)({
-                Line: (int) 3,
-                Column: (int) 24
-              })
+            Start: (*source.Position)({
+              Line: (int) 3,
+              Column: (int) 5
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 5,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 3,
+              Column: (int) 24
             })
           })
         })
@@ -97,22 +76,13 @@
         }
       }),
       Range: (*source.Range)({
-        Start: (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 3,
-            Column: (int) 5
-          },
-          EndPosition: (*source.Position)({
-            Line: (int) 3,
-            Column: (int) 24
-          })
+        Start: (*source.Position)({
+          Line: (int) 3,
+          Column: (int) 5
         }),
-        End: (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 5,
-            Column: (int) 3
-          },
-          EndPosition: (*source.Position)(<nil>)
+        End: (*source.Position)({
+          Line: (int) 3,
+          Column: (int) 24
         })
       })
     }),
@@ -145,25 +115,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 6,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 6,
-                    Column: (int) 17
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 6,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 7,
-                    Column: (int) 18
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 7,
-                    Column: (int) 43
-                  })
+                End: (*source.Position)({
+                  Line: (int) 6,
+                  Column: (int) 17
                 })
               })
             }),
@@ -189,22 +147,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 7,
-                    Column: (int) 18
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 7,
-                    Column: (int) 43
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 7,
+                  Column: (int) 18
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 8,
-                    Column: (int) 3
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 7,
+                  Column: (int) 43
                 })
               })
             })
@@ -251,19 +200,13 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 5,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 5,
+              Column: (int) 3
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 8,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 7,
+              Column: (int) 43
             })
           })
         }),
@@ -291,25 +234,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 9,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 9,
-                    Column: (int) 17
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 9,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 10,
-                    Column: (int) 18
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 10,
-                    Column: (int) 40
-                  })
+                End: (*source.Position)({
+                  Line: (int) 9,
+                  Column: (int) 17
                 })
               })
             }),
@@ -335,22 +266,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 10,
-                    Column: (int) 18
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 10,
-                    Column: (int) 40
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 10,
+                  Column: (int) 18
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 11,
-                    Column: (int) 3
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 10,
+                  Column: (int) 40
                 })
               })
             })
@@ -397,19 +319,13 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 8,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 8,
+              Column: (int) 3
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 11,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 10,
+              Column: (int) 40
             })
           })
         }),
@@ -437,22 +353,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 12,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 12,
-                    Column: (int) 17
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 12,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 15,
-                    Column: (int) 3
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 12,
+                  Column: (int) 17
                 })
               })
             })
@@ -484,19 +391,13 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 11,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 11,
+              Column: (int) 3
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 15,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 12,
+              Column: (int) 17
             })
           })
         })
@@ -637,19 +538,13 @@
         }
       }),
       Range: (*source.Range)({
-        Start: (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 5,
-            Column: (int) 3
-          },
-          EndPosition: (*source.Position)(<nil>)
+        Start: (*source.Position)({
+          Line: (int) 5,
+          Column: (int) 3
         }),
-        End: (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 15,
-            Column: (int) 3
-          },
-          EndPosition: (*source.Position)(<nil>)
+        End: (*source.Position)({
+          Line: (int) 12,
+          Column: (int) 17
         })
       })
     }),
@@ -682,22 +577,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 16,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 16,
-                    Column: (int) 20
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 16,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 18,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 16,
+                  Column: (int) 20
                 })
               })
             }),
@@ -718,22 +604,13 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=14) "Network source",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 18,
-                            Column: (int) 20
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 18,
-                            Column: (int) 34
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 18,
+                          Column: (int) 20
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 20,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 18,
+                          Column: (int) 34
                         })
                       })
                     })
@@ -767,22 +644,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 18,
-                        Column: (int) 20
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 18,
-                        Column: (int) 34
-                      })
+                    Start: (*source.Position)({
+                      Line: (int) 18,
+                      Column: (int) 20
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 20,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 18,
+                      Column: (int) 34
                     })
                   })
                 })
@@ -827,19 +695,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 18,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 18,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 20,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 18,
+                  Column: (int) 34
                 })
               })
             }),
@@ -870,25 +732,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 20,
-                        Column: (int) 14
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 20,
-                        Column: (int) 18
-                      })
+                    Start: (*source.Position)({
+                      Line: (int) 20,
+                      Column: (int) 14
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 21,
-                        Column: (int) 17
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 21,
-                        Column: (int) 24
-                      })
+                    End: (*source.Position)({
+                      Line: (int) 20,
+                      Column: (int) 18
                     })
                   })
                 }),
@@ -904,22 +754,13 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (schema.DataSourceFilterOperator) (len=7) "has key",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 21,
-                            Column: (int) 17
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 21,
-                            Column: (int) 24
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 21,
+                          Column: (int) 17
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 22,
-                            Column: (int) 15
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 21,
+                          Column: (int) 24
                         })
                       })
                     })
@@ -938,22 +779,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 21,
-                        Column: (int) 17
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 21,
-                        Column: (int) 24
-                      })
+                    Start: (*source.Position)({
+                      Line: (int) 21,
+                      Column: (int) 17
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 22,
-                        Column: (int) 15
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 21,
+                      Column: (int) 24
                     })
                   })
                 }),
@@ -986,22 +818,13 @@
                             })
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 22,
-                                Column: (int) 17
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 22,
-                                Column: (int) 38
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 22,
+                              Column: (int) 17
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 24,
-                                Column: (int) 7
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 22,
+                              Column: (int) 38
                             })
                           })
                         })
@@ -1070,22 +893,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 22,
-                            Column: (int) 15
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 22,
-                            Column: (int) 39
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 22,
+                          Column: (int) 15
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 24,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 22,
+                          Column: (int) 38
                         })
                       })
                     })
@@ -1165,19 +979,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 22,
-                        Column: (int) 15
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 22,
+                      Column: (int) 15
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 24,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 22,
+                      Column: (int) 38
                     })
                   })
                 })
@@ -1295,19 +1103,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 20,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 20,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 24,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 22,
+                  Column: (int) 38
                 })
               })
             }),
@@ -1340,22 +1142,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 25,
-                            Column: (int) 15
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 25,
-                            Column: (int) 20
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 25,
+                          Column: (int) 15
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 26,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 25,
+                          Column: (int) 20
                         })
                       })
                     })
@@ -1385,19 +1178,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 24,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 24,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 26,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 25,
+                      Column: (int) 20
                     })
                   })
                 }),
@@ -1425,22 +1212,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 27,
-                            Column: (int) 15
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 27,
-                            Column: (int) 20
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 27,
+                          Column: (int) 15
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 28,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 27,
+                          Column: (int) 20
                         })
                       })
                     })
@@ -1470,19 +1248,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 26,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 26,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 28,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 27,
+                      Column: (int) 20
                     })
                   })
                 }),
@@ -1510,22 +1282,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 29,
-                            Column: (int) 15
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 29,
-                            Column: (int) 21
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 29,
+                          Column: (int) 15
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 34,
-                            Column: (int) 3
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 29,
+                          Column: (int) 21
                         })
                       })
                     })
@@ -1555,19 +1318,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 28,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 28,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 34,
-                        Column: (int) 3
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 29,
+                      Column: (int) 21
                     })
                   })
                 })
@@ -1672,19 +1429,13 @@
                 }
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 24,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 24,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 34,
-                    Column: (int) 3
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 29,
+                  Column: (int) 21
                 })
               })
             })
@@ -1963,19 +1714,13 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 15,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 15,
+              Column: (int) 3
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 34,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 29,
+              Column: (int) 21
             })
           })
         })
@@ -2267,19 +2012,13 @@
         }
       }),
       Range: (*source.Range)({
-        Start: (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 15,
-            Column: (int) 3
-          },
-          EndPosition: (*source.Position)(<nil>)
+        Start: (*source.Position)({
+          Line: (int) 15,
+          Column: (int) 3
         }),
-        End: (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 34,
-            Column: (int) 3
-          },
-          EndPosition: (*source.Position)(<nil>)
+        End: (*source.Position)({
+          Line: (int) 29,
+          Column: (int) 21
         })
       })
     }),
@@ -2312,22 +2051,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 37,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 37,
-                    Column: (int) 25
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 37,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 39,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 37,
+                  Column: (int) 25
                 })
               })
             }),
@@ -2348,22 +2078,13 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=9) "Order API",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 39,
-                            Column: (int) 20
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 39,
-                            Column: (int) 29
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 39,
+                          Column: (int) 20
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 41,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 39,
+                          Column: (int) 29
                         })
                       })
                     })
@@ -2397,22 +2118,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 39,
-                        Column: (int) 20
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 39,
-                        Column: (int) 29
-                      })
+                    Start: (*source.Position)({
+                      Line: (int) 39,
+                      Column: (int) 20
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 41,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 39,
+                      Column: (int) 29
                     })
                   })
                 }),
@@ -2428,20 +2140,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 41,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 41,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 43,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     })
                   },
@@ -2460,20 +2163,11 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 41,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 41,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 43,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
-                    })
+                    End: (*source.Position)(<nil>)
                   })
                 }),
                 (*schema.TreeNode)({
@@ -2513,22 +2207,13 @@
                                 })
                               }),
                               Range: (*source.Range)({
-                                Start: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 44,
-                                    Column: (int) 18
-                                  },
-                                  EndPosition: (*source.Position)({
-                                    Line: (int) 44,
-                                    Column: (int) 24
-                                  })
+                                Start: (*source.Position)({
+                                  Line: (int) 44,
+                                  Column: (int) 18
                                 }),
-                                End: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 45,
-                                    Column: (int) 11
-                                  },
-                                  EndPosition: (*source.Position)(<nil>)
+                                End: (*source.Position)({
+                                  Line: (int) 44,
+                                  Column: (int) 24
                                 })
                               })
                             })
@@ -2563,19 +2248,13 @@
                             FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 44,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            Start: (*source.Position)({
+                              Line: (int) 44,
+                              Column: (int) 11
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 45,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 44,
+                              Column: (int) 24
                             })
                           })
                         }),
@@ -2606,22 +2285,13 @@
                                 })
                               }),
                               Range: (*source.Range)({
-                                Start: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 45,
-                                    Column: (int) 18
-                                  },
-                                  EndPosition: (*source.Position)({
-                                    Line: (int) 45,
-                                    Column: (int) 20
-                                  })
+                                Start: (*source.Position)({
+                                  Line: (int) 45,
+                                  Column: (int) 18
                                 }),
-                                End: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 46,
-                                    Column: (int) 11
-                                  },
-                                  EndPosition: (*source.Position)(<nil>)
+                                End: (*source.Position)({
+                                  Line: (int) 45,
+                                  Column: (int) 20
                                 })
                               })
                             })
@@ -2656,19 +2326,13 @@
                             FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 45,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            Start: (*source.Position)({
+                              Line: (int) 45,
+                              Column: (int) 11
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 46,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 45,
+                              Column: (int) 20
                             })
                           })
                         }),
@@ -2699,22 +2363,13 @@
                                 })
                               }),
                               Range: (*source.Range)({
-                                Start: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 46,
-                                    Column: (int) 19
-                                  },
-                                  EndPosition: (*source.Position)({
-                                    Line: (int) 46,
-                                    Column: (int) 21
-                                  })
+                                Start: (*source.Position)({
+                                  Line: (int) 46,
+                                  Column: (int) 19
                                 }),
-                                End: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 47,
-                                    Column: (int) 11
-                                  },
-                                  EndPosition: (*source.Position)(<nil>)
+                                End: (*source.Position)({
+                                  Line: (int) 46,
+                                  Column: (int) 21
                                 })
                               })
                             })
@@ -2749,19 +2404,13 @@
                             FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 46,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            Start: (*source.Position)({
+                              Line: (int) 46,
+                              Column: (int) 11
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 47,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 46,
+                              Column: (int) 21
                             })
                           })
                         }),
@@ -2802,22 +2451,13 @@
                                         })
                                       }),
                                       Range: (*source.Range)({
-                                        Start: (*source.Meta)({
-                                          Position: (source.Position) {
-                                            Line: (int) 48,
-                                            Column: (int) 23
-                                          },
-                                          EndPosition: (*source.Position)({
-                                            Line: (int) 48,
-                                            Column: (int) 39
-                                          })
+                                        Start: (*source.Position)({
+                                          Line: (int) 48,
+                                          Column: (int) 23
                                         }),
-                                        End: (*source.Meta)({
-                                          Position: (source.Position) {
-                                            Line: (int) 49,
-                                            Column: (int) 15
-                                          },
-                                          EndPosition: (*source.Position)(<nil>)
+                                        End: (*source.Position)({
+                                          Line: (int) 48,
+                                          Column: (int) 39
                                         })
                                       })
                                     })
@@ -2852,19 +2492,13 @@
                                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                                   }),
                                   Range: (*source.Range)({
-                                    Start: (*source.Meta)({
-                                      Position: (source.Position) {
-                                        Line: (int) 48,
-                                        Column: (int) 15
-                                      },
-                                      EndPosition: (*source.Position)(<nil>)
+                                    Start: (*source.Position)({
+                                      Line: (int) 48,
+                                      Column: (int) 15
                                     }),
-                                    End: (*source.Meta)({
-                                      Position: (source.Position) {
-                                        Line: (int) 49,
-                                        Column: (int) 15
-                                      },
-                                      EndPosition: (*source.Position)(<nil>)
+                                    End: (*source.Position)({
+                                      Line: (int) 48,
+                                      Column: (int) 39
                                     })
                                   })
                                 }),
@@ -2895,22 +2529,13 @@
                                         })
                                       }),
                                       Range: (*source.Range)({
-                                        Start: (*source.Meta)({
-                                          Position: (source.Position) {
-                                            Line: (int) 49,
-                                            Column: (int) 26
-                                          },
-                                          EndPosition: (*source.Position)({
-                                            Line: (int) 49,
-                                            Column: (int) 32
-                                          })
+                                        Start: (*source.Position)({
+                                          Line: (int) 49,
+                                          Column: (int) 26
                                         }),
-                                        End: (*source.Meta)({
-                                          Position: (source.Position) {
-                                            Line: (int) 50,
-                                            Column: (int) 15
-                                          },
-                                          EndPosition: (*source.Position)(<nil>)
+                                        End: (*source.Position)({
+                                          Line: (int) 49,
+                                          Column: (int) 32
                                         })
                                       })
                                     })
@@ -2945,19 +2570,13 @@
                                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                                   }),
                                   Range: (*source.Range)({
-                                    Start: (*source.Meta)({
-                                      Position: (source.Position) {
-                                        Line: (int) 49,
-                                        Column: (int) 15
-                                      },
-                                      EndPosition: (*source.Position)(<nil>)
+                                    Start: (*source.Position)({
+                                      Line: (int) 49,
+                                      Column: (int) 15
                                     }),
-                                    End: (*source.Meta)({
-                                      Position: (source.Position) {
-                                        Line: (int) 50,
-                                        Column: (int) 15
-                                      },
-                                      EndPosition: (*source.Position)(<nil>)
+                                    End: (*source.Position)({
+                                      Line: (int) 49,
+                                      Column: (int) 32
                                     })
                                   })
                                 }),
@@ -2988,22 +2607,13 @@
                                         })
                                       }),
                                       Range: (*source.Range)({
-                                        Start: (*source.Meta)({
-                                          Position: (source.Position) {
-                                            Line: (int) 50,
-                                            Column: (int) 27
-                                          },
-                                          EndPosition: (*source.Position)({
-                                            Line: (int) 50,
-                                            Column: (int) 37
-                                          })
+                                        Start: (*source.Position)({
+                                          Line: (int) 50,
+                                          Column: (int) 27
                                         }),
-                                        End: (*source.Meta)({
-                                          Position: (source.Position) {
-                                            Line: (int) 52,
-                                            Column: (int) 7
-                                          },
-                                          EndPosition: (*source.Position)(<nil>)
+                                        End: (*source.Position)({
+                                          Line: (int) 50,
+                                          Column: (int) 37
                                         })
                                       })
                                     })
@@ -3038,19 +2648,13 @@
                                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                                   }),
                                   Range: (*source.Range)({
-                                    Start: (*source.Meta)({
-                                      Position: (source.Position) {
-                                        Line: (int) 50,
-                                        Column: (int) 15
-                                      },
-                                      EndPosition: (*source.Position)(<nil>)
+                                    Start: (*source.Position)({
+                                      Line: (int) 50,
+                                      Column: (int) 15
                                     }),
-                                    End: (*source.Meta)({
-                                      Position: (source.Position) {
-                                        Line: (int) 52,
-                                        Column: (int) 7
-                                      },
-                                      EndPosition: (*source.Position)(<nil>)
+                                    End: (*source.Position)({
+                                      Line: (int) 50,
+                                      Column: (int) 37
                                     })
                                   })
                                 })
@@ -3180,19 +2784,13 @@
                                 }
                               }),
                               Range: (*source.Range)({
-                                Start: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 48,
-                                    Column: (int) 15
-                                  },
-                                  EndPosition: (*source.Position)(<nil>)
+                                Start: (*source.Position)({
+                                  Line: (int) 48,
+                                  Column: (int) 15
                                 }),
-                                End: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 52,
-                                    Column: (int) 7
-                                  },
-                                  EndPosition: (*source.Position)(<nil>)
+                                End: (*source.Position)({
+                                  Line: (int) 50,
+                                  Column: (int) 37
                                 })
                               })
                             })
@@ -3337,19 +2935,13 @@
                             FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 47,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            Start: (*source.Position)({
+                              Line: (int) 47,
+                              Column: (int) 11
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 52,
-                                Column: (int) 7
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 50,
+                              Column: (int) 37
                             })
                           })
                         })
@@ -3625,19 +3217,13 @@
                         }
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 43,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 43,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 52,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 50,
+                          Column: (int) 37
                         })
                       })
                     })
@@ -3936,19 +3522,13 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 43,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 43,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 52,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 50,
+                      Column: (int) 37
                     })
                   })
                 })
@@ -4299,19 +3879,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 39,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 39,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 52,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 50,
+                  Column: (int) 37
                 })
               })
             }),
@@ -4332,20 +3906,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 53,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 53,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 64,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     })
                   },
@@ -4364,20 +3929,11 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 53,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 53,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 64,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
-                    })
+                    End: (*source.Position)(<nil>)
                   })
                 })
               },
@@ -4405,20 +3961,11 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 52,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 52,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 64,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
-                })
+                End: (*source.Position)(<nil>)
               })
             }),
             (*schema.TreeNode)({
@@ -4465,22 +4012,13 @@
                                     })
                                   }),
                                   Range: (*source.Range)({
-                                    Start: (*source.Meta)({
-                                      Position: (source.Position) {
-                                        Line: (int) 66,
-                                        Column: (int) 29
-                                      },
-                                      EndPosition: (*source.Position)({
-                                        Line: (int) 66,
-                                        Column: (int) 52
-                                      })
+                                    Start: (*source.Position)({
+                                      Line: (int) 66,
+                                      Column: (int) 29
                                     }),
-                                    End: (*source.Meta)({
-                                      Position: (source.Position) {
-                                        Line: (int) 71,
-                                        Column: (int) 7
-                                      },
-                                      EndPosition: (*source.Position)(<nil>)
+                                    End: (*source.Position)({
+                                      Line: (int) 66,
+                                      Column: (int) 52
                                     })
                                   })
                                 })
@@ -4549,22 +4087,13 @@
                                 })
                               }),
                               Range: (*source.Range)({
-                                Start: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 66,
-                                    Column: (int) 27
-                                  },
-                                  EndPosition: (*source.Position)({
-                                    Line: (int) 66,
-                                    Column: (int) 53
-                                  })
+                                Start: (*source.Position)({
+                                  Line: (int) 66,
+                                  Column: (int) 27
                                 }),
-                                End: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 71,
-                                    Column: (int) 7
-                                  },
-                                  EndPosition: (*source.Position)(<nil>)
+                                End: (*source.Position)({
+                                  Line: (int) 66,
+                                  Column: (int) 52
                                 })
                               })
                             })
@@ -4646,19 +4175,13 @@
                             FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 66,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            Start: (*source.Position)({
+                              Line: (int) 66,
+                              Column: (int) 11
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 71,
-                                Column: (int) 7
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 66,
+                              Column: (int) 52
                             })
                           })
                         })
@@ -4763,19 +4286,13 @@
                         }
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 65,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 65,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 71,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 66,
+                          Column: (int) 52
                         })
                       })
                     })
@@ -4903,19 +4420,13 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 64,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 64,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 71,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 66,
+                      Column: (int) 52
                     })
                   })
                 }),
@@ -4946,22 +4457,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 71,
-                            Column: (int) 16
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 71,
-                            Column: (int) 21
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 71,
+                          Column: (int) 16
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 74,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 71,
+                          Column: (int) 21
                         })
                       })
                     })
@@ -4996,19 +4498,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 71,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 71,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 74,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 71,
+                      Column: (int) 21
                     })
                   })
                 }),
@@ -5039,22 +4535,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 74,
-                            Column: (int) 23
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 74,
-                            Column: (int) 27
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 74,
+                          Column: (int) 23
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 81,
-                            Column: (int) 3
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 74,
+                          Column: (int) 27
                         })
                       })
                     })
@@ -5089,19 +4576,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 74,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 74,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 81,
-                        Column: (int) 3
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 74,
+                      Column: (int) 27
                     })
                   })
                 })
@@ -5324,19 +4805,13 @@
                 }
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 64,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 64,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 81,
-                    Column: (int) 3
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 74,
+                  Column: (int) 27
                 })
               })
             })
@@ -5952,19 +5427,13 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 34,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 34,
+              Column: (int) 3
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 81,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 74,
+              Column: (int) 27
             })
           })
         }),
@@ -5992,22 +5461,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 82,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 82,
-                    Column: (int) 29
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 82,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 84,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 82,
+                  Column: (int) 29
                 })
               })
             }),
@@ -6028,22 +5488,13 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=10) "Authoriser",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 84,
-                            Column: (int) 20
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 84,
-                            Column: (int) 30
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 84,
+                          Column: (int) 20
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 89,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 84,
+                          Column: (int) 30
                         })
                       })
                     })
@@ -6077,22 +5528,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 84,
-                        Column: (int) 20
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 84,
-                        Column: (int) 30
-                      })
+                    Start: (*source.Position)({
+                      Line: (int) 84,
+                      Column: (int) 20
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 89,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 84,
+                      Column: (int) 30
                     })
                   })
                 }),
@@ -6113,25 +5555,13 @@
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=4) "true",
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 89,
-                                Column: (int) 21
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 89,
-                                Column: (int) 25
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 89,
+                              Column: (int) 21
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 93,
-                                Column: (int) 37
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 93,
-                                Column: (int) 55
-                              })
+                            End: (*source.Position)({
+                              Line: (int) 89,
+                              Column: (int) 25
                             })
                           })
                         })
@@ -6165,25 +5595,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 89,
-                            Column: (int) 21
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 89,
-                            Column: (int) 25
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 89,
+                          Column: (int) 21
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 93,
-                            Column: (int) 37
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 93,
-                            Column: (int) 55
-                          })
+                        End: (*source.Position)({
+                          Line: (int) 89,
+                          Column: (int) 25
                         })
                       })
                     }),
@@ -6199,25 +5617,13 @@
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=18) "MyCustomAuthHeader",
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 93,
-                                Column: (int) 37
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 93,
-                                Column: (int) 55
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 93,
+                              Column: (int) 37
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 94,
-                                Column: (int) 51
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 94,
-                                Column: (int) 62
-                              })
+                            End: (*source.Position)({
+                              Line: (int) 93,
+                              Column: (int) 55
                             })
                           })
                         })
@@ -6251,25 +5657,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 93,
-                            Column: (int) 37
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 93,
-                            Column: (int) 55
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 93,
+                          Column: (int) 37
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 94,
-                            Column: (int) 51
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 94,
-                            Column: (int) 62
-                          })
+                        End: (*source.Position)({
+                          Line: (int) 93,
+                          Column: (int) 55
                         })
                       })
                     }),
@@ -6285,25 +5679,13 @@
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=9) "Bearer .*",
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 94,
-                                Column: (int) 51
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 94,
-                                Column: (int) 62
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 94,
+                              Column: (int) 51
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 95,
-                                Column: (int) 47
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 95,
-                                Column: (int) 49
-                              })
+                            End: (*source.Position)({
+                              Line: (int) 94,
+                              Column: (int) 62
                             })
                           })
                         })
@@ -6337,25 +5719,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 94,
-                            Column: (int) 51
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 94,
-                            Column: (int) 62
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 94,
+                          Column: (int) 51
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 95,
-                            Column: (int) 47
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 95,
-                            Column: (int) 49
-                          })
+                        End: (*source.Position)({
+                          Line: (int) 94,
+                          Column: (int) 62
                         })
                       })
                     }),
@@ -6371,22 +5741,13 @@
                           Children: ([]*schema.TreeNode) <nil>,
                           SchemaElement: (string) (len=2) "20",
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 95,
-                                Column: (int) 47
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 95,
-                                Column: (int) 49
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 95,
+                              Column: (int) 47
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 97,
-                                Column: (int) 9
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 95,
+                              Column: (int) 49
                             })
                           })
                         })
@@ -6420,22 +5781,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 95,
-                            Column: (int) 47
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 95,
-                            Column: (int) 49
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 95,
+                          Column: (int) 47
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 97,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 95,
+                          Column: (int) 49
                         })
                       })
                     })
@@ -6587,19 +5939,13 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 89,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 89,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 97,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 95,
+                      Column: (int) 49
                     })
                   })
                 }),
@@ -6615,20 +5961,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 97,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 97,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 99,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     })
                   },
@@ -6647,20 +5984,11 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 97,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 97,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 99,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
-                    })
+                    End: (*source.Position)(<nil>)
                   })
                 })
               },
@@ -6863,20 +6191,11 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 84,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 84,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 99,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
-                })
+                End: (*source.Position)(<nil>)
               })
             }),
             (*schema.TreeNode)({
@@ -6911,22 +6230,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 99,
-                            Column: (int) 16
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 99,
-                            Column: (int) 35
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 99,
+                          Column: (int) 16
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 100,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 99,
+                          Column: (int) 35
                         })
                       })
                     })
@@ -6961,19 +6271,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 99,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 99,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 100,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 99,
+                      Column: (int) 35
                     })
                   })
                 }),
@@ -7004,22 +6308,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 100,
-                            Column: (int) 16
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 100,
-                            Column: (int) 19
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 100,
+                          Column: (int) 16
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 102,
-                            Column: (int) 3
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 100,
+                          Column: (int) 19
                         })
                       })
                     })
@@ -7054,19 +6349,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 100,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 100,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 102,
-                        Column: (int) 3
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 100,
+                      Column: (int) 19
                     })
                   })
                 })
@@ -7160,19 +6449,13 @@
                 }
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 99,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 99,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 102,
-                    Column: (int) 3
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 100,
+                  Column: (int) 19
                 })
               })
             })
@@ -7490,19 +6773,13 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 81,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 81,
+              Column: (int) 3
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 102,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 100,
+              Column: (int) 19
             })
           })
         }),
@@ -7530,22 +6807,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 103,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 103,
-                    Column: (int) 29
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 103,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 105,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 103,
+                  Column: (int) 29
                 })
               })
             }),
@@ -7566,22 +6834,13 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=18) "Get Orders Handler",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 105,
-                            Column: (int) 20
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 105,
-                            Column: (int) 38
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 105,
+                          Column: (int) 20
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 107,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 105,
+                          Column: (int) 38
                         })
                       })
                     })
@@ -7615,22 +6874,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 105,
-                        Column: (int) 20
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 105,
-                        Column: (int) 38
-                      })
+                    Start: (*source.Position)({
+                      Line: (int) 105,
+                      Column: (int) 20
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 107,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 105,
+                      Column: (int) 38
                     })
                   })
                 }),
@@ -7646,20 +6896,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 107,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 107,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 109,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     })
                   },
@@ -7678,20 +6919,11 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 107,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 107,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 109,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
-                    })
+                    End: (*source.Position)(<nil>)
                   })
                 })
               },
@@ -7749,20 +6981,11 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 105,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 105,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 109,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
-                })
+                End: (*source.Position)(<nil>)
               })
             }),
             (*schema.TreeNode)({
@@ -7797,22 +7020,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 109,
-                            Column: (int) 16
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 109,
-                            Column: (int) 34
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 109,
+                          Column: (int) 16
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 110,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 109,
+                          Column: (int) 34
                         })
                       })
                     })
@@ -7847,19 +7061,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 109,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 109,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 110,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 109,
+                      Column: (int) 34
                     })
                   })
                 }),
@@ -7890,22 +7098,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 110,
-                            Column: (int) 16
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 110,
-                            Column: (int) 19
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 110,
+                          Column: (int) 16
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 111,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 110,
+                          Column: (int) 19
                         })
                       })
                     })
@@ -7940,19 +7139,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 110,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 110,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 111,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 110,
+                      Column: (int) 19
                     })
                   })
                 }),
@@ -7988,22 +7181,13 @@
                             })
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 112,
-                                Column: (int) 17
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 112,
-                                Column: (int) 20
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 112,
+                              Column: (int) 17
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 113,
-                                Column: (int) 9
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 112,
+                              Column: (int) 20
                             })
                           })
                         })
@@ -8038,19 +7222,13 @@
                         FieldsSourceMeta: (map[string]*source.Meta) <nil>
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 112,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 112,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 113,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 112,
+                          Column: (int) 20
                         })
                       })
                     }),
@@ -8081,22 +7259,13 @@
                             })
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 113,
-                                Column: (int) 15
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 113,
-                                Column: (int) 22
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 113,
+                              Column: (int) 15
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 114,
-                                Column: (int) 9
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 113,
+                              Column: (int) 22
                             })
                           })
                         })
@@ -8131,19 +7300,13 @@
                         FieldsSourceMeta: (map[string]*source.Meta) <nil>
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 113,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 113,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 114,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 113,
+                          Column: (int) 22
                         })
                       })
                     }),
@@ -8179,22 +7342,13 @@
                                 })
                               }),
                               Range: (*source.Range)({
-                                Start: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 114,
-                                    Column: (int) 23
-                                  },
-                                  EndPosition: (*source.Position)({
-                                    Line: (int) 114,
-                                    Column: (int) 33
-                                  })
+                                Start: (*source.Position)({
+                                  Line: (int) 114,
+                                  Column: (int) 23
                                 }),
-                                End: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 117,
-                                    Column: (int) 3
-                                  },
-                                  EndPosition: (*source.Position)(<nil>)
+                                End: (*source.Position)({
+                                  Line: (int) 114,
+                                  Column: (int) 33
                                 })
                               })
                             })
@@ -8266,22 +7420,13 @@
                             })
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 114,
-                                Column: (int) 21
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 114,
-                                Column: (int) 34
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 114,
+                              Column: (int) 21
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 117,
-                                Column: (int) 3
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 114,
+                              Column: (int) 33
                             })
                           })
                         })
@@ -8366,19 +7511,13 @@
                         FieldsSourceMeta: (map[string]*source.Meta) <nil>
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 114,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 114,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 117,
-                            Column: (int) 3
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 114,
+                          Column: (int) 33
                         })
                       })
                     })
@@ -8558,19 +7697,13 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 111,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 111,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 117,
-                        Column: (int) 3
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 114,
+                      Column: (int) 33
                     })
                   })
                 })
@@ -8845,19 +7978,13 @@
                 }
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 109,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 109,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 117,
-                    Column: (int) 3
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 114,
+                  Column: (int) 33
                 })
               })
             })
@@ -9211,19 +8338,13 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 102,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 102,
+              Column: (int) 3
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 117,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 114,
+              Column: (int) 33
             })
           })
         }),
@@ -9251,22 +8372,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 118,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 118,
-                    Column: (int) 29
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 118,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 120,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 118,
+                  Column: (int) 29
                 })
               })
             }),
@@ -9287,22 +8399,13 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=21) "Update Order Function",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 120,
-                            Column: (int) 20
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 120,
-                            Column: (int) 41
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 120,
+                          Column: (int) 20
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 122,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 120,
+                          Column: (int) 41
                         })
                       })
                     })
@@ -9336,22 +8439,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 120,
-                        Column: (int) 20
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 120,
-                        Column: (int) 41
-                      })
+                    Start: (*source.Position)({
+                      Line: (int) 120,
+                      Column: (int) 20
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 122,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 120,
+                      Column: (int) 41
                     })
                   })
                 }),
@@ -9367,20 +8461,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=11) "orderPubSub",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 122,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 122,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 127,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     }),
                     (*schema.TreeNode)({
@@ -9390,20 +8475,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "consumer",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 127,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 127,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 129,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     })
                   },
@@ -9430,20 +8506,11 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 122,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 122,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 129,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
-                    })
+                    End: (*source.Position)(<nil>)
                   })
                 })
               },
@@ -9509,20 +8576,11 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 120,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 120,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 129,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
-                })
+                End: (*source.Position)(<nil>)
               })
             }),
             (*schema.TreeNode)({
@@ -9557,22 +8615,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 129,
-                            Column: (int) 16
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 129,
-                            Column: (int) 36
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 129,
+                          Column: (int) 16
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 130,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 129,
+                          Column: (int) 36
                         })
                       })
                     })
@@ -9607,19 +8656,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 129,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 129,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 130,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 129,
+                      Column: (int) 36
                     })
                   })
                 }),
@@ -9650,22 +8693,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 130,
-                            Column: (int) 16
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 130,
-                            Column: (int) 19
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 130,
+                          Column: (int) 16
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 131,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 130,
+                          Column: (int) 19
                         })
                       })
                     })
@@ -9700,19 +8734,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 130,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 130,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 131,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 130,
+                      Column: (int) 19
                     })
                   })
                 }),
@@ -9753,22 +8781,13 @@
                                 })
                               }),
                               Range: (*source.Range)({
-                                Start: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 133,
-                                    Column: (int) 17
-                                  },
-                                  EndPosition: (*source.Position)({
-                                    Line: (int) 133,
-                                    Column: (int) 23
-                                  })
+                                Start: (*source.Position)({
+                                  Line: (int) 133,
+                                  Column: (int) 17
                                 }),
-                                End: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 136,
-                                    Column: (int) 11
-                                  },
-                                  EndPosition: (*source.Position)(<nil>)
+                                End: (*source.Position)({
+                                  Line: (int) 133,
+                                  Column: (int) 23
                                 })
                               })
                             })
@@ -9803,19 +8822,13 @@
                             FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 133,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            Start: (*source.Position)({
+                              Line: (int) 133,
+                              Column: (int) 11
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 136,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 133,
+                              Column: (int) 23
                             })
                           })
                         }),
@@ -9846,22 +8859,13 @@
                                 })
                               }),
                               Range: (*source.Range)({
-                                Start: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 136,
-                                    Column: (int) 22
-                                  },
-                                  EndPosition: (*source.Position)({
-                                    Line: (int) 136,
-                                    Column: (int) 24
-                                  })
+                                Start: (*source.Position)({
+                                  Line: (int) 136,
+                                  Column: (int) 22
                                 }),
-                                End: (*source.Meta)({
-                                  Position: (source.Position) {
-                                    Line: (int) 138,
-                                    Column: (int) 3
-                                  },
-                                  EndPosition: (*source.Position)(<nil>)
+                                End: (*source.Position)({
+                                  Line: (int) 136,
+                                  Column: (int) 24
                                 })
                               })
                             })
@@ -9896,19 +8900,13 @@
                             FieldsSourceMeta: (map[string]*source.Meta) <nil>
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 136,
-                                Column: (int) 11
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            Start: (*source.Position)({
+                              Line: (int) 136,
+                              Column: (int) 11
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 138,
-                                Column: (int) 3
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 136,
+                              Column: (int) 24
                             })
                           })
                         })
@@ -10002,19 +9000,13 @@
                         }
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 132,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 132,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 138,
-                            Column: (int) 3
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 136,
+                          Column: (int) 24
                         })
                       })
                     })
@@ -10131,19 +9123,13 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 131,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 131,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 138,
-                        Column: (int) 3
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 136,
+                      Column: (int) 24
                     })
                   })
                 })
@@ -10355,19 +9341,13 @@
                 }
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 129,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 129,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 138,
-                    Column: (int) 3
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 136,
+                  Column: (int) 24
                 })
               })
             })
@@ -10666,19 +9646,13 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 117,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 117,
+              Column: (int) 3
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 138,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 136,
+              Column: (int) 24
             })
           })
         }),
@@ -10706,22 +9680,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 145,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 145,
-                    Column: (int) 34
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 145,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 147,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 145,
+                  Column: (int) 34
                 })
               })
             }),
@@ -10742,22 +9707,13 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=21) "Shared Packages Layer",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 147,
-                            Column: (int) 20
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 147,
-                            Column: (int) 41
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 147,
+                          Column: (int) 20
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 149,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 147,
+                          Column: (int) 41
                         })
                       })
                     })
@@ -10791,22 +9747,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 147,
-                        Column: (int) 20
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 147,
-                        Column: (int) 41
-                      })
+                    Start: (*source.Position)({
+                      Line: (int) 147,
+                      Column: (int) 20
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 149,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 147,
+                      Column: (int) 41
                     })
                   })
                 }),
@@ -10822,20 +9769,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=11) "orderPubSub",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 149,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 149,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 150,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     }),
                     (*schema.TreeNode)({
@@ -10845,20 +9783,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=8) "orderApi",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 150,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 150,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 152,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     })
                   },
@@ -10885,20 +9814,11 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 149,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 149,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 152,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
-                    })
+                    End: (*source.Position)(<nil>)
                   })
                 })
               },
@@ -10964,20 +9884,11 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 147,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 147,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 152,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
-                })
+                End: (*source.Position)(<nil>)
               })
             }),
             (*schema.TreeNode)({
@@ -11017,22 +9928,13 @@
                             })
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 152,
-                                Column: (int) 28
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 152,
-                                Column: (int) 35
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 152,
+                              Column: (int) 28
                             }),
-                            End: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 155,
-                                Column: (int) 7
-                              },
-                              EndPosition: (*source.Position)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 152,
+                              Column: (int) 35
                             })
                           })
                         })
@@ -11067,19 +9969,13 @@
                         FieldsSourceMeta: (map[string]*source.Meta) <nil>
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 152,
-                            Column: (int) 28
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 152,
+                          Column: (int) 28
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 155,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 152,
+                          Column: (int) 35
                         })
                       })
                     })
@@ -11129,19 +10025,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 152,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 152,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 155,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 152,
+                      Column: (int) 35
                     })
                   })
                 }),
@@ -11172,22 +10062,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 155,
-                            Column: (int) 16
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 155,
-                            Column: (int) 43
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 155,
+                          Column: (int) 16
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 156,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 155,
+                          Column: (int) 43
                         })
                       })
                     })
@@ -11222,19 +10103,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 155,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 155,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 156,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 155,
+                      Column: (int) 43
                     })
                   })
                 }),
@@ -11265,22 +10140,13 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 156,
-                            Column: (int) 18
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 156,
-                            Column: (int) 37
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 156,
+                          Column: (int) 18
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 157,
-                            Column: (int) 3
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 156,
+                          Column: (int) 37
                         })
                       })
                     })
@@ -11315,19 +10181,13 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 156,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 156,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 157,
-                        Column: (int) 3
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 156,
+                      Column: (int) 37
                     })
                   })
                 })
@@ -11472,19 +10332,13 @@
                 }
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 152,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 152,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 157,
-                    Column: (int) 3
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 156,
+                  Column: (int) 37
                 })
               })
             })
@@ -11716,19 +10570,13 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 138,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 138,
+              Column: (int) 3
             }),
-            End: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 157,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 156,
+              Column: (int) 37
             })
           })
         }),
@@ -11756,22 +10604,13 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 161,
-                    Column: (int) 11
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 161,
-                    Column: (int) 28
-                  })
+                Start: (*source.Position)({
+                  Line: (int) 161,
+                  Column: (int) 11
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 163,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 161,
+                  Column: (int) 28
                 })
               })
             }),
@@ -11792,22 +10631,13 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=13) "Order Pub/Sub",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 163,
-                            Column: (int) 20
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 163,
-                            Column: (int) 33
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 163,
+                          Column: (int) 20
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 165,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 163,
+                          Column: (int) 33
                         })
                       })
                     })
@@ -11841,22 +10671,13 @@
                     })
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 163,
-                        Column: (int) 20
-                      },
-                      EndPosition: (*source.Position)({
-                        Line: (int) 163,
-                        Column: (int) 33
-                      })
+                    Start: (*source.Position)({
+                      Line: (int) 163,
+                      Column: (int) 20
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 165,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 163,
+                      Column: (int) 33
                     })
                   })
                 }),
@@ -11872,20 +10693,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=11) "orderPubSub",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 165,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 165,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 167,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     })
                   },
@@ -11904,20 +10716,11 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 165,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 165,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 167,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
-                    })
+                    End: (*source.Position)(<nil>)
                   })
                 })
               },
@@ -11975,20 +10778,11 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 163,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 163,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 167,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
-                })
+                End: (*source.Position)(<nil>)
               })
             }),
             (*schema.TreeNode)({
@@ -12008,20 +10802,11 @@
                       Children: ([]*schema.TreeNode) <nil>,
                       SchemaElement: (string) (len=11) "orderPubSub",
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 168,
-                            Column: (int) 9
-                          },
-                          EndPosition: (*source.Position)(<nil>)
+                        Start: (*source.Position)({
+                          Line: (int) 168,
+                          Column: (int) 9
                         }),
-                        End: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 170,
-                            Column: (int) 7
-                          },
-                          EndPosition: (*source.Position)(<nil>)
-                        })
+                        End: (*source.Position)(<nil>)
                       })
                     })
                   },
@@ -12040,20 +10825,11 @@
                     }
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 168,
-                        Column: (int) 9
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 168,
+                      Column: (int) 9
                     }),
-                    End: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 170,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
-                    })
+                    End: (*source.Position)(<nil>)
                   })
                 })
               },
@@ -12081,20 +10857,11 @@
                 })
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 167,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 167,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 170,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
-                })
+                End: (*source.Position)(<nil>)
               })
             }),
             (*schema.TreeNode)({
@@ -12131,17 +10898,14 @@
                             })
                           }),
                           Range: (*source.Range)({
-                            Start: (*source.Meta)({
-                              Position: (source.Position) {
-                                Line: (int) 170,
-                                Column: (int) 20
-                              },
-                              EndPosition: (*source.Position)({
-                                Line: (int) 170,
-                                Column: (int) 45
-                              })
+                            Start: (*source.Position)({
+                              Line: (int) 170,
+                              Column: (int) 20
                             }),
-                            End: (*source.Meta)(<nil>)
+                            End: (*source.Position)({
+                              Line: (int) 170,
+                              Column: (int) 45
+                            })
                           })
                         })
                       },
@@ -12209,17 +10973,14 @@
                         })
                       }),
                       Range: (*source.Range)({
-                        Start: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 170,
-                            Column: (int) 18
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 170,
-                            Column: (int) 46
-                          })
+                        Start: (*source.Position)({
+                          Line: (int) 170,
+                          Column: (int) 18
                         }),
-                        End: (*source.Meta)(<nil>)
+                        End: (*source.Position)({
+                          Line: (int) 170,
+                          Column: (int) 45
+                        })
                       })
                     })
                   },
@@ -12300,14 +11061,14 @@
                     FieldsSourceMeta: (map[string]*source.Meta) <nil>
                   }),
                   Range: (*source.Range)({
-                    Start: (*source.Meta)({
-                      Position: (source.Position) {
-                        Line: (int) 170,
-                        Column: (int) 7
-                      },
-                      EndPosition: (*source.Position)(<nil>)
+                    Start: (*source.Position)({
+                      Line: (int) 170,
+                      Column: (int) 7
                     }),
-                    End: (*source.Meta)(<nil>)
+                    End: (*source.Position)({
+                      Line: (int) 170,
+                      Column: (int) 45
+                    })
                   })
                 })
               },
@@ -12411,14 +11172,14 @@
                 }
               }),
               Range: (*source.Range)({
-                Start: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 170,
-                    Column: (int) 7
-                  },
-                  EndPosition: (*source.Position)(<nil>)
+                Start: (*source.Position)({
+                  Line: (int) 170,
+                  Column: (int) 7
                 }),
-                End: (*source.Meta)(<nil>)
+                End: (*source.Position)({
+                  Line: (int) 170,
+                  Column: (int) 45
+                })
               })
             })
           },
@@ -12623,14 +11384,14 @@
             })
           }),
           Range: (*source.Range)({
-            Start: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 157,
-                Column: (int) 3
-              },
-              EndPosition: (*source.Position)(<nil>)
+            Start: (*source.Position)({
+              Line: (int) 157,
+              Column: (int) 3
             }),
-            End: (*source.Meta)(<nil>)
+            End: (*source.Position)({
+              Line: (int) 170,
+              Column: (int) 45
+            })
           })
         })
       },
@@ -14672,14 +13433,14 @@
         }
       }),
       Range: (*source.Range)({
-        Start: (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 34,
-            Column: (int) 3
-          },
-          EndPosition: (*source.Position)(<nil>)
+        Start: (*source.Position)({
+          Line: (int) 34,
+          Column: (int) 3
         }),
-        End: (*source.Meta)(<nil>)
+        End: (*source.Position)({
+          Line: (int) 170,
+          Column: (int) 45
+        })
       })
     })
   },
@@ -17181,13 +15942,10 @@
     Metadata: (*core.MappingNode)(<nil>)
   }),
   Range: (*source.Range)({
-    Start: (*source.Meta)({
-      Position: (source.Position) {
-        Line: (int) 1,
-        Column: (int) 1
-      },
-      EndPosition: (*source.Position)(<nil>)
+    Start: (*source.Position)({
+      Line: (int) 1,
+      Column: (int) 1
     }),
-    End: (*source.Meta)(<nil>)
+    End: (*source.Position)(<nil>)
   })
 })

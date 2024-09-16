@@ -70,6 +70,6 @@ func EndSourcePositionFromYAMLScalarNode(node *yaml.Node) *Position {
 // Start and End could also hold additional information provided
 // in the Meta struct.
 type Range struct {
-	Start *Meta
-	End   *Meta
+	Start *Position
+	End   *Position
 }
