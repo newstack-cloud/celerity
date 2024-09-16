@@ -20,6 +20,7 @@ func ValidateCustomVariable(
 	varMap *schema.VariableMap,
 	params bpcore.BlueprintParams,
 	customVariableType provider.CustomVariableType,
+	validateRuntimeParams bool,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	optionLabels, err := validateCustomVariableOptions(
@@ -60,11 +61,11 @@ func ValidateCustomVariable(
 	userProvidedValue := params.BlueprintVariable(varName)
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
-	if finalValue == nil {
+	if validateRuntimeParams && finalValue == nil {
 		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
-	if finalValue.StringValue == nil {
+	if validateRuntimeParams && finalValue.StringValue == nil {
 		return diagnostics, errVariableInvalidOrMissing(
 			varSchema.Type.Value,
 			varName,
@@ -73,7 +74,7 @@ func ValidateCustomVariable(
 		)
 	}
 
-	if strings.TrimSpace(*finalValue.StringValue) == "" {
+	if validateRuntimeParams && strings.TrimSpace(*finalValue.StringValue) == "" {
 		return diagnostics, errVariableEmptyValue(
 			varSchema.Type.Value,
 			varName,
@@ -81,7 +82,7 @@ func ValidateCustomVariable(
 		)
 	}
 
-	if !core.SliceContainsComparable(optionLabels, *finalValue.StringValue) {
+	if validateRuntimeParams && !core.SliceContainsComparable(optionLabels, *finalValue.StringValue) {
 		usingDefault := userProvidedValue == nil
 		return diagnostics, errCustomVariableValueNotInOptions(
 			varSchema.Type.Value,
@@ -92,7 +93,8 @@ func ValidateCustomVariable(
 		)
 	}
 
-	if len(varSchema.AllowedValues) > 0 && !bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
+	if validateRuntimeParams && len(varSchema.AllowedValues) > 0 &&
+		!bpcore.IsInScalarList(finalValue, varSchema.AllowedValues) {
 		usingDefault := userProvidedValue == nil
 		return diagnostics, errVariableValueNotAllowed(
 			varSchema.Type.Value,

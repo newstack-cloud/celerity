@@ -834,7 +834,15 @@ func (l *defaultLoader) validateCustomVariableType(
 	if err != nil {
 		return []*bpcore.Diagnostic{}, err
 	}
-	return validation.ValidateCustomVariable(ctx, varName, varSchema, variables, params, providerCustomVarType)
+	return validation.ValidateCustomVariable(
+		ctx,
+		varName,
+		varSchema,
+		variables,
+		params,
+		providerCustomVarType,
+		l.validateRuntimeValues,
+	)
 }
 
 func (l *defaultLoader) deriveProviderCustomVarType(ctx context.Context, varName string, varSchema *schema.Variable) (provider.CustomVariableType, error) {
