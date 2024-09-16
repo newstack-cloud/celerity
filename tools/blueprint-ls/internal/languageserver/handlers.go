@@ -344,7 +344,32 @@ func (a *Application) handleGotoDefinition(
 	ctx *common.LSPContext,
 	params *lsp.DefinitionParams,
 ) (any, error) {
-	return []lsp.LocationLink{}, nil
+	dispatcher := lsp.NewDispatcher(ctx)
+
+	tree := a.state.GetDocumentTree(params.TextDocument.URI)
+	if tree == nil {
+		err := a.validateAndPublishDiagnostics(ctx, params.TextDocument.URI, dispatcher)
+		if err != nil {
+			return nil, err
+		}
+
+		tree = a.state.GetDocumentTree(params.TextDocument.URI)
+	}
+	content := a.getDocumentContent(params.TextDocument.URI, true)
+	bpSchema := a.state.GetDocumentSchema(params.TextDocument.URI)
+	if bpSchema == nil {
+		return nil, errors.New("no parsed blueprint found for document")
+	}
+
+	// todo: check if client has textDocument.definition.linkSupport
+	// capability
+
+	return a.gotoDefinitionService.GetDefinitions(
+		*content,
+		tree,
+		bpSchema,
+		&params.TextDocumentPositionParams,
+	)
 }
 
 func (a *Application) handleShutdown(ctx *common.LSPContext) error {

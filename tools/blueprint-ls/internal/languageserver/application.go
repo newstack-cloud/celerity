@@ -10,20 +10,21 @@ import (
 )
 
 type Application struct {
-	handler            *lsp.Handler
-	state              *languageservices.State
-	settingsService    *languageservices.SettingsService
-	functionRegistry   provider.FunctionRegistry
-	resourceRegistry   resourcehelpers.Registry
-	dataSourceRegistry provider.DataSourceRegistry
-	blueprintLoader    container.Loader
-	completionService  *languageservices.CompletionService
-	diagnosticService  *languageservices.DiagnosticsService
-	signatureService   *languageservices.SignatureService
-	hoverService       *languageservices.HoverService
-	symbolService      *languageservices.SymbolService
-	logger             *zap.Logger
-	traceService       *lsp.TraceService
+	handler               *lsp.Handler
+	state                 *languageservices.State
+	settingsService       *languageservices.SettingsService
+	functionRegistry      provider.FunctionRegistry
+	resourceRegistry      resourcehelpers.Registry
+	dataSourceRegistry    provider.DataSourceRegistry
+	blueprintLoader       container.Loader
+	completionService     *languageservices.CompletionService
+	diagnosticService     *languageservices.DiagnosticsService
+	signatureService      *languageservices.SignatureService
+	hoverService          *languageservices.HoverService
+	symbolService         *languageservices.SymbolService
+	gotoDefinitionService *languageservices.GotoDefinitionService
+	logger                *zap.Logger
+	traceService          *lsp.TraceService
 }
 
 func NewApplication(
@@ -39,22 +40,24 @@ func NewApplication(
 	signatureService *languageservices.SignatureService,
 	hoverService *languageservices.HoverService,
 	symbolService *languageservices.SymbolService,
+	gotoDefinitionService *languageservices.GotoDefinitionService,
 	logger *zap.Logger,
 ) *Application {
 	return &Application{
-		state:              state,
-		settingsService:    settingsService,
-		traceService:       traceService,
-		functionRegistry:   functionRegistry,
-		resourceRegistry:   resourceRegistry,
-		dataSourceRegistry: dataSourceRegistry,
-		blueprintLoader:    blueprintLoader,
-		completionService:  completionService,
-		diagnosticService:  diagnosticService,
-		signatureService:   signatureService,
-		hoverService:       hoverService,
-		symbolService:      symbolService,
-		logger:             logger,
+		state:                 state,
+		settingsService:       settingsService,
+		traceService:          traceService,
+		functionRegistry:      functionRegistry,
+		resourceRegistry:      resourceRegistry,
+		dataSourceRegistry:    dataSourceRegistry,
+		blueprintLoader:       blueprintLoader,
+		completionService:     completionService,
+		diagnosticService:     diagnosticService,
+		signatureService:      signatureService,
+		hoverService:          hoverService,
+		symbolService:         symbolService,
+		gotoDefinitionService: gotoDefinitionService,
+		logger:                logger,
 	}
 }
 

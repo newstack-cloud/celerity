@@ -242,7 +242,11 @@ func scalarYamlNodeEndPosition(node *yaml.Node) lsp.Position {
 
 	lines := strings.Split(strings.ReplaceAll(node.Value, "\r\n", "\n"), "\n")
 	lineCountInBlock := len(lines) - 1
-	columnOnLastLine := node.Column + utf8.RuneCountInString(lines[lineCountInBlock-1])
+	columnOnLastLine := node.Column
+
+	if lineCountInBlock > 0 {
+		columnOnLastLine += utf8.RuneCountInString(lines[lineCountInBlock-1])
+	}
 
 	return lsp.Position{
 		Line:      lsp.UInteger(node.Line + lineCountInBlock - 1),

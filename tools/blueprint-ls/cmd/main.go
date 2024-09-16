@@ -96,6 +96,10 @@ func main() {
 		state,
 		logger,
 	)
+	gotoDefinitionService := languageservices.NewGotoDefinitionService(
+		state,
+		logger,
+	)
 
 	app := languageserver.NewApplication(
 		state,
@@ -110,6 +114,7 @@ func main() {
 		signatureService,
 		hoverService,
 		symbolService,
+		gotoDefinitionService,
 		logger,
 	)
 	app.Setup()

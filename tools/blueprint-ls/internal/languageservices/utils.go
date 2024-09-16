@@ -1,6 +1,8 @@
 package languageservices
 
 import (
+	"strings"
+
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
@@ -86,4 +88,35 @@ func collectElementsAtPosition(
 			i += 1
 		}
 	}
+}
+
+func findNodeByPath(
+	tree *schema.TreeNode,
+	path string,
+	logger *zap.Logger,
+) *schema.TreeNode {
+	if tree == nil {
+		logger.Debug("findNodeByPath: tree is nil")
+		return nil
+	}
+
+	if tree.Path == path {
+		logger.Debug("findNodeByPath: found node", zap.String("path", path))
+		return tree
+	}
+
+	node := (*schema.TreeNode)(nil)
+	i := 0
+	for node == nil && i < len(tree.Children) {
+		child := tree.Children[i]
+		if strings.HasPrefix(path, child.Path) {
+			logger.Debug("findNodeByPath: found child matching prefix", zap.String("path", child.Path))
+			node = findNodeByPath(tree.Children[i], path, logger)
+		} else {
+			logger.Debug("findNodeByPath: child does not match prefix", zap.String("path", child.Path))
+		}
+		i += 1
+	}
+
+	return node
 }
