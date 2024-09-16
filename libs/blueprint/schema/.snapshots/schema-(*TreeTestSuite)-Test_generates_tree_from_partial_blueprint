@@ -979,7 +979,10 @@
                                 Line: (int) 22,
                                 Column: (int) 17
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 22,
+                                Column: (int) 38
+                              })
                             })
                           }),
                           Range: (*source.Range)({
@@ -988,7 +991,10 @@
                                 Line: (int) 22,
                                 Column: (int) 17
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 22,
+                                Column: (int) 38
+                              })
                             }),
                             End: (*source.Meta)({
                               Position: (source.Position) {
@@ -1013,7 +1019,10 @@
                                     Line: (int) 22,
                                     Column: (int) 17
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 22,
+                                    Column: (int) 38
+                                  })
                                 })
                               }),
                               ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -1031,7 +1040,10 @@
                                   Line: (int) 22,
                                   Column: (int) 17
                                 },
-                                EndPosition: (*source.Position)(<nil>)
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 22,
+                                  Column: (int) 38
+                                })
                               })
                             }),
                             SourceMeta: (*source.Meta)({
@@ -1041,7 +1053,7 @@
                               },
                               EndPosition: (*source.Position)({
                                 Line: (int) 22,
-                                Column: (int) 36
+                                Column: (int) 39
                               })
                             })
                           })
@@ -1093,7 +1105,10 @@
                                     Line: (int) 22,
                                     Column: (int) 17
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 22,
+                                    Column: (int) 38
+                                  })
                                 })
                               }),
                               ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -1111,7 +1126,10 @@
                                   Line: (int) 22,
                                   Column: (int) 17
                                 },
-                                EndPosition: (*source.Position)(<nil>)
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 22,
+                                  Column: (int) 38
+                                })
                               })
                             }),
                             SourceMeta: (*source.Meta)({
@@ -1121,7 +1139,7 @@
                               },
                               EndPosition: (*source.Position)({
                                 Line: (int) 22,
-                                Column: (int) 36
+                                Column: (int) 39
                               })
                             })
                           })
@@ -1209,7 +1227,10 @@
                                   Line: (int) 22,
                                   Column: (int) 17
                                 },
-                                EndPosition: (*source.Position)(<nil>)
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 22,
+                                  Column: (int) 38
+                                })
                               })
                             }),
                             ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -1227,7 +1248,10 @@
                                 Line: (int) 22,
                                 Column: (int) 17
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 22,
+                                Column: (int) 38
+                              })
                             })
                           }),
                           SourceMeta: (*source.Meta)({
@@ -1237,7 +1261,7 @@
                             },
                             EndPosition: (*source.Position)({
                               Line: (int) 22,
-                              Column: (int) 36
+                              Column: (int) 39
                             })
                           })
                         })
@@ -1763,7 +1787,10 @@
                                 Line: (int) 22,
                                 Column: (int) 17
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 22,
+                                Column: (int) 38
+                              })
                             })
                           }),
                           ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -1781,7 +1808,10 @@
                               Line: (int) 22,
                               Column: (int) 17
                             },
-                            EndPosition: (*source.Position)(<nil>)
+                            EndPosition: (*source.Position)({
+                              Line: (int) 22,
+                              Column: (int) 38
+                            })
                           })
                         }),
                         SourceMeta: (*source.Meta)({
@@ -1791,7 +1821,7 @@
                           },
                           EndPosition: (*source.Position)({
                             Line: (int) 22,
-                            Column: (int) 36
+                            Column: (int) 39
                           })
                         })
                       })
@@ -2050,7 +2080,10 @@
                                 Line: (int) 22,
                                 Column: (int) 17
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 22,
+                                Column: (int) 38
+                              })
                             })
                           }),
                           ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -2068,7 +2101,10 @@
                               Line: (int) 22,
                               Column: (int) 17
                             },
-                            EndPosition: (*source.Position)(<nil>)
+                            EndPosition: (*source.Position)({
+                              Line: (int) 22,
+                              Column: (int) 38
+                            })
                           })
                         }),
                         SourceMeta: (*source.Meta)({
@@ -2078,7 +2114,7 @@
                           },
                           EndPosition: (*source.Position)({
                             Line: (int) 22,
-                            Column: (int) 36
+                            Column: (int) 39
                           })
                         })
                       })
@@ -4422,7 +4458,10 @@
                                         Line: (int) 66,
                                         Column: (int) 29
                                       },
-                                      EndPosition: (*source.Position)(<nil>)
+                                      EndPosition: (*source.Position)({
+                                        Line: (int) 66,
+                                        Column: (int) 52
+                                      })
                                     })
                                   }),
                                   Range: (*source.Range)({
@@ -4431,7 +4470,10 @@
                                         Line: (int) 66,
                                         Column: (int) 29
                                       },
-                                      EndPosition: (*source.Position)(<nil>)
+                                      EndPosition: (*source.Position)({
+                                        Line: (int) 66,
+                                        Column: (int) 52
+                                      })
                                     }),
                                     End: (*source.Meta)({
                                       Position: (source.Position) {
@@ -4456,7 +4498,10 @@
                                             Line: (int) 66,
                                             Column: (int) 29
                                           },
-                                          EndPosition: (*source.Position)(<nil>)
+                                          EndPosition: (*source.Position)({
+                                            Line: (int) 66,
+                                            Column: (int) 52
+                                          })
                                         })
                                       }),
                                       ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -4474,7 +4519,10 @@
                                           Line: (int) 66,
                                           Column: (int) 29
                                         },
-                                        EndPosition: (*source.Position)(<nil>)
+                                        EndPosition: (*source.Position)({
+                                          Line: (int) 66,
+                                          Column: (int) 52
+                                        })
                                       })
                                     }),
                                     SourceMeta: (*source.Meta)({
@@ -4484,7 +4532,7 @@
                                       },
                                       EndPosition: (*source.Position)({
                                         Line: (int) 66,
-                                        Column: (int) 50
+                                        Column: (int) 53
                                       })
                                     })
                                   })
@@ -4538,7 +4586,10 @@
                                           Line: (int) 66,
                                           Column: (int) 29
                                         },
-                                        EndPosition: (*source.Position)(<nil>)
+                                        EndPosition: (*source.Position)({
+                                          Line: (int) 66,
+                                          Column: (int) 52
+                                        })
                                       })
                                     }),
                                     ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -4556,7 +4607,10 @@
                                         Line: (int) 66,
                                         Column: (int) 29
                                       },
-                                      EndPosition: (*source.Position)(<nil>)
+                                      EndPosition: (*source.Position)({
+                                        Line: (int) 66,
+                                        Column: (int) 52
+                                      })
                                     })
                                   }),
                                   SourceMeta: (*source.Meta)({
@@ -4566,7 +4620,7 @@
                                     },
                                     EndPosition: (*source.Position)({
                                       Line: (int) 66,
-                                      Column: (int) 50
+                                      Column: (int) 53
                                     })
                                   })
                                 })
@@ -4629,7 +4683,10 @@
                                           Line: (int) 66,
                                           Column: (int) 29
                                         },
-                                        EndPosition: (*source.Position)(<nil>)
+                                        EndPosition: (*source.Position)({
+                                          Line: (int) 66,
+                                          Column: (int) 52
+                                        })
                                       })
                                     }),
                                     ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -4647,7 +4704,10 @@
                                         Line: (int) 66,
                                         Column: (int) 29
                                       },
-                                      EndPosition: (*source.Position)(<nil>)
+                                      EndPosition: (*source.Position)({
+                                        Line: (int) 66,
+                                        Column: (int) 52
+                                      })
                                     })
                                   }),
                                   SourceMeta: (*source.Meta)({
@@ -4657,7 +4717,7 @@
                                     },
                                     EndPosition: (*source.Position)({
                                       Line: (int) 66,
-                                      Column: (int) 50
+                                      Column: (int) 53
                                     })
                                   })
                                 })
@@ -4743,7 +4803,10 @@
                                           Line: (int) 66,
                                           Column: (int) 29
                                         },
-                                        EndPosition: (*source.Position)(<nil>)
+                                        EndPosition: (*source.Position)({
+                                          Line: (int) 66,
+                                          Column: (int) 52
+                                        })
                                       })
                                     }),
                                     ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -4761,7 +4824,10 @@
                                         Line: (int) 66,
                                         Column: (int) 29
                                       },
-                                      EndPosition: (*source.Position)(<nil>)
+                                      EndPosition: (*source.Position)({
+                                        Line: (int) 66,
+                                        Column: (int) 52
+                                      })
                                     })
                                   }),
                                   SourceMeta: (*source.Meta)({
@@ -4771,7 +4837,7 @@
                                     },
                                     EndPosition: (*source.Position)({
                                       Line: (int) 66,
-                                      Column: (int) 50
+                                      Column: (int) 53
                                     })
                                   })
                                 })
@@ -5066,7 +5132,10 @@
                                           Line: (int) 66,
                                           Column: (int) 29
                                         },
-                                        EndPosition: (*source.Position)(<nil>)
+                                        EndPosition: (*source.Position)({
+                                          Line: (int) 66,
+                                          Column: (int) 52
+                                        })
                                       })
                                     }),
                                     ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -5084,7 +5153,10 @@
                                         Line: (int) 66,
                                         Column: (int) 29
                                       },
-                                      EndPosition: (*source.Position)(<nil>)
+                                      EndPosition: (*source.Position)({
+                                        Line: (int) 66,
+                                        Column: (int) 52
+                                      })
                                     })
                                   }),
                                   SourceMeta: (*source.Meta)({
@@ -5094,7 +5166,7 @@
                                     },
                                     EndPosition: (*source.Position)({
                                       Line: (int) 66,
-                                      Column: (int) 50
+                                      Column: (int) 53
                                     })
                                   })
                                 })
@@ -5680,7 +5752,10 @@
                                         Line: (int) 66,
                                         Column: (int) 29
                                       },
-                                      EndPosition: (*source.Position)(<nil>)
+                                      EndPosition: (*source.Position)({
+                                        Line: (int) 66,
+                                        Column: (int) 52
+                                      })
                                     })
                                   }),
                                   ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -5698,7 +5773,10 @@
                                       Line: (int) 66,
                                       Column: (int) 29
                                     },
-                                    EndPosition: (*source.Position)(<nil>)
+                                    EndPosition: (*source.Position)({
+                                      Line: (int) 66,
+                                      Column: (int) 52
+                                    })
                                   })
                                 }),
                                 SourceMeta: (*source.Meta)({
@@ -5708,7 +5786,7 @@
                                   },
                                   EndPosition: (*source.Position)({
                                     Line: (int) 66,
-                                    Column: (int) 50
+                                    Column: (int) 53
                                   })
                                 })
                               })
@@ -8094,7 +8172,10 @@
                                     Line: (int) 114,
                                     Column: (int) 23
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 114,
+                                    Column: (int) 33
+                                  })
                                 })
                               }),
                               Range: (*source.Range)({
@@ -8103,7 +8184,10 @@
                                     Line: (int) 114,
                                     Column: (int) 23
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 114,
+                                    Column: (int) 33
+                                  })
                                 }),
                                 End: (*source.Meta)({
                                   Position: (source.Position) {
@@ -8136,7 +8220,10 @@
                                         Line: (int) 114,
                                         Column: (int) 23
                                       },
-                                      EndPosition: (*source.Position)(<nil>)
+                                      EndPosition: (*source.Position)({
+                                        Line: (int) 114,
+                                        Column: (int) 33
+                                      })
                                     })
                                   }),
                                   Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -8149,7 +8236,10 @@
                                       Line: (int) 114,
                                       Column: (int) 23
                                     },
-                                    EndPosition: (*source.Position)(<nil>)
+                                    EndPosition: (*source.Position)({
+                                      Line: (int) 114,
+                                      Column: (int) 33
+                                    })
                                   })
                                 }),
                                 SourceMeta: (*source.Meta)({
@@ -8159,7 +8249,7 @@
                                   },
                                   EndPosition: (*source.Position)({
                                     Line: (int) 114,
-                                    Column: (int) 31
+                                    Column: (int) 34
                                   })
                                 })
                               })
@@ -8221,7 +8311,10 @@
                                       Line: (int) 114,
                                       Column: (int) 23
                                     },
-                                    EndPosition: (*source.Position)(<nil>)
+                                    EndPosition: (*source.Position)({
+                                      Line: (int) 114,
+                                      Column: (int) 33
+                                    })
                                   })
                                 }),
                                 Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -8234,7 +8327,10 @@
                                     Line: (int) 114,
                                     Column: (int) 23
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 114,
+                                    Column: (int) 33
+                                  })
                                 })
                               }),
                               SourceMeta: (*source.Meta)({
@@ -8244,7 +8340,7 @@
                                 },
                                 EndPosition: (*source.Position)({
                                   Line: (int) 114,
-                                  Column: (int) 31
+                                  Column: (int) 34
                                 })
                               })
                             })
@@ -8315,7 +8411,10 @@
                                       Line: (int) 114,
                                       Column: (int) 23
                                     },
-                                    EndPosition: (*source.Position)(<nil>)
+                                    EndPosition: (*source.Position)({
+                                      Line: (int) 114,
+                                      Column: (int) 33
+                                    })
                                   })
                                 }),
                                 Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -8328,7 +8427,10 @@
                                     Line: (int) 114,
                                     Column: (int) 23
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 114,
+                                    Column: (int) 33
+                                  })
                                 })
                               }),
                               SourceMeta: (*source.Meta)({
@@ -8338,7 +8440,7 @@
                                 },
                                 EndPosition: (*source.Position)({
                                   Line: (int) 114,
-                                  Column: (int) 31
+                                  Column: (int) 34
                                 })
                               })
                             })
@@ -8504,7 +8606,10 @@
                                       Line: (int) 114,
                                       Column: (int) 23
                                     },
-                                    EndPosition: (*source.Position)(<nil>)
+                                    EndPosition: (*source.Position)({
+                                      Line: (int) 114,
+                                      Column: (int) 33
+                                    })
                                   })
                                 }),
                                 Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -8517,7 +8622,10 @@
                                     Line: (int) 114,
                                     Column: (int) 23
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 114,
+                                    Column: (int) 33
+                                  })
                                 })
                               }),
                               SourceMeta: (*source.Meta)({
@@ -8527,7 +8635,7 @@
                                 },
                                 EndPosition: (*source.Position)({
                                   Line: (int) 114,
-                                  Column: (int) 31
+                                  Column: (int) 34
                                 })
                               })
                             })
@@ -8856,7 +8964,10 @@
                                     Line: (int) 114,
                                     Column: (int) 23
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 114,
+                                    Column: (int) 33
+                                  })
                                 })
                               }),
                               Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -8869,7 +8980,10 @@
                                   Line: (int) 114,
                                   Column: (int) 23
                                 },
-                                EndPosition: (*source.Position)(<nil>)
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 114,
+                                  Column: (int) 33
+                                })
                               })
                             }),
                             SourceMeta: (*source.Meta)({
@@ -8879,7 +8993,7 @@
                               },
                               EndPosition: (*source.Position)({
                                 Line: (int) 114,
-                                Column: (int) 31
+                                Column: (int) 34
                               })
                             })
                           })
@@ -12010,7 +12124,10 @@
                                 Line: (int) 170,
                                 Column: (int) 20
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 170,
+                                Column: (int) 45
+                              })
                             })
                           }),
                           Range: (*source.Range)({
@@ -12019,7 +12136,10 @@
                                 Line: (int) 170,
                                 Column: (int) 20
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 170,
+                                Column: (int) 45
+                              })
                             }),
                             End: (*source.Meta)(<nil>)
                           })
@@ -12038,7 +12158,10 @@
                                     Line: (int) 170,
                                     Column: (int) 20
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 170,
+                                    Column: (int) 45
+                                  })
                                 })
                               }),
                               ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -12056,7 +12179,10 @@
                                   Line: (int) 170,
                                   Column: (int) 20
                                 },
-                                EndPosition: (*source.Position)(<nil>)
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 170,
+                                  Column: (int) 45
+                                })
                               })
                             }),
                             SourceMeta: (*source.Meta)({
@@ -12066,7 +12192,7 @@
                               },
                               EndPosition: (*source.Position)({
                                 Line: (int) 170,
-                                Column: (int) 43
+                                Column: (int) 46
                               })
                             })
                           })
@@ -12114,7 +12240,10 @@
                                   Line: (int) 170,
                                   Column: (int) 20
                                 },
-                                EndPosition: (*source.Position)(<nil>)
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 170,
+                                  Column: (int) 45
+                                })
                               })
                             }),
                             ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -12132,7 +12261,10 @@
                                 Line: (int) 170,
                                 Column: (int) 20
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 170,
+                                Column: (int) 45
+                              })
                             })
                           }),
                           SourceMeta: (*source.Meta)({
@@ -12142,7 +12274,7 @@
                             },
                             EndPosition: (*source.Position)({
                               Line: (int) 170,
-                              Column: (int) 43
+                              Column: (int) 46
                             })
                           })
                         })
@@ -12199,7 +12331,10 @@
                                   Line: (int) 170,
                                   Column: (int) 20
                                 },
-                                EndPosition: (*source.Position)(<nil>)
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 170,
+                                  Column: (int) 45
+                                })
                               })
                             }),
                             ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -12217,7 +12352,10 @@
                                 Line: (int) 170,
                                 Column: (int) 20
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 170,
+                                Column: (int) 45
+                              })
                             })
                           }),
                           SourceMeta: (*source.Meta)({
@@ -12227,7 +12365,7 @@
                             },
                             EndPosition: (*source.Position)({
                               Line: (int) 170,
-                              Column: (int) 43
+                              Column: (int) 46
                             })
                           })
                         })
@@ -12397,7 +12535,10 @@
                                 Line: (int) 170,
                                 Column: (int) 20
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 170,
+                                Column: (int) 45
+                              })
                             })
                           }),
                           ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -12415,7 +12556,10 @@
                               Line: (int) 170,
                               Column: (int) 20
                             },
-                            EndPosition: (*source.Position)(<nil>)
+                            EndPosition: (*source.Position)({
+                              Line: (int) 170,
+                              Column: (int) 45
+                            })
                           })
                         }),
                         SourceMeta: (*source.Meta)({
@@ -12425,7 +12569,7 @@
                           },
                           EndPosition: (*source.Position)({
                             Line: (int) 170,
-                            Column: (int) 43
+                            Column: (int) 46
                           })
                         })
                       })
@@ -12906,7 +13050,10 @@
                                     Line: (int) 114,
                                     Column: (int) 23
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 114,
+                                    Column: (int) 33
+                                  })
                                 })
                               }),
                               Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -12919,7 +13066,10 @@
                                   Line: (int) 114,
                                   Column: (int) 23
                                 },
-                                EndPosition: (*source.Position)(<nil>)
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 114,
+                                  Column: (int) 33
+                                })
                               })
                             }),
                             SourceMeta: (*source.Meta)({
@@ -12929,7 +13079,7 @@
                               },
                               EndPosition: (*source.Position)({
                                 Line: (int) 114,
-                                Column: (int) 31
+                                Column: (int) 34
                               })
                             })
                           })
@@ -13557,7 +13707,10 @@
                                         Line: (int) 66,
                                         Column: (int) 29
                                       },
-                                      EndPosition: (*source.Position)(<nil>)
+                                      EndPosition: (*source.Position)({
+                                        Line: (int) 66,
+                                        Column: (int) 52
+                                      })
                                     })
                                   }),
                                   ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -13575,7 +13728,10 @@
                                       Line: (int) 66,
                                       Column: (int) 29
                                     },
-                                    EndPosition: (*source.Position)(<nil>)
+                                    EndPosition: (*source.Position)({
+                                      Line: (int) 66,
+                                      Column: (int) 52
+                                    })
                                   })
                                 }),
                                 SourceMeta: (*source.Meta)({
@@ -13585,7 +13741,7 @@
                                   },
                                   EndPosition: (*source.Position)({
                                     Line: (int) 66,
-                                    Column: (int) 50
+                                    Column: (int) 53
                                   })
                                 })
                               })
@@ -13863,7 +14019,10 @@
                                 Line: (int) 170,
                                 Column: (int) 20
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 170,
+                                Column: (int) 45
+                              })
                             })
                           }),
                           ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -13881,7 +14040,10 @@
                               Line: (int) 170,
                               Column: (int) 20
                             },
-                            EndPosition: (*source.Position)(<nil>)
+                            EndPosition: (*source.Position)({
+                              Line: (int) 170,
+                              Column: (int) 45
+                            })
                           })
                         }),
                         SourceMeta: (*source.Meta)({
@@ -13891,7 +14053,7 @@
                           },
                           EndPosition: (*source.Position)({
                             Line: (int) 170,
-                            Column: (int) 43
+                            Column: (int) 46
                           })
                         })
                       })
@@ -15108,7 +15270,10 @@
                                   Line: (int) 114,
                                   Column: (int) 23
                                 },
-                                EndPosition: (*source.Position)(<nil>)
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 114,
+                                  Column: (int) 33
+                                })
                               })
                             }),
                             Child: (*substitutions.SubstitutionChild)(<nil>),
@@ -15121,7 +15286,10 @@
                                 Line: (int) 114,
                                 Column: (int) 23
                               },
-                              EndPosition: (*source.Position)(<nil>)
+                              EndPosition: (*source.Position)({
+                                Line: (int) 114,
+                                Column: (int) 33
+                              })
                             })
                           }),
                           SourceMeta: (*source.Meta)({
@@ -15131,7 +15299,7 @@
                             },
                             EndPosition: (*source.Position)({
                               Line: (int) 114,
-                              Column: (int) 31
+                              Column: (int) 34
                             })
                           })
                         })
@@ -15759,7 +15927,10 @@
                                       Line: (int) 66,
                                       Column: (int) 29
                                     },
-                                    EndPosition: (*source.Position)(<nil>)
+                                    EndPosition: (*source.Position)({
+                                      Line: (int) 66,
+                                      Column: (int) 52
+                                    })
                                   })
                                 }),
                                 ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -15777,7 +15948,10 @@
                                     Line: (int) 66,
                                     Column: (int) 29
                                   },
-                                  EndPosition: (*source.Position)(<nil>)
+                                  EndPosition: (*source.Position)({
+                                    Line: (int) 66,
+                                    Column: (int) 52
+                                  })
                                 })
                               }),
                               SourceMeta: (*source.Meta)({
@@ -15787,7 +15961,7 @@
                                 },
                                 EndPosition: (*source.Position)({
                                   Line: (int) 66,
-                                  Column: (int) 50
+                                  Column: (int) 53
                                 })
                               })
                             })
@@ -16065,7 +16239,10 @@
                               Line: (int) 170,
                               Column: (int) 20
                             },
-                            EndPosition: (*source.Position)(<nil>)
+                            EndPosition: (*source.Position)({
+                              Line: (int) 170,
+                              Column: (int) 45
+                            })
                           })
                         }),
                         ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -16083,7 +16260,10 @@
                             Line: (int) 170,
                             Column: (int) 20
                           },
-                          EndPosition: (*source.Position)(<nil>)
+                          EndPosition: (*source.Position)({
+                            Line: (int) 170,
+                            Column: (int) 45
+                          })
                         })
                       }),
                       SourceMeta: (*source.Meta)({
@@ -16093,7 +16273,7 @@
                         },
                         EndPosition: (*source.Position)({
                           Line: (int) 170,
-                          Column: (int) 43
+                          Column: (int) 46
                         })
                       })
                     })
@@ -16811,7 +16991,10 @@
                               Line: (int) 22,
                               Column: (int) 17
                             },
-                            EndPosition: (*source.Position)(<nil>)
+                            EndPosition: (*source.Position)({
+                              Line: (int) 22,
+                              Column: (int) 38
+                            })
                           })
                         }),
                         ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
@@ -16829,7 +17012,10 @@
                             Line: (int) 22,
                             Column: (int) 17
                           },
-                          EndPosition: (*source.Position)(<nil>)
+                          EndPosition: (*source.Position)({
+                            Line: (int) 22,
+                            Column: (int) 38
+                          })
                         })
                       }),
                       SourceMeta: (*source.Meta)({
@@ -16839,7 +17025,7 @@
                         },
                         EndPosition: (*source.Position)({
                           Line: (int) 22,
-                          Column: (int) 36
+                          Column: (int) 39
                         })
                       })
                     })

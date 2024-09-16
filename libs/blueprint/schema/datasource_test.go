@@ -199,15 +199,27 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c 
 						SubstitutionValue: &substitutions.Substitution{
 							Variable: &substitutions.SubstitutionVariable{
 								VariableName: "environment",
-								SourceMeta: &source.Meta{Position: source.Position{
+								SourceMeta: &source.Meta{
+									Position: source.Position{
+										Line:   3,
+										Column: 11,
+									},
+									EndPosition: &source.Position{
+										Line:   3,
+										Column: 32,
+									},
+								},
+							},
+							SourceMeta: &source.Meta{
+								Position: source.Position{
 									Line:   3,
 									Column: 11,
-								}},
+								},
+								EndPosition: &source.Position{
+									Line:   3,
+									Column: 32,
+								},
 							},
-							SourceMeta: &source.Meta{Position: source.Position{
-								Line:   3,
-								Column: 11,
-							}},
 						},
 						SourceMeta: &source.Meta{
 							Position: source.Position{
@@ -216,7 +228,7 @@ func (s *DataSourceTestSuite) Test_parses_valid_data_source_filter_yaml_input(c 
 							},
 							EndPosition: &source.Position{
 								Line:   3,
-								Column: 30,
+								Column: 33,
 							},
 						},
 					},

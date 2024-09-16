@@ -53,19 +53,28 @@ func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml(c *C) {
 			Values: []*substitutions.StringOrSubstitution{
 				{
 					StringValue: &testStringValPart,
-					SourceMeta:  &source.Meta{Position: source.Position{Line: 1, Column: 1}},
+					SourceMeta: &source.Meta{
+						Position:    source.Position{Line: 1, Column: 1},
+						EndPosition: &source.Position{Line: 1, Column: 23},
+					},
 				},
 				{
 					SubstitutionValue: &substitutions.Substitution{
 						Variable: &substitutions.SubstitutionVariable{
 							VariableName: "environment",
-							SourceMeta:   &source.Meta{Position: source.Position{Line: 1, Column: 25}},
+							SourceMeta: &source.Meta{
+								Position:    source.Position{Line: 1, Column: 25},
+								EndPosition: &source.Position{Line: 1, Column: 46},
+							},
 						},
-						SourceMeta: &source.Meta{Position: source.Position{Line: 1, Column: 25}},
+						SourceMeta: &source.Meta{
+							Position:    source.Position{Line: 1, Column: 25},
+							EndPosition: &source.Position{Line: 1, Column: 46},
+						},
 					},
 					SourceMeta: &source.Meta{
 						Position:    source.Position{Line: 1, Column: 23},
-						EndPosition: &source.Position{Line: 1, Column: 44},
+						EndPosition: &source.Position{Line: 1, Column: 47},
 					},
 				},
 			},
@@ -74,7 +83,9 @@ func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml(c *C) {
 				EndPosition: &source.Position{Line: 1, Column: 47},
 			},
 		},
-		SourceMeta: &source.Meta{Position: source.Position{Line: 1, Column: 1}},
+		SourceMeta: &source.Meta{
+			Position: source.Position{Line: 1, Column: 1},
+		},
 	})
 }
 
@@ -141,19 +152,28 @@ func assertFieldsNodeYAML(c *C, actual *MappingNode) {
 					Values: []*substitutions.StringOrSubstitution{
 						{
 							StringValue: &expectedStrSubPrefix,
-							SourceMeta:  &source.Meta{Position: source.Position{Line: 3, Column: 15}},
+							SourceMeta: &source.Meta{
+								Position:    source.Position{Line: 3, Column: 15},
+								EndPosition: &source.Position{Line: 3, Column: 30},
+							},
 						},
 						{
 							SubstitutionValue: &substitutions.Substitution{
 								Variable: &substitutions.SubstitutionVariable{
 									VariableName: "environment",
-									SourceMeta:   &source.Meta{Position: source.Position{Line: 3, Column: 32}},
+									SourceMeta: &source.Meta{
+										Position:    source.Position{Line: 3, Column: 32},
+										EndPosition: &source.Position{Line: 3, Column: 53},
+									},
 								},
-								SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 32}},
+								SourceMeta: &source.Meta{
+									Position:    source.Position{Line: 3, Column: 32},
+									EndPosition: &source.Position{Line: 3, Column: 53},
+								},
 							},
 							SourceMeta: &source.Meta{
 								Position:    source.Position{Line: 3, Column: 30},
-								EndPosition: &source.Position{Line: 3, Column: 51},
+								EndPosition: &source.Position{Line: 3, Column: 54},
 							},
 						},
 					},
@@ -249,19 +269,28 @@ func assertItemsNodeYAML(c *C, actual *MappingNode) {
 					Values: []*substitutions.StringOrSubstitution{
 						{
 							StringValue: &expectedStrSubPrefix,
-							SourceMeta:  &source.Meta{Position: source.Position{Line: 3, Column: 11}},
+							SourceMeta: &source.Meta{
+								Position:    source.Position{Line: 3, Column: 11},
+								EndPosition: &source.Position{Line: 3, Column: 26},
+							},
 						},
 						{
 							SubstitutionValue: &substitutions.Substitution{
 								Variable: &substitutions.SubstitutionVariable{
 									VariableName: "environment",
-									SourceMeta:   &source.Meta{Position: source.Position{Line: 3, Column: 28}},
+									SourceMeta: &source.Meta{
+										Position:    source.Position{Line: 3, Column: 28},
+										EndPosition: &source.Position{Line: 3, Column: 49},
+									},
 								},
-								SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 28}},
+								SourceMeta: &source.Meta{
+									Position:    source.Position{Line: 3, Column: 28},
+									EndPosition: &source.Position{Line: 3, Column: 49},
+								},
 							},
 							SourceMeta: &source.Meta{
 								Position:    source.Position{Line: 3, Column: 26},
-								EndPosition: &source.Position{Line: 3, Column: 47},
+								EndPosition: &source.Position{Line: 3, Column: 50},
 							},
 						},
 					},
@@ -438,19 +467,28 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 							Values: []*substitutions.StringOrSubstitution{
 								{
 									StringValue: &expectedStrSubPrefix,
-									SourceMeta:  &source.Meta{Position: source.Position{Line: 7, Column: 14}},
+									SourceMeta: &source.Meta{
+										Position:    source.Position{Line: 7, Column: 14},
+										EndPosition: &source.Position{Line: 7, Column: 31},
+									},
 								},
 								{
 									SubstitutionValue: &substitutions.Substitution{
 										Variable: &substitutions.SubstitutionVariable{
 											VariableName: "environment",
-											SourceMeta:   &source.Meta{Position: source.Position{Line: 7, Column: 33}},
+											SourceMeta: &source.Meta{
+												Position:    source.Position{Line: 7, Column: 33},
+												EndPosition: &source.Position{Line: 7, Column: 54},
+											},
 										},
-										SourceMeta: &source.Meta{Position: source.Position{Line: 7, Column: 33}},
+										SourceMeta: &source.Meta{
+											Position:    source.Position{Line: 7, Column: 33},
+											EndPosition: &source.Position{Line: 7, Column: 54},
+										},
 									},
 									SourceMeta: &source.Meta{
 										Position:    source.Position{Line: 7, Column: 31},
-										EndPosition: &source.Position{Line: 7, Column: 52},
+										EndPosition: &source.Position{Line: 7, Column: 55},
 									},
 								},
 							},

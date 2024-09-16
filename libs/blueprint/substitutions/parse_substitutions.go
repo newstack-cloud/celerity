@@ -211,6 +211,18 @@ func createStringValSourceMeta(state *interpolationParseState, stringVal string)
 			Line:   toAbsLine(parentLine, state.relativeLineInfo.Line),
 			Column: column,
 		},
+		EndPosition: &source.Position{
+			Line: toAbsLine(parentLine, state.relativeLineInfo.Line),
+			Column: toAbsColumn(
+				parentCol,
+				// Subtract 1 to account for the "$" code point in the "${"
+				// indicating a potential start of a substitution that leads
+				// to us taking the previous string value as a string literal.
+				state.relativeLineInfo.Column-1,
+				state.relativeLineInfo.Line == 0,
+				state.ignoreParentColumn,
+			),
+		},
 	}
 }
 
@@ -264,23 +276,13 @@ func createSubstitutionSourceMeta(state *interpolationParseState) *source.Meta {
 		parentLine = state.parentSourceStart.Line
 	}
 
-	parentCol := 1
-	if state.parentSourceStart != nil {
-		// Subtract 2 to account for "${" that allows accurate column position reporting
-		// for the wrapper Substitution nodes at the top level of parsing
-		// a substitution.
-		// For example, if there is an error with the substitution as a whole, the column
-		// reported should be the start of the "${" that wraps the substitution.
-		// This would be reflected to the user by something like
-		// range highlighting in an editor.
-		parentCol = state.parentSourceStart.Column - 2
-	}
+	parentStartCol := toFinalParentStartCol(state.parentSourceStart)
 
 	return &source.Meta{
 		Position: source.Position{
 			Line: toAbsLine(parentLine, state.relativeSubStart.Line),
 			Column: toAbsColumn(
-				parentCol,
+				parentStartCol,
 				state.relativeSubStart.Column,
 				state.relativeSubStart.Line == 0,
 				state.ignoreParentColumn,
@@ -289,13 +291,37 @@ func createSubstitutionSourceMeta(state *interpolationParseState) *source.Meta {
 		EndPosition: &source.Position{
 			Line: toAbsLine(parentLine, state.relativeLineInfo.Line),
 			Column: toAbsColumn(
-				parentCol,
-				state.relativeLineInfo.Column,
+				parentStartCol,
+				toFinalEndCol(state.parentSourceStart, state.relativeLineInfo.Column),
 				state.relativeLineInfo.Line == 0,
 				state.ignoreParentColumn,
 			),
 		},
 	}
+}
+
+func toFinalParentStartCol(parentSourceStart *source.Meta) int {
+	parentStartCol := 1
+	if parentSourceStart != nil {
+		// Subtract 2 to account for "${" that allows accurate column position reporting
+		// for the wrapper Substitution nodes at the top level of parsing
+		// a substitution.
+		// For example, if there is an error with the substitution as a whole, the column
+		// reported should be the start of the "${" that wraps the substitution.
+		// This would be reflected to the user by something like
+		// range highlighting in an editor.
+		parentStartCol = parentSourceStart.Column - 2
+	}
+	return parentStartCol
+}
+
+func toFinalEndCol(parentSourceStart *source.Meta, relativeLineInfoCol int) int {
+	if parentSourceStart != nil {
+		// Add 3 to include the "${" deducted from the parent start column
+		// and include the closing "}" of the substitution.
+		return relativeLineInfoCol + 3
+	}
+	return relativeLineInfoCol
 }
 
 func toAbsSourceMeta(parentSourceStart, relativeSubStart *source.Meta, ignoreParentColumn bool) *source.Meta {

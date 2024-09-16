@@ -3,6 +3,7 @@ package substitutions
 import (
 	"fmt"
 	"strconv"
+	"unicode/utf8"
 
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
@@ -802,7 +803,13 @@ func (p *Parser) advance() *token {
 
 func (p *Parser) peek() *token {
 	if p.isAtEnd() {
-		return &token{tokenType: tokenEOF}
+		// Provide an EOF token with accurate line and column information.
+		prev := p.previous()
+		return &token{
+			tokenType:    tokenEOF,
+			relativeLine: prev.relativeLine,
+			relativeCol:  prev.relativeCol + getTokenCharCount(prev),
+		}
 	}
 	return p.tokens[p.pos]
 }
@@ -844,15 +851,33 @@ func (p *Parser) popPos() {
 	}
 }
 
-func (p *Parser) sourceMeta(token *token) *source.Meta {
+func (p *Parser) sourceMeta(tkn *token) *source.Meta {
 	if !p.outputLineInfo {
 		return nil
 	}
 
-	if token == nil {
+	if tkn == nil {
 		return nil
 	}
 
+	line, col := p.getOutputLineAndColumn(tkn)
+
+	endToken := p.peek()
+	endLine, endCol := p.getOutputLineAndColumn(endToken)
+
+	return &source.Meta{
+		Position: source.Position{
+			Line:   line,
+			Column: col,
+		},
+		EndPosition: &source.Position{
+			Line:   endLine,
+			Column: endCol,
+		},
+	}
+}
+
+func (p *Parser) getOutputLineAndColumn(token *token) (int, int) {
 	line := token.relativeLine + 1
 	if p.parentSourceStart != nil {
 		line = token.relativeLine + p.parentSourceStart.Line
@@ -863,12 +888,7 @@ func (p *Parser) sourceMeta(token *token) *source.Meta {
 		col = token.relativeCol + p.parentSourceStart.Column
 	}
 
-	return &source.Meta{
-		Position: source.Position{
-			Line:   line,
-			Column: col,
-		},
-	}
+	return line, col
 }
 
 func (p *Parser) determineColumnAccuracy() ColumnAccuracy {
@@ -883,4 +903,13 @@ func (p *Parser) determineColumnAccuracy() ColumnAccuracy {
 	}
 
 	return ColumnAccuracyExact
+}
+
+func getTokenCharCount(tkn *token) int {
+	switch tkn.tokenType {
+	case tokenStringLiteral, tokenNameStringLiteral:
+		return utf8.RuneCountInString(tkn.value) + 2
+	default:
+		return utf8.RuneCountInString(tkn.value)
+	}
 }

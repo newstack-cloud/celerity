@@ -97,15 +97,27 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 								FieldName: "enabled",
 							},
 						},
-						SourceMeta: &source.Meta{Position: source.Position{
+						SourceMeta: &source.Meta{
+							Position: source.Position{
+								Line:   2,
+								Column: 10,
+							},
+							EndPosition: &source.Position{
+								Line:   2,
+								Column: 49,
+							},
+						},
+					},
+					SourceMeta: &source.Meta{
+						Position: source.Position{
 							Line:   2,
 							Column: 10,
-						}},
+						},
+						EndPosition: &source.Position{
+							Line:   2,
+							Column: 49,
+						},
 					},
-					SourceMeta: &source.Meta{Position: source.Position{
-						Line:   2,
-						Column: 10,
-					}},
 				},
 				SourceMeta: &source.Meta{
 					Position: source.Position{
@@ -114,7 +126,7 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 					},
 					EndPosition: &source.Position{
 						Line:   2,
-						Column: 47,
+						Column: 50,
 					},
 				},
 			},
