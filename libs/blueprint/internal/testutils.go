@@ -53,6 +53,16 @@ func (f *FunctionRegistryMock) GetDefinition(
 	return defOutput, nil
 }
 
+func (r *FunctionRegistryMock) ListFunctions(
+	ctx context.Context,
+) ([]string, error) {
+	functions := make([]string, 0, len(r.Functions))
+	for function := range r.Functions {
+		functions = append(functions, function)
+	}
+	return functions, nil
+}
+
 func (f *FunctionRegistryMock) HasFunction(ctx context.Context, functionName string) (bool, error) {
 	_, ok := f.Functions[functionName]
 	return ok, nil

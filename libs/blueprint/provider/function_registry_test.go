@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"slices"
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
@@ -83,6 +84,31 @@ func (s *FunctionRegistryTestSuite) Test_has_function(c *C) {
 	hasFunc, err = s.funcRegistry.HasFunction(context.TODO(), "test_substr_not_exist")
 	c.Assert(err, IsNil)
 	c.Assert(hasFunc, Equals, false)
+}
+
+func (s *FunctionRegistryTestSuite) Test_list_functions(c *C) {
+	functions, err := s.funcRegistry.ListFunctions(
+		context.TODO(),
+	)
+	c.Assert(err, IsNil)
+
+	containsTestExampleDataSource := slices.Contains(
+		functions,
+		"test_substr",
+	)
+	c.Assert(containsTestExampleDataSource, Equals, true)
+
+	// Second time should be cached and produce the same result.
+	functionsCached, err := s.funcRegistry.ListFunctions(
+		context.TODO(),
+	)
+	c.Assert(err, IsNil)
+
+	containsCachedTestSubstr := slices.Contains(
+		functionsCached,
+		"test_substr",
+	)
+	c.Assert(containsCachedTestSubstr, Equals, true)
 }
 
 func (s *FunctionRegistryTestSuite) Test_duplicate_function_conflict(c *C) {

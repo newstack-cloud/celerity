@@ -804,11 +804,18 @@ func (p *Parser) advance() *token {
 func (p *Parser) peek() *token {
 	if p.isAtEnd() {
 		// Provide an EOF token with accurate line and column information.
-		prev := p.previous()
+		if p.pos > 0 {
+			prev := p.previous()
+			return &token{
+				tokenType:    tokenEOF,
+				relativeLine: prev.relativeLine,
+				relativeCol:  prev.relativeCol + getTokenCharCount(prev),
+			}
+		}
 		return &token{
 			tokenType:    tokenEOF,
-			relativeLine: prev.relativeLine,
-			relativeCol:  prev.relativeCol + getTokenCharCount(prev),
+			relativeLine: 0,
+			relativeCol:  0,
 		}
 	}
 	return p.tokens[p.pos]

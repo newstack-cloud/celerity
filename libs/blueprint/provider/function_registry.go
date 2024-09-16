@@ -16,6 +16,7 @@ import (
 type FunctionRegistry interface {
 	// Call allows calling a function in the registry by name.
 	Call(ctx context.Context, functionName string, input *FunctionCallInput) (*FunctionCallOutput, error)
+
 	// GetDefinition returns the definition of a function
 	// in the registry that includes allowed parameters and return types.
 	GetDefinition(
@@ -23,14 +24,20 @@ type FunctionRegistry interface {
 		functionName string,
 		input *FunctionGetDefinitionInput,
 	) (*FunctionGetDefinitionOutput, error)
+
 	// HasFunction checks if a function is available in the registry.
 	HasFunction(ctx context.Context, functionName string) (bool, error)
+
+	// ListFunctions retrieves a list of all the functions avaiable
+	// in the registry.
+	ListFunctions(ctx context.Context) ([]string, error)
 }
 
 type functionRegistryFromProviders struct {
 	providers             map[string]Provider
 	functionProviderCache map[string]Provider
 	functionCache         map[string]Function
+	functionNames         []string
 	callStack             function.Stack
 }
 
@@ -44,6 +51,7 @@ func NewFunctionRegistry(
 		providers:             providers,
 		functionProviderCache: map[string]Provider{},
 		functionCache:         map[string]Function{},
+		functionNames:         []string{},
 		callStack:             function.NewStack(),
 	}
 }
@@ -93,6 +101,26 @@ func (r *functionRegistryFromProviders) HasFunction(ctx context.Context, functio
 		return false, err
 	}
 	return functionImpl != nil, nil
+}
+
+func (r *functionRegistryFromProviders) ListFunctions(ctx context.Context) ([]string, error) {
+	if len(r.functionNames) > 0 {
+		return r.functionNames, nil
+	}
+
+	functionNames := []string{}
+	for _, provider := range r.providers {
+		functions, err := provider.ListFunctions(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		functionNames = append(functionNames, functions...)
+	}
+
+	r.functionNames = functionNames
+
+	return functionNames, nil
 }
 
 func (r *functionRegistryFromProviders) getFunction(ctx context.Context, functionName string) (Function, error) {
