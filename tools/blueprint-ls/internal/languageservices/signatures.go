@@ -93,7 +93,7 @@ func findFunctionAtPosition(
 	}
 
 	subFunc := (*substitutions.SubstitutionFunctionExpr)(nil)
-	if containsLSPPoint(tree.Range, pos) {
+	if containsLSPPoint(tree.Range, pos, 0 /* columnLeeway */) {
 		var isParentSubFunc bool
 		subFunc, isParentSubFunc = tree.SchemaElement.(*substitutions.SubstitutionFunctionExpr)
 		if isParentSubFunc && len(tree.Children) == 0 {

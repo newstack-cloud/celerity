@@ -54,6 +54,7 @@ func main() {
 		resourceRegistry,
 		dataSourceRegistry,
 		customVarTypeRegistry,
+		functionRegistry,
 		state,
 		logger,
 	)

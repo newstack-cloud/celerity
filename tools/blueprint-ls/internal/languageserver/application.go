@@ -72,6 +72,7 @@ func (a *Application) Setup() {
 		lsp.WithCompletionHandler(a.handleCompletion),
 		lsp.WithCompletionItemResolveHandler(a.handleCompletionItemResolve),
 		lsp.WithDocumentSymbolHandler(a.handleDocumentSymbols),
+		lsp.WithGotoDefinitionHandler(a.handleGotoDefinition),
 	)
 }
 

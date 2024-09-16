@@ -57,7 +57,7 @@ func (s *HoverService) GetHoverContent(
 	// The last element in the collected list is the element with the shortest
 	// range that contains the position.
 	collected := []*schema.TreeNode{}
-	collectElementsAtPosition(tree, params.Position, s.logger, &collected)
+	collectElementsAtPosition(tree, params.Position, s.logger, &collected, 0 /* columnLeeway */)
 
 	return s.getHoverElementContent(
 		ctx,

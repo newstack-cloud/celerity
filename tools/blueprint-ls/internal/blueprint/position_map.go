@@ -23,7 +23,7 @@ import (
 func CreatePositionMap(tree *schema.TreeNode) map[string][]*schema.TreeNode {
 	positionMap := map[string][]*schema.TreeNode{}
 	populatePositionMap(tree, positionMap)
-	return map[string][]*schema.TreeNode{}
+	return positionMap
 }
 
 func populatePositionMap(
@@ -50,7 +50,7 @@ func populatePositionMap(
 // This produces a key of the form `line:column`.
 // If the provided source meta struct is nil, `1:1`
 // is returned.
-func PositionKey(pos *source.Meta) string {
+func PositionKey(pos *source.Position) string {
 	if pos == nil {
 		return "1:1"
 	}

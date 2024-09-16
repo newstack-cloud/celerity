@@ -7,25 +7,31 @@ import (
 	"go.uber.org/zap"
 )
 
-func containsLSPPoint(bpRange *source.Range, lspPos lsp.Position) bool {
-	bpPos := &source.Meta{
+func containsLSPPoint(bpRange *source.Range, lspPos lsp.Position, columnLeeway int) bool {
+	bpPos := &source.Position{
 		Line:   int(lspPos.Line + 1),
 		Column: int(lspPos.Character + 1),
 	}
 
 	if bpRange.End == nil {
 		return bpPos.Line > bpRange.Start.Line ||
-			(bpPos.Line == bpRange.Start.Line && bpPos.Column >= bpRange.Start.Column)
+			(bpPos.Line == bpRange.Start.Line && bpPos.Column >= bpRange.Start.Column-columnLeeway)
+	}
+
+	// Check in range on single line.
+	if bpPos.Line == bpRange.Start.Line && bpPos.Line == bpRange.End.Line {
+		return bpPos.Column >= bpRange.Start.Column-columnLeeway &&
+			bpPos.Column <= bpRange.End.Column+columnLeeway
 	}
 
 	// Check in range on start line.
 	if bpPos.Line == bpRange.Start.Line {
-		return bpPos.Column >= bpRange.Start.Column
+		return bpPos.Column >= bpRange.Start.Column-columnLeeway
 	}
 
 	// Check in range on end line.
 	if bpPos.Line == bpRange.End.Line {
-		return bpPos.Column <= bpRange.End.Column
+		return bpPos.Column <= bpRange.End.Column+columnLeeway
 	}
 
 	// Check in range across multiple lines.
@@ -54,6 +60,7 @@ func collectElementsAtPosition(
 	pos lsp.Position,
 	logger *zap.Logger,
 	collected *[]*schema.TreeNode,
+	columnLeeway int,
 ) {
 	if tree == nil {
 		return
@@ -65,7 +72,7 @@ func collectElementsAtPosition(
 		zap.Any("range", tree.Range),
 		zap.Any("pos", pos),
 	)
-	if containsLSPPoint(tree.Range, pos) {
+	if containsLSPPoint(tree.Range, pos, columnLeeway) {
 		logger.Debug(
 			"collectElementsAtPosition: found element",
 			zap.String("path", tree.Path),
@@ -75,7 +82,7 @@ func collectElementsAtPosition(
 		*collected = append(*collected, tree)
 		i := 0
 		for i < len(tree.Children) {
-			collectElementsAtPosition(tree.Children[i], pos, logger, collected)
+			collectElementsAtPosition(tree.Children[i], pos, logger, collected, columnLeeway)
 			i += 1
 		}
 	}

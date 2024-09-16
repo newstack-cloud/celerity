@@ -4,6 +4,8 @@ import (
 	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
 	"gopkg.in/yaml.v3"
 )
@@ -182,6 +184,36 @@ func (s *State) GetDocumentTree(uri string) *schema.TreeNode {
 	}
 
 	return tree
+}
+
+// SetDocumentPositionMap sets the document position map for a document by its URI.
+// This maps positions in the document to nodes in the document tree.
+func (s *State) SetDocumentPositionMap(uri string, positionMap map[string][]*schema.TreeNode) {
+	if positionMap == nil {
+		return
+	}
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.documentPositionMaps[uri] = positionMap
+}
+
+// GetDocumentPositionMapNodes retrieves the nodes in the document tree for a document by its URI
+// at a given position.
+func (s *State) GetDocumentPositionNodes(uri string, position *source.Position) []*schema.TreeNode {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	positionMap, ok := s.documentPositionMaps[uri]
+	if !ok {
+		return nil
+	}
+
+	nodes, ok := positionMap[blueprint.PositionKey(position)]
+	if !ok {
+		return nil
+	}
+
+	return nodes
 }
 
 // GetDocumentSettings retrieves the settings for a document by its URI.

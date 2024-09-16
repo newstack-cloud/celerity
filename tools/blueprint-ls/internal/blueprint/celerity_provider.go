@@ -172,6 +172,16 @@ func (r *celerityHandlerResource) GetSpecDefinition(
 						Description: "The runtime that the handler uses.",
 						Type:        provider.ResourceDefinitionsSchemaTypeString,
 					},
+					"info": {
+						Description: "Additional information about the handler.",
+						Type:        provider.ResourceDefinitionsSchemaTypeObject,
+						Attributes: map[string]*provider.ResourceDefinitionsSchema{
+							"applicationId": {
+								Description: "The ID of the application that the handler is part of.",
+								Type:        provider.ResourceDefinitionsSchemaTypeString,
+							},
+						},
+					},
 				},
 			},
 		},

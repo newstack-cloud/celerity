@@ -3,6 +3,7 @@ package languageservices
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
@@ -48,7 +49,14 @@ func (s *SymbolService) GetDocumentSymbols(
 
 	lines := strings.Split(strings.ReplaceAll(content, "\r\n", "\n"), "\n")
 	numberOfLines := len(lines)
-	s.collectDocumentSymbols("document", yamlNode, &symbols, nil, numberOfLines)
+	s.collectDocumentSymbols(
+		"document",
+		yamlNode,
+		&symbols,
+		/* next */ nil,
+		/* mappingKeyNode */ nil,
+		numberOfLines,
+	)
 
 	return symbols, nil
 }
@@ -58,10 +66,11 @@ func (s *SymbolService) collectDocumentSymbols(
 	node *yaml.Node,
 	symbols *[]lsp.DocumentSymbol,
 	next *yaml.Node,
+	mappingKeyNode *yaml.Node,
 	numberOfLinesInDocument int,
 ) {
 	if node.Kind == yaml.DocumentNode {
-		symbolRange := yamlNodeToLSPRange(node, nil)
+		symbolRange := yamlNodeToLSPRange(node, nil, nil)
 		symbolRange.End.Line = lsp.UInteger(numberOfLinesInDocument)
 		symbol := lsp.DocumentSymbol{
 			Name:           name,
@@ -80,6 +89,7 @@ func (s *SymbolService) collectDocumentSymbols(
 				child,
 				&symbol.Children,
 				childNext,
+				nil,
 				numberOfLinesInDocument,
 			)
 		}
@@ -88,17 +98,12 @@ func (s *SymbolService) collectDocumentSymbols(
 	}
 
 	if node.Kind == yaml.MappingNode {
-		symbolRange := yamlNodeToLSPRange(node, next)
-		if next == nil {
-			symbolRange.End.Line = lsp.UInteger(numberOfLinesInDocument)
-		}
+		symbolRange := yamlNodeToLSPRange(node, next, mappingKeyNode)
 
 		symbol := lsp.DocumentSymbol{
-			Name:           name,
-			Kind:           lsp.SymbolKindObject,
-			Range:          symbolRange,
-			SelectionRange: symbolRange,
-			Children:       []lsp.DocumentSymbol{},
+			Name:     name,
+			Kind:     lsp.SymbolKindObject,
+			Children: []lsp.DocumentSymbol{},
 		}
 
 		for i := 0; i < len(node.Content); i += 2 {
@@ -115,26 +120,32 @@ func (s *SymbolService) collectDocumentSymbols(
 				value,
 				&symbol.Children,
 				childNext,
+				key,
 				numberOfLinesInDocument,
 			)
 		}
+
+		if len(symbol.Children) > 0 {
+			lastChild := symbol.Children[len(symbol.Children)-1]
+			symbolRange.End = lastChild.Range.End
+		} else if next == nil {
+			symbolRange.End.Line = lsp.UInteger(numberOfLinesInDocument)
+		}
+
+		symbol.Range = symbolRange
+		symbol.SelectionRange = symbolRange
 
 		*symbols = append(*symbols, symbol)
 		return
 	}
 
 	if node.Kind == yaml.SequenceNode {
-		symbolRange := yamlNodeToLSPRange(node, next)
-		if next == nil {
-			symbolRange.End.Line = lsp.UInteger(numberOfLinesInDocument)
-		}
+		symbolRange := yamlNodeToLSPRange(node, next, mappingKeyNode)
 
 		symbol := lsp.DocumentSymbol{
-			Name:           name,
-			Kind:           lsp.SymbolKindArray,
-			Range:          symbolRange,
-			SelectionRange: symbolRange,
-			Children:       []lsp.DocumentSymbol{},
+			Name:     name,
+			Kind:     lsp.SymbolKindArray,
+			Children: []lsp.DocumentSymbol{},
 		}
 
 		for i := 0; i < len(node.Content); i += 1 {
@@ -150,19 +161,28 @@ func (s *SymbolService) collectDocumentSymbols(
 				item,
 				&symbol.Children,
 				childNext,
+				nil,
 				numberOfLinesInDocument,
 			)
 		}
+
+		if len(symbol.Children) > 0 {
+			lastChild := symbol.Children[len(symbol.Children)-1]
+			symbolRange.End = lastChild.Range.End
+		} else if next == nil {
+			symbolRange.End.Line = lsp.UInteger(numberOfLinesInDocument)
+		}
+
+		symbol.Range = symbolRange
+		symbol.SelectionRange = symbolRange
 
 		*symbols = append(*symbols, symbol)
 		return
 	}
 
 	if node.Kind == yaml.ScalarNode {
-		symbolRange := yamlNodeToLSPRange(node, next)
-		if next == nil {
-			symbolRange.End.Line = lsp.UInteger(numberOfLinesInDocument)
-		}
+		s.logger.Debug("Adding scalar symbol", zap.String("name", name), zap.String("value", node.Value), zap.Int("style", int(node.Style)))
+		symbolRange := yamlNodeToLSPRange(node, next, mappingKeyNode)
 
 		symbolKind := determineYAMLScalarSymbolKind(node)
 
@@ -172,21 +192,26 @@ func (s *SymbolService) collectDocumentSymbols(
 			Range:          symbolRange,
 			SelectionRange: symbolRange,
 		}
-
 		*symbols = append(*symbols, symbol)
 	}
 }
 
-func yamlNodeToLSPRange(node *yaml.Node, next *yaml.Node) lsp.Range {
+func yamlNodeToLSPRange(node *yaml.Node, next *yaml.Node, mappingKeyNode *yaml.Node) lsp.Range {
 	start := lsp.Position{
 		// yaml.v3 package uses 1-based line and column numbers,
 		// LSP uses 0-based line and column numbers.
 		Line:      lsp.UInteger(node.Line - 1),
 		Character: lsp.UInteger(node.Column - 1),
 	}
+	if mappingKeyNode != nil {
+		start.Line = lsp.UInteger(mappingKeyNode.Line - 1)
+		start.Character = lsp.UInteger(mappingKeyNode.Column - 1)
+	}
 
 	end := lsp.Position{}
-	if next != nil {
+	if node.Kind == yaml.ScalarNode {
+		end = scalarYamlNodeEndPosition(node)
+	} else if next != nil {
 		end.Line = lsp.UInteger(next.Line - 1)
 		end.Character = lsp.UInteger(next.Column - 1)
 	}
@@ -194,6 +219,34 @@ func yamlNodeToLSPRange(node *yaml.Node, next *yaml.Node) lsp.Range {
 	return lsp.Range{
 		Start: start,
 		End:   end,
+	}
+}
+
+func scalarYamlNodeEndPosition(node *yaml.Node) lsp.Position {
+
+	if node.Style == yaml.DoubleQuotedStyle || node.Style == yaml.SingleQuotedStyle {
+		charCount := utf8.RuneCountInString(node.Value) + 2
+		return lsp.Position{
+			Line:      lsp.UInteger(node.Line - 1),
+			Character: lsp.UInteger(node.Column + charCount - 1),
+		}
+	}
+
+	// 0 indicates plain style
+	if node.Style == 0 {
+		return lsp.Position{
+			Line:      lsp.UInteger(node.Line - 1),
+			Character: lsp.UInteger(node.Column + utf8.RuneCountInString(node.Value) - 1),
+		}
+	}
+
+	lines := strings.Split(strings.ReplaceAll(node.Value, "\r\n", "\n"), "\n")
+	lineCountInBlock := len(lines) - 1
+	columnOnLastLine := node.Column + utf8.RuneCountInString(lines[lineCountInBlock-1])
+
+	return lsp.Position{
+		Line:      lsp.UInteger(node.Line + lineCountInBlock - 1),
+		Character: lsp.UInteger(columnOnLastLine - 1),
 	}
 }
 

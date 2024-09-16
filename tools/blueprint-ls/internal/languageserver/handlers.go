@@ -222,7 +222,9 @@ func (a *Application) storeDocumentAndDerivedStructures(
 	}
 	a.state.SetDocumentSchema(uri, parsed)
 	tree := schema.SchemaToTree(parsed)
+	// positionMap := blueprint.CreatePositionMap(tree)
 	a.state.SetDocumentTree(uri, tree)
+	// a.state.SetDocumentPositionMap(uri, positionMap)
 	yamlNode, err := blueprint.ParseYAMLNode(content)
 	if err != nil {
 		return err
@@ -336,6 +338,13 @@ func (a *Application) handleDocumentSymbols(
 	// return empty array if not supported
 
 	return a.symbolService.GetDocumentSymbols(params.TextDocument.URI, *content)
+}
+
+func (a *Application) handleGotoDefinition(
+	ctx *common.LSPContext,
+	params *lsp.DefinitionParams,
+) (any, error) {
+	return []lsp.LocationLink{}, nil
 }
 
 func (a *Application) handleShutdown(ctx *common.LSPContext) error {

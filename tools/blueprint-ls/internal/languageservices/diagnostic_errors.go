@@ -223,8 +223,10 @@ func getStartErrorLocation(location blueprintErrorLocation) *source.Meta {
 	}
 
 	return &source.Meta{
-		Line:   *line,
-		Column: col,
+		Position: source.Position{
+			Line:   *line,
+			Column: col,
+		},
 	}
 }
 
