@@ -130,7 +130,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_when_an_invalid_sub_is_p
 		loadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to an invalid substitution found in \"include.coreInfra\", "+
-			"resolved type \"object\" is not supported by descriptions, only values that resolve as strings are supported",
+			"resolved type \"object\" is not supported by descriptions, only values that resolve as primitives are supported",
 	)
 }
 
@@ -177,7 +177,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_when_an_invalid_sub_is_p
 		loadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to an invalid substitution found in \"include.coreInfra\", "+
-			"resolved type \"object\" is not supported by include paths, only values that resolve as strings are supported",
+			"resolved type \"object\" is not supported by include paths, only values that resolve as primitives are supported",
 	)
 }
 

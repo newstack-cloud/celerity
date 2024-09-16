@@ -688,7 +688,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_providing_a_disp
 		Equals,
 		"blueprint load error: validation failed due to an invalid substitution found in "+
 			"\"datasources.vmInstance\", resolved type \"object\" is not supported by display names, "+
-			"only values that resolve as strings are supported",
+			"only values that resolve as primitives are supported",
 	)
 }
 
@@ -726,7 +726,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_providing_a_desc
 		Equals,
 		"blueprint load error: validation failed due to an invalid substitution found in "+
 			"\"datasources.vmInstance\", resolved type \"object\" is not supported by descriptions, "+
-			"only values that resolve as strings are supported",
+			"only values that resolve as primitives are supported",
 	)
 }
 

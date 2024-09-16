@@ -1482,7 +1482,7 @@ func errInvalidDescriptionSubType(
 		Err: fmt.Errorf(
 			"validation failed due to an invalid substitution found in %q, "+
 				"resolved type %q is not supported by descriptions, "+
-				"only values that resolve as strings are supported",
+				"only values that resolve as primitives are supported",
 			usedIn,
 			resolvedType,
 		),
@@ -1502,7 +1502,7 @@ func errInvalidIncludePathSubType(
 		Err: fmt.Errorf(
 			"validation failed due to an invalid substitution found in %q, "+
 				"resolved type %q is not supported by include paths, "+
-				"only values that resolve as strings are supported",
+				"only values that resolve as primitives are supported",
 			usedIn,
 			resolvedType,
 		),
@@ -1522,7 +1522,7 @@ func errInvalidDisplayNameSubType(
 		Err: fmt.Errorf(
 			"validation failed due to an invalid substitution found in %q, "+
 				"resolved type %q is not supported by display names, "+
-				"only values that resolve as strings are supported",
+				"only values that resolve as primitives are supported",
 			usedIn,
 			resolvedType,
 		),

@@ -168,7 +168,7 @@ func validateDescription(
 				errs = append(errs, err)
 			} else {
 				diagnostics = append(diagnostics, subDiagnostics...)
-				if resolvedType != string(substitutions.ResolvedSubExprTypeString) {
+				if !isSubPrimitiveType(resolvedType) {
 					errs = append(errs, errInvalidDescriptionSubType(
 						usedIn,
 						resolvedType,

@@ -222,7 +222,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_providing_a_displa
 		Equals,
 		"blueprint load error: validation failed due to an invalid substitution found in "+
 			"\"resources.testService\", resolved type \"object\" is not supported by display names, "+
-			"only values that resolve as strings are supported",
+			"only values that resolve as primitives are supported",
 	)
 }
 
@@ -259,7 +259,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_providing_a_descri
 		Equals,
 		"blueprint load error: validation failed due to an invalid substitution found in "+
 			"\"resources.testService\", resolved type \"object\" is not supported by descriptions, "+
-			"only values that resolve as strings are supported",
+			"only values that resolve as primitives are supported",
 	)
 }
 

@@ -217,7 +217,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_for_invalid_sub_in_descrip
 		Equals,
 		"blueprint load error: validation failed due to an invalid substitution found in \"values.regions\","+
 			" resolved type \"any\" is not supported by descriptions, "+
-			"only values that resolve as strings are supported",
+			"only values that resolve as primitives are supported",
 	)
 }
 
