@@ -8,18 +8,19 @@ import (
 )
 
 type interpolationParseState struct {
-	parentSourceStart  *source.Meta
-	relativeLineInfo   *source.Meta
-	relativeSubStart   *source.Meta
-	parsed             []*StringOrSubstitution
-	inPossibleSub      bool
-	inStringLiteral    bool
-	potentialSub       string
-	potentialNonSubStr string
-	prevChar           rune
-	errors             []error
-	outputLineInfo     bool
-	ignoreParentColumn bool
+	parentSourceStart               *source.Meta
+	parentContextPrecedingCharCount int
+	relativeLineInfo                *source.Meta
+	relativeSubStart                *source.Meta
+	parsed                          []*StringOrSubstitution
+	inPossibleSub                   bool
+	inStringLiteral                 bool
+	potentialSub                    string
+	potentialNonSubStr              string
+	prevChar                        rune
+	errors                          []error
+	outputLineInfo                  bool
+	ignoreParentColumn              bool
 }
 
 // ParseSubstitutionValues parses a string that can contain interpolated
@@ -29,6 +30,7 @@ func ParseSubstitutionValues(
 	parentSourceMeta *source.Meta,
 	outputLineInfo bool,
 	ignoreParentColumn bool,
+	parentContextPrecedingCharCount int,
 ) ([]*StringOrSubstitution, error) {
 	// This is hand-rolled to account for the fact that string literals
 	// are supported in the spec for substitutions and they can contain
@@ -53,9 +55,10 @@ func ParseSubstitutionValues(
 		// one error at a time per substitution, all errors are collected.
 		// The trade-off will not be significant in most use cases as string
 		// values that can contain substitutions are not expected to be very long.
-		errors:            []error{},
-		parsed:            []*StringOrSubstitution{},
-		parentSourceStart: parentSourceMeta,
+		errors:                          []error{},
+		parsed:                          []*StringOrSubstitution{},
+		parentSourceStart:               parentSourceMeta,
+		parentContextPrecedingCharCount: parentContextPrecedingCharCount,
 		relativeLineInfo: &source.Meta{
 			Position: source.Position{
 				Line:   0,
@@ -242,6 +245,7 @@ func checkCloseSubBracket(state *interpolationParseState, value string, i int, s
 			state.parentSourceStart,
 			state.relativeSubStart,
 			state.ignoreParentColumn,
+			state.parentContextPrecedingCharCount,
 		)
 		parsedSub, err := ParseSubstitution(
 			substitutionContext,
@@ -276,7 +280,9 @@ func createSubstitutionSourceMeta(state *interpolationParseState) *source.Meta {
 		parentLine = state.parentSourceStart.Line
 	}
 
-	parentStartCol := toFinalParentStartCol(state.parentSourceStart)
+	parentStartCol := toFinalParentStartCol(
+		state.parentSourceStart,
+	)
 
 	return &source.Meta{
 		Position: source.Position{
@@ -312,6 +318,7 @@ func toFinalParentStartCol(parentSourceStart *source.Meta) int {
 		// range highlighting in an editor.
 		parentStartCol = parentSourceStart.Column - 2
 	}
+
 	return parentStartCol
 }
 
@@ -324,7 +331,11 @@ func toFinalEndCol(parentSourceStart *source.Meta, relativeLineInfoCol int) int 
 	return relativeLineInfoCol
 }
 
-func toAbsSourceMeta(parentSourceStart, relativeSubStart *source.Meta, ignoreParentColumn bool) *source.Meta {
+func toAbsSourceMeta(
+	parentSourceStart, relativeSubStart *source.Meta,
+	ignoreParentColumn bool,
+	parentPrecedingCharCount int,
+) *source.Meta {
 	if parentSourceStart == nil {
 		return &source.Meta{
 			Position: source.Position{
@@ -338,7 +349,7 @@ func toAbsSourceMeta(parentSourceStart, relativeSubStart *source.Meta, ignorePar
 		Position: source.Position{
 			Line: toAbsLine(parentSourceStart.Line, relativeSubStart.Line),
 			Column: toAbsColumn(
-				parentSourceStart.Column,
+				parentSourceStart.Column+parentPrecedingCharCount,
 				relativeSubStart.Column,
 				relativeSubStart.Line == 0,
 				ignoreParentColumn,

@@ -30,6 +30,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_multip
 		}},
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 4)
@@ -234,6 +235,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_data
 		nil,
 		true,  // outputLineInfo
 		false, // ignoreParentColumn
+		0,     // parentContextPrecedingCharCount
 	)
 	index := int64(0)
 	c.Assert(err, IsNil)
@@ -286,6 +288,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_data
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	index := int64(1)
 	c.Assert(err, IsNil)
@@ -338,6 +341,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_chil
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	index := int64(0)
 	c.Assert(err, IsNil)
@@ -399,6 +403,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -459,6 +464,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -516,6 +522,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -566,6 +573,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	templateIndex := int64(2)
 	c.Assert(err, IsNil)
@@ -625,6 +633,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_valu
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -686,6 +695,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_valu
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -744,6 +754,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_valu
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -794,6 +805,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_curren
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -847,6 +859,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_curren
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -897,6 +910,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	expectedStrVal := "This is a \"string\" literal𒀁"
 	c.Assert(err, IsNil)
@@ -935,6 +949,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	trimArg := "This is a \"string\" literal"
 	arg2 := int64(0)
@@ -1105,6 +1120,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 		nil,
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	arg1 := "This is a \"string\" literal"
 	arg2 := true
@@ -1215,6 +1231,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 		}},
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	arg := 25.40932102
 	c.Assert(err, IsNil)
@@ -1299,6 +1316,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 		}},
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	arg1 := 25.40932102
 	arg2 := 10.492
@@ -1438,6 +1456,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 		}},
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(parsed), Equals, 1)
@@ -1550,6 +1569,7 @@ func (s *ParseSubstitutionsTestSuite) Test_fails_to_parse_susbstitution_reportin
 		}},
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, NotNil)
 
@@ -1593,6 +1613,7 @@ func (s *ParseSubstitutionsTestSuite) Test_fails_to_parse_susbstitution_reportin
 		}},
 		true,
 		false,
+		/* parentContextPrecedingCharCount */ 0,
 	)
 	c.Assert(err, NotNil)
 

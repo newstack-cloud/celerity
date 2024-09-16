@@ -47,3 +47,12 @@ func ContainsSubstitution(str string) bool {
 	closeIndex := strings.Index(str, "}")
 	return openIndex > -1 && closeIndex > openIndex
 }
+
+func GetYAMLNodePrecedingCharCount(node *yaml.Node) int {
+	if node.Kind == yaml.ScalarNode &&
+		node.Style == yaml.DoubleQuotedStyle || node.Style == yaml.SingleQuotedStyle {
+		return 1
+	}
+
+	return 0
+}

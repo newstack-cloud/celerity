@@ -58,7 +58,11 @@ func EndSourcePositionFromYAMLScalarNode(node *yaml.Node) *Position {
 
 	lines := strings.Split(strings.ReplaceAll(node.Value, "\r\n", "\n"), "\n")
 	lineCountInBlock := len(lines) - 1
-	columnOnLastLine := node.Column + utf8.RuneCountInString(lines[lineCountInBlock-1])
+	columnOnLastLine := node.Column
+
+	if lineCountInBlock > 0 {
+		columnOnLastLine += utf8.RuneCountInString(lines[lineCountInBlock-1])
+	}
 
 	return &Position{
 		Line:   node.Line + lineCountInBlock,

@@ -125,6 +125,7 @@ func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 	}
 
 	isBlockStyle := node.Style == yaml.LiteralStyle || node.Style == yaml.FoldedStyle
+	precedingCharCount := substitutions.GetYAMLNodePrecedingCharCount(node)
 	sourceStartMeta := substitutions.DetermineYAMLSourceStartMeta(node, sourceMeta)
 	strSubs, err := substitutions.ParseSubstitutionValues(
 		"", // substitutionContext
@@ -135,6 +136,7 @@ func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 		// of a "folded" or "literal" style block in a mapping or sequence,
 		// the column number should be ignored until the difficulty of doing so changes.
 		isBlockStyle, // ignoreParentColumn
+		precedingCharCount,
 	)
 	if err != nil {
 		// When substitutions are present but invalid, we must return an error to provide
@@ -208,7 +210,7 @@ func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {
 	if len(dataStr) >= 2 && dataStr[0] == '"' && dataStr[len(dataStr)-1] == '"' {
 		normalised = dataStr[1 : len(dataStr)-1]
 	}
-	strSubs, err := substitutions.ParseSubstitutionValues("", normalised, nil, false, true)
+	strSubs, err := substitutions.ParseSubstitutionValues("", normalised, nil, false, true, 0)
 
 	if err != nil {
 		// When substitutions are present but invalid, we must return an error to provide

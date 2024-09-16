@@ -53,7 +53,8 @@ func (s *StringOrSubstitutions) UnmarshalYAML(node *yaml.Node) error {
 		// Due to the difficulty involved in getting the precise starting column
 		// of a "folded" or "literal" style block in a mapping or sequence,
 		// the column number should be ignored until the difficulty of doing so changes.
-		isBlockStyle, // ignoreParentColumn
+		isBlockStyle,                        // ignoreParentColumn
+		GetYAMLNodePrecedingCharCount(node), // parentContextPrecedingCharCount
 	)
 	if err != nil {
 		return err
@@ -97,7 +98,7 @@ func (s *StringOrSubstitutions) UnmarshalJSON(data []byte) error {
 	// During deserialisation, there is no way of knowing the context
 	// (i.e. the key or field name) in which the substitutions are being used.
 	// This is why an empty string is passed as the substitution context.
-	parsedValues, err := ParseSubstitutionValues("", unescaped, nil, false, true)
+	parsedValues, err := ParseSubstitutionValues("", unescaped, nil, false, true, 0)
 	if err != nil {
 		return err
 	}

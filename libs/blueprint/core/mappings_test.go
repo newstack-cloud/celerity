@@ -162,13 +162,13 @@ func assertFieldsNodeYAML(c *C, actual *MappingNode) {
 								Variable: &substitutions.SubstitutionVariable{
 									VariableName: "environment",
 									SourceMeta: &source.Meta{
-										Position:    source.Position{Line: 3, Column: 32},
-										EndPosition: &source.Position{Line: 3, Column: 53},
+										Position:    source.Position{Line: 3, Column: 33},
+										EndPosition: &source.Position{Line: 3, Column: 54},
 									},
 								},
 								SourceMeta: &source.Meta{
-									Position:    source.Position{Line: 3, Column: 32},
-									EndPosition: &source.Position{Line: 3, Column: 53},
+									Position:    source.Position{Line: 3, Column: 33},
+									EndPosition: &source.Position{Line: 3, Column: 54},
 								},
 							},
 							SourceMeta: &source.Meta{
@@ -279,13 +279,13 @@ func assertItemsNodeYAML(c *C, actual *MappingNode) {
 								Variable: &substitutions.SubstitutionVariable{
 									VariableName: "environment",
 									SourceMeta: &source.Meta{
-										Position:    source.Position{Line: 3, Column: 28},
-										EndPosition: &source.Position{Line: 3, Column: 49},
+										Position:    source.Position{Line: 3, Column: 29},
+										EndPosition: &source.Position{Line: 3, Column: 50},
 									},
 								},
 								SourceMeta: &source.Meta{
-									Position:    source.Position{Line: 3, Column: 28},
-									EndPosition: &source.Position{Line: 3, Column: 49},
+									Position:    source.Position{Line: 3, Column: 29},
+									EndPosition: &source.Position{Line: 3, Column: 50},
 								},
 							},
 							SourceMeta: &source.Meta{
@@ -477,13 +477,13 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 										Variable: &substitutions.SubstitutionVariable{
 											VariableName: "environment",
 											SourceMeta: &source.Meta{
-												Position:    source.Position{Line: 7, Column: 33},
-												EndPosition: &source.Position{Line: 7, Column: 54},
+												Position:    source.Position{Line: 7, Column: 34},
+												EndPosition: &source.Position{Line: 7, Column: 55},
 											},
 										},
 										SourceMeta: &source.Meta{
-											Position:    source.Position{Line: 7, Column: 33},
-											EndPosition: &source.Position{Line: 7, Column: 54},
+											Position:    source.Position{Line: 7, Column: 34},
+											EndPosition: &source.Position{Line: 7, Column: 55},
 										},
 									},
 									SourceMeta: &source.Meta{
