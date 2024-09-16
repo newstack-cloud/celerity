@@ -901,6 +901,14 @@ func (s *CompletionService) getStringSubResourcePropCompletionItems(
 		return s.getResourceSpecPropCompletionItems(ctx, position, blueprint, resourceProp)
 	}
 
+	if len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "state" {
+		return s.getResourceStatePropCompletionItems(ctx, position, blueprint, resourceProp)
+	}
+
+	if len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "metadata" {
+		return getResourceMetadataPropCompletionItems(position, blueprint, resourceProp), nil
+	}
+
 	return resourceItems, nil
 }
 
@@ -937,6 +945,49 @@ func (s *CompletionService) getResourceSpecPropCompletionItems(
 			currentSchema = nil
 		} else {
 			currentSchema = currentSchema.Attributes[pathAfterSpec[i].FieldName]
+		}
+		i += 1
+	}
+
+	return resourceDefAttributesSchemaCompletionItems(
+		currentSchema.Attributes,
+		position,
+	), nil
+}
+
+func (s *CompletionService) getResourceStatePropCompletionItems(
+	ctx *common.LSPContext,
+	position *lsp.Position,
+	blueprint *schema.Blueprint,
+	resourceProp *substitutions.SubstitutionResourceProperty,
+) ([]*lsp.CompletionItem, error) {
+
+	resource := getResource(blueprint, resourceProp.ResourceName)
+	if resource == nil || resource.Type == nil {
+		return []*lsp.CompletionItem{}, nil
+	}
+
+	stateDefOutput, err := s.resourceRegistry.GetStateDefinition(
+		ctx.Context,
+		resource.Type.Value,
+		&provider.ResourceGetStateDefinitionInput{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if stateDefOutput.StateDefinition == nil || stateDefOutput.StateDefinition.Schema == nil {
+		return []*lsp.CompletionItem{}, nil
+	}
+
+	currentSchema := stateDefOutput.StateDefinition.Schema
+	pathAfterState := resourceProp.Path[1:]
+	i := 0
+	for currentSchema != nil && i < len(pathAfterState) {
+		if currentSchema.Type != provider.ResourceDefinitionsSchemaTypeObject {
+			currentSchema = nil
+		} else {
+			currentSchema = currentSchema.Attributes[pathAfterState[i].FieldName]
 		}
 		i += 1
 	}
@@ -1026,6 +1077,80 @@ func getResourceTopLevelPropCompletionItems(position *lsp.Position, blueprint *s
 			Detail:   &detail,
 			Kind:     &fieldKind,
 			TextEdit: stateEdit,
+			Data: map[string]interface{}{
+				"completionType": "resourceProperty",
+			},
+		},
+	}
+}
+
+func getResourceMetadataPropCompletionItems(
+	position *lsp.Position,
+	blueprint *schema.Blueprint,
+	resourceProp *substitutions.SubstitutionResourceProperty,
+) []*lsp.CompletionItem {
+	detail := "Resource metadata property"
+
+	insertRange := getItemInsertRange(position)
+
+	displayNameText := "displayName"
+	displayNameEdit := lsp.TextEdit{
+		NewText: displayNameText,
+		Range:   insertRange,
+	}
+
+	labelsText := "labels"
+	labelsEdit := lsp.TextEdit{
+		NewText: labelsText,
+		Range:   insertRange,
+	}
+
+	annotationsText := "annotations"
+	annotationsEdit := lsp.TextEdit{
+		NewText: annotationsText,
+		Range:   insertRange,
+	}
+
+	customText := "custom"
+	customEdit := lsp.TextEdit{
+		NewText: customText,
+		Range:   insertRange,
+	}
+
+	fieldKind := lsp.CompletionItemKindField
+	return []*lsp.CompletionItem{
+		{
+			Label:    displayNameText,
+			Detail:   &detail,
+			Kind:     &fieldKind,
+			TextEdit: displayNameEdit,
+			Data: map[string]interface{}{
+				"completionType": "resourceProperty",
+			},
+		},
+		{
+			Label:    labelsText,
+			Detail:   &detail,
+			Kind:     &fieldKind,
+			TextEdit: labelsEdit,
+			Data: map[string]interface{}{
+				"completionType": "resourceProperty",
+			},
+		},
+		{
+			Label:    annotationsText,
+			Detail:   &detail,
+			Kind:     &fieldKind,
+			TextEdit: annotationsEdit,
+			Data: map[string]interface{}{
+				"completionType": "resourceProperty",
+			},
+		},
+		{
+			Label:    customText,
+			Detail:   &detail,
+			Kind:     &fieldKind,
+			TextEdit: customEdit,
 			Data: map[string]interface{}{
 				"completionType": "resourceProperty",
 			},
