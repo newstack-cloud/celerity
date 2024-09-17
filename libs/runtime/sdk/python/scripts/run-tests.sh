@@ -5,9 +5,9 @@ if [ -n "$GITHUB_ACTIONS" ]; then
   maturin build
   pip install .
   cp -r build/lib*/celerity_runtime_sdk/ celerity_runtime_sdk/
-  python -m pytest tests/
+  python -m pytest -rA tests/
 else
   # Run with pipenv in local envs.
   pipenv run maturin develop
-  pipenv run python -m pytest tests/
+  pipenv run python -m pytest -rA tests/
 fi

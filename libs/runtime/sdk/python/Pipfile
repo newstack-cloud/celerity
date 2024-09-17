@@ -6,3 +6,5 @@ name = "pypi"
 [dev-packages]
 pytest = "*"
 maturin = "*"
+requests = "*"
+types-requests = "*"
