@@ -6,11 +6,13 @@ use celerity_blueprint_config_parser::blueprint::{
 };
 
 use crate::{
-    config::{ApiConfig, HttpConfig, HttpHandlerDefinition},
+    config::{
+        ApiConfig, HttpConfig, HttpHandlerDefinition, WebSocketConfig, WebSocketHandlerDefinition,
+    },
     consts::{
         CELERITY_HTTP_HANDLER_ANNOTATION_NAME, CELERITY_HTTP_METHOD_ANNOTATION_NAME,
-        CELERITY_HTTP_PATH_ANNOTATION_NAME, DEFAULT_HANDLER_TIMEOUT, DEFAULT_TRACING_ENABLED,
-        MAX_HANDLER_TIMEOUT,
+        CELERITY_HTTP_PATH_ANNOTATION_NAME, CELERITY_WS_HANDLER_ANNOTATION_NAME,
+        DEFAULT_HANDLER_TIMEOUT, DEFAULT_TRACING_ENABLED, MAX_HANDLER_TIMEOUT,
     },
     errors::ConfigError,
 };
@@ -38,12 +40,51 @@ pub(crate) fn collect_api_config(
         CelerityResourceType::CelerityHandler,
     )?;
 
-    let mut candidate_http_handlers = Vec::new();
+    let mut collected_handler_names: Vec<String> = Vec::new();
+
+    let http_handlers = collect_http_handler_definitions(
+        &target_handlers,
+        &blueprint_config,
+        &mut collected_handler_names,
+    )?;
+
+    if http_handlers.len() > 0 {
+        api_config.http = Some(HttpConfig {
+            handlers: http_handlers,
+            base_paths: vec![],
+        });
+    }
+
+    let ws_handlers = collect_ws_handler_definitions(
+        &target_handlers,
+        &blueprint_config,
+        &mut collected_handler_names,
+    )?;
+
+    if ws_handlers.len() > 0 {
+        api_config.websocket = Some(WebSocketConfig {
+            handlers: ws_handlers,
+            base_paths: vec![],
+        });
+    }
+
+    Ok(api_config)
+}
+
+fn collect_http_handler_definitions(
+    target_handlers: &Vec<ResourceWithName>,
+    blueprint_config: &BlueprintConfig,
+    collected_handler_names: &mut Vec<String>,
+) -> Result<Vec<HttpHandlerDefinition>, ConfigError> {
+    let mut http_handlers = Vec::new();
+
     for handler in target_handlers {
         if let Some(annotations) = &handler.resource.metadata.annotations {
             if let Some(scalar_value) = annotations.get(CELERITY_HTTP_HANDLER_ANNOTATION_NAME) {
                 if let BlueprintScalarValue::Bool(http_enabled) = scalar_value {
                     if *http_enabled {
+                        check_handler_already_collected(&handler.name, collected_handler_names)?;
+
                         // Get http-specific annotations and push to candidate http handlers list.
                         let method = annotations
                             .get(CELERITY_HTTP_METHOD_ANNOTATION_NAME)
@@ -58,18 +99,19 @@ pub(crate) fn collect_api_config(
                         {
                             let handler_configs = select_resources(
                                 &handler.resource.link_selector,
-                                &blueprint_config,
+                                blueprint_config,
                                 CelerityResourceType::CelerityHandlerConfig,
                             )?;
                             let handler_definition = apply_http_handler_configurations(
-                                handler.name,
+                                handler.name.clone(),
                                 handler_spec,
                                 handler_configs,
                                 blueprint_config.metadata.as_ref(),
                                 method,
                                 path,
                             )?;
-                            candidate_http_handlers.push(handler_definition);
+                            http_handlers.push(handler_definition);
+                            collected_handler_names.push(handler.name.clone());
                         } else {
                             return Err(ConfigError::Api(format!(
                                 "handler {} is missing spec or resource is not a handler",
@@ -82,14 +124,42 @@ pub(crate) fn collect_api_config(
         }
     }
 
-    if candidate_http_handlers.len() > 0 {
-        api_config.http = Some(HttpConfig {
-            handlers: candidate_http_handlers,
-            base_paths: vec![],
-        });
-    }
+    Ok(http_handlers)
+}
 
-    Ok(api_config)
+fn collect_ws_handler_definitions(
+    target_handlers: &Vec<ResourceWithName>,
+    blueprint_config: &BlueprintConfig,
+    collected_handler_names: &Vec<String>,
+) -> Result<Vec<WebSocketHandlerDefinition>, ConfigError> {
+    let mut ws_handlers = Vec::new();
+
+    for handler in target_handlers {
+        if let Some(annotations) = &handler.resource.metadata.annotations {
+            if let Some(scalar_value) = annotations.get(CELERITY_WS_HANDLER_ANNOTATION_NAME) {
+                if let BlueprintScalarValue::Bool(ws_enabled) = scalar_value {
+                    if *ws_enabled {
+                        check_handler_already_collected(&handler.name, collected_handler_names)?;
+                    }
+                }
+            }
+        }
+    }
+    Ok(ws_handlers)
+}
+
+fn check_handler_already_collected(
+    handler_name: &String,
+    collected_handler_names: &Vec<String>,
+) -> Result<(), ConfigError> {
+    if collected_handler_names.contains(handler_name) {
+        return Err(ConfigError::Api(format!(
+            "handler {} is configured for multiple kinds of applications, \
+            a handler can only be configured for one kind of application (e.g. HTTP, WebSocket, Queue Consumer etc.)",
+            handler_name
+        )));
+    }
+    Ok(())
 }
 
 fn apply_http_handler_configurations(

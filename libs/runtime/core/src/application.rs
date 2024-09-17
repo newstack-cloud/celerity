@@ -75,7 +75,6 @@ impl Application {
         match collect_api_config(blueprint_config) {
             Ok(api_config) => {
                 app_config.api = Some(api_config);
-                // todo: attach health check endpoint if runtime_config.use_custom_health_check is false or None
                 self.http_server_app = Some(self.setup_http_server_app());
             }
             Err(ConfigError::ApiMissing) => (),
@@ -89,17 +88,16 @@ impl Application {
 
     fn setup_http_server_app(&self) -> Router {
         let mut http_server_app = Router::new();
-        if let Some(use_custom_health_check) = self.runtime_config.use_custom_health_check {
-            if !use_custom_health_check {
-                http_server_app = http_server_app.route(
-                    DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
-                    get(|()| async {
-                        Json(HealthCheckResponse {
-                            timestamp: get_epoch_seconds(),
-                        })
-                    }),
-                );
-            }
+        let use_custom_health_check = self.runtime_config.use_custom_health_check.unwrap_or(false);
+        if !use_custom_health_check {
+            http_server_app = http_server_app.route(
+                DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
+                get(|()| async {
+                    Json(HealthCheckResponse {
+                        timestamp: get_epoch_seconds(),
+                    })
+                }),
+            );
         }
         http_server_app
     }

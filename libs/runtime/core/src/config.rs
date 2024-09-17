@@ -7,6 +7,7 @@ use crate::{consts::DEFAULT_LOCAL_API_PORT, env::EnvVars};
 /// Core runtime configuration
 /// that is used to locate blueprint files
 /// and determine how to set up an application.
+#[derive(Debug)]
 pub struct RuntimeConfig {
     pub blueprint_config_path: String,
     pub runtime_call_mode: RuntimeCallMode,

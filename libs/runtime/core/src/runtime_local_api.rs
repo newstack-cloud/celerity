@@ -16,7 +16,7 @@ use crate::{
     config::{AppConfig, EventConfig},
     errors::{ApplicationStartError, EventResultError, WebSocketsMessageError},
     types::{EventData, EventResult, EventTuple, ResponseMessage, WebSocketMessages},
-    wsconn_registry::{WebSocketConnRegistry, WebSocketRegistrySend},
+    wsconn_registry::WebSocketRegistrySend,
 };
 
 // Creates a router for the local runtime API
