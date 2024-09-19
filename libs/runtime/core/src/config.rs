@@ -1,6 +1,4 @@
-use celerity_blueprint_config_parser::blueprint::{
-    CelerityApiAuth, CelerityApiCors, CelerityApiCorsConfiguration,
-};
+use celerity_blueprint_config_parser::blueprint::{CelerityApiAuth, CelerityApiCors};
 
 use crate::{consts::DEFAULT_LOCAL_API_PORT, env::EnvVars};
 
@@ -136,7 +134,7 @@ pub struct HttpConfig {
     pub base_paths: Vec<String>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct HttpHandlerDefinition {
     pub name: String,
     pub path: String,

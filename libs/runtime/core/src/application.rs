@@ -1,39 +1,27 @@
 use std::{
-    cmp::max,
     collections::{HashMap, VecDeque},
     net::SocketAddr,
     sync::{Arc, Mutex},
 };
 
 use axum::{
-    extract::ws::WebSocket,
     handler::Handler,
     routing::{get, post},
     Json, Router,
 };
-use celerity_blueprint_config_parser::{
-    blueprint::{
-        BlueprintConfig, BlueprintLinkSelector, BlueprintScalarValue, CelerityResourceSpec,
-        CelerityResourceType, RuntimeBlueprintResource,
-    },
-    parse::BlueprintParseError,
-};
+use celerity_blueprint_config_parser::{blueprint::BlueprintConfig, parse::BlueprintParseError};
 use serde::{Deserialize, Serialize};
 use tokio::{net::TcpListener, task::JoinHandle};
 
 use crate::{
     config::{AppConfig, RuntimeCallMode, RuntimeConfig},
-    consts::{
-        CELERITY_HTTP_HANDLER_ANNOTATION_NAME, CELERITY_HTTP_METHOD_ANNOTATION_NAME,
-        CELERITY_HTTP_PATH_ANNOTATION_NAME, DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
-        MAX_HANDLER_TIMEOUT,
-    },
+    consts::DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
     errors::{ApplicationStartError, ConfigError},
     runtime_local_api::create_runtime_local_api,
     transform_config::collect_api_config,
-    types::{EventData, EventTuple},
+    types::EventTuple,
     utils::get_epoch_seconds,
-    wsconn_registry::{WebSocketConnRegistry, WebSocketRegistrySend},
+    wsconn_registry::WebSocketRegistrySend,
 };
 
 /// Provides an application that can run a HTTP server, WebSocket server,
