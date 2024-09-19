@@ -2,7 +2,12 @@ use std::path::PathBuf;
 
 use oo_bindgen::model::*;
 
+mod app_config;
 mod application;
+mod headers;
+mod http_handler;
+mod response;
+mod shared;
 
 pub fn build_lib() -> BackTraced<Library> {
     let lib_info = LibraryInfo {
@@ -43,7 +48,36 @@ pub fn build_lib() -> BackTraced<Library> {
 
     let mut builder = LibraryBuilder::new(Version::parse("1.2.3").unwrap(), lib_info, settings);
 
-    application::define(&mut builder)?;
+    let shared_definitions = shared::define(&mut builder)?;
+
+    let headers = headers::define(&mut builder)?;
+    let response = response::define(&mut builder, headers.declaration())?;
+    let http_handler = http_handler::define(&mut builder, response.declaration())?;
+    let http_handler_future = http_handler::define_future(&mut builder)?;
+    let app_conf = app_config::define(&mut builder)?;
+    application::define(
+        &mut builder,
+        http_handler,
+        http_handler_future,
+        app_conf.declaration(),
+        shared_definitions,
+    )?;
+
+    let logging_error_type = builder
+        .define_error_type(
+            "logging_error",
+            "logging_exception",
+            ExceptionType::UncheckedException,
+        )?
+        .add_error(
+            "logging_already_configured",
+            "Logging can only be configured once",
+        )?
+        .doc("Error returned on failure to setup logging")?
+        .build()?;
+
+    // common logging interface with other libraries
+    sfio_tracing_ffi::define(&mut builder, logging_error_type)?;
 
     let library = builder.build()?;
 
