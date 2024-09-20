@@ -318,6 +318,17 @@ pub enum CelerityApiProtocol {
     Http,
     #[serde(rename = "websocket")]
     WebSocket,
+    #[serde(rename = "websocketConfig")]
+    WebSocketConfig(WebSocketConfiguration),
+}
+
+// Configuration specific to the WebSocket protocol
+// for an API.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct WebSocketConfiguration {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "routeKey")]
+    pub route_key: Option<String>,
 }
 
 /// CORS configuration for a Celerity API resource which can be

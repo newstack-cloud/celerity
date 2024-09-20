@@ -14,10 +14,10 @@ use crate::{
         CelerityScheduleSpec, DataStreamSourceConfiguration, DatabaseStreamSourceConfiguration,
         EventConfiguration, EventSourceConfiguration, EventSourceType,
         ObjectStorageEventSourceConfiguration, ObjectStorageEventType, RuntimeBlueprintResource,
-        SharedHandlerConfig, ValueSourceConfiguration, CELERITY_API_RESOURCE_TYPE,
-        CELERITY_BLUEPRINT_V2023_04_20, CELERITY_CONSUMER_RESOURCE_TYPE,
-        CELERITY_HANDLER_CONFIG_RESOURCE_TYPE, CELERITY_HANDLER_RESOURCE_TYPE,
-        CELERITY_SCHEDULE_RESOURCE_TYPE,
+        SharedHandlerConfig, ValueSourceConfiguration, WebSocketConfiguration,
+        CELERITY_API_RESOURCE_TYPE, CELERITY_BLUEPRINT_V2023_04_20,
+        CELERITY_CONSUMER_RESOURCE_TYPE, CELERITY_HANDLER_CONFIG_RESOURCE_TYPE,
+        CELERITY_HANDLER_RESOURCE_TYPE, CELERITY_SCHEDULE_RESOURCE_TYPE,
     },
     parse::BlueprintParseError,
 };
@@ -832,8 +832,9 @@ fn validate_celerity_api_spec(
                     if let yaml_rust2::Yaml::Array(value_arr) = value {
                         let mut protocols = Vec::new();
                         for item in value_arr {
-                            if let yaml_rust2::Yaml::String(protocol_str) = item {
-                                protocols.push(validate_api_protocol(protocol_str)?);
+                            let protocol_opt = validate_api_protocol(item)?;
+                            if let Some(protocol) = protocol_opt {
+                                protocols.push(protocol);
                             }
                         }
                         celerity_api_spec.protocols = protocols;
@@ -1077,16 +1078,65 @@ fn validate_celerity_api_domain(
 }
 
 fn validate_api_protocol(
-    protocol_str: &String,
-) -> Result<CelerityApiProtocol, BlueprintParseError> {
-    match protocol_str.as_str() {
-        "http" => Ok(CelerityApiProtocol::Http),
-        "websocket" => Ok(CelerityApiProtocol::WebSocket),
-        _ => Err(BlueprintParseError::YamlFormatError(format!(
-            "expected a supported api protocol (\\\"http\\\" or \\\"websocket\\\"), found {}",
-            protocol_str
-        ))),
+    protocol_item: &yaml_rust2::Yaml,
+) -> Result<Option<CelerityApiProtocol>, BlueprintParseError> {
+    if let yaml_rust2::Yaml::String(protocol_str) = protocol_item {
+        match protocol_str.as_str() {
+            "http" => Ok(Some(CelerityApiProtocol::Http)),
+            "websocket" => Ok(Some(CelerityApiProtocol::WebSocket)),
+            _ => Err(BlueprintParseError::YamlFormatError(format!(
+                "expected a supported api protocol (\\\"http\\\" or \\\"websocket\\\" or websocket configuration object), found {}",
+                protocol_str
+            ))),
+        }
+    } else if let yaml_rust2::Yaml::Hash(protocol_map) = protocol_item {
+        if let Some(config_item) =
+            protocol_map.get(&yaml_rust2::Yaml::String("websocketConfig".to_string()))
+        {
+            if let yaml_rust2::Yaml::Hash(config_map) = config_item {
+                let websocket_config = validate_websocket_config(config_map)?;
+                Ok(Some(CelerityApiProtocol::WebSocketConfig(websocket_config)))
+            } else {
+                Err(BlueprintParseError::YamlFormatError(format!(
+                    "expected a mapping for websocket configuration, found {:?}",
+                    config_item,
+                )))
+            }
+        } else {
+            Err(BlueprintParseError::YamlFormatError(
+                "expected a websocket configuration object for api protocol".to_string(),
+            ))
+        }
+    } else {
+        Err(BlueprintParseError::YamlFormatError(format!(
+            "expected a string or websocket configuration object for api protocol, found {:?}",
+            protocol_item,
+        )))
     }
+}
+
+fn validate_websocket_config(
+    websocket_map: &yaml_rust2::yaml::Hash,
+) -> Result<WebSocketConfiguration, BlueprintParseError> {
+    let mut websocket_config = WebSocketConfiguration::default();
+    for (key, value) in websocket_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "routeKey" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        websocket_config.route_key = Some(value_str.clone())
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for routeKey, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+    Ok(websocket_config)
 }
 
 fn validate_celerity_api_auth(
