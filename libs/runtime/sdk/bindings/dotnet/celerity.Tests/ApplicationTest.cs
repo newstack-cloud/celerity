@@ -1,23 +1,62 @@
+
 using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 using Xunit;
-using celerity;
 
 namespace celerity.Tests
 {
-    public class ClassTest
+
+    record class Order(
+        int? Id = null
+    );
+
+    public class ApplicationTest
     {
         [Fact]
-        public void ConstructionDestructionTest()
+        public async Task HttpApiTest()
         {
-            Assert.Equal(0u, Application.ConstructionCounter());
+            try
+            {
+                Process process = new();
+                process.StartInfo.FileName = "dotnet";
+                process.StartInfo.Arguments = "run --project celerity.App";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
+                // Current directory is sdk/bindings/dotnet/celerity.Tests/bin/*/net8.0
+                // Run the project from the sdk/bindings/dotnet directory so dotnet
+                // can find the celerity.App project.
+                process.StartInfo.WorkingDirectory = "../../../../";
+                process.Start();
 
-            var application = new Application(41);
-            Assert.Equal(1u, Application.ConstructionCounter());
-            Assert.Equal(200u, application.GetValue());
+                // Wait for the server to start.
+                await Task.Delay(2000);
 
-            application.Shutdown();
+                var client = new HttpClient();
+                var resp = await client.PostAsJsonAsync(
+                    "http://localhost:8080/orders/1",
+                    new Order(Id: 1)
+                );
 
-            Assert.Equal(0u, Application.ConstructionCounter());
-        }       
+                Assert.Equal(System.Net.HttpStatusCode.OK, resp.StatusCode);
+                var content = await resp.Content.ReadAsStringAsync();
+                Assert.Equal("{\"message\":\"Order received\"}", content);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            finally
+            {
+                // Process is a parent process of the actual serverprocess that we need to kill.
+                foreach (var currentProcess in Process.GetProcessesByName("celerity.App"))
+                {
+                    currentProcess.Kill();
+                    await currentProcess.WaitForExitAsync();
+                }
+            }
+        }
     }
 }
