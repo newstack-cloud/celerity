@@ -1362,6 +1362,10 @@ func scalarsToTreeNode(label string, scalars []*bpcore.ScalarValue, parentPath s
 			Start: minPosition(core.Map(
 				scalars,
 				func(scalar *bpcore.ScalarValue, _ int) *source.Meta {
+					if scalar == nil {
+						return nil
+					}
+
 					return scalar.SourceMeta
 				}),
 			),
@@ -1382,7 +1386,10 @@ func scalarsToTreeNode(label string, scalars []*bpcore.ScalarValue, parentPath s
 
 	sortTreeNodes(children)
 	scalarsNode.Children = children
-	scalarsNode.Range.End = children[len(children)-1].Range.End
+	lastChild := children[len(children)-1]
+	if lastChild != nil {
+		scalarsNode.Range.End = lastChild.Range.End
+	}
 
 	return scalarsNode
 }
@@ -1762,8 +1769,9 @@ func sortTreeNodes(nodes []*TreeNode) {
 	}
 
 	slices.SortFunc(nodes, func(a, b *TreeNode) int {
-		if a.Range == nil || b.Range == nil ||
-			a.Range.Start == nil || b.Range.Start == nil {
+		if a == nil || b == nil || a.Range == nil ||
+			b.Range == nil || a.Range.Start == nil ||
+			b.Range.Start == nil {
 			return 0
 		}
 
@@ -1792,6 +1800,10 @@ func minPosition(positions []*source.Meta) *source.Position {
 
 	min := positions[0]
 	for _, pos := range positions {
+		if pos == nil {
+			continue
+		}
+
 		if pos.Line < min.Line || (pos.Line == min.Line && pos.Column < min.Column) {
 			min = pos
 		}
