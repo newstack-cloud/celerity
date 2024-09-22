@@ -71,6 +71,10 @@ var (
 	// in determining the type of completion items to provide.
 	childRefPattern = regexp.MustCompile(`children\.$`)
 
+	// Pattern for matching "elem." before the cursor position
+	// in determining the type of completion items to provide.
+	elemRefPattern = regexp.MustCompile(`elem\.$`)
+
 	// Pattern for matching "${" before the cursor position
 	// in determining the type of completion items to provide.
 	subOpenPattern = regexp.MustCompile(`\${$`)
@@ -305,6 +309,10 @@ func (s *CompletionService) checkStringSubElement(
 		return "stringSubChildRef", true
 	}
 
+	if s.isStringSubElem(pathParts, sourceContent, position) {
+		return "elemRef", true
+	}
+
 	if s.isStringSub(pathParts, sourceContent, position) {
 		return "stringSub", true
 	}
@@ -521,6 +529,15 @@ func (s *CompletionService) isStringSubChild(
 ) bool {
 	return slices.Contains(pathParts, "stringSubs") &&
 		s.isPrecededBy(position, childRefPattern, sourceContent)
+}
+
+func (s *CompletionService) isStringSubElem(
+	pathParts []string,
+	sourceContent string,
+	position *lsp.Position,
+) bool {
+	return slices.Contains(pathParts, "stringSubs") &&
+		s.isPrecededBy(position, elemRefPattern, sourceContent)
 }
 
 func (s *CompletionService) isStringSub(
