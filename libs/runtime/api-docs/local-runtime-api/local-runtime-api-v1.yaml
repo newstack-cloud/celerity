@@ -153,7 +153,7 @@ paths:
                 $ref: "#/components/schemas/RuntimeConfigurationResponse"
         "500":
           description: |
-            A server error occurred when trying to send websocket messages.
+            A server error occurred when trying to retrieve runtime configuration.
           content:
             applicatoin/json:
               schema:
