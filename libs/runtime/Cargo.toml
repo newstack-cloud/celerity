@@ -2,6 +2,9 @@
 
 members = [
     "core",
+    "workflow",
+    "signature",
+    "helpers",
     "blueprint-config-parser",
     "sdk/node",
     "sdk/python",
