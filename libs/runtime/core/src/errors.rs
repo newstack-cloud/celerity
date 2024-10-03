@@ -6,7 +6,9 @@ use axum::{
     Json,
 };
 use celerity_blueprint_config_parser::parse::BlueprintParseError;
+use opentelemetry::trace::TraceError as OTelTraceError;
 use tokio::{sync::mpsc::error::SendError, task::JoinError, time::error::Elapsed};
+use tracing_subscriber::{filter::ParseError, util::TryInitError};
 
 use crate::types::ResponseMessage;
 
@@ -63,6 +65,9 @@ pub enum ApplicationStartError {
     // An error occured while blocking on one of the long-running
     // tasks to complete. (e.g. API server or message poller/consumer)
     TaskWaitError(JoinError),
+    OpenTelemetryTrace(OTelTraceError),
+    TracerTryInit(TryInitError),
+    TracingFilterParse(ParseError),
 }
 
 impl fmt::Display for ApplicationStartError {
@@ -79,6 +84,15 @@ impl fmt::Display for ApplicationStartError {
             }
             ApplicationStartError::TaskWaitError(join_error) => {
                 write!(f, "application start error: {}", join_error)
+            }
+            ApplicationStartError::OpenTelemetryTrace(trace_error) => {
+                write!(f, "application start error: {}", trace_error)
+            }
+            ApplicationStartError::TracerTryInit(try_init_error) => {
+                write!(f, "application start error: {}", try_init_error)
+            }
+            ApplicationStartError::TracingFilterParse(parse_error) => {
+                write!(f, "application start error: {}", parse_error)
             }
         }
     }
@@ -99,6 +113,24 @@ impl From<BlueprintParseError> for ApplicationStartError {
 impl From<JoinError> for ApplicationStartError {
     fn from(error: JoinError) -> Self {
         ApplicationStartError::TaskWaitError(error)
+    }
+}
+
+impl From<OTelTraceError> for ApplicationStartError {
+    fn from(error: OTelTraceError) -> Self {
+        ApplicationStartError::OpenTelemetryTrace(error)
+    }
+}
+
+impl From<TryInitError> for ApplicationStartError {
+    fn from(error: TryInitError) -> Self {
+        ApplicationStartError::TracerTryInit(error)
+    }
+}
+
+impl From<ParseError> for ApplicationStartError {
+    fn from(error: ParseError) -> Self {
+        ApplicationStartError::TracingFilterParse(error)
     }
 }
 
@@ -151,6 +183,19 @@ impl IntoResponse for WebSocketsMessageError {
             ),
         };
         resp_tuple.into_response()
+    }
+}
+
+impl fmt::Display for WebSocketsMessageError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            WebSocketsMessageError::NotEnabled => {
+                write!(f, "WebSockets are not enabled for the current application")
+            }
+            WebSocketsMessageError::UnexpectedError => {
+                write!(f, "An unexpected error occurred")
+            }
+        }
     }
 }
 

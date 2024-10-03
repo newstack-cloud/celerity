@@ -12,9 +12,12 @@ async fn sets_up_and_runs_http_server_application_in_ffi_mode() {
                 "CELERITY_BLUEPRINT",
                 "tests/data/fixtures/http-api.blueprint.yaml".to_string(),
             ),
+            ("CELERITY_SERVICE_NAME", "http-api-test".to_string()),
+            ("CELERITY_RUNTIME_PLATFORM", "local".to_string()),
             ("CELERITY_RUNTIME_CALL_MODE", "ffi".to_string()),
             ("CELERITY_SERVER_PORT", "2345".to_string()),
             ("CELERITY_SERVER_LOOPBACK_ONLY", "true".to_string()),
+            ("CELERITY_TEST_MODE", "true".to_string()),
         ]
         .into_iter()
         .collect(),

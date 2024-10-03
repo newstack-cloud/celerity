@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::oneshot;
 
+use crate::config::RuntimePlatform;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EventData {
     pub id: String,
@@ -197,4 +199,11 @@ pub struct WebSocketMessage {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ResponseMessage {
     pub message: String,
+}
+
+// ApiAppState holds shared API application state to be used in axum
+// middleware and handlers.
+#[derive(Debug, Clone)]
+pub struct ApiAppState {
+    pub platform: RuntimePlatform,
 }

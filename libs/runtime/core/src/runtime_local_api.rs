@@ -371,6 +371,7 @@ mod tests {
         CelerityApiAuthGuardValueSource, CelerityApiCors, CelerityApiCorsConfiguration,
     };
     use http_body_util::BodyExt;
+    use pretty_assertions::assert_eq;
     use serde_json::json;
     use tokio::sync::{mpsc, oneshot};
 
@@ -781,10 +782,13 @@ mod tests {
                         name: "Orders-StreamOrders-v1".to_string(),
                         route_key: "event".to_string(),
                         route: "order".to_string(),
+                        location: "./handlers/order-stream".to_string(),
+                        handler: "stream_orders".to_string(),
                         timeout: 30,
                         tracing_enabled: true,
                     }],
                     base_paths: vec!["/ws".to_string()],
+                    route_key: "event".to_string(),
                 }),
                 auth: Some(CelerityApiAuth {
                     default_guard: Some("jwt".to_string()),
@@ -797,7 +801,6 @@ mod tests {
                             token_source: Some(CelerityApiAuthGuardValueSource::Str(
                                 "$.headers.Authorization".to_string(),
                             )),
-                            api_key_source: None,
                         },
                     )]),
                 }),
