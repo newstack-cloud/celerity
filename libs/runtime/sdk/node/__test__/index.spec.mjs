@@ -1,7 +1,7 @@
 import test from "ava";
 import { promisify } from "node:util";
 
-import { CoreRuntimeApplication, sum } from "../index.js";
+import { CoreRuntimeApplication } from "../index.js";
 import supertest from "supertest";
 
 const request = supertest("http://localhost:22345");
@@ -20,10 +20,6 @@ test.afterEach(() => {
   if (app) {
     app.shutdown();
   }
-});
-
-test("sum from native", (t) => {
-  t.is(sum(1, 2), 3);
 });
 
 /**

@@ -11,7 +11,7 @@ use celerity_runtime_core::{
   application::Application,
   config::{
     ApiConfig, AppConfig, HttpConfig, HttpHandlerDefinition, RuntimeCallMode, RuntimeConfig,
-    WebSocketConfig,
+    RuntimePlatform, WebSocketConfig,
   },
 };
 use napi::{
@@ -26,11 +26,6 @@ use tokio::time;
 
 #[macro_use]
 extern crate napi_derive;
-
-#[napi]
-pub fn sum(a: i32, b: i32) -> i32 {
-  a + b
-}
 
 #[napi(object)]
 pub struct CoreRuntimeConfig {
@@ -273,6 +268,11 @@ impl CoreRuntimeApplication {
       server_port: runtime_config.server_port,
       local_api_port: 8259,
       use_custom_health_check: None,
+      service_name: "CelerityTestService".to_string(),
+      platform: RuntimePlatform::Local,
+      trace_otlp_collector_endpoint: "http://localhost:4317".to_string(),
+      runtime_max_diagnostics_level: tracing::Level::INFO,
+      test_mode: false,
     };
     let inner = Application::new(native_runtime_config);
     CoreRuntimeApplication {
