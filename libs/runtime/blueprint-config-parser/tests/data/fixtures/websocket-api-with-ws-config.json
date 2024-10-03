@@ -13,7 +13,14 @@
         }
       },
       "spec": {
-        "protocols": [{ "websocketConfig": { "routeKey": "action" } }],
+        "protocols": [
+          {
+            "websocketConfig": {
+              "routeKey": "action",
+              "authStrategy": "connect"
+            }
+          }
+        ],
         "cors": {
           "allowOrigins": ["https://example.com", "https://another.example.com"]
         },

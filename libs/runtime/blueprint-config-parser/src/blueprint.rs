@@ -329,6 +329,18 @@ pub struct WebSocketConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "routeKey")]
     pub route_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "authStrategy")]
+    pub auth_strategy: Option<WebSocketAuthStrategy>,
+}
+
+/// Authentication strategy for a WebSocket API.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub enum WebSocketAuthStrategy {
+    #[serde(rename = "authMessage")]
+    AuthMessage,
+    #[serde(rename = "connect")]
+    Connect,
 }
 
 /// CORS configuration for a Celerity API resource which can be
@@ -434,9 +446,6 @@ pub struct CelerityApiAuthGuard {
     pub token_source: Option<CelerityApiAuthGuardValueSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub audience: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "apiKeySource")]
-    pub api_key_source: Option<CelerityApiAuthGuardValueSource>,
 }
 
 impl Default for CelerityApiAuthGuard {
@@ -446,7 +455,6 @@ impl Default for CelerityApiAuthGuard {
             issuer: None,
             token_source: None,
             audience: None,
-            api_key_source: None,
         }
     }
 }
@@ -457,8 +465,6 @@ impl Default for CelerityApiAuthGuard {
 pub enum CelerityApiAuthGuardType {
     #[serde(rename = "jwt")]
     Jwt,
-    #[serde(rename = "apiKey")]
-    ApiKey,
     #[serde(rename = "custom")]
     Custom,
     #[serde(rename = "noGuardType")]
@@ -467,7 +473,7 @@ pub enum CelerityApiAuthGuardType {
 
 /// Value source for authorization configuration
 /// in a Celerity API resource.
-/// A value would be an API key or JWT.
+/// A value could be a JWT.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum CelerityApiAuthGuardValueSource {

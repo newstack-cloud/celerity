@@ -1257,24 +1257,6 @@ fn validate_celerity_api_auth_guard(
                         )))?
                     }
                 }
-                "apiKeySource" => {
-                    if let yaml_rust2::Yaml::Hash(value_map) = value {
-                        guard.api_key_source =
-                            Some(CelerityApiAuthGuardValueSource::ValueSourceConfiguration(
-                                validate_celerity_api_auth_value_source_config(
-                                    value_map, "apiKey",
-                                )?,
-                            ))
-                    } else if let yaml_rust2::Yaml::String(value_str) = value {
-                        guard.api_key_source =
-                            Some(CelerityApiAuthGuardValueSource::Str(value_str.clone()))
-                    } else {
-                        Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string or mapping for apiKey source, found {:?}",
-                            value,
-                        )))?
-                    }
-                }
                 _ => (),
             }
         }
@@ -1383,11 +1365,9 @@ fn validate_celerity_api_auth_guard_type(
 ) -> Result<CelerityApiAuthGuardType, BlueprintParseError> {
     match guard_type.as_str() {
         "jwt" => Ok(CelerityApiAuthGuardType::Jwt),
-        "apiKey" => Ok(CelerityApiAuthGuardType::ApiKey),
         "custom" => Ok(CelerityApiAuthGuardType::Custom),
         _ => Err(BlueprintParseError::YamlFormatError(format!(
-            "expected a supported guard type (\\\"jwt\\\", 
-                \\\"apiKey\\\", \\\"custom\\\"), found {}",
+            "expected a supported guard type (\\\"jwt\\\", \\\"custom\\\"), found {}",
             guard_type
         )))?,
     }

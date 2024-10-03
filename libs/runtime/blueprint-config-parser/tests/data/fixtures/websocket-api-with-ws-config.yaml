@@ -12,6 +12,7 @@ resources:
       protocols:
         - websocketConfig:
             routeKey: "action"
+            authStrategy: "connect"
       cors:
         allowOrigins:
           - "https://example.com"

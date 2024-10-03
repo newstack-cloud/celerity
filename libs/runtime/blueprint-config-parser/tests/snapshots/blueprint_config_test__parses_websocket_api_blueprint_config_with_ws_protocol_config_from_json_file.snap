@@ -17,7 +17,8 @@ expression: blueprint_config
         "protocols": [
           {
             "websocketConfig": {
-              "routeKey": "action"
+              "routeKey": "action",
+              "authStrategy": "connect"
             }
           }
         ],

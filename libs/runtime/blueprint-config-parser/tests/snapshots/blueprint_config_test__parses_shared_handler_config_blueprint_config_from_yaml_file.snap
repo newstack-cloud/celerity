@@ -110,10 +110,6 @@ expression: blueprint_config
         "auth": {
           "defaultGuard": "jwt",
           "guards": {
-            "apiKey": {
-              "type": "apiKey",
-              "apiKeySource": "$.headers.X-API-Key"
-            },
             "customGuard": {
               "type": "custom"
             },

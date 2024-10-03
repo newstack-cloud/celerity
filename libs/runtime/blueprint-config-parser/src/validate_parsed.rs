@@ -13,6 +13,7 @@ pub fn validate_blueprint_config(blueprint: &BlueprintConfig) -> Result<(), Blue
             "at least one resource must be provided for a blueprint".to_string(),
         ));
     }
+
     if let Some(variables_map) = &blueprint.variables {
         for (var_name, var_definition) in variables_map {
             validate_blueprint_var(var_name.as_str(), var_definition)?;

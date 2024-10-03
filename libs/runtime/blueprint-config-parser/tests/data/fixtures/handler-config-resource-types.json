@@ -64,10 +64,6 @@
               "tokenSource": "$.headers.Authorization",
               "audience": ["https://identity.twohundred.cloud/api/manage/v1/"]
             },
-            "apiKey": {
-              "type": "apiKey",
-              "apiKeySource": "$.headers.X-API-Key"
-            },
             "customGuard": {
               "type": "custom"
             }
