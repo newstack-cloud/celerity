@@ -271,7 +271,11 @@ fn verify_message(
     message: &[u8],
     signature: &str,
 ) -> Result<(), SignatureVerificationError> {
-    let signature_bytes = BASE64_URL_SAFE_NO_PAD.decode(signature.as_bytes()).unwrap();
+    let signature_bytes = BASE64_URL_SAFE_NO_PAD
+        .decode(signature.as_bytes())
+        .map_err(|_| {
+            SignatureVerificationError::InvalidSignature("Invalid signature".to_string())
+        })?;
     let mut mac = Hmac::<Sha256>::new_from_slice(key_pair.secret_key.as_bytes())
         .expect("HMAC can take key of any size");
     mac.update(message);
@@ -654,6 +658,40 @@ mod tests {
         );
         other_headers.insert(SIGNATURE_HEADER_NAME, signature_header.parse().unwrap());
         let result = verify_signature(&key_pairs, &other_headers, &clock, None);
+        assert!(matches!(
+            result,
+            Err(SignatureVerificationError::InvalidSignature(msg)) if msg == "Invalid signature"
+        ));
+    }
+
+    #[test]
+    fn test_fails_verifying_signature_for_invalid_signature_that_is_not_a_base64_encoded_string() {
+        let clock = TestClock {
+            now: TEST_TIMESTAMP,
+        };
+        let key_id = "test-key-id-4".to_string();
+        let key_pairs = HashMap::from([(
+            key_id.clone(),
+            KeyPair {
+                key_id: key_id.clone(),
+                secret_key: "test-secret_key-4".to_string(),
+            },
+        )]);
+        let mut headers = HeaderMap::new();
+        headers.insert("X-Custom-Header", "custom-value-4".parse().unwrap());
+        let custom_header_names = vec!["X-Custom-Header".to_string()];
+
+        let mut signature_header = create_signature_header(
+            &key_pairs[&key_id],
+            &mut headers,
+            custom_header_names,
+            &clock,
+        )
+        .expect("signature header to be created without any issues");
+        signature_header = signature_header.replace("signature=\"", "signature=\"invalid");
+
+        headers.insert(SIGNATURE_HEADER_NAME, signature_header.parse().unwrap());
+        let result = verify_signature(&key_pairs, &headers, &clock, None);
         assert!(matches!(
             result,
             Err(SignatureVerificationError::InvalidSignature(msg)) if msg == "Invalid signature"
