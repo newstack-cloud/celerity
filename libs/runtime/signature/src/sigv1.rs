@@ -36,11 +36,10 @@ pub const DEFAULT_CLOCK_SKEW: u64 = 300;
 ///
 /// let clock = DefaultClock::new();
 /// // Uses the default clock skew of 5 minutes.
-/// match verify_signature(key_pairs, headers, clock, None) {
+/// match verify_signature(&key_pairs, &headers, &clock, None) {
 ///     Ok(_) => println!("Signature verified"),
 ///     Err(e) => eprintln!("Signature verification failed: {:?}", e),
 /// }
-///
 /// ```
 pub fn verify_signature(
     key_pairs: &HashMap<String, KeyPair>,
@@ -111,7 +110,7 @@ pub fn verify_signature(
 /// headers.insert("X-Custom-Header", "custom-value".parse().unwrap());
 /// let custom_header_names = vec!["X-Custom-Header".to_string()];
 /// let clock = DefaultClock::new();
-/// let signature_header = create_signature_header(key_pair, headers, custom_header_names, clock)
+/// let signature_header = create_signature_header(&key_pair, &mut headers, custom_header_names, &clock)
 ///     .expect("signature header to be created without any issues");
 ///
 /// assert!(signature_header.starts_with("key-id"));
