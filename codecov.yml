@@ -12,6 +12,10 @@ coverage:
         target: 80%
         flags:
           - runtime-lib-core
+      runtime-lib-signature:
+        target: 80%
+        flags:
+          - runtime-lib-signature
 
 # adding Flags to your `layout` configuration to show up in the PR comment
 comment:
@@ -29,3 +33,6 @@ flags:
   runtime-lib-core:
     paths:
       - libs/runtime/core/src/
+  runtime-lib-signature:
+    paths:
+      - libs/runtime/signature/src/
