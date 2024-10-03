@@ -13,7 +13,7 @@ use celerity_runtime_core::{
   application::Application,
   config::{
     ApiConfig, AppConfig, HttpConfig, HttpHandlerDefinition, RuntimeCallMode, RuntimeConfig,
-    WebSocketConfig,
+    RuntimePlatform, WebSocketConfig,
   },
 };
 use serde::{Deserialize, Serialize};
@@ -217,6 +217,11 @@ impl CoreRuntimeApplication {
       server_port: runtime_config.server_port,
       local_api_port: 8259,
       use_custom_health_check: None,
+      service_name: "CelerityTestService".to_string(),
+      platform: RuntimePlatform::Local,
+      trace_otlp_collector_endpoint: "http://localhost:4317".to_string(),
+      runtime_max_diagnostics_level: tracing::Level::INFO,
+      test_mode: false,
     };
     print!(
       "Creating CoreRuntimeApplication with config: {:?}\n",
@@ -300,7 +305,15 @@ impl CoreRuntimeApplication {
     let inner = self.inner.clone();
     thread::spawn(move || {
       let rt = runtime::new_tokio_multi_thread().expect("failed to create tokio runtime");
-      let _ = rt.block_on(inner.lock().unwrap().run(true));
+      let _ = rt.block_on(async move {
+        match inner.lock().unwrap().run(true).await {
+          Ok(_) => {}
+          Err(err) => {
+            println!("Error running core runtime: {}", err);
+            abort();
+          }
+        }
+      });
     });
 
     let event_loop = self.task_locals.clone().unwrap().event_loop(py);

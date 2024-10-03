@@ -15,12 +15,12 @@ def test_http_endpoint(runtime_server):
 
 @pytest.fixture(scope="session")
 def runtime_server(command_args: List[str]):
-
-    server_proc = subprocess.Popen(
-        command_args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
+    with open("test-server.log", "w") as log_file:
+        server_proc = subprocess.Popen(
+            command_args,
+            stdout=log_file,
+            stderr=log_file,
+        )
     # Give the server time to start up.
     time.sleep(2)
 
