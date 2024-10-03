@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use axum::{body::Body, http::Request};
 use celerity_runtime_core::{
     application::Application as RuntimeApp,
-    config::{RuntimeCallMode, RuntimeConfig},
+    config::{RuntimeCallMode, RuntimeConfig, RuntimePlatform},
     errors::{ApplicationStartError, ConfigError},
 };
 use tokio::select;
@@ -37,6 +37,11 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
             server_loopback_only: Some(true),
             local_api_port: 3001,
             use_custom_health_check: Some(false),
+            service_name: "CelerityTestService".to_string(),
+            platform: RuntimePlatform::Local,
+            trace_otlp_collector_endpoint: "http://localhost:4317".to_string(),
+            runtime_max_diagnostics_level: tracing::Level::INFO,
+            test_mode: false,
         }),
         handler: None,
     });
@@ -170,6 +175,15 @@ impl From<ApplicationStartError> for GeneralError {
                 ConfigError::ApiMissing => GeneralError::ApplicationStartConfigApiMissing,
             },
             ApplicationStartError::TaskWaitError(_) => GeneralError::ApplicationStartTaskWaitError,
+            ApplicationStartError::OpenTelemetryTrace(_) => {
+                GeneralError::ApplicationStartOpenTelemetryTraceError
+            }
+            ApplicationStartError::TracerTryInit(_) => {
+                GeneralError::ApplicationStartTracerTryInitError
+            }
+            ApplicationStartError::TracingFilterParse(_) => {
+                GeneralError::ApplicationStartTracingFilterParseError
+            }
         }
     }
 }
