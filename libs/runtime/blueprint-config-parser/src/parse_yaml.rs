@@ -18,8 +18,10 @@ use crate::{
         CELERITY_API_RESOURCE_TYPE, CELERITY_BLUEPRINT_V2023_04_20,
         CELERITY_CONSUMER_RESOURCE_TYPE, CELERITY_HANDLER_CONFIG_RESOURCE_TYPE,
         CELERITY_HANDLER_RESOURCE_TYPE, CELERITY_SCHEDULE_RESOURCE_TYPE,
+        CELERITY_WORKFLOW_RESOURCE_TYPE,
     },
     parse::BlueprintParseError,
+    yaml_workflow::validate_celerity_workflow_spec,
 };
 
 pub fn build_blueprint_config_from_yaml(
@@ -305,6 +307,7 @@ fn validate_resource_type(
         CELERITY_SCHEDULE_RESOURCE_TYPE => Ok(CelerityResourceType::CeleritySchedule),
         CELERITY_HANDLER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandler),
         CELERITY_HANDLER_CONFIG_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandlerConfig),
+        CELERITY_WORKFLOW_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityWorkflow),
         _ => Err(BlueprintParseError::UnsupportedResourceType(
             resource_type.to_string(),
         )),
@@ -330,6 +333,9 @@ fn validate_resource_spec(
         )),
         CelerityResourceType::CelerityHandlerConfig => Ok(CelerityResourceSpec::HandlerConfig(
             validate_shared_handler_config(spec_map)?,
+        )),
+        CelerityResourceType::CelerityWorkflow => Ok(CelerityResourceSpec::Workflow(
+            validate_celerity_workflow_spec(spec_map)?,
         )),
     }
 }

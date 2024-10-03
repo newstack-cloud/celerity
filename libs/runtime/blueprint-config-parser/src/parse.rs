@@ -54,6 +54,7 @@ pub enum BlueprintParseError {
     YamlScanError(yaml_rust2::ScanError),
     YamlFormatError(String),
     UnsupportedResourceType(String),
+    UnsupportedWorkflowStateType(String),
 }
 
 impl fmt::Display for BlueprintParseError {
@@ -70,6 +71,9 @@ impl fmt::Display for BlueprintParseError {
             BlueprintParseError::ValidationError(error) => write!(f, "validation error: {}", error),
             BlueprintParseError::UnsupportedResourceType(resource_type) => {
                 write!(f, "resource type not supported: {}", resource_type)
+            }
+            BlueprintParseError::UnsupportedWorkflowStateType(state_type) => {
+                write!(f, "workflow state type not supported: {}", state_type)
             }
         }
     }

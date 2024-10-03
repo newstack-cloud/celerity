@@ -20,6 +20,9 @@ pub const CELERITY_HANDLER_RESOURCE_TYPE: &str = "celerity/handler";
 /// The resource type identifier a Celerity Handler Config (shared config).
 pub const CELERITY_HANDLER_CONFIG_RESOURCE_TYPE: &str = "celerity/handlerConfig";
 
+/// The resource type identifier for a Celerity Workflow.
+pub const CELERITY_WORKFLOW_RESOURCE_TYPE: &str = "celerity/workflow";
+
 /// This is a struct that holds the configuration
 /// for the Celerity runtime in the form a blueprint.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -143,8 +146,8 @@ impl Default for RuntimeBlueprintResource {
 }
 
 /// This is an enum that holds the types of resources
-/// that are recognised by the Celerity runtime.
-/// The runtime will only process resources that are
+/// that are recognised by the Celerity runtimes.
+/// The runtimes will only process resources that are
 /// of these types and ignore any other types.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum CelerityResourceType {
@@ -158,6 +161,8 @@ pub enum CelerityResourceType {
     CeleritySchedule,
     #[serde(rename = "celerity/handlerConfig")]
     CelerityHandlerConfig,
+    #[serde(rename = "celerity/workflow")]
+    CelerityWorkflow,
 }
 
 /// This holds the metadata
@@ -202,6 +207,7 @@ pub enum CelerityResourceSpec {
     Consumer(CelerityConsumerSpec),
     Schedule(CelerityScheduleSpec),
     HandlerConfig(SharedHandlerConfig),
+    Workflow(CelerityWorkflowSpec),
     NoSpec,
 }
 
@@ -661,4 +667,214 @@ pub struct SharedHandlerConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "environmentVariables")]
     pub environment_variables: Option<HashMap<String, String>>,
+}
+
+/// This holds the specification
+/// for a workflow resource in the blueprint configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityWorkflowSpec {
+    pub states: HashMap<String, CelerityWorkflowState>,
+}
+
+/// This holds the specification
+/// for a state in a workflow resource in the blueprint configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct CelerityWorkflowState {
+    #[serde(rename = "type")]
+    pub state_type: CelerityWorkflowStateType,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "inputPath")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_path: Option<String>,
+    #[serde(rename = "resultPath")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result_path: Option<String>,
+    #[serde(rename = "outputPath")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_path: Option<String>,
+    #[serde(rename = "payloadTemplate")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub payload_template: Option<HashMap<String, MappingNode>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decisions: Option<Vec<CelerityWorkflowDecisionRule>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<MappingNode>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeout: Option<i64>,
+    #[serde(rename = "waitConfig")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wait_config: Option<CelerityWorkflowWaitConfig>,
+    #[serde(rename = "failureConfig")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub failure_config: Option<CelerityWorkflowFailureConfig>,
+    #[serde(rename = "parallelBranches")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parallel_branches: Option<Vec<CelerityWorkflowParallelBranch>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub retry: Option<Vec<CelerityWorkflowRetryConfig>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub catch: Option<Vec<CelerityWorkflowCatchConfig>>,
+}
+
+impl Default for CelerityWorkflowState {
+    fn default() -> Self {
+        CelerityWorkflowState {
+            state_type: CelerityWorkflowStateType::Unknown,
+            description: None,
+            input_path: None,
+            result_path: None,
+            output_path: None,
+            payload_template: None,
+            next: None,
+            end: None,
+            decisions: None,
+            result: None,
+            timeout: None,
+            wait_config: None,
+            failure_config: None,
+            parallel_branches: None,
+            retry: None,
+            catch: None,
+        }
+    }
+}
+
+/// A decision rule that can be used in a "decision"
+/// workflow state.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityWorkflowDecisionRule {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub and: Option<Vec<CelerityWorkflowCondition>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub or: Option<Vec<CelerityWorkflowCondition>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub not: Option<CelerityWorkflowCondition>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub condition: Option<CelerityWorkflowCondition>,
+    pub next: String,
+}
+
+/// A condition for a decision rule in a "decision"
+/// workflow state.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityWorkflowCondition {
+    pub inputs: Vec<MappingNode>,
+    pub function: String,
+}
+
+/// Configuration for a "wait" workflow state.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityWorkflowWaitConfig {
+    /// The number of seconds to wait before transitioning to the next state.
+    /// This can be a path to a value in the input object
+    /// or a string containing the number of seconds.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seconds: Option<String>,
+    /// The timestamp to wait until before transitioning to the next state.
+    /// The timestamp must be in the format of the [RFC3339](https://datatracker.ietf.org/doc/html/rfc3339)
+    /// profile for the ISO 8601 standard.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+}
+
+/// Configuration for the "failure" workflow state.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityWorkflowFailureConfig {
+    /// The error name to be used for the failure state. This can be a path
+    /// or a literal value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    /// The cause of the failure. This can be a path or a literal value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cause: Option<String>,
+}
+
+/// A parallel branch in a "parallel" workflow state.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityWorkflowParallelBranch {
+    #[serde(rename = "startAt")]
+    pub start_at: String,
+    pub states: HashMap<String, CelerityWorkflowState>,
+}
+
+/// Configuration for retrying a state in a workflow.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityWorkflowRetryConfig {
+    #[serde(rename = "matchErrors")]
+    pub match_errors: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interval: Option<i64>,
+    #[serde(rename = "maxAttempts")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_attempts: Option<i64>,
+    #[serde(rename = "maxDelay")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_delay: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub jitter: Option<bool>,
+    #[serde(rename = "backoffRate")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub backoff_rate: Option<f64>,
+}
+
+/// Configuration for catching an error in a workflow.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityWorkflowCatchConfig {
+    #[serde(rename = "matchErrors")]
+    pub match_errors: Vec<String>,
+    pub next: String,
+    #[serde(rename = "resultPath")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result_path: Option<String>,
+}
+
+/// The type of state in a workflow resource.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub enum CelerityWorkflowStateType {
+    /// A state that executes a handler.
+    #[serde(rename = "executeStep")]
+    ExecuteStep,
+    /// A state that passes the input to the output without doing anything,
+    /// a pass step can inject extra data into the output.
+    #[serde(rename = "pass")]
+    Pass,
+    /// A state that executes multiple steps in parallel.
+    #[serde(rename = "parallel")]
+    Parallel,
+    /// A state that waits for a specific amount of time before transitioning
+    /// to the next state.
+    #[serde(rename = "wait")]
+    Wait,
+    /// A state that makes a decision on the next state based on the output
+    /// of a previous state.
+    #[serde(rename = "decision")]
+    Decision,
+    /// A state that indicates a specific failure state in the workflow, this
+    /// is a terminal state.
+    #[serde(rename = "failure")]
+    Failure,
+    /// A state that indicates the end of a successful workflow run,
+    /// this is a terminal state.
+    #[serde(rename = "success")]
+    Success,
+    /// A placeholder for when a state type has not yet been set or is not recognised.
+    Unknown,
+}
+
+/// A mapping node is used for user-defined complex
+/// structures that can not be known at compile time.
+/// An example use case is a payload template in a workflow
+/// state.
+#[derive(Serialize, Debug, PartialEq)]
+#[serde(untagged)]
+pub enum MappingNode {
+    Scalar(BlueprintScalarValue),
+    Mapping(HashMap<String, MappingNode>),
+    Sequence(Vec<MappingNode>),
+    Null,
 }

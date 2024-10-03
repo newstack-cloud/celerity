@@ -188,6 +188,26 @@ fn parses_schedule_app_blueprint_config_from_json_file() {
 }
 
 #[test_log::test]
+fn parses_workflow_app_blueprint_config_from_yaml_file() {
+    let blueprint_config =
+        BlueprintConfig::from_yaml_file("tests/data/fixtures/workflow-app.yaml").unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
+
+#[test_log::test]
+fn parses_workflow_app_blueprint_config_from_json_file() {
+    let blueprint_config =
+        BlueprintConfig::from_yaml_file("tests/data/fixtures/workflow-app.json").unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
+
+#[test_log::test]
 fn produces_expected_error_for_invalid_yaml_blueprint_config() {
     let result = BlueprintConfig::from_yaml_file("tests/data/fixtures/invalid-blueprint.yaml");
     assert!(matches!(
