@@ -22,7 +22,7 @@ The blueprint framework is an implementation of the [Celerity Blueprint Specific
 
 ### Blueprint Language Server (blueprint-ls)
 
-`blueprint-ls` is a language server that provides LSP support for the Celerity Blueprint Specification. The language server provides features such as syntax highlighting, code completion, and diagnostics.
+`blueprint-ls` is a language server that provides LSP support for the Celerity Blueprint Specification. The language server provides features such as code completion, go to definitions and diagnostics.
 
 The language server can be used with any language server protocol compatible editor such as Visual Studio Code, NeoVim,  Atom etc.
 
