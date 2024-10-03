@@ -44,6 +44,18 @@ pub(crate) fn define(lib: &mut LibraryBuilder) -> BackTraced<SharedDefinitions> 
             "application_start_task_wait_error",
             "Error starting the application due to a task failing or other runtime error",
         )?
+        .add_error(
+            "application_start_open_telemetry_trace_error",
+            "Error starting the application due to failure in setting up tracing",
+        )?
+        .add_error(
+            "application_start_tracer_try_init_error",
+            "Error starting the application due to failure initialisating runtime tracer",
+        )?
+        .add_error(
+            "application_start_tracing_filter_parse_error",
+            "Error starting the application due to failure parsing tracing directives for the runtime",
+        )?
         .add_error("runtime_creation_failure", "Failed to create Tokio runtime")?
         .add_error("runtime_destroyed", "Runtime has already been disposed")?
         .add_error(
