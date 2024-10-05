@@ -21,6 +21,9 @@ num_cpus = "1.16.0"
 [dependencies.celerity_runtime_core]
 path = "../../core"
 
+[dependencies.celerity_helpers]
+path = "../../helpers"
+
 [build-dependencies]
 celerity_runtime_bindgen_schema = { path = "../bindgen-schema" }
 oo-bindgen = "0.8.7"

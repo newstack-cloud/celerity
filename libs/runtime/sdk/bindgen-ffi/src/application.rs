@@ -1,17 +1,18 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use axum::{body::Body, http::Request};
+use celerity_helpers::runtime_types::{RuntimeCallMode, RuntimePlatform};
 use celerity_runtime_core::{
     application::Application as RuntimeApp,
-    config::{RuntimeCallMode, RuntimeConfig, RuntimePlatform},
+    config::RuntimeConfig,
     errors::{ApplicationStartError, ConfigError},
 };
 use tokio::select;
 
 use crate::{
     ffi::{self, ApplicationStartupError, CoreRuntimeConfig, GeneralError},
-    http_config_create, ApiConfig, AppConfig, HandlerError, HttpConfig, HttpHeaders, Response,
-    ResponseData, RuntimeError,
+    ApiConfig, AppConfig, HandlerError, HttpConfig, HttpHeaders, Response, ResponseData,
+    RuntimeError,
 };
 
 static mut CONSTRUCTION_COUNTER: u32 = 0;
