@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
+use celerity_helpers::runtime_types::RuntimePlatform;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::oneshot;
-
-use crate::config::RuntimePlatform;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EventData {
@@ -193,11 +192,6 @@ pub struct WebSocketMessages {
 pub struct WebSocketMessage {
     #[serde(rename = "connectionId")]
     pub connection_id: String,
-    pub message: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ResponseMessage {
     pub message: String,
 }
 

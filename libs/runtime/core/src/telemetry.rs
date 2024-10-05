@@ -1,11 +1,8 @@
 use std::time::Instant;
 
 use crate::{
-    aws_telemetry::XrayTraceId,
-    config::{RuntimeConfig, RuntimePlatform},
-    errors::ApplicationStartError,
-    request::RequestId,
-    types::ApiAppState,
+    aws_telemetry::XrayTraceId, config::RuntimeConfig, errors::ApplicationStartError,
+    request::RequestId, types::ApiAppState,
 };
 use axum::{
     extract::{Request, State},
@@ -16,6 +13,7 @@ use axum::{
 };
 use axum_client_ip::SecureClientIp;
 use axum_extra::{headers, TypedHeader};
+use celerity_helpers::runtime_types::RuntimePlatform;
 use opentelemetry::{global, trace::TraceContextExt};
 use opentelemetry_aws::trace::XrayPropagator as AwsXrayPropagator;
 use opentelemetry_otlp::WithExportConfig;

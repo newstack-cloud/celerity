@@ -1,10 +1,10 @@
 use std::cmp::max;
 
 use celerity_blueprint_config_parser::blueprint::{
-    BlueprintConfig, BlueprintLinkSelector, BlueprintMetadata, BlueprintScalarValue,
-    CelerityApiProtocol, CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType,
-    RuntimeBlueprintResource,
+    BlueprintConfig, BlueprintMetadata, BlueprintScalarValue, CelerityApiProtocol,
+    CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType,
 };
+use celerity_helpers::blueprint::{select_resources, ResourceWithName};
 
 use crate::{
     config::{
@@ -40,7 +40,7 @@ pub(crate) fn collect_api_config(
         &api.link_selector,
         &blueprint_config,
         CelerityResourceType::CelerityHandler,
-    )?;
+    );
 
     let mut collected_handler_names: Vec<String> = Vec::new();
 
@@ -131,7 +131,7 @@ fn collect_http_handler_definition(
             &handler.resource.link_selector,
             blueprint_config,
             CelerityResourceType::CelerityHandlerConfig,
-        )?;
+        );
         let handler_definition = apply_http_handler_configurations(
             handler.name.clone(),
             handler_spec,
@@ -231,7 +231,7 @@ fn collect_websocket_handler_definition(
             &handler.resource.link_selector,
             blueprint_config,
             CelerityResourceType::CelerityHandlerConfig,
-        )?;
+        );
         let handler_definition = apply_websocket_handler_configurations(
             handler.name.clone(),
             handler_spec,
@@ -461,45 +461,6 @@ fn to_axum_path(celerity_path: String) -> String {
         })
         .collect::<Vec<_>>()
         .join("/")
-}
-
-#[derive(Debug)]
-pub struct ResourceWithName<'a> {
-    pub name: String,
-    pub resource: &'a RuntimeBlueprintResource,
-}
-
-fn select_resources<'a>(
-    link_selector: &'a Option<BlueprintLinkSelector>,
-    blueprint_config: &'a BlueprintConfig,
-    target_type: CelerityResourceType,
-) -> Result<Vec<ResourceWithName<'a>>, ConfigError> {
-    let mut handlers = Vec::new();
-    if let Some(link_selector) = link_selector {
-        for (key, value) in &link_selector.by_label {
-            let matching_handlers = blueprint_config
-                .resources
-                .iter()
-                .filter(|(_, resource)| {
-                    if let Some(labels) = &resource.metadata.labels {
-                        labels
-                            .get(key)
-                            .map(|search_label_val| search_label_val == value)
-                            .is_some()
-                            && resource.resource_type == target_type
-                    } else {
-                        false
-                    }
-                })
-                .map(|(name, resource)| ResourceWithName {
-                    name: name.clone(),
-                    resource,
-                })
-                .collect::<Vec<_>>();
-            handlers.extend(matching_handlers);
-        }
-    }
-    Ok(handlers)
 }
 
 #[cfg(test)]

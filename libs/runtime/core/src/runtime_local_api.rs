@@ -9,13 +9,14 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use celerity_helpers::runtime_types::ResponseMessage;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
 use crate::{
     config::{AppConfig, EventConfig},
     errors::{ApplicationStartError, EventResultError, WebSocketsMessageError},
-    types::{EventData, EventResult, EventTuple, ResponseMessage, WebSocketMessages},
+    types::{EventData, EventResult, EventTuple, WebSocketMessages},
     wsconn_registry::WebSocketRegistrySend,
 };
 

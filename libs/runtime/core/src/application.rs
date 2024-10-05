@@ -13,13 +13,13 @@ use axum::{
 };
 use axum_client_ip::SecureClientIpSource;
 use celerity_blueprint_config_parser::{blueprint::BlueprintConfig, parse::BlueprintParseError};
-use serde::{Deserialize, Serialize};
+use celerity_helpers::runtime_types::{HealthCheckResponse, RuntimeCallMode};
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::trace::TraceLayer;
 use tracing::{debug, info_span, warn};
 
 use crate::{
-    config::{ApiConfig, AppConfig, RuntimeCallMode, RuntimeConfig, WebSocketConfig},
+    config::{ApiConfig, AppConfig, RuntimeConfig, WebSocketConfig},
     consts::DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
     errors::{ApplicationStartError, ConfigError},
     request::request_id,
@@ -378,9 +378,4 @@ fn resolve_websocket_base_path<'a>(
 #[derive(Debug)]
 pub struct AppInfo {
     pub http_server_address: Option<SocketAddr>,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct HealthCheckResponse {
-    pub timestamp: u64,
 }

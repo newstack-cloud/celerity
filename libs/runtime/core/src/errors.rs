@@ -6,11 +6,10 @@ use axum::{
     Json,
 };
 use celerity_blueprint_config_parser::parse::BlueprintParseError;
+use celerity_helpers::runtime_types::ResponseMessage;
 use opentelemetry::trace::TraceError as OTelTraceError;
 use tokio::{sync::mpsc::error::SendError, task::JoinError, time::error::Elapsed};
 use tracing_subscriber::{filter::ParseError, util::TryInitError};
-
-use crate::types::ResponseMessage;
 
 /// Provides a custom error type to be used for failures
 /// within message handlers.
