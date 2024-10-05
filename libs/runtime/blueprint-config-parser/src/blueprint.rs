@@ -89,7 +89,7 @@ impl Default for BlueprintVariable {
 /// in the blueprint configuration.
 /// This is used to define allowed and default values
 /// for a variable.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(untagged)]
 pub enum BlueprintScalarValue {
     Str(String),
@@ -671,14 +671,14 @@ pub struct SharedHandlerConfig {
 
 /// This holds the specification
 /// for a workflow resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
 pub struct CelerityWorkflowSpec {
     pub states: HashMap<String, CelerityWorkflowState>,
 }
 
 /// This holds the specification
 /// for a state in a workflow resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct CelerityWorkflowState {
     #[serde(rename = "type")]
     pub state_type: CelerityWorkflowStateType,
@@ -746,7 +746,7 @@ impl Default for CelerityWorkflowState {
 
 /// A decision rule that can be used in a "decision"
 /// workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowDecisionRule {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub and: Option<Vec<CelerityWorkflowCondition>>,
@@ -761,14 +761,14 @@ pub struct CelerityWorkflowDecisionRule {
 
 /// A condition for a decision rule in a "decision"
 /// workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowCondition {
     pub inputs: Vec<MappingNode>,
     pub function: String,
 }
 
 /// Configuration for a "wait" workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowWaitConfig {
     /// The number of seconds to wait before transitioning to the next state.
     /// This can be a path to a value in the input object
@@ -783,7 +783,7 @@ pub struct CelerityWorkflowWaitConfig {
 }
 
 /// Configuration for the "failure" workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowFailureConfig {
     /// The error name to be used for the failure state. This can be a path
     /// or a literal value.
@@ -795,7 +795,7 @@ pub struct CelerityWorkflowFailureConfig {
 }
 
 /// A parallel branch in a "parallel" workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowParallelBranch {
     #[serde(rename = "startAt")]
     pub start_at: String,
@@ -803,7 +803,7 @@ pub struct CelerityWorkflowParallelBranch {
 }
 
 /// Configuration for retrying a state in a workflow.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowRetryConfig {
     #[serde(rename = "matchErrors")]
     pub match_errors: Vec<String>,
@@ -823,7 +823,7 @@ pub struct CelerityWorkflowRetryConfig {
 }
 
 /// Configuration for catching an error in a workflow.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowCatchConfig {
     #[serde(rename = "matchErrors")]
     pub match_errors: Vec<String>,
@@ -834,7 +834,7 @@ pub struct CelerityWorkflowCatchConfig {
 }
 
 /// The type of state in a workflow resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum CelerityWorkflowStateType {
     /// A state that executes a handler.
     #[serde(rename = "executeStep")]
@@ -870,7 +870,7 @@ pub enum CelerityWorkflowStateType {
 /// structures that can not be known at compile time.
 /// An example use case is a payload template in a workflow
 /// state.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 #[serde(untagged)]
 pub enum MappingNode {
     Scalar(BlueprintScalarValue),
