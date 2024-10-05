@@ -24,6 +24,8 @@ tracing-subscriber = { version = "0.3.18", features = ["chrono", "json"] }
 [dependencies.celerity_runtime_core]
 path = "../../core"
 
+[dependencies.celerity_helpers]
+path = "../../helpers"
 
 [build-dependencies]
 napi-build = "2.0.1"

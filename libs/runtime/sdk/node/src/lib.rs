@@ -7,11 +7,11 @@ use axum::{
   http::{request::Parts, Request},
   response::IntoResponse,
 };
+use celerity_helpers::runtime_types::{RuntimeCallMode, RuntimePlatform};
 use celerity_runtime_core::{
   application::Application,
   config::{
-    ApiConfig, AppConfig, HttpConfig, HttpHandlerDefinition, RuntimeCallMode, RuntimeConfig,
-    RuntimePlatform, WebSocketConfig,
+    ApiConfig, AppConfig, HttpConfig, HttpHandlerDefinition, RuntimeConfig, WebSocketConfig,
   },
 };
 use napi::{
