@@ -25,6 +25,9 @@ nanoid = "0.4.0"
 [dependencies.celerity_blueprint_config_parser]
 path = "../blueprint-config-parser"
 
+[dependencies.celerity_helpers]
+path = "../helpers"
+
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
