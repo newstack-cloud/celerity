@@ -673,6 +673,8 @@ pub struct SharedHandlerConfig {
 /// for a workflow resource in the blueprint configuration.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
 pub struct CelerityWorkflowSpec {
+    #[serde(rename = "startAt")]
+    pub start_at: String,
     pub states: HashMap<String, CelerityWorkflowState>,
 }
 

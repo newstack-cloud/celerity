@@ -28,6 +28,15 @@ pub fn validate_celerity_workflow_spec(
     for (key, value) in value_map.iter() {
         if let yaml_rust2::Yaml::String(key_str) = key {
             match key_str.as_str() {
+                "startAt" => {
+                    if let yaml_rust2::Yaml::String(start_at_str) = value {
+                        workflow_spec.start_at = start_at_str.to_string();
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Start at state must be a string".to_string(),
+                        ));
+                    }
+                }
                 "states" => {
                     if let yaml_rust2::Yaml::Hash(states_map) = value {
                         workflow_spec.states = validate_celerity_workflow_states(states_map)?;
