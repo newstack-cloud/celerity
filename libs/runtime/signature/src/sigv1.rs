@@ -315,6 +315,10 @@ mod tests {
         fn now(&self) -> u64 {
             self.now
         }
+
+        fn now_millis(&self) -> u64 {
+            self.now * 1000
+        }
     }
 
     #[test]
