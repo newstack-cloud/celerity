@@ -1,11 +1,14 @@
 use std::{collections::HashMap, fmt};
 
+use axum::extract::path;
 use celerity_blueprint_config_parser::blueprint::{BlueprintScalarValue, MappingNode};
+use jsonpath_rust::JsonPath;
 use serde_json::{json, Map, Number, Value};
 
 use crate::{
     scanner::Scanner,
-    template_func_parser::{parse_func, ParseError},
+    template_func_parser::{parse_func, ParseError, TemplateFunctionCall, TemplateFunctionExpr},
+    template_functions_v1::{self, FunctionCallError},
 };
 
 /// A trait for a payload template rendering engine
@@ -33,8 +36,8 @@ impl fmt::Debug for dyn Engine + Send + Sync {
 pub enum PayloadTemplateEngineError {
     JSONPathError(String),
     FunctionNotFound(String),
-    IncorrectFunctionArgs(String),
     ParseFunctionCallError(String),
+    FunctionCallFailed(FunctionCallError),
 }
 
 impl fmt::Display for PayloadTemplateEngineError {
@@ -54,10 +57,10 @@ impl fmt::Display for PayloadTemplateEngineError {
                     func
                 )
             }
-            PayloadTemplateEngineError::IncorrectFunctionArgs(err) => {
+            PayloadTemplateEngineError::FunctionCallFailed(err) => {
                 write!(
                     f,
-                    "payload template engine error: incorrect function arguments: {}",
+                    "payload template engine error: function call failed: {}",
                     err
                 )
             }
@@ -75,6 +78,12 @@ impl fmt::Display for PayloadTemplateEngineError {
 impl From<ParseError> for PayloadTemplateEngineError {
     fn from(error: ParseError) -> Self {
         PayloadTemplateEngineError::ParseFunctionCallError(error.to_string())
+    }
+}
+
+impl From<FunctionCallError> for PayloadTemplateEngineError {
+    fn from(error: FunctionCallError) -> Self {
+        PayloadTemplateEngineError::FunctionCallFailed(error)
     }
 }
 
@@ -117,19 +126,59 @@ impl EngineV1 {
 
     fn render_func_call(
         &self,
-        key: &str,
+        context: &str,
         func_call: &str,
         input: &Value,
     ) -> Result<Value, PayloadTemplateEngineError> {
         let mut scanner = Scanner::new(func_call);
         let parsed = parse_func(&mut scanner)?;
-        // match func_name {
-        //     "format" => self.format(),
-        //     _ => Err(PayloadTemplateEngineError::FunctionNotFound(
-        //         func_name.to_string(),
-        //     )),
-        // }
-        Ok(json!({}))
+        self.compute_func_call(context, &parsed, input)
+    }
+
+    fn compute_func_call(
+        &self,
+        context: &str,
+        func_call: &TemplateFunctionCall,
+        input: &Value,
+    ) -> Result<Value, PayloadTemplateEngineError> {
+        let computed_args = self.compute_args(context, &func_call.args, input)?;
+        match func_call.name.as_str() {
+            "format" => template_functions_v1::format(computed_args).map_err(Into::into),
+            _ => Err(PayloadTemplateEngineError::FunctionNotFound(
+                func_call.name.clone(),
+            )),
+        }
+    }
+
+    fn compute_args(
+        &self,
+        context: &str,
+        args: &Vec<TemplateFunctionExpr>,
+        input: &Value,
+    ) -> Result<Vec<Value>, PayloadTemplateEngineError> {
+        let mut computed_args = Vec::new();
+        for arg in args {
+            match arg {
+                TemplateFunctionExpr::Str(value) => {
+                    computed_args.push(Value::String(value.clone()))
+                }
+                TemplateFunctionExpr::Int(value) => {
+                    computed_args.push(Value::Number(Number::from(value.clone())))
+                }
+                TemplateFunctionExpr::Float(value) => computed_args
+                    .push(Value::Number(Number::from_f64(value.clone()).expect(
+                        "float parsed by template function parser must be valid",
+                    ))),
+                TemplateFunctionExpr::Bool(value) => computed_args.push(Value::Bool(value.clone())),
+                TemplateFunctionExpr::Null => computed_args.push(Value::Null),
+                TemplateFunctionExpr::JsonPath(path) => computed_args.push(path.find(input)),
+                TemplateFunctionExpr::FuncCall(func_call) => {
+                    let computed = self.compute_func_call(context, &func_call, input)?;
+                    computed_args.push(computed);
+                }
+            }
+        }
+        Ok(computed_args)
     }
 
     fn render_json_path_query(

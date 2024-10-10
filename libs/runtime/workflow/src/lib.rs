@@ -7,6 +7,7 @@ pub mod payload_template;
 mod scanner;
 pub mod state_machine;
 mod template_func_parser;
+mod template_functions_v1;
 mod transform_config;
 pub mod types;
 pub mod workflow_executions;
