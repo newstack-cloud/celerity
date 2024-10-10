@@ -96,7 +96,9 @@ components:
           type: string
           const: "stateTransition"
         prevState:
-          $ref: "#/components/schemas/executionState"
+          oneOf:
+            - $ref: "#/components/schemas/executionState"
+            - type: "null"
         newState:
           $ref: "#/components/schemas/executionState"
 
@@ -136,6 +138,7 @@ components:
       type: object
       required:
         - id
+        - input
         - started
         - completed
         - duration
@@ -147,6 +150,12 @@ components:
         id:
           type: string
           description: The ID of the Execution
+        input:
+          type: ["object", "array", "string", "number", "null"]
+          description: The input data fed into the state.
+          examples:
+            - data:
+                timestamp: 0
         started:
           type: number
           description: A unix timestamp in milliseconds for when the execution was started.
@@ -163,24 +172,32 @@ components:
           examples: [1.747]
         status:
           type: string
-          enum: ["IN_PROGRESS", "FAILED", "SUCCEEDED"]
+          enum: ["PREPARING", "IN_PROGRESS", "FAILED", "SUCCEEDED"]
           description: The current status of the execution.
         statusDetail:
           type: string
           description: A description of the current status of the execution.
           examples: ["The execution is currently in the \"handleError\" state"]
         currentState:
-          type: string
+          type: ["string", "null"]
           description: the ID of the current state that the workflow is running.
         states:
           type: array
           items:
               $ref: "#/components/schemas/executionState"
+        output:
+          type: ["object", "array", "string", "number", "null"]
+          description: The output data for the state, if there is a subsequent state, this will be fed in as its input. This will be null until the state execution has been completed.
+          examples:
+            - data:
+                timestamp: 0
+                uploadedProcessedDocId: 1001
 
     executionState:
       type: object
       required:
         - name
+        - type
         - input
         - started
         - status
@@ -191,8 +208,22 @@ components:
       properties:
         name:
           type: string
-          descrpition: The unique Id of the state in the Workflow
+          description: The unique Id of the state in the Workflow
           examples: ["processDocument"]
+        type:
+          type: string
+          description: The type of the executed state.
+          enum:
+            - executeStep
+            - pass
+            - parallel
+            - wait
+            - decision
+            - failure
+            - success
+        parent:
+          type: ["string", "null"]
+          description: The parent state name if the state is a child of a parallel state.
         input:
           type: ["object", "array", "string", "number", "null"]
           description: The input data fed into the state.
@@ -215,7 +246,7 @@ components:
           examples: [1.747]
         status:
           type: string
-          enum: ["IN_PROGRESS", "FAILED", "SUCCEEDED"]
+          enum: ["PREPARING", "IN_PROGRESS", "FAILED", "SUCCEEDED"]
           description: The current status of the state.
         attempt:
           type: number
@@ -270,4 +301,3 @@ components:
       bindings:
         http:
           method: GET
-
