@@ -8,6 +8,7 @@ use serde_json::Value;
 pub enum FunctionCallError {
     InvalidArgument(String),
     IncorrectNumberOfArguments(String),
+    InvalidInput(String),
 }
 
 impl fmt::Display for FunctionCallError {
@@ -23,6 +24,9 @@ impl fmt::Display for FunctionCallError {
                     func
                 )
             }
+            FunctionCallError::InvalidInput(err) => {
+                write!(f, "function call error: invalid input: {}", err)
+            }
         }
     }
 }
@@ -33,7 +37,7 @@ impl fmt::Display for FunctionCallError {
 /// The use of `{}` in the format string will be replaced by the arguments
 /// in the order they are provided.
 ///
-/// See [format function definition](docs/applications/resources/celerity-workflow#format).
+/// See [format function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#format).
 pub fn format(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     if args.len() < 1 {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
@@ -84,12 +88,42 @@ pub fn format(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     Ok(Value::String(formatted))
 }
 
+/// V1 Workflow Template Function `jsondecode` implementation.
+///
+/// This function decodes a JSON string into an object, array or scalar value.
+///
+/// See [jsondecode function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#jsondecode).
+pub fn jsondecode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 1 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "jsondecode function requires a single argument".to_string(),
+        ));
+    }
+
+    let encoded_string = match &args[0] {
+        Value::String(string) => string,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "jsondecode function requires the first argument to be a string".to_string(),
+            ))
+        }
+    };
+
+    match serde_json::from_str(encoded_string) {
+        Ok(decoded) => Ok(decoded),
+        Err(err) => Err(FunctionCallError::InvalidInput(format!(
+            "jsondecode function failed to decode JSON string: {}",
+            err
+        ))),
+    }
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
     use serde_json::json;
 
-    #[test_log::test]
+    #[test]
     fn test_format_simple() {
         let args = vec![json!("This is a simple {}!"), json!("test")];
         let result = format(args).unwrap();
@@ -198,6 +232,67 @@ mod format_tests {
             err.to_string(),
             "function call error: incorrect number of arguments: format function requires \
             2 arguments after the format string, one for each \"{}\" placeholder"
+        );
+    }
+}
+
+#[cfg(test)]
+mod jsondecode_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_decodes_valid_json() {
+        let args = vec![json!("{\"id\":\"2aa3a8ae-64ff-4c94-8de9-6c952245da32\"}")];
+        let result = jsondecode(args).unwrap();
+        assert_eq!(
+            result,
+            json!({
+                "id": "2aa3a8ae-64ff-4c94-8de9-6c952245da32"
+            })
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_argument() {
+        let args = vec![json!(905)];
+        let result = jsondecode(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: jsondecode function requires the first argument to be a string"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![];
+        let result = jsondecode(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: jsondecode function requires a single argument"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_json_input() {
+        let args = vec![json!("{\"invalid\": \"json\"")];
+        let result = jsondecode(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidInput(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid input: jsondecode function failed to decode JSON string: \
+            EOF while parsing an object at line 1 column 18"
         );
     }
 }
