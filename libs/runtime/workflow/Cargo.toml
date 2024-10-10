@@ -21,6 +21,10 @@ opentelemetry-otlp = { version = "0.15.0" }
 tracing-opentelemetry = "0.23.0"
 opentelemetry-aws = "0.10.0"
 nanoid = "0.4.0"
+uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }
+futures = "0.3.30"
+tokio-stream = { version = "0.1.16", features = ["sync"] }
+jsonpath-rust = "0.7.1"
 
 [dependencies.celerity_blueprint_config_parser]
 path = "../blueprint-config-parser"

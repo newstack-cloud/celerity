@@ -457,6 +457,7 @@ mod tests {
                 tracing_enabled: true,
             }]),
             workflow: CelerityWorkflowSpec {
+                start_at: "processDocument".to_string(),
                 states: HashMap::new(),
             },
         }

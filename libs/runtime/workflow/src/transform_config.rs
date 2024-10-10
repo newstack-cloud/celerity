@@ -26,6 +26,7 @@ pub fn collect_workflow_app_config(
     Ok(WorkflowAppConfig {
         state_handlers: None,
         workflow: CelerityWorkflowSpec {
+            start_at: "".to_string(),
             states: HashMap::new(),
         },
     })
