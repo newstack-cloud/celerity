@@ -445,6 +445,45 @@ pub fn contains(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     }
 }
 
+/// V1 Workflow Template Function `split` implementation.
+///
+/// This function splits a string into an array of substrings based on a delimiter.
+///
+/// See [split function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#split).
+pub fn split(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "split function requires two arguments".to_string(),
+        ));
+    }
+
+    let (string, delimiter) = (&args[0], &args[1]);
+    let string = match string {
+        Value::String(string) => string,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "split function requires the first argument to be a string".to_string(),
+            ))
+        }
+    };
+
+    let delimiter = match delimiter {
+        Value::String(delimiter) => delimiter,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "split function requires the second argument to be a string".to_string(),
+            ))
+        }
+    };
+
+    Ok(Value::Array(
+        string
+            .split(delimiter)
+            .map(|s| Value::String(s.to_string()))
+            .collect(),
+    ))
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -1130,6 +1169,61 @@ mod contains_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: contains function requires the second argument to be a string when the first argument is a string"
+        );
+    }
+}
+
+#[cfg(test)]
+mod split_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_splits_string_into_array_of_substrings() {
+        let args = vec![json!("This is a test string"), json!(" ")];
+        let result = split(args).unwrap();
+        assert_eq!(result, json!(["This", "is", "a", "test", "string"]));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!("This is a test string")];
+        let result = split(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: split function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_first_argument() {
+        let args = vec![json!(49), json!(" ")];
+        let result = split(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: split function requires the first argument to be a string"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_second_argument() {
+        let args = vec![json!("This is a test string"), json!(952)];
+        let result = split(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: split function requires the second argument to be a string"
         );
     }
 }
