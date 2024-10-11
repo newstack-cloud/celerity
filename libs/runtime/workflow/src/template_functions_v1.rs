@@ -711,6 +711,37 @@ pub fn len(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     }
 }
 
+/// V1 Workflow Template Function `uuid` implementation.
+///
+/// This function generates a random UUID as per the UUID version 4 specification.
+///
+/// See [uuid function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#uuid).
+pub fn uuid(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 0 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "uuid function does not accept any arguments".to_string(),
+        ));
+    }
+
+    Ok(Value::String(uuid::Uuid::new_v4().to_string()))
+}
+
+/// V1 Workflow Template Function `nanoid` implementation.
+///
+/// This function provides a way to generate an ID that is shorter than a UUID
+/// while maintaining a low probability of collisions.
+///
+/// See [nanoid function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#nanoid).
+pub fn nanoid(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 0 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "nanoid function does not accept any arguments".to_string(),
+        ));
+    }
+
+    Ok(Value::String(nanoid::nanoid!()))
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -1803,6 +1834,68 @@ mod len_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: len function requires the argument to be a string or an array"
+        );
+    }
+}
+
+#[cfg(test)]
+mod uuid_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_generates_uuid_v4() {
+        let args = vec![];
+        let result = uuid(args).unwrap();
+        assert!(result.is_string());
+        let uuid = result.as_str().unwrap();
+        assert_eq!(uuid.len(), 36);
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!("unexpected")];
+        let result = uuid(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: uuid function does not accept any arguments"
+        );
+    }
+}
+
+#[cfg(test)]
+mod nanoid_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_generates_nanoid() {
+        let args = vec![];
+        let result = nanoid(args).unwrap();
+        assert!(result.is_string());
+        let nanoid = result.as_str().unwrap();
+        assert_eq!(nanoid.len(), 21);
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!("unexpected")];
+        let result = nanoid(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: nanoid function does not accept any arguments"
         );
     }
 }

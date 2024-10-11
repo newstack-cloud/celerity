@@ -164,6 +164,8 @@ impl EngineV1 {
             "math_mult" => template_functions_v1::math_mult(computed_args).map_err(Into::into),
             "math_div" => template_functions_v1::math_div(computed_args).map_err(Into::into),
             "len" => template_functions_v1::len(computed_args).map_err(Into::into),
+            "uuid" => template_functions_v1::uuid(computed_args).map_err(Into::into),
+            "nanoid" => template_functions_v1::nanoid(computed_args).map_err(Into::into),
             _ => Err(PayloadTemplateEngineError::FunctionNotFound(
                 func_call.name.clone(),
             )),
