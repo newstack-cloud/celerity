@@ -52,6 +52,12 @@ impl<'de> Visitor<'de> for MappingNodeVisitor {
         Ok(MappingNode::Scalar(BlueprintScalarValue::Str(value)))
     }
 
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E> {
+        Ok(MappingNode::Scalar(BlueprintScalarValue::Str(
+            value.to_string(),
+        )))
+    }
+
     fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E> {
         Ok(MappingNode::Scalar(BlueprintScalarValue::Bool(value)))
     }
