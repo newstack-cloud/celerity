@@ -605,6 +605,45 @@ pub fn math_sub(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     ))
 }
 
+/// V1 Workflow Template Function `math_mult` implementation.
+///
+/// This function will multiply two numbers together.
+///
+/// See [math mult function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#math_mult).
+pub fn math_mult(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "math_mult function requires two arguments".to_string(),
+        ));
+    }
+
+    let (first, second) = (&args[0], &args[1]);
+    let first = match first {
+        Value::Number(first) => first.as_f64().expect("first value must be a valid number"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "math_mult function requires the first argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    let second = match second {
+        Value::Number(second) => second
+            .as_f64()
+            .expect("second value must be a valid number"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "math_mult function requires the second argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    Ok(Value::Number(
+        serde_json::Number::from_f64(first * second)
+            .expect("result of math mult function must be a valid number"),
+    ))
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -1525,6 +1564,61 @@ mod math_sub_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: math_sub function requires the second argument to be a number"
+        );
+    }
+}
+
+#[cfg(test)]
+mod math_mult_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_multiplies_two_numbers() {
+        let args = vec![json!(10), json!(58.931)];
+        let result = math_mult(args).unwrap();
+        assert_eq!(result, json!(589.31));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!(2012)];
+        let result = math_mult(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: math_mult function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_first_argument() {
+        let args = vec![json!("invalid value"), json!(58.931)];
+        let result = math_mult(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: math_mult function requires the first argument to be a number"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_second_argument() {
+        let args = vec![json!(11), json!("invalid second value")];
+        let result = math_mult(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: math_mult function requires the second argument to be a number"
         );
     }
 }
