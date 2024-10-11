@@ -189,6 +189,36 @@ pub fn b64encode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     Ok(Value::String(BASE64_STANDARD.encode(input.as_bytes())))
 }
 
+/// V1 Workflow Template Function `b64decode` implementation.
+///
+/// This function base64 decodes a string.
+///
+/// See [b64decode function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#b64decode).
+pub fn b64decode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 1 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "b64decode function requires a single argument".to_string(),
+        ));
+    }
+
+    let input = match &args[0] {
+        Value::String(string) => string,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "b64decode function requires the first argument to be a string".to_string(),
+            ))
+        }
+    };
+
+    match BASE64_STANDARD.decode(input.as_bytes()) {
+        Ok(decoded) => Ok(Value::String(String::from_utf8_lossy(&decoded).to_string())),
+        Err(err) => Err(FunctionCallError::InvalidInput(format!(
+            "b64decode function failed to decode base64 string: {}",
+            err
+        ))),
+    }
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -489,6 +519,62 @@ mod b64encode_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: b64encode function requires the first argument to be a string"
+        );
+    }
+}
+
+#[cfg(test)]
+mod b64decode_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_decodes_base64_string() {
+        let args = vec![json!("VGhpcyBpcyBhbm90aGVyIHRlc3Qgc3RyaW5n")];
+        let result = b64decode(args).unwrap();
+        assert_eq!(result, json!("This is another test string"));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![];
+        let result = b64decode(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: b64decode function requires a single argument"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_argument() {
+        let args = vec![json!({"id": "2aa3a8ae-64ff-4c94-8de9-6c952245da32"})];
+        let result = b64decode(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: b64decode function requires the first argument to be a string"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_base64_input() {
+        let args = vec![json!("VGhpcyBpcyBh$$@!bm$$90aGVyIHRlc3Qgc3RyaW5n")];
+        let result = b64decode(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidInput(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid input: b64decode function failed to decode base64 string: \
+            Invalid symbol 36, offset 12."
         );
     }
 }
