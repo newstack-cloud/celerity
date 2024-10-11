@@ -145,6 +145,7 @@ impl EngineV1 {
         match func_call.name.as_str() {
             "format" => template_functions_v1::format(computed_args).map_err(Into::into),
             "jsondecode" => template_functions_v1::jsondecode(computed_args).map_err(Into::into),
+            "jsonencode" => template_functions_v1::jsonencode(computed_args).map_err(Into::into),
             _ => Err(PayloadTemplateEngineError::FunctionNotFound(
                 func_call.name.clone(),
             )),

@@ -118,6 +118,27 @@ pub fn jsondecode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     }
 }
 
+/// V1 Workflow Template Function `jsonencode` implementation.
+///
+/// This function encodes a value into a JSON string.
+///
+/// See [jsonencode function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#jsonencode).
+pub fn jsonencode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 1 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "jsonencode function requires a single argument".to_string(),
+        ));
+    }
+
+    match serde_json::to_string(&args[0]) {
+        Ok(encoded) => Ok(Value::String(encoded)),
+        Err(err) => Err(FunctionCallError::InvalidInput(format!(
+            "jsonencode function failed to encode JSON value: {}",
+            err
+        ))),
+    }
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -293,6 +314,38 @@ mod jsondecode_tests {
             err.to_string(),
             "function call error: invalid input: jsondecode function failed to decode JSON string: \
             EOF while parsing an object at line 1 column 18"
+        );
+    }
+}
+
+#[cfg(test)]
+mod jsonencode_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_encodes_value_as_json_string() {
+        let args = vec![json!({"id": "2aa3a8ae-64ff-4c94-8de9-6c952245da32"})];
+        let result = jsonencode(args).unwrap();
+        assert_eq!(
+            result,
+            json!("{\"id\":\"2aa3a8ae-64ff-4c94-8de9-6c952245da32\"}")
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![];
+        let result = jsonencode(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: jsonencode function requires a single argument"
         );
     }
 }
