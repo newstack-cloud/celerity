@@ -527,6 +527,45 @@ pub fn math_rand(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     Ok(Value::Number(random.into()))
 }
 
+/// V1 Workflow Template Function `math_add` implementation.
+///
+/// This function will add two numbers together.
+///
+/// See [math add function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#math_add).
+pub fn math_add(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "math_add function requires two arguments".to_string(),
+        ));
+    }
+
+    let (first, second) = (&args[0], &args[1]);
+    let first = match first {
+        Value::Number(first) => first.as_f64().expect("first value must be a valid number"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "math_add function requires the first argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    let second = match second {
+        Value::Number(second) => second
+            .as_f64()
+            .expect("second value must be a valid number"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "math_add function requires the second argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    Ok(Value::Number(
+        serde_json::Number::from_f64(first + second)
+            .expect("result of math add function must be a valid number"),
+    ))
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -1337,6 +1376,61 @@ mod math_rand_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: math_rand function requires the min to be less than the max"
+        );
+    }
+}
+
+#[cfg(test)]
+mod math_add_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_adds_two_numbers() {
+        let args = vec![json!(42), json!(58.931)];
+        let result = math_add(args).unwrap();
+        assert_eq!(result, json!(100.931));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!(42)];
+        let result = math_add(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: math_add function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_first_argument() {
+        let args = vec![json!("invalid value"), json!(58.931)];
+        let result = math_add(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: math_add function requires the first argument to be a number"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_second_argument() {
+        let args = vec![json!(42), json!("invalid second value")];
+        let result = math_add(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: math_add function requires the second argument to be a number"
         );
     }
 }
