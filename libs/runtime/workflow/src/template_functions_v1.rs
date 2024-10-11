@@ -139,6 +139,31 @@ pub fn jsonencode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     }
 }
 
+/// V1 Workflow Template Function `jsonmerge` implementation.
+///
+/// This function merges two JSON objects into a single JSON object.
+///
+/// See [jsonmerge function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#jsonmerge).
+pub fn jsonmerge(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "jsonmerge function requires two arguments".to_string(),
+        ));
+    }
+
+    let (first, second) = (&args[0], &args[1]);
+    match (first, second) {
+        (Value::Object(first_obj), Value::Object(second_obj)) => {
+            let mut merged = first_obj.clone();
+            merged.extend(second_obj.clone());
+            Ok(Value::Object(merged))
+        }
+        _ => Err(FunctionCallError::InvalidArgument(
+            "jsonmerge function requires two JSON objects as arguments".to_string(),
+        )),
+    }
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -346,6 +371,57 @@ mod jsonencode_tests {
         assert_eq!(
             err.to_string(),
             "function call error: incorrect number of arguments: jsonencode function requires a single argument"
+        );
+    }
+}
+
+#[cfg(test)]
+mod jsonmerge_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_merges_2_json_objects() {
+        let args = vec![
+            json!({"id": "2aa3a8ae-64ff-4c94-8de9-6c952245da32"}),
+            json!({"name": "John Doe"}),
+        ];
+        let result = jsonmerge(args).unwrap();
+        assert_eq!(
+            result,
+            json!({
+                "id": "2aa3a8ae-64ff-4c94-8de9-6c952245da32",
+                "name": "John Doe"
+            })
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!({"id": "2aa3a8ae-64ff-4c94-8de9-6c952245da32"})];
+        let result = jsonmerge(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: jsonmerge function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_argument() {
+        let args = vec![json!(42), json!(true)];
+        let result = jsonmerge(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: jsonmerge function requires two JSON objects as arguments"
         );
     }
 }
