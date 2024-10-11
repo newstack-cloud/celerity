@@ -1,5 +1,6 @@
 use std::fmt;
 
+use base64::{prelude::BASE64_STANDARD, Engine};
 use serde_json::Value;
 
 /// The error type used for template function
@@ -162,6 +163,30 @@ pub fn jsonmerge(args: Vec<Value>) -> Result<Value, FunctionCallError> {
             "jsonmerge function requires two JSON objects as arguments".to_string(),
         )),
     }
+}
+
+/// V1 Workflow Template Function `b64encode` implementation.
+///
+/// This function base64 encodes a string.
+///
+/// See [b64encode function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#b64encode).
+pub fn b64encode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 1 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "b64encode function requires a single argument".to_string(),
+        ));
+    }
+
+    let input = match &args[0] {
+        Value::String(string) => string,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "b64encode function requires the first argument to be a string".to_string(),
+            ))
+        }
+    };
+
+    Ok(Value::String(BASE64_STANDARD.encode(input.as_bytes())))
 }
 
 #[cfg(test)]
@@ -422,6 +447,48 @@ mod jsonmerge_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: jsonmerge function requires two JSON objects as arguments"
+        );
+    }
+}
+
+#[cfg(test)]
+mod b64encode_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_encodes_string_to_base64() {
+        let args = vec![json!("This is a test string")];
+        let result = b64encode(args).unwrap();
+        assert_eq!(result, json!("VGhpcyBpcyBhIHRlc3Qgc3RyaW5n"));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![];
+        let result = b64encode(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: b64encode function requires a single argument"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_argument() {
+        let args = vec![json!(6094.20)];
+        let result = b64encode(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: b64encode function requires the first argument to be a string"
         );
     }
 }

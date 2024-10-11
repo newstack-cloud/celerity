@@ -25,6 +25,7 @@ uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }
 futures = "0.3.30"
 tokio-stream = { version = "0.1.16", features = ["sync"] }
 jsonpath-rust = "0.7.1"
+base64 = "0.22.1"
 
 [dependencies.celerity_blueprint_config_parser]
 path = "../blueprint-config-parser"
