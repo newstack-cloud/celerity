@@ -408,6 +408,43 @@ pub fn remove_duplicates(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     Ok(Value::Array(unique))
 }
 
+/// V1 Workflow Template Function `contains` implementation.
+///
+/// This function checks if a value is present in a list or a substring is present in a string.
+/// This will carry out deep equality checks for objects and arrays.
+///
+/// See [contains function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#contains).
+pub fn contains(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "contains function requires two arguments".to_string(),
+        ));
+    }
+
+    let (list, value) = (&args[0], &args[1]);
+    match list {
+        Value::Array(list) => {
+            for elem in list {
+                if elem == value {
+                    return Ok(Value::Bool(true));
+                }
+            }
+            Ok(Value::Bool(false))
+        }
+        Value::String(haystack) => match value {
+            Value::String(needle) => Ok(Value::Bool(haystack.contains(needle))),
+            _ => Err(FunctionCallError::InvalidArgument(
+                "contains function requires the second argument to be \
+                a string when the first argument is a string"
+                    .to_string(),
+            )),
+        },
+        _ => Err(FunctionCallError::InvalidArgument(
+            "contains function requires the first argument to be a list or a string".to_string(),
+        )),
+    }
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -1031,6 +1068,68 @@ mod remove_duplicates_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: remove_duplicates function requires the first argument to be a list"
+        );
+    }
+}
+
+#[cfg(test)]
+mod contains_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_checks_if_value_is_in_list() {
+        let args = vec![json!([1, 2, 3, 4, 5]), json!(3)];
+        let result = contains(args).unwrap();
+        assert_eq!(result, json!(true));
+    }
+
+    #[test]
+    fn test_checks_if_needle_is_in_haystack() {
+        let args = vec![json!("This is a test string"), json!("test")];
+        let result = contains(args).unwrap();
+        assert_eq!(result, json!(true));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!([1, 2, 3, 4, 5])];
+        let result = contains(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: contains function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_first_argument() {
+        let args = vec![json!(1204), json!(3)];
+        let result = contains(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: contains function requires the first argument to be a list or a string"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_second_argument_for_substring_search() {
+        let args = vec![json!("This is a test string"), json!(true)];
+        let result = contains(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: contains function requires the second argument to be a string when the first argument is a string"
         );
     }
 }

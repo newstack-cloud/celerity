@@ -156,6 +156,7 @@ impl EngineV1 {
             "remove_duplicates" => {
                 template_functions_v1::remove_duplicates(computed_args).map_err(Into::into)
             }
+            "contains" => template_functions_v1::contains(computed_args).map_err(Into::into),
             _ => Err(PayloadTemplateEngineError::FunctionNotFound(
                 func_call.name.clone(),
             )),
