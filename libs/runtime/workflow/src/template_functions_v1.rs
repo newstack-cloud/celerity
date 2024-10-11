@@ -689,6 +689,28 @@ pub fn math_div(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     ))
 }
 
+/// V1 Workflow Template Function `len` implementation.
+///
+/// This function will return the length of a string or an array.
+///
+/// See [len function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#len).
+pub fn len(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 1 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "len function requires a single argument".to_string(),
+        ));
+    }
+
+    let value = &args[0];
+    match value {
+        Value::String(string) => Ok(Value::Number(serde_json::Number::from(string.len()))),
+        Value::Array(array) => Ok(Value::Number(serde_json::Number::from(array.len()))),
+        _ => Err(FunctionCallError::InvalidArgument(
+            "len function requires the argument to be a string or an array".to_string(),
+        )),
+    }
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -1732,6 +1754,55 @@ mod math_div_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid input: math_div function requires the second argument to be a non-zero number"
+        );
+    }
+}
+
+#[cfg(test)]
+mod len_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_gets_length_of_string() {
+        let args = vec![json!("This is a test string")];
+        let result = len(args).unwrap();
+        assert_eq!(result, json!(21));
+    }
+
+    #[test]
+    fn test_gets_length_of_list() {
+        let args = vec![json!([1, 2, 3, 4, 5])];
+        let result = len(args).unwrap();
+        assert_eq!(result, json!(5));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![];
+        let result = len(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: len function requires a single argument"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_argument() {
+        let args = vec![json!(true)];
+        let result = len(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: len function requires the argument to be a string or an array"
         );
     }
 }
