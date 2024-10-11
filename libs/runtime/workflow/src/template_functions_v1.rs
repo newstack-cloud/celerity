@@ -1,6 +1,7 @@
 use std::fmt;
 
 use base64::{prelude::BASE64_STANDARD, Engine};
+use rand::Rng;
 use serde_json::Value;
 use sha2::{Digest, Sha256, Sha384, Sha512};
 
@@ -482,6 +483,48 @@ pub fn split(args: Vec<Value>) -> Result<Value, FunctionCallError> {
             .map(|s| Value::String(s.to_string()))
             .collect(),
     ))
+}
+
+/// V1 Workflow Template Function `math_rand` implementation.
+///
+/// This function generates a random number between a minimum and maximum value.
+/// The random number generated is an integer and the provided parameters must be integers.
+///
+/// See [math rand function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#math_rand).
+pub fn math_rand(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "math_rand function requires two arguments".to_string(),
+        ));
+    }
+
+    let (min, max) = (&args[0], &args[1]);
+    let min = match min {
+        Value::Number(min) => min.as_i64().expect("min value must be a valid integer"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "math_rand function requires the first argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    let max = match max {
+        Value::Number(max) => max.as_i64().expect("max value must be a valid integer"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "math_rand function requires the second argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    if min >= max {
+        return Err(FunctionCallError::InvalidArgument(
+            "math_rand function requires the min to be less than the max".to_string(),
+        ));
+    }
+
+    let random = rand::thread_rng().gen_range(min..max);
+    Ok(Value::Number(random.into()))
 }
 
 #[cfg(test)]
@@ -1224,6 +1267,76 @@ mod split_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: split function requires the second argument to be a string"
+        );
+    }
+}
+
+#[cfg(test)]
+mod math_rand_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_generates_random_number_between_min_and_max() {
+        let args = vec![json!(0), json!(100)];
+        let result = math_rand(args).unwrap();
+        assert!(result.is_number());
+        let random = result.as_i64().unwrap();
+        assert!(random >= 0 && random < 100);
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!(0)];
+        let result = math_rand(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: math_rand function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_first_argument() {
+        let args = vec![json!("0"), json!(100)];
+        let result = math_rand(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: math_rand function requires the first argument to be a number"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_second_argument() {
+        let args = vec![json!(0), json!("100")];
+        let result = math_rand(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: math_rand function requires the second argument to be a number"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_when_min_is_greater_than_max() {
+        let args = vec![json!(230), json!(50)];
+        let result = math_rand(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: math_rand function requires the min to be less than the max"
         );
     }
 }

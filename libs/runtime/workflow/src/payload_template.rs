@@ -158,6 +158,7 @@ impl EngineV1 {
             }
             "contains" => template_functions_v1::contains(computed_args).map_err(Into::into),
             "split" => template_functions_v1::split(computed_args).map_err(Into::into),
+            "math_rand" => template_functions_v1::math_rand(computed_args).map_err(Into::into),
             _ => Err(PayloadTemplateEngineError::FunctionNotFound(
                 func_call.name.clone(),
             )),
