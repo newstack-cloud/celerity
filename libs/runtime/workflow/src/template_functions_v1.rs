@@ -644,6 +644,51 @@ pub fn math_mult(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     ))
 }
 
+/// V1 Workflow Template Function `math_div` implementation.
+///
+/// This function will divide a number by another.
+///
+/// See [math div function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#math_div).
+pub fn math_div(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "math_div function requires two arguments".to_string(),
+        ));
+    }
+
+    let (first, second) = (&args[0], &args[1]);
+    let first = match first {
+        Value::Number(first) => first.as_f64().expect("first value must be a valid number"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "math_div function requires the first argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    let second = match second {
+        Value::Number(second) => second
+            .as_f64()
+            .expect("second value must be a valid number"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "math_div function requires the second argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    if second == 0.0 {
+        return Err(FunctionCallError::InvalidInput(
+            "math_div function requires the second argument to be a non-zero number".to_string(),
+        ));
+    }
+
+    Ok(Value::Number(
+        serde_json::Number::from_f64(first / second)
+            .expect("result of math div function must be a valid number"),
+    ))
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -1619,6 +1664,74 @@ mod math_mult_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: math_mult function requires the second argument to be a number"
+        );
+    }
+}
+
+#[cfg(test)]
+mod math_div_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_divides_first_number_by_second() {
+        let args = vec![json!(100), json!(10.5)];
+        let result = math_div(args).unwrap();
+        assert_eq!(result, json!(9.523809523809524));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!(1312)];
+        let result = math_div(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: math_div function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_first_argument() {
+        let args = vec![json!("invalid value"), json!(10.5)];
+        let result = math_div(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: math_div function requires the first argument to be a number"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_second_argument() {
+        let args = vec![json!(100), json!("invalid second value")];
+        let result = math_div(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: math_div function requires the second argument to be a number"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_when_dividing_by_zero() {
+        let args = vec![json!(100), json!(0)];
+        let result = math_div(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidInput(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid input: math_div function requires the second argument to be a non-zero number"
         );
     }
 }
