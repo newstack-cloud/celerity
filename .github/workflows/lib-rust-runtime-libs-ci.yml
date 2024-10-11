@@ -59,3 +59,17 @@ jobs:
           files: codecov.json
           fail_ci_if_error: true
           flags: runtime-lib-core
+      - name: Upload coverage to Codecov for `runtime-lib-workflow`
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: codecov.json
+          fail_ci_if_error: true
+          flags: runtime-lib-workflow
+      - name: Upload coverage to Codecov for `runtime-lib-signature`
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: codecov.json
+          fail_ci_if_error: true
+          flags: runtime-lib-signature
