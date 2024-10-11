@@ -150,6 +150,12 @@ impl EngineV1 {
             "b64encode" => template_functions_v1::b64encode(computed_args).map_err(Into::into),
             "b64decode" => template_functions_v1::b64decode(computed_args).map_err(Into::into),
             "hash" => template_functions_v1::hash(computed_args).map_err(Into::into),
+            "list" => template_functions_v1::list(computed_args).map_err(Into::into),
+            "chunk_list" => template_functions_v1::chunk_list(computed_args).map_err(Into::into),
+            "list_elem" => template_functions_v1::list_elem(computed_args).map_err(Into::into),
+            "remove_duplicates" => {
+                template_functions_v1::remove_duplicates(computed_args).map_err(Into::into)
+            }
             _ => Err(PayloadTemplateEngineError::FunctionNotFound(
                 func_call.name.clone(),
             )),

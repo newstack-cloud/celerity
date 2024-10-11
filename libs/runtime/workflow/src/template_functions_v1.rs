@@ -286,6 +286,128 @@ pub fn hash(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     Ok(Value::String(hash))
 }
 
+/// V1 Workflow Template Function `list` implementation.
+///
+/// This function creates a list from a set of positional arguments.
+///
+/// See [list function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#list).
+pub fn list(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    Ok(Value::Array(args))
+}
+
+/// V1 Workflow Template Function `chunk_list` implementation.
+///
+/// This function splits a list into chunks of a specified size.
+///
+/// See [chunk list function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#chunk_list).
+pub fn chunk_list(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "chunk_list function requires two arguments".to_string(),
+        ));
+    }
+
+    let (list, chunk_size) = (&args[0], &args[1]);
+    let list = match list {
+        Value::Array(list) => list,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "chunk_list function requires the first argument to be a list".to_string(),
+            ))
+        }
+    };
+
+    let chunk_size = match chunk_size {
+        Value::Number(size) => size.as_u64().expect("chunk size must be a valid integer"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "chunk_list function requires the second argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    let mut chunks = Vec::new();
+    for chunk in list.chunks(chunk_size as usize) {
+        chunks.push(Value::Array(chunk.to_vec()));
+    }
+
+    Ok(Value::Array(chunks))
+}
+
+/// V1 Workflow Template Function `list_elem` implementation.
+///
+/// This function returns an element from a list at a specific index.
+///
+/// See [list element function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#list_elem).
+pub fn list_elem(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "list_elem function requires two arguments".to_string(),
+        ));
+    }
+
+    let (list, index) = (&args[0], &args[1]);
+    let list = match list {
+        Value::Array(list) => list,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "list_elem function requires the first argument to be a list".to_string(),
+            ))
+        }
+    };
+
+    let index = match index {
+        Value::Number(size) => size.as_u64().expect("index must be a valid integer"),
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "list_elem function requires the second argument to be a number".to_string(),
+            ))
+        }
+    };
+
+    match list.get(index as usize) {
+        Some(elem) => Ok(elem.clone()),
+        // As null (Value::Null) can be a valid value in a list, to avoid confusing an expected null value
+        // with an index being out of bounds, an error is returned.
+        None => Err(FunctionCallError::InvalidInput(
+            "list_elem function failed to get element at index: index out of bounds".to_string(),
+        )),
+    }
+}
+
+/// V1 Workflow Template Function `remove_duplicates` implementation.
+///
+/// This function removes duplicates from an array of values.
+/// The functoin will carry out deep equality checks for objects and arrays,
+/// performance may be significantly implacted when working with large and complex structures.
+///
+/// See [remove duplicates function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#remove_duplicates).
+pub fn remove_duplicates(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 1 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "remove_duplicates function requires a single argument".to_string(),
+        ));
+    }
+
+    let list = match &args[0] {
+        Value::Array(list) => list,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "remove_duplicates function requires the first argument to be a list".to_string(),
+            ))
+        }
+    };
+
+    let mut unique = Vec::new();
+    for elem in list {
+        if !unique.contains(elem) {
+            unique.push(elem.clone());
+        }
+    }
+
+    Ok(Value::Array(unique))
+}
+
 #[cfg(test)]
 mod format_tests {
     use super::*;
@@ -726,6 +848,189 @@ mod hash_tests {
         assert_eq!(
             err.to_string(),
             "function call error: invalid argument: hash function requires the second argument to be a string"
+        );
+    }
+}
+
+#[cfg(test)]
+mod list_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_creates_list_from_arguments() {
+        let args = vec![json!("This is a test"), json!(42), json!(true)];
+        let result = list(args).unwrap();
+        assert_eq!(result, json!(["This is a test", 42, true]));
+    }
+}
+
+#[cfg(test)]
+mod chunk_list_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_chunks_list_into_specified_size() {
+        let args = vec![json!([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), json!(3)];
+        let result = chunk_list(args).unwrap();
+        assert_eq!(result, json!([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])];
+        let result = chunk_list(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: chunk_list function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_first_argument() {
+        let args = vec![json!(42), json!(3)];
+        let result = chunk_list(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: chunk_list function requires the first argument to be a list"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_second_argument() {
+        let args = vec![json!([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), json!("invalid")];
+        let result = chunk_list(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: chunk_list function requires the second argument to be a number"
+        );
+    }
+}
+
+#[cfg(test)]
+mod list_elem_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_gets_element_at_index() {
+        let args = vec![json!([1, 2, 3, 4, 5]), json!(2)];
+        let result = list_elem(args).unwrap();
+        assert_eq!(result, json!(3));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!([1, 2, 3, 4, 5])];
+        let result = list_elem(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: list_elem function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_first_argument() {
+        let args = vec![json!(9483), json!(2)];
+        let result = list_elem(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: list_elem function requires the first argument to be a list"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_second_argument() {
+        let args = vec![json!([1, 2, 3, 4, 5]), json!("notvalid")];
+        let result = list_elem(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: list_elem function requires the second argument to be a number"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_index_out_of_bounds() {
+        let args = vec![json!([1, 2, 3, 4, 5]), json!(5)];
+        let result = list_elem(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidInput(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid input: list_elem function failed to get element at index: index out of bounds"
+        );
+    }
+}
+
+#[cfg(test)]
+mod remove_duplicates_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_removes_duplicates_from_list() {
+        let args = vec![
+            json!([1, 2, {"id": "1"}, 4, 2, {"id": "1"}, 1, 6, [57, 93], 8, 9, [57, 93], 3, 10]),
+        ];
+        let result = remove_duplicates(args).unwrap();
+        assert_eq!(
+            result,
+            json!([1, 2, {"id": "1"}, 4, 6, [57, 93], 8, 9, 3, 10])
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![];
+        let result = remove_duplicates(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: remove_duplicates function requires a single argument"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_argument() {
+        let args = vec![json!({"id": "2aa3a8ae-64ff-4c94-8de9-6c952245da32"})];
+        let result = remove_duplicates(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: remove_duplicates function requires the first argument to be a list"
         );
     }
 }
