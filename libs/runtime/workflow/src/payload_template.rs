@@ -149,6 +149,7 @@ impl EngineV1 {
             "jsonmerge" => template_functions_v1::jsonmerge(computed_args).map_err(Into::into),
             "b64encode" => template_functions_v1::b64encode(computed_args).map_err(Into::into),
             "b64decode" => template_functions_v1::b64decode(computed_args).map_err(Into::into),
+            "hash" => template_functions_v1::hash(computed_args).map_err(Into::into),
             _ => Err(PayloadTemplateEngineError::FunctionNotFound(
                 func_call.name.clone(),
             )),

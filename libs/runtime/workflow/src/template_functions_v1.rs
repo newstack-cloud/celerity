@@ -2,6 +2,7 @@ use std::fmt;
 
 use base64::{prelude::BASE64_STANDARD, Engine};
 use serde_json::Value;
+use sha2::{Digest, Sha256, Sha384, Sha512};
 
 /// The error type used for template function
 /// call errors.
@@ -217,6 +218,72 @@ pub fn b64decode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
             err
         ))),
     }
+}
+
+/// V1 Workflow Template Function `hash` implementation.
+///
+/// This function hashes some input data using a specified algorithm.
+/// This returns the hash as a hex string.
+///
+/// The available algorithms are:
+/// - `SHA256`
+/// - `SHA384`
+/// - `SHA512`
+///
+/// MD5 and SHA1 were considered in the original design but were not included
+/// due to the insecurity of these algorithms.
+///
+/// See [hash function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#hash).
+pub fn hash(args: Vec<Value>) -> Result<Value, FunctionCallError> {
+    if args.len() != 2 {
+        return Err(FunctionCallError::IncorrectNumberOfArguments(
+            "hash function requires two arguments".to_string(),
+        ));
+    }
+
+    let (algorithm, input) = (&args[0], &args[1]);
+    let algorithm = match algorithm {
+        Value::String(algo) => algo,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "hash function requires the first argument to be a string".to_string(),
+            ))
+        }
+    };
+
+    let input = match input {
+        Value::String(string) => string,
+        _ => {
+            return Err(FunctionCallError::InvalidArgument(
+                "hash function requires the second argument to be a string".to_string(),
+            ))
+        }
+    };
+
+    let hash =
+        match algorithm.as_str() {
+            "SHA256" => {
+                let mut hasher = Sha256::new();
+                hasher.update(input.as_bytes());
+                hex::encode(hasher.finalize())
+            }
+            "SHA384" => {
+                let mut hasher = Sha384::new();
+                hasher.update(input.as_bytes());
+                hex::encode(hasher.finalize())
+            }
+            "SHA512" => {
+                let mut hasher = Sha512::new();
+                hasher.update(input.as_bytes());
+                hex::encode(hasher.finalize())
+            }
+            _ => return Err(FunctionCallError::InvalidArgument(
+                "hash function requires the first argument to be one of: SHA256, SHA384, SHA512"
+                    .to_string(),
+            )),
+        };
+
+    Ok(Value::String(hash))
 }
 
 #[cfg(test)]
@@ -575,6 +642,90 @@ mod b64decode_tests {
             err.to_string(),
             "function call error: invalid input: b64decode function failed to decode base64 string: \
             Invalid symbol 36, offset 12."
+        );
+    }
+}
+
+#[cfg(test)]
+mod hash_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_hashes_input_with_sha256() {
+        let args = vec![json!("SHA256"), json!("This is a test string")];
+        let result = hash(args).unwrap();
+        assert_eq!(
+            result,
+            json!("717ac506950da0ccb6404cdd5e7591f72018a20cbca27c8a423e9c9e5626ac61")
+        );
+    }
+
+    #[test]
+    fn test_hashes_input_with_sha384() {
+        let args = vec![json!("SHA384"), json!("This is a test string")];
+        let result = hash(args).unwrap();
+        assert_eq!(
+            result,
+            json!(
+                "9bd1f75eb75c8ffad8f4b4c67c8f14db32cc3d4177b942334abd4\
+                7f9e02e35b371d599cb4796185d7410e808f046e119"
+            )
+        );
+    }
+
+    #[test]
+    fn test_hashes_input_with_sha512() {
+        let args = vec![json!("SHA512"), json!("This is a test string")];
+        let result = hash(args).unwrap();
+        assert_eq!(
+            result,
+            json!(
+                "b8ee69b29956b0b56e26d0a25c6a80713c858cf2902a12962aad\
+                08d682345646b2d5f193bbe03997543a9285e5932f34baf2c85c89459f25ba1cf43c4410793c"
+            )
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_incorrect_number_of_arguments() {
+        let args = vec![json!("SHA256")];
+        let result = hash(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(
+            err,
+            FunctionCallError::IncorrectNumberOfArguments(_)
+        ));
+        assert_eq!(
+            err.to_string(),
+            "function call error: incorrect number of arguments: hash function requires two arguments"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_argument() {
+        let args = vec![json!("SHA1"), json!("This is a test string")];
+        let result = hash(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: hash function requires the first argument to be one of: SHA256, SHA384, SHA512"
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_for_invalid_input() {
+        let args = vec![json!("SHA256"), json!(42)];
+        let result = hash(args);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, FunctionCallError::InvalidArgument(_)));
+        assert_eq!(
+            err.to_string(),
+            "function call error: invalid argument: hash function requires the second argument to be a string"
         );
     }
 }
