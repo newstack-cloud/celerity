@@ -13,14 +13,10 @@ pub fn calculate_retry_wait_time_ms(
     // Interval is configured in seconds, convert to milliseconds to allow
     // for millisecond precision for fractional backoff rates.
     let interval_ms = retry_config.interval.unwrap_or(default_interval_seconds) * 1000;
-    println!("interval_ms: {}", interval_ms);
     let multiplier = retry_config.backoff_rate.unwrap_or(default_backoff_rate);
-    println!("multiplier: {}", multiplier);
     let mut computed_wait_time_ms = interval_ms as f64 * multiplier.powf(retry_attempt as f64);
 
     if let Some(max_delay) = retry_config.max_delay {
-        println!("max_delay: {}", max_delay);
-        println!("computed_wait_time_ms: {}", computed_wait_time_ms);
         computed_wait_time_ms = computed_wait_time_ms.min(max_delay as f64 * 1000.0);
     }
 
