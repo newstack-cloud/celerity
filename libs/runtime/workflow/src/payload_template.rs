@@ -1,9 +1,8 @@
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, str::FromStr};
 
-use axum::extract::path;
 use celerity_blueprint_config_parser::blueprint::{BlueprintScalarValue, MappingNode};
 use jsonpath_rust::JsonPath;
-use serde_json::{json, Map, Number, Value};
+use serde_json::{Map, Number, Value};
 
 use crate::{
     scanner::Scanner,
@@ -34,7 +33,7 @@ impl fmt::Debug for dyn Engine + Send + Sync {
 /// engine implementations.
 #[derive(Debug)]
 pub enum PayloadTemplateEngineError {
-    JSONPathError(String),
+    JsonPathError(String),
     FunctionNotFound(String),
     ParseFunctionCallError(String),
     FunctionCallFailed(FunctionCallError),
@@ -43,7 +42,7 @@ pub enum PayloadTemplateEngineError {
 impl fmt::Display for PayloadTemplateEngineError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            PayloadTemplateEngineError::JSONPathError(path) => {
+            PayloadTemplateEngineError::JsonPathError(path) => {
                 write!(
                     f,
                     "payload template engine error: JSON path error: {}",
@@ -124,6 +123,27 @@ impl EngineV1 {
         }
     }
 
+    fn render_sequence(
+        &self,
+        key: &str,
+        items: &Vec<MappingNode>,
+        input: &Value,
+    ) -> Result<Value, PayloadTemplateEngineError> {
+        let mut rendered = Vec::new();
+        for item in items {
+            let rendered_item = match item {
+                MappingNode::Scalar(value) => self.render_scalar(key, value, input)?,
+                MappingNode::Mapping(mapping) => self.render(mapping, input)?,
+                MappingNode::Sequence(child_items) => {
+                    self.render_sequence(key, child_items, input)?
+                }
+                MappingNode::Null => Value::Null,
+            };
+            rendered.push(rendered_item);
+        }
+        Ok(Value::Array(rendered))
+    }
+
     fn render_func_call(
         &self,
         context: &str,
@@ -193,7 +213,9 @@ impl EngineV1 {
                     ))),
                 TemplateFunctionExpr::Bool(value) => computed_args.push(Value::Bool(value.clone())),
                 TemplateFunctionExpr::Null => computed_args.push(Value::Null),
-                TemplateFunctionExpr::JsonPath(path) => computed_args.push(path.find(input)),
+                TemplateFunctionExpr::JsonPath(path) => {
+                    computed_args.push(self.extract_json_path_value(path, input))
+                }
                 TemplateFunctionExpr::FuncCall(func_call) => {
                     let computed = self.compute_func_call(context, &func_call, input)?;
                     computed_args.push(computed);
@@ -209,7 +231,38 @@ impl EngineV1 {
         path: &str,
         input: &Value,
     ) -> Result<Value, PayloadTemplateEngineError> {
-        Ok(json!({}))
+        let path = match JsonPath::from_str(path) {
+            Ok(path) => path,
+            Err(err) => {
+                return Err(PayloadTemplateEngineError::JsonPathError(format!(
+                    "invalid json path found for key \"{}\": {}",
+                    key, err,
+                )))
+            }
+        };
+
+        Ok(self.extract_json_path_value(&path, input))
+    }
+
+    fn extract_json_path_value(&self, path: &JsonPath, input: &Value) -> Value {
+        match path.find(input) {
+            Value::Null => Value::Null,
+            // The jsonpath crate always returns a Value::Array for the query result,
+            // even for a single result. We unwrap the single result here.
+            wrapped => match wrapped {
+                Value::Array(mut array) => {
+                    if array.len() == 1 {
+                        array.remove(0)
+                    } else {
+                        // Keep an array where the query result is an array
+                        // with multiple elements, suggesting that the query
+                        // matched multiple elements in the input.
+                        Value::Array(array)
+                    }
+                }
+                value => value,
+            },
+        }
     }
 }
 
@@ -223,14 +276,147 @@ impl Engine for EngineV1 {
         for (key, node) in template.iter() {
             let rendered_value = match node {
                 MappingNode::Scalar(value) => self.render_scalar(key, value, input)?,
-                _ => {
-                    return Err(PayloadTemplateEngineError::FunctionNotFound(
-                        "array functions are not supported".to_string(),
-                    ))
-                }
+                MappingNode::Mapping(mapping) => self.render(mapping, input)?,
+                MappingNode::Sequence(items) => self.render_sequence(key, items, input)?,
+                MappingNode::Null => Value::Null,
             };
             rendered.insert(key.clone(), rendered_value);
         }
         Ok(Value::Object(rendered))
+    }
+}
+
+#[cfg(test)]
+mod engine_v1_tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+    use serde_json::json;
+
+    #[test]
+    fn test_engine_renders_template() {
+        let engine = EngineV1::new();
+        let template = HashMap::from([
+            (
+                "value1".to_string(),
+                MappingNode::Scalar(BlueprintScalarValue::Str("$.values[0]".to_string())),
+            ),
+            (
+                "restOfValues".to_string(),
+                MappingNode::Scalar(BlueprintScalarValue::Str(
+                    "func:remove_duplicates($.values[-5:])".to_string(),
+                )),
+            ),
+            (
+                "nestedStructure".to_string(),
+                MappingNode::Mapping(HashMap::from([
+                    (
+                        "key1".to_string(),
+                        MappingNode::Scalar(BlueprintScalarValue::Str("some value".to_string())),
+                    ),
+                    (
+                        "key2".to_string(),
+                        MappingNode::Scalar(BlueprintScalarValue::Int(20)),
+                    ),
+                    (
+                        "key3".to_string(),
+                        MappingNode::Scalar(BlueprintScalarValue::Float(4039.402)),
+                    ),
+                    (
+                        "sequence".to_string(),
+                        MappingNode::Sequence(vec![
+                            MappingNode::Scalar(BlueprintScalarValue::Str(
+                                "$.values[0]".to_string(),
+                            )),
+                            MappingNode::Scalar(BlueprintScalarValue::Str(
+                                "$.values[1]".to_string(),
+                            )),
+                            MappingNode::Scalar(BlueprintScalarValue::Str(
+                                "func:list(3054, 43.2, remove_duplicates($.values[?(@ > 300)]), true, $['inputStructure'], null, \"string value\")"
+                                    .to_string(),
+                            )),
+                            MappingNode::Null,
+                        ]),
+                    ),
+                    (
+                        "flag".to_string(),
+                        MappingNode::Scalar(BlueprintScalarValue::Str("$.flag1".to_string())),
+                    ),
+                    (
+                        "flag2".to_string(),
+                        MappingNode::Scalar(BlueprintScalarValue::Bool(false)),
+                    ),
+                ])),
+            ),
+        ]);
+        let input = json!({
+            "values": [10, 405, 304, 20, 304, 20],
+            "inputStructure": {
+                "id": "1fb11a12-21a5-4404-a12b-b86e06329605"
+            },
+            "flag1": true,
+        });
+        let rendered = engine.render(&template, &input).unwrap();
+        assert_eq!(
+            rendered,
+            json!({
+                "value1": 10,
+                "restOfValues": [405, 304, 20],
+                "nestedStructure": {
+                    "key1": "some value",
+                    "key2": 20,
+                    "key3": 4039.402,
+                    "sequence": [
+                        10,
+                        405,
+                        [
+                            3054,
+                            43.2,
+                            [405, 304],
+                            true,
+                            { "id": "1fb11a12-21a5-4404-a12b-b86e06329605" },
+                            null,
+                            "string value"
+                        ],
+                        null
+                    ],
+                    "flag": true,
+                    "flag2": false,
+                },
+            })
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_due_to_invalid_json_path() {
+        let engine = EngineV1::new();
+        let template = HashMap::from([(
+            "value1".to_string(),
+            MappingNode::Scalar(BlueprintScalarValue::Str("$.values[0".to_string())),
+        )]);
+        let input = json!({
+            "values": [10, 405, 304, 20, 304, 20],
+        });
+        let rendered = engine.render(&template, &input);
+        assert!(matches!(
+            rendered,
+            Err(PayloadTemplateEngineError::JsonPathError(_))
+        ));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_due_to_missing_function() {
+        let engine = EngineV1::new();
+        let template = HashMap::from([(
+            "value1".to_string(),
+            MappingNode::Scalar(BlueprintScalarValue::Str(
+                "func:unknown_function()".to_string(),
+            )),
+        )]);
+        let input = json!({});
+        let rendered = engine.render(&template, &input);
+        assert!(matches!(
+            rendered,
+            Err(PayloadTemplateEngineError::FunctionNotFound(_))
+        ));
     }
 }
