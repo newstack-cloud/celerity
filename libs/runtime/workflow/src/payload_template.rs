@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fmt, str::FromStr};
 
 use celerity_blueprint_config_parser::blueprint::{BlueprintScalarValue, MappingNode};
+use celerity_helpers::jsonpath::jsonpath_inject_root;
 use jsonpath_rust::JsonPath;
 use serde_json::{Map, Number, Value};
 
@@ -13,6 +14,7 @@ use crate::{
 /// A trait for a payload template rendering engine
 /// that can be used to render the "payload" input object for
 /// a workflow state that will in most cases be passed into a handler.
+/// This is also used to inject values into a provided input value.
 pub trait Engine {
     /// Render the payload template using the provided template
     /// and input data.
@@ -20,6 +22,14 @@ pub trait Engine {
         &self,
         template: &HashMap<String, MappingNode>,
         input: &Value,
+    ) -> Result<Value, PayloadTemplateEngineError>;
+
+    /// Inject a value into the provided input with the given path.
+    fn inject(
+        &self,
+        input: &Value,
+        inject_path: String,
+        inject_value: Value,
     ) -> Result<Value, PayloadTemplateEngineError>;
 }
 
@@ -284,10 +294,37 @@ impl Engine for EngineV1 {
         }
         Ok(Value::Object(rendered))
     }
+
+    fn inject(
+        &self,
+        input: &Value,
+        inject_path: String,
+        inject_value: Value,
+    ) -> Result<Value, PayloadTemplateEngineError> {
+        let path = match JsonPath::from_str(&inject_path) {
+            Ok(path) => path,
+            Err(err) => {
+                return Err(PayloadTemplateEngineError::JsonPathError(format!(
+                    "invalid json path found for inject path: {}",
+                    err,
+                )))
+            }
+        };
+
+        let mut cloned_input = input.clone();
+        let injected = jsonpath_inject_root(&path, &mut cloned_input, inject_value);
+        if !injected {
+            return Err(PayloadTemplateEngineError::JsonPathError(format!(
+                "failed to inject value at path: {}",
+                inject_path,
+            )));
+        }
+        Ok(cloned_input)
+    }
 }
 
 #[cfg(test)]
-mod engine_v1_tests {
+mod engine_v1_render_tests {
     use super::*;
     use pretty_assertions::assert_eq;
     use serde_json::json;
@@ -417,6 +454,70 @@ mod engine_v1_tests {
         assert!(matches!(
             rendered,
             Err(PayloadTemplateEngineError::FunctionNotFound(_))
+        ));
+    }
+}
+
+#[cfg(test)]
+mod engine_v1_inject_tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+    use serde_json::json;
+
+    #[test]
+    fn test_engine_injects_value() {
+        let engine = EngineV1::new();
+        let input = json!({
+            "values": [10, 405, 304, 20, 304, 20],
+            "inputStructure": {
+                "id": "1fb11a12-21a5-4404-a12b-b86e06329605"
+            },
+            "flag1": true,
+        });
+        let inject_path = "$.flag2".to_string();
+        let inject_value = json!(false);
+        let injected = engine.inject(&input, inject_path, inject_value).unwrap();
+        assert_eq!(
+            injected,
+            json!({
+                "values": [10, 405, 304, 20, 304, 20],
+                "inputStructure": {
+                    "id": "1fb11a12-21a5-4404-a12b-b86e06329605"
+                },
+                "flag1": true,
+                "flag2": false,
+            })
+        );
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_due_to_invalid_json_path() {
+        let engine = EngineV1::new();
+        let input = json!({
+            "values": [10, 405, 304, 20, 304, 20],
+        });
+        let inject_path = "$.values[0".to_string();
+        let inject_value = json!(100);
+        let injected = engine.inject(&input, inject_path, inject_value);
+        assert!(matches!(
+            injected,
+            Err(PayloadTemplateEngineError::JsonPathError(_))
+        ));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_due_to_unsupported_injection() {
+        let engine = EngineV1::new();
+        let input = json!({
+            "values": [10, 405, 304, 20, 304, 20],
+        });
+        // Only fields of the root object can be injected into.
+        let inject_path = "$.values[10]".to_string();
+        let inject_value = json!(100);
+        let injected = engine.inject(&input, inject_path, inject_value);
+        assert!(matches!(
+            injected,
+            Err(PayloadTemplateEngineError::JsonPathError(_))
         ));
     }
 }
