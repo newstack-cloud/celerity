@@ -2,7 +2,7 @@ use celerity_blueprint_config_parser::blueprint::CelerityWorkflowRetryConfig;
 use rand::Rng;
 
 /// Calculate the wait time in milliseconds for a retry attempt.
-/// This uses exponentnial backoff; jitter is also used if configured.
+/// This uses exponential backoff; jitter is also used if configured.
 /// See: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 pub fn calculate_retry_wait_time_ms(
     retry_config: &CelerityWorkflowRetryConfig,

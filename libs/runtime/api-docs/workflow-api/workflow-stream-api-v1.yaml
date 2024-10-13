@@ -260,9 +260,11 @@ components:
         parallel:
           type: array
           description: |
-            An array of execution states for a `parallel` state, each entry in the array represents the execution state of a child state.
+            A 2-dimensional array of execution states for a `parallel` state, each entry in the array a parallel branch containing child state execution information.
           items:
-            $ref: "#/components/schemas/executionState"
+            type: array
+            items:
+              $ref: "#/components/schemas/executionState"
         output:
           type: ["object", "array", "string", "number", "null"]
           description: The output data for the state, if there is a subsequent state, this will be fed in as its input. This will be null until the state execution has been completed.

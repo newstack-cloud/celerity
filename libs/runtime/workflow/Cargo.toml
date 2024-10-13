@@ -30,6 +30,7 @@ sha2 = "0.10.8"
 hex-literal = "0.4.1"
 hex = "0.4.3"
 rand = "0.8.5"
+async-recursion = "1.1.1"
 
 [dependencies.celerity_blueprint_config_parser]
 path = "../blueprint-config-parser"

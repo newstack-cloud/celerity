@@ -150,7 +150,7 @@ pub struct WorkflowExecutionState {
     pub status: WorkflowExecutionStatus,
     pub attempt: u32,
     pub error: Option<String>,
-    pub parallel: Vec<WorkflowExecutionState>,
+    pub parallel: Vec<Vec<WorkflowExecutionState>>,
     pub output: Option<Value>,
 }
 

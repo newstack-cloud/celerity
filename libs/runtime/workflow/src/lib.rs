@@ -3,6 +3,7 @@ pub mod config;
 pub mod consts;
 pub mod errors;
 pub mod handlers;
+mod helpers;
 pub mod payload_template;
 mod scanner;
 pub mod state_machine;

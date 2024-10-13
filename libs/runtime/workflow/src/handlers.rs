@@ -1,3 +1,4 @@
+use core::fmt;
 use std::{fmt::Debug, future::Future, pin::Pin};
 
 use serde_json::Value;
@@ -61,4 +62,10 @@ pub type BoxedWorkflowStateHandler = Box<
 pub struct WorkflowStateHandlerError {
     pub name: String,
     pub message: String,
+}
+
+impl fmt::Display for WorkflowStateHandlerError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "handler error [{}]: {}", self.name, self.message)
+    }
 }
