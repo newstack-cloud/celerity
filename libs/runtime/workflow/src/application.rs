@@ -209,7 +209,7 @@ async fn run_handler(
         // the GET /executions/:id endpoint.
         tokio::spawn(
             async move {
-                let state_machine = StateMachine::new(state, execution_state);
+                let state_machine = Arc::new(StateMachine::new(state, execution_state));
                 state_machine.start().await;
             }
             .instrument(info_span!("state_machine")),

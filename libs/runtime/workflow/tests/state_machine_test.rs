@@ -11,7 +11,6 @@ use celerity_blueprint_config_parser::blueprint::{
     CelerityWorkflowWaitConfig, MappingNode,
 };
 use celerity_helpers::{runtime_types::RuntimePlatform, time::Clock};
-use pretty_assertions::assert_eq;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio::{
@@ -76,7 +75,7 @@ async fn test_state_machine_1_successful_with_retries() {
     });
 
     let execution_service = Arc::new(MemoryWorkflowExecutionService::new());
-    let mut state_machine = StateMachine::new(
+    let state_machine = Arc::new(StateMachine::new(
         WorkflowAppState {
             platform: RuntimePlatform::Local,
             clock: Arc::new(TestClock::new(vec![1000, 1000, 2000])),
@@ -100,7 +99,7 @@ async fn test_state_machine_1_successful_with_retries() {
             current_state: None,
             states: vec![],
         },
-    );
+    ));
 
     state_machine.start().await;
 

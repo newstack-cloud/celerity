@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use celerity_blueprint_config_parser::blueprint::CelerityWorkflowRetryConfig;
 use rand::Rng;
 
@@ -27,6 +29,12 @@ pub fn calculate_retry_wait_time_ms(
     } else {
         computed_wait_time_ms as u64
     }
+}
+
+/// Convert a `Duration` to fractional seconds,
+/// where the fractional part is to millisecond precision.
+pub fn as_fractional_seconds(duration: Duration) -> f64 {
+    duration.as_millis() as f64 / 1000.0
 }
 
 #[cfg(test)]

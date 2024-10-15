@@ -14,7 +14,8 @@ use crate::{
 /// A trait for a payload template rendering engine
 /// that can be used to render the "payload" input object for
 /// a workflow state that will in most cases be passed into a handler.
-/// This is also used to inject values into a provided input value.
+/// This is also used to inject values into a provided input value
+/// and extract values from a provided input value.
 pub trait Engine {
     /// Render the payload template using the provided template
     /// and input data.
@@ -28,8 +29,15 @@ pub trait Engine {
     fn inject(
         &self,
         input: &Value,
-        inject_path: String,
+        inject_path: &str,
         inject_value: Value,
+    ) -> Result<Value, PayloadTemplateEngineError>;
+
+    /// Extracts a value from the provided input using the given path.
+    fn extract(
+        &self,
+        input: &Value,
+        extract_path: &str,
     ) -> Result<Value, PayloadTemplateEngineError>;
 }
 
@@ -62,7 +70,7 @@ impl fmt::Display for PayloadTemplateEngineError {
             PayloadTemplateEngineError::FunctionNotFound(func) => {
                 write!(
                     f,
-                    "payload template engine error: function not found: {}",
+                    "payload template engine error: function \"{}\" not found",
                     func
                 )
             }
@@ -298,10 +306,10 @@ impl Engine for EngineV1 {
     fn inject(
         &self,
         input: &Value,
-        inject_path: String,
+        inject_path: &str,
         inject_value: Value,
     ) -> Result<Value, PayloadTemplateEngineError> {
-        let path = match JsonPath::from_str(&inject_path) {
+        let path = match JsonPath::from_str(inject_path) {
             Ok(path) => path,
             Err(err) => {
                 return Err(PayloadTemplateEngineError::JsonPathError(format!(
@@ -320,6 +328,24 @@ impl Engine for EngineV1 {
             )));
         }
         Ok(cloned_input)
+    }
+
+    fn extract(
+        &self,
+        input: &Value,
+        extract_path: &str,
+    ) -> Result<Value, PayloadTemplateEngineError> {
+        let path = match JsonPath::from_str(extract_path) {
+            Ok(path) => path,
+            Err(err) => {
+                return Err(PayloadTemplateEngineError::JsonPathError(format!(
+                    "invalid json path found for extract path: {}",
+                    err,
+                )))
+            }
+        };
+
+        Ok(self.extract_json_path_value(&path, input))
     }
 }
 
@@ -474,7 +500,7 @@ mod engine_v1_inject_tests {
             },
             "flag1": true,
         });
-        let inject_path = "$.flag2".to_string();
+        let inject_path = "$.flag2";
         let inject_value = json!(false);
         let injected = engine.inject(&input, inject_path, inject_value).unwrap();
         assert_eq!(
@@ -496,7 +522,7 @@ mod engine_v1_inject_tests {
         let input = json!({
             "values": [10, 405, 304, 20, 304, 20],
         });
-        let inject_path = "$.values[0".to_string();
+        let inject_path = "$.values[0";
         let inject_value = json!(100);
         let injected = engine.inject(&input, inject_path, inject_value);
         assert!(matches!(
@@ -512,11 +538,47 @@ mod engine_v1_inject_tests {
             "values": [10, 405, 304, 20, 304, 20],
         });
         // Only fields of the root object can be injected into.
-        let inject_path = "$.values[10]".to_string();
+        let inject_path = "$.values[10]";
         let inject_value = json!(100);
         let injected = engine.inject(&input, inject_path, inject_value);
         assert!(matches!(
             injected,
+            Err(PayloadTemplateEngineError::JsonPathError(_))
+        ));
+    }
+}
+
+#[cfg(test)]
+mod engine_v1_extract_tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+    use serde_json::json;
+
+    #[test]
+    fn test_engine_extracts_value() {
+        let engine = EngineV1::new();
+        let input = json!({
+            "values": [10, 405, 304, 20, 304, 20],
+            "inputStructure": {
+                "id": "1fb11a12-21a5-4404-a12b-b86e06329605"
+            },
+            "flag1": true,
+        });
+        let extract_path = "$.inputStructure.id";
+        let extracted = engine.extract(&input, extract_path).unwrap();
+        assert_eq!(extracted, json!("1fb11a12-21a5-4404-a12b-b86e06329605"));
+    }
+
+    #[test]
+    fn test_fails_with_expected_error_due_to_invalid_json_path() {
+        let engine = EngineV1::new();
+        let input = json!({
+            "values": [10, 405, 304, 20, 304, 20],
+        });
+        let extract_path = "$.values[0";
+        let extracted = engine.extract(&input, extract_path);
+        assert!(matches!(
+            extracted,
             Err(PayloadTemplateEngineError::JsonPathError(_))
         ));
     }

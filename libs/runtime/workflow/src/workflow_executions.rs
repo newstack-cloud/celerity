@@ -108,7 +108,7 @@ pub struct SaveWorkflowExecutionPayload {
     pub input: Value,
     pub started: u64,
     pub completed: Option<u64>,
-    pub duration: Option<u64>,
+    pub duration: Option<f64>,
     pub status: WorkflowExecutionStatus,
     pub status_detail: String,
     pub current_state: Option<String>,
@@ -123,7 +123,7 @@ pub struct WorkflowExecution {
     pub output: Option<Value>,
     pub started: u64,
     pub completed: Option<u64>,
-    pub duration: Option<u64>,
+    pub duration: Option<f64>,
     pub status: WorkflowExecutionStatus,
     #[serde(rename = "statusDetail")]
     pub status_detail: String,
@@ -146,11 +146,13 @@ pub struct WorkflowExecutionState {
     pub input: Value,
     pub started: u64,
     pub completed: Option<u64>,
-    pub duration: Option<u64>,
+    pub duration: Option<f64>,
     pub status: WorkflowExecutionStatus,
     pub attempt: u32,
     pub error: Option<String>,
     pub parallel: Vec<Vec<WorkflowExecutionState>>,
+    #[serde(rename = "rawOutput")]
+    pub raw_output: Option<Value>,
     pub output: Option<Value>,
 }
 
