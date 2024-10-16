@@ -204,6 +204,7 @@ components:
         - completed
         - duration
         - attempt
+        - rawOutput
         - output
       properties:
         name:
@@ -260,11 +261,18 @@ components:
         parallel:
           type: array
           description: |
-            A 2-dimensional array of execution states for a `parallel` state, each entry in the array a parallel branch containing child state execution information.
+            An 2-dimensional array of execution states for a `parallel` state, each entry in the array a parallel branch containing child state execution information.
           items:
             type: array
             items:
               $ref: "#/components/schemas/executionState"
+        rawOutput:
+          type: ["object", "array", "string", "number", "null"]
+          description: The raw output data for the state, this is the output of the state before `resultPath` or `outputPath` configuration is applied to the output. This will be null until the state execution has been completed.
+          examples:
+            - data:
+                timestamp: 0
+                uploadedProcessedDocId: 1001
         output:
           type: ["object", "array", "string", "number", "null"]
           description: The output data for the state, if there is a subsequent state, this will be fed in as its input. This will be null until the state execution has been completed.

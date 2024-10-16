@@ -274,6 +274,7 @@ components:
         - completed
         - duration
         - attempt
+        - rawOutput
         - output
       properties:
         name:
@@ -335,6 +336,13 @@ components:
             type: array
             items:
               $ref: "#/components/schemas/ExecutionState"
+        rawOutput:
+          type: ["object", "array", "string", "number", "null"]
+          description: The raw output data for the state, this is the output of the state before `resultPath` or `outputPath` configuration is applied to the output. This will be null until the state execution has been completed.
+          examples:
+            - data:
+                timestamp: 0
+                uploadedProcessedDocId: 1001
         output:
           type: ["object", "array", "string", "number", "null"]
           description: The output data for the state, if there is a subsequent state, this will be fed in as its input. This will be null until the state execution has been completed.
