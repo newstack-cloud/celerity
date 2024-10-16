@@ -9,7 +9,7 @@ The runtime is responsible for processing incoming requests, messages/events, an
 
 ## [core runtime](./core/README.md)
 
-The core runtime is for applications where the handlers need to be written in a language that is compiled ahead of time, such as Rust, C, C++ or Go.
+The core (os-only) runtime is for applications where the handlers need to be written in a language that is compiled ahead of time, such as Rust, C, C++ or Go.
 This runtime interfaces with handlers by exposing a HTTP API.
 
 Developers can make use of the Celerity SDKs for Rust and Go for a smoother development experience where interactions with the runtime are taken care of and a useful plugin/middleware system provides standard functionality such as loading secrets and dependency injection.
@@ -43,3 +43,7 @@ The Python runtime is for applications where the handlers need to be written in 
 This runtime interfaces with handlers through in-process FFI calls through bindings wrapped in the Celerity Python SDK.
 
 Developers should make use of the Celerity Python SDK for a smoother development experience where interactions with the runtime are taken care of and a useful plugin/middleware system provides standard functionality such as loading secrets and dependency injection.
+
+# Additional docs
+
+- [HTTP API Docs](../../libs/runtime/api-docs/README.md) - API docs for the Local Runtime and Handler Invoke APIs where the former is used for handler <-> runtime communication for the os-only runtime.
