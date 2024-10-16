@@ -250,11 +250,11 @@ func (s *CompletionService) matchCompletionElement(
 		return collected[index], "dataSourceFieldType"
 	}
 
-	if s.isDataSourceFilterField(pathParts, sourceContent, position) {
+	if s.isDataSourceFilterField(pathParts) {
 		return collected[index], "dataSourceFilterField"
 	}
 
-	if s.isDataSourceFilterOperator(pathParts, sourceContent, position) {
+	if s.isDataSourceFilterOperator(pathParts) {
 		return collected[index], "dataSourceFilterOperator"
 	}
 
@@ -413,8 +413,6 @@ func (s *CompletionService) isNewDataSourceFilterField(
 
 func (s *CompletionService) isDataSourceFilterField(
 	pathParts []string,
-	sourceContent string,
-	position *lsp.Position,
 ) bool {
 	return len(pathParts) == 5 &&
 		pathParts[1] == "datasources" &&
@@ -435,8 +433,6 @@ func (s *CompletionService) isNewDataSourceFilterOperator(
 
 func (s *CompletionService) isDataSourceFilterOperator(
 	pathParts []string,
-	sourceContent string,
-	position *lsp.Position,
 ) bool {
 	return len(pathParts) == 5 &&
 		pathParts[1] == "datasources" &&
@@ -911,7 +907,7 @@ func (s *CompletionService) getStringSubResourcePropCompletionItems(
 	}
 
 	if len(resourceProp.Path) == 0 {
-		return getResourceTopLevelPropCompletionItems(position, blueprint), nil
+		return getResourceTopLevelPropCompletionItems(position), nil
 	}
 
 	if len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "spec" {
@@ -923,7 +919,7 @@ func (s *CompletionService) getStringSubResourcePropCompletionItems(
 	}
 
 	if len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "metadata" {
-		return getResourceMetadataPropCompletionItems(position, blueprint, resourceProp), nil
+		return getResourceMetadataPropCompletionItems(position), nil
 	}
 
 	return resourceItems, nil
@@ -1046,7 +1042,7 @@ func resourceDefAttributesSchemaCompletionItems(
 	return completionItems
 }
 
-func getResourceTopLevelPropCompletionItems(position *lsp.Position, blueprint *schema.Blueprint) []*lsp.CompletionItem {
+func getResourceTopLevelPropCompletionItems(position *lsp.Position) []*lsp.CompletionItem {
 	detail := "Resource property"
 
 	insertRange := getItemInsertRange(position)
@@ -1103,8 +1099,6 @@ func getResourceTopLevelPropCompletionItems(position *lsp.Position, blueprint *s
 
 func getResourceMetadataPropCompletionItems(
 	position *lsp.Position,
-	blueprint *schema.Blueprint,
-	resourceProp *substitutions.SubstitutionResourceProperty,
 ) []*lsp.CompletionItem {
 	detail := "Resource metadata property"
 

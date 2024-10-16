@@ -64,8 +64,7 @@ func main() {
 		map[string]transform.SpecTransformer{},
 		/* stateContainer */ nil,
 		/* updateChan */ nil,
-		// TODO: instantiate ref chain collector on each load!!!
-		validation.NewRefChainCollector(),
+		validation.NewRefChainCollector,
 		// Disable runtime value validation as it is not needed for diagnostics.
 		container.WithLoaderValidateRuntimeValues(false),
 		// Disable spec transformation as it is not needed for diagnostics.
