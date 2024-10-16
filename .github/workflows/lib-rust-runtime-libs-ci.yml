@@ -6,10 +6,12 @@ name: Runtime Libraries CI
 on:
   push:
     branches: [ main ]
-    paths: 'libs/runtime/**'
+    paths: 
+      - 'libs/runtime/**'
   pull_request:
     branches: [ main ]
-    paths: 'libs/runtime/**'
+    paths: 
+      - 'libs/runtime/**'
   workflow_dispatch:
     inputs: {}
 
