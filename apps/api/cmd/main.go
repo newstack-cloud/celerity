@@ -3,9 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -17,14 +21,14 @@ import (
 func main() {
 	apiVersion := utils.Getenv("CELERITY_API_VERSION", "v1")
 	port := utils.Getenv("CELERITY_API_PORT", "8325")
+	useUnixSocket := os.Getenv("CELERITY_API_USE_UNIX_SOCKET")
+	unixSocketPath := utils.Getenv("CELERITY_API_UNIX_SOCKET_PATH", "/tmp/celerity.sock")
 	// Fallback to loopback only as a more secure default.
-	loopbackOnly := utils.Getenv("CELERITY_LOOPBACK_ONLY", "1")
+	loopbackOnly := utils.Getenv("CELERITY_API_LOOPBACK_ONLY", "1")
 	setup, setupExists := apiVersions[apiVersion]
 	if !setupExists {
 		log.Fatalf("version \"%s\" does not exist", apiVersion)
 	}
-
-	serverAddr := determineServerAddr(loopbackOnly, port)
 
 	r := mux.NewRouter().PathPrefix(fmt.Sprintf("/%s", apiVersion)).Subrouter()
 	_, err := setup(r)
@@ -34,12 +38,36 @@ func main() {
 
 	srv := &http.Server{
 		Handler:      r,
-		Addr:         serverAddr,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Fatal(srv.ListenAndServe())
+	if useUnixSocket == "" || useUnixSocket == "0" || useUnixSocket == "false" {
+		serverAddr := determineServerAddr(loopbackOnly, port)
+		srv.Addr = serverAddr
+		log.Fatal(srv.ListenAndServe())
+	} else {
+		startUnixSocketServer(srv, unixSocketPath)
+	}
+}
+
+func startUnixSocketServer(srv *http.Server, unixSocketPath string) {
+	listener, err := net.Listen("unix", unixSocketPath)
+	if err != nil {
+		log.Fatalf("error creating listener for unix socket: %s", err)
+	}
+
+	// Cleanup the sockfile.
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		os.Remove(unixSocketPath)
+		os.Exit(1)
+	}()
+
+	defer listener.Close()
+	log.Fatal(srv.Serve(listener))
 }
 
 func determineServerAddr(loopbackOnlyStr, portStr string) string {
