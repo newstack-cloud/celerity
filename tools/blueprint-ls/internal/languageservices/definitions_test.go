@@ -1,0 +1,303 @@
+package languageservices
+
+import (
+	"os"
+	"testing"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	"go.uber.org/zap"
+)
+
+type GotoDefinitionServiceSuite struct {
+	suite.Suite
+	service          GotoDefinitionService
+	blueprintContent string
+	blueprint        *schema.Blueprint
+	tree             *schema.TreeNode
+}
+
+func (s *GotoDefinitionServiceSuite) SetupTest() {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		s.FailNow(err.Error())
+	}
+
+	state := NewState()
+	state.SetLinkSupportCapability(true)
+	s.service = *NewGotoDefinitionService(state, logger)
+	s.blueprintContent, err = loadTestBlueprintContent()
+	s.Require().NoError(err)
+
+	blueprint, err := schema.LoadString(s.blueprintContent, schema.YAMLSpecFormat)
+	s.Require().NoError(err)
+	s.blueprint = blueprint
+
+	tree := schema.SchemaToTree(blueprint)
+	s.Require().NoError(err)
+	s.tree = tree
+}
+
+func (s *GotoDefinitionServiceSuite) Test_get_definitions_for_resource_ref() {
+	definitions, err := s.service.GetDefinitions(s.blueprintContent, s.tree, s.blueprint, &lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{
+			URI: "file:///blueprint.yaml",
+		},
+		Position: lsp.Position{
+			Line:      156,
+			Character: 21,
+		},
+	})
+	s.Require().NoError(err)
+	s.Assert().Equal([]lsp.LocationLink{
+		{
+			OriginSelectionRange: &lsp.Range{
+				Start: lsp.Position{
+					Line:      156,
+					Character: 19,
+				},
+				End: lsp.Position{
+					Line:      156,
+					Character: 68,
+				},
+			},
+			TargetURI: "file:///blueprint.yaml",
+			TargetRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      125,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      146,
+					Character: 57,
+				},
+			},
+			TargetSelectionRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      125,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      146,
+					Character: 57,
+				},
+			},
+		},
+	}, definitions)
+}
+
+func (s *GotoDefinitionServiceSuite) Test_get_definitions_for_datasource_ref() {
+	definitions, err := s.service.GetDefinitions(s.blueprintContent, s.tree, s.blueprint, &lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{
+			URI: "file:///blueprint.yaml",
+		},
+		Position: lsp.Position{
+			Line:      160,
+			Character: 11,
+		},
+	})
+	s.Require().NoError(err)
+	s.Assert().Equal([]lsp.LocationLink{
+		{
+			OriginSelectionRange: &lsp.Range{
+				Start: lsp.Position{
+					Line:      160,
+					Character: 9,
+				},
+				End: lsp.Position{
+					Line:      160,
+					Character: 38,
+				},
+			},
+			TargetURI: "file:///blueprint.yaml",
+			TargetRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      49,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      66,
+					Character: 46,
+				},
+			},
+			TargetSelectionRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      49,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      66,
+					Character: 46,
+				},
+			},
+		},
+	}, definitions)
+}
+
+func (s *GotoDefinitionServiceSuite) Test_get_definitions_for_var_ref() {
+	definitions, err := s.service.GetDefinitions(s.blueprintContent, s.tree, s.blueprint, &lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{
+			URI: "file:///blueprint.yaml",
+		},
+		Position: lsp.Position{
+			Line:      107,
+			Character: 30,
+		},
+	})
+	s.Require().NoError(err)
+	s.Assert().Equal([]lsp.LocationLink{
+		{
+			OriginSelectionRange: &lsp.Range{
+				Start: lsp.Position{
+					Line:      107,
+					Character: 26,
+				},
+				End: lsp.Position{
+					Line:      107,
+					Character: 49,
+				},
+			},
+			TargetURI: "file:///blueprint.yaml",
+			TargetRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      8,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      10,
+					Character: 75,
+				},
+			},
+			TargetSelectionRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      8,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      10,
+					Character: 75,
+				},
+			},
+		},
+	}, definitions)
+}
+
+func (s *GotoDefinitionServiceSuite) Test_get_definitions_for_val_ref() {
+	definitions, err := s.service.GetDefinitions(s.blueprintContent, s.tree, s.blueprint, &lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{
+			URI: "file:///blueprint.yaml",
+		},
+		Position: lsp.Position{
+			Line:      154,
+			Character: 27,
+		},
+	})
+	s.Require().NoError(err)
+	s.Assert().Equal([]lsp.LocationLink{
+		{
+			OriginSelectionRange: &lsp.Range{
+				Start: lsp.Position{
+					Line:      154,
+					Character: 25,
+				},
+				End: lsp.Position{
+					Line:      154,
+					Character: 50,
+				},
+			},
+			TargetURI: "file:///blueprint.yaml",
+			TargetRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      38,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      41,
+					Character: 18,
+				},
+			},
+			TargetSelectionRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      38,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      41,
+					Character: 18,
+				},
+			},
+		},
+	}, definitions)
+}
+
+func (s *GotoDefinitionServiceSuite) Test_get_definitions_for_child_ref() {
+	definitions, err := s.service.GetDefinitions(s.blueprintContent, s.tree, s.blueprint, &lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{
+			URI: "file:///blueprint.yaml",
+		},
+		Position: lsp.Position{
+			Line:      155,
+			Character: 22,
+		},
+	})
+	s.Require().NoError(err)
+	s.Assert().Equal([]lsp.LocationLink{
+		{
+			OriginSelectionRange: &lsp.Range{
+				Start: lsp.Position{
+					Line:      155,
+					Character: 16,
+				},
+				End: lsp.Position{
+					Line:      155,
+					Character: 49,
+				},
+			},
+			TargetURI: "file:///blueprint.yaml",
+			TargetRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      149,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      151,
+					Character: 60,
+				},
+			},
+			TargetSelectionRange: lsp.Range{
+				Start: lsp.Position{
+					Line:      149,
+					Character: 2,
+				},
+				End: lsp.Position{
+					Line:      151,
+					Character: 60,
+				},
+			},
+		},
+	}, definitions)
+}
+
+func (s *GotoDefinitionServiceSuite) Test_get_definitions_returns_empty_list_for_a_non_ref_position() {
+	definitions, err := s.service.GetDefinitions(s.blueprintContent, s.tree, s.blueprint, &lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{
+			URI: "file:///blueprint.yaml",
+		},
+		Position: lsp.Position{
+			Line:      0,
+			Character: 0,
+		},
+	})
+	s.Require().NoError(err)
+	s.Assert().Empty(definitions)
+}
+
+func loadTestBlueprintContent() (string, error) {
+	bytes, err := os.ReadFile("__testdata/blueprint.yaml")
+	return string(bytes), err
+}
+
+func TestGotoDefinitionServiceSuite(t *testing.T) {
+	suite.Run(t, new(GotoDefinitionServiceSuite))
+}

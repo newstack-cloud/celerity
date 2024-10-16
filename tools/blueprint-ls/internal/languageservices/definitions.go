@@ -45,9 +45,7 @@ func (s *GotoDefinitionService) GetDefinitions(
 
 	return s.getDefinitionLinks(
 		params.TextDocument.URI,
-		content,
 		blueprint,
-		&params.Position,
 		collected,
 		tree,
 	)
@@ -55,9 +53,7 @@ func (s *GotoDefinitionService) GetDefinitions(
 
 func (s *GotoDefinitionService) getDefinitionLinks(
 	docURI lsp.URI,
-	content string,
 	blueprint *schema.Blueprint,
-	position *lsp.Position,
 	collected []*schema.TreeNode,
 	tree *schema.TreeNode,
 ) ([]lsp.LocationLink, error) {
