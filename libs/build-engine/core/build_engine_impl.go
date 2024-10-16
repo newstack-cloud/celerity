@@ -1,0 +1,229 @@
+package core
+
+import (
+	"context"
+	"os"
+	"path"
+
+	"github.com/spf13/afero"
+	"github.com/two-hundred/celerity/libs/blueprint/container"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/build-engine/blueprint"
+	"github.com/two-hundred/celerity/libs/build-engine/utils"
+	"go.uber.org/zap"
+)
+
+const (
+	// SchemeFileSystemOS is the scheme for the OS file system.
+	SchemeFileSystemOS = "file://"
+)
+
+const (
+	// DefaultBlueprintFile is the default blueprint file name.
+	DefaultBlueprintFile = "app.blueprint.yaml"
+)
+
+type buildEngineImpl struct {
+	blueprintLoader container.Loader
+	fileSystems     map[string]afero.Fs
+	logger          *zap.Logger
+}
+
+// DefaultBuildEngineOption is an option for the default BuildEngine implementation.
+type DefaultBuildEngineOption func(*buildEngineImpl)
+
+// WithFileSystems sets the file systems to use for the given scheme
+// in the default BuildEngine implementation.
+// The scheme should contain the trailing "://" (e.g. "file://").
+func WithFileSystems(scheme string, fileSystem afero.Fs) DefaultBuildEngineOption {
+	return func(b *buildEngineImpl) {
+		b.fileSystems[scheme] = fileSystem
+	}
+}
+
+// NewDefaultBuildEngine creates a new instance of the default BuildEngine implementation.
+func NewDefaultBuildEngine(loader container.Loader, logger *zap.Logger, opts ...DefaultBuildEngineOption) BuildEngine {
+	engine := &buildEngineImpl{
+		blueprintLoader: loader,
+		logger:          logger,
+		fileSystems:     make(map[string]afero.Fs),
+	}
+
+	for _, opt := range opts {
+		opt(engine)
+	}
+
+	_, hasOSFS := engine.fileSystems[SchemeFileSystemOS]
+	if !hasOSFS {
+		engine.fileSystems[SchemeFileSystemOS] = afero.NewOsFs()
+	}
+
+	return engine
+}
+
+// Validate a Celerity project or blueprint.
+// For a project, this validates the project structure,
+// the blueprint file and other configuration
+// depending on the programming language along with the source code.
+// When blueprintOnly is set to true, this only validate the blueprint.
+func (b *buildEngineImpl) Validate(ctx context.Context, params *ValidateParams) (*ValidateResults, error) {
+	fs, err := b.getFileSystem(params.FileSourceScheme)
+	if err != nil {
+		return nil, err
+	}
+
+	filePath, diagnostics, err := b.validateBlueprint(params, fs)
+	if err != nil {
+		return nil, err
+	}
+
+	results := &ValidateResults{
+		GroupedResults: []*GroupedValidateResults{
+			{
+				Category:    ValidationCategoryBlueprint,
+				FilePath:    &filePath,
+				Diagnostics: diagnostics,
+			},
+		},
+	}
+
+	if params.BlueprintOnly != nil && *params.BlueprintOnly {
+		return results, nil
+	}
+
+	// todo: validate project structure, source code, and other configuration
+
+	return results, nil
+}
+
+func (b *buildEngineImpl) validateBlueprint(params *ValidateParams, fs afero.Fs) (string, []*core.Diagnostic, error) {
+	filePath, err := b.determineFilePath(
+		params.FileSourceScheme,
+		params.Directory,
+		params.BlueprintFile,
+	)
+	if err != nil {
+		return filePath, nil, err
+	}
+
+	blueprintBytes, err := afero.ReadFile(fs, filePath)
+	if err != nil {
+		return filePath, nil, err
+	}
+
+	blueprintFormat, err := utils.BlueprintFormatFromExtension(filePath)
+	if err != nil {
+		return filePath, nil, err
+	}
+
+	blueprintParams := blueprint.NewParams(
+		map[string]map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+	)
+	validationResult, err := b.blueprintLoader.ValidateString(
+		context.TODO(),
+		string(blueprintBytes),
+		blueprintFormat,
+		blueprintParams,
+	)
+	// Validation errors are converted to diagnostics to provide a consistent
+	// experience for the user, the only errors that should be returned are failures
+	// outside of the validation process.
+	errDiagnostics := utils.DiagnosticsFromBlueprintValidationError(err, b.logger)
+
+	return filePath, append(validationResult.Diagnostics, errDiagnostics...), nil
+}
+
+func (b *buildEngineImpl) validateBlueprintAsync(
+	ctx context.Context,
+	params *ValidateParams,
+	fs afero.Fs,
+	out chan<- *ValidateResult,
+	errChan chan<- error,
+) {
+	b.logger.Info("Blueprint validation started")
+
+	filePath, diagnostics, err := b.validateBlueprint(params, fs)
+	if err != nil {
+		errChan <- err
+		return
+	}
+
+	b.logger.Info("Blueprint validation complete", zap.String("file", filePath))
+
+	for _, diagnostic := range diagnostics {
+		b.logger.Debug("Sending diagnostic", zap.Any("diagnostic", diagnostic))
+		out <- &ValidateResult{
+			Category:   ValidationCategoryBlueprint,
+			FilePath:   &filePath,
+			Diagnostic: diagnostic,
+		}
+	}
+
+	out <- nil
+}
+
+// ValidateStream validates a Celerity project or blueprint.
+// This is a streaming version of the Validate method,
+// a stream of validation results are sent to the out channel.
+// If an error occurs during validation, it is sent to the err channel.
+// A nil value is sent to the out channel when validation is complete.
+func (b *buildEngineImpl) ValidateStream(
+	ctx context.Context,
+	params *ValidateParams,
+	out chan<- *ValidateResult,
+	errChan chan<- error,
+) error {
+	b.logger.Info("Deriving file system for validation")
+	fs, err := b.getFileSystem(params.FileSourceScheme)
+	if err != nil {
+		return err
+	}
+
+	go b.validateBlueprintAsync(ctx, params, fs, out, errChan)
+
+	return nil
+}
+
+func (b *buildEngineImpl) getFileSystem(scheme *string) (afero.Fs, error) {
+	if scheme == nil {
+		return b.fileSystems[SchemeFileSystemOS], nil
+	}
+
+	fs, ok := b.fileSystems[*scheme]
+	if !ok {
+		return nil, ErrFileSystemNotFound
+	}
+
+	return fs, nil
+}
+
+func (b *buildEngineImpl) determineFilePath(
+	scheme *string,
+	directory *string,
+	blueprintFile *string,
+) (string, error) {
+	finalScheme := SchemeFileSystemOS
+	if scheme != nil {
+		finalScheme = *scheme
+	}
+
+	finalDir := ""
+	if directory == nil && finalScheme != SchemeFileSystemOS {
+		var err error
+		finalDir, err = os.Getwd()
+		if err != nil {
+			return "", err
+		}
+	} else if directory != nil {
+		finalDir = *directory
+	}
+
+	finalBlueprintFile := DefaultBlueprintFile
+	if blueprintFile != nil {
+		finalBlueprintFile = *blueprintFile
+	}
+
+	return path.Join(finalDir, finalBlueprintFile), nil
+}

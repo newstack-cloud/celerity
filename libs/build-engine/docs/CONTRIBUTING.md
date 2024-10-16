@@ -21,6 +21,43 @@ go mod download
 bash ./scripts/run-tests.sh
 ```
 
+## Generating gRPC protobuf code
+
+The build engine uses gRPC for the provider and transform plugin system.
+
+1. Follow the instructions [here](https://grpc.io/docs/protoc-installation/#install-using-a-package-manager) to install the `protoc` compiler.
+
+2. Install the Go protoc plugins:
+
+```bash
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+```
+
+3. Run the following command from the `libs/build-engine` directory to generate the gRPC protobuf code for the plugin service that plugins register with:
+
+```bash
+protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
+  --go-grpc_out=.. --go-grpc_opt=paths=source_relative \
+  build-engine/plugin/pluginservice/service.proto
+```
+
+4. Run the following command from the `libs/build-engine` directory to generate the gRPC protobuf code for provider plugins:
+
+```bash
+protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
+  --go-grpc_out=.. --go-grpc_opt=paths=source_relative \
+  build-engine/plugin/providerserverv1/provider.proto
+```
+
+5. Run the following command from the `libs/build-engine` directory to generate the gRPC protobuf code for transform plugins:
+
+```bash
+protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
+  --go-grpc_out=.. --go-grpc_opt=paths=source_relative \
+  build-engine/plugin/transformerserverv1/transformer.proto
+```
+
 ## Releasing
 
 To release a new version of the library, you need to create a new tag and push it to the repository.
