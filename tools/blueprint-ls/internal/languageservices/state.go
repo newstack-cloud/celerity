@@ -13,11 +13,13 @@ import (
 // State holds the state shared between language server services
 // to provide functionality for working with blueprint documents.
 type State struct {
-	hasWorkspaceFolderCapability bool
-	hasConfigurationCapability   bool
-	documentSettings             map[string]*DocSettings
-	documentContent              map[string]string
-	documentSchemas              map[string]*schema.Blueprint
+	hasWorkspaceFolderCapability            bool
+	hasConfigurationCapability              bool
+	hasHierarchicalDocumentSymbolCapability bool
+	hasLinkSupportCapability                bool
+	documentSettings                        map[string]*DocSettings
+	documentContent                         map[string]string
+	documentSchemas                         map[string]*schema.Blueprint
 	// YAML document hierarchy representation to extract document symbols
 	// from.
 	documentYAMLNodes    map[string]*yaml.Node
@@ -79,6 +81,36 @@ func (s *State) SetConfigurationCapability(value bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.hasConfigurationCapability = value
+}
+
+// HasHierarchicalDocumentSymbolCapability returns true if the language server
+// has the capability to handle hierarchical document symbols.
+func (s *State) HasHierarchicalDocumentSymbolCapability() bool {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.hasHierarchicalDocumentSymbolCapability
+}
+
+// SetHierarchicalDocumentSymbolCapability sets the capability to handle hierarchical document symbols.
+func (s *State) SetHierarchicalDocumentSymbolCapability(value bool) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.hasHierarchicalDocumentSymbolCapability = value
+}
+
+// HasLinkSupportCapability returns true if the language server
+// has the capability to handle links using the LocationLink result type.
+func (s *State) HasLinkSupportCapability() bool {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.hasLinkSupportCapability
+}
+
+// SetLinkSupportCapability sets the capability to handle links using the LocationLink result type.
+func (s *State) SetLinkSupportCapability(value bool) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.hasLinkSupportCapability = value
 }
 
 // SetPositionEncodingKind sets the encoding kind for positions in documents

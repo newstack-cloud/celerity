@@ -33,6 +33,16 @@ func (a *Application) handleInitialise(ctx *common.LSPContext, params *lsp.Initi
 	hasConfigurationCapability := clientCapabilities.Workspace != nil && clientCapabilities.Workspace.Configuration != nil
 	a.state.SetConfigurationCapability(hasConfigurationCapability)
 
+	hasHierarchicalDocumentSymbolCapability := clientCapabilities.TextDocument != nil &&
+		clientCapabilities.TextDocument.DocumentSymbol != nil &&
+		*clientCapabilities.TextDocument.DocumentSymbol.HierarchicalDocumentSymbolSupport
+	a.state.SetHierarchicalDocumentSymbolCapability(hasHierarchicalDocumentSymbolCapability)
+
+	hasLinkSupportCapability := clientCapabilities.TextDocument != nil &&
+		clientCapabilities.TextDocument.Definition != nil &&
+		*clientCapabilities.TextDocument.Definition.LinkSupport
+	a.state.SetLinkSupportCapability(hasLinkSupportCapability)
+
 	result := lsp.InitializeResult{
 		Capabilities: capabilities,
 		ServerInfo: &lsp.InitializeResultServerInfo{
@@ -334,10 +344,11 @@ func (a *Application) handleDocumentSymbols(
 		return nil, errors.New("no content found for document")
 	}
 
-	// todo: check if client has hierarchical document symbol support
-	// return empty array if not supported
+	if a.state.HasHierarchicalDocumentSymbolCapability() {
+		return a.symbolService.GetDocumentSymbols(params.TextDocument.URI, *content)
+	}
 
-	return a.symbolService.GetDocumentSymbols(params.TextDocument.URI, *content)
+	return []lsp.DocumentSymbol{}, nil
 }
 
 func (a *Application) handleGotoDefinition(
@@ -361,15 +372,16 @@ func (a *Application) handleGotoDefinition(
 		return nil, errors.New("no parsed blueprint found for document")
 	}
 
-	// todo: check if client has textDocument.definition.linkSupport
-	// capability
+	if a.state.HasLinkSupportCapability() {
+		return a.gotoDefinitionService.GetDefinitions(
+			*content,
+			tree,
+			bpSchema,
+			&params.TextDocumentPositionParams,
+		)
+	}
 
-	return a.gotoDefinitionService.GetDefinitions(
-		*content,
-		tree,
-		bpSchema,
-		&params.TextDocumentPositionParams,
-	)
+	return []lsp.Location{}, nil
 }
 
 func (a *Application) handleShutdown(ctx *common.LSPContext) error {

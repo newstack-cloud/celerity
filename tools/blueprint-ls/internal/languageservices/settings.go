@@ -35,9 +35,6 @@ func (s *SettingsService) GetDocumentSettings(
 	if settings != nil {
 		return settings, nil
 	} else {
-		// todo: fix this
-		// Currently, this just hangs and gives up on the timeout configured for the server.
-		//
 		dispatcher := lsp.NewDispatcher(context)
 		configResponse := []DocSettings{}
 		err := dispatcher.WorkspaceConfiguration(
