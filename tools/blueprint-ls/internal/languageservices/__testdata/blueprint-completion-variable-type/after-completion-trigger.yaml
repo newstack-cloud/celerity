@@ -1,0 +1,4 @@
+version: 2024-07-20
+variables:
+  instanceType:
+    type: ""

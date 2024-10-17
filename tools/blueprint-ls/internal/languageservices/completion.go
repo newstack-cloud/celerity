@@ -61,7 +61,7 @@ var (
 
 	// Pattern for matching data source property references before the
 	// cursor position in determining the type of completion items to provide.
-	dataSourcePropertyPattern = regexp.MustCompile(`datasources\.([A-Za-z0-9_-]|"|\.|\[|\])+\.$`)
+	dataSourcePropertyPattern = regexp.MustCompile(`datasources\.(([A-Za-z0-9_-]|"|\.|\[|\])+)\.$`)
 
 	// Pattern for matching "values." before the cursor position
 	// in determining the type of completion items to provide.
@@ -131,10 +131,19 @@ func (s *CompletionService) GetCompletionItems(
 	params *lsp.TextDocumentPositionParams,
 ) ([]*lsp.CompletionItem, error) {
 
+	accuratePosition := true
 	// The last element in the collected list is the element with the shortest
 	// range that contains the position.
 	collected := []*schema.TreeNode{}
 	collectElementsAtPosition(tree, params.Position, s.logger, &collected, CompletionColumnLeeway)
+
+	// If no elements are collected other than the root node,
+	// collect elements on the line of the cursor position.
+	if len(collected) == 1 {
+		accuratePosition = false
+		collected = []*schema.TreeNode{}
+		collectElementsOnLine(tree, params.Position, s.logger, &collected)
+	}
 
 	return s.getCompletionItems(
 		ctx,
@@ -142,6 +151,7 @@ func (s *CompletionService) GetCompletionItems(
 		blueprint,
 		&params.Position,
 		collected,
+		accuratePosition,
 	)
 }
 
@@ -151,6 +161,7 @@ func (s *CompletionService) getCompletionItems(
 	blueprint *schema.Blueprint,
 	position *lsp.Position,
 	collected []*schema.TreeNode,
+	accuratePosition bool,
 ) ([]*lsp.CompletionItem, error) {
 
 	if len(collected) == 0 {
@@ -170,6 +181,7 @@ func (s *CompletionService) getCompletionItems(
 			pathParts,
 			content,
 			position,
+			accuratePosition,
 		)
 		i -= 1
 	}
@@ -193,18 +205,18 @@ func (s *CompletionService) getCompletionItems(
 		return s.getExportTypeCompletionItems()
 	case "stringSubVariableRef":
 		return s.getStringSubVariableCompletionItems(position, blueprint)
-	case "stringSubResourceRef":
-		return s.getStringSubResourceCompletionItems(position, blueprint)
 	case "stringSubResourceProperty":
-		return s.getStringSubResourcePropCompletionItems(ctx, position, blueprint, node)
+		return s.getStringSubResourcePropCompletionItems(ctx, position, content, blueprint, node)
 	case "stringSubDataSourceRef":
 		return s.getStringSubDataSourceCompletionItems(position, blueprint)
 	case "stringSubDataSourceProperty":
-		return s.getStringSubDataSourcePropCompletionItems(position, blueprint, node)
+		return s.getStringSubDataSourcePropCompletionItems(position, content, blueprint, node)
 	case "stringSubValueRef":
 		return s.getStringSubValueCompletionItems(position, blueprint)
 	case "stringSubChildRef":
 		return s.getStringSubChildCompletionItems(position, blueprint)
+	case "stringSubResourceRef":
+		return s.getStringSubResourceCompletionItems(position, blueprint)
 	case "stringSub":
 		return s.getStringSubCompletionItems(ctx, position, blueprint)
 	default:
@@ -218,7 +230,11 @@ func (s *CompletionService) matchCompletionElement(
 	pathParts []string,
 	sourceContent string,
 	position *lsp.Position,
+	accuratePosition bool,
 ) (*schema.TreeNode, string) {
+	if !accuratePosition {
+		return s.matchCompletionElementOnLine(collected, index, pathParts, sourceContent, position)
+	}
 
 	if s.isResourceType(pathParts, sourceContent, position) {
 		return collected[index], "resourceType"
@@ -285,14 +301,6 @@ func (s *CompletionService) checkStringSubElement(
 		return "stringSubVariableRef", true
 	}
 
-	if s.isStringSubResource(pathParts, sourceContent, position) {
-		return "stringSubResourceRef", true
-	}
-
-	if s.isStringSubResourceProperty(pathParts, sourceContent, position, node) {
-		return "stringSubResourceProperty", true
-	}
-
 	if s.isStringSubDataSource(pathParts, sourceContent, position) {
 		return "stringSubDataSourceRef", true
 	}
@@ -311,6 +319,17 @@ func (s *CompletionService) checkStringSubElement(
 
 	if s.isStringSubElem(pathParts, sourceContent, position) {
 		return "elemRef", true
+	}
+
+	// Resource and resource property references should be checked after all other possible references
+	// as a resource reference can match on an identifier pattern which would lead to incorrect completion
+	// suggestions if checked before other references.
+	if s.isStringSubResource(pathParts, sourceContent, position) {
+		return "stringSubResourceRef", true
+	}
+
+	if s.isStringSubResourceProperty(pathParts, sourceContent, position, node) {
+		return "stringSubResourceProperty", true
 	}
 
 	if s.isStringSub(pathParts, sourceContent, position) {
@@ -545,6 +564,29 @@ func (s *CompletionService) isStringSub(
 		s.isPrecededBy(position, inSubPattern, sourceContent)) ||
 		(slices.Contains(stringPathTypes, pathParts[len(pathParts)-1]) &&
 			s.isPrecededBy(position, subOpenPattern, sourceContent))
+}
+
+func (s *CompletionService) matchCompletionElementOnLine(
+	collected []*schema.TreeNode,
+	index int,
+	pathParts []string,
+	sourceContent string,
+	position *lsp.Position,
+) (*schema.TreeNode, string) {
+	if s.isStringSubDataSourcePropertyOnLine(pathParts, sourceContent, position) {
+		return collected[index], "stringSubDataSourceProperty"
+	}
+
+	return nil, ""
+}
+
+func (s *CompletionService) isStringSubDataSourcePropertyOnLine(
+	pathParts []string,
+	sourceContent string,
+	position *lsp.Position,
+) bool {
+	return slices.Contains(pathParts, "stringSubs") &&
+		s.isPrecededBy(position, dataSourcePropertyPattern, sourceContent)
 }
 
 func (s *CompletionService) isPrecededBy(
@@ -890,6 +932,7 @@ func (s *CompletionService) getStringSubResourceCompletionItems(
 func (s *CompletionService) getStringSubResourcePropCompletionItems(
 	ctx *common.LSPContext,
 	position *lsp.Position,
+	content string,
 	blueprint *schema.Blueprint,
 	node *schema.TreeNode,
 ) ([]*lsp.CompletionItem, error) {
@@ -903,22 +946,28 @@ func (s *CompletionService) getStringSubResourcePropCompletionItems(
 
 	resourceProp, isResourceProp := node.SchemaElement.(*substitutions.SubstitutionResourceProperty)
 	if !isResourceProp {
-		return resourceItems, nil
-	}
-
-	if len(resourceProp.Path) == 0 {
 		return getResourceTopLevelPropCompletionItems(position), nil
 	}
 
-	if len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "spec" {
+	index := position.IndexIn(content, s.state.GetPositionEncodingKind())
+	sourceContentBefore := content[:index]
+
+	if strings.HasSuffix(sourceContentBefore, fmt.Sprintf(".%s.", resourceProp.ResourceName)) {
+		return getResourceTopLevelPropCompletionItems(position), nil
+	}
+
+	if strings.HasSuffix(sourceContentBefore, ".spec.") ||
+		(len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "spec") {
 		return s.getResourceSpecPropCompletionItems(ctx, position, blueprint, resourceProp)
 	}
 
-	if len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "state" {
+	if strings.HasSuffix(sourceContentBefore, ".state.") ||
+		(len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "state") {
 		return s.getResourceStatePropCompletionItems(ctx, position, blueprint, resourceProp)
 	}
 
-	if len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "metadata" {
+	if strings.HasSuffix(sourceContentBefore, ".metadata.") ||
+		(len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "metadata") {
 		return getResourceMetadataPropCompletionItems(position), nil
 	}
 
@@ -965,6 +1014,7 @@ func (s *CompletionService) getResourceSpecPropCompletionItems(
 	return resourceDefAttributesSchemaCompletionItems(
 		currentSchema.Attributes,
 		position,
+		"Resource spec property",
 	), nil
 }
 
@@ -1008,16 +1058,17 @@ func (s *CompletionService) getResourceStatePropCompletionItems(
 	return resourceDefAttributesSchemaCompletionItems(
 		currentSchema.Attributes,
 		position,
+		"Resource state property",
 	), nil
 }
 
 func resourceDefAttributesSchemaCompletionItems(
 	attributes map[string]*provider.ResourceDefinitionsSchema,
 	position *lsp.Position,
+	attrDetail string,
 ) []*lsp.CompletionItem {
 	completionItems := []*lsp.CompletionItem{}
 	for attrName := range attributes {
-		attrDetail := "Resource spec property"
 		fieldKind := lsp.CompletionItemKindField
 
 		edit := lsp.TextEdit{
@@ -1206,6 +1257,7 @@ func (s *CompletionService) getStringSubDataSourceCompletionItems(
 
 func (s *CompletionService) getStringSubDataSourcePropCompletionItems(
 	position *lsp.Position,
+	content string,
 	blueprint *schema.Blueprint,
 	node *schema.TreeNode,
 ) ([]*lsp.CompletionItem, error) {
@@ -1218,12 +1270,12 @@ func (s *CompletionService) getStringSubDataSourcePropCompletionItems(
 
 	dataSourceItems := []*lsp.CompletionItem{}
 
-	dsProp, isDSProp := node.SchemaElement.(*substitutions.SubstitutionDataSourceProperty)
-	if !isDSProp {
+	dataSourceName, isDataSourceProp := s.deriveDataSourceName(node, position, content)
+	if !isDataSourceProp {
 		return dataSourceItems, nil
 	}
 
-	dataSource := getDataSource(blueprint, dsProp.DataSourceName)
+	dataSource := getDataSource(blueprint, dataSourceName)
 	if dataSource == nil || dataSource.Exports == nil {
 		return dataSourceItems, nil
 	}
@@ -1249,6 +1301,29 @@ func (s *CompletionService) getStringSubDataSourcePropCompletionItems(
 	}
 
 	return dataSourceItems, nil
+}
+
+func (s *CompletionService) deriveDataSourceName(node *schema.TreeNode, position *lsp.Position, content string) (string, bool) {
+	if node == nil {
+		return "", false
+	}
+
+	dsProp, isDSProp := node.SchemaElement.(*substitutions.SubstitutionDataSourceProperty)
+	if isDSProp {
+		return dsProp.DataSourceName, true
+	}
+
+	// If the node path does not contain the data source name, we need to derive it
+	// from the content.
+	index := position.IndexIn(content, s.state.GetPositionEncodingKind())
+	sourceContentBefore := content[:index]
+	matches := dataSourcePropertyPattern.FindStringSubmatch(sourceContentBefore)
+	if len(matches) >= 2 {
+		// The name is the second capture group.
+		return matches[1], true
+	}
+
+	return "", false
 }
 
 func (s *CompletionService) getStringSubValueCompletionItems(

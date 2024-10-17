@@ -40,6 +40,19 @@ func containsLSPPoint(bpRange *source.Range, lspPos lsp.Position, columnLeeway i
 	return bpPos.Line > bpRange.Start.Line && bpPos.Line < bpRange.End.Line
 }
 
+func lineContainsLSPPoint(bpRange *source.Range, lspPos lsp.Position) bool {
+	bpPos := &source.Position{
+		Line: int(lspPos.Line + 1),
+	}
+
+	if bpRange.End == nil {
+		// Check >= to allow for root node that does not have an end position.
+		return bpPos.Line >= bpRange.Start.Line
+	}
+
+	return bpPos.Line >= bpRange.Start.Line && bpPos.Line <= bpRange.End.Line
+}
+
 func rangeToLSPRange(bpRange *source.Range) *lsp.Range {
 	if bpRange == nil {
 		return nil
@@ -85,6 +98,39 @@ func collectElementsAtPosition(
 		i := 0
 		for i < len(tree.Children) {
 			collectElementsAtPosition(tree.Children[i], pos, logger, collected, columnLeeway)
+			i += 1
+		}
+	}
+}
+
+func collectElementsOnLine(
+	tree *schema.TreeNode,
+	pos lsp.Position,
+	logger *zap.Logger,
+	collected *[]*schema.TreeNode,
+
+) {
+	if tree == nil {
+		return
+	}
+
+	logger.Debug(
+		"collectElementsOnLine: checking element",
+		zap.String("path", tree.Path),
+		zap.Any("range", tree.Range),
+		zap.Any("pos", pos),
+	)
+	if lineContainsLSPPoint(tree.Range, pos) {
+		logger.Debug(
+			"collectElementsOnLine: found element",
+			zap.String("path", tree.Path),
+			zap.Any("range", tree.Range),
+		)
+		logger.Debug("Children length", zap.Int("length", len(tree.Children)))
+		*collected = append(*collected, tree)
+		i := 0
+		for i < len(tree.Children) {
+			collectElementsOnLine(tree.Children[i], pos, logger, collected)
 			i += 1
 		}
 	}

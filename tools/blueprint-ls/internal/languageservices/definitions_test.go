@@ -1,7 +1,6 @@
 package languageservices
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -12,7 +11,7 @@ import (
 
 type GotoDefinitionServiceSuite struct {
 	suite.Suite
-	service          GotoDefinitionService
+	service          *GotoDefinitionService
 	blueprintContent string
 	blueprint        *schema.Blueprint
 	tree             *schema.TreeNode
@@ -26,8 +25,8 @@ func (s *GotoDefinitionServiceSuite) SetupTest() {
 
 	state := NewState()
 	state.SetLinkSupportCapability(true)
-	s.service = *NewGotoDefinitionService(state, logger)
-	s.blueprintContent, err = loadTestBlueprintContent()
+	s.service = NewGotoDefinitionService(state, logger)
+	s.blueprintContent, err = loadTestBlueprintContent("blueprint-definitions.yaml")
 	s.Require().NoError(err)
 
 	blueprint, err := schema.LoadString(s.blueprintContent, schema.YAMLSpecFormat)
@@ -291,11 +290,6 @@ func (s *GotoDefinitionServiceSuite) Test_get_definitions_returns_empty_list_for
 	})
 	s.Require().NoError(err)
 	s.Assert().Empty(definitions)
-}
-
-func loadTestBlueprintContent() (string, error) {
-	bytes, err := os.ReadFile("__testdata/blueprint.yaml")
-	return string(bytes), err
 }
 
 func TestGotoDefinitionServiceSuite(t *testing.T) {
