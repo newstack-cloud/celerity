@@ -5,6 +5,7 @@ go 1.22.2
 replace github.com/two-hundred/celerity/libs/blueprint => ../../libs/blueprint
 
 require (
+	github.com/bradleyjkemp/cupaloy v2.3.0+incompatible
 	github.com/davecgh/go-spew v1.1.1
 	github.com/sourcegraph/jsonrpc2 v0.2.0
 	github.com/stretchr/testify v1.9.0
