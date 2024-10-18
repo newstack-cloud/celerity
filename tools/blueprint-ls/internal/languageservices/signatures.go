@@ -52,7 +52,6 @@ func (s *SignatureService) SignatureInfoFromFunction(
 	subFunc *substitutions.SubstitutionFunctionExpr,
 	ctx *common.LSPContext,
 ) ([]*lsp.SignatureInformation, error) {
-
 	defOutput, err := s.funcRegistry.GetDefinition(
 		ctx.Context,
 		string(subFunc.FunctionName),
