@@ -1555,6 +1555,146 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 	})
 }
 
+func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_func_call_6(c *C) {
+	parsed, err := ParseSubstitutionValues(
+		"",
+		`${  object(total = -25, avg = -11, label = "Label")   }`,
+		// Emulate this substitution starting on line 100, column 50.
+		// Source meta values of substitution components are offset from the start
+		// of the input string.
+		&source.Meta{Position: source.Position{
+			Line:   100,
+			Column: 50,
+		}},
+		true,
+		false,
+		/* parentContextPrecedingCharCount */ 0,
+	)
+	arg1 := int64(-25)
+	arg2 := int64(-11)
+	arg3 := "Label"
+	c.Assert(err, IsNil)
+	c.Assert(len(parsed), Equals, 1)
+	c.Assert(parsed[0], DeepEquals, &StringOrSubstitution{
+		SubstitutionValue: &Substitution{
+			Function: &SubstitutionFunctionExpr{
+				FunctionName: "object",
+				Arguments: []*SubstitutionFunctionArg{
+					{
+						Name: "total",
+						Value: &Substitution{
+							IntValue: &arg1,
+							SourceMeta: &source.Meta{
+								Position: source.Position{
+									Line:   100,
+									Column: 69,
+								},
+								EndPosition: &source.Position{
+									Line:   100,
+									Column: 72,
+								},
+							},
+						},
+						SourceMeta: &source.Meta{
+							Position: source.Position{
+								Line:   100,
+								Column: 61,
+							},
+							EndPosition: &source.Position{
+								Line:   100,
+								Column: 72,
+							},
+						},
+					},
+					{
+						Name: "avg",
+						Value: &Substitution{
+							IntValue: &arg2,
+							SourceMeta: &source.Meta{
+								Position: source.Position{
+									Line:   100,
+									Column: 80,
+								},
+								EndPosition: &source.Position{
+									Line:   100,
+									Column: 83,
+								},
+							},
+						},
+						SourceMeta: &source.Meta{
+							Position: source.Position{
+								Line:   100,
+								Column: 74,
+							},
+							EndPosition: &source.Position{
+								Line:   100,
+								Column: 83,
+							},
+						},
+					},
+					{
+						Name: "label",
+						Value: &Substitution{
+							StringValue: &arg3,
+							SourceMeta: &source.Meta{
+								Position: source.Position{
+									Line:   100,
+									Column: 93,
+								},
+								EndPosition: &source.Position{
+									Line:   100,
+									Column: 100,
+								},
+							},
+						},
+						SourceMeta: &source.Meta{
+							Position: source.Position{
+								Line:   100,
+								Column: 85,
+							},
+							EndPosition: &source.Position{
+								Line:   100,
+								Column: 100,
+							},
+						},
+					},
+				},
+				Path: []*SubstitutionPathItem{},
+				SourceMeta: &source.Meta{
+					Position: source.Position{
+						Line:   100,
+						Column: 54,
+					},
+					EndPosition: &source.Position{
+						Line:   100,
+						Column: 101,
+					},
+				},
+			},
+			SourceMeta: &source.Meta{
+				Position: source.Position{
+					Line:   100,
+					Column: 54,
+				},
+				EndPosition: &source.Position{
+					Line:   100,
+					Column: 101,
+				},
+			},
+		},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   100,
+				Column: 50,
+			},
+			EndPosition: &source.Position{
+				Line:   100,
+				Column: 105,
+			},
+		},
+	})
+}
+
 func (s *ParseSubstitutionsTestSuite) Test_fails_to_parse_susbstitution_reporting_correct_position(c *C) {
 	_, err := ParseSubstitutionValues(
 		"",

@@ -311,12 +311,15 @@ func updateFloatParts(intPart *string, fractionalPart *string, passedDecimalPoin
 func takeIntLiteral(state *lexState, sequence string, startPos int) (int, int) {
 	inPossibleInt := true
 	i := startPos
-	value := ""
+	sign := ""
+	numberPart := ""
 
 	for inPossibleInt && i < len(sequence) {
 		char, width := utf8.DecodeRuneInString(sequence[i:])
-		if char >= '0' && char <= '9' {
-			value += string(char)
+		if char == '-' && i == startPos {
+			sign = "-"
+		} else if char >= '0' && char <= '9' {
+			numberPart += string(char)
 		} else {
 			inPossibleInt = false
 		}
@@ -324,6 +327,7 @@ func takeIntLiteral(state *lexState, sequence string, startPos int) (int, int) {
 		i += width
 	}
 
+	value := fmt.Sprintf("%s%s", sign, numberPart)
 	state.tokens = append(state.tokens, &token{
 		tokenType:    tokenIntLiteral,
 		value:        value,
