@@ -503,47 +503,12 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
-	// Apply some validation to get diagnostics about non-standard transformers
-	// that may not be present at runtime.
-	var transformDiagnostics []*bpcore.Diagnostic
-	transformDiagnostics, err = l.validateTransforms(ctx, blueprintSchema)
+	transformers, transformDiagnostics, err := l.validateAndApplyTransforms(ctx, blueprintSchema)
 	diagnostics = append(diagnostics, transformDiagnostics...)
 	if err != nil {
-		validationErrors = append(validationErrors, err)
-	}
-
-	if !l.transformSpec {
-		spec := &internalBlueprintSpec{
+		return &internalBlueprintSpec{
 			schema: blueprintSchema,
-		}
-		if len(validationErrors) > 0 {
-			return spec, diagnostics, validation.ErrMultipleValidationErrors(validationErrors)
-		}
-		return spec, diagnostics, nil
-	}
-
-	transformers, err := l.collectTransformers(blueprintSchema)
-	if err != nil {
-		spec := &internalBlueprintSpec{
-			schema: blueprintSchema,
-		}
-		return spec, diagnostics, validation.ErrMultipleValidationErrors(
-			append(validationErrors, err),
-		)
-	}
-	for _, transformer := range transformers {
-		output, err := transformer.Transform(ctx, &transform.SpecTransformerTransformInput{
-			InputBlueprint: blueprintSchema,
-		})
-		blueprintSchema = output.TransformedBlueprint
-		if err != nil {
-			spec := &internalBlueprintSpec{
-				schema: blueprintSchema,
-			}
-			return spec, diagnostics, validation.ErrMultipleValidationErrors(
-				append(validationErrors, err),
-			)
-		}
+		}, diagnostics, err
 	}
 
 	if l.validateAfterTransform && len(transformers) > 0 {
@@ -567,6 +532,48 @@ func (l *defaultLoader) loadSpec(
 	return &internalBlueprintSpec{
 		schema: blueprintSchema,
 	}, diagnostics, nil
+}
+
+func (l *defaultLoader) validateAndApplyTransforms(
+	ctx context.Context,
+	blueprintSchema *schema.Blueprint,
+) ([]transform.SpecTransformer, []*bpcore.Diagnostic, error) {
+	// Apply some validation to get diagnostics about non-standard transformers
+	// that may not be present at runtime.
+	var transformDiagnostics []*bpcore.Diagnostic
+	var validationErrors []error
+	validateDiagnostics, err := l.validateTransforms(ctx, blueprintSchema)
+	transformDiagnostics = append(transformDiagnostics, validateDiagnostics...)
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
+
+	if !l.transformSpec {
+		if len(validationErrors) > 0 {
+			return nil, transformDiagnostics, validation.ErrMultipleValidationErrors(validationErrors)
+		}
+		return nil, transformDiagnostics, nil
+	}
+
+	transformers, err := l.collectTransformers(blueprintSchema)
+	if err != nil {
+		return nil, transformDiagnostics, validation.ErrMultipleValidationErrors(
+			append(validationErrors, err),
+		)
+	}
+	for _, transformer := range transformers {
+		output, err := transformer.Transform(ctx, &transform.SpecTransformerTransformInput{
+			InputBlueprint: blueprintSchema,
+		})
+		blueprintSchema = output.TransformedBlueprint
+		if err != nil {
+			return transformers, transformDiagnostics, validation.ErrMultipleValidationErrors(
+				append(validationErrors, err),
+			)
+		}
+	}
+
+	return transformers, transformDiagnostics, nil
 }
 
 func (l *defaultLoader) collectTransformers(schema *schema.Blueprint) ([]transform.SpecTransformer, error) {

@@ -3,15 +3,9 @@ package container
 import (
 	"context"
 	"fmt"
-	"testing"
 
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	. "gopkg.in/check.v1"
 )
-
-func Test(t *testing.T) {
-	TestingT(t)
-}
 
 type testAWSProvider struct {
 	resources           map[string]provider.Resource

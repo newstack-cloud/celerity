@@ -2,16 +2,18 @@ package container
 
 import (
 	"context"
+	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/common/core"
-	. "gopkg.in/check.v1"
 )
 
 type OrderingTestSuite struct {
 	orderFixtures []orderChainLinkFixture
+	suite.Suite
 }
 
 type orderChainLinkFixture struct {
@@ -26,49 +28,47 @@ type orderChainLinkFixture struct {
 	orderedExpected [][]string
 }
 
-var _ = Suite(&OrderingTestSuite{})
-
-func (s *OrderingTestSuite) SetUpSuite(c *C) {
+func (s *OrderingTestSuite) SetUpSuite() {
 	s.orderFixtures = []orderChainLinkFixture{
 		orderFixture1,
 	}
 }
 
-func (s *OrderingTestSuite) Test_order_links_for_deployment_with_circular_links(c *C) {
+func (s *OrderingTestSuite) Test_order_links_for_deployment_with_circular_links() {
 	orderedLinks, err := OrderLinksForDeployment(context.TODO(), orderFixture1.inputChains, nil)
-	c.Assert(err, IsNil)
-	c.Assert(len(orderedLinks), Equals, len(orderFixture1.expectedPresent))
-	c.Assert(
-		len(
-			core.Filter(orderedLinks, inExpected(orderFixture1.expectedPresent)),
+	s.Assert().NoError(err)
+	s.Assert().Len(orderedLinks, len(orderFixture1.expectedPresent))
+	s.Assert().Len(
+		core.Filter(
+			orderedLinks,
+			inExpected(orderFixture1.expectedPresent),
 		),
-		Equals,
 		len(orderFixture1.expectedPresent),
 	)
 
 	for _, orderedExpectedSet := range orderFixture1.orderedExpected {
-		assertOrderedExpected(c, orderedLinks, orderedExpectedSet)
+		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
 	}
 }
 
-func (s *OrderingTestSuite) Test_order_links_for_deployment_without_circular_links(c *C) {
+func (s *OrderingTestSuite) Test_order_links_for_deployment_without_circular_links() {
 	orderedLinks, err := OrderLinksForDeployment(context.TODO(), orderFixture2.inputChains, nil)
-	c.Assert(err, IsNil)
-	c.Assert(len(orderedLinks), Equals, len(orderFixture2.expectedPresent))
-	c.Assert(
-		len(
-			core.Filter(orderedLinks, inExpected(orderFixture2.expectedPresent)),
+	s.Assert().NoError(err)
+	s.Assert().Len(orderedLinks, len(orderFixture2.expectedPresent))
+	s.Assert().Len(
+		core.Filter(
+			orderedLinks,
+			inExpected(orderFixture2.expectedPresent),
 		),
-		Equals,
 		len(orderFixture2.expectedPresent),
 	)
 
 	for _, orderedExpectedSet := range orderFixture2.orderedExpected {
-		assertOrderedExpected(c, orderedLinks, orderedExpectedSet)
+		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
 	}
 }
 
-func assertOrderedExpected(c *C, actual []*links.ChainLink, orderedExpected []string) {
+func (s *OrderingTestSuite) assertOrderedExpected(actual []*links.ChainLink, orderedExpected []string) {
 	expectedItemsInOrder := core.Filter(actual, inExpected(orderedExpected))
 	inOrder := true
 	i := 0
@@ -85,7 +85,7 @@ func assertOrderedExpected(c *C, actual []*links.ChainLink, orderedExpected []st
 	}
 
 	if !inOrder {
-		c.Errorf("expected \"%s\" to come before \"%s\"", linkB.ResourceName, linkA.ResourceName)
+		s.Failf("expected \"%s\" to come before \"%s\"", linkB.ResourceName, linkA.ResourceName)
 	}
 }
 
@@ -413,4 +413,8 @@ func orderFixture2Chain() []*links.ChainLink {
 		subnet,
 		securityGroup,
 	}
+}
+
+func TestOrderingTestSuite(t *testing.T) {
+	suite.Run(t, new(OrderingTestSuite))
 }

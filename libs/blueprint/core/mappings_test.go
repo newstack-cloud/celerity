@@ -3,9 +3,9 @@ package core
 import (
 	"encoding/json"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
 )
 
@@ -17,38 +17,37 @@ var (
 type MappingNodeTestSuite struct {
 	specParseFixtures     map[string][]byte
 	specSerialiseFixtures map[string]*MappingNode
+	suite.Suite
 }
 
-var _ = Suite(&MappingNodeTestSuite{})
-
-func (s *MappingNodeTestSuite) SetUpSuite(c *C) {
+func (s *MappingNodeTestSuite) SetUpSuite() {
 	s.prepareParseInputFixtures()
 	s.prepareExpectedFixtures()
 }
 
-func (s *MappingNodeTestSuite) Test_parse_string_val_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_string_val_yaml() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["stringValYAML"], targetMappingNode)
-	c.Assert(err, IsNil)
-	c.Assert(targetMappingNode.Literal.StringValue, NotNil)
-	c.Assert(*targetMappingNode.Literal.StringValue, Equals, testStringValue)
-	c.Assert(targetMappingNode.Literal.SourceMeta.Line, Equals, 1)
-	c.Assert(targetMappingNode.Literal.SourceMeta.Column, Equals, 1)
+	s.Assert().NoError(err)
+	s.Assert().NotNil(targetMappingNode.Literal.StringValue)
+	s.Assert().Equal(testStringValue, *targetMappingNode.Literal.StringValue)
+	s.Assert().Equal(1, targetMappingNode.Literal.SourceMeta.Line)
+	s.Assert().Equal(1, targetMappingNode.Literal.SourceMeta.Column)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_string_val_json(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_string_val_json() {
 	targetMappingNode := &MappingNode{}
 	err := json.Unmarshal(s.specParseFixtures["stringValJSON"], targetMappingNode)
-	c.Assert(err, IsNil)
-	c.Assert(targetMappingNode.Literal.StringValue, NotNil)
-	c.Assert(*targetMappingNode.Literal.StringValue, Equals, testStringValue)
+	s.Assert().NoError(err)
+	s.Assert().NotNil(targetMappingNode.Literal.StringValue)
+	s.Assert().Equal(testStringValue, *targetMappingNode.Literal.StringValue)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["stringWithSubsYAML"], targetMappingNode)
-	c.Assert(err, IsNil)
-	c.Assert(targetMappingNode, DeepEquals, &MappingNode{
+	s.Assert().NoError(err)
+	s.Assert().Equal(&MappingNode{
 		StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{
@@ -86,14 +85,14 @@ func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml(c *C) {
 		SourceMeta: &source.Meta{
 			Position: source.Position{Line: 1, Column: 1},
 		},
-	})
+	}, targetMappingNode)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_string_with_subs_json(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_string_with_subs_json() {
 	targetMappingNode := &MappingNode{}
 	err := json.Unmarshal(s.specParseFixtures["stringWithSubsJSON"], targetMappingNode)
-	c.Assert(err, IsNil)
-	c.Assert(targetMappingNode, DeepEquals, &MappingNode{
+	s.Assert().NoError(err)
+	s.Assert().Equal(&MappingNode{
 		StringWithSubstitutions: &substitutions.StringOrSubstitutions{
 			Values: []*substitutions.StringOrSubstitution{
 				{StringValue: &testStringValPart},
@@ -106,36 +105,36 @@ func (s *MappingNodeTestSuite) Test_parse_string_with_subs_json(c *C) {
 				},
 			},
 		},
-	})
+	}, targetMappingNode)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_int_val(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_int_val() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["intVal"], targetMappingNode)
-	c.Assert(err, IsNil)
-	c.Assert(targetMappingNode.Literal.IntValue, NotNil)
-	c.Assert(*targetMappingNode.Literal.IntValue, Equals, 45172131)
+	s.Assert().NoError(err)
+	s.Assert().NotNil(targetMappingNode.Literal.IntValue)
+	s.Assert().Equal(45172131, *targetMappingNode.Literal.IntValue)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_fields_val_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_fields_val_yaml() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["fieldsValYAML"], targetMappingNode)
-	c.Assert(err, IsNil)
-	assertFieldsNodeYAML(c, targetMappingNode)
+	s.Assert().NoError(err)
+	s.assertFieldsNodeYAML(targetMappingNode)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_fields_val_json(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_fields_val_json() {
 	targetMappingNode := &MappingNode{}
 	err := json.Unmarshal(s.specParseFixtures["fieldsValJSON"], targetMappingNode)
-	c.Assert(err, IsNil)
-	assertFieldsNodeJSON(c, targetMappingNode)
+	s.Assert().NoError(err)
+	s.assertFieldsNodeJSON(targetMappingNode)
 }
 
-func assertFieldsNodeYAML(c *C, actual *MappingNode) {
+func (s *MappingNodeTestSuite) assertFieldsNodeYAML(actual *MappingNode) {
 	expectedIntVal := 45172131
 	expectedStrVal := "value1"
 	expectedStrSubPrefix := "value with sub "
-	c.Assert(actual, DeepEquals, &MappingNode{
+	s.Assert().Equal(&MappingNode{
 		Fields: map[string]*MappingNode{
 			"key1": {
 				Literal: &ScalarValue{
@@ -201,14 +200,14 @@ func assertFieldsNodeYAML(c *C, actual *MappingNode) {
 			"key2": {Position: source.Position{Line: 3, Column: 9}},
 			"key3": {Position: source.Position{Line: 4, Column: 9}},
 		},
-	})
+	}, actual)
 }
 
-func assertFieldsNodeJSON(c *C, actual *MappingNode) {
+func (s *MappingNodeTestSuite) assertFieldsNodeJSON(actual *MappingNode) {
 	expectedIntVal := 45172131
 	expectedStrVal := "value1"
 	expectedStrSubPrefix := "value with sub "
-	c.Assert(actual, DeepEquals, &MappingNode{
+	s.Assert().Equal(&MappingNode{
 		Fields: map[string]*MappingNode{
 			"key1": {
 				Literal: &ScalarValue{StringValue: &expectedStrVal},
@@ -231,28 +230,28 @@ func assertFieldsNodeJSON(c *C, actual *MappingNode) {
 				Literal: &ScalarValue{IntValue: &expectedIntVal},
 			},
 		},
-	})
+	}, actual)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_items_val_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_items_val_yaml() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["itemsValYAML"], targetMappingNode)
-	c.Assert(err, IsNil)
-	assertItemsNodeYAML(c, targetMappingNode)
+	s.Assert().NoError(err)
+	s.assertItemsNodeYAML(targetMappingNode)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_items_val_json(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_items_val_json() {
 	targetMappingNode := &MappingNode{}
 	err := json.Unmarshal(s.specParseFixtures["itemsValJSON"], targetMappingNode)
-	c.Assert(err, IsNil)
-	assertItemsNodeJSON(c, targetMappingNode)
+	s.Assert().NoError(err)
+	s.assertItemsNodeJSON(targetMappingNode)
 }
 
-func assertItemsNodeYAML(c *C, actual *MappingNode) {
+func (s *MappingNodeTestSuite) assertItemsNodeYAML(actual *MappingNode) {
 	expectedIntVal := 45172131
 	expectedStrVal := "value1"
 	expectedStrSubPrefix := "value with sub "
-	c.Assert(actual, DeepEquals, &MappingNode{
+	s.Assert().Equal(&MappingNode{
 		Items: []*MappingNode{
 			{
 				Literal: &ScalarValue{
@@ -313,14 +312,14 @@ func assertItemsNodeYAML(c *C, actual *MappingNode) {
 			},
 		},
 		SourceMeta: &source.Meta{Position: source.Position{Line: 2, Column: 9}},
-	})
+	}, actual)
 }
 
-func assertItemsNodeJSON(c *C, actual *MappingNode) {
+func (s *MappingNodeTestSuite) assertItemsNodeJSON(actual *MappingNode) {
 	expectedIntVal := 45172131
 	expectedStrVal := "value1"
 	expectedStrSubPrefix := "value with sub "
-	c.Assert(actual, DeepEquals, &MappingNode{
+	s.Assert().Equal(&MappingNode{
 		Items: []*MappingNode{
 			{
 				Literal: &ScalarValue{
@@ -347,30 +346,30 @@ func assertItemsNodeJSON(c *C, actual *MappingNode) {
 				},
 			},
 		},
-	})
+	}, actual)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_nested_val_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_nested_val_yaml() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["nestedValYAML"], targetMappingNode)
-	c.Assert(err, IsNil)
-	assertNestedNodeYAML(c, targetMappingNode)
+	s.Assert().NoError(err)
+	s.assertNestedNodeYAML(targetMappingNode)
 }
 
-func (s *MappingNodeTestSuite) Test_parse_nested_val_json(c *C) {
+func (s *MappingNodeTestSuite) Test_parse_nested_val_json() {
 	targetMappingNode := &MappingNode{}
 	err := json.Unmarshal(s.specParseFixtures["nestedValJSON"], targetMappingNode)
-	c.Assert(err, IsNil)
-	assertNestedNodeJSON(c, targetMappingNode)
+	s.Assert().NoError(err)
+	s.assertNestedNodeJSON(targetMappingNode)
 }
 
-func assertNestedNodeJSON(c *C, actual *MappingNode) {
+func (s *MappingNodeTestSuite) assertNestedNodeJSON(actual *MappingNode) {
 	expectedIntVal := 931721304
 	expectedStrVal1 := "value10"
 	expectedStrVal2 := "value11"
 	expectedStrVal3 := "value12"
 	expectedStrSubPrefix := "value13 with sub "
-	c.Assert(actual, DeepEquals, &MappingNode{
+	s.Assert().Equal(&MappingNode{
 		Fields: map[string]*MappingNode{
 			"key1": {
 				Literal: &ScalarValue{StringValue: &expectedStrVal1},
@@ -407,16 +406,16 @@ func assertNestedNodeJSON(c *C, actual *MappingNode) {
 				Literal: &ScalarValue{IntValue: &expectedIntVal},
 			},
 		},
-	})
+	}, actual)
 }
 
-func assertNestedNodeYAML(c *C, actual *MappingNode) {
+func (s *MappingNodeTestSuite) assertNestedNodeYAML(actual *MappingNode) {
 	expectedIntVal := 931721304
 	expectedStrVal1 := "value10"
 	expectedStrVal2 := "value11"
 	expectedStrVal3 := "value12"
 	expectedStrSubPrefix := "value13 with sub "
-	c.Assert(actual, DeepEquals, &MappingNode{
+	s.Assert().Equal(&MappingNode{
 		Fields: map[string]*MappingNode{
 			"key1": {
 				Literal: &ScalarValue{
@@ -522,91 +521,91 @@ func assertNestedNodeYAML(c *C, actual *MappingNode) {
 			"key4": {Position: source.Position{Line: 5, Column: 11}},
 			"key5": {Position: source.Position{Line: 8, Column: 11}},
 		},
-	})
+	}, actual)
 }
 
-func (s *MappingNodeTestSuite) Test_fails_to_parse_invalid_value(c *C) {
+func (s *MappingNodeTestSuite) Test_fails_to_parse_invalid_value() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["failInvalidValue"], targetMappingNode)
-	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, "a blueprint mapping node must be a valid scalar, mapping or sequence")
+	s.Assert().NoError(err)
+	s.Assert().Equal("a blueprint mapping node must be a valid scalar, mapping or sequence", err.Error())
 	coreErr, isCoreErr := err.(*Error)
-	c.Assert(isCoreErr, Equals, true)
-	c.Assert(coreErr.ReasonCode, Equals, ErrorCoreReasonCodeInvalidMappingNode)
-	c.Assert(*coreErr.SourceLine, Equals, 3)
-	c.Assert(*coreErr.SourceColumn, Equals, 11)
+	s.Assert().Equal(true, isCoreErr)
+	s.Assert().Equal(ErrorCoreReasonCodeInvalidMappingNode, coreErr.ReasonCode)
+	s.Assert().Equal(3, *coreErr.SourceLine)
+	s.Assert().Equal(11, *coreErr.SourceColumn)
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_string_val_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_string_val_yaml() {
 	actual, err := yaml.Marshal(s.specSerialiseFixtures["stringValYAML"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "Test string value\n")
+	s.Assert().NoError(err)
+	s.Assert().Equal("Test string value\n", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_string_val_json(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_string_val_json() {
 	actual, err := json.Marshal(s.specSerialiseFixtures["stringValJSON"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "\"Test string value\"")
+	s.Assert().NoError(err)
+	s.Assert().Equal("\"Test string value\"", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_string_with_subs_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_string_with_subs_yaml() {
 	actual, err := yaml.Marshal(s.specSerialiseFixtures["stringWithSubsYAML"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "Test string value for ${variables.environment}\n")
+	s.Assert().NoError(err)
+	s.Assert().Equal("Test string value for ${variables.environment}\n", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_string_with_subs_json(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_string_with_subs_json() {
 	actual, err := json.Marshal(s.specSerialiseFixtures["stringWithSubsJSON"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "\"Test string value for ${variables.environment}\"")
+	s.Assert().NoError(err)
+	s.Assert().Equal("\"Test string value for ${variables.environment}\"", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_int_val_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_int_val_yaml() {
 	actual, err := yaml.Marshal(s.specSerialiseFixtures["intVal"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "45172131\n")
+	s.Assert().NoError(err)
+	s.Assert().Equal("45172131\n", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_int_val_json(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_int_val_json() {
 	actual, err := json.Marshal(s.specSerialiseFixtures["intVal"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "45172131")
+	s.Assert().NoError(err)
+	s.Assert().Equal("45172131", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_fields_val_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_fields_val_yaml() {
 	actual, err := yaml.Marshal(s.specSerialiseFixtures["fieldsValYAML"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "key1: Test string value\nkey2: Test string value for ${variables.environment}\nkey3: 45172131\n")
+	s.Assert().NoError(err)
+	s.Assert().Equal("key1: Test string value\nkey2: Test string value for ${variables.environment}\nkey3: 45172131\n", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_fields_val_json(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_fields_val_json() {
 	actual, err := json.Marshal(s.specSerialiseFixtures["fieldsValJSON"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "{\"key1\":\"Test string value\",\"key2\":\"Test string value for ${variables.environment}\",\"key3\":45172131}")
+	s.Assert().NoError(err)
+	s.Assert().Equal("{\"key1\":\"value1\",\"key2\":\"value with sub ${variables.environment}\",\"key3\":45172131}", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_items_val_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_items_val_yaml() {
 	actual, err := yaml.Marshal(s.specSerialiseFixtures["itemsValYAML"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "- Test string value\n- Test string value for ${variables.environment}\n- 45172131\n")
+	s.Assert().NoError(err)
+	s.Assert().Equal("- Test string value\n- Test string value for ${variables.environment}\n- 45172131\n", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_serialise_items_val_json(c *C) {
+func (s *MappingNodeTestSuite) Test_serialise_items_val_json() {
 	actual, err := json.Marshal(s.specSerialiseFixtures["itemsValJSON"])
-	c.Assert(err, IsNil)
-	c.Assert(string(actual), Equals, "[\"Test string value\",\"Test string value for ${variables.environment}\",45172131]")
+	s.Assert().NoError(err)
+	s.Assert().Equal("[\"value1\",\"value with sub ${variables.environment}\",45172131]", string(actual))
 }
 
-func (s *MappingNodeTestSuite) Test_fails_to_serialise_invalid_mapping_node_yaml(c *C) {
+func (s *MappingNodeTestSuite) Test_fails_to_serialise_invalid_mapping_node_yaml() {
 	_, err := yaml.Marshal(s.specSerialiseFixtures["failInvalidYAML"])
-	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, "a blueprint mapping node must have a valid value set")
+	s.Assert().Error(err)
+	s.Assert().Equal("a blueprint mapping node must have a valid value set", err.Error())
 }
 
-func (s *MappingNodeTestSuite) Test_fails_to_serialise_invalid_mapping_node_json(c *C) {
+func (s *MappingNodeTestSuite) Test_fails_to_serialise_invalid_mapping_node_json() {
 	_, err := json.Marshal(s.specSerialiseFixtures["failInvalidJSON"])
-	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, "json: error calling MarshalJSON for type *core.MappingNode: a blueprint mapping node must have a valid value set")
+	s.Assert().Error(err)
+	s.Assert().Equal("json: error calling MarshalJSON for type *core.MappingNode: a blueprint mapping node must have a valid value set", err.Error())
 }
 
 func (s *MappingNodeTestSuite) prepareParseInputFixtures() {
