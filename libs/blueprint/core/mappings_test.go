@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"testing"
 
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -20,7 +21,7 @@ type MappingNodeTestSuite struct {
 	suite.Suite
 }
 
-func (s *MappingNodeTestSuite) SetUpSuite() {
+func (s *MappingNodeTestSuite) SetupTest() {
 	s.prepareParseInputFixtures()
 	s.prepareExpectedFixtures()
 }
@@ -527,7 +528,7 @@ func (s *MappingNodeTestSuite) assertNestedNodeYAML(actual *MappingNode) {
 func (s *MappingNodeTestSuite) Test_fails_to_parse_invalid_value() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["failInvalidValue"], targetMappingNode)
-	s.Assert().NoError(err)
+	s.Assert().Error(err)
 	s.Assert().Equal("a blueprint mapping node must be a valid scalar, mapping or sequence", err.Error())
 	coreErr, isCoreErr := err.(*Error)
 	s.Assert().Equal(true, isCoreErr)
@@ -581,7 +582,7 @@ func (s *MappingNodeTestSuite) Test_serialise_fields_val_yaml() {
 func (s *MappingNodeTestSuite) Test_serialise_fields_val_json() {
 	actual, err := json.Marshal(s.specSerialiseFixtures["fieldsValJSON"])
 	s.Assert().NoError(err)
-	s.Assert().Equal("{\"key1\":\"value1\",\"key2\":\"value with sub ${variables.environment}\",\"key3\":45172131}", string(actual))
+	s.Assert().Equal("{\"key1\":\"Test string value\",\"key2\":\"Test string value for ${variables.environment}\",\"key3\":45172131}", string(actual))
 }
 
 func (s *MappingNodeTestSuite) Test_serialise_items_val_yaml() {
@@ -593,7 +594,7 @@ func (s *MappingNodeTestSuite) Test_serialise_items_val_yaml() {
 func (s *MappingNodeTestSuite) Test_serialise_items_val_json() {
 	actual, err := json.Marshal(s.specSerialiseFixtures["itemsValJSON"])
 	s.Assert().NoError(err)
-	s.Assert().Equal("[\"value1\",\"value with sub ${variables.environment}\",45172131]", string(actual))
+	s.Assert().Equal("[\"Test string value\",\"Test string value for ${variables.environment}\",45172131]", string(actual))
 }
 
 func (s *MappingNodeTestSuite) Test_fails_to_serialise_invalid_mapping_node_yaml() {
@@ -752,4 +753,8 @@ func (s *MappingNodeTestSuite) prepareExpectedFixtures() {
 		"failInvalidYAML": {},
 		"failInvalidJSON": {},
 	}
+}
+
+func TestLoaderTestSuite(t *testing.T) {
+	suite.Run(t, new(MappingNodeTestSuite))
 }
