@@ -3,11 +3,12 @@ package corefunctions
 import (
 	"context"
 	"fmt"
+	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	. "gopkg.in/check.v1"
 )
 
 type CWDFunctionTestSuite struct {
@@ -15,11 +16,10 @@ type CWDFunctionTestSuite struct {
 	callContext       *functionCallContextMock
 	getWorkingDir     WorkingDirResolver
 	getWorkingDirFail WorkingDirResolver
+	suite.Suite
 }
 
-var _ = Suite(&CWDFunctionTestSuite{})
-
-func (s *CWDFunctionTestSuite) SetUpTest(c *C) {
+func (s *CWDFunctionTestSuite) SetupTest() {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -37,7 +37,7 @@ func (s *CWDFunctionTestSuite) SetUpTest(c *C) {
 	}
 }
 
-func (s *CWDFunctionTestSuite) Test_gets_current_working_directory(c *C) {
+func (s *CWDFunctionTestSuite) Test_gets_current_working_directory() {
 	cwdFunc := NewCWDFunction(s.getWorkingDir)
 	s.callStack.Push(&function.Call{
 		FunctionName: "cwd",
@@ -50,13 +50,13 @@ func (s *CWDFunctionTestSuite) Test_gets_current_working_directory(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputStr, isStr := output.ResponseData.(string)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, "/home/user")
+	s.Assert().True(isStr)
+	s.Assert().Equal("/home/user", outputStr)
 }
 
-func (s *CWDFunctionTestSuite) Test_returns_func_error_on_failure_to_get_current_working_directory(c *C) {
+func (s *CWDFunctionTestSuite) Test_returns_func_error_on_failure_to_get_current_working_directory() {
 	cwdFunc := NewCWDFunction(s.getWorkingDirFail)
 	s.callStack.Push(&function.Call{
 		FunctionName: "cwd",
@@ -69,14 +69,24 @@ func (s *CWDFunctionTestSuite) Test_returns_func_error_on_failure_to_get_current
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, NotNil)
+	s.Require().Error(err)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
-	c.Assert(isFuncErr, Equals, true)
-	c.Assert(funcErr.Message, Equals, "unable to get current working directory: failed to resolve working directory")
-	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
-		{
-			FunctionName: "cwd",
+	s.Assert().True(isFuncErr)
+	s.Assert().Equal(
+		"unable to get current working directory: failed to resolve working directory",
+		funcErr.Message,
+	)
+	s.Assert().Equal(
+		[]*function.Call{
+			{
+				FunctionName: "cwd",
+			},
 		},
-	})
-	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeFunctionCall)
+		funcErr.CallStack,
+	)
+	s.Assert().Equal(function.FuncCallErrorCodeFunctionCall, funcErr.Code)
+}
+
+func TestCWDFunctionTestSuite(t *testing.T) {
+	suite.Run(t, new(CWDFunctionTestSuite))
 }

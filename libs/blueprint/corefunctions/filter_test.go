@@ -2,21 +2,21 @@ package corefunctions
 
 import (
 	"context"
+	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	. "gopkg.in/check.v1"
 )
 
 type FilterFunctionTestSuite struct {
 	callStack   function.Stack
 	callContext *functionCallContextMock
+	suite.Suite
 }
 
-var _ = Suite(&FilterFunctionTestSuite{})
-
-func (s *FilterFunctionTestSuite) SetUpTest(c *C) {
+func (s *FilterFunctionTestSuite) SetupTest() {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -30,7 +30,7 @@ func (s *FilterFunctionTestSuite) SetUpTest(c *C) {
 	}
 }
 
-func (s *FilterFunctionTestSuite) Test_filters_items_correctly(c *C) {
+func (s *FilterFunctionTestSuite) Test_filters_items_correctly() {
 
 	filterFunc := NewFilterFunction()
 	s.callStack.Push(&function.Call{
@@ -53,13 +53,13 @@ func (s *FilterFunctionTestSuite) Test_filters_items_correctly(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputSlice, isStrSlice := output.ResponseData.([]interface{})
-	c.Assert(isStrSlice, Equals, true)
-	c.Assert(outputSlice, DeepEquals, []interface{}{"core_a", "core_b", "core_c"})
+	s.Assert().True(isStrSlice)
+	s.Assert().Equal([]interface{}{"core_a", "core_b", "core_c"}, outputSlice)
 }
 
-func (s *FilterFunctionTestSuite) Test_returns_func_error_for_invalid_item_in_list(c *C) {
+func (s *FilterFunctionTestSuite) Test_returns_func_error_for_invalid_item_in_list() {
 	filterFunc := NewFilterFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "filter",
@@ -82,22 +82,25 @@ func (s *FilterFunctionTestSuite) Test_returns_func_error_for_invalid_item_in_li
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, NotNil)
+	s.Require().Error(err)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
-	c.Assert(isFuncErr, Equals, true)
-	c.Assert(funcErr.Message, Equals, "argument at index 0 is of type int, but target is of type string")
-	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
-		{
-			FunctionName: "has_prefix",
+	s.Assert().True(isFuncErr)
+	s.Assert().Equal("argument at index 0 is of type int, but target is of type string", funcErr.Message)
+	s.Assert().Equal(
+		[]*function.Call{
+			{
+				FunctionName: "has_prefix",
+			},
+			{
+				FunctionName: "filter",
+			},
 		},
-		{
-			FunctionName: "filter",
-		},
-	})
-	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidArgumentType)
+		funcErr.CallStack,
+	)
+	s.Assert().Equal(function.FuncCallErrorCodeInvalidArgumentType, funcErr.Code)
 }
 
-func (s *FilterFunctionTestSuite) Test_returns_func_error_for_invalid_args_offset(c *C) {
+func (s *FilterFunctionTestSuite) Test_returns_func_error_for_invalid_args_offset() {
 	filterFunc := NewFilterFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "filter",
@@ -120,19 +123,24 @@ func (s *FilterFunctionTestSuite) Test_returns_func_error_for_invalid_args_offse
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, NotNil)
+	s.Require().Error(err)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
-	c.Assert(isFuncErr, Equals, true)
-	c.Assert(
-		funcErr.Message,
-		Equals,
+	s.Assert().True(isFuncErr)
+	s.Assert().Equal(
 		"invalid args offset defined for the partially applied \"has_prefix\""+
 			" function, this is an issue with the function used to create the function value passed into filter",
+		funcErr.Message,
 	)
-	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
-		{
-			FunctionName: "filter",
-		},
-	})
-	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidArgsOffset)
+	s.Assert().Equal(
+		[]*function.Call{{FunctionName: "filter"}},
+		funcErr.CallStack,
+	)
+	s.Assert().Equal(
+		function.FuncCallErrorCodeInvalidArgsOffset,
+		funcErr.Code,
+	)
+}
+
+func TestFilterFunctionTestSuite(t *testing.T) {
+	suite.Run(t, new(FilterFunctionTestSuite))
 }

@@ -4,23 +4,23 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	. "gopkg.in/check.v1"
 )
 
 type DateTimeFunctionTestSuite struct {
 	callStack   function.Stack
 	callContext *functionCallContextMock
 	clock       core.Clock
+	suite.Suite
 }
 
-var _ = Suite(&DateTimeFunctionTestSuite{})
-
-func (s *DateTimeFunctionTestSuite) SetUpTest(c *C) {
+func (s *DateTimeFunctionTestSuite) SetupTest() {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -33,7 +33,7 @@ func (s *DateTimeFunctionTestSuite) SetUpTest(c *C) {
 	s.clock = &internal.ClockMock{}
 }
 
-func (s *DateTimeFunctionTestSuite) Test_gets_current_time_unix_format(c *C) {
+func (s *DateTimeFunctionTestSuite) Test_gets_current_time_unix_format() {
 	dateTimeFunc := NewDateTimeFunction(s.clock)
 	s.callStack.Push(&function.Call{
 		FunctionName: "datetime",
@@ -48,13 +48,13 @@ func (s *DateTimeFunctionTestSuite) Test_gets_current_time_unix_format(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputStr, isStr := output.ResponseData.(string)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, fmt.Sprintf("%d", internal.CurrentTimeUnixMock))
+	s.Assert().True(isStr)
+	s.Assert().Equal(fmt.Sprintf("%d", internal.CurrentTimeUnixMock), outputStr)
 }
 
-func (s *DateTimeFunctionTestSuite) Test_gets_current_time_rfc3339_format(c *C) {
+func (s *DateTimeFunctionTestSuite) Test_gets_current_time_rfc3339_format() {
 	dateTimeFunc := NewDateTimeFunction(s.clock)
 	s.callStack.Push(&function.Call{
 		FunctionName: "datetime",
@@ -69,13 +69,13 @@ func (s *DateTimeFunctionTestSuite) Test_gets_current_time_rfc3339_format(c *C) 
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputStr, isStr := output.ResponseData.(string)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, "2023-09-07T14:43:44Z")
+	s.Assert().True(isStr)
+	s.Assert().Equal("2023-09-07T14:43:44Z", outputStr)
 }
 
-func (s *DateTimeFunctionTestSuite) Test_gets_current_time_tag_format(c *C) {
+func (s *DateTimeFunctionTestSuite) Test_gets_current_time_tag_format() {
 	dateTimeFunc := NewDateTimeFunction(s.clock)
 	s.callStack.Push(&function.Call{
 		FunctionName: "datetime",
@@ -90,13 +90,13 @@ func (s *DateTimeFunctionTestSuite) Test_gets_current_time_tag_format(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputStr, isStr := output.ResponseData.(string)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, "2023-09-07--14-43-44")
+	s.Assert().True(isStr)
+	s.Assert().Equal("2023-09-07--14-43-44", outputStr)
 }
 
-func (s *DateTimeFunctionTestSuite) Test_gets_current_time_tagcompact_format(c *C) {
+func (s *DateTimeFunctionTestSuite) Test_gets_current_time_tagcompact_format() {
 	dateTimeFunc := NewDateTimeFunction(s.clock)
 	s.callStack.Push(&function.Call{
 		FunctionName: "datetime",
@@ -111,13 +111,13 @@ func (s *DateTimeFunctionTestSuite) Test_gets_current_time_tagcompact_format(c *
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputStr, isStr := output.ResponseData.(string)
-	c.Assert(isStr, Equals, true)
-	c.Assert(outputStr, Equals, "20230907144344")
+	s.Assert().True(isStr)
+	s.Assert().Equal("20230907144344", outputStr)
 }
 
-func (s *DateTimeFunctionTestSuite) Test_returns_func_error_when_unsupported_format_is_provided(c *C) {
+func (s *DateTimeFunctionTestSuite) Test_returns_func_error_when_unsupported_format_is_provided() {
 	dateTimeFunc := NewDateTimeFunction(s.clock)
 	s.callStack.Push(&function.Call{
 		FunctionName: "datetime",
@@ -133,21 +133,27 @@ func (s *DateTimeFunctionTestSuite) Test_returns_func_error_when_unsupported_for
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, NotNil)
+	s.Require().Error(err)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
-	c.Assert(isFuncErr, Equals, true)
-	c.Assert(
-		funcErr.Message,
-		Equals,
+	s.Assert().True(isFuncErr)
+	s.Assert().Equal(
 		fmt.Sprintf(
 			"the requested date/time format is not supported by the \"datetime\" function, "+
 				"supported formats include: %s", strings.Join(SupportedDateTimeFormats, ", "),
 		),
+		funcErr.Message,
 	)
-	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
-		{
-			FunctionName: "datetime",
+	s.Assert().Equal(
+		[]*function.Call{
+			{
+				FunctionName: "datetime",
+			},
 		},
-	})
-	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidInput)
+		funcErr.CallStack,
+	)
+	s.Assert().Equal(function.FuncCallErrorCodeInvalidInput, funcErr.Code)
+}
+
+func TestDateTimeFunctionTestSuite(t *testing.T) {
+	suite.Run(t, new(DateTimeFunctionTestSuite))
 }

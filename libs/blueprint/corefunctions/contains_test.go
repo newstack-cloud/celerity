@@ -2,21 +2,21 @@ package corefunctions
 
 import (
 	"context"
+	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	. "gopkg.in/check.v1"
 )
 
 type ContainsFunctionTestSuite struct {
 	callStack   function.Stack
 	callContext *functionCallContextMock
+	suite.Suite
 }
 
-var _ = Suite(&ContainsFunctionTestSuite{})
-
-func (s *ContainsFunctionTestSuite) SetUpTest(c *C) {
+func (s *ContainsFunctionTestSuite) SetupTest() {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -28,7 +28,7 @@ func (s *ContainsFunctionTestSuite) SetUpTest(c *C) {
 	}
 }
 
-func (s *ContainsFunctionTestSuite) Test_string_contains_substring(c *C) {
+func (s *ContainsFunctionTestSuite) Test_string_contains_substring() {
 	containsFunc := NewContainsFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "contains",
@@ -44,13 +44,13 @@ func (s *ContainsFunctionTestSuite) Test_string_contains_substring(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputBool, isBool := output.ResponseData.(bool)
-	c.Assert(isBool, Equals, true)
-	c.Assert(outputBool, Equals, true)
+	s.Assert().True(isBool)
+	s.Assert().True(outputBool)
 }
 
-func (s *ContainsFunctionTestSuite) Test_array_contains_element_primitive(c *C) {
+func (s *ContainsFunctionTestSuite) Test_array_contains_element_primitive() {
 	containsFunc := NewContainsFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "contains",
@@ -66,13 +66,13 @@ func (s *ContainsFunctionTestSuite) Test_array_contains_element_primitive(c *C) 
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputBool, isBool := output.ResponseData.(bool)
-	c.Assert(isBool, Equals, true)
-	c.Assert(outputBool, Equals, true)
+	s.Assert().True(isBool)
+	s.Assert().True(outputBool)
 }
 
-func (s *ContainsFunctionTestSuite) Test_array_contains_element_comparable(c *C) {
+func (s *ContainsFunctionTestSuite) Test_array_contains_element_comparable() {
 	containsFunc := NewContainsFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "contains",
@@ -88,13 +88,13 @@ func (s *ContainsFunctionTestSuite) Test_array_contains_element_comparable(c *C)
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputBool, isBool := output.ResponseData.(bool)
-	c.Assert(isBool, Equals, true)
-	c.Assert(outputBool, Equals, true)
+	s.Assert().True(isBool)
+	s.Assert().True(outputBool)
 }
 
-func (s *ContainsFunctionTestSuite) Test_returns_func_error_for_invalid_input_string_search(c *C) {
+func (s *ContainsFunctionTestSuite) Test_returns_func_error_for_invalid_input_string_search() {
 	containsFunc := NewContainsFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "contains",
@@ -112,23 +112,25 @@ func (s *ContainsFunctionTestSuite) Test_returns_func_error_for_invalid_input_st
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, NotNil)
+	s.Require().Error(err)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
-	c.Assert(isFuncErr, Equals, true)
-	c.Assert(
-		funcErr.Message,
-		Equals,
+	s.Assert().True(isFuncErr)
+	s.Assert().Equal(
 		"Invalid input type. Expected string for item to search for in a string search space, received int",
+		funcErr.Message,
 	)
-	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
-		{
-			FunctionName: "contains",
+	s.Assert().Equal(
+		[]*function.Call{
+			{
+				FunctionName: "contains",
+			},
 		},
-	})
-	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidInput)
+		funcErr.CallStack,
+	)
+	s.Assert().Equal(function.FuncCallErrorCodeInvalidInput, funcErr.Code)
 }
 
-func (s *ContainsFunctionTestSuite) Test_returns_func_error_for_invalid_input_search_space(c *C) {
+func (s *ContainsFunctionTestSuite) Test_returns_func_error_for_invalid_input_search_space() {
 	containsFunc := NewContainsFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "contains",
@@ -145,19 +147,25 @@ func (s *ContainsFunctionTestSuite) Test_returns_func_error_for_invalid_input_se
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, NotNil)
+	s.Require().Error(err)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
-	c.Assert(isFuncErr, Equals, true)
-	c.Assert(
-		funcErr.Message,
-		Equals,
+	s.Assert().True(isFuncErr)
+	s.Assert().Equal(
 		"Invalid input type. Expected string or array for "+
 			"search space, received struct { Value string }",
+		funcErr.Message,
 	)
-	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
-		{
-			FunctionName: "contains",
+	s.Assert().Equal(
+		[]*function.Call{
+			{
+				FunctionName: "contains",
+			},
 		},
-	})
-	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidInput)
+		funcErr.CallStack,
+	)
+	s.Assert().Equal(function.FuncCallErrorCodeInvalidInput, funcErr.Code)
+}
+
+func TestContainsFunctionTestSuite(t *testing.T) {
+	suite.Run(t, new(ContainsFunctionTestSuite))
 }

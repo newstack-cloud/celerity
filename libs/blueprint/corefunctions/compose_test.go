@@ -2,21 +2,21 @@ package corefunctions
 
 import (
 	"context"
+	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	. "gopkg.in/check.v1"
 )
 
 type ComposeFunctionTestSuite struct {
 	callStack   function.Stack
 	callContext *functionCallContextMock
+	suite.Suite
 }
 
-var _ = Suite(&ComposeFunctionTestSuite{})
-
-func (s *ComposeFunctionTestSuite) SetUpTest(c *C) {
+func (s *ComposeFunctionTestSuite) SetupTest() {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -33,7 +33,7 @@ func (s *ComposeFunctionTestSuite) SetUpTest(c *C) {
 	}
 }
 
-func (s *ComposeFunctionTestSuite) Test_composes_functions_together_and_executes_composed_function_correctly(c *C) {
+func (s *ComposeFunctionTestSuite) Test_composes_functions_together_and_executes_composed_function_correctly() {
 	composeFunc := NewComposeFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "compose",
@@ -52,7 +52,7 @@ func (s *ComposeFunctionTestSuite) Test_composes_functions_together_and_executes
 			CallContext: s.callContext,
 		},
 	)
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 
 	output, err := composeFunc.Call(context.TODO(), &provider.FunctionCallInput{
 		Arguments: &functionCallArgsMock{
@@ -69,7 +69,7 @@ func (s *ComposeFunctionTestSuite) Test_composes_functions_together_and_executes
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 
 	// Execute the composition.
 	args := []any{
@@ -90,12 +90,11 @@ func (s *ComposeFunctionTestSuite) Test_composes_functions_together_and_executes
 			CallContext: s.callContext,
 		},
 	)
-	c.Assert(err, IsNil)
-
-	c.Assert(result.ResponseData, Equals, "TEST-ID-10392")
+	s.Require().NoError(err)
+	s.Assert().Equal("TEST-ID-10392", result.ResponseData)
 }
 
-func (s *ComposeFunctionTestSuite) Test_composition_execution_fails_for_invalid_args_offset(c *C) {
+func (s *ComposeFunctionTestSuite) Test_composition_execution_fails_for_invalid_args_offset() {
 	composeFunc := NewComposeFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "compose",
@@ -114,7 +113,7 @@ func (s *ComposeFunctionTestSuite) Test_composition_execution_fails_for_invalid_
 			CallContext: s.callContext,
 		},
 	)
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 
 	// 30 is not a valid args offset, _compose_exec expects 1 or 0.
 	getAttrFuncOutput.FunctionInfo.ArgsOffset = 30
@@ -133,7 +132,7 @@ func (s *ComposeFunctionTestSuite) Test_composition_execution_fails_for_invalid_
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 
 	// Execute the composition.
 	args := []any{
@@ -154,21 +153,21 @@ func (s *ComposeFunctionTestSuite) Test_composition_execution_fails_for_invalid_
 			CallContext: s.callContext,
 		},
 	)
-	c.Assert(err, NotNil)
+	s.Require().Error(err)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
-	c.Assert(isFuncErr, Equals, true)
-	c.Assert(
-		funcErr.Message,
-		Equals,
-		"invalid args offset defined for the partially applied function \"_getattr_exec\"",
-	)
-	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
+	s.Assert().True(isFuncErr)
+	s.Assert().Equal("invalid args offset defined for the partially applied function \"_getattr_exec\"", funcErr.Message)
+	s.Assert().Equal([]*function.Call{
 		{
 			FunctionName: "_compose_exec",
 		},
 		{
 			FunctionName: "compose",
 		},
-	})
-	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidArgsOffset)
+	}, funcErr.CallStack)
+	s.Assert().Equal(function.FuncCallErrorCodeInvalidArgsOffset, funcErr.Code)
+}
+
+func TestComposeFunctionTestSuite(t *testing.T) {
+	suite.Run(t, new(ComposeFunctionTestSuite))
 }

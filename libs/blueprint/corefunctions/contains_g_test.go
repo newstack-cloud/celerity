@@ -2,21 +2,21 @@ package corefunctions
 
 import (
 	"context"
+	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	. "gopkg.in/check.v1"
 )
 
 type Contains_G_FunctionTestSuite struct {
 	callStack   function.Stack
 	callContext *functionCallContextMock
+	suite.Suite
 }
 
-var _ = Suite(&Contains_G_FunctionTestSuite{})
-
-func (s *Contains_G_FunctionTestSuite) SetUpTest(c *C) {
+func (s *Contains_G_FunctionTestSuite) SetupTest() {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -28,7 +28,7 @@ func (s *Contains_G_FunctionTestSuite) SetUpTest(c *C) {
 	}
 }
 
-func (s *Contains_G_FunctionTestSuite) Test_returns_function_runtime_info_with_partial_args(c *C) {
+func (s *Contains_G_FunctionTestSuite) Test_returns_function_runtime_info_with_partial_args() {
 	contains_G_Func := NewContains_G_Function()
 	s.callStack.Push(&function.Call{
 		FunctionName: "contains_g",
@@ -43,10 +43,14 @@ func (s *Contains_G_FunctionTestSuite) Test_returns_function_runtime_info_with_p
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
-	c.Assert(output.FunctionInfo, DeepEquals, provider.FunctionRuntimeInfo{
+	s.Require().NoError(err)
+	s.Assert().Equal(provider.FunctionRuntimeInfo{
 		FunctionName: "contains",
 		PartialArgs:  []any{"search for me"},
 		ArgsOffset:   1,
-	})
+	}, output.FunctionInfo)
+}
+
+func TestContains_G_FunctionTestSuite(t *testing.T) {
+	suite.Run(t, new(Contains_G_FunctionTestSuite))
 }

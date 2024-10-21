@@ -2,21 +2,21 @@ package corefunctions
 
 import (
 	"context"
+	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	. "gopkg.in/check.v1"
 )
 
 type EqFunctionTestSuite struct {
 	callStack   function.Stack
 	callContext *functionCallContextMock
+	suite.Suite
 }
 
-var _ = Suite(&EqFunctionTestSuite{})
-
-func (s *EqFunctionTestSuite) SetUpTest(c *C) {
+func (s *EqFunctionTestSuite) SetupTest() {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
 		params: &blueprintParamsMock{},
@@ -28,7 +28,7 @@ func (s *EqFunctionTestSuite) SetUpTest(c *C) {
 	}
 }
 
-func (s *EqFunctionTestSuite) Test_equals_1(c *C) {
+func (s *EqFunctionTestSuite) Test_equals_1() {
 	eqFunc := NewEqFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "eq",
@@ -44,13 +44,13 @@ func (s *EqFunctionTestSuite) Test_equals_1(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputBool, isBool := output.ResponseData.(bool)
-	c.Assert(isBool, Equals, true)
-	c.Assert(outputBool, Equals, true)
+	s.Assert().True(isBool)
+	s.Assert().True(outputBool)
 }
 
-func (s *EqFunctionTestSuite) Test_equals_2(c *C) {
+func (s *EqFunctionTestSuite) Test_equals_2() {
 	eqFunc := NewEqFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "eq",
@@ -66,13 +66,13 @@ func (s *EqFunctionTestSuite) Test_equals_2(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputBool, isBool := output.ResponseData.(bool)
-	c.Assert(isBool, Equals, true)
-	c.Assert(outputBool, Equals, false)
+	s.Assert().True(isBool)
+	s.Assert().False(outputBool)
 }
 
-func (s *EqFunctionTestSuite) Test_equals_3(c *C) {
+func (s *EqFunctionTestSuite) Test_equals_3() {
 	eqFunc := NewEqFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "eq",
@@ -92,13 +92,13 @@ func (s *EqFunctionTestSuite) Test_equals_3(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputBool, isBool := output.ResponseData.(bool)
-	c.Assert(isBool, Equals, true)
-	c.Assert(outputBool, Equals, true)
+	s.Assert().True(isBool)
+	s.Assert().True(outputBool)
 }
 
-func (s *EqFunctionTestSuite) Test_equals_4(c *C) {
+func (s *EqFunctionTestSuite) Test_equals_4() {
 	eqFunc := NewEqFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "eq",
@@ -119,13 +119,13 @@ func (s *EqFunctionTestSuite) Test_equals_4(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputBool, isBool := output.ResponseData.(bool)
-	c.Assert(isBool, Equals, true)
-	c.Assert(outputBool, Equals, false)
+	s.Assert().True(isBool)
+	s.Assert().False(outputBool)
 }
 
-func (s *EqFunctionTestSuite) Test_equals_comparable_1(c *C) {
+func (s *EqFunctionTestSuite) Test_equals_comparable_1() {
 	eqFunc := NewEqFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "eq",
@@ -141,13 +141,13 @@ func (s *EqFunctionTestSuite) Test_equals_comparable_1(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputBool, isBool := output.ResponseData.(bool)
-	c.Assert(isBool, Equals, true)
-	c.Assert(outputBool, Equals, true)
+	s.Assert().True(isBool)
+	s.Assert().True(outputBool)
 }
 
-func (s *EqFunctionTestSuite) Test_equals_comparable_2(c *C) {
+func (s *EqFunctionTestSuite) Test_equals_comparable_2() {
 	eqFunc := NewEqFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "eq",
@@ -163,13 +163,13 @@ func (s *EqFunctionTestSuite) Test_equals_comparable_2(c *C) {
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, IsNil)
+	s.Require().NoError(err)
 	outputBool, isBool := output.ResponseData.(bool)
-	c.Assert(isBool, Equals, true)
-	c.Assert(outputBool, Equals, false)
+	s.Assert().True(isBool)
+	s.Assert().False(outputBool)
 }
 
-func (s *EqFunctionTestSuite) Test_returns_func_error_for_comparison_type_mismatch(c *C) {
+func (s *EqFunctionTestSuite) Test_returns_func_error_for_comparison_type_mismatch() {
 	eqFunc := NewEqFunction()
 	s.callStack.Push(&function.Call{
 		FunctionName: "eq",
@@ -186,18 +186,17 @@ func (s *EqFunctionTestSuite) Test_returns_func_error_for_comparison_type_mismat
 		CallContext: s.callContext,
 	})
 
-	c.Assert(err, NotNil)
+	s.Require().Error(err)
 	funcErr, isFuncErr := err.(*function.FuncCallError)
-	c.Assert(isFuncErr, Equals, true)
-	c.Assert(
-		funcErr.Message,
-		Equals,
+	s.Assert().True(isFuncErr)
+	s.Assert().Equal(
 		"expected both values to be of the same type, got string and int",
+		funcErr.Message,
 	)
-	c.Assert(funcErr.CallStack, DeepEquals, []*function.Call{
-		{
-			FunctionName: "eq",
-		},
-	})
-	c.Assert(funcErr.Code, Equals, function.FuncCallErrorCodeInvalidArgumentType)
+	s.Assert().Equal([]*function.Call{{FunctionName: "eq"}}, funcErr.CallStack)
+	s.Assert().Equal(function.FuncCallErrorCodeInvalidArgumentType, funcErr.Code)
+}
+
+func TestEqFunctionTestSuite(t *testing.T) {
+	suite.Run(t, new(EqFunctionTestSuite))
 }
