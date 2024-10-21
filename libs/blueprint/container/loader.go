@@ -580,6 +580,11 @@ func (l *defaultLoader) collectTransformers(schema *schema.Blueprint) ([]transfo
 	usedBySpec := []transform.SpecTransformer{}
 	missingTransformers := []string{}
 	childErrors := []error{}
+
+	if schema.Transform == nil {
+		return usedBySpec, nil
+	}
+
 	for i, name := range schema.Transform.Values {
 		transformer, exists := l.specTransformers[name]
 		if exists {
@@ -852,6 +857,14 @@ func (l *defaultLoader) validateCustomVariableType(
 	if err != nil {
 		return []*bpcore.Diagnostic{}, err
 	}
+
+	if providerCustomVarType == nil {
+		line, col := source.PositionFromSourceMeta(varSchema.SourceMeta)
+		return []*bpcore.Diagnostic{}, errInvalidCustomVariableType(
+			varName, varSchema.Type.Value, line, col,
+		)
+	}
+
 	return validation.ValidateCustomVariable(
 		ctx,
 		varName,

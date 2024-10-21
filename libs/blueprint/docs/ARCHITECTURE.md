@@ -173,44 +173,44 @@ type Container interface {
         ctx context.Context,
         instanceID string,
         resourceID string,
-    ) (ResourceState, error)
+    ) (*ResourceState, error)
 
     GetResourceForRevision(
         ctx context.Context,
         instanceID string,
         revisionID string,
         resourceID string,
-    ) (ResourceState, error)
+    ) (*ResourceState, error)
 
 	GetLink(
         ctx context.Context,
         instanceID string,
         linkID string,
-    ) (LinkState, error)
+    ) (*LinkState, error)
 
 	GetLinkForRevision(
         ctx context.Context,
         instanceID string,
         revisionID string,
         linkID string,
-    ) (LinkState, error)
+    ) (*LinkState, error)
 
     GetInstance(
         ctx context.Context,
         instanceID string,
-    ) (InstanceState, error)
+    ) (*InstanceState, error)
 
     GetInstanceRevision(
         ctx context.Context,
         instanceID string,
         revisionID string,
-    ) (InstanceState, error)
+    ) (*InstanceState, error)
 
     SaveInstance(
         ctx context.Context,
         instanceID string,
         instanceState InstanceState,
-    ) (InstanceState, error)
+    ) (*InstanceState, error)
 
     RemoveInstance(ctx context.Context, instanceID string) error
 
@@ -224,14 +224,14 @@ type Container interface {
         ctx context.Context,
         instanceID string,
         resourceID string,
-        resourceState ResourceState,
+        resourceState *ResourceState,
     ) error
 
     RemoveResource(
         ctx context.Context,
         instanceID string,
         resourceID string,
-    ) (ResourceState, error)
+    ) (*ResourceState, error)
 
     CleanupRevisions(ctx context.Context, instanceID string) error
 }

@@ -1,72 +1,177 @@
 package container
 
 import (
+	"context"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/internal"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/transform"
+	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 type LoaderTestSuite struct {
+	specFixtures                 map[string]string
+	specFixtureFiles             map[string]string
+	specFixtureSchemas           map[string]*schema.Blueprint
+	loader                       Loader
+	loaderDefaultCore            Loader
+	loaderValidateAfterTransform Loader
 	suite.Suite
 }
 
-func (s *LoaderTestSuite) Test_loads_container_from_input_spec_file_without_any_issues() {
+func (s *LoaderTestSuite) SetupSuite() {
+	s.specFixtures = make(map[string]string)
+	s.specFixtureFiles = map[string]string{
+		"valid":                "__testdata/loader/valid-blueprint.yml",
+		"invalid-yaml":         "__testdata/loader/invalid-yaml-blueprint.yml",
+		"invalid-schema":       "__testdata/loader/invalid-schema-blueprint.yml",
+		"unsupported-var-type": "__testdata/loader/unsupported-var-type-blueprint.yml",
+		"valid-serverless":     "__testdata/loader/valid-serverless-blueprint.yml",
+		"missing-transform":    "__testdata/loader/missing-transform-blueprint.yml",
+	}
+	s.specFixtureSchemas = make(map[string]*schema.Blueprint)
+
+	for name, filePath := range s.specFixtureFiles {
+		specBytes, err := os.ReadFile(filePath)
+		if err != nil {
+			s.FailNow(err.Error())
+		}
+		blueprintStr := string(specBytes)
+		s.specFixtures[name] = blueprintStr
+		if strings.HasPrefix(name, "valid") {
+			blueprint, err := schema.LoadString(blueprintStr, schema.YAMLSpecFormat)
+			if err != nil {
+				s.FailNow(err.Error())
+			}
+			s.specFixtureSchemas[name] = blueprint
+		}
+	}
+
+	stateContainer := internal.NewMemoryStateContainer()
+	providers := map[string]provider.Provider{
+		"aws": newTestAWSProvider(),
+		"core": providerhelpers.NewCoreProvider(
+			stateContainer,
+			core.BlueprintInstanceIDFromContext,
+			os.Getwd,
+			core.SystemClock{},
+		),
+	}
+	specTransformers := map[string]transform.SpecTransformer{
+		"serverless-2024": &internal.ServerlessTransformer{},
+	}
+	s.loader = NewDefaultLoader(
+		providers,
+		specTransformers,
+		stateContainer,
+		nil,
+		validation.NewRefChainCollector,
+		WithLoaderTransformSpec(true),
+	)
+	s.loaderValidateAfterTransform = NewDefaultLoader(
+		providers,
+		specTransformers,
+		stateContainer,
+		nil,
+		validation.NewRefChainCollector,
+		WithLoaderTransformSpec(true),
+		WithLoaderValidateAfterTransform(true),
+	)
+	providersWithoutCore := map[string]provider.Provider{
+		"aws": newTestAWSProvider(),
+	}
+	s.loaderDefaultCore = NewDefaultLoader(
+		providersWithoutCore,
+		specTransformers,
+		stateContainer,
+		nil,
+		validation.NewRefChainCollector,
+	)
 }
 
-func (s *LoaderTestSuite) Test_loads_container_from_input_spec_string_without_any_issues() {}
+func (s *LoaderTestSuite) Test_loads_container_from_input_spec_file_without_any_issues() {
+	container, err := s.loader.Load(context.TODO(), s.specFixtureFiles["valid"], createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(container)
+}
+
+func (s *LoaderTestSuite) Test_loads_container_from_input_spec_file_using_default_core_provider() {
+	container, err := s.loaderDefaultCore.Load(context.TODO(), s.specFixtureFiles["valid"], createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(container)
+}
+
+func (s *LoaderTestSuite) Test_loads_container_from_input_spec_string_without_any_issues() {
+	container, err := s.loader.LoadString(context.TODO(), s.specFixtures["valid"], schema.YAMLSpecFormat, createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(container)
+}
 
 func (s *LoaderTestSuite) Test_validates_spec_from_input_spec_file_without_any_issues() {
+	validationRes, err := s.loader.Validate(context.TODO(), s.specFixtureFiles["valid"], createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(validationRes)
 }
 
-func (s *LoaderTestSuite) Test_validates_spec_from_input_spec_string_without_any_issues() {}
+func (s *LoaderTestSuite) Test_validates_spec_from_input_spec_string_without_any_issues() {
+	validationRes, err := s.loader.ValidateString(context.TODO(), s.specFixtures["valid"], schema.YAMLSpecFormat, createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(validationRes)
+}
+
+func (s *LoaderTestSuite) Test_loads_container_from_input_schema_without_any_issues() {
+	container, err := s.loader.LoadFromSchema(context.TODO(), s.specFixtureSchemas["valid"], createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(container)
+}
+
+func (s *LoaderTestSuite) Test_loads_and_transforms_input_blueprint_without_any_issues() {
+	container, err := s.loader.Load(context.TODO(), s.specFixtureFiles["valid-serverless"], createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(container)
+}
+
+func (s *LoaderTestSuite) Test_loads_and_transforms_input_blueprint_validating_after_transform() {
+	container, err := s.loaderValidateAfterTransform.Load(context.TODO(), s.specFixtureFiles["valid-serverless"], createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(container)
+}
+
+func (s *LoaderTestSuite) Test_validates_spec_from_input_schema_without_any_issues() {
+	validationRes, err := s.loader.ValidateFromSchema(context.TODO(), s.specFixtureSchemas["valid"], createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(validationRes)
+}
 
 func (s *LoaderTestSuite) Test_reports_expected_error_when_the_provided_spec_is_invalid() {
 	// This is for when the spec is invalid JSON/YAML, as test coverage for specific formats
 	// is handled by the schema package, we just need to ensure that the error is reported
 	// for either format.
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["invalid-yaml"], createParams())
+	s.Require().Error(err)
 }
 
 func (s *LoaderTestSuite) Test_reports_expected_error_when_the_provided_spec_fails_schema_specific_validation() {
 	// This is for when the spec is valid JSON/YAML, but fails validation against the schema.
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["invalid-schema"], createParams())
+	s.Require().Error(err)
 }
 
 func (s *LoaderTestSuite) Test_reports_expected_error_when_the_provided_spec_contains_unsupported_variable_types() {
-
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["unsupported-var-type"], createParams())
+	s.Require().Error(err)
 }
 
-func (s *LoaderTestSuite) Test_reports_expected_error_when_there_is_a_mismatch_between_variable_type_and_value() {
-
-}
-
-func (s *LoaderTestSuite) Test_reports_expected_error_when_a_given_custom_variable_value_is_invalid() {
-}
-
-func (s *LoaderTestSuite) Test_reports_expected_error_when_a_given_custom_variable_type_provider_is_missing() {
-
-}
-
-func (s *LoaderTestSuite) Test_reports_expected_error_when_a_given_resource_provider_is_missing() {
-
-}
-
-func (s *LoaderTestSuite) Test_reports_expected_error_for_a_missing_resource() {
-
-}
-
-func (s *LoaderTestSuite) Test_reports_expected_error_for_a_resource_with_an_invalid_spec() {
-
-}
-
-func (s *LoaderTestSuite) Test_reports_expected_error_when_a_given_data_source_provider_is_missing() {
-
-}
-
-func (s *LoaderTestSuite) Test_reports_expected_error_for_a_missing_data_source() {
-
-}
-
-func (s *LoaderTestSuite) Test_reports_expected_error_for_unsupported_exported_fields_in_a_data_source() {
-
+func (s *LoaderTestSuite) Test_reports_expected_error_when_transform_is_missing() {
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["missing-transform"], createParams())
+	s.Require().Error(err)
 }
 
 func TestLoaderTestSuite(t *testing.T) {

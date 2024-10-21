@@ -271,7 +271,7 @@ func (r *registryFromProviders) getResourceType(ctx context.Context, resourceTyp
 		return nil, errResourceTypeProviderNotFound(providerNamespace, resourceType)
 	}
 	resourceImpl, err := provider.Resource(ctx, resourceType)
-	if err != nil {
+	if err != nil || resourceImpl == nil {
 		return nil, errProviderResourceTypeNotFound(resourceType, providerNamespace)
 	}
 	r.resourceCache[resourceType] = resourceImpl

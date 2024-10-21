@@ -4,18 +4,32 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
+func createParams() core.BlueprintParams {
+	return internal.NewParams(
+		map[string]map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+	)
+}
+
 type testAWSProvider struct {
 	resources           map[string]provider.Resource
+	dataSources         map[string]provider.DataSource
 	links               map[string]provider.Link
 	customVariableTypes map[string]provider.CustomVariableType
 }
 
 func newTestAWSProvider() provider.Provider {
 	return &testAWSProvider{
-		resources: map[string]provider.Resource{},
+		resources: map[string]provider.Resource{
+			"aws/dynamodb/table":  &internal.DynamoDBTableResource{},
+			"aws/lambda/function": &internal.LambdaFunctionResource{},
+		},
 		links: map[string]provider.Link{
 			"aws/apigateway/api::aws/lambda/function":  &testApiGatewayLambdaLink{},
 			"aws/lambda/function::aws/dynamodb/table":  &testLambdaDynamoDBTableLink{},
@@ -27,7 +41,12 @@ func newTestAWSProvider() provider.Provider {
 			"aws/ec2/route::aws/ec2/routeTable":        &testRouteRouteTableLink{},
 			"aws/ec2/route::aws/ec2/internetGateway":   &testRouteInternetGatewayLink{},
 		},
-		customVariableTypes: map[string]provider.CustomVariableType{},
+		customVariableTypes: map[string]provider.CustomVariableType{
+			"aws/ec2/instanceType": &internal.InstanceTypeCustomVariableType{},
+		},
+		dataSources: map[string]provider.DataSource{
+			"aws/vpc": &internal.VPCDataSource{},
+		},
 	}
 }
 
@@ -45,31 +64,39 @@ func (p *testAWSProvider) Link(ctx context.Context, resourceTypeA string, resour
 }
 
 func (p *testAWSProvider) DataSource(ctx context.Context, dataSourceType string) (provider.DataSource, error) {
-	return nil, nil
+	return p.dataSources[dataSourceType], nil
 }
 
 func (p *testAWSProvider) CustomVariableType(ctx context.Context, customVariableType string) (provider.CustomVariableType, error) {
-	return nil, nil
+	return p.customVariableTypes[customVariableType], nil
 }
 
-// ListFunctions is not used for spec link info!
 func (p *testAWSProvider) ListFunctions(ctx context.Context) ([]string, error) {
-	return nil, nil
+	return []string{}, nil
 }
 
-// ListResourceTypes is not used for spec link info!
 func (p *testAWSProvider) ListResourceTypes(ctx context.Context) ([]string, error) {
-	return nil, nil
+	resourceTypes := make([]string, 0, len(p.resources))
+	for resourceType := range p.resources {
+		resourceTypes = append(resourceTypes, resourceType)
+	}
+	return resourceTypes, nil
 }
 
-// ListDataSourceTypes is not used for spec link info!
 func (p *testAWSProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {
-	return nil, nil
+	dataSourceTypes := make([]string, 0, len(p.dataSources))
+	for dataSourceType := range p.dataSources {
+		dataSourceTypes = append(dataSourceTypes, dataSourceType)
+	}
+	return dataSourceTypes, nil
 }
 
-// ListCustomVariableTypes is not used for spec link info!
 func (p *testAWSProvider) ListCustomVariableTypes(ctx context.Context) ([]string, error) {
-	return nil, nil
+	customVariableTypes := make([]string, 0, len(p.customVariableTypes))
+	for customVariableType := range p.customVariableTypes {
+		customVariableTypes = append(customVariableTypes, customVariableType)
+	}
+	return customVariableTypes, nil
 }
 
 func (p *testAWSProvider) Function(ctx context.Context, functionName string) (provider.Function, error) {
