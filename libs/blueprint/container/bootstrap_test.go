@@ -35,6 +35,7 @@ func newTestAWSProvider() provider.Provider {
 			"aws/lambda/function::aws/dynamodb/table":  &testLambdaDynamoDBTableLink{},
 			"aws/dynamodb/table::aws/dynamodb/stream":  &testDynamoDBTableStreamLink{},
 			"aws/dynamodb/stream::aws/lambda/function": &testDynamoDBStreamLambdaLink{},
+			"aws/dynamodb/table::aws/lambda/function":  &testDynamoDBTableLambdaLink{},
 			"aws/ec2/subnet::aws/ec2/vpc":              &testSubnetVPCLink{},
 			"aws/ec2/securityGroup::aws/ec2/vpc":       &testSecurityGroupVPCLink{},
 			"aws/ec2/routeTable::aws/ec2/vpc":          &testRouteTableVPCLink{},
@@ -186,7 +187,7 @@ func (l *testLambdaDynamoDBTableLink) GetType(
 
 func (l *testLambdaDynamoDBTableLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
-		Kind: provider.LinkKindSoft,
+		Kind: provider.LinkKindHard,
 	}, nil
 }
 
@@ -313,6 +314,60 @@ func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeBError(
 }
 
 func (l *testDynamoDBStreamLambdaLink) Deploy(
+	ctx context.Context,
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
+}
+
+type testDynamoDBTableLambdaLink struct{}
+
+func (l *testDynamoDBTableLambdaLink) StageChanges(
+	ctx context.Context,
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
+}
+
+func (l *testDynamoDBTableLambdaLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/dynamodb/table",
+	}, nil
+}
+
+func (l *testDynamoDBTableLambdaLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/dynamodb/table::aws/lambda/function",
+	}, nil
+}
+
+func (l *testDynamoDBTableLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testDynamoDBTableLambdaLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
+	return nil
+}
+
+func (l *testDynamoDBTableLambdaLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
+	return nil
+}
+
+func (l *testDynamoDBTableLambdaLink) Deploy(
 	ctx context.Context,
 	input *provider.LinkDeployInput,
 ) (*provider.LinkDeployOutput, error) {

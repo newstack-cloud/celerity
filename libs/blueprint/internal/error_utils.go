@@ -46,6 +46,11 @@ func renderError(errorType string, message string, childErrors []error, indent s
 	rendered.WriteString("Message: ")
 	rendered.WriteString(message)
 	rendered.WriteString("\n")
+
+	if childErrors == nil {
+		return rendered.String()
+	}
+
 	rendered.WriteString(childIndent)
 	rendered.WriteString("Children: ")
 	renderChildErrors(childErrors, childIndent, &rendered)

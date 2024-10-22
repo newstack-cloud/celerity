@@ -44,6 +44,7 @@ func ValidateSubstitution(
 	refChainCollector RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) (string, []*bpcore.Diagnostic, error) {
+
 	diagnostics := []*bpcore.Diagnostic{}
 	if sub == nil {
 		return "", diagnostics, nil
@@ -180,6 +181,8 @@ func validateValueSubstitution(
 		return "", diagnostics, errSubValSelfReference(valName, subVal.SourceMeta)
 	}
 
+	refChainCollector.Collect(fmt.Sprintf("values.%s", valName), valSchema, usedIn)
+
 	if len(subVal.Path) >= 1 {
 		// At this point, we can't know the exact type of the value reference without
 		// inspecting the contents of the value definition, this could be quite an expensive operation
@@ -188,8 +191,6 @@ func validateValueSubstitution(
 		// we return any to account for all possible types.
 		return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
 	}
-
-	refChainCollector.Collect(fmt.Sprintf("values.%s", valName), valSchema, usedIn)
 
 	return subValType(valSchema.Type), diagnostics, nil
 }
@@ -272,6 +273,32 @@ func validateResourcePropertySubstitution(
 		)
 	}
 
+	resourcePropType, extractDiagnostics, err := extractResourcePropertySubType(
+		ctx,
+		subResourceProp,
+		resourceSchema,
+		resourceRegistry,
+		nextLocation,
+		params,
+	)
+	diagnostics = append(diagnostics, extractDiagnostics...)
+	if err != nil {
+		return "", diagnostics, err
+	}
+
+	refChainCollector.Collect(fmt.Sprintf("resources.%s", resourceName), resourceSchema, usedIn)
+
+	return resourcePropType, diagnostics, nil
+}
+
+func extractResourcePropertySubType(
+	ctx context.Context,
+	subResourceProp *substitutions.SubstitutionResourceProperty,
+	resourceSchema *schema.Resource,
+	resourceRegistry resourcehelpers.Registry,
+	nextLocation *source.Meta,
+	params bpcore.BlueprintParams,
+) (string, []*bpcore.Diagnostic, error) {
 	if len(subResourceProp.Path) > 0 && subResourceProp.Path[0].FieldName == "spec" {
 		return validateResourcePropertySubSpec(
 			ctx,
@@ -301,9 +328,7 @@ func validateResourcePropertySubstitution(
 		)
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("resources.%s", resourceName), resourceSchema, usedIn)
-
-	return string(substitutions.ResolvedSubExprTypeAny), diagnostics, nil
+	return string(substitutions.ResolvedSubExprTypeAny), []*bpcore.Diagnostic{}, nil
 }
 
 func validateResourcePropertySubSpec(

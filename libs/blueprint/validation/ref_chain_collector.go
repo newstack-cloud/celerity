@@ -67,8 +67,23 @@ func (s *refChainCollectorImpl) Collect(elementName string, element interface{},
 
 func (s *refChainCollectorImpl) FindCircularReferences() []*ReferenceChain {
 	circularRefs := []*ReferenceChain{}
+	s.cleanupChains()
 	findCycles(s.chains, &circularRefs)
 	return circularRefs
+}
+
+func (s *refChainCollectorImpl) cleanupChains() {
+	newChains := []*ReferenceChain{}
+	for _, chain := range s.chains {
+		if chain.Element == nil {
+			// Remove placeholder chains that were added for elements that were
+			// referenced but not defined in the spec.
+			delete(s.refMap, chain.ElementName)
+		} else {
+			newChains = append(newChains, chain)
+		}
+	}
+	s.chains = newChains
 }
 
 func (s *refChainCollectorImpl) createOrUpdateChain(elementName string, element interface{}, referencedBy string) (*ReferenceChain, error) {
@@ -81,12 +96,23 @@ func (s *refChainCollectorImpl) createOrUpdateChain(elementName string, element 
 		}
 	}
 
-	if parent, parentExists := s.refMap[referencedBy]; referencedBy != "" && parentExists {
+	var parent *ReferenceChain
+	if existingParent, parentExists := s.refMap[referencedBy]; referencedBy != "" && parentExists {
+		parent = existingParent
+	} else if referencedBy != "" && !parentExists {
+		// Add a placeholder for the parent, parents with nil elements will be cleaned up
+		// as a part of the cycle detection process when FindCircularReferences is called.
+		parent = &ReferenceChain{
+			ElementName: referencedBy,
+		}
+		s.chains = append(s.chains, parent)
+		s.refMap[referencedBy] = parent
+	}
+
+	if parent != nil {
 		elementChain.ReferencedBy = append(elementChain.ReferencedBy, parent)
 		addParentPaths(elementChain, parent)
 		parent.References = append(parent.References, elementChain)
-	} else if referencedBy != "" && !parentExists {
-		return nil, fmt.Errorf("referenced by element %q does not exist", referencedBy)
 	}
 
 	return elementChain, nil

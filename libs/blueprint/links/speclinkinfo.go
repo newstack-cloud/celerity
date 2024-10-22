@@ -219,7 +219,7 @@ func (l *defaultSpecLinkInfo) addOrUpdateChainsForSelector(
 }
 
 // Adds a resource to chains if it has not already been created.
-// Importantly this needs to run regardless of whether or not the given resource
+// Importantly, this needs to run regardless of whether or not the given resource
 // has already been added to a chain, this is because we need to be able to fill in
 // missing links from resources that have both inbound and outbound links.
 func (l *defaultSpecLinkInfo) addResourceChainToChains(
@@ -234,7 +234,7 @@ func (l *defaultSpecLinkInfo) addResourceChainToChains(
 	l.linkMap[resource.Name] = chainLink
 	resourceLinkCount := 0
 
-	if resource.Resource.Metadata.Labels != nil {
+	if resource.Resource.Metadata != nil && resource.Resource.Metadata.Labels != nil {
 		for key, value := range resource.Resource.Metadata.Labels.Values {
 			lookUpSelectorName := fmt.Sprintf("label::%s:%s", key, value)
 			selectGroup, exists := selectGroupMappings[lookUpSelectorName]

@@ -16,7 +16,7 @@ func (r *DynamoDBTableResource) CanLinkTo(
 	input *provider.ResourceCanLinkToInput,
 ) (*provider.ResourceCanLinkToOutput, error) {
 	return &provider.ResourceCanLinkToOutput{
-		CanLinkTo: []string{"aws/dynamodb/stream"},
+		CanLinkTo: []string{"aws/dynamodb/stream", "aws/lambda/function"},
 	}, nil
 }
 
@@ -128,7 +128,7 @@ func (r *LambdaFunctionResource) CanLinkTo(
 	input *provider.ResourceCanLinkToInput,
 ) (*provider.ResourceCanLinkToOutput, error) {
 	return &provider.ResourceCanLinkToOutput{
-		CanLinkTo: []string{},
+		CanLinkTo: []string{"aws/dynamodb/table"},
 	}, nil
 }
 
@@ -146,7 +146,7 @@ func (r *LambdaFunctionResource) GetType(
 	input *provider.ResourceGetTypeInput,
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
-		Type: "aws/dynamodb/table",
+		Type: "aws/lambda/function",
 	}, nil
 }
 

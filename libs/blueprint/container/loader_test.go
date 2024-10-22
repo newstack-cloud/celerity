@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
+	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
@@ -35,6 +36,9 @@ func (s *LoaderTestSuite) SetupSuite() {
 		"unsupported-var-type": "__testdata/loader/unsupported-var-type-blueprint.yml",
 		"valid-serverless":     "__testdata/loader/valid-serverless-blueprint.yml",
 		"missing-transform":    "__testdata/loader/missing-transform-blueprint.yml",
+		"cyclic-ref":           "__testdata/loader/cyclic-ref-blueprint.yml",
+		"cyclic-ref-2":         "__testdata/loader/cyclic-ref-2-blueprint.yml",
+		"cyclic-ref-3":         "__testdata/loader/cyclic-ref-3-blueprint.yml",
 	}
 	s.specFixtureSchemas = make(map[string]*schema.Blueprint)
 
@@ -172,6 +176,39 @@ func (s *LoaderTestSuite) Test_reports_expected_error_when_the_provided_spec_con
 func (s *LoaderTestSuite) Test_reports_expected_error_when_transform_is_missing() {
 	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["missing-transform"], createParams())
 	s.Require().Error(err)
+}
+
+func (s *LoaderTestSuite) Test_reports_error_for_blueprint_with_cyclic_references() {
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["cyclic-ref"], createParams())
+	s.Require().Error(err)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	s.Assert().True(isLoadErr)
+	s.Assert().Equal(
+		validation.ErrorReasonCodeReferenceCycle,
+		loadErr.ReasonCode,
+	)
+}
+
+func (s *LoaderTestSuite) Test_reports_error_for_blueprint_with_cyclic_link_and_reference() {
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["cyclic-ref-2"], createParams())
+	s.Require().Error(err)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	s.Assert().True(isLoadErr)
+	s.Assert().Equal(
+		validation.ErrorReasonCodeReferenceCycle,
+		loadErr.ReasonCode,
+	)
+}
+
+func (s *LoaderTestSuite) Test_reports_error_for_blueprint_with_hard_cyclic_link() {
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["cyclic-ref-3"], createParams())
+	s.Require().Error(err)
+	linkErr, isLinkErr := err.(*links.LinkError)
+	s.Assert().True(isLinkErr)
+	s.Assert().Equal(
+		links.LinkErrorReasonCodeCircularLinks,
+		linkErr.ReasonCode,
+	)
 }
 
 func TestLoaderTestSuite(t *testing.T) {

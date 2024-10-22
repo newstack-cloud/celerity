@@ -424,9 +424,9 @@ func (l *defaultLoader) createResourceProviderMap(blueprintSpec speccore.Bluepri
 		resources = blueprintSpec.Schema().Resources.Values
 	}
 
-	for name := range resources {
-		namespace := strings.SplitAfter(name, "/")[0]
-		resourceProviderMap[name] = l.providers[namespace]
+	for _, resource := range resources {
+		namespace := strings.Split(resource.Type.Value, "/")[0]
+		resourceProviderMap[resource.Type.Value] = l.providers[namespace]
 	}
 	return resourceProviderMap
 }

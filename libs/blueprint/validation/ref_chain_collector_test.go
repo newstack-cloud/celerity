@@ -101,13 +101,6 @@ func (s *RefChainCollectorTestSuite) Test_finds_no_circular_references(c *C) {
 	c.Assert(circularRefs, HasLen, 0)
 }
 
-func (s *RefChainCollectorTestSuite) Test_produces_error_when_referencing_element_has_not_been_collected(c *C) {
-	collector := NewRefChainCollector()
-	err := collector.Collect("resources.resourceB", s.resourceB, "resources.resourceA")
-	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, "referenced by element \"resources.resourceA\" does not exist")
-}
-
 func createTestResource(id string) *schema.Resource {
 	return &schema.Resource{
 		Type: &schema.ResourceTypeWrapper{Value: "celerity/example"},

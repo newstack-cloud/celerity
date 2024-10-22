@@ -15,7 +15,9 @@ import (
 // OrderLinksForDeployment deals with creating a flat ordered
 // slice of chain links for stage changing and deployments.
 // Ordering is determined by the priority resource type specified
-// in each link implementation.
+// in each link implementation and usage of references between resources,
+// A resource reference is treated as a hard link.
+//
 // It is a requirement for the input chains not to have any direct
 // or transitive circular hard links.
 // A hard link is when one resource type requires the other in a link
@@ -40,7 +42,7 @@ import (
 // ├── ResourceB1
 // │	 ├── ResourceB2 (lt)
 // │	 │   ├── ResourceB4 (lt)
-// │   │   │   └── ResourceA6 (lt)
+// │     │   │   └── ResourceA6 (lt)
 // │	 │   └── ResourceB5 (lt)
 // │	 └── ResourceB3 (lf)
 // │	 	   └── ResourceB6 (lt)
@@ -48,18 +50,18 @@ import (
 // We will want output like:
 // [
 //
-//		ResourceA4,
-//	 ResourceA5,
-//	 ResourceA1,
-//	 ResourceA2,
-//	 ResourceA3,
-//	 ResourceA6,
-//	 ResourceB4,
-//	 ResourceB5,
-//	 ResourceB2,
-//		ResourceB1,
-//	 ResourceB6,
-//	 ResourceB3
+//	ResourceA4,
+//	ResourceA5,
+//	ResourceA1,
+//	ResourceA2,
+//	ResourceA3,
+//	ResourceA6,
+//	ResourceB4,
+//	ResourceB5,
+//	ResourceB2,
+//	ResourceB1,
+//	ResourceB6,
+//	ResourceB3
 //
 // ]
 //
