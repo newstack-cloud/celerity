@@ -181,7 +181,8 @@ func validateValueSubstitution(
 		return "", diagnostics, errSubValSelfReference(valName, subVal.SourceMeta)
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("values.%s", valName), valSchema, usedIn, []string{"subRef"})
+	subRefTag := fmt.Sprintf("subRef:%s", usedIn)
+	refChainCollector.Collect(fmt.Sprintf("values.%s", valName), valSchema, usedIn, []string{subRefTag})
 
 	if len(subVal.Path) >= 1 {
 		// At this point, we can't know the exact type of the value reference without
@@ -286,7 +287,8 @@ func validateResourcePropertySubstitution(
 		return "", diagnostics, err
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("resources.%s", resourceName), resourceSchema, usedIn, []string{"subRef"})
+	subRefTag := fmt.Sprintf("subRef:%s", usedIn)
+	refChainCollector.Collect(fmt.Sprintf("resources.%s", resourceName), resourceSchema, usedIn, []string{subRefTag})
 
 	return resourcePropType, diagnostics, nil
 }
@@ -774,7 +776,8 @@ func validateDataSourcePropertySubstitution(
 		return "", diagnostics, err
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("datasources.%s", dataSourceName), dataSourceSchema, usedIn, []string{"subRef"})
+	subRefTag := fmt.Sprintf("subRef:%s", usedIn)
+	refChainCollector.Collect(fmt.Sprintf("datasources.%s", dataSourceName), dataSourceSchema, usedIn, []string{subRefTag})
 
 	return resolveType, diagnostics, nil
 }
@@ -837,7 +840,8 @@ func validateChildSubstitution(
 		return "", diagnostics, errSubChildBlueprintSelfReference(childName, subChild.SourceMeta)
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("children.%s", childName), childSchema, usedIn, []string{"subRef"})
+	subRefTag := fmt.Sprintf("subRef:%s", usedIn)
+	refChainCollector.Collect(fmt.Sprintf("children.%s", childName), childSchema, usedIn, []string{subRefTag})
 
 	// There is no way of knowing the exact type of the child blueprint exports
 	// until runtime, so we return any to account for all possible types.

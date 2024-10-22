@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/links"
@@ -59,25 +60,58 @@ func collectLinksFromChain(
 			return err
 		}
 
-		// Only collect link for cycle detection if it is a hard link.
-		// Soft links do not require a specific order of deployment/resolution.
-		if linkKindOutput.Kind == provider.LinkKindHard {
-			resourceID := fmt.Sprintf("resources.%s", link.ResourceName)
-			err = refChainCollector.Collect(resourceID, link, referencedByResourceID, []string{"link"})
+		if !alreadyCollected(refChainCollector, link, referencedByResourceID) {
+			err = collectResourceFromLink(ctx, refChainCollector, link, linkKindOutput.Kind, referencedByResourceID)
 			if err != nil {
 				return err
 			}
 		}
+	}
 
-		// There is no risk of infinite recursion due to cyclic links as at this point,
-		// any pure link cycles have been detected and reported.
-		err = collectLinksFromChain(ctx, link, refChainCollector)
+	return nil
+}
+
+func collectResourceFromLink(
+	ctx context.Context,
+	refChainCollector validation.RefChainCollector,
+	link *links.ChainLink,
+	linkKind provider.LinkKind,
+	referencedByResourceID string,
+) error {
+	// Only collect link for cycle detection if it is a hard link.
+	// Soft links do not require a specific order of deployment/resolution.
+	if linkKind == provider.LinkKindHard {
+		resourceID := fmt.Sprintf("resources.%s", link.ResourceName)
+		err := refChainCollector.Collect(resourceID, link, referencedByResourceID, []string{"link"})
 		if err != nil {
 			return err
 		}
 	}
 
+	// There is no risk of infinite recursion due to cyclic links as at this point,
+	// any pure link cycles have been detected and reported.
+	err := collectLinksFromChain(ctx, link, refChainCollector)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func alreadyCollected(
+	refChainCollector validation.RefChainCollector,
+	link *links.ChainLink,
+	referencedByResourceID string,
+) bool {
+	elementName := fmt.Sprintf("resources.%s", link.ResourceName)
+	collected := refChainCollector.Chain(elementName)
+	return collected != nil &&
+		slices.ContainsFunc(
+			collected.ReferencedBy,
+			func(current *validation.ReferenceChain) bool {
+				return current.ElementName == referencedByResourceID
+			},
+		)
 }
 
 func getLinkImplementation(

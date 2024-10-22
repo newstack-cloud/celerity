@@ -31,7 +31,7 @@ type orderChainLinkFixture struct {
 	orderedExpected [][]string
 }
 
-func (s *OrderingTestSuite) SetUpSuite() {
+func (s *OrderingTestSuite) SetupSuite() {
 	orderFixture1, err := orderFixture1()
 	if err != nil {
 		s.FailNow(err.Error())
@@ -106,7 +106,7 @@ func (s *OrderingTestSuite) assertOrderedExpected(actual []*links.ChainLink, ord
 	}
 
 	if !inOrder {
-		s.Failf("expected \"%s\" to come before \"%s\"", linkB.ResourceName, linkA.ResourceName)
+		s.Failf("incorrect order", "expected \"%s\" to come before \"%s\"", linkB.ResourceName, linkA.ResourceName)
 	}
 }
 
@@ -136,7 +136,6 @@ func orderFixture1() (orderChainLinkFixture, error) {
 			"ordersTable",
 			"ordersStream",
 			"statsAccumulatorFunction",
-			"secondaryOrdersDB",
 		},
 		orderedExpected: [][]string{{"ordersTable", "ordersStream"}},
 	}, nil
@@ -262,22 +261,6 @@ func orderFixture1Chains() []*links.ChainLink {
 		},
 	}
 
-	resourceWithMissingLinkImplementation := &links.ChainLink{
-		ResourceName: "secondaryOrdersDB",
-		Resource: &schema.Resource{
-			Type: &schema.ResourceTypeWrapper{Value: "aws/rds/dbInstance"},
-		},
-		Paths: []string{
-			"/orderApi/getOrdersFunction/ordersTable/ordersStream/statsAccumulator",
-			"/orderApi/createOrderFunction/ordersTable/ordersStream/statsAccumulator",
-			"/orderApi/updateOrderFunction/ordersTable/ordersStream/statsAccumulator",
-		},
-		LinkImplementations: map[string]provider.Link{},
-		LinkedFrom: []*links.ChainLink{
-			statsAccumulatorFunction,
-		},
-	}
-
 	orderApi.LinksTo = []*links.ChainLink{
 		getOrdersFunction,
 		createOrderFunction,
@@ -300,7 +283,6 @@ func orderFixture1Chains() []*links.ChainLink {
 	}
 	statsAccumulatorFunction.LinksTo = []*links.ChainLink{
 		ordersTable,
-		resourceWithMissingLinkImplementation,
 	}
 
 	return []*links.ChainLink{
@@ -319,7 +301,12 @@ func orderFixture1RefChains(
 		}
 	}
 
-	collector.Collect("resources.ordersTable", nil, "resources.getOrdersFunction", []string{"subRef"})
+	collector.Collect(
+		"resources.ordersTable",
+		nil,
+		"resources.getOrdersFunction",
+		[]string{"subRef:resources.getOrdersFunction"},
+	)
 
 	return collector, nil
 }
@@ -362,8 +349,8 @@ func orderFixture2Chain() []*links.ChainLink {
 		},
 		Paths: []string{},
 		LinkImplementations: map[string]provider.Link{
-			"routeTable1":      routeRouteTableLink,
-			"internetGateway1": routeIGWLink,
+			"routeTable1": routeRouteTableLink,
+			"igw1":        routeIGWLink,
 		},
 		LinkedFrom: []*links.ChainLink{},
 		LinksTo:    []*links.ChainLink{},
@@ -481,7 +468,7 @@ func orderFixture2RefChains(
 		}
 	}
 
-	collector.Collect("resources.sg1", nil, "resources.vpc1", []string{"subRef"})
+	collector.Collect("resources.vpc1", nil, "resources.sg1", []string{"subRef:resources.sg1"})
 
 	return collector, nil
 }
