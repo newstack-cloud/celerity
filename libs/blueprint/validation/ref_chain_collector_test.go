@@ -1,6 +1,9 @@
 package validation
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	. "gopkg.in/check.v1"
@@ -13,11 +16,10 @@ type RefChainCollectorTestSuite struct {
 	resourceD *schema.Resource
 	resourceE *schema.Resource
 	resourceF *schema.Resource
+	suite.Suite
 }
 
-var _ = Suite(&RefChainCollectorTestSuite{})
-
-func (s *RefChainCollectorTestSuite) SetUpTest(c *C) {
+func (s *RefChainCollectorTestSuite) SetupTest(c *C) {
 	s.resourceA = createTestResource("resourceA")
 	s.resourceB = createTestResource("resourceB")
 	s.resourceC = createTestResource("resourceC")
@@ -26,79 +28,79 @@ func (s *RefChainCollectorTestSuite) SetUpTest(c *C) {
 	s.resourceF = createTestResource("resourceF")
 }
 
-func (s *RefChainCollectorTestSuite) Test_detects_circular_references(c *C) {
+func (s *RefChainCollectorTestSuite) Test_detects_circular_references() {
 
 	collector := NewRefChainCollector()
-	err := collector.Collect("resources.resourceA", s.resourceA, "")
+	err := collector.Collect("resources.resourceA", s.resourceA, "", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceB", s.resourceB, "resources.resourceA")
+	err = collector.Collect("resources.resourceB", s.resourceB, "resources.resourceA", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceC", s.resourceC, "resources.resourceB")
+	err = collector.Collect("resources.resourceC", s.resourceC, "resources.resourceB", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceA", s.resourceA, "resources.resourceC")
+	err = collector.Collect("resources.resourceA", s.resourceA, "resources.resourceC", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
 
-	err = collector.Collect("resources.resourceD", s.resourceD, "")
+	err = collector.Collect("resources.resourceD", s.resourceD, "", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceE", s.resourceE, "resources.resourceD")
+	err = collector.Collect("resources.resourceE", s.resourceE, "resources.resourceD", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceF", s.resourceF, "resources.resourceE")
+	err = collector.Collect("resources.resourceF", s.resourceF, "resources.resourceE", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceD", s.resourceD, "resources.resourceF")
+	err = collector.Collect("resources.resourceD", s.resourceD, "resources.resourceF", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
 
 	circularRefs := collector.FindCircularReferences()
-	c.Assert(circularRefs, HasLen, 2)
-	c.Assert(circularRefs[0].ElementName, Equals, "resources.resourceA")
-	c.Assert(circularRefs[1].ElementName, Equals, "resources.resourceD")
+	s.Assert().Len(circularRefs, 2)
+	s.Assert().Equal("resources.resourceA", circularRefs[0].ElementName)
+	s.Assert().Equal("resources.resourceD", circularRefs[1].ElementName)
 }
 
-func (s *RefChainCollectorTestSuite) Test_finds_no_circular_references(c *C) {
+func (s *RefChainCollectorTestSuite) Test_finds_no_circular_references() {
 	collector := NewRefChainCollector()
-	err := collector.Collect("resources.resourceA", s.resourceA, "")
+	err := collector.Collect("resources.resourceA", s.resourceA, "", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceB", s.resourceB, "resources.resourceA")
+	err = collector.Collect("resources.resourceB", s.resourceB, "resources.resourceA", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceC", s.resourceC, "resources.resourceB")
+	err = collector.Collect("resources.resourceC", s.resourceC, "resources.resourceB", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
 
-	err = collector.Collect("resources.resourceD", s.resourceD, "")
+	err = collector.Collect("resources.resourceD", s.resourceD, "", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceE", s.resourceE, "resources.resourceD")
+	err = collector.Collect("resources.resourceE", s.resourceE, "resources.resourceD", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
-	err = collector.Collect("resources.resourceF", s.resourceF, "resources.resourceE")
+	err = collector.Collect("resources.resourceF", s.resourceF, "resources.resourceE", []string{})
 	if err != nil {
-		c.Fatal(err)
+		s.FailNow(err.Error())
 	}
 
 	circularRefs := collector.FindCircularReferences()
-	c.Assert(circularRefs, HasLen, 0)
+	s.Assert().Len(circularRefs, 0)
 }
 
 func createTestResource(id string) *schema.Resource {
@@ -114,4 +116,8 @@ func createTestResource(id string) *schema.Resource {
 			},
 		},
 	}
+}
+
+func TestRefChainCollectorTestSuite(t *testing.T) {
+	suite.Run(t, new(RefChainCollectorTestSuite))
 }

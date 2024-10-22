@@ -128,7 +128,7 @@ func (r *LambdaFunctionResource) CanLinkTo(
 	input *provider.ResourceCanLinkToInput,
 ) (*provider.ResourceCanLinkToOutput, error) {
 	return &provider.ResourceCanLinkToOutput{
-		CanLinkTo: []string{"aws/dynamodb/table"},
+		CanLinkTo: []string{"aws/dynamodb/table", "aws/lambda/function"},
 	}, nil
 }
 

@@ -1,10 +1,14 @@
 package container
 
 import (
+	"context"
+	"fmt"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 func deriveSpecFormat(specFilePath string) (schema.SpecFormat, error) {
@@ -36,4 +40,59 @@ func copyProviderMap(m map[string]provider.Provider) map[string]provider.Provide
 		copy[k] = v
 	}
 	return copy
+}
+
+func collectLinksFromChain(
+	ctx context.Context,
+	chain *links.ChainLink,
+	refChainCollector validation.RefChainCollector,
+) error {
+	referencedByResourceID := fmt.Sprintf("resources.%s", chain.ResourceName)
+	for _, link := range chain.LinksTo {
+		linkImplementation, err := getLinkImplementation(chain, link)
+		if err != nil {
+			return err
+		}
+
+		linkKindOutput, err := linkImplementation.GetKind(ctx, &provider.LinkGetKindInput{})
+		if err != nil {
+			return err
+		}
+
+		// Only collect link for cycle detection if it is a hard link.
+		// Soft links do not require a specific order of deployment/resolution.
+		if linkKindOutput.Kind == provider.LinkKindHard {
+			resourceID := fmt.Sprintf("resources.%s", link.ResourceName)
+			err = refChainCollector.Collect(resourceID, link, referencedByResourceID, []string{"link"})
+			if err != nil {
+				return err
+			}
+		}
+
+		// There is no risk of infinite recursion due to cyclic links as at this point,
+		// any pure link cycles have been detected and reported.
+		err = collectLinksFromChain(ctx, link, refChainCollector)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getLinkImplementation(
+	linkA *links.ChainLink,
+	linkB *links.ChainLink,
+) (provider.Link, error) {
+	linkImplementation, hasLinkImplementation := linkA.LinkImplementations[linkB.ResourceName]
+	if !hasLinkImplementation {
+		// The relationship could be either way.
+		linkImplementation, hasLinkImplementation = linkB.LinkImplementations[linkA.ResourceName]
+	}
+
+	if !hasLinkImplementation {
+		return nil, fmt.Errorf("no link implementation found between %s and %s", linkA.ResourceName, linkB.ResourceName)
+	}
+
+	return linkImplementation, nil
 }

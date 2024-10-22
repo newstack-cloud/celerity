@@ -9,6 +9,7 @@ import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -16,7 +17,8 @@ import (
 // slice of chain links for stage changing and deployments.
 // Ordering is determined by the priority resource type specified
 // in each link implementation and usage of references between resources,
-// A resource reference is treated as a hard link.
+// A resource reference is treated as a hard link where the priority resource
+// is the resource being referenced.
 //
 // It is a requirement for the input chains not to have any direct
 // or transitive circular hard links.
@@ -68,7 +70,12 @@ import (
 // What matters in the output is that resources are ordered by the priority
 // definition of the links, the order of items that have no direct or transitive
 // relationship are irrelevant.
-func OrderLinksForDeployment(ctx context.Context, chains []*links.ChainLink, params bpcore.BlueprintParams) ([]*links.ChainLink, error) {
+func OrderLinksForDeployment(
+	ctx context.Context,
+	chains []*links.ChainLink,
+	refChainCollector validation.RefChainCollector,
+	params bpcore.BlueprintParams,
+) ([]*links.ChainLink, error) {
 	flattened := flattenChains(chains, []*links.ChainLink{})
 	var sortErr error
 	sort.Slice(flattened, func(i, j int) bool {

@@ -23,6 +23,10 @@ type ReferenceChain struct {
 	// Having this information here allows us to efficiently find out if
 	// there is a relationship between two elements at any depth in the chain.
 	Paths []string
+	// Tags provide a way to categorise a reference chain node.
+	// For example, "link" could be used to indicate that the reference chain node
+	// that represents a link derived from link selectors in the blueprint.
+	Tags []string
 }
 
 // RefChainCollector collects references in a set of chains (tree structures)
@@ -33,7 +37,9 @@ type ReferenceChain struct {
 type RefChainCollector interface {
 	// Collect adds a new reference to the reference chain(s) to be used for cycle detection
 	// and other use cases.
-	Collect(elementName string, element interface{}, referencedBy string) error
+	Collect(elementName string, element interface{}, referencedBy string, tags []string) error
+	// Chain returns the reference chain node for the given element name.
+	Chain(elementName string) *ReferenceChain
 	// FindCircularReferences returns a list of reference chain nodes for which there are
 	// cycles.
 	FindCircularReferences() []*ReferenceChain
@@ -53,13 +59,15 @@ func NewRefChainCollector() RefChainCollector {
 	}
 }
 
-func (s *refChainCollectorImpl) Collect(elementName string, element interface{}, referencedBy string) error {
-	chain, err := s.createOrUpdateChain(elementName, element, referencedBy)
+func (s *refChainCollectorImpl) Collect(elementName string, element interface{}, referencedBy string, tags []string) error {
+	chain, addedToExistingParent, err := s.createOrUpdateChain(elementName, element, referencedBy, tags)
 	if err != nil {
 		return err
 	}
 
-	s.chains = append(s.chains, chain)
+	if !addedToExistingParent {
+		s.chains = append(s.chains, chain)
+	}
 	s.refMap[elementName] = chain
 
 	return nil
@@ -70,6 +78,10 @@ func (s *refChainCollectorImpl) FindCircularReferences() []*ReferenceChain {
 	s.cleanupChains()
 	findCycles(s.chains, &circularRefs)
 	return circularRefs
+}
+
+func (s *refChainCollectorImpl) Chain(elementName string) *ReferenceChain {
+	return s.refMap[elementName]
 }
 
 func (s *refChainCollectorImpl) cleanupChains() {
@@ -86,19 +98,27 @@ func (s *refChainCollectorImpl) cleanupChains() {
 	s.chains = newChains
 }
 
-func (s *refChainCollectorImpl) createOrUpdateChain(elementName string, element interface{}, referencedBy string) (*ReferenceChain, error) {
+func (s *refChainCollectorImpl) createOrUpdateChain(
+	elementName string,
+	element interface{},
+	referencedBy string,
+	tags []string,
+) (*ReferenceChain, bool, error) {
 
 	elementChain, elementChainExists := s.refMap[elementName]
 	if !elementChainExists {
 		elementChain = &ReferenceChain{
 			ElementName: elementName,
 			Element:     element,
+			Tags:        tags,
 		}
 	}
 
 	var parent *ReferenceChain
+	addedToExistingParent := false
 	if existingParent, parentExists := s.refMap[referencedBy]; referencedBy != "" && parentExists {
 		parent = existingParent
+		addedToExistingParent = true
 	} else if referencedBy != "" && !parentExists {
 		// Add a placeholder for the parent, parents with nil elements will be cleaned up
 		// as a part of the cycle detection process when FindCircularReferences is called.
@@ -112,10 +132,23 @@ func (s *refChainCollectorImpl) createOrUpdateChain(elementName string, element 
 	if parent != nil {
 		elementChain.ReferencedBy = append(elementChain.ReferencedBy, parent)
 		addParentPaths(elementChain, parent)
+		if len(elementChain.References) > 0 {
+			// Update the elements referenced by the current element to include the updated
+			// parent paths.
+			updatePathsForReferencedElements(elementChain)
+		}
 		parent.References = append(parent.References, elementChain)
 	}
 
-	return elementChain, nil
+	elementChain.Tags = append(elementChain.Tags, tags...)
+
+	return elementChain, addedToExistingParent, nil
+}
+
+func updatePathsForReferencedElements(elementChain *ReferenceChain) {
+	for _, reference := range elementChain.References {
+		addParentPaths(reference, elementChain)
+	}
 }
 
 func addParentPaths(elementChain *ReferenceChain, parent *ReferenceChain) {

@@ -35,6 +35,7 @@ func newTestAWSProvider() provider.Provider {
 			"aws/lambda/function::aws/dynamodb/table":  &testLambdaDynamoDBTableLink{},
 			"aws/dynamodb/table::aws/dynamodb/stream":  &testDynamoDBTableStreamLink{},
 			"aws/dynamodb/stream::aws/lambda/function": &testDynamoDBStreamLambdaLink{},
+			"aws/lambda/function::aws/lambda/function": &testLambdaLambdaLink{},
 			"aws/dynamodb/table::aws/lambda/function":  &testDynamoDBTableLambdaLink{},
 			"aws/ec2/subnet::aws/ec2/vpc":              &testSubnetVPCLink{},
 			"aws/ec2/securityGroup::aws/ec2/vpc":       &testSecurityGroupVPCLink{},
@@ -368,6 +369,60 @@ func (l *testDynamoDBTableLambdaLink) HandleResourceTypeBError(
 }
 
 func (l *testDynamoDBTableLambdaLink) Deploy(
+	ctx context.Context,
+	input *provider.LinkDeployInput,
+) (*provider.LinkDeployOutput, error) {
+	return &provider.LinkDeployOutput{}, nil
+}
+
+type testLambdaLambdaLink struct{}
+
+func (l *testLambdaLambdaLink) StageChanges(
+	ctx context.Context,
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
+}
+
+func (l *testLambdaLambdaLink) GetPriorityResourceType(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceTypeInput,
+) (*provider.LinkGetPriorityResourceTypeOutput, error) {
+	return &provider.LinkGetPriorityResourceTypeOutput{
+		PriorityResourceType: "aws/lambda/function",
+	}, nil
+}
+
+func (l *testLambdaLambdaLink) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/lambda/function::aws/lambda/function",
+	}, nil
+}
+
+func (l *testLambdaLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testLambdaLambdaLink) HandleResourceTypeAError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
+	return nil
+}
+
+func (l *testLambdaLambdaLink) HandleResourceTypeBError(
+	ctx context.Context,
+	input *provider.LinkHandleResourceTypeErrorInput,
+) error {
+	return nil
+}
+
+func (l *testLambdaLambdaLink) Deploy(
 	ctx context.Context,
 	input *provider.LinkDeployInput,
 ) (*provider.LinkDeployOutput, error) {

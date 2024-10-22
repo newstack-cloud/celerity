@@ -39,6 +39,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 		"cyclic-ref":           "__testdata/loader/cyclic-ref-blueprint.yml",
 		"cyclic-ref-2":         "__testdata/loader/cyclic-ref-2-blueprint.yml",
 		"cyclic-ref-3":         "__testdata/loader/cyclic-ref-3-blueprint.yml",
+		"cyclic-ref-4":         "__testdata/loader/cyclic-ref-4-blueprint.yml",
 	}
 	s.specFixtureSchemas = make(map[string]*schema.Blueprint)
 
@@ -208,6 +209,17 @@ func (s *LoaderTestSuite) Test_reports_error_for_blueprint_with_hard_cyclic_link
 	s.Assert().Equal(
 		links.LinkErrorReasonCodeCircularLinks,
 		linkErr.ReasonCode,
+	)
+}
+
+func (s *LoaderTestSuite) Test_reports_error_for_blueprint_with_indirect_cyclic_link() {
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["cyclic-ref-4"], createParams())
+	s.Require().Error(err)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	s.Assert().True(isLoadErr)
+	s.Assert().Equal(
+		validation.ErrorReasonCodeReferenceCycle,
+		loadErr.ReasonCode,
 	)
 }
 

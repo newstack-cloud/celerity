@@ -8,16 +8,19 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 type OrderingTestSuite struct {
-	orderFixtures []orderChainLinkFixture
+	orderFixture1 orderChainLinkFixture
+	orderFixture2 orderChainLinkFixture
 	suite.Suite
 }
 
 type orderChainLinkFixture struct {
-	inputChains []*links.ChainLink
+	inputChains       []*links.ChainLink
+	refChainCollector validation.RefChainCollector
 	// All the resource names that are expected to be present
 	// in the ordered flattened list of links (resources)
 	// to be deployed.
@@ -29,41 +32,59 @@ type orderChainLinkFixture struct {
 }
 
 func (s *OrderingTestSuite) SetUpSuite() {
-	s.orderFixtures = []orderChainLinkFixture{
-		orderFixture1,
+	orderFixture1, err := orderFixture1()
+	if err != nil {
+		s.FailNow(err.Error())
 	}
+	s.orderFixture1 = orderFixture1
+
+	orderFixture2, err := orderFixture2()
+	if err != nil {
+		s.FailNow(err.Error())
+	}
+	s.orderFixture2 = orderFixture2
 }
 
 func (s *OrderingTestSuite) Test_order_links_for_deployment_with_circular_links() {
-	orderedLinks, err := OrderLinksForDeployment(context.TODO(), orderFixture1.inputChains, nil)
+	orderedLinks, err := OrderLinksForDeployment(
+		context.TODO(),
+		s.orderFixture1.inputChains,
+		s.orderFixture1.refChainCollector,
+		nil,
+	)
 	s.Assert().NoError(err)
-	s.Assert().Len(orderedLinks, len(orderFixture1.expectedPresent))
+	s.Assert().Len(orderedLinks, len(s.orderFixture1.expectedPresent))
 	s.Assert().Len(
 		core.Filter(
 			orderedLinks,
-			inExpected(orderFixture1.expectedPresent),
+			inExpected(s.orderFixture1.expectedPresent),
 		),
-		len(orderFixture1.expectedPresent),
+		len(s.orderFixture1.expectedPresent),
 	)
 
-	for _, orderedExpectedSet := range orderFixture1.orderedExpected {
+	for _, orderedExpectedSet := range s.orderFixture1.orderedExpected {
 		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
 	}
 }
 
 func (s *OrderingTestSuite) Test_order_links_for_deployment_without_circular_links() {
-	orderedLinks, err := OrderLinksForDeployment(context.TODO(), orderFixture2.inputChains, nil)
+	orderedLinks, err := OrderLinksForDeployment(
+		context.TODO(),
+		s.orderFixture2.inputChains,
+		s.orderFixture2.refChainCollector,
+		nil,
+	)
 	s.Assert().NoError(err)
-	s.Assert().Len(orderedLinks, len(orderFixture2.expectedPresent))
+	s.Assert().Len(orderedLinks, len(s.orderFixture2.expectedPresent))
 	s.Assert().Len(
 		core.Filter(
 			orderedLinks,
-			inExpected(orderFixture2.expectedPresent),
+			inExpected(s.orderFixture2.expectedPresent),
 		),
-		len(orderFixture2.expectedPresent),
+		len(s.orderFixture2.expectedPresent),
 	)
 
-	for _, orderedExpectedSet := range orderFixture2.orderedExpected {
+	for _, orderedExpectedSet := range s.orderFixture2.orderedExpected {
 		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
 	}
 }
@@ -97,19 +118,28 @@ func inExpected(expectedResourceNames []string) func(*links.ChainLink, int) bool
 
 var testProviderImpl = newTestAWSProvider()
 
-var orderFixture1 = orderChainLinkFixture{
-	inputChains: orderFixture1Chains(),
-	expectedPresent: []string{
-		"orderApi",
-		"getOrdersFunction",
-		"createOrderFunction",
-		"updateOrderFunction",
-		"ordersTable",
-		"ordersStream",
-		"statsAccumulatorFunction",
-		"secondaryOrdersDB",
-	},
-	orderedExpected: [][]string{{"ordersTable", "ordersStream"}},
+func orderFixture1() (orderChainLinkFixture, error) {
+	var inputChains = orderFixture1Chains()
+	refChainCollector, err := orderFixture1RefChains(inputChains)
+	if err != nil {
+		return orderChainLinkFixture{}, err
+	}
+
+	return orderChainLinkFixture{
+		inputChains:       inputChains,
+		refChainCollector: refChainCollector,
+		expectedPresent: []string{
+			"orderApi",
+			"getOrdersFunction",
+			"createOrderFunction",
+			"updateOrderFunction",
+			"ordersTable",
+			"ordersStream",
+			"statsAccumulatorFunction",
+			"secondaryOrdersDB",
+		},
+		orderedExpected: [][]string{{"ordersTable", "ordersStream"}},
+	}, nil
 }
 
 func orderFixture1Chains() []*links.ChainLink {
@@ -278,23 +308,48 @@ func orderFixture1Chains() []*links.ChainLink {
 	}
 }
 
-var orderFixture2 = orderChainLinkFixture{
-	inputChains: orderFixture2Chain(),
-	expectedPresent: []string{
-		"route1",
-		"subnet1",
-		"sg1",
-		"routeTable1",
-		"vpc1",
-		"igw1",
-	},
-	orderedExpected: [][]string{
-		{"routeTable1", "route1"},
-		{"igw1", "route1"},
-		{"vpc1", "routeTable1"},
-		{"vpc1", "subnet1"},
-		{"vpc1", "sg1"},
-	},
+func orderFixture1RefChains(
+	linkChains []*links.ChainLink,
+) (validation.RefChainCollector, error) {
+	collector := validation.NewRefChainCollector()
+	for _, link := range linkChains {
+		err := collectLinksFromChain(context.TODO(), link, collector)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	collector.Collect("resources.ordersTable", nil, "resources.getOrdersFunction", []string{"subRef"})
+
+	return collector, nil
+}
+
+func orderFixture2() (orderChainLinkFixture, error) {
+	var inputChains = orderFixture2Chain()
+	refChainCollector, err := orderFixture2RefChains(inputChains)
+	if err != nil {
+		return orderChainLinkFixture{}, err
+	}
+
+	return orderChainLinkFixture{
+		inputChains:       inputChains,
+		refChainCollector: refChainCollector,
+		expectedPresent: []string{
+			"route1",
+			"subnet1",
+			"sg1",
+			"routeTable1",
+			"vpc1",
+			"igw1",
+		},
+		orderedExpected: [][]string{
+			{"routeTable1", "route1"},
+			{"igw1", "route1"},
+			{"vpc1", "routeTable1"},
+			{"vpc1", "subnet1"},
+			{"vpc1", "sg1"},
+		},
+	}, nil
 }
 
 func orderFixture2Chain() []*links.ChainLink {
@@ -413,6 +468,22 @@ func orderFixture2Chain() []*links.ChainLink {
 		subnet,
 		securityGroup,
 	}
+}
+
+func orderFixture2RefChains(
+	linkChains []*links.ChainLink,
+) (validation.RefChainCollector, error) {
+	collector := validation.NewRefChainCollector()
+	for _, link := range linkChains {
+		err := collectLinksFromChain(context.TODO(), link, collector)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	collector.Collect("resources.sg1", nil, "resources.vpc1", []string{"subRef"})
+
+	return collector, nil
 }
 
 func TestOrderingTestSuite(t *testing.T) {

@@ -383,34 +383,9 @@ func (l *defaultLoader) collectLinksAsReferences(
 	}
 
 	for _, chain := range chains {
-		err = l.collectLinksFromChain(ctx, chain, refChainCollector)
+		err = collectLinksFromChain(ctx, chain, refChainCollector)
 		if err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-func (l *defaultLoader) collectLinksFromChain(
-	ctx context.Context,
-	chain *links.ChainLink,
-	refChainCollector validation.RefChainCollector,
-) error {
-	referencedByResourceID := fmt.Sprintf("resources.%s", chain.ResourceName)
-	for _, link := range chain.LinksTo {
-		resourceID := fmt.Sprintf("resources.%s", link.ResourceName)
-		err := refChainCollector.Collect(resourceID, link, referencedByResourceID)
-		if err != nil {
-			return err
-		}
-		for _, childChain := range link.LinksTo {
-			// There is no risk of infinite recursion due to cyclic links as at this point,
-			// any pure link cycles have been detected and reported.
-			err = l.collectLinksFromChain(ctx, childChain, refChainCollector)
-			if err != nil {
-				return err
-			}
 		}
 	}
 
@@ -683,7 +658,7 @@ func (l *defaultLoader) validateVariable(
 		*diagnostics = append(*diagnostics, customVarDiagnostics...)
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("variables.%s", name), varSchema, "")
+	refChainCollector.Collect(fmt.Sprintf("variables.%s", name), varSchema, "", []string{})
 	return currentVarErrs
 }
 
@@ -743,7 +718,7 @@ func (l *defaultLoader) validateValue(
 	}
 	*diagnostics = append(*diagnostics, resultDiagnostics...)
 
-	refChainCollector.Collect(fmt.Sprintf("values.%s", name), valSchema, "")
+	refChainCollector.Collect(fmt.Sprintf("values.%s", name), valSchema, "", []string{})
 	return currentValErrs
 }
 
@@ -963,7 +938,7 @@ func (l *defaultLoader) validateDataSource(
 		currentDataSourceErrs = append(currentDataSourceErrs, err)
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("datasources.%s", name), dataSourceSchema, "")
+	refChainCollector.Collect(fmt.Sprintf("datasources.%s", name), dataSourceSchema, "", []string{})
 	return currentDataSourceErrs
 }
 
@@ -1032,7 +1007,7 @@ func (l *defaultLoader) validateResource(
 		currentResouceErrs = append(currentResouceErrs, err)
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("resources.%s", name), resourceSchema, "")
+	refChainCollector.Collect(fmt.Sprintf("resources.%s", name), resourceSchema, "", []string{})
 	return currentResouceErrs
 }
 
