@@ -213,6 +213,9 @@ func (l *defaultSpecLinkInfo) addOrUpdateChainsForSelector(
 			selectorLabel,
 			chainLinkForResource,
 		)
+		if err != nil {
+			return err
+		}
 	}
 
 	return err
@@ -326,7 +329,12 @@ func (l *defaultSpecLinkInfo) checkCanLinkTo(
 		if err != nil {
 			return nil, err
 		}
-		linkAllowed := core.SliceContainsComparable(linkFromResourceOutput.CanLinkTo, linkToResourceType)
+
+		linkAllowed := core.SliceContainsComparable(
+			linkFromResourceOutput.CanLinkTo,
+			linkToResourceType,
+		) && linkFromResource.Name != linkToResource.Name
+
 		return &linkCheckInfo{
 			linkImplementation: linkImplementation,
 			canLinkTo:          linkAllowed,
@@ -363,13 +371,11 @@ func (l *defaultSpecLinkInfo) addLinkInChainsIfMissing(ctx context.Context, newL
 		}
 
 		selectorCanLinkToCandidate := candidateLinkCheckInfo.canLinkTo && candidateLinkCheckInfo.linkImplementation != nil
-
 		if candidateLinkCheckInfo.canLinkTo && candidateLinkCheckInfo.linkImplementation == nil {
 			return errMissingLinkImplementation(selectorAsIntermediaryResource, candidateAsIntermediaryResource)
 		}
 
 		if len(existingWithResourceName) == 0 && selectorCanLinkToCandidate {
-
 			selectorChainLink.LinksTo = append(selectorChainLink.LinksTo, newLink)
 			alreadyInLinkedFrom := len(core.Filter(
 				newLink.LinkedFrom,
