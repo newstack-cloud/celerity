@@ -15,6 +15,7 @@ import (
 type OrderingTestSuite struct {
 	orderFixture1 orderChainLinkFixture
 	orderFixture2 orderChainLinkFixture
+	orderFixture3 orderChainLinkFixture
 	suite.Suite
 }
 
@@ -43,6 +44,12 @@ func (s *OrderingTestSuite) SetupSuite() {
 		s.FailNow(err.Error())
 	}
 	s.orderFixture2 = orderFixture2
+
+	orderFixture3, err := orderFixture3()
+	if err != nil {
+		s.FailNow(err.Error())
+	}
+	s.orderFixture3 = orderFixture3
 }
 
 func (s *OrderingTestSuite) Test_order_links_for_deployment_with_circular_links() {
@@ -85,6 +92,28 @@ func (s *OrderingTestSuite) Test_order_links_for_deployment_without_circular_lin
 	)
 
 	for _, orderedExpectedSet := range s.orderFixture2.orderedExpected {
+		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
+	}
+}
+
+func (s *OrderingTestSuite) Test_order_links_based_on_references() {
+	orderedLinks, err := OrderLinksForDeployment(
+		context.TODO(),
+		s.orderFixture3.inputChains,
+		s.orderFixture3.refChainCollector,
+		nil,
+	)
+	s.Assert().NoError(err)
+	s.Assert().Len(orderedLinks, len(s.orderFixture3.expectedPresent))
+	s.Assert().Len(
+		core.Filter(
+			orderedLinks,
+			inExpected(s.orderFixture3.expectedPresent),
+		),
+		len(s.orderFixture3.expectedPresent),
+	)
+
+	for _, orderedExpectedSet := range s.orderFixture3.orderedExpected {
 		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
 	}
 }
@@ -469,6 +498,194 @@ func orderFixture2RefChains(
 	}
 
 	collector.Collect("resources.vpc1", nil, "resources.sg1", []string{"subRef:resources.sg1"})
+
+	return collector, nil
+}
+
+func orderFixture3() (orderChainLinkFixture, error) {
+	var inputChains = orderFixture3Chains()
+	refChainCollector, err := orderFixture3RefChains(inputChains)
+	if err != nil {
+		return orderChainLinkFixture{}, err
+	}
+
+	return orderChainLinkFixture{
+		inputChains:       inputChains,
+		refChainCollector: refChainCollector,
+		expectedPresent: []string{
+			"orderApi",
+			"getOrdersFunction",
+			"createOrderFunction",
+			"updateOrderFunction",
+			"ordersTable",
+			"ordersStream",
+			"statsAccumulatorFunction",
+		},
+		orderedExpected: [][]string{
+			{"ordersTable", "ordersStream"},
+			{"ordersTable", "getOrdersFunction"},
+			{"ordersTable", "createOrderFunction"},
+			{"ordersTable", "updateOrderFunction"},
+		},
+	}, nil
+}
+
+func orderFixture3Chains() []*links.ChainLink {
+	apiGatewayLambdaLinkImpl, _ := testProviderImpl.Link(context.TODO(), "aws/apigateway/api", "aws/lambda/function")
+	orderApi := &links.ChainLink{
+		ResourceName: "orderApi",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{Value: "aws/apigateway/api"},
+		},
+		Paths: []string{},
+		LinkImplementations: map[string]provider.Link{
+			"getOrdersFunction":   apiGatewayLambdaLinkImpl,
+			"createOrderFunction": apiGatewayLambdaLinkImpl,
+			"updateOrderFunction": apiGatewayLambdaLinkImpl,
+		},
+		LinkedFrom: []*links.ChainLink{},
+		LinksTo:    []*links.ChainLink{},
+	}
+
+	lambdaDynamoDBTableLink, _ := testProviderImpl.Link(context.TODO(), "aws/lambda/function", "aws/dynamodb/table")
+	// For fixture 3, functions do not link to tables, references are being tested for this fixture
+	// so each function will have a reference to the orders table defined in the ref chain fixtures.
+	getOrdersFunction := &links.ChainLink{
+		ResourceName: "getOrdersFunction",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
+		},
+		Paths:               []string{"/orderApi"},
+		LinkImplementations: map[string]provider.Link{},
+		LinkedFrom: []*links.ChainLink{
+			orderApi,
+		},
+	}
+	createOrderFunction := &links.ChainLink{
+		ResourceName: "createOrderFunction",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
+		},
+		LinkImplementations: map[string]provider.Link{},
+		Paths:               []string{"/orderApi"},
+		LinkedFrom: []*links.ChainLink{
+			orderApi,
+		},
+	}
+	updateOrderFunction := &links.ChainLink{
+		ResourceName: "updateOrderFunction",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
+		},
+		LinkImplementations: map[string]provider.Link{},
+		Paths:               []string{"/orderApi"},
+		LinkedFrom: []*links.ChainLink{
+			orderApi,
+		},
+	}
+
+	dynamoDBTableStreamLink, _ := testProviderImpl.Link(context.TODO(), "aws/dynamodb/table", "aws/dynamodb/stream")
+	// The only hard link in this chain is between the orders table
+	// and the orders stream.
+	ordersTable := &links.ChainLink{
+		ResourceName: "ordersTable",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/table"},
+		},
+		LinkImplementations: map[string]provider.Link{
+			"ordersStream": dynamoDBTableStreamLink,
+		},
+		Paths:      []string{},
+		LinkedFrom: []*links.ChainLink{},
+	}
+
+	dynamoDBStreamLambdaLink, _ := testProviderImpl.Link(context.TODO(), "aws/dynamodb/stream", "aws/lambda/function")
+	ordersStream := &links.ChainLink{
+		ResourceName: "ordersStream",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{Value: "aws/dynamodb/stream"},
+		},
+		Paths: []string{
+			"/ordersTable",
+		},
+		LinkImplementations: map[string]provider.Link{
+			"statsAccumulatorFunction": dynamoDBStreamLambdaLink,
+		},
+		LinkedFrom: []*links.ChainLink{
+			getOrdersFunction,
+			createOrderFunction,
+			updateOrderFunction,
+		},
+		LinksTo: []*links.ChainLink{},
+	}
+
+	// Includes transitive soft circular link.
+	statsAccumulatorFunction := &links.ChainLink{
+		ResourceName: "statsAccumulatorFunction",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
+		},
+		Paths: []string{
+			"/ordersTable/ordersStream",
+		},
+		LinkImplementations: map[string]provider.Link{
+			"ordersTable": lambdaDynamoDBTableLink,
+		},
+		LinkedFrom: []*links.ChainLink{
+			ordersStream,
+		},
+	}
+
+	orderApi.LinksTo = []*links.ChainLink{
+		getOrdersFunction,
+		createOrderFunction,
+		updateOrderFunction,
+	}
+	ordersTable.LinksTo = []*links.ChainLink{
+		ordersStream,
+	}
+	ordersStream.LinksTo = []*links.ChainLink{
+		statsAccumulatorFunction,
+	}
+	statsAccumulatorFunction.LinksTo = []*links.ChainLink{
+		ordersTable,
+	}
+
+	return []*links.ChainLink{
+		orderApi,
+		ordersTable,
+	}
+}
+
+func orderFixture3RefChains(
+	linkChains []*links.ChainLink,
+) (validation.RefChainCollector, error) {
+	collector := validation.NewRefChainCollector()
+	for _, link := range linkChains {
+		err := collectLinksFromChain(context.TODO(), link, collector)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	collector.Collect(
+		"resources.ordersTable",
+		nil,
+		"resources.getOrdersFunction",
+		[]string{"subRef:resources.getOrdersFunction"},
+	)
+	collector.Collect(
+		"resources.ordersTable",
+		nil,
+		"resources.createOrderFunction",
+		[]string{"subRef:resources.createOrderFunction"},
+	)
+	collector.Collect(
+		"resources.ordersTable",
+		nil,
+		"resources.updateOrderFunction",
+		[]string{"subRef:resources.updateOrderFunction"},
+	)
 
 	return collector, nil
 }

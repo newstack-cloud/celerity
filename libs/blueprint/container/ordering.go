@@ -108,10 +108,21 @@ func OrderLinksForDeployment(
 		}
 		// If A references B or any of B's descendants then A does not have priority regardless
 		// of the link relationship. (An explicit reference is a dependency)
-		linkADependsOnLinkB := linkResourceReferences(refChainCollector, linkA, linkB)
-		linkAHasPriority := (isParentWithPriority || isChildWithPriority) && !linkADependsOnLinkB
+		linkAReferencesLinkB := linkResourceReferences(refChainCollector, linkA, linkB)
+		linkAHasPriority := (isParentWithPriority || isChildWithPriority) && !linkAReferencesLinkB
 
-		return (linkAIsAncestor || linkAIsDescendant) && linkAHasPriority
+		// If link B references link A but is not connected via a link relationship,
+		// then link A has priority.
+		// For example, lets say link A is an "orders" NoSQL table in a blueprint
+		// and link B is a "createOrders" serverless function.
+		// The "createOrders" function references the "orders" table in its environment variables
+		// as the source for the table name made available to the function code.
+		// There is no linkSelector initated link between the two resources, however, the "orders"
+		// table (link A) needs to be deployed before the "createOrders" function (link B) so the function can source
+		// the table name from the environment variables.
+		linkBReferencesLinkA := linkResourceReferences(refChainCollector, linkB, linkA)
+
+		return linkBReferencesLinkA || ((linkAIsAncestor || linkAIsDescendant) && linkAHasPriority)
 	})
 	return flattened, sortErr
 }
