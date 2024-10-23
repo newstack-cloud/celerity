@@ -113,7 +113,7 @@ func OrderLinksForDeployment(
 
 		// If link B references link A but is not connected via a link relationship,
 		// then link A has priority.
-		// For example, lets say link A is an "orders" NoSQL table in a blueprint
+		// For example, let's say link A is an "orders" NoSQL table in a blueprint
 		// and link B is a "createOrders" serverless function.
 		// The "createOrders" function references the "orders" table in its environment variables
 		// as the source for the table name made available to the function code.
