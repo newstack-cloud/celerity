@@ -25,17 +25,17 @@ type SpecLinkInfo interface {
 	// the labels in the spec that link them together and the provider.Link implementation.
 	// This will return an error when a link defined in the spec
 	// is not supported.
-	Links(ctx context.Context) ([]*ChainLink, error)
+	Links(ctx context.Context) ([]*ChainLinkNode, error)
 	// Warnings provides a list of warnings for potential issues
 	// with the links in a provided specification.
 	Warnings(ctx context.Context) ([]string, error)
 }
 
-// ChainLink provides a node in a chain of links that contains the name
+// ChainLinkNode provides a node in a chain of links that contains the name
 // of the current resource in the chain, selectors used to link it with
 // other resources, the implementation for each outward link and the chain link
 // nodes that the current resource links out to.
-type ChainLink struct {
+type ChainLinkNode struct {
 	// ResourceName is the unique name in the spec for the current
 	// resource in the chain.
 	ResourceName string
@@ -53,11 +53,11 @@ type ChainLink struct {
 	LinkImplementations map[string]provider.Link
 	// LinksTo holds the chain link nodes for the resources
 	// that the curent resource links to.
-	LinksTo []*ChainLink
+	LinksTo []*ChainLinkNode
 	// LinkedFrom holds the chain link nodes that link to the current resource.
 	// This information is important to allow backtracking when the blueprint container
 	// is deciding the order in which resources should be deployed.
-	LinkedFrom []*ChainLink
+	LinkedFrom []*ChainLinkNode
 	// Paths holds all the different "routes" to get to the current link in a set of chains.
 	// These are known as materialised paths in the context of tree data structures.
 	// Having this information here allows us to efficiently find out if
@@ -65,16 +65,16 @@ type ChainLink struct {
 	Paths []string
 }
 
-func (l *ChainLink) Equal(otherLink *ChainLink) bool {
+func (l *ChainLinkNode) Equal(otherLink *ChainLinkNode) bool {
 	return l.ResourceName == otherLink.ResourceName
 }
 
 type defaultSpecLinkInfo struct {
 	resourceProviders        map[string]provider.Provider
 	spec                     speccore.BlueprintSpec
-	chains                   []*ChainLink
-	linkMap                  map[string]*ChainLink
-	linksToCleanFromTopLevel []*ChainLink
+	chains                   []*ChainLinkNode
+	linkMap                  map[string]*ChainLinkNode
+	linksToCleanFromTopLevel []*ChainLinkNode
 	blueprintParams          bpcore.BlueprintParams
 }
 
@@ -92,16 +92,16 @@ func NewDefaultLinkInfoProvider(
 	return &defaultSpecLinkInfo{
 		resourceProviders:        resourceProviders,
 		spec:                     spec,
-		chains:                   []*ChainLink{},
-		linkMap:                  make(map[string]*ChainLink),
-		linksToCleanFromTopLevel: []*ChainLink{},
+		chains:                   []*ChainLinkNode{},
+		linkMap:                  make(map[string]*ChainLinkNode),
+		linksToCleanFromTopLevel: []*ChainLinkNode{},
 		blueprintParams:          blueprintParams,
 	}, nil
 }
 
-func (l *defaultSpecLinkInfo) Links(ctx context.Context) ([]*ChainLink, error) {
+func (l *defaultSpecLinkInfo) Links(ctx context.Context) ([]*ChainLinkNode, error) {
 	resourcesGroupedBySelectors := GroupResourcesBySelector(l.spec)
-	err := l.buildChainLinks(ctx, resourcesGroupedBySelectors)
+	err := l.buildChainLinkNodes(ctx, resourcesGroupedBySelectors)
 	if err != nil {
 		return l.chains, err
 	}
@@ -116,7 +116,7 @@ func (l *defaultSpecLinkInfo) collectResourceNamesWithLinks() []string {
 	return resourceNamesWithLinks
 }
 
-func (l *defaultSpecLinkInfo) buildChainLinks(
+func (l *defaultSpecLinkInfo) buildChainLinkNodes(
 	ctx context.Context,
 	groupedBySelector map[string]*SelectGroup,
 ) error {
@@ -129,18 +129,18 @@ func (l *defaultSpecLinkInfo) buildChainLinks(
 
 	standaloneResources := l.extractStandaloneResources(groupedBySelector)
 	for _, standaloneResource := range standaloneResources {
-		standaloneChainLink := &ChainLink{
+		standaloneChainLinkNode := &ChainLinkNode{
 			ResourceName: standaloneResource.Name,
 			Resource:     standaloneResource.Resource,
 			// Values will be filled in for link implementations, selectors and linksTo
 			// when the candidate link appears as a selector in SelectGroup.SelectorResources.
 			Selectors:           map[string][]string{},
 			LinkImplementations: map[string]provider.Link{},
-			LinksTo:             []*ChainLink{},
-			LinkedFrom:          []*ChainLink{},
+			LinksTo:             []*ChainLinkNode{},
+			LinkedFrom:          []*ChainLinkNode{},
 			Paths:               []string{},
 		}
-		l.chains = append(l.chains, standaloneChainLink)
+		l.chains = append(l.chains, standaloneChainLinkNode)
 	}
 
 	// At this point we have built all the chains, only after we have built the chains
@@ -204,14 +204,14 @@ func (l *defaultSpecLinkInfo) addOrUpdateChainsForSelector(
 	selectGroupMappings map[string]*SelectGroup,
 ) (err error) {
 	for _, selectorResource := range selectGroup.SelectorResources {
-		chainLinkForResource := l.findChainLink(selectorResource.Name)
+		ChainLinkNodeForResource := l.findChainLinkNode(selectorResource.Name)
 		_, err = l.addResourceChainToChains(
 			ctx,
 			selectGroup,
 			selectGroupMappings,
 			selectorResource,
 			selectorLabel,
-			chainLinkForResource,
+			ChainLinkNodeForResource,
 		)
 		if err != nil {
 			return err
@@ -231,10 +231,10 @@ func (l *defaultSpecLinkInfo) addResourceChainToChains(
 	selectGroupMappings map[string]*SelectGroup,
 	resource *ResourceWithNameAndSelectors,
 	primarySelectorLabel string,
-	existingChainLink *ChainLink,
-) (*ChainLink, error) {
-	chainLink := determineChainLink(existingChainLink, resource)
-	l.linkMap[resource.Name] = chainLink
+	existingChainLinkNode *ChainLinkNode,
+) (*ChainLinkNode, error) {
+	chainLinkNode := determineChainLinkNode(existingChainLinkNode, resource)
+	l.linkMap[resource.Name] = chainLinkNode
 	resourceLinkCount := 0
 
 	if resource.Resource.Metadata != nil && resource.Resource.Metadata.Labels != nil {
@@ -244,15 +244,15 @@ func (l *defaultSpecLinkInfo) addResourceChainToChains(
 			if exists {
 				// When this resource is linked to by other resources using a selector
 				// let's make sure we add it in the right places in the chains.
-				selectorChainLinks, err := l.collectSelectorChainLinks(ctx, selectGroup, resource)
+				selectorChainLinkNodes, err := l.collectSelectorChainLinkNodes(ctx, selectGroup, resource)
 				if err != nil {
 					return nil, err
 				}
-				if len(selectorChainLinks) > 0 {
+				if len(selectorChainLinkNodes) > 0 {
 					resourceLinkCount += 1
 				}
 
-				err = l.addLinkInChainsIfMissing(ctx, chainLink, selectorChainLinks, lookUpSelectorName)
+				err = l.addLinkInChainsIfMissing(ctx, chainLinkNode, selectorChainLinkNodes, lookUpSelectorName)
 				if err != nil {
 					return nil, err
 				}
@@ -265,28 +265,28 @@ func (l *defaultSpecLinkInfo) addResourceChainToChains(
 		// so we'll make it the start link of a chain for now.
 		// This can change later as we can't rely on ordering from iterating
 		// over maps.
-		l.chains = append(l.chains, chainLink)
+		l.chains = append(l.chains, chainLinkNode)
 	}
 
 	// Now we know where to place the current resource in the chain, let's build out
 	// the chain for the current resource.
 	err := l.buildChainForLink(
 		ctx,
-		chainLink,
+		chainLinkNode,
 		resource,
 		currentSelectGroup.CandidateResourcesForSelection,
 		primarySelectorLabel,
 	)
 
-	return chainLink, err
+	return chainLinkNode, err
 }
 
-func (l *defaultSpecLinkInfo) collectSelectorChainLinks(
+func (l *defaultSpecLinkInfo) collectSelectorChainLinkNodes(
 	ctx context.Context,
 	selectGroup *SelectGroup,
 	targetResource *ResourceWithNameAndSelectors,
-) ([]*ChainLink, error) {
-	existingLinks := []*ChainLink{}
+) ([]*ChainLinkNode, error) {
+	existingLinks := []*ChainLinkNode{}
 	for _, selectorResource := range selectGroup.SelectorResources {
 		linkToTargetCheckInfo, err := l.checkCanLinkTo(ctx, selectorResource, targetResource)
 		if err != nil {
@@ -346,16 +346,16 @@ func (l *defaultSpecLinkInfo) checkCanLinkTo(
 	}, nil
 }
 
-func (l *defaultSpecLinkInfo) addLinkInChainsIfMissing(ctx context.Context, newLink *ChainLink, selectorChainLinks []*ChainLink, contextSelectorLabel string) error {
-	for _, selectorChainLink := range selectorChainLinks {
+func (l *defaultSpecLinkInfo) addLinkInChainsIfMissing(ctx context.Context, newLink *ChainLinkNode, selectorChainLinkNodes []*ChainLinkNode, contextSelectorLabel string) error {
+	for _, selectorChainLinkNode := range selectorChainLinkNodes {
 		existingWithResourceName := core.Filter(
-			selectorChainLink.LinksTo,
+			selectorChainLinkNode.LinksTo,
 			checkLinkHasResourceName(newLink.ResourceName),
 		)
 
 		selectorAsIntermediaryResource := &ResourceWithNameAndSelectors{
-			Name:     selectorChainLink.ResourceName,
-			Resource: selectorChainLink.Resource,
+			Name:     selectorChainLinkNode.ResourceName,
+			Resource: selectorChainLinkNode.Resource,
 		}
 		candidateAsIntermediaryResource := &ResourceWithNameAndSelectors{
 			Name:     newLink.ResourceName,
@@ -376,28 +376,28 @@ func (l *defaultSpecLinkInfo) addLinkInChainsIfMissing(ctx context.Context, newL
 		}
 
 		if len(existingWithResourceName) == 0 && selectorCanLinkToCandidate {
-			selectorChainLink.LinksTo = append(selectorChainLink.LinksTo, newLink)
+			selectorChainLinkNode.LinksTo = append(selectorChainLinkNode.LinksTo, newLink)
 			alreadyInLinkedFrom := len(core.Filter(
 				newLink.LinkedFrom,
-				checkLinkHasResourceName(selectorChainLink.ResourceName),
+				checkLinkHasResourceName(selectorChainLinkNode.ResourceName),
 			)) > 0
 			if !alreadyInLinkedFrom {
-				newLink.LinkedFrom = append(newLink.LinkedFrom, selectorChainLink)
+				newLink.LinkedFrom = append(newLink.LinkedFrom, selectorChainLinkNode)
 			}
 
 			alreadyHasPathWithLinkedFrom := len(core.Filter(
 				newLink.Paths,
-				checkLinkHasParentInPaths(selectorChainLink.ResourceName),
+				checkLinkHasParentInPaths(selectorChainLinkNode.ResourceName),
 			)) > 0
 			if !alreadyHasPathWithLinkedFrom {
-				newLink.Paths = append(newLink.Paths, buildLinkPaths(selectorChainLink)...)
+				newLink.Paths = append(newLink.Paths, buildLinkPaths(selectorChainLinkNode)...)
 			}
 
-			selectorChainLink.LinkImplementations[newLink.ResourceName] = candidateLinkCheckInfo.linkImplementation
-			resourceNamesBySelector := selectorChainLink.Selectors[contextSelectorLabel]
+			selectorChainLinkNode.LinkImplementations[newLink.ResourceName] = candidateLinkCheckInfo.linkImplementation
+			resourceNamesBySelector := selectorChainLinkNode.Selectors[contextSelectorLabel]
 			resourceInSelectors := core.SliceContainsComparable(resourceNamesBySelector, newLink.ResourceName)
 			if !resourceInSelectors {
-				selectorChainLink.Selectors[contextSelectorLabel] = append(resourceNamesBySelector, newLink.ResourceName)
+				selectorChainLinkNode.Selectors[contextSelectorLabel] = append(resourceNamesBySelector, newLink.ResourceName)
 			}
 		}
 	}
@@ -405,13 +405,13 @@ func (l *defaultSpecLinkInfo) addLinkInChainsIfMissing(ctx context.Context, newL
 	return nil
 }
 
-func (l *defaultSpecLinkInfo) findChainLink(resourceName string) *ChainLink {
+func (l *defaultSpecLinkInfo) findChainLinkNode(resourceName string) *ChainLinkNode {
 	return l.linkMap[resourceName]
 }
 
 func (l *defaultSpecLinkInfo) buildChainForLink(
 	ctx context.Context,
-	startLink *ChainLink,
+	startLink *ChainLinkNode,
 	startLinkResource *ResourceWithNameAndSelectors,
 	candidateLinkedResources []*ResourceWithNameAndSelectors,
 	contextSelectorLabel string,
@@ -446,7 +446,7 @@ func (l *defaultSpecLinkInfo) buildChainForLink(
 }
 
 func (l *defaultSpecLinkInfo) connectCandidateIfMeetsConditions(
-	startLink *ChainLink,
+	startLink *ChainLinkNode,
 	startLinkResource *ResourceWithNameAndSelectors,
 	candidateLinkedResource *ResourceWithNameAndSelectors,
 	candidateLinkCheckInfo *linkCheckInfo,
@@ -459,7 +459,7 @@ func (l *defaultSpecLinkInfo) connectCandidateIfMeetsConditions(
 		return errMissingLinkImplementation(startLinkResource, candidateLinkedResource)
 	}
 
-	linkToChainLink, candidateLinkExists := l.linkMap[candidateLinkedResource.Name]
+	linkToChainLinkNode, candidateLinkExists := l.linkMap[candidateLinkedResource.Name]
 
 	if candidateLinkExists && candidateLinkCheckInfo.canLinkTo {
 		// When the candidate already exists and can be linked to by the given start link,
@@ -483,18 +483,18 @@ func (l *defaultSpecLinkInfo) connectCandidateIfMeetsConditions(
 			core.Filter(l.chains, checkLinkHasResourceName(candidateLinkedResource.Name))...,
 		)
 	} else if !candidateLinkExists {
-		linkToChainLink = &ChainLink{
+		linkToChainLinkNode = &ChainLinkNode{
 			ResourceName: candidateLinkedResource.Name,
 			Resource:     candidateLinkedResource.Resource,
 			// Values will be filled in for link implementations, selectors and linksTo
 			// when the candidate link appears as a selector in SelectGroup.SelectorResources.
 			Selectors:           core.SliceToMapKeys[string](candidateLinkedResource.Selectors),
 			LinkImplementations: map[string]provider.Link{},
-			LinksTo:             []*ChainLink{},
-			LinkedFrom:          []*ChainLink{},
+			LinksTo:             []*ChainLinkNode{},
+			LinkedFrom:          []*ChainLinkNode{},
 			Paths:               []string{},
 		}
-		l.linkMap[candidateLinkedResource.Name] = linkToChainLink
+		l.linkMap[candidateLinkedResource.Name] = linkToChainLinkNode
 	}
 
 	alreadyLinkedTo := len(core.Filter(
@@ -504,21 +504,21 @@ func (l *defaultSpecLinkInfo) connectCandidateIfMeetsConditions(
 
 	if candidateLinkCheckInfo.canLinkTo && !alreadyLinkedTo {
 
-		startLink.LinksTo = append(startLink.LinksTo, linkToChainLink)
+		startLink.LinksTo = append(startLink.LinksTo, linkToChainLinkNode)
 		alreadyInLinkedFrom := len(core.Filter(
-			linkToChainLink.LinkedFrom,
+			linkToChainLinkNode.LinkedFrom,
 			checkLinkHasResourceName(startLink.ResourceName),
 		)) > 0
 		if !alreadyInLinkedFrom {
-			linkToChainLink.LinkedFrom = append(linkToChainLink.LinkedFrom, startLink)
+			linkToChainLinkNode.LinkedFrom = append(linkToChainLinkNode.LinkedFrom, startLink)
 		}
 
 		alreadyHasPathWithLinkedFrom := len(core.Filter(
-			linkToChainLink.Paths,
+			linkToChainLinkNode.Paths,
 			checkLinkHasParentInPaths(startLink.ResourceName),
 		)) > 0
 		if !alreadyHasPathWithLinkedFrom {
-			linkToChainLink.Paths = append(linkToChainLink.Paths, buildLinkPaths(startLink)...)
+			linkToChainLinkNode.Paths = append(linkToChainLinkNode.Paths, buildLinkPaths(startLink)...)
 		}
 
 		startLink.LinkImplementations[candidateLinkedResource.Name] = candidateLinkCheckInfo.linkImplementation
@@ -534,10 +534,10 @@ func (l *defaultSpecLinkInfo) connectCandidateIfMeetsConditions(
 
 func (l *defaultSpecLinkInfo) findCircularLinks(ctx context.Context) ([]*circularLinkInfoItem, error) {
 	circularLinkInfoItems := []*circularLinkInfoItem{}
-	for _, chainLink := range l.chains {
+	for _, chainLinkNode := range l.chains {
 		collected, err := collectCircularLinkInfo(
 			ctx,
-			chainLink,
+			chainLinkNode,
 			[]*ancestorLinkInfo{},
 			l.blueprintParams,
 		)
@@ -573,7 +573,7 @@ func (l *defaultSpecLinkInfo) Warnings(ctx context.Context) ([]string, error) {
 
 func (l *defaultSpecLinkInfo) collectWarnings(
 	ctx context.Context,
-	chainLinks []*ChainLink,
+	ChainLinkNodes []*ChainLinkNode,
 	existingWarnings []string,
 	alreadyCollectedResourceNames []string,
 ) ([]string, []string, error) {
@@ -584,7 +584,7 @@ func (l *defaultSpecLinkInfo) collectWarnings(
 	// The critera for a warning is that if a resource represented
 	// by a chain link can link to other resource
 	// types and is not a "common terminal resource".
-	for _, currentLink := range chainLinks {
+	for _, currentLink := range ChainLinkNodes {
 		if len(currentLink.LinksTo) == 0 {
 			currentLinkResourceType := currentLink.Resource.Type.Value
 			resourceProvider, rpExists := l.resourceProviders[currentLinkResourceType]
@@ -650,8 +650,8 @@ func (l *defaultSpecLinkInfo) getResourceLinkInfo(
 	return canLinkToOutput.CanLinkTo, commonTerminalOutput.IsCommonTerminal, nil
 }
 
-func checkLinkHasResourceName(searchForResourceName string) func(*ChainLink, int) bool {
-	return func(link *ChainLink, index int) bool {
+func checkLinkHasResourceName(searchForResourceName string) func(*ChainLinkNode, int) bool {
+	return func(link *ChainLinkNode, index int) bool {
 		return link.ResourceName == searchForResourceName
 	}
 }
@@ -668,12 +668,12 @@ func checkLinkDoesNotHaveParentInPaths(parentResourceName string) func(string, i
 	}
 }
 
-func determineChainLink(existingChainLink *ChainLink, resource *ResourceWithNameAndSelectors) *ChainLink {
-	if existingChainLink != nil {
-		return existingChainLink
+func determineChainLinkNode(existingChainLinkNode *ChainLinkNode, resource *ResourceWithNameAndSelectors) *ChainLinkNode {
+	if existingChainLinkNode != nil {
+		return existingChainLinkNode
 	}
 
-	return &ChainLink{
+	return &ChainLinkNode{
 		ResourceName: resource.Name,
 		Resource:     resource.Resource,
 		// Add selected resources once they have been filtered
@@ -681,8 +681,8 @@ func determineChainLink(existingChainLink *ChainLink, resource *ResourceWithName
 		// For now we'll just prepare an empty slice for each selector key.
 		Selectors:           core.SliceToMapKeys[string](resource.Selectors),
 		LinkImplementations: map[string]provider.Link{},
-		LinksTo:             []*ChainLink{},
-		LinkedFrom:          []*ChainLink{},
+		LinksTo:             []*ChainLinkNode{},
+		LinkedFrom:          []*ChainLinkNode{},
 		Paths:               []string{},
 	}
 }
@@ -699,12 +699,12 @@ type circularLinkInfoItem struct {
 
 func collectCircularLinkInfo(
 	ctx context.Context,
-	chainLink *ChainLink,
+	ChainLinkNode *ChainLinkNode,
 	ancestors []*ancestorLinkInfo,
 	blueprintParams bpcore.BlueprintParams,
 ) ([]*circularLinkInfoItem, error) {
 	collected := []*circularLinkInfoItem{}
-	for _, linkedTo := range chainLink.LinksTo {
+	for _, linkedTo := range ChainLinkNode.LinksTo {
 		linkedToAncestorEntry := core.Find(ancestors, ancestorIsResource(linkedTo.ResourceName))
 
 		if linkedToAncestorEntry != nil {
@@ -715,8 +715,8 @@ func collectCircularLinkInfo(
 				collected = append(
 					collected,
 					&circularLinkInfoItem{
-						err:          errCircularLink(chainLink, linkedTo, isIndirect),
-						resourceName: chainLink.ResourceName,
+						err:          errCircularLink(ChainLinkNode, linkedTo, isIndirect),
+						resourceName: ChainLinkNode.ResourceName,
 					},
 				)
 			} else {
@@ -724,7 +724,7 @@ func collectCircularLinkInfo(
 					collected,
 					&circularLinkInfoItem{
 						err:          nil,
-						resourceName: chainLink.ResourceName,
+						resourceName: ChainLinkNode.ResourceName,
 					},
 				)
 			}
@@ -733,7 +733,7 @@ func collectCircularLinkInfo(
 		// As soon as we reach any kind of circular link, we can't explore any further circular links,
 		// otherwise we'll be infinitely going in circles searching for circular links!
 		if len(linkedTo.LinksTo) > 0 && linkedToAncestorEntry == nil {
-			linkImpl := chainLink.LinkImplementations[linkedTo.ResourceName]
+			linkImpl := ChainLinkNode.LinkImplementations[linkedTo.ResourceName]
 			linkKindOutput, err := linkImpl.GetKind(ctx, &provider.LinkGetKindInput{
 				Params: blueprintParams,
 			})
@@ -782,10 +782,10 @@ func ancestorIsResource(resourceName string) func(*ancestorLinkInfo, int) bool {
 }
 
 func linkNotInList(
-	list []*ChainLink,
+	list []*ChainLinkNode,
 	circularLinkInfoItems []*circularLinkInfoItem,
-) func(*ChainLink, int) bool {
-	return func(link *ChainLink, index int) bool {
+) func(*ChainLinkNode, int) bool {
+	return func(link *ChainLinkNode, index int) bool {
 		circularEntryIndex := core.FindIndex(circularLinkInfoItems, isInCircularLinks(link.ResourceName))
 		return !core.SliceContains(list, link) || circularEntryIndex > -1
 	}
@@ -797,7 +797,7 @@ func isInCircularLinks(resourceName string) func(*circularLinkInfoItem, int) boo
 	}
 }
 
-func buildLinkPaths(link *ChainLink) []string {
+func buildLinkPaths(link *ChainLinkNode) []string {
 	if len(link.Paths) == 0 {
 		return []string{fmt.Sprintf("/%s", link.ResourceName)}
 	}
@@ -812,13 +812,13 @@ func buildLinkPaths(link *ChainLink) []string {
 	return pathsFromCurrentLink
 }
 
-func correctSubChainPaths(linksCleanedFromTopLevel []*ChainLink) {
+func correctSubChainPaths(linksCleanedFromTopLevel []*ChainLinkNode) {
 	for _, subChain := range linksCleanedFromTopLevel {
 		correctChainPaths(subChain.LinksTo, subChain, []string{subChain.ResourceName})
 	}
 }
 
-func correctChainPaths(links []*ChainLink, parent *ChainLink, ancestors []string) {
+func correctChainPaths(links []*ChainLinkNode, parent *ChainLinkNode, ancestors []string) {
 	for _, link := range links {
 		isCycle := core.SliceContainsComparable(ancestors, link.ResourceName)
 		if !isCycle {

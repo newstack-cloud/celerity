@@ -45,7 +45,7 @@ func copyProviderMap(m map[string]provider.Provider) map[string]provider.Provide
 
 func collectLinksFromChain(
 	ctx context.Context,
-	chain *links.ChainLink,
+	chain *links.ChainLinkNode,
 	refChainCollector validation.RefChainCollector,
 ) error {
 	referencedByResourceID := fmt.Sprintf("resources.%s", chain.ResourceName)
@@ -74,7 +74,7 @@ func collectLinksFromChain(
 func collectResourceFromLink(
 	ctx context.Context,
 	refChainCollector validation.RefChainCollector,
-	link *links.ChainLink,
+	link *links.ChainLinkNode,
 	linkKind provider.LinkKind,
 	referencedByResourceID string,
 ) error {
@@ -100,7 +100,7 @@ func collectResourceFromLink(
 
 func alreadyCollected(
 	refChainCollector validation.RefChainCollector,
-	link *links.ChainLink,
+	link *links.ChainLinkNode,
 	referencedByResourceID string,
 ) bool {
 	elementName := fmt.Sprintf("resources.%s", link.ResourceName)
@@ -108,15 +108,15 @@ func alreadyCollected(
 	return collected != nil &&
 		slices.ContainsFunc(
 			collected.ReferencedBy,
-			func(current *validation.ReferenceChain) bool {
+			func(current *validation.ReferenceChainNode) bool {
 				return current.ElementName == referencedByResourceID
 			},
 		)
 }
 
 func getLinkImplementation(
-	linkA *links.ChainLink,
-	linkB *links.ChainLink,
+	linkA *links.ChainLinkNode,
+	linkB *links.ChainLinkNode,
 ) (provider.Link, error) {
 	linkImplementation, hasLinkImplementation := linkA.LinkImplementations[linkB.ResourceName]
 	if !hasLinkImplementation {
@@ -129,4 +129,58 @@ func getLinkImplementation(
 	}
 
 	return linkImplementation, nil
+}
+
+func linkResourceReferences(
+	refChainCollector validation.RefChainCollector,
+	linkA *links.ChainLinkNode,
+	linkB *links.ChainLinkNode,
+) bool {
+	resourceRefA := refChainCollector.Chain(fmt.Sprintf("resources.%s", linkA.ResourceName))
+	resourceRefB := refChainCollector.Chain(fmt.Sprintf("resources.%s", linkB.ResourceName))
+
+	if resourceRefA == nil || resourceRefB == nil {
+		return false
+	}
+
+	return referencesResourceOrDescendants(resourceRefA.ElementName, resourceRefA.References, resourceRefB)
+}
+
+func referencesResourceOrDescendants(
+	referencedByElementName string,
+	searchIn []*validation.ReferenceChainNode,
+	searchFor *validation.ReferenceChainNode,
+) bool {
+	if len(searchIn) == 0 || searchFor == nil {
+		return false
+	}
+
+	if slices.ContainsFunc(searchIn, compareElementNameForSubRef(referencedByElementName, searchFor)) {
+		return true
+	}
+
+	for _, childSearchFor := range searchFor.References {
+		if referencesResourceOrDescendants(referencedByElementName, searchIn, childSearchFor) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func compareElementNameForSubRef(referencedByElementName string, searchFor *validation.ReferenceChainNode) func(*validation.ReferenceChainNode) bool {
+	return func(current *validation.ReferenceChainNode) bool {
+		return current.ElementName == searchFor.ElementName &&
+			// Only match if the reference has a "subRef:{referencedFrom}" tag.
+			// Links are collected to combine cycle detection logic for
+			// links and references during the validation phase.
+			// Tags are used to differentiate between the two.
+			slices.Contains(searchFor.Tags, fmt.Sprintf("subRef:%s", referencedByElementName))
+	}
+}
+
+func isResourceAncestor(resourceName string) func(string, int) bool {
+	return func(path string, index int) bool {
+		return strings.Contains(path, fmt.Sprintf("/%s", resourceName))
+	}
 }

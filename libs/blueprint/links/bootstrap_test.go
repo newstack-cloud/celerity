@@ -1612,7 +1612,7 @@ func (l *testLambdaStratosIAMRoleLink) Deploy(
 
 // Provides a version of a chain link purely for snapshot tests.
 // this simplifies the linked from references to a slice of resource names.
-type snapshotChainLink struct {
+type snapshotChainLinkNode struct {
 	// ResourceName is the unique name in the spec for the current
 	// resource in the chain.
 	ResourceName string
@@ -1630,7 +1630,7 @@ type snapshotChainLink struct {
 	LinkImplementations map[string]provider.Link
 	// LinksTo holds the chain link nodes for the resources
 	// that the curent resource links to.
-	LinksTo []*snapshotChainLink
+	LinksTo []*snapshotChainLinkNode
 	// LinkedFrom holds the resource names for the chain link nodes that link to the current resource.
 	// This information is important to allow backtracking when the blueprint container
 	// is deciding the order in which resources should be deployed.

@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-// ReferenceChain provides a node in a chain of references that contains the name
+// ReferenceChainNode provides a node in a chain of references that contains the name
 // of the current element in the chain.
-type ReferenceChain struct {
+type ReferenceChainNode struct {
 	// ElementName is the unique name in the spec for the current
 	// element in the chain.
 	ElementName string
@@ -15,9 +15,9 @@ type ReferenceChain struct {
 	Element interface{}
 	// References holds the references that the current element makes to other elements
 	// in the blueprint.
-	References []*ReferenceChain
+	References []*ReferenceChainNode
 	// ReferencedBy holds the references that other elements make to the current element.
-	ReferencedBy []*ReferenceChain
+	ReferencedBy []*ReferenceChainNode
 	// Paths holds all the different "routes" to get to the current element in a set of chains.
 	// These are known as materialised paths in the context of tree data structures.
 	// Having this information here allows us to efficiently find out if
@@ -39,23 +39,23 @@ type RefChainCollector interface {
 	// and other use cases.
 	Collect(elementName string, element interface{}, referencedBy string, tags []string) error
 	// Chain returns the reference chain node for the given element name.
-	Chain(elementName string) *ReferenceChain
+	Chain(elementName string) *ReferenceChainNode
 	// FindCircularReferences returns a list of reference chain nodes for which there are
 	// cycles.
-	FindCircularReferences() []*ReferenceChain
+	FindCircularReferences() []*ReferenceChainNode
 }
 
 type refChainCollectorImpl struct {
-	chains []*ReferenceChain
-	refMap map[string]*ReferenceChain
+	chains []*ReferenceChainNode
+	refMap map[string]*ReferenceChainNode
 }
 
 // NewRefChainCollector creates a new instance of the default
 // reference chain collector implementation.
 func NewRefChainCollector() RefChainCollector {
 	return &refChainCollectorImpl{
-		chains: []*ReferenceChain{},
-		refMap: map[string]*ReferenceChain{},
+		chains: []*ReferenceChainNode{},
+		refMap: map[string]*ReferenceChainNode{},
 	}
 }
 
@@ -73,19 +73,19 @@ func (s *refChainCollectorImpl) Collect(elementName string, element interface{},
 	return nil
 }
 
-func (s *refChainCollectorImpl) FindCircularReferences() []*ReferenceChain {
-	circularRefs := []*ReferenceChain{}
+func (s *refChainCollectorImpl) FindCircularReferences() []*ReferenceChainNode {
+	circularRefs := []*ReferenceChainNode{}
 	s.cleanupChains()
 	findCycles(s.chains, &circularRefs)
 	return circularRefs
 }
 
-func (s *refChainCollectorImpl) Chain(elementName string) *ReferenceChain {
+func (s *refChainCollectorImpl) Chain(elementName string) *ReferenceChainNode {
 	return s.refMap[elementName]
 }
 
 func (s *refChainCollectorImpl) cleanupChains() {
-	newChains := []*ReferenceChain{}
+	newChains := []*ReferenceChainNode{}
 	for _, chain := range s.chains {
 		if chain.Element == nil {
 			// Remove placeholder chains that were added for elements that were
@@ -103,18 +103,18 @@ func (s *refChainCollectorImpl) createOrUpdateChain(
 	element interface{},
 	referencedBy string,
 	tags []string,
-) (*ReferenceChain, bool, error) {
+) (*ReferenceChainNode, bool, error) {
 
 	elementChain, elementChainExists := s.refMap[elementName]
 	if !elementChainExists {
-		elementChain = &ReferenceChain{
+		elementChain = &ReferenceChainNode{
 			ElementName: elementName,
 			Element:     element,
 			Tags:        tags,
 		}
 	}
 
-	var parent *ReferenceChain
+	var parent *ReferenceChainNode
 	addedToExistingParent := false
 	if existingParent, parentExists := s.refMap[referencedBy]; referencedBy != "" && parentExists {
 		parent = existingParent
@@ -122,7 +122,7 @@ func (s *refChainCollectorImpl) createOrUpdateChain(
 	} else if referencedBy != "" && !parentExists {
 		// Add a placeholder for the parent, parents with nil elements will be cleaned up
 		// as a part of the cycle detection process when FindCircularReferences is called.
-		parent = &ReferenceChain{
+		parent = &ReferenceChainNode{
 			ElementName: referencedBy,
 		}
 		s.chains = append(s.chains, parent)
@@ -145,13 +145,13 @@ func (s *refChainCollectorImpl) createOrUpdateChain(
 	return elementChain, addedToExistingParent, nil
 }
 
-func updatePathsForReferencedElements(elementChain *ReferenceChain) {
+func updatePathsForReferencedElements(elementChain *ReferenceChainNode) {
 	for _, reference := range elementChain.References {
 		addParentPaths(reference, elementChain)
 	}
 }
 
-func addParentPaths(elementChain *ReferenceChain, parent *ReferenceChain) {
+func addParentPaths(elementChain *ReferenceChainNode, parent *ReferenceChainNode) {
 	for _, path := range parent.Paths {
 		elementChain.Paths = append(elementChain.Paths, fmt.Sprintf("%s/%s", path, elementChain.ElementName))
 	}
@@ -160,7 +160,7 @@ func addParentPaths(elementChain *ReferenceChain, parent *ReferenceChain) {
 	}
 }
 
-func findCycles(chains []*ReferenceChain, chainsWithCycle *[]*ReferenceChain) {
+func findCycles(chains []*ReferenceChainNode, chainsWithCycle *[]*ReferenceChainNode) {
 	for _, chain := range chains {
 		// As soon as a cycle is found in a chain, we'll capture the node
 		// and move on to the next independent chain.
@@ -176,7 +176,7 @@ func findCycles(chains []*ReferenceChain, chainsWithCycle *[]*ReferenceChain) {
 	}
 }
 
-func hasCyclicPath(chain *ReferenceChain) bool {
+func hasCyclicPath(chain *ReferenceChainNode) bool {
 	foundPathWithCycle := false
 	i := 0
 	for !foundPathWithCycle && i < len(chain.Paths) {
@@ -188,7 +188,7 @@ func hasCyclicPath(chain *ReferenceChain) bool {
 	return foundPathWithCycle
 }
 
-func hasChain(chains []*ReferenceChain, chain *ReferenceChain) bool {
+func hasChain(chains []*ReferenceChainNode, chain *ReferenceChainNode) bool {
 	hasChain := false
 	i := 0
 	for !hasChain && i < len(chains) {

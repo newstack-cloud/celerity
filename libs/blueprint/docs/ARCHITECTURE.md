@@ -135,7 +135,7 @@ The library comes with a default blueprint container that should meet all your n
 ```go
 type SpecLinkInfo interface {
 
-    Links(ctx context.Context) ([]*ChainLink, error)
+    Links(ctx context.Context) ([]*ChainLinkNode, error)
 
     Warnings(ctx context.Context) ([]string, error)
 }

@@ -1,5 +1,5 @@
-([]*links.snapshotChainLink) (len=3) {
-  (*links.snapshotChainLink)({
+([]*links.snapshotChainLinkNode) (len=3) {
+  (*links.snapshotChainLinkNode)({
     ResourceName: (string) (len=8) "orderApi",
     Resource: (*schema.Resource)({
       Type: (*schema.ResourceTypeWrapper)({
@@ -45,8 +45,8 @@
       (string) (len=17) "getOrdersFunction": (*links.testApiGatewayLambdaLink)({
       })
     },
-    LinksTo: ([]*links.snapshotChainLink) (len=2) {
-      (*links.snapshotChainLink)({
+    LinksTo: ([]*links.snapshotChainLinkNode) (len=2) {
+      (*links.snapshotChainLinkNode)({
         ResourceName: (string) (len=19) "createOrderFunction",
         Resource: (*schema.Resource)({
           Type: (*schema.ResourceTypeWrapper)({
@@ -89,8 +89,8 @@
           (string) (len=11) "ordersTable": (*links.testLambdaDynamoDBTableLink)({
           })
         },
-        LinksTo: ([]*links.snapshotChainLink) (len=1) {
-          (*links.snapshotChainLink)({
+        LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+          (*links.snapshotChainLinkNode)({
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
               Type: (*schema.ResourceTypeWrapper)({
@@ -133,8 +133,8 @@
               (string) (len=12) "ordersStream": (*links.testDynamoDBTableStreamLink)({
               })
             },
-            LinksTo: ([]*links.snapshotChainLink) (len=1) {
-              (*links.snapshotChainLink)({
+            LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+              (*links.snapshotChainLinkNode)({
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
                   Type: (*schema.ResourceTypeWrapper)({
@@ -177,8 +177,8 @@
                   (string) (len=24) "statsAccumulatorFunction": (*links.testDynamoDBStreamLambdaLink)({
                   })
                 },
-                LinksTo: ([]*links.snapshotChainLink) (len=1) {
-                  (*links.snapshotChainLink)({
+                LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+                  (*links.snapshotChainLinkNode)({
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
                       Type: (*schema.ResourceTypeWrapper)({
@@ -208,7 +208,7 @@
                     },
                     LinkImplementations: (map[string]provider.Link) {
                     },
-                    LinksTo: ([]*links.snapshotChainLink) {
+                    LinksTo: ([]*links.snapshotChainLinkNode) {
                     },
                     LinkedFrom: ([]string) (len=1) {
                       (string) (len=12) "ordersStream"
@@ -249,7 +249,7 @@
           (string) (len=9) "/orderApi"
         }
       }),
-      (*links.snapshotChainLink)({
+      (*links.snapshotChainLinkNode)({
         ResourceName: (string) (len=17) "getOrdersFunction",
         Resource: (*schema.Resource)({
           Type: (*schema.ResourceTypeWrapper)({
@@ -292,8 +292,8 @@
           (string) (len=11) "ordersTable": (*links.testLambdaDynamoDBTableLink)({
           })
         },
-        LinksTo: ([]*links.snapshotChainLink) (len=1) {
-          (*links.snapshotChainLink)({
+        LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+          (*links.snapshotChainLinkNode)({
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
               Type: (*schema.ResourceTypeWrapper)({
@@ -336,8 +336,8 @@
               (string) (len=12) "ordersStream": (*links.testDynamoDBTableStreamLink)({
               })
             },
-            LinksTo: ([]*links.snapshotChainLink) (len=1) {
-              (*links.snapshotChainLink)({
+            LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+              (*links.snapshotChainLinkNode)({
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
                   Type: (*schema.ResourceTypeWrapper)({
@@ -380,8 +380,8 @@
                   (string) (len=24) "statsAccumulatorFunction": (*links.testDynamoDBStreamLambdaLink)({
                   })
                 },
-                LinksTo: ([]*links.snapshotChainLink) (len=1) {
-                  (*links.snapshotChainLink)({
+                LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+                  (*links.snapshotChainLinkNode)({
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
                       Type: (*schema.ResourceTypeWrapper)({
@@ -411,7 +411,7 @@
                     },
                     LinkImplementations: (map[string]provider.Link) {
                     },
-                    LinksTo: ([]*links.snapshotChainLink) {
+                    LinksTo: ([]*links.snapshotChainLinkNode) {
                     },
                     LinkedFrom: ([]string) (len=1) {
                       (string) (len=12) "ordersStream"
@@ -458,7 +458,7 @@
     Paths: ([]string) {
     }
   }),
-  (*links.snapshotChainLink)({
+  (*links.snapshotChainLinkNode)({
     ResourceName: (string) (len=10) "orderQueue",
     Resource: (*schema.Resource)({
       Type: (*schema.ResourceTypeWrapper)({
@@ -501,8 +501,8 @@
       (string) (len=21) "processOrdersFunction": (*links.testSQSQueueLambdaLink)({
       })
     },
-    LinksTo: ([]*links.snapshotChainLink) (len=1) {
-      (*links.snapshotChainLink)({
+    LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+      (*links.snapshotChainLinkNode)({
         ResourceName: (string) (len=21) "processOrdersFunction",
         Resource: (*schema.Resource)({
           Type: (*schema.ResourceTypeWrapper)({
@@ -545,8 +545,8 @@
           (string) (len=11) "ordersTable": (*links.testLambdaDynamoDBTableLink)({
           })
         },
-        LinksTo: ([]*links.snapshotChainLink) (len=1) {
-          (*links.snapshotChainLink)({
+        LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+          (*links.snapshotChainLinkNode)({
             ResourceName: (string) (len=11) "ordersTable",
             Resource: (*schema.Resource)({
               Type: (*schema.ResourceTypeWrapper)({
@@ -589,8 +589,8 @@
               (string) (len=12) "ordersStream": (*links.testDynamoDBTableStreamLink)({
               })
             },
-            LinksTo: ([]*links.snapshotChainLink) (len=1) {
-              (*links.snapshotChainLink)({
+            LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+              (*links.snapshotChainLinkNode)({
                 ResourceName: (string) (len=12) "ordersStream",
                 Resource: (*schema.Resource)({
                   Type: (*schema.ResourceTypeWrapper)({
@@ -633,8 +633,8 @@
                   (string) (len=24) "statsAccumulatorFunction": (*links.testDynamoDBStreamLambdaLink)({
                   })
                 },
-                LinksTo: ([]*links.snapshotChainLink) (len=1) {
-                  (*links.snapshotChainLink)({
+                LinksTo: ([]*links.snapshotChainLinkNode) (len=1) {
+                  (*links.snapshotChainLinkNode)({
                     ResourceName: (string) (len=24) "statsAccumulatorFunction",
                     Resource: (*schema.Resource)({
                       Type: (*schema.ResourceTypeWrapper)({
@@ -664,7 +664,7 @@
                     },
                     LinkImplementations: (map[string]provider.Link) {
                     },
-                    LinksTo: ([]*links.snapshotChainLink) {
+                    LinksTo: ([]*links.snapshotChainLinkNode) {
                     },
                     LinkedFrom: ([]string) (len=1) {
                       (string) (len=12) "ordersStream"
@@ -711,7 +711,7 @@
     Paths: ([]string) {
     }
   }),
-  (*links.snapshotChainLink)({
+  (*links.snapshotChainLinkNode)({
     ResourceName: (string) (len=14) "standaloneRole",
     Resource: (*schema.Resource)({
       Type: (*schema.ResourceTypeWrapper)({
@@ -736,7 +736,7 @@
     },
     LinkImplementations: (map[string]provider.Link) {
     },
-    LinksTo: ([]*links.snapshotChainLink) {
+    LinksTo: ([]*links.snapshotChainLinkNode) {
     },
     LinkedFrom: ([]string) {
     },

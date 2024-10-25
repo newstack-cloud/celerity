@@ -225,59 +225,59 @@ func (s *SpecLinkInfoTestSuite) Test_get_link_warnings_from_spec_for_a_blueprint
 // Also, to simplify the structure that is snapshotted we will convert linked from references to strings
 // containing resource names. This will resolve false negatives in snapshot failure and make it easier to read
 // the snapshots.
-func normaliseForSnapshot(chains []*ChainLink, ancestors []string) []*snapshotChainLink {
-	orderedChainLinks := append([]*ChainLink{}, chains...)
-	sort.SliceStable(orderedChainLinks, func(i, j int) bool {
-		return orderedChainLinks[i].ResourceName < orderedChainLinks[j].ResourceName
+func normaliseForSnapshot(chains []*ChainLinkNode, ancestors []string) []*snapshotChainLinkNode {
+	orderedChainLinkNodes := append([]*ChainLinkNode{}, chains...)
+	sort.SliceStable(orderedChainLinkNodes, func(i, j int) bool {
+		return orderedChainLinkNodes[i].ResourceName < orderedChainLinkNodes[j].ResourceName
 	})
-	ssChainLinks := []*snapshotChainLink{}
-	for _, chainLink := range orderedChainLinks {
+	ssChainLinkNodes := []*snapshotChainLinkNode{}
+	for _, chainLinkNode := range orderedChainLinkNodes {
 
-		ssChainLink := &snapshotChainLink{
-			ResourceName:        chainLink.ResourceName,
-			Selectors:           chainLink.Selectors,
-			LinkImplementations: chainLink.LinkImplementations,
-			Resource:            chainLink.Resource,
-			Paths:               chainLink.Paths,
+		ssChainLinkNode := &snapshotChainLinkNode{
+			ResourceName:        chainLinkNode.ResourceName,
+			Selectors:           chainLinkNode.Selectors,
+			LinkImplementations: chainLinkNode.LinkImplementations,
+			Resource:            chainLinkNode.Resource,
+			Paths:               chainLinkNode.Paths,
 		}
-		sort.Strings(ssChainLink.Paths)
+		sort.Strings(ssChainLinkNode.Paths)
 		// Prevent infinite loops/stack overflows when normalising chains
 		// with circular links.
-		if !core.SliceContainsComparable(ancestors, chainLink.ResourceName) {
-			ssChainLink.LinksTo = normaliseForSnapshot(chainLink.LinksTo, append(ancestors, chainLink.ResourceName))
+		if !core.SliceContainsComparable(ancestors, chainLinkNode.ResourceName) {
+			ssChainLinkNode.LinksTo = normaliseForSnapshot(chainLinkNode.LinksTo, append(ancestors, chainLinkNode.ResourceName))
 		} else {
 			// To avoid going in circles, we'll create copies of the linked to
 			// items only containing resource names for the purpose of snapshots.
-			ssChainLink.LinksTo = createCycleStubsForSnapshot(chainLink.LinksTo)
+			ssChainLinkNode.LinksTo = createCycleStubsForSnapshot(chainLinkNode.LinksTo)
 		}
-		ssChainLink.LinkedFrom = core.Map(
-			chainLink.LinkedFrom,
-			func(linkedFrom *ChainLink, _ int) string {
+		ssChainLinkNode.LinkedFrom = core.Map(
+			chainLinkNode.LinkedFrom,
+			func(linkedFrom *ChainLinkNode, _ int) string {
 				return linkedFrom.ResourceName
 			},
 		)
-		sort.Strings(ssChainLink.LinkedFrom)
-		for selectorKey, selectedResources := range chainLink.Selectors {
+		sort.Strings(ssChainLinkNode.LinkedFrom)
+		for selectorKey, selectedResources := range chainLinkNode.Selectors {
 			sort.Strings(selectedResources)
-			chainLink.Selectors[selectorKey] = selectedResources
+			chainLinkNode.Selectors[selectorKey] = selectedResources
 		}
-		ssChainLinks = append(ssChainLinks, ssChainLink)
+		ssChainLinkNodes = append(ssChainLinkNodes, ssChainLinkNode)
 	}
 
-	return ssChainLinks
+	return ssChainLinkNodes
 }
 
-func createCycleStubsForSnapshot(links []*ChainLink) []*snapshotChainLink {
-	cycleStubs := []*snapshotChainLink{}
+func createCycleStubsForSnapshot(links []*ChainLinkNode) []*snapshotChainLinkNode {
+	cycleStubs := []*snapshotChainLinkNode{}
 	for _, link := range links {
-		cycleStubs = append(cycleStubs, &snapshotChainLink{
+		cycleStubs = append(cycleStubs, &snapshotChainLinkNode{
 			ResourceName: fmt.Sprintf("%s-cycleStub", link.ResourceName),
 		})
 	}
 	return cycleStubs
 }
 
-func circularLinksApproximateSnapshotSchema5(ssChainLinks []*snapshotChainLink) error {
+func circularLinksApproximateSnapshotSchema5(ssChainLinkNodes []*snapshotChainLinkNode) error {
 	possiblePaths := map[string]interface{}{
 		"statsRetrieverFunction": map[string]interface{}{
 			"lambdaExecutionRole": map[string]interface{}{
@@ -312,27 +312,27 @@ func circularLinksApproximateSnapshotSchema5(ssChainLinks []*snapshotChainLink) 
 		},
 	}
 
-	if len(ssChainLinks) != 2 {
-		return fmt.Errorf("expected 2 top-level chains, found %d", len(ssChainLinks))
+	if len(ssChainLinkNodes) != 2 {
+		return fmt.Errorf("expected 2 top-level chains, found %d", len(ssChainLinkNodes))
 	}
 
-	for _, ssChainLink := range ssChainLinks {
-		chainLinkError := followPaths(ssChainLink, possiblePaths)
-		if chainLinkError != nil {
-			return chainLinkError
+	for _, ssChainLinkNode := range ssChainLinkNodes {
+		ChainLinkNodeError := followPaths(ssChainLinkNode, possiblePaths)
+		if ChainLinkNodeError != nil {
+			return ChainLinkNodeError
 		}
 	}
 
 	return nil
 }
 
-func followPaths(ssChainLink *snapshotChainLink, possiblePaths interface{}) error {
+func followPaths(ssChainLinkNode *snapshotChainLinkNode, possiblePaths interface{}) error {
 	possiblePathsStr, isTerminal := possiblePaths.(string)
 	if isTerminal {
-		if ssChainLink.ResourceName != possiblePathsStr {
+		if ssChainLinkNode.ResourceName != possiblePathsStr {
 			return fmt.Errorf(
 				"%s is not the expected cycle stub \"%s\"",
-				ssChainLink.ResourceName,
+				ssChainLinkNode.ResourceName,
 				possiblePathsStr,
 			)
 		}
@@ -341,11 +341,11 @@ func followPaths(ssChainLink *snapshotChainLink, possiblePaths interface{}) erro
 
 	mapping, isMap := possiblePaths.(map[string]interface{})
 	if isMap {
-		nextLevelPath, hasNextLevelPath := mapping[ssChainLink.ResourceName]
+		nextLevelPath, hasNextLevelPath := mapping[ssChainLinkNode.ResourceName]
 		if !hasNextLevelPath {
-			return fmt.Errorf("%s is not an expected resource in possible paths", ssChainLink.ResourceName)
+			return fmt.Errorf("%s is not an expected resource in possible paths", ssChainLinkNode.ResourceName)
 		}
-		return followPaths(ssChainLink.LinksTo[0], nextLevelPath)
+		return followPaths(ssChainLinkNode.LinksTo[0], nextLevelPath)
 	}
 
 	return errors.New("unexpected possiblePaths type provided")

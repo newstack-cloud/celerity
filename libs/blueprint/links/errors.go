@@ -9,8 +9,8 @@ type LinkError struct {
 	Err          error
 	FromResource *ResourceWithNameAndSelectors
 	ToResource   *ResourceWithNameAndSelectors
-	FromLink     *ChainLink
-	ToLink       *ChainLink
+	FromLink     *ChainLinkNode
+	ToLink       *ChainLinkNode
 	ChildErrors  []error
 }
 
@@ -70,8 +70,8 @@ func errCircularLinks(circularLinkErrors []error) error {
 }
 
 func errCircularLink(
-	linkFrom *ChainLink,
-	linkTo *ChainLink,
+	linkFrom *ChainLinkNode,
+	linkTo *ChainLinkNode,
 	indirect bool,
 ) error {
 	linkType := "direct"

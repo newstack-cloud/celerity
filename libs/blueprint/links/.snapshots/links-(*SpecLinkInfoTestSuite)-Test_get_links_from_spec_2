@@ -1,5 +1,5 @@
-([]*links.snapshotChainLink) (len=3) {
-  (*links.snapshotChainLink)({
+([]*links.snapshotChainLinkNode) (len=3) {
+  (*links.snapshotChainLinkNode)({
     ResourceName: (string) (len=20) "exchangeRateFunction",
     Resource: (*schema.Resource)({
       Type: (*schema.ResourceTypeWrapper)({
@@ -29,14 +29,14 @@
     },
     LinkImplementations: (map[string]provider.Link) {
     },
-    LinksTo: ([]*links.snapshotChainLink) {
+    LinksTo: ([]*links.snapshotChainLinkNode) {
     },
     LinkedFrom: ([]string) {
     },
     Paths: ([]string) {
     }
   }),
-  (*links.snapshotChainLink)({
+  (*links.snapshotChainLinkNode)({
     ResourceName: (string) (len=28) "refreshExchangeRatesFunction",
     Resource: (*schema.Resource)({
       Type: (*schema.ResourceTypeWrapper)({
@@ -66,14 +66,14 @@
     },
     LinkImplementations: (map[string]provider.Link) {
     },
-    LinksTo: ([]*links.snapshotChainLink) {
+    LinksTo: ([]*links.snapshotChainLinkNode) {
     },
     LinkedFrom: ([]string) {
     },
     Paths: ([]string) {
     }
   }),
-  (*links.snapshotChainLink)({
+  (*links.snapshotChainLinkNode)({
     ResourceName: (string) (len=15) "standaloneRole2",
     Resource: (*schema.Resource)({
       Type: (*schema.ResourceTypeWrapper)({
@@ -98,7 +98,7 @@
     },
     LinkImplementations: (map[string]provider.Link) {
     },
-    LinksTo: ([]*links.snapshotChainLink) {
+    LinksTo: ([]*links.snapshotChainLinkNode) {
     },
     LinkedFrom: ([]string) {
     },

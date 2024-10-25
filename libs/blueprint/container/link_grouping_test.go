@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -9,169 +10,134 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
-	"github.com/two-hundred/celerity/libs/common/core"
 )
 
-type OrderingTestSuite struct {
-	orderFixture1 orderChainLinkNodeFixture
-	orderFixture2 orderChainLinkNodeFixture
-	orderFixture3 orderChainLinkNodeFixture
+type GroupOrderedLinkNodesTestSuite struct {
+	groupFixture1 groupChainLinkNodeFixture
+	groupFixture2 groupChainLinkNodeFixture
+	groupFixture3 groupChainLinkNodeFixture
 	suite.Suite
 }
 
-type orderChainLinkNodeFixture struct {
-	inputChains       []*links.ChainLinkNode
+type groupChainLinkNodeFixture struct {
+	orderedLinkNodes  []*links.ChainLinkNode
 	refChainCollector validation.RefChainCollector
-	// All the resource names that are expected to be present
-	// in the ordered flattened list of links (resources)
-	// to be deployed.
-	expectedPresent []string
-	// A two-dimensional slice of resources with hard links that must
-	// come in the provided order, it doesn't matter what the exact
-	// positions in the list they are as long as they are in the given order.
-	orderedExpected [][]string
+	// All the resource names that are expected to be in each group.
+	// The order of the groups matter but the order of the resources
+	// in each group doesn't.
+	expectedPresent [][]string
 }
 
-func (s *OrderingTestSuite) SetupSuite() {
-	orderFixture1, err := orderFixture1()
+func (s *GroupOrderedLinkNodesTestSuite) SetupSuite() {
+	groupFixture1, err := groupFixture1()
 	if err != nil {
 		s.FailNow(err.Error())
 	}
-	s.orderFixture1 = orderFixture1
+	s.groupFixture1 = groupFixture1
 
-	orderFixture2, err := orderFixture2()
+	groupFixture2, err := groupFixture2()
 	if err != nil {
 		s.FailNow(err.Error())
 	}
-	s.orderFixture2 = orderFixture2
+	s.groupFixture2 = groupFixture2
 
-	orderFixture3, err := orderFixture3()
+	groupFixture3, err := groupFixture3()
 	if err != nil {
 		s.FailNow(err.Error())
 	}
-	s.orderFixture3 = orderFixture3
+	s.groupFixture3 = groupFixture3
 }
 
-func (s *OrderingTestSuite) Test_order_links_for_deployment_with_circular_links() {
-	orderedLinks, err := OrderLinksForDeployment(
+func (s *GroupOrderedLinkNodesTestSuite) Test_group_links_for_deployment_with_circular_links() {
+	groups, err := GroupOrderedLinkNodes(
 		context.TODO(),
-		s.orderFixture1.inputChains,
-		s.orderFixture1.refChainCollector,
+		s.groupFixture1.orderedLinkNodes,
+		s.groupFixture1.refChainCollector,
 		nil,
 	)
 	s.Assert().NoError(err)
-	s.Assert().Len(orderedLinks, len(s.orderFixture1.expectedPresent))
-	s.Assert().Len(
-		core.Filter(
-			orderedLinks,
-			inExpected(s.orderFixture1.expectedPresent),
-		),
-		len(s.orderFixture1.expectedPresent),
-	)
+	s.Assert().Len(groups, len(s.groupFixture1.expectedPresent))
 
-	for _, orderedExpectedSet := range s.orderFixture1.orderedExpected {
-		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
-	}
+	s.assertExpectedGroups(groups, s.groupFixture1.expectedPresent)
 }
 
-func (s *OrderingTestSuite) Test_order_links_for_deployment_without_circular_links() {
-	orderedLinks, err := OrderLinksForDeployment(
+func (s *GroupOrderedLinkNodesTestSuite) Test_group_links_for_deployment_without_circular_links() {
+	groups, err := GroupOrderedLinkNodes(
 		context.TODO(),
-		s.orderFixture2.inputChains,
-		s.orderFixture2.refChainCollector,
+		s.groupFixture2.orderedLinkNodes,
+		s.groupFixture2.refChainCollector,
 		nil,
 	)
 	s.Assert().NoError(err)
-	s.Assert().Len(orderedLinks, len(s.orderFixture2.expectedPresent))
-	s.Assert().Len(
-		core.Filter(
-			orderedLinks,
-			inExpected(s.orderFixture2.expectedPresent),
-		),
-		len(s.orderFixture2.expectedPresent),
-	)
+	s.Assert().Len(groups, len(s.groupFixture2.expectedPresent))
 
-	for _, orderedExpectedSet := range s.orderFixture2.orderedExpected {
-		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
-	}
+	s.assertExpectedGroups(groups, s.groupFixture2.expectedPresent)
 }
 
-func (s *OrderingTestSuite) Test_order_links_based_on_references() {
-	orderedLinks, err := OrderLinksForDeployment(
+func (s *GroupOrderedLinkNodesTestSuite) Test_group_links_for_deployment_based_on_references() {
+	groups, err := GroupOrderedLinkNodes(
 		context.TODO(),
-		s.orderFixture3.inputChains,
-		s.orderFixture3.refChainCollector,
+		s.groupFixture3.orderedLinkNodes,
+		s.groupFixture3.refChainCollector,
 		nil,
 	)
 	s.Assert().NoError(err)
-	s.Assert().Len(orderedLinks, len(s.orderFixture3.expectedPresent))
-	s.Assert().Len(
-		core.Filter(
-			orderedLinks,
-			inExpected(s.orderFixture3.expectedPresent),
-		),
-		len(s.orderFixture3.expectedPresent),
-	)
+	s.Assert().Len(groups, len(s.groupFixture3.expectedPresent))
 
-	for _, orderedExpectedSet := range s.orderFixture3.orderedExpected {
-		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
-	}
+	s.assertExpectedGroups(groups, s.groupFixture3.expectedPresent)
 }
 
-func (s *OrderingTestSuite) assertOrderedExpected(actual []*links.ChainLinkNode, orderedExpected []string) {
-	expectedItemsInOrder := core.Filter(actual, inExpected(orderedExpected))
-	inOrder := true
-	i := 0
-	var linkA *links.ChainLinkNode
-	var linkB *links.ChainLinkNode
-
-	for inOrder && i < len(expectedItemsInOrder) {
-		if i+1 < len(expectedItemsInOrder) {
-			linkA = expectedItemsInOrder[i]
-			linkB = expectedItemsInOrder[i+1]
-			inOrder = linkA.ResourceName == orderedExpected[i] && linkB.ResourceName == orderedExpected[i+1]
+func (s *GroupOrderedLinkNodesTestSuite) assertExpectedGroups(
+	groups [][]*links.ChainLinkNode,
+	expectedPresent [][]string,
+) {
+	for i, group := range groups {
+		expectedGroupNames := expectedPresent[i]
+		expectedGroupNamesNormalised := []string{}
+		copy(expectedGroupNamesNormalised, expectedGroupNames)
+		groupNormalised := []string{}
+		for _, node := range group {
+			groupNormalised = append(groupNormalised, node.ResourceName)
 		}
-		i += 2
-	}
+		slices.Sort(groupNormalised)
+		slices.Sort(expectedGroupNames)
+		s.Assert().Equal(expectedGroupNames, groupNormalised)
 
-	if !inOrder {
-		s.Failf("incorrect order", "expected \"%s\" to come before \"%s\"", linkB.ResourceName, linkA.ResourceName)
-	}
-}
-
-func inExpected(expectedResourceNames []string) func(*links.ChainLinkNode, int) bool {
-	return func(currentLink *links.ChainLinkNode, index int) bool {
-		return core.SliceContainsComparable(expectedResourceNames, currentLink.ResourceName)
 	}
 }
 
-var testProviderImpl = newTestAWSProvider()
+var testGroupProviderImpl = newTestAWSProvider()
 
-func orderFixture1() (orderChainLinkNodeFixture, error) {
-	var inputChains = orderFixture1Chains()
-	refChainCollector, err := orderFixture1RefChains(inputChains)
+func groupFixture1() (groupChainLinkNodeFixture, error) {
+	var orderedLinkNodes = groupFixture1Chains()
+	refChainCollector, err := groupFixture1RefChains(orderedLinkNodes)
 	if err != nil {
-		return orderChainLinkNodeFixture{}, err
+		return groupChainLinkNodeFixture{}, err
 	}
 
-	return orderChainLinkNodeFixture{
-		inputChains:       inputChains,
+	return groupChainLinkNodeFixture{
+		orderedLinkNodes:  orderedLinkNodes,
 		refChainCollector: refChainCollector,
-		expectedPresent: []string{
-			"orderApi",
-			"getOrdersFunction",
-			"createOrderFunction",
-			"updateOrderFunction",
-			"ordersTable",
-			"ordersStream",
-			"statsAccumulatorFunction",
+		expectedPresent: [][]string{
+			{
+				"orderApi",
+				"ordersTable",
+			},
+			{
+				"ordersStream",
+				"getOrdersFunction",
+				"createOrderFunction",
+				"updateOrderFunction",
+				// The link between statsAccumulatorFunction and ordersStream
+				// is a soft link in the test provider so they can be resolved concurrently.
+				"statsAccumulatorFunction",
+			},
 		},
-		orderedExpected: [][]string{{"ordersTable", "ordersStream"}},
 	}, nil
 }
 
-func orderFixture1Chains() []*links.ChainLinkNode {
-	apiGatewayLambdaLinkImpl, _ := testProviderImpl.Link(context.TODO(), "aws/apigateway/api", "aws/lambda/function")
+func groupFixture1Chains() []*links.ChainLinkNode {
+	apiGatewayLambdaLinkImpl, _ := testGroupProviderImpl.Link(context.TODO(), "aws/apigateway/api", "aws/lambda/function")
 	orderApi := &links.ChainLinkNode{
 		ResourceName: "orderApi",
 		Resource: &schema.Resource{
@@ -264,6 +230,9 @@ func orderFixture1Chains() []*links.ChainLinkNode {
 			"statsAccumulatorFunction": dynamoDBStreamLambdaLink,
 		},
 		LinkedFrom: []*links.ChainLinkNode{
+			getOrdersFunction,
+			createOrderFunction,
+			updateOrderFunction,
 			ordersTable,
 		},
 		LinksTo: []*links.ChainLinkNode{},
@@ -314,10 +283,16 @@ func orderFixture1Chains() []*links.ChainLinkNode {
 
 	return []*links.ChainLinkNode{
 		orderApi,
+		ordersTable,
+		ordersStream,
+		getOrdersFunction,
+		createOrderFunction,
+		updateOrderFunction,
+		statsAccumulatorFunction,
 	}
 }
 
-func orderFixture1RefChains(
+func groupFixture1RefChains(
 	linkChains []*links.ChainLinkNode,
 ) (validation.RefChainCollector, error) {
 	collector := validation.NewRefChainCollector()
@@ -338,36 +313,35 @@ func orderFixture1RefChains(
 	return collector, nil
 }
 
-func orderFixture2() (orderChainLinkNodeFixture, error) {
-	var inputChains = orderFixture2Chain()
-	refChainCollector, err := orderFixture2RefChains(inputChains)
+func groupFixture2() (groupChainLinkNodeFixture, error) {
+	var orderedLinkNodes = groupFixture2Chain()
+	refChainCollector, err := groupFixture2RefChains(orderedLinkNodes)
 	if err != nil {
-		return orderChainLinkNodeFixture{}, err
+		return groupChainLinkNodeFixture{}, err
 	}
 
-	return orderChainLinkNodeFixture{
-		inputChains:       inputChains,
+	return groupChainLinkNodeFixture{
+		orderedLinkNodes:  orderedLinkNodes,
 		refChainCollector: refChainCollector,
-		expectedPresent: []string{
-			"route1",
-			"subnet1",
-			"sg1",
-			"routeTable1",
-			"vpc1",
-			"igw1",
-		},
-		orderedExpected: [][]string{
-			{"routeTable1", "route1"},
-			{"igw1", "route1"},
-			{"vpc1", "routeTable1"},
-			{"vpc1", "subnet1"},
-			{"vpc1", "sg1"},
+		expectedPresent: [][]string{
+			{
+				"vpc1",
+			},
+			{
+				"routeTable1",
+				"igw1",
+			},
+			{
+				"route1",
+				"subnet1",
+				"sg1",
+			},
 		},
 	}, nil
 }
 
-func orderFixture2Chain() []*links.ChainLinkNode {
-	routeRouteTableLink, _ := testProviderImpl.Link(context.TODO(), "aws/ec2/route", "aws/ec2/routeTable")
+func groupFixture2Chain() []*links.ChainLinkNode {
+	routeRouteTableLink, _ := testGroupProviderImpl.Link(context.TODO(), "aws/ec2/route", "aws/ec2/routeTable")
 	routeIGWLink, _ := testProviderImpl.Link(context.TODO(), "aws/ec2/route", "aws/ec2/internetGateway")
 	route := &links.ChainLinkNode{
 		ResourceName: "route1",
@@ -478,13 +452,16 @@ func orderFixture2Chain() []*links.ChainLinkNode {
 	}
 
 	return []*links.ChainLinkNode{
+		vpc,
+		routeTable,
+		internetGateway,
 		route,
 		subnet,
 		securityGroup,
 	}
 }
 
-func orderFixture2RefChains(
+func groupFixture2RefChains(
 	linkChains []*links.ChainLinkNode,
 ) (validation.RefChainCollector, error) {
 	collector := validation.NewRefChainCollector()
@@ -500,36 +477,36 @@ func orderFixture2RefChains(
 	return collector, nil
 }
 
-func orderFixture3() (orderChainLinkNodeFixture, error) {
-	var inputChains = orderFixture3Chains()
-	refChainCollector, err := orderFixture3RefChains(inputChains)
+func groupFixture3() (groupChainLinkNodeFixture, error) {
+	var orderedLinkNodes = groupFixture3Chains()
+	refChainCollector, err := groupFixture3RefChains(orderedLinkNodes)
 	if err != nil {
-		return orderChainLinkNodeFixture{}, err
+		return groupChainLinkNodeFixture{}, err
 	}
 
-	return orderChainLinkNodeFixture{
-		inputChains:       inputChains,
+	return groupChainLinkNodeFixture{
+		orderedLinkNodes:  orderedLinkNodes,
 		refChainCollector: refChainCollector,
-		expectedPresent: []string{
-			"orderApi",
-			"getOrdersFunction",
-			"createOrderFunction",
-			"updateOrderFunction",
-			"ordersTable",
-			"ordersStream",
-			"statsAccumulatorFunction",
-		},
-		orderedExpected: [][]string{
-			{"ordersTable", "ordersStream"},
-			{"ordersTable", "getOrdersFunction"},
-			{"ordersTable", "createOrderFunction"},
-			{"ordersTable", "updateOrderFunction"},
+		expectedPresent: [][]string{
+			{
+				"ordersTable",
+				"orderApi",
+			},
+			{
+				"ordersStream",
+				// The link between statsAccumulatorFunction and ordersStream
+				// is a soft link in the test provider so they can be resolved concurrently.
+				"statsAccumulatorFunction",
+				"getOrdersFunction",
+				"createOrderFunction",
+				"updateOrderFunction",
+			},
 		},
 	}, nil
 }
 
-func orderFixture3Chains() []*links.ChainLinkNode {
-	apiGatewayLambdaLinkImpl, _ := testProviderImpl.Link(context.TODO(), "aws/apigateway/api", "aws/lambda/function")
+func groupFixture3Chains() []*links.ChainLinkNode {
+	apiGatewayLambdaLinkImpl, _ := testGroupProviderImpl.Link(context.TODO(), "aws/apigateway/api", "aws/lambda/function")
 	orderApi := &links.ChainLinkNode{
 		ResourceName: "orderApi",
 		Resource: &schema.Resource{
@@ -610,9 +587,7 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 			"statsAccumulatorFunction": dynamoDBStreamLambdaLink,
 		},
 		LinkedFrom: []*links.ChainLinkNode{
-			getOrdersFunction,
-			createOrderFunction,
-			updateOrderFunction,
+			ordersTable,
 		},
 		LinksTo: []*links.ChainLinkNode{},
 	}
@@ -652,10 +627,15 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 	return []*links.ChainLinkNode{
 		orderApi,
 		ordersTable,
+		getOrdersFunction,
+		createOrderFunction,
+		updateOrderFunction,
+		ordersStream,
+		statsAccumulatorFunction,
 	}
 }
 
-func orderFixture3RefChains(
+func groupFixture3RefChains(
 	linkChains []*links.ChainLinkNode,
 ) (validation.RefChainCollector, error) {
 	collector := validation.NewRefChainCollector()
@@ -688,6 +668,6 @@ func orderFixture3RefChains(
 	return collector, nil
 }
 
-func TestOrderingTestSuite(t *testing.T) {
-	suite.Run(t, new(OrderingTestSuite))
+func TestGroupOrderedLinkNodesTestSuite(t *testing.T) {
+	suite.Run(t, new(GroupOrderedLinkNodesTestSuite))
 }

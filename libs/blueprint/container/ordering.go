@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"fmt"
-	"slices"
 	"sort"
 	"strings"
 
@@ -17,7 +16,7 @@ import (
 // OrderLinksForDeployment deals with creating a flat ordered
 // slice of chain links for stage changing and deployments.
 // Ordering is determined by the priority resource type specified
-// in each link implementation and usage of references between resources,
+// in each link implementation and usage of references between resources.
 // A resource reference is treated as a hard link where the priority resource
 // is the resource being referenced.
 //
@@ -73,11 +72,11 @@ import (
 // relationship are irrelevant.
 func OrderLinksForDeployment(
 	ctx context.Context,
-	chains []*links.ChainLink,
+	chains []*links.ChainLinkNode,
 	refChainCollector validation.RefChainCollector,
 	params bpcore.BlueprintParams,
-) ([]*links.ChainLink, error) {
-	flattened := flattenChains(chains, []*links.ChainLink{})
+) ([]*links.ChainLinkNode, error) {
+	flattened := flattenChains(chains, []*links.ChainLinkNode{})
 	var sortErr error
 	sort.Slice(flattened, func(i, j int) bool {
 		linkA := flattened[i]
@@ -127,71 +126,17 @@ func OrderLinksForDeployment(
 	return flattened, sortErr
 }
 
-func linkResourceReferences(
-	refChainCollector validation.RefChainCollector,
-	linkA *links.ChainLink,
-	linkB *links.ChainLink,
-) bool {
-	resourceRefA := refChainCollector.Chain(fmt.Sprintf("resources.%s", linkA.ResourceName))
-	resourceRefB := refChainCollector.Chain(fmt.Sprintf("resources.%s", linkB.ResourceName))
-
-	if resourceRefA == nil || resourceRefB == nil {
-		return false
-	}
-
-	return referencesResourceOrDescendants(resourceRefA.ElementName, resourceRefA.References, resourceRefB)
-}
-
-func referencesResourceOrDescendants(
-	referencedByElementName string,
-	searchIn []*validation.ReferenceChain,
-	searchFor *validation.ReferenceChain,
-) bool {
-	if len(searchIn) == 0 || searchFor == nil {
-		return false
-	}
-
-	if slices.ContainsFunc(searchIn, compareElementNameForSubRef(referencedByElementName, searchFor)) {
-		return true
-	}
-
-	for _, childSearchFor := range searchFor.References {
-		if referencesResourceOrDescendants(referencedByElementName, searchIn, childSearchFor) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func compareElementNameForSubRef(referencedByElementName string, searchFor *validation.ReferenceChain) func(*validation.ReferenceChain) bool {
-	return func(current *validation.ReferenceChain) bool {
-		return current.ElementName == searchFor.ElementName &&
-			// Only match if the reference has a "subRef:{referencedFrom}" tag.
-			// Links are collected to combine cycle detection logic for
-			// links and references during the validation phase.
-			// Tags are used to differentiate between the two.
-			slices.Contains(searchFor.Tags, fmt.Sprintf("subRef:%s", referencedByElementName))
-	}
-}
-
-func isResourceAncestor(resourceName string) func(string, int) bool {
-	return func(path string, index int) bool {
-		return strings.Contains(path, fmt.Sprintf("/%s", resourceName))
-	}
-}
-
-func getDirectParentsForPaths(paths []string, link *links.ChainLink) []*links.ChainLink {
+func getDirectParentsForPaths(paths []string, link *links.ChainLinkNode) []*links.ChainLinkNode {
 	return core.Filter(link.LinkedFrom, isLastInAtLeastOnePath(paths))
 }
 
-func isLastInAtLeastOnePath(paths []string) func(*links.ChainLink, int) bool {
-	return func(candidateParentLink *links.ChainLink, index int) bool {
+func isLastInAtLeastOnePath(paths []string) func(*links.ChainLinkNode, int) bool {
+	return func(candidateParentLink *links.ChainLinkNode, index int) bool {
 		return len(core.Filter(paths, isLastInPath(candidateParentLink))) > 0
 	}
 }
 
-func isLastInPath(link *links.ChainLink) func(string, int) bool {
+func isLastInPath(link *links.ChainLinkNode) func(string, int) bool {
 	return func(path string, index int) bool {
 		return strings.HasSuffix(path, fmt.Sprintf("/%s", link.ResourceName))
 	}
@@ -199,11 +144,11 @@ func isLastInPath(link *links.ChainLink) func(string, int) bool {
 
 func hasPriorityOver(
 	ctx context.Context,
-	otherLink *links.ChainLink,
+	otherLink *links.ChainLinkNode,
 	params bpcore.BlueprintParams,
 	captureError *error,
-) func(*links.ChainLink, int) bool {
-	return func(candidatePriorityLink *links.ChainLink, index int) bool {
+) func(*links.ChainLinkNode, int) bool {
+	return func(candidatePriorityLink *links.ChainLinkNode, index int) bool {
 		linkImplementation, hasLinkImplementation := candidatePriorityLink.LinkImplementations[otherLink.ResourceName]
 		if !hasLinkImplementation {
 			// The relationship could be either way.
@@ -240,8 +185,8 @@ func hasPriorityOver(
 	}
 }
 
-func flattenChains(chains []*links.ChainLink, flattenedAccum []*links.ChainLink) []*links.ChainLink {
-	flattened := append([]*links.ChainLink{}, flattenedAccum...)
+func flattenChains(chains []*links.ChainLinkNode, flattenedAccum []*links.ChainLinkNode) []*links.ChainLinkNode {
+	flattened := append([]*links.ChainLinkNode{}, flattenedAccum...)
 	for _, chain := range chains {
 		if !core.SliceContains(flattened, chain) {
 			flattened = append(flattened, chain)

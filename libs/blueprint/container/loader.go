@@ -326,6 +326,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			map[string]provider.Provider{},
 			blueprintSpec,
 			nil,
+			refChainCollector,
 			diagnostics,
 			l.updateChan,
 		), diagnostics, err
@@ -341,6 +342,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			map[string]provider.Provider{},
 			blueprintSpec,
 			nil,
+			refChainCollector,
 			diagnostics,
 			l.updateChan,
 		), diagnostics, err
@@ -351,6 +353,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		resourceProviderMap,
 		blueprintSpec,
 		linkInfo,
+		refChainCollector,
 		diagnostics,
 		l.updateChan,
 	)

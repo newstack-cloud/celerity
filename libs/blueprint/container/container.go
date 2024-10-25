@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 // BlueprintContainer provides the interface for a service that manages
@@ -91,6 +92,7 @@ type defaultBlueprintContainer struct {
 	resourceProviders map[string]provider.Provider
 	spec              speccore.BlueprintSpec
 	linkInfo          links.SpecLinkInfo
+	refChainCollector validation.RefChainCollector
 	diagnostics       []*core.Diagnostic
 	// The channel to send deployment and change-staging updates to.
 	updateChan chan Update
@@ -105,6 +107,7 @@ func NewDefaultBlueprintContainer(
 	resourceProviders map[string]provider.Provider,
 	spec speccore.BlueprintSpec,
 	linkInfo links.SpecLinkInfo,
+	refChainCollector validation.RefChainCollector,
 	diagnostics []*core.Diagnostic,
 	updateChan chan Update,
 ) BlueprintContainer {
@@ -113,128 +116,36 @@ func NewDefaultBlueprintContainer(
 		resourceProviders,
 		spec,
 		linkInfo,
+		refChainCollector,
 		diagnostics,
 		updateChan,
 	}
 }
 
 func (c *defaultBlueprintContainer) StageChanges(
-	ctx context.Context, instanceID string, paramOverrides core.BlueprintParams,
+	ctx context.Context, instanceID string,
+	paramOverrides core.BlueprintParams,
 ) (BlueprintChanges, error) {
-	// 1. get chain links
-	// 2. traverse through chains and collect staged changes
-
 	// chains, err := c.linkInfo.Links(ctx)
 	// if err != nil {
 	// 	return nil, err
 	// }
-
-	// instanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
+	// orderedLinkNodes, err := OrderLinksForDeployment(ctx, chains, c.refChainCollector, paramOverrides)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// parallelGroups, err := GroupOrderedLinkNodes(ctx, orderedLinkNodes, c.refChainCollector, paramOverrides)
 	// if err != nil {
 	// 	return nil, err
 	// }
 
-	// linksInDeployOrder := c.collectChainLinksInDeployOrder(
-	// 	chains,
-	// 	nil,
-	// 	[]*links.ChainLink{},
-	// )
-	// return c.stageChangesFromChains(
-	// 	ctx, chains, nil, instanceState, map[string]*provider.Changes[interface{}]{},
-	// )
-	// for name, res := range c.spec.Schema().Resources {
-	// 	spec := c.spec.ResourceConcreteSpec(name)
-	// 	resourceInfo := &provider.ResourceInfo{
-	// 		ResourceID: resourceID,
-	// 		InstanceID: instanceID,
-	// 	}
-	// provider := c.resourceProviders[name]
-	// resourceProviderImpl := provider.Resource(res.Type)
-	// changes, err := resourceProviderImpl.StageChanges(ctx, resourceInfo, linksTo, params)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	blueprintChanges[name] = changes
+	// state := &stageChangesState{}
+	// for _, group := range parallelGroups {
+	// 	// If resources do not depend on each other, they can be staged concurrently.
 	// }
+
 	return nil, nil
 }
-
-// func (c *defaultBlueprintContainer) collectChainLinksInDeployOrder(
-// 	chains []*links.ChainLink,
-// 	parent *links.ChainLink,
-// 	collectedBeforeParent []*links.ChainLink,
-// 	collectedAfterParent []*links.ChainLink,
-// ) []*links.ChainLink {
-// 	// collectedBeforeParentLocal := append([]*links.ChainLink{}, collectedBeforeParent...)
-// 	// collectedAfterParentLocal := append([]*links.ChainLink{}, collectedAfterParent...)
-// 	// for _, link := range chains {
-// 	// 	if len(link.LinksTo) > 0 {
-// 	// 		collectedLocal = c.collectChainLinksInDeployOrder(
-// 	// 			link.LinksTo,
-// 	// 			link,
-// 	// 			collectedBeforeParentLocal,
-// 	// 			collectedAfterParentLocal,
-// 	// 		)
-// 	// 	}
-
-// 	// 	if parent != nil {
-// 	// 		linkImplementation := parent.LinkImplementations[link.ResourceName]
-// 	// 		priorityResourceType := linkImplementation.PriorityResourceType()
-
-// 	// 	}
-// 	// }
-// 	// return collectedLocal
-// 	return []*links.ChainLink{}
-// }
-
-// func (c *defaultBlueprintContainer) stageChangesFromChains(
-// 	ctx context.Context,
-// 	chains []*links.ChainLink,
-// 	parent *links.ChainLink,
-// 	instanceState state.InstanceState,
-// 	changesSoFar map[string]*provider.Changes[interface{}],
-// ) (BlueprintChanges, error) {
-// 	var err error
-// 	currentBlueprintChanges := core.ShallowCopyMap(changesSoFar)
-// 	for _, link := range chains {
-// 		// get link to
-// 		// get priority resource
-// 		// stage changes for priority resource, then other resource and then link implementation.
-// 		// do it recursively!
-// 		if len(link.LinksTo) > 0 {
-// 			currentBlueprintChanges, err = c.stageChangesFromChains(
-// 				ctx,
-// 				link.LinksTo,
-// 				link,
-// 				instanceState,
-// 				currentBlueprintChanges,
-// 			)
-// 			if err != nil {
-// 				return currentBlueprintChanges, err
-// 			}
-// 		}
-
-// 		if parent != nil {
-// 			linkImplementation, hasLinkImplementation := parent.LinkImplementations[link.ResourceName]
-// 			if !hasLinkImplementation {
-// 				return currentBlueprintChanges, errMissingLinkImplementation()
-// 			}
-
-// 			priorityResourceType := linkImplementation.PriorityResourceType()
-
-// 			_, parentChangesStaged := currentBlueprintChanges[parent.ResourceName]
-// 			if !parentChangesStaged {
-
-// 			}
-// 		}
-
-// 		// provider := c.resourceProviders[link.ResourceName]
-// 		// resourceProviderImpl := provider.Resource(link.Resource.Type)
-
-// 		// changes, err := resourceProviderImpl.StageChanges(ctx, resourceInfo, link., params)
-// 	}
-// 	return currentBlueprintChanges, err
-// }
 
 func (c *defaultBlueprintContainer) Deploy(ctx context.Context, instanceID string) (string, error) {
 	// 1. get chain links
@@ -263,3 +174,16 @@ func (c *defaultBlueprintContainer) BlueprintSpec() speccore.BlueprintSpec {
 func (c *defaultBlueprintContainer) Diagnostics() []*core.Diagnostic {
 	return c.diagnostics
 }
+
+// type stageChangesState struct {
+// 	pendingLinks map[string]*linkPendingCompletion
+// 	// Mutex is required as resources can be staged concurrently.
+// 	mu sync.Mutex
+// }
+
+// type linkPendingCompletion struct {
+// 	link             *links.ChainLinkNode
+// 	resourceAPending bool
+// 	resourceBPending bool
+// 	linkPending      bool
+// }
