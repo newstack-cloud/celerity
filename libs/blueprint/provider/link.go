@@ -132,23 +132,23 @@ const (
 // of the resource schema (includes metadata labels and annotations) and spec
 // that has already had all it's variables substituted.
 type LinkChanges struct {
-	ResourceTypeAModifiedFields  []string
-	ResourceTypeANewFields       []string
+	ResourceTypeAModifiedFields  []*FieldChange
+	ResourceTypeANewFields       []*FieldChange
 	ResourceTypeARemovedFields   []string
 	ResourceTypeAUnchangedFields []string
-	ResourceTypeBModifiedFields  []string
-	ResourceTypeBNewFields       []string
+	ResourceTypeBModifiedFields  []*FieldChange
+	ResourceTypeBNewFields       []*FieldChange
 	ResourceTypeBRemovedFields   []string
 	ResourceTypeBUnchangedFields []string
-	IntermediaryResourceChanges  []LinkIntermediaryResourceChanges
+	IntermediaryResourceChanges  map[string]*LinkIntermediaryResourceChanges
 }
 
 // LinkIntermediaryResourceChanges provides a set of modified fields
 // for an intermediary resource in a link relationship.
 type LinkIntermediaryResourceChanges struct {
 	ResourceType    string
-	ModifiedFields  []string
-	NewFields       []string
+	ModifiedFields  []*FieldChange
+	NewFields       []*FieldChange
 	RemovedFields   []string
 	UnchangedFields []string
 }

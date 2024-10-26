@@ -71,7 +71,7 @@ type ResourceState struct {
 	// ResourceData is the mapping that holds the structure of
 	// the "raw" resource data from the resource provider service.
 	// (e.g. AWS Lambda Function object)
-	ResourceData map[string]interface{}
+	ResourceData map[string]*core.MappingNode
 	// Holds the latest reasons for failures in deploying a resource,
 	// this only ever holds the results of the latest deployment attempt.
 	FailureReasons []string
@@ -89,8 +89,8 @@ type InstanceState struct {
 	// that is relevant to the blueprint framework but can also be used to store
 	// additional information that is relevant to the application/tool
 	// making use of this library.
-	Metadata        map[string]interface{}
-	Exports         map[string]interface{}
+	Metadata        map[string]*core.MappingNode
+	Exports         map[string]*core.MappingNode
 	ChildBlueprints map[string]*InstanceState
 }
 
@@ -106,5 +106,5 @@ type LinkState struct {
 	// the "raw" link data to hold information about a link that is not
 	// stored directly in the resources that are linked and is not
 	// stored in intermediary resources.
-	LinkData map[string]interface{}
+	LinkData map[string]*core.MappingNode
 }

@@ -30,6 +30,11 @@ func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 		},
 		callStack: s.callStack,
 	}
+
+	resourceARN := "arn:aws:iam::123456789012:policy/test-execute-function-policy"
+	awsLambdaHTTP := true
+	awsLambdaHTTPMethod := "POST"
+	awsLambdaHTTPPath := "/orders"
 	s.stateRetriever = &linkStateRetrieverMock{
 		linkState: map[string]state.LinkState{
 			"test-blueprint-1::orderApi::createOrderFunction": {
@@ -37,16 +42,30 @@ func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 					{
 						ResourceID: "test-execute-function-policy",
 						Status:     core.ResourceStatusCreated,
-						ResourceData: map[string]interface{}{
-							"Arn": "arn:aws:iam::123456789012:policy/test-execute-function-policy",
+						ResourceData: map[string]*core.MappingNode{
+							"Arn": {
+								Literal: &core.ScalarValue{
+									StringValue: &resourceARN,
+								},
+							},
 						},
 						FailureReasons: []string{},
 					},
 				},
-				LinkData: map[string]interface{}{
-					"aws.lambda.http":        true,
-					"aws.lambda.http.method": "POST",
-					"aws.lambda.http.path":   "/orders",
+				LinkData: map[string]*core.MappingNode{
+					"aws.lambda.http": {
+						Literal: &core.ScalarValue{BoolValue: &awsLambdaHTTP},
+					},
+					"aws.lambda.http.method": {
+						Literal: &core.ScalarValue{
+							StringValue: &awsLambdaHTTPMethod,
+						},
+					},
+					"aws.lambda.http.path": {
+						Literal: &core.ScalarValue{
+							StringValue: &awsLambdaHTTPPath,
+						},
+					},
 				},
 			},
 		},
@@ -77,21 +96,40 @@ func (s *LinkFunctionTestSuite) Test_gets_link_state(c *C) {
 	c.Assert(err, IsNil)
 	outputState, isMap := output.ResponseData.(map[string]interface{})
 	c.Assert(isMap, Equals, true)
+
+	resourceARN := "arn:aws:iam::123456789012:policy/test-execute-function-policy"
+	isAWSLambdaHTTP := true
+	awsLambdaHTTPMethod := "POST"
+	awsLambdaHTTPPath := "/orders"
 	c.Assert(outputState, DeepEquals, map[string]interface{}{
 		"intermediaryResourceStates": []interface{}{
 			map[string]interface{}{
 				"resourceID": "test-execute-function-policy",
 				"status":     core.ResourceStatusCreated,
-				"resourceData": map[string]interface{}{
-					"Arn": "arn:aws:iam::123456789012:policy/test-execute-function-policy",
+				"resourceData": map[string]*core.MappingNode{
+					"Arn": {
+						Literal: &core.ScalarValue{
+							StringValue: &resourceARN,
+						},
+					},
 				},
 				"failureReasons": []interface{}{},
 			},
 		},
-		"linkData": map[string]interface{}{
-			"aws.lambda.http":        true,
-			"aws.lambda.http.method": "POST",
-			"aws.lambda.http.path":   "/orders",
+		"linkData": map[string]*core.MappingNode{
+			"aws.lambda.http": {
+				Literal: &core.ScalarValue{BoolValue: &isAWSLambdaHTTP},
+			},
+			"aws.lambda.http.method": {
+				Literal: &core.ScalarValue{
+					StringValue: &awsLambdaHTTPMethod,
+				},
+			},
+			"aws.lambda.http.path": {
+				Literal: &core.ScalarValue{
+					StringValue: &awsLambdaHTTPPath,
+				},
+			},
 		},
 	})
 }

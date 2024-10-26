@@ -123,7 +123,8 @@ func NewDefaultBlueprintContainer(
 }
 
 func (c *defaultBlueprintContainer) StageChanges(
-	ctx context.Context, instanceID string,
+	ctx context.Context,
+	instanceID string,
 	paramOverrides core.BlueprintParams,
 ) (BlueprintChanges, error) {
 	// chains, err := c.linkInfo.Links(ctx)
@@ -139,9 +140,31 @@ func (c *defaultBlueprintContainer) StageChanges(
 	// 	return nil, err
 	// }
 
+	// persistedInstanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	// state := &stageChangesState{}
 	// for _, group := range parallelGroups {
-	// 	// If resources do not depend on each other, they can be staged concurrently.
+	// 	changesChan := make(chan *resourceChangesMessage)
+	// 	linkChangesChan := make(chan *linkChangesMessage)
+	// 	errChan := make(chan error)
+	// 	c.stageResourceChanges(ctx, instanceID, state, group, paramOverrides, changesChan, linkChangesChan, errChan)
+
+	// 	collected := map[string]*provider.Changes{}
+	// 	var err error
+	// 	for len(collected) < len(group) && err == nil {
+	// 		select {
+	// 		case changes := <-changesChan:
+	// 			collected[changes.resourceName] = changes.changes
+	// 		case err = <-errChan:
+	// 		}
+	// 	}
+
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 	// }
 
 	return nil, nil
@@ -174,6 +197,21 @@ func (c *defaultBlueprintContainer) BlueprintSpec() speccore.BlueprintSpec {
 func (c *defaultBlueprintContainer) Diagnostics() []*core.Diagnostic {
 	return c.diagnostics
 }
+
+// type resourceChangesMessage struct {
+// 	resourceName string
+// 	removed      bool
+// 	new          bool
+// 	changes      *provider.Changes
+// }
+
+// type linkChangesMessage struct {
+// 	resourceAName string
+// 	resourceBName string
+// 	removed       bool
+// 	new           bool
+// 	changes       *provider.LinkChanges
+// }
 
 // type stageChangesState struct {
 // 	pendingLinks map[string]*linkPendingCompletion

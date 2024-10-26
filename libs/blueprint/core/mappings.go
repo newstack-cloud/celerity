@@ -21,6 +21,9 @@ import (
 // This is also used to provide a tree structure for metadata mappings
 // to facilitate substitutions at all levels of nesting in user-provided
 // metadata.
+//
+// A mapping node can be used to store data for resources, links and data sources
+// along with storing the output of a ${..} substitution.
 type MappingNode struct {
 	// Literal represents a literal value in a mapping node.
 	Literal *ScalarValue

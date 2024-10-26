@@ -226,14 +226,19 @@ type Changes struct {
 	// so the deploy phase has everything it needs to deploy the resource.
 	AppliedResourceInfo *ResourceInfo
 	MustRecreate        bool
-	ModifiedFields      []string
-	NewFields           []string
+	ModifiedFields      []*FieldChange
+	NewFields           []*FieldChange
 	RemovedFields       []string
 	UnchangedFields     []string
 	// OutboundLinkChanges holds a mapping
 	// of the linked to resource name to any changes
 	// that will be made to the link.
+	// The key is of the form `{resourceA}::{resoureB}`
 	OutboundLinkChanges map[string]*LinkChanges
+	// RemovedOutboundLinks holds a list of link identifiers
+	// that will be removed.
+	// The form of the link identifier is `{resourceA}::{resoureB}`
+	RemovedOutboundLinks []string
 }
 
 // ResourceSpecDefinition provides a definition for a resource spec
