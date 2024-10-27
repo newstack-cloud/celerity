@@ -2,7 +2,9 @@ package resourcehelpers
 
 import (
 	"context"
+	"sync"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
@@ -52,9 +54,10 @@ type Registry interface {
 type registryFromProviders struct {
 	providers             map[string]provider.Provider
 	transformers          map[string]transform.SpecTransformer
-	resourceCache         map[string]provider.Resource
-	abstractResourceCache map[string]transform.AbstractResource
+	resourceCache         *core.Cache[provider.Resource]
+	abstractResourceCache *core.Cache[transform.AbstractResource]
 	resourceTypes         []string
+	mu                    sync.Mutex
 }
 
 // NewRegistry creates a new resource registry from a map of providers,
@@ -66,8 +69,8 @@ func NewRegistry(
 	return &registryFromProviders{
 		providers:             providers,
 		transformers:          transformers,
-		resourceCache:         map[string]provider.Resource{},
-		abstractResourceCache: map[string]transform.AbstractResource{},
+		resourceCache:         core.NewCache[provider.Resource](),
+		abstractResourceCache: core.NewCache[transform.AbstractResource](),
 		resourceTypes:         []string{},
 	}
 }
@@ -164,6 +167,9 @@ func (r *registryFromProviders) GetTypeDescription(
 }
 
 func (r *registryFromProviders) ListResourceTypes(ctx context.Context) ([]string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if len(r.resourceTypes) > 0 {
 		return r.resourceTypes, nil
 	}
@@ -260,7 +266,7 @@ func (r *registryFromProviders) CustomValidate(
 }
 
 func (r *registryFromProviders) getResourceType(ctx context.Context, resourceType string) (provider.Resource, error) {
-	resource, cached := r.resourceCache[resourceType]
+	resource, cached := r.resourceCache.Get(resourceType)
 	if cached {
 		return resource, nil
 	}
@@ -274,13 +280,13 @@ func (r *registryFromProviders) getResourceType(ctx context.Context, resourceTyp
 	if err != nil || resourceImpl == nil {
 		return nil, errProviderResourceTypeNotFound(resourceType, providerNamespace)
 	}
-	r.resourceCache[resourceType] = resourceImpl
+	r.resourceCache.Set(resourceType, resourceImpl)
 
 	return resourceImpl, nil
 }
 
 func (r *registryFromProviders) getAbstractResourceType(ctx context.Context, resourceType string) (transform.AbstractResource, error) {
-	resource, cached := r.abstractResourceCache[resourceType]
+	resource, cached := r.abstractResourceCache.Get(resourceType)
 	if cached {
 		return resource, nil
 	}
@@ -302,7 +308,7 @@ func (r *registryFromProviders) getAbstractResourceType(ctx context.Context, res
 		return nil, errAbstactResourceTypeNotFound(resourceType)
 	}
 
-	r.abstractResourceCache[resourceType] = abstractResource
+	r.abstractResourceCache.Set(resourceType, abstractResource)
 
 	return abstractResource, nil
 }

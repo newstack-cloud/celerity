@@ -2,7 +2,9 @@ package provider
 
 import (
 	"context"
+	"sync"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 )
 
@@ -58,8 +60,9 @@ type DataSourceRegistry interface {
 
 type dataSourceRegistryFromProviders struct {
 	providers       map[string]Provider
-	dataSourceCache map[string]DataSource
+	dataSourceCache *core.Cache[DataSource]
 	dataSourceTypes []string
+	mu              sync.Mutex
 }
 
 // NewDataSourceRegistry creates a new DataSourceRegistry from a map of providers,
@@ -67,7 +70,7 @@ type dataSourceRegistryFromProviders struct {
 func NewDataSourceRegistry(providers map[string]Provider) DataSourceRegistry {
 	return &dataSourceRegistryFromProviders{
 		providers:       providers,
-		dataSourceCache: map[string]DataSource{},
+		dataSourceCache: core.NewCache[DataSource](),
 		dataSourceTypes: []string{},
 	}
 }
@@ -125,6 +128,9 @@ func (r *dataSourceRegistryFromProviders) HasDataSourceType(ctx context.Context,
 }
 
 func (r *dataSourceRegistryFromProviders) ListDataSourceTypes(ctx context.Context) ([]string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if len(r.dataSourceTypes) > 0 {
 		return r.dataSourceTypes, nil
 	}
@@ -171,7 +177,7 @@ func (r *dataSourceRegistryFromProviders) Fetch(
 }
 
 func (r *dataSourceRegistryFromProviders) getDataSourceType(ctx context.Context, dataSourceType string) (DataSource, error) {
-	dataSource, cached := r.dataSourceCache[dataSourceType]
+	dataSource, cached := r.dataSourceCache.Get(dataSourceType)
 	if cached {
 		return dataSource, nil
 	}
@@ -185,7 +191,7 @@ func (r *dataSourceRegistryFromProviders) getDataSourceType(ctx context.Context,
 	if err != nil {
 		return nil, errProviderDataSourceTypeNotFound(dataSourceType, providerNamespace)
 	}
-	r.dataSourceCache[dataSourceType] = dataSourceImpl
+	r.dataSourceCache.Set(dataSourceType, dataSourceImpl)
 
 	return dataSourceImpl, nil
 }

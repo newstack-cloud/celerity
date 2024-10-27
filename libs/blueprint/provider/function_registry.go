@@ -2,7 +2,9 @@ package provider
 
 import (
 	"context"
+	"sync"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 )
@@ -14,6 +16,11 @@ import (
 // for adding calls to a stack along with other context-specific
 // enhancements that may be needed.
 type FunctionRegistry interface {
+	// ForCallContext creates a light-weight copy of the registry
+	// with a call stack that is specific to the current call context
+	// (i.e. a ${..} substitution).
+	ForCallContext() FunctionRegistry
+
 	// Call allows calling a function in the registry by name.
 	Call(ctx context.Context, functionName string, input *FunctionCallInput) (*FunctionCallOutput, error)
 
@@ -35,10 +42,11 @@ type FunctionRegistry interface {
 
 type functionRegistryFromProviders struct {
 	providers             map[string]Provider
-	functionProviderCache map[string]Provider
-	functionCache         map[string]Function
+	functionProviderCache *core.Cache[Provider]
+	functionCache         *core.Cache[Function]
 	functionNames         []string
 	callStack             function.Stack
+	mu                    sync.Mutex
 }
 
 // NewFunctionRegistry creates a new FunctionRegistry from a map of providers,
@@ -49,9 +57,19 @@ func NewFunctionRegistry(
 ) FunctionRegistry {
 	return &functionRegistryFromProviders{
 		providers:             providers,
-		functionProviderCache: map[string]Provider{},
-		functionCache:         map[string]Function{},
+		functionProviderCache: core.NewCache[Provider](),
+		functionCache:         core.NewCache[Function](),
 		functionNames:         []string{},
+		callStack:             function.NewStack(),
+	}
+}
+
+func (r *functionRegistryFromProviders) ForCallContext() FunctionRegistry {
+	return &functionRegistryFromProviders{
+		providers:             r.providers,
+		functionProviderCache: r.functionProviderCache,
+		functionCache:         r.functionCache,
+		functionNames:         r.functionNames,
 		callStack:             function.NewStack(),
 	}
 }
@@ -104,6 +122,9 @@ func (r *functionRegistryFromProviders) HasFunction(ctx context.Context, functio
 }
 
 func (r *functionRegistryFromProviders) ListFunctions(ctx context.Context) ([]string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if len(r.functionNames) > 0 {
 		return r.functionNames, nil
 	}
@@ -124,18 +145,18 @@ func (r *functionRegistryFromProviders) ListFunctions(ctx context.Context) ([]st
 }
 
 func (r *functionRegistryFromProviders) getFunction(ctx context.Context, functionName string) (Function, error) {
-	function, cached := r.functionCache[functionName]
+	function, cached := r.functionCache.Get(functionName)
 	if cached {
 		return function, nil
 	}
 
-	funcProvider, funcProviderCached := r.functionProviderCache[functionName]
+	funcProvider, funcProviderCached := r.functionProviderCache.Get(functionName)
 	if !funcProviderCached {
 		err := r.registerProviderFunctions(ctx)
 		if err != nil {
 			return nil, err
 		}
-		funcProvider, funcProviderCached = r.functionProviderCache[functionName]
+		funcProvider, funcProviderCached = r.functionProviderCache.Get(functionName)
 		if !funcProviderCached {
 			return nil, errFunctionNotFound(functionName)
 		}
@@ -150,7 +171,7 @@ func (r *functionRegistryFromProviders) getFunction(ctx context.Context, functio
 	if err != nil {
 		return nil, errFunctionNotFoundInProvider(functionName, providerNamespace)
 	}
-	r.functionCache[functionName] = functionImpl
+	r.functionCache.Set(functionName, functionImpl)
 	return functionImpl, nil
 }
 
@@ -162,13 +183,13 @@ func (r *functionRegistryFromProviders) registerProviderFunctions(ctx context.Co
 		}
 
 		for _, functionName := range functions {
-			if providedBy, alreadyProvided := r.functionProviderCache[functionName]; alreadyProvided {
+			if providedBy, alreadyProvided := r.functionProviderCache.Get(functionName); alreadyProvided {
 				err := handleFunctionProviderConflict(ctx, functionName, providedBy, provider)
 				if err != nil {
 					return err
 				}
 			}
-			r.functionProviderCache[functionName] = provider
+			r.functionProviderCache.Set(functionName, provider)
 		}
 	}
 	return nil
