@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
@@ -47,17 +48,85 @@ type DataSourceValidateOutput struct {
 	Diagnostics []*core.Diagnostic
 }
 
+// ResolvedDataSource is a data source for which all ${..}
+// substitutions have been applied.
+type ResolvedDataSource struct {
+	Type               *schema.DataSourceTypeWrapper             `json:"type"`
+	DataSourceMetadata *ResolvedDataSourceMetadata               `json:"metadata"`
+	Filter             *ResolvedDataSourceFilter                 `json:"filter"`
+	Exports            map[string]*ResolvedDataSourceFieldExport `json:"exports"`
+	Description        *core.MappingNode                         `json:"description,omitempty"`
+}
+
+// ResolvedDataSourceMetadata provides metadata for which all ${..}
+// substitutions have been applied.
+type ResolvedDataSourceMetadata struct {
+	DisplayName *core.MappingNode `json:"displayName"`
+	Annotations *core.MappingNode `json:"annotations,omitempty"`
+	Custom      *core.MappingNode `json:"custom,omitempty"`
+}
+
+// ResolvedDataSourceFilter provides a filter for which all ${..}
+// substitutions have been applied.
+type ResolvedDataSourceFilter struct {
+	Field    *core.ScalarValue                       `json:"field"`
+	Operator *schema.DataSourceFilterOperatorWrapper `json:"operator"`
+	Search   *ResolvedDataSourceFilterSearch         `json:"search"`
+}
+
+// ResolvedDataSourceFilterSearch provides a search for which all ${..}
+// substitutions have been applied.
+type ResolvedDataSourceFilterSearch struct {
+	Values []*core.MappingNode
+}
+
+func (s *ResolvedDataSourceFilterSearch) MarshalJSON() ([]byte, error) {
+	if len(s.Values) == 1 {
+		return json.Marshal(s.Values[0])
+	}
+
+	return json.Marshal(s.Values)
+}
+
+func (s *ResolvedDataSourceFilterSearch) UnmarshalJSON(data []byte) error {
+	singleValue := core.MappingNode{}
+	err := json.Unmarshal(data, &singleValue)
+	if err == nil {
+		s.Values = []*core.MappingNode{&singleValue}
+		return nil
+	}
+
+	multipleValues := []*core.MappingNode{}
+	err = json.Unmarshal(data, &multipleValues)
+	if err != nil {
+		return err
+	}
+
+	s.Values = multipleValues
+	return nil
+}
+
+// ResolvedDataSourceFieldExport provides a field export for which all ${..}
+// substitutions have been applied.
+type ResolvedDataSourceFieldExport struct {
+	Type        *schema.DataSourceFieldTypeWrapper `json:"type"`
+	AliasFor    *core.ScalarValue                  `json:"aliasFor,omitempty"`
+	Description *core.MappingNode                  `json:"description,omitempty"`
+}
+
 // DataSourceFetchInput provides the input required to fetch
 // data from an upstream data source.
 type DataSourceFetchInput struct {
-	SchemaDataSource *schema.DataSource
-	Params           core.BlueprintParams
+	// DataSourceWithResolvedSubs holds a version of a data source for which all ${..}
+	// substitutions have been applied.
+	DataSourceWithResolvedSubs *ResolvedDataSource
+	Params                     core.BlueprintParams
 }
 
 // DataSourceFetchOutput provides the output from fetching data from an upstream
 // data source which includes the exported fields defined in the spec.
 type DataSourceFetchOutput struct {
-	Data map[string]interface{}
+	Data map[string]*core.MappingNode
 }
 
 // DataSourceGetTypeInput provides the input required to

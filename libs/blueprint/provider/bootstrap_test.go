@@ -393,8 +393,15 @@ func (d *testExampleDataSource) Fetch(
 	ctx context.Context,
 	input *DataSourceFetchInput,
 ) (*DataSourceFetchOutput, error) {
+	testName := "test"
 	return &DataSourceFetchOutput{
-		Data: map[string]interface{}{},
+		Data: map[string]*core.MappingNode{
+			"name": {
+				Literal: &core.ScalarValue{
+					StringValue: &testName,
+				},
+			},
+		},
 	}, nil
 }
 

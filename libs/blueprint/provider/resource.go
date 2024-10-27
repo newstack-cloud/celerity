@@ -2,30 +2,14 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
-
-// ResourceInfo provides all the information needed for a resource
-// including the blueprint schema data with annotations, labels
-// and the spec as a core mapping node.
-type ResourceInfo struct {
-	// ResourceID holds the ID of a resource when in the context
-	// of a blueprint instance when deploying or staging changes.
-	// Sometimes staging changes is independent of an instance and is used to compare
-	// two vesions of a blueprint in which
-	// case the resource ID will be empty.
-	ResourceID string
-	// InstanceID holds the ID of the blueprint instance
-	// that the current resource belongs to.
-	InstanceID string
-	// RevisionID holds the ID of the blueprint instance revision
-	// that the current resource deployment belongs to.
-	RevisionID     string
-	SchemaResource *schema.Resource
-}
 
 // Resource provides the interface for a resource
 // that a provider can contain which includes logic for validating,
@@ -82,6 +66,109 @@ type Resource interface {
 	// state is successfully deployed or cleaning up a corrupt or partially deployed
 	// resource instance.
 	Destroy(ctx context.Context, input *ResourceDestroyInput) error
+}
+
+// ResourceInfo provides all the information needed for a resource
+// including the blueprint schema data with annotations, labels
+// and the spec as a core mapping node.
+type ResourceInfo struct {
+	// ResourceID holds the ID of a resource when in the context
+	// of a blueprint instance when deploying or staging changes.
+	// Sometimes staging changes is independent of an instance and is used to compare
+	// two vesions of a blueprint in which
+	// case the resource ID will be empty.
+	ResourceID string
+	// InstanceID holds the ID of the blueprint instance
+	// that the current resource belongs to.
+	InstanceID string
+	// RevisionID holds the ID of the blueprint instance revision
+	// that the current resource deployment belongs to.
+	RevisionID string
+	// ResourceWithResolvedSubs holds a version of a resource for which all ${..}
+	// substitutions have been applied.
+	ResourceWithResolvedSubs *ResolvedResource
+}
+
+// ResolvedResource provides a version of a resource for which all ${..}
+// substitutions have been applied.
+// Mapping nodes replace StringOrSubstitutions from the blueprint schema representation
+// of the resource.
+type ResolvedResource struct {
+	Type         *schema.ResourceTypeWrapper `json:"type"`
+	Description  *core.MappingNode           `json:"description,omitempty"`
+	Metadata     *ResolvedResourceMetadata   `json:"metadata,omitempty"`
+	Condition    *ResolvedResourceCondition  `json:"condition,omitempty"`
+	Each         *core.MappingNode           `json:"each,omitempty"`
+	LinkSelector *schema.LinkSelector        `json:"linkSelector,omitempty"`
+	Spec         *core.MappingNode           `json:"spec"`
+}
+
+// ResolvedResourceMetadata provides a resolved version of the metadata
+// for a resource where all substitutions have been applied.
+type ResolvedResourceMetadata struct {
+	DisplayName *core.MappingNode `json:"displayName"`
+	Annotations *core.MappingNode `json:"annotations,omitempty"`
+	Labels      *schema.StringMap `json:"labels,omitempty"`
+	Custom      *core.MappingNode `json:"custom,omitempty"`
+}
+
+// ResolvedResourceCondition provides a resolved version of the condition
+// for a resource where all substitutions have been applied.
+type ResolvedResourceCondition struct {
+	// A list of conditions that must all be true.
+	And []*ResolvedResourceCondition `json:"and,omitempty"`
+	// A list of conditions where at least one must be true.
+	Or []*ResolvedResourceCondition `json:"or,omitempty"`
+	// A condition that will be negated.
+	Not *ResolvedResourceCondition `json:"not,omitempty"`
+	// A condition expression that is expected
+	// to be a substitution that resolves to a boolean.
+	StringValue *core.MappingNode `json:"-"`
+}
+
+func (c *ResolvedResourceCondition) UnmarshalJSON(data []byte) error {
+	if strings.HasPrefix(string(data), "\"") {
+		stringVal := &core.MappingNode{}
+		if err := json.Unmarshal(data, &stringVal); err == nil {
+			c.StringValue = stringVal
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	type conditionAlias ResolvedResourceCondition
+	var alias conditionAlias
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+
+	c.And = alias.And
+	c.Or = alias.Or
+	c.Not = alias.Not
+
+	if (len(c.And) > 0 && len(c.Or) > 0) ||
+		(len(c.Or) > 0 && c.Not != nil) ||
+		(len(c.And) > 0 && c.Not != nil) {
+		return fmt.Errorf(
+			"an invalid resource condition has been provided, only one of \"and\", \"or\" or \"not\" can be set",
+		)
+	}
+
+	return nil
+}
+
+func (c *ResolvedResourceCondition) MarshalJSON() ([]byte, error) {
+	if c.StringValue != nil {
+		return json.Marshal(c.StringValue)
+	}
+
+	type conditionAlias ResolvedResourceCondition
+	var alias conditionAlias
+	alias.And = c.And
+	alias.Or = c.Or
+	alias.Not = c.Not
+	return json.Marshal(alias)
 }
 
 // ResourceValidateParams provides the input data needed for a resource to
