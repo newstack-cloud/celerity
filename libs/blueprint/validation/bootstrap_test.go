@@ -696,7 +696,7 @@ func (d *testEC2InstanceDataSource) Fetch(
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
 	return &provider.DataSourceFetchOutput{
-		Data: map[string]interface{}{},
+		Data: map[string]*core.MappingNode{},
 	}, nil
 }
 
@@ -761,7 +761,7 @@ func (d *testVPCDataSource) Fetch(
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
 	return &provider.DataSourceFetchOutput{
-		Data: map[string]interface{}{},
+		Data: map[string]*core.MappingNode{},
 	}, nil
 }
 
@@ -820,7 +820,7 @@ func (d *testVPC2DataSource) Fetch(
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
 	return &provider.DataSourceFetchOutput{
-		Data: map[string]interface{}{},
+		Data: map[string]*core.MappingNode{},
 	}, nil
 }
 
@@ -885,7 +885,7 @@ func (d *testVPC3DataSource) Fetch(
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
 	return &provider.DataSourceFetchOutput{
-		Data: map[string]interface{}{},
+		Data: map[string]*core.MappingNode{},
 	}, nil
 }
 

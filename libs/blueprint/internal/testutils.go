@@ -234,6 +234,22 @@ func (r *DataSourceRegistryMock) CustomValidate(
 	return defOutput, nil
 }
 
+func (r *DataSourceRegistryMock) Fetch(
+	ctx context.Context,
+	dataSourceType string,
+	input *provider.DataSourceFetchInput,
+) (*provider.DataSourceFetchOutput, error) {
+	res, ok := r.DataSources[dataSourceType]
+	if !ok {
+		return nil, fmt.Errorf("data source %s not found", dataSourceType)
+	}
+	defOutput, err := res.Fetch(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
+}
+
 // UnpackLoadError recursively unpacks a LoadError that can contain child errors.
 // This will recursively unpack the first child error until it reaches the last child error.
 func UnpackLoadError(err error) (*errors.LoadError, bool) {
