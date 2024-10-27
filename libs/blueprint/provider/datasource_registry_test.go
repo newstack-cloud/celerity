@@ -87,6 +87,23 @@ func (s *DataSourceRegistryTestSuite) Test_custom_validate(c *C) {
 	})
 }
 
+func (s *DataSourceRegistryTestSuite) Test_fetch(c *C) {
+	output, err := s.dataSourceRegistry.Fetch(
+		context.TODO(),
+		"test/exampleDataSource",
+		&DataSourceFetchInput{},
+	)
+	c.Assert(err, IsNil)
+	expectedName := "test"
+	c.Assert(output.Data, DeepEquals, map[string]*core.MappingNode{
+		"name": {
+			Literal: &core.ScalarValue{
+				StringValue: &expectedName,
+			},
+		},
+	})
+}
+
 func (s *DataSourceRegistryTestSuite) Test_has_data_source_type(c *C) {
 	hasDSType, err := s.dataSourceRegistry.HasDataSourceType(context.TODO(), "test/exampleDataSource")
 	c.Assert(err, IsNil)

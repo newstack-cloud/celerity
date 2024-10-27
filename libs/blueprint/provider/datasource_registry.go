@@ -46,6 +46,14 @@ type DataSourceRegistry interface {
 		dataSourceType string,
 		input *DataSourceValidateInput,
 	) (*DataSourceValidateOutput, error)
+
+	// Fetch retrieves the data from a data source using the provider
+	// of the given type.
+	Fetch(
+		ctx context.Context,
+		dataSourceType string,
+		input *DataSourceFetchInput,
+	) (*DataSourceFetchOutput, error)
 }
 
 type dataSourceRegistryFromProviders struct {
@@ -147,6 +155,19 @@ func (r *dataSourceRegistryFromProviders) CustomValidate(
 	}
 
 	return dataSourceImpl.CustomValidate(ctx, input)
+}
+
+func (r *dataSourceRegistryFromProviders) Fetch(
+	ctx context.Context,
+	dataSourceType string,
+	input *DataSourceFetchInput,
+) (*DataSourceFetchOutput, error) {
+	dataSourceImpl, err := r.getDataSourceType(ctx, dataSourceType)
+	if err != nil {
+		return nil, err
+	}
+
+	return dataSourceImpl.Fetch(ctx, input)
 }
 
 func (r *dataSourceRegistryFromProviders) getDataSourceType(ctx context.Context, dataSourceType string) (DataSource, error) {
