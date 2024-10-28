@@ -355,7 +355,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_chil
 						FieldName: "cacheNodes",
 					},
 					{
-						PrimitiveArrIndex: &index,
+						ArrayIndex: &index,
 					},
 					{
 						FieldName: "host",
@@ -650,7 +650,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_valu
 						FieldName: "objectConfig",
 					},
 					{
-						PrimitiveArrIndex: &arrIndex,
+						ArrayIndex: &arrIndex,
 					},
 				},
 				SourceMeta: &source.Meta{
@@ -706,7 +706,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_valu
 				ValueName: "googleCloudBuckets",
 				Path: []*SubstitutionPathItem{
 					{
-						PrimitiveArrIndex: &arrIndex,
+						ArrayIndex: &arrIndex,
 					},
 					{
 						FieldName: "name",
@@ -1511,7 +1511,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 				},
 				Path: []*SubstitutionPathItem{
 					{
-						PrimitiveArrIndex: &rootIndex,
+						ArrayIndex: &rootIndex,
 					},
 					{
 						FieldName: "details",

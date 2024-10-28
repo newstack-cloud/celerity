@@ -64,8 +64,8 @@ type SubstitutionResourceProperty struct {
 }
 
 type SubstitutionPathItem struct {
-	FieldName         string
-	PrimitiveArrIndex *int64
+	FieldName  string
+	ArrayIndex *int64
 }
 
 type SubstitutionChild struct {

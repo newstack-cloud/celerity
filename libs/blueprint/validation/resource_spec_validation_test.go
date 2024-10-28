@@ -803,6 +803,14 @@ func (r *testResourceMissingSpecDef) CanLinkTo(
 	return &provider.ResourceCanLinkToOutput{}, nil
 }
 
+// StabilisedDependencies is not used for validation!
+func (r *testResourceMissingSpecDef) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
 // IsCommonTerminal is not used for validation!
 func (r *testResourceMissingSpecDef) IsCommonTerminal(
 	ctx context.Context,
@@ -903,6 +911,14 @@ func (r *testResourceMissingSchema) CanLinkTo(
 	input *provider.ResourceCanLinkToInput,
 ) (*provider.ResourceCanLinkToOutput, error) {
 	return &provider.ResourceCanLinkToOutput{}, nil
+}
+
+// StabilisedDependencies is not used for validation!
+func (r *testResourceMissingSchema) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
 }
 
 // IsCommonTerminal is not used for validation!
@@ -1007,6 +1023,14 @@ func (r *specValidationTestExampleResource) CanLinkTo(
 	input *provider.ResourceCanLinkToInput,
 ) (*provider.ResourceCanLinkToOutput, error) {
 	return &provider.ResourceCanLinkToOutput{}, nil
+}
+
+// StabilisedDependencies is not used for validation!
+func (r *specValidationTestExampleResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
 }
 
 // IsCommonTerminal is not used for validation!

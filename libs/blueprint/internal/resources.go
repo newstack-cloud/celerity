@@ -20,6 +20,13 @@ func (r *DynamoDBTableResource) CanLinkTo(
 	}, nil
 }
 
+func (r *DynamoDBTableResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
 func (r *DynamoDBTableResource) IsCommonTerminal(
 	ctx context.Context,
 	input *provider.ResourceIsCommonTerminalInput,
@@ -130,6 +137,13 @@ func (r *LambdaFunctionResource) CanLinkTo(
 	return &provider.ResourceCanLinkToOutput{
 		CanLinkTo: []string{"aws/dynamodb/table", "aws/lambda/function"},
 	}, nil
+}
+
+func (r *LambdaFunctionResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
 }
 
 func (r *LambdaFunctionResource) IsCommonTerminal(

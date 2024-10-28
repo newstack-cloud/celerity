@@ -436,7 +436,7 @@ func validateResourcePropertySubDefinitionsPath(
 			if i == len(subResourceProp.Path)-1 {
 				resolvedType = attrType
 			}
-		} else if property.PrimitiveArrIndex != nil &&
+		} else if property.ArrayIndex != nil &&
 			currentSchema.Type == provider.ResourceDefinitionsSchemaTypeArray {
 			currentSchema = currentSchema.Items
 			if i == len(subResourceProp.Path)-1 {

@@ -150,7 +150,7 @@ func errSerialiseSubstitutionInvalidChildPath(
 }
 
 func errSerialiseSubstitutionInvalidPathItem(pathItem *SubstitutionPathItem) error {
-	if pathItem.PrimitiveArrIndex == nil {
+	if pathItem.ArrayIndex == nil {
 		return &errors.SerialiseError{
 			ReasonCode: ErrorReasonCodeInvalidReferenceSub,
 			Err: fmt.Errorf(
@@ -164,7 +164,7 @@ func errSerialiseSubstitutionInvalidPathItem(pathItem *SubstitutionPathItem) err
 		ReasonCode: ErrorReasonCodeInvalidReferenceSub,
 		Err: fmt.Errorf(
 			"validation failed due to invalid index accessor path item [\"%d\"] having been provided in a reference substitution",
-			*pathItem.PrimitiveArrIndex,
+			*pathItem.ArrayIndex,
 		),
 	}
 }

@@ -141,6 +141,14 @@ func (r *testExampleResource) CanLinkTo(
 	return &provider.ResourceCanLinkToOutput{}, nil
 }
 
+// StabilisedDependencies is not used for validation!
+func (r *testExampleResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
 // IsCommonTerminal is not used for validation!
 func (r *testExampleResource) IsCommonTerminal(
 	ctx context.Context,

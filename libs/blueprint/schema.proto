@@ -195,6 +195,6 @@ message SubstitutionChild {
 message SubstitutionPathItem {
     oneof item {
         string field_name = 1;
-        int64 primitive_arr_index = 2;
+        int64 array_index = 2;
     }
 }

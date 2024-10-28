@@ -2077,7 +2077,7 @@ func subPathToString(path []*substitutions.SubstitutionPathItem) string {
 			fieldStr := fmt.Sprintf("[\"%s\"]", item.FieldName)
 			sb.WriteString(fieldStr)
 		} else {
-			pathStr := fmt.Sprintf("[%d]", *item.PrimitiveArrIndex)
+			pathStr := fmt.Sprintf("[%d]", *item.ArrayIndex)
 			sb.WriteString(pathStr)
 		}
 	}

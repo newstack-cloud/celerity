@@ -33,6 +33,10 @@ type Resource interface {
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
 	CanLinkTo(ctx context.Context, input *ResourceCanLinkToInput) (*ResourceCanLinkToOutput, error)
+	// StabilisedDependencies retrieves a list of resource types that must be stabilised
+	// before the current resource can be deployed when another resource of one of the specified types
+	// is a dependency of the current resource in a blueprint.
+	StabilisedDependencies(ctx context.Context, input *ResourceStabilisedDependenciesInput) (*ResourceStabilisedDependenciesOutput, error)
 	// IsCommonTerminal specifies whether this resource is expected to have a common use-case
 	// as a terminal resource that does not link out to other resources.
 	// This is useful for providing useful warnings to users about their blueprints
@@ -218,6 +222,18 @@ type ResourceCanLinkToInput struct {
 // a given resource can link to.
 type ResourceCanLinkToOutput struct {
 	CanLinkTo []string
+}
+
+// ResourceStabilisedDependenciesInput provides the input data needed for a resource to
+// determine what resource types must be stabilised before the current resource can be deployed.
+type ResourceStabilisedDependenciesInput struct {
+	Params core.BlueprintParams
+}
+
+// ResourceStabilisedDependenciesOutput provides the output data from determining what resource types
+// must be stabilised before the current resource can be deployed.
+type ResourceStabilisedDependenciesOutput struct {
+	StabilisedDependencies []string
 }
 
 // ResourceIsCommonTerminalInput provides the input data needed for a resource to

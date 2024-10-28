@@ -56,7 +56,7 @@ func SubstitutionToString(substitutionContext string, substitution *Substitution
 	} else if substitution.DataSourceProperty != nil {
 		return subDataSourcePropertyToString(substitution.DataSourceProperty)
 	} else if substitution.ResourceProperty != nil {
-		return subResourcePropertyToString(substitution.ResourceProperty)
+		return SubResourcePropertyToString(substitution.ResourceProperty)
 	} else if substitution.Child != nil {
 		return subChildToString(substitution.Child)
 	}
@@ -156,7 +156,9 @@ func subDataSourcePropertyToString(prop *SubstitutionDataSourceProperty) (string
 	return path, nil
 }
 
-func subResourcePropertyToString(prop *SubstitutionResourceProperty) (string, error) {
+// SubResourcePropertyToString produces a string representation of a substitution
+// component that refers to a resource property.
+func SubResourcePropertyToString(prop *SubstitutionResourceProperty) (string, error) {
 	path := "resources"
 	if NamePattern.MatchString(prop.ResourceName) {
 		path += fmt.Sprintf(".%s", prop.ResourceName)
@@ -190,8 +192,8 @@ func propertyPathItemToString(pathItem *SubstitutionPathItem) (string, error) {
 		return fmt.Sprintf(".%s", pathItem.FieldName), nil
 	} else if NameStringLiteralPattern.MatchString(pathItem.FieldName) {
 		return fmt.Sprintf("[\"%s\"]", pathItem.FieldName), nil
-	} else if pathItem.PrimitiveArrIndex != nil {
-		return fmt.Sprintf("[%d]", *pathItem.PrimitiveArrIndex), nil
+	} else if pathItem.ArrayIndex != nil {
+		return fmt.Sprintf("[%d]", *pathItem.ArrayIndex), nil
 	}
 
 	// Return the raw path item string so it can be used in higher level error messages.

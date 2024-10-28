@@ -126,6 +126,13 @@ func (r *testApiGatewayResource) CanLinkTo(
 	}, nil
 }
 
+func (r *testApiGatewayResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
 func (r *testApiGatewayResource) IsCommonTerminal(
 	ctx context.Context,
 	input *provider.ResourceIsCommonTerminalInput,
@@ -221,6 +228,13 @@ func (r *testSQSQueueResource) CanLinkTo(
 	return &provider.ResourceCanLinkToOutput{
 		CanLinkTo: []string{"aws/lambda/function"},
 	}, nil
+}
+
+func (r *testSQSQueueResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
 }
 
 func (r *testSQSQueueResource) IsCommonTerminal(
@@ -323,6 +337,13 @@ func (r *testLambdaFunctionResource) CanLinkTo(
 	}, nil
 }
 
+func (r *testLambdaFunctionResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
 func (r *testLambdaFunctionResource) IsCommonTerminal(
 	ctx context.Context,
 	input *provider.ResourceIsCommonTerminalInput,
@@ -418,6 +439,13 @@ func (r *testStratosLambdaFunctionResource) CanLinkTo(
 	return &provider.ResourceCanLinkToOutput{
 		CanLinkTo: []string{"aws/dynamodb/table"},
 	}, nil
+}
+
+func (r *testStratosLambdaFunctionResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
 }
 
 func (r *testStratosLambdaFunctionResource) IsCommonTerminal(
@@ -517,6 +545,13 @@ func (r *testDynamoDBTableResource) CanLinkTo(
 	}, nil
 }
 
+func (r *testDynamoDBTableResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
 func (r *testDynamoDBTableResource) IsCommonTerminal(
 	ctx context.Context,
 	input *provider.ResourceIsCommonTerminalInput,
@@ -612,6 +647,13 @@ func (r *testDynamoDBStreamResource) CanLinkTo(
 	return &provider.ResourceCanLinkToOutput{
 		CanLinkTo: []string{"aws/lambda/function", "stratosaws/lambda/function"},
 	}, nil
+}
+
+func (r *testDynamoDBStreamResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
 }
 
 func (r *testDynamoDBStreamResource) IsCommonTerminal(
@@ -712,6 +754,13 @@ func (r *testIAMRoleResource) CanLinkTo(
 	}, nil
 }
 
+func (r *testIAMRoleResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
 func (r *testIAMRoleResource) IsCommonTerminal(
 	ctx context.Context,
 	input *provider.ResourceIsCommonTerminalInput,
@@ -808,6 +857,13 @@ func (r *testStratosIAMRoleResource) CanLinkTo(
 		// "aws/lambda/function" is included here to test catching circular links.
 		CanLinkTo: []string{"aws/iam/policy", "aws/lambda/function"},
 	}, nil
+}
+
+func (r *testStratosIAMRoleResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
 }
 
 func (r *testStratosIAMRoleResource) IsCommonTerminal(

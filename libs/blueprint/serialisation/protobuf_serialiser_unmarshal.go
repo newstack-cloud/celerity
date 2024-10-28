@@ -856,9 +856,9 @@ func fromSubstitutionPathItemPB(
 		}, nil
 	}
 
-	if indexVal, isIndex := pathItemPB.Item.(*schemapb.SubstitutionPathItem_PrimitiveArrIndex); isIndex {
+	if indexVal, isIndex := pathItemPB.Item.(*schemapb.SubstitutionPathItem_ArrayIndex); isIndex {
 		return &substitutions.SubstitutionPathItem{
-			PrimitiveArrIndex: &indexVal.PrimitiveArrIndex,
+			ArrayIndex: &indexVal.ArrayIndex,
 		}, nil
 	}
 

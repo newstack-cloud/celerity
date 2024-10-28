@@ -33,7 +33,7 @@
                               Path: ([]*substitutions.SubstitutionPathItem) (len=1) {
                                 (*substitutions.SubstitutionPathItem)({
                                   FieldName: (string) (len=10) "bucketName",
-                                  PrimitiveArrIndex: (*int64)(<nil>)
+                                  ArrayIndex: (*int64)(<nil>)
                                 })
                               },
                               SourceMeta: (*source.Meta)({
@@ -214,7 +214,7 @@
                             Path: ([]*substitutions.SubstitutionPathItem) (len=1) {
                               (*substitutions.SubstitutionPathItem)({
                                 FieldName: (string) (len=10) "bucketName",
-                                PrimitiveArrIndex: (*int64)(<nil>)
+                                ArrayIndex: (*int64)(<nil>)
                               })
                             },
                             SourceMeta: (*source.Meta)({

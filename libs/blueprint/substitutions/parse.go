@@ -475,7 +475,7 @@ func (p *Parser) propertyPathIndexParent(topLevelIndex *int64) ([]*SubstitutionP
 	path := []*SubstitutionPathItem{}
 	if topLevelIndex != nil {
 		path = append(path, &SubstitutionPathItem{
-			PrimitiveArrIndex: topLevelIndex,
+			ArrayIndex: topLevelIndex,
 		})
 	}
 
@@ -513,7 +513,7 @@ func (p *Parser) restOfPropertyPath(targetPath *[]*SubstitutionPathItem) []error
 		}
 		if index != nil {
 			*targetPath = append(*targetPath, &SubstitutionPathItem{
-				PrimitiveArrIndex: index,
+				ArrayIndex: index,
 			})
 		} else {
 			isValidPathItem = false

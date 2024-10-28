@@ -827,10 +827,10 @@ func toSubstitutionPathItemPB(
 		}, nil
 	}
 
-	if pathItem.PrimitiveArrIndex != nil {
+	if pathItem.ArrayIndex != nil {
 		return &schemapb.SubstitutionPathItem{
-			Item: &schemapb.SubstitutionPathItem_PrimitiveArrIndex{
-				PrimitiveArrIndex: *pathItem.PrimitiveArrIndex,
+			Item: &schemapb.SubstitutionPathItem_ArrayIndex{
+				ArrayIndex: *pathItem.ArrayIndex,
 			},
 		}, nil
 	}

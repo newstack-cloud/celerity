@@ -1513,7 +1513,7 @@
                                 Path: ([]*substitutions.SubstitutionPathItem) (len=1) {
                                   (*substitutions.SubstitutionPathItem)({
                                     FieldName: (string) (len=13) "dynamoDBTable",
-                                    PrimitiveArrIndex: (*int64)(<nil>)
+                                    ArrayIndex: (*int64)(<nil>)
                                   })
                                 },
                                 SourceMeta: (*source.Meta)({
