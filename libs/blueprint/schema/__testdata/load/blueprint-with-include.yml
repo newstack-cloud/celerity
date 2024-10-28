@@ -38,6 +38,8 @@ resources:
     # For Makeshift to be fully compatible with celerity, we'll use the
     # celerity namespace for all Makeshift resources.
     type: "celerity/api"
+    dependsOn:
+      - getOrdersHandler
     metadata:
       displayName: Order API
       labels:

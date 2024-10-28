@@ -364,6 +364,11 @@ func toResourcePB(resource *schema.Resource) (*schemapb.Resource, error) {
 		return nil, err
 	}
 
+	dependsOn := []string{}
+	if resource.DependsOn != nil {
+		dependsOn = resource.DependsOn.Values
+	}
+
 	resourceMetadataPB, err := toResourceMetadataPB(resource.Metadata)
 	if err != nil {
 		return nil, err
@@ -380,6 +385,7 @@ func toResourcePB(resource *schema.Resource) (*schemapb.Resource, error) {
 		Condition:    conditionPB,
 		Each:         eachPB,
 		Metadata:     resourceMetadataPB,
+		DependsOn:    dependsOn,
 		LinkSelector: toLinkSelectorPB(resource.LinkSelector),
 		Spec:         specPB,
 	}, nil

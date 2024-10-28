@@ -65,6 +65,8 @@ resources:
   # are defined at the API level.
   orderApi:
     type: "celerity/api"
+    dependsOn:
+      - getOrdersHandler
     metadata:
       displayName: Order API
       labels:

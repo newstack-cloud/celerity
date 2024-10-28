@@ -47,6 +47,7 @@
   "resources": {
     "orderApi": {
       "type": "celerity/api",
+      "dependsOn": ["getOrdersHandler"],
       "metadata": {
         "displayName": "Order API",
         "labels": {

@@ -18,12 +18,14 @@ func (s *TransformValidationTestSuite) Test_succeeds_without_any_issues_for_a_va
 	blueprint := &schema.Blueprint{
 		Version: &core.ScalarValue{StringValue: &version},
 		Transform: &schema.TransformValueWrapper{
-			Values: []string{TransformCelerity2024_09_01},
-			SourceMeta: []*source.Meta{
-				{Position: source.Position{
-					Line:   1,
-					Column: 1,
-				}},
+			StringList: schema.StringList{
+				Values: []string{TransformCelerity2024_09_01},
+				SourceMeta: []*source.Meta{
+					{Position: source.Position{
+						Line:   1,
+						Column: 1,
+					}},
+				},
 			},
 		},
 	}
@@ -37,20 +39,22 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_and_warnings_for_inva
 	blueprint := &schema.Blueprint{
 		Version: &core.ScalarValue{StringValue: &version},
 		Transform: &schema.TransformValueWrapper{
-			Values: []string{TransformCelerity2024_09_01, "", "non-core-transform"},
-			SourceMeta: []*source.Meta{
-				{Position: source.Position{
-					Line:   1,
-					Column: 1,
-				}},
-				{Position: source.Position{
-					Line:   2,
-					Column: 1,
-				}},
-				{Position: source.Position{
-					Line:   3,
-					Column: 1,
-				}},
+			StringList: schema.StringList{
+				Values: []string{TransformCelerity2024_09_01, "", "non-core-transform"},
+				SourceMeta: []*source.Meta{
+					{Position: source.Position{
+						Line:   1,
+						Column: 1,
+					}},
+					{Position: source.Position{
+						Line:   2,
+						Column: 1,
+					}},
+					{Position: source.Position{
+						Line:   3,
+						Column: 1,
+					}},
+				},
 			},
 		},
 	}
@@ -94,16 +98,18 @@ func (s *BlueprintValidationTestSuite) Test_reports_error_for_sub_usage_in_trans
 	blueprint := &schema.Blueprint{
 		Version: &core.ScalarValue{StringValue: &version},
 		Transform: &schema.TransformValueWrapper{
-			Values: []string{TransformCelerity2024_09_01, "${variables.transform1}"},
-			SourceMeta: []*source.Meta{
-				{Position: source.Position{
-					Line:   1,
-					Column: 1,
-				}},
-				{Position: source.Position{
-					Line:   2,
-					Column: 1,
-				}},
+			StringList: schema.StringList{
+				Values: []string{TransformCelerity2024_09_01, "${variables.transform1}"},
+				SourceMeta: []*source.Meta{
+					{Position: source.Position{
+						Line:   1,
+						Column: 1,
+					}},
+					{Position: source.Position{
+						Line:   2,
+						Column: 1,
+					}},
+				},
 			},
 		},
 	}

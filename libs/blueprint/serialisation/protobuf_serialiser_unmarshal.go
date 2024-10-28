@@ -61,7 +61,9 @@ func fromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
 
 	transform := (*schema.TransformValueWrapper)(nil)
 	if len(blueprintPB.Transform) > 0 {
-		transform = &schema.TransformValueWrapper{Values: blueprintPB.Transform}
+		transform = &schema.TransformValueWrapper{
+			StringList: schema.StringList{Values: blueprintPB.Transform},
+		}
 	}
 
 	return &schema.Blueprint{
@@ -385,6 +387,15 @@ func fromResourcePB(resourcePB *schemapb.Resource) (*schema.Resource, error) {
 		return nil, err
 	}
 
+	dependsOn := (*schema.DependsOnList)(nil)
+	if resourcePB.DependsOn != nil {
+		dependsOn = &schema.DependsOnList{
+			StringList: schema.StringList{
+				Values: resourcePB.DependsOn,
+			},
+		}
+	}
+
 	resourceMetadata, err := fromResourceMetadataPB(resourcePB.Metadata)
 	if err != nil {
 		return nil, err
@@ -400,6 +411,7 @@ func fromResourcePB(resourcePB *schemapb.Resource) (*schema.Resource, error) {
 		Description:  description,
 		Each:         each,
 		Condition:    condition,
+		DependsOn:    dependsOn,
 		Metadata:     resourceMetadata,
 		LinkSelector: fromLinkSelectorPB(resourcePB.LinkSelector),
 		Spec:         spec,

@@ -7,10 +7,12 @@
     SourceMeta: (*source.Meta)(<nil>)
   }),
   Transform: (*schema.TransformValueWrapper)({
-    Values: ([]string) (len=1) {
-      (string) (len=19) "celerity-2022-01-22"
-    },
-    SourceMeta: ([]*source.Meta) <nil>
+    StringList: (schema.StringList) {
+      Values: ([]string) (len=1) {
+        (string) (len=19) "celerity-2022-01-22"
+      },
+      SourceMeta: ([]*source.Meta) <nil>
+    }
   }),
   Variables: (*schema.VariableMap)({
     Values: (map[string]*schema.Variable) (len=2) {
@@ -247,6 +249,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
+        DependsOn: (*schema.DependsOnList)(<nil>),
         Condition: (*schema.Condition)(<nil>),
         Each: (*substitutions.StringOrSubstitutions)(<nil>),
         LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -316,6 +319,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
+        DependsOn: (*schema.DependsOnList)(<nil>),
         Condition: (*schema.Condition)(<nil>),
         Each: (*substitutions.StringOrSubstitutions)(<nil>),
         LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -459,6 +463,14 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
+        DependsOn: (*schema.DependsOnList)({
+          StringList: (schema.StringList) {
+            Values: ([]string) (len=1) {
+              (string) (len=16) "getOrdersHandler"
+            },
+            SourceMeta: ([]*source.Meta) <nil>
+          }
+        }),
         Condition: (*schema.Condition)(<nil>),
         Each: (*substitutions.StringOrSubstitutions)(<nil>),
         LinkSelector: (*schema.LinkSelector)({
@@ -594,6 +606,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
+        DependsOn: (*schema.DependsOnList)(<nil>),
         Condition: (*schema.Condition)(<nil>),
         Each: (*substitutions.StringOrSubstitutions)(<nil>),
         LinkSelector: (*schema.LinkSelector)({
@@ -678,6 +691,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
+        DependsOn: (*schema.DependsOnList)(<nil>),
         Condition: (*schema.Condition)(<nil>),
         Each: (*substitutions.StringOrSubstitutions)(<nil>),
         LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -771,6 +785,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)(<nil>)
         }),
+        DependsOn: (*schema.DependsOnList)(<nil>),
         Condition: (*schema.Condition)(<nil>),
         Each: (*substitutions.StringOrSubstitutions)(<nil>),
         LinkSelector: (*schema.LinkSelector)(<nil>),

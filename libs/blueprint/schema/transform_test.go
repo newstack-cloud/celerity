@@ -124,10 +124,12 @@ func (s *TransformTestSuite) Test_serialise_valid_transform_yaml_input(c *C) {
 	}
 
 	serialisedBytes, err := yaml.Marshal(&TransformValueWrapper{
-		Values: []string{
-			"celerity-2022-01-22",
-			"custom-transform-2023-01-01",
-			"custom-transform-2023-02-21",
+		StringList: StringList{
+			Values: []string{
+				"celerity-2022-01-22",
+				"custom-transform-2023-01-01",
+				"custom-transform-2023-02-21",
+			},
 		},
 	})
 	if err != nil {
@@ -206,10 +208,12 @@ func (s *TransformTestSuite) Test_serialise_valid_transform_json_input(c *C) {
 	}
 
 	serialisedBytes, err := json.Marshal(&TransformValueWrapper{
-		Values: []string{
-			"celerity-2022-01-22",
-			"custom-transform-2023-01-01",
-			"custom-transform-2023-02-21",
+		StringList: StringList{
+			Values: []string{
+				"celerity-2022-01-22",
+				"custom-transform-2023-01-01",
+				"custom-transform-2023-02-21",
+			},
 		},
 	})
 	if err != nil {

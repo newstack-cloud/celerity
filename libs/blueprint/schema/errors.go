@@ -42,6 +42,10 @@ const (
 	// when the reason for a blueprint schema load error is due to
 	// an invalid transform field value being provided.
 	ErrorSchemaReasonCodeInvalidTransformType ErrorSchemaReasonCode = "invalid_transform_type"
+	// ErrorSchemaReasonCodeInvalidDependencyType is provided
+	// when the reason for a blueprint schema load error is due
+	// to an invalid dependsOn field value being provided for a resource.
+	ErrorSchemaReasonCodeInvalidDependencyType ErrorSchemaReasonCode = "invalid_dependency_type"
 	// ErrorSchemaReasonCodeInvalidMap is provided when the reason
 	// for a blueprint schema load error is due to an invalid map
 	// being provided.
@@ -61,6 +65,18 @@ func errInvalidTransformType(underlyingError error, line *int, column *int) erro
 		ReasonCode: ErrorSchemaReasonCodeInvalidTransformType,
 		Err: fmt.Errorf(
 			"unsupported type provided for spec transform, must be string or a list of strings: %s",
+			underlyingError.Error(),
+		),
+		SourceLine:   line,
+		SourceColumn: column,
+	}
+}
+
+func errInvalidDependencyType(underlyingError error, line *int, column *int) error {
+	return &Error{
+		ReasonCode: ErrorSchemaReasonCodeInvalidDependencyType,
+		Err: fmt.Errorf(
+			"unsupported type provided for resource dependency, must be string or a list of strings: %s",
 			underlyingError.Error(),
 		),
 		SourceLine:   line,

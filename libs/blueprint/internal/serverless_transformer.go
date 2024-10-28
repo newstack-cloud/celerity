@@ -92,8 +92,10 @@ func removeServerlessTransform(
 	}
 
 	return &schema.TransformValueWrapper{
-		Values:     values,
-		SourceMeta: sourceMeta,
+		StringList: schema.StringList{
+			Values:     values,
+			SourceMeta: sourceMeta,
+		},
 	}
 }
 

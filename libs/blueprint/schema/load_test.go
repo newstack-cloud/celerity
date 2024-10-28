@@ -64,7 +64,7 @@ func (s *LoadTestSuite) Test_loads_blueprint_from_json_file(c *C) {
 	}
 }
 
-func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file_winth_includes(c *C) {
+func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file_with_includes(c *C) {
 	blueprint, err := Load(s.specFixtures["yamlWithInclude"].filePath, YAMLSpecFormat)
 	if err != nil {
 		c.Error(err)

@@ -56,10 +56,11 @@ message Resource {
     string type = 1;
     optional StringOrSubstitutions description = 2;
     ResourceMetadata metadata = 3;
-    optional ResourceCondition condition = 4;
-    optional StringOrSubstitutions each = 5;
-    optional LinkSelector link_selector = 6;
-    MappingNode spec = 7;
+    repeated string depends_on = 4;
+    optional ResourceCondition condition = 5;
+    optional StringOrSubstitutions each = 6;
+    optional LinkSelector link_selector = 7;
+    MappingNode spec = 8;
 }
 
 message LinkSelector {

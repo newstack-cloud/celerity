@@ -59,20 +59,22 @@
         })
       },
       SchemaElement: (*schema.TransformValueWrapper)({
-        Values: ([]string) (len=1) {
-          (string) (len=19) "celerity-2022-01-22"
-        },
-        SourceMeta: ([]*source.Meta) (len=1) {
-          (*source.Meta)({
-            Position: (source.Position) {
-              Line: (int) 3,
-              Column: (int) 5
-            },
-            EndPosition: (*source.Position)({
-              Line: (int) 3,
-              Column: (int) 24
+        StringList: (schema.StringList) {
+          Values: ([]string) (len=1) {
+            (string) (len=19) "celerity-2022-01-22"
+          },
+          SourceMeta: ([]*source.Meta) (len=1) {
+            (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 3,
+                Column: (int) 5
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 3,
+                Column: (int) 24
+              })
             })
-          })
+          }
         }
       }),
       Range: (*source.Range)({
@@ -11490,6 +11492,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)({
               And: ([]*schema.Condition) (len=1) {
                 (*schema.Condition)({
@@ -13232,6 +13235,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -14616,6 +14620,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -15987,6 +15992,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -16978,6 +16984,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -17810,6 +17817,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)({
@@ -19597,6 +19605,7 @@
             }),
             Description: (*substitutions.StringOrSubstitutions)(<nil>),
             Metadata: (*schema.Metadata)(<nil>),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)({
               Values: ([]*substitutions.StringOrSubstitution) (len=1) {
@@ -20261,6 +20270,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -20428,6 +20438,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -21095,6 +21106,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)({
               And: ([]*schema.Condition) (len=1) {
                 (*schema.Condition)({
@@ -21658,6 +21670,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)({
@@ -21806,6 +21819,7 @@
             }),
             Description: (*substitutions.StringOrSubstitutions)(<nil>),
             Metadata: (*schema.Metadata)(<nil>),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)({
               Values: ([]*substitutions.StringOrSubstitution) (len=1) {
@@ -22319,6 +22333,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -22545,6 +22560,7 @@
                 EndPosition: (*source.Position)(<nil>)
               })
             }),
+            DependsOn: (*schema.DependsOnList)(<nil>),
             Condition: (*schema.Condition)(<nil>),
             Each: (*substitutions.StringOrSubstitutions)(<nil>),
             LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -23501,20 +23517,22 @@
       })
     }),
     Transform: (*schema.TransformValueWrapper)({
-      Values: ([]string) (len=1) {
-        (string) (len=19) "celerity-2022-01-22"
-      },
-      SourceMeta: ([]*source.Meta) (len=1) {
-        (*source.Meta)({
-          Position: (source.Position) {
-            Line: (int) 3,
-            Column: (int) 5
-          },
-          EndPosition: (*source.Position)({
-            Line: (int) 3,
-            Column: (int) 24
+      StringList: (schema.StringList) {
+        Values: ([]string) (len=1) {
+          (string) (len=19) "celerity-2022-01-22"
+        },
+        SourceMeta: ([]*source.Meta) (len=1) {
+          (*source.Meta)({
+            Position: (source.Position) {
+              Line: (int) 3,
+              Column: (int) 5
+            },
+            EndPosition: (*source.Position)({
+              Line: (int) 3,
+              Column: (int) 24
+            })
           })
-        })
+        }
       }
     }),
     Variables: (*schema.VariableMap)({
@@ -24778,6 +24796,7 @@
               EndPosition: (*source.Position)(<nil>)
             })
           }),
+          DependsOn: (*schema.DependsOnList)(<nil>),
           Condition: (*schema.Condition)(<nil>),
           Each: (*substitutions.StringOrSubstitutions)(<nil>),
           LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -24945,6 +24964,7 @@
               EndPosition: (*source.Position)(<nil>)
             })
           }),
+          DependsOn: (*schema.DependsOnList)(<nil>),
           Condition: (*schema.Condition)(<nil>),
           Each: (*substitutions.StringOrSubstitutions)(<nil>),
           LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -25612,6 +25632,7 @@
               EndPosition: (*source.Position)(<nil>)
             })
           }),
+          DependsOn: (*schema.DependsOnList)(<nil>),
           Condition: (*schema.Condition)({
             And: ([]*schema.Condition) (len=1) {
               (*schema.Condition)({
@@ -26175,6 +26196,7 @@
               EndPosition: (*source.Position)(<nil>)
             })
           }),
+          DependsOn: (*schema.DependsOnList)(<nil>),
           Condition: (*schema.Condition)(<nil>),
           Each: (*substitutions.StringOrSubstitutions)(<nil>),
           LinkSelector: (*schema.LinkSelector)({
@@ -26323,6 +26345,7 @@
           }),
           Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Metadata: (*schema.Metadata)(<nil>),
+          DependsOn: (*schema.DependsOnList)(<nil>),
           Condition: (*schema.Condition)(<nil>),
           Each: (*substitutions.StringOrSubstitutions)({
             Values: ([]*substitutions.StringOrSubstitution) (len=1) {
@@ -26836,6 +26859,7 @@
               EndPosition: (*source.Position)(<nil>)
             })
           }),
+          DependsOn: (*schema.DependsOnList)(<nil>),
           Condition: (*schema.Condition)(<nil>),
           Each: (*substitutions.StringOrSubstitutions)(<nil>),
           LinkSelector: (*schema.LinkSelector)(<nil>),
@@ -27062,6 +27086,7 @@
               EndPosition: (*source.Position)(<nil>)
             })
           }),
+          DependsOn: (*schema.DependsOnList)(<nil>),
           Condition: (*schema.Condition)(<nil>),
           Each: (*substitutions.StringOrSubstitutions)(<nil>),
           LinkSelector: (*schema.LinkSelector)(<nil>),

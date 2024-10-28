@@ -17,6 +17,7 @@ type Resource struct {
 	Type         *ResourceTypeWrapper                 `yaml:"type" json:"type"`
 	Description  *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 	Metadata     *Metadata                            `yaml:"metadata,omitempty" json:"metadata,omitempty"`
+	DependsOn    *DependsOnList                       `yaml:"dependsOn,omitempty" json:"dependsOn,omitempty"`
 	Condition    *Condition                           `yaml:"condition,omitempty" json:"condition,omitempty"`
 	Each         *substitutions.StringOrSubstitutions `yaml:"each,omitempty" json:"each,omitempty"`
 	LinkSelector *LinkSelector                        `yaml:"linkSelector,omitempty" json:"linkSelector,omitempty"`
@@ -41,12 +42,38 @@ func (r *Resource) UnmarshalYAML(value *yaml.Node) error {
 	r.Type = alias.Type
 	r.Description = alias.Description
 	r.Metadata = alias.Metadata
+	r.DependsOn = alias.DependsOn
 	r.Condition = alias.Condition
 	r.Each = alias.Each
 	r.LinkSelector = alias.LinkSelector
 	r.Spec = alias.Spec
 
 	return nil
+}
+
+// DependsOnList provides a list of resource names
+// that a resource depends on.
+// This can include extra information about the locations of
+// elements in the list in the original source,
+// depending on the source format.
+type DependsOnList struct {
+	StringList
+}
+
+func (t *DependsOnList) MarshalYAML() (interface{}, error) {
+	return t.StringList.MarshalYAML()
+}
+
+func (t *DependsOnList) UnmarshalYAML(value *yaml.Node) error {
+	return t.StringList.unmarshalYAML(value, errInvalidDependencyType, "dependency")
+}
+
+func (t *DependsOnList) MarshalJSON() ([]byte, error) {
+	return t.StringList.MarshalJSON()
+}
+
+func (t *DependsOnList) UnmarshalJSON(data []byte) error {
+	return t.unmarshalJSON(data, errInvalidDependencyType, "dependency")
 }
 
 // ResourceTypeWrapper provides a struct that holds a resource type
