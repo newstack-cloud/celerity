@@ -66,8 +66,9 @@ type Container interface {
 // This includes the status, the Raw data from the upstream resouce provider
 // along with reasons for failure when a resource is in a failure state.
 type ResourceState struct {
-	ResourceID string
-	Status     core.ResourceStatus
+	ResourceID    string
+	Status        core.ResourceStatus
+	PreciseStatus core.PreciseResourceStatus
 	// ResourceData is the mapping that holds the structure of
 	// the "raw" resource data from the resource provider service.
 	// (e.g. AWS Lambda Function object)
