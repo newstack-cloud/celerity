@@ -97,6 +97,18 @@ func ValidateResource(
 		errs = append(errs, validateMetadataErr)
 	}
 
+	validateResDepsDiagnostics, validateResDepsErr := validateResourceDependencies(
+		ctx,
+		name,
+		resource.DependsOn,
+		bpSchema,
+		refChainCollector,
+	)
+	diagnostics = append(diagnostics, validateResDepsDiagnostics...)
+	if validateResDepsErr != nil {
+		errs = append(errs, validateResDepsErr)
+	}
+
 	validateResConditionDiagnostics, validateResConditionErr := validateResourceCondition(
 		ctx,
 		name,
@@ -425,6 +437,65 @@ func validateResourceMetadataAnnotations(
 	}
 
 	return diagnostics, nil
+}
+
+func validateResourceDependencies(
+	ctx context.Context,
+	resourceName string,
+	dependsOn *schema.DependsOnList,
+	blueprint *schema.Blueprint,
+	refChainCollector RefChainCollector,
+) ([]*bpcore.Diagnostic, error) {
+	if dependsOn == nil {
+		return []*bpcore.Diagnostic{}, nil
+	}
+
+	errs := []error{}
+	for i, dependency := range dependsOn.Values {
+		if substitutions.ContainsSubstitution(dependency) {
+			errs = append(errs, errResourceDependencyContainsSubstitution(
+				resourceName,
+				dependency,
+				dependsOn.SourceMeta[i],
+			))
+		}
+
+		dependencyResource, hasResource := getResource(dependency, blueprint)
+		if !hasResource {
+			errs = append(errs, errResourceDependencyMissing(
+				resourceName,
+				dependency,
+				dependsOn.SourceMeta[i],
+			))
+		}
+
+		if resourceName == dependency {
+			errs = append(errs, errSelfReferencingResourceDependency(
+				resourceName,
+				dependsOn.SourceMeta[i],
+			))
+		}
+
+		// Collect reference in the ref chain collector for the dependency to cover
+		// cycle detection across references, dependsOn and links.
+		resourceID := fmt.Sprintf("resources.%s", dependency)
+		referencedByResourceID := fmt.Sprintf("resources.%s", resourceName)
+		err := refChainCollector.Collect(
+			resourceID,
+			dependencyResource,
+			referencedByResourceID,
+			[]string{"dependsOn"},
+		)
+		if err != nil {
+			return []*bpcore.Diagnostic{}, err
+		}
+	}
+
+	if len(errs) > 0 {
+		return []*bpcore.Diagnostic{}, ErrMultipleValidationErrors(errs)
+	}
+
+	return []*bpcore.Diagnostic{}, nil
 }
 
 func validateResourceCondition(
@@ -794,4 +865,13 @@ func getResourceSourceMeta(resourceMap *schema.ResourceMap, resourceName string)
 	}
 
 	return resourceMap.SourceMeta[resourceName]
+}
+
+func getResource(resourceName string, blueprint *schema.Blueprint) (*schema.Resource, bool) {
+	if blueprint.Resources == nil {
+		return nil, false
+	}
+
+	resource, hasResource := blueprint.Resources.Values[resourceName]
+	return resource, hasResource
 }

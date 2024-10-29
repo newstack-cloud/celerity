@@ -700,6 +700,147 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_link_selector_labe
 	)
 }
 
+func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_has_a_missing_dependency(c *C) {
+	resource := newTestValidResource()
+	resource.DependsOn = &schema.DependsOnList{
+		StringList: schema.StringList{
+			Values: []string{"missingResource"},
+			SourceMeta: []*source.Meta{
+				{
+					Position: source.Position{
+						Line:   1,
+						Column: 1,
+					},
+				},
+			},
+		},
+	}
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"testService": resource,
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testService",
+		resource,
+		blueprint.Resources,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMissingResourceDependency)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a missing dependency \"missingResource\" "+
+			"for resource \"testService\"",
+	)
+}
+
+func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_dependency_contains_substitution(c *C) {
+	resource := newTestValidResource()
+	resource.DependsOn = &schema.DependsOnList{
+		StringList: schema.StringList{
+			Values: []string{"resource-${variables.environment}"},
+			SourceMeta: []*source.Meta{
+				{
+					Position: source.Position{
+						Line:   1,
+						Column: 1,
+					},
+				},
+			},
+		},
+	}
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"testService": resource,
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testService",
+		resource,
+		blueprint.Resources,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a dependency \"resource-${variables.environment}\" "+
+			"containing a substitution in resource \"testService\", the dependency name \"resource-${variables.environment}\" "+
+			"can not contain substitutions and must be a resource in the same blueprint",
+	)
+}
+
+func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_depends_on_itself(c *C) {
+	resource := newTestValidResource()
+	resource.DependsOn = &schema.DependsOnList{
+		StringList: schema.StringList{
+			Values: []string{"testService"},
+			SourceMeta: []*source.Meta{
+				{
+					Position: source.Position{
+						Line:   1,
+						Column: 1,
+					},
+				},
+			},
+		},
+	}
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"testService": resource,
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testService",
+		resource,
+		blueprint.Resources,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a self-referencing dependency in resource \"testService\"",
+	)
+}
+
 func newTestValidResource() *schema.Resource {
 	serviceName := "testService"
 	displayNamePrefix := "Service-"

@@ -86,6 +86,10 @@ const (
 	// ErrorReasonCodeInvalidMappingNode is provided when the reason
 	// for a blueprint spec load error is due to an invalid mapping node.
 	ErrorReasonCodeInvalidMappingNode errors.ErrorReasonCode = "invalid_mapping_node"
+	// ErrorReasonCodeInvalidResourceDependency is provided when the reason
+	// for a blueprint spec load error is due to a resource dependency in the "dependsOn"
+	// property not being a valid resource.
+	ErrorReasonCodeMissingResourceDependency errors.ErrorReasonCode = "missing_resource_dependency"
 )
 
 func errBlueprintMissingVersion() error {
@@ -2003,6 +2007,60 @@ func errExportTypeMismatch(
 			exportType,
 			resolvedType,
 			field,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceDependencyMissing(
+	resourceName string,
+	dependencyName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeMissingResourceDependency,
+		Err: fmt.Errorf(
+			"validation failed due to a missing dependency %q for resource %q",
+			dependencyName,
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceDependencyContainsSubstitution(
+	resourceName string,
+	dependencyName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a dependency %q containing a substitution in resource %q, "+
+				"the dependency name %q can not contain substitutions and must be a resource in the same blueprint",
+			dependencyName,
+			resourceName,
+			dependencyName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSelfReferencingResourceDependency(
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a self-referencing dependency in resource %q",
+			resourceName,
 		),
 		Line:   line,
 		Column: col,
