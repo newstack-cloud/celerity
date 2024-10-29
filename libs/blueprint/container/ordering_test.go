@@ -518,12 +518,14 @@ func orderFixture3() (orderChainLinkNodeFixture, error) {
 			"ordersTable",
 			"ordersStream",
 			"statsAccumulatorFunction",
+			"standaloneFunction",
 		},
 		orderedExpected: [][]string{
 			{"ordersTable", "ordersStream"},
 			{"ordersTable", "getOrdersFunction"},
 			{"ordersTable", "createOrderFunction"},
 			{"ordersTable", "updateOrderFunction"},
+			{"standaloneFunction", "statsAccumulatorFunction"},
 		},
 	}, nil
 }
@@ -634,6 +636,16 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 		},
 	}
 
+	standaloneFunction := &links.ChainLinkNode{
+		ResourceName: "standaloneFunction",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
+		},
+		Paths:               []string{},
+		LinkImplementations: map[string]provider.Link{},
+		LinkedFrom:          []*links.ChainLinkNode{},
+	}
+
 	orderApi.LinksTo = []*links.ChainLinkNode{
 		getOrdersFunction,
 		createOrderFunction,
@@ -652,6 +664,7 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 	return []*links.ChainLinkNode{
 		orderApi,
 		ordersTable,
+		standaloneFunction,
 	}
 }
 
@@ -683,6 +696,13 @@ func orderFixture3RefChains(
 		nil,
 		"resources.updateOrderFunction",
 		[]string{"subRef:resources.updateOrderFunction"},
+	)
+
+	collector.Collect(
+		"resources.standaloneFunction",
+		nil,
+		"resources.statsAccumulatorFunction",
+		[]string{"dependencyOf:resources.statsAccumulatorFunction"},
 	)
 
 	return collector, nil

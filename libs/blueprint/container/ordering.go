@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -182,6 +183,66 @@ func hasPriorityOver(
 		}
 		isHardLink := kindOutput.Kind == provider.LinkKindHard
 		return priorityResourceTypeOutput.PriorityResourceType == candidatePriorityLink.Resource.Type.Value && isHardLink
+	}
+}
+
+func linkResourceReferences(
+	refChainCollector validation.RefChainCollector,
+	linkA *links.ChainLinkNode,
+	linkB *links.ChainLinkNode,
+) bool {
+	resourceRefA := refChainCollector.Chain(fmt.Sprintf("resources.%s", linkA.ResourceName))
+	resourceRefB := refChainCollector.Chain(fmt.Sprintf("resources.%s", linkB.ResourceName))
+
+	if resourceRefA == nil || resourceRefB == nil {
+		return false
+	}
+
+	return referencesResourceOrDescendants(resourceRefA.ElementName, resourceRefA.References, resourceRefB)
+}
+
+func referencesResourceOrDescendants(
+	referencedByElementName string,
+	searchIn []*validation.ReferenceChainNode,
+	searchFor *validation.ReferenceChainNode,
+) bool {
+	if len(searchIn) == 0 || searchFor == nil {
+		return false
+	}
+
+	if slices.ContainsFunc(searchIn, compareElementNameForSubRef(referencedByElementName, searchFor)) {
+		return true
+	}
+
+	for _, childSearchFor := range searchFor.References {
+		if referencesResourceOrDescendants(referencedByElementName, searchIn, childSearchFor) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func compareElementNameForSubRef(referencedByElementName string, searchFor *validation.ReferenceChainNode) func(*validation.ReferenceChainNode) bool {
+	return func(current *validation.ReferenceChainNode) bool {
+		return current.ElementName == searchFor.ElementName &&
+			// Only match if the reference has a "subRef:{referencedFrom}"
+			// tag or a "dependencyOf:{referencedFrom}" tag.
+			// Links are collected to combine cycle detection logic for
+			// links, explicit dependencies and references during the validation phase.
+			// References and explicit dependencies are treated as hard links.
+			// Tags are used to differentiate between links, dependencies and references
+			// to allow this logic to skip links that are handled separately.
+			slices.ContainsFunc(searchFor.Tags, func(tag string) bool {
+				return tag == fmt.Sprintf("subRef:%s", referencedByElementName) ||
+					tag == fmt.Sprintf("dependencyOf:%s", referencedByElementName)
+			})
+	}
+}
+
+func isResourceAncestor(resourceName string) func(string, int) bool {
+	return func(path string, index int) bool {
+		return strings.Contains(path, fmt.Sprintf("/%s", resourceName))
 	}
 }
 

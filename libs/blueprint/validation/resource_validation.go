@@ -480,11 +480,12 @@ func validateResourceDependencies(
 		// cycle detection across references, dependsOn and links.
 		resourceID := fmt.Sprintf("resources.%s", dependency)
 		referencedByResourceID := fmt.Sprintf("resources.%s", resourceName)
+		dependencyTag := fmt.Sprintf("dependencyOf:%s", referencedByResourceID)
 		err := refChainCollector.Collect(
 			resourceID,
 			dependencyResource,
 			referencedByResourceID,
-			[]string{"dependsOn"},
+			[]string{dependencyTag},
 		)
 		if err != nil {
 			return []*bpcore.Diagnostic{}, err

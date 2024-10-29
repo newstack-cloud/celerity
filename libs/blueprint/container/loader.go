@@ -322,11 +322,14 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		// Ensure the spec is returned when parsing was successful
 		// but validation failed.
 		return NewDefaultBlueprintContainer(
-			l.stateContainer,
-			map[string]provider.Provider{},
 			blueprintSpec,
-			nil,
-			refChainCollector,
+			&BlueprintContainerDependencies{
+				StateContainer:       l.stateContainer,
+				ResourceProviders:    map[string]provider.Provider{},
+				LinkInfo:             nil,
+				RefChainCollector:    refChainCollector,
+				SubstitutionResolver: nil,
+			},
 			diagnostics,
 			l.updateChan,
 		), diagnostics, err
@@ -338,22 +341,39 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		// Ensure the spec is returned when parsing and
 		// validation was successful but loading link information failed.
 		return NewDefaultBlueprintContainer(
-			l.stateContainer,
-			map[string]provider.Provider{},
 			blueprintSpec,
-			nil,
-			refChainCollector,
+			&BlueprintContainerDependencies{
+				StateContainer:       l.stateContainer,
+				ResourceProviders:    map[string]provider.Provider{},
+				LinkInfo:             nil,
+				RefChainCollector:    refChainCollector,
+				SubstitutionResolver: nil,
+			},
 			diagnostics,
 			l.updateChan,
 		), diagnostics, err
 	}
 
-	container := NewDefaultBlueprintContainer(
+	resourceCache := bpcore.NewCache[[]*provider.ResolvedResource]()
+	substitutionResolver := NewDefaultSubstitutionResolver(
+		l.funcRegistry,
+		l.resourceRegistry,
+		l.dataSourceRegistry,
 		l.stateContainer,
-		resourceProviderMap,
+		resourceCache,
 		blueprintSpec,
-		linkInfo,
-		refChainCollector,
+		params,
+	)
+	container := NewDefaultBlueprintContainer(
+		blueprintSpec,
+		&BlueprintContainerDependencies{
+			StateContainer:       l.stateContainer,
+			ResourceProviders:    resourceProviderMap,
+			LinkInfo:             linkInfo,
+			RefChainCollector:    refChainCollector,
+			SubstitutionResolver: substitutionResolver,
+			ResourceCache:        resourceCache,
+		},
 		diagnostics,
 		l.updateChan,
 	)
