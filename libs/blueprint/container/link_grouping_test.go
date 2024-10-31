@@ -74,7 +74,7 @@ func (s *GroupOrderedLinkNodesTestSuite) Test_group_links_for_deployment_without
 	s.assertExpectedGroups(groups, s.groupFixture2.expectedPresent)
 }
 
-func (s *GroupOrderedLinkNodesTestSuite) Test_group_links_for_deployment_based_on_references() {
+func (s *GroupOrderedLinkNodesTestSuite) Test_group_links_for_deployment_based_on_references_and_dependencies() {
 	groups, err := GroupOrderedLinkNodes(
 		context.TODO(),
 		s.groupFixture3.orderedLinkNodes,
@@ -493,12 +493,14 @@ func groupFixture3() (groupChainLinkNodeFixture, error) {
 				"orderApi",
 			},
 			{
+				"createOrderFunction",
+			},
+			{
 				"ordersStream",
 				// The link between statsAccumulatorFunction and ordersStream
 				// is a soft link in the test provider so they can be resolved concurrently.
 				"statsAccumulatorFunction",
 				"getOrdersFunction",
-				"createOrderFunction",
 				"updateOrderFunction",
 			},
 		},
@@ -624,11 +626,13 @@ func groupFixture3Chains() []*links.ChainLinkNode {
 		ordersTable,
 	}
 
+	// This is the equivalent to the result of ordering the link nodes with the
+	// OrderLinksForDeployment function.
 	return []*links.ChainLinkNode{
 		orderApi,
 		ordersTable,
-		getOrdersFunction,
 		createOrderFunction,
+		getOrdersFunction,
 		updateOrderFunction,
 		ordersStream,
 		statsAccumulatorFunction,
@@ -663,6 +667,13 @@ func groupFixture3RefChains(
 		nil,
 		"resources.updateOrderFunction",
 		[]string{"subRef:resources.updateOrderFunction"},
+	)
+
+	collector.Collect(
+		"resources.createOrderFunction",
+		nil,
+		"resources.getOrdersFunction",
+		[]string{"dependencyOf:resources.getOrdersFunction"},
 	)
 
 	return collector, nil

@@ -83,7 +83,10 @@ func hasReferenceInGroup(
 		resourceName := strings.TrimPrefix(reference.ElementName, "resources.")
 		if groupIndex, ok := nodeGroupMap[resourceName]; ok {
 			hasReferenceInGroup = groupIndex == currentGroupIndex &&
-				slices.Contains(reference.Tags, fmt.Sprintf("subRef:resources.%s", node.ResourceName))
+				slices.ContainsFunc(reference.Tags, func(tag string) bool {
+					return tag == fmt.Sprintf("subRef:%s", refChainNode.ElementName) ||
+						tag == fmt.Sprintf("dependencyOf:%s", refChainNode.ElementName)
+				})
 		}
 		i += 1
 	}
