@@ -79,36 +79,6 @@ func errUnsupportedSpecFileExtension(filePath string) error {
 	}
 }
 
-// func errInvalidResourceType(resourceType string) error {
-// 	return &errors.LoadError{
-// 		ReasonCode: ErrorReasonCodeInvalidResourceType,
-// 		Err:        fmt.Errorf("resource type format is invalid for %s, resource type must be of the form {provider}/*", resourceType),
-// 	}
-// }
-
-// func errMissingProvider(providerKey string, resourceType string) error {
-// 	return &errors.LoadError{
-// 		ReasonCode: ErrorReasonCodeMissingProvider,
-// 		Err:        fmt.Errorf("missing provider %s for the resource type %s", providerKey, resourceType),
-// 	}
-// }
-
-// func errMissingResource(providerKey string, resourceType string) error {
-// 	return &errors.LoadError{
-// 		ReasonCode: ErrorReasonCodeMissingResource,
-// 		Err:        fmt.Errorf("missing resource in provider %s for the resource type %s", providerKey, resourceType),
-// 	}
-// }
-
-// func errResourceValidationError(errorMap map[string]error) error {
-// 	errCount := len(errorMap)
-// 	return &errors.LoadError{
-// 		ReasonCode:  ErrorReasonCodeResourceValidationErrors,
-// 		Err:         fmt.Errorf("validation failed due to issues with %d resources in the spec", errCount),
-// 		ChildErrors: core.MapToSlice(errorMap),
-// 	}
-// }
-
 func errVariableValidationError(errorMap map[string][]error) error {
 	errs := flattenErrorMap(errorMap)
 	errCount := len(errs)

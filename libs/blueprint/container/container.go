@@ -2,6 +2,8 @@ package container
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
@@ -22,18 +24,14 @@ type BlueprintContainer interface {
 	// when the container was loaded with an empty set.
 	StageChanges(ctx context.Context, instanceID string, paramOverrides core.BlueprintParams) (BlueprintChanges, error)
 	// Deploy deals with deploying the blueprint for the given instance ID.
-	// This will create a new revision and destroy the previous revision once the new revision
-	// has been successfully deployed.
-	// This returns the revision ID of the newly deployed instance revision upon
-	// successful deployment.
-	Deploy(ctx context.Context, instanceID string) (string, error)
+	// Deploying a blueprint involves creating, updating and destroying resources
+	// based on the staged changes.
+	// Deploy should also be used as the mechanism to rollback a blueprint to a previous
+	// revision managed in version control or a data store for blueprint source documents.
+	Deploy(ctx context.Context, instanceID string, changes BlueprintChanges, paramOverrides core.BlueprintParams) (string, error)
 	// Destroy deals with destroying all the resources and links
-	// for a revision of a blueprint instance.
-	Destroy(ctx context.Context, instanceID string, revisionID string) error
-	// Rollback deals with rolling a blueprint instance back to a previous revision.
-	// This will destroy any new resources that were created as a part of the revision
-	// that is being rolled back.
-	Rollback(ctx context.Context, instanceID string, revisionIDToRollback string, prevRevisionID string) error
+	// for a blueprint instance.
+	Destroy(ctx context.Context, instanceID string, paramOverrides core.BlueprintParams) error
 	// SpecLinkInfo provides the chain link and warnings for potential issues
 	// with links provided in the given specification.
 	SpecLinkInfo() links.SpecLinkInfo
@@ -89,13 +87,27 @@ type defaultBlueprintContainer struct {
 	stateContainer state.Container
 	// Should be a mapping of resource name to the provider
 	// that serves the resource.
-	resourceProviders map[string]provider.Provider
-	spec              speccore.BlueprintSpec
-	linkInfo          links.SpecLinkInfo
-	refChainCollector validation.RefChainCollector
-	diagnostics       []*core.Diagnostic
+	resourceProviders              map[string]provider.Provider
+	spec                           speccore.BlueprintSpec
+	linkInfo                       links.SpecLinkInfo
+	refChainCollector              validation.RefChainCollector
+	substitutionResolver           SubstitutionResolver
+	resourceCache                  *core.Cache[[]*provider.ResolvedResource]
+	resourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
+	diagnostics                    []*core.Diagnostic
 	// The channel to send deployment and change-staging updates to.
 	updateChan chan Update
+}
+
+// BlueprintContainerDependencies provides the dependencies
+// required to create a new instance of a blueprint container.
+type BlueprintContainerDependencies struct {
+	StateContainer       state.Container
+	ResourceProviders    map[string]provider.Provider
+	LinkInfo             links.SpecLinkInfo
+	RefChainCollector    validation.RefChainCollector
+	SubstitutionResolver SubstitutionResolver
+	ResourceCache        *core.Cache[[]*provider.ResolvedResource]
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -103,20 +115,20 @@ type defaultBlueprintContainer struct {
 // The map of resource providers must be a map of provider resource name
 // to a provider.
 func NewDefaultBlueprintContainer(
-	stateContainer state.Container,
-	resourceProviders map[string]provider.Provider,
 	spec speccore.BlueprintSpec,
-	linkInfo links.SpecLinkInfo,
-	refChainCollector validation.RefChainCollector,
+	deps *BlueprintContainerDependencies,
 	diagnostics []*core.Diagnostic,
 	updateChan chan Update,
 ) BlueprintContainer {
 	return &defaultBlueprintContainer{
-		stateContainer,
-		resourceProviders,
+		deps.StateContainer,
+		deps.ResourceProviders,
 		spec,
-		linkInfo,
-		refChainCollector,
+		deps.LinkInfo,
+		deps.RefChainCollector,
+		deps.SubstitutionResolver,
+		deps.ResourceCache,
+		core.NewCache[[]*core.MappingNode](),
 		diagnostics,
 		updateChan,
 	}
@@ -127,62 +139,221 @@ func (c *defaultBlueprintContainer) StageChanges(
 	instanceID string,
 	paramOverrides core.BlueprintParams,
 ) (BlueprintChanges, error) {
-	// chains, err := c.linkInfo.Links(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// orderedLinkNodes, err := OrderLinksForDeployment(ctx, chains, c.refChainCollector, paramOverrides)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// parallelGroups, err := GroupOrderedLinkNodes(ctx, orderedLinkNodes, c.refChainCollector, paramOverrides)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	chains, err := c.linkInfo.Links(ctx)
+	if err != nil {
+		return nil, err
+	}
+	orderedLinkNodes, err := OrderLinksForDeployment(ctx, chains, c.refChainCollector, paramOverrides)
+	if err != nil {
+		return nil, err
+	}
+	parallelGroups, err := GroupOrderedLinkNodes(ctx, orderedLinkNodes, c.refChainCollector, paramOverrides)
+	if err != nil {
+		return nil, err
+	}
 
-	// persistedInstanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	_, err = c.stateContainer.GetInstance(ctx, instanceID)
+	if err != nil {
+		return nil, err
+	}
 
-	// state := &stageChangesState{}
-	// for _, group := range parallelGroups {
-	// 	changesChan := make(chan *resourceChangesMessage)
-	// 	linkChangesChan := make(chan *linkChangesMessage)
-	// 	errChan := make(chan error)
-	// 	c.stageResourceChanges(ctx, instanceID, state, group, paramOverrides, changesChan, linkChangesChan, errChan)
+	state := &stageChangesState{}
+	for _, group := range parallelGroups {
+		changesChan := make(chan *resourceChangesMessage)
+		linkChangesChan := make(chan *linkChangesMessage)
+		errChan := make(chan error)
+		channels := &stageResourceChangeChannels{
+			changesChan,
+			linkChangesChan,
+			errChan,
+		}
+		c.stageResourceGroupChanges(
+			ctx,
+			instanceID,
+			state,
+			group,
+			paramOverrides,
+			channels,
+		)
 
-	// 	collected := map[string]*provider.Changes{}
-	// 	var err error
-	// 	for len(collected) < len(group) && err == nil {
-	// 		select {
-	// 		case changes := <-changesChan:
-	// 			collected[changes.resourceName] = changes.changes
-	// 		case err = <-errChan:
-	// 		}
-	// 	}
+		collected := map[string]*provider.Changes{}
+		var err error
+		for len(collected) < len(group) && err == nil {
+			select {
+			case changes := <-changesChan:
+				collected[changes.resourceName] = changes.changes
+			case err = <-errChan:
+			}
+		}
 
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// If persisted
 
 	return nil, nil
 }
 
-func (c *defaultBlueprintContainer) Deploy(ctx context.Context, instanceID string) (string, error) {
-	// 1. get chain links
-	// 2. traverse through chains and order resources to be created, destroyed or updated
-	// 3. carry out deployment
-	// 4. upon success, destroy any remaining resources from the previous revision
+func (c *defaultBlueprintContainer) stageResourceGroupChanges(
+	ctx context.Context,
+	instanceID string,
+	state *stageChangesState,
+	group []*links.ChainLinkNode,
+	paramOverrides core.BlueprintParams,
+	channels *stageResourceChangeChannels,
+) {
+	for _, node := range group {
+		go c.stageResourceChanges(
+			ctx,
+			instanceID,
+			state,
+			node,
+			paramOverrides,
+			channels,
+		)
+	}
+}
+
+func (c *defaultBlueprintContainer) stageResourceChanges(
+	ctx context.Context,
+	instanceID string,
+	state *stageChangesState,
+	node *links.ChainLinkNode,
+	paramOverrides core.BlueprintParams,
+	channels *stageResourceChangeChannels,
+) {
+	resourceProvider, hasResourceProvider := c.resourceProviders[node.ResourceName]
+	if !hasResourceProvider {
+		channels.errChan <- fmt.Errorf("no provider found for resource %q", node.ResourceName)
+		return
+	}
+
+	resourceImplementation, err := resourceProvider.Resource(ctx, node.Resource.Type.Value)
+	if err != nil {
+		channels.errChan <- err
+		return
+	}
+
+	items, err := c.substitutionResolver.ResolveResourceEach(ctx, node.ResourceName, node.Resource)
+	if err != nil {
+		channels.errChan <- err
+		return
+	}
+
+	if len(items) == 0 {
+		err := c.stageIndividualResourceChanges(
+			ctx,
+			&stageResourceChangeInfo{
+				node:       node,
+				instanceID: instanceID,
+				index:      0,
+			},
+			resourceImplementation,
+			paramOverrides,
+			channels.changesChan,
+		)
+		if err != nil {
+			channels.errChan <- err
+			return
+		}
+		return
+	}
+
+	c.cacheResourceTemplateInputElements(node.ResourceName, items)
+	for index := range items {
+
+		resourceID, err := c.getResourceID(ctx, instanceID, node.ResourceName, index)
+		if err != nil {
+			channels.errChan <- err
+			return
+		}
+
+		err = c.stageIndividualResourceChanges(
+			ctx,
+			&stageResourceChangeInfo{
+				node:       node,
+				instanceID: instanceID,
+				resourceID: resourceID,
+				index:      index,
+			},
+			resourceImplementation,
+			paramOverrides,
+			channels.changesChan,
+		)
+		if err != nil {
+			channels.errChan <- err
+			return
+		}
+	}
+}
+
+func (c *defaultBlueprintContainer) getResourceID(
+	ctx context.Context,
+	instanceID string,
+	resourceName string,
+	index int,
+) (string, error) {
 	return "", nil
 }
 
-func (c *defaultBlueprintContainer) Rollback(ctx context.Context, instanceID string, revisionIDToRollback string, prevRevisionID string) error {
+func (c *defaultBlueprintContainer) stageIndividualResourceChanges(
+	ctx context.Context,
+	resourceInfo *stageResourceChangeInfo,
+	resourceImplementation provider.Resource,
+	paramOverrides core.BlueprintParams,
+	changesChan chan *resourceChangesMessage,
+) error {
+	node := resourceInfo.node
+	resolvedResource, err := c.substitutionResolver.ResolveInResource(
+		ctx,
+		node.ResourceName,
+		node.Resource,
+		resourceInfo.index,
+	)
+	if err != nil {
+		return err
+	}
+
+	changesOutput, err := resourceImplementation.StageChanges(ctx, &provider.ResourceStageChangesInput{
+		ResourceInfo: &provider.ResourceInfo{
+			ResourceID:               resourceInfo.resourceID,
+			InstanceID:               resourceInfo.instanceID,
+			ResourceWithResolvedSubs: resolvedResource,
+		},
+		Params: paramOverrides,
+	})
+	if err != nil {
+		return err
+	}
+
+	changesChan <- &resourceChangesMessage{
+		resourceName: node.ResourceName,
+		index:        resourceInfo.index,
+		changes:      changesOutput.Changes,
+	}
+
 	return nil
 }
 
-func (c *defaultBlueprintContainer) Destroy(ctx context.Context, instanceID string, revisionID string) error {
+func (c *defaultBlueprintContainer) cacheResourceTemplateInputElements(resourceName string, items []*core.MappingNode) {
+	c.resourceTemplateInputElemCache.Set(resourceName, items)
+}
+
+func (c *defaultBlueprintContainer) Deploy(
+	ctx context.Context,
+	instanceID string,
+	changes BlueprintChanges,
+	paramOverrides core.BlueprintParams,
+) (string, error) {
+	// 1. get chain links
+	// 2. traverse through chains and order resources to be created, destroyed or updated
+	// 3. carry out deployment
+	return "", nil
+}
+
+func (c *defaultBlueprintContainer) Destroy(ctx context.Context, instanceID string, paramOverrides core.BlueprintParams) error {
 	return nil
 }
 
@@ -198,30 +369,44 @@ func (c *defaultBlueprintContainer) Diagnostics() []*core.Diagnostic {
 	return c.diagnostics
 }
 
-// type resourceChangesMessage struct {
-// 	resourceName string
-// 	removed      bool
-// 	new          bool
-// 	changes      *provider.Changes
-// }
+type stageResourceChangeChannels struct {
+	changesChan     chan *resourceChangesMessage
+	linkChangesChan chan *linkChangesMessage
+	errChan         chan error
+}
 
-// type linkChangesMessage struct {
-// 	resourceAName string
-// 	resourceBName string
-// 	removed       bool
-// 	new           bool
-// 	changes       *provider.LinkChanges
-// }
+type resourceChangesMessage struct {
+	resourceName string
+	index        int
+	removed      bool
+	new          bool
+	changes      *provider.Changes
+}
 
-// type stageChangesState struct {
-// 	pendingLinks map[string]*linkPendingCompletion
-// 	// Mutex is required as resources can be staged concurrently.
-// 	mu sync.Mutex
-// }
+type linkChangesMessage struct {
+	resourceAName string
+	resourceBName string
+	removed       bool
+	new           bool
+	changes       *provider.LinkChanges
+}
 
-// type linkPendingCompletion struct {
-// 	link             *links.ChainLinkNode
-// 	resourceAPending bool
-// 	resourceBPending bool
-// 	linkPending      bool
-// }
+type stageChangesState struct {
+	pendingLinks map[string]*linkPendingCompletion
+	// Mutex is required as resources can be staged concurrently.
+	mu sync.Mutex
+}
+
+type linkPendingCompletion struct {
+	link             *links.ChainLinkNode
+	resourceAPending bool
+	resourceBPending bool
+	linkPending      bool
+}
+
+type stageResourceChangeInfo struct {
+	node       *links.ChainLinkNode
+	instanceID string
+	resourceID string
+	index      int
+}

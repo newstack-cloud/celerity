@@ -60,11 +60,11 @@ type Resource interface {
 	// been substituted at this stage and must be used instead of the passed in params argument
 	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
 	Deploy(ctx context.Context, input *ResourceDeployInput) (*ResourceDeployOutput, error)
-	// GetExternalState deals with getting a revision of the state of the resource from the resource provider.
+	// GetExternalState deals with getting a the state of the resource from the resource provider.
 	// (e.g. AWS or Google Cloud)
-	// The blueprint instance, resource and in same case the revision IDs should be
+	// The blueprint instance and resource should be
 	// attached to the resource in the external provider
-	// in order to fetch it's status and sync up.
+	// in order to fetch its status and sync up.
 	GetExternalState(ctx context.Context, input *ResourceGetExternalStateInput) (*ResourceGetExternalStateOutput, error)
 	// Destroy deals with destroying a resource instance if its current
 	// state is successfully deployed or cleaning up a corrupt or partially deployed
@@ -85,9 +85,6 @@ type ResourceInfo struct {
 	// InstanceID holds the ID of the blueprint instance
 	// that the current resource belongs to.
 	InstanceID string
-	// RevisionID holds the ID of the blueprint instance revision
-	// that the current resource deployment belongs to.
-	RevisionID string
 	// ResourceWithResolvedSubs holds a version of a resource for which all ${..}
 	// substitutions have been applied.
 	ResourceWithResolvedSubs *ResolvedResource
@@ -98,13 +95,16 @@ type ResourceInfo struct {
 // Mapping nodes replace StringOrSubstitutions from the blueprint schema representation
 // of the resource.
 type ResolvedResource struct {
-	Type         *schema.ResourceTypeWrapper `json:"type"`
-	Description  *core.MappingNode           `json:"description,omitempty"`
-	Metadata     *ResolvedResourceMetadata   `json:"metadata,omitempty"`
-	Condition    *ResolvedResourceCondition  `json:"condition,omitempty"`
-	Each         *core.MappingNode           `json:"each,omitempty"`
-	LinkSelector *schema.LinkSelector        `json:"linkSelector,omitempty"`
-	Spec         *core.MappingNode           `json:"spec"`
+	Type        *schema.ResourceTypeWrapper `json:"type"`
+	Description *core.MappingNode           `json:"description,omitempty"`
+	Metadata    *ResolvedResourceMetadata   `json:"metadata,omitempty"`
+	Condition   *ResolvedResourceCondition  `json:"condition,omitempty"`
+	// The index of a resolved resource in a resource template.
+	// A resource template is a resource that uses the `each` property
+	// to derive resources from a list of items.
+	Index        int                  `json:"index,omitempty"`
+	LinkSelector *schema.LinkSelector `json:"linkSelector,omitempty"`
+	Spec         *core.MappingNode    `json:"spec"`
 }
 
 // ResolvedResourceMetadata provides a resolved version of the metadata
@@ -302,7 +302,6 @@ type ResourceDeployOutput struct {
 // get the external state of a resource.
 type ResourceGetExternalStateInput struct {
 	InstanceID string
-	RevisionID string
 	ResourceID string
 }
 
@@ -316,7 +315,6 @@ type ResourceGetExternalStateOutput struct {
 // a resource.
 type ResourceDestroyInput struct {
 	InstanceID string
-	RevisionID string
 	ResourceID string
 }
 

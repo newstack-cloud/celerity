@@ -13,52 +13,23 @@ import (
 type Container interface {
 	// GetResource deals with retrieving the state for a given resource
 	// in the provided blueprint instance.
-	// This retrieves the resource for the latest revision of the given instance.
 	GetResource(ctx context.Context, instanceID string, resourceID string) (*ResourceState, error)
-	// GetResourceForRevision deals with retrieving the state for a given resource
-	// in the provided blueprint instance revision.
-	GetResourceForRevision(ctx context.Context, instanceID string, revisionID string, resourceID string) (*ResourceState, error)
 	// GetLink deals with retrieving the state for a given link
 	// in the provided blueprint instance.
 	GetLink(ctx context.Context, instanceID string, linkID string) (*LinkState, error)
-	// GetLinkForRevision deals with retrieving the state for a given link
-	// in the provided blueprint instance revision.
-	GetLinkForRevision(ctx context.Context, instanceID string, revisionID string, linkID string) (*LinkState, error)
 	// GetInstance deals with retrieving the state for a given blueprint
 	// instance ID.
-	// This retrieves the latest revision of an instance.
 	GetInstance(ctx context.Context, instanceID string) (*InstanceState, error)
-	// GetInstanceRevision deals with retrieving the state for a specific revision
-	// of a given blueprint instance.
-	GetInstanceRevision(ctx context.Context, instanceID string, revisionID string) (*InstanceState, error)
 	// SaveInstance deals with persisting a blueprint instance.
-	// This will create a new revision.
 	SaveInstance(ctx context.Context, instanceID string, instanceState InstanceState) (*InstanceState, error)
 	// RemoveInstance deals with removing the state for a given blueprint instance.
 	// This is not for destroying the actual deployed resources, just removing the state.
-	// This deals with removing all blueprint instance revisions.
 	RemoveInstance(ctx context.Context, instanceID string) error
-	// RemoveInstanceRevision deals with removing the state for a specific revision
-	// of a blueprint instance.
-	// This is not for destroying actual deployed resources, just removing the state.
-	RemoveInstanceRevision(ctx context.Context, instanceID string, revisionID string) error
 	// SaveResource deals with persisting a resource in a blueprint instance.
-	// This covers adding new resources and updating existing resources in the latest revision
-	// in an immutable fashion.
-	// This should always create a new blueprint instance revision.
 	SaveResource(ctx context.Context, instanceID string, resourceID string, resourceState *ResourceState) error
 	// RemoveResource deals with removing the state of a resource from
 	// a given blueprint instance.
-	// This removes the state for all blueprint instance revisions for the given resource.
-	// There is no way to remove a resource from a specific instance revision,
-	// the instance revision should be removed as a whole and recreated instead.
 	RemoveResource(ctx context.Context, instanceID string, resourceID string) (*ResourceState, error)
-	// CleanupRevisions deals with removing old revisions of a blueprint instance
-	// based on a retention policy.
-	// Applications using this library should implement functionality that facilitates
-	// retention policies for blueprint instance revisions, the blueprint framework
-	// only provides the interface to remove old revisions.
-	CleanupRevisions(ctx context.Context, instanceID string) error
 }
 
 // ResourceState provides the current state of a resource
@@ -82,7 +53,6 @@ type ResourceState struct {
 // including resources, metadata, exported fields and child blueprints.
 type InstanceState struct {
 	InstanceID string
-	RevisionID string
 	Status     core.InstanceStatus
 	Resources  map[string]*ResourceState
 	Links      map[string]*LinkState

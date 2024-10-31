@@ -22,10 +22,6 @@ The blueprint library does support caching blueprint specifications in their exp
 that have been previously loaded without modifications more efficient.
 This is significant as it allows skipping the need to parse each occurrence of a `${..}` substitution in the blueprint spec.
 
-The state container provides an interface that allows cleaning up old revisions of blueprint instances,
-management of retention policies is not in the scope of this library
-and should be implemented by applications or other helper libraries that extend the blueprint framework.
-
 Authentication and authorisation is out of scope for this library and should be implemented by applications or helper libraries that extend the blueprint framework.
 
 _The following sections are interfaces for the high level components of the blueprint framework, you can find deeper documentation about lower level components like "Resource" or "CustomVariableType" in the [go docs](https://pkg.go.dev/github.com/two-hundred/celerity/libs/blueprint) and in the [Celerity docs](https://www.celerityframework.com/docs/blueprint/intro)._
@@ -99,15 +95,17 @@ type BlueprintContainer interface {
         paramOverrides core.BlueprintParams,
     ) (BlueprintChanges, error)
 
-    Deploy(ctx context.Context, instanceID string) (string, error)
-
-    Destroy(ctx context.Context, instanceID string, revisionID string) error
-
-    Rollback(
+    Deploy(
         ctx context.Context,
         instanceID string,
-        revisionIDToRollback string,
-        prevRevisionID string,
+        changes BlueprintChanges,
+        paramOverrides core.BlueprintParams,
+    ) (string, error)
+
+    Destroy(
+        ctx context.Context,
+        instanceID string,
+        paramOverrides core.BlueprintParams,
     ) error
 
     SpecLinkInfo() links.SpecLinkInfo
@@ -175,35 +173,15 @@ type Container interface {
         resourceID string,
     ) (*ResourceState, error)
 
-    GetResourceForRevision(
-        ctx context.Context,
-        instanceID string,
-        revisionID string,
-        resourceID string,
-    ) (*ResourceState, error)
-
 	GetLink(
         ctx context.Context,
         instanceID string,
         linkID string,
     ) (*LinkState, error)
 
-	GetLinkForRevision(
-        ctx context.Context,
-        instanceID string,
-        revisionID string,
-        linkID string,
-    ) (*LinkState, error)
-
     GetInstance(
         ctx context.Context,
         instanceID string,
-    ) (*InstanceState, error)
-
-    GetInstanceRevision(
-        ctx context.Context,
-        instanceID string,
-        revisionID string,
     ) (*InstanceState, error)
 
     SaveInstance(
@@ -213,12 +191,6 @@ type Container interface {
     ) (*InstanceState, error)
 
     RemoveInstance(ctx context.Context, instanceID string) error
-
-    RemoveInstanceRevision(
-        ctx context.Context,
-        instanceID string,
-        revisionID string,
-    ) error
 
     SaveResource(
         ctx context.Context,
@@ -232,8 +204,6 @@ type Container interface {
         instanceID string,
         resourceID string,
     ) (*ResourceState, error)
-
-    CleanupRevisions(ctx context.Context, instanceID string) error
 }
 ```
 
