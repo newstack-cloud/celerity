@@ -295,6 +295,18 @@ func (c *defaultBlueprintContainer) getResourceID(
 	resourceName string,
 	index int,
 ) (string, error) {
+	// instanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// resource, hasResource := instanceState.Resources[resourceName]
+	// if !hasResource || len(resource) <= index {
+	// 	// This resource does not exist in the state, it will be created
+	// 	// when the changes are deployed.
+	// 	return "", nil
+	// }
+
+	// return resource[index].ResourceID, nil
 	return "", nil
 }
 

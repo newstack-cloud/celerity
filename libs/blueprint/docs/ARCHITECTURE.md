@@ -82,7 +82,7 @@ and stage changes for instances or simply validating a spec without loading a bl
 A loader needs to be instantiated with a map of namespace -> resource providers and a state container.
 An example of a namespace would be `aws/`.
 
-The library comes with a default container loader that should meet all your needs.
+The core framework comes with a default container loader that should meet all your needs.
 
 ## Blueprint Container (container.BlueprintContainer)
 
@@ -126,7 +126,7 @@ along with retrieving state for instances and resources in those instances.
 The blueprint container needs to be instantiated with a a state container, a map of resource names -> resource providers, a blueprint spec
 and a spec link info provider.
 
-The library comes with a default blueprint container that should meet all your needs.
+The core framework comes with a default blueprint container that should meet all your needs.
 
 ## Spec Link Info Provider (links.SpecLinkInfo)
 
@@ -144,7 +144,7 @@ with links in a given spec.
 
 The link extractor needs to be instantiated with a map of resource names -> resource providers and a blueprint spec.
 
-The library comes with a default link info provider that should meet all your needs.
+The core blueprint framework comes with a default link info provider that should meet all your needs.
 
 ## Blueprint Spec (speccore.BlueprintSpec)
 
@@ -160,56 +160,140 @@ type BlueprintSpec interface {
 The blueprint spec deals with providing the schema of a blueprint, its resources and a `*core.MappingNode` representation of the resource specification. The resource specification is everything under the the `spec` mapping in the
 YAML or JSON input blueprint. The spec must be a `*core.MappingNode` to allow for the usage of substitutions (with `${..}` syntax); a concrete, user-defined struct would not allow for this.
 
-The library comes with a default blueprint spec that should meet all your needs.
+The core framework comes with a default blueprint spec that should meet all your needs.
 
 ## State Container (state.Container)
 
 ```go
 type Container interface {
 
+    GetInstance(
+        ctx context.Context,
+        instanceID string,
+    ) (InstanceState, error)
+
+    SaveInstance(
+        ctx context.Context,
+        instanceState InstanceState,
+    ) error
+
+    RemoveInstance(
+        ctx context.Context,
+        instanceID string,
+    ) (InstanceState, error)
+
     GetResource(
         ctx context.Context,
         instanceID string,
         resourceID string,
-    ) (*ResourceState, error)
-
-	GetLink(
-        ctx context.Context,
-        instanceID string,
-        linkID string,
-    ) (*LinkState, error)
-
-    GetInstance(
-        ctx context.Context,
-        instanceID string,
-    ) (*InstanceState, error)
-
-    SaveInstance(
-        ctx context.Context,
-        instanceID string,
-        instanceState InstanceState,
-    ) (*InstanceState, error)
-
-    RemoveInstance(ctx context.Context, instanceID string) error
+    ) (ResourceState, error)
 
     SaveResource(
         ctx context.Context,
         instanceID string,
-        resourceID string,
-        resourceState *ResourceState,
+        index int,
+        resourceState ResourceState,
     ) error
 
     RemoveResource(
         ctx context.Context,
         instanceID string,
         resourceID string,
-    ) (*ResourceState, error)
+    ) (ResourceState, error)
+
+    GetLink(
+        ctx context.Context,
+        instanceID string,
+        linkID string,
+    ) (LinkState, error)
+
+    SaveLink(
+        ctx context.Context,
+        instanceID string,
+        linkState LinkState,
+    ) error
+
+    RemoveLink(
+        ctx context.Context,
+        instanceID string,
+        linkID string,
+    ) (LinkState, error)
+
+    GetMetadata(
+        ctx context.Context,
+        instanceID string,
+    ) (map[string]*core.MappingNode, error)
+
+    SaveMetadata(
+        ctx context.Context,
+        instanceID string,
+        metadata map[string]*core.MappingNode,
+    ) error
+
+    RemoveMetadata(
+        ctx context.Context,
+        instanceID string,
+    ) (map[string]*core.MappingNode, error)
+
+    GetExports(
+        ctx context.Context,
+        instanceID string,
+    ) (map[string]*core.MappingNode, error)
+
+    GetExport(
+        ctx context.Context,
+        instanceID string,
+        exportName string,
+    ) (*core.MappingNode, error)
+
+    SaveExports(
+        ctx context.Context,
+        instanceID string,
+        exports map[string]*core.MappingNode,
+    ) error
+
+    SaveExport(
+        ctx context.Context,
+        instanceID string,
+        exportName string,
+        export *core.MappingNode,
+    ) error
+
+    RemoveExports(
+        ctx context.Context,
+        instanceID string,
+    ) (map[string]*core.MappingNode, error)
+
+    RemoveExport(
+        ctx context.Context,
+        instanceID string,
+        exportName string,
+    ) (*core.MappingNode, error)
+
+    GetChild(
+        ctx context.Context,
+        instanceID string,
+        childName string,
+    ) (InstanceState, error)
+
+    SaveChild(
+        ctx context.Context,
+        instanceID string,
+        childName string,
+        childState InstanceState,
+    ) error
+
+    RemoveChild(
+        ctx context.Context,
+        instanceID string,
+        childName string,
+    ) (InstanceState, error)
 }
 ```
 
 A state container deals with persisting and loading state for blueprint instances, this could be to files on disk, to a NoSQL or relational database or a remote object/file storage service.
 
-The library does NOT come with any state container implementations, you must implement them yourself or use a library that extends the blueprint framework.
+The core blueprint framework does NOT come with any state container implementations, you must implement them yourself or use a library that extends the blueprint framework.
 
 ## Provider (provider.Provider)
 
@@ -255,7 +339,7 @@ In the case where there are links between resources that span multiple providers
 
 The interface for a provider includes `context.Context` and returns an `error` to allow for provider implementations over the network boundary like with an RPC-based plugin system.
 
-The library does NOT come with any provider implementations, you must implement them yourself or use a library that extends the blueprint framework.
+The core framework does NOT come with any provider implementations, you must implement them yourself or use a library that extends the blueprint framework.
 
 ## SpecTransformer (transformer.SpecTransformer)
 
@@ -356,7 +440,7 @@ type BlueprintCache interface {
 The blueprint cache allows for the caching of expanded blueprint schemas to make loading blueprints that have been previously loaded without modifications more efficient.
 For implementations that require a serialised form of the blueprint spec to store in a scalable cache, the `schema.Blueprint` struct can be serialised as a [Protocol Buffer](http://protobuf.dev/) using the built-in [ExpandedBlueprintSerialiser](#expandedblueprintserialiser-serialisationexpandedblueprintserialiser) and stored in the cache. _JSON and YAML serialisation can be used but will not store the blueprint in its expanded form so the primary benefits of caching will be lost. This is because the JSON and YAML serialisation will collapse `${..}` substitutions into strings and deserialisation will expand `${..}` substitutions._
 
-The library does NOT come with any cache implementations, you must implement them yourself or use a library that extends the blueprint framework.
+The core framework does NOT come with any cache implementations, you must implement them yourself or use a library that extends the blueprint framework.
 
 ## ExpandedBlueprintSerialiser (serialisation.ExpandedBlueprintSerialiser)
 
@@ -371,4 +455,4 @@ type ExpandedBlueprintSerialiser interface {
 
 The expanded blueprint serialiser allows for the serialisation and deserialisation of expanded blueprint schemas, this is useful for storing expanded blueprint schemas in a cache or other storage mechanism.
 
-This library comes with a single built-in expanded blueprint serialiser that uses [Protocol Buffers](http://protobuf.dev/) for serialisation and deserialisation. _The Protobuf serialisation format does not retain source code line and column information, so will not be particularly useful for reporting diagnostics for language servers or similar tools._ You can implement your own serialiser if you wish to use a different serialisation format.
+The core framework comes with a single built-in expanded blueprint serialiser that uses [Protocol Buffers](http://protobuf.dev/) for serialisation and deserialisation. _The Protobuf serialisation format does not retain source code line and column information, so will not be particularly useful for reporting diagnostics for language servers or similar tools._ You can implement your own serialiser if you wish to use a different serialisation format.

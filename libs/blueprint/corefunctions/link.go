@@ -179,7 +179,7 @@ func extractResourceName(input *provider.FunctionCallInput, index int, resourceA
 // Converts a link state struct to a map of string to interface
 // to be compatible with any function that the value can be passed
 // to.
-func linkStateToInterfaceMap(linkState *state.LinkState) map[string]interface{} {
+func linkStateToInterfaceMap(linkState state.LinkState) map[string]interface{} {
 	intermediaryResourceStates := make([]interface{}, 0, len(linkState.IntermediaryResourceStates))
 	for _, state := range linkState.IntermediaryResourceStates {
 		intermediaryResourceStates = append(intermediaryResourceStates, resourceStateToInterfaceMap(state))
@@ -211,5 +211,5 @@ func resourceStateToInterfaceMap(resourceState *state.ResourceState) map[string]
 type LinkStateRetriever interface {
 	// GetLink deals with retrieving the state for a given link
 	// in the provided blueprint instance.
-	GetLink(ctx context.Context, instanceID string, linkID string) (*state.LinkState, error)
+	GetLink(ctx context.Context, instanceID string, linkID string) (state.LinkState, error)
 }
