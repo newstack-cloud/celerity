@@ -93,7 +93,7 @@ func OrderItemsForDeployment(
 		nodeA := combined[i]
 		nodeB := combined[j]
 
-		if nodeA.ChainLinkNode != nil && nodeB.ChainLinkNode != nil {
+		if nodeA.Type() == "resource" && nodeB.Type() == "resource" {
 			return resourceAHasPriority(
 				ctx,
 				nodeA.ChainLinkNode,
@@ -104,7 +104,7 @@ func OrderItemsForDeployment(
 			)
 		}
 
-		if nodeA.ChainLinkNode != nil && nodeB.ChildNode != nil {
+		if nodeA.Type() == "resource" && nodeB.Type() == "child" {
 			return resourceHasPriorityOverChild(
 				nodeA.ChainLinkNode,
 				nodeB.ChildNode,
@@ -112,7 +112,7 @@ func OrderItemsForDeployment(
 			)
 		}
 
-		if nodeA.ChildNode != nil && nodeB.ChainLinkNode != nil {
+		if nodeA.Type() == "child" && nodeB.Type() == "resource" {
 			return childHasPriorityOverResource(
 				nodeA.ChildNode,
 				nodeB.ChainLinkNode,
@@ -120,7 +120,7 @@ func OrderItemsForDeployment(
 			)
 		}
 
-		if nodeA.ChildNode != nil && nodeB.ChildNode != nil {
+		if nodeA.Type() == "child" && nodeB.Type() == "child" {
 			return childAHasPriority(
 				nodeA.ChildNode,
 				nodeB.ChildNode,
@@ -391,4 +391,16 @@ func (d *DeploymentNode) Name() string {
 		return fmt.Sprintf("resources.%s", d.ChainLinkNode.ResourceName)
 	}
 	return d.ChildNode.ElementName
+}
+
+func (d *DeploymentNode) Type() string {
+	if d.ChainLinkNode != nil {
+		return "resource"
+	}
+
+	if d.ChildNode != nil {
+		return "child"
+	}
+
+	return ""
 }
