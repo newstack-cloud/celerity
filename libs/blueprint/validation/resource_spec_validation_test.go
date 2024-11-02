@@ -840,14 +840,6 @@ func (r *testResourceMissingSpecDef) GetTypeDescription(
 	}, nil
 }
 
-// StageChanges is not used for validation!
-func (r *testResourceMissingSpecDef) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 func (r *testResourceMissingSpecDef) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
@@ -948,14 +940,6 @@ func (r *testResourceMissingSchema) GetTypeDescription(
 		MarkdownDescription:  "",
 		PlainTextDescription: "",
 	}, nil
-}
-
-// StageChanges is not used for validation!
-func (r *testResourceMissingSchema) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 func (r *testResourceMissingSchema) CustomValidate(
@@ -1060,14 +1044,6 @@ func (r *specValidationTestExampleResource) GetTypeDescription(
 		MarkdownDescription:  "",
 		PlainTextDescription: "",
 	}, nil
-}
-
-// StageChanges is not used for validation!
-func (r *specValidationTestExampleResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 func (r *specValidationTestExampleResource) CustomValidate(

@@ -93,12 +93,12 @@ type BlueprintContainer interface {
         ctx context.Context,
         instanceID string,
         paramOverrides core.BlueprintParams,
-    ) (BlueprintChanges, error)
+    ) (*BlueprintChanges, error)
 
     Deploy(
         ctx context.Context,
         instanceID string,
-        changes BlueprintChanges,
+        changes *BlueprintChanges,
         paramOverrides core.BlueprintParams,
     ) (string, error)
 

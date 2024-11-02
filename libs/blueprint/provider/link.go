@@ -10,6 +10,8 @@ import (
 type Link interface {
 	// StageChanges must detail the changes that will be made when a deployment of the loaded blueprint
 	// for the link between two resources and blueprint instance provided in resourceInfo.
+	// Unlike resources, links do not map to a specification for a single deployable unit,
+	// so link implementations must specify the changes that will be made across multiple resources.
 	StageChanges(
 		ctx context.Context,
 		input *LinkStageChangesInput,
@@ -132,23 +134,23 @@ const (
 // of the resource schema (includes metadata labels and annotations) and spec
 // that has already had all it's variables substituted.
 type LinkChanges struct {
-	ResourceTypeAModifiedFields  []*FieldChange
-	ResourceTypeANewFields       []*FieldChange
-	ResourceTypeARemovedFields   []string
-	ResourceTypeAUnchangedFields []string
-	ResourceTypeBModifiedFields  []*FieldChange
-	ResourceTypeBNewFields       []*FieldChange
-	ResourceTypeBRemovedFields   []string
-	ResourceTypeBUnchangedFields []string
-	IntermediaryResourceChanges  map[string]*LinkIntermediaryResourceChanges
+	ResourceTypeAModifiedFields  []*FieldChange                              `json:"resourceTypeAModifiedFields"`
+	ResourceTypeANewFields       []*FieldChange                              `json:"resourceTypeANewFields"`
+	ResourceTypeARemovedFields   []string                                    `json:"resourceTypeARemovedFields"`
+	ResourceTypeAUnchangedFields []string                                    `json:"resourceTypeAUnchangedFields"`
+	ResourceTypeBModifiedFields  []*FieldChange                              `json:"resourceTypeBModifiedFields"`
+	ResourceTypeBNewFields       []*FieldChange                              `json:"resourceTypeBNewFields"`
+	ResourceTypeBRemovedFields   []string                                    `json:"resourceTypeBRemovedFields"`
+	ResourceTypeBUnchangedFields []string                                    `json:"resourceTypeBUnchangedFields"`
+	IntermediaryResourceChanges  map[string]*LinkIntermediaryResourceChanges `json:"intermediaryResourceChanges"`
 }
 
 // LinkIntermediaryResourceChanges provides a set of modified fields
 // for an intermediary resource in a link relationship.
 type LinkIntermediaryResourceChanges struct {
-	ResourceType    string
-	ModifiedFields  []*FieldChange
-	NewFields       []*FieldChange
-	RemovedFields   []string
-	UnchangedFields []string
+	ResourceType    string         `json:"resourceType"`
+	ModifiedFields  []*FieldChange `json:"modifiedFields"`
+	NewFields       []*FieldChange `json:"newFields"`
+	RemovedFields   []string       `json:"removedFields"`
+	UnchangedFields []string       `json:"unchangedFields"`
 }

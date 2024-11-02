@@ -55,13 +55,6 @@ func (r *DynamoDBTableResource) GetTypeDescription(
 	}, nil
 }
 
-func (r *DynamoDBTableResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 func (r *DynamoDBTableResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
@@ -172,13 +165,6 @@ func (r *LambdaFunctionResource) GetTypeDescription(
 		PlainTextDescription: "",
 		MarkdownDescription:  "# AWS Lambda\n\nA Lambda function in AWS.",
 	}, nil
-}
-
-func (r *LambdaFunctionResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 func (r *LambdaFunctionResource) CustomValidate(

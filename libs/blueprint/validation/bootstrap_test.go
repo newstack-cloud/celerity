@@ -294,14 +294,6 @@ func (r *testExampleResource) GetTypeDescription(
 	}, nil
 }
 
-// StageChanges is not used for validation!
-func (r *testExampleResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 func (r *testExampleResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
@@ -429,14 +421,6 @@ func (r *testExampleResourceMissingSpecDefinition) GetTypeDescription(
 	}, nil
 }
 
-// StageChanges is not used for validation!
-func (r *testExampleResourceMissingSpecDefinition) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 func (r *testExampleResourceMissingSpecDefinition) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
@@ -533,14 +517,6 @@ func (r *testExampleResourceMissingSpecSchema) GetTypeDescription(
 		MarkdownDescription:  "",
 		PlainTextDescription: "",
 	}, nil
-}
-
-// StageChanges is not used for validation!
-func (r *testExampleResourceMissingSpecSchema) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 func (r *testExampleResourceMissingSpecSchema) CustomValidate(
@@ -641,14 +617,6 @@ func (r *testExampleResourceMissingStateDefinition) GetTypeDescription(
 		MarkdownDescription:  "",
 		PlainTextDescription: "",
 	}, nil
-}
-
-// StageChanges is not used for validation!
-func (r *testExampleResourceMissingStateDefinition) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 func (r *testExampleResourceMissingStateDefinition) CustomValidate(
@@ -1005,14 +973,6 @@ func (r *testECSServiceResource) GetTypeDescription(
 		MarkdownDescription:  "",
 		PlainTextDescription: "",
 	}, nil
-}
-
-// StageChanges is not used for validation!
-func (r *testECSServiceResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 func (r *testECSServiceResource) CustomValidate(

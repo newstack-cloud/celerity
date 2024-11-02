@@ -178,14 +178,6 @@ func (r *testExampleResource) GetTypeDescription(
 	}, nil
 }
 
-// StageChanges is not used for validation!
-func (r *testExampleResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 func (r *testExampleResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,

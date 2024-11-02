@@ -161,14 +161,6 @@ func (r *testApiGatewayResource) GetTypeDescription(
 	}, nil
 }
 
-// StageChanges is not used for spec link info!
-func (r *testApiGatewayResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 // CustomValidate is not used for spec link info!
 func (r *testApiGatewayResource) CustomValidate(
 	ctx context.Context,
@@ -263,14 +255,6 @@ func (r *testSQSQueueResource) GetTypeDescription(
 		PlainTextDescription: "",
 		MarkdownDescription:  "",
 	}, nil
-}
-
-// StageChanges is not used for spec link info!
-func (r *testSQSQueueResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 // CustomValidate is not used for spec link info!
@@ -372,14 +356,6 @@ func (r *testLambdaFunctionResource) GetTypeDescription(
 	}, nil
 }
 
-// StageChanges is not used for spec link info!
-func (r *testLambdaFunctionResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 // CustomValidate is not used for spec link info!
 func (r *testLambdaFunctionResource) CustomValidate(
 	ctx context.Context,
@@ -474,14 +450,6 @@ func (r *testStratosLambdaFunctionResource) GetTypeDescription(
 		PlainTextDescription: "",
 		MarkdownDescription:  "",
 	}, nil
-}
-
-// StageChanges is not used for spec link info!
-func (r *testStratosLambdaFunctionResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 // CustomValidate is not used for spec link info!
@@ -580,14 +548,6 @@ func (r *testDynamoDBTableResource) GetTypeDescription(
 	}, nil
 }
 
-// StageChanges is not used for spec link info!
-func (r *testDynamoDBTableResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 // CustomValidate is not used for spec link info!
 func (r *testDynamoDBTableResource) CustomValidate(
 	ctx context.Context,
@@ -682,14 +642,6 @@ func (r *testDynamoDBStreamResource) GetTypeDescription(
 		PlainTextDescription: "",
 		MarkdownDescription:  "",
 	}, nil
-}
-
-// StageChanges is not used for spec link info!
-func (r *testDynamoDBStreamResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 // CustomValidate is not used for spec link info!
@@ -789,14 +741,6 @@ func (r *testIAMRoleResource) GetTypeDescription(
 	}, nil
 }
 
-// StageChanges is not used for spec link info!
-func (r *testIAMRoleResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 // CustomValidate is not used for spec link info!
 func (r *testIAMRoleResource) CustomValidate(
 	ctx context.Context,
@@ -892,14 +836,6 @@ func (r *testStratosIAMRoleResource) GetTypeDescription(
 		PlainTextDescription: "",
 		MarkdownDescription:  "",
 	}, nil
-}
-
-// StageChanges is not used for spec link info!
-func (r *testStratosIAMRoleResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
 }
 
 // CustomValidate is not used for spec link info!

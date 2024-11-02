@@ -43,9 +43,6 @@ type Resource interface {
 	// without overloading them with warnings for all resources that don't have any outbound
 	// links that could have.
 	IsCommonTerminal(ctx context.Context, input *ResourceIsCommonTerminalInput) (*ResourceIsCommonTerminalOutput, error)
-	// StageChanges must detail the changes that will be made when a deployment of the loaded blueprint
-	// for the resource and blueprint instance provided in resourceInfo.
-	StageChanges(ctx context.Context, input *ResourceStageChangesInput) (*ResourceStageChangesOutput, error)
 	// GetType deals with retrieving the namespaced type for a resource in a blueprint spec.
 	GetType(ctx context.Context, input *ResourceGetTypeInput) (*ResourceGetTypeOutput, error)
 	// GetTypeDescription deals with retrieving the description for a resource type in a blueprint spec
@@ -81,13 +78,24 @@ type ResourceInfo struct {
 	// Sometimes staging changes is independent of an instance and is used to compare
 	// two vesions of a blueprint in which
 	// case the resource ID will be empty.
-	ResourceID string
+	ResourceID string `json:"resourceId"`
 	// InstanceID holds the ID of the blueprint instance
 	// that the current resource belongs to.
-	InstanceID string
+	// This could be empty if the resource is being staged
+	// for an initial deployment.
+	InstanceID string `json:"instanceId"`
+	// CurrentResourceState holds the current state of the resource
+	// for which changes are being staged.
+	// The ResourceInfo struct is passed into resource implementation plugins
+	// for deployment.
+	// A resource implementation should be guarded from the details of where
+	// the state is stored and how it is retrieved,
+	// the state should be provided to resource plugins by the blueprint
+	// engine.
+	CurrentResourceState *state.ResourceState `json:"currentResourceState"`
 	// ResourceWithResolvedSubs holds a version of a resource for which all ${..}
 	// substitutions have been applied.
-	ResourceWithResolvedSubs *ResolvedResource
+	ResourceWithResolvedSubs *ResolvedResource `json:"resourceWithResolvedSubs"`
 }
 
 // ResolvedResource provides a version of a resource for which all ${..}
@@ -255,19 +263,6 @@ type ResourceDeployInput struct {
 	Params  core.BlueprintParams
 }
 
-// ResourceStageChangesInput provides the input data needed for a resource to
-// stage changes.
-type ResourceStageChangesInput struct {
-	ResourceInfo *ResourceInfo
-	Params       core.BlueprintParams
-}
-
-// ResourceStageChangesOutput provides the output data from staging changes
-// for a resource.
-type ResourceStageChangesOutput struct {
-	Changes *Changes
-}
-
 // ResourceGetTypeInput provides the input data needed for a resource to
 // determine the type of a resource in a blueprint spec.
 type ResourceGetTypeInput struct {
@@ -325,21 +320,21 @@ type Changes struct {
 	// AppliedResourceInfo provides a new version of the spec
 	// and schema for which variable substitution has been applied
 	// so the deploy phase has everything it needs to deploy the resource.
-	AppliedResourceInfo *ResourceInfo
-	MustRecreate        bool
-	ModifiedFields      []*FieldChange
-	NewFields           []*FieldChange
-	RemovedFields       []string
-	UnchangedFields     []string
+	AppliedResourceInfo *ResourceInfo  `json:"appliedResourceInfo"`
+	MustRecreate        bool           `json:"mustRecreate"`
+	ModifiedFields      []*FieldChange `json:"modifiedFields"`
+	NewFields           []*FieldChange `json:"newFields"`
+	RemovedFields       []string       `json:"removedFields"`
+	UnchangedFields     []string       `json:"unchangedFields"`
 	// OutboundLinkChanges holds a mapping
 	// of the linked to resource name to any changes
 	// that will be made to the link.
 	// The key is of the form `{resourceA}::{resoureB}`
-	OutboundLinkChanges map[string]*LinkChanges
+	OutboundLinkChanges map[string]*LinkChanges `json:"outboundLinkChanges"`
 	// RemovedOutboundLinks holds a list of link identifiers
 	// that will be removed.
 	// The form of the link identifier is `{resourceA}::{resoureB}`
-	RemovedOutboundLinks []string
+	RemovedOutboundLinks []string `json:"removedOutboundLinks"`
 }
 
 // ResourceSpecDefinition provides a definition for a resource spec
@@ -399,6 +394,11 @@ type ResourceDefinitionsSchema struct {
 	// the resource provider must make sure required fields are populated
 	// in the output state.
 	Default interface{}
+	// MustRecreate specifies whether the value must be recreated
+	// if a change is detected to the field in the resource state.
+	// This is only used in change staging for the state definition of a resource.
+	// This is ignored for spec definitions.
+	MustRecreate bool
 }
 
 // ResourceDefinitionsSchemaType holds the type of a resource schema.
