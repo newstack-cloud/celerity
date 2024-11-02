@@ -130,3 +130,22 @@ func getLinkImplementation(
 
 	return linkImplementation, nil
 }
+
+func extractChildRefNodes(
+	blueprint *schema.Blueprint,
+	refChainCollector validation.RefChainCollector,
+) []*validation.ReferenceChainNode {
+	childRefNodes := []*validation.ReferenceChainNode{}
+	if blueprint.Include == nil {
+		return childRefNodes
+	}
+
+	for childName, _ := range blueprint.Include.Values {
+		refChainNode := refChainCollector.Chain(fmt.Sprintf("children.%s", childName))
+		if refChainNode != nil {
+			childRefNodes = append(childRefNodes, refChainNode)
+		}
+	}
+
+	return childRefNodes
+}

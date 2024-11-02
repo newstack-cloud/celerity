@@ -13,7 +13,7 @@ import (
 )
 
 // GroupOrderedLinkNodes deals with grouping ordered links
-// for stage changing and deployments to make the process
+// for change staging and deployments to make the process
 // more efficient by concurrently staging and deploying unrelated resources.
 // The input is expected to be an ordered list of link nodes.
 // The output is a list of groups of chain link nodes that can be staged or deployed

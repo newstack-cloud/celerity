@@ -16,6 +16,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/libs/common/core"
@@ -355,7 +356,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	}
 
 	resourceCache := bpcore.NewCache[[]*provider.ResolvedResource]()
-	substitutionResolver := NewDefaultSubstitutionResolver(
+	substitutionResolver := subengine.NewDefaultSubstitutionResolver(
 		l.funcRegistry,
 		l.resourceRegistry,
 		l.dataSourceRegistry,

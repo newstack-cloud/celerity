@@ -90,18 +90,18 @@ type Container interface {
 // along with reasons for failure when a resource is in a failure state.
 type ResourceState struct {
 	// A globally unique identifier for the resource.
-	ResourceID string
+	ResourceID string `json:"resourceId"`
 	// The logical name of the resource in the blueprint.
-	ResourceName  string
-	Status        core.ResourceStatus
-	PreciseStatus core.PreciseResourceStatus
+	ResourceName  string                     `json:"resourceName"`
+	Status        core.ResourceStatus        `json:"status"`
+	PreciseStatus core.PreciseResourceStatus `json:"preciseStatus"`
 	// ResourceData is the mapping that holds the structure of
 	// the "raw" resource data from the resource provider service.
 	// (e.g. AWS Lambda Function object)
-	ResourceData map[string]*core.MappingNode
+	ResourceData map[string]*core.MappingNode `json:"resourceData"`
 	// Holds the latest reasons for failures in deploying a resource,
 	// this only ever holds the results of the latest deployment attempt.
-	FailureReasons []string
+	FailureReasons []string `json:"failureReasons"`
 }
 
 // InstanceState stores the state of a blueprint instance
