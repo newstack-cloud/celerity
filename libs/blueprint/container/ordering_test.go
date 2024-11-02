@@ -23,7 +23,7 @@ type orderChainLinkNodeFixture struct {
 	inputChains       []*links.ChainLinkNode
 	refChainCollector validation.RefChainCollector
 	// All the resource names that are expected to be present
-	// in the ordered flattened list of links (resources)
+	// in the ordered flattened list of nodes (resources and children)
 	// to be deployed.
 	expectedPresent []string
 	// A two-dimensional slice of resources with hard links that must
@@ -52,96 +52,99 @@ func (s *OrderingTestSuite) SetupSuite() {
 	s.orderFixture3 = orderFixture3
 }
 
-func (s *OrderingTestSuite) Test_order_links_for_deployment_with_circular_links() {
-	orderedLinks, err := OrderLinksForDeployment(
+func (s *OrderingTestSuite) Test_order_items_for_deployment_with_circular_links() {
+	orderedItems, err := OrderItemsForDeployment(
 		context.TODO(),
 		s.orderFixture1.inputChains,
+		[]*validation.ReferenceChainNode{},
 		s.orderFixture1.refChainCollector,
 		nil,
 	)
 	s.Assert().NoError(err)
-	s.Assert().Len(orderedLinks, len(s.orderFixture1.expectedPresent))
+	s.Assert().Len(orderedItems, len(s.orderFixture1.expectedPresent))
 	s.Assert().Len(
 		core.Filter(
-			orderedLinks,
+			orderedItems,
 			inExpected(s.orderFixture1.expectedPresent),
 		),
 		len(s.orderFixture1.expectedPresent),
 	)
 
 	for _, orderedExpectedSet := range s.orderFixture1.orderedExpected {
-		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
+		s.assertOrderedExpected(orderedItems, orderedExpectedSet)
 	}
 }
 
-func (s *OrderingTestSuite) Test_order_links_for_deployment_without_circular_links() {
-	orderedLinks, err := OrderLinksForDeployment(
+func (s *OrderingTestSuite) Test_order_items_for_deployment_without_circular_links() {
+	orderedItems, err := OrderItemsForDeployment(
 		context.TODO(),
 		s.orderFixture2.inputChains,
+		[]*validation.ReferenceChainNode{},
 		s.orderFixture2.refChainCollector,
 		nil,
 	)
 	s.Assert().NoError(err)
-	s.Assert().Len(orderedLinks, len(s.orderFixture2.expectedPresent))
+	s.Assert().Len(orderedItems, len(s.orderFixture2.expectedPresent))
 	s.Assert().Len(
 		core.Filter(
-			orderedLinks,
+			orderedItems,
 			inExpected(s.orderFixture2.expectedPresent),
 		),
 		len(s.orderFixture2.expectedPresent),
 	)
 
 	for _, orderedExpectedSet := range s.orderFixture2.orderedExpected {
-		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
+		s.assertOrderedExpected(orderedItems, orderedExpectedSet)
 	}
 }
 
-func (s *OrderingTestSuite) Test_order_links_based_on_references() {
-	orderedLinks, err := OrderLinksForDeployment(
+func (s *OrderingTestSuite) Test_order_items_based_on_references() {
+	orderedItems, err := OrderItemsForDeployment(
 		context.TODO(),
 		s.orderFixture3.inputChains,
+		[]*validation.ReferenceChainNode{},
 		s.orderFixture3.refChainCollector,
 		nil,
 	)
 	s.Assert().NoError(err)
-	s.Assert().Len(orderedLinks, len(s.orderFixture3.expectedPresent))
+	s.Assert().Len(orderedItems, len(s.orderFixture3.expectedPresent))
 	s.Assert().Len(
 		core.Filter(
-			orderedLinks,
+			orderedItems,
 			inExpected(s.orderFixture3.expectedPresent),
 		),
 		len(s.orderFixture3.expectedPresent),
 	)
 
 	for _, orderedExpectedSet := range s.orderFixture3.orderedExpected {
-		s.assertOrderedExpected(orderedLinks, orderedExpectedSet)
+		s.assertOrderedExpected(orderedItems, orderedExpectedSet)
 	}
 }
 
-func (s *OrderingTestSuite) assertOrderedExpected(actual []*links.ChainLinkNode, orderedExpected []string) {
+func (s *OrderingTestSuite) assertOrderedExpected(actual []*DeploymentNode, orderedExpected []string) {
 	expectedItemsInOrder := core.Filter(actual, inExpected(orderedExpected))
 	inOrder := true
 	i := 0
-	var linkA *links.ChainLinkNode
-	var linkB *links.ChainLinkNode
+	var nodeA *DeploymentNode
+	var nodeB *DeploymentNode
 
 	for inOrder && i < len(expectedItemsInOrder) {
 		if i+1 < len(expectedItemsInOrder) {
-			linkA = expectedItemsInOrder[i]
-			linkB = expectedItemsInOrder[i+1]
-			inOrder = linkA.ResourceName == orderedExpected[i] && linkB.ResourceName == orderedExpected[i+1]
+			nodeA = expectedItemsInOrder[i]
+			nodeB = expectedItemsInOrder[i+1]
+			inOrder = nodeA.Name() == orderedExpected[i] && nodeB.Name() == orderedExpected[i+1]
 		}
 		i += 2
 	}
 
 	if !inOrder {
-		s.Failf("incorrect order", "expected \"%s\" to come before \"%s\"", linkB.ResourceName, linkA.ResourceName)
+		s.Failf("incorrect order", "expected \"%s\" to come before \"%s\"", nodeB.Name(), nodeA.Name())
 	}
 }
 
-func inExpected(expectedResourceNames []string) func(*links.ChainLinkNode, int) bool {
-	return func(currentLink *links.ChainLinkNode, index int) bool {
-		return core.SliceContainsComparable(expectedResourceNames, currentLink.ResourceName)
+func inExpected(expectedItemNames []string) func(*DeploymentNode, int) bool {
+	return func(currentNode *DeploymentNode, index int) bool {
+		return core.SliceContainsComparable(expectedItemNames, currentNode.Name())
 	}
 }
 
@@ -158,15 +161,15 @@ func orderFixture1() (orderChainLinkNodeFixture, error) {
 		inputChains:       inputChains,
 		refChainCollector: refChainCollector,
 		expectedPresent: []string{
-			"orderApi",
-			"getOrdersFunction",
-			"createOrderFunction",
-			"updateOrderFunction",
-			"ordersTable",
-			"ordersStream",
-			"statsAccumulatorFunction",
+			"resources.orderApi",
+			"resources.getOrdersFunction",
+			"resources.createOrderFunction",
+			"resources.updateOrderFunction",
+			"resources.ordersTable",
+			"resources.ordersStream",
+			"resources.statsAccumulatorFunction",
 		},
-		orderedExpected: [][]string{{"ordersTable", "ordersStream"}},
+		orderedExpected: [][]string{{"resources.ordersTable", "resources.ordersStream"}},
 	}, nil
 }
 
@@ -349,19 +352,19 @@ func orderFixture2() (orderChainLinkNodeFixture, error) {
 		inputChains:       inputChains,
 		refChainCollector: refChainCollector,
 		expectedPresent: []string{
-			"route1",
-			"subnet1",
-			"sg1",
-			"routeTable1",
-			"vpc1",
-			"igw1",
+			"resources.route1",
+			"resources.subnet1",
+			"resources.sg1",
+			"resources.routeTable1",
+			"resources.vpc1",
+			"resources.igw1",
 		},
 		orderedExpected: [][]string{
-			{"routeTable1", "route1"},
-			{"igw1", "route1"},
-			{"vpc1", "routeTable1"},
-			{"vpc1", "subnet1"},
-			{"vpc1", "sg1"},
+			{"resources.routeTable1", "resources.route1"},
+			{"resources.igw1", "resources.route1"},
+			{"resources.vpc1", "resources.routeTable1"},
+			{"resources.vpc1", "resources.subnet1"},
+			{"resources.vpc1", "resources.sg1"},
 		},
 	}, nil
 }
@@ -511,21 +514,21 @@ func orderFixture3() (orderChainLinkNodeFixture, error) {
 		inputChains:       inputChains,
 		refChainCollector: refChainCollector,
 		expectedPresent: []string{
-			"orderApi",
-			"getOrdersFunction",
-			"createOrderFunction",
-			"updateOrderFunction",
-			"ordersTable",
-			"ordersStream",
-			"statsAccumulatorFunction",
-			"standaloneFunction",
+			"resources.orderApi",
+			"resources.getOrdersFunction",
+			"resources.createOrderFunction",
+			"resources.updateOrderFunction",
+			"resources.ordersTable",
+			"resources.ordersStream",
+			"resources.statsAccumulatorFunction",
+			"resources.standaloneFunction",
 		},
 		orderedExpected: [][]string{
-			{"ordersTable", "ordersStream"},
-			{"ordersTable", "getOrdersFunction"},
-			{"ordersTable", "createOrderFunction"},
-			{"ordersTable", "updateOrderFunction"},
-			{"standaloneFunction", "statsAccumulatorFunction"},
+			{"resources.ordersTable", "resources.ordersStream"},
+			{"resources.ordersTable", "resources.getOrdersFunction"},
+			{"resources.ordersTable", "resources.createOrderFunction"},
+			{"resources.ordersTable", "resources.updateOrderFunction"},
+			{"resources.standaloneFunction", "resources.statsAccumulatorFunction"},
 		},
 	}, nil
 }

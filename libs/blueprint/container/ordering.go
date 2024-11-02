@@ -14,22 +14,24 @@ import (
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
-// OrderLinksForDeployment deals with creating a flat ordered
-// slice of chain links for stage changing and deployments.
+// OrderItemsForDeployment deals with creating a flat ordered
+// slice of chain link nodes and child blueprints for change staging and deployments.
 // Ordering is determined by the priority resource type specified
-// in each link implementation and usage of references between resources.
-// A resource reference is treated as a hard link where the priority resource
-// is the resource being referenced.
+// in each link implementation and usage of references between resources and child blueprints.
+// A reference is treated as a hard link where the priority resource or child blueprint
+// is the one being referenced.
 //
-// It is a requirement for the input chains not to have any direct
+// It is a requirement for the input chains and child blueprints to not have any direct
 // or transitive circular hard links.
 // A hard link is when one resource type requires the other in a link
-// relationship to be deployed first.
+// relationship to be deployed first or where a reference is made to a
+// resource or child blueprint.
 //
-// For the following set of chains:
+// For the following set of chains and child blueprints:
 //
-// (lt) = the linked to resource is the priority resource type.
-// (lf) = the linked from resource is the priority resource type.
+// (lt)                = the linked to resource is the priority resource type.
+// (lf)                = the linked from resource is the priority resource type.
+// (rb:{referencedBy}) = referenced by other item.
 //
 // *All the links in the example below are hard links.
 //
@@ -39,92 +41,192 @@ import (
 // │	 │   ├── ResourceA4 (lt)
 // │	 │   └── ResourceA5 (lt)
 // │	 └── ResourceA3 (lf)
-// │	 	   └── ResourceA6 (lf)
+// │	 	 └── ResourceA6 (lf)
 //
 // Chain 2
 // ├── ResourceB1
 // │	 ├── ResourceB2 (lt)
-// │	 │   ├── ResourceB4 (lt)
+// │	 │   ├── ResourceB4 (lt) (rb:ResourceA5)
 // │     │   │   └── ResourceA6 (lt)
-// │	 │   └── ResourceB5 (lt)
+// │	 │   └── ResourceB5 (lt) (rb:Child2)
 // │	 └── ResourceB3 (lf)
-// │	 	   └── ResourceB6 (lt)
+// │	 	 └── ResourceB6 (lt)
+//
+// Child1 (rb:ResourceA4)
+//
+// Child2 (rb:ResourceA5)
 //
 // We will want output like:
 // [
 //
-//	ResourceA4,
-//	ResourceA5,
-//	ResourceA1,
-//	ResourceA2,
-//	ResourceA3,
-//	ResourceA6,
-//	ResourceB4,
-//	ResourceB5,
-//	ResourceB2,
-//	ResourceB1,
-//	ResourceB6,
-//	ResourceB3
+//		Child1,
+//		ResourceA4,
+//		ResourceA1,
+//		ResourceA3,
+//		ResourceA6,
+//		ResourceB4,
+//		ResourceB5,
+//	 	Child2,
+//		ResourceA5,
+//		ResourceA2,
+//		ResourceB2,
+//		ResourceB1,
+//		ResourceB6,
+//		ResourceB3
 //
 // ]
 //
 // What matters in the output is that resources are ordered by the priority
-// definition of the links, the order of items that have no direct or transitive
-// relationship are irrelevant.
-func OrderLinksForDeployment(
+// definition of the links and based on references (treated the same as hard links),
+// the order of items that have no direct or transitive relationship are irrelevant.
+func OrderItemsForDeployment(
 	ctx context.Context,
 	chains []*links.ChainLinkNode,
+	children []*validation.ReferenceChainNode,
 	refChainCollector validation.RefChainCollector,
 	params bpcore.BlueprintParams,
-) ([]*links.ChainLinkNode, error) {
+) ([]*DeploymentNode, error) {
 	flattened := flattenChains(chains, []*links.ChainLinkNode{})
+	combined := combineChainsAndChildren(flattened, children)
 	var sortErr error
-	sort.Slice(flattened, func(i, j int) bool {
-		linkA := flattened[i]
-		linkB := flattened[j]
+	sort.Slice(combined, func(i, j int) bool {
+		nodeA := combined[i]
+		nodeB := combined[j]
 
-		pathsWithLinkA := core.Filter(linkB.Paths, isResourceAncestor(linkA.ResourceName))
-		linkAIsAncestor := len(pathsWithLinkA) > 0
-
-		pathsWithLinkB := core.Filter(linkA.Paths, isResourceAncestor(linkB.ResourceName))
-		linkAIsDescendant := len(pathsWithLinkB) > 0
-
-		directParentsOfLinkB := getDirectParentsForPaths(pathsWithLinkA, linkB)
-
-		// link A has priority in two cases.
-		// 1, if at least one of the direct parents of link B
-		// (for which link A is an ancestor) is the priority resource type
-		// in the link relationship.
-		// 2, if at least one of the direct children of link B
-		// (for which link A is a descendant) is the priority resource type
-		// in the link relationship.
-		isParentWithPriority := len(core.Filter(directParentsOfLinkB, hasPriorityOver(ctx, linkB, params, &sortErr))) > 0
-		if sortErr != nil {
-			return false
+		if nodeA.ChainLinkNode != nil && nodeB.ChainLinkNode != nil {
+			return resourceAHasPriority(
+				ctx,
+				nodeA.ChainLinkNode,
+				nodeB.ChainLinkNode,
+				refChainCollector,
+				params,
+				&sortErr,
+			)
 		}
-		isChildWithPriority := len(core.Filter(linkB.LinksTo, hasPriorityOver(ctx, linkB, params, &sortErr))) > 0
-		if sortErr != nil {
-			return false
+
+		if nodeA.ChainLinkNode != nil && nodeB.ChildNode != nil {
+			return resourceHasPriorityOverChild(
+				nodeA.ChainLinkNode,
+				nodeB.ChildNode,
+				refChainCollector,
+			)
 		}
-		// If A references B or any of B's descendants then A does not have priority regardless
-		// of the link relationship. (An explicit reference is a dependency)
-		linkAReferencesLinkB := linkResourceReferences(refChainCollector, linkA, linkB)
-		linkAHasPriority := (isParentWithPriority || isChildWithPriority) && !linkAReferencesLinkB
 
-		// If link B references link A but is not connected via a link relationship,
-		// then link A has priority.
-		// For example, let's say link A is an "orders" NoSQL table in a blueprint
-		// and link B is a "createOrders" serverless function.
-		// The "createOrders" function references the "orders" table in its environment variables
-		// as the source for the table name made available to the function code.
-		// There is no linkSelector initated link between the two resources, however, the "orders"
-		// table (link A) needs to be deployed before the "createOrders" function (link B) so the function can source
-		// the table name from the environment variables.
-		linkBReferencesLinkA := linkResourceReferences(refChainCollector, linkB, linkA)
+		if nodeA.ChildNode != nil && nodeB.ChainLinkNode != nil {
+			return childHasPriorityOverResource(
+				nodeA.ChildNode,
+				nodeB.ChainLinkNode,
+				refChainCollector,
+			)
+		}
 
-		return linkBReferencesLinkA || ((linkAIsAncestor || linkAIsDescendant) && linkAHasPriority)
+		if nodeA.ChildNode != nil && nodeB.ChildNode != nil {
+			return childAHasPriority(
+				nodeA.ChildNode,
+				nodeB.ChildNode,
+			)
+		}
+
+		return false
 	})
-	return flattened, sortErr
+	return combined, sortErr
+}
+
+func resourceAHasPriority(
+	ctx context.Context,
+	linkA *links.ChainLinkNode,
+	linkB *links.ChainLinkNode,
+	refChainCollector validation.RefChainCollector,
+	params bpcore.BlueprintParams,
+	sortErr *error,
+) bool {
+
+	pathsWithLinkA := core.Filter(linkB.Paths, isResourceAncestor(linkA.ResourceName))
+	linkAIsAncestor := len(pathsWithLinkA) > 0
+
+	pathsWithLinkB := core.Filter(linkA.Paths, isResourceAncestor(linkB.ResourceName))
+	linkAIsDescendant := len(pathsWithLinkB) > 0
+
+	directParentsOfLinkB := getDirectParentsForPaths(pathsWithLinkA, linkB)
+
+	// link A has priority in two cases.
+	// 1, if at least one of the direct parents of link B
+	// (for which link A is an ancestor) is the priority resource type
+	// in the link relationship.
+	// 2, if at least one of the direct children of link B
+	// (for which link A is a descendant) is the priority resource type
+	// in the link relationship.
+	var internalSortErr error
+	isParentWithPriority := len(core.Filter(directParentsOfLinkB, hasPriorityOver(ctx, linkB, params, &internalSortErr))) > 0
+	if internalSortErr != nil {
+		*sortErr = internalSortErr
+		return false
+	}
+	isChildWithPriority := len(core.Filter(linkB.LinksTo, hasPriorityOver(ctx, linkB, params, &internalSortErr))) > 0
+	if internalSortErr != nil {
+		*sortErr = internalSortErr
+		return false
+	}
+	// If A references B or any of B's descendants then A does not have priority regardless
+	// of the link relationship. (An explicit reference is a dependency)
+	linkAReferencesLinkB := linkResourceReferences(refChainCollector, linkA, linkB)
+	linkAHasPriority := (isParentWithPriority || isChildWithPriority) && !linkAReferencesLinkB
+
+	// If link B references link A but is not connected via a link relationship,
+	// then link A has priority.
+	// For example, let's say link A is an "orders" NoSQL table in a blueprint
+	// and link B is a "createOrders" serverless function.
+	// The "createOrders" function references the "orders" table in its environment variables
+	// as the source for the table name made available to the function code.
+	// There is no linkSelector initated link between the two resources, however, the "orders"
+	// table (link A) needs to be deployed before the "createOrders" function (link B) so the function can source
+	// the table name from the environment variables.
+	linkBReferencesLinkA := linkResourceReferences(refChainCollector, linkB, linkA)
+
+	return linkBReferencesLinkA || ((linkAIsAncestor || linkAIsDescendant) && linkAHasPriority)
+}
+
+func resourceHasPriorityOverChild(
+	resourceNode *links.ChainLinkNode,
+	childNode *validation.ReferenceChainNode,
+	refChainCollector validation.RefChainCollector,
+) bool {
+	resourceElementName := fmt.Sprintf("resources.%s", resourceNode.ResourceName)
+	resourceRef := refChainCollector.Chain(resourceElementName)
+	if resourceRef == nil {
+		return false
+	}
+
+	// If resource (A) references child (B) or any of B's descendants then A does not have priority.
+	resourceReferencesChild := referencesResourceOrDescendants(resourceElementName, resourceRef.References, childNode)
+
+	return !resourceReferencesChild
+}
+
+func childHasPriorityOverResource(
+	childNode *validation.ReferenceChainNode,
+	resourceNode *links.ChainLinkNode,
+	refChainCollector validation.RefChainCollector,
+) bool {
+	resourceElementName := fmt.Sprintf("resources.%s", resourceNode.ResourceName)
+	resourceRef := refChainCollector.Chain(resourceElementName)
+	if resourceRef == nil {
+		return false
+	}
+
+	// If child (A) references resource (B) or any of B's descendants then B has priority.
+	childReferencesResource := referencesResourceOrDescendants(childNode.ElementName, childNode.References, resourceRef)
+
+	return !childReferencesResource
+}
+
+func childAHasPriority(
+	childA *validation.ReferenceChainNode,
+	childB *validation.ReferenceChainNode,
+) bool {
+	// If child A references child B or any of B's descendants then A does not have priority.
+	childAReferencesChildB := referencesResourceOrDescendants(childA.ElementName, childA.References, childB)
+	return !childAReferencesChildB
 }
 
 func getDirectParentsForPaths(paths []string, link *links.ChainLinkNode) []*links.ChainLinkNode {
@@ -257,4 +359,36 @@ func flattenChains(chains []*links.ChainLinkNode, flattenedAccum []*links.ChainL
 		}
 	}
 	return flattened
+}
+
+func combineChainsAndChildren(
+	chains []*links.ChainLinkNode,
+	children []*validation.ReferenceChainNode,
+) []*DeploymentNode {
+	deploymentNodes := []*DeploymentNode{}
+	for _, chain := range chains {
+		deploymentNodes = append(deploymentNodes, &DeploymentNode{
+			ChainLinkNode: chain,
+		})
+	}
+	for _, child := range children {
+		deploymentNodes = append(deploymentNodes, &DeploymentNode{
+			ChildNode: child,
+		})
+	}
+	return deploymentNodes
+}
+
+// DeploymentNode is a node that represents a resource or a child blueprint
+// to be deployed (or staged for deployment).
+type DeploymentNode struct {
+	ChainLinkNode *links.ChainLinkNode
+	ChildNode     *validation.ReferenceChainNode
+}
+
+func (d *DeploymentNode) Name() string {
+	if d.ChainLinkNode != nil {
+		return fmt.Sprintf("resources.%s", d.ChainLinkNode.ResourceName)
+	}
+	return d.ChildNode.ElementName
 }
