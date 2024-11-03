@@ -3,6 +3,7 @@ package testutils
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
@@ -28,7 +29,7 @@ func (d *VPCDataSource) Fetch(
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
 	return &provider.DataSourceFetchOutput{
-		Data: map[string]interface{}{},
+		Data: map[string]*core.MappingNode{},
 	}, nil
 }
 

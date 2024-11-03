@@ -501,27 +501,6 @@ func (s *CompletionServiceGetItemsSuite) Test_get_completion_items_for_resource_
 				"completionType": "resourceProperty",
 			},
 		},
-	}), sortCompletionItems(completionItems))
-}
-
-func (s *CompletionServiceGetItemsSuite) Test_get_completion_items_for_resource_property_ref_3() {
-	blueprintInfo, err := loadCompletionBlueprintAndTree("blueprint-completion-resource-property-ref-3")
-	s.Require().NoError(err)
-
-	lspCtx := &common.LSPContext{}
-	completionItems, err := s.service.GetCompletionItems(lspCtx, blueprintInfo.content, blueprintInfo.tree, blueprintInfo.blueprint, &lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{
-			URI: blueprintURI,
-		},
-		Position: lsp.Position{
-			Line:      46,
-			Character: 54,
-		},
-	})
-	s.Require().NoError(err)
-	detail := "Resource state property"
-	itemKind := lsp.CompletionItemKindField
-	s.Assert().Equal(sortCompletionItems([]*lsp.CompletionItem{
 		{
 			Kind:   &itemKind,
 			Label:  "id",
@@ -530,11 +509,11 @@ func (s *CompletionServiceGetItemsSuite) Test_get_completion_items_for_resource_
 				Range: &lsp.Range{
 					Start: lsp.Position{
 						Line:      46,
-						Character: 54,
+						Character: 53,
 					},
 					End: lsp.Position{
 						Line:      46,
-						Character: 54,
+						Character: 53,
 					},
 				},
 				NewText: "id",

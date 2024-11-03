@@ -37,3 +37,25 @@ func (p *Params) ContextVariable(name string) *core.ScalarValue {
 func (p *Params) BlueprintVariable(name string) *core.ScalarValue {
 	return p.blueprintVariables[name]
 }
+
+func (b *Params) WithBlueprintVariables(
+	vars map[string]*core.ScalarValue,
+	keepExisting bool,
+) core.BlueprintParams {
+	newBlueprintVariables := map[string]*core.ScalarValue{}
+	if keepExisting {
+		for k, v := range b.blueprintVariables {
+			newBlueprintVariables[k] = v
+		}
+	}
+
+	for k, v := range vars {
+		newBlueprintVariables[k] = v
+	}
+
+	return &Params{
+		providerConfig:     b.providerConfig,
+		contextVariables:   b.contextVariables,
+		blueprintVariables: newBlueprintVariables,
+	}
+}

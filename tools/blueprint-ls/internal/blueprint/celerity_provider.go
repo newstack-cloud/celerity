@@ -138,13 +138,6 @@ func (d *celerityHandlerResource) GetTypeDescription(
 	}, nil
 }
 
-func (r *celerityHandlerResource) StageChanges(
-	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
-}
-
 func (r *celerityHandlerResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
@@ -164,6 +157,11 @@ func (r *celerityHandlerResource) GetSpecDefinition(
 				Description: "A resource that represents a handler for a Celerity application.",
 				Type:        provider.ResourceDefinitionsSchemaTypeObject,
 				Attributes: map[string]*provider.ResourceDefinitionsSchema{
+					"id": {
+						Description: "The ID of the handler in the deployed environment.",
+						Type:        provider.ResourceDefinitionsSchemaTypeString,
+						Computed:    true,
+					},
 					"handlerName": {
 						Description: "The name of the handler.",
 						Type:        provider.ResourceDefinitionsSchemaTypeString,
@@ -188,23 +186,12 @@ func (r *celerityHandlerResource) GetSpecDefinition(
 	}, nil
 }
 
-func (r *celerityHandlerResource) GetStateDefinition(
+func (r *celerityHandlerResource) StabilisedDependencies(
 	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: &provider.ResourceStateDefinition{
-			Schema: &provider.ResourceDefinitionsSchema{
-				Description: "The output state of a deployed handler for a Celerity application.",
-				Type:        provider.ResourceDefinitionsSchemaTypeObject,
-				Attributes: map[string]*provider.ResourceDefinitionsSchema{
-					"id": {
-						Description: "The ID of the handler in the deployed environment.",
-						Type:        provider.ResourceDefinitionsSchemaTypeString,
-					},
-				},
-			},
-		},
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{
+		StabilisedDependencies: []string{},
 	}, nil
 }
 
@@ -260,7 +247,7 @@ func (d *celerityVPCDataSource) Fetch(
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
 	return &provider.DataSourceFetchOutput{
-		Data: map[string]interface{}{},
+		Data: map[string]*core.MappingNode{},
 	}, nil
 }
 

@@ -17,6 +17,13 @@ type FunctionRegistryMock struct {
 	CallStack function.Stack
 }
 
+func (f *FunctionRegistryMock) ForCallContext() provider.FunctionRegistry {
+	return &FunctionRegistryMock{
+		Functions: f.Functions,
+		CallStack: f.CallStack,
+	}
+}
+
 func (f *FunctionRegistryMock) Call(
 	ctx context.Context,
 	functionName string,
@@ -95,22 +102,6 @@ func (r *ResourceRegistryMock) GetSpecDefinition(
 	return defOutput, nil
 }
 
-func (r *ResourceRegistryMock) GetStateDefinition(
-	ctx context.Context,
-	resourceType string,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	res, ok := r.Resources[resourceType]
-	if !ok {
-		return nil, fmt.Errorf("resource %s not found", resourceType)
-	}
-	defOutput, err := res.GetStateDefinition(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-	return defOutput, nil
-}
-
 func (r *ResourceRegistryMock) GetTypeDescription(
 	ctx context.Context,
 	resourceType string,
@@ -160,6 +151,22 @@ type DataSourceRegistryMock struct {
 func (r *DataSourceRegistryMock) HasDataSourceType(ctx context.Context, dataSourceType string) (bool, error) {
 	_, ok := r.DataSources[dataSourceType]
 	return ok, nil
+}
+
+func (r *DataSourceRegistryMock) Fetch(
+	ctx context.Context,
+	dataSourceType string,
+	input *provider.DataSourceFetchInput,
+) (*provider.DataSourceFetchOutput, error) {
+	res, ok := r.DataSources[dataSourceType]
+	if !ok {
+		return nil, fmt.Errorf("data source %s not found", dataSourceType)
+	}
+	defOutput, err := res.Fetch(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
 }
 
 func (r *DataSourceRegistryMock) GetSpecDefinition(

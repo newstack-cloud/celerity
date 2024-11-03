@@ -254,8 +254,8 @@ func renderFieldPath(path []*substitutions.SubstitutionPathItem) string {
 				sb.WriteString(".")
 			}
 			sb.WriteString(item.FieldName)
-		} else if item.PrimitiveArrIndex != nil {
-			sb.WriteString(fmt.Sprintf("[%d]", *item.PrimitiveArrIndex))
+		} else if item.ArrayIndex != nil {
+			sb.WriteString(fmt.Sprintf("[%d]", *item.ArrayIndex))
 		}
 	}
 

@@ -46,11 +46,13 @@ func (r *DynamoDBTableResource) GetTypeDescription(
 	}, nil
 }
 
-func (r *DynamoDBTableResource) StageChanges(
+func (r *DynamoDBTableResource) StabilisedDependencies(
 	ctx context.Context,
-	input *provider.ResourceStageChangesInput,
-) (*provider.ResourceStageChangesOutput, error) {
-	return &provider.ResourceStageChangesOutput{}, nil
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{
+		StabilisedDependencies: []string{},
+	}, nil
 }
 
 func (r *DynamoDBTableResource) CustomValidate(
@@ -71,25 +73,11 @@ func (r *DynamoDBTableResource) GetSpecDefinition(
 			Schema: &provider.ResourceDefinitionsSchema{
 				Type: provider.ResourceDefinitionsSchemaTypeObject,
 				Attributes: map[string]*provider.ResourceDefinitionsSchema{
-					"tableName": {
-						Type: provider.ResourceDefinitionsSchemaTypeString,
-					},
-				},
-			},
-		},
-	}, nil
-}
-
-func (r *DynamoDBTableResource) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: &provider.ResourceStateDefinition{
-			Schema: &provider.ResourceDefinitionsSchema{
-				Type: provider.ResourceDefinitionsSchemaTypeObject,
-				Attributes: map[string]*provider.ResourceDefinitionsSchema{
 					"id": {
+						Type:     provider.ResourceDefinitionsSchemaTypeString,
+						Computed: true,
+					},
+					"tableName": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
 				},

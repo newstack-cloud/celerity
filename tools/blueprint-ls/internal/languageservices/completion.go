@@ -961,11 +961,6 @@ func (s *CompletionService) getStringSubResourcePropCompletionItems(
 		return s.getResourceSpecPropCompletionItems(ctx, position, blueprint, resourceProp)
 	}
 
-	if strings.HasSuffix(sourceContentBefore, ".state.") ||
-		(len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "state") {
-		return s.getResourceStatePropCompletionItems(ctx, position, blueprint, resourceProp)
-	}
-
 	if strings.HasSuffix(sourceContentBefore, ".metadata.") ||
 		(len(resourceProp.Path) >= 1 && resourceProp.Path[0].FieldName == "metadata") {
 		return getResourceMetadataPropCompletionItems(position), nil
@@ -1015,50 +1010,6 @@ func (s *CompletionService) getResourceSpecPropCompletionItems(
 		currentSchema.Attributes,
 		position,
 		"Resource spec property",
-	), nil
-}
-
-func (s *CompletionService) getResourceStatePropCompletionItems(
-	ctx *common.LSPContext,
-	position *lsp.Position,
-	blueprint *schema.Blueprint,
-	resourceProp *substitutions.SubstitutionResourceProperty,
-) ([]*lsp.CompletionItem, error) {
-
-	resource := getResource(blueprint, resourceProp.ResourceName)
-	if resource == nil || resource.Type == nil {
-		return []*lsp.CompletionItem{}, nil
-	}
-
-	stateDefOutput, err := s.resourceRegistry.GetStateDefinition(
-		ctx.Context,
-		resource.Type.Value,
-		&provider.ResourceGetStateDefinitionInput{},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	if stateDefOutput.StateDefinition == nil || stateDefOutput.StateDefinition.Schema == nil {
-		return []*lsp.CompletionItem{}, nil
-	}
-
-	currentSchema := stateDefOutput.StateDefinition.Schema
-	pathAfterState := resourceProp.Path[1:]
-	i := 0
-	for currentSchema != nil && i < len(pathAfterState) {
-		if currentSchema.Type != provider.ResourceDefinitionsSchemaTypeObject {
-			currentSchema = nil
-		} else {
-			currentSchema = currentSchema.Attributes[pathAfterState[i].FieldName]
-		}
-		i += 1
-	}
-
-	return resourceDefAttributesSchemaCompletionItems(
-		currentSchema.Attributes,
-		position,
-		"Resource state property",
 	), nil
 }
 

@@ -177,28 +177,6 @@ func (s *HoverService) getResourceRefHoverContent(
 		)
 	}
 
-	if len(resRef.Path) > 1 && resRef.Path[0].FieldName == "state" {
-		s.logger.Debug(
-			"Fetching state definition for hover content",
-			zap.String("resourceType", resource.Type.Value),
-		)
-		stateDefOutput, err := s.resourceRegistry.GetStateDefinition(
-			ctx.Context,
-			resource.Type.Value,
-			&provider.ResourceGetStateDefinitionInput{},
-		)
-		if err != nil {
-			return &HoverContent{}, err
-		}
-
-		return getResourceWithStateHoverContent(
-			node,
-			resource,
-			resRef,
-			stateDefOutput.StateDefinition,
-		)
-	}
-
 	return &HoverContent{}, nil
 }
 
@@ -460,34 +438,6 @@ func getResourceWithSpecHoverContent(
 	}, nil
 }
 
-func getResourceWithStateHoverContent(
-	node *schema.TreeNode,
-	resource *schema.Resource,
-	resRef *substitutions.SubstitutionResourceProperty,
-	stateDef *provider.ResourceStateDefinition,
-) (*HoverContent, error) {
-	if stateDef == nil {
-		return &HoverContent{}, nil
-	}
-
-	stateFieldSchema, err := findResourceFieldSchema(stateDef.Schema, resRef.Path[1:])
-	if err != nil {
-		return &HoverContent{}, err
-	}
-
-	content := helpinfo.RenderResourceDefinitionFieldInfo(
-		node.Label,
-		resource,
-		resRef,
-		stateFieldSchema,
-	)
-
-	return &HoverContent{
-		Value: content,
-		Range: rangeToLSPRange(node.Range),
-	}, nil
-}
-
 func getDataSourceRefHoverContent(
 	node *schema.TreeNode,
 	blueprint *schema.Blueprint,
@@ -721,7 +671,7 @@ func checkResourceArrayItemSchema(
 	pathItem *substitutions.SubstitutionPathItem,
 ) *provider.ResourceDefinitionsSchema {
 
-	if pathItem.PrimitiveArrIndex != nil &&
+	if pathItem.ArrayIndex != nil &&
 		schema.Type == provider.ResourceDefinitionsSchemaTypeArray {
 		if schema.Items == nil {
 			return nil
