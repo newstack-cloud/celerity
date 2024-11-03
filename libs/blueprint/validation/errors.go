@@ -90,6 +90,11 @@ const (
 	// for a blueprint spec load error is due to a resource dependency in the "dependsOn"
 	// property not being a valid resource.
 	ErrorReasonCodeMissingResourceDependency errors.ErrorReasonCode = "missing_resource_dependency"
+	// ErrorReasonCodeComputedFieldInBlueprint is provided when the reason
+	// for a blueprint spec load error is due to a computed field being used in a blueprint.
+	// Computed fields are not allowed to be defined in blueprints,
+	// they are computed by providers when a resource has been created.
+	ErrorReasonCodeComputedFieldInBlueprint errors.ErrorReasonCode = "computed_field_in_blueprint"
 )
 
 func errBlueprintMissingVersion() error {
@@ -2060,6 +2065,25 @@ func errSelfReferencingResourceDependency(
 		ReasonCode: ErrorReasonCodeInvalidResource,
 		Err: fmt.Errorf(
 			"validation failed due to a self-referencing dependency in resource %q",
+			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errComputedFieldDefinedInBlueprint(
+	path string,
+	resourceName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeComputedFieldInBlueprint,
+		Err: fmt.Errorf(
+			"validation failed due to %q being a computed field defined in the blueprint for resource %q, "+
+				"this field is computed by the provider after the resource has been created",
+			path,
 			resourceName,
 		),
 		Line:   line,

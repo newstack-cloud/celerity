@@ -38,6 +38,14 @@ func validateResourceDefinition(
 		return diagnostics, nil
 	}
 
+	if validateAgainstSchema.Computed {
+		return diagnostics, errComputedFieldDefinedInBlueprint(
+			path,
+			resourceName,
+			spec.SourceMeta,
+		)
+	}
+
 	switch validateAgainstSchema.Type {
 	case provider.ResourceDefinitionsSchemaTypeObject:
 		return validateResourceDefinitionObject(

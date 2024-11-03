@@ -225,6 +225,60 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 	)
 }
 
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_computed_field_defined_in_blueprint(c *C) {
+	resource := createTestValidResource()
+	idValue := "id-value"
+	resource.Spec.Fields["map"].Fields["item1"] = &core.MappingNode{
+		Fields: map[string]*core.MappingNode{
+			"id": {
+				Literal: &core.ScalarValue{
+					StringValue: &idValue,
+				},
+			},
+		},
+	}
+	computedValue := "test-computed-value"
+	resource.Spec.Fields["computed"] = &core.MappingNode{
+		Literal: &core.ScalarValue{
+			StringValue: &computedValue,
+		},
+	}
+
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&testBlueprintParams{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeComputedFieldInBlueprint)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to \"resources.testHandler.spec.computed\" being a "+
+			"computed field defined in the blueprint for resource \"testHandler\", this field is computed by the provider "+
+			"after the resource has been created",
+	)
+}
+
 func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_missing_required_field(c *C) {
 	resource := createTestValidResource()
 	floatVal := 4039.21
@@ -1090,6 +1144,10 @@ func (r *specValidationTestExampleResource) GetSpecDefinition(
 					"nullable": {
 						Type:     provider.ResourceDefinitionsSchemaTypeString,
 						Nullable: true,
+					},
+					"computed": {
+						Type:     provider.ResourceDefinitionsSchemaTypeString,
+						Computed: true,
 					},
 				},
 			},
