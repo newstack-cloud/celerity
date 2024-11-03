@@ -460,7 +460,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_resource_ref_sub_2(c *C) {
 	parsed, err := ParseSubstitutionValues(
 		"",
-		`${resources["save-order-function.v1"].state.functionArn}`,
+		`${resources["save-order-function.v1"].spec.functionArn}`,
 		nil,
 		true,
 		false,
@@ -474,7 +474,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 				ResourceName: "save-order-function.v1",
 				Path: []*SubstitutionPathItem{
 					{
-						FieldName: "state",
+						FieldName: "spec",
 					},
 					{
 						FieldName: "functionArn",
@@ -487,7 +487,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 					},
 					EndPosition: &source.Position{
 						Line:   1,
-						Column: 56,
+						Column: 55,
 					},
 				},
 			},
@@ -498,7 +498,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 				},
 				EndPosition: &source.Position{
 					Line:   1,
-					Column: 56,
+					Column: 55,
 				},
 			},
 		},
@@ -509,7 +509,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 			},
 			EndPosition: &source.Position{
 				Line:   1,
-				Column: 56,
+				Column: 55,
 			},
 		},
 	})
@@ -569,7 +569,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_resource_ref_sub_4(c *C) {
 	parsed, err := ParseSubstitutionValues(
 		"",
-		`${resources.contentBuckets[2].state.bucketArn}`,
+		`${resources.contentBuckets[2].spec.bucketArn}`,
 		nil,
 		true,
 		false,
@@ -585,7 +585,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 				ResourceEachTemplateIndex: &templateIndex,
 				Path: []*SubstitutionPathItem{
 					{
-						FieldName: "state",
+						FieldName: "spec",
 					},
 					{
 						FieldName: "bucketArn",
@@ -598,7 +598,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 					},
 					EndPosition: &source.Position{
 						Line:   1,
-						Column: 46,
+						Column: 45,
 					},
 				},
 			},
@@ -609,7 +609,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 				},
 				EndPosition: &source.Position{
 					Line:   1,
-					Column: 46,
+					Column: 45,
 				},
 			},
 		},
@@ -620,7 +620,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_string_with_a_reso
 			},
 			EndPosition: &source.Position{
 				Line:   1,
-				Column: 46,
+				Column: 45,
 			},
 		},
 	})
@@ -1446,7 +1446,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_func_call_5(c *C) {
 	parsed, err := ParseSubstitutionValues(
 		"",
-		`${  extract_config(resources.network.state)[0]["details"].id  }`,
+		`${  extract_config(resources.network.spec)[0]["details"].id  }`,
 		// Emulate this substitution starting on line 100, column 50.
 		// Source meta values of substitution components are offset from the start
 		// of the input string.
@@ -1472,7 +1472,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 								ResourceName: "network",
 								Path: []*SubstitutionPathItem{
 									{
-										FieldName: "state",
+										FieldName: "spec",
 									},
 								},
 								SourceMeta: &source.Meta{
@@ -1482,7 +1482,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 									},
 									EndPosition: &source.Position{
 										Line:   100,
-										Column: 92,
+										Column: 91,
 									},
 								},
 							},
@@ -1493,7 +1493,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 								},
 								EndPosition: &source.Position{
 									Line:   100,
-									Column: 92,
+									Column: 91,
 								},
 							},
 						},
@@ -1504,7 +1504,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 							},
 							EndPosition: &source.Position{
 								Line:   100,
-								Column: 92,
+								Column: 91,
 							},
 						},
 					},
@@ -1527,7 +1527,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 					},
 					EndPosition: &source.Position{
 						Line:   100,
-						Column: 110,
+						Column: 109,
 					},
 				},
 			},
@@ -1538,7 +1538,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 				},
 				EndPosition: &source.Position{
 					Line:   100,
-					Column: 110,
+					Column: 109,
 				},
 			},
 		},
@@ -1549,7 +1549,7 @@ func (s *ParseSubstitutionsTestSuite) Test_correctly_parses_a_sub_string_with_a_
 			},
 			EndPosition: &source.Position{
 				Line:   100,
-				Column: 113,
+				Column: 112,
 			},
 		},
 	})

@@ -17,4 +17,15 @@ type BlueprintParams interface {
 	// specific to a blueprint that will ultimately substitute
 	// variable placeholders in a blueprint.
 	BlueprintVariable(name string) *ScalarValue
+	// WithBlueprintVariables returns a new BlueprintParams
+	// with the given variables added to the blueprint variables.
+	// If keepExisting is true, the existing blueprint variables
+	// will be kept, otherwise they will not be included in the new
+	// BlueprintParams.
+	//
+	// This is useful for creating a new set of parameters for child
+	// blueprints that need to inherit context variables and provider config
+	// from the parent but require their own set of blueprint variables as
+	// defined in an "include" block of the parent blueprint.
+	WithBlueprintVariables(vars map[string]*ScalarValue, keepExisting bool) BlueprintParams
 }

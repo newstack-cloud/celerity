@@ -67,4 +67,4 @@ resources:
         # should fail with a circular reference error.
         app: "orders2"
     spec:
-      handler: "src/${resources.ordersTable.state.id}"
+      handler: "src/${resources.ordersTable.spec.id}"

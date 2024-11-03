@@ -95,10 +95,10 @@ type ResourceState struct {
 	ResourceName  string                     `json:"resourceName"`
 	Status        core.ResourceStatus        `json:"status"`
 	PreciseStatus core.PreciseResourceStatus `json:"preciseStatus"`
-	// ResourceData is the mapping that holds the structure of
-	// the "raw" resource data from the resource provider service.
-	// (e.g. AWS Lambda Function object)
-	ResourceData map[string]*core.MappingNode `json:"resourceData"`
+	// ResourceSpecData holds the resolved resource spec
+	// for the currently deployed version of the resource along with computed
+	// fields derived from the deployed resource in the provider.
+	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
 	// Holds the latest reasons for failures in deploying a resource,
 	// this only ever holds the results of the latest deployment attempt.
 	FailureReasons []string `json:"failureReasons"`

@@ -2,5 +2,5 @@
   "type": "integer",
   "description": "This is an example integer value",
   "secret": false,
-  "value": "${resources.awsAccount.state.accountId}"
+  "value": "${resources.awsAccount.spec.accountId}"
 }

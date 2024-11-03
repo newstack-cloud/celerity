@@ -91,7 +91,7 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 						ResourceName: "exampleResource",
 						Path: []*substitutions.SubstitutionPathItem{
 							{
-								FieldName: "state",
+								FieldName: "spec",
 							},
 							{
 								FieldName: "enabled",
@@ -104,7 +104,7 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 							},
 							EndPosition: &source.Position{
 								Line:   2,
-								Column: 49,
+								Column: 48,
 							},
 						},
 					},
@@ -115,7 +115,7 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 						},
 						EndPosition: &source.Position{
 							Line:   2,
-							Column: 49,
+							Column: 48,
 						},
 					},
 				},
@@ -126,7 +126,7 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 					},
 					EndPosition: &source.Position{
 						Line:   2,
-						Column: 50,
+						Column: 49,
 					},
 				},
 			},
@@ -138,7 +138,7 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 			},
 			EndPosition: &source.Position{
 				Line:   2,
-				Column: 50,
+				Column: 49,
 			},
 		},
 	})
@@ -270,7 +270,7 @@ func (s *ValueTestSuite) Test_parses_valid_value_json_input(c *C) {
 						ResourceName: "awsAccount",
 						Path: []*substitutions.SubstitutionPathItem{
 							{
-								FieldName: "state",
+								FieldName: "spec",
 							},
 							{
 								FieldName: "accountId",
@@ -325,7 +325,7 @@ func (s *ValueTestSuite) Test_serialise_valid_value_json_input(c *C) {
 							ResourceName: "awsAccount",
 							Path: []*substitutions.SubstitutionPathItem{
 								{
-									FieldName: "state",
+									FieldName: "spec",
 								},
 								{
 									FieldName: "region",

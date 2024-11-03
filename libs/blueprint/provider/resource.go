@@ -22,14 +22,10 @@ type Resource interface {
 	// this is the first line of validation for a resource in a blueprint and is also
 	// useful for validating references to a resource instance
 	// in a blueprint and for providing definitions for docs and tooling.
+	// The spec defines both the schema for the resource spec fields that can be defined
+	// by users in a blueprint and computed fields that are derived from the deployed
+	// resource in the external provider (e.g. Lambda ARN in AWS).
 	GetSpecDefinition(ctx context.Context, input *ResourceGetSpecDefinitionInput) (*ResourceGetSpecDefinitionOutput, error)
-	// GetStateDefinition retrieves the output state definition for a resource,
-	// This exposes the attributes made available by the resource provider from a deployed
-	// resource instance.
-	GetStateDefinition(
-		ctx context.Context,
-		input *ResourceGetStateDefinitionInput,
-	) (*ResourceGetStateDefinitionOutput, error)
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
 	CanLinkTo(ctx context.Context, input *ResourceCanLinkToInput) (*ResourceCanLinkToOutput, error)
@@ -208,18 +204,6 @@ type ResourceGetSpecDefinitionOutput struct {
 	SpecDefinition *ResourceSpecDefinition
 }
 
-// ResourceGetStateDefinitionInput provides the input data needed for a resource to
-// provide an output state definition.
-type ResourceGetStateDefinitionInput struct {
-	Params core.BlueprintParams
-}
-
-// ResourceGetStateDefinitionOutput provides the output data from providing a state definition
-// for a resource.
-type ResourceGetStateDefinitionOutput struct {
-	StateDefinition *ResourceStateDefinition
-}
-
 // ResourceCanLinkToInput provides the input data needed for a resource to
 // determine what types of resources it can link to.
 type ResourceCanLinkToInput struct {
@@ -338,19 +322,19 @@ type Changes struct {
 }
 
 // ResourceSpecDefinition provides a definition for a resource spec
-// that can be used for validation, docs and tooling.
+// that is used for state management, validation, docs and tooling.
 type ResourceSpecDefinition struct {
 	// Schema holds the schema for the resource
 	// specification.
 	Schema *ResourceDefinitionsSchema
-}
-
-// ResourceStateDefinition provides a definition for a resource's output state
-// that can be used for validation, docs and tooling.
-type ResourceStateDefinition struct {
-	// Schema holds the schema for the resource
-	// state.
-	Schema *ResourceDefinitionsSchema
+	// IDField holds the name of the field in the resource spec
+	// that holds the ID of the resource.
+	// This is used to resolve references to a resource in a blueprint
+	// where only the name of the resource is specified.
+	// For example, references such as `resources.processOrderFunction` or `processOrderFunction`
+	// should resolve to the ID of the resource in the blueprint.
+	// The ID field must be a top-level property of the resource spec schema.
+	IDField string
 }
 
 // ResourceDefinitionsSchema provides a schema that can be used to validate
@@ -394,6 +378,11 @@ type ResourceDefinitionsSchema struct {
 	// the resource provider must make sure required fields are populated
 	// in the output state.
 	Default interface{}
+	// Computed specifies whether the value is computed by the provider
+	// and should not be set by the user.
+	// Computed values are expected to be populated by resource implementations
+	// in a provider in the deployment process.
+	Computed bool
 	// MustRecreate specifies whether the value must be recreated
 	// if a change is detected to the field in the resource state.
 	// This is only used in change staging for the state definition of a resource.

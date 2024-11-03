@@ -81,7 +81,7 @@ const (
 )
 
 // Update holds an update to be sent to a caller
-// representing an updating in staging changes or deploying
+// representing an event in staging changes or deploying
 // a blueprint instance.
 type Update struct {
 	EventType     UpdateEventType
@@ -150,62 +150,34 @@ func (c *defaultBlueprintContainer) StageChanges(
 	instanceID string,
 	paramOverrides core.BlueprintParams,
 ) (*BlueprintChanges, error) {
-	// instanceState, err := c.getInstanceState(ctx, instanceID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// Collect changes from child blueprints before collecting changes from resources
-	// childBlueprintChanges := map[string]*BlueprintChanges{}
-	// for childName, childState := range instanceState.ChildBlueprints {
-	// 	childBlueprintContainer := NewDefaultBlueprintContainer(
-	// 		c.spec,
-	// 		&BlueprintContainerDependencies{
-	// 			StateContainer:       c.stateContainer,
-	// 			ResourceProviders:    c.resourceProviders,
-	// 			LinkInfo:             c.linkInfo,
-	// 			RefChainCollector:    c.refChainCollector,
-	// 			SubstitutionResolver: c.substitutionResolver,
-	// 			ChangeStager:         c.changeStager,
-	// 			ResourceCache:        c.resourceCache,
-	// 		},
-	// 		c.diagnostics,
-	// 		c.updateChan,
-	// 	)
-	// 	// childParams := c.createParamsForChildBlueprint(paramOverrides, childVariables)
-	// 	childChanges, err := childBlueprintContainer.StageChanges(ctx, childState.InstanceID, paramOverrides)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	childBlueprintChanges[childName] = childChanges
-	// }
 
 	chains, err := c.linkInfo.Links(ctx)
 	if err != nil {
 		return nil, err
 	}
 	childrenRefNodes := extractChildRefNodes(c.spec.Schema(), c.refChainCollector)
-	_, err = OrderItemsForDeployment(ctx, chains, childrenRefNodes, c.refChainCollector, paramOverrides)
+	orderedNodes, err := OrderItemsForDeployment(ctx, chains, childrenRefNodes, c.refChainCollector, paramOverrides)
 	if err != nil {
 		return nil, err
 	}
-	// parallelGroups, err := GroupOrderedLinkNodes(ctx, orderedNodes, c.refChainCollector, paramOverrides)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	parallelGroups := [][]*links.ChainLinkNode{}
+	parallelGroups, err := GroupOrderedNodes(ctx, orderedNodes, c.refChainCollector, paramOverrides)
+	if err != nil {
+		return nil, err
+	}
 
 	state := &stageChangesState{}
 	for _, group := range parallelGroups {
-		changesChan := make(chan *resourceChangesMessage)
+		resourceChangesChan := make(chan *resourceChangesMessage)
+		childChangesChan := make(chan *childChangesMessage)
 		linkChangesChan := make(chan *linkChangesMessage)
 		errChan := make(chan error)
-		channels := &stageResourceChangeChannels{
-			changesChan,
+		channels := &stageChangeChannels{
+			resourceChangesChan,
+			childChangesChan,
 			linkChangesChan,
 			errChan,
 		}
-		c.stageResourceGroupChanges(
+		c.stageGroupChanges(
 			ctx,
 			instanceID,
 			state,
@@ -214,12 +186,22 @@ func (c *defaultBlueprintContainer) StageChanges(
 			channels,
 		)
 
-		collected := map[string]*provider.Changes{}
+		collected := map[string]*changesWrapper{}
 		var err error
 		for len(collected) < len(group) && err == nil {
 			select {
-			case changes := <-changesChan:
-				collected[changes.resourceName] = changes.changes
+			case changes := <-resourceChangesChan:
+				elementName := fmt.Sprintf("resources.%s", changes.resourceName)
+				collected[elementName] = &changesWrapper{
+					resourceChanges: changes.changes,
+				}
+			case changes := <-linkChangesChan:
+				attachLinkChangesToResourceChanges(collected, changes)
+			case changes := <-childChangesChan:
+				elementName := fmt.Sprintf("children.%s", changes.childBlueprintName)
+				collected[elementName] = &changesWrapper{
+					childChanges: changes.changes,
+				}
 			case err = <-errChan:
 			}
 		}
@@ -234,36 +216,39 @@ func (c *defaultBlueprintContainer) StageChanges(
 	return nil, nil
 }
 
-func (c *defaultBlueprintContainer) getInstanceState(ctx context.Context, instanceID string) (*state.InstanceState, error) {
-	var instanceStatePtr *state.InstanceState
-	instanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
-	if err != nil {
-		if !state.IsInstanceNotFound(err) {
-			return nil, err
-		}
-	} else {
-		instanceStatePtr = &instanceState
-	}
-	return instanceStatePtr, nil
+func attachLinkChangesToResourceChanges(
+	collected map[string]*changesWrapper,
+	changes *linkChangesMessage,
+) {
+	// todo: attach link changes to resource A as outbound link changes.
 }
 
-func (c *defaultBlueprintContainer) stageResourceGroupChanges(
+func (c *defaultBlueprintContainer) stageGroupChanges(
 	ctx context.Context,
 	instanceID string,
 	state *stageChangesState,
-	group []*links.ChainLinkNode,
+	group []*DeploymentNode,
 	paramOverrides core.BlueprintParams,
-	channels *stageResourceChangeChannels,
+	channels *stageChangeChannels,
 ) {
 	for _, node := range group {
-		go c.stageResourceChanges(
-			ctx,
-			instanceID,
-			state,
-			node,
-			paramOverrides,
-			channels,
-		)
+		if node.Type() == "resource" {
+			go c.stageResourceChanges(
+				ctx,
+				instanceID,
+				state,
+				node.ChainLinkNode,
+				channels,
+			)
+		} else if node.Type() == "child" {
+			go c.stageChildBlueprintChanges(
+				ctx,
+				state,
+				node.ChildNode,
+				paramOverrides,
+				channels,
+			)
+		}
 	}
 }
 
@@ -272,8 +257,7 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 	instanceID string,
 	stagingState *stageChangesState,
 	node *links.ChainLinkNode,
-	paramOverrides core.BlueprintParams,
-	channels *stageResourceChangeChannels,
+	channels *stageChangeChannels,
 ) {
 	resourceProvider, hasResourceProvider := c.resourceProviders[node.ResourceName]
 	if !hasResourceProvider {
@@ -302,8 +286,7 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 				index:      0,
 			},
 			resourceImplementation,
-			paramOverrides,
-			channels.changesChan,
+			channels.resourceChangesChan,
 			stagingState,
 		)
 		if err != nil {
@@ -331,8 +314,7 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 				index:      index,
 			},
 			resourceImplementation,
-			paramOverrides,
-			channels.changesChan,
+			channels.resourceChangesChan,
 			stagingState,
 		)
 		if err != nil {
@@ -367,7 +349,6 @@ func (c *defaultBlueprintContainer) stageIndividualResourceChanges(
 	ctx context.Context,
 	resourceInfo *stageResourceChangeInfo,
 	resourceImplementation provider.Resource,
-	paramOverrides core.BlueprintParams,
 	changesChan chan *resourceChangesMessage,
 	stagingState *stageChangesState,
 ) error {
@@ -396,12 +377,16 @@ func (c *defaultBlueprintContainer) stageIndividualResourceChanges(
 		currentResourceStatePtr = &currentResourceState
 	}
 
-	changes, err := c.changeStager.StageChanges(ctx, &provider.ResourceInfo{
-		ResourceID:               resourceInfo.resourceID,
-		InstanceID:               resourceInfo.instanceID,
-		CurrentResourceState:     currentResourceStatePtr,
-		ResourceWithResolvedSubs: resolvedResource,
-	})
+	changes, err := c.changeStager.StageChanges(
+		ctx,
+		&provider.ResourceInfo{
+			ResourceID:               resourceInfo.resourceID,
+			InstanceID:               resourceInfo.instanceID,
+			CurrentResourceState:     currentResourceStatePtr,
+			ResourceWithResolvedSubs: resolvedResource,
+		},
+		resourceImplementation,
+	)
 	if err != nil {
 		return err
 	}
@@ -428,6 +413,15 @@ func (c *defaultBlueprintContainer) stageLinkChanges(
 	linksReadyToBeStaged []*linkPendingCompletion,
 ) error {
 	return nil
+}
+
+func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
+	ctx context.Context,
+	stagingState *stageChangesState,
+	node *validation.ReferenceChainNode,
+	paramOverrides core.BlueprintParams,
+	channels *stageChangeChannels,
+) {
 }
 
 func (c *defaultBlueprintContainer) updateStagingState(
@@ -552,10 +546,11 @@ func (c *defaultBlueprintContainer) Diagnostics() []*core.Diagnostic {
 	return c.diagnostics
 }
 
-type stageResourceChangeChannels struct {
-	changesChan     chan *resourceChangesMessage
-	linkChangesChan chan *linkChangesMessage
-	errChan         chan error
+type stageChangeChannels struct {
+	resourceChangesChan chan *resourceChangesMessage
+	childChangesChan    chan *childChangesMessage
+	linkChangesChan     chan *linkChangesMessage
+	errChan             chan error
 }
 
 type resourceChangesMessage struct {
@@ -564,6 +559,13 @@ type resourceChangesMessage struct {
 	removed      bool
 	new          bool
 	changes      *provider.Changes
+}
+
+type childChangesMessage struct {
+	childBlueprintName string
+	removed            bool
+	new                bool
+	changes            *BlueprintChanges
 }
 
 type linkChangesMessage struct {
@@ -599,4 +601,9 @@ type stageResourceChangeInfo struct {
 	instanceID string
 	resourceID string
 	index      int
+}
+
+type changesWrapper struct {
+	resourceChanges *provider.Changes
+	childChanges    *BlueprintChanges
 }

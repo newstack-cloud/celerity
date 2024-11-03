@@ -42,10 +42,12 @@ func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 					{
 						ResourceID: "test-execute-function-policy",
 						Status:     core.ResourceStatusCreated,
-						ResourceData: map[string]*core.MappingNode{
-							"Arn": {
-								Literal: &core.ScalarValue{
-									StringValue: &resourceARN,
+						ResourceSpecData: &core.MappingNode{
+							Fields: map[string]*core.MappingNode{
+								"arn": {
+									Literal: &core.ScalarValue{
+										StringValue: &resourceARN,
+									},
 								},
 							},
 						},
@@ -106,10 +108,12 @@ func (s *LinkFunctionTestSuite) Test_gets_link_state(c *C) {
 			map[string]interface{}{
 				"resourceID": "test-execute-function-policy",
 				"status":     core.ResourceStatusCreated,
-				"resourceData": map[string]*core.MappingNode{
-					"Arn": {
-						Literal: &core.ScalarValue{
-							StringValue: &resourceARN,
+				"resourceSpecData": &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"arn": {
+							Literal: &core.ScalarValue{
+								StringValue: &resourceARN,
+							},
 						},
 					},
 				},

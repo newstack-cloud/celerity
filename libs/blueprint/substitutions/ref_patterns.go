@@ -15,15 +15,13 @@ const (
 	stringLiteralNamePattern           = `([A-Za-z0-9_-]|\.)+`
 	resourceMetadataPrefixPattern      = `(\.metadata|\["metadata"\])`
 	resourceMetadataDisplayNamePattern = `(\.displayName|\["displayName"\])`
-	resourceStatePattern               = `\.state|\["state"\]`
 	resourceSpecPattern                = `\.spec|\["spec"\]`
 	resourceMetadataPattern            = `(\.metadata|\["metadata"\])(\.labels|\["labels"\]|\.custom|\["custom"\]|\.annotations|\["annotations"\])`
 )
 
-func resourceStateSpecMetadataPattern() string {
+func resourceSpecMetadataPattern() string {
 	return fmt.Sprintf(
-		`(%s|%s|%s)`,
-		resourceStatePattern,
+		`(%s|%s)`,
 		resourceSpecPattern,
 		resourceMetadataPattern,
 	)
@@ -34,7 +32,7 @@ func resourcePathPrefixPattern() string {
 		`(%s%s)|(%s`,
 		resourceMetadataPrefixPattern,
 		resourceMetadataDisplayNamePattern,
-		resourceStateSpecMetadataPattern(),
+		resourceSpecMetadataPattern(),
 	)
 }
 
@@ -61,20 +59,18 @@ var (
 	// - saveOrderFunction
 	//   - This will resolve the field assigned as the ID for the resource.
 	// - resources.saveOrderFunction
-	// 	 - This will also resolve the field assigned as the ID for the resource
-	//     in the resource provider implementation mapping to .state.{idField}.
-	// - resources.saveOrderFunction.state.functionArn
-	// - resources.save_order_function.state.endpoints[].host
+	// - resources.saveOrderFunction.spec.functionArn
+	// - resources.save_order_function.spec.endpoints[].host
 	//   - Shorthand that will resolve the host of the first endpoint in the array.
-	// - resources.saveOrderFunction.state.endpoints[0].host
+	// - resources.saveOrderFunction.spec.endpoints[0].host
 	// - resources.saveOrderFunction.spec.functionName
 	// - resources.save-order-function.metadata.custom.apiEndpoint
 	// - resources.save-order-function.metadata.displayName
-	// - resources.saveOrderFunction.state.configurations[0][1].concurrency
+	// - resources.saveOrderFunction.spec.configurations[0][1].concurrency
 	// - resources.saveOrderFunction.metadata.annotations["annotationKey.v1"]
-	// - resources.saveOrderFunction.state["stateValue.v1"].value
-	// - resources["save-order-function.v1"].state.functionArn
-	// - resources.s3Buckets[].state.bucketArn
+	// - resources.saveOrderFunction.spec["stateValue.v1"].value
+	// - resources["save-order-function.v1"].spec.functionArn
+	// - resources.s3Buckets[].spec.bucketArn
 	// - resources.s3Buckets[1].spec.bucketName
 	// - resources["s3-buckets.v1"][2]["spec"].bucketName
 	//

@@ -43,7 +43,7 @@ func (s *ExportValidationTestSuite) SetUpTest(c *C) {
 
 func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_export(c *C) {
 	description := "The endpoint information to be used to connect to a cache cluster."
-	field := "resources.cacheCluster.state.id"
+	field := "resources.cacheCluster.spec.id"
 	exportSchema := &schema.Export{
 		Type: &schema.ExportTypeWrapper{Value: schema.ExportTypeString},
 		Description: &substitutions.StringOrSubstitutions{
@@ -93,7 +93,7 @@ func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_exp
 
 func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_export_type_is_provided(c *C) {
 	description := "The endpoint information to be used to connect to a cache cluster."
-	field := "resources.cacheCluster.state.cacheNodes.endpoints"
+	field := "resources.cacheCluster.spec.cacheNodes.endpoints"
 	exportSchema := &schema.Export{
 		// mapping[string, integer] is not a supported export type.
 		Type: &schema.ExportTypeWrapper{Value: schema.ExportType("mapping[string, integer]")},

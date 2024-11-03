@@ -858,15 +858,6 @@ func (r *testResourceMissingSpecDef) GetSpecDefinition(
 	}, nil
 }
 
-func (r *testResourceMissingSpecDef) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: nil,
-	}, nil
-}
-
 // Deploy is not used for validation!
 func (r *testResourceMissingSpecDef) Deploy(
 	ctx context.Context,
@@ -959,15 +950,6 @@ func (r *testResourceMissingSchema) GetSpecDefinition(
 		SpecDefinition: &provider.ResourceSpecDefinition{
 			Schema: nil,
 		},
-	}, nil
-}
-
-func (r *testResourceMissingSchema) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: nil,
 	}, nil
 }
 
@@ -1112,15 +1094,6 @@ func (r *specValidationTestExampleResource) GetSpecDefinition(
 				},
 			},
 		},
-	}, nil
-}
-
-func (r *specValidationTestExampleResource) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: nil,
 	}, nil
 }
 

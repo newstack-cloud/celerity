@@ -39,7 +39,7 @@ resources:
     description: "Table that stores orders for an application."
     metadata:
       custom:
-        otherInfo: "${resources.saveOrderFunction.state.id}"
+        otherInfo: "${resources.saveOrderFunction.spec.id}"
     spec:
       name: "Orders"
 
@@ -47,4 +47,4 @@ resources:
     type: aws/lambda/function
     description: "Function that saves an order to the database."
     spec:
-      handler: "src/${resources.ordersTable.state.id}"
+      handler: "src/${resources.ordersTable.spec.id}"

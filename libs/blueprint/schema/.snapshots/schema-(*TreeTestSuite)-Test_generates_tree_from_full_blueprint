@@ -22890,7 +22890,7 @@
                 IntValue: (*int)(<nil>),
                 BoolValue: (*bool)(<nil>),
                 FloatValue: (*float64)(<nil>),
-                StringValue: (*string)((len=20) "orderPubSub.state.id"),
+                StringValue: (*string)((len=19) "orderPubSub.spec.id"),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
                     Line: (int) 225,
@@ -22898,7 +22898,7 @@
                   },
                   EndPosition: (*source.Position)({
                     Line: (int) 225,
-                    Column: (int) 32
+                    Column: (int) 31
                   })
                 })
               }),
@@ -22909,7 +22909,7 @@
                 }),
                 End: (*source.Position)({
                   Line: (int) 225,
-                  Column: (int) 32
+                  Column: (int) 31
                 })
               })
             }),
@@ -22994,7 +22994,7 @@
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=20) "orderPubSub.state.id"),
+              StringValue: (*string)((len=19) "orderPubSub.spec.id"),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
                   Line: (int) 225,
@@ -23002,7 +23002,7 @@
                 },
                 EndPosition: (*source.Position)({
                   Line: (int) 225,
-                  Column: (int) 32
+                  Column: (int) 31
                 })
               })
             }),
@@ -23074,7 +23074,7 @@
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=20) "orderPubSub.state.id"),
+              StringValue: (*string)((len=19) "orderPubSub.spec.id"),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
                   Line: (int) 225,
@@ -23082,7 +23082,7 @@
                 },
                 EndPosition: (*source.Position)({
                   Line: (int) 225,
-                  Column: (int) 32
+                  Column: (int) 31
                 })
               })
             }),
@@ -27663,7 +27663,7 @@
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),
-            StringValue: (*string)((len=20) "orderPubSub.state.id"),
+            StringValue: (*string)((len=19) "orderPubSub.spec.id"),
             SourceMeta: (*source.Meta)({
               Position: (source.Position) {
                 Line: (int) 225,
@@ -27671,7 +27671,7 @@
               },
               EndPosition: (*source.Position)({
                 Line: (int) 225,
-                Column: (int) 32
+                Column: (int) 31
               })
             })
           }),

@@ -14,5 +14,22 @@ type ResourceChangeStager interface {
 	StageChanges(
 		ctx context.Context,
 		resourceInfo *provider.ResourceInfo,
+		resourceImplementation provider.Resource,
 	) (*provider.Changes, error)
+}
+
+type defaultResourceChangeStager struct{}
+
+// NewResourceChangeStager returns a new instance of the default
+// implementation of a resource change stager.
+func NewDefaultResourceChangeStager() ResourceChangeStager {
+	return &defaultResourceChangeStager{}
+}
+
+func (s *defaultResourceChangeStager) StageChanges(
+	ctx context.Context,
+	resourceInfo *provider.ResourceInfo,
+	resourceImplementation provider.Resource,
+) (*provider.Changes, error) {
+	return nil, nil
 }

@@ -198,10 +198,10 @@ func resourceStateToInterfaceMap(resourceState *state.ResourceState) map[string]
 	}
 
 	return map[string]interface{}{
-		"resourceID":     resourceState.ResourceID,
-		"status":         resourceState.Status,
-		"resourceData":   resourceState.ResourceData,
-		"failureReasons": failureReasons,
+		"resourceID":       resourceState.ResourceID,
+		"status":           resourceState.Status,
+		"resourceSpecData": resourceState.ResourceSpecData,
+		"failureReasons":   failureReasons,
 	}
 }
 

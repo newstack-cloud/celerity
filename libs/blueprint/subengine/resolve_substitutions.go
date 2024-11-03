@@ -524,10 +524,6 @@ func (r *defaultSubstitutionResolver) resolveResourceProperty(
 	// 	return r.resolveResourceMetadataProperty(ctx, elementName, resourceProperty)
 	// }
 
-	// if len(resourceProperty.Path) > 1 && resourceProperty.Path[0].FieldName == "state" {
-	// 	return r.resolveResourceStateProperty(ctx, elementName, resourceProperty)
-	// }
-
 	// if len(resourceProperty.Path) == 0 {
 	// 	return r.resolveResourceID(ctx, elementName, resourceProperty)
 	// }

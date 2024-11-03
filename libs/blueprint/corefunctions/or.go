@@ -21,7 +21,7 @@ func NewOrFunction() provider.Function {
 			Description: "A function that acts as a logical OR operator on two boolean values.",
 			FormattedDescription: "A function that acts as a logical OR operator on two boolean values.\n\n" +
 				"**Examples:**\n\n" +
-				"```\n${or(resources.orderApi.state.isDev, eq(variables.environment, \"dev\"))}\n```",
+				"```\n${or(resources.orderApi.spec.isDev, eq(variables.environment, \"dev\"))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
 					Label: "a",

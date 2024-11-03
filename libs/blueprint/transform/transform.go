@@ -49,13 +49,6 @@ type AbstractResource interface {
 		ctx context.Context,
 		input *AbstractResourceGetSpecDefinitionInput,
 	) (*AbstractResourceGetSpecDefinitionOutput, error)
-	// GetStateDefinition retrieves the output state definition for an abstract resource,
-	// This exposes a collection of alias attributes that map to the underlying concrete
-	// resource state attributes.
-	GetStateDefinition(
-		ctx context.Context,
-		input *AbstractResourceGetStateDefinitionInput,
-	) (*AbstractResourceGetStateDefinitionOutput, error)
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
 	CanLinkTo(ctx context.Context, input *AbstractResourceCanLinkToInput) (*AbstractResourceCanLinkToOutput, error)
@@ -108,18 +101,6 @@ type AbstractResourceValidateOutput struct {
 // AbstractResourceGetSpecDefinitionInput provides the input from providing a spec definition
 // for an abstract resource.
 type AbstractResourceGetSpecDefinitionInput struct {
-	Params core.BlueprintParams
-}
-
-// AbstractResourceGetSpecDefinitionOutput provides the output from providing an
-// output state definition for an abstract resource.
-type AbstractResourceGetStateDefinitionOutput struct {
-	StateDefinition *provider.ResourceStateDefinition
-}
-
-// AbstractResourceGetStateDefinitionInput provides the input from providing an output state
-// definition for an abstract resource.
-type AbstractResourceGetStateDefinitionInput struct {
 	Params core.BlueprintParams
 }
 

@@ -36,6 +36,28 @@ func (p *testBlueprintParams) BlueprintVariable(name string) *core.ScalarValue {
 	return p.blueprintVariables[name]
 }
 
+func (b *testBlueprintParams) WithBlueprintVariables(
+	vars map[string]*core.ScalarValue,
+	keepExisting bool,
+) core.BlueprintParams {
+	newBlueprintVariables := map[string]*core.ScalarValue{}
+	if keepExisting {
+		for k, v := range b.blueprintVariables {
+			newBlueprintVariables[k] = v
+		}
+	}
+
+	for k, v := range vars {
+		newBlueprintVariables[k] = v
+	}
+
+	return &testBlueprintParams{
+		providerConfig:     b.providerConfig,
+		contextVariables:   b.contextVariables,
+		blueprintVariables: newBlueprintVariables,
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Test custom variable types implementing the provider.CustomVariableType interface.
 ////////////////////////////////////////////////////////////////////////////////
@@ -332,24 +354,6 @@ func (r *testExampleResource) GetSpecDefinition(
 	}, nil
 }
 
-func (r *testExampleResource) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: &provider.ResourceStateDefinition{
-			Schema: &provider.ResourceDefinitionsSchema{
-				Type: provider.ResourceDefinitionsSchemaTypeObject,
-				Attributes: map[string]*provider.ResourceDefinitionsSchema{
-					"name": {
-						Type: provider.ResourceDefinitionsSchemaTypeString,
-					},
-				},
-			},
-		},
-	}, nil
-}
-
 // Deploy is not used for validation!
 func (r *testExampleResource) Deploy(
 	ctx context.Context,
@@ -436,15 +440,6 @@ func (r *testExampleResourceMissingSpecDefinition) GetSpecDefinition(
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
 	return &provider.ResourceGetSpecDefinitionOutput{
 		SpecDefinition: nil,
-	}, nil
-}
-
-func (r *testExampleResourceMissingSpecDefinition) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: nil,
 	}, nil
 }
 
@@ -539,15 +534,6 @@ func (r *testExampleResourceMissingSpecSchema) GetSpecDefinition(
 	}, nil
 }
 
-func (r *testExampleResourceMissingSpecSchema) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: nil,
-	}, nil
-}
-
 // Deploy is not used for validation!
 func (r *testExampleResourceMissingSpecSchema) Deploy(
 	ctx context.Context,
@@ -566,104 +552,6 @@ func (r *testExampleResourceMissingSpecSchema) GetExternalState(
 
 // Destroy is not used for validation!
 func (r *testExampleResourceMissingSpecSchema) Destroy(
-	ctx context.Context,
-	input *provider.ResourceDestroyInput,
-) error {
-	return nil
-}
-
-type testExampleResourceMissingStateDefinition struct{}
-
-// CanLinkTo is not used for validation!
-func (r *testExampleResourceMissingStateDefinition) CanLinkTo(
-	ctx context.Context,
-	input *provider.ResourceCanLinkToInput,
-) (*provider.ResourceCanLinkToOutput, error) {
-	return &provider.ResourceCanLinkToOutput{}, nil
-}
-
-// StabilisedDependencies is not used for validation!
-func (r *testExampleResourceMissingStateDefinition) StabilisedDependencies(
-	ctx context.Context,
-	input *provider.ResourceStabilisedDependenciesInput,
-) (*provider.ResourceStabilisedDependenciesOutput, error) {
-	return &provider.ResourceStabilisedDependenciesOutput{}, nil
-}
-
-// IsCommonTerminal is not used for validation!
-func (r *testExampleResourceMissingStateDefinition) IsCommonTerminal(
-	ctx context.Context,
-	input *provider.ResourceIsCommonTerminalInput,
-) (*provider.ResourceIsCommonTerminalOutput, error) {
-	return &provider.ResourceIsCommonTerminalOutput{
-		IsCommonTerminal: false,
-	}, nil
-}
-
-func (r *testExampleResourceMissingStateDefinition) GetType(
-	ctx context.Context,
-	input *provider.ResourceGetTypeInput,
-) (*provider.ResourceGetTypeOutput, error) {
-	return &provider.ResourceGetTypeOutput{
-		Type: "celerity/exampleResource",
-	}, nil
-}
-
-func (r *testExampleResourceMissingStateDefinition) GetTypeDescription(
-	ctx context.Context,
-	input *provider.ResourceGetTypeDescriptionInput,
-) (*provider.ResourceGetTypeDescriptionOutput, error) {
-	return &provider.ResourceGetTypeDescriptionOutput{
-		MarkdownDescription:  "",
-		PlainTextDescription: "",
-	}, nil
-}
-
-func (r *testExampleResourceMissingStateDefinition) CustomValidate(
-	ctx context.Context,
-	input *provider.ResourceValidateInput,
-) (*provider.ResourceValidateOutput, error) {
-	return &provider.ResourceValidateOutput{
-		Diagnostics: []*core.Diagnostic{},
-	}, nil
-}
-
-func (r *testExampleResourceMissingStateDefinition) GetSpecDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetSpecDefinitionInput,
-) (*provider.ResourceGetSpecDefinitionOutput, error) {
-	return &provider.ResourceGetSpecDefinitionOutput{
-		SpecDefinition: nil,
-	}, nil
-}
-
-func (r *testExampleResourceMissingStateDefinition) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: nil,
-	}, nil
-}
-
-// Deploy is not used for validation!
-func (r *testExampleResourceMissingStateDefinition) Deploy(
-	ctx context.Context,
-	input *provider.ResourceDeployInput,
-) (*provider.ResourceDeployOutput, error) {
-	return &provider.ResourceDeployOutput{}, nil
-}
-
-// GetExternalState is not used for validation!
-func (r *testExampleResourceMissingStateDefinition) GetExternalState(
-	ctx context.Context,
-	input *provider.ResourceGetExternalStateInput,
-) (*provider.ResourceGetExternalStateOutput, error) {
-	return &provider.ResourceGetExternalStateOutput{}, nil
-}
-
-// Destroy is not used for validation!
-func (r *testExampleResourceMissingStateDefinition) Destroy(
 	ctx context.Context,
 	input *provider.ResourceDestroyInput,
 ) error {
@@ -993,25 +881,10 @@ func (r *testECSServiceResource) GetSpecDefinition(
 			Schema: &provider.ResourceDefinitionsSchema{
 				Type: provider.ResourceDefinitionsSchemaTypeObject,
 				Attributes: map[string]*provider.ResourceDefinitionsSchema{
-					"serviceName": {
+					"id": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
-				},
-			},
-		},
-	}, nil
-}
-
-func (r *testECSServiceResource) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: &provider.ResourceStateDefinition{
-			Schema: &provider.ResourceDefinitionsSchema{
-				Type: provider.ResourceDefinitionsSchemaTypeObject,
-				Attributes: map[string]*provider.ResourceDefinitionsSchema{
-					"id": {
+					"serviceName": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
 				},

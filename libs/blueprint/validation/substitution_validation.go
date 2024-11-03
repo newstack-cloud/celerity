@@ -312,17 +312,6 @@ func extractResourcePropertySubType(
 		)
 	}
 
-	if len(subResourceProp.Path) > 0 && subResourceProp.Path[0].FieldName == "state" {
-		return validateResourcePropertySubState(
-			ctx,
-			subResourceProp,
-			resourceSchema.Type.Value,
-			resourceRegistry,
-			nextLocation,
-			params,
-		)
-	}
-
 	if len(subResourceProp.Path) > 0 && subResourceProp.Path[0].FieldName == "metadata" {
 		return validateResourcePropertySubMetadata(
 			subResourceProp,
@@ -457,72 +446,6 @@ func validateResourcePropertySubDefinitionsPath(
 	}
 
 	return resolvedType, diagnostics, nil
-}
-
-func validateResourcePropertySubState(
-	ctx context.Context,
-	subResourceProp *substitutions.SubstitutionResourceProperty,
-	resourceType string,
-	resourceRegistry resourcehelpers.Registry,
-	nextLocation *source.Meta,
-	params bpcore.BlueprintParams,
-) (string, []*bpcore.Diagnostic, error) {
-	diagnostics := []*bpcore.Diagnostic{}
-
-	if len(subResourceProp.Path) < 2 {
-		return "", diagnostics, errSubResourceStateInvalidRef(
-			subResourceProp.ResourceName,
-			subResourceProp.SourceMeta,
-		)
-	}
-
-	earlyResolveType, err := checkResourceType(
-		ctx,
-		resourceType,
-		resourceRegistry,
-		subResourceProp,
-		nextLocation,
-		&diagnostics,
-	)
-	if err != nil {
-		return "", diagnostics, err
-	}
-	if earlyResolveType != "" {
-		return earlyResolveType, diagnostics, nil
-	}
-
-	stateDefOutput, err := resourceRegistry.GetStateDefinition(
-		ctx,
-		resourceType,
-		&provider.ResourceGetStateDefinitionInput{
-			Params: params,
-		},
-	)
-	if err != nil {
-		return "", diagnostics, errResourceTypeMissingStateDefinition(
-			subResourceProp.ResourceName,
-			resourceType,
-			/* inSubstitution */ true,
-			subResourceProp.SourceMeta,
-			"failed to load state definition",
-		)
-	}
-
-	if stateDefOutput.StateDefinition == nil {
-		return "", diagnostics, errResourceTypeMissingStateDefinition(
-			subResourceProp.ResourceName,
-			resourceType,
-			/* inSubstitution */ true,
-			subResourceProp.SourceMeta,
-			"state definition is nil",
-		)
-	}
-
-	return validateResourcePropertySubDefinitionsPath(
-		subResourceProp,
-		resourceType,
-		stateDefOutput.StateDefinition.Schema,
-	)
 }
 
 func checkResourceType(

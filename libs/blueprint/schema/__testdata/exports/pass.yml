@@ -1,3 +1,3 @@
 type: string
 description: The arn of the queue used to send order workloads to
-field: resources.orderQueue.state.arn
+field: resources.orderQueue.spec.arn

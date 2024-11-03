@@ -21,14 +21,6 @@ type Registry interface {
 		input *provider.ResourceGetSpecDefinitionInput,
 	) (*provider.ResourceGetSpecDefinitionOutput, error)
 
-	// GetStateDefinition returns the definition of a resource's output state
-	// in the registry.
-	GetStateDefinition(
-		ctx context.Context,
-		resourceType string,
-		input *provider.ResourceGetStateDefinitionInput,
-	) (*provider.ResourceGetStateDefinitionOutput, error)
-
 	// GetTypeDescription returns the description of a resource type
 	// in the registry.
 	GetTypeDescription(
@@ -103,36 +95,6 @@ func (r *registryFromProviders) GetSpecDefinition(
 	}
 
 	return resourceImpl.GetSpecDefinition(ctx, input)
-}
-
-func (r *registryFromProviders) GetStateDefinition(
-	ctx context.Context,
-	resourceType string,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	resourceImpl, err := r.getResourceType(ctx, resourceType)
-	if err != nil {
-		abstractResourceImpl, abstractErr := r.getAbstractResourceType(ctx, resourceType)
-		if abstractErr != nil {
-			return nil, errMultipleRunErrors([]error{err, abstractErr})
-		}
-
-		output, err := abstractResourceImpl.GetStateDefinition(
-			ctx,
-			&transform.AbstractResourceGetStateDefinitionInput{
-				Params: input.Params,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		return &provider.ResourceGetStateDefinitionOutput{
-			StateDefinition: output.StateDefinition,
-		}, nil
-	}
-
-	return resourceImpl.GetStateDefinition(ctx, input)
 }
 
 func (r *registryFromProviders) GetTypeDescription(

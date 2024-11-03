@@ -21,7 +21,7 @@ func NewAndFunction() provider.Function {
 			Description: "A function that acts as a logical AND operator on two boolean values.",
 			FormattedDescription: "A function that acts as a logical AND operator on two boolean values.\n\n" +
 				"**Examples:**\n\n" +
-				"```\n${and(resources.orderApi.state.isProd, eq(variables.environment, \"prod\"))}\n```",
+				"```\n${and(resources.orderApi.spec.isProd, eq(variables.environment, \"prod\"))}\n```",
 			Parameters: []function.Parameter{
 				&function.ScalarParameter{
 					Label: "a",

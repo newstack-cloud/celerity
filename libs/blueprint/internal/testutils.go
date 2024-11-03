@@ -100,22 +100,6 @@ func (r *ResourceRegistryMock) GetSpecDefinition(
 	return defOutput, nil
 }
 
-func (r *ResourceRegistryMock) GetStateDefinition(
-	ctx context.Context,
-	resourceType string,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	res, ok := r.Resources[resourceType]
-	if !ok {
-		return nil, fmt.Errorf("resource %s not found", resourceType)
-	}
-	defOutput, err := res.GetStateDefinition(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-	return defOutput, nil
-}
-
 func (r *ResourceRegistryMock) GetTypeDescription(
 	ctx context.Context,
 	resourceType string,

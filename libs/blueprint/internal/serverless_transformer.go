@@ -143,13 +143,6 @@ func (r *serverlessFunctionResource) GetSpecDefinition(
 	}, nil
 }
 
-func (r *serverlessFunctionResource) GetStateDefinition(
-	ctx context.Context,
-	input *transform.AbstractResourceGetStateDefinitionInput,
-) (*transform.AbstractResourceGetStateDefinitionOutput, error) {
-	return &transform.AbstractResourceGetStateDefinitionOutput{}, nil
-}
-
 func (r *serverlessFunctionResource) CanLinkTo(
 	ctx context.Context,
 	input *transform.AbstractResourceCanLinkToInput,

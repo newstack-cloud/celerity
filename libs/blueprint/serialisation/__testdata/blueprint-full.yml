@@ -224,4 +224,4 @@ exports:
   orderApi:
     type: string
     description: The Order API ARN
-    field: resources.orderApi.state.arn
+    field: resources.orderApi.spec.arn

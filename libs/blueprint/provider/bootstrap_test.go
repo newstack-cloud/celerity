@@ -358,6 +358,28 @@ func (b *blueprintParamsMock) BlueprintVariable(name string) *core.ScalarValue {
 	return b.blueprintVariables[name]
 }
 
+func (b *blueprintParamsMock) WithBlueprintVariables(
+	vars map[string]*core.ScalarValue,
+	keepExisting bool,
+) core.BlueprintParams {
+	newBlueprintVariables := map[string]*core.ScalarValue{}
+	if keepExisting {
+		for k, v := range b.blueprintVariables {
+			newBlueprintVariables[k] = v
+		}
+	}
+
+	for k, v := range vars {
+		newBlueprintVariables[k] = v
+	}
+
+	return &blueprintParamsMock{
+		providerConfig:     b.providerConfig,
+		contextVariables:   b.contextVariables,
+		blueprintVariables: newBlueprintVariables,
+	}
+}
+
 type testExampleDataSource struct {
 	definition           *DataSourceSpecDefinition
 	filterFields         []string

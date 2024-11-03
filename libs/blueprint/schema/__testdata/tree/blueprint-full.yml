@@ -222,7 +222,7 @@ resources:
 exports:
   orderPubSubID:
     type: string
-    field: orderPubSub.state.id
+    field: orderPubSub.spec.id
     description: The ID of the Order Pub/Sub resource
 
 metadata:

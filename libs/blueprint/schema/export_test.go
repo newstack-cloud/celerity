@@ -45,7 +45,7 @@ func (s *ExportTestSuite) Test_parses_valid_string_export_yaml_input(c *C) {
 		c.FailNow()
 	}
 
-	field := "resources.orderQueue.state.arn"
+	field := "resources.orderQueue.spec.arn"
 	description := "The arn of the queue used to send order workloads to"
 	c.Assert(targetExport, DeepEquals, &Export{
 		Type: &ExportTypeWrapper{
@@ -97,7 +97,7 @@ func (s *ExportTestSuite) Test_parses_valid_string_export_yaml_input(c *C) {
 				},
 				EndPosition: &source.Position{
 					Line:   3,
-					Column: 38,
+					Column: 37,
 				},
 			},
 		},
@@ -119,7 +119,7 @@ func (s *ExportTestSuite) Test_serialise_valid_export_yaml_input(c *C) {
 	}
 
 	description := "The ARN of the function used to save orders to the system."
-	field := "resources.saveOrdersFunction.state.functionArn"
+	field := "resources.saveOrdersFunction.spec.functionArn"
 	serialisedBytes, err := yaml.Marshal(&Export{
 		Type: &ExportTypeWrapper{Value: ExportTypeString},
 		Description: &substitutions.StringOrSubstitutions{
@@ -157,7 +157,7 @@ func (s *ExportTestSuite) Test_parses_valid_export_json_input(c *C) {
 	}
 
 	description := "The arn of the queue used to send order workloads to"
-	field := "resources.orderQueue.state.arn"
+	field := "resources.orderQueue.spec.arn"
 	c.Assert(targetExport, DeepEquals, &Export{
 		Type: &ExportTypeWrapper{Value: ExportTypeString},
 		Description: &substitutions.StringOrSubstitutions{
@@ -180,7 +180,7 @@ func (s *ExportTestSuite) Test_serialise_valid_export_json_input(c *C) {
 	}
 
 	description := "The ARN of the function used to save orders to the system."
-	field := "resources.saveOrdersFunction.state.functionArn"
+	field := "resources.saveOrdersFunction.spec.functionArn"
 	serialisedBytes, err := json.Marshal(&Export{
 		Type: &ExportTypeWrapper{Value: ExportTypeString},
 		Description: &substitutions.StringOrSubstitutions{

@@ -73,25 +73,10 @@ func (r *DynamoDBTableResource) GetSpecDefinition(
 			Schema: &provider.ResourceDefinitionsSchema{
 				Type: provider.ResourceDefinitionsSchemaTypeObject,
 				Attributes: map[string]*provider.ResourceDefinitionsSchema{
-					"tableName": {
+					"id": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
-				},
-			},
-		},
-	}, nil
-}
-
-func (r *DynamoDBTableResource) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: &provider.ResourceStateDefinition{
-			Schema: &provider.ResourceDefinitionsSchema{
-				Type: provider.ResourceDefinitionsSchemaTypeObject,
-				Attributes: map[string]*provider.ResourceDefinitionsSchema{
-					"id": {
+					"tableName": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
 				},
@@ -185,25 +170,10 @@ func (r *LambdaFunctionResource) GetSpecDefinition(
 			Schema: &provider.ResourceDefinitionsSchema{
 				Type: provider.ResourceDefinitionsSchemaTypeObject,
 				Attributes: map[string]*provider.ResourceDefinitionsSchema{
-					"handler": {
+					"id": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
-				},
-			},
-		},
-	}, nil
-}
-
-func (r *LambdaFunctionResource) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: &provider.ResourceStateDefinition{
-			Schema: &provider.ResourceDefinitionsSchema{
-				Type: provider.ResourceDefinitionsSchemaTypeObject,
-				Attributes: map[string]*provider.ResourceDefinitionsSchema{
-					"id": {
+					"handler": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
 				},

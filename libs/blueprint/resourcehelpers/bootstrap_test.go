@@ -97,7 +97,6 @@ func (p *testProvider) Function(ctx context.Context, functionName string) (provi
 
 type testExampleResource struct {
 	definition           *provider.ResourceSpecDefinition
-	stateDefinition      *provider.ResourceStateDefinition
 	markdownDescription  string
 	plainTextDescription string
 }
@@ -124,9 +123,6 @@ func newTestExampleResource() provider.Resource {
 					},
 				},
 			},
-		},
-		stateDefinition: &provider.ResourceStateDefinition{
-			Schema: &provider.ResourceDefinitionsSchema{},
 		},
 		markdownDescription:  "## celerity/exampleResource\n\nThis is an example resource.",
 		plainTextDescription: "celerity/exampleResource\n\nThis is an example resource.",
@@ -193,15 +189,6 @@ func (r *testExampleResource) GetSpecDefinition(
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
 	return &provider.ResourceGetSpecDefinitionOutput{
 		SpecDefinition: r.definition,
-	}, nil
-}
-
-func (r *testExampleResource) GetStateDefinition(
-	ctx context.Context,
-	input *provider.ResourceGetStateDefinitionInput,
-) (*provider.ResourceGetStateDefinitionOutput, error) {
-	return &provider.ResourceGetStateDefinitionOutput{
-		StateDefinition: r.stateDefinition,
 	}, nil
 }
 
@@ -319,11 +306,4 @@ func (r *testExampleAbstractResource) GetSpecDefinition(
 	input *transform.AbstractResourceGetSpecDefinitionInput,
 ) (*transform.AbstractResourceGetSpecDefinitionOutput, error) {
 	return &transform.AbstractResourceGetSpecDefinitionOutput{}, nil
-}
-
-func (r *testExampleAbstractResource) GetStateDefinition(
-	ctx context.Context,
-	input *transform.AbstractResourceGetStateDefinitionInput,
-) (*transform.AbstractResourceGetStateDefinitionOutput, error) {
-	return &transform.AbstractResourceGetStateDefinitionOutput{}, nil
 }
