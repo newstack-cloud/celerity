@@ -20,6 +20,7 @@ type ChildResolver interface {
 	// or the source of the child blueprint loaded into memory.
 	Resolve(
 		ctx context.Context,
+		includeName string,
 		include *subengine.ResolvedInclude,
 		params core.BlueprintParams,
 	) (*ChildBlueprintInfo, error)
