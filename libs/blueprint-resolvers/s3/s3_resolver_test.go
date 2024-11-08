@@ -99,7 +99,7 @@ func (s *S3ChildResolverSuite) Test_returns_error_when_metadata_is_not_set() {
 	s.Require().True(isRunError)
 	s.Assert().Equal(includes.ErrorReasonCodeInvalidMetadata, runErr.ReasonCode)
 	s.Assert().Equal(
-		"[include.test]: invalid metadata provided for an S3 include",
+		"[include.test]: invalid metadata provided for the S3 include",
 		runErr.Err.Error(),
 	)
 }
@@ -129,7 +129,7 @@ func (s *S3ChildResolverSuite) Test_returns_error_when_bucket_is_missing_from_me
 	s.Require().True(isRunError)
 	s.Assert().Equal(includes.ErrorReasonCodeInvalidMetadata, runErr.ReasonCode)
 	s.Assert().Equal(
-		"[include.test]: missing bucket field in metadata for an S3 include",
+		"[include.test]: missing bucket field in metadata for the S3 include",
 		runErr.Err.Error(),
 	)
 }

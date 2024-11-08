@@ -93,7 +93,7 @@ func (s *GCSChildResolverSuite) Test_returns_error_when_metadata_is_not_set() {
 	s.Require().True(isRunError)
 	s.Assert().Equal(includes.ErrorReasonCodeInvalidMetadata, runErr.ReasonCode)
 	s.Assert().Equal(
-		"[include.test]: invalid metadata provided for a Google Cloud Storage include",
+		"[include.test]: invalid metadata provided for the Google Cloud Storage include",
 		runErr.Err.Error(),
 	)
 }
@@ -123,7 +123,7 @@ func (s *GCSChildResolverSuite) Test_returns_error_when_bucket_is_missing_from_m
 	s.Require().True(isRunError)
 	s.Assert().Equal(includes.ErrorReasonCodeInvalidMetadata, runErr.ReasonCode)
 	s.Assert().Equal(
-		"[include.test]: missing bucket field in metadata for a Google Cloud Storage include",
+		"[include.test]: missing bucket field in metadata for the Google Cloud Storage include",
 		runErr.Err.Error(),
 	)
 }

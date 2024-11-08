@@ -8,6 +8,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/two-hundred/celerity/libs/blueprint-resolvers/utils"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
@@ -34,26 +35,19 @@ func (r *azureBlobStorageChildResolver) Resolve(
 	params core.BlueprintParams,
 ) (*includes.ChildBlueprintInfo, error) {
 
+	err := utils.ValidateInclude(
+		include,
+		includeName,
+		[]string{"container"},
+		"Azure Blob Storage",
+		"azure blob storage",
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	path := includes.StringValue(include.Path)
-	if path == "" {
-		return nil, includes.ErrInvalidPath(includeName, "azure blob storage")
-	}
-
-	metadata := include.Metadata
-	if metadata == nil || metadata.Fields == nil {
-		return nil, includes.ErrInvalidMetadata(
-			includeName,
-			"invalid metadata provided for an Azure Blob Storage include",
-		)
-	}
-
-	container := includes.StringValue(metadata.Fields["container"])
-	if container == "" {
-		return nil, includes.ErrInvalidMetadata(
-			includeName,
-			"missing container field in metadata for an Azure Blob Storage include",
-		)
-	}
+	container := includes.StringValue(include.Metadata.Fields["container"])
 
 	stream, err := r.client.DownloadStream(ctx, container, path, nil)
 	if err != nil {

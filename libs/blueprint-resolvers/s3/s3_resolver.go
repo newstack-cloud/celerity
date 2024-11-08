@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/two-hundred/celerity/libs/blueprint-resolvers/utils"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
@@ -40,28 +41,14 @@ func (r *s3ChildResolver) Resolve(
 	params core.BlueprintParams,
 ) (*includes.ChildBlueprintInfo, error) {
 
+	err := utils.ValidateInclude(include, includeName, []string{"bucket"}, "S3", "s3")
+	if err != nil {
+		return nil, err
+	}
+
 	path := includes.StringValue(include.Path)
-	if path == "" {
-		return nil, includes.ErrInvalidPath(includeName, "s3")
-	}
-
-	metadata := include.Metadata
-	if metadata == nil || metadata.Fields == nil {
-		return nil, includes.ErrInvalidMetadata(
-			includeName,
-			"invalid metadata provided for an S3 include",
-		)
-	}
-
-	bucket := includes.StringValue(metadata.Fields["bucket"])
-	if bucket == "" {
-		return nil, includes.ErrInvalidMetadata(
-			includeName,
-			"missing bucket field in metadata for an S3 include",
-		)
-	}
-
-	region := includes.StringValue(metadata.Fields["region"])
+	bucket := includes.StringValue(include.Metadata.Fields["bucket"])
+	region := includes.StringValue(include.Metadata.Fields["region"])
 
 	conf, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	if err != nil {

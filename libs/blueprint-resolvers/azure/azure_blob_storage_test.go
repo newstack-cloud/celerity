@@ -115,7 +115,7 @@ func (s *AzureBlobStorageChildResolverSuite) Test_returns_error_when_metadata_is
 	s.Require().True(isRunError)
 	s.Assert().Equal(includes.ErrorReasonCodeInvalidMetadata, runErr.ReasonCode)
 	s.Assert().Equal(
-		"[include.test]: invalid metadata provided for an Azure Blob Storage include",
+		"[include.test]: invalid metadata provided for the Azure Blob Storage include",
 		runErr.Err.Error(),
 	)
 }
@@ -145,7 +145,7 @@ func (s *AzureBlobStorageChildResolverSuite) Test_returns_error_when_bucket_is_m
 	s.Require().True(isRunError)
 	s.Assert().Equal(includes.ErrorReasonCodeInvalidMetadata, runErr.ReasonCode)
 	s.Assert().Equal(
-		"[include.test]: missing container field in metadata for an Azure Blob Storage include",
+		"[include.test]: missing container field in metadata for the Azure Blob Storage include",
 		runErr.Err.Error(),
 	)
 }

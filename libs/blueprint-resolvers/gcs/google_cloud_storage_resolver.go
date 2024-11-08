@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"cloud.google.com/go/storage"
+	"github.com/two-hundred/celerity/libs/blueprint-resolvers/utils"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
@@ -34,26 +35,19 @@ func (r *gcsChildResolver) Resolve(
 	params core.BlueprintParams,
 ) (*includes.ChildBlueprintInfo, error) {
 
+	err := utils.ValidateInclude(
+		include,
+		includeName,
+		[]string{"bucket"},
+		"Google Cloud Storage",
+		"google cloud storage",
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	path := includes.StringValue(include.Path)
-	if path == "" {
-		return nil, includes.ErrInvalidPath(includeName, "google cloud storage")
-	}
-
-	metadata := include.Metadata
-	if metadata == nil || metadata.Fields == nil {
-		return nil, includes.ErrInvalidMetadata(
-			includeName,
-			"invalid metadata provided for a Google Cloud Storage include",
-		)
-	}
-
-	bucket := includes.StringValue(metadata.Fields["bucket"])
-	if bucket == "" {
-		return nil, includes.ErrInvalidMetadata(
-			includeName,
-			"missing bucket field in metadata for a Google Cloud Storage include",
-		)
-	}
+	bucket := includes.StringValue(include.Metadata.Fields["bucket"])
 
 	client, err := createClient(ctx, r.endpoint)
 	if err != nil {
