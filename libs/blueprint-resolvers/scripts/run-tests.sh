@@ -37,15 +37,15 @@ fi
 
 finish() {
   echo "Taking down test dependencies docker compose stack ..."
-  docker-compose -f docker-compose.test-deps.yml down
-  docker-compose -f docker-compose.test-deps.yml rm -v -f
+  docker compose -f docker-compose.test-deps.yml down
+  docker compose -f docker-compose.test-deps.yml rm -v -f
 }
 
 trap finish EXIT
 
 echo "Bringing up docker compose stack for test dependencies ..."
 
-docker-compose -f docker-compose.test-deps.yml up -d
+docker compose -f docker-compose.test-deps.yml up -d
 
 echo "Waiting for LocalStack to be ready ..."
 start=$EPOCHSECONDS

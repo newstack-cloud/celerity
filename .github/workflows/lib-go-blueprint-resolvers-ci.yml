@@ -49,6 +49,10 @@ jobs:
     - name: Run Tests
       run: bash scripts/run-tests.sh
       working-directory: ${{env.working-directory}}
+      env:
+        # Test credentials for LocalStack
+        AWS_ACCESS_KEY_ID: test
+        AWS_SECRET_ACCESS_KEY: test
 
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
