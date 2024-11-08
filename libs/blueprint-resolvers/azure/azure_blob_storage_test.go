@@ -41,6 +41,12 @@ func (s *AzureBlobStorageChildResolverSuite) SetupSuite() {
 	s.Require().NoError(err)
 }
 
+func (s *AzureBlobStorageChildResolverSuite) TearDownSuite() {
+	ctx := context.Background()
+	_, err := s.client.DeleteContainer(ctx, "test-container", &container.DeleteOptions{})
+	s.Require().NoError(err)
+}
+
 func (s *AzureBlobStorageChildResolverSuite) Test_resolves_blueprint_file() {
 	path := "azure.test.blueprint.yml"
 	container := "test-container"
