@@ -24,7 +24,7 @@ go mod download
 bash ./scripts/run-tests.sh
 ```
 
-This will spin up a docker compose stack with cloud object storage emulators and run the tests.
+This will spin up a docker compose stack with cloud object storage emulators, once they are up and running the script will then run the tests.
 
 ## Releasing
 
