@@ -23,3 +23,14 @@ services:
       ["-scheme", "http", "-port", "8000", "-public-host", "localhost:8184"]
     volumes:
       - ${PWD}/__testdata/gcs/data:/data
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: "azurite_celerity_blueprint_resolver_tests"
+    hostname: azurite
+    restart: always
+    command: ["azurite-blob", "--blobHost", "0.0.0.0", "--blobPort", "10000"]
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
