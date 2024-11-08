@@ -26,7 +26,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 function help {
   cat << EOF
 Test runner
-Runs tests for the library:
+Runs tests for the core blueprint framework:
 bash scripts/run-tests.sh
 
 Run tests and re-generate snapshots (For spec/schema tests):
