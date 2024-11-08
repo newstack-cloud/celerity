@@ -18,7 +18,8 @@ services:
     container_name: "fake_gcs_server_celerity_blueprint_resolver_tests"
     image: fsouza/fake-gcs-server:1.50.2
     ports:
-      - "4443:4443"
-    command: ["-scheme", "http"]
+      - "8084:8000"
+    command:
+      ["-scheme", "http", "-port", "8000", "-public-host", "localhost:8084"]
     volumes:
-      - ./__testdata/gcs/data:/data
+      - ${PWD}/__testdata/gcs/data:/data
