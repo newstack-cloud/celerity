@@ -79,5 +79,5 @@ fi
 
 if [ -n "$GITHUB_ACTION" ]; then
   # We are in a CI environment so run tests again to generate JSON report.
-  go test -timeout 30000ms -json -tags "$TEST_TYPES" `go list ./... | egrep -v '(/(testutils))$'` > report.json
+  go test -timeout 30000ms -json `go list ./... | egrep -v '(/(testutils))$'` > report.json
 fi
