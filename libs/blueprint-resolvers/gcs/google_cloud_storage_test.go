@@ -22,7 +22,7 @@ func (s *GCSChildResolverSuite) SetupTest() {
 	expectedBytes, err := os.ReadFile("../__testdata/gcs/data/test-bucket/gcs.test.blueprint.yml")
 	s.Require().NoError(err)
 	s.expectedBlueprintSource = string(expectedBytes)
-	s.resolver = NewResolver("http://localhost:8084/storage/v1/")
+	s.resolver = NewResolver("http://localhost:8184/storage/v1/")
 }
 
 func (s *GCSChildResolverSuite) Test_resolves_blueprint_file() {
