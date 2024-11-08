@@ -1,0 +1,57 @@
+version: 2023-04-20
+variables:
+  instanceType:
+    type: aws/ec2/instanceType
+    description: "The configuration buckets to create."
+  environment:
+    type: string
+
+values:
+  tableName:
+    type: string
+    value: "${variables.environment}-ordersTable"
+
+datasources:
+  network:
+    type: aws/vpc
+    description: "Networking resources for the application."
+    filter:
+      field: tags
+      operator: "not contains"
+      search: service
+    metadata:
+      displayName: Networking
+    exports:
+      vpc:
+        type: string
+        aliasFor: vpcId
+        description: |
+          The ID of the VPC.
+      subnetIds:
+        type: array
+        description: "The IDs of the subnets."
+
+resources:
+  ordersTable:
+    type: aws/dynamodb/table
+    description: "Table that stores orders for an application."
+    spec:
+      name: "Orders"
+
+include:
+  coreInfra:
+    path: core-infra.yaml
+    description: core infrastructure for the Orders API
+    metadata:
+      sourceType: aws/s3
+      bucket: order-system-blueprints
+      region: eu-west-1
+
+exports:
+  environment:
+    type: string
+    field: variables.environment
+    description: "The environment for the blueprint."
+
+metadata:
+  build: esbuild

@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  localstack:
+    container_name: "localstack_celerity_blueprint_resolver_tests"
+    image: localstack/localstack:3.2.0
+    network_mode: bridge
+    ports:
+      - "4579:4566"
+    environment:
+      SERVICES: s3
+      DEBUG: 1
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  fake_gcs_server:
+    container_name: "fake_gcs_server_celerity_blueprint_resolver_tests"
+    image: fsouza/fake-gcs-server:1.50.2
+    ports:
+      - "4443:4443"
+    command: ["-scheme", "http"]
+    volumes:
+      - ./__testdata/gcs/data:/data
