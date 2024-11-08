@@ -2,6 +2,7 @@ go 1.22.2
 
 use (
 	./libs/blueprint
+	./libs/blueprint-resolvers
 	./libs/common
 	./libs/build-engine
 	./tools/blueprint-ls
