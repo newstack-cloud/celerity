@@ -38,7 +38,6 @@ fi
 finish() {
   echo "Taking down test dependencies docker compose stack ..."
   docker compose -f docker-compose.test-deps.yml down
-  docker compose -f docker-compose.test-deps.yml rm -v -f
 }
 
 trap finish EXIT
