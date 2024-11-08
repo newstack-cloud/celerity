@@ -25,6 +25,7 @@ module.exports = {
       "always",
       [
         "blueprint",
+        "blueprint-resolvers",
         "blueprint-ls",
         "build-engine",
         "celerity-one",
