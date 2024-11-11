@@ -159,6 +159,7 @@ func validateDescription(
 				nil,
 				bpSchema,
 				usedIn,
+				"description",
 				params,
 				funcRegistry,
 				refChainCollector,
@@ -253,4 +254,15 @@ func resourceDefinitionsUnionTypeToString(unionSchema []*provider.ResourceDefini
 	}
 	sb.WriteString(")")
 	return sb.String()
+}
+
+// CreateSubRefTag creates a reference chain node tag for a substitution reference.
+func CreateSubRefTag(usedIn string) string {
+	return fmt.Sprintf("subRef:%s", usedIn)
+}
+
+// CreateSubRefPropTag creates a reference chain node tag for a substitution reference
+// including the property path within the resource that holds the reference.
+func CreateSubRefPropTag(usedIn string, usedInPropPath string) string {
+	return fmt.Sprintf("subRefProp:%s:%s", usedIn, usedInPropPath)
 }

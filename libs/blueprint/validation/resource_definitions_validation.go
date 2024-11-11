@@ -792,6 +792,7 @@ func validateResourceDefinitionSubstitution(
 				nil,
 				bpSchema,
 				resourceIdentifier,
+				path,
 				params,
 				funcRegistry,
 				refChainCollector,

@@ -8,7 +8,7 @@ import (
 
 // ResourceChangeStager is an interface for a service that handles
 // staging changes for a resource based on the current state of the
-// resource, the resolved resource spec and the state definition
+// resource, the resolved resource spec and the spec definition
 // provided by the resource plugin implementation.
 type ResourceChangeStager interface {
 	StageChanges(

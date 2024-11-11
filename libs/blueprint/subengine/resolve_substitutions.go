@@ -120,6 +120,7 @@ func (r *defaultSubstitutionResolver) ResolveResourceEach(
 	resource *schema.Resource,
 ) ([]*core.MappingNode, error) {
 	elementName := fmt.Sprintf("resources.%s", resourceName)
+	// TODO: error if substitutions references at any level are resources or child blueprints
 	eachResolved, err := r.resolveSubstitutions(ctx, elementName, resource.Each)
 	if err != nil {
 		return nil, err

@@ -336,7 +336,7 @@ func compareElementNameForSubRef(referencedByElementName string, searchFor *vali
 			// Tags are used to differentiate between links, dependencies and references
 			// to allow this logic to skip links that are handled separately.
 			slices.ContainsFunc(searchFor.Tags, func(tag string) bool {
-				return tag == fmt.Sprintf("subRef:%s", referencedByElementName) ||
+				return tag == validation.CreateSubRefTag(referencedByElementName) ||
 					tag == fmt.Sprintf("dependencyOf:%s", referencedByElementName)
 			})
 	}

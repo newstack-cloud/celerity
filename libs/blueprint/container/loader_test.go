@@ -77,7 +77,6 @@ func (s *LoaderTestSuite) SetupSuite() {
 		providers,
 		specTransformers,
 		stateContainer,
-		nil,
 		validation.NewRefChainCollector,
 		WithLoaderTransformSpec(true),
 	)
@@ -85,7 +84,6 @@ func (s *LoaderTestSuite) SetupSuite() {
 		providers,
 		specTransformers,
 		stateContainer,
-		nil,
 		validation.NewRefChainCollector,
 		WithLoaderTransformSpec(true),
 		WithLoaderValidateAfterTransform(true),
@@ -97,7 +95,6 @@ func (s *LoaderTestSuite) SetupSuite() {
 		providersWithoutCore,
 		specTransformers,
 		stateContainer,
-		nil,
 		validation.NewRefChainCollector,
 	)
 }

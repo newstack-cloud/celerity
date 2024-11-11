@@ -89,7 +89,7 @@ func hasReferenceInGroup(
 		if groupIndex, ok := nodeGroupMap[reference.ElementName]; ok {
 			hasReferenceInGroup = groupIndex == currentGroupIndex &&
 				slices.ContainsFunc(reference.Tags, func(tag string) bool {
-					return tag == fmt.Sprintf("subRef:%s", refChainNode.ElementName) ||
+					return tag == validation.CreateSubRefTag(refChainNode.ElementName) ||
 						tag == fmt.Sprintf("dependencyOf:%s", refChainNode.ElementName)
 				})
 		}

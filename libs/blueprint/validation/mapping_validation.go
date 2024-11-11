@@ -93,6 +93,7 @@ func validateMappingNode(
 		return validateMappingNodeStringWithSubstitutions(
 			ctx,
 			usedIn,
+			attributePath,
 			mappingNode.StringWithSubstitutions,
 			bpSchema,
 			params,
@@ -222,6 +223,7 @@ func validateMappingNodeItems(
 func validateMappingNodeStringWithSubstitutions(
 	ctx context.Context,
 	usedIn string,
+	usedInPropertyPath string,
 	stringWithSub *substitutions.StringOrSubstitutions,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -241,6 +243,7 @@ func validateMappingNodeStringWithSubstitutions(
 				nextLocation,
 				bpSchema,
 				usedIn,
+				usedInPropertyPath,
 				params,
 				funcRegistry,
 				refChainCollector,

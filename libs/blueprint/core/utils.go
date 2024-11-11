@@ -10,3 +10,12 @@ func IsInScalarList(value *ScalarValue, list []*ScalarValue) bool {
 	}
 	return found
 }
+
+// StringValue extracts the string value from a MappingNode.
+func StringValue(value *MappingNode) string {
+	if value == nil || value.Literal == nil || value.Literal.StringValue == nil {
+		return ""
+	}
+
+	return *value.Literal.StringValue
+}

@@ -304,17 +304,20 @@ type Changes struct {
 	// AppliedResourceInfo provides a new version of the spec
 	// and schema for which variable substitution has been applied
 	// so the deploy phase has everything it needs to deploy the resource.
-	AppliedResourceInfo *ResourceInfo  `json:"appliedResourceInfo"`
-	MustRecreate        bool           `json:"mustRecreate"`
-	ModifiedFields      []*FieldChange `json:"modifiedFields"`
-	NewFields           []*FieldChange `json:"newFields"`
-	RemovedFields       []string       `json:"removedFields"`
-	UnchangedFields     []string       `json:"unchangedFields"`
+	AppliedResourceInfo ResourceInfo  `json:"appliedResourceInfo"`
+	MustRecreate        bool          `json:"mustRecreate"`
+	ModifiedFields      []FieldChange `json:"modifiedFields"`
+	NewFields           []FieldChange `json:"newFields"`
+	RemovedFields       []string      `json:"removedFields"`
+	UnchangedFields     []string      `json:"unchangedFields"`
+	// NewOutboundLinks holds a mapping of the linked to resource name
+	// to the link changes representing the new links that will be created.
+	NewOutboundLinks map[string]LinkChanges `json:"newOutboundLinks"`
 	// OutboundLinkChanges holds a mapping
 	// of the linked to resource name to any changes
-	// that will be made to the link.
+	// that will be made to existing links.
 	// The key is of the form `{resourceA}::{resoureB}`
-	OutboundLinkChanges map[string]*LinkChanges `json:"outboundLinkChanges"`
+	OutboundLinkChanges map[string]LinkChanges `json:"outboundLinkChanges"`
 	// RemovedOutboundLinks holds a list of link identifiers
 	// that will be removed.
 	// The form of the link identifier is `{resourceA}::{resoureB}`
@@ -383,8 +386,8 @@ type ResourceDefinitionsSchema struct {
 	// Computed values are expected to be populated by resource implementations
 	// in a provider in the deployment process.
 	Computed bool
-	// MustRecreate specifies whether the value must be recreated
-	// if a change is detected to the field in the resource state.
+	// MustRecreate specifies whether the resource must be recreated
+	// if a change to the field is detected in the resource state.
 	// This is only used in change staging for the state definition of a resource.
 	// This is ignored for spec definitions.
 	MustRecreate bool

@@ -1606,6 +1606,25 @@ func errInvalidSubTypeNotArray(
 	}
 }
 
+func errEmptyEachSubstitution(
+	usedIn string,
+	valueContext string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidSubstitution,
+		Err: fmt.Errorf(
+			"%s substitution in the \"each\" property of %q is empty, "+
+				"a single value must be provided that resolves to an array",
+			valueContext,
+			usedIn,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errMissingValueContent(
 	valueID string,
 	location *source.Meta,

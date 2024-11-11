@@ -6,9 +6,11 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
@@ -148,4 +150,42 @@ func extractChildRefNodes(
 	}
 
 	return childRefNodes
+}
+
+func extractIncludeVariables(include *subengine.ResolvedInclude) map[string]*core.ScalarValue {
+	includeVariables := map[string]*core.ScalarValue{}
+
+	if include == nil || include.Variables == nil {
+		return includeVariables
+	}
+
+	for variableName, variableValue := range include.Variables.Fields {
+		if variableValue.Literal != nil {
+			includeVariables[variableName] = variableValue.Literal
+		}
+	}
+
+	return includeVariables
+}
+
+func extractChildBlueprintFormat(includeName string, include *subengine.ResolvedInclude) (schema.SpecFormat, error) {
+	if include == nil || include.Path == nil {
+		return schema.SpecFormat(""), errMissingChildBlueprintPath(includeName)
+	}
+
+	pathString := core.StringValue(include.Path)
+	if pathString == "" {
+		// This should lead to an error when trying to load a child blueprint.
+		return schema.SpecFormat(""), errEmptyChildBlueprintPath(includeName)
+	}
+
+	return deriveSpecFormat(pathString)
+}
+
+func createLinkID(resourceAName string, resourceBName string) string {
+	return fmt.Sprintf(
+		"%s::%s",
+		resourceAName,
+		resourceBName,
+	)
 }

@@ -152,7 +152,6 @@ type defaultLoader struct {
 	providers                map[string]provider.Provider
 	specTransformers         map[string]transform.SpecTransformer
 	stateContainer           state.Container
-	updateChan               chan Update
 	validateRuntimeValues    bool
 	validateAfterTransform   bool
 	transformSpec            bool
@@ -242,7 +241,6 @@ func NewDefaultLoader(
 	providers map[string]provider.Provider,
 	specTransformers map[string]transform.SpecTransformer,
 	stateContainer state.Container,
-	updateChan chan Update,
 	refChainCollectorFactory func() validation.RefChainCollector,
 	opts ...LoaderOption,
 ) Loader {
@@ -255,7 +253,6 @@ func NewDefaultLoader(
 		providers:                internalProviders,
 		specTransformers:         specTransformers,
 		stateContainer:           stateContainer,
-		updateChan:               updateChan,
 		refChainCollectorFactory: refChainCollectorFactory,
 		funcRegistry:             funcRegistry,
 		resourceRegistry:         resourceRegistry,
@@ -278,6 +275,20 @@ func NewDefaultLoader(
 	}
 
 	return loader
+}
+
+func (l *defaultLoader) forChildBlueprint() Loader {
+	return NewDefaultLoader(
+		l.providers,
+		l.specTransformers,
+		l.stateContainer,
+		l.refChainCollectorFactory,
+		WithLoaderValidateRuntimeValues(l.validateRuntimeValues),
+		WithLoaderValidateAfterTransform(l.validateAfterTransform),
+		WithLoaderTransformSpec(l.transformSpec),
+		WithLoaderClock(l.clock),
+		WithLoaderResolveWorkingDir(l.resolveWorkingDir),
+	)
 }
 
 func (l *defaultLoader) Load(ctx context.Context, blueprintSpecFile string, params bpcore.BlueprintParams) (BlueprintContainer, error) {
@@ -325,14 +336,14 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		return NewDefaultBlueprintContainer(
 			blueprintSpec,
 			&BlueprintContainerDependencies{
-				StateContainer:       l.stateContainer,
-				ResourceProviders:    map[string]provider.Provider{},
-				LinkInfo:             nil,
-				RefChainCollector:    refChainCollector,
-				SubstitutionResolver: nil,
+				StateContainer:              l.stateContainer,
+				ResourceProviders:           map[string]provider.Provider{},
+				LinkInfo:                    nil,
+				RefChainCollector:           refChainCollector,
+				SubstitutionResolver:        nil,
+				ChildBlueprintLoaderFactory: l.forChildBlueprint,
 			},
 			diagnostics,
-			l.updateChan,
 		), diagnostics, err
 	}
 
@@ -344,14 +355,14 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		return NewDefaultBlueprintContainer(
 			blueprintSpec,
 			&BlueprintContainerDependencies{
-				StateContainer:       l.stateContainer,
-				ResourceProviders:    map[string]provider.Provider{},
-				LinkInfo:             nil,
-				RefChainCollector:    refChainCollector,
-				SubstitutionResolver: nil,
+				StateContainer:              l.stateContainer,
+				ResourceProviders:           map[string]provider.Provider{},
+				LinkInfo:                    nil,
+				RefChainCollector:           refChainCollector,
+				SubstitutionResolver:        nil,
+				ChildBlueprintLoaderFactory: l.forChildBlueprint,
 			},
 			diagnostics,
-			l.updateChan,
 		), diagnostics, err
 	}
 
@@ -368,15 +379,15 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	container := NewDefaultBlueprintContainer(
 		blueprintSpec,
 		&BlueprintContainerDependencies{
-			StateContainer:       l.stateContainer,
-			ResourceProviders:    resourceProviderMap,
-			LinkInfo:             linkInfo,
-			RefChainCollector:    refChainCollector,
-			SubstitutionResolver: substitutionResolver,
-			ResourceCache:        resourceCache,
+			StateContainer:              l.stateContainer,
+			ResourceProviders:           resourceProviderMap,
+			LinkInfo:                    linkInfo,
+			RefChainCollector:           refChainCollector,
+			SubstitutionResolver:        substitutionResolver,
+			ResourceCache:               resourceCache,
+			ChildBlueprintLoaderFactory: l.forChildBlueprint,
 		},
 		diagnostics,
-		l.updateChan,
 	)
 
 	// Once we have loaded the link information,
@@ -775,6 +786,8 @@ func (l *defaultLoader) validateIncludes(
 			includeErrors[name] = err
 		}
 		diagnostics = append(diagnostics, includeDiagnostics...)
+
+		refChainCollector.Collect(fmt.Sprintf("children.%s", name), includeSchema, "", []string{})
 	}
 
 	if len(includeErrors) > 0 {

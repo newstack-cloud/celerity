@@ -327,6 +327,7 @@ func validateResourceMetadataDisplayName(
 				nil,
 				bpSchema,
 				resourceIdentifier,
+				"metadata.displayName",
 				params,
 				funcRegistry,
 				refChainCollector,
@@ -645,6 +646,7 @@ func validateConditionValue(
 				nil,
 				bpSchema,
 				resourceIdentifier,
+				"condition",
 				params,
 				funcRegistry,
 				refChainCollector,
@@ -727,10 +729,17 @@ func validateResourceEach(
 		return []*bpcore.Diagnostic{}, nil
 	}
 
-	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
 
 	resourceIdentifier := fmt.Sprintf("resources.%s", resourceName)
+
+	if len(each.Values) == 0 {
+		return diagnostics, errEmptyEachSubstitution(
+			resourceIdentifier,
+			"each",
+			each.SourceMeta,
+		)
+	}
 
 	if len(each.Values) > 1 {
 		return diagnostics, errInvalidSubTypeNotArray(
@@ -743,41 +752,42 @@ func validateResourceEach(
 		)
 	}
 
-	for i, stringOrSub := range each.Values {
-		nextLocation := getSubNextLocation(i, each.Values)
+	stringOrSub := each.Values[0]
+	nextLocation := getSubNextLocation(0, each.Values)
 
-		if stringOrSub.SubstitutionValue != nil {
-			resolvedType, subDiagnostics, err := ValidateSubstitution(
-				ctx,
-				stringOrSub.SubstitutionValue,
-				nil,
-				bpSchema,
-				resourceIdentifier,
-				params,
-				funcRegistry,
-				refChainCollector,
-				resourceRegistry,
-			)
-			if err != nil {
-				errs = append(errs, err)
-			} else {
-				diagnostics = append(diagnostics, subDiagnostics...)
-				handleResolvedTypeExpectingArray(
-					resolvedType,
-					resourceIdentifier,
-					stringOrSub,
-					each,
-					"each",
-					nextLocation,
-					&diagnostics,
-					&errs,
-				)
-			}
+	if stringOrSub.SubstitutionValue != nil {
+		resolvedType, subDiagnostics, err := ValidateSubstitution(
+			ctx,
+			stringOrSub.SubstitutionValue,
+			nil,
+			bpSchema,
+			resourceIdentifier,
+			"each",
+			params,
+			funcRegistry,
+			refChainCollector,
+			resourceRegistry,
+		)
+		if err != nil {
+			return diagnostics, err
 		}
-	}
 
-	if len(errs) > 0 {
-		return diagnostics, ErrMultipleValidationErrors(errs)
+		var errs []error
+		diagnostics = append(diagnostics, subDiagnostics...)
+		handleResolvedTypeExpectingArray(
+			resolvedType,
+			resourceIdentifier,
+			stringOrSub,
+			each,
+			"each",
+			nextLocation,
+			&diagnostics,
+			&errs,
+		)
+
+		if len(errs) > 0 {
+			return diagnostics, errs[0]
+		}
 	}
 
 	return diagnostics, nil

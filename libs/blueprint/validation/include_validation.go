@@ -152,6 +152,7 @@ func validateIncludePath(
 				nil,
 				bpSchema,
 				includeIdentifier,
+				"path",
 				params,
 				funcRegistry,
 				refChainCollector,

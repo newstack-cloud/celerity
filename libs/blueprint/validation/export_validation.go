@@ -66,6 +66,7 @@ func ValidateExport(
 		nil,
 		bpSchema,
 		exportIdentifier,
+		"field",
 		params,
 		funcRegistry,
 		refChainCollector,
