@@ -829,6 +829,77 @@ func handleResolvedTypeExpectingArray(
 	}
 }
 
+// ValidateResourceEachDependencies validates the dependencies of the `each`
+// property of a resource.
+// This should be called after all validation of a blueprint has been carried out
+// and the full set of references have been collected.
+func ValidateResourceEachDependencies(
+	blueprint *schema.Blueprint,
+	refChainCollector RefChainCollector,
+) error {
+	if blueprint.Resources == nil {
+		return nil
+	}
+
+	var errs []error
+	for resourceName, resource := range blueprint.Resources.Values {
+		if resource.Each != nil {
+			resourceIdentifier := fmt.Sprintf("resources.%s", resourceName)
+			eachTag := CreateSubRefPropTag(resourceIdentifier, "each")
+			nodes := refChainCollector.FindByTag(eachTag)
+			if len(nodes) > 0 {
+				errsForCurrentResource := checkEachResourceOrChildDependencies(
+					nodes,
+					resourceIdentifier,
+					resource.Each.SourceMeta,
+					[]error{},
+				)
+				if len(errsForCurrentResource) > 0 {
+					errs = append(errs, errsForCurrentResource...)
+				}
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return ErrMultipleValidationErrors(errs)
+	}
+
+	return nil
+}
+
+func checkEachResourceOrChildDependencies(
+	nodes []*ReferenceChainNode,
+	resourceIdentifier string,
+	eachLocation *source.Meta,
+	errs []error,
+) []error {
+	for _, node := range nodes {
+		if _, isResource := node.Element.(*schema.Resource); isResource {
+			errs = append(errs, errEachResourceDependencyDetected(
+				resourceIdentifier,
+				node.ElementName,
+				eachLocation,
+			))
+		} else if _, isChild := node.Element.(*schema.Include); isChild {
+			errs = append(errs, errEachChildDependencyDetected(
+				resourceIdentifier,
+				node.ElementName,
+				eachLocation,
+			))
+		} else {
+			errs = checkEachResourceOrChildDependencies(
+				node.References,
+				resourceIdentifier,
+				eachLocation,
+				errs,
+			)
+		}
+	}
+
+	return errs
+}
+
 func validateResourceLinkSelector(
 	resourceName string,
 	linkSelector *schema.LinkSelector,

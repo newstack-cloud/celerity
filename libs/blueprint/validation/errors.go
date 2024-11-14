@@ -95,6 +95,14 @@ const (
 	// Computed fields are not allowed to be defined in blueprints,
 	// they are computed by providers when a resource has been created.
 	ErrorReasonCodeComputedFieldInBlueprint errors.ErrorReasonCode = "computed_field_in_blueprint"
+	// ErrorReasonCodeEachResourceDependency is provided when the reason
+	// for a blueprint spec load error is due to the "each" property of a resource
+	// having a dependency on another resource.
+	ErrorReasonCodeEachResourceDependency errors.ErrorReasonCode = "each_resource_dependency"
+	// ErrorReasonCodeEachChildDependency is provided when the reason
+	// for a blueprint spec load error is due to the "each" property of a resource
+	// having a dependency on a child blueprint.
+	ErrorReasonCodeEachChildDependency errors.ErrorReasonCode = "each_child_dependency"
 )
 
 func errBlueprintMissingVersion() error {
@@ -2104,6 +2112,45 @@ func errComputedFieldDefinedInBlueprint(
 				"this field is computed by the provider after the resource has been created",
 			path,
 			resourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errEachResourceDependencyDetected(
+	resourceIDWithEachProp string,
+	dependencyName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeEachResourceDependency,
+		Err: fmt.Errorf(
+			"validation failed due to a resource %q having a direct or transitive dependency %q in the each property, "+
+				"the each property can not depend on resources",
+			resourceIDWithEachProp,
+			dependencyName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errEachChildDependencyDetected(
+	resourceIDWithEachProp string,
+	dependencyName string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeEachChildDependency,
+		Err: fmt.Errorf(
+			"validation failed due to a resource %q having a direct or transitive dependency "+
+				"on a child blueprint %q in the each property, "+
+				"the each property can not depend on child blueprints",
+			resourceIDWithEachProp,
+			dependencyName,
 		),
 		Line:   line,
 		Column: col,

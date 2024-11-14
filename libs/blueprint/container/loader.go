@@ -404,6 +404,14 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		return container, diagnostics, validation.ErrReferenceCycles(refCycleRoots)
 	}
 
+	eachDepsErr := validation.ValidateResourceEachDependencies(
+		blueprintSpec.Schema(),
+		refChainCollector,
+	)
+	if eachDepsErr != nil {
+		return container, diagnostics, eachDepsErr
+	}
+
 	return container, diagnostics, nil
 }
 

@@ -40,6 +40,8 @@ type RefChainCollector interface {
 	Collect(elementName string, element interface{}, referencedBy string, tags []string) error
 	// Chain returns the reference chain node for the given element name.
 	Chain(elementName string) *ReferenceChainNode
+	// FindByTag returns a list of reference chain nodes that have the given tag.
+	FindByTag(tag string) []*ReferenceChainNode
 	// FindCircularReferences returns a list of reference chain nodes for which there are
 	// cycles.
 	FindCircularReferences() []*ReferenceChainNode
@@ -84,6 +86,22 @@ func (s *refChainCollectorImpl) Chain(elementName string) *ReferenceChainNode {
 	return s.refMap[elementName]
 }
 
+func (s *refChainCollectorImpl) FindByTag(tag string) []*ReferenceChainNode {
+	nodes := []*ReferenceChainNode{}
+	for _, node := range s.refMap {
+		tagFound := false
+		i := 0
+		for !tagFound && i < len(node.Tags) {
+			tagFound = node.Tags[i] == tag
+			i += 1
+		}
+		if tagFound {
+			nodes = append(nodes, node)
+		}
+	}
+	return nodes
+}
+
 func (s *refChainCollectorImpl) cleanupChains() {
 	newChains := []*ReferenceChainNode{}
 	for _, chain := range s.chains {
@@ -112,6 +130,14 @@ func (s *refChainCollectorImpl) createOrUpdateChain(
 			Element:     element,
 			Tags:        tags,
 		}
+	}
+
+	// Ensure to fill the element for the current node in the chain
+	// if it was not set before.
+	// This will be the case for parent nodes that were added as placeholders
+	// when the child nodes were added to the chain before the parent nodes.
+	if element != nil && elementChain.Element == nil {
+		elementChain.Element = element
 	}
 
 	var parent *ReferenceChainNode

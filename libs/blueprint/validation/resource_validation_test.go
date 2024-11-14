@@ -841,6 +841,331 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_depends_o
 	)
 }
 
+const (
+	testClusterID = "resources.testCluster"
+)
+
+func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_each_directly_references_another_resource(c *C) {
+	resource := newTestValidResource()
+	resource.Each = &substitutions.StringOrSubstitutions{
+		Values: []*substitutions.StringOrSubstitution{
+			{
+				SubstitutionValue: &substitutions.Substitution{
+					ResourceProperty: &substitutions.SubstitutionResourceProperty{
+						ResourceName: "testService",
+						Path: []*substitutions.SubstitutionPathItem{
+							{FieldName: "spec"},
+							{FieldName: "id"},
+						},
+					},
+				},
+			},
+		},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 10,
+			},
+		},
+	}
+	testServiceResource := newTestValidResource()
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"testCluster": resource,
+				"testService": testServiceResource,
+			},
+		},
+	}
+
+	refChainCollector := NewRefChainCollector()
+	refChainCollector.Collect(
+		"resources.testService",
+		testServiceResource,
+		testClusterID,
+		[]string{CreateSubRefPropTag(testClusterID, "each")},
+	)
+
+	err := ValidateResourceEachDependencies(
+		blueprint,
+		refChainCollector,
+	)
+
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeEachResourceDependency)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a resource \"resources.testCluster\" having a direct or transitive "+
+			"dependency \"resources.testService\" in the each property, the each property can not depend on resources",
+	)
+}
+
+func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_indirectly_depends_on_another_resource(c *C) {
+	resource := newTestValidResource()
+	resource.Each = &substitutions.StringOrSubstitutions{
+		Values: []*substitutions.StringOrSubstitution{
+			{
+				SubstitutionValue: &substitutions.Substitution{
+					ValueReference: &substitutions.SubstitutionValueReference{
+						ValueName: "testServiceIdWithPrefix",
+					},
+				},
+			},
+		},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 10,
+			},
+		},
+	}
+	testServiceResource := newTestValidResource()
+	testServiceIDWithPrefixValue := &schema.Value{
+		Type: &schema.ValueTypeWrapper{Value: "string"},
+		Value: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					SubstitutionValue: &substitutions.Substitution{
+						ResourceProperty: &substitutions.SubstitutionResourceProperty{
+							ResourceName: "testService",
+							Path: []*substitutions.SubstitutionPathItem{
+								{
+									FieldName: "spec",
+								},
+								{
+									FieldName: "id",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"testCluster": resource,
+				"testService": testServiceResource,
+			},
+		},
+		Values: &schema.ValueMap{
+			Values: map[string]*schema.Value{
+				"testServiceIdWithPrefix": testServiceIDWithPrefixValue,
+			},
+		},
+	}
+
+	testServiceIDWithPrefixValueID := "values.testServiceIdWithPrefix"
+	refChainCollector := NewRefChainCollector()
+	refChainCollector.Collect(
+		testServiceIDWithPrefixValueID,
+		testServiceIDWithPrefixValue,
+		testClusterID,
+		[]string{CreateSubRefPropTag(testClusterID, "each")},
+	)
+	refChainCollector.Collect(
+		"resources.testService",
+		testServiceResource,
+		testServiceIDWithPrefixValueID,
+		[]string{CreateSubRefTag(testServiceIDWithPrefixValueID)},
+	)
+
+	err := ValidateResourceEachDependencies(
+		blueprint,
+		refChainCollector,
+	)
+
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeEachResourceDependency)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a resource \"resources.testCluster\" having a direct "+
+			"or transitive dependency \"resources.testService\" in the each property, the each property can not depend on resources",
+	)
+}
+
+const (
+	testNetworkingStackID = "children.testNetworkingStack"
+)
+
+func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_each_directly_references_a_child_blueprint(c *C) {
+	resource := newTestValidResource()
+	resource.Each = &substitutions.StringOrSubstitutions{
+		Values: []*substitutions.StringOrSubstitution{
+			{
+				SubstitutionValue: &substitutions.Substitution{
+					Child: &substitutions.SubstitutionChild{
+						ChildName: "testNetworkingStack",
+						Path: []*substitutions.SubstitutionPathItem{
+							{FieldName: "spec"},
+							{FieldName: "id"},
+						},
+					},
+				},
+			},
+		},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 10,
+			},
+		},
+	}
+	networkingStackFilePath := "stacks/networking.blueprint.yml"
+	testNetworkingStack := &schema.Include{
+		Path: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &networkingStackFilePath,
+				},
+			},
+		},
+	}
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"testCluster": resource,
+			},
+		},
+		Include: &schema.IncludeMap{
+			Values: map[string]*schema.Include{
+				"testNetworkingStack": testNetworkingStack,
+			},
+		},
+	}
+
+	refChainCollector := NewRefChainCollector()
+	refChainCollector.Collect(
+		testNetworkingStackID,
+		testNetworkingStack,
+		testClusterID,
+		[]string{CreateSubRefPropTag(testClusterID, "each")},
+	)
+
+	err := ValidateResourceEachDependencies(
+		blueprint,
+		refChainCollector,
+	)
+
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeEachChildDependency)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a resource \"resources.testCluster\" having a direct or "+
+			"transitive dependency on a child blueprint \"children.testNetworkingStack\" in the each property, "+
+			"the each property can not depend on child blueprints",
+	)
+}
+
+func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_indirectly_depends_on_a_child_blueprint(c *C) {
+	resource := newTestValidResource()
+	resource.Each = &substitutions.StringOrSubstitutions{
+		Values: []*substitutions.StringOrSubstitution{
+			{
+				SubstitutionValue: &substitutions.Substitution{
+					ValueReference: &substitutions.SubstitutionValueReference{
+						ValueName: "testNetworkingStackVPC",
+					},
+				},
+			},
+		},
+		SourceMeta: &source.Meta{
+			Position: source.Position{
+				Line:   1,
+				Column: 10,
+			},
+		},
+	}
+	networkingStackFilePath := "stacks/networking.blueprint.yml"
+	testNetworkingStack := &schema.Include{
+		Path: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &networkingStackFilePath,
+				},
+			},
+		},
+	}
+	testNetworkingStackVPCValue := &schema.Value{
+		Type: &schema.ValueTypeWrapper{Value: "string"},
+		Value: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					SubstitutionValue: &substitutions.Substitution{
+						Child: &substitutions.SubstitutionChild{
+							ChildName: "testNetworkingStack",
+							Path: []*substitutions.SubstitutionPathItem{
+								{
+									FieldName: "vpcId",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"testCluster": resource,
+			},
+		},
+		Include: &schema.IncludeMap{
+			Values: map[string]*schema.Include{
+				"testNetworkingStack": testNetworkingStack,
+			},
+		},
+		Values: &schema.ValueMap{
+			Values: map[string]*schema.Value{
+				"testNetworkingStackVPC": testNetworkingStackVPCValue,
+			},
+		},
+	}
+
+	testNetworkingStackVPCValueID := "values.testNetworkingStackVPC"
+	refChainCollector := NewRefChainCollector()
+	refChainCollector.Collect(
+		testNetworkingStackVPCValueID,
+		testNetworkingStackVPCValue,
+		testClusterID,
+		[]string{CreateSubRefPropTag(testClusterID, "each")},
+	)
+	refChainCollector.Collect(
+		testNetworkingStackID,
+		testNetworkingStack,
+		testNetworkingStackVPCValueID,
+		[]string{CreateSubRefTag(testNetworkingStackVPCValueID)},
+	)
+
+	err := ValidateResourceEachDependencies(
+		blueprint,
+		refChainCollector,
+	)
+
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeEachChildDependency)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a resource \"resources.testCluster\" having a direct or "+
+			"transitive dependency on a child blueprint \"children.testNetworkingStack\" in the each property, "+
+			"the each property can not depend on child blueprints",
+	)
+}
+
 func newTestValidResource() *schema.Resource {
 	serviceName := "testService"
 	displayNamePrefix := "Service-"

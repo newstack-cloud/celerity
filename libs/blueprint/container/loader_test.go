@@ -27,20 +27,26 @@ type LoaderTestSuite struct {
 	suite.Suite
 }
 
+const (
+	validServerlessBlueprintName = "valid-serverless"
+)
+
 func (s *LoaderTestSuite) SetupSuite() {
 	s.specFixtures = make(map[string]string)
 	s.specFixtureFiles = map[string]string{
-		"valid":                "__testdata/loader/valid-blueprint.yml",
-		"invalid-yaml":         "__testdata/loader/invalid-yaml-blueprint.yml",
-		"invalid-schema":       "__testdata/loader/invalid-schema-blueprint.yml",
-		"unsupported-var-type": "__testdata/loader/unsupported-var-type-blueprint.yml",
-		"valid-serverless":     "__testdata/loader/valid-serverless-blueprint.yml",
-		"missing-transform":    "__testdata/loader/missing-transform-blueprint.yml",
-		"cyclic-ref":           "__testdata/loader/cyclic-ref-blueprint.yml",
-		"cyclic-ref-2":         "__testdata/loader/cyclic-ref-2-blueprint.yml",
-		"cyclic-ref-3":         "__testdata/loader/cyclic-ref-3-blueprint.yml",
-		"cyclic-ref-4":         "__testdata/loader/cyclic-ref-4-blueprint.yml",
-		"cyclic-ref-5":         "__testdata/loader/cyclic-ref-5-blueprint.yml",
+		"valid":                       "__testdata/loader/valid-blueprint.yml",
+		"invalid-yaml":                "__testdata/loader/invalid-yaml-blueprint.yml",
+		"invalid-schema":              "__testdata/loader/invalid-schema-blueprint.yml",
+		"unsupported-var-type":        "__testdata/loader/unsupported-var-type-blueprint.yml",
+		validServerlessBlueprintName:  "__testdata/loader/valid-serverless-blueprint.yml",
+		"missing-transform":           "__testdata/loader/missing-transform-blueprint.yml",
+		"cyclic-ref":                  "__testdata/loader/cyclic-ref-blueprint.yml",
+		"cyclic-ref-2":                "__testdata/loader/cyclic-ref-2-blueprint.yml",
+		"cyclic-ref-3":                "__testdata/loader/cyclic-ref-3-blueprint.yml",
+		"cyclic-ref-4":                "__testdata/loader/cyclic-ref-4-blueprint.yml",
+		"cyclic-ref-5":                "__testdata/loader/cyclic-ref-5-blueprint.yml",
+		"invalid-resource-each-dep-1": "__testdata/loader/invalid-resource-each-dep-1-blueprint.yml",
+		"invalid-resource-each-dep-2": "__testdata/loader/invalid-resource-each-dep-2-blueprint.yml",
 	}
 	s.specFixtureSchemas = make(map[string]*schema.Blueprint)
 
@@ -136,13 +142,13 @@ func (s *LoaderTestSuite) Test_loads_container_from_input_schema_without_any_iss
 }
 
 func (s *LoaderTestSuite) Test_loads_and_transforms_input_blueprint_without_any_issues() {
-	container, err := s.loader.Load(context.TODO(), s.specFixtureFiles["valid-serverless"], createParams())
+	container, err := s.loader.Load(context.TODO(), s.specFixtureFiles[validServerlessBlueprintName], createParams())
 	s.Require().NoError(err)
 	s.Assert().NotNil(container)
 }
 
 func (s *LoaderTestSuite) Test_loads_and_transforms_input_blueprint_validating_after_transform() {
-	container, err := s.loaderValidateAfterTransform.Load(context.TODO(), s.specFixtureFiles["valid-serverless"], createParams())
+	container, err := s.loaderValidateAfterTransform.Load(context.TODO(), s.specFixtureFiles[validServerlessBlueprintName], createParams())
 	s.Require().NoError(err)
 	s.Assert().NotNil(container)
 }
@@ -228,6 +234,28 @@ func (s *LoaderTestSuite) Test_reports_error_for_blueprint_with_indirect_cyclic_
 	s.Assert().True(isLoadErr)
 	s.Assert().Equal(
 		validation.ErrorReasonCodeReferenceCycle,
+		loadErr.ReasonCode,
+	)
+}
+
+func (s *LoaderTestSuite) Test_reports_error_for_blueprint_with_invalid_resource_each_dependency_1() {
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["invalid-resource-each-dep-1"], createParams())
+	s.Require().Error(err)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	s.Assert().True(isLoadErr)
+	s.Assert().Equal(
+		validation.ErrorReasonCodeEachResourceDependency,
+		loadErr.ReasonCode,
+	)
+}
+
+func (s *LoaderTestSuite) Test_reports_error_for_blueprint_with_invalid_resource_each_dependency_2() {
+	_, err := s.loader.Load(context.TODO(), s.specFixtureFiles["invalid-resource-each-dep-2"], createParams())
+	s.Require().Error(err)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	s.Assert().True(isLoadErr)
+	s.Assert().Equal(
+		validation.ErrorReasonCodeEachChildDependency,
 		loadErr.ReasonCode,
 	)
 }
