@@ -54,7 +54,7 @@ This CLI validates, builds, and deploys celerity applications.`,
 		"embedded",
 		"e",
 		false,
-		"Set this flag when you want to use the embedded build engine, "+
+		"Set this flag when you want to use the embedded deploy engine, "+
 			"the http api is used by default.",
 	)
 	confProvider.BindPFlag("embeddedEngine", rootCmd.PersistentFlags().Lookup("embedded"))
@@ -62,10 +62,10 @@ This CLI validates, builds, and deploys celerity applications.`,
 
 	rootCmd.PersistentFlags().String(
 		"connect-protocol",
-		// Connect to a local instance of the build engine
+		// Connect to a local instance of the deploy engine
 		// via a unix socket by default.
 		"unix-socket",
-		"The protocol to connect to the build engine with, "+
+		"The protocol to connect to the deploy engine with, "+
 			"can be either \"unix-socket\" or \"tcp\". This is ignored if the --embedded flag is set.",
 	)
 	confProvider.BindPFlag("connectProtocol", rootCmd.PersistentFlags().Lookup("connect-protocol"))
@@ -74,7 +74,7 @@ This CLI validates, builds, and deploys celerity applications.`,
 	rootCmd.PersistentFlags().String(
 		"api-endpoint",
 		"http://localhost:8325",
-		"The endpoint of the build engine api, this is used if --connect-protocol is set to tcp",
+		"The endpoint of the deploy engine api, this is used if --connect-protocol is set to tcp",
 	)
 	setupVersionCommand(rootCmd)
 	setupInitCommand(rootCmd, confProvider)

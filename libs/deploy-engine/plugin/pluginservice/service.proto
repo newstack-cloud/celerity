@@ -1,0 +1,85 @@
+edition = "2023";
+
+option features.field_presence = IMPLICIT;
+option go_package = "github.com/two-hundred/celerity/libs/deploy-engine/plugin/pluginservice";
+
+package plugin;
+
+// Interface exported by the deploy engine
+// to allow plugins to register and deregister
+// themselves.
+service Service {
+    // Register is used by plugins to register themselves
+    // with the deploy engine.
+    rpc Register(PluginRegistrationRequest) returns (PluginRegistrationResponse) {}
+    // Deregister is used by plugins to deregister themselves
+    // from the deploy engine.
+    rpc Deregister(PluginDeregistrationRequest) returns (PluginDeregistrationResponse) {}
+}
+
+// PluginRegistrationRequest is the request
+// for registering a plugin.
+message PluginRegistrationRequest {
+    // The type of plugin that is registered.
+    PluginType plugin_type = 1;
+	// The unique identifier for the provider plugin.
+	// In addition to being unique, the ID should point to the location
+	// where the provider plugin can be downloaded.
+	// {hostname/}?{namespace}/{provider}
+	//
+	// For example:
+	// registry.celerityframework.com/celerity/aws
+	// celerity/aws
+    string plugin_id = 2;
+    // The id of the plugin instance that should correspond to the
+    // id that was captured when the plugin was launched.
+    string instance_id = 3;
+    // The protocol version that the plugin is using.
+    int32 protocol_version = 4;
+    // The tcp port that the plugin is listening on.
+    // Only the port needs to be specified here as the address
+    // can only ever be the loopback address,
+    // plugins can not be called from a remote host.
+    int32 port = 5;
+    // The unix socket that the plugin is listening on.
+    string unix_socket = 6;
+}
+
+// PluginRegistrationResponse is the response
+// for registering a plugin.
+message PluginRegistrationResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// PluginDeregistrationResponse is the request
+// for deregistering a plugin.
+message PluginDeregistrationRequest {
+    // The id of the plugin that should correspond to the
+    // id that was captured when the plugin was launched.
+    string plugin_id = 1;
+    // The id of the plugin instance that should correspond to the
+    // id that was captured when the plugin was launched.
+    string instance_id = 2;
+}
+
+// PluginDeregistrationResponse is the response
+// for deregistering a plugin.
+message PluginDeregistrationResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// PluginType is an enum for the type of plugin being registered.
+// The plugin type is used to determine the type of plugin that is
+// being registered.
+enum PluginType {
+    // protobuf enums must have a zero value, so we need a NONE value
+    // here.
+    // PluginType starts at 1.
+    PLUGIN_TYPE_NONE = 0;
+    // A provider plugin.
+    PLUGIN_TYPE_PROVIDER = 1;
+    // A transformer plugin.
+    PLUGIN_TYPE_TRANSFORMER = 2;
+}

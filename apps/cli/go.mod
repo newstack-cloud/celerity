@@ -9,7 +9,6 @@ require (
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
-	github.com/two-hundred/celerity/libs/build-engine v0.0.0-20240813183650-16760343a5b8
 	golang.org/x/term v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
 )

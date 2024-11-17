@@ -13,7 +13,7 @@ Implementations of these traits can be found in specific packages such as `celer
 The runtime supports a limited version of `${..}` [substitutions](https://www.celerityframework.com/docs/blueprint/specification#references--substitutions).
 Only `${variables.[name]}` substitutions are recognised, all other substitutions are treated as string literals.
 
-In the runtime, the parser will replace `${variables.[name]}` with an environment variable of the form `CELERITY_VARIABLE_[name]`, these environment variables are expected to be set at package/build time by a tool like the Celerity Build Engine used in the Celerity CLI.
+In the runtime, the parser will replace `${variables.[name]}` with an environment variable of the form `CELERITY_VARIABLE_[name]`, these environment variables are expected to be set at package/build time by a tool like the Celerity Deploy Engine used in the Celerity CLI.
 
 ## Additional documentation
 

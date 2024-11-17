@@ -19,7 +19,7 @@ require (
 	github.com/gorilla/websocket v1.5.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/two-hundred/celerity/libs/common v0.0.0-20240912224249-e73f42b3f4d8 // indirect
+	github.com/two-hundred/celerity/libs/common v0.0.0-20241018163112-0db375f31936 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
 )

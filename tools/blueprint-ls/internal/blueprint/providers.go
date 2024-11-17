@@ -11,7 +11,7 @@ import (
 // and in providing other LSP features for blueprint such as function signatures,
 // hover information and completion items.
 //
-// The language server uses the build engine plugin system to load gRPC provider
+// The language server uses the deploy engine plugin system to load gRPC provider
 // plugins.
 func LoadProviders(ctx context.Context) (map[string]provider.Provider, error) {
 
@@ -29,7 +29,7 @@ func LoadProviders(ctx context.Context) (map[string]provider.Provider, error) {
 	// providers have been implemented to test with.
 	celerityProvider := NewCelerityProvider()
 
-	// TODO: load provider plugins through the build engine plugin system
+	// TODO: load provider plugins through the deploy engine plugin system
 
 	return map[string]provider.Provider{
 		"core":     coreProvider,

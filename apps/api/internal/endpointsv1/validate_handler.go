@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/two-hundred/celerity/libs/build-engine/core"
+	"github.com/two-hundred/celerity/libs/deploy-engine/core"
 )
 
 type validateHandler struct {
-	buildEngine core.BuildEngine
+	deployEngine core.DeployEngine
 }
 
 // StreamHandler is the handler for the /validate/stream endpoint
@@ -34,7 +34,7 @@ func (h *validateHandler) StreamHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	go h.buildEngine.ValidateStream(r.Context(), params, resultChan, errChan)
+	go h.deployEngine.ValidateStream(r.Context(), params, resultChan, errChan)
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")

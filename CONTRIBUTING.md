@@ -31,7 +31,7 @@ Tools and libraries that make up the Celerity "build-time engine" that handles e
 ### Libraries
 
 - [Blueprint](./libs/blueprint)
-- [Build Engine](./libs/build-engine)
+- [Deploy Engine](./libs/deploy-engine)
 - [Common](./libs/common)
 
 ### Validators

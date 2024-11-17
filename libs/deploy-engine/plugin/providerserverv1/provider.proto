@@ -1,0 +1,197 @@
+edition = "2023";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "blueprint/schema.proto";
+
+option features.field_presence = IMPLICIT;
+option go_package = "github.com/two-hundred/celerity/libs/deploy-engine/plugin/providerserverv1";
+
+package providerserverv1;
+
+// Interface exported by a provider plugin server.
+service Provider {
+    // GetNamespace returns the namespace of the provider
+    // used to route resource and data source types
+    // to the correct provider.
+    rpc GetNamespace(google.protobuf.Empty) returns (Namespace) {}
+    // ValidateResource deals with validating a resource
+    // against the provider's schema/specification.
+    rpc ValidateResource(ValidateResourceRequest) returns (ValidateResourceResponse) {}
+    // CanLinkTo produces a list of all the resource types
+    // that the given resource type can link to.
+    rpc CanLinkTo(ResourceType) returns (CanLinkToResponse) {}
+}
+
+// Namespace of a provider used to route resource and data source types
+// to the correct provider.
+message Namespace {
+    string namespace = 1;
+}
+
+// ValidateResourceRequest is the request
+// for resource validation.
+message ValidateResourceRequest {
+    // The resource schema as parsed within a blueprint.
+    schema.Resource schema_resource = 1;
+    // Runtime parameters for the current blueprint,
+    // provider and context.
+    BlueprintParams blueprint_params = 2;
+}
+
+// ValidateResourceResponse is the response
+// for resource validation, can be a validation
+// complete response or an error response.
+message ValidateResourceResponse {
+    oneof response {
+        ValidateResourceCompleteResponse complete_response = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// ValidateResourceCompleteResponse is the response
+// returned by the provider plugin when resource
+// validation has been completed.
+message ValidateResourceCompleteResponse {
+    repeated Diagnostic diagnostics = 1;
+}
+
+// Diagnostic provides error, warning or informational
+// diagnostic for a blueprint.
+message Diagnostic {
+    // The level of this diagnostic.
+    DiagnosticLevel level = 1;
+    // The message of this diagnostic.
+    string message = 2;
+    // An optional text range in the source blueprint
+    // that the diagnostic applies to.
+    // This will only be present when the source blueprint
+    // is YAML and the plugin can extract this information
+    // from the resource schema.
+    DiagnosticRange range = 3;
+}
+
+// DiagnosticLevel is an enum for the level of a diagnostic.
+enum DiagnosticLevel {
+    // protobuf enums must have a zero value, so we need a NONE value
+    // here.
+    // DiagnosticLevel starts at 1 as per the Blueprint framework.
+    DIAGNOSTIC_LEVEL_NONE = 0;
+    // Indicates an error diagnostic.
+    DIAGNOSTIC_LEVEL_ERROR = 1;
+    // Indicates a warning diagnostic.
+    DIAGNOSTIC_LEVEL_WARNING = 2;
+    // Indicates an informational diagnostic.
+    DIAGNOSTIC_LEVEL_INFO = 3;
+}
+
+// A range in the source blueprint that a diagnostic applies to.
+// This will only be used for source formats that allow position tracking
+// (i.e. YAML source documents).
+message DiagnosticRange {
+    SourceMeta start = 1;
+    SourceMeta end = 2;
+    ColumnAccuracy column_accuracy = 3;
+}
+
+// SourceMeta provides the line and column number in the source blueprint.
+message SourceMeta {
+    // The line number in the source blueprint.
+    int32 line = 1;
+    // The column number in the source blueprint.
+    int32 column = 2;
+}
+
+// DiagnosticLevel is an enum for the level of a diagnostic.
+enum ColumnAccuracy {
+    // protobuf enums must have a zero value, so we need a NONE value
+    // here.
+    // ColumnAccuracy starts at 1 as per the Blueprint framework.
+    COLUMN_ACCURACY_NONE = 0;
+    // Indicates that the column is accurate.
+    COLUMN_ACCURACY_EXACT = 1;
+    // Indicates that the column is approximate.
+    COLUMN_ACCURACY_APPROXIMATE = 2;
+}
+
+// Error response returned by the provider plugin
+// when an error occurs during any of the supported
+// provider plugin actions.
+message ErrorResponse {
+    // An error code specific to the plugin system.
+    // For example, an action that should be retried
+    // would have a specific error code to let the deploy engine
+    // host know that the action should be retried.
+    ErrorCode code = 1;
+    // A human-readable error message.
+    string message = 2;
+    // Extra details about the error.
+    google.protobuf.Any details = 3;
+}
+
+// ErrorCode is an enum for a range of error codes
+// for provider plugins.
+enum ErrorCode {
+    // Indicates that the error is unexpected and the
+    // action cannot be retried by the deploy engine
+    // host.
+    // This will not crash the deploy engine host but
+    // will stop the current action (e.g. deploying a blueprint).
+    ERROR_CODE_UNEXPECTED = 0;
+    // Indicates that the failure is transient and the
+    // action can be retried by the deploy engine
+    // host based on the deploy engine host's retry policy.
+    ERROR_CODE_TRANSIENT = 1;
+    // Indicates that the input to the provider plugin
+    // is invalid. Bad input errors should not be retried
+    // but are distinguished from unexpected errors to allow
+    // the deploy engine host to provide a more specific
+    // error message to the user.
+    ERROR_CODE_BAD_INPUT = 2;
+}
+
+// BlueprintParams holds the runtime parameters for
+// the current blueprint, provider and context.
+message BlueprintParams {
+    // Configuration parameters specifically for the provider.
+    map<string, schema.ScalarValue> provider_config = 1;
+	// Context-wide variable for the current deploy engine run.
+    map<string, schema.ScalarValue> context_variables = 2;
+    // Variables for the current blueprint.
+    map<string, schema.ScalarValue> blueprint_variables = 3;
+}
+
+// ResourceInfo holds identifiers for the current resource instance
+// along with the resource schema. 
+message ResourceInfo {
+    // Holds the ID of a resource when in the context
+    // of a blueprint instance when deploying or staging changes.
+	// Sometimes staging changes is independent of an instance and is used to compare
+	// two vesions of a blueprint in which
+	// case the resource ID will be empty.
+    string resource_id = 1;
+	// Holds the ID of the blueprint instance
+	// that the current resource belongs to.
+    string instance_id = 2;
+	// Holds the ID of the blueprint instance revision
+	// that the current resource deployment belongs to.
+    string revision_id = 3;
+    // The resource representation with all ${..} substitutions
+    // resolved. 
+    ResolvedResource resolved_resource = 4;
+}
+
+// TODO: Add the ResolvedResource message.
+
+// The type of resource to carry out an action or query
+// some information about.
+message ResourceType {
+    string type = 1;
+}
+
+// CanLinkToResponse is the response
+// for a request to get all the resource types
+// that a given resource type can link to.
+message CanLinkToResponse {
+    repeated ResourceType resource_types = 1;
+}

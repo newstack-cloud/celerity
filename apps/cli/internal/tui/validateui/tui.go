@@ -6,7 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/two-hundred/celerity/libs/build-engine/core"
+	"github.com/two-hundred/celerity/libs/deploy-engine/core"
 	"golang.org/x/term"
 )
 
@@ -110,7 +110,7 @@ func (m MainModel) View() string {
 	return selected + m.validate.View()
 }
 
-func NewValidateApp(engine core.BuildEngine, blueprintFile string, isDefaultBlueprintFile bool) (*MainModel, error) {
+func NewValidateApp(engine core.DeployEngine, blueprintFile string, isDefaultBlueprintFile bool) (*MainModel, error) {
 	sessionState := validateBlueprintSelect
 	// Skip the blueprint selection if a blueprint file is explictly provided
 	// by the user or if the application is not running in a terminal.

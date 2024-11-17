@@ -26,7 +26,7 @@ lint_project() {
 lint_project libs/blueprint
 lint_project libs/blueprint-resolvers
 lint_project libs/common
-lint_project libs/build-engine
+lint_project libs/deploy-engine
 lint_project libs/runtime
 
 lint_project tools/blueprint-ls

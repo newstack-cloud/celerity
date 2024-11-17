@@ -17,8 +17,8 @@ github.com/sourcegraph/jsonrpc2 v0.2.0 h1:KjN/dC4fP6aN9030MZCJs9WQbTOjWHhrtKVpzz
 github.com/sourcegraph/jsonrpc2 v0.2.0/go.mod h1:ZafdZgk/axhT1cvZAPOhw+95nz2I/Ra5qMlU4gTRwIo=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/two-hundred/celerity/libs/common v0.0.0-20240912224249-e73f42b3f4d8 h1:j09hmLix98qbKN5e45zGPJD8wHoSFaKKLWbKkR6wT7Q=
-github.com/two-hundred/celerity/libs/common v0.0.0-20240912224249-e73f42b3f4d8/go.mod h1:l3SbVmqFIs2SZpmg/GgnNgrk9KpDSfOfpmpycbOpMo4=
+github.com/two-hundred/celerity/libs/common v0.0.0-20241018163112-0db375f31936 h1:rG9P3roYaqAig1G8kXDNMw8GNPmHbG6OEvZ8+e+m8p8=
+github.com/two-hundred/celerity/libs/common v0.0.0-20241018163112-0db375f31936/go.mod h1:l3SbVmqFIs2SZpmg/GgnNgrk9KpDSfOfpmpycbOpMo4=
 github.com/two-hundred/ls-builder v0.2.3 h1:NxwpPmPS53KdHxc2QyhZ1fS9u9+NaHrNQGZuLEb6B2Y=
 github.com/two-hundred/ls-builder v0.2.3/go.mod h1:zOvsTcujiPa4TmoJvAuXbswYoAdoK0T8zlcMa3YYYcI=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=

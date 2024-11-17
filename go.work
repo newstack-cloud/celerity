@@ -4,7 +4,7 @@ use (
 	./libs/blueprint
 	./libs/blueprint-resolvers
 	./libs/common
-	./libs/build-engine
+	./libs/deploy-engine
 	./tools/blueprint-ls
 	./apps/cli
 	./apps/api

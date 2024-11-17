@@ -3,17 +3,17 @@ package engine
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/build-engine/core"
+	"github.com/two-hundred/celerity/libs/deploy-engine/core"
 )
 
-// EngineAPI provides a `BuildEngine` implementation
+// EngineAPI provides a `DeployEngine` implementation
 // that uses the HTTP API to interact with the
-// Build Engine.
+// Deploy Engine.
 type EngineAPI struct {
 	connectProtocol string
 }
 
-func NewEngineAPI(connectProtocol string) core.BuildEngine {
+func NewEngineAPI(connectProtocol string) core.DeployEngine {
 	return &EngineAPI{
 		connectProtocol,
 	}

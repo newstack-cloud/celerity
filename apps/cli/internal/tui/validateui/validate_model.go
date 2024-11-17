@@ -10,7 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/build-engine/core"
+	"github.com/two-hundred/celerity/libs/deploy-engine/core"
 )
 
 var (
@@ -42,7 +42,7 @@ func (i item) FilterValue() string {
 type ValidateModel struct {
 	spinner       spinner.Model
 	list          list.Model
-	engine        core.BuildEngine
+	engine        core.DeployEngine
 	blueprintFile string
 	resultStream  chan *core.ValidateResult
 	collected     []*core.ValidateResult
@@ -145,7 +145,7 @@ func (m ValidateModel) View() string {
 	return sb.String()
 }
 
-func NewValidateModel(engine core.BuildEngine) ValidateModel {
+func NewValidateModel(engine core.DeployEngine) ValidateModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))

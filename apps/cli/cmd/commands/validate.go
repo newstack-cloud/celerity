@@ -27,14 +27,14 @@ func setupValidateCommand(rootCmd *cobra.Command, confProvider *config.Provider)
 			}
 			defer handle.Close()
 
-			buildEngine := engine.Select(confProvider, logger)
+			deployEngine := engine.Select(confProvider, logger)
 			blueprintFile, isDefault := confProvider.GetString("validateBlueprintFile")
 
 			if _, err := tea.LogToFile("debug.log", "simple"); err != nil {
 				log.Fatal(err)
 			}
 
-			app, err := validateui.NewValidateApp(buildEngine, blueprintFile, isDefault)
+			app, err := validateui.NewValidateApp(deployEngine, blueprintFile, isDefault)
 			if err != nil {
 				return err
 			}

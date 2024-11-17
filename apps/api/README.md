@@ -1,10 +1,10 @@
-# Celerity Build Engine API
+# Celerity Deploy Engine API
 
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-api&metric=coverage)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-api)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-api&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-api)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-api&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-api)
 
-The HTTP API for the Celerity Build Engine.
+The HTTP API for the Celerity Deploy Engine.
 
 ## Additional documentation
 

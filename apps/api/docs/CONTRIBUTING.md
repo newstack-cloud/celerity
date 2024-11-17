@@ -55,7 +55,7 @@ git push --tags
 
 Be sure to add a release for the tag with notes following this template:
 
-Title: `Build Engine API - v0.2.0`
+Title: `Deploy Engine API - v0.2.0`
 
 ```markdown
 ## Fixed:

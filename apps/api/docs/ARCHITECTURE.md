@@ -1,6 +1,6 @@
 # Architecture
 
-The Celerity Build Engine API provides a HTTP API for managing Celerity applications and blueprints.
+The Celerity Deploy Engine API provides a HTTP API for managing Celerity applications and blueprints.
 
 ## Authentication
 
