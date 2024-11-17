@@ -769,7 +769,7 @@ func validateResourceDefinitionSubstitution(
 		return []*core.Diagnostic{}, nil
 	}
 
-	resourceIdentifier := fmt.Sprintf("resources.%s", resourceName)
+	resourceIdentifier := core.ResourceElementID(resourceName)
 	errs := []error{}
 	diagnostics := []*core.Diagnostic{}
 

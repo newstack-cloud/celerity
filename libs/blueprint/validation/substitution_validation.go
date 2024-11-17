@@ -196,14 +196,14 @@ func validateValueSubstitution(
 		return "", diagnostics, errSubValNotFound(valName, subVal.SourceMeta)
 	}
 
-	if usedIn == fmt.Sprintf("values.%s", valName) {
+	if usedIn == bpcore.ValueElementID(valName) {
 		return "", diagnostics, errSubValSelfReference(valName, subVal.SourceMeta)
 	}
 
 	subRefTag := CreateSubRefTag(usedIn)
 	subRefPropTag := CreateSubRefPropTag(usedIn, usedInPropertyPath)
 	refChainCollector.Collect(
-		fmt.Sprintf("values.%s", valName),
+		bpcore.ValueElementID(valName),
 		valSchema,
 		usedIn,
 		[]string{subRefTag, subRefPropTag},
@@ -288,7 +288,7 @@ func validateResourcePropertySubstitution(
 		return "", diagnostics, errResourceMissingType(resourceName, subResourceProp.SourceMeta)
 	}
 
-	if usedIn == fmt.Sprintf("resources.%s", resourceName) {
+	if usedIn == bpcore.ResourceElementID(resourceName) {
 		return "", diagnostics, errSubResourceSelfReference(resourceName, subResourceProp.SourceMeta)
 	}
 
@@ -316,7 +316,7 @@ func validateResourcePropertySubstitution(
 	subRefTag := CreateSubRefTag(usedIn)
 	subRefPropTag := CreateSubRefPropTag(usedIn, usedInPropertyPath)
 	refChainCollector.Collect(
-		fmt.Sprintf("resources.%s", resourceName),
+		bpcore.ResourceElementID(resourceName),
 		resourceSchema,
 		usedIn,
 		[]string{subRefTag, subRefPropTag},
@@ -723,7 +723,7 @@ func validateDataSourcePropertySubstitution(
 		return "", diagnostics, errSubDataSourceNotFound(dataSourceName, subDataSourceProp.SourceMeta)
 	}
 
-	if usedIn == fmt.Sprintf("datasources.%s", dataSourceName) {
+	if usedIn == bpcore.DataSourceElementID(dataSourceName) {
 		return "", diagnostics, errSubDataSourceSelfReference(dataSourceName, subDataSourceProp.SourceMeta)
 	}
 
@@ -735,7 +735,7 @@ func validateDataSourcePropertySubstitution(
 	subRefTag := CreateSubRefTag(usedIn)
 	subRefPropTag := CreateSubRefPropTag(usedIn, usedInPropertyPath)
 	refChainCollector.Collect(
-		fmt.Sprintf("datasources.%s", dataSourceName),
+		bpcore.DataSourceElementID(dataSourceName),
 		dataSourceSchema,
 		usedIn,
 		[]string{subRefTag, subRefPropTag},
@@ -799,14 +799,14 @@ func validateChildSubstitution(
 		return "", diagnostics, errSubChildBlueprintNotFound(childName, subChild.SourceMeta)
 	}
 
-	if usedIn == fmt.Sprintf("children.%s", childName) {
+	if usedIn == bpcore.ChildElementID(childName) {
 		return "", diagnostics, errSubChildBlueprintSelfReference(childName, subChild.SourceMeta)
 	}
 
 	subRefTag := CreateSubRefTag(usedIn)
 	subRefPropTag := CreateSubRefPropTag(usedIn, usedInPropertyPath)
 	refChainCollector.Collect(
-		fmt.Sprintf("children.%s", childName),
+		bpcore.ChildElementID(childName),
 		childSchema,
 		usedIn,
 		[]string{subRefTag, subRefPropTag},
@@ -832,44 +832,17 @@ func validateFunctionSubstitution(
 	diagnostics := []*bpcore.Diagnostic{}
 	funcName := string(subFunc.FunctionName)
 
-	isCoreFunc := core.SliceContainsComparable(
-		substitutions.CoreSubstitutionFunctions,
-		subFunc.FunctionName,
-	)
-
-	hasFunc, err := funcRegistry.HasFunction(ctx, funcName)
-	if err != nil {
-		return "", diagnostics, err
-	}
-
-	if !hasFunc && !isCoreFunc {
-		diagnostics = append(
-			diagnostics,
-			&bpcore.Diagnostic{
-				Level: bpcore.DiagnosticLevelWarning,
-				Message: fmt.Sprintf(
-					"Function %q is not a core function, when staging changes and deploying,"+
-						" you will need to make sure the provider is loaded.",
-					funcName,
-				),
-				Range: toDiagnosticRange(subFunc.SourceMeta, nextLocation),
-			},
-		)
-	}
-
-	defOutput, err := funcRegistry.GetDefinition(
+	defOutput, validateFuncDiagnostics, err := validateFunction(
 		ctx,
 		funcName,
-		&provider.FunctionGetDefinitionInput{
-			Params: params,
-		},
+		subFunc,
+		nextLocation,
+		funcRegistry,
+		params,
 	)
+	diagnostics = append(diagnostics, validateFuncDiagnostics...)
 	if err != nil {
-		return "", diagnostics, errSubFailedToLoadFunctionDefintion(
-			funcName,
-			subFunc.SourceMeta,
-			"the function may not be configured with the loaded providers",
-		)
+		return "", diagnostics, err
 	}
 
 	if len(subFunc.Arguments) != len(defOutput.Definition.Parameters) &&
@@ -912,6 +885,13 @@ func validateFunctionSubstitution(
 				errs = append(errs, err)
 			}
 		}
+
+		// "link" function arguments are a special case, where string literals
+		// that contain resource names should be treated as references to resources in the blueprint.
+		err = validateLinkFuncArg(funcName, i, arg, usedIn, bpSchema, refChainCollector)
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if len(errs) > 0 {
@@ -919,6 +899,87 @@ func validateFunctionSubstitution(
 	}
 
 	return subFunctionReturnType(defOutput), diagnostics, nil
+}
+
+func validateFunction(
+	ctx context.Context,
+	funcName string,
+	subFunc *substitutions.SubstitutionFunctionExpr,
+	nextLocation *source.Meta,
+	funcRegistry provider.FunctionRegistry,
+	params bpcore.BlueprintParams,
+) (*provider.FunctionGetDefinitionOutput, []*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+	isCoreFunc := core.SliceContainsComparable(
+		substitutions.CoreSubstitutionFunctions,
+		subFunc.FunctionName,
+	)
+
+	hasFunc, err := funcRegistry.HasFunction(ctx, funcName)
+	if err != nil {
+		return nil, diagnostics, err
+	}
+
+	if !hasFunc && !isCoreFunc {
+		diagnostics = append(
+			diagnostics,
+			&bpcore.Diagnostic{
+				Level: bpcore.DiagnosticLevelWarning,
+				Message: fmt.Sprintf(
+					"Function %q is not a core function, when staging changes and deploying,"+
+						" you will need to make sure the provider is loaded.",
+					funcName,
+				),
+				Range: toDiagnosticRange(subFunc.SourceMeta, nextLocation),
+			},
+		)
+	}
+
+	defOutput, err := funcRegistry.GetDefinition(
+		ctx,
+		funcName,
+		&provider.FunctionGetDefinitionInput{
+			Params: params,
+		},
+	)
+	if err != nil {
+		return nil, diagnostics, errSubFailedToLoadFunctionDefintion(
+			funcName,
+			subFunc.SourceMeta,
+			"the function may not be configured with the loaded providers",
+		)
+	}
+
+	return defOutput, diagnostics, nil
+}
+
+func validateLinkFuncArg(
+	funcName string,
+	index int,
+	arg *substitutions.SubstitutionFunctionArg,
+	usedIn string,
+	bpSchema *schema.Blueprint,
+	refChainCollector RefChainCollector,
+) error {
+	if funcName == string(substitutions.SubstitutionFunctionLink) {
+		if arg.Value != nil && arg.Value.StringValue != nil {
+			resourceName := *arg.Value.StringValue
+			resource, hasResource := getResource(resourceName, bpSchema)
+			if hasResource {
+				subRefTag := CreateSubRefTag(usedIn)
+				refChainCollector.Collect(
+					bpcore.ResourceElementID(resourceName),
+					resource,
+					usedIn,
+					[]string{subRefTag},
+				)
+			} else {
+				return errSubFuncLinkArgResourceNotFound(resourceName, index, usedIn, arg.SourceMeta)
+			}
+		}
+	}
+
+	return nil
 }
 
 func checkSubFuncArgType(

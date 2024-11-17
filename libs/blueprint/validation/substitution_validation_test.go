@@ -31,6 +31,7 @@ func (s *SubstitutionValidationTestSuite) SetUpTest(c *C) {
 			"list":       corefunctions.NewListFunction(),
 			"object":     corefunctions.NewObjectFunction(),
 			"datetime":   corefunctions.NewDateTimeFunction(&internal.ClockMock{}),
+			"link":       corefunctions.NewLinkFunction(nil, nil),
 		},
 	}
 	s.refChainCollector = NewRefChainCollector()
@@ -2132,5 +2133,63 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		Equals,
 		"validation failed as the field \"vpcId\" being referenced with index \"1\" in the substitution "+
 			"is not an array for data source \"networking\"",
+	)
+}
+
+func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_link_func_arg_referencing_a_resource_that_does_not_exist(c *C) {
+	subInputStr := "${link(\"exampleResource1\", \"exampleResource2\")}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"networking": {
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
+					Exports: &schema.DataSourceFieldExportMap{
+						Values: map[string]*schema.DataSourceFieldExport{
+							"vpcId": {
+								Type: &schema.DataSourceFieldTypeWrapper{
+									Value: schema.DataSourceFieldTypeString,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource1": {
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
+				},
+			},
+		},
+	}
+
+	_, _, err = ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		"resources.exampleResource3",
+		"",
+		&testBlueprintParams{},
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeSubFuncLinkArgResourceNotFound)
+	c.Assert(
+		loadErr.Err.Error(),
+		Equals,
+		"validation failed due to a missing resource \"exampleResource2\" being referenced "+
+			"in the link function call argument at position 1 in \"resources.exampleResource3\"",
 	)
 }

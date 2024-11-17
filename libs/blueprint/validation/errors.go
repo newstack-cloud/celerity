@@ -103,6 +103,10 @@ const (
 	// for a blueprint spec load error is due to the "each" property of a resource
 	// having a dependency on a child blueprint.
 	ErrorReasonCodeEachChildDependency errors.ErrorReasonCode = "each_child_dependency"
+	// ErrorReasonCodeSubFuncLinkArgResourceNotFound is provided when the reason
+	// for a blueprint spec load error is due to a resource not being found
+	// in an argument to the "link" substitution function.
+	ErrorReasonCodeSubFuncLinkArgResourceNotFound errors.ErrorReasonCode = "sub_func_link_arg_resource_not_found"
 )
 
 func errBlueprintMissingVersion() error {
@@ -2151,6 +2155,27 @@ func errEachChildDependencyDetected(
 				"the each property can not depend on child blueprints",
 			resourceIDWithEachProp,
 			dependencyName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errSubFuncLinkArgResourceNotFound(
+	resourceName string,
+	argIndex int,
+	usedIn string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeSubFuncLinkArgResourceNotFound,
+		Err: fmt.Errorf(
+			"validation failed due to a missing resource %q being referenced in the link function"+
+				" call argument at position %d in %q",
+			resourceName,
+			argIndex,
+			usedIn,
 		),
 		Line:   line,
 		Column: col,

@@ -266,3 +266,9 @@ func CreateSubRefTag(usedIn string) string {
 func CreateSubRefPropTag(usedIn string, usedInPropPath string) string {
 	return fmt.Sprintf("subRefProp:%s:%s", usedIn, usedInPropPath)
 }
+
+// CreateDependencyRefTag creates a reference chain node tag for a dependency reference
+// defined in a blueprint resource with the "dependsOn" property.
+func CreateDependencyRefTag(usedIn string) string {
+	return fmt.Sprintf("dependencyOf:%s", usedIn)
+}

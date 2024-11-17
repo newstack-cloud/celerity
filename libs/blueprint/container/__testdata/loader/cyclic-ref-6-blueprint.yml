@@ -1,0 +1,72 @@
+version: 2023-04-20
+transform:
+  - serverless-2024
+variables:
+  instanceType:
+    type: aws/ec2/instanceType
+    description: "The configuration buckets to create."
+  environment:
+    type: string
+
+values:
+  tableName:
+    type: string
+    value: "${variables.environment}-ordersTable"
+
+datasources:
+  network:
+    type: aws/vpc
+    description: "Networking resources for the application."
+    filter:
+      field: tags
+      operator: "not contains"
+      search: service
+    metadata:
+      displayName: Networking
+    exports:
+      vpc:
+        type: string
+        aliasFor: vpcId
+        description: |
+          The ID of the VPC.
+      subnetIds:
+        type: array
+        description: "The IDs of the subnets."
+
+resources:
+  ordersTable:
+    type: aws/dynamodb/table
+    description: "Table that stores orders for an application."
+    linkSelector:
+      byLabel:
+        app: "orders1"
+    spec:
+      name: "Orders"
+
+  saveOrderFunction:
+    type: aws/lambda/function
+    description: "Function that saves an order to the database."
+    linkSelector:
+      byLabel:
+        app: "orders2"
+    metadata:
+      labels:
+        app: "orders1"
+    spec:
+      handler: "src/orders.saveOrder"
+
+  getOrderFunction:
+    type: aws/lambda/function
+    description: "Function that gets an order from the database."
+    dependsOn: "ordersTable"
+    metadata:
+      labels:
+        app: "orders2"
+      custom:
+        # This dependency causes a cyclic dependency that should be caught with the
+        # reference chain collector functionality to detect cyclic dependencies
+        # for the special case where string literals are used for resource names
+        # when passed as arguments to the "link" function.
+        linkInfo: '${link("ordersTable", "saveOrderFunction")}'
+    spec:
+      handler: "src/orders.getOrder"

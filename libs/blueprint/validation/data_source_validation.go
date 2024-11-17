@@ -75,7 +75,7 @@ func ValidateDataSource(
 
 	validateDescriptionDiagnostics, validateDescErr := validateDescription(
 		ctx,
-		fmt.Sprintf("datasources.%s", name),
+		bpcore.DataSourceElementID(name),
 		dataSource.Description,
 		bpSchema,
 		params,
@@ -248,7 +248,7 @@ func validateDataSourceMetadata(
 
 	customDiagnostics, err := ValidateMappingNode(
 		ctx,
-		fmt.Sprintf("datasources.%s", dataSourceName),
+		bpcore.DataSourceElementID(dataSourceName),
 		"metadata.custom",
 		metadataSchema.Custom,
 		bpSchema,
@@ -283,7 +283,7 @@ func validateDataSourceMetadataDisplayName(
 		return []*bpcore.Diagnostic{}, nil
 	}
 
-	dataSourceIdentifier := fmt.Sprintf("datasources.%s", dataSourceName)
+	dataSourceIdentifier := bpcore.DataSourceElementID(dataSourceName)
 	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
 	for _, stringOrSub := range metadataSchema.DisplayName.Values {
@@ -336,7 +336,7 @@ func validateDataSourceMetadataAnnotations(
 		return []*bpcore.Diagnostic{}, nil
 	}
 
-	dataSourceIdentifier := fmt.Sprintf("datasources.%s", dataSourceName)
+	dataSourceIdentifier := bpcore.DataSourceElementID(dataSourceName)
 	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
 	for key, annotation := range metadataSchema.Annotations.Values {
@@ -579,7 +579,7 @@ func validateDataSourceFilterSearch(
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 
-	dataSourceIdentifier := fmt.Sprintf("datasources.%s", dataSourceName)
+	dataSourceIdentifier := bpcore.DataSourceElementID(dataSourceName)
 	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
 	for _, searchValue := range search.Values {
@@ -820,7 +820,11 @@ func validateDataSourceExport(
 
 	diagnostics, err := validateDescription(
 		ctx,
-		fmt.Sprintf("datasources.%s.exports.%s", dataSourceName, exportName),
+		fmt.Sprintf(
+			"%s.exports.%s",
+			bpcore.DataSourceElementID(dataSourceName),
+			exportName,
+		),
 		export.Description,
 		bpSchema,
 		params,

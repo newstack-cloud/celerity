@@ -2,7 +2,6 @@ package validation
 
 import (
 	"context"
-	"fmt"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -128,7 +127,7 @@ func validateValueDescription(
 		return []*bpcore.Diagnostic{}, nil
 	}
 
-	valIdentifier := fmt.Sprintf("values.%s", valName)
+	valIdentifier := bpcore.ValueElementID(valName)
 	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
 	for _, stringOrSub := range valSchema.Description.Values {
@@ -182,7 +181,7 @@ func validateValueContent(
 		return []*bpcore.Diagnostic{}, errMissingValueContent(valName, valSchema.SourceMeta)
 	}
 
-	valIdentifier := fmt.Sprintf("values.%s", valName)
+	valIdentifier := bpcore.ValueElementID(valName)
 	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
 

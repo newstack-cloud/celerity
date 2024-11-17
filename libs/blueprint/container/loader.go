@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 
@@ -701,7 +700,7 @@ func (l *defaultLoader) validateVariable(
 		*diagnostics = append(*diagnostics, customVarDiagnostics...)
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("variables.%s", name), varSchema, "", []string{})
+	refChainCollector.Collect(bpcore.VariableElementID(name), varSchema, "", []string{})
 	return currentVarErrs
 }
 
@@ -761,7 +760,7 @@ func (l *defaultLoader) validateValue(
 	}
 	*diagnostics = append(*diagnostics, resultDiagnostics...)
 
-	refChainCollector.Collect(fmt.Sprintf("values.%s", name), valSchema, "", []string{})
+	refChainCollector.Collect(bpcore.ValueElementID(name), valSchema, "", []string{})
 	return currentValErrs
 }
 
@@ -795,7 +794,7 @@ func (l *defaultLoader) validateIncludes(
 		}
 		diagnostics = append(diagnostics, includeDiagnostics...)
 
-		refChainCollector.Collect(fmt.Sprintf("children.%s", name), includeSchema, "", []string{})
+		refChainCollector.Collect(bpcore.ChildElementID(name), includeSchema, "", []string{})
 	}
 
 	if len(includeErrors) > 0 {
@@ -983,7 +982,7 @@ func (l *defaultLoader) validateDataSource(
 		currentDataSourceErrs = append(currentDataSourceErrs, err)
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("datasources.%s", name), dataSourceSchema, "", []string{})
+	refChainCollector.Collect(bpcore.DataSourceElementID(name), dataSourceSchema, "", []string{})
 	return currentDataSourceErrs
 }
 
@@ -1052,7 +1051,7 @@ func (l *defaultLoader) validateResource(
 		currentResouceErrs = append(currentResouceErrs, err)
 	}
 
-	refChainCollector.Collect(fmt.Sprintf("resources.%s", name), resourceSchema, "", []string{})
+	refChainCollector.Collect(bpcore.ResourceElementID(name), resourceSchema, "", []string{})
 	return currentResouceErrs
 }
 
