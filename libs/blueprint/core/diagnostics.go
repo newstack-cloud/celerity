@@ -8,7 +8,7 @@ import (
 // Diagnostic provides error, warning or informational diagnostic for a blueprint.
 // Blueprint validation will not use this for errors, but instead return an error,
 // tools that use the blueprint framework can transform these errors into diagnostics,
-// see the Blueprint Language Server or the Build Engine for examples.
+// see the Blueprint Language Server or the Deploy Engine for examples.
 type Diagnostic struct {
 	// The level of this diagnostic.
 	Level DiagnosticLevel `json:"level"`

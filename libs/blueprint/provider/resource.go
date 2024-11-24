@@ -99,16 +99,12 @@ type ResourceInfo struct {
 // Mapping nodes replace StringOrSubstitutions from the blueprint schema representation
 // of the resource.
 type ResolvedResource struct {
-	Type        *schema.ResourceTypeWrapper `json:"type"`
-	Description *core.MappingNode           `json:"description,omitempty"`
-	Metadata    *ResolvedResourceMetadata   `json:"metadata,omitempty"`
-	Condition   *ResolvedResourceCondition  `json:"condition,omitempty"`
-	// The index of a resolved resource in a resource template.
-	// A resource template is a resource that uses the `each` property
-	// to derive resources from a list of items.
-	Index        int                  `json:"index,omitempty"`
-	LinkSelector *schema.LinkSelector `json:"linkSelector,omitempty"`
-	Spec         *core.MappingNode    `json:"spec"`
+	Type         *schema.ResourceTypeWrapper `json:"type"`
+	Description  *core.MappingNode           `json:"description,omitempty"`
+	Metadata     *ResolvedResourceMetadata   `json:"metadata,omitempty"`
+	Condition    *ResolvedResourceCondition  `json:"condition,omitempty"`
+	LinkSelector *schema.LinkSelector        `json:"linkSelector,omitempty"`
+	Spec         *core.MappingNode           `json:"spec"`
 }
 
 // ResolvedResourceMetadata provides a resolved version of the metadata

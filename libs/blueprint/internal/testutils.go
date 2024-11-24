@@ -15,10 +15,10 @@ type FunctionRegistryMock struct {
 	CallStack function.Stack
 }
 
-func (f *FunctionRegistryMock) ForCallContext() provider.FunctionRegistry {
+func (f *FunctionRegistryMock) ForCallContext(stack function.Stack) provider.FunctionRegistry {
 	return &FunctionRegistryMock{
 		Functions: f.Functions,
-		CallStack: f.CallStack,
+		CallStack: stack,
 	}
 }
 

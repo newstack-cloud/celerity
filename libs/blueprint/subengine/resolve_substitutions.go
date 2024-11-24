@@ -3,32 +3,33 @@ package subengine
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/two-hundred/celerity/libs/blueprint/validation"
+	"github.com/two-hundred/celerity/libs/common/core"
 )
 
-// SubstitutionResolver is an interface that provides methods to resolve
-// substitutions in components of a blueprint specification.
+// SubstitutionResolver is an interface that provides functionality to resolve
+// substitutions in components of a blueprint.
 // Resolving involves taking a parsed representation of a substitution, resolving referenced
 // values and executing functions to produce a final output.
 type SubstitutionResolver interface {
 	// ResolveInResource resolves substitutions in a resource.
-	// The index parameter is used to select the index of the resource to resolve
-	// when the resource is a template (i.e. has an `each` property).
-	// For resource definitions that are not templates, the index should always be 0.
 	ResolveInResource(
 		ctx context.Context,
 		resourceName string,
 		resource *schema.Resource,
-		index int,
-	) (*provider.ResolvedResource, error)
+		resolveTargetInfo *ResolveResourceTargetInfo,
+	) (*ResolveInResourceResult, error)
 	// ResolveResourceEach resolves the substitution in the `each` property of a resource
 	// that is expected to resolve to a list of items that will be mapped to a planned and
 	// eventually deployed resource.
@@ -36,39 +37,140 @@ type SubstitutionResolver interface {
 		ctx context.Context,
 		resourceName string,
 		resource *schema.Resource,
-	) ([]*core.MappingNode, error)
+		resolveFor ResolveForStage,
+	) ([]*bpcore.MappingNode, error)
 	// ResolveInDataSource resolves substitutions in a data source.
 	ResolveInDataSource(
 		ctx context.Context,
 		dataSourceName string,
 		dataSource *schema.DataSource,
-	) (*provider.ResolvedDataSource, error)
+		resolveTargetInfo *ResolveDataSourceTargetInfo,
+	) (*ResolveInDataSourceResult, error)
 	// ResolveInMappingNode resolves substitutions in a mapping node, primarily used
 	// for the top-level blueprint metadata.
 	ResolveInMappingNode(
 		ctx context.Context,
 		currentElementName string,
-		mappingNode *core.MappingNode,
-	) (*core.MappingNode, error)
+		mappingNode *bpcore.MappingNode,
+		resolveTargetInfo *ResolveMappingNodeTargetInfo,
+	) (*ResolveInMappingNodeResult, error)
 	// ResolveInValue resolves substitutions in a value.
 	ResolveInValue(
 		ctx context.Context,
 		valueName string,
 		value *schema.Value,
-	) (*ResolvedValue, error)
+		resolveTargetInfo *ResolveValueTargetInfo,
+	) (*ResolveInValueResult, error)
 	// ResolveInInclude resolves substitutions in an include.
 	ResolveInInclude(
 		ctx context.Context,
 		includeName string,
 		include *schema.Include,
-	) (*ResolvedInclude, error)
+		resolveTargetInfo *ResolveIncludeTargetInfo,
+	) (*ResolveInIncludeResult, error)
 	// ResolveInExport resolves substitutions in an export.
 	ResolveInExport(
 		ctx context.Context,
 		exportName string,
 		export *schema.Export,
-	) (*ResolvedExport, error)
+		resolveTargetInfo *ResolveExportTargetInfo,
+	) (*ResolveInExportResult, error)
 }
+
+// ResolveTargetInfo contains information about the target of a substitution
+// that is being resolved in a resource.
+type ResolveResourceTargetInfo struct {
+	ResolveFor        ResolveForStage
+	PartiallyResolved *provider.ResolvedResource
+}
+
+// ResolveInResourceResult contains a resolved resource
+// and a list of full property paths that must be resolved during deployment.
+type ResolveInResourceResult struct {
+	ResolvedResource *provider.ResolvedResource
+	ResolveOnDeploy  []string
+}
+
+// ResolveDataSourceTargetInfo contains information about the target of a substitution
+// that is being resolved in a data source.
+type ResolveDataSourceTargetInfo struct {
+	ResolveFor        ResolveForStage
+	PartiallyResolved *provider.ResolvedDataSource
+}
+
+// ResolveInDataSourceResult contains a resolved data source
+// and a list of full property paths that must be resolved during deployment.
+type ResolveInDataSourceResult struct {
+	ResolvedDataSource *provider.ResolvedDataSource
+	ResolveOnDeploy    []string
+}
+
+// ResolveMappingNodeTargetInfo contains information about the target of a substitution
+// that is being resolved in a mapping node.
+type ResolveMappingNodeTargetInfo struct {
+	ResolveFor        ResolveForStage
+	PartiallyResolved *bpcore.MappingNode
+}
+
+// ResolveInMappingNodeResult contains a resolved mapping node
+// and a list of full property paths that must be resolved during deployment.
+type ResolveInMappingNodeResult struct {
+	ResolvedMappingNode *bpcore.MappingNode
+	ResolveOnDeploy     []string
+}
+
+// ResolveValueTargetInfo contains information about the target of a substitution
+// that is being resolved in a value.
+type ResolveValueTargetInfo struct {
+	ResolveFor        ResolveForStage
+	PartiallyResolved *ResolvedValue
+}
+
+// ResolveInValueResult contains a resolved value
+// and a list of full property paths that must be resolved during deployment.
+type ResolveInValueResult struct {
+	ResolvedValue   *ResolvedValue
+	ResolveOnDeploy []string
+}
+
+// ResolveIncludeTargetInfo contains information about the target of a substitution
+// that is being resolved in a child blueprint include.
+type ResolveIncludeTargetInfo struct {
+	ResolveFor        ResolveForStage
+	PartiallyResolved *ResolvedInclude
+}
+
+// ResolveInIncludeResult contains a resolved include
+// and a list of full property paths that must be resolved during deployment.
+type ResolveInIncludeResult struct {
+	ResolvedInclude *ResolvedInclude
+	ResolveOnDeploy []string
+}
+
+// ResolveExportTargetInfo contains information about the target of a substitution
+// that is being resolved in a blueprint export.
+type ResolveExportTargetInfo struct {
+	ResolveFor        ResolveForStage
+	PartiallyResolved *ResolvedExport
+}
+
+// ResolveInExportResult contains a resolved export
+// and a list of full property paths that must be resolved during deployment.
+type ResolveInExportResult struct {
+	ResolvedExport  *ResolvedExport
+	ResolveOnDeploy []string
+}
+
+// ResolveForStage is an enum that indicates the stage at which a substitution
+// is being resolved for.
+type ResolveForStage string
+
+const (
+	// ResolveForChangeStaging indicates that the substitution is being resolved for staging changes.
+	ResolveForChangeStaging ResolveForStage = "change_staging"
+	// ResolveForDeployment indicates that the substitution is being resolved for deploying a blueprint.
+	ResolveForDeployment ResolveForStage = "deployment"
+)
 
 type defaultSubstitutionResolver struct {
 	funcRegistry        provider.FunctionRegistry
@@ -76,12 +178,12 @@ type defaultSubstitutionResolver struct {
 	dataSourceRegistry  provider.DataSourceRegistry
 	stateContainer      state.Container
 	spec                speccore.BlueprintSpec
-	params              core.BlueprintParams
-	valueCache          *core.Cache[*ResolvedValue]
-	dataSourceCache     *core.Cache[*provider.ResolvedDataSource]
-	dataSourceDataCache *core.Cache[map[string]*core.MappingNode]
-	resourceCache       *core.Cache[[]*provider.ResolvedResource]
-	resourceStateCache  *core.Cache[*state.ResourceState]
+	params              bpcore.BlueprintParams
+	valueCache          *bpcore.Cache[*ResolvedValue]
+	dataSourceCache     *bpcore.Cache[*provider.ResolvedDataSource]
+	dataSourceDataCache *bpcore.Cache[map[string]*bpcore.MappingNode]
+	resourceCache       *bpcore.Cache[*provider.ResolvedResource]
+	resourceStateCache  *bpcore.Cache[*state.ResourceState]
 }
 
 // NewDefaultSubstitutionResolver creates a new default implementation
@@ -95,9 +197,9 @@ func NewDefaultSubstitutionResolver(
 	// are resolved before references to them are resolved.
 	// The substitution resolver can safely assume that ordering is taken care of
 	// so that a resolved resource is available when needed.
-	resourceCache *core.Cache[[]*provider.ResolvedResource],
+	resourceCache *bpcore.Cache[*provider.ResolvedResource],
 	spec speccore.BlueprintSpec,
-	params core.BlueprintParams,
+	params bpcore.BlueprintParams,
 ) SubstitutionResolver {
 	return &defaultSubstitutionResolver{
 		funcRegistry:        funcRegistry,
@@ -106,11 +208,11 @@ func NewDefaultSubstitutionResolver(
 		stateContainer:      stateContainer,
 		spec:                spec,
 		params:              params,
-		valueCache:          core.NewCache[*ResolvedValue](),
-		dataSourceCache:     core.NewCache[*provider.ResolvedDataSource](),
-		dataSourceDataCache: core.NewCache[map[string]*core.MappingNode](),
+		valueCache:          bpcore.NewCache[*ResolvedValue](),
+		dataSourceCache:     bpcore.NewCache[*provider.ResolvedDataSource](),
+		dataSourceDataCache: bpcore.NewCache[map[string]*bpcore.MappingNode](),
 		resourceCache:       resourceCache,
-		resourceStateCache:  core.NewCache[*state.ResourceState](),
+		resourceStateCache:  bpcore.NewCache[*state.ResourceState](),
 	}
 }
 
@@ -118,10 +220,20 @@ func (r *defaultSubstitutionResolver) ResolveResourceEach(
 	ctx context.Context,
 	resourceName string,
 	resource *schema.Resource,
-) ([]*core.MappingNode, error) {
-	elementName := fmt.Sprintf("resources.%s", resourceName)
-	// TODO: error if substitutions references at any level are resources or child blueprints
-	eachResolved, err := r.resolveSubstitutions(ctx, elementName, resource.Each)
+	resolveFor ResolveForStage,
+) ([]*bpcore.MappingNode, error) {
+	elementName := bpcore.ResourceElementID(resourceName)
+	eachResolved, err := r.resolveSubstitutions(
+		ctx,
+		resource.Each,
+		&resolveContext{
+			rootElementName:        elementName,
+			rootElementProperty:    "each",
+			currentElementName:     elementName,
+			currentElementProperty: "each",
+			disallowedElementTypes: []string{"resources", "children"},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -140,106 +252,1134 @@ func (r *defaultSubstitutionResolver) ResolveInResource(
 	ctx context.Context,
 	resourceName string,
 	resource *schema.Resource,
-	index int,
-) (*provider.ResolvedResource, error) {
-	elementName := fmt.Sprintf("resources.%s", resourceName)
-	resolvedDescription, err := r.resolveInDescription(ctx, elementName, resource.Description)
-	if err != nil {
-		return nil, err
+	resolveTargetInfo *ResolveResourceTargetInfo,
+) (*ResolveInResourceResult, error) {
+	resolveOnDeploy := []string{}
+
+	elementName := bpcore.ResourceElementID(resourceName)
+	resolvedResource, err := r.resolveInResource(ctx, resource, &resolveContext{
+		rootElementName:    elementName,
+		currentElementName: elementName,
+		resolveFor:         resolveTargetInfo.ResolveFor,
+		partiallyResolved:  resolveTargetInfo.PartiallyResolved,
+	})
+	finalErr := handleResolveError(err, &resolveOnDeploy)
+	if finalErr != nil {
+		return nil, finalErr
 	}
 
-	return &provider.ResolvedResource{
-		Type:         resource.Type,
-		Description:  resolvedDescription,
-		LinkSelector: resource.LinkSelector,
+	return &ResolveInResourceResult{
+		ResolvedResource: resolvedResource,
+		ResolveOnDeploy:  resolveOnDeploy,
 	}, nil
 }
 
-func (r *defaultSubstitutionResolver) resolveInDescription(
+func (r *defaultSubstitutionResolver) resolveInResource(
 	ctx context.Context,
-	elementName string,
+	resource *schema.Resource,
+	resolveCtx *resolveContext,
+) (*provider.ResolvedResource, error) {
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	resolvedDescription, err := r.resolveInResourceDescription(
+		ctx,
+		resource.Description,
+		resolveCtx,
+	)
+	finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedMetadata, err := r.resolveInResourceMetadata(ctx, resource.Metadata, resolveCtx)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedCondition, err := r.resolveInResourceCondition(
+		ctx,
+		resource.Condition,
+		resolveContextFromParent("condition", resolveCtx),
+	)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	partiallyResolvedSpec := getPartiallyResolvedResourceSpec(resolveCtx)
+	resolvedSpec, err := r.resolveInMappingNode(
+		ctx,
+		resource.Spec,
+		partiallyResolvedSpec,
+		resolveContextFromParent("spec", resolveCtx),
+		/* depth */ 0,
+	)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedResource := &provider.ResolvedResource{
+		Type:         resource.Type,
+		Description:  resolvedDescription,
+		Metadata:     resolvedMetadata,
+		Condition:    resolvedCondition,
+		Spec:         resolvedSpec,
+		LinkSelector: resource.LinkSelector,
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedResource, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedResource, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInResourceDescription(
+	ctx context.Context,
 	description *substitutions.StringOrSubstitutions,
-) (*core.MappingNode, error) {
-	if description == nil {
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	if resolveCtx.partiallyResolved != nil {
+		partiallyResolved, ok := resolveCtx.partiallyResolved.(*provider.ResolvedResource)
+		if ok &&
+			partiallyResolved != nil &&
+			partiallyResolved.Description != nil {
+			return partiallyResolved.Description, nil
+		}
+	}
+
+	return r.resolveSubstitutions(
+		ctx,
+		description,
+		resolveContextFromParent("description", resolveCtx),
+	)
+}
+
+func (r *defaultSubstitutionResolver) resolveInResourceCondition(
+	ctx context.Context,
+	condition *schema.Condition,
+	resolveCtx *resolveContext,
+) (*provider.ResolvedResourceCondition, error) {
+	if condition == nil {
 		return nil, nil
 	}
 
-	if isStringLiteral(description) {
-		return &core.MappingNode{
-			Literal: &core.ScalarValue{
-				StringValue: description.Values[0].StringValue,
-			},
+	// Resolving a condition is all or nothing, if any part of the condition
+	// cannot be resolved during change staging then the entire condition must
+	// be resolved on deploy.
+	if resolveCtx.partiallyResolved != nil {
+		partiallyResolved, ok := resolveCtx.partiallyResolved.(*provider.ResolvedResource)
+		if ok &&
+			partiallyResolved != nil &&
+			partiallyResolved.Condition != nil {
+			return partiallyResolved.Condition, nil
+		}
+	}
+
+	if condition.StringValue != nil {
+		resolved, err := r.resolveSubstitutions(
+			ctx,
+			condition.StringValue,
+			resolveCtx,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &provider.ResolvedResourceCondition{
+			StringValue: resolved,
 		}, nil
 	}
 
-	return r.resolveSubstitutions(ctx, elementName, description)
+	if condition.And != nil {
+		resolvedAnd, err := r.resolveInResourceConditions(
+			ctx,
+			condition.And,
+			resolveCtx,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &provider.ResolvedResourceCondition{
+			And: resolvedAnd,
+		}, nil
+	}
+
+	if condition.Or != nil {
+		resolvedOr, err := r.resolveInResourceConditions(
+			ctx,
+			condition.Or,
+			resolveCtx,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &provider.ResolvedResourceCondition{
+			Or: resolvedOr,
+		}, nil
+	}
+
+	if condition.Not != nil {
+		return r.resolveInResourceCondition(
+			ctx,
+			condition.Not,
+			resolveCtx,
+		)
+	}
+
+	return nil, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInResourceConditions(
+	ctx context.Context,
+	conditions []*schema.Condition,
+	resolveCtx *resolveContext,
+) ([]*provider.ResolvedResourceCondition, error) {
+	resolvedConditions := []*provider.ResolvedResourceCondition{}
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	for _, condition := range conditions {
+		resolvedCondition, err := r.resolveInResourceCondition(
+			ctx,
+			condition,
+			resolveCtx,
+		)
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+
+		resolvedConditions = append(resolvedConditions, resolvedCondition)
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedConditions, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedConditions, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInResourceMetadata(
+	ctx context.Context,
+	metadata *schema.Metadata,
+	resolveCtx *resolveContext,
+) (*provider.ResolvedResourceMetadata, error) {
+	if metadata == nil {
+		return nil, nil
+	}
+
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	resolvedDisplayName, err := r.resolveInResourceMetadataDisplayName(
+		ctx,
+		metadata.DisplayName,
+		resolveCtx,
+	)
+	finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedAnnotations, err := r.resolveInResourceMetadataAnnotations(
+		ctx,
+		metadata.Annotations,
+		resolveCtx,
+	)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedCustom, err := r.resolveInResourceCustomMetadata(
+		ctx,
+		metadata.Custom,
+		resolveCtx,
+	)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedResourceMetadata := &provider.ResolvedResourceMetadata{
+		DisplayName: resolvedDisplayName,
+		Annotations: resolvedAnnotations,
+		Labels:      metadata.Labels,
+		Custom:      resolvedCustom,
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedResourceMetadata, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedResourceMetadata, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInResourceMetadataDisplayName(
+	ctx context.Context,
+	displayName *substitutions.StringOrSubstitutions,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	if resolveCtx.partiallyResolved != nil {
+		partiallyResolved, ok := resolveCtx.partiallyResolved.(*provider.ResolvedResource)
+		if ok &&
+			partiallyResolved != nil &&
+			partiallyResolved.Metadata != nil &&
+			partiallyResolved.Metadata.DisplayName != nil {
+			return partiallyResolved.Metadata.DisplayName, nil
+		}
+	}
+
+	return r.resolveSubstitutions(
+		ctx,
+		displayName,
+		resolveContextFromParent("metadata.displayName", resolveCtx),
+	)
+}
+
+func (r *defaultSubstitutionResolver) resolveInResourceMetadataAnnotations(
+	ctx context.Context,
+	annotations *schema.StringOrSubstitutionsMap,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	if annotations == nil {
+		return nil, nil
+	}
+
+	annotationsToResolve := annotations
+	partiallyResolvedAnnotations := &bpcore.MappingNode{
+		Fields: map[string]*bpcore.MappingNode{},
+	}
+	if resolveCtx.partiallyResolved != nil {
+		partiallyResolved, ok := resolveCtx.partiallyResolved.(*provider.ResolvedResource)
+		if ok &&
+			partiallyResolved != nil &&
+			partiallyResolved.Metadata != nil &&
+			partiallyResolved.Metadata.Annotations != nil {
+
+			partiallyResolvedAnnotations = partiallyResolved.Metadata.Annotations
+			annotationsToResolve = filterOutResolvedAnnotations(
+				partiallyResolvedAnnotations,
+				annotations,
+			)
+		}
+	}
+
+	resolvedAnnotations, err := r.resolveInStringOrSubsMap(
+		ctx,
+		annotationsToResolve,
+		resolveContextFromParent("metadata.annotations", resolveCtx),
+	)
+	if err != nil {
+		// When some annotations can not be resolved at the current stage,
+		// we still want to return the annotations that were resolved.
+		return bpcore.MergeMaps(
+			partiallyResolvedAnnotations,
+			resolvedAnnotations,
+		), err
+	}
+
+	return bpcore.MergeMaps(
+		partiallyResolvedAnnotations,
+		resolvedAnnotations,
+	), err
+}
+
+func (r *defaultSubstitutionResolver) resolveInResourceCustomMetadata(
+	ctx context.Context,
+	custom *bpcore.MappingNode,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	return r.resolveInMappingNode(
+		ctx,
+		custom,
+		getPartiallyResolvedResourceCustomMetadata(resolveCtx),
+		resolveContextFromParent("metadata.custom", resolveCtx),
+		/* depth */ 0,
+	)
 }
 
 func (r *defaultSubstitutionResolver) ResolveInDataSource(
 	ctx context.Context,
 	dataSourceName string,
 	dataSource *schema.DataSource,
+	resolveTargetInfo *ResolveDataSourceTargetInfo,
+) (*ResolveInDataSourceResult, error) {
+	resolveOnDeploy := []string{}
+
+	elementName := bpcore.DataSourceElementID(dataSourceName)
+	resolvedDataSource, err := r.resolveInDataSource(ctx, dataSource, &resolveContext{
+		rootElementName:    elementName,
+		currentElementName: elementName,
+		resolveFor:         resolveTargetInfo.ResolveFor,
+		partiallyResolved:  resolveTargetInfo.PartiallyResolved,
+	})
+	finalErr := handleResolveError(err, &resolveOnDeploy)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	return &ResolveInDataSourceResult{
+		ResolvedDataSource: resolvedDataSource,
+		ResolveOnDeploy:    resolveOnDeploy,
+	}, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInDataSource(
+	ctx context.Context,
+	dataSource *schema.DataSource,
+	resolveCtx *resolveContext,
 ) (*provider.ResolvedDataSource, error) {
-	return nil, nil
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	resolvedDescription, err := r.resolveSubstitutions(
+		ctx,
+		dataSource.Description,
+		resolveContextFromParent("description", resolveCtx),
+	)
+	finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedMetadata, err := r.resolveInDataSourceMetadata(
+		ctx,
+		dataSource.DataSourceMetadata,
+		resolveCtx,
+	)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedDataSourceFilter, err := r.resolveInDataSourceFilter(
+		ctx,
+		dataSource.Filter,
+		resolveCtx,
+	)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedDataSourceExports, err := r.resolveInDataSourceExports(
+		ctx,
+		dataSource.Exports,
+		resolveCtx,
+	)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedDataSource := &provider.ResolvedDataSource{
+		Type:               dataSource.Type,
+		Description:        resolvedDescription,
+		DataSourceMetadata: resolvedMetadata,
+		Filter:             resolvedDataSourceFilter,
+		Exports:            resolvedDataSourceExports,
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedDataSource, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedDataSource, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInDataSourceMetadata(
+	ctx context.Context,
+	dataSourceMetadata *schema.DataSourceMetadata,
+	resolveCtx *resolveContext,
+) (*provider.ResolvedDataSourceMetadata, error) {
+	if dataSourceMetadata == nil {
+		return nil, nil
+	}
+
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	resolvedDisplayName, err := r.resolveSubstitutions(
+		ctx,
+		dataSourceMetadata.DisplayName,
+		resolveContextFromParent("metadata.displayName", resolveCtx),
+	)
+	finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedAnnotations, err := r.resolveInStringOrSubsMap(
+		ctx,
+		dataSourceMetadata.Annotations,
+		resolveContextFromParent("metadata.annotations", resolveCtx),
+	)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedCustom, err := r.resolveInMappingNode(
+		ctx,
+		dataSourceMetadata.Custom,
+		getPartiallyResolvedDataSourceCustomMetadata(resolveCtx),
+		resolveContextFromParent("metadata.custom", resolveCtx),
+		/* depth */ 0,
+	)
+	finalErr = handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedDataSourceMetadata := &provider.ResolvedDataSourceMetadata{
+		DisplayName: resolvedDisplayName,
+		Annotations: resolvedAnnotations,
+		Custom:      resolvedCustom,
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedDataSourceMetadata, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedDataSourceMetadata, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInDataSourceFilter(
+	ctx context.Context,
+	filter *schema.DataSourceFilter,
+	resolveCtx *resolveContext,
+) (*provider.ResolvedDataSourceFilter, error) {
+	if filter == nil {
+		return nil, nil
+	}
+
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	resolvedSearchValues, err := r.resolveStringOrSubstitutionsSlice(
+		ctx,
+		filter.Search.Values,
+		resolveContextFromParent("filter.search", resolveCtx),
+	)
+	finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	resolvedDataSourceMetadata := &provider.ResolvedDataSourceFilter{
+		Field:    filter.Field,
+		Operator: filter.Operator,
+		Search: &provider.ResolvedDataSourceFilterSearch{
+			Values: resolvedSearchValues,
+		},
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedDataSourceMetadata, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedDataSourceMetadata, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInDataSourceExports(
+	ctx context.Context,
+	exports *schema.DataSourceFieldExportMap,
+	resolveCtx *resolveContext,
+) (map[string]*provider.ResolvedDataSourceFieldExport, error) {
+	if exports == nil {
+		return nil, nil
+	}
+
+	resolvedExports := map[string]*provider.ResolvedDataSourceFieldExport{}
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	for exportName, export := range exports.Values {
+
+		resolvedDescription, err := r.resolveSubstitutions(
+			ctx,
+			export.Description,
+			resolveContextFromParent(
+				fmt.Sprintf("exports.%s.description", exportName),
+				resolveCtx,
+			),
+		)
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+
+		resolvedExports[exportName] = &provider.ResolvedDataSourceFieldExport{
+			Type:        export.Type,
+			AliasFor:    export.AliasFor,
+			Description: resolvedDescription,
+		}
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedExports, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedExports, nil
 }
 
 func (r *defaultSubstitutionResolver) ResolveInMappingNode(
 	ctx context.Context,
 	currentElementName string,
-	mappingNode *core.MappingNode,
-) (*core.MappingNode, error) {
-	return nil, nil
+	mappingNode *bpcore.MappingNode,
+	resolveTargetInfo *ResolveMappingNodeTargetInfo,
+) (*ResolveInMappingNodeResult, error) {
+	resolveOnDeploy := []string{}
+
+	resolved, err := r.resolveInMappingNode(
+		ctx,
+		mappingNode,
+		resolveTargetInfo.PartiallyResolved,
+		&resolveContext{
+			rootElementName:    currentElementName,
+			currentElementName: currentElementName,
+			resolveFor:         resolveTargetInfo.ResolveFor,
+			partiallyResolved:  resolveTargetInfo.PartiallyResolved,
+		},
+		/* depth */ 0,
+	)
+	finalErr := handleResolveError(err, &resolveOnDeploy)
+	if finalErr != nil {
+		return nil, finalErr
+	}
+
+	return &ResolveInMappingNodeResult{
+		ResolvedMappingNode: resolved,
+		ResolveOnDeploy:     resolveOnDeploy,
+	}, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInMappingNode(
+	ctx context.Context,
+	mappingNode *bpcore.MappingNode,
+	// A partially resolved mapping node is passed down to combine with the resolved
+	// mapping node.
+	// This differs from resolveContext.partiallyResolved which holds the full partially
+	// resolved element in a blueprint (e.g. a resource or data source).
+	partiallyResolved *bpcore.MappingNode,
+	resolveCtx *resolveContext,
+	depth int,
+) (*bpcore.MappingNode, error) {
+	// Depth counting starts at 0.
+	if mappingNode == nil || depth >= validation.MappingNodeMaxTraverseDepth {
+		return nil, nil
+	}
+
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	if mappingNode.Literal != nil {
+		return mappingNode, nil
+	}
+
+	var resolvedMappingNode *bpcore.MappingNode
+
+	if mappingNode.StringWithSubstitutions != nil {
+		if getStringWithSubstitutions(partiallyResolved) != nil {
+			return partiallyResolved, nil
+		}
+
+		resolvedSub, err := r.resolveSubstitutions(
+			ctx,
+			mappingNode.StringWithSubstitutions,
+			resolveCtx,
+		)
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+
+		resolvedMappingNode = resolvedSub
+	}
+
+	if mappingNode.Items != nil {
+		resolvedItems, err := r.resolveInMappingNodeSlice(
+			ctx,
+			mappingNode.Items,
+			getItems(partiallyResolved),
+			resolveCtx,
+			depth,
+		)
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+
+		resolvedMappingNode = &bpcore.MappingNode{
+			Items: resolvedItems,
+		}
+	}
+
+	if mappingNode.Fields != nil {
+		resolvedFields, err := r.resolveInMappingNodeFields(
+			ctx,
+			mappingNode.Fields,
+			getFields(partiallyResolved),
+			resolveCtx,
+			depth,
+		)
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+
+		resolvedMappingNode = &bpcore.MappingNode{
+			Fields: resolvedFields,
+		}
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedMappingNode, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedMappingNode, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInMappingNodeSlice(
+	ctx context.Context,
+	items []*bpcore.MappingNode,
+	partiallyResolvedItems []*bpcore.MappingNode,
+	resolveCtx *resolveContext,
+	depth int,
+) ([]*bpcore.MappingNode, error) {
+	resolvedItems := []*bpcore.MappingNode{}
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	for i, item := range items {
+		partiallyResolvedItem := getItem(partiallyResolvedItems, i)
+		propertyPath := fmt.Sprintf("%s[%d]", resolveCtx.currentElementProperty, i)
+		resolvedItem, err := r.resolveInMappingNode(
+			ctx,
+			item,
+			partiallyResolvedItem,
+			resolveContextFromParent(propertyPath, resolveCtx),
+			depth+1,
+		)
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+
+		resolvedItems = append(resolvedItems, resolvedItem)
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedItems, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedItems, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInMappingNodeFields(
+	ctx context.Context,
+	fields map[string]*bpcore.MappingNode,
+	partiallyResolvedFields map[string]*bpcore.MappingNode,
+	resolveCtx *resolveContext,
+	depth int,
+) (map[string]*bpcore.MappingNode, error) {
+	resolvedFields := map[string]*bpcore.MappingNode{}
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	for fieldName, field := range fields {
+		partiallyResolvedField := getField(partiallyResolvedFields, fieldName)
+		propertyPath := fmt.Sprintf("%s[\"%s\"]", resolveCtx.currentElementProperty, fieldName)
+		resolvedField, err := r.resolveInMappingNode(
+			ctx,
+			field,
+			partiallyResolvedField,
+			resolveContextFromParent(propertyPath, resolveCtx),
+			depth+1,
+		)
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+
+		resolvedFields[fieldName] = resolvedField
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedFields, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedFields, nil
 }
 
 func (r *defaultSubstitutionResolver) ResolveInValue(
 	ctx context.Context,
 	valueName string,
 	value *schema.Value,
+	resolveTargetInfo *ResolveValueTargetInfo,
+) (*ResolveInValueResult, error) {
+	resolveOnDeploy := []string{}
+
+	elementName := bpcore.ValueElementID(valueName)
+	resolvedValue, err := r.resolveInValue(ctx, value, &resolveContext{
+		rootElementName:    elementName,
+		currentElementName: elementName,
+		resolveFor:         resolveTargetInfo.ResolveFor,
+		partiallyResolved:  resolveTargetInfo.PartiallyResolved,
+	})
+	if err != nil {
+		finalErr := handleResolveError(err, &resolveOnDeploy)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	return &ResolveInValueResult{
+		ResolvedValue:   resolvedValue,
+		ResolveOnDeploy: resolveOnDeploy,
+	}, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInValue(
+	ctx context.Context,
+	value *schema.Value,
+	resolveCtx *resolveContext,
 ) (*ResolvedValue, error) {
-	return nil, nil
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	resolvedContent, err := r.resolveSubstitutions(
+		ctx,
+		value.Value,
+		resolveContextFromParent("value", resolveCtx),
+	)
+	if err != nil {
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	resolvedDescription, err := r.resolveSubstitutions(
+		ctx,
+		value.Description,
+		resolveContextFromParent("description", resolveCtx),
+	)
+	if err != nil {
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	resolvedValue := &ResolvedValue{
+		Type:        value.Type,
+		Value:       resolvedContent,
+		Description: resolvedDescription,
+		Secret:      value.Secret,
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedValue, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedValue, nil
 }
 
 func (r *defaultSubstitutionResolver) ResolveInInclude(
 	ctx context.Context,
 	includeName string,
 	include *schema.Include,
+	resolveTargetInfo *ResolveIncludeTargetInfo,
+) (*ResolveInIncludeResult, error) {
+	resolveOnDeploy := []string{}
+
+	elementName := bpcore.ChildElementID(includeName)
+	resolvedInclude, err := r.resolveInInclude(ctx, include, &resolveContext{
+		rootElementName:    elementName,
+		currentElementName: elementName,
+		resolveFor:         resolveTargetInfo.ResolveFor,
+		partiallyResolved:  resolveTargetInfo.PartiallyResolved,
+	})
+	if err != nil {
+		finalErr := handleResolveError(err, &resolveOnDeploy)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	return &ResolveInIncludeResult{
+		ResolvedInclude: resolvedInclude,
+		ResolveOnDeploy: resolveOnDeploy,
+	}, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInInclude(
+	ctx context.Context,
+	include *schema.Include,
+	resolveCtx *resolveContext,
 ) (*ResolvedInclude, error) {
-	return nil, nil
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	resolvedPath, err := r.resolveSubstitutions(
+		ctx,
+		include.Path,
+		resolveContextFromParent("path", resolveCtx),
+	)
+	if err != nil {
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	resolvedVars, err := r.resolveInMappingNode(
+		ctx,
+		include.Variables,
+		getPartiallyResolvedIncludeVariables(resolveCtx),
+		resolveContextFromParent("variables", resolveCtx),
+		/* depth */ 0,
+	)
+	if err != nil {
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	resolvedMetadata, err := r.resolveInMappingNode(
+		ctx,
+		include.Metadata,
+		getPartiallyResolvedIncludeMetadata(resolveCtx),
+		resolveContextFromParent("metadata", resolveCtx),
+		/* depth */ 0,
+	)
+	if err != nil {
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	resolvedDescription, err := r.resolveSubstitutions(
+		ctx,
+		include.Description,
+		resolveContextFromParent("description", resolveCtx),
+	)
+	if err != nil {
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	resolvedInclude := &ResolvedInclude{
+		Path:        resolvedPath,
+		Variables:   resolvedVars,
+		Metadata:    resolvedMetadata,
+		Description: resolvedDescription,
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedInclude, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedInclude, nil
 }
 
 func (r *defaultSubstitutionResolver) ResolveInExport(
 	ctx context.Context,
 	exportName string,
 	export *schema.Export,
+	resolveTargetInfo *ResolveExportTargetInfo,
+) (*ResolveInExportResult, error) {
+	resolveOnDeploy := []string{}
+
+	elementName := bpcore.ExportElementID(exportName)
+	resolvedExport, err := r.resolveInExport(ctx, export, &resolveContext{
+		rootElementName:    elementName,
+		currentElementName: elementName,
+		resolveFor:         resolveTargetInfo.ResolveFor,
+		partiallyResolved:  resolveTargetInfo.PartiallyResolved,
+	})
+	if err != nil {
+		finalErr := handleResolveError(err, &resolveOnDeploy)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	return &ResolveInExportResult{
+		ResolvedExport:  resolvedExport,
+		ResolveOnDeploy: resolveOnDeploy,
+	}, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInExport(
+	ctx context.Context,
+	export *schema.Export,
+	resolveCtx *resolveContext,
 ) (*ResolvedExport, error) {
-	return nil, nil
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	resolvedDescription, err := r.resolveSubstitutions(
+		ctx,
+		export.Description,
+		resolveContextFromParent("description", resolveCtx),
+	)
+	if err != nil {
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	resolvedExport := &ResolvedExport{
+		Type:        export.Type,
+		Field:       export.Field,
+		Description: resolvedDescription,
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedExport, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedExport, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInStringOrSubsMap(
+	ctx context.Context,
+	stringOrSubsMap *schema.StringOrSubstitutionsMap,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	resolvedMapping := map[string]*bpcore.MappingNode{}
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+	for key, value := range stringOrSubsMap.Values {
+		resolvedValue, err := r.resolveSubstitutions(
+			ctx,
+			value,
+			resolveCtx,
+		)
+		if err != nil {
+			finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+			if finalErr != nil {
+				return nil, finalErr
+			}
+		}
+
+		resolvedMapping[key] = resolvedValue
+	}
+
+	resolvedMappingNode := &bpcore.MappingNode{
+		Fields: resolvedMapping,
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedMappingNode, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedMappingNode, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveStringOrSubstitutionsSlice(
+	ctx context.Context,
+	stringOrSubsSlice []*substitutions.StringOrSubstitutions,
+	resolveCtx *resolveContext,
+) ([]*bpcore.MappingNode, error) {
+	resolvedSlice := []*bpcore.MappingNode{}
+
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	for _, stringOrSubs := range stringOrSubsSlice {
+		resolvedValue, err := r.resolveSubstitutions(
+			ctx,
+			stringOrSubs,
+			resolveCtx,
+		)
+		if err != nil {
+			finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+			if finalErr != nil {
+				return nil, finalErr
+			}
+		}
+
+		resolvedSlice = append(resolvedSlice, resolvedValue)
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedSlice, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedSlice, nil
 }
 
 func (r *defaultSubstitutionResolver) resolveSubstitutions(
 	ctx context.Context,
-	elementName string,
 	stringOrSubs *substitutions.StringOrSubstitutions,
-) (*core.MappingNode, error) {
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	if stringOrSubs == nil {
+		return nil, nil
+	}
 
 	isStringInterpolation := len(stringOrSubs.Values) > 1
 	if !isStringInterpolation {
-		// A scoped function registry with a call stack created for
-		// the substitution.
-		scopedFunctionRegistry := r.funcRegistry.ForCallContext()
+		// A set of dependencies needed to make function calls with a call stack
+		// scoped to the current ${..} substitution.
+		functionCallDeps := createFunctionCallDependencies(
+			r.funcRegistry,
+			r.params,
+			stringOrSubs.Values[0].SourceMeta,
+		)
 		return r.resolveSubstitution(
 			ctx,
-			elementName,
 			stringOrSubs.Values[0],
-			scopedFunctionRegistry,
+			functionCallDeps,
+			resolveCtx,
 		)
 	}
 
 	sb := &strings.Builder{}
 	for _, value := range stringOrSubs.Values {
-		// A scoped function registry with a call stack created for
-		// each individual substitution.
-		scopedFunctionRegistry := r.funcRegistry.ForCallContext()
-		resolvedValue, err := r.resolveSubstitution(ctx, elementName, value, scopedFunctionRegistry)
+		// A set of dependencies needed to make function calls with a call stack
+		// scoped to the current substitution.
+		functionCallDeps := createFunctionCallDependencies(
+			r.funcRegistry,
+			r.params,
+			value.SourceMeta,
+		)
+		resolvedValue, err := r.resolveSubstitution(
+			ctx,
+			value,
+			functionCallDeps,
+			resolveCtx,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -247,13 +1387,13 @@ func (r *defaultSubstitutionResolver) resolveSubstitutions(
 		if stringValue, err := resolvedValueToString(resolvedValue); err == nil {
 			sb.WriteString(stringValue)
 		} else {
-			return nil, errInvalidInterpolationSubType(elementName, resolvedValue)
+			return nil, errInvalidInterpolationSubType(resolveCtx.currentElementName, resolvedValue)
 		}
 	}
 
 	resolvedStr := sb.String()
-	return &core.MappingNode{
-		Literal: &core.ScalarValue{
+	return &bpcore.MappingNode{
+		Literal: &bpcore.ScalarValue{
 			StringValue: &resolvedStr,
 		},
 	}, nil
@@ -261,13 +1401,13 @@ func (r *defaultSubstitutionResolver) resolveSubstitutions(
 
 func (r *defaultSubstitutionResolver) resolveSubstitution(
 	ctx context.Context,
-	elementName string,
 	value *substitutions.StringOrSubstitution,
-	scopedFunctionRegistry provider.FunctionRegistry,
-) (*core.MappingNode, error) {
+	functionCallDeps *functionCallDependencies,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
 	if value.StringValue != nil {
-		return &core.MappingNode{
-			Literal: &core.ScalarValue{
+		return &bpcore.MappingNode{
+			Literal: &bpcore.ScalarValue{
 				StringValue: value.StringValue,
 			},
 		}, nil
@@ -276,89 +1416,146 @@ func (r *defaultSubstitutionResolver) resolveSubstitution(
 	if value.SubstitutionValue != nil {
 		return r.resolveSubstitutionValue(
 			ctx,
-			elementName,
 			value.SubstitutionValue,
-			scopedFunctionRegistry,
+			functionCallDeps,
+			resolveCtx,
 		)
 	}
 
-	return nil, errEmptySubstitutionValue(elementName)
+	return nil, errEmptySubstitutionValue(resolveCtx.currentElementName)
 }
 
 func (r *defaultSubstitutionResolver) resolveSubstitutionValue(
 	ctx context.Context,
-	elementName string,
 	substitutionValue *substitutions.Substitution,
-	scopedFunctionRegistry provider.FunctionRegistry,
-) (*core.MappingNode, error) {
-	if substitutionValue.StringValue != nil {
-		return &core.MappingNode{
-			Literal: &core.ScalarValue{
-				StringValue: substitutionValue.StringValue,
-			},
-		}, nil
-	}
+	functionCallDeps *functionCallDependencies,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
 
-	if substitutionValue.IntValue != nil {
-		intVal := int(*substitutionValue.IntValue)
-		return &core.MappingNode{
-			Literal: &core.ScalarValue{
-				IntValue: &intVal,
-			},
-		}, nil
-	}
-
-	if substitutionValue.FloatValue != nil {
-		return &core.MappingNode{
-			Literal: &core.ScalarValue{
-				FloatValue: substitutionValue.FloatValue,
-			},
-		}, nil
-	}
-
-	if substitutionValue.BoolValue != nil {
-		return &core.MappingNode{
-			Literal: &core.ScalarValue{
-				BoolValue: substitutionValue.BoolValue,
-			},
-		}, nil
+	resolvedLiteral := r.resolveLiteral(substitutionValue)
+	if resolvedLiteral != nil {
+		return resolvedLiteral, nil
 	}
 
 	if substitutionValue.Variable != nil {
-		return r.resolveVariable(elementName, substitutionValue.Variable)
+		return r.resolveVariable(resolveCtx.currentElementName, substitutionValue.Variable)
 	}
 
 	if substitutionValue.ValueReference != nil {
 		return r.resolveValue(
 			ctx,
-			elementName,
 			substitutionValue.ValueReference,
+			resolveCtx,
 		)
 	}
 
 	if substitutionValue.DataSourceProperty != nil {
 		return r.resolveDataSourceProperty(
 			ctx,
-			elementName,
 			substitutionValue.DataSourceProperty,
+			resolveCtx,
 		)
 	}
 
 	if substitutionValue.ResourceProperty != nil {
+		if slices.Contains(resolveCtx.disallowedElementTypes, "resources") {
+			return nil, errDisallowedElementType(
+				resolveCtx.rootElementName,
+				resolveCtx.rootElementProperty,
+				"resource",
+			)
+		}
+
 		return r.resolveResourceProperty(
 			ctx,
-			elementName,
 			substitutionValue.ResourceProperty,
+			resolveCtx,
 		)
 	}
 
-	return nil, errEmptySubstitutionValue(elementName)
+	if substitutionValue.Child != nil {
+		if slices.Contains(resolveCtx.disallowedElementTypes, "children") {
+			return nil, errDisallowedElementType(
+				resolveCtx.rootElementName,
+				resolveCtx.rootElementProperty,
+				"child",
+			)
+		}
+
+		return r.resolveChildReference(
+			ctx,
+			substitutionValue.Child,
+			resolveCtx,
+		)
+	}
+
+	if substitutionValue.Function != nil {
+		funcCallOutput, err := r.resolveFunctionCall(
+			ctx,
+			substitutionValue.Function,
+			functionCallDeps,
+			resolveCtx,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if funcCallOutput.value != nil {
+			return funcCallOutput.value, nil
+		}
+
+		return nil, errHigherOrderFunctionNotSupported(
+			resolveCtx.currentElementName,
+			string(substitutionValue.Function.FunctionName),
+		)
+	}
+
+	return nil, errEmptySubstitutionValue(resolveCtx.currentElementName)
+}
+
+func (r *defaultSubstitutionResolver) resolveLiteral(
+	substitutionValue *substitutions.Substitution,
+) *bpcore.MappingNode {
+	if substitutionValue.StringValue != nil {
+		return &bpcore.MappingNode{
+			Literal: &bpcore.ScalarValue{
+				StringValue: substitutionValue.StringValue,
+			},
+		}
+	}
+
+	if substitutionValue.IntValue != nil {
+		intVal := int(*substitutionValue.IntValue)
+		return &bpcore.MappingNode{
+			Literal: &bpcore.ScalarValue{
+				IntValue: &intVal,
+			},
+		}
+	}
+
+	if substitutionValue.FloatValue != nil {
+		return &bpcore.MappingNode{
+			Literal: &bpcore.ScalarValue{
+				FloatValue: substitutionValue.FloatValue,
+			},
+		}
+	}
+
+	if substitutionValue.BoolValue != nil {
+		return &bpcore.MappingNode{
+			Literal: &bpcore.ScalarValue{
+				BoolValue: substitutionValue.BoolValue,
+			},
+		}
+	}
+
+	return nil
 }
 
 func (r *defaultSubstitutionResolver) resolveVariable(
 	elementName string,
 	variable *substitutions.SubstitutionVariable,
-) (*core.MappingNode, error) {
+) (*bpcore.MappingNode, error) {
 
 	varValue := r.params.BlueprintVariable(variable.VariableName)
 	if varValue == nil {
@@ -368,61 +1565,80 @@ func (r *defaultSubstitutionResolver) resolveVariable(
 		}
 
 		if specVar.Default != nil {
-			return &core.MappingNode{
+			return &bpcore.MappingNode{
 				Literal: specVar.Default,
 			}, nil
 		}
 	}
 
-	return &core.MappingNode{
+	return &bpcore.MappingNode{
 		Literal: varValue,
 	}, nil
 }
 
 func (r *defaultSubstitutionResolver) resolveValue(
 	ctx context.Context,
-	elementName string,
 	value *substitutions.SubstitutionValueReference,
-) (*core.MappingNode, error) {
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
 	cached, hasValue := r.valueCache.Get(value.ValueName)
 	if hasValue {
 		return cached.Value, nil
 	}
 
-	computed, err := r.computeValue(ctx, elementName, value)
+	computed, err := r.computeValue(ctx, value, resolveCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	r.valueCache.Set(value.ValueName, computed)
+	r.valueCache.Set(value.ValueName, computed.ResolvedValue)
 
-	return computed.Value, nil
+	return computed.ResolvedValue.Value, nil
 }
 
 func (r *defaultSubstitutionResolver) computeValue(
 	ctx context.Context,
-	elementName string,
 	value *substitutions.SubstitutionValueReference,
-) (*ResolvedValue, error) {
+	resolveCtx *resolveContext,
+) (*ResolveInValueResult, error) {
+	resolveOnDeploy := []string{}
+
 	valueSpec := getValue(value.ValueName, r.spec.Schema())
 	if valueSpec == nil {
-		return nil, errMissingValue(elementName, value.ValueName)
+		return nil, errMissingValue(resolveCtx.currentElementName, value.ValueName)
 	}
 
-	return r.ResolveInValue(ctx, value.ValueName, valueSpec)
+	elementID := bpcore.ValueElementID(value.ValueName)
+	resolvedValue, err := r.resolveInValue(
+		ctx,
+		valueSpec,
+		resolveContextForCurrentElement(elementID, resolveCtx),
+	)
+	if err != nil {
+		finalErr := handleResolveError(err, &resolveOnDeploy)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	return &ResolveInValueResult{
+		ResolvedValue:   resolvedValue,
+		ResolveOnDeploy: resolveOnDeploy,
+	}, nil
+
 }
 
 func (r *defaultSubstitutionResolver) resolveDataSourceProperty(
 	ctx context.Context,
-	elementName string,
 	dataSourceProperty *substitutions.SubstitutionDataSourceProperty,
-) (*core.MappingNode, error) {
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
 	cached, hasValue := r.dataSourceDataCache.Get(dataSourceProperty.DataSourceName)
 	if hasValue {
-		return extractDataSourceProperty(elementName, cached, dataSourceProperty)
+		return extractDataSourceProperty(resolveCtx.currentElementName, cached, dataSourceProperty)
 	}
 
-	resolvedDataSource, err := r.resolveDataSource(ctx, elementName, dataSourceProperty)
+	resolvedDataSource, err := r.resolveDataSource(ctx, dataSourceProperty, resolveCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -441,14 +1657,14 @@ func (r *defaultSubstitutionResolver) resolveDataSourceProperty(
 
 	r.dataSourceDataCache.Set(dataSourceProperty.DataSourceName, dataOutput.Data)
 
-	return extractDataSourceProperty(elementName, cached, dataSourceProperty)
+	return extractDataSourceProperty(resolveCtx.currentElementName, cached, dataSourceProperty)
 }
 
 func extractDataSourceProperty(
 	parentElementName string,
-	data map[string]*core.MappingNode,
+	data map[string]*bpcore.MappingNode,
 	prop *substitutions.SubstitutionDataSourceProperty,
-) (*core.MappingNode, error) {
+) (*bpcore.MappingNode, error) {
 	if data == nil {
 		return nil, errEmptyDataSourceData(parentElementName, prop.DataSourceName)
 	}
@@ -481,189 +1697,373 @@ func extractDataSourceProperty(
 
 func (r *defaultSubstitutionResolver) resolveDataSource(
 	ctx context.Context,
-	elementName string,
 	prop *substitutions.SubstitutionDataSourceProperty,
+	resolveCtx *resolveContext,
 ) (*provider.ResolvedDataSource, error) {
 	cached, hasDataSource := r.dataSourceCache.Get(prop.DataSourceName)
 	if hasDataSource {
 		return cached, nil
 	}
 
-	computed, err := r.computeDataSource(ctx, elementName, prop)
+	computed, err := r.computeDataSource(ctx, prop, resolveCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	r.dataSourceCache.Set(prop.DataSourceName, computed)
+	r.dataSourceCache.Set(prop.DataSourceName, computed.ResolvedDataSource)
 
-	return computed, nil
+	return computed.ResolvedDataSource, nil
 }
 
 func (r *defaultSubstitutionResolver) computeDataSource(
 	ctx context.Context,
-	elementName string,
 	prop *substitutions.SubstitutionDataSourceProperty,
-) (*provider.ResolvedDataSource, error) {
+	resolveCtx *resolveContext,
+) (*ResolveInDataSourceResult, error) {
+	resolveOnDeploy := []string{}
+
 	dataSourceSpec := getDataSource(prop.DataSourceName, r.spec.Schema())
 	if dataSourceSpec == nil {
-		return nil, errMissingDataSource(elementName, prop.DataSourceName)
+		return nil, errMissingDataSource(resolveCtx.currentElementName, prop.DataSourceName)
 	}
 
-	return r.ResolveInDataSource(ctx, prop.DataSourceName, dataSourceSpec)
+	elementID := bpcore.DataSourceElementID(prop.DataSourceName)
+	resolvedDataSource, err := r.resolveInDataSource(
+		ctx,
+		dataSourceSpec,
+		resolveContextForCurrentElement(elementID, resolveCtx),
+	)
+	if err != nil {
+		finalErr := handleResolveError(err, &resolveOnDeploy)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	return &ResolveInDataSourceResult{
+		ResolvedDataSource: resolvedDataSource,
+		ResolveOnDeploy:    resolveOnDeploy,
+	}, nil
 }
 
 func (r *defaultSubstitutionResolver) resolveResourceProperty(
 	ctx context.Context,
-	elementName string,
 	resourceProperty *substitutions.SubstitutionResourceProperty,
-) (*core.MappingNode, error) {
-	if len(resourceProperty.Path) > 1 && resourceProperty.Path[0].FieldName == "spec" {
-		return r.resolveResourceSpecProperty(ctx, elementName, resourceProperty)
-	}
-
-	// if len(resourceProperty.Path) > 1 && resourceProperty.Path[0].FieldName == "metadata" {
-	// 	return r.resolveResourceMetadataProperty(ctx, elementName, resourceProperty)
-	// }
-
-	// if len(resourceProperty.Path) == 0 {
-	// 	return r.resolveResourceID(ctx, elementName, resourceProperty)
-	// }
-
-	renderedPath, err := substitutions.SubResourcePropertyToString(resourceProperty)
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	path, err := substitutions.PropertyPathToString(resourceProperty.Path)
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, errInvalidResourcePropertyPath(elementName, renderedPath)
+	if len(resourceProperty.Path) == 0 ||
+		(len(resourceProperty.Path) > 1 && resourceProperty.Path[0].FieldName == "spec") {
+
+		return r.resolveResourceSpecProperty(
+			ctx,
+			resourceProperty,
+			resolveContextFromParent(path, resolveCtx),
+		)
+	}
+
+	if len(resourceProperty.Path) > 1 && resourceProperty.Path[0].FieldName == "metadata" {
+		return r.resolveResourceMetadataProperty(
+			resourceProperty,
+			resolveContextFromParent(path, resolveCtx),
+		)
+	}
+
+	return nil, errInvalidResourcePropertyPath(resolveCtx.currentElementName, resourceProperty)
 }
 
 func (r *defaultSubstitutionResolver) resolveResourceSpecProperty(
 	ctx context.Context,
-	elementName string,
 	prop *substitutions.SubstitutionResourceProperty,
-) (*core.MappingNode, error) {
-	resources, hasResource := r.resourceCache.Get(prop.ResourceName)
-	if !hasResource || len(resources) == 0 {
-		return nil, errResourceNotResolved(elementName, prop.ResourceName)
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+
+	blueprintResource := r.spec.ResourceSchema(prop.ResourceName)
+	if blueprintResource == nil {
+		return nil, errReferencedResourceMissing(resolveCtx.currentElementName, prop.ResourceName)
 	}
 
-	current, err := selectResourceForProperty(elementName, prop, resources)
+	resourceType := string(blueprintResource.Type.Value)
+	output, err := r.resourceRegistry.GetSpecDefinition(
+		ctx,
+		resourceType,
+		&provider.ResourceGetSpecDefinitionInput{
+			Params: r.params,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	pathExists := true
-	i := 1
-	for pathExists && current != nil && i < len(prop.Path) {
-		pathItem := prop.Path[i]
-		if pathItem.FieldName != "" && current.Fields != nil {
-			current = current.Fields[pathItem.FieldName]
-		} else if pathItem.ArrayIndex != nil &&
-			len(current.Items) > int(*pathItem.ArrayIndex) {
-			current = current.Items[*pathItem.ArrayIndex]
-		} else {
-			pathExists = false
-		}
-
-		i += 1
+	if output.SpecDefinition == nil || output.SpecDefinition.Schema == nil {
+		return nil, errMissingResourceSpecDefinition(
+			resolveCtx.currentElementName,
+			prop.ResourceName,
+			resourceType,
+		)
 	}
 
-	if !pathExists || current == nil {
-		renderedPath, err := substitutions.SubResourcePropertyToString(prop)
+	definition, err := getResourceSpecPropertyDefinition(
+		output.SpecDefinition,
+		prop,
+		resourceType,
+		resolveCtx,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if definition.Computed && resolveCtx.resolveFor == ResolveForChangeStaging {
+		return nil, errMustResolveOnDeploy(
+			resolveCtx.currentElementName,
+			resolveCtx.currentElementProperty,
+		)
+	}
+
+	// During change staging, the resolved value will contain all user-provided
+	// values that can be resolved without requiring the resource to be deployed.
+	resourceName := getFinalResourceName(prop)
+	resource, hasResource := r.resourceCache.Get(resourceName)
+	if !hasResource {
+		return nil, errResourceNotResolved(resolveCtx.currentElementName, prop.ResourceName)
+	}
+
+	resolved, err := getResourceSpecPropertyValue(resource, prop, resolveCtx)
+	runErr, isRunErr := err.(*errors.RunError)
+	if err != nil && isRunErr &&
+		runErr.ReasonCode == ErrorReasonCodeMissingResourceSpecProperty &&
+		resolveCtx.resolveFor == ResolveForDeployment {
+		return r.resolveResourceSpecPropertyFromState(ctx, prop, resolveCtx)
+	} else if err != nil {
+		return nil, err
+	}
+
+	return resolved, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveResourceSpecPropertyFromState(
+	ctx context.Context,
+	prop *substitutions.SubstitutionResourceProperty,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	resourceName := getFinalResourceName(prop)
+	resourceState, hasResourceState := r.resourceStateCache.Get(resourceName)
+	if !hasResourceState {
+		instanceID, err := bpcore.BlueprintInstanceIDFromContext(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		return nil, errInvalidResourcePropertyPath(elementName, renderedPath)
-	}
-
-	return current, nil
-}
-
-func selectResourceForProperty(
-	parentElementName string,
-	prop *substitutions.SubstitutionResourceProperty,
-	resources []*provider.ResolvedResource,
-) (*core.MappingNode, error) {
-	current := resources[0].Spec
-	if prop.ResourceEachTemplateIndex != nil {
-		if len(resources) <= int(*prop.ResourceEachTemplateIndex) {
-			return nil, errResourceEachIndexOutOfBounds(
-				parentElementName,
-				prop.ResourceName,
-				int(*prop.ResourceEachTemplateIndex),
-			)
+		freshResourceState, err := r.stateContainer.GetResourceByName(ctx, instanceID, resourceName)
+		if err != nil {
+			return nil, err
 		}
 
-		current = resources[*prop.ResourceEachTemplateIndex].Spec
+		r.resourceStateCache.Set(resourceName, &freshResourceState)
+		resourceState = &freshResourceState
 	}
 
-	return current, nil
+	return getResourceSpecPropertyFromState(
+		resourceState,
+		prop,
+		resolveCtx,
+	)
 }
 
-func getVariable(
-	variableName string,
-	schema *schema.Blueprint,
-) *schema.Variable {
-	if schema.Variables == nil {
-		return nil
+func (r *defaultSubstitutionResolver) resolveResourceMetadataProperty(
+	prop *substitutions.SubstitutionResourceProperty,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+
+	blueprintResource := r.spec.ResourceSchema(prop.ResourceName)
+	if blueprintResource == nil {
+		return nil, errReferencedResourceMissing(resolveCtx.currentElementName, prop.ResourceName)
 	}
 
-	return schema.Variables.Values[variableName]
+	// During change staging, the resolved value will contain all user-provided
+	// values that can be resolved without requiring the resource to be deployed.
+	resourceName := getFinalResourceName(prop)
+	resource, hasResource := r.resourceCache.Get(resourceName)
+	if !hasResource {
+		return nil, errResourceNotResolved(resolveCtx.currentElementName, prop.ResourceName)
+	}
+
+	resolved, err := getResourceMetadataPropertyValue(resource, prop, resolveCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	return resolved, nil
 }
 
-func getValue(
-	valueName string,
-	schema *schema.Blueprint,
-) *schema.Value {
-	if schema.Values == nil {
-		return nil
+func (r *defaultSubstitutionResolver) resolveChildReference(
+	ctx context.Context,
+	childReference *substitutions.SubstitutionChild,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+
+	if resolveCtx.resolveFor == ResolveForChangeStaging {
+		return nil, errMustResolveOnDeploy(
+			resolveCtx.currentElementName,
+			resolveCtx.currentElementProperty,
+		)
 	}
 
-	return schema.Values.Values[valueName]
+	if len(childReference.Path) == 0 {
+		return nil, errEmptyChildPath(resolveCtx.currentElementName, childReference.ChildName)
+	}
+
+	instanceID, err := bpcore.BlueprintInstanceIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	childState, err := r.stateContainer.GetChild(ctx, instanceID, childReference.ChildName)
+	if err != nil {
+		return nil, err
+	}
+
+	exportState := getChildExport(childReference.ChildName, &childState)
+	if exportState == nil {
+		return nil, errMissingChildExport(
+			resolveCtx.currentElementName,
+			childReference.ChildName,
+			childReference,
+		)
+	}
+
+	return getChildExportProperty(exportState, childReference, resolveCtx)
 }
 
-func getDataSource(
-	valueName string,
-	schema *schema.Blueprint,
-) *schema.DataSource {
-	if schema.DataSources == nil {
-		return nil
+func (r *defaultSubstitutionResolver) resolveFunctionCall(
+	ctx context.Context,
+	function *substitutions.SubstitutionFunctionExpr,
+	functionCallDeps *functionCallDependencies,
+	resolveCtx *resolveContext,
+) (*resolvedFunctionCallValue, error) {
+
+	hasFunction, err := functionCallDeps.scopedRegistry.HasFunction(
+		ctx,
+		string(function.FunctionName),
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	return schema.DataSources.Values[valueName]
+	if !hasFunction {
+		return nil, errMissingFunction(resolveCtx.currentElementName, string(function.FunctionName))
+	}
+
+	// Link functions can only be resolved during deployment
+	// as referenced resources need to be have been deployed
+	// to be able to resolve the link.
+	// errMustResolveOnDeploy should be handled at a per-substitution level
+	// to be collected in a list of elements that need to be resolved
+	// during deployment.
+	if function.FunctionName == substitutions.SubstitutionFunctionLink &&
+		resolveCtx.resolveFor == ResolveForChangeStaging {
+		return nil, errMustResolveOnDeploy(
+			resolveCtx.currentElementName,
+			resolveCtx.currentElementProperty,
+		)
+	}
+
+	resolvedArgs := []*resolvedFunctionCallValue{}
+	for index, arg := range function.Arguments {
+		if arg.Value != nil {
+			resolvedArg, err := r.resolveFunctionCallArg(
+				ctx,
+				arg,
+				functionCallDeps,
+				resolveCtx,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			resolvedArgs = append(resolvedArgs, resolvedArg)
+		} else {
+			return nil, createEmptyArgError(
+				resolveCtx.currentElementName,
+				string(function.FunctionName),
+				arg,
+				index,
+			)
+		}
+	}
+
+	args := functionCallDeps.callCtx.NewCallArgs(
+		core.Map(resolvedArgs, transformValueForFunctionCall)...,
+	)
+	output, err := functionCallDeps.scopedRegistry.Call(
+		ctx,
+		string(function.FunctionName),
+		&provider.FunctionCallInput{
+			Arguments:   args,
+			CallContext: functionCallDeps.callCtx,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if output.ResponseData == nil && output.FunctionInfo.FunctionName == "" {
+		return nil, errEmptyFunctionOutput(
+			resolveCtx.currentElementName,
+			string(function.FunctionName),
+		)
+	}
+
+	if output.ResponseData != nil {
+		return &resolvedFunctionCallValue{
+			value: GoValueToMappingNode(output.ResponseData),
+		}, nil
+	}
+
+	return &resolvedFunctionCallValue{
+		function: output.FunctionInfo,
+	}, nil
 }
 
-func isStringLiteral(s *substitutions.StringOrSubstitutions) bool {
-	return len(s.Values) == 1 && s.Values[0].StringValue != nil
-}
+func (r *defaultSubstitutionResolver) resolveFunctionCallArg(
+	ctx context.Context,
+	arg *substitutions.SubstitutionFunctionArg,
+	functionCallDeps *functionCallDependencies,
+	resolveCtx *resolveContext,
+) (*resolvedFunctionCallValue, error) {
+	// Function calls have to be treated differently from other substitutions,
+	// a function call can return a value or a partially applied function,
+	// to keep the surface area of accounting for different types of outputs
+	// as small as possible, this logic is kept within function call resolution.
+	if arg.Value.Function != nil {
+		funcOutput, err := r.resolveFunctionCall(
+			ctx,
+			arg.Value.Function,
+			functionCallDeps,
+			resolveCtx,
+		)
+		if err != nil {
+			return nil, err
+		}
 
-func resolvedValueToString(
-	value *core.MappingNode,
-) (string, error) {
-	if value.Literal == nil {
-		return "", fmt.Errorf("only literal values can be converted to a string")
+		return funcOutput, nil
 	}
 
-	if value.Literal.StringValue != nil {
-		return *value.Literal.StringValue, nil
+	resolvedArg, err := r.resolveSubstitutionValue(
+		ctx,
+		arg.Value,
+		functionCallDeps,
+		resolveCtx,
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	if value.Literal.IntValue != nil {
-		return fmt.Sprintf("%d", *value.Literal.IntValue), nil
-	}
-
-	if value.Literal.FloatValue != nil {
-		return fmt.Sprintf("%f", *value.Literal.FloatValue), nil
-	}
-
-	if value.Literal.BoolValue != nil {
-		return fmt.Sprintf("%t", *value.Literal.BoolValue), nil
-	}
-
-	return "", fmt.Errorf("expected a scalar string, int, float or bool value")
-}
-
-func mappingNodeIsArray(node *core.MappingNode) bool {
-	return node.Items != nil
+	return &resolvedFunctionCallValue{
+		value: resolvedArg,
+	}, nil
 }

@@ -12,14 +12,21 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
+const (
+	resourceNotFoundText = "resource not found"
+	instanceNotFoundText = "instance not found"
+)
+
 type MemoryStateContainer struct {
-	instances map[string]*state.InstanceState
-	mu        sync.RWMutex
+	instances     map[string]*state.InstanceState
+	resourceDrift map[string]map[string]*state.ResourceState
+	mu            sync.RWMutex
 }
 
 func NewMemoryStateContainer() state.Container {
 	return &MemoryStateContainer{
-		instances: make(map[string]*state.InstanceState),
+		instances:     make(map[string]*state.InstanceState),
+		resourceDrift: make(map[string]map[string]*state.ResourceState),
 	}
 }
 
@@ -31,7 +38,7 @@ func (c *MemoryStateContainer) GetInstance(ctx context.Context, instanceID strin
 		return *instance, nil
 	}
 
-	return state.InstanceState{}, errors.New("instance not found")
+	return state.InstanceState{}, errors.New(instanceNotFoundText)
 }
 
 func (c *MemoryStateContainer) SaveInstance(
@@ -52,7 +59,7 @@ func (c *MemoryStateContainer) RemoveInstance(ctx context.Context, instanceID st
 
 	instance, ok := c.instances[instanceID]
 	if !ok {
-		return state.InstanceState{}, errors.New("instance not found")
+		return state.InstanceState{}, errors.New(instanceNotFoundText)
 	}
 
 	delete(c.instances, instanceID)
@@ -74,6 +81,26 @@ func (c *MemoryStateContainer) GetResource(ctx context.Context, instanceID strin
 	return state.ResourceState{}, nil
 }
 
+func (c *MemoryStateContainer) GetResourceByName(
+	ctx context.Context,
+	instanceID string,
+	resourceName string,
+) (state.ResourceState, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if instance, ok := c.instances[instanceID]; ok {
+		if instance != nil {
+			resourceID, ok := instance.ResourceIDs[resourceName]
+			if ok {
+				return *instance.Resources[resourceID], nil
+			}
+		}
+	}
+
+	return state.ResourceState{}, nil
+}
+
 func (c *MemoryStateContainer) SaveResource(
 	ctx context.Context,
 	instanceID string,
@@ -86,16 +113,9 @@ func (c *MemoryStateContainer) SaveResource(
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
 			instance.Resources[resourceState.ResourceID] = &resourceState
-			resourceIDList, ok := instance.ResourceIDs[resourceState.ResourceName]
-			if !ok {
-				instance.ResourceIDs[resourceState.ResourceName] = []string{
-					resourceState.ResourceID,
-				}
-			} else {
-				instance.ResourceIDs[resourceState.ResourceName] = append(resourceIDList, resourceState.ResourceID)
-			}
+			instance.ResourceIDs[resourceState.ResourceName] = resourceState.ResourceID
 		} else {
-			return errors.New("instance not found")
+			return errors.New(instanceNotFoundText)
 		}
 	}
 
@@ -120,7 +140,93 @@ func (c *MemoryStateContainer) RemoveResource(
 		}
 	}
 
-	return state.ResourceState{}, errors.New("resource not found")
+	return state.ResourceState{}, errors.New(resourceNotFoundText)
+}
+
+func (c *MemoryStateContainer) GetResourceDrift(ctx context.Context, instanceID string, resourceID string) (state.ResourceState, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
+		if driftEntries != nil {
+			if driftState, ok := driftEntries[resourceID]; ok {
+				return *driftState, nil
+			}
+		}
+	}
+
+	return state.ResourceState{}, nil
+}
+
+func (c *MemoryStateContainer) SaveResourceDrift(
+	ctx context.Context,
+	instanceID string,
+	driftState state.ResourceState,
+) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if instance, ok := c.instances[instanceID]; ok {
+		if instance != nil {
+			resource, ok := instance.Resources[driftState.ResourceID]
+			if ok {
+				resource.Drifted = true
+			} else {
+				return errors.New(resourceNotFoundText)
+			}
+		} else {
+			return errors.New(instanceNotFoundText)
+		}
+	} else {
+		return errors.New(instanceNotFoundText)
+	}
+
+	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
+		driftEntries[driftState.ResourceID] = &driftState
+	} else {
+		c.resourceDrift[instanceID] = map[string]*state.ResourceState{
+			driftState.ResourceID: &driftState,
+		}
+	}
+
+	return nil
+}
+
+func (c *MemoryStateContainer) RemoveResourceDrift(
+	ctx context.Context,
+	instanceID string,
+	resourceID string,
+) (state.ResourceState, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if instance, ok := c.instances[instanceID]; ok {
+		if instance != nil {
+			resource, ok := instance.Resources[resourceID]
+			if ok {
+				resource.Drifted = false
+				resource.LastDriftDetectedTimestamp = nil
+			} else {
+				return state.ResourceState{}, errors.New(resourceNotFoundText)
+			}
+		} else {
+			return state.ResourceState{}, errors.New(instanceNotFoundText)
+		}
+	} else {
+		return state.ResourceState{}, errors.New(instanceNotFoundText)
+	}
+
+	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
+		if driftEntries != nil {
+			driftState, ok := driftEntries[resourceID]
+			if ok {
+				delete(driftEntries, resourceID)
+				return *driftState, nil
+			}
+		}
+	}
+
+	return state.ResourceState{}, errors.New(resourceNotFoundText)
 }
 
 func (c *MemoryStateContainer) GetLink(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
@@ -146,7 +252,7 @@ func (c *MemoryStateContainer) SaveLink(ctx context.Context, instanceID string, 
 		if instance != nil {
 			instance.Links[linkState.LinkID] = &linkState
 		} else {
-			return errors.New("instance not found")
+			return errors.New(instanceNotFoundText)
 		}
 	}
 
@@ -180,7 +286,7 @@ func (c *MemoryStateContainer) GetMetadata(ctx context.Context, instanceID strin
 		}
 	}
 
-	return nil, errors.New("instance not found")
+	return nil, errors.New(instanceNotFoundText)
 }
 
 func (c *MemoryStateContainer) SaveMetadata(
@@ -195,7 +301,7 @@ func (c *MemoryStateContainer) SaveMetadata(
 		if instance != nil {
 			instance.Metadata = metadata
 		} else {
-			return errors.New("instance not found")
+			return errors.New(instanceNotFoundText)
 		}
 	}
 
@@ -214,7 +320,7 @@ func (c *MemoryStateContainer) RemoveMetadata(ctx context.Context, instanceID st
 		}
 	}
 
-	return nil, errors.New("instance not found")
+	return nil, errors.New(instanceNotFoundText)
 }
 
 func (c *MemoryStateContainer) GetExports(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
@@ -227,7 +333,7 @@ func (c *MemoryStateContainer) GetExports(ctx context.Context, instanceID string
 		}
 	}
 
-	return nil, errors.New("instance not found")
+	return nil, errors.New(instanceNotFoundText)
 }
 
 func (c *MemoryStateContainer) GetExport(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
@@ -257,7 +363,7 @@ func (c *MemoryStateContainer) SaveExports(
 		if instance != nil {
 			instance.Exports = exports
 		} else {
-			return errors.New("instance not found")
+			return errors.New(instanceNotFoundText)
 		}
 	}
 
@@ -277,7 +383,7 @@ func (c *MemoryStateContainer) SaveExport(
 		if instance != nil {
 			instance.Exports[exportName] = export
 		} else {
-			return errors.New("instance not found")
+			return errors.New(instanceNotFoundText)
 		}
 	}
 
@@ -296,7 +402,7 @@ func (c *MemoryStateContainer) RemoveExports(ctx context.Context, instanceID str
 		}
 	}
 
-	return nil, errors.New("instance not found")
+	return nil, errors.New(instanceNotFoundText)
 }
 
 func (c *MemoryStateContainer) RemoveExport(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
@@ -344,7 +450,7 @@ func (c *MemoryStateContainer) SaveChild(
 		if instance != nil {
 			instance.ChildBlueprints[childName] = &childState
 		} else {
-			return errors.New("instance not found")
+			return errors.New(instanceNotFoundText)
 		}
 	}
 

@@ -60,7 +60,7 @@ type FunctionCallArguments interface {
 // FunctionCallContext provides useful context for functions
 // that allow access to "global" blueprint params and the ability
 // to call other functions loaded into the provider.
-// Functions should not be able to access directly access state,
+// Functions should not be able to directly access state,
 // values from state should be resolved before calling a function.
 type FunctionCallContext interface {
 	// Registry retrieves the function registry that can be used to

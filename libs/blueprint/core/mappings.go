@@ -232,3 +232,19 @@ func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {
 	}
 	return nil
 }
+
+// MergeMaps merges multiple mapping nodes that represent a map of fields
+// to values into a single mapping node.
+func MergeMaps(nodes ...*MappingNode) *MappingNode {
+	merged := make(map[string]*MappingNode)
+	for _, node := range nodes {
+		if node.Fields != nil {
+			for k, v := range node.Fields {
+				merged[k] = v
+			}
+		}
+	}
+	return &MappingNode{
+		Fields: merged,
+	}
+}

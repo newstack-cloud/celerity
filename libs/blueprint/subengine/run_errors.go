@@ -5,6 +5,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 )
 
 const (
@@ -82,6 +83,92 @@ const (
 	// the `each` property of a resource template yielding a value
 	// that is not an array.
 	ErrorReasonCodeResourceEachInvalidType errors.ErrorReasonCode = "resource_each_invalid_type"
+	// ErrorReasonCodeMissingFunction
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a missing function in the registry.
+	ErrorReasonCodeMissingFunction errors.ErrorReasonCode = "missing_function"
+	// ErrorReasonCodeEmptyPositionalFunctionArgument
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// an empty value being provided for a positional argument
+	// in a function call.
+	ErrorReasonCodeEmptyPositionalFunctionArgument errors.ErrorReasonCode = "empty_positional_function_argument"
+	// ErrorReasonCodeEmptyNamedFunctionArgument
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// an empty value being provided for a named argument
+	// in a function call.
+	ErrorReasonCodeEmptyNamedFunctionArgument errors.ErrorReasonCode = "empty_named_function_argument"
+	// ErrorReasonCodeEmptyFunctionOutput
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a function call returning an empty output.
+	ErrorReasonCodeEmptyFunctionOutput errors.ErrorReasonCode = "empty_function_output"
+	// ErrorReasonCodeHigherOrderFunctionNotSupported
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a higher order function being used in a context where
+	// it is not supported.
+	ErrorReasonCodeHigherOrderFunctionNotSupported errors.ErrorReasonCode = "higher_order_function_not_supported"
+	// ErrorReasonCodeResourceMissing
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a referenced resource not being present in the blueprint.
+	ErrorReasonCodeResourceMissing errors.ErrorReasonCode = "resource_missing"
+	// ErrorReasonCodeResourceSpecDefinitionMissing
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a missing spec definition for a resource.
+	ErrorReasonCodeResourceSpecDefinitionMissing errors.ErrorReasonCode = "resource_spec_definition_missing"
+	// ErrorReasonCodeInvalidResourceSpecDefinition
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// an invalid spec definition for a resource.
+	ErrorReasonCodeInvalidResourceSpecDefinition errors.ErrorReasonCode = "invalid_resource_spec_definition"
+	// ErrorReasonCodeInvalidResourceSpecProperty
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// an unsupported property being referenced for a resource.
+	ErrorReasonCodeInvalidResourceSpecProperty errors.ErrorReasonCode = "invalid_resource_spec_property"
+	// ErrorReasonCodeMissingResourceSpecProperty
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a missing property being referenced for a resource.
+	ErrorReasonCodeMissingResourceSpecProperty errors.ErrorReasonCode = "missing_resource_spec_property"
+	// ErrorReasonCodeInvalidResourceMetadataProperty
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// an unsupported property being referenced for the metadata
+	// of a resource.
+	ErrorReasonCodeInvalidResourceMetadataProperty errors.ErrorReasonCode = "invalid_resource_metadata_property"
+	// ErrorReasonCodeMissingResourceMetadataProperty
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a missing property being referenced for the metadata
+	// of a resource.
+	ErrorReasonCodeMissingResourceMetadataProperty errors.ErrorReasonCode = "missing_resource_metadata_property"
+	// ErrorReasonCodeInvalidResourceMetadataNotSet
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a metadata property being referenced for a resource
+	// that does not have any metadata set.
+	ErrorReasonCodeInvalidResourceMetadataNotSet errors.ErrorReasonCode = "invalid_resource_metadata_not_set"
+	// ErrorReasonCodeEmptyChildPath
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// an empty child export path being provided for a child reference.
+	ErrorReasonCodeEmptyChildPath errors.ErrorReasonCode = "empty_child_path"
+	// ErrorReasonCodeMissingChildExport
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a missing export in a child reference.
+	ErrorReasonCodeMissingChildExport errors.ErrorReasonCode = "missing_child_export"
+	// ErrorReasonCodeMissingChildExportProperty
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a missing property in the export data for a child reference.
+	ErrorReasonCodeMissingChildExportProperty errors.ErrorReasonCode = "missing_child_export_property"
 )
 
 func errInvalidInterpolationSubType(elementName string, resolvedValue *core.MappingNode) error {
@@ -148,13 +235,6 @@ func errDataSourcePropArrayIndexOutOfBounds(elementName string, dataSourceName s
 	}
 }
 
-func errInvalidResourcePropertyPath(elementName string, path string) error {
-	return &errors.RunError{
-		ReasonCode: ErrorReasonCodeInvalidResolvedSubValue,
-		Err:        fmt.Errorf("[%s]: invalid resource property path %q", elementName, path),
-	}
-}
-
 func errResourceNotResolved(elementName string, resourceName string) error {
 	return &errors.RunError{
 		ReasonCode: ErrorReasonCodeResourceNotResolved,
@@ -189,6 +269,323 @@ func errResourceEachNotArray(elementName string, resourceName string, value *cor
 			elementName,
 			resourceName,
 			determineValueType(value),
+		),
+	}
+}
+
+func errDisallowedElementType(
+	rootElementName string,
+	rootElementProp string,
+	referencedElementType string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeInvalidResolvedSubValue,
+		Err: fmt.Errorf(
+			"[%s]: element type %q can not be be a dependency for the %q property, "+
+				"a dependency can be either a direct or inderect reference to an element in a blueprint,"+
+				" be sure to check the full trail of references",
+			rootElementName,
+			rootElementProp,
+			referencedElementType,
+		),
+	}
+}
+
+func errMissingFunction(elementName string, functionName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeMissingFunction,
+		Err: fmt.Errorf(
+			"[%s]: function not found, the function %q is not implemented by any of the loaded providers",
+			elementName,
+			functionName,
+		),
+	}
+}
+
+func errEmptyPositionalFunctionArgument(elementName string, functionName string, index int) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeEmptyPositionalFunctionArgument,
+		Err: fmt.Errorf(
+			"[%s]: a value must be provided for function argument at position %d in %q call",
+			elementName,
+			index,
+			functionName,
+		),
+	}
+}
+
+func errEmptyNamedFunctionArgument(elementName string, functionName string, argumentName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeEmptyNamedFunctionArgument,
+		Err: fmt.Errorf(
+			"[%s]: a value must be provided for function argument %q in %q call",
+			elementName,
+			argumentName,
+			functionName,
+		),
+	}
+}
+
+func errEmptyFunctionOutput(elementName string, functionName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeEmptyFunctionOutput,
+		Err: fmt.Errorf(
+			"[%s]: function %q returned an empty output",
+			elementName,
+			functionName,
+		),
+	}
+}
+
+func errHigherOrderFunctionNotSupported(elementName string, functionName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeHigherOrderFunctionNotSupported,
+		Err: fmt.Errorf(
+			"[%s]: higher order function %q can only be used as a function argument to functions like \"map\" or \"filter\", "+
+				"this is because the function returns a partially applied function that needs to be executed "+
+				"and not a value that can be resolved",
+			elementName,
+			functionName,
+		),
+	}
+}
+
+func errReferencedResourceMissing(elementName string, resourceName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeResourceMissing,
+		Err: fmt.Errorf(
+			"[%s]: referenced resource %q is missing, the resource must exist in the blueprint",
+			elementName,
+			resourceName,
+		),
+	}
+}
+
+func errMissingResourceSpecDefinition(elementName string, resourceName string, resourceType string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeResourceSpecDefinitionMissing,
+		Err: fmt.Errorf(
+			"[%s]: missing or empty spec definition found for resource %q, "+
+				"the provider plugin for the resource type %q should provide a spec definition, "+
+				"you may need to update the plugin or contact the plugin developer",
+			elementName,
+			resourceName,
+			resourceType,
+		),
+	}
+}
+
+func errResourceSpecMissingIDField(elementName string, resourceName string, resourceType string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeInvalidResourceSpecDefinition,
+		Err: fmt.Errorf(
+			"[%s]: missing ID field in spec definition for resource %q, "+
+				"the provider plugin for the resource should provide a spec definition with an ID field, "+
+				"you may need to update the plugin or contact the plugin developer",
+			elementName,
+			resourceName,
+		),
+	}
+}
+
+func errInvalidResourcePropertyPath(
+	elementName string,
+	property *substitutions.SubstitutionResourceProperty,
+) error {
+	// Error is returned when a resource name is invalid, at this point,
+	// the resource name is expected to be valid, given the blueprint has been successfully
+	// loaded, it is safe to assume that the resource name is valid.
+	path, _ := substitutions.SubResourcePropertyToString(property)
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeInvalidResolvedSubValue,
+		Err:        fmt.Errorf("[%s]: invalid resource property path %q", elementName, path),
+	}
+}
+
+func errInvalidResourceSpecProperty(
+	elementName string,
+	property *substitutions.SubstitutionResourceProperty,
+	resourceType string,
+) error {
+	// Error is returned when a resource name is invalid, at this point,
+	// the resource name is expected to be valid, given the blueprint has been successfully
+	// loaded, it is safe to assume that the resource name is valid.
+	path, _ := substitutions.SubResourcePropertyToString(property)
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeInvalidResourceSpecProperty,
+		Err: fmt.Errorf(
+			"[%s]: invalid property %q in spec definition for resource %q, "+
+				"this property is not valid for resource type %q",
+			elementName,
+			path,
+			property.ResourceName,
+			resourceType,
+		),
+	}
+}
+
+func errMissingResourceSpecProperty(
+	elementName string,
+	property *substitutions.SubstitutionResourceProperty,
+	// e.g. 1 for a mapping node defined in "spec"
+	mappingNodeStartsAfter int,
+	depth int,
+	maxDepth int,
+) error {
+	depthWarning := ""
+	if depth > maxDepth {
+		depthWarning = fmt.Sprintf(
+			", the depth of the property path is %d, resource spec properties "+
+				" can not exceed a maximum depth of %d",
+			depth+mappingNodeStartsAfter,
+			maxDepth+mappingNodeStartsAfter,
+		)
+	}
+
+	// Error is returned when a resource name is invalid, at this point,
+	// the resource name is expected to be valid, given the blueprint has been successfully
+	// loaded, it is safe to assume that the resource name is valid.
+	path, _ := substitutions.SubResourcePropertyToString(property)
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeMissingResourceSpecProperty,
+		Err: fmt.Errorf(
+			"[%s]: missing property %q in spec definition for resource %q%s",
+			elementName,
+			property.ResourceName,
+			path,
+			depthWarning,
+		),
+	}
+}
+
+func errInvalidResourceMetadataProperty(
+	elementName string,
+	property *substitutions.SubstitutionResourceProperty,
+) error {
+	// Error is returned when a resource name is invalid, at this point,
+	// the resource name is expected to be valid, given the blueprint has been successfully
+	// loaded, it is safe to assume that the resource name is valid.
+	path, _ := substitutions.SubResourcePropertyToString(property)
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeInvalidResourceMetadataProperty,
+		Err: fmt.Errorf(
+			"[%s]: invalid property %q in metadata for resource %q",
+			elementName,
+			property.ResourceName,
+			path,
+		),
+	}
+}
+
+func errMissingResourceMetadataProperty(
+	elementName string,
+	property *substitutions.SubstitutionResourceProperty,
+	// Offset to start counting the depth from.
+	// For example, 2 for a mapping node defined in "metadata.custom".
+	mappingNodeStartsAfter int,
+	depth int,
+	maxDepth int,
+) error {
+	// Error is returned when a resource name is invalid, at this point,
+	// the resource name is expected to be valid, given the blueprint has been successfully
+	// loaded, it is safe to assume that the resource name is valid.
+	path, _ := substitutions.SubResourcePropertyToString(property)
+
+	depthWarning := ""
+	if depth > maxDepth {
+		depthWarning = fmt.Sprintf(
+			", the depth of the %q property path is %d, metadata "+
+				"properties can not exceed a maximum depth of %d",
+			path,
+			depth+mappingNodeStartsAfter,
+			maxDepth+mappingNodeStartsAfter,
+		)
+	}
+
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeMissingResourceMetadataProperty,
+		Err: fmt.Errorf(
+			"[%s]: missing property %q in metadata for resource %q%s",
+			elementName,
+			property.ResourceName,
+			path,
+			depthWarning,
+		),
+	}
+}
+
+func errMissingChildExportProperty(
+	elementName string,
+	property *substitutions.SubstitutionChild,
+	// Offset to start counting the depth from.
+	mappingNodeStartsAfter int,
+	depth int,
+	maxDepth int,
+) error {
+	path, _ := substitutions.SubChildToString(property)
+
+	depthWarning := ""
+	if depth > maxDepth {
+		depthWarning = fmt.Sprintf(
+			", the depth of the %q property path is %d, child export "+
+				"properties can not exceed a maximum depth of %d",
+			path,
+			depth+mappingNodeStartsAfter,
+			maxDepth+mappingNodeStartsAfter,
+		)
+	}
+
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeMissingChildExportProperty,
+		Err: fmt.Errorf(
+			"[%s]: missing property %q in export data for child %q%s",
+			elementName,
+			property.ChildName,
+			path,
+			depthWarning,
+		),
+	}
+}
+
+func errResourceMetadataNotSet(
+	elementName string,
+	resourceName string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeInvalidResourceMetadataNotSet,
+		Err: fmt.Errorf(
+			"[%s]: referenced resource metadata property does "+
+				"not exist as metadata is not set for resource %q",
+			elementName,
+			resourceName,
+		),
+	}
+}
+
+func errEmptyChildPath(elementName string, childName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeEmptyChildPath,
+		Err: fmt.Errorf(
+			"[%s]: empty child path, a path to an exported value must be provided for the child %q",
+			elementName,
+			childName,
+		),
+	}
+}
+
+func errMissingChildExport(
+	elementName string,
+	childName string,
+	childRefProp *substitutions.SubstitutionChild,
+) error {
+	exportPath, _ := substitutions.SubChildToString(childRefProp)
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeMissingChildExport,
+		Err: fmt.Errorf(
+			"[%s]: missing export in child %q referenced in path %q",
+			elementName,
+			childName,
+			exportPath,
 		),
 	}
 }

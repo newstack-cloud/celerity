@@ -19,7 +19,7 @@ type FunctionRegistry interface {
 	// ForCallContext creates a light-weight copy of the registry
 	// with a call stack that is specific to the current call context
 	// (i.e. a ${..} substitution).
-	ForCallContext() FunctionRegistry
+	ForCallContext(stack function.Stack) FunctionRegistry
 
 	// Call allows calling a function in the registry by name.
 	Call(ctx context.Context, functionName string, input *FunctionCallInput) (*FunctionCallOutput, error)
@@ -64,13 +64,13 @@ func NewFunctionRegistry(
 	}
 }
 
-func (r *functionRegistryFromProviders) ForCallContext() FunctionRegistry {
+func (r *functionRegistryFromProviders) ForCallContext(stack function.Stack) FunctionRegistry {
 	return &functionRegistryFromProviders{
 		providers:             r.providers,
 		functionProviderCache: r.functionProviderCache,
 		functionCache:         r.functionCache,
 		functionNames:         r.functionNames,
-		callStack:             function.NewStack(),
+		callStack:             stack,
 	}
 }
 

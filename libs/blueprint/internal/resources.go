@@ -79,6 +79,9 @@ func (r *DynamoDBTableResource) GetSpecDefinition(
 					"tableName": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
 					},
+					"region": {
+						Type: provider.ResourceDefinitionsSchemaTypeString,
+					},
 				},
 			},
 		},

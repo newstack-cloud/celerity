@@ -11,6 +11,10 @@ type TransformMappingNodeTestSuite struct {
 	suite.Suite
 }
 
+const (
+	stringText = "This is a string"
+)
+
 func (s *TransformMappingNodeTestSuite) Test_transform_go_int_value_to_mapping_node() {
 	intVal := 42
 	mappingNode := GoValueToMappingNode(intVal)
@@ -32,7 +36,7 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_float_value_to_mapping
 }
 
 func (s *TransformMappingNodeTestSuite) Test_transform_go_string_value_to_mapping_node() {
-	stringVal := "this is a string"
+	stringVal := stringText
 	mappingNode := GoValueToMappingNode(stringVal)
 	s.Assert().Equal(&core.MappingNode{
 		Literal: &core.ScalarValue{
@@ -250,14 +254,14 @@ func (s *TransformMappingNodeTestSuite) Test_transform_float_mapping_node_to_go_
 }
 
 func (s *TransformMappingNodeTestSuite) Test_transform_string_mapping_node_to_go_value() {
-	inputString := "this is a string"
+	inputString := stringText
 	mappingNode := &core.MappingNode{
 		Literal: &core.ScalarValue{
 			StringValue: &inputString,
 		},
 	}
 	stringVal := MappingNodeToGoValue(mappingNode)
-	s.Assert().Equal("this is a string", stringVal)
+	s.Assert().Equal(stringText, stringVal)
 }
 
 func (s *TransformMappingNodeTestSuite) Test_transform_bool_mapping_node_to_go_value() {

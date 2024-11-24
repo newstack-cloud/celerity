@@ -58,7 +58,7 @@ func SubstitutionToString(substitutionContext string, substitution *Substitution
 	} else if substitution.ResourceProperty != nil {
 		return SubResourcePropertyToString(substitution.ResourceProperty)
 	} else if substitution.Child != nil {
-		return subChildToString(substitution.Child)
+		return SubChildToString(substitution.Child)
 	}
 	return "", nil
 }
@@ -200,7 +200,9 @@ func propertyPathItemToString(pathItem *SubstitutionPathItem) (string, error) {
 	return fmt.Sprintf("[\"%s\"]", pathItem.FieldName), errSerialiseSubstitutionInvalidPathItem(pathItem)
 }
 
-func subChildToString(child *SubstitutionChild) (string, error) {
+// SubChildToString produces a string representation of a substitution
+// component that refers to a child blueprint export.
+func SubChildToString(child *SubstitutionChild) (string, error) {
 	path := "children"
 	if NamePattern.MatchString(child.ChildName) {
 		path += fmt.Sprintf(".%s", child.ChildName)
@@ -231,4 +233,19 @@ func subChildToString(child *SubstitutionChild) (string, error) {
 	}
 
 	return path, nil
+}
+
+// PropertyPathToString converts a property path to a string.
+func PropertyPathToString(path []*SubstitutionPathItem) (string, error) {
+	var b strings.Builder
+
+	for _, pathItem := range path {
+		pathItemStr, err := propertyPathItemToString(pathItem)
+		if err != nil {
+			return "", err
+		}
+		b.WriteString(pathItemStr)
+	}
+
+	return b.String(), nil
 }
