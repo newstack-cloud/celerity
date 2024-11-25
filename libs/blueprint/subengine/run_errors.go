@@ -169,6 +169,13 @@ const (
 	// during deployment or change staging is due to
 	// a missing property in the export data for a child reference.
 	ErrorReasonCodeMissingChildExportProperty errors.ErrorReasonCode = "missing_child_export_property"
+	// ErrorReasonCodeDisallowedElementType
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a referenced element type not beig a supported dependency for a given property.
+	// For example, a resource being used as a dependency for the `each` property
+	// of another resource.
+	ErrorReasonCodeDisallowedElementType errors.ErrorReasonCode = "disallowed_element_type"
 )
 
 func errInvalidInterpolationSubType(elementName string, resolvedValue *core.MappingNode) error {
@@ -279,14 +286,14 @@ func errDisallowedElementType(
 	referencedElementType string,
 ) error {
 	return &errors.RunError{
-		ReasonCode: ErrorReasonCodeInvalidResolvedSubValue,
+		ReasonCode: ErrorReasonCodeDisallowedElementType,
 		Err: fmt.Errorf(
-			"[%s]: element type %q can not be be a dependency for the %q property, "+
-				"a dependency can be either a direct or inderect reference to an element in a blueprint,"+
+			"[%s]: element type %q can not be a dependency for the %q property, "+
+				"a dependency can be either a direct or indirect reference to an element in a blueprint,"+
 				" be sure to check the full trail of references",
 			rootElementName,
-			rootElementProp,
 			referencedElementType,
+			rootElementProp,
 		),
 	}
 }

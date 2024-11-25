@@ -248,3 +248,12 @@ func MergeMaps(nodes ...*MappingNode) *MappingNode {
 		Fields: merged,
 	}
 }
+
+// IsNilMappingNode returns true if the mapping node is nil or has no content.
+func IsNilMappingNode(node *MappingNode) bool {
+	return node == nil ||
+		(node.Literal == nil &&
+			node.StringWithSubstitutions == nil &&
+			node.Fields == nil &&
+			node.Items == nil)
+}
