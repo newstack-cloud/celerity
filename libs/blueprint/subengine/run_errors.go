@@ -522,14 +522,15 @@ func errMissingChildExportProperty(
 	depth int,
 	maxDepth int,
 ) error {
-	path, _ := substitutions.SubChildToString(property)
+	fullPath, _ := substitutions.SubChildToString(property)
+	propertyPath, _ := substitutions.PropertyPathToString(property.Path)
 
 	depthWarning := ""
 	if depth > maxDepth {
 		depthWarning = fmt.Sprintf(
 			", the depth of the %q property path is %d, child export "+
 				"properties can not exceed a maximum depth of %d",
-			path,
+			fullPath,
 			depth+mappingNodeStartsAfter,
 			maxDepth+mappingNodeStartsAfter,
 		)
@@ -540,8 +541,8 @@ func errMissingChildExportProperty(
 		Err: fmt.Errorf(
 			"[%s]: missing property %q in export data for child %q%s",
 			elementName,
+			propertyPath,
 			property.ChildName,
-			path,
 			depthWarning,
 		),
 	}

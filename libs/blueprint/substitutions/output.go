@@ -247,5 +247,5 @@ func PropertyPathToString(path []*SubstitutionPathItem) (string, error) {
 		b.WriteString(pathItemStr)
 	}
 
-	return b.String(), nil
+	return strings.TrimPrefix(b.String(), "."), nil
 }

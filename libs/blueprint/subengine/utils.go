@@ -429,7 +429,7 @@ func getChildExportProperty(
 		property.Path,
 		property,
 		resolveCtx,
-		/* offset of mapping node in property path (children.<child>.*) */ 1,
+		/* offset of mapping node in property path (children.<child>.<exportedField>.*) */ 3,
 		errMissingChildExportProperty,
 	)
 }
@@ -458,7 +458,7 @@ func getPathValueFromMappingNode[Prop any](
 			current = current.Fields[pathItem.FieldName]
 		} else if pathItem.ArrayIndex != nil && current.Items != nil {
 			current = current.Items[*pathItem.ArrayIndex]
-		} else {
+		} else if bpcore.IsNilMappingNode(current) {
 			pathExists = false
 		}
 
@@ -469,7 +469,7 @@ func getPathValueFromMappingNode[Prop any](
 		return nil, errFunc(
 			resolveCtx.currentElementName,
 			property,
-			/* offset of mapping node in property path */ 2,
+			mappingNodeStartsAfter,
 			i,
 			validation.MappingNodeMaxTraverseDepth,
 		)

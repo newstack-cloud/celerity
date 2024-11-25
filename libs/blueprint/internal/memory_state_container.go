@@ -448,6 +448,9 @@ func (c *MemoryStateContainer) SaveChild(
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
+			if instance.ChildBlueprints == nil {
+				instance.ChildBlueprints = make(map[string]*state.InstanceState)
+			}
 			instance.ChildBlueprints[childName] = &childState
 		} else {
 			return errors.New(instanceNotFoundText)

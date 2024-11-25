@@ -1927,7 +1927,7 @@ func (r *defaultSubstitutionResolver) resolveChildReference(
 		return nil, err
 	}
 
-	exportState := getChildExport(childReference.ChildName, &childState)
+	exportState := getChildExport(childReference.Path[0].FieldName, &childState)
 	if exportState == nil {
 		return nil, errMissingChildExport(
 			resolveCtx.currentElementName,

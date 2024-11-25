@@ -51,7 +51,9 @@ resources:
     condition:
       and:
         - ${eq(variables.environment, "production-env")}
-        - ${contains(values.deployOrdersTableToRegions, variables.region)}
+        - or:
+            - ${contains(values.deployOrdersTableToRegions, variables.region)}
+            - not: ${eq(variables.region, "eu-central-1")}
     metadata:
       displayName: ${variables.environment} Orders Table
       annotations:

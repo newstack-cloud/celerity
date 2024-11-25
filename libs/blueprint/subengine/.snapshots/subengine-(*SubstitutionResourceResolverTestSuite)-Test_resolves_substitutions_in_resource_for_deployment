@@ -72,7 +72,7 @@
         SourceMeta: (map[string]*source.Meta) (len=1) {
           (string) (len=3) "app": (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 60,
+              Line: (int) 62,
               Column: (int) 9
             },
             EndPosition: (*source.Position)(<nil>)
@@ -107,11 +107,11 @@
                   StringValue: (*string)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 63,
+                      Line: (int) 65,
                       Column: (int) 14
                     },
                     EndPosition: (*source.Position)({
-                      Line: (int) 63,
+                      Line: (int) 65,
                       Column: (int) 17
                     })
                   })
@@ -121,7 +121,7 @@
                 StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 63,
+                    Line: (int) 65,
                     Column: (int) 14
                   },
                   EndPosition: (*source.Position)(<nil>)
@@ -136,11 +136,11 @@
                   StringValue: (*string)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 64,
+                      Line: (int) 66,
                       Column: (int) 14
                     },
                     EndPosition: (*source.Position)({
-                      Line: (int) 64,
+                      Line: (int) 66,
                       Column: (int) 17
                     })
                   })
@@ -150,7 +150,7 @@
                 StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 64,
+                    Line: (int) 66,
                     Column: (int) 14
                   },
                   EndPosition: (*source.Position)(<nil>)
@@ -193,22 +193,53 @@
         }),
         (*provider.ResolvedResourceCondition)({
           And: ([]*provider.ResolvedResourceCondition) <nil>,
-          Or: ([]*provider.ResolvedResourceCondition) <nil>,
-          Not: (*provider.ResolvedResourceCondition)(<nil>),
-          StringValue: (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(true),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)(<nil>),
-              SourceMeta: (*source.Meta)(<nil>)
+          Or: ([]*provider.ResolvedResourceCondition) (len=2) {
+            (*provider.ResolvedResourceCondition)({
+              And: ([]*provider.ResolvedResourceCondition) <nil>,
+              Or: ([]*provider.ResolvedResourceCondition) <nil>,
+              Not: (*provider.ResolvedResourceCondition)(<nil>),
+              StringValue: (*core.MappingNode)({
+                Literal: (*core.ScalarValue)({
+                  IntValue: (*int)(<nil>),
+                  BoolValue: (*bool)(true),
+                  FloatValue: (*float64)(<nil>),
+                  StringValue: (*string)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>)
+                }),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>),
+                FieldsSourceMeta: (map[string]*source.Meta) <nil>
+              })
             }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)(<nil>),
-            FieldsSourceMeta: (map[string]*source.Meta) <nil>
-          })
+            (*provider.ResolvedResourceCondition)({
+              And: ([]*provider.ResolvedResourceCondition) <nil>,
+              Or: ([]*provider.ResolvedResourceCondition) <nil>,
+              Not: (*provider.ResolvedResourceCondition)({
+                And: ([]*provider.ResolvedResourceCondition) <nil>,
+                Or: ([]*provider.ResolvedResourceCondition) <nil>,
+                Not: (*provider.ResolvedResourceCondition)(<nil>),
+                StringValue: (*core.MappingNode)({
+                  Literal: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(false),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                })
+              }),
+              StringValue: (*core.MappingNode)(<nil>)
+            })
+          },
+          Not: (*provider.ResolvedResourceCondition)(<nil>),
+          StringValue: (*core.MappingNode)(<nil>)
         })
       },
       Or: ([]*provider.ResolvedResourceCondition) <nil>,
@@ -223,7 +254,7 @@
         SourceMeta: (map[string]*source.Meta) (len=1) {
           (string) (len=3) "app": (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 68,
+              Line: (int) 70,
               Column: (int) 9
             },
             EndPosition: (*source.Position)(<nil>)
@@ -232,7 +263,7 @@
       }),
       SourceMeta: (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 67,
+          Line: (int) 69,
           Column: (int) 7
         },
         EndPosition: (*source.Position)(<nil>)
@@ -241,7 +272,20 @@
     Spec: (*core.MappingNode)({
       Literal: (*core.ScalarValue)(<nil>),
       Fields: (map[string]*core.MappingNode) (len=2) {
-        (string) (len=6) "region": (*core.MappingNode)(<nil>),
+        (string) (len=6) "region": (*core.MappingNode)({
+          Literal: (*core.ScalarValue)({
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=9) "eu-west-1"),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          Fields: (map[string]*core.MappingNode) <nil>,
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        }),
         (string) (len=9) "tableName": (*core.MappingNode)({
           Literal: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
@@ -263,7 +307,6 @@
       FieldsSourceMeta: (map[string]*source.Meta) <nil>
     })
   }),
-  ResolveOnDeploy: ([]string) (len=1) {
-    (string) (len=36) "resources.ordersTable.spec[\"region\"]"
+  ResolveOnDeploy: ([]string) {
   }
 })
