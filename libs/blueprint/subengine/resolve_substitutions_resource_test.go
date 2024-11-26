@@ -29,13 +29,15 @@ type SubstitutionResourceResolverTestSuite struct {
 }
 
 const (
-	resolveInResourceFixtureName = "resolve-in-resource"
-	testInstanceID               = "cb826a32-1052-4fde-aa6e-d449b9f50066"
+	resolveInResourceFixtureName                   = "resolve-in-resource"
+	resolveInResourcePartialAnnotationsFixtureName = "resolve-in-resource-partial-annotations"
+	testInstanceID                                 = "cb826a32-1052-4fde-aa6e-d449b9f50066"
 )
 
 func (s *SubstitutionResourceResolverTestSuite) SetupSuite() {
 	s.specFixtureFiles = map[string]string{
-		resolveInResourceFixtureName: "__testdata/sub-resolver/resolve-in-resource-blueprint.yml",
+		resolveInResourceFixtureName:                   "__testdata/sub-resolver/resolve-in-resource-blueprint.yml",
+		resolveInResourcePartialAnnotationsFixtureName: "__testdata/sub-resolver/resolve-in-resource-partial-annotations-blueprint.yml",
 	}
 	s.specFixtureSchemas = make(map[string]*schema.Blueprint)
 
@@ -77,6 +79,35 @@ func (s *SubstitutionResourceResolverTestSuite) SetupTest() {
 
 func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_resource_for_change_staging() {
 	blueprint := s.specFixtureSchemas[resolveInResourceFixtureName]
+	spec := internal.NewBlueprintSpecMock(blueprint)
+	params := resolveInResourceTestParams()
+	subResolver := NewDefaultSubstitutionResolver(
+		s.funcRegistry,
+		s.resourceRegistry,
+		s.dataSourceRegistry,
+		s.stateContainer,
+		s.resourceCache,
+		spec,
+		params,
+	)
+
+	result, err := subResolver.ResolveInResource(
+		context.TODO(),
+		"ordersTable",
+		blueprint.Resources.Values["ordersTable"],
+		&ResolveResourceTargetInfo{
+			ResolveFor: ResolveForChangeStaging,
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().NotNil(result)
+
+	err = cupaloy.Snapshot(result)
+	s.Require().NoError(err)
+}
+
+func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_resource_for_change_staging_with_partial_annotations() {
+	blueprint := s.specFixtureSchemas[resolveInResourcePartialAnnotationsFixtureName]
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveInResourceTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
