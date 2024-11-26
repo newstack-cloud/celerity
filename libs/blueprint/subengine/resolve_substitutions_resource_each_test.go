@@ -32,6 +32,7 @@ const (
 	resolveInResourceEachFixtureName      = "resolve-resource-each"
 	resolveInResourceEachFail1FixtureName = "resolve-resource-each-fail-1"
 	resolveInResourceEachFail2FixtureName = "resolve-resource-each-fail-2"
+	resolveInResourceEachFail3FixtureName = "resolve-resource-each-fail-3"
 )
 
 func (s *SubstitutionResourceEachResolverTestSuite) SetupSuite() {
@@ -39,6 +40,7 @@ func (s *SubstitutionResourceEachResolverTestSuite) SetupSuite() {
 		resolveInResourceEachFixtureName:      "__testdata/sub-resolver/resolve-resource-each-blueprint.yml",
 		resolveInResourceEachFail1FixtureName: "__testdata/sub-resolver/resolve-resource-each-fail-1-blueprint.yml",
 		resolveInResourceEachFail2FixtureName: "__testdata/sub-resolver/resolve-resource-each-fail-2-blueprint.yml",
+		resolveInResourceEachFail3FixtureName: "__testdata/sub-resolver/resolve-resource-each-fail-3-blueprint.yml",
 	}
 	s.specFixtureSchemas = make(map[string]*schema.Blueprint)
 
@@ -187,6 +189,38 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_fails_when_resource_eac
 		"run error: [resources.ordersTable]: element type \"child\" can not be a dependency for the \"each\" property, "+
 			"a dependency can be either a direct or indirect reference to an element in a blueprint, "+
 			"be sure to check the full trail of references",
+		runErr.Error(),
+	)
+}
+
+func (s *SubstitutionResourceEachResolverTestSuite) Test_fails_when_resource_each_resolves_to_a_value_that_is_not_a_list() {
+	blueprint := s.specFixtureSchemas[resolveInResourceEachFail3FixtureName]
+	spec := internal.NewBlueprintSpecMock(blueprint)
+	params := resolveResourceEachTestParams()
+	subResolver := NewDefaultSubstitutionResolver(
+		s.funcRegistry,
+		s.resourceRegistry,
+		s.dataSourceRegistry,
+		s.stateContainer,
+		s.resourceCache,
+		spec,
+		params,
+	)
+
+	result, err := subResolver.ResolveResourceEach(
+		context.TODO(),
+		"ordersTable",
+		blueprint.Resources.Values["ordersTable"],
+		ResolveForChangeStaging,
+	)
+	s.Assert().Error(err)
+	s.Assert().Nil(result)
+	runErr, isRunErr := err.(*errors.RunError)
+	s.Assert().True(isRunErr)
+	s.Assert().Equal(ErrorReasonCodeResourceEachInvalidType, runErr.ReasonCode)
+	s.Assert().Equal(
+		"run error: [resources.ordersTable]: `each` property in resource template"+
+			" \"ordersTable\" must yield an array, string found",
 		runErr.Error(),
 	)
 }
