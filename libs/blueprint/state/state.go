@@ -117,6 +117,11 @@ type ResourceState struct {
 	// for the currently deployed version of the resource along with computed
 	// fields derived from the deployed resource in the provider.
 	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
+	// Metadata holds metadata for the resource that is derived from a source blueprint
+	// that includes additional information that allows for extensions built on top of the
+	// blueprint framework along with the storage of labels, annotations and a human-friendly
+	// display name for the resource.
+	Metadata *ResourceMetadataState `json:"metadata,omitempty"`
 	// Holds the latest reasons for failures in deploying a resource,
 	// this only ever holds the results of the latest deployment attempt.
 	FailureReasons []string `json:"failureReasons"`
@@ -125,6 +130,15 @@ type ResourceState struct {
 	Drifted bool `json:"drifted,omitempty"`
 	// LastDriftDetectedTimestamp holds the unix timestamp when drift was last detected.
 	LastDriftDetectedTimestamp *int `json:"lastDriftDetectedTimestamp,omitempty"`
+}
+
+// ResourceMetadataState holds metadata for a resource
+// that is derived from a source blueprint.
+type ResourceMetadataState struct {
+	DisplayName string            `json:"displayName,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Custom      *core.MappingNode `json:"custom,omitempty"`
 }
 
 // InstanceState stores the state of a blueprint instance
