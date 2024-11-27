@@ -1,6 +1,9 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // IsInScalarList checks if a given scalar value is in a list of scalar values.
 func IsInScalarList(value *ScalarValue, list []*ScalarValue) bool {
@@ -60,6 +63,9 @@ func ExportElementID(dataSourceName string) string {
 
 // ElementPropertyPath generates a property path for a given element ID and property name.
 func ElementPropertyPath(elementID string, propertyName string) string {
+	if strings.HasPrefix(propertyName, "[") {
+		return fmt.Sprintf("%s%s", elementID, propertyName)
+	}
 	return fmt.Sprintf("%s.%s", elementID, propertyName)
 }
 

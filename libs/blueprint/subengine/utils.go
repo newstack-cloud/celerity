@@ -166,6 +166,7 @@ func handleResolveError(err error, resolveOnDeploy *[]string) error {
 			})...,
 		)
 		*resolveOnDeploy = slices.Compact(*resolveOnDeploy)
+		slices.Sort(*resolveOnDeploy)
 		return nil
 	}
 
