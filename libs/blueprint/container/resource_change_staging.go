@@ -15,6 +15,7 @@ type ResourceChangeStager interface {
 		ctx context.Context,
 		resourceInfo *provider.ResourceInfo,
 		resourceImplementation provider.Resource,
+		resolveOnDeploy []string,
 	) (*provider.Changes, error)
 }
 
@@ -30,6 +31,7 @@ func (s *defaultResourceChangeStager) StageChanges(
 	ctx context.Context,
 	resourceInfo *provider.ResourceInfo,
 	resourceImplementation provider.Resource,
+	resolveOnDeploy []string,
 ) (*provider.Changes, error) {
 	return nil, nil
 }

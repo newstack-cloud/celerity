@@ -191,7 +191,7 @@ func resourceHasPriorityOverChild(
 	childNode *validation.ReferenceChainNode,
 	refChainCollector validation.RefChainCollector,
 ) bool {
-	resourceElementName := fmt.Sprintf("resources.%s", resourceNode.ResourceName)
+	resourceElementName := bpcore.ResourceElementID(resourceNode.ResourceName)
 	resourceRef := refChainCollector.Chain(resourceElementName)
 	if resourceRef == nil {
 		return false
@@ -208,7 +208,7 @@ func childHasPriorityOverResource(
 	resourceNode *links.ChainLinkNode,
 	refChainCollector validation.RefChainCollector,
 ) bool {
-	resourceElementName := fmt.Sprintf("resources.%s", resourceNode.ResourceName)
+	resourceElementName := bpcore.ResourceElementID(resourceNode.ResourceName)
 	resourceRef := refChainCollector.Chain(resourceElementName)
 	if resourceRef == nil {
 		return false
@@ -293,8 +293,8 @@ func linkResourceReferences(
 	linkA *links.ChainLinkNode,
 	linkB *links.ChainLinkNode,
 ) bool {
-	resourceRefA := refChainCollector.Chain(fmt.Sprintf("resources.%s", linkA.ResourceName))
-	resourceRefB := refChainCollector.Chain(fmt.Sprintf("resources.%s", linkB.ResourceName))
+	resourceRefA := refChainCollector.Chain(bpcore.ResourceElementID(linkA.ResourceName))
+	resourceRefB := refChainCollector.Chain(bpcore.ResourceElementID(linkB.ResourceName))
 
 	if resourceRefA == nil || resourceRefB == nil {
 		return false
@@ -337,7 +337,7 @@ func compareElementNameForSubRef(referencedByElementName string, searchFor *vali
 			// to allow this logic to skip links that are handled separately.
 			slices.ContainsFunc(searchFor.Tags, func(tag string) bool {
 				return tag == validation.CreateSubRefTag(referencedByElementName) ||
-					tag == fmt.Sprintf("dependencyOf:%s", referencedByElementName)
+					tag == validation.CreateDependencyRefTag(referencedByElementName)
 			})
 	}
 }
@@ -388,7 +388,7 @@ type DeploymentNode struct {
 
 func (d *DeploymentNode) Name() string {
 	if d.ChainLinkNode != nil {
-		return fmt.Sprintf("resources.%s", d.ChainLinkNode.ResourceName)
+		return bpcore.ResourceElementID(d.ChainLinkNode.ResourceName)
 	}
 	return d.ChildNode.ElementName
 }

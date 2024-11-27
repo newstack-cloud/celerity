@@ -110,6 +110,10 @@ type BlueprintChanges struct {
 	// RemovedChildren contains the name of the child blueprints that will be removed
 	// when deploying the changes.
 	RemovedChildren []string `json:"removedChildren"`
+	// ResolveOnDeploy contains paths to properties in blueprint elements
+	// that contain substitutions that can not be resolved until the blueprint
+	// is deployed.
+	ResolveOnDeploy []string `json:"resolveOnDeploy"`
 }
 
 // NewBlueprintDefinition provides a definition for a new child blueprint
@@ -144,7 +148,7 @@ type defaultBlueprintContainer struct {
 	substitutionResolver           subengine.SubstitutionResolver
 	changeStager                   ResourceChangeStager
 	childResolver                  includes.ChildResolver
-	resourceCache                  *core.Cache[[]*provider.ResolvedResource]
+	resourceCache                  *core.Cache[*provider.ResolvedResource]
 	resourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
 	diagnostics                    []*core.Diagnostic
 	createChildBlueprintLoader     func() Loader
@@ -160,7 +164,7 @@ type BlueprintContainerDependencies struct {
 	SubstitutionResolver        subengine.SubstitutionResolver
 	ChangeStager                ResourceChangeStager
 	ChildResolver               includes.ChildResolver
-	ResourceCache               *core.Cache[[]*provider.ResolvedResource]
+	ResourceCache               *core.Cache[*provider.ResolvedResource]
 	ChildBlueprintLoaderFactory func() Loader
 }
 
@@ -237,28 +241,6 @@ func (c *defaultBlueprintContainer) StageChanges(
 	return nil
 }
 
-func (c *defaultBlueprintContainer) expandChains(
-	ctx context.Context,
-	chains []*links.ChainLinkNode,
-	visited map[string]bool,
-) ([]*links.ChainLinkNode, error) {
-	for _, node := range chains {
-		if node.Resource.Each != nil && !visited[node.ResourceName] {
-			items, err := c.substitutionResolver.ResolveResourceEach(ctx, node.ResourceName, node.Resource)
-			if err != nil {
-				return nil, err
-			}
-			// Cache to be used to resolve each resource derived from a template later.
-			c.cacheResourceTemplateInputElements(node.ResourceName, items)
-			visited[node.ResourceName] = true
-
-		} else if node.Resource.Each == nil {
-			visited[node.ResourceName] = true
-		}
-	}
-	return chains, nil
-}
-
 func (c *defaultBlueprintContainer) stageChanges(
 	ctx context.Context,
 	instanceID string,
@@ -322,7 +304,7 @@ func (c *defaultBlueprintContainer) listenToAndProcessGroupChanges(
 		err == nil {
 		select {
 		case changes := <-internalChannels.ResourceChangesChan:
-			elementName := fmt.Sprintf("resources.%s", changes.ResourceName)
+			elementName := core.ResourceElementID(changes.ResourceName)
 			collected[elementName] = &changesWrapper{
 				resourceChanges: &changes.Changes,
 			}
@@ -333,7 +315,7 @@ func (c *defaultBlueprintContainer) listenToAndProcessGroupChanges(
 			linkChangesCount += 1
 			externalChannels.LinkChangesChan <- changes
 		case changes := <-internalChannels.ChildChangesChan:
-			elementName := fmt.Sprintf("children.%s", changes.ChildBlueprintName)
+			elementName := core.ChildElementID(changes.ChildBlueprintName)
 			collected[elementName] = &changesWrapper{
 				childChanges: &changes.Changes,
 			}
@@ -506,7 +488,7 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 	// there is no need for logic that deals with resource templates at this stage.
 	// This simplifies the change staging implementation considerably.
 
-	items, err := c.substitutionResolver.ResolveResourceEach(ctx, node.ResourceName, node.Resource)
+	items, err := c.substitutionResolver.ResolveResourceEach(ctx, node.ResourceName, node.Resource, subengine.ResolveForChangeStaging)
 	if err != nil {
 		channels.ErrChan <- err
 		return
@@ -570,9 +552,9 @@ func (c *defaultBlueprintContainer) getResourceID(
 		return "", err
 	}
 
-	resourceIDs, hasResourceIDs := instanceState.ResourceIDs[resourceName]
-	if hasResourceIDs && len(resourceIDs) > index {
-		return resourceIDs[index], nil
+	resourceID, hasResourceID := instanceState.ResourceIDs[resourceName]
+	if hasResourceID {
+		return resourceID, nil
 	}
 
 	// This resource does not exist in the state, it will be created
@@ -588,11 +570,13 @@ func (c *defaultBlueprintContainer) stageIndividualResourceChanges(
 	stagingState *stageChangesState,
 ) error {
 	node := resourceInfo.node
-	resolvedResource, err := c.substitutionResolver.ResolveInResource(
+	resolveResourceResult, err := c.substitutionResolver.ResolveInResource(
 		ctx,
 		node.ResourceName,
 		node.Resource,
-		resourceInfo.index,
+		&subengine.ResolveResourceTargetInfo{
+			ResolveFor: subengine.ResolveForChangeStaging,
+		},
 	)
 	if err != nil {
 		return err
@@ -618,9 +602,10 @@ func (c *defaultBlueprintContainer) stageIndividualResourceChanges(
 			ResourceID:               resourceInfo.resourceID,
 			InstanceID:               resourceInfo.instanceID,
 			CurrentResourceState:     currentResourceStatePtr,
-			ResourceWithResolvedSubs: resolvedResource,
+			ResourceWithResolvedSubs: resolveResourceResult.ResolvedResource,
 		},
 		resourceImplementation,
+		resolveResourceResult.ResolveOnDeploy,
 	)
 	if err != nil {
 		return err

@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"fmt"
 	"slices"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
@@ -90,7 +89,7 @@ func hasReferenceInGroup(
 			hasReferenceInGroup = groupIndex == currentGroupIndex &&
 				slices.ContainsFunc(reference.Tags, func(tag string) bool {
 					return tag == validation.CreateSubRefTag(refChainNode.ElementName) ||
-						tag == fmt.Sprintf("dependencyOf:%s", refChainNode.ElementName)
+						tag == validation.CreateDependencyRefTag(refChainNode.ElementName)
 				})
 		}
 		i += 1
@@ -111,7 +110,7 @@ func hasHardLinkInGroup(
 	i := 0
 	for !hasHardLinkInGroup && i < len(relatedNodes) {
 		relatedNode := relatedNodes[i]
-		relatedElementName := fmt.Sprintf("resources.%s", relatedNode.ResourceName)
+		relatedElementName := bpcore.ResourceElementID(relatedNode.ResourceName)
 		if groupIndex, ok := nodeGroupMap[relatedElementName]; ok {
 			linkImplementation, err := getLinkImplementation(node, relatedNode)
 			if err != nil {

@@ -673,7 +673,7 @@ func groupFixture3RefChains(
 		"resources.createOrderFunction",
 		nil,
 		"resources.getOrdersFunction",
-		[]string{"dependencyOf:resources.getOrdersFunction"},
+		[]string{validation.CreateDependencyRefTag("resources.getOrdersFunction")},
 	)
 
 	collector.Collect(

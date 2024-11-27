@@ -365,7 +365,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		), diagnostics, err
 	}
 
-	resourceCache := bpcore.NewCache[[]*provider.ResolvedResource]()
+	resourceCache := bpcore.NewCache[*provider.ResolvedResource]()
 	substitutionResolver := subengine.NewDefaultSubstitutionResolver(
 		l.funcRegistry,
 		l.resourceRegistry,

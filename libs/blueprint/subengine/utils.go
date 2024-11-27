@@ -67,27 +67,6 @@ func createEmptyArgError(
 	return errEmptyPositionalFunctionArgument(elementName, functionName, index)
 }
 
-func selectResourceForProperty(
-	parentElementName string,
-	prop *substitutions.SubstitutionResourceProperty,
-	resources []*provider.ResolvedResource,
-) (*bpcore.MappingNode, error) {
-	current := resources[0].Spec
-	if prop.ResourceEachTemplateIndex != nil {
-		if len(resources) <= int(*prop.ResourceEachTemplateIndex) {
-			return nil, errResourceEachIndexOutOfBounds(
-				parentElementName,
-				prop.ResourceName,
-				int(*prop.ResourceEachTemplateIndex),
-			)
-		}
-
-		current = resources[*prop.ResourceEachTemplateIndex].Spec
-	}
-
-	return current, nil
-}
-
 func getVariable(
 	variableName string,
 	schema *schema.Blueprint,
@@ -119,10 +98,6 @@ func getDataSource(
 	}
 
 	return schema.DataSources.Values[valueName]
-}
-
-func isStringLiteral(s *substitutions.StringOrSubstitutions) bool {
-	return len(s.Values) == 1 && s.Values[0].StringValue != nil
 }
 
 func resolvedValueToString(

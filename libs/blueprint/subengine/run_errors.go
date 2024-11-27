@@ -249,13 +249,6 @@ func errResourceNotResolved(elementName string, resourceName string) error {
 	}
 }
 
-func errResourceEachIndexOutOfBounds(elementName string, resourceName string, index int) error {
-	return &errors.RunError{
-		ReasonCode: ErrorReasonCodeResourceEachIndexOutOfBounds,
-		Err:        fmt.Errorf("[%s]: index %d out of bounds for resource template %q", elementName, index, resourceName),
-	}
-}
-
 func errEmptyResourceEach(elementName string, resourceName string) error {
 	return &errors.RunError{
 		ReasonCode: ErrorReasonCodeResourceEachEmpty,

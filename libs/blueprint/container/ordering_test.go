@@ -705,7 +705,7 @@ func orderFixture3RefChains(
 		"resources.standaloneFunction",
 		nil,
 		"resources.statsAccumulatorFunction",
-		[]string{"dependencyOf:resources.statsAccumulatorFunction"},
+		[]string{validation.CreateDependencyRefTag("resources.statsAccumulatorFunction")},
 	)
 
 	return collector, nil

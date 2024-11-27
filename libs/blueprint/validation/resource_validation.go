@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
@@ -171,7 +170,7 @@ func ValidateResource(
 
 	validateDescriptionDiagnostics, validateDescErr := validateDescription(
 		ctx,
-		core.ResourceElementID(name),
+		bpcore.ResourceElementID(name),
 		resource.Description,
 		bpSchema,
 		params,
@@ -282,7 +281,7 @@ func validateResourceMetadata(
 
 	customDiagnostics, err := ValidateMappingNode(
 		ctx,
-		core.ResourceElementID(resourceName),
+		bpcore.ResourceElementID(resourceName),
 		"metadata.custom",
 		metadataSchema.Custom,
 		bpSchema,
@@ -317,7 +316,7 @@ func validateResourceMetadataDisplayName(
 		return []*bpcore.Diagnostic{}, nil
 	}
 
-	resourceIdentifier := core.ResourceElementID(resourceName)
+	resourceIdentifier := bpcore.ResourceElementID(resourceName)
 	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
 	for _, stringOrSub := range metadataSchema.DisplayName.Values {
@@ -406,7 +405,7 @@ func validateResourceMetadataAnnotations(
 		return []*bpcore.Diagnostic{}, nil
 	}
 
-	resourceIdentifier := core.ResourceElementID(resourceName)
+	resourceIdentifier := bpcore.ResourceElementID(resourceName)
 	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
 	for key, annotation := range metadataSchema.Annotations.Values {
@@ -480,8 +479,8 @@ func validateResourceDependencies(
 
 		// Collect reference in the ref chain collector for the dependency to cover
 		// cycle detection across references, dependsOn and links.
-		resourceID := core.ResourceElementID(dependency)
-		referencedByResourceID := core.ResourceElementID(resourceName)
+		resourceID := bpcore.ResourceElementID(dependency)
+		referencedByResourceID := bpcore.ResourceElementID(resourceName)
 		dependencyTag := CreateDependencyRefTag(referencedByResourceID)
 		err := refChainCollector.Collect(
 			resourceID,
@@ -624,7 +623,7 @@ func validateConditionValue(
 	errs := []error{}
 	diagnostics := []*bpcore.Diagnostic{}
 
-	resourceIdentifier := core.ResourceElementID(resourceName)
+	resourceIdentifier := bpcore.ResourceElementID(resourceName)
 
 	if len(conditionValue.Values) > 1 {
 		return diagnostics, errInvalidSubTypeNotBoolean(
@@ -732,7 +731,7 @@ func validateResourceEach(
 
 	diagnostics := []*bpcore.Diagnostic{}
 
-	resourceIdentifier := core.ResourceElementID(resourceName)
+	resourceIdentifier := bpcore.ResourceElementID(resourceName)
 
 	if len(each.Values) == 0 {
 		return diagnostics, errEmptyEachSubstitution(
@@ -845,7 +844,7 @@ func ValidateResourceEachDependencies(
 	var errs []error
 	for resourceName, resource := range blueprint.Resources.Values {
 		if resource.Each != nil {
-			resourceIdentifier := core.ResourceElementID(resourceName)
+			resourceIdentifier := bpcore.ResourceElementID(resourceName)
 			eachTag := CreateSubRefPropTag(resourceIdentifier, "each")
 			nodes := refChainCollector.FindByTag(eachTag)
 			if len(nodes) > 0 {

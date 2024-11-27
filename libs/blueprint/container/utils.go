@@ -50,7 +50,7 @@ func collectLinksFromChain(
 	chain *links.ChainLinkNode,
 	refChainCollector validation.RefChainCollector,
 ) error {
-	referencedByResourceID := fmt.Sprintf("resources.%s", chain.ResourceName)
+	referencedByResourceID := core.ResourceElementID(chain.ResourceName)
 	for _, link := range chain.LinksTo {
 		linkImplementation, err := getLinkImplementation(chain, link)
 		if err != nil {
@@ -83,7 +83,7 @@ func collectResourceFromLink(
 	// Only collect link for cycle detection if it is a hard link.
 	// Soft links do not require a specific order of deployment/resolution.
 	if linkKind == provider.LinkKindHard {
-		resourceID := fmt.Sprintf("resources.%s", link.ResourceName)
+		resourceID := core.ResourceElementID(link.ResourceName)
 		err := refChainCollector.Collect(resourceID, link, referencedByResourceID, []string{"link"})
 		if err != nil {
 			return err
@@ -105,7 +105,7 @@ func alreadyCollected(
 	link *links.ChainLinkNode,
 	referencedByResourceID string,
 ) bool {
-	elementName := fmt.Sprintf("resources.%s", link.ResourceName)
+	elementName := core.ResourceElementID(link.ResourceName)
 	collected := refChainCollector.Chain(elementName)
 	return collected != nil &&
 		slices.ContainsFunc(
@@ -142,8 +142,8 @@ func extractChildRefNodes(
 		return childRefNodes
 	}
 
-	for childName, _ := range blueprint.Include.Values {
-		refChainNode := refChainCollector.Chain(fmt.Sprintf("children.%s", childName))
+	for childName := range blueprint.Include.Values {
+		refChainNode := refChainCollector.Chain(core.ChildElementID(childName))
 		if refChainNode != nil {
 			childRefNodes = append(childRefNodes, refChainNode)
 		}
