@@ -100,6 +100,11 @@ metadata:
   networkingSummary:
     coreInfraRegion: "${children.coreInfra.region}"
     vpc: "${datasources.network.vpc}"
+    mainSubnet: "${datasources.network.subnetIds[0]}"
     suffixedRegions:
       - "${variables.region}-input"
       - "${children.coreInfra.region}-infra"
+  intValue: ${4039}
+  floatValue: ${50392.296}
+  boolValue: ${true}
+  ordersTableDisplayName: ${resources.ordersTable.metadata.displayName}

@@ -37,11 +37,27 @@ func (d *VPCDataSource) Fetch(
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
 	vpc := "vpc-12345678"
+	subnet1 := "subnet-12345678"
+	subnet2 := "subnet-87654321"
 	return &provider.DataSourceFetchOutput{
 		Data: map[string]*core.MappingNode{
 			"vpcId": {
 				Literal: &core.ScalarValue{
 					StringValue: &vpc,
+				},
+			},
+			"subnetIds": {
+				Items: []*core.MappingNode{
+					{
+						Literal: &core.ScalarValue{
+							StringValue: &subnet1,
+						},
+					},
+					{
+						Literal: &core.ScalarValue{
+							StringValue: &subnet2,
+						},
+					},
 				},
 			},
 		},

@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
@@ -47,6 +46,21 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 		spec,
 		params,
 	)
+
+	// The resource must be resolved before the metadata can be resolved.
+	// During change staging, the blueprint container will make sure that resources
+	// are ordered correctly so that by the time any resource is referenced, it has
+	// already been resolved.
+	resolvedOrdersTableResult, err := subResolver.ResolveInResource(
+		context.TODO(),
+		"ordersTable",
+		blueprint.Resources.Values["ordersTable"],
+		&ResolveResourceTargetInfo{
+			ResolveFor: ResolveForChangeStaging,
+		},
+	)
+	s.Require().NoError(err)
+	s.resourceCache.Set("ordersTable", resolvedOrdersTableResult.ResolvedResource)
 
 	result, err := subResolver.ResolveInMappingNode(
 		context.TODO(),
@@ -130,11 +144,18 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 	)
 	s.Require().NoError(err)
 
-	// The resource must be resolved before the data source can be resolved.
-	// During change staging, the blueprint container will make sure that resources
-	// are ordered correctly so that by the time any resource is referenced, it has
-	// already been resolved.
-	s.resourceCache.Set("ordersTable", &provider.ResolvedResource{})
+	// The resource must be resolved before the metadata can be resolved.
+	// This is required in addition to the resource state to access metadata properties.
+	resolvedOrdersTableResult, err := subResolver.ResolveInResource(
+		ctx,
+		"ordersTable",
+		blueprint.Resources.Values["ordersTable"],
+		&ResolveResourceTargetInfo{
+			ResolveFor: ResolveForDeployment,
+		},
+	)
+	s.Require().NoError(err)
+	s.resourceCache.Set("ordersTable", resolvedOrdersTableResult.ResolvedResource)
 
 	result, err := subResolver.ResolveInMappingNode(
 		ctx,
