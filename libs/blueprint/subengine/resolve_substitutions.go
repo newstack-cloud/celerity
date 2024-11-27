@@ -1274,6 +1274,10 @@ func (r *defaultSubstitutionResolver) resolveInStringOrSubsMap(
 	stringOrSubsMap *schema.StringOrSubstitutionsMap,
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
+	if stringOrSubsMap == nil {
+		return nil, nil
+	}
+
 	resolvedMapping := map[string]*bpcore.MappingNode{}
 	resolveOnDeployErrs := []*resolveOnDeployError{}
 	for key, value := range stringOrSubsMap.Values {
@@ -1593,6 +1597,10 @@ func (r *defaultSubstitutionResolver) resolveValue(
 
 	r.valueCache.Set(value.ValueName, computed.ResolvedValue)
 
+	// TODO: Implement same functionality as resolveDataSource to make sure
+	// resolve on deploy errors are propogated up the parent property that is referencing
+	// the value.
+
 	return computed.ResolvedValue.Value, nil
 }
 
@@ -1635,7 +1643,7 @@ func (r *defaultSubstitutionResolver) resolveDataSourceProperty(
 ) (*bpcore.MappingNode, error) {
 	cached, hasValue := r.dataSourceDataCache.Get(dataSourceProperty.DataSourceName)
 	if hasValue {
-		return extractDataSourceProperty(resolveCtx.currentElementName, cached, dataSourceProperty)
+		return extractDataSourceProperty(resolveCtx.currentElementName, nil, cached, dataSourceProperty)
 	}
 
 	resolvedDataSource, err := r.resolveDataSource(ctx, dataSourceProperty, resolveCtx)
@@ -1657,11 +1665,17 @@ func (r *defaultSubstitutionResolver) resolveDataSourceProperty(
 
 	r.dataSourceDataCache.Set(dataSourceProperty.DataSourceName, dataOutput.Data)
 
-	return extractDataSourceProperty(resolveCtx.currentElementName, cached, dataSourceProperty)
+	return extractDataSourceProperty(
+		resolveCtx.currentElementName,
+		resolvedDataSource,
+		dataOutput.Data,
+		dataSourceProperty,
+	)
 }
 
 func extractDataSourceProperty(
 	parentElementName string,
+	resolvedDataSource *provider.ResolvedDataSource,
 	data map[string]*bpcore.MappingNode,
 	prop *substitutions.SubstitutionDataSourceProperty,
 ) (*bpcore.MappingNode, error) {
@@ -1669,7 +1683,7 @@ func extractDataSourceProperty(
 		return nil, errEmptyDataSourceData(parentElementName, prop.DataSourceName)
 	}
 
-	value, hasValue := data[prop.FieldName]
+	value, hasValue := getDataSourceFieldByPropOrAlias(data, prop.FieldName, resolvedDataSource)
 	if !hasValue {
 		return nil, errMissingDataSourceProperty(parentElementName, prop.DataSourceName, prop.FieldName)
 	}
@@ -1712,6 +1726,22 @@ func (r *defaultSubstitutionResolver) resolveDataSource(
 
 	r.dataSourceCache.Set(prop.DataSourceName, computed.ResolvedDataSource)
 
+	if len(computed.ResolveOnDeploy) > 0 {
+		return computed.ResolvedDataSource, errMustResolveOnDeployMultiple(
+			append(
+				computed.ResolveOnDeploy,
+				// Ensure that the current element property is included in the list of paths
+				// to be resolved on deploy.
+				// If the referenced data source field needs to be resolved on deploy, then the
+				// location where it is referenced must also be resolved on deploy.
+				bpcore.ElementPropertyPath(
+					resolveCtx.currentElementName,
+					resolveCtx.currentElementProperty,
+				),
+			),
+		)
+	}
+
 	return computed.ResolvedDataSource, nil
 }
 
@@ -1751,10 +1781,6 @@ func (r *defaultSubstitutionResolver) resolveResourceProperty(
 	resourceProperty *substitutions.SubstitutionResourceProperty,
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
-	path, err := substitutions.PropertyPathToString(resourceProperty.Path)
-	if err != nil {
-		return nil, err
-	}
 
 	if len(resourceProperty.Path) == 0 ||
 		(len(resourceProperty.Path) > 1 && resourceProperty.Path[0].FieldName == "spec") {
@@ -1762,14 +1788,14 @@ func (r *defaultSubstitutionResolver) resolveResourceProperty(
 		return r.resolveResourceSpecProperty(
 			ctx,
 			resourceProperty,
-			resolveContextFromParent(path, resolveCtx),
+			resolveCtx,
 		)
 	}
 
 	if len(resourceProperty.Path) > 1 && resourceProperty.Path[0].FieldName == "metadata" {
 		return r.resolveResourceMetadataProperty(
 			resourceProperty,
-			resolveContextFromParent(path, resolveCtx),
+			resolveCtx,
 		)
 	}
 

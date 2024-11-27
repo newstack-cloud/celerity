@@ -39,12 +39,6 @@ type Container interface {
 	SaveResource(
 		ctx context.Context,
 		instanceID string,
-		// Resource definitions in blueprints can be templates through
-		// the use of the "each" property.
-		// This index is used to differentiate between resources that
-		// are created from the same resource definition.
-		// For resource definitions that are not templates, this should always be 0.
-		index int,
 		resourceState ResourceState,
 	) error
 	// RemoveResource deals with removing the state of a resource from

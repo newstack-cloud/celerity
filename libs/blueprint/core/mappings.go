@@ -238,7 +238,7 @@ func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {
 func MergeMaps(nodes ...*MappingNode) *MappingNode {
 	merged := make(map[string]*MappingNode)
 	for _, node := range nodes {
-		if node.Fields != nil {
+		if node != nil && node.Fields != nil {
 			for k, v := range node.Fields {
 				merged[k] = v
 			}

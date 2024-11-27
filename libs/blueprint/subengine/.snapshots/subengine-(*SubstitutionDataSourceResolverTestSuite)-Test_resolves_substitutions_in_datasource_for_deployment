@@ -1,0 +1,177 @@
+(*subengine.ResolveInDataSourceResult)({
+  ResolvedDataSource: (*provider.ResolvedDataSource)({
+    Type: (*schema.DataSourceTypeWrapper)({
+      Value: (string) (len=7) "aws/vpc",
+      SourceMeta: (*source.Meta)({
+        Position: (source.Position) {
+          Line: (int) 29,
+          Column: (int) 11
+        },
+        EndPosition: (*source.Position)({
+          Line: (int) 29,
+          Column: (int) 18
+        })
+      })
+    }),
+    DataSourceMetadata: (*provider.ResolvedDataSourceMetadata)({
+      DisplayName: (*core.MappingNode)({
+        Literal: (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=10) "Networking"),
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>),
+        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+      }),
+      Annotations: (*core.MappingNode)(<nil>),
+      Custom: (*core.MappingNode)(<nil>)
+    }),
+    Filter: (*provider.ResolvedDataSourceFilter)({
+      Field: (*core.ScalarValue)({
+        IntValue: (*int)(<nil>),
+        BoolValue: (*bool)(<nil>),
+        FloatValue: (*float64)(<nil>),
+        StringValue: (*string)((len=4) "tags"),
+        SourceMeta: (*source.Meta)({
+          Position: (source.Position) {
+            Line: (int) 32,
+            Column: (int) 14
+          },
+          EndPosition: (*source.Position)({
+            Line: (int) 32,
+            Column: (int) 18
+          })
+        })
+      }),
+      Operator: (*schema.DataSourceFilterOperatorWrapper)({
+        Value: (schema.DataSourceFilterOperator) (len=12) "not contains",
+        SourceMeta: (*source.Meta)({
+          Position: (source.Position) {
+            Line: (int) 33,
+            Column: (int) 17
+          },
+          EndPosition: (*source.Position)({
+            Line: (int) 33,
+            Column: (int) 31
+          })
+        })
+      }),
+      Search: (*provider.ResolvedDataSourceFilterSearch)({
+        Values: ([]*core.MappingNode) (len=1) {
+          (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=27) "test-orders-table-309428320"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          })
+        }
+      })
+    }),
+    Exports: (map[string]*provider.ResolvedDataSourceFieldExport) (len=2) {
+      (string) (len=9) "subnetIds": (*provider.ResolvedDataSourceFieldExport)({
+        Type: (*schema.DataSourceFieldTypeWrapper)({
+          Value: (schema.DataSourceFieldType) (len=5) "array",
+          SourceMeta: (*source.Meta)({
+            Position: (source.Position) {
+              Line: (int) 44,
+              Column: (int) 15
+            },
+            EndPosition: (*source.Position)({
+              Line: (int) 44,
+              Column: (int) 20
+            })
+          })
+        }),
+        AliasFor: (*core.ScalarValue)(<nil>),
+        Description: (*core.MappingNode)({
+          Literal: (*core.ScalarValue)({
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=23) "The IDs of the subnets."),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          Fields: (map[string]*core.MappingNode) <nil>,
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        })
+      }),
+      (string) (len=3) "vpc": (*provider.ResolvedDataSourceFieldExport)({
+        Type: (*schema.DataSourceFieldTypeWrapper)({
+          Value: (schema.DataSourceFieldType) (len=6) "string",
+          SourceMeta: (*source.Meta)({
+            Position: (source.Position) {
+              Line: (int) 39,
+              Column: (int) 15
+            },
+            EndPosition: (*source.Position)({
+              Line: (int) 39,
+              Column: (int) 21
+            })
+          })
+        }),
+        AliasFor: (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=5) "vpcId"),
+          SourceMeta: (*source.Meta)({
+            Position: (source.Position) {
+              Line: (int) 40,
+              Column: (int) 19
+            },
+            EndPosition: (*source.Position)({
+              Line: (int) 40,
+              Column: (int) 24
+            })
+          })
+        }),
+        Description: (*core.MappingNode)({
+          Literal: (*core.ScalarValue)({
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=19) "The ID of the VPC.\n"),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          Fields: (map[string]*core.MappingNode) <nil>,
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        })
+      })
+    },
+    Description: (*core.MappingNode)({
+      Literal: (*core.ScalarValue)({
+        IntValue: (*int)(<nil>),
+        BoolValue: (*bool)(<nil>),
+        FloatValue: (*float64)(<nil>),
+        StringValue: (*string)((len=41) "Networking resources for the application."),
+        SourceMeta: (*source.Meta)(<nil>)
+      }),
+      Fields: (map[string]*core.MappingNode) <nil>,
+      Items: ([]*core.MappingNode) <nil>,
+      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>),
+      FieldsSourceMeta: (map[string]*source.Meta) <nil>
+    })
+  }),
+  ResolveOnDeploy: ([]string) {
+  }
+})

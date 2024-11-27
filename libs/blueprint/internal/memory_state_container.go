@@ -104,7 +104,6 @@ func (c *MemoryStateContainer) GetResourceByName(
 func (c *MemoryStateContainer) SaveResource(
 	ctx context.Context,
 	instanceID string,
-	index int,
 	resourceState state.ResourceState,
 ) error {
 	c.mu.Lock()
@@ -112,7 +111,13 @@ func (c *MemoryStateContainer) SaveResource(
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
+			if instance.Resources == nil {
+				instance.Resources = make(map[string]*state.ResourceState)
+			}
 			instance.Resources[resourceState.ResourceID] = &resourceState
+			if instance.ResourceIDs == nil {
+				instance.ResourceIDs = make(map[string]string)
+			}
 			instance.ResourceIDs[resourceState.ResourceName] = resourceState.ResourceID
 		} else {
 			return errors.New(instanceNotFoundText)

@@ -32,3 +32,17 @@ func (e resolveOnDeployErrors) Error() string {
 		len(e.errors),
 	)
 }
+
+func errMustResolveOnDeployMultiple(
+	paths []string,
+) error {
+	errors := make([]*resolveOnDeployError, len(paths))
+	for i, path := range paths {
+		errors[i] = &resolveOnDeployError{
+			propertyPath: path,
+		}
+	}
+	return &resolveOnDeployErrors{
+		errors: errors,
+	}
+}

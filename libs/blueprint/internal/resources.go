@@ -74,7 +74,8 @@ func (r *DynamoDBTableResource) GetSpecDefinition(
 				Type: provider.ResourceDefinitionsSchemaTypeObject,
 				Attributes: map[string]*provider.ResourceDefinitionsSchema{
 					"id": {
-						Type: provider.ResourceDefinitionsSchemaTypeString,
+						Type:     provider.ResourceDefinitionsSchemaTypeString,
+						Computed: true,
 					},
 					"tableName": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,

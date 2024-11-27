@@ -36,8 +36,15 @@ func (d *VPCDataSource) Fetch(
 	ctx context.Context,
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
+	vpc := "vpc-12345678"
 	return &provider.DataSourceFetchOutput{
-		Data: map[string]*core.MappingNode{},
+		Data: map[string]*core.MappingNode{
+			"vpcId": {
+				Literal: &core.ScalarValue{
+					StringValue: &vpc,
+				},
+			},
+		},
 	}, nil
 }
 

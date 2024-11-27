@@ -458,8 +458,8 @@ func errMissingResourceSpecProperty(
 		Err: fmt.Errorf(
 			"[%s]: missing property %q in spec definition for resource %q%s",
 			elementName,
-			property.ResourceName,
 			path,
+			property.ResourceName,
 			depthWarning,
 		),
 	}

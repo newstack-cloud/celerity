@@ -310,7 +310,7 @@ func getResourceSpecPropertyValue(
 ) (*bpcore.MappingNode, error) {
 	return getResourcePropertyValueFromMappingNode(
 		resolvedResource.Spec,
-		property.Path,
+		property.Path[1:],
 		property,
 		resolveCtx,
 		/* offset of mapping node in property path */ 1,
@@ -485,7 +485,7 @@ func getResourceSpecPropertyFromState(
 ) (*bpcore.MappingNode, error) {
 	return getResourcePropertyValueFromMappingNode(
 		resourceState.ResourceSpecData,
-		property.Path,
+		property.Path[1:],
 		property,
 		resolveCtx,
 		/* offset of mapping node in property path */ 1,
@@ -522,8 +522,8 @@ func getPartiallyResolvedResourceSpec(
 		return nil
 	}
 
-	resource := resolvedContext.partiallyResolved.(*provider.ResolvedResource)
-	if resource == nil {
+	resource, isResource := resolvedContext.partiallyResolved.(*provider.ResolvedResource)
+	if !isResource || resource == nil {
 		return nil
 	}
 
@@ -537,8 +537,8 @@ func getPartiallyResolvedResourceCustomMetadata(
 		return nil
 	}
 
-	resource := resolvedContext.partiallyResolved.(*provider.ResolvedResource)
-	if resource == nil {
+	resource, isResource := resolvedContext.partiallyResolved.(*provider.ResolvedResource)
+	if !isResource || resource == nil {
 		return nil
 	}
 
@@ -552,8 +552,8 @@ func getPartiallyResolvedDataSourceCustomMetadata(
 		return nil
 	}
 
-	dataSource := resolvedContext.partiallyResolved.(*provider.ResolvedDataSource)
-	if dataSource == nil {
+	dataSource, isDataSource := resolvedContext.partiallyResolved.(*provider.ResolvedDataSource)
+	if !isDataSource || dataSource == nil {
 		return nil
 	}
 
@@ -567,8 +567,8 @@ func getPartiallyResolvedIncludeVariables(
 		return nil
 	}
 
-	include := resolvedContext.partiallyResolved.(*ResolvedInclude)
-	if include == nil {
+	include, isInclude := resolvedContext.partiallyResolved.(*ResolvedInclude)
+	if !isInclude || include == nil {
 		return nil
 	}
 
@@ -582,8 +582,8 @@ func getPartiallyResolvedIncludeMetadata(
 		return nil
 	}
 
-	include := resolvedContext.partiallyResolved.(*ResolvedInclude)
-	if include == nil {
+	include, isInclude := resolvedContext.partiallyResolved.(*ResolvedInclude)
+	if !isInclude || include == nil {
 		return nil
 	}
 
@@ -673,4 +673,41 @@ func getStringWithSubstitutions(
 	}
 
 	return nil
+}
+
+func getDataSourceFieldByPropOrAlias(
+	data map[string]*bpcore.MappingNode,
+	fieldName string,
+	resolvedDataSource *provider.ResolvedDataSource,
+) (*bpcore.MappingNode, bool) {
+	value, hasValue := data[fieldName]
+	if hasValue {
+		return value, true
+	}
+
+	if resolvedDataSource == nil {
+		return nil, false
+	}
+
+	export, hasExport := resolvedDataSource.Exports[fieldName]
+	if !hasExport {
+		return nil, false
+	}
+
+	aliasedFieldName, isAliased := getDataSourceAliasedField(export)
+	if !isAliased {
+		return nil, false
+	}
+
+	return data[aliasedFieldName], true
+}
+
+func getDataSourceAliasedField(
+	export *provider.ResolvedDataSourceFieldExport,
+) (string, bool) {
+	if export.AliasFor != nil && export.AliasFor.StringValue != nil {
+		return *export.AliasFor.StringValue, true
+	}
+
+	return "", false
 }

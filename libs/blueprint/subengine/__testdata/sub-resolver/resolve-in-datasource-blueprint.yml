@@ -31,7 +31,7 @@ datasources:
     filter:
       field: tags
       operator: "not contains"
-      search: ${children.coreInfra.region}
+      search: ${ordersTable.spec.id}
     metadata:
       displayName: Networking
     exports:
@@ -58,7 +58,6 @@ resources:
       displayName: ${variables.environment} Orders Table
       annotations:
         aws.dynamodb.trigger: ${variables.enableOrderTableTrigger}
-        aws.dynamodb.vpc: ${datasources.network.vpc}
       labels:
         app: orders
       custom:
