@@ -37,7 +37,7 @@ func (s *SubstitutionMappingNodeResolverTestSuite) SetupTest() {
 func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_in_mapping_node_for_change_staging() {
 	blueprint := s.specFixtureSchemas[resolveInMappingNodeFixtureName]
 	spec := internal.NewBlueprintSpecMock(blueprint)
-	params := resolveInDataSourceTestParams()
+	params := resolveInMappingNodeTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
 		s.funcRegistry,
 		s.resourceRegistry,
@@ -176,6 +176,7 @@ func resolveInMappingNodeTestParams() *internal.Params {
 	enableOrderTableTrigger := true
 	region := "us-west-2"
 	deployOrdersTableToRegions := "[\"us-west-2\",\"us-east-1\"]"
+	relatedInfo := "[{\"id\":\"test-info-1\"},{\"id\":\"test-info-2\"}]"
 	blueprintVars := map[string]*core.ScalarValue{
 		"environment": {
 			StringValue: &environment,
@@ -188,6 +189,9 @@ func resolveInMappingNodeTestParams() *internal.Params {
 		},
 		"enableOrderTableTrigger": {
 			BoolValue: &enableOrderTableTrigger,
+		},
+		"relatedInfo": {
+			StringValue: &relatedInfo,
 		},
 	}
 	return internal.NewParams(

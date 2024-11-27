@@ -1,7 +1,7 @@
 (*subengine.ResolveInMappingNodeResult)({
   ResolvedMappingNode: (*core.MappingNode)({
     Literal: (*core.ScalarValue)(<nil>),
-    Fields: (map[string]*core.MappingNode) (len=2) {
+    Fields: (map[string]*core.MappingNode) (len=3) {
       (string) (len=5) "build": (*core.MappingNode)({
         Literal: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
@@ -10,11 +10,11 @@
           StringValue: (*string)((len=7) "esbuild"),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 91,
+              Line: (int) 98,
               Column: (int) 10
             },
             EndPosition: (*source.Position)({
-              Line: (int) 91,
+              Line: (int) 98,
               Column: (int) 17
             })
           })
@@ -24,7 +24,7 @@
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)({
           Position: (source.Position) {
-            Line: (int) 91,
+            Line: (int) 98,
             Column: (int) 10
           },
           EndPosition: (*source.Position)(<nil>)
@@ -33,11 +33,72 @@
       }),
       (string) (len=17) "networkingSummary": (*core.MappingNode)({
         Literal: (*core.ScalarValue)(<nil>),
-        Fields: (map[string]*core.MappingNode) (len=2) {
+        Fields: (map[string]*core.MappingNode) (len=3) {
           (string) (len=15) "coreInfraRegion": (*core.MappingNode)(<nil>),
+          (string) (len=15) "suffixedRegions": (*core.MappingNode)({
+            Literal: (*core.ScalarValue)(<nil>),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) (len=2) {
+              (*core.MappingNode)({
+                Literal: (*core.ScalarValue)({
+                  IntValue: (*int)(<nil>),
+                  BoolValue: (*bool)(<nil>),
+                  FloatValue: (*float64)(<nil>),
+                  StringValue: (*string)((len=15) "us-west-2-input"),
+                  SourceMeta: (*source.Meta)(<nil>)
+                }),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>),
+                FieldsSourceMeta: (map[string]*source.Meta) <nil>
+              }),
+              (*core.MappingNode)(<nil>)
+            },
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
           (string) (len=3) "vpc": (*core.MappingNode)(<nil>)
         },
         Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>),
+        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+      }),
+      (string) (len=14) "relatedInfoIds": (*core.MappingNode)({
+        Literal: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) (len=2) {
+          (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=11) "test-info-1"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (*core.MappingNode)({
+            Literal: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=11) "test-info-2"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          })
+        },
         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
         SourceMeta: (*source.Meta)(<nil>),
         FieldsSourceMeta: (map[string]*source.Meta) <nil>
@@ -48,9 +109,10 @@
     SourceMeta: (*source.Meta)(<nil>),
     FieldsSourceMeta: (map[string]*source.Meta) <nil>
   }),
-  ResolveOnDeploy: ([]string) (len=3) {
+  ResolveOnDeploy: ([]string) (len=4) {
     (string) (len=33) "datasources.network.filter.search",
     (string) (len=48) "metadata[\"networkingSummary\"][\"coreInfraRegion\"]",
+    (string) (len=51) "metadata[\"networkingSummary\"][\"suffixedRegions\"][1]",
     (string) (len=36) "metadata[\"networkingSummary\"][\"vpc\"]"
   }
 })

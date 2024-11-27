@@ -14,9 +14,6 @@ variables:
   deployOrdersTableToRegions:
     type: string
     description: "A JSON-encoded list of regions to deploy the orders table to."
-  relatedInfo:
-    type: string
-    description: "A JSON-encoded list containing records of related information for the stack."
 
 values:
   tableName:
@@ -26,10 +23,7 @@ values:
   deployOrdersTableToRegions:
     type: array
     value: "${jsondecode(variables.deployOrdersTableToRegions)}"
-
-  relatedInfoIds:
-    type: array
-    value: ${map(jsondecode(variables.relatedInfo), getattr("id"))}
+    description: "The regions to deploy the orders table to."
 
 datasources:
   network:
@@ -59,7 +53,7 @@ resources:
       and:
         - ${eq(variables.environment, "production-env")}
         - or:
-            - ${contains(values.deployOrdersTableToRegions, trimprefix(variables.region, "Region-"))}
+            - ${contains(values.deployOrdersTableToRegions, variables.region)}
             - not: ${eq(variables.region, "eu-central-1")}
     metadata:
       displayName: ${variables.environment} Orders Table
@@ -96,10 +90,3 @@ exports:
 
 metadata:
   build: esbuild
-  relatedInfoIds: ${values.relatedInfoIds}
-  networkingSummary:
-    coreInfraRegion: "${children.coreInfra.region}"
-    vpc: "${datasources.network.vpc}"
-    suffixedRegions:
-      - "${variables.region}-input"
-      - "${children.coreInfra.region}-infra"
