@@ -3,6 +3,7 @@ package subengine
 import (
 	"fmt"
 	"math"
+	"slices"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -176,7 +177,9 @@ func handleResolveError(err error, resolveOnDeploy *[]string) error {
 	}
 
 	if resolveOnDeployErr, ok := err.(*resolveOnDeployError); ok {
-		*resolveOnDeploy = append(*resolveOnDeploy, resolveOnDeployErr.propertyPath)
+		if !slices.Contains(*resolveOnDeploy, resolveOnDeployErr.propertyPath) {
+			*resolveOnDeploy = append(*resolveOnDeploy, resolveOnDeployErr.propertyPath)
+		}
 		return nil
 	}
 
@@ -187,6 +190,7 @@ func handleResolveError(err error, resolveOnDeploy *[]string) error {
 				return err.propertyPath
 			})...,
 		)
+		*resolveOnDeploy = slices.Compact(*resolveOnDeploy)
 		return nil
 	}
 

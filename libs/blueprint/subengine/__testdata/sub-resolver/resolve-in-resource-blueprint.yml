@@ -24,6 +24,10 @@ values:
     type: array
     value: "${jsondecode(variables.deployOrdersTableToRegions)}"
 
+  prefixedCoreInfraRegion:
+    type: string
+    value: "core-${children.coreInfra.region}"
+
 datasources:
   network:
     type: aws/vpc
@@ -59,6 +63,7 @@ resources:
       annotations:
         aws.dynamodb.trigger: ${variables.enableOrderTableTrigger}
         aws.dynamodb.vpc: ${datasources.network.vpc}
+        custom.coreInfraRegion: ${values.prefixedCoreInfraRegion}
       labels:
         app: orders
       custom:

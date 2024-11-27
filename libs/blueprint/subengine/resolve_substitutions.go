@@ -1597,9 +1597,21 @@ func (r *defaultSubstitutionResolver) resolveValue(
 
 	r.valueCache.Set(value.ValueName, computed.ResolvedValue)
 
-	// TODO: Implement same functionality as resolveDataSource to make sure
-	// resolve on deploy errors are propogated up the parent property that is referencing
-	// the value.
+	if len(computed.ResolveOnDeploy) > 0 {
+		return computed.ResolvedValue.Value, errMustResolveOnDeployMultiple(
+			append(
+				computed.ResolveOnDeploy,
+				// Ensure that the current element property is included in the list of paths
+				// to be resolved on deploy.
+				// If the referenced value needs to be resolved on deploy, then the
+				// location where it is referenced must also be resolved on deploy.
+				bpcore.ElementPropertyPath(
+					resolveCtx.currentElementName,
+					resolveCtx.currentElementProperty,
+				),
+			),
+		)
+	}
 
 	return computed.ResolvedValue.Value, nil
 }
