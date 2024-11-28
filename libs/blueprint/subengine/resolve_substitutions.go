@@ -173,17 +173,17 @@ const (
 )
 
 type defaultSubstitutionResolver struct {
-	funcRegistry        provider.FunctionRegistry
-	resourceRegistry    resourcehelpers.Registry
-	dataSourceRegistry  provider.DataSourceRegistry
-	stateContainer      state.Container
-	spec                speccore.BlueprintSpec
-	params              bpcore.BlueprintParams
-	valueCache          *bpcore.Cache[*ResolvedValue]
-	dataSourceCache     *bpcore.Cache[*provider.ResolvedDataSource]
-	dataSourceDataCache *bpcore.Cache[map[string]*bpcore.MappingNode]
-	resourceCache       *bpcore.Cache[*provider.ResolvedResource]
-	resourceStateCache  *bpcore.Cache[*state.ResourceState]
+	funcRegistry                 provider.FunctionRegistry
+	resourceRegistry             resourcehelpers.Registry
+	dataSourceRegistry           provider.DataSourceRegistry
+	stateContainer               state.Container
+	spec                         speccore.BlueprintSpec
+	params                       bpcore.BlueprintParams
+	valueCache                   *bpcore.Cache[*ResolvedValue]
+	dataSourceResolveResultCache *bpcore.Cache[*ResolveInDataSourceResult]
+	dataSourceDataCache          *bpcore.Cache[map[string]*bpcore.MappingNode]
+	resourceCache                *bpcore.Cache[*provider.ResolvedResource]
+	resourceStateCache           *bpcore.Cache[*state.ResourceState]
 }
 
 // NewDefaultSubstitutionResolver creates a new default implementation
@@ -202,17 +202,17 @@ func NewDefaultSubstitutionResolver(
 	params bpcore.BlueprintParams,
 ) SubstitutionResolver {
 	return &defaultSubstitutionResolver{
-		funcRegistry:        funcRegistry,
-		resourceRegistry:    resourceRegistry,
-		dataSourceRegistry:  dataSourceRegistry,
-		stateContainer:      stateContainer,
-		spec:                spec,
-		params:              params,
-		valueCache:          bpcore.NewCache[*ResolvedValue](),
-		dataSourceCache:     bpcore.NewCache[*provider.ResolvedDataSource](),
-		dataSourceDataCache: bpcore.NewCache[map[string]*bpcore.MappingNode](),
-		resourceCache:       resourceCache,
-		resourceStateCache:  bpcore.NewCache[*state.ResourceState](),
+		funcRegistry:                 funcRegistry,
+		resourceRegistry:             resourceRegistry,
+		dataSourceRegistry:           dataSourceRegistry,
+		stateContainer:               stateContainer,
+		spec:                         spec,
+		params:                       params,
+		valueCache:                   bpcore.NewCache[*ResolvedValue](),
+		dataSourceResolveResultCache: bpcore.NewCache[*ResolveInDataSourceResult](),
+		dataSourceDataCache:          bpcore.NewCache[map[string]*bpcore.MappingNode](),
+		resourceCache:                resourceCache,
+		resourceStateCache:           bpcore.NewCache[*state.ResourceState](),
 	}
 }
 
@@ -1653,14 +1653,14 @@ func (r *defaultSubstitutionResolver) resolveDataSourceProperty(
 	dataSourceProperty *substitutions.SubstitutionDataSourceProperty,
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
-	cached, hasValue := r.dataSourceDataCache.Get(dataSourceProperty.DataSourceName)
-	if hasValue {
-		return extractDataSourceProperty(resolveCtx.currentElementName, nil, cached, dataSourceProperty)
-	}
-
 	resolvedDataSource, err := r.resolveDataSource(ctx, dataSourceProperty, resolveCtx)
 	if err != nil {
 		return nil, err
+	}
+
+	cached, hasValue := r.dataSourceDataCache.Get(dataSourceProperty.DataSourceName)
+	if hasValue {
+		return extractDataSourceProperty(resolveCtx.currentElementName, resolvedDataSource, cached, dataSourceProperty)
 	}
 
 	dataOutput, err := r.dataSourceRegistry.Fetch(
@@ -1726,9 +1726,9 @@ func (r *defaultSubstitutionResolver) resolveDataSource(
 	prop *substitutions.SubstitutionDataSourceProperty,
 	resolveCtx *resolveContext,
 ) (*provider.ResolvedDataSource, error) {
-	cached, hasDataSource := r.dataSourceCache.Get(prop.DataSourceName)
+	cached, hasDataSource := r.dataSourceResolveResultCache.Get(prop.DataSourceName)
 	if hasDataSource {
-		return cached, nil
+		return expandResolveDataSourceResultWithError(cached, resolveCtx)
 	}
 
 	computed, err := r.computeDataSource(ctx, prop, resolveCtx)
@@ -1736,25 +1736,9 @@ func (r *defaultSubstitutionResolver) resolveDataSource(
 		return nil, err
 	}
 
-	r.dataSourceCache.Set(prop.DataSourceName, computed.ResolvedDataSource)
+	r.dataSourceResolveResultCache.Set(prop.DataSourceName, computed)
 
-	if len(computed.ResolveOnDeploy) > 0 {
-		return computed.ResolvedDataSource, errMustResolveOnDeployMultiple(
-			append(
-				computed.ResolveOnDeploy,
-				// Ensure that the current element property is included in the list of paths
-				// to be resolved on deploy.
-				// If the referenced data source field needs to be resolved on deploy, then the
-				// location where it is referenced must also be resolved on deploy.
-				bpcore.ElementPropertyPath(
-					resolveCtx.currentElementName,
-					resolveCtx.currentElementProperty,
-				),
-			),
-		)
-	}
-
-	return computed.ResolvedDataSource, nil
+	return expandResolveDataSourceResultWithError(computed, resolveCtx)
 }
 
 func (r *defaultSubstitutionResolver) computeDataSource(

@@ -77,20 +77,7 @@
         Literal: (*core.ScalarValue)(<nil>),
         Fields: (map[string]*core.MappingNode) (len=4) {
           (string) (len=15) "coreInfraRegion": (*core.MappingNode)(<nil>),
-          (string) (len=10) "mainSubnet": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=15) "subnet-12345678"),
-              SourceMeta: (*source.Meta)(<nil>)
-            }),
-            Fields: (map[string]*core.MappingNode) <nil>,
-            Items: ([]*core.MappingNode) <nil>,
-            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
-            SourceMeta: (*source.Meta)(<nil>),
-            FieldsSourceMeta: (map[string]*source.Meta) <nil>
-          }),
+          (string) (len=10) "mainSubnet": (*core.MappingNode)(<nil>),
           (string) (len=15) "suffixedRegions": (*core.MappingNode)({
             Literal: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) <nil>,
@@ -179,9 +166,11 @@
     SourceMeta: (*source.Meta)(<nil>),
     FieldsSourceMeta: (map[string]*source.Meta) <nil>
   }),
-  ResolveOnDeploy: ([]string) (len=4) {
+  ResolveOnDeploy: ([]string) (len=6) {
+    (string) (len=33) "datasources.network.filter.search",
     (string) (len=33) "datasources.network.filter.search",
     (string) (len=48) "metadata[\"networkingSummary\"][\"coreInfraRegion\"]",
+    (string) (len=43) "metadata[\"networkingSummary\"][\"mainSubnet\"]",
     (string) (len=51) "metadata[\"networkingSummary\"][\"suffixedRegions\"][1]",
     (string) (len=36) "metadata[\"networkingSummary\"][\"vpc\"]"
   }

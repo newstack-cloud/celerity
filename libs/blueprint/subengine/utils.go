@@ -155,6 +155,7 @@ func handleResolveError(err error, resolveOnDeploy *[]string) error {
 		if !slices.Contains(*resolveOnDeploy, resolveOnDeployErr.propertyPath) {
 			*resolveOnDeploy = append(*resolveOnDeploy, resolveOnDeployErr.propertyPath)
 		}
+		slices.Sort(*resolveOnDeploy)
 		return nil
 	}
 
@@ -690,4 +691,27 @@ func getDataSourceAliasedField(
 	}
 
 	return "", false
+}
+
+func expandResolveDataSourceResultWithError(
+	result *ResolveInDataSourceResult,
+	resolveCtx *resolveContext,
+) (*provider.ResolvedDataSource, error) {
+	if len(result.ResolveOnDeploy) > 0 {
+		return result.ResolvedDataSource, errMustResolveOnDeployMultiple(
+			append(
+				result.ResolveOnDeploy,
+				// Ensure that the current element property is included in the list of paths
+				// to be resolved on deploy.
+				// If the referenced data source field needs to be resolved on deploy, then the
+				// location where it is referenced must also be resolved on deploy.
+				bpcore.ElementPropertyPath(
+					resolveCtx.currentElementName,
+					resolveCtx.currentElementProperty,
+				),
+			),
+		)
+	}
+
+	return result.ResolvedDataSource, nil
 }
