@@ -803,7 +803,8 @@ func validateResourceDefinitionSubstitution(
 				errs = append(errs, err)
 			} else {
 				diagnostics = append(diagnostics, subDiagnostics...)
-				if resolvedType != string(expectedResolvedType) {
+				if resolvedType != string(expectedResolvedType) &&
+					resolvedType != string(substitutions.ResolvedSubExprTypeAny) {
 					errs = append(errs, errInvalidResourceDefSubType(
 						resolvedType,
 						path,
