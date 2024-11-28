@@ -1,0 +1,76 @@
+version: 2023-04-20
+variables:
+  environment:
+    type: string
+  otherFunctionsConfig:
+    type: string
+  tablesConfig:
+    type: string
+
+values:
+  otherFunctionsConfig:
+    type: array
+    value: "${jsondecode(variables.otherFunctionsConfig)}"
+
+  tablesConfig:
+    type: array
+    value: "${jsondecode(variables.tablesConfig)}"
+
+datasources:
+  network:
+    type: aws/vpc
+    description: "Networking resources for the application."
+    filter:
+      field: tags
+      operator: "not contains"
+      search: service
+    metadata:
+      displayName: Networking
+    exports:
+      vpc:
+        type: string
+        aliasFor: vpcId
+        description: |
+          The ID of the VPC.
+      subnetIds:
+        type: array
+        description: "The IDs of the subnets."
+
+resources:
+  function:
+    type: aws/lambda/function
+    description: "Function that saves an order to the database."
+    each: "${values.otherFunctionsConfig}"
+    linkSelector:
+      byLabel:
+        app: orders
+    spec:
+      handler: "${elem.handler}"
+
+  ordersTable:
+    type: aws/dynamodb/table
+    description: "Table that stores orders for an application."
+    each: "${values.tablesConfig}"
+    metadata:
+      labels:
+        app: orders
+    spec:
+      name: "${elem.name}"
+
+include:
+  coreInfra:
+    path: core-infra.yaml
+    description: core infrastructure for the Orders API
+    metadata:
+      sourceType: aws/s3
+      bucket: order-system-blueprints
+      region: eu-west-1
+
+exports:
+  environment:
+    type: string
+    field: variables.environment
+    description: "The environment for the blueprint."
+
+metadata:
+  build: esbuild

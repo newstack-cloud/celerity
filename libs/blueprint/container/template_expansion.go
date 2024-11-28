@@ -96,6 +96,8 @@ func ExpandResourceTemplates(
 			}
 			// Cache to be used to resolve each resource derived from a template later.
 			cache.Set(resourceName, items)
+		} else {
+			expandedBlueprint.Resources.Values[resourceName] = resource
 		}
 	}
 
@@ -221,10 +223,8 @@ func createExpandedResourceMetadata(
 				labelInfo.labelsToBeMadeUnique,
 				index,
 			),
-			SourceMeta: metadata.Labels.SourceMeta,
 		},
-		Custom:     metadata.Custom,
-		SourceMeta: metadata.SourceMeta,
+		Custom: metadata.Custom,
 	}
 }
 
@@ -244,9 +244,7 @@ func createExpandedResourceLinkSelector(
 				linkSelectorInfo.linkSelectorsToBeMadeUnique,
 				index,
 			),
-			SourceMeta: linkSelector.ByLabel.SourceMeta,
 		},
-		SourceMeta: linkSelector.SourceMeta,
 	}
 }
 
