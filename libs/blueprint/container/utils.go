@@ -168,6 +168,53 @@ func extractIncludeVariables(include *subengine.ResolvedInclude) map[string]*cor
 	return includeVariables
 }
 
+func isConditionKnownOnDeploy(
+	resourceName string,
+	resolveOnDeploy []string,
+) bool {
+	resourceElementID := core.ResourceElementID(resourceName)
+	return slices.ContainsFunc(resolveOnDeploy, func(resolveOnDeployProp string) bool {
+		conditionPropPrefix := fmt.Sprintf("%s.condition", resourceElementID)
+		return strings.HasPrefix(resolveOnDeployProp, conditionPropPrefix)
+	})
+}
+
+func evaluateCondition(
+	condition *provider.ResolvedResourceCondition,
+) bool {
+	if condition == nil {
+		return true
+	}
+
+	if condition.And != nil {
+		result := true
+		for _, subCondition := range condition.And {
+			result = result && evaluateCondition(subCondition)
+		}
+		return result
+	}
+
+	if condition.Or != nil {
+		result := false
+		for _, subCondition := range condition.Or {
+			result = result || evaluateCondition(subCondition)
+		}
+		return result
+	}
+
+	if condition.Not != nil {
+		return !evaluateCondition(condition.Not)
+	}
+
+	if condition.StringValue != nil {
+		return core.BoolValue(condition.StringValue)
+	}
+
+	// A condition with no value set is equivalent to a condition not being set at all
+	// for the given resource.
+	return true
+}
+
 func extractChildBlueprintFormat(includeName string, include *subengine.ResolvedInclude) (schema.SpecFormat, error) {
 	if include == nil || include.Path == nil {
 		return schema.SpecFormat(""), errMissingChildBlueprintPath(includeName)

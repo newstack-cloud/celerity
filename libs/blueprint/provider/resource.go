@@ -312,6 +312,12 @@ type Changes struct {
 	// FieldChangesKnownOnDeploy holds a list of field names
 	// for which changes will be known when the host blueprint is deployed.
 	FieldChangesKnownOnDeploy []string `json:"fieldChangesKnownOnDeploy"`
+	// ConditionKnownOnDeploy specifies whether the condition
+	// for the resource will be known when the host blueprint is deployed.
+	// When a condition makes use of items in the blueprint that are not resolved
+	// until deployment, whether the resource will be deployed or not
+	// cannot be known during the change staging phase.
+	ConditionKnownOnDeploy bool `json:"conditionKnownOnDeploy"`
 	// NewOutboundLinks holds a mapping of the linked to resource name
 	// to the link changes representing the new links that will be created.
 	NewOutboundLinks map[string]LinkChanges `json:"newOutboundLinks"`

@@ -69,6 +69,7 @@ func (r *DynamoDBTableResource) GetSpecDefinition(
 	ctx context.Context,
 	input *provider.ResourceGetSpecDefinitionInput,
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	defaultGlobal := false
 	return &provider.ResourceGetSpecDefinitionOutput{
 		SpecDefinition: &provider.ResourceSpecDefinition{
 			Schema: &provider.ResourceDefinitionsSchema{
@@ -83,6 +84,14 @@ func (r *DynamoDBTableResource) GetSpecDefinition(
 					},
 					"region": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
+					},
+					"global": {
+						Type: provider.ResourceDefinitionsSchemaTypeBoolean,
+						Default: &core.MappingNode{
+							Literal: &core.ScalarValue{
+								BoolValue: &defaultGlobal,
+							},
+						},
 					},
 				},
 			},
@@ -267,6 +276,11 @@ func (r *ExampleComplexResource) GetSpecDefinition(
 	ctx context.Context,
 	input *provider.ResourceGetSpecDefinitionInput,
 ) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	defaultPrimaryPort := 80
+	defaultOtherItemConfigValue1 := "Contents of value 1"
+	defaultOtherItemConfigValue2 := "Contents of value 2"
+	defaultVendorId := "default-vendor-id"
+
 	return &provider.ResourceGetSpecDefinitionOutput{
 		SpecDefinition: &provider.ResourceSpecDefinition{
 			Schema: &provider.ResourceDefinitionsSchema{
@@ -293,6 +307,11 @@ func (r *ExampleComplexResource) GetSpecDefinition(
 									},
 									"primaryPort": {
 										Type: provider.ResourceDefinitionsSchemaTypeInteger,
+										Default: &core.MappingNode{
+											Literal: &core.ScalarValue{
+												IntValue: &defaultPrimaryPort,
+											},
+										},
 									},
 									"score": {
 										Type:     provider.ResourceDefinitionsSchemaTypeFloat,
@@ -341,6 +360,20 @@ func (r *ExampleComplexResource) GetSpecDefinition(
 								},
 							},
 						},
+						Default: &core.MappingNode{
+							Fields: map[string]*core.MappingNode{
+								"value1": {
+									Literal: &core.ScalarValue{
+										StringValue: &defaultOtherItemConfigValue1,
+									},
+								},
+								"value2": {
+									Literal: &core.ScalarValue{
+										StringValue: &defaultOtherItemConfigValue2,
+									},
+								},
+							},
+						},
 					},
 					"vendorTags": {
 						Type: provider.ResourceDefinitionsSchemaTypeUnion,
@@ -355,6 +388,42 @@ func (r *ExampleComplexResource) GetSpecDefinition(
 								},
 							},
 						},
+					},
+					"vendorConfig": {
+						Type: provider.ResourceDefinitionsSchemaTypeUnion,
+						OneOf: []*provider.ResourceDefinitionsSchema{
+							{
+								Type: provider.ResourceDefinitionsSchemaTypeString,
+							},
+							{
+								Type: provider.ResourceDefinitionsSchemaTypeArray,
+								Items: &provider.ResourceDefinitionsSchema{
+									Type: provider.ResourceDefinitionsSchemaTypeObject,
+									Attributes: map[string]*provider.ResourceDefinitionsSchema{
+										"vendorNamespace": {
+											Type: provider.ResourceDefinitionsSchemaTypeString,
+										},
+										"vendorId": {
+											Type: provider.ResourceDefinitionsSchemaTypeUnion,
+											OneOf: []*provider.ResourceDefinitionsSchema{
+												{
+													Type: provider.ResourceDefinitionsSchemaTypeString,
+												},
+												{
+													Type: provider.ResourceDefinitionsSchemaTypeInteger,
+												},
+											},
+											Default: &core.MappingNode{
+												Literal: &core.ScalarValue{
+													StringValue: &defaultVendorId,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						Nullable: true,
 					},
 				},
 			},

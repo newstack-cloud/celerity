@@ -1180,8 +1180,9 @@
     (string) (len=18) "spec.vendorTags[1]",
     (string) (len=18) "spec.vendorTags[2]"
   },
-  UnchangedFields: ([]string) (len=2) {
+  UnchangedFields: ([]string) (len=3) {
     (string) (len=28) "spec.itemConfig.endpoints[3]",
+    (string) (len=17) "spec.vendorConfig",
     (string) (len=18) "spec.vendorTags[0]"
   },
   FieldChangesKnownOnDeploy: ([]string) (len=4) {
@@ -1190,6 +1191,7 @@
     (string) (len=28) "spec.itemConfig.endpoints[2]",
     (string) (len=28) "spec.itemConfig.endpoints[4]"
   },
+  ConditionKnownOnDeploy: (bool) false,
   NewOutboundLinks: (map[string]provider.LinkChanges) <nil>,
   OutboundLinkChanges: (map[string]provider.LinkChanges) <nil>,
   RemovedOutboundLinks: ([]string) <nil>

@@ -611,13 +611,15 @@
   },
   RemovedFields: ([]string) {
   },
-  UnchangedFields: ([]string) {
+  UnchangedFields: ([]string) (len=1) {
+    (string) (len=17) "spec.vendorConfig"
   },
   FieldChangesKnownOnDeploy: ([]string) (len=3) {
     (string) (len=42) "metadata.annotations[\"test.annotation.v1\"]",
     (string) (len=19) "metadata.custom.url",
     (string) (len=28) "spec.itemConfig.endpoints[3]"
   },
+  ConditionKnownOnDeploy: (bool) false,
   NewOutboundLinks: (map[string]provider.LinkChanges) <nil>,
   OutboundLinkChanges: (map[string]provider.LinkChanges) <nil>,
   RemovedOutboundLinks: ([]string) <nil>

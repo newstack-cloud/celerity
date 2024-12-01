@@ -34,6 +34,17 @@ func StringValue(value *MappingNode) string {
 	return *value.Literal.StringValue
 }
 
+// BoolValue extracts the boolean value from a MappingNode.
+// This will return false if the value is nil or the given mapping node
+// contains another type of value.
+func BoolValue(value *MappingNode) bool {
+	if value == nil || value.Literal == nil || value.Literal.BoolValue == nil {
+		return false
+	}
+
+	return *value.Literal.BoolValue
+}
+
 // ResourceElementID generates an element ID for a resource that is used
 // primarily for resolving substitutions.
 func ResourceElementID(resourceName string) string {

@@ -11,6 +11,8 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
@@ -129,6 +131,7 @@ type defaultBlueprintContainer struct {
 	// Should be a mapping of resource name to the provider
 	// that serves the resource.
 	resourceProviders              map[string]provider.Provider
+	resourceRegistry               resourcehelpers.Registry
 	spec                           speccore.BlueprintSpec
 	linkInfo                       links.SpecLinkInfo
 	refChainCollector              validation.RefChainCollector
@@ -146,6 +149,7 @@ type defaultBlueprintContainer struct {
 type BlueprintContainerDependencies struct {
 	StateContainer              state.Container
 	ResourceProviders           map[string]provider.Provider
+	ResourceRegistry            resourcehelpers.Registry
 	LinkInfo                    links.SpecLinkInfo
 	RefChainCollector           validation.RefChainCollector
 	SubstitutionResolver        subengine.SubstitutionResolver
@@ -167,6 +171,7 @@ func NewDefaultBlueprintContainer(
 	return &defaultBlueprintContainer{
 		deps.StateContainer,
 		deps.ResourceProviders,
+		deps.ResourceRegistry,
 		spec,
 		deps.LinkInfo,
 		deps.RefChainCollector,
@@ -187,7 +192,10 @@ func (c *defaultBlueprintContainer) StageChanges(
 	paramOverrides core.BlueprintParams,
 ) error {
 
-	expandedBlueprintContainer, err := c.expandResourceTemplates(ctx, paramOverrides)
+	expandedBlueprintContainer, err := c.expandResourceTemplates(
+		ctx,
+		paramOverrides,
+	)
 	if err != nil {
 		return err
 	}
@@ -530,6 +538,10 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 		Removed:         false,
 		New:             resourceInfo.CurrentResourceState == nil,
 		ResolveOnDeploy: resolveResourceResult.ResolveOnDeploy,
+		ConditionKnownOnDeploy: isConditionKnownOnDeploy(
+			stageResourceInfo.node.ResourceName,
+			resolveResourceResult.ResolveOnDeploy,
+		),
 	}
 
 	linksReadyToBeStaged := c.updateStagingState(stageResourceInfo.node, stagingState)
@@ -562,6 +574,13 @@ func (c *defaultBlueprintContainer) getResourceInfo(
 	)
 	if err != nil {
 		return nil, nil, err
+	}
+	_, cached := c.resourceCache.Get(stageInfo.node.ResourceName)
+	if !cached {
+		c.resourceCache.Set(
+			stageInfo.node.ResourceName,
+			resolveResourceResult.ResolvedResource,
+		)
 	}
 
 	var currentResourceStatePtr *state.ResourceState
@@ -790,13 +809,6 @@ func (c *defaultBlueprintContainer) stageRemovals(
 
 	flattenedNodes := core.Flatten(deploymentNodes)
 
-	// TODO: check if resource condition resolved to false and the resource is in the current state,
-	// if so, remove the resource for the next deployment.
-
-	// TODO: check if resource condition can not be resolved until deploy time,
-	// if so, mark resource as could be removed at deploy time based on how the condition
-	// is resolved at deploy time.
-
 	for resourceName := range instanceState.Resources {
 		inDeployNodes := slices.ContainsFunc(flattenedNodes, func(node *DeploymentNode) bool {
 			return node.ChainLinkNode.ResourceName == resourceName
@@ -938,6 +950,61 @@ func (c *defaultBlueprintContainer) updatePendingLinksInStagingState(
 	return linksReadyToBeStaged
 }
 
+func (c *defaultBlueprintContainer) applyResourceConditions(
+	ctx context.Context,
+	blueprint *schema.Blueprint,
+	resolveFor subengine.ResolveForStage,
+) (*schema.Blueprint, error) {
+
+	if blueprint.Resources == nil {
+		return blueprint, nil
+	}
+
+	resourcesAfterConditions := map[string]*schema.Resource{}
+	for resourceName, resource := range blueprint.Resources.Values {
+		if resource.Condition != nil {
+			resolveResourceResult, err := c.substitutionResolver.ResolveInResource(
+				ctx,
+				resourceName,
+				resource,
+				&subengine.ResolveResourceTargetInfo{
+					ResolveFor: resolveFor,
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			conditionKnownOnDeploy := isConditionKnownOnDeploy(
+				resourceName,
+				resolveResourceResult.ResolveOnDeploy,
+			)
+			if resolveFor == subengine.ResolveForChangeStaging &&
+				(conditionKnownOnDeploy ||
+					evaluateCondition(resolveResourceResult.ResolvedResource.Condition)) {
+
+				c.resourceCache.Set(resourceName, resolveResourceResult.ResolvedResource)
+
+				resourcesAfterConditions[resourceName] = resource
+			}
+		}
+	}
+
+	return &schema.Blueprint{
+		Version:   blueprint.Version,
+		Transform: blueprint.Transform,
+		Variables: blueprint.Variables,
+		Values:    blueprint.Values,
+		Include:   blueprint.Include,
+		Resources: &schema.ResourceMap{
+			Values: resourcesAfterConditions,
+		},
+		DataSources: blueprint.DataSources,
+		Exports:     blueprint.Exports,
+		Metadata:    blueprint.Metadata,
+	}, nil
+}
+
 func (c *defaultBlueprintContainer) expandResourceTemplates(
 	ctx context.Context,
 	params core.BlueprintParams,
@@ -959,12 +1026,35 @@ func (c *defaultBlueprintContainer) expandResourceTemplates(
 		return nil, err
 	}
 
+	populateDefaultsIn := c.spec.Schema()
 	if len(expandResult.ResourceTemplateMap) > 0 {
-		loader := c.createChildBlueprintLoader()
-		return loader.LoadFromSchema(ctx, expandResult.ExpandedBlueprint, params)
+		populateDefaultsIn = expandResult.ExpandedBlueprint
 	}
 
-	return c, nil
+	// Populate defaults before applying conditions to ensure that the
+	// resolved resources that are cached when applying conditions
+	// are populated with the default values.
+	applyConditionsTo, err := PopulateResourceSpecDefaults(
+		ctx,
+		populateDefaultsIn,
+		params,
+		c.resourceRegistry,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	afterConditionsApplied, err := c.applyResourceConditions(
+		ctx,
+		applyConditionsTo,
+		subengine.ResolveForChangeStaging,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	loader := c.createChildBlueprintLoader()
+	return loader.LoadFromSchema(ctx, afterConditionsApplied, params)
 }
 
 func (c *defaultBlueprintContainer) Deploy(
@@ -1025,6 +1115,11 @@ type ResourceChangesMessage struct {
 	New             bool
 	Changes         provider.Changes
 	ResolveOnDeploy []string
+	// ConditionKnownOnDeploy is used to indicate that the condition for the resource
+	// can not be resolved until the blueprint is deployed.
+	// This means the changes described in this message may not be applied
+	// if the condition evaluates to false when the blueprint is deployed.
+	ConditionKnownOnDeploy bool
 }
 
 // ChildChangesMessage provides a message containing the changes

@@ -337,6 +337,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			&BlueprintContainerDependencies{
 				StateContainer:              l.stateContainer,
 				ResourceProviders:           map[string]provider.Provider{},
+				ResourceRegistry:            l.resourceRegistry,
 				LinkInfo:                    nil,
 				RefChainCollector:           refChainCollector,
 				SubstitutionResolver:        nil,
@@ -356,6 +357,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			&BlueprintContainerDependencies{
 				StateContainer:              l.stateContainer,
 				ResourceProviders:           map[string]provider.Provider{},
+				ResourceRegistry:            l.resourceRegistry,
 				LinkInfo:                    nil,
 				RefChainCollector:           refChainCollector,
 				SubstitutionResolver:        nil,
@@ -380,6 +382,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		&BlueprintContainerDependencies{
 			StateContainer:              l.stateContainer,
 			ResourceProviders:           resourceProviderMap,
+			ResourceRegistry:            l.resourceRegistry,
 			LinkInfo:                    linkInfo,
 			RefChainCollector:           refChainCollector,
 			SubstitutionResolver:        substitutionResolver,
