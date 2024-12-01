@@ -108,3 +108,5 @@ metadata:
   floatValue: ${50392.296}
   boolValue: ${true}
   ordersTableDisplayName: ${resources.ordersTable.metadata.displayName}
+  ordersTableGlobal: ${resources.ordersTable.spec.global}
+  ordersTableId: ${resources.ordersTable.spec.id}

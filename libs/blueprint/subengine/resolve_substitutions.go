@@ -1857,9 +1857,8 @@ func (r *defaultSubstitutionResolver) resolveResourceSpecProperty(
 	resolved, err := getResourceSpecPropertyValue(resource, prop, resolveCtx)
 	runErr, isRunErr := err.(*errors.RunError)
 	if err != nil && isRunErr &&
-		runErr.ReasonCode == ErrorReasonCodeMissingResourceSpecProperty &&
-		resolveCtx.resolveFor == ResolveForDeployment {
-		return r.resolveResourceSpecPropertyFromState(ctx, prop, resolveCtx)
+		runErr.ReasonCode == ErrorReasonCodeMissingResourceSpecProperty {
+		return r.resolveResourceSpecPropertyFromStateOrDefault(ctx, prop, definition, err, resolveCtx)
 	} else if err != nil {
 		return nil, err
 	}
@@ -1867,33 +1866,43 @@ func (r *defaultSubstitutionResolver) resolveResourceSpecProperty(
 	return resolved, nil
 }
 
-func (r *defaultSubstitutionResolver) resolveResourceSpecPropertyFromState(
+func (r *defaultSubstitutionResolver) resolveResourceSpecPropertyFromStateOrDefault(
 	ctx context.Context,
 	prop *substitutions.SubstitutionResourceProperty,
+	definition *provider.ResourceDefinitionsSchema,
+	originalErr error,
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
-	resourceName := getFinalResourceName(prop)
-	resourceState, hasResourceState := r.resourceStateCache.Get(resourceName)
-	if !hasResourceState {
-		instanceID, err := bpcore.BlueprintInstanceIDFromContext(ctx)
-		if err != nil {
-			return nil, err
+	if resolveCtx.resolveFor == ResolveForDeployment {
+		resourceName := getFinalResourceName(prop)
+		resourceState, hasResourceState := r.resourceStateCache.Get(resourceName)
+		if !hasResourceState {
+			instanceID, err := bpcore.BlueprintInstanceIDFromContext(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			freshResourceState, err := r.stateContainer.GetResourceByName(ctx, instanceID, resourceName)
+			if err != nil {
+				if state.IsResourceNotFound(err) {
+					return getResourceSpecDefaultValueFromDefinition(err, definition)
+				}
+				return nil, err
+			}
+
+			r.resourceStateCache.Set(resourceName, &freshResourceState)
+			resourceState = &freshResourceState
 		}
 
-		freshResourceState, err := r.stateContainer.GetResourceByName(ctx, instanceID, resourceName)
-		if err != nil {
-			return nil, err
-		}
-
-		r.resourceStateCache.Set(resourceName, &freshResourceState)
-		resourceState = &freshResourceState
+		return getResourceSpecPropertyFromState(
+			resourceState,
+			prop,
+			definition,
+			resolveCtx,
+		)
 	}
 
-	return getResourceSpecPropertyFromState(
-		resourceState,
-		prop,
-		resolveCtx,
-	)
+	return getResourceSpecDefaultValueFromDefinition(originalErr, definition)
 }
 
 func (r *defaultSubstitutionResolver) resolveResourceMetadataProperty(

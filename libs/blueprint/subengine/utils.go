@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
@@ -462,9 +463,10 @@ func getPathValueFromMappingNode[Prop any](
 func getResourceSpecPropertyFromState(
 	resourceState *state.ResourceState,
 	property *substitutions.SubstitutionResourceProperty,
+	definition *provider.ResourceDefinitionsSchema,
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
-	return getResourcePropertyValueFromMappingNode(
+	value, err := getResourcePropertyValueFromMappingNode(
 		resourceState.ResourceSpecData,
 		property.Path[1:],
 		property,
@@ -472,6 +474,28 @@ func getResourceSpecPropertyFromState(
 		/* offset of mapping node in property path */ 1,
 		errMissingResourceSpecProperty,
 	)
+
+	if err != nil {
+		if runErr, isRunErr := err.(*errors.RunError); isRunErr {
+			if runErr.ReasonCode == ErrorReasonCodeMissingResourceSpecProperty {
+				return getResourceSpecDefaultValueFromDefinition(err, definition)
+			}
+		}
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func getResourceSpecDefaultValueFromDefinition(
+	originalError error,
+	definition *provider.ResourceDefinitionsSchema,
+) (*bpcore.MappingNode, error) {
+	if definition.Default == nil || definition.Computed {
+		return nil, originalError
+	}
+
+	return definition.Default, nil
 }
 
 func filterOutResolvedAnnotations(
