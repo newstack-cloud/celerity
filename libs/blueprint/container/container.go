@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 
@@ -123,20 +124,6 @@ type NewBlueprintDefinition struct {
 	NewChildren  map[string]NewBlueprintDefinition `json:"newChildren"`
 }
 
-// UpdateEventType provides a convenience alias
-// to allow us to distinguish between deployment
-// and change staging update events.
-type UpdateEventType string
-
-const (
-	// DeployUpdateEvent is the event update type
-	// for deployments.
-	DeployUpdateEvent UpdateEventType = "deploy"
-	// StageChangesUpdateEvent is the event update type
-	// for staging changes.
-	StageChangesUpdateEvent UpdateEventType = "stageChanges"
-)
-
 type defaultBlueprintContainer struct {
 	stateContainer state.Container
 	// Should be a mapping of resource name to the provider
@@ -200,27 +187,17 @@ func (c *defaultBlueprintContainer) StageChanges(
 	paramOverrides core.BlueprintParams,
 ) error {
 
-	// TODO: Expand resource templates in *schema.Blueprint
-	// Create a new container from the derived template
-	// Extract links from the derived template container
-	// The container should not be referenced after links have been extracted
-	// so it can be garbage collected as soon as possible.
-	// expandedBlueprint, err := ExpandResourceTemplates(
-	// 	ctx,
-	// 	c.spec.Schema(),
-	// 	c.substitutionResolver,
-	// 	c.resourceTemplateInputElemCache,
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-
-	chains, err := c.linkInfo.Links(ctx)
+	expandedBlueprintContainer, err := c.expandResourceTemplates(ctx, paramOverrides)
 	if err != nil {
 		return err
 	}
 
-	childrenRefNodes := extractChildRefNodes(c.spec.Schema(), c.refChainCollector)
+	chains, err := expandedBlueprintContainer.SpecLinkInfo().Links(ctx)
+	if err != nil {
+		return err
+	}
+
+	childrenRefNodes := extractChildRefNodes(expandedBlueprintContainer.BlueprintSpec().Schema(), c.refChainCollector)
 	orderedNodes, err := OrderItemsForDeployment(ctx, chains, childrenRefNodes, c.refChainCollector, paramOverrides)
 	if err != nil {
 		return err
@@ -259,6 +236,19 @@ func (c *defaultBlueprintContainer) stageChanges(
 		ChildChangesChan:    childChangesChan,
 		LinkChangesChan:     linkChangesChan,
 		ErrChan:             errChan,
+	}
+
+	// Check for all the removed resources, links and child blueprints.
+	// All removals will be handled before the groups of new elements and element
+	// updates are staged.
+	// Staging state changes will be applied synchronously for all resources, links and child blueprints
+	// that have been removed in the source blueprint being staged for deployment.
+	// A message is dispatched to the external channels for each removal so that the caller
+	// can gather and display removals in the same way as other changes.
+	err := c.stageRemovals(ctx, instanceID, state, parallelGroups, channels)
+	if err != nil {
+		channels.ErrChan <- err
+		return
 	}
 
 	for _, group := range parallelGroups {
@@ -338,6 +328,7 @@ func (c *defaultBlueprintContainer) listenToAndProcessGroupChanges(
 			NewChildren:      state.outputChanges.NewChildren,
 			ChildChanges:     state.outputChanges.ChildChanges,
 			RemovedChildren:  state.outputChanges.RemovedChildren,
+			ResolveOnDeploy:  state.outputChanges.ResolveOnDeploy,
 		}
 	}
 
@@ -390,6 +381,9 @@ func applyLinkChangesToState(changes LinkChangesMessage, state *stageChangesStat
 		)
 		return
 	}
+
+	pendingLink := state.pendingLinks[createLinkID(changes.ResourceAName, changes.ResourceBName)]
+	pendingLink.linkPending = false
 
 	resourceChanges := getResourceChanges(changes.ResourceAName, state.outputChanges)
 	if resourceChanges != nil {
@@ -446,12 +440,13 @@ func (c *defaultBlueprintContainer) stageGroupChanges(
 ) {
 	for _, node := range group {
 		if node.Type() == "resource" {
-			go c.stageResourceChanges(
+			go c.prepareAndStageResourceChanges(
 				ctx,
 				instanceID,
 				stagingState,
 				node.ChainLinkNode,
 				channels,
+				paramOverrides,
 			)
 		} else if node.Type() == "child" {
 			go c.stageChildBlueprintChanges(
@@ -465,12 +460,13 @@ func (c *defaultBlueprintContainer) stageGroupChanges(
 	}
 }
 
-func (c *defaultBlueprintContainer) stageResourceChanges(
+func (c *defaultBlueprintContainer) prepareAndStageResourceChanges(
 	ctx context.Context,
 	instanceID string,
 	stagingState *stageChangesState,
 	node *links.ChainLinkNode,
 	channels *ChangeStagingChannels,
+	params core.BlueprintParams,
 ) {
 	resourceProvider, hasResourceProvider := c.resourceProviders[node.ResourceName]
 	if !hasResourceProvider {
@@ -484,144 +480,137 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 		return
 	}
 
-	// Expansion of resource templates happens before ordering, grouping and stage changing,
-	// there is no need for logic that deals with resource templates at this stage.
-	// This simplifies the change staging implementation considerably.
-
-	items, err := c.substitutionResolver.ResolveResourceEach(ctx, node.ResourceName, node.Resource, subengine.ResolveForChangeStaging)
+	err = c.stageResourceChanges(
+		ctx,
+		&stageResourceChangeInfo{
+			node:       node,
+			instanceID: instanceID,
+		},
+		resourceImplementation,
+		channels.ResourceChangesChan,
+		channels.LinkChangesChan,
+		stagingState,
+		params,
+	)
 	if err != nil {
 		channels.ErrChan <- err
 		return
 	}
-
-	if len(items) == 0 {
-		err := c.stageIndividualResourceChanges(
-			ctx,
-			&stageResourceChangeInfo{
-				node:       node,
-				instanceID: instanceID,
-				index:      0,
-			},
-			resourceImplementation,
-			channels.ResourceChangesChan,
-			stagingState,
-		)
-		if err != nil {
-			channels.ErrChan <- err
-			return
-		}
-		return
-	}
-
-	c.cacheResourceTemplateInputElements(node.ResourceName, items)
-	for index := range items {
-
-		resourceID, err := c.getResourceID(ctx, instanceID, node.ResourceName, index)
-		if err != nil {
-			channels.ErrChan <- err
-			return
-		}
-
-		err = c.stageIndividualResourceChanges(
-			ctx,
-			&stageResourceChangeInfo{
-				node:       node,
-				instanceID: instanceID,
-				resourceID: resourceID,
-				index:      index,
-			},
-			resourceImplementation,
-			channels.ResourceChangesChan,
-			stagingState,
-		)
-		if err != nil {
-			channels.ErrChan <- err
-			return
-		}
-	}
 }
 
-func (c *defaultBlueprintContainer) getResourceID(
+func (c *defaultBlueprintContainer) stageResourceChanges(
 	ctx context.Context,
-	instanceID string,
-	resourceName string,
-	index int,
-) (string, error) {
-	instanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
-	if err != nil {
-		return "", err
-	}
-
-	resourceID, hasResourceID := instanceState.ResourceIDs[resourceName]
-	if hasResourceID {
-		return resourceID, nil
-	}
-
-	// This resource does not exist in the state, it will be created
-	// when the changes are deployed.
-	return "", nil
-}
-
-func (c *defaultBlueprintContainer) stageIndividualResourceChanges(
-	ctx context.Context,
-	resourceInfo *stageResourceChangeInfo,
+	stageResourceInfo *stageResourceChangeInfo,
 	resourceImplementation provider.Resource,
 	changesChan chan ResourceChangesMessage,
+	linkChangesChan chan LinkChangesMessage,
 	stagingState *stageChangesState,
+	params core.BlueprintParams,
 ) error {
-	node := resourceInfo.node
-	resolveResourceResult, err := c.substitutionResolver.ResolveInResource(
-		ctx,
-		node.ResourceName,
-		node.Resource,
-		&subengine.ResolveResourceTargetInfo{
-			ResolveFor: subengine.ResolveForChangeStaging,
-		},
-	)
+
+	resourceInfo, resolveResourceResult, err := c.getResourceInfo(ctx, stageResourceInfo)
 	if err != nil {
 		return err
 	}
 
-	var currentResourceStatePtr *state.ResourceState
-	currentResourceState, err := c.stateContainer.GetResource(
-		ctx,
-		resourceInfo.instanceID,
-		resourceInfo.resourceID,
-	)
-	if err != nil {
-		if !state.IsResourceNotFound(err) {
-			return err
-		}
-	} else {
-		currentResourceStatePtr = &currentResourceState
-	}
-
 	changes, err := c.changeStager.StageChanges(
 		ctx,
-		&provider.ResourceInfo{
-			ResourceID:               resourceInfo.resourceID,
-			InstanceID:               resourceInfo.instanceID,
-			CurrentResourceState:     currentResourceStatePtr,
-			ResourceWithResolvedSubs: resolveResourceResult.ResolvedResource,
-		},
+		resourceInfo,
 		resourceImplementation,
 		resolveResourceResult.ResolveOnDeploy,
+		params,
 	)
 	if err != nil {
 		return err
 	}
 
 	changesChan <- ResourceChangesMessage{
-		ResourceName: node.ResourceName,
-		Index:        resourceInfo.index,
-		Changes:      *changes,
+		ResourceName:    stageResourceInfo.node.ResourceName,
+		Changes:         *changes,
+		Removed:         false,
+		New:             resourceInfo.CurrentResourceState == nil,
+		ResolveOnDeploy: resolveResourceResult.ResolveOnDeploy,
 	}
 
-	linksReadyToBeStaged := c.updateStagingState(node, stagingState)
+	linksReadyToBeStaged := c.updateStagingState(stageResourceInfo.node, stagingState)
 
-	err = c.stageLinkChanges(ctx, node, linksReadyToBeStaged)
+	err = c.prepareAndStageLinkChanges(
+		ctx,
+		resourceInfo,
+		linksReadyToBeStaged,
+		linkChangesChan,
+		params,
+	)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) getResourceInfo(
+	ctx context.Context,
+	stageInfo *stageResourceChangeInfo,
+) (*provider.ResourceInfo, *subengine.ResolveInResourceResult, error) {
+	resolveResourceResult, err := c.substitutionResolver.ResolveInResource(
+		ctx,
+		stageInfo.node.ResourceName,
+		stageInfo.node.Resource,
+		&subengine.ResolveResourceTargetInfo{
+			ResolveFor: subengine.ResolveForChangeStaging,
+		},
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var currentResourceStatePtr *state.ResourceState
+	currentResourceState, err := c.stateContainer.GetResource(
+		ctx,
+		stageInfo.instanceID,
+		stageInfo.resourceID,
+	)
+	if err != nil {
+		if !state.IsResourceNotFound(err) {
+			return nil, nil, err
+		}
+	} else {
+		currentResourceStatePtr = &currentResourceState
+	}
+
+	return &provider.ResourceInfo{
+		ResourceID:               stageInfo.resourceID,
+		ResourceName:             stageInfo.node.ResourceName,
+		InstanceID:               stageInfo.instanceID,
+		CurrentResourceState:     currentResourceStatePtr,
+		ResourceWithResolvedSubs: resolveResourceResult.ResolvedResource,
+	}, resolveResourceResult, nil
+}
+
+func (c *defaultBlueprintContainer) prepareAndStageLinkChanges(
+	ctx context.Context,
+	currentResourceInfo *provider.ResourceInfo,
+	linksReadyToBeStaged []*linkPendingCompletion,
+	linkChangesChan chan LinkChangesMessage,
+	params core.BlueprintParams,
+) error {
+	for _, readyToStage := range linksReadyToBeStaged {
+		linkImpl, err := getLinkImplementation(
+			readyToStage.resourceANode,
+			readyToStage.resourceBNode,
+		)
+		if err != nil {
+			return err
+		}
+
+		// Links are staged in series to reflect what happens with deployment.
+		// For deployment, multiple links could be modifying the same resource,
+		// to ensure consistency in state, links involving the same resource will be
+		// both staged and deployed synchronously.
+		err = c.stageLinkChanges(ctx, linkImpl, currentResourceInfo, readyToStage, linkChangesChan, params)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -629,10 +618,56 @@ func (c *defaultBlueprintContainer) stageIndividualResourceChanges(
 
 func (c *defaultBlueprintContainer) stageLinkChanges(
 	ctx context.Context,
-	node *links.ChainLinkNode,
-	linksReadyToBeStaged []*linkPendingCompletion,
+	linkImpl provider.Link,
+	currentResourceInfo *provider.ResourceInfo,
+	readyToStage *linkPendingCompletion,
+	linkChangesChan chan LinkChangesMessage,
+	params core.BlueprintParams,
 ) error {
+	resourceAInfo, err := c.getResourceInfoForLink(ctx, readyToStage.resourceANode, currentResourceInfo)
+	if err != nil {
+		return err
+	}
+
+	resourceBInfo, err := c.getResourceInfoForLink(ctx, readyToStage.resourceBNode, currentResourceInfo)
+	if err != nil {
+		return err
+	}
+
+	output, err := linkImpl.StageChanges(ctx, &provider.LinkStageChangesInput{
+		ResourceAInfo: resourceAInfo,
+		ResourceBInfo: resourceBInfo,
+		Params:        params,
+	})
+	if err != nil {
+		return err
+	}
+
+	linkChangesChan <- LinkChangesMessage{
+		ResourceAName: resourceAInfo.ResourceName,
+		ResourceBName: resourceBInfo.ResourceName,
+		Changes:       *output.Changes,
+		New:           resourceAInfo.CurrentResourceState == nil || resourceBInfo.CurrentResourceState == nil,
+		Removed:       false,
+	}
+
 	return nil
+}
+
+func (c *defaultBlueprintContainer) getResourceInfoForLink(
+	ctx context.Context,
+	node *links.ChainLinkNode,
+	currentResourceInfo *provider.ResourceInfo,
+) (*provider.ResourceInfo, error) {
+	if node.ResourceName != currentResourceInfo.ResourceName {
+		resourceInfo, _, err := c.getResourceInfo(ctx, &stageResourceChangeInfo{
+			node:       node,
+			instanceID: currentResourceInfo.InstanceID,
+		})
+		return resourceInfo, err
+	}
+
+	return currentResourceInfo, nil
 }
 
 func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
@@ -690,8 +725,16 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 
 	childState, err := c.stateContainer.GetChild(ctx, parentInstanceID, includeName)
 	if err != nil {
-		channels.ErrChan <- err
-		return
+		if !state.IsInstanceNotFound(err) {
+			channels.ErrChan <- err
+			return
+		} else {
+			// Change staging includes describing the planned state for a new blueprint,
+			// an empty instance ID will be used to indicate that the blueprint instance is new.
+			childState = state.InstanceState{
+				InstanceID: "",
+			}
+		}
 	}
 
 	childChannels := &ChangeStagingChannels{
@@ -715,10 +758,97 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 	// in the parent blueprint.
 	select {
 	case changes := <-childChannels.CompleteChan:
-		channels.CompleteChan <- changes
+		channels.ChildChangesChan <- ChildChangesMessage{
+			ChildBlueprintName: includeName,
+			Removed:            false,
+			New:                childState.InstanceID == "",
+			Changes:            changes,
+		}
 	case err := <-childChannels.ErrChan:
 		channels.ErrChan <- err
 	}
+}
+
+func (c *defaultBlueprintContainer) stageRemovals(
+	ctx context.Context,
+	instanceID string,
+	stagingState *stageChangesState,
+	// Use the grouped deployment nodes to compare with the current instance
+	// state.
+	// c.spec.Schema() must NOT be used at this stage as it does not contain
+	// the expanded representation of blueprints that contain resource
+	// templates.
+	deploymentNodes [][]*DeploymentNode,
+	channels *ChangeStagingChannels,
+) error {
+	instanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
+	if err != nil {
+		if !state.IsInstanceNotFound(err) {
+			return err
+		}
+	}
+
+	flattenedNodes := core.Flatten(deploymentNodes)
+
+	// TODO: check if resource condition resolved to false and the resource is in the current state,
+	// if so, remove the resource for the next deployment.
+
+	// TODO: check if resource condition can not be resolved until deploy time,
+	// if so, mark resource as could be removed at deploy time based on how the condition
+	// is resolved at deploy time.
+
+	for resourceName := range instanceState.Resources {
+		inDeployNodes := slices.ContainsFunc(flattenedNodes, func(node *DeploymentNode) bool {
+			return node.ChainLinkNode.ResourceName == resourceName
+		})
+		if !inDeployNodes {
+			changes := ResourceChangesMessage{
+				ResourceName: resourceName,
+				Removed:      true,
+			}
+			applyResourceChangesToState(changes, stagingState)
+			channels.ResourceChangesChan <- changes
+		}
+	}
+
+	for linkName := range instanceState.Links {
+		// Links are stored as a map of "resourceAName::resourceBName"
+		// so we need to split the link name to get the resource names.
+		linkParts := strings.Split(linkName, "::")
+		resourceAName := linkParts[0]
+		resourceBName := linkParts[1]
+
+		inDeployNodes := slices.ContainsFunc(flattenedNodes, func(node *DeploymentNode) bool {
+			return node.ChainLinkNode.ResourceName == resourceAName ||
+				node.ChainLinkNode.ResourceName == resourceBName
+		})
+		if !inDeployNodes {
+			changes := LinkChangesMessage{
+				ResourceAName: resourceAName,
+				ResourceBName: resourceBName,
+				Removed:       true,
+			}
+			applyLinkChangesToState(changes, stagingState)
+			channels.LinkChangesChan <- changes
+		}
+	}
+
+	for childName := range instanceState.ChildBlueprints {
+		childElementID := core.ChildElementID(childName)
+		inDeployNodes := slices.ContainsFunc(flattenedNodes, func(node *DeploymentNode) bool {
+			return node.ChildNode.ElementName == childElementID
+		})
+		if !inDeployNodes {
+			changes := ChildChangesMessage{
+				ChildBlueprintName: childName,
+				Removed:            true,
+			}
+			applyChildChangesToState(changes, stagingState)
+			channels.ChildChangesChan <- changes
+		}
+	}
+
+	return nil
 }
 
 func (c *defaultBlueprintContainer) updateStagingState(
@@ -808,11 +938,33 @@ func (c *defaultBlueprintContainer) updatePendingLinksInStagingState(
 	return linksReadyToBeStaged
 }
 
-func (c *defaultBlueprintContainer) cacheResourceTemplateInputElements(
-	resourceName string,
-	items []*core.MappingNode,
-) {
-	c.resourceTemplateInputElemCache.Set(resourceName, items)
+func (c *defaultBlueprintContainer) expandResourceTemplates(
+	ctx context.Context,
+	params core.BlueprintParams,
+) (BlueprintContainer, error) {
+
+	chains, err := c.linkInfo.Links(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	expandResult, err := ExpandResourceTemplates(
+		ctx,
+		c.spec.Schema(),
+		c.substitutionResolver,
+		chains,
+		c.resourceTemplateInputElemCache,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(expandResult.ResourceTemplateMap) > 0 {
+		loader := c.createChildBlueprintLoader()
+		return loader.LoadFromSchema(ctx, expandResult.ExpandedBlueprint, params)
+	}
+
+	return c, nil
 }
 
 func (c *defaultBlueprintContainer) Deploy(
@@ -868,11 +1020,11 @@ type ChangeStagingChannels struct {
 // ResourceChangesMessage provides a message containing the changes
 // that will be made to a resource in a blueprint instance.
 type ResourceChangesMessage struct {
-	ResourceName string
-	Index        int
-	Removed      bool
-	New          bool
-	Changes      provider.Changes
+	ResourceName    string
+	Removed         bool
+	New             bool
+	Changes         provider.Changes
+	ResolveOnDeploy []string
 }
 
 // ChildChangesMessage provides a message containing the changes
@@ -921,7 +1073,6 @@ type stageResourceChangeInfo struct {
 	node       *links.ChainLinkNode
 	instanceID string
 	resourceID string
-	index      int
 }
 
 type changesWrapper struct {
