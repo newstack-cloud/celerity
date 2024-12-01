@@ -117,6 +117,9 @@ type ResourceState struct {
 	// for the currently deployed version of the resource along with computed
 	// fields derived from the deployed resource in the provider.
 	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
+	// Description holds a human-friendly description of the resource derived
+	// from a source blueprint.
+	Description string `json:"description,omitempty"`
 	// Metadata holds metadata for the resource that is derived from a source blueprint
 	// that includes additional information that allows for extensions built on top of the
 	// blueprint framework along with the storage of labels, annotations and a human-friendly
@@ -152,7 +155,7 @@ type InstanceState struct {
 	// was last made to deploy the blueprint instance.
 	LastDeployAttemptTimestamp int `json:"lastDeployAttemptTimestamp"`
 	// A mapping of logical resource definition name
-	// to the ordered list of resource IDs
+	// to the resource IDs
 	// that are created from the resource definition.
 	ResourceIDs map[string]string
 	Resources   map[string]*ResourceState
@@ -160,7 +163,7 @@ type InstanceState struct {
 	// Metadata is used internally to store additional non-structured information
 	// that is relevant to the blueprint framework but can also be used to store
 	// additional information that is relevant to the application/tool
-	// making use of this library.
+	// making use of the framework.
 	Metadata        map[string]*core.MappingNode
 	Exports         map[string]*core.MappingNode
 	ChildBlueprints map[string]*InstanceState

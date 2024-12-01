@@ -16,6 +16,15 @@ func IsInScalarList(value *ScalarValue, list []*ScalarValue) bool {
 	return found
 }
 
+// Flatten returns a flattened 2D array of the given type.
+func Flatten[Item any](array [][]Item) []Item {
+	flattened := []Item{}
+	for _, row := range array {
+		flattened = append(flattened, row...)
+	}
+	return flattened
+}
+
 // StringValue extracts the string value from a MappingNode.
 func StringValue(value *MappingNode) string {
 	if value == nil || value.Literal == nil || value.Literal.StringValue == nil {

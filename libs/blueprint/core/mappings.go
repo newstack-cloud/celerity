@@ -257,3 +257,18 @@ func IsNilMappingNode(node *MappingNode) bool {
 			node.Fields == nil &&
 			node.Items == nil)
 }
+
+// IsObjectMappingNode returns true if the mapping node is an object or map of fields.
+func IsObjectMappingNode(node *MappingNode) bool {
+	return node != nil && node.Fields != nil
+}
+
+// IsArrayMappingNode returns true if the mapping node is an array/slice of items.
+func IsArrayMappingNode(node *MappingNode) bool {
+	return node != nil && node.Items != nil
+}
+
+// IsLiteralMappingNode returns true if the mapping node is a literal/scalar value.
+func IsLiteralMappingNode(node *MappingNode) bool {
+	return node != nil && node.Literal != nil
+}

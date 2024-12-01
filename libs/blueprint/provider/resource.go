@@ -75,6 +75,9 @@ type ResourceInfo struct {
 	// two vesions of a blueprint in which
 	// case the resource ID will be empty.
 	ResourceID string `json:"resourceId"`
+	// ResourceName holds the name of the resource in the blueprint spec.
+	// This is useful for new resources that do not have any current resource state.
+	ResourceName string `json:"resourceName"`
 	// InstanceID holds the ID of the blueprint instance
 	// that the current resource belongs to.
 	// This could be empty if the resource is being staged
@@ -306,6 +309,9 @@ type Changes struct {
 	NewFields           []FieldChange `json:"newFields"`
 	RemovedFields       []string      `json:"removedFields"`
 	UnchangedFields     []string      `json:"unchangedFields"`
+	// FieldChangesKnownOnDeploy holds a list of field names
+	// for which changes will be known when the host blueprint is deployed.
+	FieldChangesKnownOnDeploy []string `json:"fieldChangesKnownOnDeploy"`
 	// NewOutboundLinks holds a mapping of the linked to resource name
 	// to the link changes representing the new links that will be created.
 	NewOutboundLinks map[string]LinkChanges `json:"newOutboundLinks"`
@@ -365,18 +371,15 @@ type ResourceDefinitionsSchema struct {
 	// Nullable specifies whether the resource definition schema can be null.
 	Nullable bool
 	// Default holds the default value for a resource spec schema,
-	// this will be populated in the `Resource.Spec` mapping node
+	// this will be populated in the `Resource.Spec.*` mapping node
 	// if the resource spec is missing a value
 	// for a specific attribute or item in the spec.
-	// The default value will not be used if the attribute is nil
+	// The default value will not be used if the attribute value in a given resource spec is nil
 	// and the schema is nullable, a nil pointer should not be used
 	// for an empty value, pointers should be set when you want to explicitly
 	// set a value to nil.
-	//
-	// This should not be used for defining the output state schema for a resource,
-	// the resource provider must make sure required fields are populated
-	// in the output state.
-	Default interface{}
+	// The default value will not be used for computed value in a resource spec.
+	Default *core.MappingNode
 	// Computed specifies whether the value is computed by the provider
 	// and should not be set by the user.
 	// Computed values are expected to be populated by resource implementations
@@ -384,8 +387,8 @@ type ResourceDefinitionsSchema struct {
 	Computed bool
 	// MustRecreate specifies whether the resource must be recreated
 	// if a change to the field is detected in the resource state.
-	// This is only used in change staging for the state definition of a resource.
-	// This is ignored for spec definitions.
+	// This is only used for user-provided values, it will be ignored
+	// for computed values.
 	MustRecreate bool
 }
 

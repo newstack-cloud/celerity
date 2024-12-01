@@ -49,7 +49,7 @@ type PreciseResourceStatus int
 const (
 	// PreciseResourceStatusUnknown is used when we can't
 	// determine an accurate status for a resource.
-	PreciseResourceStatusUnknown ResourceStatus = iota
+	PreciseResourceStatusUnknown PreciseResourceStatus = iota
 	// PreciseResourceStatusCreating is used when
 	// an initial resource deployment is currently in progress.
 	PreciseResourceStatusCreating
