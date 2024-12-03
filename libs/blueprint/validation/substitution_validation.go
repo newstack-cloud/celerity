@@ -243,6 +243,8 @@ func validateElemReferenceSubstitution(
 		return "", diagnostics, errSubElemRefResourceNotFound(elemRefType, resourceName, location)
 	}
 
+	// TODO: check flag to allow for element references in resources that
+	// have been expanded from a template.
 	if resource.Each == nil {
 		return "", diagnostics, errSubElemRefResourceNotEach(elemRefType, resourceName, location)
 	}

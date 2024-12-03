@@ -44,7 +44,7 @@ func preValidateMappingNodeRecursive(
 				)
 			}
 
-			if value.Fields != nil || value.Items != nil {
+			if value != nil && (value.Fields != nil || value.Items != nil) {
 				preValidateMappingNodeRecursive(
 					ctx, value, nodeParentType, nodeParentName, depth+1, errors,
 				)
@@ -54,7 +54,7 @@ func preValidateMappingNodeRecursive(
 
 	if node.Items != nil {
 		for _, item := range node.Items {
-			if item.Fields != nil || item.Items != nil {
+			if item != nil && (item.Fields != nil || item.Items != nil) {
 				preValidateMappingNodeRecursive(
 					ctx, item, nodeParentType, nodeParentName, depth+1, errors,
 				)

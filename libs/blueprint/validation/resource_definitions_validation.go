@@ -43,7 +43,7 @@ func validateResourceDefinition(
 		return diagnostics, errComputedFieldDefinedInBlueprint(
 			path,
 			resourceName,
-			spec.SourceMeta,
+			selectMappingNodeLocation(spec, parentLocation),
 		)
 	}
 
