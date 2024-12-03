@@ -102,13 +102,9 @@ type ResourceState struct {
 	// The name of the resource template in the source blueprint
 	// that the resource is derived from.
 	// This will be empty if the resource is not derived from a resource template.
-	ResourceTemplateName string `json:"resourceTemplateName,omitempty"`
-	// The index of the resource template in the source blueprint
-	// that the resource is derived from.
-	// This will be empty if the resource is not derived from a resource template.
-	ResourceTemplateIndex *int                       `json:"resourceTemplateIndex,omitempty"`
-	Status                core.ResourceStatus        `json:"status"`
-	PreciseStatus         core.PreciseResourceStatus `json:"preciseStatus"`
+	ResourceTemplateName string                     `json:"resourceTemplateName,omitempty"`
+	Status               core.ResourceStatus        `json:"status"`
+	PreciseStatus        core.PreciseResourceStatus `json:"preciseStatus"`
 	// LastDeployedTimestamp holds the unix timestamp when the resource was last deployed.
 	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`
 	// LastDeployAttempTimestamp holds the unix timestamp when an attempt was last made to deploy the resource.
@@ -138,17 +134,17 @@ type ResourceState struct {
 // ResourceMetadataState holds metadata for a resource
 // that is derived from a source blueprint.
 type ResourceMetadataState struct {
-	DisplayName string            `json:"displayName,omitempty"`
-	Annotations map[string]string `json:"annotations,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	Custom      *core.MappingNode `json:"custom,omitempty"`
+	DisplayName string                       `json:"displayName,omitempty"`
+	Annotations map[string]*core.MappingNode `json:"annotations,omitempty"`
+	Labels      map[string]string            `json:"labels,omitempty"`
+	Custom      *core.MappingNode            `json:"custom,omitempty"`
 }
 
 // InstanceState stores the state of a blueprint instance
 // including resources, metadata, exported fields and child blueprints.
 type InstanceState struct {
-	InstanceID string
-	Status     core.InstanceStatus
+	InstanceID string              `json:"instanceId"`
+	Status     core.InstanceStatus `json:"status"`
 	// LastDeployedTimestamp holds the unix timestamp when the blueprint instance was last deployed.
 	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`
 	// LastDeployAttempTimestamp holds the unix timestamp when an attempt
@@ -157,19 +153,20 @@ type InstanceState struct {
 	// A mapping of logical resource definition name
 	// to the resource IDs
 	// that are created from the resource definition.
-	ResourceIDs map[string]string
-	Resources   map[string]*ResourceState
-	Links       map[string]*LinkState
+	ResourceIDs map[string]string `json:"resourceIds"`
+	// A mapping or resource IDs to the resource state.
+	Resources map[string]*ResourceState `json:"resources"`
+	Links     map[string]*LinkState     `json:"links"`
 	// Metadata is used internally to store additional non-structured information
 	// that is relevant to the blueprint framework but can also be used to store
 	// additional information that is relevant to the application/tool
 	// making use of the framework.
-	Metadata        map[string]*core.MappingNode
-	Exports         map[string]*core.MappingNode
-	ChildBlueprints map[string]*InstanceState
+	Metadata        map[string]*core.MappingNode `json:"metadata"`
+	Exports         map[string]*core.MappingNode `json:"exports"`
+	ChildBlueprints map[string]*InstanceState    `json:"childBlueprints"`
 	// Drifted indicates whether or not the blueprint instance has drifted
 	// due to changes to resources in the upstream provider.
-	Drifted bool
+	Drifted bool `json:"drifted,omitempty"`
 	// LastDriftDetectedTimestamp holds the unix timestamp when drift in any of the resources
 	// in the blueprint instance was last detected.
 	LastDriftDetectedTimestamp *int `json:"lastDriftDetectedTimestamp,omitempty"`
@@ -181,19 +178,24 @@ type InstanceState struct {
 // managed by a provider's implementation of a link.
 type LinkState struct {
 	// A globally unique identifier for the link.
-	LinkID        string
-	Status        core.LinkStatus
-	PreciseStatus core.PreciseLinkStatus
+	LinkID        string                 `json:"linkId"`
+	Status        core.LinkStatus        `json:"status"`
+	PreciseStatus core.PreciseLinkStatus `json:"preciseStatus"`
 	// LastDeployedTimestamp holds the unix timestamp when the link was last deployed.
 	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`
 	// LastDeployAttempTimestamp holds the unix timestamp when an attempt was last made to deploy the link.
 	LastDeployAttemptTimestamp int `json:"lastDeployAttemptTimestamp"`
 	// IntermediaryResourceStates holds the state of intermediary resources
 	// that are created by the provider's implementation of a link.
-	IntermediaryResourceStates []*ResourceState
+	IntermediaryResourceStates []*ResourceState `json:"intermediaryResourceStates"`
 	// ResourceData is the mapping that holds the structure of
 	// the "raw" link data to hold information about a link that is not
 	// stored directly in the resources that are linked and is not
 	// stored in intermediary resources.
-	LinkData map[string]*core.MappingNode
+	// This should hold information that may include values that are populated
+	// in one or both of the resources in the link relationship.
+	LinkData map[string]*core.MappingNode `json:"linkData"`
+	// Holds the latest reasons for failures in deploying a link,
+	// this only ever holds the results of the latest deployment attempt.
+	FailureReasons []string `json:"failureReasons"`
 }
