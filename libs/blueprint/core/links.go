@@ -77,4 +77,8 @@ const (
 	// to determine the exact state of each intermediary resource
 	// in the link.
 	PreciseLinkStatusUpdatingIntermediaryResources
+	// PreciseLinkStatusComplete is used when
+	// all components of the link have been successfully updated
+	// and or created.
+	PreciseLinkStatusComplete
 )
