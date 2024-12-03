@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
@@ -268,4 +269,11 @@ type ClockMock struct{}
 
 func (c *ClockMock) Now() time.Time {
 	return time.Unix(CurrentTimeUnixMock, 0)
+}
+
+func OrderStringSlice(fields []string) []string {
+	orderedFields := make([]string, len(fields))
+	copy(orderedFields, fields)
+	slices.Sort(orderedFields)
+	return orderedFields
 }

@@ -120,6 +120,107 @@ func (r *DynamoDBTableResource) Destroy(
 	return nil
 }
 
+type DynamoDBStreamResource struct{}
+
+func (r *DynamoDBStreamResource) CanLinkTo(
+	ctx context.Context,
+	input *provider.ResourceCanLinkToInput,
+) (*provider.ResourceCanLinkToOutput, error) {
+	return &provider.ResourceCanLinkToOutput{
+		CanLinkTo: []string{"aws/lambda/function"},
+	}, nil
+}
+
+func (r *DynamoDBStreamResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
+func (r *DynamoDBStreamResource) IsCommonTerminal(
+	ctx context.Context,
+	input *provider.ResourceIsCommonTerminalInput,
+) (*provider.ResourceIsCommonTerminalOutput, error) {
+	return &provider.ResourceIsCommonTerminalOutput{
+		IsCommonTerminal: false,
+	}, nil
+}
+
+func (r *DynamoDBStreamResource) GetType(
+	ctx context.Context,
+	input *provider.ResourceGetTypeInput,
+) (*provider.ResourceGetTypeOutput, error) {
+	return &provider.ResourceGetTypeOutput{
+		Type: "aws/dynamodb/stream",
+	}, nil
+}
+
+func (r *DynamoDBStreamResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "# DynamoDB Stream\n\nA table event stream in DynamoDB.",
+	}, nil
+}
+
+func (r *DynamoDBStreamResource) CustomValidate(
+	ctx context.Context,
+	input *provider.ResourceValidateInput,
+) (*provider.ResourceValidateOutput, error) {
+	return &provider.ResourceValidateOutput{
+		Diagnostics: []*core.Diagnostic{},
+	}, nil
+}
+
+func (r *DynamoDBStreamResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.ResourceSpecDefinition{
+			Schema: &provider.ResourceDefinitionsSchema{
+				Type: provider.ResourceDefinitionsSchemaTypeObject,
+				Attributes: map[string]*provider.ResourceDefinitionsSchema{
+					"id": {
+						Type:     provider.ResourceDefinitionsSchemaTypeString,
+						Computed: true,
+					},
+					"label": {
+						Type: provider.ResourceDefinitionsSchemaTypeString,
+					},
+					"region": {
+						Type: provider.ResourceDefinitionsSchemaTypeString,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
+func (r *DynamoDBStreamResource) Deploy(
+	ctx context.Context,
+	input *provider.ResourceDeployInput,
+) (*provider.ResourceDeployOutput, error) {
+	return &provider.ResourceDeployOutput{}, nil
+}
+
+func (r *DynamoDBStreamResource) GetExternalState(
+	ctx context.Context,
+	input *provider.ResourceGetExternalStateInput,
+) (*provider.ResourceGetExternalStateOutput, error) {
+	return &provider.ResourceGetExternalStateOutput{}, nil
+}
+
+func (r *DynamoDBStreamResource) Destroy(
+	ctx context.Context,
+	input *provider.ResourceDestroyInput,
+) error {
+	return nil
+}
+
 type LambdaFunctionResource struct{}
 
 func (r *LambdaFunctionResource) CanLinkTo(
