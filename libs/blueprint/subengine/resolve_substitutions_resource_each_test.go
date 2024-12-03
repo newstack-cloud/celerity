@@ -40,11 +40,14 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_resolves_substitutions_
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveResourceEachTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		spec,
 		params,
 	)
@@ -87,11 +90,14 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_fails_when_resource_eac
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveResourceEachTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		spec,
 		params,
 	)
@@ -120,11 +126,14 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_fails_when_resource_eac
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveResourceEachTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		spec,
 		params,
 	)
@@ -153,11 +162,14 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_fails_when_resource_eac
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveResourceEachTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		spec,
 		params,
 	)

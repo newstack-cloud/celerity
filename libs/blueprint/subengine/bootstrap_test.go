@@ -32,13 +32,14 @@ func newTestAWSProvider() provider.Provider {
 }
 
 type SubResolverTestContainer struct {
-	specFixtureFiles   map[string]string
-	specFixtureSchemas map[string]*schema.Blueprint
-	resourceRegistry   resourcehelpers.Registry
-	funcRegistry       provider.FunctionRegistry
-	dataSourceRegistry provider.DataSourceRegistry
-	stateContainer     state.Container
-	resourceCache      *core.Cache[*provider.ResolvedResource]
+	specFixtureFiles               map[string]string
+	specFixtureSchemas             map[string]*schema.Blueprint
+	resourceRegistry               resourcehelpers.Registry
+	funcRegistry                   provider.FunctionRegistry
+	dataSourceRegistry             provider.DataSourceRegistry
+	stateContainer                 state.Container
+	resourceCache                  *core.Cache[*provider.ResolvedResource]
+	resourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
 }
 
 func (s *SubResolverTestContainer) populateSpecFixtureSchemas(
@@ -82,4 +83,22 @@ func (s *SubResolverTestContainer) populateDependencies() {
 		providers,
 	)
 	s.resourceCache = core.NewCache[*provider.ResolvedResource]()
+	s.resourceTemplateInputElemCache = core.NewCache[[]*core.MappingNode]()
+}
+
+func convertToTemplateResourceInstance(
+	resource *schema.Resource,
+) *schema.Resource {
+	// Exclude `each` property as per the template expansion process
+	// in the change staging process.
+	return &schema.Resource{
+		Type:         resource.Type,
+		Description:  resource.Description,
+		Metadata:     resource.Metadata,
+		DependsOn:    resource.DependsOn,
+		Condition:    resource.Condition,
+		LinkSelector: resource.LinkSelector,
+		Spec:         resource.Spec,
+		SourceMeta:   resource.SourceMeta,
+	}
 }

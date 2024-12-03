@@ -59,6 +59,10 @@ func SubstitutionToString(substitutionContext string, substitution *Substitution
 		return SubResourcePropertyToString(substitution.ResourceProperty)
 	} else if substitution.Child != nil {
 		return SubChildToString(substitution.Child)
+	} else if substitution.ElemReference != nil {
+		return SubElemToString(substitution.ElemReference)
+	} else if substitution.ElemIndexReference != nil {
+		return "i", nil
 	}
 	return "", nil
 }
@@ -230,6 +234,30 @@ func SubChildToString(child *SubstitutionChild) (string, error) {
 
 	if len(errors) > 0 {
 		return "", errSerialiseSubstitutionInvalidChildPath(rawPath, child.ChildName, errors)
+	}
+
+	return path, nil
+}
+
+// SubElemToString produces a string representation of a substitution
+// component that refers to the current element in an input array for
+// a resource template.
+func SubElemToString(elem *SubstitutionElemReference) (string, error) {
+	errors := []error{}
+	path := "elem"
+	rawPath := ""
+	for _, pathItem := range elem.Path {
+		pathItemStr, err := propertyPathItemToString(pathItem)
+		if err != nil {
+			errors = append(errors, err)
+		} else {
+			path += pathItemStr
+		}
+		rawPath += pathItemStr
+	}
+
+	if len(errors) > 0 {
+		return "", errSerialiseSubstitutionInvalidCurrentElementPath(rawPath, errors)
 	}
 
 	return path, nil

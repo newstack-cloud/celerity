@@ -173,46 +173,55 @@ const (
 )
 
 type defaultSubstitutionResolver struct {
-	funcRegistry                 provider.FunctionRegistry
-	resourceRegistry             resourcehelpers.Registry
-	dataSourceRegistry           provider.DataSourceRegistry
-	stateContainer               state.Container
-	spec                         speccore.BlueprintSpec
-	params                       bpcore.BlueprintParams
-	valueCache                   *bpcore.Cache[*ResolvedValue]
-	dataSourceResolveResultCache *bpcore.Cache[*ResolveInDataSourceResult]
-	dataSourceDataCache          *bpcore.Cache[map[string]*bpcore.MappingNode]
-	resourceCache                *bpcore.Cache[*provider.ResolvedResource]
-	resourceStateCache           *bpcore.Cache[*state.ResourceState]
+	funcRegistry                   provider.FunctionRegistry
+	resourceRegistry               resourcehelpers.Registry
+	dataSourceRegistry             provider.DataSourceRegistry
+	stateContainer                 state.Container
+	spec                           speccore.BlueprintSpec
+	params                         bpcore.BlueprintParams
+	valueCache                     *bpcore.Cache[*ResolvedValue]
+	dataSourceResolveResultCache   *bpcore.Cache[*ResolveInDataSourceResult]
+	dataSourceDataCache            *bpcore.Cache[map[string]*bpcore.MappingNode]
+	resourceCache                  *bpcore.Cache[*provider.ResolvedResource]
+	resourceTemplateInputElemCache *bpcore.Cache[[]*bpcore.MappingNode]
+	resourceStateCache             *bpcore.Cache[*state.ResourceState]
+}
+
+type Registries struct {
+	FuncRegistry       provider.FunctionRegistry
+	ResourceRegistry   resourcehelpers.Registry
+	DataSourceRegistry provider.DataSourceRegistry
 }
 
 // NewDefaultSubstitutionResolver creates a new default implementation
 // of a substitution resolver.
 func NewDefaultSubstitutionResolver(
-	funcRegistry provider.FunctionRegistry,
-	resourceRegistry resourcehelpers.Registry,
-	dataSourceRegistry provider.DataSourceRegistry,
+	registries *Registries,
 	stateContainer state.Container,
 	// The resource cache is passed down from the container as resources
 	// are resolved before references to them are resolved.
 	// The substitution resolver can safely assume that ordering is taken care of
 	// so that a resolved resource is available when needed.
 	resourceCache *bpcore.Cache[*provider.ResolvedResource],
+	// The cache is used to retrieve "elem" and "i" references for resources
+	// expanded from a resource template.
+	resourceTemplateInputElemCache *bpcore.Cache[[]*bpcore.MappingNode],
 	spec speccore.BlueprintSpec,
 	params bpcore.BlueprintParams,
 ) SubstitutionResolver {
 	return &defaultSubstitutionResolver{
-		funcRegistry:                 funcRegistry,
-		resourceRegistry:             resourceRegistry,
-		dataSourceRegistry:           dataSourceRegistry,
-		stateContainer:               stateContainer,
-		spec:                         spec,
-		params:                       params,
-		valueCache:                   bpcore.NewCache[*ResolvedValue](),
-		dataSourceResolveResultCache: bpcore.NewCache[*ResolveInDataSourceResult](),
-		dataSourceDataCache:          bpcore.NewCache[map[string]*bpcore.MappingNode](),
-		resourceCache:                resourceCache,
-		resourceStateCache:           bpcore.NewCache[*state.ResourceState](),
+		funcRegistry:                   registries.FuncRegistry,
+		resourceRegistry:               registries.ResourceRegistry,
+		dataSourceRegistry:             registries.DataSourceRegistry,
+		stateContainer:                 stateContainer,
+		spec:                           spec,
+		params:                         params,
+		valueCache:                     bpcore.NewCache[*ResolvedValue](),
+		dataSourceResolveResultCache:   bpcore.NewCache[*ResolveInDataSourceResult](),
+		dataSourceDataCache:            bpcore.NewCache[map[string]*bpcore.MappingNode](),
+		resourceCache:                  resourceCache,
+		resourceTemplateInputElemCache: resourceTemplateInputElemCache,
+		resourceStateCache:             bpcore.NewCache[*state.ResourceState](),
 	}
 }
 
@@ -1453,6 +1462,19 @@ func (r *defaultSubstitutionResolver) resolveSubstitutionValue(
 		)
 	}
 
+	if substitutionValue.ElemReference != nil {
+		return r.resolveElemReference(
+			substitutionValue.ElemReference,
+			resolveCtx,
+		)
+	}
+
+	if substitutionValue.ElemIndexReference != nil {
+		return r.resolveElemIndexReference(
+			resolveCtx,
+		)
+	}
+
 	if substitutionValue.DataSourceProperty != nil {
 		return r.resolveDataSourceProperty(
 			ctx,
@@ -1645,7 +1667,65 @@ func (r *defaultSubstitutionResolver) computeValue(
 		ResolvedValue:   resolvedValue,
 		ResolveOnDeploy: resolveOnDeploy,
 	}, nil
+}
 
+func (r *defaultSubstitutionResolver) resolveElemReference(
+	elemRef *substitutions.SubstitutionElemReference,
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	resourceName := resourceNameFromElementID(resolveCtx.currentElementName)
+	resourceNameParts, couldBeTemplate := extractResourceTemplateNameParts(resourceName)
+	if !couldBeTemplate {
+		return nil, errResourceNotTemplate(resolveCtx.currentElementName, resourceName)
+	}
+
+	items, hasItems := r.resourceTemplateInputElemCache.Get(
+		resourceNameParts.templateName,
+	)
+	if !hasItems {
+		return nil, errMissingResourceTemplateInputElements(
+			resolveCtx.currentElementName,
+			resourceNameParts.templateName,
+		)
+	}
+
+	if len(items) <= resourceNameParts.index {
+		// If the resource name ends with _\d+ and the index is out of bounds, then
+		// it is likely a resource that just happens to end with a number and can not
+		// be considered a template.
+		// These errors are primarily to catch user errors, index out of bounds error
+		// for a resource template would be an error in the change staging logic
+		// that wouldn't make sense to the user.
+		return nil, errResourceNotTemplate(
+			resolveCtx.currentElementName,
+			resourceName,
+		)
+	}
+
+	return getPathValueFromMappingNode(
+		items[resourceNameParts.index],
+		elemRef.Path,
+		elemRef,
+		resolveCtx,
+		/* mappingNodeStartsAfter */ 0,
+		errMissingCurrentElementProperty,
+	)
+}
+
+func (r *defaultSubstitutionResolver) resolveElemIndexReference(
+	resolveCtx *resolveContext,
+) (*bpcore.MappingNode, error) {
+	resourceName := resourceNameFromElementID(resolveCtx.currentElementName)
+	resourceNameParts, couldBeTemplate := extractResourceTemplateNameParts(resourceName)
+	if !couldBeTemplate {
+		return nil, errResourceNotTemplate(resolveCtx.currentElementName, resourceName)
+	}
+
+	return &bpcore.MappingNode{
+		Literal: &bpcore.ScalarValue{
+			IntValue: &resourceNameParts.index,
+		},
+	}, nil
 }
 
 func (r *defaultSubstitutionResolver) resolveDataSourceProperty(

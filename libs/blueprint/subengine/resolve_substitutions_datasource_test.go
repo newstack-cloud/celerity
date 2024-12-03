@@ -37,11 +37,14 @@ func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveInDataSourceTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		spec,
 		params,
 	)
@@ -66,11 +69,14 @@ func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveInDataSourceTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		spec,
 		params,
 	)

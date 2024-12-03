@@ -21,6 +21,7 @@ type SubstitutionResourceResolverTestSuite struct {
 const (
 	resolveInResourceFixtureName                   = "resolve-in-resource"
 	resolveInResourcePartialAnnotationsFixtureName = "resolve-in-resource-partial-annotations"
+	resolveInResourceTemplateFixtureName           = "resolve-in-resource-2"
 	testInstanceID                                 = "cb826a32-1052-4fde-aa6e-d449b9f50066"
 )
 
@@ -28,6 +29,7 @@ func (s *SubstitutionResourceResolverTestSuite) SetupSuite() {
 	s.populateSpecFixtureSchemas(map[string]string{
 		resolveInResourceFixtureName:                   "__testdata/sub-resolver/resolve-in-resource-blueprint.yml",
 		resolveInResourcePartialAnnotationsFixtureName: "__testdata/sub-resolver/resolve-in-resource-partial-annotations-blueprint.yml",
+		resolveInResourceTemplateFixtureName:           "__testdata/sub-resolver/resolve-in-resource-2-blueprint.yml",
 	}, &s.Suite)
 }
 
@@ -40,11 +42,14 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveInResourceTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		spec,
 		params,
 	)
@@ -69,11 +74,14 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveInResourceTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		spec,
 		params,
 	)
@@ -98,11 +106,14 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveInResourceTestParams()
 	subResolver := NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		spec,
 		params,
 	)
@@ -144,6 +155,52 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 		&ResolveResourceTargetInfo{
 			ResolveFor:        ResolveForDeployment,
 			PartiallyResolved: partiallyResolvedResource(),
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().NotNil(result)
+
+	err = cupaloy.Snapshot(result)
+	s.Require().NoError(err)
+}
+
+func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_resource_with_template_for_change_staging() {
+	blueprint := s.specFixtureSchemas[resolveInResourceTemplateFixtureName]
+	spec := internal.NewBlueprintSpecMock(blueprint)
+	params := resolveInResourceTestParams()
+	subResolver := NewDefaultSubstitutionResolver(
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
+		s.stateContainer,
+		s.resourceCache,
+		s.resourceTemplateInputElemCache,
+		spec,
+		params,
+	)
+
+	ordersTable1Name := "production-Orders-1"
+	s.resourceTemplateInputElemCache.Set("ordersTable", []*core.MappingNode{
+		{
+			Fields: map[string]*core.MappingNode{
+				"name": {
+					Literal: &core.ScalarValue{
+						StringValue: &ordersTable1Name,
+					},
+				},
+			},
+		},
+	})
+	result, err := subResolver.ResolveInResource(
+		context.TODO(),
+		"ordersTable_0",
+		convertToTemplateResourceInstance(
+			blueprint.Resources.Values["ordersTable"],
+		),
+		&ResolveResourceTargetInfo{
+			ResolveFor: ResolveForChangeStaging,
 		},
 	)
 	s.Require().NoError(err)

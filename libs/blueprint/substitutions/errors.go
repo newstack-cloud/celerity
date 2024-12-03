@@ -149,6 +149,36 @@ func errSerialiseSubstitutionInvalidChildPath(
 	}
 }
 
+func errSerialiseSubstitutionInvalidCurrentElementPath(
+	path string,
+	pathItemErrors []error,
+) error {
+	childErrStr := ""
+	for _, err := range pathItemErrors {
+		childErrStr += fmt.Sprintf(childErrorsFormatStr, err.Error())
+	}
+
+	if len(path) == 0 {
+		return &errors.SerialiseError{
+			ReasonCode: ErrorReasonCodeInvalidReferenceSub,
+			Err: fmt.Errorf(
+				"validation failed due to an empty path having been provided for "+
+					"the current element in a reference substitution%s",
+				childErrStr,
+			),
+		}
+	}
+
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidReferenceSub,
+		Err: fmt.Errorf(
+			"validation failed due to invalid path \"%s\" for current element having been provided in a reference substitution%s",
+			path,
+			childErrStr,
+		),
+	}
+}
+
 func errSerialiseSubstitutionInvalidPathItem(pathItem *SubstitutionPathItem) error {
 	if pathItem.ArrayIndex == nil {
 		return &errors.SerialiseError{

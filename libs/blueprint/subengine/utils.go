@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"slices"
+	"strconv"
+	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
@@ -738,4 +740,34 @@ func expandResolveDataSourceResultWithError(
 	}
 
 	return result.ResolvedDataSource, nil
+}
+
+func resourceNameFromElementID(elementID string) string {
+	return strings.TrimPrefix(elementID, "resources.")
+}
+
+type resourceTemplateNameParts struct {
+	templateName string
+	index        int
+}
+
+func extractResourceTemplateNameParts(
+	resourceName string,
+) (*resourceTemplateNameParts, bool) {
+	indexOfSeparator := strings.LastIndex(resourceName, "_")
+	if indexOfSeparator == -1 {
+		return nil, false
+	}
+
+	templateName := resourceName[:indexOfSeparator]
+	indexStr := resourceName[indexOfSeparator+1:]
+	templateIndex, err := strconv.Atoi(indexStr)
+	if err != nil {
+		return nil, false
+	}
+
+	return &resourceTemplateNameParts{
+		templateName: templateName,
+		index:        templateIndex,
+	}, true
 }

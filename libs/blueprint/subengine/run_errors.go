@@ -176,6 +176,25 @@ const (
 	// For example, a resource being used as a dependency for the `each` property
 	// of another resource.
 	ErrorReasonCodeDisallowedElementType errors.ErrorReasonCode = "disallowed_element_type"
+	// ErrorReasonCodeResourceNotTemplate
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a resource not being a template when a reference to one of
+	// "elem" or "i" is used in a substitution.
+	ErrorReasonCodeResourceNotTemplate errors.ErrorReasonCode = "resource_not_template"
+	// ErrorReasonCodeMissingResourceTemplateInputElements
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// missing input elements for a resource template.
+	// This error is expected to be returned when the stage changing process
+	// is unable to resolve the list of input elements provided in the `each` property
+	// for a resource template.
+	ErrorReasonCodeMissingResourceTemplateInputElements errors.ErrorReasonCode = "missing_resource_template_input_elements"
+	// ErrorReasonCodeMissingCurrentElementProperty
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a missing property in the current element reference.
+	ErrorReasonCodeMissingCurrentElementProperty errors.ErrorReasonCode = "missing_current_element_property"
 )
 
 func errInvalidInterpolationSubType(elementName string, resolvedValue *core.MappingNode) error {
@@ -587,6 +606,70 @@ func errMissingChildExport(
 			elementName,
 			childName,
 			exportPath,
+		),
+	}
+}
+
+func errResourceNotTemplate(
+	elementName string,
+	resourceName string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeResourceNotTemplate,
+		Err: fmt.Errorf(
+			"[%s]: the current resource %q is not a template, it must be made into a template using the each property "+
+				"in order to reference the current element via \"elem\" or \"i\" in a substitution",
+			elementName,
+			resourceName,
+		),
+	}
+}
+
+func errMissingResourceTemplateInputElements(
+	elementName string,
+	resourceName string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeMissingResourceTemplateInputElements,
+		Err: fmt.Errorf(
+			"[%s]: missing input elements for resource template %q, "+
+				"the stage changing process seems to have not been able to resolve the "+
+				"list of provided in the `each` property for the resource template",
+			elementName,
+			resourceName,
+		),
+	}
+}
+
+func errMissingCurrentElementProperty(
+	elementName string,
+	property *substitutions.SubstitutionElemReference,
+	// Offset to start counting the depth from.
+	mappingNodeStartsAfter int,
+	depth int,
+	maxDepth int,
+) error {
+	fullPath, _ := substitutions.SubElemToString(property)
+	propertyPath, _ := substitutions.PropertyPathToString(property.Path)
+
+	depthWarning := ""
+	if depth > maxDepth {
+		depthWarning = fmt.Sprintf(
+			", the depth of the %q property path is %d, current element "+
+				"properties can not exceed a maximum depth of %d",
+			fullPath,
+			depth+mappingNodeStartsAfter,
+			maxDepth+mappingNodeStartsAfter,
+		)
+	}
+
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeMissingCurrentElementProperty,
+		Err: fmt.Errorf(
+			"[%s]: missing property %q in current element%s",
+			elementName,
+			propertyPath,
+			depthWarning,
 		),
 	}
 }
