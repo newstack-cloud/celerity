@@ -301,8 +301,8 @@ func NormaliseMappingNode(mappingNode *core.MappingNode) {
 		return
 	}
 
-	if mappingNode.Literal != nil {
-		NormaliseScalarValue(mappingNode.Literal)
+	if mappingNode.Scalar != nil {
+		NormaliseScalarValue(mappingNode.Scalar)
 	}
 
 	if mappingNode.Fields != nil {

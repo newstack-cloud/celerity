@@ -546,14 +546,14 @@ func toMappingNodePB(mappingNode *core.MappingNode, optional bool) (*schemapb.Ma
 		return nil, errMappingNodeIsNil()
 	}
 
-	if mappingNode.Literal != nil {
-		scalarPB, err := toScalarValuePB(mappingNode.Literal, false)
+	if mappingNode.Scalar != nil {
+		scalarPB, err := toScalarValuePB(mappingNode.Scalar, false)
 		if err != nil {
 			return nil, err
 		}
 
 		return &schemapb.MappingNode{
-			Literal: scalarPB,
+			Scalar: scalarPB,
 		}, nil
 	}
 

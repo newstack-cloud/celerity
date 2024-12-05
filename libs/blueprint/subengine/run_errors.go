@@ -679,20 +679,20 @@ func determineValueType(resolvedValue *core.MappingNode) string {
 		return "null"
 	}
 
-	if resolvedValue.Literal != nil {
-		if resolvedValue.Literal.StringValue != nil {
+	if resolvedValue.Scalar != nil {
+		if resolvedValue.Scalar.StringValue != nil {
 			return "string"
 		}
 
-		if resolvedValue.Literal.IntValue != nil {
+		if resolvedValue.Scalar.IntValue != nil {
 			return "int"
 		}
 
-		if resolvedValue.Literal.FloatValue != nil {
+		if resolvedValue.Scalar.FloatValue != nil {
 			return "float"
 		}
 
-		if resolvedValue.Literal.BoolValue != nil {
+		if resolvedValue.Scalar.BoolValue != nil {
 			return "bool"
 		}
 	}

@@ -113,7 +113,7 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 			ResourceSpecData: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
 					"id": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &resourceID,
 						},
 					},
@@ -141,7 +141,7 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 		state.InstanceState{
 			Exports: map[string]*core.MappingNode{
 				"region": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &childBlueprintRegion,
 					},
 				},
@@ -184,7 +184,7 @@ func partiallyResolvedMappingNode() *core.MappingNode {
 	return &core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"build": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &build,
 				},
 			},

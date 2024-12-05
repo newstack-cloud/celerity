@@ -3,17 +3,18 @@ package container
 import (
 	"context"
 	"os"
+	"slices"
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
+	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
@@ -148,12 +149,18 @@ func (s *internalBlueprintSpec) Schema() *schema.Blueprint {
 }
 
 type defaultLoader struct {
-	providers                map[string]provider.Provider
-	specTransformers         map[string]transform.SpecTransformer
-	stateContainer           state.Container
-	validateRuntimeValues    bool
-	validateAfterTransform   bool
-	transformSpec            bool
+	providers              map[string]provider.Provider
+	specTransformers       map[string]transform.SpecTransformer
+	stateContainer         state.Container
+	resourceChangeStager   ResourceChangeStager
+	childResolver          includes.ChildResolver
+	validateRuntimeValues  bool
+	validateAfterTransform bool
+	transformSpec          bool
+	// A list of resource names derived from resource templates.
+	// "elem" and "i" references should be allowed in resources
+	// derived from templates where the `each` property is not set.
+	derivedFromTemplates     []string
 	refChainCollectorFactory func() validation.RefChainCollector
 	funcRegistry             provider.FunctionRegistry
 	resourceRegistry         resourcehelpers.Registry
@@ -222,6 +229,16 @@ func WithLoaderResolveWorkingDir(resolveWorkingDir corefunctions.WorkingDirResol
 	}
 }
 
+// WithLoaderDerivedFromTemplates sets the list of resource names that are derived
+// from resource templates.
+// This is useful when you want to allow references to "elem" and "i" in resources
+// derived from templates where the `each` property is not set.
+func WithLoaderDerivedFromTemplates(derivedFromTemplates []string) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.derivedFromTemplates = derivedFromTemplates
+	}
+}
+
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
 // The map of providers must be a map of provider namespaces
@@ -240,6 +257,8 @@ func NewDefaultLoader(
 	providers map[string]provider.Provider,
 	specTransformers map[string]transform.SpecTransformer,
 	stateContainer state.Container,
+	resourceChangeStager ResourceChangeStager,
+	childResolver includes.ChildResolver,
 	refChainCollectorFactory func() validation.RefChainCollector,
 	opts ...LoaderOption,
 ) Loader {
@@ -252,12 +271,15 @@ func NewDefaultLoader(
 		providers:                internalProviders,
 		specTransformers:         specTransformers,
 		stateContainer:           stateContainer,
+		resourceChangeStager:     resourceChangeStager,
+		childResolver:            childResolver,
 		refChainCollectorFactory: refChainCollectorFactory,
 		funcRegistry:             funcRegistry,
 		resourceRegistry:         resourceRegistry,
 		dataSourceRegistry:       dataSourceRegistry,
 		clock:                    &bpcore.SystemClock{},
 		resolveWorkingDir:        os.Getwd,
+		derivedFromTemplates:     []string{},
 	}
 
 	for _, opt := range opts {
@@ -276,17 +298,20 @@ func NewDefaultLoader(
 	return loader
 }
 
-func (l *defaultLoader) forChildBlueprint() Loader {
+func (l *defaultLoader) forChildBlueprint(derivedFromTemplate []string) Loader {
 	return NewDefaultLoader(
 		l.providers,
 		l.specTransformers,
 		l.stateContainer,
+		l.resourceChangeStager,
+		l.childResolver,
 		l.refChainCollectorFactory,
 		WithLoaderValidateRuntimeValues(l.validateRuntimeValues),
 		WithLoaderValidateAfterTransform(l.validateAfterTransform),
 		WithLoaderTransformSpec(l.transformSpec),
 		WithLoaderClock(l.clock),
 		WithLoaderResolveWorkingDir(l.resolveWorkingDir),
+		WithLoaderDerivedFromTemplates(derivedFromTemplate),
 	)
 }
 
@@ -336,7 +361,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			blueprintSpec,
 			&BlueprintContainerDependencies{
 				StateContainer:              l.stateContainer,
-				ResourceProviders:           map[string]provider.Provider{},
+				Providers:                   map[string]provider.Provider{},
 				ResourceRegistry:            l.resourceRegistry,
 				LinkInfo:                    nil,
 				RefChainCollector:           refChainCollector,
@@ -347,8 +372,8 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		), diagnostics, err
 	}
 
-	resourceProviderMap := l.createResourceProviderMap(blueprintSpec)
-	linkInfo, err := links.NewDefaultLinkInfoProvider(resourceProviderMap, blueprintSpec, params)
+	resourceTypeProviderMap := createResourceTypeProviderMap(blueprintSpec, l.providers)
+	linkInfo, err := links.NewDefaultLinkInfoProvider(resourceTypeProviderMap, blueprintSpec, params)
 	if err != nil {
 		// Ensure the spec is returned when parsing and
 		// validation was successful but loading link information failed.
@@ -356,7 +381,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			blueprintSpec,
 			&BlueprintContainerDependencies{
 				StateContainer:              l.stateContainer,
-				ResourceProviders:           map[string]provider.Provider{},
+				Providers:                   map[string]provider.Provider{},
 				ResourceRegistry:            l.resourceRegistry,
 				LinkInfo:                    nil,
 				RefChainCollector:           refChainCollector,
@@ -368,26 +393,33 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	}
 
 	resourceCache := bpcore.NewCache[*provider.ResolvedResource]()
+	resourceTemplateInputElemCache := bpcore.NewCache[[]*bpcore.MappingNode]()
 	substitutionResolver := subengine.NewDefaultSubstitutionResolver(
-		l.funcRegistry,
-		l.resourceRegistry,
-		l.dataSourceRegistry,
+		&subengine.Registries{
+			FuncRegistry:       l.funcRegistry,
+			ResourceRegistry:   l.resourceRegistry,
+			DataSourceRegistry: l.dataSourceRegistry,
+		},
 		l.stateContainer,
 		resourceCache,
+		resourceTemplateInputElemCache,
 		blueprintSpec,
 		params,
 	)
 	container := NewDefaultBlueprintContainer(
 		blueprintSpec,
 		&BlueprintContainerDependencies{
-			StateContainer:              l.stateContainer,
-			ResourceProviders:           resourceProviderMap,
-			ResourceRegistry:            l.resourceRegistry,
-			LinkInfo:                    linkInfo,
-			RefChainCollector:           refChainCollector,
-			SubstitutionResolver:        substitutionResolver,
-			ResourceCache:               resourceCache,
-			ChildBlueprintLoaderFactory: l.forChildBlueprint,
+			StateContainer:                 l.stateContainer,
+			Providers:                      l.providers,
+			ResourceRegistry:               l.resourceRegistry,
+			LinkInfo:                       linkInfo,
+			RefChainCollector:              refChainCollector,
+			SubstitutionResolver:           substitutionResolver,
+			ChangeStager:                   l.resourceChangeStager,
+			ChildResolver:                  l.childResolver,
+			ResourceCache:                  resourceCache,
+			ResourceTemplateInputElemCache: resourceTemplateInputElemCache,
+			ChildBlueprintLoaderFactory:    l.forChildBlueprint,
 		},
 		diagnostics,
 	)
@@ -435,20 +467,6 @@ func (l *defaultLoader) collectLinksAsReferences(
 	}
 
 	return nil
-}
-
-func (l *defaultLoader) createResourceProviderMap(blueprintSpec speccore.BlueprintSpec) map[string]provider.Provider {
-	resourceProviderMap := map[string]provider.Provider{}
-	resources := map[string]*schema.Resource{}
-	if blueprintSpec.Schema().Resources != nil {
-		resources = blueprintSpec.Schema().Resources.Values
-	}
-
-	for _, resource := range resources {
-		namespace := strings.Split(resource.Type.Value, "/")[0]
-		resourceProviderMap[resource.Type.Value] = l.providers[namespace]
-	}
-	return resourceProviderMap
 }
 
 func (l *defaultLoader) loadSpec(
@@ -859,6 +877,7 @@ func (l *defaultLoader) validateMetadata(
 		ctx,
 		"root",
 		"metadata",
+		/* usedInResourceDerivedFromTemplate */ false,
 		bpSchema.Metadata,
 		bpSchema,
 		params,
@@ -1048,6 +1067,7 @@ func (l *defaultLoader) validateResource(
 		l.funcRegistry,
 		refChainCollector,
 		l.resourceRegistry,
+		slices.Contains(l.derivedFromTemplates, name),
 	)
 	*diagnostics = append(*diagnostics, validateResourceDiagnostics...)
 	if err != nil {

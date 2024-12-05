@@ -1,7 +1,7 @@
 (*subengine.ResolveInIncludeResult)({
   ResolvedInclude: (*subengine.ResolvedInclude)({
     Path: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)({
+      Scalar: (*core.ScalarValue)({
         IntValue: (*int)(<nil>),
         BoolValue: (*bool)(<nil>),
         FloatValue: (*float64)(<nil>),
@@ -15,10 +15,10 @@
       FieldsSourceMeta: (map[string]*source.Meta) <nil>
     }),
     Variables: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)(<nil>),
+      Scalar: (*core.ScalarValue)(<nil>),
       Fields: (map[string]*core.MappingNode) (len=1) {
         (string) (len=6) "region": (*core.MappingNode)({
-          Literal: (*core.ScalarValue)({
+          Scalar: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),
@@ -38,10 +38,10 @@
       FieldsSourceMeta: (map[string]*source.Meta) <nil>
     }),
     Metadata: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)(<nil>),
+      Scalar: (*core.ScalarValue)(<nil>),
       Fields: (map[string]*core.MappingNode) (len=3) {
         (string) (len=6) "bucket": (*core.MappingNode)({
-          Literal: (*core.ScalarValue)({
+          Scalar: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),
@@ -70,7 +70,7 @@
           FieldsSourceMeta: (map[string]*source.Meta) <nil>
         }),
         (string) (len=6) "region": (*core.MappingNode)({
-          Literal: (*core.ScalarValue)({
+          Scalar: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),
@@ -99,7 +99,7 @@
           FieldsSourceMeta: (map[string]*source.Meta) <nil>
         }),
         (string) (len=10) "sourceType": (*core.MappingNode)({
-          Literal: (*core.ScalarValue)({
+          Scalar: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),
@@ -134,7 +134,7 @@
       FieldsSourceMeta: (map[string]*source.Meta) <nil>
     }),
     Description: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)({
+      Scalar: (*core.ScalarValue)({
         IntValue: (*int)(<nil>),
         BoolValue: (*bool)(<nil>),
         FloatValue: (*float64)(<nil>),

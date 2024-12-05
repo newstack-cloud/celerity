@@ -14,7 +14,7 @@
       })
     }),
     Description: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)({
+      Scalar: (*core.ScalarValue)({
         IntValue: (*int)(<nil>),
         BoolValue: (*bool)(<nil>),
         FloatValue: (*float64)(<nil>),
@@ -29,7 +29,7 @@
     }),
     Metadata: (*provider.ResolvedResourceMetadata)({
       DisplayName: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -43,10 +43,10 @@
         FieldsSourceMeta: (map[string]*source.Meta) <nil>
       }),
       Annotations: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)(<nil>),
+        Scalar: (*core.ScalarValue)(<nil>),
         Fields: (map[string]*core.MappingNode) (len=3) {
           (string) (len=20) "aws.dynamodb.trigger": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
+            Scalar: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(true),
               FloatValue: (*float64)(<nil>),
@@ -82,13 +82,13 @@
         }
       }),
       Custom: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)(<nil>),
+        Scalar: (*core.ScalarValue)(<nil>),
         Fields: (map[string]*core.MappingNode) (len=1) {
           (string) (len=6) "visual": (*core.MappingNode)({
-            Literal: (*core.ScalarValue)(<nil>),
+            Scalar: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) (len=3) {
               (string) (len=5) "label": (*core.MappingNode)({
-                Literal: (*core.ScalarValue)({
+                Scalar: (*core.ScalarValue)({
                   IntValue: (*int)(<nil>),
                   BoolValue: (*bool)(<nil>),
                   FloatValue: (*float64)(<nil>),
@@ -102,7 +102,7 @@
                 FieldsSourceMeta: (map[string]*source.Meta) <nil>
               }),
               (string) (len=1) "x": (*core.MappingNode)({
-                Literal: (*core.ScalarValue)({
+                Scalar: (*core.ScalarValue)({
                   IntValue: (*int)(100),
                   BoolValue: (*bool)(<nil>),
                   FloatValue: (*float64)(<nil>),
@@ -131,7 +131,7 @@
                 FieldsSourceMeta: (map[string]*source.Meta) <nil>
               }),
               (string) (len=1) "y": (*core.MappingNode)({
-                Literal: (*core.ScalarValue)({
+                Scalar: (*core.ScalarValue)({
                   IntValue: (*int)(200),
                   BoolValue: (*bool)(<nil>),
                   FloatValue: (*float64)(<nil>),
@@ -179,7 +179,7 @@
           Or: ([]*provider.ResolvedResourceCondition) <nil>,
           Not: (*provider.ResolvedResourceCondition)(<nil>),
           StringValue: (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
+            Scalar: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(true),
               FloatValue: (*float64)(<nil>),
@@ -201,7 +201,7 @@
               Or: ([]*provider.ResolvedResourceCondition) <nil>,
               Not: (*provider.ResolvedResourceCondition)(<nil>),
               StringValue: (*core.MappingNode)({
-                Literal: (*core.ScalarValue)({
+                Scalar: (*core.ScalarValue)({
                   IntValue: (*int)(<nil>),
                   BoolValue: (*bool)(true),
                   FloatValue: (*float64)(<nil>),
@@ -220,7 +220,7 @@
               Or: ([]*provider.ResolvedResourceCondition) <nil>,
               Not: (*provider.ResolvedResourceCondition)(<nil>),
               StringValue: (*core.MappingNode)({
-                Literal: (*core.ScalarValue)({
+                Scalar: (*core.ScalarValue)({
                   IntValue: (*int)(<nil>),
                   BoolValue: (*bool)(false),
                   FloatValue: (*float64)(<nil>),
@@ -267,11 +267,11 @@
       })
     }),
     Spec: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)(<nil>),
+      Scalar: (*core.ScalarValue)(<nil>),
       Fields: (map[string]*core.MappingNode) (len=2) {
         (string) (len=6) "region": (*core.MappingNode)(<nil>),
         (string) (len=9) "tableName": (*core.MappingNode)({
-          Literal: (*core.ScalarValue)({
+          Scalar: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),

@@ -10,6 +10,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
@@ -116,6 +117,16 @@ func alreadyCollected(
 		)
 }
 
+func getChangesFromStageLinkChangesOutput(
+	stageLinkChangesOutput *provider.LinkStageChangesOutput,
+) provider.LinkChanges {
+	if stageLinkChangesOutput == nil || stageLinkChangesOutput.Changes == nil {
+		return provider.LinkChanges{}
+	}
+
+	return *stageLinkChangesOutput.Changes
+}
+
 func getLinkImplementation(
 	linkA *links.ChainLinkNode,
 	linkB *links.ChainLinkNode,
@@ -160,8 +171,8 @@ func extractIncludeVariables(include *subengine.ResolvedInclude) map[string]*cor
 	}
 
 	for variableName, variableValue := range include.Variables.Fields {
-		if variableValue.Literal != nil {
-			includeVariables[variableName] = variableValue.Literal
+		if variableValue.Scalar != nil {
+			includeVariables[variableName] = variableValue.Scalar
 		}
 	}
 
@@ -229,10 +240,52 @@ func extractChildBlueprintFormat(includeName string, include *subengine.Resolved
 	return deriveSpecFormat(pathString)
 }
 
+func flattenMapLists[Value any](m map[string][]Value) []Value {
+	flattened := []Value{}
+	for _, list := range m {
+		flattened = append(flattened, list...)
+	}
+	return flattened
+}
+
 func createLinkID(resourceAName string, resourceBName string) string {
 	return fmt.Sprintf(
 		"%s::%s",
 		resourceAName,
 		resourceBName,
 	)
+}
+
+func createResourceTypeProviderMap(
+	blueprintSpec speccore.BlueprintSpec,
+	providers map[string]provider.Provider,
+) map[string]provider.Provider {
+	resourceTypeProviderMap := map[string]provider.Provider{}
+	resources := map[string]*schema.Resource{}
+	if blueprintSpec.Schema().Resources != nil {
+		resources = blueprintSpec.Schema().Resources.Values
+	}
+
+	for _, resource := range resources {
+		namespace := strings.Split(resource.Type.Value, "/")[0]
+		resourceTypeProviderMap[resource.Type.Value] = providers[namespace]
+	}
+	return resourceTypeProviderMap
+}
+
+func createResourceProviderMap(
+	blueprintSpec speccore.BlueprintSpec,
+	providers map[string]provider.Provider,
+) map[string]provider.Provider {
+	resourceProviderMap := map[string]provider.Provider{}
+	resources := map[string]*schema.Resource{}
+	if blueprintSpec.Schema().Resources != nil {
+		resources = blueprintSpec.Schema().Resources.Values
+	}
+
+	for resourceName, resource := range resources {
+		namespace := strings.Split(resource.Type.Value, "/")[0]
+		resourceProviderMap[resourceName] = providers[namespace]
+	}
+	return resourceProviderMap
 }

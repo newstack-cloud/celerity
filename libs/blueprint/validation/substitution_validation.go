@@ -38,6 +38,7 @@ func ValidateSubstitution(
 	sub *substitutions.Substitution,
 	nextLocation *source.Meta,
 	bpSchema *schema.Blueprint,
+	usedInResourceDerivedFromTemplate bool,
 	usedIn string,
 	// The path to the property where the substitution is used
 	// relative to the "usedIn" element.
@@ -59,6 +60,7 @@ func ValidateSubstitution(
 			sub.Function,
 			nextLocation,
 			bpSchema,
+			usedInResourceDerivedFromTemplate,
 			usedIn,
 			usedInPropertyPath,
 			params,
@@ -103,6 +105,7 @@ func ValidateSubstitution(
 			"element",
 			sub.ElemReference.SourceMeta,
 			bpSchema,
+			usedInResourceDerivedFromTemplate,
 			usedIn,
 		)
 	}
@@ -112,6 +115,7 @@ func ValidateSubstitution(
 			"index",
 			sub.ElemIndexReference.SourceMeta,
 			bpSchema,
+			usedInResourceDerivedFromTemplate,
 			usedIn,
 		)
 	}
@@ -225,6 +229,7 @@ func validateElemReferenceSubstitution(
 	elemRefType string,
 	location *source.Meta,
 	bpSchema *schema.Blueprint,
+	derivedFromTemplate bool,
 	usedIn string,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -243,9 +248,7 @@ func validateElemReferenceSubstitution(
 		return "", diagnostics, errSubElemRefResourceNotFound(elemRefType, resourceName, location)
 	}
 
-	// TODO: check flag to allow for element references in resources that
-	// have been expanded from a template.
-	if resource.Each == nil {
+	if !derivedFromTemplate && resource.Each == nil {
 		return "", diagnostics, errSubElemRefResourceNotEach(elemRefType, resourceName, location)
 	}
 
@@ -824,6 +827,7 @@ func validateFunctionSubstitution(
 	subFunc *substitutions.SubstitutionFunctionExpr,
 	nextLocation *source.Meta,
 	bpSchema *schema.Blueprint,
+	usedInResourceDerivedFromTemplate bool,
 	usedIn string,
 	usedInPropertyPath string,
 	params bpcore.BlueprintParams,
@@ -868,6 +872,7 @@ func validateFunctionSubstitution(
 			arg,
 			nextLocation,
 			bpSchema,
+			usedInResourceDerivedFromTemplate,
 			usedIn,
 			usedInPropertyPath,
 			funcName,
@@ -1089,6 +1094,7 @@ func validateSubFuncArgument(
 	arg *substitutions.SubstitutionFunctionArg,
 	nextLocation *source.Meta,
 	bpSchema *schema.Blueprint,
+	usedInResourceDerivedFromTemplate bool,
 	usedIn string,
 	usedInPropertyPath string,
 	funcName string,
@@ -1115,6 +1121,7 @@ func validateSubFuncArgument(
 		arg.Value,
 		nextLocation,
 		bpSchema,
+		usedInResourceDerivedFromTemplate,
 		usedIn,
 		usedInPropertyPath,
 		params,

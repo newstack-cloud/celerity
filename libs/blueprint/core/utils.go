@@ -27,22 +27,80 @@ func Flatten[Item any](array [][]Item) []Item {
 
 // StringValue extracts the string value from a MappingNode.
 func StringValue(value *MappingNode) string {
-	if value == nil || value.Literal == nil || value.Literal.StringValue == nil {
+	if value == nil || value.Scalar == nil || value.Scalar.StringValue == nil {
 		return ""
 	}
 
-	return *value.Literal.StringValue
+	return *value.Scalar.StringValue
 }
 
 // BoolValue extracts the boolean value from a MappingNode.
 // This will return false if the value is nil or the given mapping node
 // contains another type of value.
 func BoolValue(value *MappingNode) bool {
-	if value == nil || value.Literal == nil || value.Literal.BoolValue == nil {
+	if value == nil || value.Scalar == nil || value.Scalar.BoolValue == nil {
 		return false
 	}
 
-	return *value.Literal.BoolValue
+	return *value.Scalar.BoolValue
+}
+
+// IntValue extracts the integer value from a MappingNode.
+// This will return 0 if the value is nil or the given mapping node
+// contains another type of value.
+func IntValue(value *MappingNode) int {
+	if value == nil || value.Scalar == nil || value.Scalar.IntValue == nil {
+		return 0
+	}
+
+	return *value.Scalar.IntValue
+}
+
+// FloatValue extracts the float value from a MappingNode.
+// This will return 0.0 if the value is nil or the given mapping node
+// contains another type of value.
+func FloatValue(value *MappingNode) float64 {
+	if value == nil || value.Scalar == nil || value.Scalar.FloatValue == nil {
+		return 0.0
+	}
+
+	return *value.Scalar.FloatValue
+}
+
+// MappingNodeFromString creates a MappingNode from a string value.
+func MappingNodeFromString(value string) *MappingNode {
+	return &MappingNode{
+		Scalar: &ScalarValue{
+			StringValue: &value,
+		},
+	}
+}
+
+// MappingNodeFromBool creates a MappingNode from a boolean value.
+func MappingNodeFromBool(value bool) *MappingNode {
+	return &MappingNode{
+		Scalar: &ScalarValue{
+			BoolValue: &value,
+		},
+	}
+}
+
+// MappingNodeFromInt creates a MappingNode from an integer value.
+func MappingNodeFromInt(value int) *MappingNode {
+	return &MappingNode{
+		Scalar: &ScalarValue{
+			IntValue: &value,
+		},
+	}
+}
+
+// MappingNodeFromFloat creates a MappingNode from a float value.
+func MappingNodeFromFloat(value float64) *MappingNode {
+	return &MappingNode{
+		Scalar: &ScalarValue{
+			FloatValue: &value,
+		},
+	}
 }
 
 // ResourceElementID generates an element ID for a resource that is used

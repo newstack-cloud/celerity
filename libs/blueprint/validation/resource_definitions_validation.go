@@ -17,6 +17,7 @@ func validateResourceDefinition(
 	ctx context.Context,
 	resourceName string,
 	resourceType string,
+	resourceDerivedFromTemplate bool,
 	spec *core.MappingNode,
 	parentLocation *source.Meta,
 	validateAgainstSchema *provider.ResourceDefinitionsSchema,
@@ -53,6 +54,7 @@ func validateResourceDefinition(
 			ctx,
 			resourceName,
 			resourceType,
+			resourceDerivedFromTemplate,
 			spec,
 			parentLocation,
 			validateAgainstSchema,
@@ -69,6 +71,7 @@ func validateResourceDefinition(
 			ctx,
 			resourceName,
 			resourceType,
+			resourceDerivedFromTemplate,
 			spec,
 			parentLocation,
 			validateAgainstSchema,
@@ -85,6 +88,7 @@ func validateResourceDefinition(
 			ctx,
 			resourceName,
 			resourceType,
+			resourceDerivedFromTemplate,
 			spec,
 			parentLocation,
 			validateAgainstSchema,
@@ -100,6 +104,7 @@ func validateResourceDefinition(
 		return validateResourceDefinitionString(
 			ctx,
 			resourceName,
+			resourceDerivedFromTemplate,
 			spec,
 			parentLocation,
 			validateAgainstSchema,
@@ -114,6 +119,7 @@ func validateResourceDefinition(
 		return validateResourceDefinitionInteger(
 			ctx,
 			resourceName,
+			resourceDerivedFromTemplate,
 			spec,
 			parentLocation,
 			validateAgainstSchema,
@@ -128,6 +134,7 @@ func validateResourceDefinition(
 		return validateResourceDefinitionFloat(
 			ctx,
 			resourceName,
+			resourceDerivedFromTemplate,
 			spec,
 			parentLocation,
 			validateAgainstSchema,
@@ -142,6 +149,7 @@ func validateResourceDefinition(
 		return validateResourceDefinitionBoolean(
 			ctx,
 			resourceName,
+			resourceDerivedFromTemplate,
 			spec,
 			parentLocation,
 			validateAgainstSchema,
@@ -157,6 +165,7 @@ func validateResourceDefinition(
 			ctx,
 			resourceName,
 			resourceType,
+			resourceDerivedFromTemplate,
 			spec,
 			parentLocation,
 			validateAgainstSchema,
@@ -180,6 +189,7 @@ func validateResourceDefinitionObject(
 	ctx context.Context,
 	resourceName string,
 	resourceType string,
+	resourceDerivedFromTemplate bool,
 	node *core.MappingNode,
 	parentLocation *source.Meta,
 	validateAgainstSchema *provider.ResourceDefinitionsSchema,
@@ -236,6 +246,7 @@ func validateResourceDefinitionObject(
 				ctx,
 				resourceName,
 				resourceType,
+				resourceDerivedFromTemplate,
 				attrNode,
 				parentLocation,
 				attrSchema,
@@ -266,6 +277,7 @@ func validateResourceDefinitionMap(
 	ctx context.Context,
 	resourceName string,
 	resourceType string,
+	resourceDerivedFromTemplate bool,
 	node *core.MappingNode,
 	parentLocation *source.Meta,
 	validateAgainstSchema *provider.ResourceDefinitionsSchema,
@@ -311,6 +323,7 @@ func validateResourceDefinitionMap(
 			ctx,
 			resourceName,
 			resourceType,
+			resourceDerivedFromTemplate,
 			fieldNode,
 			parentLocation,
 			validateAgainstSchema.MapValues,
@@ -340,6 +353,7 @@ func validateResourceDefinitionArray(
 	ctx context.Context,
 	resourceName string,
 	resourceType string,
+	resourceDerivedFromTemplate bool,
 	node *core.MappingNode,
 	parentLocation *source.Meta,
 	validateAgainstSchema *provider.ResourceDefinitionsSchema,
@@ -385,6 +399,7 @@ func validateResourceDefinitionArray(
 			ctx,
 			resourceName,
 			resourceType,
+			resourceDerivedFromTemplate,
 			itemNode,
 			parentLocation,
 			validateAgainstSchema.Items,
@@ -412,6 +427,7 @@ func validateResourceDefinitionArray(
 func validateResourceDefinitionString(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	node *core.MappingNode,
 	parentLocation *source.Meta,
 	schema *provider.ResourceDefinitionsSchema,
@@ -432,8 +448,8 @@ func validateResourceDefinitionString(
 		)
 	}
 
-	hasNilValue := (node.Literal == nil ||
-		(node.Literal != nil && node.Literal.StringValue == nil)) &&
+	hasNilValue := (node.Scalar == nil ||
+		(node.Scalar != nil && node.Scalar.StringValue == nil)) &&
 		node.StringWithSubstitutions == nil
 
 	if hasNilValue && schema.Nullable {
@@ -461,6 +477,7 @@ func validateResourceDefinitionString(
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
 			resourceName,
+			resourceDerivedFromTemplate,
 			node.StringWithSubstitutions,
 			substitutions.ResolvedSubExprTypeString,
 			bpSchema,
@@ -482,6 +499,7 @@ func validateResourceDefinitionString(
 func validateResourceDefinitionInteger(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	node *core.MappingNode,
 	parentLocation *source.Meta,
 	schema *provider.ResourceDefinitionsSchema,
@@ -502,8 +520,8 @@ func validateResourceDefinitionInteger(
 		)
 	}
 
-	hasNilValue := (node.Literal == nil ||
-		(node.Literal != nil && node.Literal.IntValue == nil)) &&
+	hasNilValue := (node.Scalar == nil ||
+		(node.Scalar != nil && node.Scalar.IntValue == nil)) &&
 		node.StringWithSubstitutions == nil
 
 	if hasNilValue && schema.Nullable {
@@ -532,6 +550,7 @@ func validateResourceDefinitionInteger(
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
 			resourceName,
+			resourceDerivedFromTemplate,
 			node.StringWithSubstitutions,
 			substitutions.ResolvedSubExprTypeInteger,
 			bpSchema,
@@ -553,6 +572,7 @@ func validateResourceDefinitionInteger(
 func validateResourceDefinitionFloat(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	node *core.MappingNode,
 	parentLocation *source.Meta,
 	schema *provider.ResourceDefinitionsSchema,
@@ -573,8 +593,8 @@ func validateResourceDefinitionFloat(
 		)
 	}
 
-	hasNilValue := (node.Literal == nil ||
-		(node.Literal != nil && node.Literal.FloatValue == nil)) &&
+	hasNilValue := (node.Scalar == nil ||
+		(node.Scalar != nil && node.Scalar.FloatValue == nil)) &&
 		node.StringWithSubstitutions == nil
 
 	if hasNilValue && schema.Nullable {
@@ -603,6 +623,7 @@ func validateResourceDefinitionFloat(
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
 			resourceName,
+			resourceDerivedFromTemplate,
 			node.StringWithSubstitutions,
 			substitutions.ResolvedSubExprTypeFloat,
 			bpSchema,
@@ -624,6 +645,7 @@ func validateResourceDefinitionFloat(
 func validateResourceDefinitionBoolean(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	node *core.MappingNode,
 	parentLocation *source.Meta,
 	schema *provider.ResourceDefinitionsSchema,
@@ -644,8 +666,8 @@ func validateResourceDefinitionBoolean(
 		)
 	}
 
-	hasNilValue := (node.Literal == nil ||
-		(node.Literal != nil && node.Literal.BoolValue == nil)) &&
+	hasNilValue := (node.Scalar == nil ||
+		(node.Scalar != nil && node.Scalar.BoolValue == nil)) &&
 		node.StringWithSubstitutions == nil
 
 	if hasNilValue && schema.Nullable {
@@ -674,6 +696,7 @@ func validateResourceDefinitionBoolean(
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
 			resourceName,
+			resourceDerivedFromTemplate,
 			node.StringWithSubstitutions,
 			substitutions.ResolvedSubExprTypeBoolean,
 			bpSchema,
@@ -696,6 +719,7 @@ func validateResourceDefinitionUnion(
 	ctx context.Context,
 	resourceName string,
 	resourceType string,
+	resourceDerivedFromTemplate bool,
 	spec *core.MappingNode,
 	parentLocation *source.Meta,
 	validateAgainstSchema *provider.ResourceDefinitionsSchema,
@@ -725,6 +749,7 @@ func validateResourceDefinitionUnion(
 			ctx,
 			resourceName,
 			resourceType,
+			resourceDerivedFromTemplate,
 			spec,
 			parentLocation,
 			unionSchema,
@@ -757,6 +782,7 @@ func validateResourceDefinitionUnion(
 func validateResourceDefinitionSubstitution(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	value *substitutions.StringOrSubstitutions,
 	expectedResolvedType substitutions.ResolvedSubExprType,
 	bpSchema *schema.Blueprint,
@@ -792,6 +818,7 @@ func validateResourceDefinitionSubstitution(
 				stringOrSub.SubstitutionValue,
 				nil,
 				bpSchema,
+				resourceDerivedFromTemplate,
 				resourceIdentifier,
 				path,
 				params,

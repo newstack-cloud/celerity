@@ -57,6 +57,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		/* bpSchema */ nil,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -108,6 +109,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"exports.example",
 		"",
 		&testBlueprintParams{},
@@ -143,6 +145,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -180,6 +183,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -217,6 +221,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -242,6 +247,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		/* blueprint */ nil,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -282,7 +288,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -298,6 +304,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -338,7 +345,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -354,6 +361,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource2",
 		"",
 		&testBlueprintParams{},
@@ -396,6 +404,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource3",
 		"",
 		&testBlueprintParams{},
@@ -430,7 +439,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 							"ids": {
 								Items: []*core.MappingNode{
 									{
-										Literal: &core.ScalarValue{
+										Scalar: &core.ScalarValue{
 											StringValue: &exampleResourceID,
 										},
 									},
@@ -448,6 +457,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -482,7 +492,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 							"ids": {
 								Items: []*core.MappingNode{
 									{
-										Literal: &core.ScalarValue{
+										Scalar: &core.ScalarValue{
 											StringValue: &exampleResourceID,
 										},
 									},
@@ -500,6 +510,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -527,6 +538,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_var_ref_in
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -567,6 +579,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_var_ref_is
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -599,6 +612,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_val_ref_in
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -653,6 +667,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_val_ref_is
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -707,6 +722,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"values.bucketConfig",
 		"",
 		&testBlueprintParams{},
@@ -737,6 +753,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_out
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		/* blueprint */ nil,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"datasources.networking",
 		"",
 		&testBlueprintParams{},
@@ -769,6 +786,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -815,7 +833,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -831,6 +849,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource1",
 		"",
 		&testBlueprintParams{},
@@ -868,7 +887,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -884,6 +903,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource3",
 		"",
 		&testBlueprintParams{},
@@ -919,6 +939,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_resource_pro
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource2",
 		"",
 		&testBlueprintParams{},
@@ -956,7 +977,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_resource_pro
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -972,6 +993,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_resource_pro
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource2",
 		"",
 		&testBlueprintParams{},
@@ -1006,7 +1028,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -1022,6 +1044,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource2",
 		"",
 		&testBlueprintParams{},
@@ -1058,7 +1081,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referencing_
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -1074,6 +1097,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referencing_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource2",
 		"",
 		&testBlueprintParams{},
@@ -1109,7 +1133,7 @@ func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -1125,6 +1149,7 @@ func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource2",
 		"",
 		&testBlueprintParams{},
@@ -1176,6 +1201,7 @@ func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource2",
 		"",
 		&testBlueprintParams{},
@@ -1211,7 +1237,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -1227,6 +1253,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource3",
 		"",
 		&testBlueprintParams{},
@@ -1262,7 +1289,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceID,
 								},
 							},
@@ -1278,6 +1305,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource3",
 		"",
 		&testBlueprintParams{},
@@ -1313,7 +1341,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceName,
 								},
 							},
@@ -1329,6 +1357,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource3",
 		"",
 		&testBlueprintParams{},
@@ -1364,7 +1393,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceName,
 								},
 							},
@@ -1380,6 +1409,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource3",
 		"",
 		&testBlueprintParams{},
@@ -1414,7 +1444,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceName,
 								},
 							},
@@ -1430,6 +1460,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource3",
 		"",
 		&testBlueprintParams{},
@@ -1464,7 +1495,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceName,
 								},
 							},
@@ -1480,6 +1511,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource9",
 		"",
 		&testBlueprintParams{},
@@ -1515,7 +1547,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_pr
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceName,
 								},
 							},
@@ -1531,6 +1563,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_pr
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource9",
 		"",
 		&testBlueprintParams{},
@@ -1566,7 +1599,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceName,
 								},
 							},
@@ -1582,6 +1615,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource11",
 		"",
 		&testBlueprintParams{},
@@ -1617,7 +1651,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_mi
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceName,
 								},
 							},
@@ -1633,6 +1667,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_mi
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource14",
 		"",
 		&testBlueprintParams{},
@@ -1668,7 +1703,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceName,
 								},
 							},
@@ -1684,6 +1719,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource9",
 		"",
 		&testBlueprintParams{},
@@ -1719,7 +1755,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_mi
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"name": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &exampleResourceName,
 								},
 							},
@@ -1735,6 +1771,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_mi
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource11",
 		"",
 		&testBlueprintParams{},
@@ -1768,6 +1805,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_an_incorrect
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource1",
 		"",
 		&testBlueprintParams{},
@@ -1801,6 +1839,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_an_incorrect
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource1",
 		"",
 		&testBlueprintParams{},
@@ -1835,6 +1874,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource1",
 		"",
 		&testBlueprintParams{},
@@ -1884,6 +1924,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource1",
 		"",
 		&testBlueprintParams{},
@@ -1933,6 +1974,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"datasources.networking",
 		"",
 		&testBlueprintParams{},
@@ -1973,6 +2015,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource1",
 		"",
 		&testBlueprintParams{},
@@ -2022,6 +2065,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -2068,6 +2112,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -2118,6 +2163,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource",
 		"",
 		&testBlueprintParams{},
@@ -2175,6 +2221,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_link_func_
 		stringOrSubs.Values[0].SubstitutionValue,
 		/* nextLocation */ nil,
 		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
 		"resources.exampleResource3",
 		"",
 		&testBlueprintParams{},

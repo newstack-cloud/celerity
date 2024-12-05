@@ -182,10 +182,10 @@ func collectSpecFieldChanges(
 		)
 	}
 
-	if isLiteralSchemaType(schema.Type) &&
-		isLiteralOrNil(valueInNewSpec) &&
-		isLiteralOrNil(valueInCurrentState) {
-		collectLiteralFieldChanges(
+	if isScalarSchemaType(schema.Type) &&
+		isScalarOrNil(valueInNewSpec) &&
+		isScalarOrNil(valueInCurrentState) {
+		collectScalarFieldChanges(
 			changes,
 			schema,
 			valueInNewSpec,
@@ -206,11 +206,11 @@ func collectSpecFieldChanges(
 	}
 }
 
-func collectLiteralFieldChanges(
+func collectScalarFieldChanges(
 	changes *provider.Changes,
 	schema *provider.ResourceDefinitionsSchema,
-	literalInNewSpec *bpcore.MappingNode,
-	literalInCurrentState *bpcore.MappingNode,
+	scalarInNewSpec *bpcore.MappingNode,
+	scalarInCurrentState *bpcore.MappingNode,
 	fieldChangeCtx *fieldChangeContext,
 ) {
 
@@ -219,36 +219,36 @@ func collectLiteralFieldChanges(
 		fieldChangeCtx.currentPath,
 	)
 
-	if !bpcore.IsNilMappingNode(literalInCurrentState) &&
-		bpcore.IsNilMappingNode(literalInNewSpec) &&
+	if !bpcore.IsNilMappingNode(scalarInCurrentState) &&
+		bpcore.IsNilMappingNode(scalarInNewSpec) &&
 		!knownOnDeploy {
 		changes.RemovedFields = append(changes.RemovedFields, fieldChangeCtx.currentPath)
 		return
 	}
 
-	if !bpcore.IsNilMappingNode(literalInCurrentState) &&
-		!literalEqual(literalInNewSpec, literalInCurrentState) {
+	if !bpcore.IsNilMappingNode(scalarInCurrentState) &&
+		!scalarEqual(scalarInNewSpec, scalarInCurrentState) {
 		changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
-			FieldName:    fieldChangeCtx.currentPath,
-			PrevValue:    literalInCurrentState,
-			NewValue:     literalInNewSpec,
+			FieldPath:    fieldChangeCtx.currentPath,
+			PrevValue:    scalarInCurrentState,
+			NewValue:     scalarInNewSpec,
 			MustRecreate: fieldChangeMustRecreateResource(fieldChangeCtx.parentMustRecreate, schema),
 		})
 		return
 	}
 
-	if bpcore.IsNilMappingNode(literalInCurrentState) &&
-		!literalEqual(literalInNewSpec, literalInCurrentState) {
+	if bpcore.IsNilMappingNode(scalarInCurrentState) &&
+		!scalarEqual(scalarInNewSpec, scalarInCurrentState) {
 		changes.NewFields = append(changes.NewFields, provider.FieldChange{
-			FieldName:    fieldChangeCtx.currentPath,
+			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    nil,
-			NewValue:     literalInNewSpec,
+			NewValue:     scalarInNewSpec,
 			MustRecreate: fieldChangeMustRecreateResource(fieldChangeCtx.parentMustRecreate, schema),
 		})
 		return
 	}
 
-	if literalEqual(literalInNewSpec, literalInCurrentState) && !knownOnDeploy {
+	if scalarEqual(scalarInNewSpec, scalarInCurrentState) && !knownOnDeploy {
 		changes.UnchangedFields = append(changes.UnchangedFields, fieldChangeCtx.currentPath)
 	}
 }
@@ -376,7 +376,7 @@ func collectUnionFieldChanges(
 	if unionValueInCurrentState != nil && !mappingNodeTypeMatchInfo.typeMatches {
 		// Carry out a shallow comparison when the types don't match for the two values.
 		changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
-			FieldName:    fieldChangeCtx.currentPath,
+			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    unionValueInCurrentState,
 			NewValue:     unionValueInNewSpec,
 			MustRecreate: fieldChangeMustRecreateResource(fieldChangeCtx.parentMustRecreate, schema),
@@ -411,21 +411,21 @@ func collectMetadataFieldChanges(
 	currentDisplayName := extractDisplayNameFromState(currentResourceMetadata)
 	if currentDisplayName != "" && newDisplayName != currentDisplayName {
 		changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
-			FieldName: "metadata.displayName",
+			FieldPath: "metadata.displayName",
 			PrevValue: &bpcore.MappingNode{
-				Literal: &bpcore.ScalarValue{StringValue: &currentDisplayName},
+				Scalar: &bpcore.ScalarValue{StringValue: &currentDisplayName},
 			},
 			NewValue: &bpcore.MappingNode{
-				Literal: &bpcore.ScalarValue{StringValue: &newDisplayName},
+				Scalar: &bpcore.ScalarValue{StringValue: &newDisplayName},
 			},
 			MustRecreate: false,
 		})
 	} else if newDisplayName != currentDisplayName {
 		changes.NewFields = append(changes.NewFields, provider.FieldChange{
-			FieldName: "metadata.displayName",
+			FieldPath: "metadata.displayName",
 			PrevValue: nil,
 			NewValue: &bpcore.MappingNode{
-				Literal: &bpcore.ScalarValue{StringValue: &newDisplayName},
+				Scalar: &bpcore.ScalarValue{StringValue: &newDisplayName},
 			},
 			MustRecreate: false,
 		})
@@ -481,18 +481,18 @@ func collectMetadataLabelChanges(
 		currentValue, hasCurrentValue := currentLabels[key]
 		if hasCurrentValue && newValue != currentValue {
 			changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
-				FieldName:    currentPath,
-				PrevValue:    &bpcore.MappingNode{Literal: &bpcore.ScalarValue{StringValue: &currentValue}},
-				NewValue:     &bpcore.MappingNode{Literal: &bpcore.ScalarValue{StringValue: &newValue}},
+				FieldPath:    currentPath,
+				PrevValue:    &bpcore.MappingNode{Scalar: &bpcore.ScalarValue{StringValue: &currentValue}},
+				NewValue:     &bpcore.MappingNode{Scalar: &bpcore.ScalarValue{StringValue: &newValue}},
 				MustRecreate: false,
 			})
 		}
 
 		if !hasCurrentValue {
 			changes.NewFields = append(changes.NewFields, provider.FieldChange{
-				FieldName:    currentPath,
+				FieldPath:    currentPath,
 				PrevValue:    nil,
-				NewValue:     &bpcore.MappingNode{Literal: &bpcore.ScalarValue{StringValue: &newValue}},
+				NewValue:     &bpcore.MappingNode{Scalar: &bpcore.ScalarValue{StringValue: &newValue}},
 				MustRecreate: false,
 			})
 		}
@@ -516,7 +516,7 @@ func collectMetadataLabelChanges(
 func collectMetadataAnnotationChanges(
 	changes *provider.Changes,
 	newAnnotationsMap *bpcore.MappingNode,
-	currentAnnotations map[string]string,
+	currentAnnotations map[string]*bpcore.MappingNode,
 	fieldChangeCtx *fieldChangeContext,
 ) {
 	newAnnotations := map[string]*bpcore.MappingNode{}
@@ -536,10 +536,10 @@ func collectMetadataAnnotationChanges(
 
 		currentValue, hasCurrentValue := currentAnnotations[key]
 		if hasCurrentValue &&
-			bpcore.StringValue(newValue) != currentValue {
+			bpcore.StringValue(newValue) != bpcore.StringValue(currentValue) {
 			changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
-				FieldName:    currentPath,
-				PrevValue:    &bpcore.MappingNode{Literal: &bpcore.ScalarValue{StringValue: &currentValue}},
+				FieldPath:    currentPath,
+				PrevValue:    currentValue,
 				NewValue:     newValue,
 				MustRecreate: false,
 			})
@@ -547,7 +547,7 @@ func collectMetadataAnnotationChanges(
 
 		if !hasCurrentValue {
 			changes.NewFields = append(changes.NewFields, provider.FieldChange{
-				FieldName:    currentPath,
+				FieldPath:    currentPath,
 				PrevValue:    nil,
 				NewValue:     newValue,
 				MustRecreate: false,
@@ -612,7 +612,7 @@ func collectMetadataCustomChanges(
 		return
 	}
 
-	if isLiteralOrNil(newValue) && isLiteralOrNil(currentValue) {
+	if isScalarOrNil(newValue) && isScalarOrNil(currentValue) {
 		collectMetadataLiteralChanges(
 			changes,
 			newValue,
@@ -635,7 +635,7 @@ func collectMetadataCustomChanges(
 
 	if !bpcore.IsNilMappingNode(newValue) && bpcore.IsNilMappingNode(currentValue) {
 		changes.NewFields = append(changes.NewFields, provider.FieldChange{
-			FieldName:    fieldChangeCtx.currentPath,
+			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    nil,
 			NewValue:     newValue,
 			MustRecreate: false,
@@ -645,7 +645,7 @@ func collectMetadataCustomChanges(
 
 	if !bpcore.IsNilMappingNode(newValue) && !bpcore.IsNilMappingNode(currentValue) {
 		changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
-			FieldName:    fieldChangeCtx.currentPath,
+			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    currentValue,
 			NewValue:     newValue,
 			MustRecreate: false,
@@ -748,9 +748,9 @@ func collectMetadataLiteralChanges(
 	}
 
 	if !bpcore.IsNilMappingNode(currentLiteral) &&
-		!literalEqual(newLiteral, currentLiteral) {
+		!scalarEqual(newLiteral, currentLiteral) {
 		changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
-			FieldName:    fieldChangeCtx.currentPath,
+			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    currentLiteral,
 			NewValue:     newLiteral,
 			MustRecreate: false,
@@ -758,9 +758,9 @@ func collectMetadataLiteralChanges(
 	}
 
 	if bpcore.IsNilMappingNode(currentLiteral) &&
-		!literalEqual(newLiteral, currentLiteral) {
+		!scalarEqual(newLiteral, currentLiteral) {
 		changes.NewFields = append(changes.NewFields, provider.FieldChange{
-			FieldName:    fieldChangeCtx.currentPath,
+			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    nil,
 			NewValue:     newLiteral,
 			MustRecreate: false,
@@ -811,22 +811,22 @@ func isArrayOrNil(node *bpcore.MappingNode) bool {
 	return bpcore.IsNilMappingNode(node) || node.Items != nil
 }
 
-func isLiteralOrNil(node *bpcore.MappingNode) bool {
-	return bpcore.IsNilMappingNode(node) || node.Literal != nil
+func isScalarOrNil(node *bpcore.MappingNode) bool {
+	return bpcore.IsNilMappingNode(node) || node.Scalar != nil
 }
 
-func literalEqual(nodeA, nodeB *bpcore.MappingNode) bool {
-	if (nodeA == nil || nodeA.Literal == nil) &&
-		(nodeB == nil || nodeB.Literal == nil) {
+func scalarEqual(nodeA, nodeB *bpcore.MappingNode) bool {
+	if (nodeA == nil || nodeA.Scalar == nil) &&
+		(nodeB == nil || nodeB.Scalar == nil) {
 		return true
 	}
 
-	if nodeA == nil || nodeA.Literal == nil ||
-		nodeB == nil || nodeB.Literal == nil {
+	if nodeA == nil || nodeA.Scalar == nil ||
+		nodeB == nil || nodeB.Scalar == nil {
 		return false
 	}
 
-	return nodeA.Literal.Equal(nodeB.Literal)
+	return nodeA.Scalar.Equal(nodeB.Scalar)
 }
 
 type mappingNodeTypeMatchInfo struct {
@@ -873,7 +873,7 @@ func checkMappingNodeTypes(
 		}
 	}
 
-	if isLiteralOrNil(currentValue) && bpcore.IsLiteralMappingNode(newValue) {
+	if isScalarOrNil(currentValue) && bpcore.IsScalarMappingNode(newValue) {
 		return &mappingNodeTypeMatchInfo{
 			typeMatches: true,
 			// This does not guarantee selection of the correct schema in a union with
@@ -882,7 +882,7 @@ func checkMappingNodeTypes(
 			// whether a resource should be recreated when a specified field changes value.
 			// Provider plugin developers should ensure "MustRecreate" is set on the union
 			// type so all values that can populate a field are treated the same in this regard.
-			schema: getLiteralSchema(unionSchema.OneOf),
+			schema: getScalarSchema(unionSchema.OneOf),
 		}
 	}
 
@@ -994,7 +994,7 @@ func extractAnnotationsFromResolved(
 
 func extractAnnotationsFromState(
 	resourceMetadataState *state.ResourceMetadataState,
-) map[string]string {
+) map[string]*bpcore.MappingNode {
 	if resourceMetadataState == nil {
 		return nil
 	}
@@ -1049,7 +1049,7 @@ func objectSchemaContainsFields(
 	return true
 }
 
-func isLiteralSchemaType(schemaType provider.ResourceDefinitionsSchemaType) bool {
+func isScalarSchemaType(schemaType provider.ResourceDefinitionsSchemaType) bool {
 	return schemaType == provider.ResourceDefinitionsSchemaTypeString ||
 		schemaType == provider.ResourceDefinitionsSchemaTypeInteger ||
 		schemaType == provider.ResourceDefinitionsSchemaTypeFloat ||
@@ -1115,19 +1115,19 @@ func getArraySchema(
 	return arraySchema
 }
 
-func getLiteralSchema(
+func getScalarSchema(
 	schemas []*provider.ResourceDefinitionsSchema,
 ) *provider.ResourceDefinitionsSchema {
-	literalSchema := (*provider.ResourceDefinitionsSchema)(nil)
+	scalarSchema := (*provider.ResourceDefinitionsSchema)(nil)
 	i := 0
-	for literalSchema == nil && i < len(schemas) {
-		if isLiteralSchemaType(schemas[i].Type) {
-			literalSchema = schemas[i]
+	for scalarSchema == nil && i < len(schemas) {
+		if isScalarSchemaType(schemas[i].Type) {
+			scalarSchema = schemas[i]
 		}
 		i += 1
 	}
 
-	return literalSchema
+	return scalarSchema
 }
 
 func renderFieldPath(currentPath, fieldName string) string {

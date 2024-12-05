@@ -45,7 +45,7 @@ func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 						ResourceSpecData: &core.MappingNode{
 							Fields: map[string]*core.MappingNode{
 								"arn": {
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										StringValue: &resourceARN,
 									},
 								},
@@ -56,15 +56,15 @@ func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 				},
 				LinkData: map[string]*core.MappingNode{
 					"aws.lambda.http": {
-						Literal: &core.ScalarValue{BoolValue: &awsLambdaHTTP},
+						Scalar: &core.ScalarValue{BoolValue: &awsLambdaHTTP},
 					},
 					"aws.lambda.http.method": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &awsLambdaHTTPMethod,
 						},
 					},
 					"aws.lambda.http.path": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &awsLambdaHTTPPath,
 						},
 					},
@@ -111,7 +111,7 @@ func (s *LinkFunctionTestSuite) Test_gets_link_state(c *C) {
 				"resourceSpecData": &core.MappingNode{
 					Fields: map[string]*core.MappingNode{
 						"arn": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								StringValue: &resourceARN,
 							},
 						},
@@ -122,15 +122,15 @@ func (s *LinkFunctionTestSuite) Test_gets_link_state(c *C) {
 		},
 		"linkData": map[string]*core.MappingNode{
 			"aws.lambda.http": {
-				Literal: &core.ScalarValue{BoolValue: &isAWSLambdaHTTP},
+				Scalar: &core.ScalarValue{BoolValue: &isAWSLambdaHTTP},
 			},
 			"aws.lambda.http.method": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &awsLambdaHTTPMethod,
 				},
 			},
 			"aws.lambda.http.path": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &awsLambdaHTTPPath,
 				},
 			},

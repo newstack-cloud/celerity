@@ -65,6 +65,7 @@ func (s *ResourceSpecValidationTestSuite) Test_successfully_valid_resource(c *C)
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, IsNil)
@@ -88,7 +89,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"handler": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &handler,
 					},
 				},
@@ -115,6 +116,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -147,7 +149,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"handler": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &handler,
 					},
 				},
@@ -174,6 +176,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -211,6 +214,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -231,7 +235,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_computed_field_
 	resource.Spec.Fields["map"].Fields["item1"] = &core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"id": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &idValue,
 				},
 			},
@@ -239,7 +243,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_computed_field_
 	}
 	computedValue := "test-computed-value"
 	resource.Spec.Fields["computed"] = &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			StringValue: &computedValue,
 		},
 	}
@@ -264,6 +268,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_computed_field_
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -287,7 +292,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_missing_require
 			"array": {
 				Items: []*core.MappingNode{
 					{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							FloatValue: &floatVal,
 						},
 					},
@@ -315,6 +320,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_missing_require
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -337,7 +343,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 			"array": {
 				Items: []*core.MappingNode{
 					{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							FloatValue: &floatVal,
 						},
 					},
@@ -366,6 +372,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -403,6 +410,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -422,7 +430,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 	resource.Spec.Fields["map"].Fields["item1"] = &core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"id": {
-				Literal: nil,
+				Scalar: nil,
 			},
 		},
 	}
@@ -446,6 +454,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -465,7 +474,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 	resource.Spec.Fields["map"].Fields["item1"] = &core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"id": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: nil,
 				},
 			},
@@ -491,6 +500,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -511,7 +521,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_type_fo
 	resource.Spec.Fields["map"].Fields["item1"] = &core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"id": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					IntValue: &testIntVal,
 				},
 			},
@@ -537,6 +547,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_type_fo
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -601,6 +612,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_union_invalid_s
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -620,7 +632,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 	resource := createTestValidResource()
 	testStrVal := "testString"
 	resource.Spec = &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			StringValue: &testStrVal,
 		},
 	}
@@ -644,6 +656,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -662,7 +675,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 	resource := createTestValidResource()
 	testStrVal := "testString"
 	resource.Spec.Fields["map"] = &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			StringValue: &testStrVal,
 		},
 	}
@@ -686,6 +699,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -704,7 +718,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 	resource := createTestValidResource()
 	testStrVal := "testString"
 	resource.Spec.Fields["array"] = &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			StringValue: &testStrVal,
 		},
 	}
@@ -728,6 +742,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -762,7 +777,7 @@ func createTestValidResource() *schema.Resource {
 						"item1": {
 							Fields: map[string]*core.MappingNode{
 								"id": {
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										StringValue: &mappingItemId1,
 									},
 								},
@@ -788,7 +803,7 @@ func createTestValidResource() *schema.Resource {
 				"array": {
 					Items: []*core.MappingNode{
 						{
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								FloatValue: &arrayValFloat,
 							},
 						},
@@ -814,14 +829,14 @@ func createTestValidResource() *schema.Resource {
 							},
 						},
 						{
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								BoolValue: &True,
 							},
 						},
 						{
 							Fields: map[string]*core.MappingNode{
 								"value": {
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										IntValue: &testIntVal,
 									},
 								},
@@ -830,7 +845,7 @@ func createTestValidResource() *schema.Resource {
 					},
 				},
 				"nullable": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: nil,
 					},
 				},

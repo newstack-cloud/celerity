@@ -65,6 +65,7 @@ func ValidateExport(
 		exportFieldAsSub,
 		nil,
 		bpSchema,
+		/* usedInResourceDerivedFromTemplate */ false,
 		exportIdentifier,
 		"field",
 		params,
@@ -108,6 +109,7 @@ func ValidateExport(
 	descriptionDiagnostics, err := validateDescription(
 		ctx,
 		exportIdentifier,
+		/* usedInResourceDerivedFromTemplate */ false,
 		exportSchema.Description,
 		bpSchema,
 		params,

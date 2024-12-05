@@ -66,17 +66,17 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_resolves_substitutions_
 	s.Assert().Equal(
 		[]*core.MappingNode{
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &region1,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &region2,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &region3,
 				},
 			},

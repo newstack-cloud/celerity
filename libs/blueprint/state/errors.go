@@ -1,10 +1,13 @@
 package state
 
+import "fmt"
+
 // Error is an error type that MUST be used by implementations
 // of the state.Container interface to allow the engine to be able to distinguish
 // between failures and expected errors such as resource not found.
 type Error struct {
-	Code ErrorCode
+	Code   ErrorCode
+	ItemID string
 }
 
 type ErrorCode string
@@ -23,13 +26,43 @@ const (
 func (e *Error) Error() string {
 	switch e.Code {
 	case ErrResourceNotFound:
-		return "StateError: resource not found"
+		return fmt.Sprintf("StateError: resource %q not found", e.ItemID)
 	case ErrLinkNotFound:
-		return "StateError: link not found"
+		return fmt.Sprintf("StateError: link %q not found", e.ItemID)
 	case ErrInstanceNotFound:
-		return "StateError: instance not found"
+		return fmt.Sprintf("StateError: instance %q not found", e.ItemID)
 	default:
 		return "StateError: unknown error"
+	}
+}
+
+// ResourceNotFoundError is a helper function that creates a new error
+// for when a resource can not be found in the persistence that backs
+// a state container.
+func ResourceNotFoundError(resourceID string) *Error {
+	return &Error{
+		Code:   ErrResourceNotFound,
+		ItemID: resourceID,
+	}
+}
+
+// LinkNotFoundError is a helper function that creates a new error
+// for when a link can not be found in the persistence that backs
+// a state container.
+func LinkNotFoundError(linkID string) *Error {
+	return &Error{
+		Code:   ErrLinkNotFound,
+		ItemID: linkID,
+	}
+}
+
+// InstanceNotFoundError is a helper function that creates a new error
+// for when a blueprint instance can not be found in the persistence that backs
+// a state container.
+func InstanceNotFoundError(instanceID string) *Error {
+	return &Error{
+		Code:   ErrInstanceNotFound,
+		ItemID: instanceID,
 	}
 }
 

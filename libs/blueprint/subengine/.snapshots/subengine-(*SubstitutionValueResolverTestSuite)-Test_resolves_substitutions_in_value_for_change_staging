@@ -14,11 +14,11 @@
       })
     }),
     Value: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)(<nil>),
+      Scalar: (*core.ScalarValue)(<nil>),
       Fields: (map[string]*core.MappingNode) <nil>,
       Items: ([]*core.MappingNode) (len=2) {
         (*core.MappingNode)({
-          Literal: (*core.ScalarValue)({
+          Scalar: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),
@@ -32,7 +32,7 @@
           FieldsSourceMeta: (map[string]*source.Meta) <nil>
         }),
         (*core.MappingNode)({
-          Literal: (*core.ScalarValue)({
+          Scalar: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),
@@ -51,7 +51,7 @@
       FieldsSourceMeta: (map[string]*source.Meta) <nil>
     }),
     Description: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)({
+      Scalar: (*core.ScalarValue)({
         IntValue: (*int)(<nil>),
         BoolValue: (*bool)(<nil>),
         FloatValue: (*float64)(<nil>),

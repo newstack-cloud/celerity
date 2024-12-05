@@ -106,24 +106,24 @@ func getDataSource(
 func resolvedValueToString(
 	value *bpcore.MappingNode,
 ) (string, error) {
-	if value.Literal == nil {
-		return "", fmt.Errorf("only literal values can be converted to a string")
+	if value.Scalar == nil {
+		return "", fmt.Errorf("only scalar values can be converted to a string")
 	}
 
-	if value.Literal.StringValue != nil {
-		return *value.Literal.StringValue, nil
+	if value.Scalar.StringValue != nil {
+		return *value.Scalar.StringValue, nil
 	}
 
-	if value.Literal.IntValue != nil {
-		return fmt.Sprintf("%d", *value.Literal.IntValue), nil
+	if value.Scalar.IntValue != nil {
+		return fmt.Sprintf("%d", *value.Scalar.IntValue), nil
 	}
 
-	if value.Literal.FloatValue != nil {
-		return fmt.Sprintf("%f", *value.Literal.FloatValue), nil
+	if value.Scalar.FloatValue != nil {
+		return fmt.Sprintf("%f", *value.Scalar.FloatValue), nil
 	}
 
-	if value.Literal.BoolValue != nil {
-		return fmt.Sprintf("%t", *value.Literal.BoolValue), nil
+	if value.Scalar.BoolValue != nil {
+		return fmt.Sprintf("%t", *value.Scalar.BoolValue), nil
 	}
 
 	return "", fmt.Errorf("expected a scalar string, int, float or bool value")
@@ -331,7 +331,7 @@ func getResourceMetadataPropertyValue(
 		}
 
 		return &bpcore.MappingNode{
-			Literal: &bpcore.ScalarValue{
+			Scalar: &bpcore.ScalarValue{
 				StringValue: &label,
 			},
 		}, nil

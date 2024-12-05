@@ -97,7 +97,7 @@ func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in
 			ResourceSpecData: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
 					"id": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &resourceID,
 						},
 					},
@@ -150,7 +150,7 @@ func partiallyResolvedDataSource() *provider.ResolvedDataSource {
 		},
 		DataSourceMetadata: &provider.ResolvedDataSourceMetadata{
 			DisplayName: &core.MappingNode{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &displayName,
 				},
 			},
@@ -169,7 +169,7 @@ func partiallyResolvedDataSource() *provider.ResolvedDataSource {
 					Value: schema.DataSourceFieldTypeArray,
 				},
 				Description: &core.MappingNode{
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &subnetIdsDescription,
 					},
 				},
@@ -182,14 +182,14 @@ func partiallyResolvedDataSource() *provider.ResolvedDataSource {
 					StringValue: &vpcField,
 				},
 				Description: &core.MappingNode{
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &vpcDescription,
 					},
 				},
 			},
 		},
 		Description: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &dataSourceDescription,
 			},
 		},

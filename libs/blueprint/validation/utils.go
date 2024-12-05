@@ -136,6 +136,7 @@ func isEmptyStringWithSubstitutions(stringWithSubs *substitutions.StringOrSubsti
 func validateDescription(
 	ctx context.Context,
 	usedIn string,
+	usedInResourceDerivedFromTemplate bool,
 	description *substitutions.StringOrSubstitutions,
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
@@ -158,6 +159,7 @@ func validateDescription(
 				stringOrSub.SubstitutionValue,
 				nil,
 				bpSchema,
+				usedInResourceDerivedFromTemplate,
 				usedIn,
 				"description",
 				params,
@@ -207,24 +209,24 @@ func getEndLocation(location *source.Meta) *source.Meta {
 }
 
 func isMappingNodeEmpty(node *core.MappingNode) bool {
-	return node == nil || (node.Literal == nil && node.Fields == nil &&
+	return node == nil || (node.Scalar == nil && node.Fields == nil &&
 		node.Items == nil && node.StringWithSubstitutions == nil)
 }
 
 func deriveMappingNodeResourceDefinitionsType(node *core.MappingNode) provider.ResourceDefinitionsSchemaType {
-	if node.Literal != nil && node.Literal.BoolValue != nil {
+	if node.Scalar != nil && node.Scalar.BoolValue != nil {
 		return provider.ResourceDefinitionsSchemaTypeBoolean
 	}
 
-	if node.Literal != nil && node.Literal.StringValue != nil {
+	if node.Scalar != nil && node.Scalar.StringValue != nil {
 		return provider.ResourceDefinitionsSchemaTypeString
 	}
 
-	if node.Literal != nil && node.Literal.IntValue != nil {
+	if node.Scalar != nil && node.Scalar.IntValue != nil {
 		return provider.ResourceDefinitionsSchemaTypeInteger
 	}
 
-	if node.Literal != nil && node.Literal.FloatValue != nil {
+	if node.Scalar != nil && node.Scalar.FloatValue != nil {
 		return provider.ResourceDefinitionsSchemaTypeFloat
 	}
 

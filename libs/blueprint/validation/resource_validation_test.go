@@ -96,7 +96,7 @@ func (s *ResourceValidationTestSuite) Test_reports_errors_when_substitutions_use
 				{
 					Fields: map[string]*core.MappingNode{
 						"${variables.version}": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								StringValue: &version,
 							},
 						},
@@ -148,7 +148,7 @@ func (s *ResourceValidationTestSuite) Test_reports_errors_when_resource_type_is_
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"handler": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &handler,
 					},
 				},
@@ -175,6 +175,7 @@ func (s *ResourceValidationTestSuite) Test_reports_errors_when_resource_type_is_
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -211,6 +212,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_providing_a_displa
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -248,6 +250,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_providing_a_descri
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -286,6 +289,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_metadata_label_key
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -323,6 +327,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_metadata_label_val
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -367,6 +372,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_annotation_key_has
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -405,6 +411,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_nested_condition_i
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -455,6 +462,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_condition_resolves
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -513,6 +521,7 @@ func (s *ResourceValidationTestSuite) Test_produces_warning_when_condition_resol
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 
 	c.Assert(err, IsNil)
@@ -567,6 +576,7 @@ func (s *ResourceValidationTestSuite) Test_produces_warning_when_each_resolves_a
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 
 	c.Assert(err, IsNil)
@@ -611,6 +621,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_each_resolves_inco
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -649,6 +660,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_link_selector_labe
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -686,6 +698,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_link_selector_labe
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -733,6 +746,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_has_a_mis
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -780,6 +794,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_dependenc
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -828,6 +843,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_depends_o
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1288,7 +1304,7 @@ func newTestValidResource() *schema.Resource {
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"serviceName": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &serviceName,
 					},
 				},
@@ -1324,7 +1340,7 @@ func newTestInvalidDisplayNameResource() *schema.Resource {
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"serviceName": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &serviceName,
 					},
 				},
@@ -1352,7 +1368,7 @@ func newTestInvalidDescriptionResource() *schema.Resource {
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"serviceName": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &serviceName,
 					},
 				},

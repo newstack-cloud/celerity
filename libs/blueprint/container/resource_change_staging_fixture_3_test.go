@@ -36,6 +36,9 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3CurrentState() *stat
 	vendorTag3 := "vendor-tag-3"
 	localTag1 := "local-tag-1"
 	localTag2 := "local-tag-2"
+	firstAnnotationValue := "first-annotation-value"
+	secondAnnotationValue := "second-annotation-value"
+	originalAnnotationValue := "original-annotation-value"
 
 	return &state.ResourceState{
 		ResourceID:                 "test-resource-1",
@@ -47,7 +50,7 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3CurrentState() *stat
 		ResourceSpecData: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"id": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &itemID,
 					},
 				},
@@ -56,31 +59,31 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3CurrentState() *stat
 						"endpoints": {
 							Items: []*core.MappingNode{
 								{
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										StringValue: &currentEndpoint1,
 									},
 								},
 							},
 						},
 						"primaryPort": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								IntValue: &currentPrimaryPort,
 							},
 						},
 						"ipv4": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								BoolValue: &currentIpv4Enabled,
 							},
 						},
 						"metadata": {
 							Fields: map[string]*core.MappingNode{
 								"value1": {
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										StringValue: &currentSpecMetadataValue1,
 									},
 								},
 								"value2": {
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										StringValue: &currentSpecMetadataValue2,
 									},
 								},
@@ -89,24 +92,24 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3CurrentState() *stat
 					},
 				},
 				"otherItemConfig": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &otherItemValue,
 					},
 				},
 				"vendorTags": {
 					Items: []*core.MappingNode{
 						{
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								StringValue: &vendorTag1,
 							},
 						},
 						{
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								StringValue: &vendorTag2,
 							},
 						},
 						{
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								StringValue: &vendorTag3,
 							},
 						},
@@ -116,10 +119,22 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3CurrentState() *stat
 		},
 		Metadata: &state.ResourceMetadataState{
 			DisplayName: "Test Complex Resource",
-			Annotations: map[string]string{
-				"test.annotation.v1":          "first-annotation-value",
-				"test.annotation.v2":          "second-annotation-value",
-				"test.annotation.original-v3": "original-annotation-value",
+			Annotations: map[string]*core.MappingNode{
+				"test.annotation.v1": &core.MappingNode{
+					Scalar: &core.ScalarValue{
+						StringValue: &firstAnnotationValue,
+					},
+				},
+				"test.annotation.v2": &core.MappingNode{
+					Scalar: &core.ScalarValue{
+						StringValue: &secondAnnotationValue,
+					},
+				},
+				"test.annotation.original-v3": &core.MappingNode{
+					Scalar: &core.ScalarValue{
+						StringValue: &originalAnnotationValue,
+					},
+				},
 			},
 			Labels: map[string]string{
 				"app":   "test-app-v1",
@@ -128,19 +143,19 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3CurrentState() *stat
 			Custom: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
 					"url": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &currentMetadataCustomURL,
 						},
 					},
 					"protocol": {
 						Items: []*core.MappingNode{
 							{
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &currentMetadataProtocol1,
 								},
 							},
 							{
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &currentMetadataProtocol2,
 								},
 							},
@@ -149,12 +164,12 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3CurrentState() *stat
 					"localTags": {
 						Items: []*core.MappingNode{
 							{
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &localTag1,
 								},
 							},
 							{
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &localTag2,
 								},
 							},
@@ -189,24 +204,24 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3NewResolvedResource(
 		},
 		Metadata: &provider.ResolvedResourceMetadata{
 			DisplayName: &core.MappingNode{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &newDisplayName,
 				},
 			},
 			Annotations: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
 					"test.annotation.v1": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &firstAnnotationValue,
 						},
 					},
 					"test.annotation.v2": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &secondAnnotationValue,
 						},
 					},
 					"test.annotation.v3": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &thirdAnnotationValue,
 						},
 					},
@@ -221,14 +236,14 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3NewResolvedResource(
 			Custom: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
 					"protocol": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &newMetadataProtocol,
 						},
 					},
 					"localTags": {
 						Items: []*core.MappingNode{
 							{
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &localTag,
 								},
 							},
@@ -249,17 +264,17 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3NewResolvedResource(
 						"endpoints": {
 							Items: []*core.MappingNode{
 								{
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										StringValue: &newEndpoint1,
 									},
 								},
 								{
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										StringValue: &newEndpoint2,
 									},
 								},
 								{
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										StringValue: &newEndpoint3,
 									},
 								},
@@ -268,17 +283,17 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3NewResolvedResource(
 							},
 						},
 						"primaryPort": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								IntValue: &newPrimaryPort,
 							},
 						},
 						"ipv4": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								BoolValue: &newIpv4Enabled,
 							},
 						},
 						"score": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								FloatValue: &newScore,
 							},
 						},
@@ -290,7 +305,7 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3NewResolvedResource(
 						"metadata": {
 							Fields: map[string]*core.MappingNode{
 								"value1": {
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										StringValue: &newSpecMetadataValue1,
 									},
 								},
@@ -300,14 +315,14 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3NewResolvedResource(
 					},
 				},
 				"otherItemConfig": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &otherItemValue,
 					},
 				},
 				"vendorTags": {
 					Items: []*core.MappingNode{
 						{
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								StringValue: &vendorTag,
 							},
 						},

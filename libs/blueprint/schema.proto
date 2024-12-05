@@ -115,7 +115,7 @@ message MappingNode {
     // repeated fields and maps are not supported in oneof so it's better
     // to have a separate field for each type of value
     // and check at runtime during deserialisation.
-    ScalarValue literal = 1;
+    ScalarValue scalar = 1;
     map<string, MappingNode> fields = 2;
     repeated MappingNode items = 3;
     StringOrSubstitutions string_with_substitutions = 4;

@@ -132,7 +132,7 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 		state.InstanceState{
 			Exports: map[string]*core.MappingNode{
 				"region": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &childBlueprintRegion,
 					},
 				},
@@ -186,7 +186,7 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 		{
 			Fields: map[string]*core.MappingNode{
 				"name": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &ordersTable1Name,
 					},
 				},
@@ -225,20 +225,20 @@ func partiallyResolvedResource() *provider.ResolvedResource {
 			Value: "aws/dynamodb/table",
 		},
 		Description: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &description,
 			},
 		},
 		Metadata: &provider.ResolvedResourceMetadata{
 			DisplayName: &core.MappingNode{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &displayName,
 				},
 			},
 			Annotations: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
 					"aws.dynamodb.trigger": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							BoolValue: &trigger,
 						},
 					},
@@ -252,17 +252,17 @@ func partiallyResolvedResource() *provider.ResolvedResource {
 			Custom: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
 					"label": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &displayName,
 						},
 					},
 					"x": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							IntValue: &x,
 						},
 					},
 					"y": {
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							IntValue: &y,
 						},
 					},
@@ -273,7 +273,7 @@ func partiallyResolvedResource() *provider.ResolvedResource {
 			And: []*provider.ResolvedResourceCondition{
 				{
 					StringValue: &core.MappingNode{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							BoolValue: &condition1,
 						},
 					},
@@ -282,7 +282,7 @@ func partiallyResolvedResource() *provider.ResolvedResource {
 					Or: []*provider.ResolvedResourceCondition{
 						{
 							StringValue: &core.MappingNode{
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									BoolValue: &condition2,
 								},
 							},
@@ -290,7 +290,7 @@ func partiallyResolvedResource() *provider.ResolvedResource {
 						{
 							Not: &provider.ResolvedResourceCondition{
 								StringValue: &core.MappingNode{
-									Literal: &core.ScalarValue{
+									Scalar: &core.ScalarValue{
 										BoolValue: &condition3,
 									},
 								},
@@ -311,7 +311,7 @@ func partiallyResolvedResource() *provider.ResolvedResource {
 			Fields: map[string]*core.MappingNode{
 				"region": (*core.MappingNode)(nil),
 				"tableName": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &tableName,
 					},
 				},

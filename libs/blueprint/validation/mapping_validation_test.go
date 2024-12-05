@@ -46,7 +46,7 @@ func (s *MappingNodeValidationTestSuite) Test_succeeds_without_any_issues_for_a_
 	mappingNode := &core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"field1": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &field1Value,
 				},
 			},
@@ -73,12 +73,12 @@ func (s *MappingNodeValidationTestSuite) Test_succeeds_without_any_issues_for_a_
 			"field3": {
 				Items: []*core.MappingNode{
 					{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							IntValue: &field3Item1Value,
 						},
 					},
 					{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							IntValue: &field3Item2Value,
 						},
 					},
@@ -91,6 +91,7 @@ func (s *MappingNodeValidationTestSuite) Test_succeeds_without_any_issues_for_a_
 		context.TODO(),
 		"datasources.networking",
 		"metadata.custom",
+		/* usedInResourceDerivedFromTemplate */ false,
 		mappingNode,
 		nil,
 		nil,
@@ -110,6 +111,7 @@ func (s *MappingNodeValidationTestSuite) Test_succeeds_with_info_diagnostic_for_
 		context.TODO(),
 		"datasources.networking",
 		"metadata.custom",
+		/* usedInResourceDerivedFromTemplate */ false,
 		mappingNode,
 		nil,
 		nil,
@@ -134,6 +136,7 @@ func (s *MappingNodeValidationTestSuite) Test_produces_error_for_mapping_node_wi
 		context.TODO(),
 		"datasources.networking",
 		"metadata.custom",
+		/* usedInResourceDerivedFromTemplate */ false,
 		mappingNode,
 		nil,
 		nil,

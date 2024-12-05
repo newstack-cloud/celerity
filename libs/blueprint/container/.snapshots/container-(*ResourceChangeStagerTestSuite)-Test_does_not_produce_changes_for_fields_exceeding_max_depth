@@ -9,9 +9,9 @@
   MustRecreate: (bool) true,
   ModifiedFields: ([]provider.FieldChange) (len=9) {
     (provider.FieldChange) {
-      FieldName: (string) (len=28) "metadata.custom.localTags[1]",
+      FieldPath: (string) (len=28) "metadata.custom.localTags[1]",
       PrevValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -28,13 +28,13 @@
       MustRecreate: (bool) false
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=24) "metadata.custom.protocol",
+      FieldPath: (string) (len=24) "metadata.custom.protocol",
       PrevValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)(<nil>),
+        Scalar: (*core.ScalarValue)(<nil>),
         Fields: (map[string]*core.MappingNode) <nil>,
         Items: ([]*core.MappingNode) (len=2) {
           (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
+            Scalar: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
@@ -48,7 +48,7 @@
             FieldsSourceMeta: (map[string]*source.Meta) <nil>
           }),
           (*core.MappingNode)({
-            Literal: (*core.ScalarValue)({
+            Scalar: (*core.ScalarValue)({
               IntValue: (*int)(<nil>),
               BoolValue: (*bool)(<nil>),
               FloatValue: (*float64)(<nil>),
@@ -67,7 +67,7 @@
         FieldsSourceMeta: (map[string]*source.Meta) <nil>
       }),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -83,9 +83,9 @@
       MustRecreate: (bool) false
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=19) "metadata.custom.url",
+      FieldPath: (string) (len=19) "metadata.custom.url",
       PrevValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -102,9 +102,9 @@
       MustRecreate: (bool) false
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=20) "metadata.displayName",
+      FieldPath: (string) (len=20) "metadata.displayName",
       PrevValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -118,7 +118,7 @@
         FieldsSourceMeta: (map[string]*source.Meta) <nil>
       }),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -134,9 +134,9 @@
       MustRecreate: (bool) false
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=22) "metadata.labels[\"app\"]",
+      FieldPath: (string) (len=22) "metadata.labels[\"app\"]",
       PrevValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -150,7 +150,7 @@
         FieldsSourceMeta: (map[string]*source.Meta) <nil>
       }),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -166,9 +166,9 @@
       MustRecreate: (bool) false
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=28) "spec.itemConfig.endpoints[0]",
+      FieldPath: (string) (len=28) "spec.itemConfig.endpoints[0]",
       PrevValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -182,7 +182,7 @@
         FieldsSourceMeta: (map[string]*source.Meta) <nil>
       }),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -198,9 +198,9 @@
       MustRecreate: (bool) true
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=20) "spec.itemConfig.ipv4",
+      FieldPath: (string) (len=20) "spec.itemConfig.ipv4",
       PrevValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(true),
           FloatValue: (*float64)(<nil>),
@@ -214,7 +214,7 @@
         FieldsSourceMeta: (map[string]*source.Meta) <nil>
       }),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(false),
           FloatValue: (*float64)(<nil>),
@@ -230,9 +230,9 @@
       MustRecreate: (bool) true
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=31) "spec.itemConfig.metadata.value1",
+      FieldPath: (string) (len=31) "spec.itemConfig.metadata.value1",
       PrevValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -246,7 +246,7 @@
         FieldsSourceMeta: (map[string]*source.Meta) <nil>
       }),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -262,9 +262,9 @@
       MustRecreate: (bool) true
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=27) "spec.itemConfig.primaryPort",
+      FieldPath: (string) (len=27) "spec.itemConfig.primaryPort",
       PrevValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(8080),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -278,7 +278,7 @@
         FieldsSourceMeta: (map[string]*source.Meta) <nil>
       }),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(8081),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -296,10 +296,10 @@
   },
   NewFields: ([]provider.FieldChange) (len=5) {
     (provider.FieldChange) {
-      FieldName: (string) (len=42) "metadata.annotations[\"test.annotation.v3\"]",
+      FieldPath: (string) (len=42) "metadata.annotations[\"test.annotation.v3\"]",
       PrevValue: (*core.MappingNode)(<nil>),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -315,10 +315,10 @@
       MustRecreate: (bool) false
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=22) "metadata.labels[\"env\"]",
+      FieldPath: (string) (len=22) "metadata.labels[\"env\"]",
       PrevValue: (*core.MappingNode)(<nil>),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -334,10 +334,10 @@
       MustRecreate: (bool) false
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=28) "spec.itemConfig.endpoints[1]",
+      FieldPath: (string) (len=28) "spec.itemConfig.endpoints[1]",
       PrevValue: (*core.MappingNode)(<nil>),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -353,10 +353,10 @@
       MustRecreate: (bool) true
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=28) "spec.itemConfig.endpoints[2]",
+      FieldPath: (string) (len=28) "spec.itemConfig.endpoints[2]",
       PrevValue: (*core.MappingNode)(<nil>),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -372,10 +372,10 @@
       MustRecreate: (bool) true
     },
     (provider.FieldChange) {
-      FieldName: (string) (len=21) "spec.itemConfig.score",
+      FieldPath: (string) (len=21) "spec.itemConfig.score",
       PrevValue: (*core.MappingNode)(<nil>),
       NewValue: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(1.309),

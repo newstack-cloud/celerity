@@ -22,6 +22,7 @@ func ValidateMappingNode(
 	// Path to attribute in which the mapping node is used
 	// in the usedIn element. (e.g. "metadata.custom" used in "datasources.networking")
 	attributePath string,
+	usedInResourceDerivedFromTemplate bool,
 	mappingNode *bpcore.MappingNode,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -36,6 +37,7 @@ func ValidateMappingNode(
 	return validateMappingNode(
 		ctx,
 		usedIn,
+		usedInResourceDerivedFromTemplate,
 		attributePath,
 		mappingNode,
 		mappingNode.SourceMeta,
@@ -51,6 +53,7 @@ func ValidateMappingNode(
 func validateMappingNode(
 	ctx context.Context,
 	usedIn string,
+	usedInResourceDerivedFromTemplate bool,
 	attributePath string,
 	mappingNode *bpcore.MappingNode,
 	wrapperLocation *source.Meta,
@@ -83,8 +86,8 @@ func validateMappingNode(
 		return diagnostics, errMissingMappingNodeValue(usedIn, attributePath, wrapperLocation)
 	}
 
-	if mappingNode.Literal != nil {
-		// A literal value does not need validating as there is no type to validate against
+	if mappingNode.Scalar != nil {
+		// A scalar value does not need validating as there is no type to validate against
 		// for free-form mapping node values.
 		return diagnostics, nil
 	}
@@ -94,6 +97,7 @@ func validateMappingNode(
 			ctx,
 			usedIn,
 			attributePath,
+			usedInResourceDerivedFromTemplate,
 			mappingNode.StringWithSubstitutions,
 			bpSchema,
 			params,
@@ -108,6 +112,7 @@ func validateMappingNode(
 			ctx,
 			usedIn,
 			attributePath,
+			usedInResourceDerivedFromTemplate,
 			mappingNode.Fields,
 			mappingNode.FieldsSourceMeta,
 			depth,
@@ -124,6 +129,7 @@ func validateMappingNode(
 			ctx,
 			usedIn,
 			attributePath,
+			usedInResourceDerivedFromTemplate,
 			mappingNode.Items,
 			depth,
 			bpSchema,
@@ -141,6 +147,7 @@ func validateMappingNodeFields(
 	ctx context.Context,
 	usedIn string,
 	attributePath string,
+	usedInResourceDerivedFromTemplate bool,
 	mappingNodeFields map[string]*bpcore.MappingNode,
 	mappingNodeFieldsSourceMeta map[string]*source.Meta,
 	depth int,
@@ -156,6 +163,7 @@ func validateMappingNodeFields(
 		fieldDiagnostics, err := validateMappingNode(
 			ctx,
 			usedIn,
+			usedInResourceDerivedFromTemplate,
 			attributePath,
 			field,
 			/* wrapperLocation */ mappingNodeFieldsSourceMeta[key],
@@ -183,6 +191,7 @@ func validateMappingNodeItems(
 	ctx context.Context,
 	usedIn string,
 	attributePath string,
+	usedInResourceDerivedFromTemplate bool,
 	mappingNodeItems []*bpcore.MappingNode,
 	depth int,
 	bpSchema *schema.Blueprint,
@@ -197,6 +206,7 @@ func validateMappingNodeItems(
 		itemDiagnostics, err := validateMappingNode(
 			ctx,
 			usedIn,
+			usedInResourceDerivedFromTemplate,
 			attributePath,
 			item,
 			/* wrapperLocation */ item.SourceMeta,
@@ -224,6 +234,7 @@ func validateMappingNodeStringWithSubstitutions(
 	ctx context.Context,
 	usedIn string,
 	usedInPropertyPath string,
+	usedInResourceDerivedFromTemplate bool,
 	stringWithSub *substitutions.StringOrSubstitutions,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -242,6 +253,7 @@ func validateMappingNodeStringWithSubstitutions(
 				stringOrSub.SubstitutionValue,
 				nextLocation,
 				bpSchema,
+				usedInResourceDerivedFromTemplate,
 				usedIn,
 				usedInPropertyPath,
 				params,
@@ -265,6 +277,6 @@ func validateMappingNodeStringWithSubstitutions(
 }
 
 func mappingNodeNotSet(mappingNode *bpcore.MappingNode) bool {
-	return mappingNode.Literal == nil && mappingNode.Fields == nil &&
+	return mappingNode.Scalar == nil && mappingNode.Fields == nil &&
 		mappingNode.Items == nil && mappingNode.StringWithSubstitutions == nil
 }

@@ -21,13 +21,15 @@ import (
 )
 
 type ExpandResourceTemplatesTestSuite struct {
-	specFixtureContainers map[string]BlueprintContainer
-	stateContainer        state.Container
-	funcRegistry          provider.FunctionRegistry
-	resourceRegistry      resourcehelpers.Registry
-	dataSourceRegistry    provider.DataSourceRegistry
-	providers             map[string]provider.Provider
-	resourceCache         *core.Cache[*provider.ResolvedResource]
+	specFixtureContainers          map[string]BlueprintContainer
+	stateContainer                 state.Container
+	funcRegistry                   provider.FunctionRegistry
+	resourceRegistry               resourcehelpers.Registry
+	dataSourceRegistry             provider.DataSourceRegistry
+	resourceChangeStager           ResourceChangeStager
+	providers                      map[string]provider.Provider
+	resourceCache                  *core.Cache[*provider.ResolvedResource]
+	resourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
 	suite.Suite
 }
 
@@ -61,6 +63,8 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 		s.providers,
 		map[string]transform.SpecTransformer{},
 		s.stateContainer,
+		s.resourceChangeStager,
+		newFSChildResolver(),
 		validation.NewRefChainCollector,
 	)
 	for name, filePath := range inputFiles {
@@ -80,6 +84,7 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 
 func (s *ExpandResourceTemplatesTestSuite) SetupTest() {
 	s.stateContainer = internal.NewMemoryStateContainer()
+	s.resourceChangeStager = NewDefaultResourceChangeStager()
 	s.funcRegistry = provider.NewFunctionRegistry(s.providers)
 	s.resourceRegistry = resourcehelpers.NewRegistry(
 		s.providers,
@@ -89,21 +94,24 @@ func (s *ExpandResourceTemplatesTestSuite) SetupTest() {
 		s.providers,
 	)
 	s.resourceCache = core.NewCache[*provider.ResolvedResource]()
+	s.resourceTemplateInputElemCache = core.NewCache[[]*core.MappingNode]()
 }
 
 func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_one_to_many_link_relationship() {
 	container := s.specFixtureContainers[expandedOneToManyLinkFixtureName]
 	params := expandResourceTemplatesTestParams()
 	subResolver := subengine.NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&subengine.Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		container.BlueprintSpec(),
 		params,
 	)
-	itemsCache := core.NewCache[[]*core.MappingNode]()
 
 	ctx := context.TODO()
 	linkChains, err := container.SpecLinkInfo().Links(ctx)
@@ -114,7 +122,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_o
 		container.BlueprintSpec().Schema(),
 		subResolver,
 		linkChains,
-		itemsCache,
+		s.resourceTemplateInputElemCache,
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
@@ -127,15 +135,17 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_m
 	container := s.specFixtureContainers[expandedManyToOneLinkFixtureName]
 	params := expandResourceTemplatesTestParams()
 	subResolver := subengine.NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&subengine.Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		container.BlueprintSpec(),
 		params,
 	)
-	itemsCache := core.NewCache[[]*core.MappingNode]()
 
 	ctx := context.TODO()
 	linkChains, err := container.SpecLinkInfo().Links(ctx)
@@ -146,7 +156,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_m
 		container.BlueprintSpec().Schema(),
 		subResolver,
 		linkChains,
-		itemsCache,
+		s.resourceTemplateInputElemCache,
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
@@ -159,15 +169,17 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_m
 	container := s.specFixtureContainers[expandedManyToManyLinkFixtureName]
 	params := expandResourceTemplatesTestParams()
 	subResolver := subengine.NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&subengine.Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		container.BlueprintSpec(),
 		params,
 	)
-	itemsCache := core.NewCache[[]*core.MappingNode]()
 
 	ctx := context.TODO()
 	linkChains, err := container.SpecLinkInfo().Links(ctx)
@@ -178,7 +190,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_m
 		container.BlueprintSpec().Schema(),
 		subResolver,
 		linkChains,
-		itemsCache,
+		s.resourceTemplateInputElemCache,
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
@@ -191,15 +203,17 @@ func (s *ExpandResourceTemplatesTestSuite) Test_fails_to_expand_when_link_relati
 	container := s.specFixtureContainers[expandedFailureFixtureName]
 	params := expandResourceTemplatesTestParams()
 	subResolver := subengine.NewDefaultSubstitutionResolver(
-		s.funcRegistry,
-		s.resourceRegistry,
-		s.dataSourceRegistry,
+		&subengine.Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
 		s.stateContainer,
 		s.resourceCache,
+		s.resourceTemplateInputElemCache,
 		container.BlueprintSpec(),
 		params,
 	)
-	itemsCache := core.NewCache[[]*core.MappingNode]()
 
 	ctx := context.TODO()
 	linkChains, err := container.SpecLinkInfo().Links(ctx)
@@ -210,7 +224,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_fails_to_expand_when_link_relati
 		container.BlueprintSpec().Schema(),
 		subResolver,
 		linkChains,
-		itemsCache,
+		s.resourceTemplateInputElemCache,
 	)
 	s.Require().Error(err)
 	runError, isRunError := err.(*errors.RunError)

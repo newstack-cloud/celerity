@@ -42,19 +42,19 @@ func (d *VPCDataSource) Fetch(
 	return &provider.DataSourceFetchOutput{
 		Data: map[string]*core.MappingNode{
 			"vpcId": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &vpc,
 				},
 			},
 			"subnetIds": {
 				Items: []*core.MappingNode{
 					{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &subnet1,
 						},
 					},
 					{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &subnet2,
 						},
 					},

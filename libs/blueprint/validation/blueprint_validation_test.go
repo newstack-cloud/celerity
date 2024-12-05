@@ -26,7 +26,7 @@ func (s *BlueprintValidationTestSuite) Test_succeeds_without_any_issues_for_a_va
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"instanceType": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &instanceType,
 								},
 							},
@@ -50,7 +50,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_n
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"instanceType": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &instanceType,
 								},
 							},
@@ -91,7 +91,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_i
 					Spec: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"instanceType": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									StringValue: &instanceType,
 								},
 							},

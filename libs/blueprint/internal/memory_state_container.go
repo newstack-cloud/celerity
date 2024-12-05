@@ -6,15 +6,11 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
-)
-
-const (
-	resourceNotFoundText = "resource not found"
-	instanceNotFoundText = "instance not found"
 )
 
 type MemoryStateContainer struct {
@@ -38,7 +34,7 @@ func (c *MemoryStateContainer) GetInstance(ctx context.Context, instanceID strin
 		return *instance, nil
 	}
 
-	return state.InstanceState{}, errors.New(instanceNotFoundText)
+	return state.InstanceState{}, state.InstanceNotFoundError(instanceID)
 }
 
 func (c *MemoryStateContainer) SaveInstance(
@@ -59,7 +55,7 @@ func (c *MemoryStateContainer) RemoveInstance(ctx context.Context, instanceID st
 
 	instance, ok := c.instances[instanceID]
 	if !ok {
-		return state.InstanceState{}, errors.New(instanceNotFoundText)
+		return state.InstanceState{}, state.InstanceNotFoundError(instanceID)
 	}
 
 	delete(c.instances, instanceID)
@@ -78,7 +74,7 @@ func (c *MemoryStateContainer) GetResource(ctx context.Context, instanceID strin
 		}
 	}
 
-	return state.ResourceState{}, nil
+	return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
 }
 
 func (c *MemoryStateContainer) GetResourceByName(
@@ -98,7 +94,8 @@ func (c *MemoryStateContainer) GetResourceByName(
 		}
 	}
 
-	return state.ResourceState{}, nil
+	itemID := fmt.Sprintf("instance:%s:resource:%s", instanceID, resourceName)
+	return state.ResourceState{}, state.ResourceNotFoundError(itemID)
 }
 
 func (c *MemoryStateContainer) SaveResource(
@@ -120,7 +117,7 @@ func (c *MemoryStateContainer) SaveResource(
 			}
 			instance.ResourceIDs[resourceState.ResourceName] = resourceState.ResourceID
 		} else {
-			return errors.New(instanceNotFoundText)
+			return state.ResourceNotFoundError(resourceState.ResourceID)
 		}
 	}
 
@@ -145,7 +142,7 @@ func (c *MemoryStateContainer) RemoveResource(
 		}
 	}
 
-	return state.ResourceState{}, errors.New(resourceNotFoundText)
+	return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
 }
 
 func (c *MemoryStateContainer) GetResourceDrift(ctx context.Context, instanceID string, resourceID string) (state.ResourceState, error) {
@@ -177,13 +174,13 @@ func (c *MemoryStateContainer) SaveResourceDrift(
 			if ok {
 				resource.Drifted = true
 			} else {
-				return errors.New(resourceNotFoundText)
+				return state.ResourceNotFoundError(driftState.ResourceID)
 			}
 		} else {
-			return errors.New(instanceNotFoundText)
+			return state.InstanceNotFoundError(instanceID)
 		}
 	} else {
-		return errors.New(instanceNotFoundText)
+		return state.InstanceNotFoundError(instanceID)
 	}
 
 	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
@@ -212,13 +209,13 @@ func (c *MemoryStateContainer) RemoveResourceDrift(
 				resource.Drifted = false
 				resource.LastDriftDetectedTimestamp = nil
 			} else {
-				return state.ResourceState{}, errors.New(resourceNotFoundText)
+				return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
 			}
 		} else {
-			return state.ResourceState{}, errors.New(instanceNotFoundText)
+			return state.ResourceState{}, state.InstanceNotFoundError(instanceID)
 		}
 	} else {
-		return state.ResourceState{}, errors.New(instanceNotFoundText)
+		return state.ResourceState{}, state.InstanceNotFoundError(instanceID)
 	}
 
 	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
@@ -231,7 +228,7 @@ func (c *MemoryStateContainer) RemoveResourceDrift(
 		}
 	}
 
-	return state.ResourceState{}, errors.New(resourceNotFoundText)
+	return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
 }
 
 func (c *MemoryStateContainer) GetLink(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
@@ -246,7 +243,7 @@ func (c *MemoryStateContainer) GetLink(ctx context.Context, instanceID string, l
 		}
 	}
 
-	return state.LinkState{}, errors.New("link not found")
+	return state.LinkState{}, state.LinkNotFoundError(linkID)
 }
 
 func (c *MemoryStateContainer) SaveLink(ctx context.Context, instanceID string, linkState state.LinkState) error {
@@ -257,7 +254,7 @@ func (c *MemoryStateContainer) SaveLink(ctx context.Context, instanceID string, 
 		if instance != nil {
 			instance.Links[linkState.LinkID] = &linkState
 		} else {
-			return errors.New(instanceNotFoundText)
+			return state.InstanceNotFoundError(instanceID)
 		}
 	}
 
@@ -278,7 +275,7 @@ func (c *MemoryStateContainer) RemoveLink(ctx context.Context, instanceID string
 		}
 	}
 
-	return state.LinkState{}, errors.New("link not found")
+	return state.LinkState{}, state.LinkNotFoundError(linkID)
 }
 
 func (c *MemoryStateContainer) GetMetadata(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
@@ -291,7 +288,7 @@ func (c *MemoryStateContainer) GetMetadata(ctx context.Context, instanceID strin
 		}
 	}
 
-	return nil, errors.New(instanceNotFoundText)
+	return nil, state.InstanceNotFoundError(instanceID)
 }
 
 func (c *MemoryStateContainer) SaveMetadata(
@@ -306,7 +303,7 @@ func (c *MemoryStateContainer) SaveMetadata(
 		if instance != nil {
 			instance.Metadata = metadata
 		} else {
-			return errors.New(instanceNotFoundText)
+			return state.InstanceNotFoundError(instanceID)
 		}
 	}
 
@@ -325,7 +322,7 @@ func (c *MemoryStateContainer) RemoveMetadata(ctx context.Context, instanceID st
 		}
 	}
 
-	return nil, errors.New(instanceNotFoundText)
+	return nil, state.InstanceNotFoundError(instanceID)
 }
 
 func (c *MemoryStateContainer) GetExports(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
@@ -338,7 +335,7 @@ func (c *MemoryStateContainer) GetExports(ctx context.Context, instanceID string
 		}
 	}
 
-	return nil, errors.New(instanceNotFoundText)
+	return nil, state.InstanceNotFoundError(instanceID)
 }
 
 func (c *MemoryStateContainer) GetExport(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
@@ -368,7 +365,7 @@ func (c *MemoryStateContainer) SaveExports(
 		if instance != nil {
 			instance.Exports = exports
 		} else {
-			return errors.New(instanceNotFoundText)
+			return state.InstanceNotFoundError(instanceID)
 		}
 	}
 
@@ -388,7 +385,7 @@ func (c *MemoryStateContainer) SaveExport(
 		if instance != nil {
 			instance.Exports[exportName] = export
 		} else {
-			return errors.New(instanceNotFoundText)
+			return state.InstanceNotFoundError(instanceID)
 		}
 	}
 
@@ -407,7 +404,7 @@ func (c *MemoryStateContainer) RemoveExports(ctx context.Context, instanceID str
 		}
 	}
 
-	return nil, errors.New(instanceNotFoundText)
+	return nil, state.InstanceNotFoundError(instanceID)
 }
 
 func (c *MemoryStateContainer) RemoveExport(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
@@ -457,8 +454,9 @@ func (c *MemoryStateContainer) SaveChild(
 				instance.ChildBlueprints = make(map[string]*state.InstanceState)
 			}
 			instance.ChildBlueprints[childName] = &childState
+			c.instances[childState.InstanceID] = &childState
 		} else {
-			return errors.New(instanceNotFoundText)
+			return state.InstanceNotFoundError(instanceID)
 		}
 	}
 
@@ -479,5 +477,6 @@ func (c *MemoryStateContainer) RemoveChild(ctx context.Context, instanceID strin
 		}
 	}
 
-	return state.InstanceState{}, errors.New("child not found")
+	itemID := fmt.Sprintf("instance:%s:child:%s", instanceID, childName)
+	return state.InstanceState{}, state.InstanceNotFoundError(itemID)
 }

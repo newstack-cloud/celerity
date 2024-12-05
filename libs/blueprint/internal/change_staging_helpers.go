@@ -39,11 +39,11 @@ func orderFieldChanges(fieldChanges []provider.FieldChange) []provider.FieldChan
 	orderedFieldChanges := make([]provider.FieldChange, len(fieldChanges))
 	copy(orderedFieldChanges, fieldChanges)
 	slices.SortFunc(orderedFieldChanges, func(a, b provider.FieldChange) int {
-		if a.FieldName < b.FieldName {
+		if a.FieldPath < b.FieldPath {
 			return -1
 		}
 
-		if a.FieldName > b.FieldName {
+		if a.FieldPath > b.FieldPath {
 			return 1
 		}
 

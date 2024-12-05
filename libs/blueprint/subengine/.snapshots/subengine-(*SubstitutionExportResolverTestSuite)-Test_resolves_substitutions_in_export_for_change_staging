@@ -30,7 +30,7 @@
       })
     }),
     Description: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)({
+      Scalar: (*core.ScalarValue)({
         IntValue: (*int)(<nil>),
         BoolValue: (*bool)(<nil>),
         FloatValue: (*float64)(<nil>),

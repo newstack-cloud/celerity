@@ -65,6 +65,7 @@ func ValidateResource(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	resourceDerivedFromTemplate bool,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -85,6 +86,7 @@ func ValidateResource(
 	validateMetadataDiagnostics, validateMetadataErr := validateResourceMetadata(
 		ctx,
 		name,
+		resourceDerivedFromTemplate,
 		resource.Metadata,
 		bpSchema,
 		params,
@@ -112,6 +114,7 @@ func ValidateResource(
 	validateResConditionDiagnostics, validateResConditionErr := validateResourceCondition(
 		ctx,
 		name,
+		resourceDerivedFromTemplate,
 		resource.Condition,
 		bpSchema,
 		params,
@@ -128,6 +131,7 @@ func ValidateResource(
 	validateEachDiagnostics, validateEachErr := validateResourceEach(
 		ctx,
 		name,
+		resourceDerivedFromTemplate,
 		resource.Each,
 		bpSchema,
 		params,
@@ -154,6 +158,7 @@ func ValidateResource(
 			ctx,
 			name,
 			resource.Type.Value,
+			resourceDerivedFromTemplate,
 			resource,
 			resourceMap.SourceMeta[name],
 			bpSchema,
@@ -171,6 +176,7 @@ func ValidateResource(
 	validateDescriptionDiagnostics, validateDescErr := validateDescription(
 		ctx,
 		bpcore.ResourceElementID(name),
+		resourceDerivedFromTemplate,
 		resource.Description,
 		bpSchema,
 		params,
@@ -225,6 +231,7 @@ func validateResourceType(
 func validateResourceMetadata(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	metadataSchema *schema.Metadata,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -243,6 +250,7 @@ func validateResourceMetadata(
 	displayNameDiagnostics, err := validateResourceMetadataDisplayName(
 		ctx,
 		resourceName,
+		resourceDerivedFromTemplate,
 		metadataSchema,
 		bpSchema,
 		params,
@@ -283,6 +291,7 @@ func validateResourceMetadata(
 		ctx,
 		bpcore.ResourceElementID(resourceName),
 		"metadata.custom",
+		resourceDerivedFromTemplate,
 		metadataSchema.Custom,
 		bpSchema,
 		params,
@@ -305,6 +314,7 @@ func validateResourceMetadata(
 func validateResourceMetadataDisplayName(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	metadataSchema *schema.Metadata,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -326,6 +336,7 @@ func validateResourceMetadataDisplayName(
 				stringOrSub.SubstitutionValue,
 				nil,
 				bpSchema,
+				resourceDerivedFromTemplate,
 				resourceIdentifier,
 				"metadata.displayName",
 				params,
@@ -503,6 +514,7 @@ func validateResourceDependencies(
 func validateResourceCondition(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	conditionSchema *schema.Condition,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -531,6 +543,7 @@ func validateResourceCondition(
 			andDiagnostics, err := validateResourceCondition(
 				ctx,
 				resourceName,
+				resourceDerivedFromTemplate,
 				andCondition,
 				bpSchema,
 				params,
@@ -551,6 +564,7 @@ func validateResourceCondition(
 			orDiagnostics, err := validateResourceCondition(
 				ctx,
 				resourceName,
+				resourceDerivedFromTemplate,
 				orCondition,
 				bpSchema,
 				params,
@@ -574,6 +588,7 @@ func validateResourceCondition(
 		notDiagnostics, err := validateResourceCondition(
 			ctx,
 			resourceName,
+			resourceDerivedFromTemplate,
 			conditionSchema.Not,
 			bpSchema,
 			params,
@@ -591,6 +606,7 @@ func validateResourceCondition(
 	conditionValDiagnostics, err := validateConditionValue(
 		ctx,
 		resourceName,
+		resourceDerivedFromTemplate,
 		conditionSchema.StringValue,
 		bpSchema,
 		params,
@@ -609,6 +625,7 @@ func validateResourceCondition(
 func validateConditionValue(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	conditionValue *substitutions.StringOrSubstitutions,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -645,6 +662,7 @@ func validateConditionValue(
 				stringOrSub.SubstitutionValue,
 				nil,
 				bpSchema,
+				resourceDerivedFromTemplate,
 				resourceIdentifier,
 				"condition",
 				params,
@@ -718,6 +736,7 @@ func handleResolvedTypeExpectingBoolean(
 func validateResourceEach(
 	ctx context.Context,
 	resourceName string,
+	resourceDerivedFromTemplate bool,
 	each *substitutions.StringOrSubstitutions,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -761,6 +780,7 @@ func validateResourceEach(
 			stringOrSub.SubstitutionValue,
 			nil,
 			bpSchema,
+			resourceDerivedFromTemplate,
 			resourceIdentifier,
 			"each",
 			params,

@@ -25,8 +25,9 @@ import (
 // A mapping node can be used to store data for resources, links and data sources
 // along with storing the output of a ${..} substitution.
 type MappingNode struct {
-	// Literal represents a literal value in a mapping node.
-	Literal *ScalarValue
+	// Scalar represents a scalar value in a mapping node.
+	// This could be an integer, string, boolean or a floating point number.
+	Scalar *ScalarValue
 	// Fields represents a map of field names to child mapping nodes.
 	Fields map[string]*MappingNode
 	// Items represents a slice of child mapping nodes.
@@ -50,8 +51,8 @@ type MappingNode struct {
 // MarshalYAML fulfils the yaml.Marshaler interface
 // to marshal a mapping node into a YAML representation.
 func (m *MappingNode) MarshalYAML() (interface{}, error) {
-	if m.Literal != nil {
-		return m.Literal, nil
+	if m.Scalar != nil {
+		return m.Scalar, nil
 	}
 
 	if m.StringWithSubstitutions != nil {
@@ -148,9 +149,9 @@ func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 		// would make it harder to debug.
 		return err
 	} else if len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
-		// Parse literal value if there are no substitutions.
-		m.Literal = &ScalarValue{}
-		return m.Literal.UnmarshalYAML(node)
+		// Parse scalar value if there are no substitutions.
+		m.Scalar = &ScalarValue{}
+		return m.Scalar.UnmarshalYAML(node)
 	}
 
 	m.StringWithSubstitutions = &substitutions.StringOrSubstitutions{
@@ -163,8 +164,8 @@ func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
 // MarshalJSON fulfils the json.Marshaler interface
 // to marshal a blueprint mapping node into a JSON representation.
 func (m *MappingNode) MarshalJSON() ([]byte, error) {
-	if m.Literal != nil {
-		return json.Marshal(m.Literal)
+	if m.Scalar != nil {
+		return json.Marshal(m.Scalar)
 	}
 
 	if m.StringWithSubstitutions != nil {
@@ -222,9 +223,9 @@ func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {
 		// would make it harder to debug.
 		return err
 	} else if len(strSubs) == 0 || (len(strSubs) == 1 && strSubs[0].StringValue != nil) {
-		// Parse literal value if there are no substitutions.
-		m.Literal = &ScalarValue{}
-		return m.Literal.UnmarshalJSON(data)
+		// Parse scalar value if there are no substitutions.
+		m.Scalar = &ScalarValue{}
+		return m.Scalar.UnmarshalJSON(data)
 	}
 
 	m.StringWithSubstitutions = &substitutions.StringOrSubstitutions{
@@ -252,7 +253,7 @@ func MergeMaps(nodes ...*MappingNode) *MappingNode {
 // IsNilMappingNode returns true if the mapping node is nil or has no content.
 func IsNilMappingNode(node *MappingNode) bool {
 	return node == nil ||
-		(node.Literal == nil &&
+		(node.Scalar == nil &&
 			node.StringWithSubstitutions == nil &&
 			node.Fields == nil &&
 			node.Items == nil)
@@ -268,7 +269,7 @@ func IsArrayMappingNode(node *MappingNode) bool {
 	return node != nil && node.Items != nil
 }
 
-// IsLiteralMappingNode returns true if the mapping node is a literal/scalar value.
-func IsLiteralMappingNode(node *MappingNode) bool {
-	return node != nil && node.Literal != nil
+// IsScalarMappingNode returns true if the mapping node is a scalar value.
+func IsScalarMappingNode(node *MappingNode) bool {
+	return node != nil && node.Scalar != nil
 }

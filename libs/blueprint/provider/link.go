@@ -47,9 +47,10 @@ type Link interface {
 // LinkStageChangesInput provides the input required to
 // stage changes for a link between two resources.
 type LinkStageChangesInput struct {
-	ResourceAInfo *ResourceInfo
-	ResourceBInfo *ResourceInfo
-	Params        core.BlueprintParams
+	ResourceAChanges *Changes
+	ResourceBChanges *Changes
+	CurrentLinkState *state.LinkState
+	Params           core.BlueprintParams
 }
 
 // LinkStageChangesOutput provides the output from staging changes
@@ -130,27 +131,34 @@ const (
 	LinkKindSoft LinkKind = "soft"
 )
 
-// Changes provides a set of modified fields along with a version
-// of the resource schema (includes metadata labels and annotations) and spec
-// that has already had all it's variables substituted.
+// LinkChanges provides a set of modified fields for a link between two resources.
+// The link field changes represent a set of changes that will be made to the
+// resources in the link relationship, these changes should be modelled as per the
+// structure of the linkData that is persisted in the state of a blueprint instance.
+// The linkData model should be organised by the resource type with a structure
+// that is a close approximation of the actual changes that will be made to each
+// resource during deployment in the upstream provider.
 type LinkChanges struct {
-	ResourceTypeAModifiedFields  []*FieldChange                              `json:"resourceTypeAModifiedFields"`
-	ResourceTypeANewFields       []*FieldChange                              `json:"resourceTypeANewFields"`
-	ResourceTypeARemovedFields   []string                                    `json:"resourceTypeARemovedFields"`
-	ResourceTypeAUnchangedFields []string                                    `json:"resourceTypeAUnchangedFields"`
-	ResourceTypeBModifiedFields  []*FieldChange                              `json:"resourceTypeBModifiedFields"`
-	ResourceTypeBNewFields       []*FieldChange                              `json:"resourceTypeBNewFields"`
-	ResourceTypeBRemovedFields   []string                                    `json:"resourceTypeBRemovedFields"`
-	ResourceTypeBUnchangedFields []string                                    `json:"resourceTypeBUnchangedFields"`
-	IntermediaryResourceChanges  map[string]*LinkIntermediaryResourceChanges `json:"intermediaryResourceChanges"`
+	ModifiedFields  []*FieldChange `json:"modifiedFields"`
+	NewFields       []*FieldChange `json:"newFields"`
+	RemovedFields   []string       `json:"removedFields"`
+	UnchangedFields []string       `json:"unchangedFields"`
+	// FieldChangesKnownOnDeploy holds a list of field names
+	// for which changes will be known when the host blueprint is deployed.
+	FieldChangesKnownOnDeploy   []string                                    `json:"fieldChangesKnownOnDeploy"`
+	IntermediaryResourceChanges map[string]*LinkIntermediaryResourceChanges `json:"intermediaryResourceChanges"`
 }
 
 // LinkIntermediaryResourceChanges provides a set of modified fields
 // for an intermediary resource in a link relationship.
 type LinkIntermediaryResourceChanges struct {
-	ResourceType    string         `json:"resourceType"`
-	ModifiedFields  []*FieldChange `json:"modifiedFields"`
-	NewFields       []*FieldChange `json:"newFields"`
-	RemovedFields   []string       `json:"removedFields"`
-	UnchangedFields []string       `json:"unchangedFields"`
+	IntermediaryResourceID string         `json:"intermediaryResourceId"`
+	ResourceType           string         `json:"resourceType"`
+	ModifiedFields         []*FieldChange `json:"modifiedFields"`
+	NewFields              []*FieldChange `json:"newFields"`
+	RemovedFields          []string       `json:"removedFields"`
+	UnchangedFields        []string       `json:"unchangedFields"`
+	// FieldChangesKnownOnDeploy holds a list of field names
+	// for which changes will be known when the host blueprint is deployed.
+	FieldChangesKnownOnDeploy []string `json:"fieldChangesKnownOnDeploy"`
 }

@@ -895,7 +895,7 @@ func (r *defaultSubstitutionResolver) resolveInMappingNode(
 
 	resolveOnDeployErrs := []*resolveOnDeployError{}
 
-	if mappingNode.Literal != nil {
+	if mappingNode.Scalar != nil {
 		return mappingNode, nil
 	}
 
@@ -1406,7 +1406,7 @@ func (r *defaultSubstitutionResolver) resolveSubstitutions(
 
 	resolvedStr := sb.String()
 	return &bpcore.MappingNode{
-		Literal: &bpcore.ScalarValue{
+		Scalar: &bpcore.ScalarValue{
 			StringValue: &resolvedStr,
 		},
 	}, nil
@@ -1420,7 +1420,7 @@ func (r *defaultSubstitutionResolver) resolveSubstitution(
 ) (*bpcore.MappingNode, error) {
 	if value.StringValue != nil {
 		return &bpcore.MappingNode{
-			Literal: &bpcore.ScalarValue{
+			Scalar: &bpcore.ScalarValue{
 				StringValue: value.StringValue,
 			},
 		}, nil
@@ -1445,9 +1445,9 @@ func (r *defaultSubstitutionResolver) resolveSubstitutionValue(
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
 
-	resolvedLiteral := r.resolveLiteral(substitutionValue)
-	if resolvedLiteral != nil {
-		return resolvedLiteral, nil
+	resolvedScalar := r.resolveScalar(substitutionValue)
+	if resolvedScalar != nil {
+		return resolvedScalar, nil
 	}
 
 	if substitutionValue.Variable != nil {
@@ -1539,12 +1539,12 @@ func (r *defaultSubstitutionResolver) resolveSubstitutionValue(
 	return nil, errEmptySubstitutionValue(resolveCtx.currentElementName)
 }
 
-func (r *defaultSubstitutionResolver) resolveLiteral(
+func (r *defaultSubstitutionResolver) resolveScalar(
 	substitutionValue *substitutions.Substitution,
 ) *bpcore.MappingNode {
 	if substitutionValue.StringValue != nil {
 		return &bpcore.MappingNode{
-			Literal: &bpcore.ScalarValue{
+			Scalar: &bpcore.ScalarValue{
 				StringValue: substitutionValue.StringValue,
 			},
 		}
@@ -1553,7 +1553,7 @@ func (r *defaultSubstitutionResolver) resolveLiteral(
 	if substitutionValue.IntValue != nil {
 		intVal := int(*substitutionValue.IntValue)
 		return &bpcore.MappingNode{
-			Literal: &bpcore.ScalarValue{
+			Scalar: &bpcore.ScalarValue{
 				IntValue: &intVal,
 			},
 		}
@@ -1561,7 +1561,7 @@ func (r *defaultSubstitutionResolver) resolveLiteral(
 
 	if substitutionValue.FloatValue != nil {
 		return &bpcore.MappingNode{
-			Literal: &bpcore.ScalarValue{
+			Scalar: &bpcore.ScalarValue{
 				FloatValue: substitutionValue.FloatValue,
 			},
 		}
@@ -1569,7 +1569,7 @@ func (r *defaultSubstitutionResolver) resolveLiteral(
 
 	if substitutionValue.BoolValue != nil {
 		return &bpcore.MappingNode{
-			Literal: &bpcore.ScalarValue{
+			Scalar: &bpcore.ScalarValue{
 				BoolValue: substitutionValue.BoolValue,
 			},
 		}
@@ -1592,13 +1592,13 @@ func (r *defaultSubstitutionResolver) resolveVariable(
 
 		if specVar.Default != nil {
 			return &bpcore.MappingNode{
-				Literal: specVar.Default,
+				Scalar: specVar.Default,
 			}, nil
 		}
 	}
 
 	return &bpcore.MappingNode{
-		Literal: varValue,
+		Scalar: varValue,
 	}, nil
 }
 
@@ -1722,7 +1722,7 @@ func (r *defaultSubstitutionResolver) resolveElemIndexReference(
 	}
 
 	return &bpcore.MappingNode{
-		Literal: &bpcore.ScalarValue{
+		Scalar: &bpcore.ScalarValue{
 			IntValue: &resourceNameParts.index,
 		},
 	}, nil

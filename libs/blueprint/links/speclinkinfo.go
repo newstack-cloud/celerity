@@ -85,12 +85,12 @@ type defaultSpecLinkInfo struct {
 // The map of resource providers must be a map of provider resource name
 // to a provider.
 func NewDefaultLinkInfoProvider(
-	resourceProviders map[string]provider.Provider,
+	resourceTypeProviderMap map[string]provider.Provider,
 	spec speccore.BlueprintSpec,
 	blueprintParams bpcore.BlueprintParams,
 ) (SpecLinkInfo, error) {
 	return &defaultSpecLinkInfo{
-		resourceProviders:        resourceProviders,
+		resourceProviders:        resourceTypeProviderMap,
 		spec:                     spec,
 		chains:                   []*ChainLinkNode{},
 		linkMap:                  make(map[string]*ChainLinkNode),

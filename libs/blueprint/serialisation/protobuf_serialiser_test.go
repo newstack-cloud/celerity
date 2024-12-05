@@ -205,12 +205,12 @@ var fixtureMissingScalarField = &schema.Blueprint{
 							},
 						},
 						"runtime": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								// A scalar value is missing here.
 							},
 						},
 						"tracingEnabled": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								BoolValue: &testTracingEnabled,
 							},
 						},
@@ -247,12 +247,12 @@ var fixtureMissingStringOrSubstitutionField = &schema.Blueprint{
 							},
 						},
 						"runtime": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								StringValue: &testRuntime,
 							},
 						},
 						"tracingEnabled": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								BoolValue: &testTracingEnabled,
 							},
 						},
@@ -291,12 +291,12 @@ var fixtureMissingSubstitutionField = &schema.Blueprint{
 							},
 						},
 						"runtime": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								StringValue: &testRuntime,
 							},
 						},
 						"tracingEnabled": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								BoolValue: &testTracingEnabled,
 							},
 						},
@@ -342,12 +342,12 @@ var fixtureMissingSubstitutionPathItemField = &schema.Blueprint{
 							},
 						},
 						"runtime": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								StringValue: &testRuntime,
 							},
 						},
 						"tracingEnabled": {
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								BoolValue: &testTracingEnabled,
 							},
 						},

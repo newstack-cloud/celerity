@@ -114,7 +114,7 @@ func newTestSubstrFunction() Function {
 						Label: "string",
 						Type:  function.ValueTypeString,
 					},
-					Description: "A valid string literal, reference or function call yielding a return value " +
+					Description: "A valid string Scalar, reference or function call yielding a return value " +
 						"representing the string to extract the substring from.",
 				},
 				&function.ScalarParameter{
@@ -419,7 +419,7 @@ func (d *testExampleDataSource) Fetch(
 	return &DataSourceFetchOutput{
 		Data: map[string]*core.MappingNode{
 			"name": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &testName,
 				},
 			},

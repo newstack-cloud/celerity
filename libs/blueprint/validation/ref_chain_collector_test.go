@@ -109,7 +109,7 @@ func createTestResource(id string) *schema.Resource {
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"id": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &id,
 					},
 				},

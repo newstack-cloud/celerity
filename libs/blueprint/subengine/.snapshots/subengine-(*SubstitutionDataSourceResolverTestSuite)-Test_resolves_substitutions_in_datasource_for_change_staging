@@ -15,7 +15,7 @@
     }),
     DataSourceMetadata: (*provider.ResolvedDataSourceMetadata)({
       DisplayName: (*core.MappingNode)({
-        Literal: (*core.ScalarValue)({
+        Scalar: (*core.ScalarValue)({
           IntValue: (*int)(<nil>),
           BoolValue: (*bool)(<nil>),
           FloatValue: (*float64)(<nil>),
@@ -84,7 +84,7 @@
         }),
         AliasFor: (*core.ScalarValue)(<nil>),
         Description: (*core.MappingNode)({
-          Literal: (*core.ScalarValue)({
+          Scalar: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),
@@ -129,7 +129,7 @@
           })
         }),
         Description: (*core.MappingNode)({
-          Literal: (*core.ScalarValue)({
+          Scalar: (*core.ScalarValue)({
             IntValue: (*int)(<nil>),
             BoolValue: (*bool)(<nil>),
             FloatValue: (*float64)(<nil>),
@@ -145,7 +145,7 @@
       })
     },
     Description: (*core.MappingNode)({
-      Literal: (*core.ScalarValue)({
+      Scalar: (*core.ScalarValue)({
         IntValue: (*int)(<nil>),
         BoolValue: (*bool)(<nil>),
         FloatValue: (*float64)(<nil>),

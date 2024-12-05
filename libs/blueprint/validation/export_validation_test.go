@@ -67,7 +67,7 @@ func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_exp
 				"cacheCluster": {
 					Type: &schema.ResourceTypeWrapper{Value: "aws/ecs/service"},
 					Spec: &core.MappingNode{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &serviceName,
 						},
 					},
@@ -118,7 +118,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_expor
 				"cacheCluster": {
 					Type: &schema.ResourceTypeWrapper{Value: "aws/ecs/service"},
 					Spec: &core.MappingNode{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &serviceName,
 						},
 					},
@@ -177,7 +177,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_fiel
 				"cacheCluster": {
 					Type: &schema.ResourceTypeWrapper{Value: "aws/ecs/service"},
 					Spec: &core.MappingNode{
-						Literal: &core.ScalarValue{
+						Scalar: &core.ScalarValue{
 							StringValue: &serviceName,
 						},
 					},

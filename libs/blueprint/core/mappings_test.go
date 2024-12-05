@@ -30,18 +30,18 @@ func (s *MappingNodeTestSuite) Test_parse_string_val_yaml() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["stringValYAML"], targetMappingNode)
 	s.Assert().NoError(err)
-	s.Assert().NotNil(targetMappingNode.Literal.StringValue)
-	s.Assert().Equal(testStringValue, *targetMappingNode.Literal.StringValue)
-	s.Assert().Equal(1, targetMappingNode.Literal.SourceMeta.Line)
-	s.Assert().Equal(1, targetMappingNode.Literal.SourceMeta.Column)
+	s.Assert().NotNil(targetMappingNode.Scalar.StringValue)
+	s.Assert().Equal(testStringValue, *targetMappingNode.Scalar.StringValue)
+	s.Assert().Equal(1, targetMappingNode.Scalar.SourceMeta.Line)
+	s.Assert().Equal(1, targetMappingNode.Scalar.SourceMeta.Column)
 }
 
 func (s *MappingNodeTestSuite) Test_parse_string_val_json() {
 	targetMappingNode := &MappingNode{}
 	err := json.Unmarshal(s.specParseFixtures["stringValJSON"], targetMappingNode)
 	s.Assert().NoError(err)
-	s.Assert().NotNil(targetMappingNode.Literal.StringValue)
-	s.Assert().Equal(testStringValue, *targetMappingNode.Literal.StringValue)
+	s.Assert().NotNil(targetMappingNode.Scalar.StringValue)
+	s.Assert().Equal(testStringValue, *targetMappingNode.Scalar.StringValue)
 }
 
 func (s *MappingNodeTestSuite) Test_parse_string_with_subs_yaml() {
@@ -113,8 +113,8 @@ func (s *MappingNodeTestSuite) Test_parse_int_val() {
 	targetMappingNode := &MappingNode{}
 	err := yaml.Unmarshal(s.specParseFixtures["intVal"], targetMappingNode)
 	s.Assert().NoError(err)
-	s.Assert().NotNil(targetMappingNode.Literal.IntValue)
-	s.Assert().Equal(45172131, *targetMappingNode.Literal.IntValue)
+	s.Assert().NotNil(targetMappingNode.Scalar.IntValue)
+	s.Assert().Equal(45172131, *targetMappingNode.Scalar.IntValue)
 }
 
 func (s *MappingNodeTestSuite) Test_parse_fields_val_yaml() {
@@ -138,7 +138,7 @@ func (s *MappingNodeTestSuite) assertFieldsNodeYAML(actual *MappingNode) {
 	s.Assert().Equal(&MappingNode{
 		Fields: map[string]*MappingNode{
 			"key1": {
-				Literal: &ScalarValue{
+				Scalar: &ScalarValue{
 					StringValue: &expectedStrVal,
 					SourceMeta: &source.Meta{
 						Position:    source.Position{Line: 2, Column: 15},
@@ -185,7 +185,7 @@ func (s *MappingNodeTestSuite) assertFieldsNodeYAML(actual *MappingNode) {
 				SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 15}},
 			},
 			"key3": {
-				Literal: &ScalarValue{
+				Scalar: &ScalarValue{
 					IntValue: &expectedIntVal,
 					SourceMeta: &source.Meta{
 						Position:    source.Position{Line: 4, Column: 15},
@@ -211,7 +211,7 @@ func (s *MappingNodeTestSuite) assertFieldsNodeJSON(actual *MappingNode) {
 	s.Assert().Equal(&MappingNode{
 		Fields: map[string]*MappingNode{
 			"key1": {
-				Literal: &ScalarValue{StringValue: &expectedStrVal},
+				Scalar: &ScalarValue{StringValue: &expectedStrVal},
 			},
 			"key2": {
 				StringWithSubstitutions: &substitutions.StringOrSubstitutions{
@@ -228,7 +228,7 @@ func (s *MappingNodeTestSuite) assertFieldsNodeJSON(actual *MappingNode) {
 				},
 			},
 			"key3": {
-				Literal: &ScalarValue{IntValue: &expectedIntVal},
+				Scalar: &ScalarValue{IntValue: &expectedIntVal},
 			},
 		},
 	}, actual)
@@ -255,7 +255,7 @@ func (s *MappingNodeTestSuite) assertItemsNodeYAML(actual *MappingNode) {
 	s.Assert().Equal(&MappingNode{
 		Items: []*MappingNode{
 			{
-				Literal: &ScalarValue{
+				Scalar: &ScalarValue{
 					StringValue: &expectedStrVal,
 					SourceMeta: &source.Meta{
 						Position:    source.Position{Line: 2, Column: 11},
@@ -302,7 +302,7 @@ func (s *MappingNodeTestSuite) assertItemsNodeYAML(actual *MappingNode) {
 				SourceMeta: &source.Meta{Position: source.Position{Line: 3, Column: 11}},
 			},
 			{
-				Literal: &ScalarValue{
+				Scalar: &ScalarValue{
 					IntValue: &expectedIntVal,
 					SourceMeta: &source.Meta{
 						Position:    source.Position{Line: 4, Column: 11},
@@ -323,7 +323,7 @@ func (s *MappingNodeTestSuite) assertItemsNodeJSON(actual *MappingNode) {
 	s.Assert().Equal(&MappingNode{
 		Items: []*MappingNode{
 			{
-				Literal: &ScalarValue{
+				Scalar: &ScalarValue{
 					StringValue: &expectedStrVal,
 				},
 			},
@@ -342,7 +342,7 @@ func (s *MappingNodeTestSuite) assertItemsNodeJSON(actual *MappingNode) {
 				},
 			},
 			{
-				Literal: &ScalarValue{
+				Scalar: &ScalarValue{
 					IntValue: &expectedIntVal,
 				},
 			},
@@ -373,19 +373,19 @@ func (s *MappingNodeTestSuite) assertNestedNodeJSON(actual *MappingNode) {
 	s.Assert().Equal(&MappingNode{
 		Fields: map[string]*MappingNode{
 			"key1": {
-				Literal: &ScalarValue{StringValue: &expectedStrVal1},
+				Scalar: &ScalarValue{StringValue: &expectedStrVal1},
 			},
 			"key2": {
 				Fields: map[string]*MappingNode{
 					"key3": {
-						Literal: &ScalarValue{StringValue: &expectedStrVal2},
+						Scalar: &ScalarValue{StringValue: &expectedStrVal2},
 					},
 				},
 			},
 			"key4": {
 				Items: []*MappingNode{
 					{
-						Literal: &ScalarValue{StringValue: &expectedStrVal3},
+						Scalar: &ScalarValue{StringValue: &expectedStrVal3},
 					},
 					{
 						StringWithSubstitutions: &substitutions.StringOrSubstitutions{
@@ -404,7 +404,7 @@ func (s *MappingNodeTestSuite) assertNestedNodeJSON(actual *MappingNode) {
 				},
 			},
 			"key5": {
-				Literal: &ScalarValue{IntValue: &expectedIntVal},
+				Scalar: &ScalarValue{IntValue: &expectedIntVal},
 			},
 		},
 	}, actual)
@@ -419,7 +419,7 @@ func (s *MappingNodeTestSuite) assertNestedNodeYAML(actual *MappingNode) {
 	s.Assert().Equal(&MappingNode{
 		Fields: map[string]*MappingNode{
 			"key1": {
-				Literal: &ScalarValue{
+				Scalar: &ScalarValue{
 					StringValue: &expectedStrVal1,
 					SourceMeta: &source.Meta{
 						Position:    source.Position{Line: 2, Column: 17},
@@ -433,7 +433,7 @@ func (s *MappingNodeTestSuite) assertNestedNodeYAML(actual *MappingNode) {
 			"key2": {
 				Fields: map[string]*MappingNode{
 					"key3": {
-						Literal: &ScalarValue{
+						Scalar: &ScalarValue{
 							StringValue: &expectedStrVal2,
 							SourceMeta: &source.Meta{
 								Position:    source.Position{Line: 4, Column: 19},
@@ -451,7 +451,7 @@ func (s *MappingNodeTestSuite) assertNestedNodeYAML(actual *MappingNode) {
 			"key4": {
 				Items: []*MappingNode{
 					{
-						Literal: &ScalarValue{
+						Scalar: &ScalarValue{
 							StringValue: &expectedStrVal3,
 							SourceMeta: &source.Meta{
 								Position:    source.Position{Line: 6, Column: 14},
@@ -503,7 +503,7 @@ func (s *MappingNodeTestSuite) assertNestedNodeYAML(actual *MappingNode) {
 				SourceMeta: &source.Meta{Position: source.Position{Line: 6, Column: 12}},
 			},
 			"key5": {
-				Literal: &ScalarValue{
+				Scalar: &ScalarValue{
 					IntValue: &expectedIntVal,
 					SourceMeta: &source.Meta{
 						Position:    source.Position{Line: 8, Column: 17},
@@ -682,7 +682,7 @@ func (s *MappingNodeTestSuite) prepareExpectedFixtures() {
 	expectedIntVal := 45172131
 	expectedFields := map[string]*MappingNode{
 		"key1": {
-			Literal: &ScalarValue{StringValue: &expectedStrVal},
+			Scalar: &ScalarValue{StringValue: &expectedStrVal},
 		},
 		"key2": {
 			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
@@ -699,12 +699,12 @@ func (s *MappingNodeTestSuite) prepareExpectedFixtures() {
 			},
 		},
 		"key3": {
-			Literal: &ScalarValue{IntValue: &expectedIntVal},
+			Scalar: &ScalarValue{IntValue: &expectedIntVal},
 		},
 	}
 	expectedItems := []*MappingNode{
 		{
-			Literal: &ScalarValue{StringValue: &expectedStrVal},
+			Scalar: &ScalarValue{StringValue: &expectedStrVal},
 		},
 		{
 			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
@@ -721,21 +721,21 @@ func (s *MappingNodeTestSuite) prepareExpectedFixtures() {
 			},
 		},
 		{
-			Literal: &ScalarValue{IntValue: &expectedIntVal},
+			Scalar: &ScalarValue{IntValue: &expectedIntVal},
 		},
 	}
 
 	s.specSerialiseFixtures = map[string]*MappingNode{
 		"stringValYAML": {
-			Literal: &ScalarValue{StringValue: &expectedStrVal},
+			Scalar: &ScalarValue{StringValue: &expectedStrVal},
 		},
 		"stringValJSON": {
-			Literal: &ScalarValue{StringValue: &expectedStrVal},
+			Scalar: &ScalarValue{StringValue: &expectedStrVal},
 		},
 		"stringWithSubsYAML": expectedMappingNodeWithSubs,
 		"stringWithSubsJSON": expectedMappingNodeWithSubs,
 		"intVal": {
-			Literal: &ScalarValue{IntValue: &expectedIntVal},
+			Scalar: &ScalarValue{IntValue: &expectedIntVal},
 		},
 		"fieldsValYAML": {
 			Fields: expectedFields,

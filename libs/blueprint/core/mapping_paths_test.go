@@ -17,7 +17,7 @@ func (s *MappingPathsTestSuite) Test_get_value_by_path_for_complex_path() {
 	value, err := GetPathValue(path, node, 10)
 	s.Require().NoError(err)
 	s.Assert().Equal(&MappingNode{
-		Literal: &ScalarValue{
+		Scalar: &ScalarValue{
 			StringValue: &expectedEndpoint,
 		},
 	}, value)
@@ -86,7 +86,7 @@ func fixtureMappingNode1() (*MappingNode, string) {
 													{
 														Fields: map[string]*MappingNode{
 															"endpoint": {
-																Literal: &ScalarValue{
+																Scalar: &ScalarValue{
 																	StringValue: &endpoint,
 																},
 															},

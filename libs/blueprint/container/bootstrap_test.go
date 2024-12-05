@@ -2,9 +2,11 @@ package container
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
+	"github.com/two-hundred/celerity/libs/blueprint/linkhelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
@@ -21,6 +23,7 @@ func newTestAWSProvider() provider.Provider {
 		NamespaceValue: "aws",
 		Resources: map[string]provider.Resource{
 			"aws/dynamodb/table":  &internal.DynamoDBTableResource{},
+			"aws/dynamodb/stream": &internal.DynamoDBStreamResource{},
 			"aws/lambda/function": &internal.LambdaFunctionResource{},
 		},
 		Links: map[string]provider.Link{
@@ -42,6 +45,18 @@ func newTestAWSProvider() provider.Provider {
 		DataSources: map[string]provider.DataSource{
 			"aws/vpc": &internal.VPCDataSource{},
 		},
+	}
+}
+
+func newTestExampleProvider() provider.Provider {
+	return &internal.ProviderMock{
+		NamespaceValue: "example",
+		Resources: map[string]provider.Resource{
+			"example/complex": &internal.ExampleComplexResource{},
+		},
+		Links:               map[string]provider.Link{},
+		CustomVariableTypes: map[string]provider.CustomVariableType{},
+		DataSources:         map[string]provider.DataSource{},
 	}
 }
 
@@ -105,7 +120,126 @@ func (l *testLambdaDynamoDBTableLink) StageChanges(
 	ctx context.Context,
 	input *provider.LinkStageChangesInput,
 ) (*provider.LinkStageChangesOutput, error) {
-	return &provider.LinkStageChangesOutput{}, nil
+	changes := &provider.LinkChanges{}
+
+	functionResourceName := linkhelpers.GetResourceNameFromChanges(input.ResourceAChanges)
+	tableResourceName := linkhelpers.GetResourceNameFromChanges(input.ResourceBChanges)
+
+	currentLinkData := linkhelpers.GetLinkDataFromState(input.CurrentLinkState)
+
+	tableFieldPath := fmt.Sprintf(
+		"$.%s.environmentVariables.TABLE_NAME_%s",
+		functionResourceName,
+		tableResourceName,
+	)
+	err := linkhelpers.CollectChanges(
+		"$.spec.tableName",
+		tableFieldPath,
+		currentLinkData,
+		input.ResourceBChanges,
+		changes,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	regionFieldPath := fmt.Sprintf(
+		"$.%s.environmentVariables.TABLE_REGION_%s",
+		functionResourceName,
+		tableResourceName,
+	)
+	err = linkhelpers.CollectChanges(
+		"$.spec.region",
+		regionFieldPath,
+		currentLinkData,
+		input.ResourceBChanges,
+		changes,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	accessType := linkhelpers.GetAnnotation(
+		input.ResourceAChanges,
+		"aws.lambda.dynamodb.accessType",
+		core.MappingNodeFromString("read"),
+	)
+	actionArray := l.policyStatementActionFromAccessType(accessType)
+	actionFieldPath := fmt.Sprintf(
+		"$.%s[\"iam.policyStatements\"].0.action",
+		functionResourceName,
+	)
+	err = linkhelpers.CollectLinkDataChanges(
+		actionFieldPath,
+		currentLinkData,
+		changes,
+		actionArray,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	effect := core.MappingNodeFromString("Allow")
+	effectFieldPath := fmt.Sprintf(
+		"$.%s[\"iam.policyStatements\"].0.effect",
+		functionResourceName,
+	)
+	err = linkhelpers.CollectLinkDataChanges(
+		effectFieldPath,
+		currentLinkData,
+		changes,
+		effect,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceARNFieldPath := fmt.Sprintf(
+		"$.%s[\"iam.policyStatements\"].0.resource",
+		functionResourceName,
+	)
+	err = linkhelpers.CollectChanges(
+		"$.spec.id",
+		resourceARNFieldPath,
+		currentLinkData,
+		input.ResourceBChanges,
+		changes,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.LinkStageChangesOutput{
+		Changes: changes,
+	}, nil
+}
+
+func (l *testLambdaDynamoDBTableLink) policyStatementActionFromAccessType(accessType *core.MappingNode) *core.MappingNode {
+	switch *accessType.Scalar.StringValue {
+	case "write":
+		return &core.MappingNode{
+			Items: []*core.MappingNode{
+				core.MappingNodeFromString("dynamodb:PutItem"),
+				core.MappingNodeFromString("dynamodb:DeleteItem"),
+				core.MappingNodeFromString("dynamodb:UpdateItem"),
+			},
+		}
+	case "readwrite":
+		return &core.MappingNode{
+			Items: []*core.MappingNode{
+				core.MappingNodeFromString("dynamodb:GetItem"),
+				core.MappingNodeFromString("dynamodb:PutItem"),
+				core.MappingNodeFromString("dynamodb:DeleteItem"),
+				core.MappingNodeFromString("dynamodb:UpdateItem"),
+			},
+		}
+	default:
+		return &core.MappingNode{
+			Items: []*core.MappingNode{
+				core.MappingNodeFromString("dynamodb:GetItem"),
+			},
+		}
+	}
 }
 
 func (l *testLambdaDynamoDBTableLink) GetPriorityResourceType(

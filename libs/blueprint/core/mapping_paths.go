@@ -24,7 +24,7 @@ import (
 //
 // Example:
 //
-//	GetPathValue("$[\"cluster.v1\"].config.endpoints[0]", node, 3)
+//	core.GetPathValue("$[\"cluster.v1\"].config.endpoints[0]", node, 3)
 func GetPathValue(path string, node *MappingNode, maxTraverseDepth int) (*MappingNode, error) {
 	parsedPath, err := parsePath(path)
 	if err != nil {

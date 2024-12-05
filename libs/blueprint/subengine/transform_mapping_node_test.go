@@ -19,7 +19,7 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_int_value_to_mapping_n
 	intVal := 42
 	mappingNode := GoValueToMappingNode(intVal)
 	s.Assert().Equal(&core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			IntValue: &intVal,
 		},
 	}, mappingNode)
@@ -29,7 +29,7 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_float_value_to_mapping
 	floatVal := 4092.4029
 	mappingNode := GoValueToMappingNode(floatVal)
 	s.Assert().Equal(&core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			FloatValue: &floatVal,
 		},
 	}, mappingNode)
@@ -39,7 +39,7 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_string_value_to_mappin
 	stringVal := stringText
 	mappingNode := GoValueToMappingNode(stringVal)
 	s.Assert().Equal(&core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			StringValue: &stringVal,
 		},
 	}, mappingNode)
@@ -49,7 +49,7 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_bool_value_to_mapping_
 	boolVal := true
 	mappingNode := GoValueToMappingNode(boolVal)
 	s.Assert().Equal(&core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			BoolValue: &boolVal,
 		},
 	}, mappingNode)
@@ -65,22 +65,22 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_mixed_slice_value_to_m
 	s.Assert().Equal(&core.MappingNode{
 		Items: []*core.MappingNode{
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					IntValue: &intVal,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &stringVal,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					FloatValue: &floatVal,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					BoolValue: &boolVal,
 				},
 			},
@@ -97,17 +97,17 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_typed_slice_value_to_m
 	s.Assert().Equal(&core.MappingNode{
 		Items: []*core.MappingNode{
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &stringVal1,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &stringVal2,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &stringVal3,
 				},
 			},
@@ -130,22 +130,22 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_mixed_map_to_mapping_n
 	s.Assert().Equal(&core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"key1": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					IntValue: &key1Val,
 				},
 			},
 			"key2": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &key2Val,
 				},
 			},
 			"key3": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					FloatValue: &key3Val,
 				},
 			},
 			"key4": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					BoolValue: &key4Val,
 				},
 			},
@@ -168,22 +168,22 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_typed_map_to_mapping_n
 	s.Assert().Equal(&core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"key1": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					FloatValue: &key1Val,
 				},
 			},
 			"key2": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					FloatValue: &key2Val,
 				},
 			},
 			"key3": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					FloatValue: &key3Val,
 				},
 			},
 			"key4": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					FloatValue: &key4Val,
 				},
 			},
@@ -208,22 +208,22 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_struct_to_mapping_node
 	s.Assert().Equal(&core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"Key1": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					IntValue: &structVal.Key1,
 				},
 			},
 			"Key2": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &structVal.Key2,
 				},
 			},
 			"Key3": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					FloatValue: &structVal.Key3,
 				},
 			},
 			"Key4": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					BoolValue: &structVal.Key4,
 				},
 			},
@@ -234,7 +234,7 @@ func (s *TransformMappingNodeTestSuite) Test_transform_go_struct_to_mapping_node
 func (s *TransformMappingNodeTestSuite) Test_transform_int_mapping_node_to_go_value() {
 	inputInt := 409282
 	mappingNode := &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			IntValue: &inputInt,
 		},
 	}
@@ -245,7 +245,7 @@ func (s *TransformMappingNodeTestSuite) Test_transform_int_mapping_node_to_go_va
 func (s *TransformMappingNodeTestSuite) Test_transform_float_mapping_node_to_go_value() {
 	inputFloat := 3.14159
 	mappingNode := &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			FloatValue: &inputFloat,
 		},
 	}
@@ -256,7 +256,7 @@ func (s *TransformMappingNodeTestSuite) Test_transform_float_mapping_node_to_go_
 func (s *TransformMappingNodeTestSuite) Test_transform_string_mapping_node_to_go_value() {
 	inputString := stringText
 	mappingNode := &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			StringValue: &inputString,
 		},
 	}
@@ -267,7 +267,7 @@ func (s *TransformMappingNodeTestSuite) Test_transform_string_mapping_node_to_go
 func (s *TransformMappingNodeTestSuite) Test_transform_bool_mapping_node_to_go_value() {
 	inputBool := true
 	mappingNode := &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			BoolValue: &inputBool,
 		},
 	}
@@ -283,22 +283,22 @@ func (s *TransformMappingNodeTestSuite) Test_transform_slice_mapping_node_to_go_
 	mappingNode := &core.MappingNode{
 		Items: []*core.MappingNode{
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					IntValue: &intVal,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &stringVal,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					FloatValue: &floatVal,
 				},
 			},
 			{
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					BoolValue: &boolVal,
 				},
 			},
@@ -316,22 +316,22 @@ func (s *TransformMappingNodeTestSuite) Test_transform_map_mapping_node_to_go_va
 	mappingNode := &core.MappingNode{
 		Fields: map[string]*core.MappingNode{
 			"key1": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					IntValue: &key1Val,
 				},
 			},
 			"key2": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					StringValue: &key2Val,
 				},
 			},
 			"key3": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					FloatValue: &key3Val,
 				},
 			},
 			"key4": {
-				Literal: &core.ScalarValue{
+				Scalar: &core.ScalarValue{
 					BoolValue: &key4Val,
 				},
 			},

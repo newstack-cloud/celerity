@@ -66,8 +66,8 @@ func expandServerlessFunction(
 		Spec: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"handler": {
-					Literal: &core.ScalarValue{
-						StringValue: resource.Spec.Fields["handler"].Literal.StringValue,
+					Scalar: &core.ScalarValue{
+						StringValue: resource.Spec.Fields["handler"].Scalar.StringValue,
 					},
 				},
 			},

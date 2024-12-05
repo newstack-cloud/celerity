@@ -97,7 +97,7 @@ func (s *DataSourceRegistryTestSuite) Test_fetch(c *C) {
 	expectedName := "test"
 	c.Assert(output.Data, DeepEquals, map[string]*core.MappingNode{
 		"name": {
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &expectedName,
 			},
 		},

@@ -1293,8 +1293,8 @@ func mappingNodeToTreeNode(
 		},
 	}
 
-	if mappingNode.Literal != nil {
-		literalNode := scalarToTreeNode("scalar", mappingNode.Literal, mappingNodePath)
+	if mappingNode.Scalar != nil {
+		literalNode := scalarToTreeNode("scalar", mappingNode.Scalar, mappingNodePath)
 		if literalNode != nil {
 			mappingTreeNode.Children = []*TreeNode{literalNode}
 			mappingTreeNode.Range.End = literalNode.Range.End

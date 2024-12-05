@@ -88,7 +88,7 @@ func (r *DynamoDBTableResource) GetSpecDefinition(
 					"global": {
 						Type: provider.ResourceDefinitionsSchemaTypeBoolean,
 						Default: &core.MappingNode{
-							Literal: &core.ScalarValue{
+							Scalar: &core.ScalarValue{
 								BoolValue: &defaultGlobal,
 							},
 						},
@@ -409,7 +409,7 @@ func (r *ExampleComplexResource) GetSpecDefinition(
 									"primaryPort": {
 										Type: provider.ResourceDefinitionsSchemaTypeInteger,
 										Default: &core.MappingNode{
-											Literal: &core.ScalarValue{
+											Scalar: &core.ScalarValue{
 												IntValue: &defaultPrimaryPort,
 											},
 										},
@@ -463,14 +463,18 @@ func (r *ExampleComplexResource) GetSpecDefinition(
 						},
 						Default: &core.MappingNode{
 							Fields: map[string]*core.MappingNode{
-								"value1": {
-									Literal: &core.ScalarValue{
-										StringValue: &defaultOtherItemConfigValue1,
-									},
-								},
-								"value2": {
-									Literal: &core.ScalarValue{
-										StringValue: &defaultOtherItemConfigValue2,
+								"default": {
+									Fields: map[string]*core.MappingNode{
+										"value1": {
+											Scalar: &core.ScalarValue{
+												StringValue: &defaultOtherItemConfigValue1,
+											},
+										},
+										"value2": {
+											Scalar: &core.ScalarValue{
+												StringValue: &defaultOtherItemConfigValue2,
+											},
+										},
 									},
 								},
 							},
@@ -515,7 +519,7 @@ func (r *ExampleComplexResource) GetSpecDefinition(
 												},
 											},
 											Default: &core.MappingNode{
-												Literal: &core.ScalarValue{
+												Scalar: &core.ScalarValue{
 													StringValue: &defaultVendorId,
 												},
 											},

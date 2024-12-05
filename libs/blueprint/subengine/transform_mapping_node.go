@@ -63,8 +63,8 @@ func GoValueToMappingNode(value interface{}) *core.MappingNode {
 // to be used as arguments for function calls as functions expect
 // Go values as arguments.
 func MappingNodeToGoValue(node *core.MappingNode) interface{} {
-	if node.Literal != nil {
-		return toGoLiteral(node.Literal)
+	if node.Scalar != nil {
+		return toGoScalar(node.Scalar)
 	}
 
 	if node.Items != nil {
@@ -78,21 +78,21 @@ func MappingNodeToGoValue(node *core.MappingNode) interface{} {
 	return nil
 }
 
-func toGoLiteral(literal *core.ScalarValue) interface{} {
-	if literal.IntValue != nil {
-		return *literal.IntValue
+func toGoScalar(Scalar *core.ScalarValue) interface{} {
+	if Scalar.IntValue != nil {
+		return *Scalar.IntValue
 	}
 
-	if literal.FloatValue != nil {
-		return *literal.FloatValue
+	if Scalar.FloatValue != nil {
+		return *Scalar.FloatValue
 	}
 
-	if literal.StringValue != nil {
-		return *literal.StringValue
+	if Scalar.StringValue != nil {
+		return *Scalar.StringValue
 	}
 
-	if literal.BoolValue != nil {
-		return *literal.BoolValue
+	if Scalar.BoolValue != nil {
+		return *Scalar.BoolValue
 	}
 
 	return nil
@@ -118,7 +118,7 @@ func toGoMap(fields map[string]*core.MappingNode) interface{} {
 
 func toIntMappingNode(value int) *core.MappingNode {
 	return &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			IntValue: &value,
 		},
 	}
@@ -126,7 +126,7 @@ func toIntMappingNode(value int) *core.MappingNode {
 
 func toFloatMappingNode(value float64) *core.MappingNode {
 	return &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			FloatValue: &value,
 		},
 	}
@@ -134,7 +134,7 @@ func toFloatMappingNode(value float64) *core.MappingNode {
 
 func toStringMappingNode(value string) *core.MappingNode {
 	return &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			StringValue: &value,
 		},
 	}
@@ -142,7 +142,7 @@ func toStringMappingNode(value string) *core.MappingNode {
 
 func toBoolMappingNode(value bool) *core.MappingNode {
 	return &core.MappingNode{
-		Literal: &core.ScalarValue{
+		Scalar: &core.ScalarValue{
 			BoolValue: &value,
 		},
 	}

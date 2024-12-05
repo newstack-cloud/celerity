@@ -48,8 +48,15 @@ func PopulateResourceSpecDefaults(
 					/* depth */ 0,
 				)
 				newResourceMap.Values[resourceName] = &schema.Resource{
-					Type: resource.Type,
-					Spec: newSpec,
+					Type:         resource.Type,
+					Description:  resource.Description,
+					Metadata:     resource.Metadata,
+					DependsOn:    resource.DependsOn,
+					Condition:    resource.Condition,
+					Each:         resource.Each,
+					LinkSelector: resource.LinkSelector,
+					Spec:         newSpec,
+					SourceMeta:   resource.SourceMeta,
 				}
 			}
 		}
@@ -173,11 +180,14 @@ func populateDefaultsInObject(
 		Fields: map[string]*core.MappingNode{},
 	}
 	for key, attributeDefinition := range definition.Attributes {
-		newSpecValue.Fields[key] = populateDefaultValues(
+		newFieldValue := populateDefaultValues(
 			specValue.Fields[key],
 			attributeDefinition,
 			depth+1,
 		)
+		if newFieldValue != nil {
+			newSpecValue.Fields[key] = newFieldValue
+		}
 	}
 	return newSpecValue
 }
@@ -196,11 +206,14 @@ func populateDefaultsInMapValues(
 		// Providing defaults for a nil map value for an explicitly set key
 		// in most cases will be seen as unexpected behaviour.
 		if mapValue != nil {
-			newSpecMapValue.Fields[mapKey] = populateDefaultValues(
+			newMapValue := populateDefaultValues(
 				specValue.Fields[mapKey],
 				definition.MapValues,
 				depth+1,
 			)
+			if newMapValue != nil {
+				newSpecMapValue.Fields[mapKey] = newMapValue
+			}
 		}
 	}
 	return newSpecMapValue

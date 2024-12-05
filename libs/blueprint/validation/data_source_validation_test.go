@@ -1133,12 +1133,12 @@ func newTestValidDataSource() *schema.DataSource {
 					"visuals": {
 						Fields: map[string]*core.MappingNode{
 							"x": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									IntValue: &x,
 								},
 							},
 							"y": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									IntValue: &y,
 								},
 							},
@@ -1394,12 +1394,12 @@ func newBaseVPCTestDataSource(dataSourceType string) *schema.DataSource {
 					"visuals": {
 						Fields: map[string]*core.MappingNode{
 							"x": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									IntValue: &x,
 								},
 							},
 							"y": {
-								Literal: &core.ScalarValue{
+								Scalar: &core.ScalarValue{
 									IntValue: &y,
 								},
 							},
