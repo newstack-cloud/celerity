@@ -755,6 +755,6 @@ func (s *MappingNodeTestSuite) prepareExpectedFixtures() {
 	}
 }
 
-func TestLoaderTestSuite(t *testing.T) {
+func TestMappingNodeTestSuite(t *testing.T) {
 	suite.Run(t, new(MappingNodeTestSuite))
 }
