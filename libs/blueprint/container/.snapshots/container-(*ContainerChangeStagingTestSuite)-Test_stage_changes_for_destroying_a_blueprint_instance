@@ -1,0 +1,58 @@
+(*container.BlueprintChanges)({
+  NewResources: (map[string]provider.Changes) {
+  },
+  ResourceChanges: (map[string]provider.Changes) {
+  },
+  RemovedResources: ([]string) (len=4) {
+    (string) (len=13) "invoicesTable",
+    (string) (len=13) "ordersTable_0",
+    (string) (len=13) "ordersTable_1",
+    (string) (len=17) "saveOrderFunction"
+  },
+  RemovedLinks: ([]string) (len=2) {
+    (string) (len=11) "test-link-1",
+    (string) (len=11) "test-link-2"
+  },
+  NewChildren: (map[string]container.NewBlueprintDefinition) {
+  },
+  ChildChanges: (map[string]container.BlueprintChanges) (len=1) {
+    (string) (len=9) "coreInfra": (container.BlueprintChanges) {
+      NewResources: (map[string]provider.Changes) {
+      },
+      ResourceChanges: (map[string]provider.Changes) {
+      },
+      RemovedResources: ([]string) (len=1) {
+        (string) (len=15) "complexResource"
+      },
+      RemovedLinks: ([]string) {
+      },
+      NewChildren: (map[string]container.NewBlueprintDefinition) {
+      },
+      ChildChanges: (map[string]container.BlueprintChanges) {
+      },
+      RemovedChildren: ([]string) {
+      },
+      NewExports: (map[string]provider.FieldChange) <nil>,
+      ExportChanges: (map[string]provider.FieldChange) <nil>,
+      UnchangedExports: ([]string) {
+      },
+      RemovedExports: ([]string) (len=1) {
+        (string) (len=11) "environment"
+      },
+      ResolveOnDeploy: ([]string) {
+      }
+    }
+  },
+  RemovedChildren: ([]string) (len=1) {
+    (string) (len=9) "coreInfra"
+  },
+  NewExports: (map[string]provider.FieldChange) <nil>,
+  ExportChanges: (map[string]provider.FieldChange) <nil>,
+  UnchangedExports: ([]string) {
+  },
+  RemovedExports: ([]string) (len=1) {
+    (string) (len=11) "environment"
+  },
+  ResolveOnDeploy: ([]string) {
+  }
+})

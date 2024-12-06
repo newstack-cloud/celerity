@@ -281,6 +281,7 @@ type ResourceDeployOutput struct {
 type ResourceGetExternalStateInput struct {
 	InstanceID string
 	ResourceID string
+	Params     core.BlueprintParams
 }
 
 // ResourceGetExternalStateOutput provides the output data from
@@ -294,6 +295,8 @@ type ResourceGetExternalStateOutput struct {
 type ResourceDestroyInput struct {
 	InstanceID string
 	ResourceID string
+	Changes    *Changes
+	Params     core.BlueprintParams
 }
 
 // Changes provides a set of modified fields along with a version

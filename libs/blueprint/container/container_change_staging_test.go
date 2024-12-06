@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -26,6 +27,7 @@ const (
 	blueprint3InstanceID      = "blueprint-instance-3"
 	blueprint3ChildInstanceID = "blueprint-instance-3-child-core-infra"
 	blueprint4InstanceID      = "blueprint-instance-4"
+	blueprint5InstanceID      = "blueprint-instance-5"
 )
 
 const timeoutMessage = "timed out waiting for changes to be staged"
@@ -35,6 +37,7 @@ type ContainerChangeStagingTestSuite struct {
 	blueprint2Container BlueprintContainer
 	blueprint3Container BlueprintContainer
 	blueprint4Container BlueprintContainer
+	blueprint5Container BlueprintContainer
 	suite.Suite
 }
 
@@ -97,6 +100,14 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 	)
 	s.Require().NoError(err)
 	s.blueprint4Container = blueprint4Container
+
+	blueprint5Container, err := loader.Load(
+		context.Background(),
+		"__testdata/container/change-staging/blueprint5.yml",
+		baseBlueprintParams(),
+	)
+	s.Require().NoError(err)
+	s.blueprint5Container = blueprint5Container
 }
 
 func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_blueprint_instance() {
@@ -105,7 +116,9 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_bluepri
 
 	err := s.blueprint1Container.StageChanges(
 		context.Background(),
-		blueprint1InstanceID,
+		&StageChangesInput{
+			InstanceID: blueprint1InstanceID,
+		},
 		channels,
 		params,
 	)
@@ -146,7 +159,9 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint
 
 	err := s.blueprint2Container.StageChanges(
 		context.Background(),
-		blueprint2InstanceID,
+		&StageChangesInput{
+			InstanceID: blueprint2InstanceID,
+		},
 		channels,
 		params,
 	)
@@ -181,13 +196,49 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint
 	s.Require().NoError(err)
 }
 
+func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_destroying_a_blueprint_instance() {
+	channels := createChangeStagingChannels()
+	params := baseBlueprintParams()
+
+	err := s.blueprint5Container.StageChanges(
+		context.Background(),
+		&StageChangesInput{
+			InstanceID: blueprint5InstanceID,
+			Destroy:    true,
+		},
+		channels,
+		params,
+	)
+	s.Require().NoError(err)
+
+	fullChangeSet := (*BlueprintChanges)(nil)
+	for err == nil && fullChangeSet == nil {
+		select {
+		// For destroy operations, we only expect to see the complete message
+		// as resources can be efficiently collected synchronously in one go based on the
+		// current persisted state of the instance.
+		case changeSet := <-channels.CompleteChan:
+			fullChangeSet = &changeSet
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Require().NoError(err)
+
+	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	s.Require().NoError(err)
+}
+
 func (s *ContainerChangeStagingTestSuite) Test_stage_changes_fails_for_cyclic_dependency_between_blueprint_instances() {
 	channels := createChangeStagingChannels()
 	params := baseBlueprintParams()
 
 	err := s.blueprint3Container.StageChanges(
 		context.Background(),
-		blueprint3InstanceID,
+		&StageChangesInput{
+			InstanceID: blueprint3InstanceID,
+		},
 		channels,
 		params,
 	)
@@ -219,7 +270,9 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_fails_when_max_blue
 
 	err := s.blueprint4Container.StageChanges(
 		context.Background(),
-		blueprint4InstanceID,
+		&StageChangesInput{
+			InstanceID: blueprint4InstanceID,
+		},
 		channels,
 		params,
 	)
@@ -247,37 +300,62 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_fails_when_max_blue
 
 func (s *ContainerChangeStagingTestSuite) populateCurrentState(stateContainer state.Container) error {
 
-	blueprint1CurrentState, err := s.loadCurrentState(
-		"__testdata/container/change-staging/current-state/blueprint1.json",
+	err := s.populateBlueprintCurrentState(stateContainer, blueprint1InstanceID, 1)
+	if err != nil {
+		return err
+	}
+
+	err = s.populateBlueprint3CyclicCurrentState(stateContainer)
+	if err != nil {
+		return err
+	}
+
+	return s.populateBlueprintCurrentState(stateContainer, blueprint5InstanceID, 5)
+}
+
+func (s *ContainerChangeStagingTestSuite) populateBlueprintCurrentState(
+	stateContainer state.Container,
+	instanceID string,
+	blueprintNo int,
+) error {
+	blueprintCurrentState, err := s.loadCurrentState(
+		fmt.Sprintf(
+			"__testdata/container/change-staging/current-state/blueprint%d.json",
+			blueprintNo,
+		),
 	)
 	if err != nil {
 		return err
 	}
 	err = stateContainer.SaveInstance(
 		context.Background(),
-		*blueprint1CurrentState,
+		*blueprintCurrentState,
 	)
 	if err != nil {
 		return err
 	}
 
-	blueprint1ChildCurrentState, err := s.loadCurrentState(
-		"__testdata/container/change-staging/current-state/blueprint1-child-core-infra.json",
+	blueprintChildCurrentState, err := s.loadCurrentState(
+		fmt.Sprintf(
+			"__testdata/container/change-staging/current-state/blueprint%d-child-core-infra.json",
+			blueprintNo,
+		),
 	)
 	if err != nil {
 		return err
 	}
 
-	err = stateContainer.SaveChild(
+	return stateContainer.SaveChild(
 		context.Background(),
-		blueprint1InstanceID,
+		instanceID,
 		"coreInfra",
-		*blueprint1ChildCurrentState,
+		*blueprintChildCurrentState,
 	)
-	if err != nil {
-		return err
-	}
+}
 
+func (s *ContainerChangeStagingTestSuite) populateBlueprint3CyclicCurrentState(
+	stateContainer state.Container,
+) error {
 	blueprint3CurrentState, err := s.loadCurrentState(
 		"__testdata/container/change-staging/current-state/blueprint3.json",
 	)

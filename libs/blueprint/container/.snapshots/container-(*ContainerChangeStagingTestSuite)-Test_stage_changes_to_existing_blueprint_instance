@@ -3202,7 +3202,8 @@
       },
       ChildChanges: (map[string]container.BlueprintChanges) {
       },
-      RemovedChildren: ([]string) <nil>,
+      RemovedChildren: ([]string) {
+      },
       NewExports: (map[string]provider.FieldChange) (len=1) {
         (string) (len=6) "region": (provider.FieldChange) {
           FieldPath: (string) (len=14) "exports.region",
@@ -3266,7 +3267,8 @@
       }
     }
   },
-  RemovedChildren: ([]string) <nil>,
+  RemovedChildren: ([]string) {
+  },
   NewExports: (map[string]provider.FieldChange) {
   },
   ExportChanges: (map[string]provider.FieldChange) (len=1) {

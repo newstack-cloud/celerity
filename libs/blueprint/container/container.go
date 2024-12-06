@@ -30,7 +30,7 @@ type BlueprintContainer interface {
 	// when the container was loaded with an empty set.
 	StageChanges(
 		ctx context.Context,
-		instanceID string,
+		input *StageChangesInput,
 		channels *ChangeStagingChannels,
 		paramOverrides core.BlueprintParams,
 	) error
@@ -43,18 +43,21 @@ type BlueprintContainer interface {
 	// revision managed in version control or a data store for blueprint source documents.
 	Deploy(
 		ctx context.Context,
-		instanceID string,
-		changes *BlueprintChanges,
+		input *DeployInput,
 		channels *DeployChannels,
 		paramOverrides core.BlueprintParams,
 	) error
 	// Destroy deals with destroying all the resources, child blueprints and links
 	// for a blueprint instance.
+	// Like Deploy, Destroy requires changes to be staged and passed in to ensure that
+	// the user gets a chance to review everything that will be destroyed before
+	// starting the process; this should go hand and hand with a confirmation step and prompts
+	// to allow the user to dig deeper in the tools built on top of the framework.
 	// This will stream updates to the provided channels for each resource, child blueprint and link
 	// that has been removed.
 	Destroy(
 		ctx context.Context,
-		instanceID string,
+		input *DestroyInput,
 		channels *DestroyChannels,
 		paramOverrides core.BlueprintParams,
 	) error
@@ -79,6 +82,34 @@ type BlueprintContainer interface {
 	// should also be unpacked to get the precise location and information about the reason loading the
 	// blueprint failed.
 	Diagnostics() []*core.Diagnostic
+}
+
+// StageChangesInput contains the primary input needed to stage changes
+// for a blueprint instance.
+type StageChangesInput struct {
+	// InstanceID is the ID of the blueprint instance that the changes will be applied to.
+	InstanceID string
+	// Destroy is used to indicate that the changes being staged should be for a destroy operation.
+	// If this is set to true, the change set will be generated for removal all components
+	// in the current state of the blueprint instance.
+	Destroy bool
+}
+
+// DeployInput contains the primary input needed to deploy a blueprint instance.
+type DeployInput struct {
+	// InstanceID is the ID of the blueprint instance that the changes will be deployed for.
+	InstanceID string
+	// Changes contains the changes that will be made to the blueprint instance.
+	Changes *BlueprintChanges
+}
+
+// DestroyInput contains the primary input needed to destroy a blueprint instance.
+type DestroyInput struct {
+	// InstanceID is the ID of the blueprint instance that will be destroyed.
+	InstanceID string
+	// Changes contains a description of all the elements that need to be
+	// removed when destroying the blueprint instance.
+	Changes *BlueprintChanges
 }
 
 // BlueprintChanges provides a set of changes that will be made
@@ -203,8 +234,7 @@ func NewDefaultBlueprintContainer(
 
 func (c *defaultBlueprintContainer) Deploy(
 	ctx context.Context,
-	instanceID string,
-	changes *BlueprintChanges,
+	input *DeployInput,
 	channels *DeployChannels,
 	paramOverrides core.BlueprintParams,
 ) error {
@@ -216,7 +246,7 @@ func (c *defaultBlueprintContainer) Deploy(
 
 func (c *defaultBlueprintContainer) Destroy(
 	ctx context.Context,
-	instanceID string,
+	input *DestroyInput,
 	channels *DestroyChannels,
 	paramOverrides core.BlueprintParams,
 ) error {

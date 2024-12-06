@@ -2754,7 +2754,8 @@
   },
   ChildChanges: (map[string]container.BlueprintChanges) {
   },
-  RemovedChildren: ([]string) <nil>,
+  RemovedChildren: ([]string) {
+  },
   NewExports: (map[string]provider.FieldChange) (len=1) {
     (string) (len=11) "environment": (provider.FieldChange) {
       FieldPath: (string) (len=19) "exports.environment",

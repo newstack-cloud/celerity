@@ -19,17 +19,22 @@ import (
 
 func (c *defaultBlueprintContainer) StageChanges(
 	ctx context.Context,
-	instanceID string,
+	input *StageChangesInput,
 	channels *ChangeStagingChannels,
 	paramOverrides core.BlueprintParams,
 ) error {
 
-	instanceTreePath := getInstanceTreePath(paramOverrides, instanceID)
+	instanceTreePath := getInstanceTreePath(paramOverrides, input.InstanceID)
 	if exceedsMaxDepth(instanceTreePath, MaxBlueprintDepth) {
 		return errMaxBlueprintDepthExceeded(
 			instanceTreePath,
 			MaxBlueprintDepth,
 		)
+	}
+
+	if input.Destroy {
+		go c.stageInstanceRemoval(ctx, input.InstanceID, channels)
+		return nil
 	}
 
 	expandedBlueprintContainer, err := c.expandResourceTemplates(
@@ -67,7 +72,7 @@ func (c *defaultBlueprintContainer) StageChanges(
 
 	go c.stageChanges(
 		ctx,
-		instanceID,
+		input.InstanceID,
 		parallelGroups,
 		paramOverrides,
 		expandedResourceProviderMap,
@@ -733,7 +738,14 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 		CompleteChan:        make(chan BlueprintChanges),
 		ErrChan:             make(chan error),
 	}
-	err = childContainer.StageChanges(ctx, childState.InstanceID, childChannels, childParams)
+	err = childContainer.StageChanges(
+		ctx,
+		&StageChangesInput{
+			InstanceID: childState.InstanceID,
+		},
+		childChannels,
+		childParams,
+	)
 	if err != nil {
 		channels.ErrChan <- err
 		return
@@ -1282,4 +1294,24 @@ func (c *defaultBlueprintContainer) expandResourceTemplates(
 		flattenMapLists(expandResult.ResourceTemplateMap),
 	)
 	return loader.LoadFromSchema(ctx, afterConditionsApplied, params)
+}
+
+func (c *defaultBlueprintContainer) stageInstanceRemoval(
+	ctx context.Context,
+	instanceID string,
+	channels *ChangeStagingChannels,
+) {
+
+	instanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
+	if err != nil {
+		channels.ErrChan <- err
+		return
+	}
+
+	changes := getInstanceRemovalChanges(&instanceState)
+
+	// For staging changes for destroying an instance, we don't need to individually
+	// dispatch resource, link, and child changes. We can just send the complete
+	// set of changes to the complete channel.
+	channels.CompleteChan <- changes
 }
