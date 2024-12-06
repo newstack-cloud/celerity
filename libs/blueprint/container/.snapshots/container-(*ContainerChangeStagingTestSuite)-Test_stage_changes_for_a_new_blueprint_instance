@@ -504,8 +504,16 @@
       FieldChangesKnownOnDeploy: ([]string) {
       },
       ConditionKnownOnDeploy: (bool) false,
-      NewOutboundLinks: (map[string]provider.LinkChanges) (len=1) {
+      NewOutboundLinks: (map[string]provider.LinkChanges) (len=2) {
         (string) (len=13) "invoiceStream": (provider.LinkChanges) {
+          ModifiedFields: ([]*provider.FieldChange) <nil>,
+          NewFields: ([]*provider.FieldChange) <nil>,
+          RemovedFields: ([]string) <nil>,
+          UnchangedFields: ([]string) <nil>,
+          FieldChangesKnownOnDeploy: ([]string) <nil>,
+          IntermediaryResourceChanges: (map[string]*provider.LinkIntermediaryResourceChanges) <nil>
+        },
+        (string) (len=22) "processInvoiceFunction": (provider.LinkChanges) {
           ModifiedFields: ([]*provider.FieldChange) <nil>,
           NewFields: ([]*provider.FieldChange) <nil>,
           RemovedFields: ([]string) <nil>,

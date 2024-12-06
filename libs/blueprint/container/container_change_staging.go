@@ -293,9 +293,6 @@ func applyLinkChangesToState(changes LinkChangesMessage, state *stageChangesStat
 		return
 	}
 
-	pendingLink := state.pendingLinks[createLinkID(changes.ResourceAName, changes.ResourceBName)]
-	pendingLink.linkPending = false
-
 	resourceChanges := getResourceChanges(changes.ResourceAName, state.outputChanges)
 	if resourceChanges != nil {
 		if changes.New {
@@ -623,6 +620,12 @@ func (c *defaultBlueprintContainer) stageLinkChanges(
 	if err != nil {
 		return err
 	}
+
+	c.markLinkAsNoLongerPending(
+		readyToStage.resourceANode,
+		readyToStage.resourceBNode,
+		stagingState,
+	)
 
 	linkChangesChan <- LinkChangesMessage{
 		ResourceAName: resourceAInfo.ResourceName,
@@ -1098,6 +1101,18 @@ func (c *defaultBlueprintContainer) resolveExport(
 	return nil, nil
 }
 
+func (c *defaultBlueprintContainer) markLinkAsNoLongerPending(
+	resourceANode, resourceBNode *links.ChainLinkNode,
+	stagingState *stageChangesState,
+) {
+	stagingState.mu.Lock()
+	defer stagingState.mu.Unlock()
+
+	linkID := createLinkID(resourceANode.ResourceName, resourceBNode.ResourceName)
+	pendingLink := stagingState.pendingLinks[linkID]
+	pendingLink.linkPending = false
+}
+
 func (c *defaultBlueprintContainer) updateStagingState(
 	node *links.ChainLinkNode,
 	stagingState *stageChangesState,
@@ -1107,57 +1122,60 @@ func (c *defaultBlueprintContainer) updateStagingState(
 
 	hasLinks := len(node.LinksTo) > 0 || len(node.LinkedFrom) > 0
 	pendingLinkIDs := stagingState.resourceNameLinkMap[node.ResourceName]
-	if len(pendingLinkIDs) == 0 {
-		if hasLinks {
-			c.addPendingLinksToStagingState(node, stagingState)
-		}
-	} else {
-		return c.updatePendingLinksInStagingState(node, stagingState, pendingLinkIDs)
+	if hasLinks {
+		c.addPendingLinksToStagingState(node, pendingLinkIDs, stagingState)
 	}
-
-	return []*linkPendingCompletion{}
+	return c.updatePendingLinksInStagingState(node, stagingState, pendingLinkIDs)
 }
 
 // This must only be called when a lock has already been held on the staging state.
-func (c *defaultBlueprintContainer) addPendingLinksToStagingState(node *links.ChainLinkNode, stagingState *stageChangesState) {
+func (c *defaultBlueprintContainer) addPendingLinksToStagingState(
+	node *links.ChainLinkNode,
+	alreadyPendingLinks []string,
+	stagingState *stageChangesState,
+) {
 	for _, linksToNode := range node.LinksTo {
-		completionState := &linkPendingCompletion{
-			resourceANode:    node,
-			resourceBNode:    linksToNode,
-			resourceAPending: false,
-			resourceBPending: true,
-			linkPending:      true,
-		}
 		linkID := createLinkID(node.ResourceName, linksToNode.ResourceName)
-		stagingState.pendingLinks[linkID] = completionState
-		stagingState.resourceNameLinkMap[node.ResourceName] = append(
-			stagingState.resourceNameLinkMap[node.ResourceName],
-			linkID,
-		)
-		stagingState.resourceNameLinkMap[linksToNode.ResourceName] = append(
-			stagingState.resourceNameLinkMap[linksToNode.ResourceName],
-			linkID,
-		)
+		if !slices.Contains(alreadyPendingLinks, linkID) {
+			completionState := &linkPendingCompletion{
+				resourceANode:    node,
+				resourceBNode:    linksToNode,
+				resourceAPending: false,
+				resourceBPending: true,
+				linkPending:      true,
+			}
+			stagingState.pendingLinks[linkID] = completionState
+			stagingState.resourceNameLinkMap[node.ResourceName] = append(
+				stagingState.resourceNameLinkMap[node.ResourceName],
+				linkID,
+			)
+			stagingState.resourceNameLinkMap[linksToNode.ResourceName] = append(
+				stagingState.resourceNameLinkMap[linksToNode.ResourceName],
+				linkID,
+			)
+		}
 	}
 
 	for _, linkedFromNode := range node.LinkedFrom {
-		completionState := &linkPendingCompletion{
-			resourceANode:    linkedFromNode,
-			resourceBNode:    node,
-			resourceAPending: true,
-			resourceBPending: false,
-			linkPending:      true,
-		}
 		linkID := createLinkID(linkedFromNode.ResourceName, node.ResourceName)
-		stagingState.pendingLinks[linkID] = completionState
-		stagingState.resourceNameLinkMap[linkedFromNode.ResourceName] = append(
-			stagingState.resourceNameLinkMap[linkedFromNode.ResourceName],
-			linkID,
-		)
-		stagingState.resourceNameLinkMap[node.ResourceName] = append(
-			stagingState.resourceNameLinkMap[node.ResourceName],
-			linkID,
-		)
+		if !slices.Contains(alreadyPendingLinks, linkID) {
+			completionState := &linkPendingCompletion{
+				resourceANode:    linkedFromNode,
+				resourceBNode:    node,
+				resourceAPending: true,
+				resourceBPending: false,
+				linkPending:      true,
+			}
+			stagingState.pendingLinks[linkID] = completionState
+			stagingState.resourceNameLinkMap[linkedFromNode.ResourceName] = append(
+				stagingState.resourceNameLinkMap[linkedFromNode.ResourceName],
+				linkID,
+			)
+			stagingState.resourceNameLinkMap[node.ResourceName] = append(
+				stagingState.resourceNameLinkMap[node.ResourceName],
+				linkID,
+			)
+		}
 	}
 }
 

@@ -175,7 +175,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint
 		(fullChangeSet == nil ||
 			len(resourceChangeMessages) < 6 ||
 			len(childChangeMessages) < 1 ||
-			len(linkChangeMessages) < 4) {
+			len(linkChangeMessages) < 5) {
 		select {
 		case msg := <-channels.ResourceChangesChan:
 			resourceChangeMessages = append(resourceChangeMessages, msg)
