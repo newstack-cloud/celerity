@@ -3,7 +3,7 @@ package container
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -11,7 +11,7 @@ import (
 	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	bperrors "github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
@@ -131,7 +131,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_bluepri
 			fullChangeSet = &changeSet
 		case err = <-channels.ErrChan:
 		case <-time.After(60 * time.Second):
-			err = fmt.Errorf(timeoutMessage)
+			err = errors.New(timeoutMessage)
 		}
 	}
 	s.Require().NoError(err)
@@ -172,7 +172,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint
 			fullChangeSet = &changeSet
 		case err = <-channels.ErrChan:
 		case <-time.After(60 * time.Second):
-			err = fmt.Errorf(timeoutMessage)
+			err = errors.New(timeoutMessage)
 		}
 	}
 	s.Require().NoError(err)
@@ -201,11 +201,11 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_fails_for_cyclic_de
 		case <-channels.CompleteChan:
 		case err = <-channels.ErrChan:
 		case <-time.After(60 * time.Second):
-			err = fmt.Errorf(timeoutMessage)
+			err = errors.New(timeoutMessage)
 		}
 	}
 	s.Assert().Error(err)
-	runErr, isRunErr := err.(*errors.RunError)
+	runErr, isRunErr := err.(*bperrors.RunError)
 	s.Assert().True(isRunErr)
 	s.Assert().Equal(
 		ErrorReasonCodeBlueprintCycleDetected,
@@ -233,11 +233,11 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_fails_when_max_blue
 		case <-channels.CompleteChan:
 		case err = <-channels.ErrChan:
 		case <-time.After(60 * time.Second):
-			err = fmt.Errorf(timeoutMessage)
+			err = errors.New(timeoutMessage)
 		}
 	}
 	s.Assert().Error(err)
-	runErr, isRunErr := err.(*errors.RunError)
+	runErr, isRunErr := err.(*bperrors.RunError)
 	s.Assert().True(isRunErr)
 	s.Assert().Equal(
 		ErrorReasonCodeMaxBlueprintDepthExceeded,
