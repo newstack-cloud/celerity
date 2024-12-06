@@ -1,12 +1,10 @@
 package container
 
 import (
-	"context"
 	"slices"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
@@ -19,10 +17,8 @@ import (
 // concurrently, maintaining the order of the provided list for nodes that are
 // connected.
 func GroupOrderedNodes(
-	ctx context.Context,
 	orderedNodes []*DeploymentNode,
 	refChainCollector validation.RefChainCollector,
-	params bpcore.BlueprintParams,
 ) ([][]*DeploymentNode, error) {
 	if len(orderedNodes) == 0 {
 		return [][]*DeploymentNode{}, nil
@@ -40,23 +36,16 @@ func GroupOrderedNodes(
 			currentGroupIndex,
 		)
 
-		var err error
-		hasHardLinkInCurrentGroup := false
+		hasLinkInCurrentGroup := false
 		if node.Type() == "resource" {
-			hasHardLinkInCurrentGroup, err = hasHardLinkInGroup(
-				ctx,
+			hasLinkInCurrentGroup = hasLinkInGroup(
 				node.ChainLinkNode,
 				nodeGroupMap,
 				currentGroupIndex,
-				params,
 			)
 		}
 
-		if err != nil {
-			return nil, err
-		}
-
-		if hasReferenceInCurrentGroup || hasHardLinkInCurrentGroup {
+		if hasReferenceInCurrentGroup || hasLinkInCurrentGroup {
 			currentGroupIndex += 1
 			newGroup := []*DeploymentNode{node}
 			groups = append(groups, newGroup)
@@ -98,40 +87,29 @@ func hasReferenceInGroup(
 	return hasReferenceInGroup
 }
 
-func hasHardLinkInGroup(
-	ctx context.Context,
+func hasLinkInGroup(
 	node *links.ChainLinkNode,
 	nodeGroupMap map[string]int,
 	currentGroupIndex int,
-	params bpcore.BlueprintParams,
-) (bool, error) {
-	hasHardLinkInGroup := false
+) bool {
+	linkInGroup := false
 	relatedNodes := append(node.LinkedFrom, node.LinksTo...)
 	i := 0
-	for !hasHardLinkInGroup && i < len(relatedNodes) {
+	for !linkInGroup && i < len(relatedNodes) {
 		relatedNode := relatedNodes[i]
 		relatedElementName := bpcore.ResourceElementID(relatedNode.ResourceName)
 		if groupIndex, ok := nodeGroupMap[relatedElementName]; ok {
-			linkImplementation, err := getLinkImplementation(node, relatedNode)
-			if err != nil {
-				return false, err
-			}
-
-			// Only check if the link is hard as the nodes passed in to GroupOrderedLinkNodes
-			// are expected to be ordered taking into account the priority resource type
-			// of the links.
-			linkKindOutput, err := linkImplementation.GetKind(ctx, &provider.LinkGetKindInput{
-				Params: params,
-			})
-			if err != nil {
-				return false, err
-			}
-
-			hasHardLinkInGroup = groupIndex == currentGroupIndex &&
-				linkKindOutput.Kind == provider.LinkKindHard
+			// Originally, the idea was to only check for hard links in the grouping logic,
+			// however, this can create issues where a link is being resolved in staging state
+			// prior to the resource changes being applied to the state as the link resolving functionality
+			// obtains a lock on the staging state before the resource changes are applied.
+			// In change staging, this creates an incorrect set of link changes being reported.
+			// To make the process more predictable and less error prone, we have to make sure that
+			// two resources that are linked are never in the same group regardless of the link type.
+			linkInGroup = groupIndex == currentGroupIndex
 		}
 		i += 1
 	}
 
-	return hasHardLinkInGroup, nil
+	return linkInGroup
 }

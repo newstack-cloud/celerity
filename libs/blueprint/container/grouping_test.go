@@ -50,10 +50,8 @@ func (s *GroupOrderedNodesTestSuite) SetupSuite() {
 
 func (s *GroupOrderedNodesTestSuite) Test_group_links_for_deployment_with_circular_links() {
 	groups, err := GroupOrderedNodes(
-		context.TODO(),
 		s.groupFixture1.orderedNodes,
 		s.groupFixture1.refChainCollector,
-		nil,
 	)
 	s.Assert().NoError(err)
 	s.Assert().Len(groups, len(s.groupFixture1.expectedPresent))
@@ -63,10 +61,8 @@ func (s *GroupOrderedNodesTestSuite) Test_group_links_for_deployment_with_circul
 
 func (s *GroupOrderedNodesTestSuite) Test_group_links_for_deployment_without_circular_links() {
 	groups, err := GroupOrderedNodes(
-		context.TODO(),
 		s.groupFixture2.orderedNodes,
 		s.groupFixture2.refChainCollector,
-		nil,
 	)
 	s.Assert().NoError(err)
 	s.Assert().Len(groups, len(s.groupFixture2.expectedPresent))
@@ -76,10 +72,8 @@ func (s *GroupOrderedNodesTestSuite) Test_group_links_for_deployment_without_cir
 
 func (s *GroupOrderedNodesTestSuite) Test_group_links_for_deployment_based_on_references_and_dependencies() {
 	groups, err := GroupOrderedNodes(
-		context.TODO(),
 		s.groupFixture3.orderedNodes,
 		s.groupFixture3.refChainCollector,
-		nil,
 	)
 	s.Assert().NoError(err)
 	s.Assert().Len(groups, len(s.groupFixture3.expectedPresent))
@@ -128,8 +122,8 @@ func groupFixture1() (groupDeploymentNodeFixture, error) {
 				"resources.getOrdersFunction",
 				"resources.createOrderFunction",
 				"resources.updateOrderFunction",
-				// The link between statsAccumulatorFunction and ordersStream
-				// is a soft link in the test provider so they can be resolved concurrently.
+			},
+			{
 				"resources.statsAccumulatorFunction",
 			},
 		},
@@ -493,11 +487,11 @@ func groupFixture3() (groupDeploymentNodeFixture, error) {
 			},
 			{
 				"resources.ordersStream",
-				// The link between statsAccumulatorFunction and ordersStream
-				// is a soft link in the test provider so they can be resolved concurrently.
-				"resources.statsAccumulatorFunction",
 				"resources.getOrdersFunction",
 				"resources.updateOrderFunction",
+			},
+			{
+				"resources.statsAccumulatorFunction",
 			},
 		},
 	}, nil

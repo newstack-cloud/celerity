@@ -24,6 +24,11 @@ func normaliseBlueprintChanges(changes *BlueprintChanges) *BlueprintChanges {
 		RemovedLinks:     internal.OrderStringSlice(changes.RemovedLinks),
 		NewChildren:      normaliseNewChildMap(changes.NewChildren),
 		ChildChanges:     normaliseChildChangesMap(changes.ChildChanges),
+		NewExports:       changes.NewExports,
+		ExportChanges:    changes.ExportChanges,
+		RemovedExports:   internal.OrderStringSlice(changes.RemovedExports),
+		UnchangedExports: internal.OrderStringSlice(changes.UnchangedExports),
+		ResolveOnDeploy:  internal.OrderStringSlice(changes.ResolveOnDeploy),
 	}
 
 	return normalisedChanges

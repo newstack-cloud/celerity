@@ -45,6 +45,7 @@ func (s *SubstitutionExportResolverTestSuite) Test_resolves_substitutions_in_exp
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		spec,
 		params,
 	)

@@ -614,6 +614,9 @@
   UnchangedFields: ([]string) (len=1) {
     (string) (len=17) "spec.vendorConfig"
   },
+  ComputedFields: ([]string) (len=1) {
+    (string) (len=7) "spec.id"
+  },
   FieldChangesKnownOnDeploy: ([]string) (len=3) {
     (string) (len=42) "metadata.annotations[\"test.annotation.v1\"]",
     (string) (len=19) "metadata.custom.url",

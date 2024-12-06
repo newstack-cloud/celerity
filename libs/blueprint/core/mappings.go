@@ -273,3 +273,55 @@ func IsArrayMappingNode(node *MappingNode) bool {
 func IsScalarMappingNode(node *MappingNode) bool {
 	return node != nil && node.Scalar != nil
 }
+
+// ScalarMappingNodeEqual returns true if the scalar values of two mapping nodes are equal.
+func ScalarMappingNodeEqual(nodeA, nodeB *MappingNode) bool {
+	if (nodeA == nil || nodeA.Scalar == nil) &&
+		(nodeB == nil || nodeB.Scalar == nil) {
+		return true
+	}
+
+	if nodeA == nil || nodeA.Scalar == nil ||
+		nodeB == nil || nodeB.Scalar == nil {
+		return false
+	}
+
+	return nodeA.Scalar.Equal(nodeB.Scalar)
+}
+
+// MappingNodeEqual returns true if the mapping nodes are equal.
+// This will carry out a deep comparison for mapping nodes that represent
+// maps/objects and arrays.
+func MappingNodeEqual(nodeA, nodeB *MappingNode) bool {
+	if IsScalarMappingNode(nodeA) && IsScalarMappingNode(nodeB) {
+		return ScalarMappingNodeEqual(nodeA, nodeB)
+	}
+
+	if IsObjectMappingNode(nodeA) && IsObjectMappingNode(nodeB) {
+		if len(nodeA.Fields) != len(nodeB.Fields) {
+			return false
+		}
+
+		for k, v := range nodeA.Fields {
+			if !MappingNodeEqual(v, nodeB.Fields[k]) {
+				return false
+			}
+		}
+		return true
+	}
+
+	if IsArrayMappingNode(nodeA) && IsArrayMappingNode(nodeB) {
+		if len(nodeA.Items) != len(nodeB.Items) {
+			return false
+		}
+
+		for i := range nodeA.Items {
+			if !MappingNodeEqual(nodeA.Items[i], nodeB.Items[i]) {
+				return false
+			}
+		}
+		return true
+	}
+
+	return false
+}

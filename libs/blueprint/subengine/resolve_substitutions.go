@@ -75,6 +75,17 @@ type SubstitutionResolver interface {
 		export *schema.Export,
 		resolveTargetInfo *ResolveExportTargetInfo,
 	) (*ResolveInExportResult, error)
+	// ResolveSubstitution resolves a substitution value from a string or a substitution
+	// in a provided context.
+	// This is to be used to resolve values outside the regular substitution resolution context
+	// (e.g. resolving a reference to a resource property in an export).
+	ResolveSubstitution(
+		ctx context.Context,
+		value *substitutions.StringOrSubstitution,
+		inElementName string,
+		inElementProperty string,
+		resolveTargetInfo *ResolveTargetInfo,
+	) (*ResolveResult, error)
 }
 
 // ResolveTargetInfo contains information about the target of a substitution
@@ -161,6 +172,28 @@ type ResolveInExportResult struct {
 	ResolveOnDeploy []string
 }
 
+// ResolveTargetInfo contains information about the target of a substitution
+// that is being resolved in a context outside of regular substitution resolution.
+type ResolveTargetInfo struct {
+	ResolveFor        ResolveForStage
+	PartiallyResolved interface{}
+}
+
+// ResolveResult contains a resolved mapping node and a list of full property paths
+// that must be resolved during deployment.
+type ResolveResult struct {
+	Resolved        *bpcore.MappingNode
+	ResolveOnDeploy []string
+}
+
+// ExportFieldInfo contains information about an exported field from a child blueprint
+// that is used in resolving references to child blueprint exports.
+type ChildExportFieldInfo struct {
+	Value           *bpcore.MappingNode
+	Removed         bool
+	ResolveOnDeploy bool
+}
+
 // ResolveForStage is an enum that indicates the stage at which a substitution
 // is being resolved for.
 type ResolveForStage string
@@ -184,6 +217,7 @@ type defaultSubstitutionResolver struct {
 	dataSourceDataCache            *bpcore.Cache[map[string]*bpcore.MappingNode]
 	resourceCache                  *bpcore.Cache[*provider.ResolvedResource]
 	resourceTemplateInputElemCache *bpcore.Cache[[]*bpcore.MappingNode]
+	childExportFieldCache          *bpcore.Cache[*ChildExportFieldInfo]
 	resourceStateCache             *bpcore.Cache[*state.ResourceState]
 }
 
@@ -206,6 +240,9 @@ func NewDefaultSubstitutionResolver(
 	// The cache is used to retrieve "elem" and "i" references for resources
 	// expanded from a resource template.
 	resourceTemplateInputElemCache *bpcore.Cache[[]*bpcore.MappingNode],
+	// A cache holding child export fields that is used to resolve references
+	// to child blueprint exports.
+	childExportFieldCache *bpcore.Cache[*ChildExportFieldInfo],
 	spec speccore.BlueprintSpec,
 	params bpcore.BlueprintParams,
 ) SubstitutionResolver {
@@ -221,6 +258,7 @@ func NewDefaultSubstitutionResolver(
 		dataSourceDataCache:            bpcore.NewCache[map[string]*bpcore.MappingNode](),
 		resourceCache:                  resourceCache,
 		resourceTemplateInputElemCache: resourceTemplateInputElemCache,
+		childExportFieldCache:          childExportFieldCache,
 		resourceStateCache:             bpcore.NewCache[*state.ResourceState](),
 	}
 }
@@ -1412,6 +1450,47 @@ func (r *defaultSubstitutionResolver) resolveSubstitutions(
 	}, nil
 }
 
+func (r *defaultSubstitutionResolver) ResolveSubstitution(
+	ctx context.Context,
+	value *substitutions.StringOrSubstitution,
+	inElementName string,
+	inElementProperty string,
+	resolveTargetInfo *ResolveTargetInfo,
+) (*ResolveResult, error) {
+
+	resolveOnDeploy := []string{}
+
+	functionCallDeps := createFunctionCallDependencies(
+		r.funcRegistry,
+		r.params,
+		value.SourceMeta,
+	)
+	mappingNode, err := r.resolveSubstitution(
+		ctx,
+		value,
+		functionCallDeps,
+		&resolveContext{
+			rootElementName:        inElementName,
+			rootElementProperty:    inElementProperty,
+			currentElementName:     inElementName,
+			currentElementProperty: inElementProperty,
+			resolveFor:             resolveTargetInfo.ResolveFor,
+			partiallyResolved:      resolveTargetInfo.PartiallyResolved,
+		},
+	)
+	if err != nil {
+		finalErr := handleResolveError(err, &resolveOnDeploy)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+	}
+
+	return &ResolveResult{
+		Resolved:        mappingNode,
+		ResolveOnDeploy: resolveOnDeploy,
+	}, nil
+}
+
 func (r *defaultSubstitutionResolver) resolveSubstitution(
 	ctx context.Context,
 	value *substitutions.StringOrSubstitution,
@@ -2017,15 +2096,32 @@ func (r *defaultSubstitutionResolver) resolveChildReference(
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
 
+	if len(childReference.Path) == 0 {
+		return nil, errEmptyChildPath(resolveCtx.currentElementName, childReference.ChildName)
+	}
+
+	cacheKey := substitutions.RenderFieldPath(
+		childReference.ChildName,
+		childReference.Path[0].FieldName,
+	)
+	// The child export cache is derived from change staging a child blueprint so can reliably
+	// be used to resolve child exports during change staging.
+	childExportInfo, hasChildExportInfo := r.childExportFieldCache.Get(cacheKey)
+	if hasChildExportInfo &&
+		!childExportInfo.Removed &&
+		!childExportInfo.ResolveOnDeploy {
+		return getChildExportProperty(childExportInfo.Value, childReference, resolveCtx)
+	}
+
 	if resolveCtx.resolveFor == ResolveForChangeStaging {
+		// If we can't get the child export from the cache and we are resolving for change
+		// staging, then trying to source the child export from the state would lead to
+		// incorrect reporting of the changes that will occur during deployment as the
+		// state may not be up-to-date.
 		return nil, errMustResolveOnDeploy(
 			resolveCtx.currentElementName,
 			resolveCtx.currentElementProperty,
 		)
-	}
-
-	if len(childReference.Path) == 0 {
-		return nil, errEmptyChildPath(resolveCtx.currentElementName, childReference.ChildName)
 	}
 
 	instanceID, err := bpcore.BlueprintInstanceIDFromContext(ctx)

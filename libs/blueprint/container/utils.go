@@ -289,3 +289,11 @@ func createResourceProviderMap(
 	}
 	return resourceProviderMap
 }
+
+func copyPointerMap[Item any](input map[string]*Item) map[string]Item {
+	output := map[string]Item{}
+	for key, value := range input {
+		output[key] = *value
+	}
+	return output
+}

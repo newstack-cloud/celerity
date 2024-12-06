@@ -46,6 +46,7 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		spec,
 		params,
 	)
@@ -93,6 +94,7 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		spec,
 		params,
 	)

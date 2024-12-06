@@ -89,6 +89,14 @@ func (s *defaultResourceChangeStager) StageChanges(
 			depth:                   0,
 		},
 	)
+	collectComputedFields(
+		changes,
+		specDefinitionOutput.SpecDefinition.Schema,
+		&fieldChangeContext{
+			currentPath: "spec",
+			depth:       0,
+		},
+	)
 
 	return changes, nil
 }
@@ -227,7 +235,7 @@ func collectScalarFieldChanges(
 	}
 
 	if !bpcore.IsNilMappingNode(scalarInCurrentState) &&
-		!scalarEqual(scalarInNewSpec, scalarInCurrentState) {
+		!bpcore.ScalarMappingNodeEqual(scalarInNewSpec, scalarInCurrentState) {
 		changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
 			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    scalarInCurrentState,
@@ -238,7 +246,7 @@ func collectScalarFieldChanges(
 	}
 
 	if bpcore.IsNilMappingNode(scalarInCurrentState) &&
-		!scalarEqual(scalarInNewSpec, scalarInCurrentState) {
+		!bpcore.ScalarMappingNodeEqual(scalarInNewSpec, scalarInCurrentState) {
 		changes.NewFields = append(changes.NewFields, provider.FieldChange{
 			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    nil,
@@ -248,7 +256,7 @@ func collectScalarFieldChanges(
 		return
 	}
 
-	if scalarEqual(scalarInNewSpec, scalarInCurrentState) && !knownOnDeploy {
+	if bpcore.ScalarMappingNodeEqual(scalarInNewSpec, scalarInCurrentState) && !knownOnDeploy {
 		changes.UnchangedFields = append(changes.UnchangedFields, fieldChangeCtx.currentPath)
 	}
 }
@@ -280,7 +288,7 @@ func collectArrayFieldChanges(
 	}
 
 	if len(newSpecItems) < len(currentStateItems) {
-		for i := len(newSpecItems); i < len(currentStateItems); i++ {
+		for i := len(newSpecItems); i < len(currentStateItems); i += 1 {
 			collectSpecFieldChanges(
 				changes,
 				schema.Items,
@@ -313,7 +321,7 @@ func collectObjectFieldChanges(
 			&fieldChangeContext{
 				fieldsToResolveOnDeploy: fieldChangeCtx.fieldsToResolveOnDeploy,
 				parentMustRecreate:      fieldChangeMustRecreateResource(fieldChangeCtx.parentMustRecreate, schema),
-				currentPath:             renderFieldPath(fieldChangeCtx.currentPath, fieldName),
+				currentPath:             substitutions.RenderFieldPath(fieldChangeCtx.currentPath, fieldName),
 				depth:                   fieldChangeCtx.depth + 1,
 			},
 		)
@@ -338,7 +346,7 @@ func collectMapFieldChanges(
 			&fieldChangeContext{
 				fieldsToResolveOnDeploy: fieldChangeCtx.fieldsToResolveOnDeploy,
 				parentMustRecreate:      fieldChangeMustRecreateResource(fieldChangeCtx.parentMustRecreate, schema),
-				currentPath:             renderFieldPath(fieldChangeCtx.currentPath, fieldName),
+				currentPath:             substitutions.RenderFieldPath(fieldChangeCtx.currentPath, fieldName),
 				depth:                   fieldChangeCtx.depth + 1,
 			},
 		)
@@ -356,7 +364,7 @@ func collectMapFieldChanges(
 				&fieldChangeContext{
 					fieldsToResolveOnDeploy: fieldChangeCtx.fieldsToResolveOnDeploy,
 					parentMustRecreate:      fieldChangeMustRecreateResource(fieldChangeCtx.parentMustRecreate, schema),
-					currentPath:             renderFieldPath(fieldChangeCtx.currentPath, fieldName),
+					currentPath:             substitutions.RenderFieldPath(fieldChangeCtx.currentPath, fieldName),
 					depth:                   fieldChangeCtx.depth + 1,
 				},
 			)
@@ -668,7 +676,7 @@ func collectMetadataMapChanges(
 			currentValue,
 			&fieldChangeContext{
 				fieldsToResolveOnDeploy: fieldChangeCtx.fieldsToResolveOnDeploy,
-				currentPath:             renderFieldPath(fieldChangeCtx.currentPath, fieldName),
+				currentPath:             substitutions.RenderFieldPath(fieldChangeCtx.currentPath, fieldName),
 				depth:                   fieldChangeCtx.depth + 1,
 			},
 		)
@@ -683,7 +691,7 @@ func collectMetadataMapChanges(
 				currentFields[fieldName],
 				&fieldChangeContext{
 					fieldsToResolveOnDeploy: fieldChangeCtx.fieldsToResolveOnDeploy,
-					currentPath:             renderFieldPath(fieldChangeCtx.currentPath, fieldName),
+					currentPath:             substitutions.RenderFieldPath(fieldChangeCtx.currentPath, fieldName),
 					depth:                   fieldChangeCtx.depth + 1,
 				},
 			)
@@ -748,7 +756,7 @@ func collectMetadataLiteralChanges(
 	}
 
 	if !bpcore.IsNilMappingNode(currentLiteral) &&
-		!scalarEqual(newLiteral, currentLiteral) {
+		!bpcore.ScalarMappingNodeEqual(newLiteral, currentLiteral) {
 		changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
 			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    currentLiteral,
@@ -758,13 +766,70 @@ func collectMetadataLiteralChanges(
 	}
 
 	if bpcore.IsNilMappingNode(currentLiteral) &&
-		!scalarEqual(newLiteral, currentLiteral) {
+		!bpcore.ScalarMappingNodeEqual(newLiteral, currentLiteral) {
 		changes.NewFields = append(changes.NewFields, provider.FieldChange{
 			FieldPath:    fieldChangeCtx.currentPath,
 			PrevValue:    nil,
 			NewValue:     newLiteral,
 			MustRecreate: false,
 		})
+	}
+}
+
+func collectComputedFields(
+	changes *provider.Changes,
+	schema *provider.ResourceDefinitionsSchema,
+	fieldChangeCtx *fieldChangeContext,
+) {
+	if schema.Computed {
+		changes.ComputedFields = append(changes.ComputedFields, fieldChangeCtx.currentPath)
+		return
+	}
+
+	if schema.Type == provider.ResourceDefinitionsSchemaTypeObject {
+		for fieldName, fieldSchema := range schema.Attributes {
+			collectComputedFields(
+				changes,
+				fieldSchema,
+				&fieldChangeContext{
+					currentPath: substitutions.RenderFieldPath(fieldChangeCtx.currentPath, fieldName),
+					depth:       fieldChangeCtx.depth + 1,
+				},
+			)
+		}
+	}
+
+	if schema.Type == provider.ResourceDefinitionsSchemaTypeMap {
+		collectComputedFields(
+			changes,
+			schema.MapValues,
+			&fieldChangeContext{
+				currentPath: substitutions.RenderFieldPath(fieldChangeCtx.currentPath, "<key>"),
+				depth:       fieldChangeCtx.depth + 1,
+			},
+		)
+	}
+
+	if schema.Type == provider.ResourceDefinitionsSchemaTypeArray {
+		collectComputedFields(
+			changes,
+			schema.Items,
+			&fieldChangeContext{
+				// 0 is a placeholder for any array index.
+				currentPath: renderFieldArrayPath(fieldChangeCtx.currentPath, 0),
+				depth:       fieldChangeCtx.depth + 1,
+			},
+		)
+	}
+
+	if schema.Type == provider.ResourceDefinitionsSchemaTypeUnion {
+		for _, unionSchema := range schema.OneOf {
+			collectComputedFields(
+				changes,
+				unionSchema,
+				fieldChangeCtx,
+			)
+		}
 	}
 }
 
@@ -813,20 +878,6 @@ func isArrayOrNil(node *bpcore.MappingNode) bool {
 
 func isScalarOrNil(node *bpcore.MappingNode) bool {
 	return bpcore.IsNilMappingNode(node) || node.Scalar != nil
-}
-
-func scalarEqual(nodeA, nodeB *bpcore.MappingNode) bool {
-	if (nodeA == nil || nodeA.Scalar == nil) &&
-		(nodeB == nil || nodeB.Scalar == nil) {
-		return true
-	}
-
-	if nodeA == nil || nodeA.Scalar == nil ||
-		nodeB == nil || nodeB.Scalar == nil {
-		return false
-	}
-
-	return nodeA.Scalar.Equal(nodeB.Scalar)
 }
 
 type mappingNodeTypeMatchInfo struct {
@@ -1128,17 +1179,6 @@ func getScalarSchema(
 	}
 
 	return scalarSchema
-}
-
-func renderFieldPath(currentPath, fieldName string) string {
-	if currentPath == "" {
-		return fieldName
-	}
-	if substitutions.NamePattern.MatchString(fieldName) {
-		return fmt.Sprintf("%s.%s", currentPath, fieldName)
-	}
-
-	return fmt.Sprintf("%s[\"%s\"]", currentPath, fieldName)
 }
 
 func renderFieldArrayPath(currentPath string, index int) string {

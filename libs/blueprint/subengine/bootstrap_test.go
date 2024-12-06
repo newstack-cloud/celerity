@@ -40,6 +40,7 @@ type SubResolverTestContainer struct {
 	stateContainer                 state.Container
 	resourceCache                  *core.Cache[*provider.ResolvedResource]
 	resourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
+	childExportFieldCache          *core.Cache[*ChildExportFieldInfo]
 }
 
 func (s *SubResolverTestContainer) populateSpecFixtureSchemas(
@@ -84,6 +85,7 @@ func (s *SubResolverTestContainer) populateDependencies() {
 	)
 	s.resourceCache = core.NewCache[*provider.ResolvedResource]()
 	s.resourceTemplateInputElemCache = core.NewCache[[]*core.MappingNode]()
+	s.childExportFieldCache = core.NewCache[*ChildExportFieldInfo]()
 }
 
 func convertToTemplateResourceInstance(

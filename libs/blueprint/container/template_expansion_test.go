@@ -30,6 +30,7 @@ type ExpandResourceTemplatesTestSuite struct {
 	providers                      map[string]provider.Provider
 	resourceCache                  *core.Cache[*provider.ResolvedResource]
 	resourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
+	childExportFieldCache          *core.Cache[*subengine.ChildExportFieldInfo]
 	suite.Suite
 }
 
@@ -95,6 +96,7 @@ func (s *ExpandResourceTemplatesTestSuite) SetupTest() {
 	)
 	s.resourceCache = core.NewCache[*provider.ResolvedResource]()
 	s.resourceTemplateInputElemCache = core.NewCache[[]*core.MappingNode]()
+	s.childExportFieldCache = core.NewCache[*subengine.ChildExportFieldInfo]()
 }
 
 func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_one_to_many_link_relationship() {
@@ -109,6 +111,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_o
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		container.BlueprintSpec(),
 		params,
 	)
@@ -143,6 +146,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_m
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		container.BlueprintSpec(),
 		params,
 	)
@@ -177,6 +181,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_m
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		container.BlueprintSpec(),
 		params,
 	)
@@ -211,6 +216,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_fails_to_expand_when_link_relati
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		container.BlueprintSpec(),
 		params,
 	)

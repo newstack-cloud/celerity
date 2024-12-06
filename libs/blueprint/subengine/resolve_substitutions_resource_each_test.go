@@ -48,6 +48,7 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_resolves_substitutions_
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		spec,
 		params,
 	)
@@ -98,6 +99,7 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_fails_when_resource_eac
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		spec,
 		params,
 	)
@@ -134,6 +136,7 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_fails_when_resource_eac
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		spec,
 		params,
 	)
@@ -170,6 +173,7 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_fails_when_resource_eac
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		spec,
 		params,
 	)

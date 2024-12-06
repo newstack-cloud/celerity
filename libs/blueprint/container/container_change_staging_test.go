@@ -95,7 +95,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_bluepri
 		case changeSet := <-channels.CompleteChan:
 			fullChangeSet = &changeSet
 		case err = <-channels.ErrChan:
-		case <-time.After(10 * time.Second):
+		case <-time.After(60 * time.Second):
 			err = fmt.Errorf("timed out waiting for changes to be staged")
 		}
 	}

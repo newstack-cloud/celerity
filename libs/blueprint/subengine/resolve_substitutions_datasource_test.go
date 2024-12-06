@@ -45,6 +45,7 @@ func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		spec,
 		params,
 	)
@@ -77,6 +78,7 @@ func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in
 		s.stateContainer,
 		s.resourceCache,
 		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
 		spec,
 		params,
 	)

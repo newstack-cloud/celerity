@@ -1,7 +1,9 @@
 package linkhelpers
 
 import (
+	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -44,44 +46,63 @@ func CollectChanges(
 	resourceChanges *provider.Changes,
 	collectIn *provider.LinkChanges,
 ) error {
-	if IsFieldKnownOnDeploy(resourceChanges, resourceFieldPath) {
-		collectIn.FieldChangesKnownOnDeploy = append(collectIn.FieldChangesKnownOnDeploy, linkFieldPath)
-	} else {
-		currentLinkDataValue, err := core.GetPathValue(
-			linkFieldPath,
-			currentLinkData,
-			validation.MappingNodeMaxTraverseDepth,
-		)
-		if err != nil {
-			return err
-		}
+	linkFieldPathWithoutRoot := removeRootFromFieldPath(linkFieldPath, "$")
+	resourceFieldPathWithoutRoot := removeRootFromFieldPath(resourceFieldPath, "$")
+	if IsFieldKnownOnDeploy(resourceChanges, resourceFieldPathWithoutRoot) ||
+		IsComputedField(resourceChanges, resourceFieldPathWithoutRoot) {
+		collectIn.FieldChangesKnownOnDeploy = append(collectIn.FieldChangesKnownOnDeploy, linkFieldPathWithoutRoot)
+		return nil
+	}
 
-		resolvedResource := GetResolvedResource(resourceChanges)
-		if resolvedResource == nil {
-			// return errMissingResolvedResource()
-			return nil
-		}
+	currentLinkDataValue, err := core.GetPathValue(
+		linkFieldPath,
+		currentLinkData,
+		validation.MappingNodeMaxTraverseDepth,
+	)
+	if err != nil {
+		return err
+	}
 
-		resourceSpecValue, err := core.GetPathValue(
-			resourceFieldPath,
-			resolvedResource.Spec,
-			validation.MappingNodeMaxTraverseDepth,
-		)
-		if err != nil {
-			return err
-		}
+	resolvedResource := GetResolvedResource(resourceChanges)
+	if resolvedResource == nil {
+		return ErrMissingResolvedResource
+	}
 
-		if core.IsNilMappingNode(currentLinkDataValue) && !core.IsNilMappingNode(resourceSpecValue) {
-			collectIn.NewFields = append(collectIn.NewFields, &provider.FieldChange{
-				FieldPath: linkFieldPath,
-				NewValue:  resourceSpecValue,
-			})
-		}
+	resourceFieldSearchPath := replaceRootInFieldPath(resourceFieldPathWithoutRoot, "spec", "$")
+	resourceSpecValue, err := core.GetPathValue(
+		resourceFieldSearchPath,
+		resolvedResource.Spec,
+		validation.MappingNodeMaxTraverseDepth,
+	)
+	if err != nil {
+		return err
+	}
 
-		if !core.IsNilMappingNode(currentLinkDataValue) && core.IsNilMappingNode(resourceSpecValue) {
-			collectIn.RemovedFields = append(collectIn.RemovedFields, linkFieldPath)
-		}
+	if core.IsNilMappingNode(currentLinkDataValue) && !core.IsNilMappingNode(resourceSpecValue) {
+		collectIn.NewFields = append(collectIn.NewFields, &provider.FieldChange{
+			FieldPath: linkFieldPathWithoutRoot,
+			NewValue:  resourceSpecValue,
+		})
+		return nil
+	}
 
+	if !core.IsNilMappingNode(currentLinkDataValue) && core.IsNilMappingNode(resourceSpecValue) {
+		collectIn.RemovedFields = append(collectIn.RemovedFields, linkFieldPathWithoutRoot)
+		return nil
+	}
+
+	if !core.IsNilMappingNode(currentLinkDataValue) &&
+		!core.ScalarMappingNodeEqual(currentLinkDataValue, resourceSpecValue) {
+		collectIn.ModifiedFields = append(collectIn.ModifiedFields, &provider.FieldChange{
+			FieldPath: linkFieldPathWithoutRoot,
+			PrevValue: currentLinkDataValue,
+			NewValue:  resourceSpecValue,
+		})
+		return nil
+	}
+
+	if core.ScalarMappingNodeEqual(currentLinkDataValue, resourceSpecValue) {
+		collectIn.UnchangedFields = append(collectIn.UnchangedFields, linkFieldPathWithoutRoot)
 	}
 
 	return nil
@@ -100,16 +121,64 @@ func CollectLinkDataChanges(
 	collectIn *provider.LinkChanges,
 	newValue *core.MappingNode,
 ) error {
-	// currentLinkDataValue, err := core.GetPathValue(
-	// 	linkFieldPath,
-	// 	currentLinkData,
-	// 	validation.MappingNodeMaxTraverseDepth,
-	// )
-	// if err != nil {
-	// 	return err
-	// }
+	currentLinkDataValue, err := core.GetPathValue(
+		linkFieldPath,
+		currentLinkData,
+		validation.MappingNodeMaxTraverseDepth,
+	)
+	if err != nil {
+		return err
+	}
+
+	linkFieldPathWithoutRoot := removeRootFromFieldPath(linkFieldPath, "$")
+	if core.IsNilMappingNode(currentLinkDataValue) && !core.IsNilMappingNode(newValue) {
+		collectIn.NewFields = append(collectIn.NewFields, &provider.FieldChange{
+			FieldPath: linkFieldPathWithoutRoot,
+			NewValue:  newValue,
+		})
+		return nil
+	}
+
+	if !core.IsNilMappingNode(currentLinkDataValue) && core.IsNilMappingNode(newValue) {
+		collectIn.RemovedFields = append(collectIn.RemovedFields, linkFieldPathWithoutRoot)
+		return nil
+	}
+
+	if !core.IsNilMappingNode(currentLinkDataValue) &&
+		!core.ScalarMappingNodeEqual(currentLinkDataValue, newValue) {
+		collectIn.ModifiedFields = append(collectIn.ModifiedFields, &provider.FieldChange{
+			FieldPath: linkFieldPathWithoutRoot,
+			PrevValue: currentLinkDataValue,
+			NewValue:  newValue,
+		})
+		return nil
+	}
+
+	if core.ScalarMappingNodeEqual(currentLinkDataValue, newValue) {
+		collectIn.UnchangedFields = append(collectIn.UnchangedFields, linkFieldPathWithoutRoot)
+	}
 
 	return nil
+}
+
+func removeRootFromFieldPath(fieldPath string, rootIdentifier string) string {
+	if strings.HasPrefix(fieldPath, fmt.Sprintf("%s[", rootIdentifier)) {
+		return fieldPath[len(rootIdentifier):]
+	}
+
+	if strings.HasPrefix(fieldPath, fmt.Sprintf("%s.", rootIdentifier)) {
+		return fieldPath[len(rootIdentifier)+1:]
+	}
+
+	return fieldPath
+}
+
+func replaceRootInFieldPath(fieldPath string, currentRoot string, newRoot string) string {
+	if strings.HasPrefix(fieldPath, currentRoot) {
+		return strings.Replace(fieldPath, currentRoot, newRoot, 1)
+	}
+
+	return fieldPath
 }
 
 // GetAnnotation returns the annotation with the given name from the resolved resource
@@ -160,4 +229,16 @@ func IsFieldKnownOnDeploy(changes *provider.Changes, fieldPath string) bool {
 	}
 
 	return slices.Contains(changes.FieldChangesKnownOnDeploy, fieldPath)
+}
+
+// IsComputedField returns whether the given field path is a computed field
+// in the given set of resource changes.
+func IsComputedField(changes *provider.Changes, fieldPath string) bool {
+	if changes == nil {
+		return false
+	}
+
+	// todo: account for computed fields in maps an arrays where the <key> and 0 placeholders are used
+	// in the computed field path.
+	return slices.Contains(changes.ComputedFields, fieldPath)
 }

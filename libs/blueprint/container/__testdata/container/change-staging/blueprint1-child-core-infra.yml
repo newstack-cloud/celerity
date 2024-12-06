@@ -5,6 +5,11 @@ variables:
   region:
     type: string
 
+values:
+  region:
+    type: string
+    value: "${to_upper(variables.region)}"
+
 resources:
   complexResource:
     type: example/complex
@@ -27,6 +32,10 @@ exports:
     type: string
     field: variables.environment
     description: "The environment for the blueprint."
+  region:
+    type: string
+    field: values.region
+    description: "The region for the blueprint."
 
 metadata:
   build: esbuild

@@ -1,6 +1,7 @@
 package substitutions
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -55,4 +56,16 @@ func GetYAMLNodePrecedingCharCount(node *yaml.Node) int {
 	}
 
 	return 0
+}
+
+// RenderFieldPath renders a field path with the given current path and field name.
+func RenderFieldPath(currentPath, fieldName string) string {
+	if currentPath == "" {
+		return fieldName
+	}
+	if NamePattern.MatchString(fieldName) {
+		return fmt.Sprintf("%s.%s", currentPath, fieldName)
+	}
+
+	return fmt.Sprintf("%s[\"%s\"]", currentPath, fieldName)
 }

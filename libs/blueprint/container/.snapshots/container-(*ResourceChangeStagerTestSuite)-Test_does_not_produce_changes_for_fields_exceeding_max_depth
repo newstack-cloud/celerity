@@ -406,6 +406,9 @@
     (string) (len=17) "spec.vendorConfig",
     (string) (len=18) "spec.vendorTags[0]"
   },
+  ComputedFields: ([]string) (len=1) {
+    (string) (len=7) "spec.id"
+  },
   FieldChangesKnownOnDeploy: ([]string) {
   },
   ConditionKnownOnDeploy: (bool) false,

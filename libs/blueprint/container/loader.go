@@ -394,6 +394,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 
 	resourceCache := bpcore.NewCache[*provider.ResolvedResource]()
 	resourceTemplateInputElemCache := bpcore.NewCache[[]*bpcore.MappingNode]()
+	childExportFieldCache := bpcore.NewCache[*subengine.ChildExportFieldInfo]()
 	substitutionResolver := subengine.NewDefaultSubstitutionResolver(
 		&subengine.Registries{
 			FuncRegistry:       l.funcRegistry,
@@ -403,6 +404,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		l.stateContainer,
 		resourceCache,
 		resourceTemplateInputElemCache,
+		childExportFieldCache,
 		blueprintSpec,
 		params,
 	)
@@ -419,6 +421,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			ChildResolver:                  l.childResolver,
 			ResourceCache:                  resourceCache,
 			ResourceTemplateInputElemCache: resourceTemplateInputElemCache,
+			ChildExportFieldCache:          childExportFieldCache,
 			ChildBlueprintLoaderFactory:    l.forChildBlueprint,
 		},
 		diagnostics,

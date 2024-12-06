@@ -309,6 +309,11 @@ type Changes struct {
 	NewFields           []FieldChange `json:"newFields"`
 	RemovedFields       []string      `json:"removedFields"`
 	UnchangedFields     []string      `json:"unchangedFields"`
+	// ComputedFields holds a list of field names that are computed
+	// at deploy time. This is primarily useful to give fast access to
+	// information about which fields are computed without having to inspect
+	// the spec schema in link implementations.
+	ComputedFields []string `json:"computedFields"`
 	// FieldChangesKnownOnDeploy holds a list of field names
 	// for which changes will be known when the host blueprint is deployed.
 	FieldChangesKnownOnDeploy []string `json:"fieldChangesKnownOnDeploy"`
