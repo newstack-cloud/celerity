@@ -16,8 +16,8 @@ var _ = Suite(&CustomVariableValidationTestSuite{})
 
 func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_value_for_a_custom_variable(c *C) {
 	instanceType := "t2.medium"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"instanceType": {
 				StringValue: &instanceType,
 			},
@@ -47,8 +47,8 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_v
 }
 
 func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_when_value_is_not_provided_for_a_custom_variable_with_a_default_value(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	customVariableType := &testEC2InstanceTypeCustomVariableType{}
@@ -79,8 +79,8 @@ func (s *CustomVariableValidationTestSuite) Test_succeeds_with_no_errors_when_va
 
 func (s *CustomVariableValidationTestSuite) Test_reports_errors_when_multiple_value_types_are_provided_in_custom_type_options(c *C) {
 	instanceType := "t2.medium"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"instanceType": {
 				StringValue: &instanceType,
 			},
@@ -120,8 +120,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_errors_when_multiple_va
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_there_is_a_failure_to_load_custom_type_options(c *C) {
 	instanceType := "t2.medium"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"instanceType": {
 				StringValue: &instanceType,
 			},
@@ -163,8 +163,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_there_is_a_f
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_allowed_value_types_include_values_which_are_not_strings(c *C) {
 	instanceType := "t2.micro"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"instanceType": {
 				StringValue: &instanceType,
 			},
@@ -229,8 +229,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_allowed_values_are_not_a_subset_of_the_labels_for_custom_type_options(c *C) {
 	instanceType := "t2.medium"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"instanceType": {
 				StringValue: &instanceType,
 			},
@@ -286,8 +286,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_all
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_default_value_is_not_a_string(c *C) {
 	instanceType := "t2.large"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"instanceType": {
 				StringValue: &instanceType,
 			},
@@ -331,8 +331,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_default_value_is_not_one_of_the_custom_type_options(c *C) {
 	instanceType := "t2.large"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"instanceType": {
 				StringValue: &instanceType,
 			},
@@ -378,8 +378,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_default_value_is_a_custom_type_option_but_is_not_an_allowed_value(c *C) {
 	// This is to handle the case when a user further refines the set of possible values by combining
 	// allowed values with a custom type.
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	customVariableType := &testEC2InstanceTypeCustomVariableType{}
@@ -428,8 +428,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_def
 }
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_no_value_is_provided_for_a_variable_with_no_default_value(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	customVariableType := &testRegionCustomVariableType{}
@@ -465,8 +465,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_no_value_is_
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string_is_explicitly_provided_for_a_value(c *C) {
 	emptyRegion := ""
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				StringValue: &emptyRegion,
 			},
@@ -506,8 +506,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 }
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string_is_explicitly_provided_for_a_default_value(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	customVariableType := &testRegionCustomVariableType{}
@@ -548,8 +548,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_empty_string
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_value_is_not_a_string(c *C) {
 	invalidRegion := 43
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				IntValue: &invalidRegion,
 			},
@@ -589,8 +589,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_value_is_not_one_of_the_custom_type_options(c *C) {
 	region := "eu-central-4"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				StringValue: &region,
 			},
@@ -630,8 +630,8 @@ func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_val
 
 func (s *CustomVariableValidationTestSuite) Test_reports_error_when_provided_value_is_one_of_the_custom_type_options_but_is_not_an_allowed_value(c *C) {
 	region := "eu-central-1"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				StringValue: &region,
 			},

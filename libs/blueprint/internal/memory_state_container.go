@@ -432,11 +432,14 @@ func (c *MemoryStateContainer) GetChild(ctx context.Context, instanceID string, 
 		if instance != nil {
 			if child, ok := instance.ChildBlueprints[childName]; ok {
 				return *child, nil
+			} else {
+				itemID := fmt.Sprintf("instance:%s:child:%s", instanceID, childName)
+				return state.InstanceState{}, state.InstanceNotFoundError(itemID)
 			}
 		}
 	}
 
-	return state.InstanceState{}, errors.New("child not found")
+	return state.InstanceState{}, state.InstanceNotFoundError(instanceID)
 }
 
 func (c *MemoryStateContainer) SaveChild(

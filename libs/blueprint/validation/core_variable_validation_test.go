@@ -16,8 +16,8 @@ var _ = Suite(&CoreVariableValidationTestSuite{})
 
 func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_integer_variable(c *C) {
 	maxRetries := 5
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"maxRetries": {
 				IntValue: &maxRetries,
 			},
@@ -46,8 +46,8 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 
 func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_float_variable(c *C) {
 	timeoutInSeconds := 30.5
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"timeoutInSeconds": {
 				FloatValue: &timeoutInSeconds,
 			},
@@ -76,8 +76,8 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 
 func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_string_variable(c *C) {
 	region := "us-east-1"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				StringValue: &region,
 			},
@@ -119,8 +119,8 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 
 func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_bool_variable(c *C) {
 	experimentalFeatures := true
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"experimentalFeatures": {
 				BoolValue: &experimentalFeatures,
 			},
@@ -148,8 +148,8 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_for_a_val
 }
 
 func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_value_is_not_provided_for_a_string_variable_with_a_default_value(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	allowedValue1 := "us-east-1"
@@ -187,8 +187,8 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 }
 
 func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_value_is_not_provided_for_an_integer_variable_with_a_default_value(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	defaultMaxRetries := 5
@@ -217,8 +217,8 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 
 func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_value_is_not_provided_for_a_float_variable_with_a_default_value(c *C) {
 
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	defaultTimeoutInSeconds := 43.21
@@ -247,8 +247,8 @@ func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_valu
 
 func (s *CoreVariableValidationTestSuite) Test_succeeds_with_no_errors_when_value_is_not_provided_for_a_boolean_variable_with_a_default_value(c *C) {
 
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	defaultExperimentalFeatures := true
@@ -307,8 +307,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_substitution_p
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_string_value_is_provided(c *C) {
 	invalidValue := 4391
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				IntValue: &invalidValue,
 			},
@@ -346,8 +346,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_strin
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_integer_value_is_provided(c *C) {
 	invalidValue := false
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"maxRetries": {
 				BoolValue: &invalidValue,
 			},
@@ -385,8 +385,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_integ
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_float_value_is_provided(c *C) {
 	invalidValue := "experiments"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"timeoutInSeconds": {
 				StringValue: &invalidValue,
 			},
@@ -424,8 +424,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_float
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_bool_value_is_provided(c *C) {
 	invalidValue := 4305.29
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"experimentalFeatures": {
 				FloatValue: &invalidValue,
 			},
@@ -463,8 +463,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_bool_
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_default_is_provided_for_a_string(c *C) {
 	validRegion := "us-east-1"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				StringValue: &validRegion,
 			},
@@ -506,8 +506,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_default_is_provided_for_an_integer(c *C) {
 	validMaxRetries := 3
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"maxRetries": {
 				IntValue: &validMaxRetries,
 			},
@@ -549,8 +549,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_default_is_provided_for_a_float(c *C) {
 	validTimeout := 30.0
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"timeoutInSeconds": {
 				FloatValue: &validTimeout,
 			},
@@ -592,8 +592,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_default_is_provided_for_a_bool(c *C) {
 	validExperimentalFeatures := true
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"experimentalFeatures": {
 				BoolValue: &validExperimentalFeatures,
 			},
@@ -635,8 +635,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_an_invalid_de
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allowed_values_are_provided_for_a_string(c *C) {
 	validRegion := "us-west-1"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				StringValue: &validRegion,
 			},
@@ -698,8 +698,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allowed_values_are_provided_for_an_integer(c *C) {
 	validMaxRetries := 5
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"maxRetries": {
 				IntValue: &validMaxRetries,
 			},
@@ -761,8 +761,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allow
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_invalid_allowed_values_are_provided_for_a_float(c *C) {
 	validTimeoutInSeconds := 45.3
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"timeoutInSeconds": {
 				FloatValue: &validTimeoutInSeconds,
 			},
@@ -834,8 +834,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_allowed_value
 	// it is better to set boolean variables that can be true or false and use other types for enumerable lists of options.
 	// This test is to help with providing a better user experience by ensuring this limitation is made clear to the user.
 	experimentalFeatures := true
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"experimentalFeatures": {
 				BoolValue: &experimentalFeatures,
 			},
@@ -887,8 +887,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_allowed_value
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_is_not_in_the_allowed_set_is_provided_for_a_string(c *C) {
 	region := "us-west-2"
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				StringValue: &region,
 			},
@@ -936,8 +936,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_is_not_in_the_allowed_set_is_provided_for_an_integer(c *C) {
 	maxRetries := 20
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"maxRetries": {
 				IntValue: &maxRetries,
 			},
@@ -985,8 +985,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_is_not_in_the_allowed_set_is_provided_for_a_float(c *C) {
 	timeoutInSeconds := 45.5
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"timeoutInSeconds": {
 				FloatValue: &timeoutInSeconds,
 			},
@@ -1033,8 +1033,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_value_that_
 }
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_value_that_is_not_in_the_allowed_set_is_provided_for_a_string(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	defaultRegion := "us-north-3"
@@ -1082,8 +1082,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 }
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_value_that_is_not_in_the_allowed_set_is_provided_for_an_integer(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	defaultBatchSize := 50000
@@ -1130,8 +1130,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 }
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_value_that_is_not_in_the_allowed_set_is_provided_for_a_float(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	defaultSampleRate := 0.5
@@ -1179,8 +1179,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_a_default_val
 
 func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_string_variable_with_explicit_empty_value_is_provided(c *C) {
 	emptyRegion := ""
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{
 			"region": {
 				StringValue: &emptyRegion,
 			},
@@ -1218,8 +1218,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_errors_when_string_variab
 }
 
 func (s *CoreVariableValidationTestSuite) Test_reports_error_when_string_variable_without_a_default_value_is_not_provided(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	description := "The region to deploy the application to."
@@ -1253,8 +1253,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_string_variabl
 }
 
 func (s *CoreVariableValidationTestSuite) Test_reports_error_when_integer_variable_without_a_default_value_is_not_provided(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	description := "The maximum number of retries allowed when calling the core API."
@@ -1288,8 +1288,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_integer_variab
 }
 
 func (s *CoreVariableValidationTestSuite) Test_reports_error_when_float_variable_without_a_default_value_is_not_provided(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	description := "The timeout in seconds used when calling the core API."
@@ -1323,8 +1323,8 @@ func (s *CoreVariableValidationTestSuite) Test_reports_error_when_float_variable
 }
 
 func (s *CoreVariableValidationTestSuite) Test_reports_error_when_boolean_variable_without_a_default_value_is_not_provided(c *C) {
-	params := &testBlueprintParams{
-		blueprintVariables: map[string]*core.ScalarValue{},
+	params := &core.ParamsImpl{
+		BlueprintVariables: map[string]*core.ScalarValue{},
 	}
 
 	description := "Whether or not to enable experimental features in the app."

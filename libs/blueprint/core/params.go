@@ -28,4 +28,90 @@ type BlueprintParams interface {
 	// from the parent but require their own set of blueprint variables as
 	// defined in an "include" block of the parent blueprint.
 	WithBlueprintVariables(vars map[string]*ScalarValue, keepExisting bool) BlueprintParams
+	// WithContextVariables returns a new BlueprintParams
+	// with the given variables added to the context variables.
+	// If keepExisting is true, the existing context variables
+	// will be kept, otherwise they will not be included in the new
+	// BlueprintParams.
+	WithContextVariables(vars map[string]*ScalarValue, keepExisting bool) BlueprintParams
+}
+
+// ParamsImpl provides an implementation of the blueprint
+// core.BlueprintParams interface to supply parameters when
+// loading blueprint source files.
+type ParamsImpl struct {
+	ProviderConf       map[string]map[string]*ScalarValue
+	ContextVariables   map[string]*ScalarValue
+	BlueprintVariables map[string]*ScalarValue
+}
+
+// NewParams creates a new Params instance with
+// the supplied provider configuration, context variables
+// and blueprint variables.
+func NewDefaultParams(
+	providerConfig map[string]map[string]*ScalarValue,
+	contextVariables map[string]*ScalarValue,
+	blueprintVariables map[string]*ScalarValue,
+) BlueprintParams {
+	return &ParamsImpl{
+		ProviderConf:       providerConfig,
+		ContextVariables:   contextVariables,
+		BlueprintVariables: blueprintVariables,
+	}
+}
+
+func (p *ParamsImpl) ProviderConfig(namespace string) map[string]*ScalarValue {
+	return p.ProviderConf[namespace]
+}
+
+func (p *ParamsImpl) ContextVariable(name string) *ScalarValue {
+	return p.ContextVariables[name]
+}
+
+func (p *ParamsImpl) BlueprintVariable(name string) *ScalarValue {
+	return p.BlueprintVariables[name]
+}
+
+func (b *ParamsImpl) WithBlueprintVariables(
+	vars map[string]*ScalarValue,
+	keepExisting bool,
+) BlueprintParams {
+	newBlueprintVariables := map[string]*ScalarValue{}
+	if keepExisting {
+		for k, v := range b.BlueprintVariables {
+			newBlueprintVariables[k] = v
+		}
+	}
+
+	for k, v := range vars {
+		newBlueprintVariables[k] = v
+	}
+
+	return &ParamsImpl{
+		ProviderConf:       b.ProviderConf,
+		ContextVariables:   b.ContextVariables,
+		BlueprintVariables: newBlueprintVariables,
+	}
+}
+
+func (b *ParamsImpl) WithContextVariables(
+	vars map[string]*ScalarValue,
+	keepExisting bool,
+) BlueprintParams {
+	newContextVariables := map[string]*ScalarValue{}
+	if keepExisting {
+		for k, v := range b.ContextVariables {
+			newContextVariables[k] = v
+		}
+	}
+
+	for k, v := range vars {
+		newContextVariables[k] = v
+	}
+
+	return &ParamsImpl{
+		ProviderConf:       b.ProviderConf,
+		ContextVariables:   newContextVariables,
+		BlueprintVariables: b.BlueprintVariables,
+	}
 }

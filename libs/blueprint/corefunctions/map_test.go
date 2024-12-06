@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -24,7 +25,7 @@ var _ = Suite(&MapFunctionTestSuite{})
 func (s *MapFunctionTestSuite) SetUpTest(c *C) {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
-		params: &blueprintParamsMock{},
+		params: &core.ParamsImpl{},
 		registry: &internal.FunctionRegistryMock{
 			Functions: map[string]provider.Function{
 				"trimprefix": NewTrimPrefixFunction(),

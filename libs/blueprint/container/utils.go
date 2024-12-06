@@ -256,6 +256,56 @@ func createLinkID(resourceAName string, resourceBName string) string {
 	)
 }
 
+func getInstanceTreePath(
+	params core.BlueprintParams,
+	instanceID string,
+) string {
+	instanceTreePath := params.ContextVariable("instanceTreePath")
+	if instanceTreePath == nil || instanceTreePath.StringValue == nil {
+		return instanceID
+	}
+
+	parentTreePath := *instanceTreePath.StringValue
+	return addToInstanceTreePath(parentTreePath, instanceID)
+}
+
+func addToInstanceTreePath(
+	parentInstanceTreePath string,
+	instanceID string,
+) string {
+	if parentInstanceTreePath == "" {
+		return instanceID
+	}
+
+	return fmt.Sprintf("%s/%s", parentInstanceTreePath, instanceID)
+}
+
+func hasBlueprintCycle(
+	parentInstanceTreePath string,
+	instanceID string,
+) bool {
+	if parentInstanceTreePath == "" {
+		return false
+	}
+
+	instances := strings.Split("/", parentInstanceTreePath)
+	return slices.Contains(instances, instanceID)
+}
+
+func createContextVarsForChildBlueprint(
+	parentInstanceID string,
+	instanceTreePath string,
+) map[string]*core.ScalarValue {
+	return map[string]*core.ScalarValue{
+		"parentInstanceID": {
+			StringValue: &parentInstanceID,
+		},
+		"instanceTreePath": {
+			StringValue: &instanceTreePath,
+		},
+	}
+}
+
 func createResourceTypeProviderMap(
 	blueprintSpec speccore.BlueprintSpec,
 	providers map[string]provider.Provider,
@@ -296,4 +346,8 @@ func copyPointerMap[Item any](input map[string]*Item) map[string]Item {
 		output[key] = *value
 	}
 	return output
+}
+
+func exceedsMaxDepth(path string, maxDepth int) bool {
+	return len(strings.Split(path, "/")) > maxDepth
 }

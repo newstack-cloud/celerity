@@ -11,7 +11,7 @@ import (
 )
 
 func createParams() core.BlueprintParams {
-	return internal.NewParams(
+	return core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},

@@ -136,6 +136,7 @@ type BlueprintChanges struct {
 type NewBlueprintDefinition struct {
 	NewResources map[string]provider.Changes       `json:"newResources"`
 	NewChildren  map[string]NewBlueprintDefinition `json:"newChildren"`
+	NewExports   map[string]provider.FieldChange   `json:"newExports"`
 }
 
 type defaultBlueprintContainer struct {

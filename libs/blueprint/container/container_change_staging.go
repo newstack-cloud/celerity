@@ -24,6 +24,14 @@ func (c *defaultBlueprintContainer) StageChanges(
 	paramOverrides core.BlueprintParams,
 ) error {
 
+	instanceTreePath := getInstanceTreePath(paramOverrides, instanceID)
+	if exceedsMaxDepth(instanceTreePath, MaxBlueprintDepth) {
+		return errMaxBlueprintDepthExceeded(
+			instanceTreePath,
+			MaxBlueprintDepth,
+		)
+	}
+
 	expandedBlueprintContainer, err := c.expandResourceTemplates(
 		ctx,
 		paramOverrides,
@@ -304,9 +312,14 @@ func applyChildChangesToState(changes ChildChangesMessage, state *stageChangesSt
 	defer state.mu.Unlock()
 
 	if changes.New {
+		if state.outputChanges.NewChildren == nil {
+			state.outputChanges.NewChildren = map[string]*NewBlueprintDefinition{}
+		}
+
 		state.outputChanges.NewChildren[changes.ChildBlueprintName] = &NewBlueprintDefinition{
 			NewResources: changes.Changes.NewResources,
 			NewChildren:  changes.Changes.NewChildren,
+			NewExports:   changes.Changes.NewExports,
 		}
 	} else if changes.Removed {
 		state.outputChanges.RemovedChildren = append(
@@ -346,6 +359,8 @@ func (c *defaultBlueprintContainer) stageGroupChanges(
 	resourceProviders map[string]provider.Provider,
 	channels *ChangeStagingChannels,
 ) {
+	instanceTreePath := getInstanceTreePath(paramOverrides, instanceID)
+
 	for _, node := range group {
 		if node.Type() == "resource" {
 			go c.prepareAndStageResourceChanges(
@@ -361,6 +376,7 @@ func (c *defaultBlueprintContainer) stageGroupChanges(
 			go c.stageChildBlueprintChanges(
 				ctx,
 				instanceID,
+				instanceTreePath,
 				node.ChildNode,
 				paramOverrides,
 				channels,
@@ -633,6 +649,7 @@ func (c *defaultBlueprintContainer) getResourceInfoForLink(
 func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 	ctx context.Context,
 	parentInstanceID string,
+	parentInstanceTreePath string,
 	node *validation.ReferenceChainNode,
 	paramOverrides core.BlueprintParams,
 	channels *ChangeStagingChannels,
@@ -656,10 +673,15 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 		return
 	}
 
-	childParams := paramOverrides.WithBlueprintVariables(
-		extractIncludeVariables(resolvedInclude),
-		/* keepExisting */ false,
-	)
+	childParams := paramOverrides.
+		WithBlueprintVariables(
+			extractIncludeVariables(resolvedInclude),
+			/* keepExisting */ false,
+		).
+		WithContextVariables(
+			createContextVarsForChildBlueprint(parentInstanceID, parentInstanceTreePath),
+			/* keepExisting */ true,
+		)
 
 	childLoader := c.createChildBlueprintLoader([]string{})
 
@@ -689,18 +711,19 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 		}
 	}
 
-	childState, err := c.stateContainer.GetChild(ctx, parentInstanceID, includeName)
+	childState, err := c.getChildState(ctx, parentInstanceID, includeName)
 	if err != nil {
-		if !state.IsInstanceNotFound(err) {
-			channels.ErrChan <- err
-			return
-		} else {
-			// Change staging includes describing the planned state for a new blueprint,
-			// an empty instance ID will be used to indicate that the blueprint instance is new.
-			childState = state.InstanceState{
-				InstanceID: "",
-			}
-		}
+		channels.ErrChan <- err
+		return
+	}
+
+	if hasBlueprintCycle(parentInstanceTreePath, childState.InstanceID) {
+		channels.ErrChan <- errBlueprintCycleDetected(
+			includeName,
+			parentInstanceTreePath,
+			childState.InstanceID,
+		)
+		return
 	}
 
 	childChannels := &ChangeStagingChannels{
@@ -716,6 +739,36 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 		return
 	}
 
+	c.waitForChildChanges(includeName, childState, childChannels, channels)
+}
+
+func (c *defaultBlueprintContainer) getChildState(
+	ctx context.Context,
+	parentInstanceID string,
+	includeName string,
+) (*state.InstanceState, error) {
+	childState, err := c.stateContainer.GetChild(ctx, parentInstanceID, includeName)
+	if err != nil {
+		if !state.IsInstanceNotFound(err) {
+			return nil, err
+		} else {
+			// Change staging includes describing the planned state for a new blueprint,
+			// an empty instance ID will be used to indicate that the blueprint instance is new.
+			return &state.InstanceState{
+				InstanceID: "",
+			}, nil
+		}
+	}
+
+	return &childState, nil
+}
+
+func (c *defaultBlueprintContainer) waitForChildChanges(
+	includeName string,
+	childState *state.InstanceState,
+	childChannels *ChangeStagingChannels,
+	channels *ChangeStagingChannels,
+) {
 	// For now, when it comes to child blueprints,
 	// wait for all changes to be staged before sending
 	// an update message for the parent blueprint context.
@@ -964,7 +1017,9 @@ func (c *defaultBlueprintContainer) resolveAndCollectExportChanges(
 
 	blueprintExportsState, err := c.stateContainer.GetExports(ctx, instanceID)
 	if err != nil {
-		return err
+		if !state.IsInstanceNotFound(err) {
+			return err
+		}
 	}
 	// Collect export changes in a temporary structure to avoid locking the staging state
 	// for the entire duration of the operation.

@@ -23,6 +23,16 @@ const (
 	// a mismatch in the length of the resolved items
 	// for linked resource templates.
 	ErrorReasonCodeResourceTemplateLinkLengthMismatch errors.ErrorReasonCode = "resource_template_link_length_mismatch"
+	// ErrorReasonCodeBlueprintCycleDetected
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a cyclic blueprint inclusion detected.
+	ErrorReasonCodeBlueprintCycleDetected errors.ErrorReasonCode = "blueprint_cycle_detected"
+	// ErrorReasonCodeMaxBlueprintDepthExceeded
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// the maximum blueprint depth being exceeded.
+	ErrorReasonCodeMaxBlueprintDepthExceeded errors.ErrorReasonCode = "max_blueprint_depth_exceeded"
 )
 
 func errMissingChildBlueprintPath(includeName string) error {
@@ -50,6 +60,38 @@ func errResourceTemplateLinkLengthMismatch(
 				"when the resolved items list from the `each` property of both templates is of the same length",
 			linkFrom,
 			linkTo,
+		),
+	}
+}
+
+func errBlueprintCycleDetected(
+	includeName string,
+	instanceTreePath string,
+	cyclicInstanceID string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeBlueprintCycleDetected,
+		Err: fmt.Errorf(
+			"[include.%s]: cyclic blueprint inclusion detected, instance %q is an ancestor of the "+
+				"current blueprint as shown in the instance tree path: %q",
+			includeName,
+			cyclicInstanceID,
+			instanceTreePath,
+		),
+	}
+}
+
+func errMaxBlueprintDepthExceeded(
+	instanceTreePath string,
+	maxDepth int,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeMaxBlueprintDepthExceeded,
+		Err: fmt.Errorf(
+			"max blueprint depth exceeded, instance tree path: %q, "+
+				"only %d levels of blueprint includes are allowed",
+			instanceTreePath,
+			maxDepth,
 		),
 	}
 }

@@ -65,7 +65,7 @@ func (s *SubstitutionExportResolverTestSuite) Test_resolves_substitutions_in_exp
 	s.Require().NoError(err)
 }
 
-func resolveInExportTestParams() *internal.Params {
+func resolveInExportTestParams() core.BlueprintParams {
 	environment := "production-env"
 	enableOrderTableTrigger := true
 	region := "us-west-2"
@@ -84,7 +84,7 @@ func resolveInExportTestParams() *internal.Params {
 			BoolValue: &enableOrderTableTrigger,
 		},
 	}
-	return internal.NewParams(
+	return core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		blueprintVars,

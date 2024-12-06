@@ -309,7 +309,7 @@ func (f *functionCallArgsMock) GetMultipleVars(ctx context.Context, targets ...a
 }
 
 type functionCallContextMock struct {
-	params          *blueprintParamsMock
+	params          *core.ParamsImpl
 	registry        FunctionRegistry
 	callStack       function.Stack
 	currentLocation *source.Meta
@@ -338,46 +338,6 @@ func (f *functionCallContextMock) CurrentLocation() *source.Meta {
 
 func (f *functionCallContextMock) SetCurrentLocation(location *source.Meta) {
 	f.currentLocation = location
-}
-
-type blueprintParamsMock struct {
-	providerConfig     map[string]*core.ScalarValue
-	contextVariables   map[string]*core.ScalarValue
-	blueprintVariables map[string]*core.ScalarValue
-}
-
-func (b *blueprintParamsMock) ProviderConfig(namespace string) map[string]*core.ScalarValue {
-	return b.providerConfig
-}
-
-func (b *blueprintParamsMock) ContextVariable(name string) *core.ScalarValue {
-	return b.contextVariables[name]
-}
-
-func (b *blueprintParamsMock) BlueprintVariable(name string) *core.ScalarValue {
-	return b.blueprintVariables[name]
-}
-
-func (b *blueprintParamsMock) WithBlueprintVariables(
-	vars map[string]*core.ScalarValue,
-	keepExisting bool,
-) core.BlueprintParams {
-	newBlueprintVariables := map[string]*core.ScalarValue{}
-	if keepExisting {
-		for k, v := range b.blueprintVariables {
-			newBlueprintVariables[k] = v
-		}
-	}
-
-	for k, v := range vars {
-		newBlueprintVariables[k] = v
-	}
-
-	return &blueprintParamsMock{
-		providerConfig:     b.providerConfig,
-		contextVariables:   b.contextVariables,
-		blueprintVariables: newBlueprintVariables,
-	}
 }
 
 type testExampleDataSource struct {

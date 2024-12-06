@@ -200,7 +200,7 @@ func partiallyResolvedMappingNode() *core.MappingNode {
 	}
 }
 
-func resolveInMappingNodeTestParams() *internal.Params {
+func resolveInMappingNodeTestParams() core.BlueprintParams {
 	environment := "production-env"
 	enableOrderTableTrigger := true
 	region := "us-west-2"
@@ -223,7 +223,7 @@ func resolveInMappingNodeTestParams() *internal.Params {
 			StringValue: &relatedInfo,
 		},
 	}
-	return internal.NewParams(
+	return core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		blueprintVars,

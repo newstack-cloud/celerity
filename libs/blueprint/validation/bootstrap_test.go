@@ -15,50 +15,6 @@ func Test(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Test blueprint params implementing the core.BlueprintParams interface.
-////////////////////////////////////////////////////////////////////////////////
-
-type testBlueprintParams struct {
-	providerConfig     map[string]map[string]*core.ScalarValue
-	contextVariables   map[string]*core.ScalarValue
-	blueprintVariables map[string]*core.ScalarValue
-}
-
-func (p *testBlueprintParams) ProviderConfig(namespace string) map[string]*core.ScalarValue {
-	return p.providerConfig[namespace]
-}
-
-func (p *testBlueprintParams) ContextVariable(name string) *core.ScalarValue {
-	return p.contextVariables[name]
-}
-
-func (p *testBlueprintParams) BlueprintVariable(name string) *core.ScalarValue {
-	return p.blueprintVariables[name]
-}
-
-func (b *testBlueprintParams) WithBlueprintVariables(
-	vars map[string]*core.ScalarValue,
-	keepExisting bool,
-) core.BlueprintParams {
-	newBlueprintVariables := map[string]*core.ScalarValue{}
-	if keepExisting {
-		for k, v := range b.blueprintVariables {
-			newBlueprintVariables[k] = v
-		}
-	}
-
-	for k, v := range vars {
-		newBlueprintVariables[k] = v
-	}
-
-	return &testBlueprintParams{
-		providerConfig:     b.providerConfig,
-		contextVariables:   b.contextVariables,
-		blueprintVariables: newBlueprintVariables,
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // Test custom variable types implementing the provider.CustomVariableType interface.
 ////////////////////////////////////////////////////////////////////////////////
 

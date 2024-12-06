@@ -196,7 +196,7 @@ func (s *SubstitutionResourceEachResolverTestSuite) Test_fails_when_resource_eac
 	)
 }
 
-func resolveResourceEachTestParams() *internal.Params {
+func resolveResourceEachTestParams() core.BlueprintParams {
 	environment := "production-env"
 	enableOrderTableTrigger := true
 	region := "us-west-2"
@@ -215,7 +215,7 @@ func resolveResourceEachTestParams() *internal.Params {
 			BoolValue: &enableOrderTableTrigger,
 		},
 	}
-	return internal.NewParams(
+	return core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		blueprintVars,

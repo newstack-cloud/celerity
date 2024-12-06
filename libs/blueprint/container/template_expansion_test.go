@@ -246,7 +246,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_fails_to_expand_when_link_relati
 	)
 }
 
-func expandResourceTemplatesTestParams() *internal.Params {
+func expandResourceTemplatesTestParams() core.BlueprintParams {
 	environment := "production-env"
 	tablesConfig := "[{\"name\":\"orders-1\"},{\"name\":\"orders-2\"},{\"name\":\"orders-3\"}]"
 	functionsConfig := "[{\"handler\":\"ordersFunction-1\"},{\"handler\":\"ordersFunction-2\"},{\"handler\":\"ordersFunction-3\"}]"
@@ -265,7 +265,7 @@ func expandResourceTemplatesTestParams() *internal.Params {
 			StringValue: &otherFunctionsConfig,
 		},
 	}
-	return internal.NewParams(
+	return core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		blueprintVars,

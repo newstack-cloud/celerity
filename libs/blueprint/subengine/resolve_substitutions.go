@@ -2043,7 +2043,7 @@ func (r *defaultSubstitutionResolver) resolveResourceSpecPropertyFromStateOrDefa
 
 			freshResourceState, err := r.stateContainer.GetResourceByName(ctx, instanceID, resourceName)
 			if err != nil {
-				if state.IsResourceNotFound(err) {
+				if state.IsResourceNotFound(err) || state.IsInstanceNotFound(err) {
 					return getResourceSpecDefaultValueFromDefinition(err, definition)
 				}
 				return nil, err

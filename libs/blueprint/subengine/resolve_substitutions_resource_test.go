@@ -324,7 +324,7 @@ func partiallyResolvedResource() *provider.ResolvedResource {
 	}
 }
 
-func resolveInResourceTestParams() *internal.Params {
+func resolveInResourceTestParams() core.BlueprintParams {
 	environment := "production-env"
 	enableOrderTableTrigger := true
 	region := "us-west-2"
@@ -343,7 +343,7 @@ func resolveInResourceTestParams() *internal.Params {
 			BoolValue: &enableOrderTableTrigger,
 		},
 	}
-	return internal.NewParams(
+	return core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		blueprintVars,

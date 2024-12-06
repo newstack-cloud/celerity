@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
@@ -128,7 +129,7 @@ func (s *ValueValidationTestSuite) Test_passes_validation_for_a_valid_value(c *C
 			},
 		},
 	}
-	params := &testBlueprintParams{}
+	params := &core.ParamsImpl{}
 
 	diagnostics, err := ValidateValue(
 		context.TODO(),
@@ -193,7 +194,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_for_invalid_sub_in_descrip
 			},
 		},
 	}
-	params := &testBlueprintParams{}
+	params := &core.ParamsImpl{}
 
 	_, err := ValidateValue(
 		context.TODO(),
@@ -243,7 +244,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_value_type_is_missing
 	}
 
 	blueprint := &schema.Blueprint{}
-	params := &testBlueprintParams{}
+	params := &core.ParamsImpl{}
 
 	_, err := ValidateValue(
 		context.TODO(),
@@ -289,7 +290,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_unsupported_value_typ
 	}
 
 	blueprint := &schema.Blueprint{}
-	params := &testBlueprintParams{}
+	params := &core.ParamsImpl{}
 
 	_, err := ValidateValue(
 		context.TODO(),
@@ -356,7 +357,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_for_interpolated_string_fo
 			},
 		},
 	}
-	params := &testBlueprintParams{}
+	params := &core.ParamsImpl{}
 
 	_, err := ValidateValue(
 		context.TODO(),
@@ -407,7 +408,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_string_literal_is_pro
 			},
 		},
 	}
-	params := &testBlueprintParams{}
+	params := &core.ParamsImpl{}
 
 	_, err := ValidateValue(
 		context.TODO(),
@@ -473,7 +474,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_sub_that_resolves_to_
 			},
 		},
 	}
-	params := &testBlueprintParams{}
+	params := &core.ParamsImpl{}
 
 	_, err := ValidateValue(
 		context.TODO(),

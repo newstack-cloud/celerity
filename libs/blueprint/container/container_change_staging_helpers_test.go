@@ -58,6 +58,7 @@ func normaliseNewChildMap(newChildMap map[string]NewBlueprintDefinition) map[str
 		newMap[childName] = NewBlueprintDefinition{
 			NewResources: normaliseResourceChangeMap(child.NewResources),
 			NewChildren:  normaliseNewChildMap(child.NewChildren),
+			NewExports:   child.NewExports,
 		}
 	}
 	return newMap

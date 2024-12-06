@@ -23,7 +23,7 @@ var _ = Suite(&LinkFunctionTestSuite{})
 func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
-		params: &blueprintParamsMock{},
+		params: &core.ParamsImpl{},
 		registry: &internal.FunctionRegistryMock{
 			Functions: map[string]provider.Function{},
 			CallStack: s.callStack,

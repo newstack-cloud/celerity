@@ -3,6 +3,7 @@ package corefunctions
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -37,7 +38,7 @@ func (s *FromJSONFunctionTestSuite) SetUpSuite(c *C) {
 func (s *FromJSONFunctionTestSuite) SetUpTest(c *C) {
 	s.callStack = function.NewStack()
 	s.callContext = &functionCallContextMock{
-		params: &blueprintParamsMock{},
+		params: &core.ParamsImpl{},
 		registry: &internal.FunctionRegistryMock{
 			Functions: map[string]provider.Function{},
 			CallStack: s.callStack,

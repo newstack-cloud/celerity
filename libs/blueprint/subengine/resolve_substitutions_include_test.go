@@ -65,7 +65,7 @@ func (s *SubstitutionIncludeResolverTestSuite) Test_resolves_substitutions_in_in
 	s.Require().NoError(err)
 }
 
-func resolveInIncludeTestParams() *internal.Params {
+func resolveInIncludeTestParams() core.BlueprintParams {
 	environment := "production-env"
 	enableOrderTableTrigger := true
 	region := "us-west-2"
@@ -84,7 +84,7 @@ func resolveInIncludeTestParams() *internal.Params {
 			BoolValue: &enableOrderTableTrigger,
 		},
 	}
-	return internal.NewParams(
+	return core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		blueprintVars,
