@@ -284,11 +284,11 @@ func hasBlueprintCycle(
 	parentInstanceTreePath string,
 	instanceID string,
 ) bool {
-	if parentInstanceTreePath == "" {
+	if parentInstanceTreePath == "" || instanceID == "" {
 		return false
 	}
 
-	instances := strings.Split("/", parentInstanceTreePath)
+	instances := strings.Split(parentInstanceTreePath, "/")
 	return slices.Contains(instances, instanceID)
 }
 

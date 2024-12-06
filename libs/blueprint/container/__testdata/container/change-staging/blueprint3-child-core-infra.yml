@@ -1,0 +1,53 @@
+version: 2023-04-20
+variables:
+  environment:
+    type: string
+  region:
+    type: string
+
+values:
+  region:
+    type: string
+    value: "${to_upper(variables.region)}"
+
+resources:
+  complexResource:
+    type: example/complex
+    description: "A complex resource type."
+    spec:
+      itemConfig:
+        endpoints:
+          - "https://example.com/1"
+          - "https://example.com/2"
+        ipv4: true
+        metadata:
+          region: ${variables.region}
+          environment: ${variables.environment}
+      vendorConfig:
+        - vendorNamespace: "example-vendor-namespace"
+          vendorId: "example-vendor-id"
+
+include:
+  ordersApi:
+    path: ${cwd()}/__testdata/container/change-staging/blueprint3.yml
+    description: Orders API stack
+    variables:
+      environment: ${variables.environment}
+      orderTablesConfig: "[{\"name\":\"orders-1\"},{\"name\":\"orders-2\"}]"
+      enableOrderTableTrigger: false
+      region: ${values.region}
+      deployOrdersTableToRegions: "[\"us-west-2\",\"us-east-1\"]"
+      includeInvoices: false
+
+exports:
+  environment:
+    type: string
+    field: variables.environment
+    description: "The environment for the blueprint."
+  region:
+    type: string
+    field: values.region
+    description: "The region for the blueprint."
+
+metadata:
+  build: esbuild

@@ -11,6 +11,7 @@ import (
 	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
@@ -20,13 +21,20 @@ import (
 )
 
 const (
-	blueprint1InstanceID = "blueprint-instance-1"
-	blueprint2InstanceID = "blueprint-instance-2"
+	blueprint1InstanceID      = "blueprint-instance-1"
+	blueprint2InstanceID      = "blueprint-instance-2"
+	blueprint3InstanceID      = "blueprint-instance-3"
+	blueprint3ChildInstanceID = "blueprint-instance-3-child-core-infra"
+	blueprint4InstanceID      = "blueprint-instance-4"
 )
+
+const timeoutMessage = "timed out waiting for changes to be staged"
 
 type ContainerChangeStagingTestSuite struct {
 	blueprint1Container BlueprintContainer
 	blueprint2Container BlueprintContainer
+	blueprint3Container BlueprintContainer
+	blueprint4Container BlueprintContainer
 	suite.Suite
 }
 
@@ -61,7 +69,7 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 	blueprint1Container, err := loader.Load(
 		context.Background(),
 		"__testdata/container/change-staging/blueprint1.yml",
-		createBlueprint1Params(),
+		baseBlueprintParams(),
 	)
 	s.Require().NoError(err)
 	s.blueprint1Container = blueprint1Container
@@ -73,11 +81,27 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 	)
 	s.Require().NoError(err)
 	s.blueprint2Container = blueprint2Container
+
+	blueprint3Container, err := loader.Load(
+		context.Background(),
+		"__testdata/container/change-staging/blueprint3.yml",
+		baseBlueprintParams(),
+	)
+	s.Require().NoError(err)
+	s.blueprint3Container = blueprint3Container
+
+	blueprint4Container, err := loader.Load(
+		context.Background(),
+		"__testdata/container/change-staging/blueprint4.yml",
+		createBlueprint4Params(),
+	)
+	s.Require().NoError(err)
+	s.blueprint4Container = blueprint4Container
 }
 
 func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_blueprint_instance() {
 	channels := createChangeStagingChannels()
-	params := createBlueprint1Params()
+	params := baseBlueprintParams()
 
 	err := s.blueprint1Container.StageChanges(
 		context.Background(),
@@ -107,7 +131,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_bluepri
 			fullChangeSet = &changeSet
 		case err = <-channels.ErrChan:
 		case <-time.After(60 * time.Second):
-			err = fmt.Errorf("timed out waiting for changes to be staged")
+			err = fmt.Errorf(timeoutMessage)
 		}
 	}
 	s.Require().NoError(err)
@@ -118,7 +142,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_bluepri
 
 func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint_instance() {
 	channels := createChangeStagingChannels()
-	params := createBlueprint1Params()
+	params := createBlueprint2Params()
 
 	err := s.blueprint2Container.StageChanges(
 		context.Background(),
@@ -136,7 +160,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint
 		(fullChangeSet == nil ||
 			len(resourceChangeMessages) < 6 ||
 			len(childChangeMessages) < 1 ||
-			len(linkChangeMessages) < 3) {
+			len(linkChangeMessages) < 4) {
 		select {
 		case msg := <-channels.ResourceChangesChan:
 			resourceChangeMessages = append(resourceChangeMessages, msg)
@@ -148,7 +172,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint
 			fullChangeSet = &changeSet
 		case err = <-channels.ErrChan:
 		case <-time.After(60 * time.Second):
-			err = fmt.Errorf("timed out waiting for changes to be staged")
+			err = fmt.Errorf(timeoutMessage)
 		}
 	}
 	s.Require().NoError(err)
@@ -158,9 +182,67 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint
 }
 
 func (s *ContainerChangeStagingTestSuite) Test_stage_changes_fails_for_cyclic_dependency_between_blueprint_instances() {
+	channels := createChangeStagingChannels()
+	params := baseBlueprintParams()
+
+	err := s.blueprint3Container.StageChanges(
+		context.Background(),
+		blueprint3InstanceID,
+		channels,
+		params,
+	)
+	s.Require().NoError(err)
+
+	for err == nil {
+		select {
+		case <-channels.ResourceChangesChan:
+		case <-channels.ChildChangesChan:
+		case <-channels.LinkChangesChan:
+		case <-channels.CompleteChan:
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = fmt.Errorf(timeoutMessage)
+		}
+	}
+	s.Assert().Error(err)
+	runErr, isRunErr := err.(*errors.RunError)
+	s.Assert().True(isRunErr)
+	s.Assert().Equal(
+		ErrorReasonCodeBlueprintCycleDetected,
+		runErr.ReasonCode,
+	)
 }
 
 func (s *ContainerChangeStagingTestSuite) Test_stage_changes_fails_when_max_blueprint_depth_is_exceeded() {
+	channels := createChangeStagingChannels()
+	params := createBlueprint4Params()
+
+	err := s.blueprint4Container.StageChanges(
+		context.Background(),
+		blueprint4InstanceID,
+		channels,
+		params,
+	)
+	s.Require().NoError(err)
+
+	for err == nil {
+		select {
+		case <-channels.ResourceChangesChan:
+		case <-channels.ChildChangesChan:
+		case <-channels.LinkChangesChan:
+		case <-channels.CompleteChan:
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = fmt.Errorf(timeoutMessage)
+		}
+	}
+	s.Assert().Error(err)
+	runErr, isRunErr := err.(*errors.RunError)
+	s.Assert().True(isRunErr)
+	s.Assert().Equal(
+		ErrorReasonCodeMaxBlueprintDepthExceeded,
+		runErr.ReasonCode,
+	)
 }
 
 func (s *ContainerChangeStagingTestSuite) populateCurrentState(stateContainer state.Container) error {
@@ -186,11 +268,53 @@ func (s *ContainerChangeStagingTestSuite) populateCurrentState(stateContainer st
 		return err
 	}
 
-	return stateContainer.SaveChild(
+	err = stateContainer.SaveChild(
 		context.Background(),
 		blueprint1InstanceID,
 		"coreInfra",
 		*blueprint1ChildCurrentState,
+	)
+	if err != nil {
+		return err
+	}
+
+	blueprint3CurrentState, err := s.loadCurrentState(
+		"__testdata/container/change-staging/current-state/blueprint3.json",
+	)
+	if err != nil {
+		return err
+	}
+	err = stateContainer.SaveInstance(
+		context.Background(),
+		*blueprint3CurrentState,
+	)
+	if err != nil {
+		return err
+	}
+
+	blueprint3ChildCurrentState, err := s.loadCurrentState(
+		"__testdata/container/change-staging/current-state/blueprint3-child-core-infra.json",
+	)
+	if err != nil {
+		return err
+	}
+
+	err = stateContainer.SaveChild(
+		context.Background(),
+		blueprint3InstanceID,
+		"coreInfra",
+		*blueprint3ChildCurrentState,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Creates cycle between blueprint1 and blueprint3
+	return stateContainer.SaveChild(
+		context.Background(),
+		blueprint3ChildInstanceID,
+		"ordersApi",
+		*blueprint3CurrentState,
 	)
 }
 
@@ -211,7 +335,7 @@ func (s *ContainerChangeStagingTestSuite) loadCurrentState(
 	return currentState, nil
 }
 
-func createBlueprint1Params() core.BlueprintParams {
+func baseBlueprintParams() core.BlueprintParams {
 	environment := "production-env"
 	enableOrderTableTrigger := true
 	region := "us-west-2"
@@ -250,7 +374,7 @@ func createBlueprint1Params() core.BlueprintParams {
 }
 
 func createBlueprint2Params() core.BlueprintParams {
-	baseParams := createBlueprint1Params()
+	baseParams := baseBlueprintParams()
 	includeInvoices := true
 	return baseParams.WithBlueprintVariables(
 		map[string]*core.ScalarValue{
@@ -260,6 +384,10 @@ func createBlueprint2Params() core.BlueprintParams {
 		},
 		true,
 	)
+}
+
+func createBlueprint4Params() core.BlueprintParams {
+	return createBlueprint2Params()
 }
 
 func TestContainerChangesStagingTestSuite(t *testing.T) {
