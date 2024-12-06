@@ -42,12 +42,12 @@ func (c *defaultBlueprintContainer) StageChanges(
 		paramOverrides,
 	)
 	if err != nil {
-		return err
+		return wrapErrorForChildContext(err, paramOverrides)
 	}
 
 	chains, err := expandedBlueprintContainer.SpecLinkInfo().Links(ctx)
 	if err != nil {
-		return err
+		return wrapErrorForChildContext(err, paramOverrides)
 	}
 
 	// We must use the ref chain collector from the expanded blueprint to correctly
@@ -58,11 +58,11 @@ func (c *defaultBlueprintContainer) StageChanges(
 	childrenRefNodes := extractChildRefNodes(expandedBlueprintContainer.BlueprintSpec().Schema(), refChainCollector)
 	orderedNodes, err := OrderItemsForDeployment(ctx, chains, childrenRefNodes, refChainCollector, paramOverrides)
 	if err != nil {
-		return err
+		return wrapErrorForChildContext(err, paramOverrides)
 	}
 	parallelGroups, err := GroupOrderedNodes(orderedNodes, refChainCollector)
 	if err != nil {
-		return err
+		return wrapErrorForChildContext(err, paramOverrides)
 	}
 
 	expandedResourceProviderMap := createResourceProviderMap(
@@ -118,7 +118,7 @@ func (c *defaultBlueprintContainer) stageChanges(
 	// can gather and display removals in the same way as other changes.
 	err := c.stageRemovals(ctx, instanceID, state, parallelGroups, channels)
 	if err != nil {
-		channels.ErrChan <- err
+		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
 		return
 	}
 
@@ -140,14 +140,14 @@ func (c *defaultBlueprintContainer) stageChanges(
 			state,
 		)
 		if err != nil {
-			channels.ErrChan <- err
+			channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
 			return
 		}
 	}
 
 	err = c.resolveAndCollectExportChanges(ctx, instanceID, blueprint, state)
 	if err != nil {
-		channels.ErrChan <- err
+		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
 		return
 	}
 
@@ -375,10 +375,12 @@ func (c *defaultBlueprintContainer) stageGroupChanges(
 				paramOverrides,
 			)
 		} else if node.Type() == "child" {
+			includeTreePath := getIncludeTreePath(paramOverrides, node.Name())
 			go c.stageChildBlueprintChanges(
 				ctx,
 				instanceID,
 				instanceTreePath,
+				includeTreePath,
 				node.ChildNode,
 				paramOverrides,
 				channels,
@@ -658,6 +660,7 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 	ctx context.Context,
 	parentInstanceID string,
 	parentInstanceTreePath string,
+	includeTreePath string,
 	node *validation.ReferenceChainNode,
 	paramOverrides core.BlueprintParams,
 	channels *ChangeStagingChannels,
@@ -687,7 +690,11 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 			/* keepExisting */ false,
 		).
 		WithContextVariables(
-			createContextVarsForChildBlueprint(parentInstanceID, parentInstanceTreePath),
+			createContextVarsForChildBlueprint(
+				parentInstanceID,
+				parentInstanceTreePath,
+				includeTreePath,
+			),
 			/* keepExisting */ true,
 		)
 

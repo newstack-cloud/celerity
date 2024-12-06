@@ -3,6 +3,7 @@ package container
 import (
 	"fmt"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 )
 
@@ -33,6 +34,13 @@ const (
 	// during deployment or change staging is due to
 	// the maximum blueprint depth being exceeded.
 	ErrorReasonCodeMaxBlueprintDepthExceeded errors.ErrorReasonCode = "max_blueprint_depth_exceeded"
+	// ErrorReasonCodeChildBlueprintError
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// an error in a child blueprint.
+	// This is used to wrap errors that occur in child blueprints
+	// that are not run errors.
+	ErrorReasonCodeChildBlueprintError errors.ErrorReasonCode = "child_blueprint_error"
 )
 
 func errMissingChildBlueprintPath(includeName string) error {
@@ -93,5 +101,36 @@ func errMaxBlueprintDepthExceeded(
 			instanceTreePath,
 			maxDepth,
 		),
+	}
+}
+
+func wrapErrorForChildContext(
+	err error,
+	params core.BlueprintParams,
+) error {
+	includeTreePath := getIncludeTreePath(params, "")
+	if includeTreePath == "" {
+		return err
+	}
+
+	runErr, isRunErr := err.(*errors.RunError)
+	if isRunErr {
+		// Be sure not to wrap errors that already have a child blueprint path,
+		// we want to surface the most precise location of the error.
+		if runErr.ChildBlueprintPath != "" {
+			return err
+		}
+
+		return &errors.RunError{
+			ReasonCode:         runErr.ReasonCode,
+			Err:                runErr.Err,
+			ChildErrors:        runErr.ChildErrors,
+			ChildBlueprintPath: includeTreePath,
+		}
+	}
+	return &errors.RunError{
+		ReasonCode:         ErrorReasonCodeChildBlueprintError,
+		Err:                err,
+		ChildBlueprintPath: includeTreePath,
 	}
 }

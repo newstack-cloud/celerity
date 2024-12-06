@@ -280,6 +280,39 @@ func addToInstanceTreePath(
 	return fmt.Sprintf("%s/%s", parentInstanceTreePath, instanceID)
 }
 
+func getIncludeTreePath(
+	params core.BlueprintParams,
+	includeChildIDName string,
+) string {
+	childName := strings.TrimPrefix(includeChildIDName, "children.")
+	includeName := ""
+	if childName != "" {
+		includeName = fmt.Sprintf("include.%s", childName)
+	}
+	includeTreePath := params.ContextVariable("includeTreePath")
+	if includeTreePath == nil || includeTreePath.StringValue == nil {
+		return includeName
+	}
+
+	parentTreePath := *includeTreePath.StringValue
+	return addToIncludeTreePath(parentTreePath, includeName)
+}
+
+func addToIncludeTreePath(
+	parentIncludeTreePath string,
+	includeName string,
+) string {
+	if parentIncludeTreePath == "" {
+		return includeName
+	}
+
+	if includeName == "" {
+		return parentIncludeTreePath
+	}
+
+	return fmt.Sprintf("%s::%s", parentIncludeTreePath, includeName)
+}
+
 func hasBlueprintCycle(
 	parentInstanceTreePath string,
 	instanceID string,
@@ -295,6 +328,7 @@ func hasBlueprintCycle(
 func createContextVarsForChildBlueprint(
 	parentInstanceID string,
 	instanceTreePath string,
+	includeTreePath string,
 ) map[string]*core.ScalarValue {
 	return map[string]*core.ScalarValue{
 		"parentInstanceID": {
@@ -302,6 +336,9 @@ func createContextVarsForChildBlueprint(
 		},
 		"instanceTreePath": {
 			StringValue: &instanceTreePath,
+		},
+		"includeTreePath": {
+			StringValue: &includeTreePath,
 		},
 	}
 }
