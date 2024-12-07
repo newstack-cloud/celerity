@@ -264,4 +264,19 @@ type linkPendingCompletion struct {
 	linkPending      bool
 }
 
-type DestroyChannels struct{}
+// DestroyChannels contains all the channels required to stream
+// destroy events.
+type DestroyChannels struct {
+	// ResourceDestroyChan receives messages about the status of deleting resources.
+	ResourceDestroyChan chan ResourceDeployUpdateMessage
+	// LinkDestroyChan receives messages about the status of deleting links.
+	LinkUpdateChan chan LinkDeployUpdateMessage
+	// ChildDestroyChan receives messages about the status of deleting child blueprints.
+	ChildDestroyChan chan ChildDeployUpdateMessage
+	// FinishChan is used to signal that the blueprint instance removal has finished,
+	// the message will contain the final status of the destroy operation.
+	FinishChan chan DeploymentFinishedMessage
+	// ErrChan is used to signal that an unexpected error occurred during the destroy
+	// operation.
+	ErrChan chan error
+}

@@ -580,7 +580,8 @@
           FailureReasons: ([]string) {
           },
           Drifted: (bool) false,
-          LastDriftDetectedTimestamp: (*int)(<nil>)
+          LastDriftDetectedTimestamp: (*int)(<nil>),
+          Durations: (*state.ResourceCompletionDurations)(<nil>)
         }),
         ResourceWithResolvedSubs: (*provider.ResolvedResource)({
           Type: (*schema.ResourceTypeWrapper)({
@@ -1336,7 +1337,8 @@
           FailureReasons: ([]string) {
           },
           Drifted: (bool) false,
-          LastDriftDetectedTimestamp: (*int)(<nil>)
+          LastDriftDetectedTimestamp: (*int)(<nil>),
+          Durations: (*state.ResourceCompletionDurations)(<nil>)
         }),
         ResourceWithResolvedSubs: (*provider.ResolvedResource)({
           Type: (*schema.ResourceTypeWrapper)({
@@ -1955,7 +1957,8 @@
           FailureReasons: ([]string) {
           },
           Drifted: (bool) false,
-          LastDriftDetectedTimestamp: (*int)(<nil>)
+          LastDriftDetectedTimestamp: (*int)(<nil>),
+          Durations: (*state.ResourceCompletionDurations)(<nil>)
         }),
         ResourceWithResolvedSubs: (*provider.ResolvedResource)({
           Type: (*schema.ResourceTypeWrapper)({
@@ -2452,7 +2455,8 @@
               FailureReasons: ([]string) {
               },
               Drifted: (bool) false,
-              LastDriftDetectedTimestamp: (*int)(<nil>)
+              LastDriftDetectedTimestamp: (*int)(<nil>),
+              Durations: (*state.ResourceCompletionDurations)(<nil>)
             }),
             ResourceWithResolvedSubs: (*provider.ResolvedResource)({
               Type: (*schema.ResourceTypeWrapper)({

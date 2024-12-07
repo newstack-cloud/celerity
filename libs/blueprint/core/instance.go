@@ -5,9 +5,13 @@ package core
 type InstanceStatus int
 
 const (
+	// InstanceStatusPreparing is used when a blueprint
+	// instance is being prepared to be deployed, updated
+	// or destroyed.
+	InstanceStatusPreparing InstanceStatus = iota
 	// InstanceStatusDeploying is used when
 	// an initial blueprint deployment is currently in progress.
-	InstanceStatusDeploying InstanceStatus = iota
+	InstanceStatusDeploying
 	// InstanceStatusDeployed is used when
 	// a blueprint instance has been deployed
 	// successfully.

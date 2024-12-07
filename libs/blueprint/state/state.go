@@ -129,6 +129,8 @@ type ResourceState struct {
 	Drifted bool `json:"drifted,omitempty"`
 	// LastDriftDetectedTimestamp holds the unix timestamp when drift was last detected.
 	LastDriftDetectedTimestamp *int `json:"lastDriftDetectedTimestamp,omitempty"`
+	// Durations holds duration information for the latest deployment of the resource.
+	Durations *ResourceCompletionDurations `json:"durations,omitempty"`
 }
 
 // ResourceMetadataState holds metadata for a resource
@@ -203,4 +205,50 @@ type LinkState struct {
 	// Holds the latest reasons for failures in deploying a link,
 	// this only ever holds the results of the latest deployment attempt.
 	FailureReasons []string `json:"failureReasons"`
+	// Durations holds duration information for the latest deployment of the link.
+	Durations *LinkCompletionDurations `json:"durations,omitempty"`
+}
+
+// ResourceCompletionDurations holds duration information
+// for the deployment of a resource change.
+type ResourceCompletionDurations struct {
+	// ConfigCompleteDuration is the duration in milliseconds for the resource to be configured.
+	// This will only be present if the resource has reached config complete status.
+	ConfigCompleteDuration *int `json:"configCompleteDuration,omitempty"`
+	// TotalDuration is the duration in milliseconds for the resource change to reach the final
+	// status.
+	TotalDuration *int `json:"totalDuration,omitempty"`
+	// AttemptDurations holds a list of durations in milliseconds
+	// for each attempt to deploy the resource.
+	// Attempt durations are in order as per the "Attempt" field in a status update message.
+	AttemptDurations []int `json:"attemptDurations,omitempty"`
+}
+
+// LinkCompletionDurations holds duration information
+// for the deployment of a link change.
+type LinkCompletionDurations struct {
+	// ResourceAUpdateDuration is the duration in milliseconds for the resource A to be updated.
+	// This will only be present if the link has reached resource A updated status.
+	ResourceAUpdateDuration *int `json:"resourceAUpdateDuration,omitempty"`
+	// ResourceBUpdateDuration is the duration in milliseconds for the resource B to be updated.
+	// This will only be present if the link has reached resource B updated status.
+	ResourceBUpdateDuration *int `json:"resourceBUpdateDuration,omitempty"`
+	// IntermediaryResourcesDuration is the duration in milliseconds for intermediary resources
+	// to be updated.
+	// This will only be present if the link has reached intermediary resources updated status.
+	IntermediaryResourcesDuration *int `json:"intermediaryResourcesDuration,omitempty"`
+	// TotalDuration is the duration in milliseconds for the link change to reach the final
+	// status.
+	TotalDuration *int `json:"totalDuration,omitempty"`
+	// AttemptDurations holds a list of durations in milliseconds
+	// for each attempt to deploy the link.
+	AttemptDurations []int `json:"attemptDurations,omitempty"`
+}
+
+// InstanceCompletionDuration holds duration information
+// for the deployment of a blueprint instance.
+type InstanceCompletionDuration struct {
+	// TotalDuration is the duration in milliseconds for the blueprint instance to reach the final
+	// status.
+	TotalDuration *int `json:"totalDuration,omitempty"`
 }
