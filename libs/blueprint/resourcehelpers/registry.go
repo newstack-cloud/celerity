@@ -41,6 +41,20 @@ type Registry interface {
 		resourceType string,
 		input *provider.ResourceValidateInput,
 	) (*provider.ResourceValidateOutput, error)
+
+	// Deploy deals with the deployment of a resource of a given type.
+	Deploy(
+		ctx context.Context,
+		resourceType string,
+		input *provider.ResourceDeployInput,
+	) (*provider.ResourceDeployOutput, error)
+
+	// Destroy deals with the destruction of a resource of a given type.
+	Destroy(
+		ctx context.Context,
+		resourceType string,
+		input *provider.ResourceDestroyInput,
+	) error
 }
 
 type registryFromProviders struct {
@@ -225,6 +239,32 @@ func (r *registryFromProviders) CustomValidate(
 	}
 
 	return resourceImpl.CustomValidate(ctx, input)
+}
+
+func (r *registryFromProviders) Deploy(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceDeployInput,
+) (*provider.ResourceDeployOutput, error) {
+	resourceImpl, err := r.getResourceType(ctx, resourceType)
+	if err != nil {
+		return nil, err
+	}
+
+	return resourceImpl.Deploy(ctx, input)
+}
+
+func (r *registryFromProviders) Destroy(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceDestroyInput,
+) error {
+	resourceImpl, err := r.getResourceType(ctx, resourceType)
+	if err != nil {
+		return err
+	}
+
+	return resourceImpl.Destroy(ctx, input)
 }
 
 func (r *registryFromProviders) getResourceType(ctx context.Context, resourceType string) (provider.Resource, error) {
