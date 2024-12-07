@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
@@ -222,9 +223,9 @@ func countPendingLinksForGroupFromState(group []*DeploymentNode, state *stageCha
 	count := 0
 	for _, node := range group {
 		if node.Type() == "resource" {
-			pendingLinkIDs := state.resourceNameLinkMap[node.ChainLinkNode.ResourceName]
-			for _, linkID := range pendingLinkIDs {
-				if state.pendingLinks[linkID].linkPending {
+			pendingLinkNames := state.resourceNameLinkMap[node.ChainLinkNode.ResourceName]
+			for _, linkName := range pendingLinkNames {
+				if state.pendingLinks[linkName].linkPending {
 					count += 1
 				}
 			}
@@ -288,7 +289,7 @@ func applyLinkChangesToState(changes LinkChangesMessage, state *stageChangesStat
 	if changes.Removed {
 		state.outputChanges.RemovedLinks = append(
 			state.outputChanges.RemovedLinks,
-			createLinkID(changes.ResourceAName, changes.ResourceBName),
+			createLogicalLinkName(changes.ResourceAName, changes.ResourceBName),
 		)
 		return
 	}
@@ -596,7 +597,7 @@ func (c *defaultBlueprintContainer) stageLinkChanges(
 	currentLinkState, err := c.stateContainer.GetLink(
 		ctx,
 		resourceAInfo.InstanceID,
-		createLinkID(resourceAInfo.ResourceName, resourceBInfo.ResourceName),
+		createLogicalLinkName(resourceAInfo.ResourceName, resourceBInfo.ResourceName),
 	)
 	if err != nil {
 		if !state.IsLinkNotFound(err) {
@@ -1115,8 +1116,8 @@ func (c *defaultBlueprintContainer) markLinkAsNoLongerPending(
 	stagingState.mu.Lock()
 	defer stagingState.mu.Unlock()
 
-	linkID := createLinkID(resourceANode.ResourceName, resourceBNode.ResourceName)
-	pendingLink := stagingState.pendingLinks[linkID]
+	linkName := createLogicalLinkName(resourceANode.ResourceName, resourceBNode.ResourceName)
+	pendingLink := stagingState.pendingLinks[linkName]
 	pendingLink.linkPending = false
 }
 
@@ -1128,11 +1129,11 @@ func (c *defaultBlueprintContainer) updateStagingState(
 	defer stagingState.mu.Unlock()
 
 	hasLinks := len(node.LinksTo) > 0 || len(node.LinkedFrom) > 0
-	pendingLinkIDs := stagingState.resourceNameLinkMap[node.ResourceName]
+	pendingLinkNames := stagingState.resourceNameLinkMap[node.ResourceName]
 	if hasLinks {
-		c.addPendingLinksToStagingState(node, pendingLinkIDs, stagingState)
+		c.addPendingLinksToStagingState(node, pendingLinkNames, stagingState)
 	}
-	return c.updatePendingLinksInStagingState(node, stagingState, pendingLinkIDs)
+	return c.updatePendingLinksInStagingState(node, stagingState, pendingLinkNames)
 }
 
 // This must only be called when a lock has already been held on the staging state.
@@ -1142,8 +1143,8 @@ func (c *defaultBlueprintContainer) addPendingLinksToStagingState(
 	stagingState *stageChangesState,
 ) {
 	for _, linksToNode := range node.LinksTo {
-		linkID := createLinkID(node.ResourceName, linksToNode.ResourceName)
-		if !slices.Contains(alreadyPendingLinks, linkID) {
+		linkName := createLogicalLinkName(node.ResourceName, linksToNode.ResourceName)
+		if !slices.Contains(alreadyPendingLinks, linkName) {
 			completionState := &linkPendingCompletion{
 				resourceANode:    node,
 				resourceBNode:    linksToNode,
@@ -1151,21 +1152,21 @@ func (c *defaultBlueprintContainer) addPendingLinksToStagingState(
 				resourceBPending: true,
 				linkPending:      true,
 			}
-			stagingState.pendingLinks[linkID] = completionState
+			stagingState.pendingLinks[linkName] = completionState
 			stagingState.resourceNameLinkMap[node.ResourceName] = append(
 				stagingState.resourceNameLinkMap[node.ResourceName],
-				linkID,
+				linkName,
 			)
 			stagingState.resourceNameLinkMap[linksToNode.ResourceName] = append(
 				stagingState.resourceNameLinkMap[linksToNode.ResourceName],
-				linkID,
+				linkName,
 			)
 		}
 	}
 
 	for _, linkedFromNode := range node.LinkedFrom {
-		linkID := createLinkID(linkedFromNode.ResourceName, node.ResourceName)
-		if !slices.Contains(alreadyPendingLinks, linkID) {
+		linkName := createLogicalLinkName(linkedFromNode.ResourceName, node.ResourceName)
+		if !slices.Contains(alreadyPendingLinks, linkName) {
 			completionState := &linkPendingCompletion{
 				resourceANode:    linkedFromNode,
 				resourceBNode:    node,
@@ -1173,14 +1174,14 @@ func (c *defaultBlueprintContainer) addPendingLinksToStagingState(
 				resourceBPending: false,
 				linkPending:      true,
 			}
-			stagingState.pendingLinks[linkID] = completionState
+			stagingState.pendingLinks[linkName] = completionState
 			stagingState.resourceNameLinkMap[linkedFromNode.ResourceName] = append(
 				stagingState.resourceNameLinkMap[linkedFromNode.ResourceName],
-				linkID,
+				linkName,
 			)
 			stagingState.resourceNameLinkMap[node.ResourceName] = append(
 				stagingState.resourceNameLinkMap[node.ResourceName],
-				linkID,
+				linkName,
 			)
 		}
 	}
@@ -1190,12 +1191,12 @@ func (c *defaultBlueprintContainer) addPendingLinksToStagingState(
 func (c *defaultBlueprintContainer) updatePendingLinksInStagingState(
 	node *links.ChainLinkNode,
 	stagingState *stageChangesState,
-	pendingLinkIDs []string,
+	pendingLinkNames []string,
 ) []*linkPendingCompletion {
 	linksReadyToBeStaged := []*linkPendingCompletion{}
 
-	for _, linkID := range pendingLinkIDs {
-		completionState := stagingState.pendingLinks[linkID]
+	for _, linkName := range pendingLinkNames {
+		completionState := stagingState.pendingLinks[linkName]
 		if completionState.resourceANode.ResourceName == node.ResourceName {
 			completionState.resourceAPending = false
 		} else if completionState.resourceBNode.ResourceName == node.ResourceName {
@@ -1339,4 +1340,100 @@ func (c *defaultBlueprintContainer) stageInstanceRemoval(
 	// dispatch resource, link, and child changes. We can just send the complete
 	// set of changes to the complete channel.
 	channels.CompleteChan <- changes
+}
+
+// ChangeStagingChannels contains all the channels required to stream
+// change staging events.
+type ChangeStagingChannels struct {
+	// ResourceChangesChan receives change sets for each resource in the blueprint.
+	ResourceChangesChan chan ResourceChangesMessage
+	// ChildChangesChan receives change sets for child blueprints once all
+	// changes for the child blueprint have been staged.
+	ChildChangesChan chan ChildChangesMessage
+	// LinkChangesChan receives change sets for links between resources.
+	LinkChangesChan chan LinkChangesMessage
+	// CompleteChan is used to signal that all changes have been staged
+	// containing the full set of changes that will be made to the blueprint instance
+	// when deploying the changes.
+	CompleteChan chan BlueprintChanges
+	// ErrChan is used to signal that an error occurred while staging changes.
+	ErrChan chan error
+}
+
+// ResourceChangesMessage provides a message containing the changes
+// that will be made to a resource in a blueprint instance.
+type ResourceChangesMessage struct {
+	ResourceName    string           `json:"resourceName"`
+	Removed         bool             `json:"removed"`
+	New             bool             `json:"new"`
+	Changes         provider.Changes `json:"changes"`
+	ResolveOnDeploy []string         `json:"resolveOnDeploy"`
+	// ConditionKnownOnDeploy is used to indicate that the condition for the resource
+	// can not be resolved until the blueprint is deployed.
+	// This means the changes described in this message may not be applied
+	// if the condition evaluates to false when the blueprint is deployed.
+	ConditionKnownOnDeploy bool `json:"conditionKnownOnDeploy"`
+}
+
+// ChildChangesMessage provides a message containing the changes
+// that will be made to a child blueprint in a blueprint instance.
+type ChildChangesMessage struct {
+	ChildBlueprintName string           `json:"childBlueprintName"`
+	Removed            bool             `json:"removed"`
+	New                bool             `json:"new"`
+	Changes            BlueprintChanges `json:"changes"`
+}
+
+// LinkChangesMessage provides a message containing the changes
+// that will be made to a link between resources in a blueprint instance.
+type LinkChangesMessage struct {
+	ResourceAName string               `json:"resourceAName"`
+	ResourceBName string               `json:"resourceBName"`
+	Removed       bool                 `json:"removed"`
+	New           bool                 `json:"new"`
+	Changes       provider.LinkChanges `json:"changes"`
+}
+
+type stageChangesState struct {
+	// A mapping of a link ID to the pending link completion state.
+	// A link ID in this context is made up of the resource names of the two resources
+	// that are linked together.
+	// For example, if resource A is linked to resource B, the link ID would be "A::B".
+	pendingLinks map[string]*linkPendingCompletion
+	// A mapping of resource names to pending links that include the resource.
+	resourceNameLinkMap map[string][]string
+	// The full set of changes that will be sent to the caller-provided complete channel
+	// when all changes have been staged.
+	// This is an intermediary format that holds pointers to resource change sets to allow
+	// modification without needing to copy and patch resource change sets back in to the state
+	// each time resource change set state needs to be updated with link change sets.
+	outputChanges *intermediaryBlueprintChanges
+	// Mutex is required as resources can be staged concurrently.
+	mu sync.Mutex
+}
+
+type intermediaryBlueprintChanges struct {
+	NewResources     map[string]*provider.Changes
+	ResourceChanges  map[string]*provider.Changes
+	RemovedResources []string
+	RemovedLinks     []string
+	NewChildren      map[string]*NewBlueprintDefinition
+	ChildChanges     map[string]*BlueprintChanges
+	RemovedChildren  []string
+	NewExports       map[string]*provider.FieldChange
+	ExportChanges    map[string]*provider.FieldChange
+	RemovedExports   []string
+	UnchangedExports []string
+	ResolveOnDeploy  []string
+}
+
+type stageResourceChangeInfo struct {
+	node       *links.ChainLinkNode
+	instanceID string
+	resourceID string
+}
+
+type changesWrapper struct {
+	resourceChanges *provider.Changes
+	childChanges    *BlueprintChanges
 }

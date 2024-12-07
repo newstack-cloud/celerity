@@ -10,8 +10,8 @@
     (string) (len=17) "saveOrderFunction"
   },
   RemovedLinks: ([]string) (len=2) {
-    (string) (len=11) "test-link-1",
-    (string) (len=11) "test-link-2"
+    (string) (len=32) "saveOrderFunction::ordersTable_0",
+    (string) (len=32) "saveOrderFunction::ordersTable_1"
   },
   NewChildren: (map[string]container.NewBlueprintDefinition) {
   },

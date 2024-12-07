@@ -178,7 +178,12 @@ type InstanceState struct {
 // managed by a provider's implementation of a link.
 type LinkState struct {
 	// A globally unique identifier for the link.
-	LinkID        string                 `json:"linkId"`
+	LinkID string `json:"linkId"`
+	// The logic name of the link in the blueprint.
+	// This is a combination of the 2 resources that are linked.
+	// For example, if a link is between a VPC and a subnet,
+	// the link name would be "vpc::subnet".
+	LinkName      string                 `json:"linkName"`
 	Status        core.LinkStatus        `json:"status"`
 	PreciseStatus core.PreciseLinkStatus `json:"preciseStatus"`
 	// LastDeployedTimestamp holds the unix timestamp when the link was last deployed.

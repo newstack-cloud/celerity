@@ -110,6 +110,7 @@
   "links": {
     "saveOrderFunction::ordersTable_0": {
       "linkId": "test-link-1",
+      "linkName": "saveOrderFunction::ordersTable_0",
       "status": 2,
       "preciseStatus": 8,
       "lastDeployedTimestamp": 1733145428,
@@ -134,6 +135,7 @@
     },
     "saveOrderFunction::ordersTable_1": {
       "linkId": "test-link-2",
+      "linkName": "saveOrderFunction::ordersTable_1",
       "status": 2,
       "preciseStatus": 8,
       "lastDeployedTimestamp": 1733145428,

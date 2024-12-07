@@ -248,7 +248,7 @@ func flattenMapLists[Value any](m map[string][]Value) []Value {
 	return flattened
 }
 
-func createLinkID(resourceAName string, resourceBName string) string {
+func createLogicalLinkName(resourceAName string, resourceBName string) string {
 	return fmt.Sprintf(
 		"%s::%s",
 		resourceAName,

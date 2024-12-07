@@ -4,7 +4,7 @@ import "github.com/two-hundred/celerity/libs/blueprint/state"
 
 func getInstanceRemovalChanges(instance *state.InstanceState) BlueprintChanges {
 	removedResources := getResourceNamesFromInstanceState(instance)
-	removedLinks := getLinkIDsFromInstanceState(instance)
+	removedLinks := getLinkNamesFromInstanceState(instance)
 	childRemovalInfo := getChildRemovalInfoFromInstanceState(instance)
 	removedExports := getExportNamesFromInstanceState(instance)
 
@@ -27,10 +27,10 @@ func getResourceNamesFromInstanceState(instance *state.InstanceState) []string {
 	return names
 }
 
-func getLinkIDsFromInstanceState(instance *state.InstanceState) []string {
+func getLinkNamesFromInstanceState(instance *state.InstanceState) []string {
 	ids := make([]string, 0)
 	for _, link := range instance.Links {
-		ids = append(ids, link.LinkID)
+		ids = append(ids, link.LinkName)
 	}
 	return ids
 }

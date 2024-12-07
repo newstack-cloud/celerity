@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
@@ -232,18 +231,6 @@ func NewDefaultBlueprintContainer(
 	}
 }
 
-func (c *defaultBlueprintContainer) Deploy(
-	ctx context.Context,
-	input *DeployInput,
-	channels *DeployChannels,
-	paramOverrides core.BlueprintParams,
-) error {
-	// 1. get chain links
-	// 2. traverse through chains and order resources to be created, destroyed or updated
-	// 3. carry out deployment
-	return nil
-}
-
 func (c *defaultBlueprintContainer) Destroy(
 	ctx context.Context,
 	input *DestroyInput,
@@ -269,89 +256,6 @@ func (c *defaultBlueprintContainer) RefChainCollector() validation.RefChainColle
 	return c.refChainCollector
 }
 
-type ChangeStagingChannels struct {
-	// ResourceChangesChan receives change sets for each resource in the blueprint.
-	ResourceChangesChan chan ResourceChangesMessage
-	// ChildChangesChan receives change sets for child blueprints once all
-	// changes for the child blueprint have been staged.
-	ChildChangesChan chan ChildChangesMessage
-	// LinkChangesChan receives change sets for links between resources.
-	LinkChangesChan chan LinkChangesMessage
-	// CompleteChan is used to signal that all changes have been staged
-	// containing the full set of changes that will be made to the blueprint instance
-	// when deploying the changes.
-	CompleteChan chan BlueprintChanges
-	// ErrChan is used to signal that an error occurred while staging changes.
-	ErrChan chan error
-}
-
-// ResourceChangesMessage provides a message containing the changes
-// that will be made to a resource in a blueprint instance.
-type ResourceChangesMessage struct {
-	ResourceName    string
-	Removed         bool
-	New             bool
-	Changes         provider.Changes
-	ResolveOnDeploy []string
-	// ConditionKnownOnDeploy is used to indicate that the condition for the resource
-	// can not be resolved until the blueprint is deployed.
-	// This means the changes described in this message may not be applied
-	// if the condition evaluates to false when the blueprint is deployed.
-	ConditionKnownOnDeploy bool
-}
-
-// ChildChangesMessage provides a message containing the changes
-// that will be made to a child blueprint in a blueprint instance.
-type ChildChangesMessage struct {
-	ChildBlueprintName string
-	Removed            bool
-	New                bool
-	Changes            BlueprintChanges
-}
-
-// LinkChangesMessage provides a message containing the changes
-// that will be made to a link between resources in a blueprint instance.
-type LinkChangesMessage struct {
-	ResourceAName string
-	ResourceBName string
-	Removed       bool
-	New           bool
-	Changes       provider.LinkChanges
-}
-
-type stageChangesState struct {
-	// A mapping of a link ID to the pending link completion state.
-	// A link ID in this context is made up of the resource names of the two resources
-	// that are linked together.
-	// For example, if resource A is linked to resource B, the link ID would be "A::B".
-	pendingLinks map[string]*linkPendingCompletion
-	// A mapping of resource names to pending links that include the resource.
-	resourceNameLinkMap map[string][]string
-	// The full set of changes that will be sent to the caller-provided complete channel
-	// when all changes have been staged.
-	// This is an intermediary format that holds pointers to resource change sets to allow
-	// modification without needing to copy and patch resource change sets back in to the state
-	// each time resource change set state needs to be updated with link change sets.
-	outputChanges *intermediaryBlueprintChanges
-	// Mutex is required as resources can be staged concurrently.
-	mu sync.Mutex
-}
-
-type intermediaryBlueprintChanges struct {
-	NewResources     map[string]*provider.Changes
-	ResourceChanges  map[string]*provider.Changes
-	RemovedResources []string
-	RemovedLinks     []string
-	NewChildren      map[string]*NewBlueprintDefinition
-	ChildChanges     map[string]*BlueprintChanges
-	RemovedChildren  []string
-	NewExports       map[string]*provider.FieldChange
-	ExportChanges    map[string]*provider.FieldChange
-	RemovedExports   []string
-	UnchangedExports []string
-	ResolveOnDeploy  []string
-}
-
 type linkPendingCompletion struct {
 	resourceANode    *links.ChainLinkNode
 	resourceBNode    *links.ChainLinkNode
@@ -359,18 +263,5 @@ type linkPendingCompletion struct {
 	resourceBPending bool
 	linkPending      bool
 }
-
-type stageResourceChangeInfo struct {
-	node       *links.ChainLinkNode
-	instanceID string
-	resourceID string
-}
-
-type changesWrapper struct {
-	resourceChanges *provider.Changes
-	childChanges    *BlueprintChanges
-}
-
-type DeployChannels struct{}
 
 type DestroyChannels struct{}
