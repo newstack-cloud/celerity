@@ -326,6 +326,14 @@ func (r *testExampleResource) GetExternalState(
 	return &provider.ResourceGetExternalStateOutput{}, nil
 }
 
+// HasStabilised is not used for validation!
+func (r *testExampleResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
+}
+
 // Destroy is not used for validation!
 func (r *testExampleResource) Destroy(
 	ctx context.Context,
@@ -405,6 +413,14 @@ func (r *testExampleResourceMissingSpecDefinition) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+// HasStabilised is not used for validation!
+func (r *testExampleResourceMissingSpecDefinition) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 // GetExternalState is not used for validation!
@@ -496,6 +512,14 @@ func (r *testExampleResourceMissingSpecSchema) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+// HasStabilised is not used for validation!
+func (r *testExampleResourceMissingSpecSchema) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 // GetExternalState is not used for validation!
@@ -863,6 +887,14 @@ func (r *testECSServiceResource) GetExternalState(
 	input *provider.ResourceGetExternalStateInput,
 ) (*provider.ResourceGetExternalStateOutput, error) {
 	return &provider.ResourceGetExternalStateOutput{}, nil
+}
+
+// HasStabilised is not used for validation!
+func (r *testECSServiceResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 // Destroy is not used for validation!

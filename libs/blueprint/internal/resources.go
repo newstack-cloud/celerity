@@ -106,6 +106,13 @@ func (r *DynamoDBTableResource) Deploy(
 	return &provider.ResourceDeployOutput{}, nil
 }
 
+func (r *DynamoDBTableResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
+}
+
 func (r *DynamoDBTableResource) GetExternalState(
 	ctx context.Context,
 	input *provider.ResourceGetExternalStateInput,
@@ -207,6 +214,13 @@ func (r *DynamoDBStreamResource) Deploy(
 	return &provider.ResourceDeployOutput{}, nil
 }
 
+func (r *DynamoDBStreamResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
+}
+
 func (r *DynamoDBStreamResource) GetExternalState(
 	ctx context.Context,
 	input *provider.ResourceGetExternalStateInput,
@@ -302,6 +316,13 @@ func (r *LambdaFunctionResource) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+func (r *LambdaFunctionResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 func (r *LambdaFunctionResource) GetExternalState(
@@ -555,6 +576,13 @@ func (r *ExampleComplexResource) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+func (r *ExampleComplexResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 func (r *ExampleComplexResource) GetExternalState(

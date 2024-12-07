@@ -103,6 +103,7 @@ type ResourceState struct {
 	// that the resource is derived from.
 	// This will be empty if the resource is not derived from a resource template.
 	ResourceTemplateName string                     `json:"resourceTemplateName,omitempty"`
+	InstanceID           string                     `json:"instanceId"`
 	Status               core.ResourceStatus        `json:"status"`
 	PreciseStatus        core.PreciseResourceStatus `json:"preciseStatus"`
 	// LastDeployedTimestamp holds the unix timestamp when the resource was last deployed.
@@ -121,6 +122,13 @@ type ResourceState struct {
 	// blueprint framework along with the storage of labels, annotations and a human-friendly
 	// display name for the resource.
 	Metadata *ResourceMetadataState `json:"metadata,omitempty"`
+	// DependsOnResources holds a list of resource IDs that the resource depends on,
+	// this dependency is derived from "hard" links, references and the use of the dependsOn
+	// property in the source blueprint.
+	DependsOnResources []string `json:"dependsOnResources,omitempty"`
+	// DependsOnChildren holds a list of child blueprint names that the resource depends on.
+	// This dependency is derived from references in the source blueprint.
+	DependsOnChildren []string `json:"dependsOnChildren,omitempty"`
 	// Holds the latest reasons for failures in deploying a resource,
 	// this only ever holds the results of the latest deployment attempt.
 	FailureReasons []string `json:"failureReasons"`
@@ -182,10 +190,11 @@ type LinkState struct {
 	// A globally unique identifier for the link.
 	LinkID string `json:"linkId"`
 	// The logic name of the link in the blueprint.
-	// This is a combination of the 2 resources that are linked.
+	// This is a combination of the logical names of the 2 resources that are linked.
 	// For example, if a link is between a VPC and a subnet,
 	// the link name would be "vpc::subnet".
 	LinkName      string                 `json:"linkName"`
+	InstanceID    string                 `json:"instanceId"`
 	Status        core.LinkStatus        `json:"status"`
 	PreciseStatus core.PreciseLinkStatus `json:"preciseStatus"`
 	// LastDeployedTimestamp holds the unix timestamp when the link was last deployed.
@@ -214,14 +223,14 @@ type LinkState struct {
 type ResourceCompletionDurations struct {
 	// ConfigCompleteDuration is the duration in milliseconds for the resource to be configured.
 	// This will only be present if the resource has reached config complete status.
-	ConfigCompleteDuration *int `json:"configCompleteDuration,omitempty"`
+	ConfigCompleteDuration *float64 `json:"configCompleteDuration,omitempty"`
 	// TotalDuration is the duration in milliseconds for the resource change to reach the final
 	// status.
-	TotalDuration *int `json:"totalDuration,omitempty"`
+	TotalDuration *float64 `json:"totalDuration,omitempty"`
 	// AttemptDurations holds a list of durations in milliseconds
 	// for each attempt to deploy the resource.
 	// Attempt durations are in order as per the "Attempt" field in a status update message.
-	AttemptDurations []int `json:"attemptDurations,omitempty"`
+	AttemptDurations []float64 `json:"attemptDurations,omitempty"`
 }
 
 // LinkCompletionDurations holds duration information
@@ -229,20 +238,20 @@ type ResourceCompletionDurations struct {
 type LinkCompletionDurations struct {
 	// ResourceAUpdateDuration is the duration in milliseconds for the resource A to be updated.
 	// This will only be present if the link has reached resource A updated status.
-	ResourceAUpdateDuration *int `json:"resourceAUpdateDuration,omitempty"`
+	ResourceAUpdateDuration *float64 `json:"resourceAUpdateDuration,omitempty"`
 	// ResourceBUpdateDuration is the duration in milliseconds for the resource B to be updated.
 	// This will only be present if the link has reached resource B updated status.
-	ResourceBUpdateDuration *int `json:"resourceBUpdateDuration,omitempty"`
+	ResourceBUpdateDuration *float64 `json:"resourceBUpdateDuration,omitempty"`
 	// IntermediaryResourcesDuration is the duration in milliseconds for intermediary resources
 	// to be updated.
 	// This will only be present if the link has reached intermediary resources updated status.
-	IntermediaryResourcesDuration *int `json:"intermediaryResourcesDuration,omitempty"`
+	IntermediaryResourcesDuration *float64 `json:"intermediaryResourcesDuration,omitempty"`
 	// TotalDuration is the duration in milliseconds for the link change to reach the final
 	// status.
-	TotalDuration *int `json:"totalDuration,omitempty"`
+	TotalDuration *float64 `json:"totalDuration,omitempty"`
 	// AttemptDurations holds a list of durations in milliseconds
 	// for each attempt to deploy the link.
-	AttemptDurations []int `json:"attemptDurations,omitempty"`
+	AttemptDurations []float64 `json:"attemptDurations,omitempty"`
 }
 
 // InstanceCompletionDuration holds duration information
@@ -250,5 +259,5 @@ type LinkCompletionDurations struct {
 type InstanceCompletionDuration struct {
 	// TotalDuration is the duration in milliseconds for the blueprint instance to reach the final
 	// status.
-	TotalDuration *int `json:"totalDuration,omitempty"`
+	TotalDuration *float64 `json:"totalDuration,omitempty"`
 }

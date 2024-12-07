@@ -7,6 +7,7 @@
       ResourceID: (string) (len=15) "test-resource-1",
       ResourceName: (string) (len=15) "complexResource",
       ResourceTemplateName: (string) "",
+      InstanceID: (string) "",
       Status: (core.ResourceStatus) 2,
       PreciseStatus: (core.PreciseResourceStatus) 3,
       LastDeployedTimestamp: (int) 1732969676,
@@ -401,6 +402,8 @@
           FieldsSourceMeta: (map[string]*source.Meta) <nil>
         })
       }),
+      DependsOnResources: ([]string) <nil>,
+      DependsOnChildren: ([]string) <nil>,
       FailureReasons: ([]string) <nil>,
       Drifted: (bool) false,
       LastDriftDetectedTimestamp: (*int)(<nil>),

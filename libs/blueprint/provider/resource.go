@@ -46,13 +46,18 @@ type Resource interface {
 	// Markdown and plain text formats are supported.
 	GetTypeDescription(ctx context.Context, input *ResourceGetTypeDescriptionInput) (*ResourceGetTypeDescriptionOutput, error)
 	// Deploy deals with deploying a resource with the upstream resource provider.
-	// The behaviour of deploy is completely down to the implementation of a resource provider and how long
-	// a resource is likely to take to deploy. The state will be synchronised periodically and will reflect the current
-	// state for long running deployments that we won't be waiting around for.
+	// The behaviour of deploy is to create or update the resource configuration and return the resource
+	// spec state once the configuration has been created or updated.
+	// Deploy should not wait for the resource to be in a stable state before returning,
+	// the framework will call the HasStabilised method periodically when waiting for a resource
+	// to stabilise.
 	// Parameters are passed into Deploy for extra context, blueprint variables will have already
 	// been substituted at this stage and must be used instead of the passed in params argument
 	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
 	Deploy(ctx context.Context, input *ResourceDeployInput) (*ResourceDeployOutput, error)
+	// HasStabilised deals with checking if a resource has stabilised after being deployed.
+	// This is important for resources that require a stable state before other resources can be deployed.
+	HasStabilised(ctx context.Context, input *ResourceHasStabilisedInput) (*ResourceHasStabilisedOutput, error)
 	// GetExternalState deals with getting a the state of the resource from the resource provider.
 	// (e.g. AWS or Google Cloud)
 	// The blueprint instance and resource should be
@@ -273,7 +278,21 @@ type ResourceGetTypeDescriptionOutput struct {
 
 // ResourceDeployOutput provides the output data from deploying a resource.
 type ResourceDeployOutput struct {
-	State *state.ResourceState
+	SpecState *core.MappingNode
+}
+
+// ResourceHasStabilisedInput provides the input data needed for a resource to
+// determine if it has stabilised after being deployed.
+type ResourceHasStabilisedInput struct {
+	InstanceID string
+	ResourceID string
+	Params     core.BlueprintParams
+}
+
+// ResourceHasStabilisedOutput provides the output data from determining if a resource
+// has stabilised after being deployed.
+type ResourceHasStabilisedOutput struct {
+	HasStabilised bool
 }
 
 // ResourceGetExternalStateInput provides the input data needed for a resource to

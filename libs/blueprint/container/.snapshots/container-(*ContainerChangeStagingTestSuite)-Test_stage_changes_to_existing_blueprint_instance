@@ -411,6 +411,7 @@
           ResourceID: (string) (len=22) "test-orders-table-0-id",
           ResourceName: (string) (len=13) "ordersTable_0",
           ResourceTemplateName: (string) (len=11) "ordersTable",
+          InstanceID: (string) (len=20) "blueprint-instance-1",
           Status: (core.ResourceStatus) 2,
           PreciseStatus: (core.PreciseResourceStatus) 3,
           LastDeployedTimestamp: (int) 1733145428,
@@ -577,6 +578,8 @@
               FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           }),
+          DependsOnResources: ([]string) <nil>,
+          DependsOnChildren: ([]string) <nil>,
           FailureReasons: ([]string) {
           },
           Drifted: (bool) false,
@@ -1168,6 +1171,7 @@
           ResourceID: (string) (len=22) "test-orders-table-1-id",
           ResourceName: (string) (len=13) "ordersTable_1",
           ResourceTemplateName: (string) (len=11) "ordersTable",
+          InstanceID: (string) (len=20) "blueprint-instance-1",
           Status: (core.ResourceStatus) 2,
           PreciseStatus: (core.PreciseResourceStatus) 3,
           LastDeployedTimestamp: (int) 1733145428,
@@ -1334,6 +1338,8 @@
               FieldsSourceMeta: (map[string]*source.Meta) <nil>
             })
           }),
+          DependsOnResources: ([]string) <nil>,
+          DependsOnChildren: ([]string) <nil>,
           FailureReasons: ([]string) {
           },
           Drifted: (bool) false,
@@ -1925,6 +1931,7 @@
           ResourceID: (string) (len=27) "test-save-order-function-id",
           ResourceName: (string) (len=17) "saveOrderFunction",
           ResourceTemplateName: (string) "",
+          InstanceID: (string) (len=20) "blueprint-instance-1",
           Status: (core.ResourceStatus) 2,
           PreciseStatus: (core.PreciseResourceStatus) 3,
           LastDeployedTimestamp: (int) 1733145428,
@@ -1954,6 +1961,8 @@
           }),
           Description: (string) (len=45) "Function that saves an order to the database.",
           Metadata: (*state.ResourceMetadataState)(<nil>),
+          DependsOnResources: ([]string) <nil>,
+          DependsOnChildren: ([]string) <nil>,
           FailureReasons: ([]string) {
           },
           Drifted: (bool) false,
@@ -2252,6 +2261,7 @@
               ResourceID: (string) (len=19) "complex-resource-id",
               ResourceName: (string) (len=15) "complexResource",
               ResourceTemplateName: (string) "",
+              InstanceID: (string) (len=35) "blueprint-instance-child-core-infra",
               Status: (core.ResourceStatus) 2,
               PreciseStatus: (core.PreciseResourceStatus) 3,
               LastDeployedTimestamp: (int) 1733145428,
@@ -2452,6 +2462,8 @@
               }),
               Description: (string) (len=24) "A complex resource type.",
               Metadata: (*state.ResourceMetadataState)(<nil>),
+              DependsOnResources: ([]string) <nil>,
+              DependsOnChildren: ([]string) <nil>,
               FailureReasons: ([]string) {
               },
               Drifted: (bool) false,

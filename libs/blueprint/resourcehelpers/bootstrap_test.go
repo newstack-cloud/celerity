@@ -200,6 +200,14 @@ func (r *testExampleResource) Deploy(
 	return &provider.ResourceDeployOutput{}, nil
 }
 
+// HasStabilised is not used for validation!
+func (r *testExampleResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
+}
+
 // GetExternalState is not used for validation!
 func (r *testExampleResource) GetExternalState(
 	ctx context.Context,

@@ -935,6 +935,14 @@ func (r *testResourceMissingSpecDef) Deploy(
 	return &provider.ResourceDeployOutput{}, nil
 }
 
+// HasStabilised is not used for validation!
+func (r *testResourceMissingSpecDef) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
+}
+
 // GetExternalState is not used for validation!
 func (r *testResourceMissingSpecDef) GetExternalState(
 	ctx context.Context,
@@ -1028,6 +1036,14 @@ func (r *testResourceMissingSchema) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+// HasStabilised is not used for validation!
+func (r *testResourceMissingSchema) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 // GetExternalState is not used for validation!
@@ -1176,6 +1192,14 @@ func (r *specValidationTestExampleResource) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+// HasStabilised is not used for validation!
+func (r *specValidationTestExampleResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 // GetExternalState is not used for validation!

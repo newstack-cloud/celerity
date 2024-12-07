@@ -10,6 +10,7 @@
     "complex-resource-id": {
       "resourceId": "complex-resource-id",
       "resourceName": "complexResource",
+      "instanceId": "blueprint-instance-3-child-core-infra",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,

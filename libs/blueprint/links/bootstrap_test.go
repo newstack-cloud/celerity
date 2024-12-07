@@ -187,6 +187,14 @@ func (r *testApiGatewayResource) Deploy(
 	return &provider.ResourceDeployOutput{}, nil
 }
 
+// HasStabilised is not used for spec link info!
+func (r *testApiGatewayResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
+}
+
 // GetExternalState is not used for spec link info!
 func (r *testApiGatewayResource) GetExternalState(
 	ctx context.Context,
@@ -273,6 +281,14 @@ func (r *testSQSQueueResource) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+// HasStabilised is not used for spec link info!
+func (r *testSQSQueueResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 // GetExternalState is not used for spec link info!
@@ -366,6 +382,14 @@ func (r *testLambdaFunctionResource) Deploy(
 	return &provider.ResourceDeployOutput{}, nil
 }
 
+// HasStabilised is not used for spec link info!
+func (r *testLambdaFunctionResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
+}
+
 // GetExternalState is not used for spec link info!
 func (r *testLambdaFunctionResource) GetExternalState(
 	ctx context.Context,
@@ -452,6 +476,14 @@ func (r *testStratosLambdaFunctionResource) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+// HasStabilised is not used for spec link info!
+func (r *testStratosLambdaFunctionResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 // GetExternalState is not used for spec link info!
@@ -542,6 +574,14 @@ func (r *testDynamoDBTableResource) Deploy(
 	return &provider.ResourceDeployOutput{}, nil
 }
 
+// HasStabilised is not used for spec link info!
+func (r *testDynamoDBTableResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
+}
+
 // GetExternalState is not used for spec link info!
 func (r *testDynamoDBTableResource) GetExternalState(
 	ctx context.Context,
@@ -628,6 +668,14 @@ func (r *testDynamoDBStreamResource) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+// HasStabilised is not used for spec link info!
+func (r *testDynamoDBStreamResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 // GetExternalState is not used for spec link info!
@@ -719,6 +767,14 @@ func (r *testIAMRoleResource) Deploy(
 	return &provider.ResourceDeployOutput{}, nil
 }
 
+// HasStabilised is not used for spec link info!
+func (r *testIAMRoleResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
+}
+
 // GetExternalState is not used for spec link info!
 func (r *testIAMRoleResource) GetExternalState(
 	ctx context.Context,
@@ -806,6 +862,14 @@ func (r *testStratosIAMRoleResource) Deploy(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+// HasStabilised is not used for spec link info!
+func (r *testStratosIAMRoleResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{}, nil
 }
 
 // GetExternalState is not used for spec link info!

@@ -13,6 +13,24 @@ func (c *defaultBlueprintContainer) Deploy(
 	channels *DeployChannels,
 	paramOverrides core.BlueprintParams,
 ) error {
+	// Send message with InstanceStatusPreparing status.
+	// Get all components that should be removed.
+	//  - If components remain in the blueprint that have a dependency
+	//    on a component that is being removed, the deployment should fail.
+	// Order component removal based on dependencies in state.
+	// Group component removals so those that are not connected can be removed in parallel.
+	// Remove components in order.
+	// Get all components to be deployed or updated.
+	// Order components based on dependencies in the blueprint.
+	// Group components so those that are not connected can be deployed in parallel.
+	// Unlike with change staging, groups are not executed as a unit, they are used as
+	// pools to look for components that can be deployed based on the current state of deployment.
+	// For each component to be created or updated:
+	//  - call Deploy method component (resource, link, child blueprint).
+	//  - If component is resource and is in config complete status, check if any of its dependents
+	//    require the resource to be stable before they can be deployed.
+	//    - If so, wait for the resource to be stable before deploying the dependent.
+	//    - If not, begin deploying the dependent.
 	return nil
 }
 
