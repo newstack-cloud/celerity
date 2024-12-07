@@ -155,3 +155,57 @@ func ErrUnknownResourceDefSchemaType(
 		),
 	}
 }
+
+// RetryableError is an error that indicates a transient error that can be retried.
+// This is a part of the API for provider resources, data sources and custom variable types.
+// When a retryable error is returned from a provider resource, data source or custom variable type.
+// The operation is retried after a delay based on a configured backoff/retry strategy
+// that is configured globally or at the provider level, the framework provides some reasonable
+// defaults.
+//
+// The message in ChildError will be used as the failure reason persisted in the state
+// when in the context of a resource deployment.
+type RetryableError struct {
+	// The underlying error for the action that can be retried.
+	ChildError error
+}
+
+func (e *RetryableError) Error() string {
+	return fmt.Sprintf("retryable error: %s", e.ChildError.Error())
+}
+
+// ResourceDeployError is an error that indicates a failure to deploy a resource.
+// This is a part of the API for provider resources that should be returned when a resource
+// fails to deploy, this will cause the operation to fail and the state of the resource will
+// be marked as failed with the failure reasons provided.
+// This should only be used for errors that can not be retried, the RetryableError
+// should be used for transient errors that can be retried.
+type ResourceDeployError struct {
+	FailureReasons []string
+}
+
+func (e *ResourceDeployError) Error() string {
+	if len(e.FailureReasons) == 1 {
+		return fmt.Sprintf("resource deployment failed: %s", e.FailureReasons[0])
+	}
+
+	return fmt.Sprintf("resource deployment failed with %d failures", len(e.FailureReasons))
+}
+
+// ResourceDestroyError is an error that indicates a failure to destroy a resource.
+// This is a part of the API for provider resources that should be returned when an attempt
+// to remove a resource fails, this will cause the operation to fail and the state of the resource will
+// be marked as failed with the failure reasons provided.
+// This should only be used for errors that can not be retried, the RetryableError
+// should be used for transient errors that can be retried.
+type ResourceDestroyError struct {
+	FailureReasons []string
+}
+
+func (e *ResourceDestroyError) Error() string {
+	if len(e.FailureReasons) == 1 {
+		return fmt.Sprintf("resource removal failed: %s", e.FailureReasons[0])
+	}
+
+	return fmt.Sprintf("resource removal failed with %d failures", len(e.FailureReasons))
+}

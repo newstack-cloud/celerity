@@ -103,18 +103,3 @@ func (e *ExpandedSerialiseError) Error() string {
 	errorsLabel := deriveErrorsLabel(childErrCount)
 	return fmt.Sprintf("expanded blueprint serialise error (%d child %s): %s", childErrCount, errorsLabel, e.Err.Error())
 }
-
-// RetryableError is an error that indicates a transient error that can be retried.
-// This is a part of the API for provider resources, data sources and custom variable types.
-// When a retryable error is returned from a provider resource, data source or custom variable type.
-// The operation is retried after a delay based on a configured backoff/retry strategy
-// that is configured globally or at the provider level, the framework provides some reasonable
-// defaults.
-type RetryableError struct {
-	// The underlying error for the action that can be retried.
-	ChildError error
-}
-
-func (e *RetryableError) Error() string {
-	return fmt.Sprintf("retryable error: %s", e.ChildError.Error())
-}
