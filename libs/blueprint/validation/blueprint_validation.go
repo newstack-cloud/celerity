@@ -29,8 +29,9 @@ func ValidateBlueprint(ctx context.Context, blueprint *schema.Blueprint) ([]*bpc
 		}
 	}
 
-	if blueprint.Resources == nil || len(blueprint.Resources.Values) == 0 {
-		errors = append(errors, errBlueprintMissingResources())
+	if (blueprint.Resources == nil || len(blueprint.Resources.Values) == 0) &&
+		(blueprint.Include == nil || len(blueprint.Include.Values) == 0) {
+		errors = append(errors, errBlueprintMissingResourcesOrIncludes())
 	}
 
 	if len(errors) > 0 {
@@ -41,10 +42,10 @@ func ValidateBlueprint(ctx context.Context, blueprint *schema.Blueprint) ([]*bpc
 }
 
 const (
-	// Version2023_04_20 is the version of the blueprint specification
+	// Version2025_02_01 is the version of the blueprint specification
 	// that is the sole version of the spec supported by the initial
 	// version of the blueprint framework.
-	Version2023_04_20 = "2023-04-20"
+	Version2025_02_01 = "2025-02-01"
 )
 
 var (
@@ -52,6 +53,6 @@ var (
 	// specification that are supported by this version of the blueprint
 	// framework.
 	SupportedVersions = []string{
-		Version2023_04_20,
+		Version2025_02_01,
 	}
 )

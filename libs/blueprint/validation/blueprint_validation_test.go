@@ -16,7 +16,7 @@ var _ = Suite(&BlueprintValidationTestSuite{})
 func (s *BlueprintValidationTestSuite) Test_succeeds_without_any_issues_for_a_valid_blueprint(c *C) {
 
 	instanceType := "t2.micro"
-	version := Version2023_04_20
+	version := Version2025_02_01
 	blueprint := &schema.Blueprint{
 		Version: &core.ScalarValue{StringValue: &version},
 		Resources: &schema.ResourceMap{
@@ -79,7 +79,7 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_n
 
 func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_incorrect(c *C) {
 	// In the intial version of blueprint framework, only version
-	// 2023-04-20 of the spec is supported.
+	// 2025-02-01 of the spec is supported.
 	instanceType := "t2.micro"
 	version := "2023-09-15"
 	blueprint := &schema.Blueprint{
@@ -114,12 +114,12 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_version_is_i
 		childLoadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to an unsupported version \"2023-09-15\" being provided. "+
-			"supported versions include: 2023-04-20",
+			"supported versions include: 2025-02-01",
 	)
 }
 
-func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_resources_property_is_missing(c *C) {
-	version := Version2023_04_20
+func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_resources_and_include_properties_are_missing(c *C) {
+	version := Version2025_02_01
 	blueprint := &schema.Blueprint{
 		Version: &core.ScalarValue{StringValue: &version},
 	}
@@ -131,19 +131,22 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_the_resources_pr
 
 	childLoadErr, isChildLoadErr := loadErr.ChildErrors[0].(*errors.LoadError)
 	c.Assert(isChildLoadErr, Equals, true)
-	c.Assert(childLoadErr.ReasonCode, Equals, ErrorReasonCodeMissingResources)
+	c.Assert(childLoadErr.ReasonCode, Equals, ErrorReasonCodeMissingResourcesOrIncludes)
 	c.Assert(
 		childLoadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an empty set of resources, at least one resource must be defined in a blueprint",
+		"blueprint load error: validation failed as no resources or includes have been defined,"+
+			" at least one resource must be defined in a blueprint if there are no includes and"+
+			" at least one include must be defined in a blueprint if there are no resources",
 	)
 }
 
-func (s *BlueprintValidationTestSuite) Test_reports_errors_when_no_resources_are_provided(c *C) {
-	version := Version2023_04_20
+func (s *BlueprintValidationTestSuite) Test_reports_errors_when_no_resources_or_includes_are_provided(c *C) {
+	version := Version2025_02_01
 	blueprint := &schema.Blueprint{
 		Version:   &core.ScalarValue{StringValue: &version},
 		Resources: &schema.ResourceMap{},
+		Include:   &schema.IncludeMap{},
 	}
 	_, err := ValidateBlueprint(context.Background(), blueprint)
 	c.Assert(err, NotNil)
@@ -153,10 +156,12 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_when_no_resources_are
 
 	childLoadErr, isChildLoadErr := loadErr.ChildErrors[0].(*errors.LoadError)
 	c.Assert(isChildLoadErr, Equals, true)
-	c.Assert(childLoadErr.ReasonCode, Equals, ErrorReasonCodeMissingResources)
+	c.Assert(childLoadErr.ReasonCode, Equals, ErrorReasonCodeMissingResourcesOrIncludes)
 	c.Assert(
 		childLoadErr.Error(),
 		Equals,
-		"blueprint load error: validation failed due to an empty set of resources, at least one resource must be defined in a blueprint",
+		"blueprint load error: validation failed as no resources or includes have been defined,"+
+			" at least one resource must be defined in a blueprint if there are no includes and"+
+			" at least one include must be defined in a blueprint if there are no resources",
 	)
 }

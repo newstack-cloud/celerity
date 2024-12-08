@@ -239,7 +239,7 @@ func validateElemReferenceSubstitution(
 	}
 
 	if bpSchema.Resources == nil || bpSchema.Resources.Values == nil {
-		return "", diagnostics, errBlueprintMissingResources()
+		return "", diagnostics, errSubElemRefNotInResource(elemRefType, location)
 	}
 
 	resourceName := usedIn[10:]
@@ -281,7 +281,7 @@ func validateResourcePropertySubstitution(
 	resourceName := subResourceProp.ResourceName
 
 	if bpSchema.Resources == nil || bpSchema.Resources.Values == nil {
-		return "", diagnostics, errBlueprintMissingResources()
+		return "", diagnostics, errSubResourceNotFound(resourceName, subResourceProp.SourceMeta)
 	}
 
 	resourceSchema, hasResource := bpSchema.Resources.Values[resourceName]

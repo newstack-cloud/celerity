@@ -798,10 +798,14 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(
+		loadErr.ReasonCode,
+		Equals,
+		ErrorReasonCodeInvalidSubstitution,
+	)
+	c.Assert(
 		loadErr.Err.Error(),
 		Equals,
-		"validation failed due to an empty set of resources, "+
-			"at least one resource must be defined in a blueprint",
+		"validation failed due to an element reference being used outside of a resource",
 	)
 }
 
@@ -951,10 +955,14 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_resource_pro
 	loadErr, isLoadErr := err.(*errors.LoadError)
 	c.Assert(isLoadErr, Equals, true)
 	c.Assert(
+		loadErr.ReasonCode,
+		Equals,
+		ErrorReasonCodeInvalidSubstitution,
+	)
+	c.Assert(
 		loadErr.Err.Error(),
 		Equals,
-		"validation failed due to an empty set of resources, "+
-			"at least one resource must be defined in a blueprint",
+		"validation failed due to the resource \"exampleResource1\" not existing in the blueprint",
 	)
 }
 

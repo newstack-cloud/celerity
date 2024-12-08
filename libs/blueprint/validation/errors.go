@@ -25,10 +25,11 @@ const (
 	// for a blueprint spec load error is due to one or more resources
 	// being invalid.
 	ErrorReasonCodeInvalidResource errors.ErrorReasonCode = "invalid_resource"
-	// ErrorReasonCodeMissingResources is provided when the reason
-	// for a blueprint spec load error is due to an empty map of resources being
-	// provided or where the resources property is omitted.
-	ErrorReasonCodeMissingResources errors.ErrorReasonCode = "missing_resources"
+	// ErrorReasonCodeMissingResourcesOrIncludes is provided when the reason
+	// for a blueprint spec load error is due no resources or includes
+	// being defined in the blueprint.
+	// An empty map or omitted property will result in this error.
+	ErrorReasonCodeMissingResourcesOrIncludes errors.ErrorReasonCode = "missing_resources"
 	// ErrorReasonCodeInvalidVariable is provided when the reason
 	// for a blueprint spec load error is due to one or more variables
 	// being invalid.
@@ -116,12 +117,13 @@ func errBlueprintMissingVersion() error {
 	}
 }
 
-func errBlueprintMissingResources() error {
+func errBlueprintMissingResourcesOrIncludes() error {
 	return &errors.LoadError{
-		ReasonCode: ErrorReasonCodeMissingResources,
+		ReasonCode: ErrorReasonCodeMissingResourcesOrIncludes,
 		Err: fmt.Errorf(
-			"validation failed due to an empty set of resources," +
-				" at least one resource must be defined in a blueprint",
+			"validation failed as no resources or includes have been defined," +
+				" at least one resource must be defined in a blueprint if there are no includes and" +
+				" at least one include must be defined in a blueprint if there are no resources",
 		),
 	}
 }

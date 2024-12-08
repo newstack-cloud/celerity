@@ -14,12 +14,12 @@ type TransformValidationTestSuite struct{}
 var _ = Suite(&TransformValidationTestSuite{})
 
 func (s *TransformValidationTestSuite) Test_succeeds_without_any_issues_for_a_valid_transform(c *C) {
-	version := Version2023_04_20
+	version := Version2025_02_01
 	blueprint := &schema.Blueprint{
 		Version: &core.ScalarValue{StringValue: &version},
 		Transform: &schema.TransformValueWrapper{
 			StringList: schema.StringList{
-				Values: []string{TransformCelerity2024_09_01},
+				Values: []string{TransformCelerity2025_04_01},
 				SourceMeta: []*source.Meta{
 					{Position: source.Position{
 						Line:   1,
@@ -35,12 +35,12 @@ func (s *TransformValidationTestSuite) Test_succeeds_without_any_issues_for_a_va
 }
 
 func (s *BlueprintValidationTestSuite) Test_reports_errors_and_warnings_for_invalid_and_non_core_transforms(c *C) {
-	version := Version2023_04_20
+	version := Version2025_02_01
 	blueprint := &schema.Blueprint{
 		Version: &core.ScalarValue{StringValue: &version},
 		Transform: &schema.TransformValueWrapper{
 			StringList: schema.StringList{
-				Values: []string{TransformCelerity2024_09_01, "", "non-core-transform"},
+				Values: []string{TransformCelerity2025_04_01, "", "non-core-transform"},
 				SourceMeta: []*source.Meta{
 					{Position: source.Position{
 						Line:   1,
@@ -94,12 +94,12 @@ func (s *BlueprintValidationTestSuite) Test_reports_errors_and_warnings_for_inva
 }
 
 func (s *BlueprintValidationTestSuite) Test_reports_error_for_sub_usage_in_transform(c *C) {
-	version := Version2023_04_20
+	version := Version2025_02_01
 	blueprint := &schema.Blueprint{
 		Version: &core.ScalarValue{StringValue: &version},
 		Transform: &schema.TransformValueWrapper{
 			StringList: schema.StringList{
-				Values: []string{TransformCelerity2024_09_01, "${variables.transform1}"},
+				Values: []string{TransformCelerity2025_04_01, "${variables.transform1}"},
 				SourceMeta: []*source.Meta{
 					{Position: source.Position{
 						Line:   1,

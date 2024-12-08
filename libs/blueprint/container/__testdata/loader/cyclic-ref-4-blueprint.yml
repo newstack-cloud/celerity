@@ -1,4 +1,4 @@
-version: 2023-04-20
+version: 2025-02-01
 transform:
   - serverless-2024
 variables:

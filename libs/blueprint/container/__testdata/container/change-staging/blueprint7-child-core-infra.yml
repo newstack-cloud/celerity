@@ -1,4 +1,4 @@
-version: 2023-04-20
+version: 2025-02-01
 variables:
   environment:
     type: string
