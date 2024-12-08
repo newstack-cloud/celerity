@@ -199,6 +199,7 @@ type defaultBlueprintContainer struct {
 	diagnostics                    []*core.Diagnostic
 	createChildBlueprintLoader     func(derivedFromTemplate []string) Loader
 	clock                          core.Clock
+	idGenerator                    core.IDGenerator
 }
 
 // BlueprintContainerDependencies provides the dependencies
@@ -217,6 +218,7 @@ type BlueprintContainerDependencies struct {
 	ChildExportFieldCache          *core.Cache[*subengine.ChildExportFieldInfo]
 	ChildBlueprintLoaderFactory    func(derivedFromTemplate []string) Loader
 	Clock                          core.Clock
+	IDGenerator                    core.IDGenerator
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -244,6 +246,7 @@ func NewDefaultBlueprintContainer(
 		diagnostics,
 		deps.ChildBlueprintLoaderFactory,
 		deps.Clock,
+		deps.IDGenerator,
 	}
 }
 

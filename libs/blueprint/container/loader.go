@@ -167,6 +167,7 @@ type defaultLoader struct {
 	dataSourceRegistry       provider.DataSourceRegistry
 	clock                    bpcore.Clock
 	resolveWorkingDir        corefunctions.WorkingDirResolver
+	idGenerator              bpcore.IDGenerator
 }
 
 type LoaderOption func(loader *defaultLoader)
@@ -239,6 +240,16 @@ func WithLoaderDerivedFromTemplates(derivedFromTemplates []string) LoaderOption 
 	}
 }
 
+// WithIDGenerator sets the ID generator to be used by blueprint containers
+// created by the loader in the deployment process.
+//
+// When this option is not provided, a UUID generator is used.
+func WithIDGenerator(idGenerator bpcore.IDGenerator) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.idGenerator = idGenerator
+	}
+}
+
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
 // The map of providers must be a map of provider namespaces
@@ -280,6 +291,7 @@ func NewDefaultLoader(
 		clock:                    &bpcore.SystemClock{},
 		resolveWorkingDir:        os.Getwd,
 		derivedFromTemplates:     []string{},
+		idGenerator:              bpcore.NewUUIDGenerator(),
 	}
 
 	for _, opt := range opts {
@@ -312,6 +324,7 @@ func (l *defaultLoader) forChildBlueprint(derivedFromTemplate []string) Loader {
 		WithLoaderClock(l.clock),
 		WithLoaderResolveWorkingDir(l.resolveWorkingDir),
 		WithLoaderDerivedFromTemplates(derivedFromTemplate),
+		WithIDGenerator(l.idGenerator),
 	)
 }
 
@@ -368,6 +381,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				SubstitutionResolver:        nil,
 				ChildBlueprintLoaderFactory: l.forChildBlueprint,
 				Clock:                       l.clock,
+				IDGenerator:                 l.idGenerator,
 			},
 			diagnostics,
 		), diagnostics, err
@@ -389,6 +403,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				SubstitutionResolver:        nil,
 				ChildBlueprintLoaderFactory: l.forChildBlueprint,
 				Clock:                       l.clock,
+				IDGenerator:                 l.idGenerator,
 			},
 			diagnostics,
 		), diagnostics, err
@@ -426,6 +441,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			ChildExportFieldCache:          childExportFieldCache,
 			ChildBlueprintLoaderFactory:    l.forChildBlueprint,
 			Clock:                          l.clock,
+			IDGenerator:                    l.idGenerator,
 		},
 		diagnostics,
 	)
