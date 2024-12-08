@@ -182,7 +182,7 @@ func extractResourceName(input *provider.FunctionCallInput, index int, resourceA
 func linkStateToInterfaceMap(linkState state.LinkState) map[string]interface{} {
 	intermediaryResourceStates := make([]interface{}, 0, len(linkState.IntermediaryResourceStates))
 	for _, state := range linkState.IntermediaryResourceStates {
-		intermediaryResourceStates = append(intermediaryResourceStates, resourceStateToInterfaceMap(state))
+		intermediaryResourceStates = append(intermediaryResourceStates, linkResourceStateToInterfaceMap(state))
 	}
 
 	return map[string]interface{}{
@@ -191,17 +191,10 @@ func linkStateToInterfaceMap(linkState state.LinkState) map[string]interface{} {
 	}
 }
 
-func resourceStateToInterfaceMap(resourceState *state.ResourceState) map[string]interface{} {
-	failureReasons := make([]interface{}, 0, len(resourceState.FailureReasons))
-	for _, reason := range resourceState.FailureReasons {
-		failureReasons = append(failureReasons, reason)
-	}
-
+func linkResourceStateToInterfaceMap(resourceState *state.LinkIntermediaryResourceState) map[string]interface{} {
 	return map[string]interface{}{
 		"resourceID":       resourceState.ResourceID,
-		"status":           resourceState.Status,
 		"resourceSpecData": resourceState.ResourceSpecData,
-		"failureReasons":   failureReasons,
 	}
 }
 

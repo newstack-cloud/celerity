@@ -15,14 +15,14 @@ import (
 
 type MemoryStateContainer struct {
 	instances     map[string]*state.InstanceState
-	resourceDrift map[string]map[string]*state.ResourceState
+	resourceDrift map[string]map[string]*state.ResourceDriftState
 	mu            sync.RWMutex
 }
 
 func NewMemoryStateContainer() state.Container {
 	return &MemoryStateContainer{
 		instances:     make(map[string]*state.InstanceState),
-		resourceDrift: make(map[string]map[string]*state.ResourceState),
+		resourceDrift: make(map[string]map[string]*state.ResourceDriftState),
 	}
 }
 
@@ -145,7 +145,7 @@ func (c *MemoryStateContainer) RemoveResource(
 	return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
 }
 
-func (c *MemoryStateContainer) GetResourceDrift(ctx context.Context, instanceID string, resourceID string) (state.ResourceState, error) {
+func (c *MemoryStateContainer) GetResourceDrift(ctx context.Context, instanceID string, resourceID string) (state.ResourceDriftState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -157,13 +157,13 @@ func (c *MemoryStateContainer) GetResourceDrift(ctx context.Context, instanceID 
 		}
 	}
 
-	return state.ResourceState{}, nil
+	return state.ResourceDriftState{}, nil
 }
 
 func (c *MemoryStateContainer) SaveResourceDrift(
 	ctx context.Context,
 	instanceID string,
-	driftState state.ResourceState,
+	driftState state.ResourceDriftState,
 ) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -186,7 +186,7 @@ func (c *MemoryStateContainer) SaveResourceDrift(
 	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
 		driftEntries[driftState.ResourceID] = &driftState
 	} else {
-		c.resourceDrift[instanceID] = map[string]*state.ResourceState{
+		c.resourceDrift[instanceID] = map[string]*state.ResourceDriftState{
 			driftState.ResourceID: &driftState,
 		}
 	}
@@ -198,7 +198,7 @@ func (c *MemoryStateContainer) RemoveResourceDrift(
 	ctx context.Context,
 	instanceID string,
 	resourceID string,
-) (state.ResourceState, error) {
+) (state.ResourceDriftState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -209,13 +209,13 @@ func (c *MemoryStateContainer) RemoveResourceDrift(
 				resource.Drifted = false
 				resource.LastDriftDetectedTimestamp = nil
 			} else {
-				return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
+				return state.ResourceDriftState{}, state.ResourceNotFoundError(resourceID)
 			}
 		} else {
-			return state.ResourceState{}, state.InstanceNotFoundError(instanceID)
+			return state.ResourceDriftState{}, state.InstanceNotFoundError(instanceID)
 		}
 	} else {
-		return state.ResourceState{}, state.InstanceNotFoundError(instanceID)
+		return state.ResourceDriftState{}, state.InstanceNotFoundError(instanceID)
 	}
 
 	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
@@ -228,7 +228,7 @@ func (c *MemoryStateContainer) RemoveResourceDrift(
 		}
 	}
 
-	return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
+	return state.ResourceDriftState{}, state.ResourceNotFoundError(resourceID)
 }
 
 func (c *MemoryStateContainer) GetLink(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {

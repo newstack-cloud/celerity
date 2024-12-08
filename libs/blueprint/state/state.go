@@ -46,13 +46,13 @@ type Container interface {
 	RemoveResource(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
 	// GetResourceDrift deals with retrieving the current drift state for a given resource
 	// in the provided blueprint instance.
-	GetResourceDrift(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
+	GetResourceDrift(ctx context.Context, instanceID string, resourceID string) (ResourceDriftState, error)
 	// SaveResourceDrift deals with persisting the drift state for a given resource
 	// in the provided blueprint instance.
-	SaveResourceDrift(ctx context.Context, instanceID string, driftState ResourceState) error
+	SaveResourceDrift(ctx context.Context, instanceID string, driftState ResourceDriftState) error
 	// RemoveResourceDrift deals with removing the drift state for a given resource
 	// in the provided blueprint instance.
-	RemoveResourceDrift(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
+	RemoveResourceDrift(ctx context.Context, instanceID string, resourceID string) (ResourceDriftState, error)
 	// GetLink deals with retrieving the state for a given link
 	// in the provided blueprint instance.
 	GetLink(ctx context.Context, instanceID string, linkID string) (LinkState, error)
@@ -182,6 +182,20 @@ type ResourceMetadataState struct {
 	Custom      *core.MappingNode            `json:"custom,omitempty"`
 }
 
+type ResourceDriftState struct {
+	// A globally unique identifier for the resource.
+	ResourceID string `json:"resourceId"`
+	// The logical name of the resource in the blueprint.
+	ResourceName string `json:"resourceName"`
+	// ResourceSpecData holds the resource spec
+	// for the drifted version of the resource derived
+	// from the upstream provider.
+	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
+	// Timestamp holds the unix timestamp of when the drift
+	// was detected.
+	Timestamp *int `json:"timestamp,omitempty"`
+}
+
 // InstanceState stores the state of a blueprint instance
 // including resources, metadata, exported fields and child blueprints.
 type InstanceState struct {
@@ -272,7 +286,7 @@ type LinkState struct {
 	LastDeployAttemptTimestamp int `json:"lastDeployAttemptTimestamp"`
 	// IntermediaryResourceStates holds the state of intermediary resources
 	// that are created by the provider's implementation of a link.
-	IntermediaryResourceStates []*ResourceState `json:"intermediaryResourceStates"`
+	IntermediaryResourceStates []*LinkIntermediaryResourceState `json:"intermediaryResourceStates"`
 	// ResourceData is the mapping that holds the structure of
 	// the "raw" link data to hold information about a link that is not
 	// stored directly in the resources that are linked and is not
@@ -297,6 +311,22 @@ func (l *LinkState) LogicalName() string {
 
 func (l *LinkState) Type() ElementType {
 	return LinkElement
+}
+
+// LinkIntermediaryResourceState holds information about the state
+// of an intermediary resources created for a link.
+type LinkIntermediaryResourceState struct {
+	// A globally unique identifier for the resource.
+	ResourceID string `json:"resourceId"`
+	InstanceID string `json:"instanceId"`
+	// LastDeployedTimestamp holds the unix timestamp when the resource was last deployed.
+	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`
+	// LastDeployAttempTimestamp holds the unix timestamp when an attempt was last made to deploy the resource.
+	LastDeployAttemptTimestamp int `json:"lastDeployAttemptTimestamp"`
+	// ResourceSpecData holds the resolved resource spec
+	// for the currently deployed version of the resource along with computed
+	// fields derived from the deployed resource in the provider.
+	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
 }
 
 // ResourceCompletionDurations holds duration information

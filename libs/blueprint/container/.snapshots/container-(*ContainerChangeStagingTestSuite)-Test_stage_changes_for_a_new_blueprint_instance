@@ -226,8 +226,7 @@
           NewFields: ([]*provider.FieldChange) <nil>,
           RemovedFields: ([]string) <nil>,
           UnchangedFields: ([]string) <nil>,
-          FieldChangesKnownOnDeploy: ([]string) <nil>,
-          IntermediaryResourceChanges: (map[string]*provider.LinkIntermediaryResourceChanges) <nil>
+          FieldChangesKnownOnDeploy: ([]string) <nil>
         }
       },
       OutboundLinkChanges: (map[string]provider.LinkChanges) <nil>,
@@ -510,16 +509,14 @@
           NewFields: ([]*provider.FieldChange) <nil>,
           RemovedFields: ([]string) <nil>,
           UnchangedFields: ([]string) <nil>,
-          FieldChangesKnownOnDeploy: ([]string) <nil>,
-          IntermediaryResourceChanges: (map[string]*provider.LinkIntermediaryResourceChanges) <nil>
+          FieldChangesKnownOnDeploy: ([]string) <nil>
         },
         (string) (len=22) "processInvoiceFunction": (provider.LinkChanges) {
           ModifiedFields: ([]*provider.FieldChange) <nil>,
           NewFields: ([]*provider.FieldChange) <nil>,
           RemovedFields: ([]string) <nil>,
           UnchangedFields: ([]string) <nil>,
-          FieldChangesKnownOnDeploy: ([]string) <nil>,
-          IntermediaryResourceChanges: (map[string]*provider.LinkIntermediaryResourceChanges) <nil>
+          FieldChangesKnownOnDeploy: ([]string) <nil>
         }
       },
       OutboundLinkChanges: (map[string]provider.LinkChanges) <nil>,
@@ -1990,8 +1987,7 @@
           UnchangedFields: ([]string) <nil>,
           FieldChangesKnownOnDeploy: ([]string) (len=1) {
             (string) (len=52) "saveOrderFunction[\"iam.policyStatements\"].0.resource"
-          },
-          IntermediaryResourceChanges: (map[string]*provider.LinkIntermediaryResourceChanges) <nil>
+          }
         },
         (string) (len=13) "ordersTable_1": (provider.LinkChanges) {
           ModifiedFields: ([]*provider.FieldChange) <nil>,
@@ -2086,8 +2082,7 @@
           UnchangedFields: ([]string) <nil>,
           FieldChangesKnownOnDeploy: ([]string) (len=1) {
             (string) (len=52) "saveOrderFunction[\"iam.policyStatements\"].0.resource"
-          },
-          IntermediaryResourceChanges: (map[string]*provider.LinkIntermediaryResourceChanges) <nil>
+          }
         }
       },
       OutboundLinkChanges: (map[string]provider.LinkChanges) <nil>,

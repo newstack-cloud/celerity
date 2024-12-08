@@ -38,10 +38,9 @@ func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 	s.stateRetriever = &linkStateRetrieverMock{
 		linkState: map[string]state.LinkState{
 			"test-blueprint-1::orderApi::createOrderFunction": {
-				IntermediaryResourceStates: []*state.ResourceState{
+				IntermediaryResourceStates: []*state.LinkIntermediaryResourceState{
 					{
 						ResourceID: "test-execute-function-policy",
-						Status:     core.ResourceStatusCreated,
 						ResourceSpecData: &core.MappingNode{
 							Fields: map[string]*core.MappingNode{
 								"arn": {
@@ -51,7 +50,6 @@ func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 								},
 							},
 						},
-						FailureReasons: []string{},
 					},
 				},
 				LinkData: map[string]*core.MappingNode{
@@ -107,7 +105,6 @@ func (s *LinkFunctionTestSuite) Test_gets_link_state(c *C) {
 		"intermediaryResourceStates": []interface{}{
 			map[string]interface{}{
 				"resourceID": "test-execute-function-policy",
-				"status":     core.ResourceStatusCreated,
 				"resourceSpecData": &core.MappingNode{
 					Fields: map[string]*core.MappingNode{
 						"arn": {
@@ -117,7 +114,6 @@ func (s *LinkFunctionTestSuite) Test_gets_link_state(c *C) {
 						},
 					},
 				},
-				"failureReasons": []interface{}{},
 			},
 		},
 		"linkData": map[string]*core.MappingNode{

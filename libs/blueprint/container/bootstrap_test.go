@@ -93,25 +93,39 @@ func (l *testApiGatewayLambdaLink) GetKind(ctx context.Context, input *provider.
 	}, nil
 }
 
-func (l *testApiGatewayLambdaLink) HandleResourceTypeAError(
+func (l *testApiGatewayLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testApiGatewayLambdaLink) HandleResourceTypeBError(
+func (l *testApiGatewayLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testApiGatewayLambdaLink) Deploy(
+func (l *testApiGatewayLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testApiGatewayLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testApiGatewayLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testLambdaDynamoDBTableLink struct{}
@@ -266,25 +280,39 @@ func (l *testLambdaDynamoDBTableLink) GetKind(ctx context.Context, input *provid
 	}, nil
 }
 
-func (l *testLambdaDynamoDBTableLink) HandleResourceTypeAError(
+func (l *testLambdaDynamoDBTableLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testLambdaDynamoDBTableLink) HandleResourceTypeBError(
+func (l *testLambdaDynamoDBTableLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testLambdaDynamoDBTableLink) Deploy(
+func (l *testLambdaDynamoDBTableLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testLambdaDynamoDBTableLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testLambdaDynamoDBTableLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testDynamoDBTableStreamLink struct{}
@@ -320,25 +348,39 @@ func (l *testDynamoDBTableStreamLink) GetKind(ctx context.Context, input *provid
 	}, nil
 }
 
-func (l *testDynamoDBTableStreamLink) HandleResourceTypeAError(
+func (l *testDynamoDBTableStreamLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testDynamoDBTableStreamLink) HandleResourceTypeBError(
+func (l *testDynamoDBTableStreamLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testDynamoDBTableStreamLink) Deploy(
+func (l *testDynamoDBTableStreamLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testDynamoDBTableStreamLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testDynamoDBTableStreamLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testDynamoDBStreamLambdaLink struct{}
@@ -374,25 +416,39 @@ func (l *testDynamoDBStreamLambdaLink) GetKind(ctx context.Context, input *provi
 	}, nil
 }
 
-func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeAError(
+func (l *testDynamoDBStreamLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeBError(
+func (l *testDynamoDBStreamLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testDynamoDBStreamLambdaLink) Deploy(
+func (l *testDynamoDBStreamLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testDynamoDBStreamLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testDynamoDBStreamLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testDynamoDBTableLambdaLink struct{}
@@ -428,25 +484,39 @@ func (l *testDynamoDBTableLambdaLink) GetKind(ctx context.Context, input *provid
 	}, nil
 }
 
-func (l *testDynamoDBTableLambdaLink) HandleResourceTypeAError(
+func (l *testDynamoDBTableLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testDynamoDBTableLambdaLink) HandleResourceTypeBError(
+func (l *testDynamoDBTableLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testDynamoDBTableLambdaLink) Deploy(
+func (l *testDynamoDBTableLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testDynamoDBTableLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testDynamoDBTableLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testLambdaLambdaLink struct{}
@@ -482,25 +552,39 @@ func (l *testLambdaLambdaLink) GetKind(ctx context.Context, input *provider.Link
 	}, nil
 }
 
-func (l *testLambdaLambdaLink) HandleResourceTypeAError(
+func (l *testLambdaLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testLambdaLambdaLink) HandleResourceTypeBError(
+func (l *testLambdaLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testLambdaLambdaLink) Deploy(
+func (l *testLambdaLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testLambdaLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testLambdaLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testSubnetVPCLink struct{}
@@ -536,25 +620,39 @@ func (l *testSubnetVPCLink) GetKind(ctx context.Context, input *provider.LinkGet
 	}, nil
 }
 
-func (l *testSubnetVPCLink) HandleResourceTypeAError(
+func (l *testSubnetVPCLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testSubnetVPCLink) HandleResourceTypeBError(
+func (l *testSubnetVPCLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testSubnetVPCLink) Deploy(
+func (l *testSubnetVPCLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testSubnetVPCLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testSubnetVPCLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testSecurityGroupVPCLink struct{}
@@ -590,25 +688,39 @@ func (l *testSecurityGroupVPCLink) GetKind(ctx context.Context, input *provider.
 	}, nil
 }
 
-func (l *testSecurityGroupVPCLink) HandleResourceTypeAError(
+func (l *testSecurityGroupVPCLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testSecurityGroupVPCLink) HandleResourceTypeBError(
+func (l *testSecurityGroupVPCLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testSecurityGroupVPCLink) Deploy(
+func (l *testSecurityGroupVPCLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testSecurityGroupVPCLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testSecurityGroupVPCLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testRouteTableVPCLink struct{}
@@ -644,25 +756,39 @@ func (l *testRouteTableVPCLink) GetKind(ctx context.Context, input *provider.Lin
 	}, nil
 }
 
-func (l *testRouteTableVPCLink) HandleResourceTypeAError(
+func (l *testRouteTableVPCLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testRouteTableVPCLink) HandleResourceTypeBError(
+func (l *testRouteTableVPCLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testRouteTableVPCLink) Deploy(
+func (l *testRouteTableVPCLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testRouteTableVPCLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testRouteTableVPCLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testRouteRouteTableLink struct{}
@@ -698,25 +824,39 @@ func (l *testRouteRouteTableLink) GetKind(ctx context.Context, input *provider.L
 	}, nil
 }
 
-func (l *testRouteRouteTableLink) HandleResourceTypeAError(
+func (l *testRouteRouteTableLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testRouteRouteTableLink) HandleResourceTypeBError(
+func (l *testRouteRouteTableLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testRouteRouteTableLink) Deploy(
+func (l *testRouteRouteTableLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testRouteRouteTableLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testRouteRouteTableLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 type testRouteInternetGatewayLink struct{}
@@ -752,23 +892,37 @@ func (l *testRouteInternetGatewayLink) GetKind(ctx context.Context, input *provi
 	}, nil
 }
 
-func (l *testRouteInternetGatewayLink) HandleResourceTypeAError(
+func (l *testRouteInternetGatewayLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testRouteInternetGatewayLink) HandleResourceTypeBError(
+func (l *testRouteInternetGatewayLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-func (l *testRouteInternetGatewayLink) Deploy(
+func (l *testRouteInternetGatewayLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testRouteInternetGatewayLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testRouteInternetGatewayLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }

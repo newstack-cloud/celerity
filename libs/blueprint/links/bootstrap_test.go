@@ -923,28 +923,44 @@ func (l *testApiGatewayLambdaLink) GetKind(ctx context.Context, input *provider.
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testApiGatewayLambdaLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testApiGatewayLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testApiGatewayLambdaLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testApiGatewayLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testApiGatewayLambdaLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testApiGatewayLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testApiGatewayLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testApiGatewayLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -982,28 +998,44 @@ func (l *testSQSQueueLambdaLink) GetKind(ctx context.Context, input *provider.Li
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testSQSQueueLambdaLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testSQSQueueLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testSQSQueueLambdaLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testSQSQueueLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testSQSQueueLambdaLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testSQSQueueLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testSQSQueueLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testSQSQueueLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1042,28 +1074,44 @@ func (l *testLambdaDynamoDBTableLink) GetKind(ctx context.Context, input *provid
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testLambdaDynamoDBTableLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testLambdaDynamoDBTableLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testLambdaDynamoDBTableLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testLambdaDynamoDBTableLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testLambdaDynamoDBTableLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testLambdaDynamoDBTableLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testLambdaDynamoDBTableLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testLambdaDynamoDBTableLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1101,28 +1149,44 @@ func (l *testStratosLambdaDynamoDBTableLink) GetKind(ctx context.Context, input 
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testStratosLambdaDynamoDBTableLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testStratosLambdaDynamoDBTableLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testStratosLambdaDynamoDBTableLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testStratosLambdaDynamoDBTableLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testStratosLambdaDynamoDBTableLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testStratosLambdaDynamoDBTableLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testStratosLambdaDynamoDBTableLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testStratosLambdaDynamoDBTableLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1160,28 +1224,44 @@ func (l *testLambdaSQSQueueLink) GetKind(ctx context.Context, input *provider.Li
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testLambdaSQSQueueLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testLambdaSQSQueueLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testLambdaSQSQueueLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testLambdaSQSQueueLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testLambdaSQSQueueLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testLambdaSQSQueueLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testLambdaSQSQueueLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testLambdaSQSQueueLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1220,28 +1300,44 @@ func (l *testDynamoDBTableStreamLink) GetKind(ctx context.Context, input *provid
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testDynamoDBTableStreamLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testDynamoDBTableStreamLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testDynamoDBTableStreamLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testDynamoDBTableStreamLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testDynamoDBTableStreamLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testDynamoDBTableStreamLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testDynamoDBTableStreamLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testDynamoDBTableStreamLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1280,28 +1376,44 @@ func (l *testDynamoDBStreamLambdaLink) GetKind(ctx context.Context, input *provi
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testDynamoDBStreamLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testDynamoDBStreamLambdaLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testDynamoDBStreamLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testDynamoDBStreamLambdaLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testDynamoDBStreamLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testDynamoDBStreamLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testDynamoDBStreamLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1340,28 +1452,44 @@ func (l *testDynamoDBStreamStratosLambdaLink) GetKind(ctx context.Context, input
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testDynamoDBStreamStratosLambdaLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testDynamoDBStreamStratosLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testDynamoDBStreamStratosLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testDynamoDBStreamStratosLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1400,28 +1528,44 @@ func (l *testIAMRoleLambdaLink) GetKind(ctx context.Context, input *provider.Lin
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testIAMRoleLambdaLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testIAMRoleLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testIAMRoleLambdaLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testIAMRoleLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testIAMRoleLambdaLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testIAMRoleLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testIAMRoleLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testIAMRoleLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1459,28 +1603,44 @@ func (l *testStratosIAMRoleLambdaLink) GetKind(ctx context.Context, input *provi
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testStratosIAMRoleLambdaLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testStratosIAMRoleLambdaLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testStratosIAMRoleLambdaLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testStratosIAMRoleLambdaLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testStratosIAMRoleLambdaLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testStratosIAMRoleLambdaLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testStratosIAMRoleLambdaLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testStratosIAMRoleLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1519,28 +1679,44 @@ func (l *testLambdaIAMRoleLink) GetKind(ctx context.Context, input *provider.Lin
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testLambdaIAMRoleLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testLambdaIAMRoleLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testLambdaIAMRoleLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testLambdaIAMRoleLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testLambdaIAMRoleLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testLambdaIAMRoleLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testLambdaIAMRoleLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testLambdaIAMRoleLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // The functionality provided by link implementations is not used for building
@@ -1578,28 +1754,44 @@ func (l *testLambdaStratosIAMRoleLink) GetKind(ctx context.Context, input *provi
 	}, nil
 }
 
-// HandleResourceTypeAError is not used for spec link info!
-func (l *testLambdaStratosIAMRoleLink) HandleResourceTypeAError(
+// HandleResourceAError is not used for spec link info!
+func (l *testLambdaStratosIAMRoleLink) HandleResourceAError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// HandleResourceTypeBError is not used for spec link info!
-func (l *testLambdaStratosIAMRoleLink) HandleResourceTypeBError(
+// HandleResourceBError is not used for spec link info!
+func (l *testLambdaStratosIAMRoleLink) HandleResourceBError(
 	ctx context.Context,
-	input *provider.LinkHandleResourceTypeErrorInput,
+	input *provider.LinkHandleResourceErrorInput,
 ) error {
 	return nil
 }
 
-// Deploy is not used for spec link info!
-func (l *testLambdaStratosIAMRoleLink) Deploy(
+// UpdateResourceA is not used for spec link info!
+func (l *testLambdaStratosIAMRoleLink) UpdateResourceA(
 	ctx context.Context,
-	input *provider.LinkDeployInput,
-) (*provider.LinkDeployOutput, error) {
-	return &provider.LinkDeployOutput{}, nil
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateResourceB is not used for spec link info!
+func (l *testLambdaStratosIAMRoleLink) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+// UpdateIntermediaryResources is not used for spec link info!
+func (l *testLambdaStratosIAMRoleLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
 // Provides a version of a chain link purely for snapshot tests.

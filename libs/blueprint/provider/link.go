@@ -7,6 +7,11 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
+// Link provides the interface for the implementation of a link between two resources.
+// This provides error handling methods in order to roll back changes to resource A and resource B,
+// however, as intermediary resources always come after resource A and B updates,
+// any errors that could cause inconsistencies between multiple intermediary resources
+// should be handled by the link implementation.
 type Link interface {
 	// StageChanges must detail the changes that will be made when a deployment of the loaded blueprint
 	// for the link between two resources and blueprint instance provided in resourceInfo.
@@ -16,14 +21,28 @@ type Link interface {
 		ctx context.Context,
 		input *LinkStageChangesInput,
 	) (*LinkStageChangesOutput, error)
-	// Deploy deals with deploying a link between two resources in the upstream provider.
-	// The behaviour of deploy is completely down to the implementation of a link provider and how long
-	// a link is likely to take to deploy. The state will be synchronised periodically and will reflect the current
-	// state for long running deployments that we won't be waiting around for.
-	// Parameters are passed into Deploy for extra context, blueprint variables will have already
+	// UpdateResourceA deals with applying the changes to the first of the two linked resources
+	// for the creation or removal of a link between two resources.
+	// Parameters are passed into UpdateResourceA for extra context, blueprint variables will have already
 	// been substituted at this stage and must be used instead of the passed in params argument
 	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
-	Deploy(ctx context.Context, input *LinkDeployInput) (*LinkDeployOutput, error)
+	UpdateResourceA(ctx context.Context, input *LinkUpdateResourceInput) (*LinkUpdateResourceOutput, error)
+	// UpdateResourceB deals with applying the changes to the second of the two linked resources
+	// for the creation or removal of a link between two resources.
+	// Parameters are passed into UpdateResourceA for extra context, blueprint variables will have already
+	// been substituted at this stage and must be used instead of the passed in params argument
+	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
+	UpdateResourceB(ctx context.Context, input *LinkUpdateResourceInput) (*LinkUpdateResourceOutput, error)
+	// UpdateIntermediaryResources deals with creating, updating or deleting intermediary resources
+	// that are required for the link between two resources.
+	// This is called for both the creation and removal of a link between two resources.
+	// Parameters are passed into UpdateResourceA for extra context, blueprint variables will have already
+	// been substituted at this stage and must be used instead of the passed in params argument
+	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
+	UpdateIntermediaryResources(
+		ctx context.Context,
+		input *LinkUpdateIntermediaryResourcesInput,
+	) (*LinkUpdateIntermediaryResourcesOutput, error)
 	// GetPriorityResourceType retrieves the resource type in the relationship
 	// that must be deployed first. This will be empty for links where one resource type does not
 	// need to be deployed before the other.
@@ -31,17 +50,23 @@ type Link interface {
 	// GetType deals with retrieving the type of the link in relation to the two resource
 	// types it provides a relationship between.
 	GetType(ctx context.Context, input *LinkGetTypeInput) (*LinkGetTypeOutput, error)
-	// GetKind tells us whether the link is "hard" or "soft" link.
+	// GetKind tells us whether the link is a "hard" or "soft" link.
 	// A hard link is where the priority resource type must be created first.
 	// A soft link is where it does not matter which resource type in the relationship
 	// is created first.
 	GetKind(ctx context.Context, input *LinkGetKindInput) (*LinkGetKindOutput, error)
-	// HandleResourceTypeAError deals with handling errors in
+	// HandleResourceAError deals with handling errors in
 	// the deployment of the first of the two linked resources.
-	HandleResourceTypeAError(ctx context.Context, input *LinkHandleResourceTypeErrorInput) error
+	// This is useful to roll back changes made to resource B in the case
+	// resource B was updated first.
+	// This will also be called on failure to update intermediary resources.
+	HandleResourceAError(ctx context.Context, input *LinkHandleResourceErrorInput) error
 	// HandleResourceTypeBError deals with handling errors
 	// in the second of the two linked resources.
-	HandleResourceTypeBError(ctx context.Context, input *LinkHandleResourceTypeErrorInput) error
+	// This is useful to roll back changes made to resource A in the case
+	// resource A was updated first.
+	// This will also be called on failure to update intermediary resources.
+	HandleResourceBError(ctx context.Context, input *LinkHandleResourceErrorInput) error
 }
 
 // LinkStageChangesInput provides the input required to
@@ -59,21 +84,33 @@ type LinkStageChangesOutput struct {
 	Changes *LinkChanges
 }
 
-// LinkDeployInput provides the input required to
-// deploy a link between two resources.
-type LinkDeployInput struct {
-	Changes       *LinkChanges
+// LinkUpdateResourceInput provides the input required to
+// update a resource in a link relationship
+// with data that will contribute to "activating" the link.
+type LinkUpdateResourceInput struct {
+	Changes      *LinkChanges
+	ResourceInfo *ResourceInfo
+	Params       core.BlueprintParams
+}
+
+// LinkUpdateResourceOutput provides the output from updating
+// a resource in a link relationship.
+type LinkUpdateResourceOutput struct {
+	LinkData *core.MappingNode
+}
+
+// LinkUpdateIntermediaryResourcesInput provides the input required to
+// update intermediary resources in a link relationship.
+type LinkUpdateIntermediaryResourcesInput struct {
 	ResourceAInfo *ResourceInfo
 	ResourceBInfo *ResourceInfo
+	Changes       *LinkChanges
 	Params        core.BlueprintParams
 }
 
-// LinkDeployOutput provides the output from deploying
-// a link between two resources.
-type LinkDeployOutput struct {
-	ResourceAState *state.ResourceState
-	ResourceBState *state.ResourceState
-	LinkState      *state.LinkState
+type LinkUpdateIntermediaryResourcesOutput struct {
+	IntermediaryResourceStates []*state.LinkIntermediaryResourceState
+	LinkData                   *core.MappingNode
 }
 
 // LinkPriorityResourceTypeOutput provides the input for retrieving
@@ -110,9 +147,9 @@ type LinkGetTypeOutput struct {
 	Type string
 }
 
-// HandleResourceTypeErrorInput provides the input for handling errors
+// LinkHandleResourceErrorInput provides the input for handling errors
 // related to the deployment of a resource type in a link relationship.
-type LinkHandleResourceTypeErrorInput struct {
+type LinkHandleResourceErrorInput struct {
 	ResourceInfo *ResourceInfo
 	Params       core.BlueprintParams
 }
@@ -143,21 +180,6 @@ type LinkChanges struct {
 	NewFields       []*FieldChange `json:"newFields"`
 	RemovedFields   []string       `json:"removedFields"`
 	UnchangedFields []string       `json:"unchangedFields"`
-	// FieldChangesKnownOnDeploy holds a list of field names
-	// for which changes will be known when the host blueprint is deployed.
-	FieldChangesKnownOnDeploy   []string                                    `json:"fieldChangesKnownOnDeploy"`
-	IntermediaryResourceChanges map[string]*LinkIntermediaryResourceChanges `json:"intermediaryResourceChanges"`
-}
-
-// LinkIntermediaryResourceChanges provides a set of modified fields
-// for an intermediary resource in a link relationship.
-type LinkIntermediaryResourceChanges struct {
-	IntermediaryResourceID string         `json:"intermediaryResourceId"`
-	ResourceType           string         `json:"resourceType"`
-	ModifiedFields         []*FieldChange `json:"modifiedFields"`
-	NewFields              []*FieldChange `json:"newFields"`
-	RemovedFields          []string       `json:"removedFields"`
-	UnchangedFields        []string       `json:"unchangedFields"`
 	// FieldChangesKnownOnDeploy holds a list of field names
 	// for which changes will be known when the host blueprint is deployed.
 	FieldChangesKnownOnDeploy []string `json:"fieldChangesKnownOnDeploy"`

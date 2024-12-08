@@ -226,8 +226,7 @@
           NewFields: ([]*provider.FieldChange) <nil>,
           RemovedFields: ([]string) <nil>,
           UnchangedFields: ([]string) <nil>,
-          FieldChangesKnownOnDeploy: ([]string) <nil>,
-          IntermediaryResourceChanges: (map[string]*provider.LinkIntermediaryResourceChanges) <nil>
+          FieldChangesKnownOnDeploy: ([]string) <nil>
         }
       },
       OutboundLinkChanges: (map[string]provider.LinkChanges) <nil>,
@@ -2155,8 +2154,7 @@
           },
           FieldChangesKnownOnDeploy: ([]string) (len=1) {
             (string) (len=52) "saveOrderFunction[\"iam.policyStatements\"].0.resource"
-          },
-          IntermediaryResourceChanges: (map[string]*provider.LinkIntermediaryResourceChanges) <nil>
+          }
         },
         (string) (len=13) "ordersTable_1": (provider.LinkChanges) {
           ModifiedFields: ([]*provider.FieldChange) (len=2) {
@@ -2233,8 +2231,7 @@
           },
           FieldChangesKnownOnDeploy: ([]string) (len=1) {
             (string) (len=52) "saveOrderFunction[\"iam.policyStatements\"].0.resource"
-          },
-          IntermediaryResourceChanges: (map[string]*provider.LinkIntermediaryResourceChanges) <nil>
+          }
         }
       },
       RemovedOutboundLinks: ([]string) <nil>
