@@ -25,6 +25,7 @@ func normaliseBlueprintChanges(changes *BlueprintChanges) *BlueprintChanges {
 		NewChildren:      normaliseNewChildMap(changes.NewChildren),
 		ChildChanges:     normaliseChildChangesMap(changes.ChildChanges),
 		RemovedChildren:  internal.OrderStringSlice(changes.RemovedChildren),
+		RecreateChildren: internal.OrderStringSlice(changes.RecreateChildren),
 		NewExports:       changes.NewExports,
 		ExportChanges:    changes.ExportChanges,
 		RemovedExports:   internal.OrderStringSlice(changes.RemovedExports),

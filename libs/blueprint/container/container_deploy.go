@@ -2,9 +2,14 @@ package container
 
 import (
 	"context"
+	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+)
+
+const (
+	prepareFailureMessage = "failed to load instance state while preparing to deploy"
 )
 
 func (c *defaultBlueprintContainer) Deploy(
@@ -12,11 +17,34 @@ func (c *defaultBlueprintContainer) Deploy(
 	input *DeployInput,
 	channels *DeployChannels,
 	paramOverrides core.BlueprintParams,
-) error {
-	// Send message with InstanceStatusPreparing status.
+) {
+	startTime := c.clock.Now()
+	channels.DeploymentUpdateChan <- DeploymentUpdateMessage{
+		InstanceID: input.InstanceID,
+		Status:     core.InstanceStatusPreparing,
+	}
+
+	_, _, err := c.collectElementsToRemove(
+		ctx,
+		input.InstanceID,
+		input.Changes,
+		startTime,
+		channels,
+	)
+	if err != nil {
+		channels.ErrChan <- err
+		return
+	}
+
+	// if finished {
+	// 	return
+	// }
+
 	// Get all components that should be removed.
 	//  - If components remain in the blueprint that have a dependency
 	//    on a component that is being removed, the deployment should fail.
+	//	  Check instance state and provided change set to determine whether these
+	//    components will still depend on the given component after deployment.
 	// Order component removal based on dependencies in state.
 	// Group component removals so those that are not connected can be removed in parallel.
 	// Remove components in order.
@@ -26,12 +54,82 @@ func (c *defaultBlueprintContainer) Deploy(
 	// Unlike with change staging, groups are not executed as a unit, they are used as
 	// pools to look for components that can be deployed based on the current state of deployment.
 	// For each component to be created or updated:
-	//  - call Deploy method component (resource, link, child blueprint).
+	//  - call Deploy method component (resource, link, child blueprint)
+	//      - handle specialised provider errors (retryable, resource deploy errors etc.)
 	//  - If component is resource and is in config complete status, check if any of its dependents
 	//    require the resource to be stable before they can be deployed.
 	//    - If so, wait for the resource to be stable before deploying the dependent.
 	//    - If not, begin deploying the dependent.
-	return nil
+}
+
+func (c *defaultBlueprintContainer) collectElementsToRemove(
+	ctx context.Context,
+	instanceID string,
+	changes *BlueprintChanges,
+	startTime time.Time,
+	channels *DeployChannels,
+) ([]*collectedElements, bool, error) {
+	if len(changes.RemovedChildren) == 0 &&
+		len(changes.RemovedResources) == 0 &&
+		len(changes.RemovedLinks) == 0 {
+		return []*collectedElements{}, false, nil
+	}
+
+	currentInstanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
+	if err != nil {
+		channels.FinishChan <- c.createDeploymentFinishedMessage(
+			instanceID,
+			core.InstanceStatusDeployFailed,
+			[]string{prepareFailureMessage},
+			time.Since(startTime),
+		)
+		return []*collectedElements{}, true, nil
+	}
+
+	_, err = c.collectResourcesToRemove(&currentInstanceState, changes.RemovedResources)
+	if err != nil {
+		// todo: if error due to dependents still being in the blueprint, provide a more detailed failure reason message.
+		channels.FinishChan <- c.createDeploymentFinishedMessage(
+			instanceID,
+			core.InstanceStatusDeployFailed,
+			[]string{prepareFailureMessage},
+			time.Since(startTime),
+		)
+		return []*collectedElements{}, true, nil
+	}
+
+	return []*collectedElements{}, false, nil
+}
+
+func (c *defaultBlueprintContainer) collectResourcesToRemove(
+	currentState *state.InstanceState,
+	removedResources []string,
+) ([]*resourceIDInfo, error) {
+	return []*resourceIDInfo{}, nil
+}
+
+func (c *defaultBlueprintContainer) createDeploymentFinishedMessage(
+	instanceID string,
+	status core.InstanceStatus,
+	failureReasons []string,
+	elapsedTime time.Duration,
+) DeploymentFinishedMessage {
+	elapsedMilliseconds := core.FractionalMilliseconds(elapsedTime)
+	return DeploymentFinishedMessage{
+		InstanceID:      instanceID,
+		Status:          status,
+		FailureReasons:  failureReasons,
+		FinishTimestamp: c.clock.Now().Unix(),
+		Durations: &state.InstanceCompletionDuration{
+			TotalDuration: &elapsedMilliseconds,
+		},
+	}
+}
+
+type collectedElements struct {
+	resources []*resourceIDInfo
+	children  []*childBlueprintIDInfo
+	total     int
 }
 
 // DeployChannels contains all the channels required to stream
@@ -43,6 +141,8 @@ type DeployChannels struct {
 	LinkUpdateChan chan LinkDeployUpdateMessage
 	// ChildUpdateChan receives messages about the status of deployment for child blueprints.
 	ChildUpdateChan chan ChildDeployUpdateMessage
+	// DeploymentUpdateChan receives messages about the status of the blueprint instance deployment.
+	DeploymentUpdateChan chan DeploymentUpdateMessage
 	// FinishChan is used to signal that the blueprint instance deployment has finished,
 	// the message will contain the final status of the deployment.
 	FinishChan chan DeploymentFinishedMessage
@@ -81,7 +181,7 @@ type ResourceDeployUpdateMessage struct {
 	Attempt int `json:"attempt"`
 	// UpdateTimestamp is the unix timestamp in seconds for
 	// when the status update occurred.
-	UpdateTimestamp int `json:"updateTimestamp"`
+	UpdateTimestamp int64 `json:"updateTimestamp"`
 	// Durations holds duration information for a resource deployment.
 	// Duration information is attached on one of the following precise status updates:
 	// - PreciseResourceStatusConfigComplete
@@ -124,7 +224,7 @@ type LinkDeployUpdateMessage struct {
 	Attempt int `json:"attempt"`
 	// UpdateTimestamp is the unix timestamp in seconds for
 	// when the status update occurred.
-	UpdateTimestamp int `json:"updateTimestamp"`
+	UpdateTimestamp int64 `json:"updateTimestamp"`
 	// Durations holds duration information for a link deployment.
 	// Duration information is attached on one of the following precise status updates:
 	// - PreciseLinkStatusResourceAUpdated
@@ -162,7 +262,7 @@ type ChildDeployUpdateMessage struct {
 	FailureReasons []string `json:"failureReasons,omitempty"`
 	// UpdateTimestamp is the unix timestamp in seconds for
 	// when the status update occurred.
-	UpdateTimestamp int `json:"updateTimestamp"`
+	UpdateTimestamp int64 `json:"updateTimestamp"`
 	// Durations holds duration information for a child blueprint deployment.
 	// Duration information is attached on one of the following status updates:
 	// - InstanceStatusDeployed
@@ -171,6 +271,16 @@ type ChildDeployUpdateMessage struct {
 	// - InstanceStatusUpdated
 	// - InstanceStatusUpdateFailed
 	Durations *state.InstanceCompletionDuration `json:"durations,omitempty"`
+}
+
+// DeploymentUpdateMessage provides a message containing a blueprint-wide status update
+// for the deployment of a blueprint instance.
+type DeploymentUpdateMessage struct {
+	// InstanceID is the ID of the blueprint instance
+	// the message is associated with.
+	InstanceID string `json:"instanceId"`
+	// Status holds the status of the instance deployment.
+	Status core.InstanceStatus `json:"status"`
 }
 
 // DeploymentFinishedMessage provides a message containing the final status
@@ -186,7 +296,7 @@ type DeploymentFinishedMessage struct {
 	FailureReasons []string `json:"failureReasons,omitempty"`
 	// FinishTimestamp is the unix timestamp in seconds for
 	// when the deployment finished.
-	FinishTimestamp int `json:"finishTimestamp"`
+	FinishTimestamp int64 `json:"finishTimestamp"`
 	// Durations holds duration information for the blueprint deployment.
 	// Duration information is attached on one of the following status updates:
 	// - InstanceStatusDeployed

@@ -28,6 +28,8 @@ const (
 	blueprint3ChildInstanceID = "blueprint-instance-3-child-core-infra"
 	blueprint4InstanceID      = "blueprint-instance-4"
 	blueprint5InstanceID      = "blueprint-instance-5"
+	blueprint6InstanceID      = "blueprint-instance-6"
+	blueprint7InstanceID      = "blueprint-instance-7"
 )
 
 const timeoutMessage = "timed out waiting for changes to be staged"
@@ -38,6 +40,8 @@ type ContainerChangeStagingTestSuite struct {
 	blueprint3Container BlueprintContainer
 	blueprint4Container BlueprintContainer
 	blueprint5Container BlueprintContainer
+	blueprint6Container BlueprintContainer
+	blueprint7Container BlueprintContainer
 	suite.Suite
 }
 
@@ -108,6 +112,22 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 	)
 	s.Require().NoError(err)
 	s.blueprint5Container = blueprint5Container
+
+	blueprint6Container, err := loader.Load(
+		context.Background(),
+		"__testdata/container/change-staging/blueprint6.yml",
+		baseBlueprintParams(),
+	)
+	s.Require().NoError(err)
+	s.blueprint6Container = blueprint6Container
+
+	blueprint7Container, err := loader.Load(
+		context.Background(),
+		"__testdata/container/change-staging/blueprint7.yml",
+		baseBlueprintParams(),
+	)
+	s.Require().NoError(err)
+	s.blueprint7Container = blueprint7Container
 }
 
 func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_blueprint_instance() {
@@ -298,6 +318,100 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_fails_when_max_blue
 	)
 }
 
+func (s *ContainerChangeStagingTestSuite) Test_stage_changes_when_removed_resource_has_dependents_still_in_blueprint() {
+	// The expected behaviour is that the elements that previously depended on the removed resource
+	// must be recreated based on the assumption that if the resource is removed and the new version
+	// of the blueprint has been successfully loaded, then the dependents
+	// that remain in the blueprint must no longer be depend on the removed resource.
+	channels := createChangeStagingChannels()
+	params := baseBlueprintParams()
+
+	err := s.blueprint6Container.StageChanges(
+		context.Background(),
+		&StageChangesInput{
+			InstanceID: blueprint6InstanceID,
+		},
+		channels,
+		params,
+	)
+	s.Require().NoError(err)
+
+	resourceChangeMessages := []ResourceChangesMessage{}
+	childChangeMessages := []ChildChangesMessage{}
+	linkChangeMessages := []LinkChangesMessage{}
+	fullChangeSet := (*BlueprintChanges)(nil)
+	for err == nil &&
+		(fullChangeSet == nil ||
+			len(resourceChangeMessages) < 7 ||
+			len(childChangeMessages) < 1 ||
+			len(linkChangeMessages) < 3) {
+		select {
+		case msg := <-channels.ResourceChangesChan:
+			resourceChangeMessages = append(resourceChangeMessages, msg)
+		case msg := <-channels.ChildChangesChan:
+			childChangeMessages = append(childChangeMessages, msg)
+		case msg := <-channels.LinkChangesChan:
+			linkChangeMessages = append(linkChangeMessages, msg)
+		case changeSet := <-channels.CompleteChan:
+			fullChangeSet = &changeSet
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Require().NoError(err)
+
+	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	s.Require().NoError(err)
+}
+
+func (s *ContainerChangeStagingTestSuite) Test_stage_changes_when_removed_child_has_dependents_still_in_blueprint() {
+	// The expected behaviour is that the elements that previously depended on the removed child
+	// must be recreated based on the assumption that if the child blueprint is removed and the
+	// new version of the host blueprint has been successfully loaded, then the dependents
+	// that remain in the blueprint must no longer be depend on the removed resource.
+	channels := createChangeStagingChannels()
+	params := baseBlueprintParams()
+
+	err := s.blueprint7Container.StageChanges(
+		context.Background(),
+		&StageChangesInput{
+			InstanceID: blueprint7InstanceID,
+		},
+		channels,
+		params,
+	)
+	s.Require().NoError(err)
+
+	resourceChangeMessages := []ResourceChangesMessage{}
+	childChangeMessages := []ChildChangesMessage{}
+	linkChangeMessages := []LinkChangesMessage{}
+	fullChangeSet := (*BlueprintChanges)(nil)
+	for err == nil &&
+		(fullChangeSet == nil ||
+			len(resourceChangeMessages) < 6 ||
+			len(childChangeMessages) < 2 ||
+			len(linkChangeMessages) < 3) {
+		select {
+		case msg := <-channels.ResourceChangesChan:
+			resourceChangeMessages = append(resourceChangeMessages, msg)
+		case msg := <-channels.ChildChangesChan:
+			childChangeMessages = append(childChangeMessages, msg)
+		case msg := <-channels.LinkChangesChan:
+			linkChangeMessages = append(linkChangeMessages, msg)
+		case changeSet := <-channels.CompleteChan:
+			fullChangeSet = &changeSet
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Require().NoError(err)
+
+	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	s.Require().NoError(err)
+}
+
 func (s *ContainerChangeStagingTestSuite) populateCurrentState(stateContainer state.Container) error {
 
 	err := s.populateBlueprintCurrentState(stateContainer, blueprint1InstanceID, 1)
@@ -310,7 +424,17 @@ func (s *ContainerChangeStagingTestSuite) populateCurrentState(stateContainer st
 		return err
 	}
 
-	return s.populateBlueprintCurrentState(stateContainer, blueprint5InstanceID, 5)
+	err = s.populateBlueprintCurrentState(stateContainer, blueprint5InstanceID, 5)
+	if err != nil {
+		return err
+	}
+
+	err = s.populateBlueprintCurrentState(stateContainer, blueprint6InstanceID, 6)
+	if err != nil {
+		return err
+	}
+
+	return s.populateBlueprint7CurrentStateWithRemovedChild(stateContainer)
 }
 
 func (s *ContainerChangeStagingTestSuite) populateBlueprintCurrentState(
@@ -393,6 +517,29 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint3CyclicCurrentState(
 		blueprint3ChildInstanceID,
 		"ordersApi",
 		*blueprint3CurrentState,
+	)
+}
+
+func (s *ContainerChangeStagingTestSuite) populateBlueprint7CurrentStateWithRemovedChild(
+	stateContainer state.Container,
+) error {
+	err := s.populateBlueprintCurrentState(stateContainer, blueprint7InstanceID, 7)
+	if err != nil {
+		return err
+	}
+
+	blueprint7ChildToBeRemoved, err := s.loadCurrentState(
+		"__testdata/container/change-staging/current-state/blueprint7-child-networking.json",
+	)
+	if err != nil {
+		return err
+	}
+
+	return stateContainer.SaveChild(
+		context.Background(),
+		blueprint7InstanceID,
+		"networking",
+		*blueprint7ChildToBeRemoved,
 	)
 }
 

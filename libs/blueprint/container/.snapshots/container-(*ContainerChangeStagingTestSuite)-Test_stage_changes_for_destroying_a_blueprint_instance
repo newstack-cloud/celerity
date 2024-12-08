@@ -30,6 +30,8 @@
       },
       ChildChanges: (map[string]container.BlueprintChanges) {
       },
+      RecreateChildren: ([]string) {
+      },
       RemovedChildren: ([]string) {
       },
       NewExports: (map[string]provider.FieldChange) <nil>,
@@ -42,6 +44,8 @@
       ResolveOnDeploy: ([]string) {
       }
     }
+  },
+  RecreateChildren: ([]string) {
   },
   RemovedChildren: ([]string) (len=1) {
     (string) (len=9) "coreInfra"

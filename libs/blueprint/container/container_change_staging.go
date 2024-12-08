@@ -97,6 +97,11 @@ func (c *defaultBlueprintContainer) stageChanges(
 		pendingLinks:        map[string]*linkPendingCompletion{},
 		resourceNameLinkMap: map[string][]string{},
 		outputChanges:       &intermediaryBlueprintChanges{},
+		mustRecreate: &collectedElements{
+			resources: []*resourceIDInfo{},
+			children:  []*childBlueprintIDInfo{},
+			total:     0,
+		},
 	}
 	resourceChangesChan := make(chan ResourceChangesMessage)
 	childChangesChan := make(chan ChildChangesMessage)
@@ -152,12 +157,17 @@ func (c *defaultBlueprintContainer) stageChanges(
 		return
 	}
 
+	// Get children that must be recreated due to removed dependencies and remove
+	// from child changes if present in child changes map.
+	recreateChildren := updateChildChangesAndCollectChildrenToRecreate(state)
+
 	channels.CompleteChan <- BlueprintChanges{
 		NewResources:     copyPointerMap(state.outputChanges.NewResources),
 		ResourceChanges:  copyPointerMap(state.outputChanges.ResourceChanges),
 		RemovedResources: state.outputChanges.RemovedResources,
 		RemovedLinks:     state.outputChanges.RemovedLinks,
 		NewChildren:      copyPointerMap(state.outputChanges.NewChildren),
+		RecreateChildren: recreateChildren,
 		ChildChanges:     copyPointerMap(state.outputChanges.ChildChanges),
 		RemovedChildren:  state.outputChanges.RemovedChildren,
 		NewExports:       copyPointerMap(state.outputChanges.NewExports),
@@ -165,6 +175,20 @@ func (c *defaultBlueprintContainer) stageChanges(
 		RemovedExports:   state.outputChanges.RemovedExports,
 		ResolveOnDeploy:  state.outputChanges.ResolveOnDeploy,
 	}
+}
+
+func updateChildChangesAndCollectChildrenToRecreate(state *stageChangesState) []string {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	recreateChildren := []string{}
+	for _, child := range state.mustRecreate.children {
+		if state.outputChanges.ChildChanges[child.childName] != nil {
+			delete(state.outputChanges.ChildChanges, child.childName)
+			recreateChildren = append(recreateChildren, child.childName)
+		}
+	}
+	return recreateChildren
 }
 
 func (c *defaultBlueprintContainer) listenToAndProcessGroupChanges(
@@ -279,6 +303,25 @@ func applyResourceChangesToState(changes ResourceChangesMessage, state *stageCha
 			state.outputChanges.ResourceChanges = map[string]*provider.Changes{}
 		}
 		state.outputChanges.ResourceChanges[changes.ResourceName] = &changes.Changes
+	}
+}
+
+func addElementsThatMustBeRecreatedToState(dependents *collectedElements, state *stageChangesState) {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	for _, resource := range dependents.resources {
+		if !collectedElementsHasResource(state.mustRecreate, resource) {
+			state.mustRecreate.resources = append(state.mustRecreate.resources, resource)
+			state.mustRecreate.total += 1
+		}
+	}
+
+	for _, child := range dependents.children {
+		if !collectedElementsHasChild(state.mustRecreate, child) {
+			state.mustRecreate.children = append(state.mustRecreate.children, child)
+			state.mustRecreate.total += 1
+		}
 	}
 }
 
@@ -455,6 +498,18 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 		return err
 	}
 
+	// The resource must be recreated if an element that it previously depended on
+	// has been removed.
+	if !changes.MustRecreate {
+		changes.MustRecreate, err = mustRecreateResourceOnRemovedDependencies(
+			resourceInfo,
+			stagingState,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	changesMsg := ResourceChangesMessage{
 		ResourceName:    stageResourceInfo.node.ResourceName,
 		Changes:         *changes,
@@ -488,6 +543,22 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 	}
 
 	return nil
+}
+
+func mustRecreateResourceOnRemovedDependencies(
+	resourceInfo *provider.ResourceInfo,
+	stagingState *stageChangesState,
+) (bool, error) {
+	stagingState.mu.Lock()
+	defer stagingState.mu.Unlock()
+
+	for _, element := range stagingState.mustRecreate.resources {
+		if element.resourceName == resourceInfo.ResourceName {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (c *defaultBlueprintContainer) getResourceInfo(
@@ -952,6 +1023,15 @@ func (c *defaultBlueprintContainer) stageResourceRemovals(
 				node.ChainLinkNode.ResourceName == resourceState.ResourceName
 		})
 		if !inDeployNodes {
+			dependents := findDependents(
+				resourceState,
+				flattenedNodes,
+				instanceState,
+			)
+			addElementsThatMustBeRecreatedToState(
+				dependents,
+				stagingState,
+			)
 			changes := ResourceChangesMessage{
 				ResourceName: resourceState.ResourceName,
 				Removed:      true,
@@ -998,13 +1078,23 @@ func (c *defaultBlueprintContainer) stageChildRemovals(
 	flattenedNodes []*DeploymentNode,
 	channels *ChangeStagingChannels,
 ) {
-	for childName := range instanceState.ChildBlueprints {
+	for childName, childState := range instanceState.ChildBlueprints {
 		childElementID := core.ChildElementID(childName)
 		inDeployNodes := slices.ContainsFunc(flattenedNodes, func(node *DeploymentNode) bool {
 			return node.ChildNode != nil &&
 				node.ChildNode.ElementName == childElementID
 		})
 		if !inDeployNodes {
+			dependents := findDependents(
+				state.WrapChildBlueprintInstance(childName, childState),
+				flattenedNodes,
+				instanceState,
+			)
+			addElementsThatMustBeRecreatedToState(
+				dependents,
+				stagingState,
+			)
+
 			changes := ChildChangesMessage{
 				ChildBlueprintName: childName,
 				Removed:            true,
@@ -1408,6 +1498,8 @@ type stageChangesState struct {
 	// modification without needing to copy and patch resource change sets back in to the state
 	// each time resource change set state needs to be updated with link change sets.
 	outputChanges *intermediaryBlueprintChanges
+	// A set of elements that must be recreated due to removal of dependencies.
+	mustRecreate *collectedElements
 	// Mutex is required as resources can be staged concurrently.
 	mu sync.Mutex
 }

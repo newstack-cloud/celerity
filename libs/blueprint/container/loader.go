@@ -367,6 +367,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				RefChainCollector:           refChainCollector,
 				SubstitutionResolver:        nil,
 				ChildBlueprintLoaderFactory: l.forChildBlueprint,
+				Clock:                       l.clock,
 			},
 			diagnostics,
 		), diagnostics, err
@@ -387,6 +388,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				RefChainCollector:           refChainCollector,
 				SubstitutionResolver:        nil,
 				ChildBlueprintLoaderFactory: l.forChildBlueprint,
+				Clock:                       l.clock,
 			},
 			diagnostics,
 		), diagnostics, err
@@ -423,6 +425,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			ResourceTemplateInputElemCache: resourceTemplateInputElemCache,
 			ChildExportFieldCache:          childExportFieldCache,
 			ChildBlueprintLoaderFactory:    l.forChildBlueprint,
+			Clock:                          l.clock,
 		},
 		diagnostics,
 	)

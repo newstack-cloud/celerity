@@ -2762,6 +2762,8 @@
   },
   ChildChanges: (map[string]container.BlueprintChanges) {
   },
+  RecreateChildren: ([]string) {
+  },
   RemovedChildren: ([]string) {
   },
   NewExports: (map[string]provider.FieldChange) (len=1) {

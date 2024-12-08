@@ -40,12 +40,16 @@ type BlueprintContainer interface {
 	// that has either been updated, created or removed.
 	// Deploy should also be used as the mechanism to rollback a blueprint to a previous
 	// revision managed in version control or a data store for blueprint source documents.
+	//
+	// There is no synchronous error handling, all unexpected errors will be sent to the provided error
+	// channel. Most errors should be handled by the container and sent to the appropriate channel
+	// as a deployment update message.
 	Deploy(
 		ctx context.Context,
 		input *DeployInput,
 		channels *DeployChannels,
 		paramOverrides core.BlueprintParams,
-	) error
+	)
 	// Destroy deals with destroying all the resources, child blueprints and links
 	// for a blueprint instance.
 	// Like Deploy, Destroy requires changes to be staged and passed in to ensure that
@@ -54,12 +58,16 @@ type BlueprintContainer interface {
 	// to allow the user to dig deeper in the tools built on top of the framework.
 	// This will stream updates to the provided channels for each resource, child blueprint and link
 	// that has been removed.
+	//
+	// There is no synchronous error handling, all errors will be sent to the provided error
+	// channel. Most errors should be handled by the container and sent to the appropriate channel
+	// as an update message.
 	Destroy(
 		ctx context.Context,
 		input *DestroyInput,
 		channels *DestroyChannels,
 		paramOverrides core.BlueprintParams,
-	) error
+	)
 	// SpecLinkInfo provides the chain link and warnings for potential issues
 	// with links provided in the given specification.
 	SpecLinkInfo() links.SpecLinkInfo
@@ -143,6 +151,11 @@ type BlueprintChanges struct {
 	// ChildChanges contains the changes that will be made to the child blueprints
 	// when deploying the changes.
 	ChildChanges map[string]BlueprintChanges `json:"childChanges"`
+	// RecreateChildren contains the name of the child blueprints that will be recreated
+	// when deploying the changes.
+	// The reason for this will primarily be due to a dependency of a child blueprint
+	// being removed from the latest version of the host blueprint.
+	RecreateChildren []string `json:"recreateChildren"`
 	// RemovedChildren contains the name of the child blueprints that will be removed
 	// when deploying the changes.
 	RemovedChildren []string `json:"removedChildren"`
@@ -185,6 +198,7 @@ type defaultBlueprintContainer struct {
 	childExportFieldCache          *core.Cache[*subengine.ChildExportFieldInfo]
 	diagnostics                    []*core.Diagnostic
 	createChildBlueprintLoader     func(derivedFromTemplate []string) Loader
+	clock                          core.Clock
 }
 
 // BlueprintContainerDependencies provides the dependencies
@@ -202,6 +216,7 @@ type BlueprintContainerDependencies struct {
 	ResourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
 	ChildExportFieldCache          *core.Cache[*subengine.ChildExportFieldInfo]
 	ChildBlueprintLoaderFactory    func(derivedFromTemplate []string) Loader
+	Clock                          core.Clock
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -228,6 +243,7 @@ func NewDefaultBlueprintContainer(
 		deps.ChildExportFieldCache,
 		diagnostics,
 		deps.ChildBlueprintLoaderFactory,
+		deps.Clock,
 	}
 }
 
@@ -236,8 +252,8 @@ func (c *defaultBlueprintContainer) Destroy(
 	input *DestroyInput,
 	channels *DestroyChannels,
 	paramOverrides core.BlueprintParams,
-) error {
-	return nil
+) {
+	// todo: implement
 }
 
 func (c *defaultBlueprintContainer) SpecLinkInfo() links.SpecLinkInfo {
@@ -262,6 +278,16 @@ type linkPendingCompletion struct {
 	resourceAPending bool
 	resourceBPending bool
 	linkPending      bool
+}
+
+type resourceIDInfo struct {
+	resourceID   string
+	resourceName string
+}
+
+type childBlueprintIDInfo struct {
+	childInstanceID string
+	childName       string
 }
 
 // DestroyChannels contains all the channels required to stream

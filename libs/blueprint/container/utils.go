@@ -11,6 +11,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
@@ -375,6 +376,184 @@ func createResourceProviderMap(
 		resourceProviderMap[resourceName] = providers[namespace]
 	}
 	return resourceProviderMap
+}
+
+func findDependents(
+	dependeeElement state.Element,
+	nodesToBeDeployed []*DeploymentNode,
+	instanceState *state.InstanceState,
+) *collectedElements {
+	dependents := &collectedElements{
+		resources: []*resourceIDInfo{},
+		children:  []*childBlueprintIDInfo{},
+		total:     0,
+	}
+
+	for _, node := range nodesToBeDeployed {
+		if node.Type() == "resource" {
+			collectDependentResource(node, dependeeElement, instanceState, dependents)
+		} else if node.Type() == "child" {
+			collectDependentChildBlueprint(node, dependeeElement, instanceState, dependents)
+		}
+	}
+
+	return dependents
+}
+
+func collectDependentResource(
+	potentialDependentNode *DeploymentNode,
+	dependeeStateElement state.Element,
+	instanceState *state.InstanceState,
+	dependents *collectedElements,
+) {
+	currentResourceName := potentialDependentNode.ChainLinkNode.ResourceName
+	currentNodeResourceState := getResourceStateByName(instanceState, currentResourceName)
+	if currentNodeResourceState != nil {
+		elementTypeDependencies := getResourceElementTypeDependencies(
+			dependeeStateElement.Type(),
+			currentNodeResourceState,
+		)
+		if slices.Contains(
+			elementTypeDependencies,
+			dependeeStateElement.ID(),
+		) {
+			dependents.resources = append(dependents.resources, &resourceIDInfo{
+				resourceID:   currentNodeResourceState.ResourceID,
+				resourceName: currentResourceName,
+			})
+			dependents.total += 1
+		}
+	}
+}
+
+func getResourceElementTypeDependencies(
+	dependeeType state.ElementType,
+	dependentResourceState *state.ResourceState,
+) []string {
+	dependencies := []string{}
+
+	if dependeeType == state.ResourceElement {
+		dependencies = dependentResourceState.DependsOnResources
+	}
+
+	if dependeeType == state.ChildElement {
+		dependencies = dependentResourceState.DependsOnChildren
+	}
+
+	return dependencies
+}
+
+func collectDependentChildBlueprint(
+	potentialDependentNode *DeploymentNode,
+	dependeeStateElement state.Element,
+	instanceState *state.InstanceState,
+	dependents *collectedElements,
+) {
+	currentChildName := strings.TrimPrefix(potentialDependentNode.ChildNode.ElementName, "children.")
+	currentNodeChildState := getChildStateByName(instanceState, currentChildName)
+	childDependencies := getChildDependencies(instanceState, currentChildName)
+	if currentNodeChildState != nil {
+		elementTypeDependencies := getChildElementTypeDependencies(
+			dependeeStateElement.Type(),
+			childDependencies,
+		)
+		if slices.Contains(
+			elementTypeDependencies,
+			dependeeStateElement.ID(),
+		) {
+			dependents.children = append(dependents.children, &childBlueprintIDInfo{
+				childInstanceID: currentNodeChildState.InstanceID,
+				childName:       currentChildName,
+			})
+			dependents.total += 1
+		}
+	}
+}
+
+func getChildElementTypeDependencies(
+	dependeeType state.ElementType,
+	childDependencies *state.ChildDependencyInfo,
+) []string {
+	dependencies := []string{}
+
+	if childDependencies == nil {
+		return dependencies
+	}
+
+	if dependeeType == state.ResourceElement {
+		dependencies = childDependencies.DependsOnResources
+	}
+
+	if dependeeType == state.ChildElement {
+		dependencies = childDependencies.DependsOnChildren
+	}
+
+	return dependencies
+}
+
+func collectedElementsHasResource(
+	searchIn *collectedElements,
+	resourceInfo *resourceIDInfo,
+) bool {
+	return slices.ContainsFunc(
+		searchIn.resources,
+		func(compareWith *resourceIDInfo) bool {
+			return compareWith.resourceName == resourceInfo.resourceName
+		},
+	)
+}
+
+func collectedElementsHasChild(
+	searchIn *collectedElements,
+	childInfo *childBlueprintIDInfo,
+) bool {
+	return slices.ContainsFunc(
+		searchIn.children,
+		func(compareWith *childBlueprintIDInfo) bool {
+			return compareWith.childName == childInfo.childName
+		},
+	)
+}
+
+func getResourceStateByName(
+	instanceState *state.InstanceState,
+	resourceName string,
+) *state.ResourceState {
+	resourceID, hasResourceID := instanceState.ResourceIDs[resourceName]
+	if !hasResourceID {
+		return nil
+	}
+
+	resourceState, hasResourceState := instanceState.Resources[resourceID]
+	if !hasResourceState {
+		return nil
+	}
+
+	return resourceState
+}
+
+func getChildStateByName(
+	instanceState *state.InstanceState,
+	childName string,
+) *state.InstanceState {
+	childBlueprint, hasChildBlueprint := instanceState.ChildBlueprints[childName]
+	if !hasChildBlueprint {
+		return nil
+	}
+
+	return childBlueprint
+}
+
+func getChildDependencies(
+	instanceState *state.InstanceState,
+	childName string,
+) *state.ChildDependencyInfo {
+	childDeps, hasChildDeps := instanceState.ChildDependencies[childName]
+	if !hasChildDeps {
+		return nil
+	}
+
+	return childDeps
 }
 
 func copyPointerMap[Item any](input map[string]*Item) map[string]Item {

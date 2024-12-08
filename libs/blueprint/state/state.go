@@ -90,6 +90,26 @@ type Container interface {
 	RemoveChild(ctx context.Context, instanceID string, childName string) (InstanceState, error)
 }
 
+// Element provides a convenience interface for elements in blueprint state
+// to extract common information such as an ID, logical name and type.
+type Element interface {
+	ID() string
+	LogicalName() string
+	Type() ElementType
+}
+
+// ElementType represents the type of an element in a blueprint instance.
+type ElementType string
+
+const (
+	// ChildElement represents a child blueprint in a blueprint instance.
+	ChildElement ElementType = "child"
+	// ResourceElement represents a resource in a blueprint instance.
+	ResourceElement ElementType = "resource"
+	// LinkElement represents a link in a blueprint instance.
+	LinkElement ElementType = "link"
+)
+
 // ResourceState provides the current state of a resource
 // in a blueprint instance.
 // This includes the status, the Raw data from the upstream resouce provider
@@ -141,6 +161,18 @@ type ResourceState struct {
 	Durations *ResourceCompletionDurations `json:"durations,omitempty"`
 }
 
+func (r *ResourceState) ID() string {
+	return r.ResourceID
+}
+
+func (r *ResourceState) LogicalName() string {
+	return r.ResourceName
+}
+
+func (r *ResourceState) Type() ElementType {
+	return ResourceElement
+}
+
 // ResourceMetadataState holds metadata for a resource
 // that is derived from a source blueprint.
 type ResourceMetadataState struct {
@@ -174,12 +206,49 @@ type InstanceState struct {
 	Metadata        map[string]*core.MappingNode `json:"metadata"`
 	Exports         map[string]*core.MappingNode `json:"exports"`
 	ChildBlueprints map[string]*InstanceState    `json:"childBlueprints"`
+	// ChildDependencies holds a mapping of child blueprint names to their dependencies.
+	ChildDependencies map[string]*ChildDependencyInfo `json:"childDependencies,omitempty"`
 	// Drifted indicates whether or not the blueprint instance has drifted
 	// due to changes to resources in the upstream provider.
 	Drifted bool `json:"drifted,omitempty"`
 	// LastDriftDetectedTimestamp holds the unix timestamp when drift in any of the resources
 	// in the blueprint instance was last detected.
 	LastDriftDetectedTimestamp *int `json:"lastDriftDetectedTimestamp,omitempty"`
+}
+
+// ChildBlueprint holds the state of a child blueprint
+// along with its logical name in the parent blueprint.
+type ChildBlueprint struct {
+	ChildName string         `json:"childName"`
+	State     *InstanceState `json:"state"`
+}
+
+func WrapChildBlueprintInstance(childName string, instance *InstanceState) *ChildBlueprint {
+	return &ChildBlueprint{
+		ChildName: childName,
+		State:     instance,
+	}
+}
+
+func (b *ChildBlueprint) ID() string {
+	return b.State.InstanceID
+}
+
+func (b *ChildBlueprint) LogicalName() string {
+	return b.ChildName
+}
+
+func (b *ChildBlueprint) Type() ElementType {
+	return ChildElement
+}
+
+// ChildDependencyInfo holds information about the dependencies
+// of a child blueprint.
+type ChildDependencyInfo struct {
+	// DependsOnResources holds a list of resource IDs that the child blueprint depends on.
+	DependsOnResources []string `json:"dependsOnResources,omitempty"`
+	// DependsOnChildren holds a list of child blueprint names that the child blueprint depends on.
+	DependsOnChildren []string `json:"dependsOnChildren,omitempty"`
 }
 
 // LinkState provides a way to store some state for links between
@@ -216,6 +285,18 @@ type LinkState struct {
 	FailureReasons []string `json:"failureReasons"`
 	// Durations holds duration information for the latest deployment of the link.
 	Durations *LinkCompletionDurations `json:"durations,omitempty"`
+}
+
+func (l *LinkState) ID() string {
+	return l.LinkID
+}
+
+func (l *LinkState) LogicalName() string {
+	return l.LinkName
+}
+
+func (l *LinkState) Type() ElementType {
+	return LinkElement
 }
 
 // ResourceCompletionDurations holds duration information
