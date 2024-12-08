@@ -40,11 +40,7 @@ func (c *defaultBlueprintContainer) Deploy(
 	// 	return
 	// }
 
-	// Get all components that should be removed.
-	//  - If components remain in the blueprint that have a dependency
-	//    on a component that is being removed, the deployment should fail.
-	//	  Check instance state and provided change set to determine whether these
-	//    components will still depend on the given component after deployment.
+	// Get all components that should be removed. (including recreated children)
 	// Order component removal based on dependencies in state.
 	// Group component removals so those that are not connected can be removed in parallel.
 	// Remove components in order.
@@ -53,7 +49,7 @@ func (c *defaultBlueprintContainer) Deploy(
 	// Group components so those that are not connected can be deployed in parallel.
 	// Unlike with change staging, groups are not executed as a unit, they are used as
 	// pools to look for components that can be deployed based on the current state of deployment.
-	// For each component to be created or updated:
+	// For each component to be created or updated (including recreated children):
 	//  - call Deploy method component (resource, link, child blueprint)
 	//      - handle specialised provider errors (retryable, resource deploy errors etc.)
 	//  - If component is resource and is in config complete status, check if any of its dependents

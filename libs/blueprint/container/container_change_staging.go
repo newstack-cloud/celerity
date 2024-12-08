@@ -159,7 +159,7 @@ func (c *defaultBlueprintContainer) stageChanges(
 
 	// Get children that must be recreated due to removed dependencies and remove
 	// from child changes if present in child changes map.
-	recreateChildren := updateChildChangesAndCollectChildrenToRecreate(state)
+	recreateChildren := collectChildrenToRecreate(state)
 
 	channels.CompleteChan <- BlueprintChanges{
 		NewResources:     copyPointerMap(state.outputChanges.NewResources),
@@ -177,14 +177,13 @@ func (c *defaultBlueprintContainer) stageChanges(
 	}
 }
 
-func updateChildChangesAndCollectChildrenToRecreate(state *stageChangesState) []string {
+func collectChildrenToRecreate(state *stageChangesState) []string {
 	state.mu.Lock()
 	defer state.mu.Unlock()
 
 	recreateChildren := []string{}
 	for _, child := range state.mustRecreate.children {
 		if state.outputChanges.ChildChanges[child.childName] != nil {
-			delete(state.outputChanges.ChildChanges, child.childName)
 			recreateChildren = append(recreateChildren, child.childName)
 		}
 	}
