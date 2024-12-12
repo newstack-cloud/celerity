@@ -38,46 +38,18 @@ func (c *defaultBlueprintContainer) StageChanges(
 		return nil
 	}
 
-	expandedBlueprintContainer, err := c.expandResourceTemplates(
-		ctx,
-		paramOverrides,
-	)
+	processed, err := c.processBlueprint(ctx, subengine.ResolveForChangeStaging, nil, paramOverrides)
 	if err != nil {
-		return wrapErrorForChildContext(err, paramOverrides)
+		return err
 	}
-
-	chains, err := expandedBlueprintContainer.SpecLinkInfo().Links(ctx)
-	if err != nil {
-		return wrapErrorForChildContext(err, paramOverrides)
-	}
-
-	// We must use the ref chain collector from the expanded blueprint to correctly
-	// order and resolve references for resources expanded from templates
-	// in the blueprint.
-	refChainCollector := expandedBlueprintContainer.RefChainCollector()
-
-	childrenRefNodes := extractChildRefNodes(expandedBlueprintContainer.BlueprintSpec().Schema(), refChainCollector)
-	orderedNodes, err := OrderItemsForDeployment(ctx, chains, childrenRefNodes, refChainCollector, paramOverrides)
-	if err != nil {
-		return wrapErrorForChildContext(err, paramOverrides)
-	}
-	parallelGroups, err := GroupOrderedNodes(orderedNodes, refChainCollector)
-	if err != nil {
-		return wrapErrorForChildContext(err, paramOverrides)
-	}
-
-	expandedResourceProviderMap := createResourceProviderMap(
-		expandedBlueprintContainer.BlueprintSpec(),
-		c.providers,
-	)
 
 	go c.stageChanges(
 		ctx,
 		input.InstanceID,
-		parallelGroups,
+		processed.parallelGroups,
 		paramOverrides,
-		expandedResourceProviderMap,
-		expandedBlueprintContainer.BlueprintSpec().Schema(),
+		processed.resourceProviderMap,
+		processed.blueprintContainer.BlueprintSpec().Schema(),
 		channels,
 	)
 
@@ -97,10 +69,10 @@ func (c *defaultBlueprintContainer) stageChanges(
 		pendingLinks:        map[string]*linkPendingCompletion{},
 		resourceNameLinkMap: map[string][]string{},
 		outputChanges:       &intermediaryBlueprintChanges{},
-		mustRecreate: &collectedElements{
-			resources: []*resourceIDInfo{},
-			children:  []*childBlueprintIDInfo{},
-			total:     0,
+		mustRecreate: &CollectedElements{
+			Resources: []*ResourceIDInfo{},
+			Children:  []*ChildBlueprintIDInfo{},
+			Total:     0,
 		},
 	}
 	resourceChangesChan := make(chan ResourceChangesMessage)
@@ -182,9 +154,9 @@ func collectChildrenToRecreate(state *stageChangesState) []string {
 	defer state.mu.Unlock()
 
 	recreateChildren := []string{}
-	for _, child := range state.mustRecreate.children {
-		if state.outputChanges.ChildChanges[child.childName] != nil {
-			recreateChildren = append(recreateChildren, child.childName)
+	for _, child := range state.mustRecreate.Children {
+		if state.outputChanges.ChildChanges[child.ChildName] != nil {
+			recreateChildren = append(recreateChildren, child.ChildName)
 		}
 	}
 	return recreateChildren
@@ -305,21 +277,21 @@ func applyResourceChangesToState(changes ResourceChangesMessage, state *stageCha
 	}
 }
 
-func addElementsThatMustBeRecreatedToState(dependents *collectedElements, state *stageChangesState) {
+func addElementsThatMustBeRecreatedToState(dependents *CollectedElements, state *stageChangesState) {
 	state.mu.Lock()
 	defer state.mu.Unlock()
 
-	for _, resource := range dependents.resources {
+	for _, resource := range dependents.Resources {
 		if !collectedElementsHasResource(state.mustRecreate, resource) {
-			state.mustRecreate.resources = append(state.mustRecreate.resources, resource)
-			state.mustRecreate.total += 1
+			state.mustRecreate.Resources = append(state.mustRecreate.Resources, resource)
+			state.mustRecreate.Total += 1
 		}
 	}
 
-	for _, child := range dependents.children {
+	for _, child := range dependents.Children {
 		if !collectedElementsHasChild(state.mustRecreate, child) {
-			state.mustRecreate.children = append(state.mustRecreate.children, child)
-			state.mustRecreate.total += 1
+			state.mustRecreate.Children = append(state.mustRecreate.Children, child)
+			state.mustRecreate.Total += 1
 		}
 	}
 }
@@ -551,8 +523,8 @@ func mustRecreateResourceOnRemovedDependencies(
 	stagingState.mu.Lock()
 	defer stagingState.mu.Unlock()
 
-	for _, element := range stagingState.mustRecreate.resources {
-		if element.resourceName == resourceInfo.ResourceName {
+	for _, element := range stagingState.mustRecreate.Resources {
+		if element.ResourceName == resourceInfo.ResourceName {
 			return true, nil
 		}
 	}
@@ -1304,6 +1276,7 @@ func (c *defaultBlueprintContainer) applyResourceConditions(
 	ctx context.Context,
 	blueprint *schema.Blueprint,
 	resolveFor subengine.ResolveForStage,
+	changes *BlueprintChanges,
 ) (*schema.Blueprint, error) {
 
 	if blueprint.Resources == nil {
@@ -1313,12 +1286,14 @@ func (c *defaultBlueprintContainer) applyResourceConditions(
 	resourcesAfterConditions := map[string]*schema.Resource{}
 	for resourceName, resource := range blueprint.Resources.Values {
 		if resource.Condition != nil {
+			partiallyResolved := getPartiallyResolvedResourceFromChanges(changes, resourceName)
 			resolveResourceResult, err := c.substitutionResolver.ResolveInResource(
 				ctx,
 				resourceName,
 				resource,
 				&subengine.ResolveResourceTargetInfo{
-					ResolveFor: resolveFor,
+					ResolveFor:        resolveFor,
+					PartiallyResolved: partiallyResolved,
 				},
 			)
 			if err != nil {
@@ -1357,8 +1332,58 @@ func (c *defaultBlueprintContainer) applyResourceConditions(
 	}, nil
 }
 
+func (c *defaultBlueprintContainer) processBlueprint(
+	ctx context.Context,
+	resolveFor subengine.ResolveForStage,
+	changes *BlueprintChanges,
+	paramOverrides core.BlueprintParams,
+) (*processedBlueprintDeps, error) {
+	expandedBlueprintContainer, err := c.expandResourceTemplates(
+		ctx,
+		resolveFor,
+		changes,
+		paramOverrides,
+	)
+	if err != nil {
+		return nil, wrapErrorForChildContext(err, paramOverrides)
+	}
+
+	chains, err := expandedBlueprintContainer.SpecLinkInfo().Links(ctx)
+	if err != nil {
+		return nil, wrapErrorForChildContext(err, paramOverrides)
+	}
+
+	// We must use the ref chain collector from the expanded blueprint to correctly
+	// order and resolve references for resources expanded from templates
+	// in the blueprint.
+	refChainCollector := expandedBlueprintContainer.RefChainCollector()
+
+	childrenRefNodes := extractChildRefNodes(expandedBlueprintContainer.BlueprintSpec().Schema(), refChainCollector)
+	orderedNodes, err := OrderItemsForDeployment(ctx, chains, childrenRefNodes, refChainCollector, paramOverrides)
+	if err != nil {
+		return nil, wrapErrorForChildContext(err, paramOverrides)
+	}
+	parallelGroups, err := GroupOrderedNodes(orderedNodes, refChainCollector)
+	if err != nil {
+		return nil, wrapErrorForChildContext(err, paramOverrides)
+	}
+
+	expandedResourceProviderMap := createResourceProviderMap(
+		expandedBlueprintContainer.BlueprintSpec(),
+		c.providers,
+	)
+
+	return &processedBlueprintDeps{
+		blueprintContainer:  expandedBlueprintContainer,
+		parallelGroups:      parallelGroups,
+		resourceProviderMap: expandedResourceProviderMap,
+	}, nil
+}
+
 func (c *defaultBlueprintContainer) expandResourceTemplates(
 	ctx context.Context,
+	resolveFor subengine.ResolveForStage,
+	changes *BlueprintChanges,
 	params core.BlueprintParams,
 ) (BlueprintContainer, error) {
 
@@ -1399,7 +1424,8 @@ func (c *defaultBlueprintContainer) expandResourceTemplates(
 	afterConditionsApplied, err := c.applyResourceConditions(
 		ctx,
 		applyConditionsTo,
-		subengine.ResolveForChangeStaging,
+		resolveFor,
+		changes,
 	)
 	if err != nil {
 		return nil, err
@@ -1484,10 +1510,10 @@ type LinkChangesMessage struct {
 }
 
 type stageChangesState struct {
-	// A mapping of a link ID to the pending link completion state.
+	// A mapping of a link name to the pending link completion state.
 	// A link ID in this context is made up of the resource names of the two resources
 	// that are linked together.
-	// For example, if resource A is linked to resource B, the link ID would be "A::B".
+	// For example, if resource A is linked to resource B, the link name would be "A::B".
 	pendingLinks map[string]*linkPendingCompletion
 	// A mapping of resource names to pending links that include the resource.
 	resourceNameLinkMap map[string][]string
@@ -1498,7 +1524,7 @@ type stageChangesState struct {
 	// each time resource change set state needs to be updated with link change sets.
 	outputChanges *intermediaryBlueprintChanges
 	// A set of elements that must be recreated due to removal of dependencies.
-	mustRecreate *collectedElements
+	mustRecreate *CollectedElements
 	// Mutex is required as resources can be staged concurrently.
 	mu sync.Mutex
 }

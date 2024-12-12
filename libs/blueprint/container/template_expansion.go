@@ -89,6 +89,9 @@ func ExpandResourceTemplates(
 				ctx,
 				resourceName,
 				resource,
+				// This is also called during deployment, however, for the `each` property of a resource template.
+				// resources and child blueprints references can not be used so changing the resolve
+				// mode will not make a difference.
 				subengine.ResolveForChangeStaging,
 			)
 			if err != nil {

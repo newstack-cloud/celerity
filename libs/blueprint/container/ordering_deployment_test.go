@@ -12,7 +12,7 @@ import (
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
-type OrderingTestSuite struct {
+type OrderingForDeploymentTestSuite struct {
 	orderFixture1 orderChainLinkNodeFixture
 	orderFixture2 orderChainLinkNodeFixture
 	orderFixture3 orderChainLinkNodeFixture
@@ -32,7 +32,7 @@ type orderChainLinkNodeFixture struct {
 	orderedExpected [][]string
 }
 
-func (s *OrderingTestSuite) SetupSuite() {
+func (s *OrderingForDeploymentTestSuite) SetupSuite() {
 	orderFixture1, err := orderFixture1()
 	if err != nil {
 		s.FailNow(err.Error())
@@ -52,7 +52,7 @@ func (s *OrderingTestSuite) SetupSuite() {
 	s.orderFixture3 = orderFixture3
 }
 
-func (s *OrderingTestSuite) Test_order_items_for_deployment_with_circular_links() {
+func (s *OrderingForDeploymentTestSuite) Test_order_items_for_deployment_with_circular_links() {
 	orderedItems, err := OrderItemsForDeployment(
 		context.TODO(),
 		s.orderFixture1.inputChains,
@@ -75,7 +75,7 @@ func (s *OrderingTestSuite) Test_order_items_for_deployment_with_circular_links(
 	}
 }
 
-func (s *OrderingTestSuite) Test_order_items_for_deployment_without_circular_links() {
+func (s *OrderingForDeploymentTestSuite) Test_order_items_for_deployment_without_circular_links() {
 	orderedItems, err := OrderItemsForDeployment(
 		context.TODO(),
 		s.orderFixture2.inputChains,
@@ -98,7 +98,7 @@ func (s *OrderingTestSuite) Test_order_items_for_deployment_without_circular_lin
 	}
 }
 
-func (s *OrderingTestSuite) Test_order_items_based_on_references() {
+func (s *OrderingForDeploymentTestSuite) Test_order_items_based_on_references() {
 	orderedItems, err := OrderItemsForDeployment(
 		context.TODO(),
 		s.orderFixture3.inputChains,
@@ -121,7 +121,7 @@ func (s *OrderingTestSuite) Test_order_items_based_on_references() {
 	}
 }
 
-func (s *OrderingTestSuite) assertOrderedExpected(actual []*DeploymentNode, orderedExpected []string) {
+func (s *OrderingForDeploymentTestSuite) assertOrderedExpected(actual []*DeploymentNode, orderedExpected []string) {
 	expectedItemsInOrder := core.Filter(actual, inExpected(orderedExpected))
 	inOrder := true
 	i := 0
@@ -711,6 +711,6 @@ func orderFixture3RefChains(
 	return collector, nil
 }
 
-func TestOrderingTestSuite(t *testing.T) {
-	suite.Run(t, new(OrderingTestSuite))
+func TestOrderingForDeploymentTestSuite(t *testing.T) {
+	suite.Run(t, new(OrderingForDeploymentTestSuite))
 }

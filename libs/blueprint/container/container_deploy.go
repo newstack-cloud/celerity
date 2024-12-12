@@ -2,10 +2,12 @@ package container
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 )
 
 const (
@@ -18,17 +20,49 @@ func (c *defaultBlueprintContainer) Deploy(
 	channels *DeployChannels,
 	paramOverrides core.BlueprintParams,
 ) {
+	if input.Changes == nil {
+		channels.FinishChan <- c.createDeploymentFinishedMessage(
+			input.InstanceID,
+			core.InstanceStatusDeployFailed,
+			[]string{"an empty set of changes was provided for deployment"},
+			0,
+		)
+		return
+	}
+
 	startTime := c.clock.Now()
 	channels.DeploymentUpdateChan <- DeploymentUpdateMessage{
 		InstanceID: input.InstanceID,
 		Status:     core.InstanceStatusPreparing,
 	}
 
-	_, _, err := c.collectElementsToRemove(
+	// Use the same behaviour as change staging to extract the nodes
+	// that need to be deployed or updated where they are grouped for concurrent deployment
+	// and in order based on links, references and use of the `dependsOn` property.
+	processed, err := c.processBlueprint(
+		ctx,
+		subengine.ResolveForDeployment,
+		input.Changes,
+		paramOverrides,
+	)
+	if err != nil {
+		channels.FinishChan <- c.createDeploymentFinishedMessage(
+			input.InstanceID,
+			core.InstanceStatusDeployFailed,
+			[]string{prepareFailureMessage},
+			time.Since(startTime),
+		)
+		return
+	}
+
+	flattenedNodes := core.Flatten(processed.parallelGroups)
+
+	finished, err := c.removeElements(
 		ctx,
 		input.InstanceID,
 		input.Changes,
 		startTime,
+		flattenedNodes,
 		channels,
 	)
 	if err != nil {
@@ -36,41 +70,37 @@ func (c *defaultBlueprintContainer) Deploy(
 		return
 	}
 
-	// if finished {
-	// 	return
-	// }
+	if finished {
+		return
+	}
 
-	// Get all components that should be removed. (including recreated children)
-	// Order component removal based on dependencies in state.
-	// Group component removals so those that are not connected can be removed in parallel.
-	// Remove components in order.
 	// Get all components to be deployed or updated.
 	// Order components based on dependencies in the blueprint.
 	// Group components so those that are not connected can be deployed in parallel.
 	// Unlike with change staging, groups are not executed as a unit, they are used as
 	// pools to look for components that can be deployed based on the current state of deployment.
 	// For each component to be created or updated (including recreated children):
-	//  - call Deploy method component (resource, link, child blueprint)
+	//  - If resource, resolve condition, check if condition is met, if not, skip deployment.
+	//  - call Deploy method component (resource or child blueprint)
 	//      - handle specialised provider errors (retryable, resource deploy errors etc.)
 	//  - If component is resource and is in config complete status, check if any of its dependents
 	//    require the resource to be stable before they can be deployed.
 	//    - If so, wait for the resource to be stable before deploying the dependent.
 	//    - If not, begin deploying the dependent.
+	//  - Check if there are any links that can be deployed based on the current state of deployment.
+	//     - If so, deploy the link.
+	//	- On failure that can not be retried, roll back all changes successfully made for the current deployment.
+	//     - See notes on deployment rollback for how this should be implemented for different states.
 }
 
-func (c *defaultBlueprintContainer) collectElementsToRemove(
+func (c *defaultBlueprintContainer) removeElements(
 	ctx context.Context,
 	instanceID string,
 	changes *BlueprintChanges,
 	startTime time.Time,
+	nodesToBeDeployed []*DeploymentNode,
 	channels *DeployChannels,
-) ([]*collectedElements, bool, error) {
-	if len(changes.RemovedChildren) == 0 &&
-		len(changes.RemovedResources) == 0 &&
-		len(changes.RemovedLinks) == 0 {
-		return []*collectedElements{}, false, nil
-	}
-
+) (bool, error) {
 	currentInstanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
 	if err != nil {
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
@@ -79,29 +109,170 @@ func (c *defaultBlueprintContainer) collectElementsToRemove(
 			[]string{prepareFailureMessage},
 			time.Since(startTime),
 		)
-		return []*collectedElements{}, true, nil
+		return true, nil
 	}
 
-	_, err = c.collectResourcesToRemove(&currentInstanceState, changes.RemovedResources)
+	elementsToRemove, finished, err := c.collectElementsToRemove(
+		&currentInstanceState,
+		changes,
+		startTime,
+		nodesToBeDeployed,
+		channels,
+	)
 	if err != nil {
-		// todo: if error due to dependents still being in the blueprint, provide a more detailed failure reason message.
+		return true, err
+	}
+
+	if finished {
+		return true, nil
+	}
+
+	orderedElements := OrderElementsForRemoval(elementsToRemove, &currentInstanceState)
+	groupedElements := GroupOrderedElements(orderedElements)
+
+	go c.removeGroupedElements(ctx, groupedElements, instanceID, startTime, channels)
+
+	return false, nil
+}
+
+func (c *defaultBlueprintContainer) removeGroupedElements(
+	ctx context.Context,
+	groupedElements [][]state.Element,
+	instanceID string,
+	startTime time.Time,
+	channels *DeployChannels,
+) {
+}
+
+func (c *defaultBlueprintContainer) collectElementsToRemove(
+	currentInstanceState *state.InstanceState,
+	changes *BlueprintChanges,
+	startTime time.Time,
+	nodesToBeDeployed []*DeploymentNode,
+	channels *DeployChannels,
+) (*CollectedElements, bool, error) {
+	if len(changes.RemovedChildren) == 0 &&
+		len(changes.RemovedResources) == 0 &&
+		len(changes.RemovedLinks) == 0 {
+		return &CollectedElements{}, false, nil
+	}
+
+	resourcesToRemove, err := c.collectResourcesToRemove(currentInstanceState, changes, nodesToBeDeployed)
+	if err != nil {
+		message := getDeploymentErrorSpecificMessage(err, prepareFailureMessage)
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
-			instanceID,
+			currentInstanceState.InstanceID,
 			core.InstanceStatusDeployFailed,
-			[]string{prepareFailureMessage},
+			[]string{message},
 			time.Since(startTime),
 		)
-		return []*collectedElements{}, true, nil
+		return &CollectedElements{}, true, nil
 	}
 
-	return []*collectedElements{}, false, nil
+	childrenToRemove, err := c.collectChildrenToRemove(currentInstanceState, changes, nodesToBeDeployed)
+	if err != nil {
+		message := getDeploymentErrorSpecificMessage(err, prepareFailureMessage)
+		channels.FinishChan <- c.createDeploymentFinishedMessage(
+			currentInstanceState.InstanceID,
+			core.InstanceStatusDeployFailed,
+			[]string{message},
+			time.Since(startTime),
+		)
+		return &CollectedElements{}, true, nil
+	}
+
+	linksToRemove := c.collectLinksToRemove(currentInstanceState, changes)
+
+	return &CollectedElements{
+		Resources: resourcesToRemove,
+		Children:  childrenToRemove,
+		Links:     linksToRemove,
+		Total:     len(resourcesToRemove) + len(childrenToRemove) + len(linksToRemove),
+	}, false, nil
 }
 
 func (c *defaultBlueprintContainer) collectResourcesToRemove(
 	currentState *state.InstanceState,
-	removedResources []string,
-) ([]*resourceIDInfo, error) {
-	return []*resourceIDInfo{}, nil
+	changes *BlueprintChanges,
+	nodesToBeDeployed []*DeploymentNode,
+) ([]*ResourceIDInfo, error) {
+	resourcesToRemove := []*ResourceIDInfo{}
+	for _, resourceToRemove := range changes.RemovedResources {
+		toBeRemovedResourceState := getResourceStateByName(currentState, resourceToRemove)
+		if toBeRemovedResourceState != nil {
+			// Check if the resource has dependents that will not be removed or recreated.
+			// Resources that previously depended on the resource to be removed
+			// and are marked to be recreated will no longer have a dependency on the resource
+			// in question. This is because the same logic is applied during change staging
+			// to mark a resource or child blueprint to be recreated if
+			// it previously depended on a resource that is being removed.
+			elements := filterOutRecreated(
+				// For this purpose, there is no need to check transitive dependencies
+				// as for a transitive dependency to exist, a direct dependency would also need to exist
+				// and as soon as a direct dependency is found that will not be removed or recreated,
+				// the deployment process will be stopped.
+				findDependents(toBeRemovedResourceState, nodesToBeDeployed, currentState),
+				changes,
+			)
+			if elements.Total > 0 {
+				return nil, errResourceToBeRemovedHasDependents(resourceToRemove, elements)
+			}
+			resourcesToRemove = append(resourcesToRemove, &ResourceIDInfo{
+				ResourceID:   toBeRemovedResourceState.ResourceID,
+				ResourceName: toBeRemovedResourceState.ResourceName,
+			})
+		}
+	}
+	return resourcesToRemove, nil
+}
+
+func (c *defaultBlueprintContainer) collectChildrenToRemove(
+	currentState *state.InstanceState,
+	changes *BlueprintChanges,
+	nodesToBeDeployed []*DeploymentNode,
+) ([]*ChildBlueprintIDInfo, error) {
+	childrenToRemove := []*ChildBlueprintIDInfo{}
+	// Child blueprints that are marked to be recreated will need to be removed an addition
+	// to those that have been removed from the source blueprint.
+	combinedChildrenToRemove := append(changes.RemovedChildren, changes.RecreateChildren...)
+	for _, childToRemove := range combinedChildrenToRemove {
+		toBeRemovedChildState := getChildStateByName(currentState, childToRemove)
+		if toBeRemovedChildState != nil {
+			elements := filterOutRecreated(
+				findDependents(
+					state.WrapChildBlueprintInstance(childToRemove, toBeRemovedChildState),
+					nodesToBeDeployed,
+					currentState,
+				),
+				changes,
+			)
+			if elements.Total > 0 {
+				return nil, errChildToBeRemovedHasDependents(childToRemove, elements)
+			}
+			childrenToRemove = append(childrenToRemove, &ChildBlueprintIDInfo{
+				ChildInstanceID: toBeRemovedChildState.InstanceID,
+				ChildName:       childToRemove,
+			})
+		}
+	}
+	return childrenToRemove, nil
+}
+
+func (c *defaultBlueprintContainer) collectLinksToRemove(
+	currentState *state.InstanceState,
+	changes *BlueprintChanges,
+) []*LinkIDInfo {
+	linksToRemove := []*LinkIDInfo{}
+	for _, linkToRemove := range changes.RemovedLinks {
+		toBeRemovedLinkState := getLinkStateByName(currentState, linkToRemove)
+		if toBeRemovedLinkState != nil {
+			linksToRemove = append(linksToRemove, &LinkIDInfo{
+				LinkID:   toBeRemovedLinkState.LinkID,
+				LinkName: linkToRemove,
+			})
+		}
+	}
+	return linksToRemove
 }
 
 func (c *defaultBlueprintContainer) createDeploymentFinishedMessage(
@@ -122,10 +293,41 @@ func (c *defaultBlueprintContainer) createDeploymentFinishedMessage(
 	}
 }
 
-type collectedElements struct {
-	resources []*resourceIDInfo
-	children  []*childBlueprintIDInfo
-	total     int
+// Keeps track of state regarding when links are ready to be processed
+// along with the previous state of a blueprint element to allow for rolling back.
+// All instance state including statuses of resources, links and child blueprints
+// are stored in the state container.
+// This is a temporary representation of the state of the deployment
+// that is not persisted.
+// The state container does not support revisions/history of the state of a blueprint instance,
+// so the previous state is held in memory during deployment by the blueprint container.
+// Services built on top of the blueprint framework will often provide revisions/history
+// for the state of a blueprint instance.
+type deploymentState struct {
+	// A mapping of a logical link name to the pending link completion state for links
+	// that need to be deployed or updated.
+	// A link ID in this context is made up of the resource names of the two resources
+	// that are linked together.
+	// For example, if resource A is linked to resource B, the link name would be "A::B".
+	// This is used to keep track of when links are ready to be deployed or updated.
+	// This does not hold the state of the link, only information about when the link is ready
+	// to be deployed or updated.
+	// Link removals are not tracked here as they do not depend on resource state changes,
+	// removal of links happens before resources in the link relationship are processed.
+	pendingLinks map[string]*linkPendingCompletion
+	// A mapping of resource names to pending links that include the resource.
+	resourceNamePendingLinkMap map[string][]string
+	// A mapping of logical resource names to the previous state of the resource.
+	// An entry with a ResourceID of "" indicates that the resource was not previously deployed.
+	previousResourceState map[string]*state.ResourceState
+	// A mapping of logical child blueprint names to the previous state of the child blueprint.
+	// An entry with a InstanceID of "" indicates that the child blueprint was not previously deployed.
+	previousChildState map[string]*state.InstanceState
+	// A mapping of logical link names ({resourceA}::{resourceB}) to the previous state of the link.
+	// An entry with a LinkID of "" indicates that the link was not previously deployed.
+	previousLinkState map[string]*state.LinkState
+	// Mutex is required as resources can be deployed concurrently.
+	mu sync.Mutex
 }
 
 // DeployChannels contains all the channels required to stream

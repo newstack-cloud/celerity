@@ -108,6 +108,10 @@ type DeployInput struct {
 	InstanceID string
 	// Changes contains the changes that will be made to the blueprint instance.
 	Changes *BlueprintChanges
+	// Rollback is used to indicate that the changes being deployed represent a rollback.
+	// This is useful for ensuring the correct statuses are applied when changes within a child
+	// blueprint need to be rolled back due to a failure in the parent blueprint.
+	Rollback bool
 }
 
 // DestroyInput contains the primary input needed to destroy a blueprint instance.
@@ -283,14 +287,73 @@ type linkPendingCompletion struct {
 	linkPending      bool
 }
 
-type resourceIDInfo struct {
-	resourceID   string
-	resourceName string
+// CollectedElements holds resources, children and links that have been collected
+// for an action in the deployment process for a blueprint instance.
+type CollectedElements struct {
+	Resources []*ResourceIDInfo
+	Children  []*ChildBlueprintIDInfo
+	Links     []*LinkIDInfo
+	Total     int
 }
 
-type childBlueprintIDInfo struct {
-	childInstanceID string
-	childName       string
+// LinkIDInfo provides the globally unique ID and logical name of a link.
+type LinkIDInfo struct {
+	LinkID   string
+	LinkName string
+}
+
+func (r *LinkIDInfo) ID() string {
+	return r.LinkID
+}
+
+func (r *LinkIDInfo) LogicalName() string {
+	return r.LinkName
+}
+
+func (r *LinkIDInfo) Type() state.ElementType {
+	return state.LinkElement
+}
+
+// ResourceIDInfo provides the globally unique ID and logical name of a resource.
+type ResourceIDInfo struct {
+	ResourceID   string
+	ResourceName string
+}
+
+func (r *ResourceIDInfo) ID() string {
+	return r.ResourceID
+}
+
+func (r *ResourceIDInfo) LogicalName() string {
+	return r.ResourceName
+}
+
+func (r *ResourceIDInfo) Type() state.ElementType {
+	return state.ResourceElement
+}
+
+// ChildBlueprintIDInfo provides the globally unique ID and logical name of a child blueprint.
+type ChildBlueprintIDInfo struct {
+	ChildInstanceID string
+	ChildName       string
+}
+
+func (r *ChildBlueprintIDInfo) ID() string {
+	return r.ChildInstanceID
+}
+
+func (r *ChildBlueprintIDInfo) LogicalName() string {
+	return r.ChildName
+}
+
+func (r *ChildBlueprintIDInfo) Type() state.ElementType {
+	return state.ChildElement
+}
+
+type processedBlueprintDeps struct {
+	resourceProviderMap map[string]provider.Provider
+	blueprintContainer  BlueprintContainer
+	parallelGroups      [][]*DeploymentNode
 }
 
 // DestroyChannels contains all the channels required to stream

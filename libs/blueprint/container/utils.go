@@ -378,15 +378,17 @@ func createResourceProviderMap(
 	return resourceProviderMap
 }
 
+// Finds direct dependents of a given element in a blueprint instance.
+// This should not be used for finding transitive dependents.
 func findDependents(
 	dependeeElement state.Element,
 	nodesToBeDeployed []*DeploymentNode,
 	instanceState *state.InstanceState,
-) *collectedElements {
-	dependents := &collectedElements{
-		resources: []*resourceIDInfo{},
-		children:  []*childBlueprintIDInfo{},
-		total:     0,
+) *CollectedElements {
+	dependents := &CollectedElements{
+		Resources: []*ResourceIDInfo{},
+		Children:  []*ChildBlueprintIDInfo{},
+		Total:     0,
 	}
 
 	for _, node := range nodesToBeDeployed {
@@ -404,7 +406,7 @@ func collectDependentResource(
 	potentialDependentNode *DeploymentNode,
 	dependeeStateElement state.Element,
 	instanceState *state.InstanceState,
-	dependents *collectedElements,
+	dependents *CollectedElements,
 ) {
 	currentResourceName := potentialDependentNode.ChainLinkNode.ResourceName
 	currentNodeResourceState := getResourceStateByName(instanceState, currentResourceName)
@@ -417,11 +419,11 @@ func collectDependentResource(
 			elementTypeDependencies,
 			dependeeStateElement.ID(),
 		) {
-			dependents.resources = append(dependents.resources, &resourceIDInfo{
-				resourceID:   currentNodeResourceState.ResourceID,
-				resourceName: currentResourceName,
+			dependents.Resources = append(dependents.Resources, &ResourceIDInfo{
+				ResourceID:   currentNodeResourceState.ResourceID,
+				ResourceName: currentResourceName,
 			})
-			dependents.total += 1
+			dependents.Total += 1
 		}
 	}
 }
@@ -447,7 +449,7 @@ func collectDependentChildBlueprint(
 	potentialDependentNode *DeploymentNode,
 	dependeeStateElement state.Element,
 	instanceState *state.InstanceState,
-	dependents *collectedElements,
+	dependents *CollectedElements,
 ) {
 	currentChildName := strings.TrimPrefix(potentialDependentNode.ChildNode.ElementName, "children.")
 	currentNodeChildState := getChildStateByName(instanceState, currentChildName)
@@ -461,11 +463,11 @@ func collectDependentChildBlueprint(
 			elementTypeDependencies,
 			dependeeStateElement.ID(),
 		) {
-			dependents.children = append(dependents.children, &childBlueprintIDInfo{
-				childInstanceID: currentNodeChildState.InstanceID,
-				childName:       currentChildName,
+			dependents.Children = append(dependents.Children, &ChildBlueprintIDInfo{
+				ChildInstanceID: currentNodeChildState.InstanceID,
+				ChildName:       currentChildName,
 			})
-			dependents.total += 1
+			dependents.Total += 1
 		}
 	}
 }
@@ -492,27 +494,56 @@ func getChildElementTypeDependencies(
 }
 
 func collectedElementsHasResource(
-	searchIn *collectedElements,
-	resourceInfo *resourceIDInfo,
+	searchIn *CollectedElements,
+	resourceInfo *ResourceIDInfo,
 ) bool {
 	return slices.ContainsFunc(
-		searchIn.resources,
-		func(compareWith *resourceIDInfo) bool {
-			return compareWith.resourceName == resourceInfo.resourceName
+		searchIn.Resources,
+		func(compareWith *ResourceIDInfo) bool {
+			return compareWith.ResourceName == resourceInfo.ResourceName
 		},
 	)
 }
 
 func collectedElementsHasChild(
-	searchIn *collectedElements,
-	childInfo *childBlueprintIDInfo,
+	searchIn *CollectedElements,
+	childInfo *ChildBlueprintIDInfo,
 ) bool {
 	return slices.ContainsFunc(
-		searchIn.children,
-		func(compareWith *childBlueprintIDInfo) bool {
-			return compareWith.childName == childInfo.childName
+		searchIn.Children,
+		func(compareWith *ChildBlueprintIDInfo) bool {
+			return compareWith.ChildName == childInfo.ChildName
 		},
 	)
+}
+
+func filterOutRecreated(
+	searchIn *CollectedElements,
+	changes *BlueprintChanges,
+) *CollectedElements {
+	filtered := &CollectedElements{
+		Resources: []*ResourceIDInfo{},
+		Children:  []*ChildBlueprintIDInfo{},
+		Total:     0,
+	}
+
+	for _, resourceInfo := range searchIn.Resources {
+		plannedChanges, hasPlannedChanges := changes.ResourceChanges[resourceInfo.ResourceName]
+		if hasPlannedChanges && !plannedChanges.MustRecreate {
+			filtered.Resources = append(filtered.Resources, resourceInfo)
+			filtered.Total += 1
+		}
+	}
+
+	for _, childInfo := range searchIn.Children {
+		isRecreatePlanned := slices.Contains(changes.RecreateChildren, childInfo.ChildName)
+		if !isRecreatePlanned {
+			filtered.Children = append(filtered.Children, childInfo)
+			filtered.Total += 1
+		}
+	}
+
+	return filtered
 }
 
 func getResourceStateByName(
@@ -544,6 +575,18 @@ func getChildStateByName(
 	return childBlueprint
 }
 
+func getLinkStateByName(
+	instanceState *state.InstanceState,
+	linkName string,
+) *state.LinkState {
+	linkState, hasLinkState := instanceState.Links[linkName]
+	if !hasLinkState {
+		return nil
+	}
+
+	return linkState
+}
+
 func getChildDependencies(
 	instanceState *state.InstanceState,
 	childName string,
@@ -554,6 +597,25 @@ func getChildDependencies(
 	}
 
 	return childDeps
+}
+
+func getPartiallyResolvedResourceFromChanges(
+	changes *BlueprintChanges,
+	resourceName string,
+) *provider.ResolvedResource {
+	if changes == nil {
+		return nil
+	}
+
+	resourceChanges, hasResourceChanges := changes.ResourceChanges[resourceName]
+	if !hasResourceChanges {
+		resourceChanges, hasResourceChanges = changes.NewResources[resourceName]
+		if !hasResourceChanges {
+			return nil
+		}
+	}
+
+	return resourceChanges.AppliedResourceInfo.ResourceWithResolvedSubs
 }
 
 func copyPointerMap[Item any](input map[string]*Item) map[string]Item {

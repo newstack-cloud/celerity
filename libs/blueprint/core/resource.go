@@ -36,6 +36,21 @@ const (
 	// ResourceStatusUpdateFailed is used when a resource
 	// has failed to update.
 	ResourceStatusUpdateFailed
+	// ResourceStatusRollingBack is used when
+	// another change in the same blueprint has failed
+	// and the latest change involving the current resource
+	// is being rolled back.
+	ResourceStatusRollingBack
+	// ResourceStatusRollbackFailed is used when
+	// another change in the same blueprint has failed
+	// and the latest change involving the current resource
+	// could not be rolled back.
+	ResourceStatusRollbackFailed
+	// ResourceStatusRollbackComplete is used when
+	// another change in the same blueprint has failed
+	// and the latest change involving the current resource
+	// has been rolled back.
+	ResourceStatusRollbackComplete
 )
 
 // PreciseResourceStatus is used to represent a more precise
@@ -68,6 +83,21 @@ const (
 	// ResourceStatusCreateFailed is used when
 	// the first creation of a resource failed.
 	PreciseResourceStatusCreateFailed
+	// PreciseResourceStatusCreateRollingBack is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// created is being rolled back.
+	PreciseResourceStatusCreateRollingBack
+	// PreciseResourceStatusCreateRollbackFailed is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// created could not be rolled back.
+	PreciseResourceStatusCreateRollbackFailed
+	// PreciseResourceStatusCreateRollbackComplete is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// created has been rolled back.
+	PreciseResourceStatusCreateRollbackComplete
 	// ResourceStatusDestroying is used when
 	// a resource is in the process of being destroyed.
 	PreciseResourceStatusDestroying
@@ -77,6 +107,22 @@ const (
 	// ResourceStatusDestroyFailed is used when
 	// the destruction of a resource fails.
 	PreciseResourceStatusDestroyFailed
+	// PreciseResourceStatusDestroyRollingBack is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// removed is being rolled back.
+	// This involves recreating the resource from the previous state.
+	PreciseResourceStatusDestroyRollingBack
+	// PreciseResourceStatusDestroyRollbackFailed is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// removed could not be rolled back (recreated).
+	PreciseResourceStatusDestroyRollbackFailed
+	// PreciseResourceStatusDestroyRollbackComplete is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// removed has been rolled back (recreated).
+	PreciseResourceStatusDestroyRollbackComplete
 	// ResourceStatusUpdating is used when
 	// a resource is being updated.
 	PreciseResourceStatusUpdating
@@ -93,4 +139,19 @@ const (
 	// ResourceStatusUpdateFailed is used when a resource
 	// has failed to update.
 	PreciseResourceStatusUpdateFailed
+	// PreciseResourceStatusUpdateRollingBack is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// updated is being rolled back to the previous state.
+	PreciseResourceStatusUpdateRollingBack
+	// PreciseResourceStatusUpdateRollbackFailed is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// updated could not be rolled back.
+	PreciseResourceStatusUpdateRollbackFailed
+	// PreciseResourceStatusUpdateRollbackComplete is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// updated has been rolled back to the previous state.
+	PreciseResourceStatusUpdateRollbackComplete
 )

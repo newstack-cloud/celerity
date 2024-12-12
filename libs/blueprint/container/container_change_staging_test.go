@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -442,7 +441,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprintCurrentState(
 	instanceID string,
 	blueprintNo int,
 ) error {
-	blueprintCurrentState, err := s.loadCurrentState(
+	blueprintCurrentState, err := internal.LoadInstanceState(
 		fmt.Sprintf(
 			"__testdata/container/change-staging/current-state/blueprint%d.json",
 			blueprintNo,
@@ -459,7 +458,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprintCurrentState(
 		return err
 	}
 
-	blueprintChildCurrentState, err := s.loadCurrentState(
+	blueprintChildCurrentState, err := internal.LoadInstanceState(
 		fmt.Sprintf(
 			"__testdata/container/change-staging/current-state/blueprint%d-child-core-infra.json",
 			blueprintNo,
@@ -480,7 +479,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprintCurrentState(
 func (s *ContainerChangeStagingTestSuite) populateBlueprint3CyclicCurrentState(
 	stateContainer state.Container,
 ) error {
-	blueprint3CurrentState, err := s.loadCurrentState(
+	blueprint3CurrentState, err := internal.LoadInstanceState(
 		"__testdata/container/change-staging/current-state/blueprint3.json",
 	)
 	if err != nil {
@@ -494,7 +493,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint3CyclicCurrentState(
 		return err
 	}
 
-	blueprint3ChildCurrentState, err := s.loadCurrentState(
+	blueprint3ChildCurrentState, err := internal.LoadInstanceState(
 		"__testdata/container/change-staging/current-state/blueprint3-child-core-infra.json",
 	)
 	if err != nil {
@@ -528,7 +527,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint7CurrentStateWithRemo
 		return err
 	}
 
-	blueprint7ChildToBeRemoved, err := s.loadCurrentState(
+	blueprint7ChildToBeRemoved, err := internal.LoadInstanceState(
 		"__testdata/container/change-staging/current-state/blueprint7-child-networking.json",
 	)
 	if err != nil {
@@ -541,23 +540,6 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint7CurrentStateWithRemo
 		"networking",
 		*blueprint7ChildToBeRemoved,
 	)
-}
-
-func (s *ContainerChangeStagingTestSuite) loadCurrentState(
-	stateSnapshotFile string,
-) (*state.InstanceState, error) {
-	currentStateBytes, err := os.ReadFile(stateSnapshotFile)
-	if err != nil {
-		return nil, err
-	}
-
-	currentState := &state.InstanceState{}
-	err = json.Unmarshal(currentStateBytes, currentState)
-	if err != nil {
-		return nil, err
-	}
-
-	return currentState, nil
 }
 
 func baseBlueprintParams() core.BlueprintParams {

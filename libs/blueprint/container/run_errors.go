@@ -2,6 +2,7 @@ package container
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
@@ -34,6 +35,18 @@ const (
 	// during deployment or change staging is due to
 	// the maximum blueprint depth being exceeded.
 	ErrorReasonCodeMaxBlueprintDepthExceeded errors.ErrorReasonCode = "max_blueprint_depth_exceeded"
+	// ErrorReasonCodeRemovedResourceHasDependents
+	// is provided when the reason for an error
+	// during deployment is due to a resource that is
+	// to be removed having dependents that will not be
+	// removed or recreated.
+	ErrorReasonCodeRemovedResourceHasDependents errors.ErrorReasonCode = "removed_resource_has_dependents"
+	// ErrorReasonCodeRemovedChildHasDependents
+	// is provided when the reason for an error
+	// during deployment is due to a child blueprint that is
+	// to be removed having dependents that will not be
+	// removed or recreated.
+	ErrorReasonCodeRemovedChildHasDependents errors.ErrorReasonCode = "removed_child_has_dependents"
 	// ErrorReasonCodeChildBlueprintError
 	// is provided when the reason for an error
 	// during deployment or change staging is due to
@@ -104,6 +117,52 @@ func errMaxBlueprintDepthExceeded(
 	}
 }
 
+func errResourceToBeRemovedHasDependents(
+	resourceName string,
+	dependents *CollectedElements,
+) error {
+	dependentsList := formatElements(dependents)
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeRemovedResourceHasDependents,
+		Err: fmt.Errorf(
+			"resource %q cannot be removed because it has dependents "+
+				"that will not be removed or recreated: %v",
+			resourceName,
+			strings.Join(dependentsList, ", "),
+		),
+	}
+}
+
+func errChildToBeRemovedHasDependents(
+	childName string,
+	dependents *CollectedElements,
+) error {
+	dependentsList := formatElements(dependents)
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeRemovedChildHasDependents,
+		Err: fmt.Errorf(
+			"child blueprint %q cannot be removed because it has dependents "+
+				"that will not be removed or recreated: %v",
+			childName,
+			strings.Join(dependentsList, ", "),
+		),
+	}
+}
+
+func formatElements(elements *CollectedElements) []string {
+	var formatted []string
+
+	for _, resource := range elements.Resources {
+		formatted = append(formatted, core.ResourceElementID(resource.ResourceName))
+	}
+
+	for _, child := range elements.Children {
+		formatted = append(formatted, core.ChildElementID(child.ChildName))
+	}
+
+	return formatted
+}
+
 func wrapErrorForChildContext(
 	err error,
 	params core.BlueprintParams,
@@ -133,4 +192,17 @@ func wrapErrorForChildContext(
 		Err:                err,
 		ChildBlueprintPath: includeTreePath,
 	}
+}
+
+func getDeploymentErrorSpecificMessage(err error, fallbackMessage string) string {
+	message := prepareFailureMessage
+
+	runErr, isRunErr := err.(*errors.RunError)
+	if isRunErr &&
+		(runErr.ReasonCode == ErrorReasonCodeRemovedResourceHasDependents ||
+			runErr.ReasonCode == ErrorReasonCodeRemovedChildHasDependents) {
+		message = runErr.Error()
+	}
+
+	return message
 }

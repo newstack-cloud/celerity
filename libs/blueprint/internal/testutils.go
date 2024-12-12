@@ -2,13 +2,16 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"slices"
 	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
 type FunctionRegistryMock struct {
@@ -302,4 +305,21 @@ func OrderStringSlice(fields []string) []string {
 	copy(orderedFields, fields)
 	slices.Sort(orderedFields)
 	return orderedFields
+}
+
+func LoadInstanceState(
+	stateSnapshotFile string,
+) (*state.InstanceState, error) {
+	currentStateBytes, err := os.ReadFile(stateSnapshotFile)
+	if err != nil {
+		return nil, err
+	}
+
+	currentState := &state.InstanceState{}
+	err = json.Unmarshal(currentStateBytes, currentState)
+	if err != nil {
+		return nil, err
+	}
+
+	return currentState, nil
 }

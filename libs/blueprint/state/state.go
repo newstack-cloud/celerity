@@ -212,7 +212,9 @@ type InstanceState struct {
 	ResourceIDs map[string]string `json:"resourceIds"`
 	// A mapping or resource IDs to the resource state.
 	Resources map[string]*ResourceState `json:"resources"`
-	Links     map[string]*LinkState     `json:"links"`
+	// A mapping of logical link definition names
+	// to the state of each link in the blueprint instance.
+	Links map[string]*LinkState `json:"links"`
 	// Metadata is used internally to store additional non-structured information
 	// that is relevant to the blueprint framework but can also be used to store
 	// additional information that is relevant to the application/tool
