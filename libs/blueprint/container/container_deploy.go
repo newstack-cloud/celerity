@@ -123,7 +123,7 @@ func (c *defaultBlueprintContainer) removeElements(
 	}
 
 	orderedElements := OrderElementsForRemoval(elementsToRemove, &currentInstanceState)
-	groupedElements := GroupOrderedElements(orderedElements)
+	groupedElements := GroupOrderedElementsForRemoval(orderedElements)
 
 	go c.removeGroupedElements(ctx, groupedElements, instanceID, startTime, channels)
 
