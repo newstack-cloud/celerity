@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -57,7 +56,7 @@ func (c *defaultBlueprintContainer) Deploy(
 
 	flattenedNodes := core.Flatten(processed.parallelGroups)
 
-	finished, err := c.removeElements(
+	_, err = c.removeElements(
 		ctx,
 		input.InstanceID,
 		input.Changes,
@@ -67,10 +66,6 @@ func (c *defaultBlueprintContainer) Deploy(
 	)
 	if err != nil {
 		channels.ErrChan <- err
-		return
-	}
-
-	if finished {
 		return
 	}
 
@@ -303,32 +298,32 @@ func (c *defaultBlueprintContainer) createDeploymentFinishedMessage(
 // so the previous state is held in memory during deployment by the blueprint container.
 // Services built on top of the blueprint framework will often provide revisions/history
 // for the state of a blueprint instance.
-type deploymentState struct {
-	// A mapping of a logical link name to the pending link completion state for links
-	// that need to be deployed or updated.
-	// A link ID in this context is made up of the resource names of the two resources
-	// that are linked together.
-	// For example, if resource A is linked to resource B, the link name would be "A::B".
-	// This is used to keep track of when links are ready to be deployed or updated.
-	// This does not hold the state of the link, only information about when the link is ready
-	// to be deployed or updated.
-	// Link removals are not tracked here as they do not depend on resource state changes,
-	// removal of links happens before resources in the link relationship are processed.
-	pendingLinks map[string]*linkPendingCompletion
-	// A mapping of resource names to pending links that include the resource.
-	resourceNamePendingLinkMap map[string][]string
-	// A mapping of logical resource names to the previous state of the resource.
-	// An entry with a ResourceID of "" indicates that the resource was not previously deployed.
-	previousResourceState map[string]*state.ResourceState
-	// A mapping of logical child blueprint names to the previous state of the child blueprint.
-	// An entry with a InstanceID of "" indicates that the child blueprint was not previously deployed.
-	previousChildState map[string]*state.InstanceState
-	// A mapping of logical link names ({resourceA}::{resourceB}) to the previous state of the link.
-	// An entry with a LinkID of "" indicates that the link was not previously deployed.
-	previousLinkState map[string]*state.LinkState
-	// Mutex is required as resources can be deployed concurrently.
-	mu sync.Mutex
-}
+// type deploymentState struct {
+// 	// A mapping of a logical link name to the pending link completion state for links
+// 	// that need to be deployed or updated.
+// 	// A link ID in this context is made up of the resource names of the two resources
+// 	// that are linked together.
+// 	// For example, if resource A is linked to resource B, the link name would be "A::B".
+// 	// This is used to keep track of when links are ready to be deployed or updated.
+// 	// This does not hold the state of the link, only information about when the link is ready
+// 	// to be deployed or updated.
+// 	// Link removals are not tracked here as they do not depend on resource state changes,
+// 	// removal of links happens before resources in the link relationship are processed.
+// 	pendingLinks map[string]*linkPendingCompletion
+// 	// A mapping of resource names to pending links that include the resource.
+// 	resourceNamePendingLinkMap map[string][]string
+// 	// A mapping of logical resource names to the previous state of the resource.
+// 	// An entry with a ResourceID of "" indicates that the resource was not previously deployed.
+// 	previousResourceState map[string]*state.ResourceState
+// 	// A mapping of logical child blueprint names to the previous state of the child blueprint.
+// 	// An entry with a InstanceID of "" indicates that the child blueprint was not previously deployed.
+// 	previousChildState map[string]*state.InstanceState
+// 	// A mapping of logical link names ({resourceA}::{resourceB}) to the previous state of the link.
+// 	// An entry with a LinkID of "" indicates that the link was not previously deployed.
+// 	previousLinkState map[string]*state.LinkState
+// 	// Mutex is required as resources can be deployed concurrently.
+// 	mu sync.Mutex
+// }
 
 // DeployChannels contains all the channels required to stream
 // deployment events.
