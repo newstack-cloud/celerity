@@ -10,6 +10,7 @@
     "complex-resource-id": {
       "resourceId": "complex-resource-id",
       "resourceName": "complexResource",
+      "resourceType": "example/complex",
       "instanceId": "blueprint-instance-child-core-infra",
       "status": 2,
       "preciseStatus": 3,

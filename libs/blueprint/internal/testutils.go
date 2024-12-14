@@ -300,6 +300,10 @@ func (c *ClockMock) Now() time.Time {
 	return time.Unix(CurrentTimeUnixMock, 0)
 }
 
+func (c *ClockMock) Since(t time.Time) time.Duration {
+	return c.Now().Sub(t)
+}
+
 func OrderStringSlice(fields []string) []string {
 	orderedFields := make([]string, len(fields))
 	copy(orderedFields, fields)

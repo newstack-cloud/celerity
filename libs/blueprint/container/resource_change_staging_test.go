@@ -69,6 +69,25 @@ func (s *ResourceChangeStagerTestSuite) Test_does_not_produce_changes_for_fields
 	s.Require().NoError(err)
 }
 
+func (s *ResourceChangeStagerTestSuite) Test_stage_changes_for_existing_resource_with_new_resource_type() {
+	changes, err := s.resourceChangeStager.StageChanges(
+		context.Background(),
+		s.resourceInfoFixture4(),
+		&internal.ExampleComplexResource{},
+		[]string{
+			"resources.complexResource.spec.itemConfig.endpoints[2]",
+			"resources.complexResource.spec.itemConfig.endpoints[4]",
+			"resources.complexResource.metadata.annotations[\"test.annotation.v1\"]",
+			"resources.complexResource.metadata.custom.url",
+		},
+		nil,
+	)
+	s.Require().NoError(err)
+
+	err = cupaloy.Snapshot(internal.NormaliseResourceChanges(changes, false /* excludeResourceInfo */))
+	s.Require().NoError(err)
+}
+
 func TestResourceChangeStagerTestSuite(t *testing.T) {
 	suite.Run(t, new(ResourceChangeStagerTestSuite))
 }

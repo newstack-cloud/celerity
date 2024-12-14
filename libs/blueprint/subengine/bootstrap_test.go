@@ -69,7 +69,7 @@ func (s *SubResolverTestContainer) populateDependencies() {
 	providers := map[string]provider.Provider{
 		"aws": newTestAWSProvider(),
 		"core": providerhelpers.NewCoreProvider(
-			s.stateContainer,
+			s.stateContainer.Links(),
 			core.BlueprintInstanceIDFromContext,
 			os.Getwd,
 			core.SystemClock{},

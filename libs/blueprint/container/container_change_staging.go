@@ -413,13 +413,12 @@ func (c *defaultBlueprintContainer) prepareAndStageResourceChanges(
 	resourceProviders map[string]provider.Provider,
 	params core.BlueprintParams,
 ) {
-	resourceProvider, hasResourceProvider := resourceProviders[node.ResourceName]
-	if !hasResourceProvider {
-		channels.ErrChan <- fmt.Errorf("no provider found for resource %q", node.ResourceName)
-		return
-	}
-
-	resourceImplementation, err := resourceProvider.Resource(ctx, node.Resource.Type.Value)
+	resourceImplementation, err := c.getProviderResourceImplementation(
+		ctx,
+		node.ResourceName,
+		node.Resource.Type.Value,
+		resourceProviders,
+	)
 	if err != nil {
 		channels.ErrChan <- err
 		return
@@ -441,6 +440,20 @@ func (c *defaultBlueprintContainer) prepareAndStageResourceChanges(
 		channels.ErrChan <- err
 		return
 	}
+}
+
+func (c *defaultBlueprintContainer) getProviderResourceImplementation(
+	ctx context.Context,
+	resourceName string,
+	resourceType string,
+	resourceProviders map[string]provider.Provider,
+) (provider.Resource, error) {
+	resourceProvider, hasResourceProvider := resourceProviders[resourceName]
+	if !hasResourceProvider {
+		return nil, fmt.Errorf("no provider found for resource %q", resourceName)
+	}
+
+	return resourceProvider.Resource(ctx, resourceType)
 }
 
 func (c *defaultBlueprintContainer) stageResourceChanges(
@@ -556,7 +569,8 @@ func (c *defaultBlueprintContainer) getResourceInfo(
 	}
 
 	var currentResourceStatePtr *state.ResourceState
-	currentResourceState, err := c.stateContainer.GetResourceByName(
+	resources := c.stateContainer.Resources()
+	currentResourceState, err := resources.GetByName(
 		ctx,
 		stageInfo.instanceID,
 		stageInfo.node.ResourceName,
@@ -636,7 +650,8 @@ func (c *defaultBlueprintContainer) stageLinkChanges(
 	}
 
 	var currentLinkStatePtr *state.LinkState
-	currentLinkState, err := c.stateContainer.GetLink(
+	links := c.stateContainer.Links()
+	currentLinkState, err := links.Get(
 		ctx,
 		resourceAInfo.InstanceID,
 		createLogicalLinkName(resourceAInfo.ResourceName, resourceBInfo.ResourceName),
@@ -812,7 +827,8 @@ func (c *defaultBlueprintContainer) getChildState(
 	parentInstanceID string,
 	includeName string,
 ) (*state.InstanceState, error) {
-	childState, err := c.stateContainer.GetChild(ctx, parentInstanceID, includeName)
+	children := c.stateContainer.Children()
+	childState, err := children.Get(ctx, parentInstanceID, includeName)
 	if err != nil {
 		if !state.IsInstanceNotFound(err) {
 			return nil, err
@@ -966,7 +982,8 @@ func (c *defaultBlueprintContainer) stageRemovals(
 	deploymentNodes [][]*DeploymentNode,
 	channels *ChangeStagingChannels,
 ) error {
-	instanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
+	instances := c.stateContainer.Instances()
+	instanceState, err := instances.Get(ctx, instanceID)
 	if err != nil {
 		if !state.IsInstanceNotFound(err) {
 			return err
@@ -1099,7 +1116,8 @@ func (c *defaultBlueprintContainer) resolveAndCollectExportChanges(
 		}
 	}
 
-	blueprintExportsState, err := c.stateContainer.GetExports(ctx, instanceID)
+	exports := c.stateContainer.Exports()
+	blueprintExportsState, err := exports.GetAll(ctx, instanceID)
 	if err != nil {
 		if !state.IsInstanceNotFound(err) {
 			return err
@@ -1443,7 +1461,8 @@ func (c *defaultBlueprintContainer) stageInstanceRemoval(
 	channels *ChangeStagingChannels,
 ) {
 
-	instanceState, err := c.stateContainer.GetInstance(ctx, instanceID)
+	instances := c.stateContainer.Instances()
+	instanceState, err := instances.Get(ctx, instanceID)
 	if err != nil {
 		channels.ErrChan <- err
 		return

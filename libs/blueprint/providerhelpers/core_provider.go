@@ -150,6 +150,16 @@ func (p *coreProvider) Function(ctx context.Context, functionName string) (provi
 	return function, nil
 }
 
+// The core provider does not provide a retry policy,
+// as the core provider only provides functions, there will be no support
+// for retries.
+// All core functions apart from the `link` function do not perform any IO
+// operations. The state container implementation that powers the `link` function
+// should be responsible for retrying transient errors.
+func (p *coreProvider) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
+	return nil, nil
+}
+
 func funcMapKeys(m map[string]provider.Function) []string {
 	keys := []string{}
 	for key := range m {

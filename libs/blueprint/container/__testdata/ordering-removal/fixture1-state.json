@@ -14,6 +14,7 @@
       "resourceId": "test-orders-table-0-id",
       "resourceName": "ordersTable_0",
       "resourceTemplateName": "ordersTable",
+      "resourceType": "aws/dynamodb/table",
       "instanceId": "blueprint-instance-1",
       "status": 2,
       "preciseStatus": 3,
@@ -49,6 +50,7 @@
       "resourceId": "test-orders-table-1-id",
       "resourceName": "ordersTable_1",
       "resourceTemplateName": "ordersTable",
+      "resourceType": "aws/dynamodb/table",
       "instanceId": "blueprint-instance-1",
       "status": 2,
       "preciseStatus": 3,
@@ -83,6 +85,7 @@
     "test-preprocess-order-function-id": {
       "resourceId": "test-preprocess-order-function-id",
       "resourceName": "preprocessOrderFunction",
+      "resourceType": "aws/lambda/function",
       "instanceId": "blueprint-instance-1",
       "status": 2,
       "preciseStatus": 3,
@@ -97,6 +100,7 @@
     "test-save-order-function-id": {
       "resourceId": "test-save-order-function-id",
       "resourceName": "saveOrderFunction",
+      "resourceType": "aws/lambda/function",
       "instanceId": "blueprint-instance-1",
       "status": 2,
       "preciseStatus": 3,
@@ -113,6 +117,7 @@
     "test-invoices-table-id": {
       "resourceId": "test-invoices-table-id",
       "resourceName": "invoicesTable",
+      "resourceType": "aws/dynamodb/table",
       "instanceId": "blueprint-instance-1",
       "status": 2,
       "preciseStatus": 3,
@@ -200,6 +205,7 @@
         "complex-resource-id": {
           "resourceId": "complex-resource-id",
           "resourceName": "complexResource",
+          "resourceType": "example/complex",
           "instanceId": "blueprint-instance-child-core-infra",
           "status": 2,
           "preciseStatus": 3,
@@ -252,6 +258,7 @@
         "complex-resource-id": {
           "resourceId": "complex-resource-id",
           "resourceName": "complexResource",
+          "resourceType": "example/complex",
           "instanceId": "blueprint-instance-child-networking",
           "status": 2,
           "preciseStatus": 3,

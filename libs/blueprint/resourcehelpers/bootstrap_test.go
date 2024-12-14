@@ -95,6 +95,10 @@ func (p *testProvider) Function(ctx context.Context, functionName string) (provi
 	return function, nil
 }
 
+func (p *testProvider) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
+	return nil, nil
+}
+
 type testExampleResource struct {
 	definition           *provider.ResourceSpecDefinition
 	markdownDescription  string

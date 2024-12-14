@@ -50,16 +50,16 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 	}
 	s.specFixtureContainers = make(map[string]BlueprintContainer)
 
+	s.stateContainer = internal.NewMemoryStateContainer()
 	s.providers = map[string]provider.Provider{
 		"aws": newTestAWSProvider(),
 		"core": providerhelpers.NewCoreProvider(
-			s.stateContainer,
+			s.stateContainer.Links(),
 			core.BlueprintInstanceIDFromContext,
 			os.Getwd,
 			core.SystemClock{},
 		),
 	}
-	s.stateContainer = internal.NewMemoryStateContainer()
 	loader := NewDefaultLoader(
 		s.providers,
 		map[string]transform.SpecTransformer{},

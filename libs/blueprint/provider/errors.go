@@ -160,8 +160,8 @@ func ErrUnknownResourceDefSchemaType(
 // This is a part of the API for provider resources, data sources and custom variable types.
 // When a retryable error is returned from a provider resource, data source or custom variable type.
 // The operation is retried after a delay based on a configured backoff/retry strategy
-// that is configured globally or at the provider level, the framework provides some reasonable
-// defaults.
+// that is configured globally or at the provider level, the framework/host tool will
+// provide some reasonable defaults.
 //
 // The message in ChildError will be used as the failure reason persisted in the state
 // when in the context of a resource deployment.
@@ -172,6 +172,14 @@ type RetryableError struct {
 
 func (e *RetryableError) Error() string {
 	return fmt.Sprintf("retryable error: %s", e.ChildError.Error())
+}
+
+// IsRetryableError returns true if the error is a retryable error.
+// Whether or not there will be another retry depends on the retry policy
+// configured for the provider or globally.
+func IsRetryableError(err error) bool {
+	_, ok := err.(*RetryableError)
+	return ok
 }
 
 // ResourceDeployError is an error that indicates a failure to deploy a resource.
@@ -192,6 +200,12 @@ func (e *ResourceDeployError) Error() string {
 	return fmt.Sprintf("resource deployment failed with %d failures", len(e.FailureReasons))
 }
 
+// IsResourceDeployError returns true if the error is a resource deploy error.
+func IsResourceDeployError(err error) bool {
+	_, ok := err.(*ResourceDeployError)
+	return ok
+}
+
 // ResourceDestroyError is an error that indicates a failure to destroy a resource.
 // This is a part of the API for provider resources that should be returned when an attempt
 // to remove a resource fails, this will cause the operation to fail and the state of the resource will
@@ -208,4 +222,10 @@ func (e *ResourceDestroyError) Error() string {
 	}
 
 	return fmt.Sprintf("resource removal failed with %d failures", len(e.FailureReasons))
+}
+
+// IsResourceDestroyError returns true if the error is a resource destroy error.
+func IsResourceDestroyError(err error) bool {
+	_, ok := err.(*ResourceDestroyError)
+	return ok
 }

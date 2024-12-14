@@ -97,6 +97,10 @@ func (p *testProvider) Function(ctx context.Context, functionName string) (Funct
 	return function, nil
 }
 
+func (p *testProvider) RetryPolicy(ctx context.Context) (*RetryPolicy, error) {
+	return nil, nil
+}
+
 type testSubstrFunction struct {
 	definition *function.Definition
 }

@@ -21,73 +21,125 @@ import (
 // The state persistence method is entirely up to the application
 // making use of this library.
 type Container interface {
-	// GetInstance deals with retrieving the state for a given blueprint
+	// Instances provides functionality to manage state for blueprint instances.
+	Instances() InstancesContainer
+	// Resources provides functionality to manage state for resources in blueprint instances.
+	Resources() ResourcesContainer
+	// Links provides functionality to manage state for links in blueprint instances.
+	Links() LinksContainer
+	// Children provides functionality to manage state for child blueprints in relation
+	// to their parent blueprint instances.
+	Children() ChildrenContainer
+	// Metadata provides functionality to manage metadata for blueprint instances.
+	Metadata() MetadataContainer
+	// Exports provides functionality to manage exported fields for blueprint instances.
+	Exports() ExportsContainer
+}
+
+// InstancesContainer provides an interface for functionality related
+// to persisting and retrieving the top-level state of a blueprint instance.
+type InstancesContainer interface {
+	// Get deals with retrieving the state for a given blueprint
 	// instance ID.
-	GetInstance(ctx context.Context, instanceID string) (InstanceState, error)
-	// SaveInstance deals with persisting a blueprint instance.
-	SaveInstance(ctx context.Context, instanceState InstanceState) error
-	// RemoveInstance deals with removing the state for a given blueprint instance.
+	Get(ctx context.Context, instanceID string) (InstanceState, error)
+	// Save deals with persisting a blueprint instance.
+	Save(ctx context.Context, instanceState InstanceState) error
+	// UpdateStatus deals with updating the status of the latest blueprint
+	// instance deployment.
+	// UpdateStatus(
+	// 	ctx context.Context,
+	// 	instanceID string,
+	// 	status core.InstanceStatus,
+	// 	durationInfo *InstanceCompletionDuration,
+	// ) error
+	// Remove deals with removing the state for a given blueprint instance.
 	// This is not for destroying the actual deployed resources, just removing the state.
-	RemoveInstance(ctx context.Context, instanceID string) (InstanceState, error)
-	// GetResource deals with retrieving the state for a given resource
+	Remove(ctx context.Context, instanceID string) (InstanceState, error)
+}
+
+// ResourcesContainer provides an interface for functionality related
+// to persisting and retrieving resource state in a blueprint instance.
+type ResourcesContainer interface {
+	// Get deals with retrieving the state for a given resource
 	// in the provided blueprint instance.
-	GetResource(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
-	// GetResourceByName deals with retrieving the state for a given resource
+	Get(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
+	// GetByName deals with retrieving the state for a given resource
 	// in the provided blueprint instance by its logical name.
-	GetResourceByName(ctx context.Context, instanceID string, resourceName string) (ResourceState, error)
-	// SaveResource deals with persisting a resource in a blueprint instance.
-	SaveResource(
+	GetByName(ctx context.Context, instanceID string, resourceName string) (ResourceState, error)
+	// Save deals with persisting a resource in a blueprint instance.
+	Save(
 		ctx context.Context,
 		instanceID string,
 		resourceState ResourceState,
 	) error
-	// RemoveResource deals with removing the state of a resource from
+	// Remove deals with removing the state of a resource from
 	// a given blueprint instance.
-	RemoveResource(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
-	// GetResourceDrift deals with retrieving the current drift state for a given resource
+	Remove(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
+	// GetDrift deals with retrieving the current drift state for a given resource
 	// in the provided blueprint instance.
-	GetResourceDrift(ctx context.Context, instanceID string, resourceID string) (ResourceDriftState, error)
-	// SaveResourceDrift deals with persisting the drift state for a given resource
+	GetDrift(ctx context.Context, instanceID string, resourceID string) (ResourceDriftState, error)
+	// SaveDrift deals with persisting the drift state for a given resource
 	// in the provided blueprint instance.
-	SaveResourceDrift(ctx context.Context, instanceID string, driftState ResourceDriftState) error
-	// RemoveResourceDrift deals with removing the drift state for a given resource
+	SaveDrift(ctx context.Context, instanceID string, driftState ResourceDriftState) error
+	// RemoveDrift deals with removing the drift state for a given resource
 	// in the provided blueprint instance.
-	RemoveResourceDrift(ctx context.Context, instanceID string, resourceID string) (ResourceDriftState, error)
-	// GetLink deals with retrieving the state for a given link
+	RemoveDrift(ctx context.Context, instanceID string, resourceID string) (ResourceDriftState, error)
+}
+
+// LinksContainer provides an interface for functionality related
+// to persisting and retrieving link state in a blueprint instance.
+type LinksContainer interface {
+	// Get deals with retrieving the state for a given link
 	// in the provided blueprint instance.
-	GetLink(ctx context.Context, instanceID string, linkID string) (LinkState, error)
-	// SaveLink deals with persisting a link in a blueprint instance.
-	SaveLink(ctx context.Context, instanceID string, linkState LinkState) error
-	// RemoveLink deals with removing the state of a link from
+	Get(ctx context.Context, instanceID string, linkID string) (LinkState, error)
+	// Save deals with persisting a link in a blueprint instance.
+	Save(ctx context.Context, instanceID string, linkState LinkState) error
+	// Remove deals with removing the state of a link from
 	// a given blueprint instance.
-	RemoveLink(ctx context.Context, instanceID string, linkID string) (LinkState, error)
-	// GetMetadata deals with retrieving metadata for a given blueprint instance.
-	GetMetadata(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
-	// SaveMetadata deals with persisting metadata for a given blueprint instance.
-	SaveMetadata(ctx context.Context, instanceID string, metadata map[string]*core.MappingNode) error
-	// RemoveMetadata deals with removing metadata from a given blueprint instance.
-	RemoveMetadata(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
-	// GetExports deals with retrieving exported fields for a given blueprint instance.
-	GetExports(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
-	// GetExport deals with retrieving an exported field for a given blueprint instance.
-	GetExport(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error)
-	// SaveExports deals with persisting exported fields for a given blueprint instance.
-	SaveExports(ctx context.Context, instanceID string, exports map[string]*core.MappingNode) error
-	// SaveExport deals with persisting an exported field for a given blueprint instance.
-	SaveExport(ctx context.Context, instanceID string, exportName string, export *core.MappingNode) error
-	// RemoveExports deals with removing all exported fields for a given blueprint instance.
-	RemoveExports(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
-	// RemoveExport deals with removing an exported field for a given blueprint instance.
-	RemoveExport(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error)
-	// GetChild deals with retrieving the state for a given child blueprint
+	Remove(ctx context.Context, instanceID string, linkID string) (LinkState, error)
+}
+
+// ChildrenContainer provides an interface for functionality related
+// to persisting and retrieving child blueprint state in relation to
+// a parent blueprint instance.
+type ChildrenContainer interface {
+	// Get deals with retrieving the state for a given child blueprint
 	// in the provided blueprint instance.
-	GetChild(ctx context.Context, instanceID string, childName string) (InstanceState, error)
-	// SaveChild deals with persisting a blueprint instance and assigning
+	Get(ctx context.Context, instanceID string, childName string) (InstanceState, error)
+	// Save deals with persisting a blueprint instance and assigning
 	// it as a child of the provided blueprint instance.
-	SaveChild(ctx context.Context, instanceID string, childName string, childState InstanceState) error
-	// RemoveChild deals with removing the state of a child blueprint from
+	Save(ctx context.Context, instanceID string, childName string, childState InstanceState) error
+	// Remove deals with removing the state of a child blueprint from
 	// a given blueprint instance.
-	RemoveChild(ctx context.Context, instanceID string, childName string) (InstanceState, error)
+	Remove(ctx context.Context, instanceID string, childName string) (InstanceState, error)
+}
+
+// MetadataContainer provides an interface for functionality related
+// to persisting and retrieving metadata for a blueprint instance.
+type MetadataContainer interface {
+	// Get deals with retrieving metadata for a given blueprint instance.
+	Get(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
+	// Save deals with persisting metadata for a given blueprint instance.
+	Save(ctx context.Context, instanceID string, metadata map[string]*core.MappingNode) error
+	// Remove deals with removing metadata from a given blueprint instance.
+	Remove(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
+}
+
+// ExportsContainer provides an interface for functionality related
+// to persisting and retrieving exported fields for a blueprint instance.
+type ExportsContainer interface {
+	// GetAll deals with retrieving exported fields for a given blueprint instance.
+	GetAll(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
+	// Get deals with retrieving an exported field for a given blueprint instance.
+	Get(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error)
+	// SaveAll deals with persisting exported fields for a given blueprint instance.
+	SaveAll(ctx context.Context, instanceID string, exports map[string]*core.MappingNode) error
+	// Save deals with persisting an exported field for a given blueprint instance.
+	Save(ctx context.Context, instanceID string, exportName string, export *core.MappingNode) error
+	// RemoveAll deals with removing all exported fields for a given blueprint instance.
+	RemoveAll(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
+	// Remove deals with removing an exported field for a given blueprint instance.
+	Remove(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error)
 }
 
 // Element provides a convenience interface for elements in blueprint state
@@ -119,6 +171,8 @@ type ResourceState struct {
 	ResourceID string `json:"resourceId"`
 	// The logical name of the resource in the blueprint.
 	ResourceName string `json:"resourceName"`
+	// The type of the resource as defined in the source blueprint.
+	ResourceType string `json:"resourceType"`
 	// The name of the resource template in the source blueprint
 	// that the resource is derived from.
 	// This will be empty if the resource is not derived from a resource template.
@@ -230,6 +284,8 @@ type InstanceState struct {
 	// LastDriftDetectedTimestamp holds the unix timestamp when drift in any of the resources
 	// in the blueprint instance was last detected.
 	LastDriftDetectedTimestamp *int `json:"lastDriftDetectedTimestamp,omitempty"`
+	// Durations holds duration information for the latest deployment of the blueprint instance.
+	Durations *InstanceCompletionDuration `json:"durations,omitempty"`
 }
 
 // ChildBlueprint holds the state of a child blueprint
@@ -370,6 +426,9 @@ type LinkCompletionDurations struct {
 // InstanceCompletionDuration holds duration information
 // for the deployment of a blueprint instance.
 type InstanceCompletionDuration struct {
+	// PrepareDuration is the duration in milliseconds for the preparation phase
+	// of a blueprint instance deployment to be completed.
+	PrepareDuration *float64 `json:"prepareDuration,omitempty"`
 	// TotalDuration is the duration in milliseconds for the blueprint instance to reach the final
 	// status.
 	TotalDuration *float64 `json:"totalDuration,omitempty"`

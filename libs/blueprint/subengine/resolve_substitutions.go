@@ -2041,7 +2041,8 @@ func (r *defaultSubstitutionResolver) resolveResourceSpecPropertyFromStateOrDefa
 				return nil, err
 			}
 
-			freshResourceState, err := r.stateContainer.GetResourceByName(ctx, instanceID, resourceName)
+			resources := r.stateContainer.Resources()
+			freshResourceState, err := resources.GetByName(ctx, instanceID, resourceName)
 			if err != nil {
 				if state.IsResourceNotFound(err) || state.IsInstanceNotFound(err) {
 					return getResourceSpecDefaultValueFromDefinition(err, definition)
@@ -2129,7 +2130,8 @@ func (r *defaultSubstitutionResolver) resolveChildReference(
 		return nil, err
 	}
 
-	childState, err := r.stateContainer.GetChild(ctx, instanceID, childReference.ChildName)
+	children := r.stateContainer.Children()
+	childState, err := children.Get(ctx, instanceID, childReference.ChildName)
 	if err != nil {
 		return nil, err
 	}

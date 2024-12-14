@@ -168,6 +168,7 @@ type defaultLoader struct {
 	clock                    bpcore.Clock
 	resolveWorkingDir        corefunctions.WorkingDirResolver
 	idGenerator              bpcore.IDGenerator
+	defaultRetryPolicy       *provider.RetryPolicy
 }
 
 type LoaderOption func(loader *defaultLoader)
@@ -250,6 +251,14 @@ func WithIDGenerator(idGenerator bpcore.IDGenerator) LoaderOption {
 	}
 }
 
+// WithDefaultRetryPolicy sets the default retry policy to be used for deployments
+// in blueprint containers created by the loader.
+func WithDefaultRetryPolicy(retryPolicy *provider.RetryPolicy) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.defaultRetryPolicy = retryPolicy
+	}
+}
+
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
 // The map of providers must be a map of provider namespaces
@@ -292,6 +301,7 @@ func NewDefaultLoader(
 		resolveWorkingDir:        os.Getwd,
 		derivedFromTemplates:     []string{},
 		idGenerator:              bpcore.NewUUIDGenerator(),
+		defaultRetryPolicy:       provider.DefaultRetryPolicy,
 	}
 
 	for _, opt := range opts {
@@ -300,7 +310,7 @@ func NewDefaultLoader(
 
 	if _, hasCore := internalProviders["core"]; !hasCore {
 		internalProviders["core"] = providerhelpers.NewCoreProvider(
-			stateContainer,
+			stateContainer.Links(),
 			bpcore.BlueprintInstanceIDFromContext,
 			loader.resolveWorkingDir,
 			loader.clock,
@@ -325,6 +335,7 @@ func (l *defaultLoader) forChildBlueprint(derivedFromTemplate []string) Loader {
 		WithLoaderResolveWorkingDir(l.resolveWorkingDir),
 		WithLoaderDerivedFromTemplates(derivedFromTemplate),
 		WithIDGenerator(l.idGenerator),
+		WithDefaultRetryPolicy(l.defaultRetryPolicy),
 	)
 }
 
@@ -382,6 +393,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				ChildBlueprintLoaderFactory: l.forChildBlueprint,
 				Clock:                       l.clock,
 				IDGenerator:                 l.idGenerator,
+				DefaultRetryPolicy:          l.defaultRetryPolicy,
 			},
 			diagnostics,
 		), diagnostics, err
@@ -404,6 +416,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				ChildBlueprintLoaderFactory: l.forChildBlueprint,
 				Clock:                       l.clock,
 				IDGenerator:                 l.idGenerator,
+				DefaultRetryPolicy:          l.defaultRetryPolicy,
 			},
 			diagnostics,
 		), diagnostics, err
@@ -442,6 +455,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			ChildBlueprintLoaderFactory:    l.forChildBlueprint,
 			Clock:                          l.clock,
 			IDGenerator:                    l.idGenerator,
+			DefaultRetryPolicy:             l.defaultRetryPolicy,
 		},
 		diagnostics,
 	)

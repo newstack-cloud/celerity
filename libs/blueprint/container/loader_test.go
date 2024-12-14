@@ -72,7 +72,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 	providers := map[string]provider.Provider{
 		"aws": newTestAWSProvider(),
 		"core": providerhelpers.NewCoreProvider(
-			stateContainer,
+			stateContainer.Links(),
 			core.BlueprintInstanceIDFromContext,
 			os.Getwd,
 			core.SystemClock{},

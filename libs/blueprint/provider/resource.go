@@ -57,6 +57,7 @@ type Resource interface {
 	Deploy(ctx context.Context, input *ResourceDeployInput) (*ResourceDeployOutput, error)
 	// HasStabilised deals with checking if a resource has stabilised after being deployed.
 	// This is important for resources that require a stable state before other resources can be deployed.
+	// This is only used when creating or updating a resource, not when destroying a resource.
 	HasStabilised(ctx context.Context, input *ResourceHasStabilisedInput) (*ResourceHasStabilisedOutput, error)
 	// GetExternalState deals with getting a the state of the resource from the resource provider.
 	// (e.g. AWS or Google Cloud)
@@ -67,6 +68,13 @@ type Resource interface {
 	// Destroy deals with destroying a resource instance if its current
 	// state is successfully deployed or cleaning up a corrupt or partially deployed
 	// resource instance.
+	// The resource instance should be completely removed from the external provider
+	// as a result of this operation; this is essential for when
+	// another element to be removed from a blueprint
+	// requires a resource to be completely removed from the external provider.
+	// There is no "config complete" equivalent for destroying a resource and
+	// "HasStabilised" is designed to be used for resources being created or
+	// updated.
 	Destroy(ctx context.Context, input *ResourceDestroyInput) error
 }
 
@@ -314,7 +322,6 @@ type ResourceGetExternalStateOutput struct {
 type ResourceDestroyInput struct {
 	InstanceID string
 	ResourceID string
-	Changes    *Changes
 	Params     core.BlueprintParams
 }
 

@@ -53,4 +53,51 @@ type Provider interface {
 	// as functions are globally named. When multiple providers provide the same function,
 	// an error should be reported during initialisation.
 	ListFunctions(ctx context.Context) ([]string, error)
+	// RetryPolicy retrieves the retry policy that should be used for the provider
+	// for resource, link and data source operations.
+	// The retry policy will be applied for resources when deploying, updating and removing
+	// resources, for links when creating and removing links and for data sources when
+	// querying the upstream data source.
+	// The retry behaviour only kicks in when the provider resource, data source or link
+	// implementation returns an error of type `provider.RetryableError`,
+	// in which case the retry policy will be applied.
+	// A retry policy is optional and if not provided, a default retry policy
+	// provided by the host tool will be used.
+	RetryPolicy(ctx context.Context) (*RetryPolicy, error)
+}
+
+// RetryPolicy defines the retry policy that should be used for the provider
+// for resource, link and data source operations.
+type RetryPolicy struct {
+	// MaxRetries is the maximum number of retries that should be attempted
+	// for a resource, link or data source operation.
+	// If MaxRetries is 0, no retries should be attempted.
+	MaxRetries int
+	// FirstRetryDelay is the delay in seconds that should be used before the first retry
+	// attempt.
+	FirstRetryDelay int
+	// MaxDelay represents the maximum interval in seconds to wait between retries.
+	// If -1 is provided, no maximum delay is enforced.
+	MaxDelay int
+	// BackoffFactor is the factor that should be used to calculate the backoff
+	// time between retries.
+	// This AWS blog post from 2015 provides a good insight into how exponential backoff works:
+	// https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+	BackoffFactor float64
+	// Jitter is a boolean value that determines whether to apply jitter to the retry interval.
+	// This AWS blog post from 2015 provides a good insight into how jitter works:
+	// https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+	Jitter bool
+}
+
+// DefaultRetryPolicy is the default retry policy that can be used when a provider
+// does not provide a custom retry policy.
+var DefaultRetryPolicy = &RetryPolicy{
+	MaxRetries: 5,
+	// The first retry delay is 2 seconds
+	FirstRetryDelay: 2,
+	// The maximum delay between retries is 300 seconds (5 minutes)
+	MaxDelay:      300,
+	BackoffFactor: 2,
+	Jitter:        true,
 }

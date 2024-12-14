@@ -204,6 +204,7 @@ type defaultBlueprintContainer struct {
 	createChildBlueprintLoader     func(derivedFromTemplate []string) Loader
 	clock                          core.Clock
 	idGenerator                    core.IDGenerator
+	defaultRetryPolicy             *provider.RetryPolicy
 }
 
 // BlueprintContainerDependencies provides the dependencies
@@ -223,6 +224,7 @@ type BlueprintContainerDependencies struct {
 	ChildBlueprintLoaderFactory    func(derivedFromTemplate []string) Loader
 	Clock                          core.Clock
 	IDGenerator                    core.IDGenerator
+	DefaultRetryPolicy             *provider.RetryPolicy
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -251,16 +253,8 @@ func NewDefaultBlueprintContainer(
 		deps.ChildBlueprintLoaderFactory,
 		deps.Clock,
 		deps.IDGenerator,
+		deps.DefaultRetryPolicy,
 	}
-}
-
-func (c *defaultBlueprintContainer) Destroy(
-	ctx context.Context,
-	input *DestroyInput,
-	channels *DestroyChannels,
-	paramOverrides core.BlueprintParams,
-) {
-	// todo: implement
 }
 
 func (c *defaultBlueprintContainer) SpecLinkInfo() links.SpecLinkInfo {
@@ -277,6 +271,19 @@ func (c *defaultBlueprintContainer) Diagnostics() []*core.Diagnostic {
 
 func (c *defaultBlueprintContainer) RefChainCollector() validation.RefChainCollector {
 	return c.refChainCollector
+}
+
+func (c *defaultBlueprintContainer) getRetryPolicy(
+	ctx context.Context,
+	resourceProviders map[string]provider.Provider,
+	resourceName string,
+) (*provider.RetryPolicy, error) {
+	provider, ok := resourceProviders[resourceName]
+	if !ok {
+		return c.defaultRetryPolicy, nil
+	}
+
+	return provider.RetryPolicy(ctx)
 }
 
 type linkPendingCompletion struct {

@@ -629,3 +629,12 @@ func copyPointerMap[Item any](input map[string]*Item) map[string]Item {
 func exceedsMaxDepth(path string, maxDepth int) bool {
 	return len(strings.Split(path, "/")) > maxDepth
 }
+
+func anyEmptyString(values ...string) bool {
+	for _, value := range values {
+		if strings.TrimSpace(value) == "" {
+			return true
+		}
+	}
+	return false
+}

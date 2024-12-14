@@ -5,6 +5,15 @@ import (
 	"strings"
 )
 
+// Sum calculates the sum of a list of numbers.
+func Sum(numbers []float64) float64 {
+	sum := 0.0
+	for _, number := range numbers {
+		sum += number
+	}
+	return sum
+}
+
 // IsInScalarList checks if a given scalar value is in a list of scalar values.
 func IsInScalarList(value *ScalarValue, list []*ScalarValue) bool {
 	found := false

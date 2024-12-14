@@ -67,3 +67,7 @@ func (p *ProviderMock) ListCustomVariableTypes(ctx context.Context) ([]string, e
 func (p *ProviderMock) Function(ctx context.Context, functionName string) (provider.Function, error) {
 	return nil, nil
 }
+
+func (p *ProviderMock) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
+	return nil, nil
+}

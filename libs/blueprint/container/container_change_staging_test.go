@@ -54,7 +54,7 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 		"aws":     newTestAWSProvider(),
 		"example": newTestExampleProvider(),
 		"core": providerhelpers.NewCoreProvider(
-			stateContainer,
+			stateContainer.Links(),
 			core.BlueprintInstanceIDFromContext,
 			os.Getwd,
 			core.SystemClock{},
@@ -450,7 +450,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprintCurrentState(
 	if err != nil {
 		return err
 	}
-	err = stateContainer.SaveInstance(
+	err = stateContainer.Instances().Save(
 		context.Background(),
 		*blueprintCurrentState,
 	)
@@ -468,7 +468,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprintCurrentState(
 		return err
 	}
 
-	return stateContainer.SaveChild(
+	return stateContainer.Children().Save(
 		context.Background(),
 		instanceID,
 		"coreInfra",
@@ -485,7 +485,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint3CyclicCurrentState(
 	if err != nil {
 		return err
 	}
-	err = stateContainer.SaveInstance(
+	err = stateContainer.Instances().Save(
 		context.Background(),
 		*blueprint3CurrentState,
 	)
@@ -500,7 +500,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint3CyclicCurrentState(
 		return err
 	}
 
-	err = stateContainer.SaveChild(
+	err = stateContainer.Children().Save(
 		context.Background(),
 		blueprint3InstanceID,
 		"coreInfra",
@@ -511,7 +511,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint3CyclicCurrentState(
 	}
 
 	// Creates cycle between blueprint1 and blueprint3
-	return stateContainer.SaveChild(
+	return stateContainer.Children().Save(
 		context.Background(),
 		blueprint3ChildInstanceID,
 		"ordersApi",
@@ -534,7 +534,7 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint7CurrentStateWithRemo
 		return err
 	}
 
-	return stateContainer.SaveChild(
+	return stateContainer.Children().Save(
 		context.Background(),
 		blueprint7InstanceID,
 		"networking",

@@ -115,6 +115,11 @@ func (p *testAWSProvider) Function(ctx context.Context, functionName string) (pr
 	return nil, nil
 }
 
+// RetryPolicy is not used for spec link info!
+func (p *testAWSProvider) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
+	return nil, nil
+}
+
 type testApiGatewayResource struct{}
 
 func (r *testApiGatewayResource) CanLinkTo(

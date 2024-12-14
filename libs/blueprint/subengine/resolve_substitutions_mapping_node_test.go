@@ -100,13 +100,13 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 	)
 	// ordersTable.spec.id is used in the referenced data source and should be resolved using the resource
 	// state.
-	err := s.stateContainer.SaveInstance(context.Background(), state.InstanceState{
+	err := s.stateContainer.Instances().Save(context.Background(), state.InstanceState{
 		InstanceID: testInstanceID,
 	})
 	s.Require().NoError(err)
 
 	resourceID := "test-orders-table-309428320"
-	err = s.stateContainer.SaveResource(
+	err = s.stateContainer.Resources().Save(
 		context.Background(),
 		testInstanceID,
 		state.ResourceState{
@@ -136,7 +136,7 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 	// coreInfra.region is used in the metadata and should be resolved using the child blueprint
 	// state.
 	childBlueprintRegion := "eu-west-1"
-	err = s.stateContainer.SaveChild(
+	err = s.stateContainer.Children().Save(
 		context.Background(),
 		testInstanceID,
 		"coreInfra",

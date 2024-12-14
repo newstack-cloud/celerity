@@ -195,7 +195,7 @@ type linkStateRetrieverMock struct {
 	linkState map[string]state.LinkState
 }
 
-func (s *linkStateRetrieverMock) GetLink(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
+func (s *linkStateRetrieverMock) Get(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
 	linkState, ok := s.linkState[fmt.Sprintf("%s::%s", instanceID, linkID)]
 	if !ok {
 		return state.LinkState{}, fmt.Errorf("link state not found")

@@ -14,19 +14,78 @@ import (
 )
 
 type MemoryStateContainer struct {
-	instances     map[string]*state.InstanceState
-	resourceDrift map[string]map[string]*state.ResourceDriftState
-	mu            sync.RWMutex
+	instancesContainer *memoryInstancesContainer
+	resourcesContainer *memoryResourcesContainer
+	linksContainer     *memoryLinksContainer
+	childrenContainer  *memoryChildrenContainer
+	metadataContainer  *memoryMetadataContainer
+	exportsContainer   *memoryExportsContainer
 }
 
 func NewMemoryStateContainer() state.Container {
+	instances := map[string]*state.InstanceState{}
+	resourceDrift := map[string]map[string]*state.ResourceDriftState{}
+
+	mu := &sync.RWMutex{}
 	return &MemoryStateContainer{
-		instances:     make(map[string]*state.InstanceState),
-		resourceDrift: make(map[string]map[string]*state.ResourceDriftState),
+		instancesContainer: &memoryInstancesContainer{
+			instances: instances,
+			mu:        mu,
+		},
+		resourcesContainer: &memoryResourcesContainer{
+			instances:     instances,
+			resourceDrift: resourceDrift,
+			mu:            mu,
+		},
+		linksContainer: &memoryLinksContainer{
+			instances: instances,
+			mu:        mu,
+		},
+		childrenContainer: &memoryChildrenContainer{
+			instances: instances,
+			mu:        mu,
+		},
+		metadataContainer: &memoryMetadataContainer{
+			instances: instances,
+			mu:        mu,
+		},
+		exportsContainer: &memoryExportsContainer{
+			instances: instances,
+			mu:        mu,
+		},
 	}
 }
 
-func (c *MemoryStateContainer) GetInstance(ctx context.Context, instanceID string) (state.InstanceState, error) {
+func (c *MemoryStateContainer) Instances() state.InstancesContainer {
+	return c.instancesContainer
+}
+
+func (c *MemoryStateContainer) Resources() state.ResourcesContainer {
+	return c.resourcesContainer
+}
+
+func (c *MemoryStateContainer) Links() state.LinksContainer {
+	return c.linksContainer
+}
+
+func (c *MemoryStateContainer) Metadata() state.MetadataContainer {
+	return c.metadataContainer
+}
+
+func (c *MemoryStateContainer) Exports() state.ExportsContainer {
+	return c.exportsContainer
+}
+
+func (c *MemoryStateContainer) Children() state.ChildrenContainer {
+	return c.childrenContainer
+}
+
+type memoryInstancesContainer struct {
+	instances map[string]*state.InstanceState
+	mu        *sync.RWMutex
+}
+
+func (c *memoryInstancesContainer) Get(ctx context.Context, instanceID string) (state.InstanceState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -37,7 +96,7 @@ func (c *MemoryStateContainer) GetInstance(ctx context.Context, instanceID strin
 	return state.InstanceState{}, state.InstanceNotFoundError(instanceID)
 }
 
-func (c *MemoryStateContainer) SaveInstance(
+func (c *memoryInstancesContainer) Save(
 	ctx context.Context,
 	instanceState state.InstanceState,
 ) error {
@@ -49,7 +108,7 @@ func (c *MemoryStateContainer) SaveInstance(
 	return nil
 }
 
-func (c *MemoryStateContainer) RemoveInstance(ctx context.Context, instanceID string) (state.InstanceState, error) {
+func (c *memoryInstancesContainer) Remove(ctx context.Context, instanceID string) (state.InstanceState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -62,7 +121,13 @@ func (c *MemoryStateContainer) RemoveInstance(ctx context.Context, instanceID st
 	return *instance, nil
 }
 
-func (c *MemoryStateContainer) GetResource(ctx context.Context, instanceID string, resourceID string) (state.ResourceState, error) {
+type memoryResourcesContainer struct {
+	instances     map[string]*state.InstanceState
+	resourceDrift map[string]map[string]*state.ResourceDriftState
+	mu            *sync.RWMutex
+}
+
+func (c *memoryResourcesContainer) Get(ctx context.Context, instanceID string, resourceID string) (state.ResourceState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -77,7 +142,7 @@ func (c *MemoryStateContainer) GetResource(ctx context.Context, instanceID strin
 	return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
 }
 
-func (c *MemoryStateContainer) GetResourceByName(
+func (c *memoryResourcesContainer) GetByName(
 	ctx context.Context,
 	instanceID string,
 	resourceName string,
@@ -98,7 +163,7 @@ func (c *MemoryStateContainer) GetResourceByName(
 	return state.ResourceState{}, state.ResourceNotFoundError(itemID)
 }
 
-func (c *MemoryStateContainer) SaveResource(
+func (c *memoryResourcesContainer) Save(
 	ctx context.Context,
 	instanceID string,
 	resourceState state.ResourceState,
@@ -124,7 +189,7 @@ func (c *MemoryStateContainer) SaveResource(
 	return nil
 }
 
-func (c *MemoryStateContainer) RemoveResource(
+func (c *memoryResourcesContainer) Remove(
 	ctx context.Context,
 	instanceID string,
 	resourceID string,
@@ -145,7 +210,7 @@ func (c *MemoryStateContainer) RemoveResource(
 	return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
 }
 
-func (c *MemoryStateContainer) GetResourceDrift(ctx context.Context, instanceID string, resourceID string) (state.ResourceDriftState, error) {
+func (c *memoryResourcesContainer) GetDrift(ctx context.Context, instanceID string, resourceID string) (state.ResourceDriftState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -160,7 +225,7 @@ func (c *MemoryStateContainer) GetResourceDrift(ctx context.Context, instanceID 
 	return state.ResourceDriftState{}, nil
 }
 
-func (c *MemoryStateContainer) SaveResourceDrift(
+func (c *memoryResourcesContainer) SaveDrift(
 	ctx context.Context,
 	instanceID string,
 	driftState state.ResourceDriftState,
@@ -194,7 +259,7 @@ func (c *MemoryStateContainer) SaveResourceDrift(
 	return nil
 }
 
-func (c *MemoryStateContainer) RemoveResourceDrift(
+func (c *memoryResourcesContainer) RemoveDrift(
 	ctx context.Context,
 	instanceID string,
 	resourceID string,
@@ -231,7 +296,12 @@ func (c *MemoryStateContainer) RemoveResourceDrift(
 	return state.ResourceDriftState{}, state.ResourceNotFoundError(resourceID)
 }
 
-func (c *MemoryStateContainer) GetLink(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
+type memoryLinksContainer struct {
+	instances map[string]*state.InstanceState
+	mu        *sync.RWMutex
+}
+
+func (c *memoryLinksContainer) Get(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -246,7 +316,7 @@ func (c *MemoryStateContainer) GetLink(ctx context.Context, instanceID string, l
 	return state.LinkState{}, state.LinkNotFoundError(linkID)
 }
 
-func (c *MemoryStateContainer) SaveLink(ctx context.Context, instanceID string, linkState state.LinkState) error {
+func (c *memoryLinksContainer) Save(ctx context.Context, instanceID string, linkState state.LinkState) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -261,7 +331,7 @@ func (c *MemoryStateContainer) SaveLink(ctx context.Context, instanceID string, 
 	return nil
 }
 
-func (c *MemoryStateContainer) RemoveLink(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
+func (c *memoryLinksContainer) Remove(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -278,7 +348,12 @@ func (c *MemoryStateContainer) RemoveLink(ctx context.Context, instanceID string
 	return state.LinkState{}, state.LinkNotFoundError(linkID)
 }
 
-func (c *MemoryStateContainer) GetMetadata(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
+type memoryMetadataContainer struct {
+	instances map[string]*state.InstanceState
+	mu        *sync.RWMutex
+}
+
+func (c *memoryMetadataContainer) Get(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -291,7 +366,7 @@ func (c *MemoryStateContainer) GetMetadata(ctx context.Context, instanceID strin
 	return nil, state.InstanceNotFoundError(instanceID)
 }
 
-func (c *MemoryStateContainer) SaveMetadata(
+func (c *memoryMetadataContainer) Save(
 	ctx context.Context,
 	instanceID string,
 	metadata map[string]*core.MappingNode,
@@ -310,7 +385,7 @@ func (c *MemoryStateContainer) SaveMetadata(
 	return nil
 }
 
-func (c *MemoryStateContainer) RemoveMetadata(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
+func (c *memoryMetadataContainer) Remove(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -325,7 +400,12 @@ func (c *MemoryStateContainer) RemoveMetadata(ctx context.Context, instanceID st
 	return nil, state.InstanceNotFoundError(instanceID)
 }
 
-func (c *MemoryStateContainer) GetExports(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
+type memoryExportsContainer struct {
+	instances map[string]*state.InstanceState
+	mu        *sync.RWMutex
+}
+
+func (c *memoryExportsContainer) GetAll(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -338,7 +418,7 @@ func (c *MemoryStateContainer) GetExports(ctx context.Context, instanceID string
 	return nil, state.InstanceNotFoundError(instanceID)
 }
 
-func (c *MemoryStateContainer) GetExport(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
+func (c *memoryExportsContainer) Get(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -353,7 +433,7 @@ func (c *MemoryStateContainer) GetExport(ctx context.Context, instanceID string,
 	return nil, errors.New("export not found")
 }
 
-func (c *MemoryStateContainer) SaveExports(
+func (c *memoryExportsContainer) SaveAll(
 	ctx context.Context,
 	instanceID string,
 	exports map[string]*core.MappingNode,
@@ -372,7 +452,7 @@ func (c *MemoryStateContainer) SaveExports(
 	return nil
 }
 
-func (c *MemoryStateContainer) SaveExport(
+func (c *memoryExportsContainer) Save(
 	ctx context.Context,
 	instanceID string,
 	exportName string,
@@ -392,7 +472,7 @@ func (c *MemoryStateContainer) SaveExport(
 	return nil
 }
 
-func (c *MemoryStateContainer) RemoveExports(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
+func (c *memoryExportsContainer) RemoveAll(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -407,7 +487,7 @@ func (c *MemoryStateContainer) RemoveExports(ctx context.Context, instanceID str
 	return nil, state.InstanceNotFoundError(instanceID)
 }
 
-func (c *MemoryStateContainer) RemoveExport(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
+func (c *memoryExportsContainer) Remove(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -424,7 +504,12 @@ func (c *MemoryStateContainer) RemoveExport(ctx context.Context, instanceID stri
 	return nil, errors.New("export not found")
 }
 
-func (c *MemoryStateContainer) GetChild(ctx context.Context, instanceID string, childName string) (state.InstanceState, error) {
+type memoryChildrenContainer struct {
+	instances map[string]*state.InstanceState
+	mu        *sync.RWMutex
+}
+
+func (c *memoryChildrenContainer) Get(ctx context.Context, instanceID string, childName string) (state.InstanceState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -442,7 +527,7 @@ func (c *MemoryStateContainer) GetChild(ctx context.Context, instanceID string, 
 	return state.InstanceState{}, state.InstanceNotFoundError(instanceID)
 }
 
-func (c *MemoryStateContainer) SaveChild(
+func (c *memoryChildrenContainer) Save(
 	ctx context.Context,
 	instanceID string,
 	childName string,
@@ -466,7 +551,7 @@ func (c *MemoryStateContainer) SaveChild(
 	return nil
 }
 
-func (c *MemoryStateContainer) RemoveChild(ctx context.Context, instanceID string, childName string) (state.InstanceState, error) {
+func (c *memoryChildrenContainer) Remove(ctx context.Context, instanceID string, childName string) (state.InstanceState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

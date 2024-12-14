@@ -45,6 +45,7 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture1CurrentState() *stat
 	return &state.ResourceState{
 		ResourceID:                 "test-resource-1",
 		ResourceName:               "complexResource",
+		ResourceType:               "example/complex",
 		Status:                     core.ResourceStatusCreated,
 		PreciseStatus:              core.PreciseResourceStatusCreated,
 		LastDeployedTimestamp:      1732969676,

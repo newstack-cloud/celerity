@@ -84,13 +84,13 @@ func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in
 	)
 	// ordersTable.spec.id is used in the resource and should be resolved using the resource
 	// state.
-	err := s.stateContainer.SaveInstance(context.Background(), state.InstanceState{
+	err := s.stateContainer.Instances().Save(context.Background(), state.InstanceState{
 		InstanceID: testInstanceID,
 	})
 	s.Require().NoError(err)
 
 	resourceID := "test-orders-table-309428320"
-	err = s.stateContainer.SaveResource(
+	err = s.stateContainer.Resources().Save(
 		context.Background(),
 		testInstanceID,
 		state.ResourceState{

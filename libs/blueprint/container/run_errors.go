@@ -47,6 +47,11 @@ const (
 	// to be removed having dependents that will not be
 	// removed or recreated.
 	ErrorReasonCodeRemovedChildHasDependents errors.ErrorReasonCode = "removed_child_has_dependents"
+	// ErrorReasonCodeResourceNotFoundInState
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a resource not being found in the state of a blueprint instance.
+	ErrorReasonCodeResourceNotFoundInState errors.ErrorReasonCode = "resource_not_found_in_state"
 	// ErrorReasonCodeChildBlueprintError
 	// is provided when the reason for an error
 	// during deployment or change staging is due to
@@ -145,6 +150,17 @@ func errChildToBeRemovedHasDependents(
 				"that will not be removed or recreated: %v",
 			childName,
 			strings.Join(dependentsList, ", "),
+		),
+	}
+}
+
+func errResourceNotFoundInState(instanceID string, resourceName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeResourceNotFoundInState,
+		Err: fmt.Errorf(
+			"resource %q not found in state for blueprint instance %q",
+			resourceName,
+			instanceID,
 		),
 	}
 }

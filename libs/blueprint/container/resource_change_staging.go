@@ -55,6 +55,19 @@ func (s *defaultResourceChangeStager) StageChanges(
 		return nil, err
 	}
 
+	// there is no need to gather all the detailed changes as there is no real value
+	// to comparing field changes between different resource types unlike an update
+	// where the resource type remains the same.
+	currentStateResourceType := getResourceTypeFromState(resourceInfo.CurrentResourceState)
+	newResourceType := getResourceTypeFromResolved(resourceInfo.ResourceWithResolvedSubs)
+	if !anyEmptyString(currentStateResourceType, newResourceType) &&
+		newResourceType != currentStateResourceType {
+		return &provider.Changes{
+			AppliedResourceInfo: *resourceInfo,
+			MustRecreate:        true,
+		}, nil
+	}
+
 	changes := &provider.Changes{
 		AppliedResourceInfo: *resourceInfo,
 	}
@@ -107,6 +120,23 @@ func getResourceSpecFromState(resourceState *state.ResourceState) *bpcore.Mappin
 	}
 
 	return resourceState.ResourceSpecData
+}
+
+func getResourceTypeFromState(resourceState *state.ResourceState) string {
+	if resourceState == nil {
+		return ""
+	}
+
+	return resourceState.ResourceType
+}
+
+func getResourceTypeFromResolved(resourceWithResolvedSubs *provider.ResolvedResource) string {
+	if resourceWithResolvedSubs == nil ||
+		resourceWithResolvedSubs.Type == nil {
+		return ""
+	}
+
+	return resourceWithResolvedSubs.Type.Value
 }
 
 func getResourceMetadataFromState(

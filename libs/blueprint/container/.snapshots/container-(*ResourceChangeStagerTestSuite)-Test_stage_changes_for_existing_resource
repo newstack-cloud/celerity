@@ -6,6 +6,7 @@
     CurrentResourceState: (*state.ResourceState)({
       ResourceID: (string) (len=15) "test-resource-1",
       ResourceName: (string) (len=15) "complexResource",
+      ResourceType: (string) (len=15) "example/complex",
       ResourceTemplateName: (string) "",
       InstanceID: (string) "",
       Status: (core.ResourceStatus) 2,

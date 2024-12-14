@@ -122,13 +122,13 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 	)
 	// coreInfra.region is used in the resource and should be resolved using the child blueprint
 	// state.
-	err := s.stateContainer.SaveInstance(context.Background(), state.InstanceState{
+	err := s.stateContainer.Instances().Save(context.Background(), state.InstanceState{
 		InstanceID: testInstanceID,
 	})
 	s.Require().NoError(err)
 
 	childBlueprintRegion := "eu-west-1"
-	err = s.stateContainer.SaveChild(
+	err = s.stateContainer.Children().Save(
 		context.Background(),
 		testInstanceID,
 		"coreInfra",
