@@ -15,7 +15,7 @@ import (
 // such as resources, links, metadata and exports.
 // Depending on the implementation, it can be more efficient to deal with
 // sub-components of the instance state separately.
-// Fr example, `GetInstance` may be a view of the instance state
+// Fr example, `Instances().Get` may be a view of the instance state
 // that could be an expensive operation to perform involving multiple
 // queries to a database or an expensive join operation.
 // The state persistence method is entirely up to the application
@@ -46,12 +46,11 @@ type InstancesContainer interface {
 	Save(ctx context.Context, instanceState InstanceState) error
 	// UpdateStatus deals with updating the status of the latest blueprint
 	// instance deployment.
-	// UpdateStatus(
-	// 	ctx context.Context,
-	// 	instanceID string,
-	// 	status core.InstanceStatus,
-	// 	durationInfo *InstanceCompletionDuration,
-	// ) error
+	UpdateStatus(
+		ctx context.Context,
+		instanceID string,
+		statusInfo InstanceStatusInfo,
+	) error
 	// Remove deals with removing the state for a given blueprint instance.
 	// This is not for destroying the actual deployed resources, just removing the state.
 	Remove(ctx context.Context, instanceID string) (InstanceState, error)
@@ -71,6 +70,13 @@ type ResourcesContainer interface {
 		ctx context.Context,
 		instanceID string,
 		resourceState ResourceState,
+	) error
+	// UpdateStatus deals with updating the status of the latest deployment of a given resource.
+	UpdateStatus(
+		ctx context.Context,
+		instanceID string,
+		resourceID string,
+		statusInfo ResourceStatusInfo,
 	) error
 	// Remove deals with removing the state of a resource from
 	// a given blueprint instance.
@@ -94,6 +100,13 @@ type LinksContainer interface {
 	Get(ctx context.Context, instanceID string, linkID string) (LinkState, error)
 	// Save deals with persisting a link in a blueprint instance.
 	Save(ctx context.Context, instanceID string, linkState LinkState) error
+	// UpdateStatus deals with updating the status of the latest deployment of a given link.
+	UpdateStatus(
+		ctx context.Context,
+		instanceID string,
+		linkID string,
+		statusInfo LinkStatusInfo,
+	) error
 	// Remove deals with removing the state of a link from
 	// a given blueprint instance.
 	Remove(ctx context.Context, instanceID string, linkID string) (LinkState, error)
@@ -250,6 +263,15 @@ type ResourceDriftState struct {
 	Timestamp *int `json:"timestamp,omitempty"`
 }
 
+// ResourceStatusInfo holds information about the status of a resource
+// that is primarily used when updating the status of a resource.
+type ResourceStatusInfo struct {
+	Status         core.ResourceStatus          `json:"status"`
+	PreciseStatus  core.PreciseResourceStatus   `json:"preciseStatus"`
+	Durations      *ResourceCompletionDurations `json:"durations,omitempty"`
+	FailureReasons []string                     `json:"failureReasons,omitempty"`
+}
+
 // InstanceState stores the state of a blueprint instance
 // including resources, metadata, exported fields and child blueprints.
 type InstanceState struct {
@@ -285,6 +307,13 @@ type InstanceState struct {
 	// in the blueprint instance was last detected.
 	LastDriftDetectedTimestamp *int `json:"lastDriftDetectedTimestamp,omitempty"`
 	// Durations holds duration information for the latest deployment of the blueprint instance.
+	Durations *InstanceCompletionDuration `json:"durations,omitempty"`
+}
+
+// InstanceStatusInfo holds information about the status of a blueprint instance
+// that is primarily used when updating the status of a blueprint instance.
+type InstanceStatusInfo struct {
+	Status    core.InstanceStatus         `json:"status"`
 	Durations *InstanceCompletionDuration `json:"durations,omitempty"`
 }
 
@@ -385,6 +414,15 @@ type LinkIntermediaryResourceState struct {
 	// for the currently deployed version of the resource along with computed
 	// fields derived from the deployed resource in the provider.
 	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
+}
+
+// LinkStatusInfo holds information about the status of a link
+// that is primarily used when updating the status of a link.
+type LinkStatusInfo struct {
+	Status         core.LinkStatus          `json:"status"`
+	PreciseStatus  core.PreciseLinkStatus   `json:"preciseStatus"`
+	Durations      *LinkCompletionDurations `json:"durations,omitempty"`
+	FailureReasons []string                 `json:"failureReasons,omitempty"`
 }
 
 // ResourceCompletionDurations holds duration information

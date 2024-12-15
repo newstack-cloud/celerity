@@ -108,6 +108,27 @@ func (c *memoryInstancesContainer) Save(
 	return nil
 }
 
+func (c *memoryInstancesContainer) UpdateStatus(
+	ctx context.Context,
+	instanceID string,
+	statusInfo state.InstanceStatusInfo,
+) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	instance, ok := c.instances[instanceID]
+	if ok {
+		instance.Status = statusInfo.Status
+		if statusInfo.Durations != nil {
+			instance.Durations = statusInfo.Durations
+		}
+
+		return nil
+	}
+
+	return state.InstanceNotFoundError(instanceID)
+}
+
 func (c *memoryInstancesContainer) Remove(ctx context.Context, instanceID string) (state.InstanceState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -187,6 +208,34 @@ func (c *memoryResourcesContainer) Save(
 	}
 
 	return nil
+}
+
+func (c *memoryResourcesContainer) UpdateStatus(
+	ctx context.Context,
+	instanceID string,
+	resourceID string,
+	statusInfo state.ResourceStatusInfo,
+) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if instance, ok := c.instances[instanceID]; ok {
+		if instance != nil {
+			resource, ok := instance.Resources[resourceID]
+			if ok {
+				resource.Status = statusInfo.Status
+				resource.PreciseStatus = statusInfo.PreciseStatus
+				resource.FailureReasons = statusInfo.FailureReasons
+				if statusInfo.Durations != nil {
+					resource.Durations = statusInfo.Durations
+				}
+
+				return nil
+			}
+		}
+	}
+
+	return state.ResourceNotFoundError(resourceID)
 }
 
 func (c *memoryResourcesContainer) Remove(
@@ -329,6 +378,34 @@ func (c *memoryLinksContainer) Save(ctx context.Context, instanceID string, link
 	}
 
 	return nil
+}
+
+func (c *memoryLinksContainer) UpdateStatus(
+	ctx context.Context,
+	instanceID string,
+	linkID string,
+	statusInfo state.LinkStatusInfo,
+) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if instance, ok := c.instances[instanceID]; ok {
+		if instance != nil {
+			link, ok := instance.Links[linkID]
+			if ok {
+				link.Status = statusInfo.Status
+				link.PreciseStatus = statusInfo.PreciseStatus
+				link.FailureReasons = statusInfo.FailureReasons
+				if statusInfo.Durations != nil {
+					link.Durations = statusInfo.Durations
+				}
+
+				return nil
+			}
+		}
+	}
+
+	return state.LinkNotFoundError(linkID)
 }
 
 func (c *memoryLinksContainer) Remove(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
