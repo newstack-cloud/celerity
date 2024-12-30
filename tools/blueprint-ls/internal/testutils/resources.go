@@ -106,3 +106,12 @@ func (r *DynamoDBTableResource) Destroy(
 ) error {
 	return nil
 }
+
+func (r *DynamoDBTableResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{
+		HasStabilised: true,
+	}, nil
+}

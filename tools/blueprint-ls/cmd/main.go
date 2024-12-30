@@ -63,6 +63,8 @@ func main() {
 		providers,
 		map[string]transform.SpecTransformer{},
 		/* stateContainer */ nil,
+		/* resourceChangeStager */ nil,
+		/* childResolver */ nil,
 		validation.NewRefChainCollector,
 		// Disable runtime value validation as it is not needed for diagnostics.
 		container.WithLoaderValidateRuntimeValues(false),

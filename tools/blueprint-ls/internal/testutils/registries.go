@@ -144,6 +144,34 @@ func (r *ResourceRegistryMock) CustomValidate(
 	return defOutput, nil
 }
 
+func (r *ResourceRegistryMock) Deploy(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceDeployInput,
+) (*provider.ResourceDeployOutput, error) {
+	res, ok := r.Resources[resourceType]
+	if !ok {
+		return nil, fmt.Errorf("resource %s not found", resourceType)
+	}
+	defOutput, err := res.Deploy(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return defOutput, nil
+}
+
+func (r *ResourceRegistryMock) Destroy(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceDestroyInput,
+) error {
+	res, ok := r.Resources[resourceType]
+	if !ok {
+		return fmt.Errorf("resource %s not found", resourceType)
+	}
+	return res.Destroy(ctx, input)
+}
+
 type DataSourceRegistryMock struct {
 	DataSources map[string]provider.DataSource
 }

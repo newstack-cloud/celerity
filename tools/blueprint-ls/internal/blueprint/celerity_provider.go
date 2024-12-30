@@ -98,6 +98,10 @@ func (p *celerityProvider) Function(ctx context.Context, functionName string) (p
 	return nil, errors.New("functions not implemented")
 }
 
+func (p *celerityProvider) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
+	return nil, nil
+}
+
 type celerityHandlerResource struct{}
 
 func (r *celerityHandlerResource) CanLinkTo(
@@ -214,6 +218,15 @@ func (r *celerityHandlerResource) Destroy(
 	input *provider.ResourceDestroyInput,
 ) error {
 	return nil
+}
+
+func (r *celerityHandlerResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{
+		HasStabilised: true,
+	}, nil
 }
 
 type celerityVPCDataSource struct{}
