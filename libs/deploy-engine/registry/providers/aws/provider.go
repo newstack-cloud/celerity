@@ -89,3 +89,7 @@ func (p *providerImpl) ListFunctions(ctx context.Context) ([]string, error) {
 func (p *providerImpl) Function(ctx context.Context, functionName string) (provider.Function, error) {
 	return nil, nil
 }
+
+func (p *providerImpl) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
+	return nil, nil
+}

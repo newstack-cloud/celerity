@@ -13,6 +13,8 @@ require (
 )
 
 require (
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/matoous/go-nanoid/v2 v2.1.0 // indirect
 	github.com/two-hundred/celerity/libs/common v0.0.0-20241018163112-0db375f31936 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.22.0 // indirect

@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/deploy-engine/blueprint"
 	"github.com/two-hundred/celerity/libs/deploy-engine/utils"
 	"go.uber.org/zap"
 )
@@ -116,7 +115,7 @@ func (b *deployEngineImpl) validateBlueprint(params *ValidateParams, fs afero.Fs
 		return filePath, nil, err
 	}
 
-	blueprintParams := blueprint.NewParams(
+	blueprintParams := core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},

@@ -66,3 +66,7 @@ func (p *providerClientWrapper) ListCustomVariableTypes(ctx context.Context) ([]
 func (p *providerClientWrapper) Function(ctx context.Context, functionName string) (provider.Function, error) {
 	return nil, nil
 }
+
+func (p *providerClientWrapper) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
+	return nil, nil
+}
