@@ -143,17 +143,17 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture1CurrentState() *stat
 		Metadata: &state.ResourceMetadataState{
 			DisplayName: "Test Complex Resource",
 			Annotations: map[string]*core.MappingNode{
-				"test.annotation.v1": &core.MappingNode{
+				"test.annotation.v1": {
 					Scalar: &core.ScalarValue{
 						StringValue: &firstAnnotationValue,
 					},
 				},
-				"test.annotation.v2": &core.MappingNode{
+				"test.annotation.v2": {
 					Scalar: &core.ScalarValue{
 						StringValue: &secondAnnotationValue,
 					},
 				},
-				"test.annotation.original-v3": &core.MappingNode{
+				"test.annotation.original-v3": {
 					Scalar: &core.ScalarValue{
 						StringValue: &originalAnnotationValue,
 					},

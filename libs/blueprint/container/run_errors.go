@@ -262,7 +262,7 @@ func wrapErrorForChildContext(
 }
 
 func getDeploymentErrorSpecificMessage(err error, fallbackMessage string) string {
-	message := prepareFailureMessage
+	message := fallbackMessage
 
 	runErr, isRunErr := err.(*errors.RunError)
 	if isRunErr &&
