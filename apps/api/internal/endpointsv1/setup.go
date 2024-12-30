@@ -21,6 +21,8 @@ func Setup(router *mux.Router) (io.WriteCloser, error) {
 		/* providers */ nil,
 		/* specTransformers */ nil,
 		/* stateContainer */ nil,
+		/* resourceChangeStager */ nil,
+		/* childResolver */ nil,
 		validation.NewRefChainCollector,
 		container.WithLoaderTransformSpec(false),
 		container.WithLoaderValidateAfterTransform(false),
