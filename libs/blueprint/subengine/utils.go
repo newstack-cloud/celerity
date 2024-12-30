@@ -605,7 +605,12 @@ func getChildExport(
 		return nil
 	}
 
-	return childState.Exports[exportName]
+	export, hasExport := childState.Exports[exportName]
+	if hasExport {
+		return export.Value
+	}
+
+	return nil
 }
 
 func getValueFromStringMap(

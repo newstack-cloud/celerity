@@ -52,6 +52,22 @@ const (
 	// during deployment or change staging is due to
 	// a resource not being found in the state of a blueprint instance.
 	ErrorReasonCodeResourceNotFoundInState errors.ErrorReasonCode = "resource_not_found_in_state"
+	// ErrorReasonCodeLinkNotFoundInState
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a link not being found in the state of a blueprint instance.
+	ErrorReasonCodeLinkNotFoundInState errors.ErrorReasonCode = "link_not_found_in_state"
+	// ErrorReasonCodeChildNotFoundInState
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// a child not being found in the state of a blueprint instance.
+	ErrorReasonCodeChildNotFoundInState errors.ErrorReasonCode = "child_not_found_in_state"
+	// ErrorReasonCodeInvalidLogicalLinkName
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// an invalid logical link name being provided when preparing to deploy
+	// or destroy a link between resources.
+	ErrorReasonCodeInvalidLogicalLinkName errors.ErrorReasonCode = "invalid_logical_link_name"
 	// ErrorReasonCodeChildBlueprintError
 	// is provided when the reason for an error
 	// during deployment or change staging is due to
@@ -160,6 +176,41 @@ func errResourceNotFoundInState(instanceID string, resourceName string) error {
 		Err: fmt.Errorf(
 			"resource %q not found in state for blueprint instance %q",
 			resourceName,
+			instanceID,
+		),
+	}
+}
+
+func errLinkNotFoundInState(instanceID string, linkName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeLinkNotFoundInState,
+		Err: fmt.Errorf(
+			"link %q not found in state for blueprint instance %q",
+			linkName,
+			instanceID,
+		),
+	}
+}
+
+func errChildNotFoundInState(instanceID string, childName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeChildNotFoundInState,
+		Err: fmt.Errorf(
+			"child %q not found in state for blueprint instance %q",
+			childName,
+			instanceID,
+		),
+	}
+}
+
+func errInvalidLogicalLinkName(linkName string, instanceID string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeInvalidLogicalLinkName,
+		Err: fmt.Errorf(
+			"invalid logical link name %q has been provided in "+
+				"blueprint instance %q, logical link names "+
+				"must be of the form `{resourceA}::{resourceB}`",
+			linkName,
 			instanceID,
 		),
 	}

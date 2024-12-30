@@ -7,7 +7,7 @@ type LinkStatus int
 const (
 	// LinkStatusUnknown is used when we can't
 	// determine an accurate status for a link.
-	LinkStatusUnknown ResourceStatus = iota
+	LinkStatusUnknown LinkStatus = iota
 	// LinkStatusCreating is used when
 	// an initial link deployment is currently in progress.
 	LinkStatusCreating
@@ -18,6 +18,18 @@ const (
 	// LinkStatusCreateFailed is used when
 	// the first creation of a link failed.
 	LinkStatusCreateFailed
+	// LinkStatusCreateRollingBack is used when
+	// another change in the same blueprint has failed
+	// and the creation of the current link is being rolled back.
+	LinkStatusCreateRollingBack
+	// LinkStatusCreateRollbackFailed is used when
+	// another resource change in the same blueprint has failed
+	// and the creation of the current link could not be rolled back.
+	LinkStatusCreateRollbackFailed
+	// LinkStatusCreateRollbackComplete is used when
+	// another change in the same blueprint has failed
+	// and the creation of the current link has been rolled back.
+	LinkStatusCreateRollbackComplete
 	// LinkStatusDestroying is used when
 	// a link is in the process of being destroyed.
 	LinkStatusDestroying
@@ -27,6 +39,18 @@ const (
 	// LinkStatusDestroyFailed is used when
 	// the destruction of a link fails.
 	LinkStatusDestroyFailed
+	// LinkStatusDestroyRollingBack is used when
+	// another change in the same blueprint has failed
+	// and the removal of the current link is being rolled back.
+	LinkStatusDestroyRollingBack
+	// LinkStatusDestroyRollbackFailed is used when
+	// another resource change in the same blueprint has failed
+	// and the removal of the current link could not be rolled back.
+	LinkStatusDestroyRollbackFailed
+	// LinkStatusDestroyRollbackComplete is used when
+	// another change in the same blueprint has failed
+	// and the removal of the current link has been rolled back.
+	LinkStatusDestroyRollbackComplete
 	// LinkStatusUpdating is used when
 	// a link is being updated.
 	LinkStatusUpdating
@@ -36,21 +60,21 @@ const (
 	// LinkStatusUpdateFailed is used when a link
 	// has failed to update.
 	LinkStatusUpdateFailed
-	// LinkStatusRollingBack is used when
+	// LinkStatusUpdateRollingBack is used when
 	// another change in the same blueprint has failed
-	// and the latest change involving the current link
-	// is being rolled back.
-	LinkStatusRollingBack
-	// ResourceStatusRollbackFailed is used when
+	// and the latest changes made to
+	// the current link are being rolled back.
+	LinkStatusUpdateRollingBack
+	// LinkStatusUpdateRollbackFailed is used when
 	// another resource change in the same blueprint has failed
-	// and the latest change involving the current link
-	// could not be rolled back.
-	LinkStatusRollbackFailed
-	// LinkStatusRollbackComplete is used when
+	// and the latest changes made to
+	// the current link could not be rolled back.
+	LinkStatusUpdateRollbackFailed
+	// LinkStatusUpdateRollbackComplete is used when
 	// another change in the same blueprint has failed
-	// and the latest change involving the current link
-	// has been rolled back.
-	LinkStatusRollbackComplete
+	// and the latest changes made to
+	// the current link have been rolled back.
+	LinkStatusUpdateRollbackComplete
 )
 
 // PreciseLinkStatus is used to represent a more precise
@@ -60,7 +84,7 @@ type PreciseLinkStatus int
 const (
 	// PreciseLinkStatusUnknown is used when we can't
 	// determine an accurate status for a link.
-	PreciseLinkStatusUnknown ResourceStatus = iota
+	PreciseLinkStatusUnknown PreciseLinkStatus = iota
 	// PreciseLinkStatusUpdatingResourceA is used when
 	// the configuration for a link is being applied to resource A
 	// in the link.

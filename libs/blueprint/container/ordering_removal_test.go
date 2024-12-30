@@ -73,9 +73,9 @@ func (s *OrderingForRemovalTestSuite) assertOrderExpected(actual []*ElementWithA
 			elemA = expectedItemsInOrder[i]
 			elemB = expectedItemsInOrder[i+1]
 			inOrder = elemA.Element.LogicalName() == orderExpected[i].LogicalName() &&
-				elemA.Element.Type() == orderExpected[i].Type() &&
+				elemA.Element.Kind() == orderExpected[i].Kind() &&
 				elemB.Element.LogicalName() == orderExpected[i+1].LogicalName() &&
-				elemB.Element.Type() == orderExpected[i+1].Type()
+				elemB.Element.Kind() == orderExpected[i+1].Kind()
 		}
 		i += 2
 	}
@@ -260,7 +260,7 @@ func getActualInExpectedOrder(actual []*ElementWithAllDeps, orderExpected []stat
 	for _, expectedElement := range orderExpected {
 		actualFiltered := core.Filter(actual, func(current *ElementWithAllDeps, index int) bool {
 			return current.Element.LogicalName() == expectedElement.LogicalName() &&
-				current.Element.Type() == expectedElement.Type()
+				current.Element.Kind() == expectedElement.Kind()
 		})
 		if len(actualFiltered) > 0 {
 			actualInOrder = append(actualInOrder, actualFiltered[0])
@@ -273,7 +273,7 @@ func inExpectedElements(expectedElements []state.Element) func(*ElementWithAllDe
 	return func(current *ElementWithAllDeps, index int) bool {
 		return slices.ContainsFunc(expectedElements, func(expected state.Element) bool {
 			return current.Element.LogicalName() == expected.LogicalName() &&
-				current.Element.Type() == expected.Type()
+				current.Element.Kind() == expected.Kind()
 		})
 	}
 }

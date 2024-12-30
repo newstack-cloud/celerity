@@ -928,22 +928,6 @@ func (l *testApiGatewayLambdaLink) GetKind(ctx context.Context, input *provider.
 	}, nil
 }
 
-// HandleResourceAError is not used for spec link info!
-func (l *testApiGatewayLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testApiGatewayLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 // UpdateResourceA is not used for spec link info!
 func (l *testApiGatewayLambdaLink) UpdateResourceA(
 	ctx context.Context,
@@ -1001,22 +985,6 @@ func (l *testSQSQueueLambdaLink) GetKind(ctx context.Context, input *provider.Li
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
 	}, nil
-}
-
-// HandleResourceAError is not used for spec link info!
-func (l *testSQSQueueLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testSQSQueueLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 // UpdateResourceA is not used for spec link info!
@@ -1079,22 +1047,6 @@ func (l *testLambdaDynamoDBTableLink) GetKind(ctx context.Context, input *provid
 	}, nil
 }
 
-// HandleResourceAError is not used for spec link info!
-func (l *testLambdaDynamoDBTableLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testLambdaDynamoDBTableLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 // UpdateResourceA is not used for spec link info!
 func (l *testLambdaDynamoDBTableLink) UpdateResourceA(
 	ctx context.Context,
@@ -1154,22 +1106,6 @@ func (l *testStratosLambdaDynamoDBTableLink) GetKind(ctx context.Context, input 
 	}, nil
 }
 
-// HandleResourceAError is not used for spec link info!
-func (l *testStratosLambdaDynamoDBTableLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testStratosLambdaDynamoDBTableLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 // UpdateResourceA is not used for spec link info!
 func (l *testStratosLambdaDynamoDBTableLink) UpdateResourceA(
 	ctx context.Context,
@@ -1227,22 +1163,6 @@ func (l *testLambdaSQSQueueLink) GetKind(ctx context.Context, input *provider.Li
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
 	}, nil
-}
-
-// HandleResourceAError is not used for spec link info!
-func (l *testLambdaSQSQueueLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testLambdaSQSQueueLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 // UpdateResourceA is not used for spec link info!
@@ -1305,22 +1225,6 @@ func (l *testDynamoDBTableStreamLink) GetKind(ctx context.Context, input *provid
 	}, nil
 }
 
-// HandleResourceAError is not used for spec link info!
-func (l *testDynamoDBTableStreamLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testDynamoDBTableStreamLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 // UpdateResourceA is not used for spec link info!
 func (l *testDynamoDBTableStreamLink) UpdateResourceA(
 	ctx context.Context,
@@ -1379,22 +1283,6 @@ func (l *testDynamoDBStreamLambdaLink) GetKind(ctx context.Context, input *provi
 		// For test purposes only, does not reflect reality!
 		Kind: provider.LinkKindHard,
 	}, nil
-}
-
-// HandleResourceAError is not used for spec link info!
-func (l *testDynamoDBStreamLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testDynamoDBStreamLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 // UpdateResourceA is not used for spec link info!
@@ -1457,22 +1345,6 @@ func (l *testDynamoDBStreamStratosLambdaLink) GetKind(ctx context.Context, input
 	}, nil
 }
 
-// HandleResourceAError is not used for spec link info!
-func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testDynamoDBStreamStratosLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 // UpdateResourceA is not used for spec link info!
 func (l *testDynamoDBStreamStratosLambdaLink) UpdateResourceA(
 	ctx context.Context,
@@ -1533,22 +1405,6 @@ func (l *testIAMRoleLambdaLink) GetKind(ctx context.Context, input *provider.Lin
 	}, nil
 }
 
-// HandleResourceAError is not used for spec link info!
-func (l *testIAMRoleLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testIAMRoleLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 // UpdateResourceA is not used for spec link info!
 func (l *testIAMRoleLambdaLink) UpdateResourceA(
 	ctx context.Context,
@@ -1606,22 +1462,6 @@ func (l *testStratosIAMRoleLambdaLink) GetKind(ctx context.Context, input *provi
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
 	}, nil
-}
-
-// HandleResourceAError is not used for spec link info!
-func (l *testStratosIAMRoleLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testStratosIAMRoleLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 // UpdateResourceA is not used for spec link info!
@@ -1684,22 +1524,6 @@ func (l *testLambdaIAMRoleLink) GetKind(ctx context.Context, input *provider.Lin
 	}, nil
 }
 
-// HandleResourceAError is not used for spec link info!
-func (l *testLambdaIAMRoleLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testLambdaIAMRoleLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 // UpdateResourceA is not used for spec link info!
 func (l *testLambdaIAMRoleLink) UpdateResourceA(
 	ctx context.Context,
@@ -1757,22 +1581,6 @@ func (l *testLambdaStratosIAMRoleLink) GetKind(ctx context.Context, input *provi
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
 	}, nil
-}
-
-// HandleResourceAError is not used for spec link info!
-func (l *testLambdaStratosIAMRoleLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-// HandleResourceBError is not used for spec link info!
-func (l *testLambdaStratosIAMRoleLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 // UpdateResourceA is not used for spec link info!

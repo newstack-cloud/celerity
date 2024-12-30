@@ -190,7 +190,11 @@
     "build": "tsc"
   },
   "exports": {
-    "environment": "legacy-production-env"
+    "environment": {
+      "value": "legacy-production-env",
+      "type": "string",
+      "field": "variables.environment"
+    }
   },
   "childBlueprints": {
     "coreInfra": {
@@ -242,7 +246,11 @@
         "build": "tsc"
       },
       "exports": {
-        "environment": "legacy-production-env"
+        "environment": {
+          "value": "legacy-production-env",
+          "type": "string",
+          "field": "variables.environment"
+        }
       },
       "childBlueprints": {}
     },
@@ -295,7 +303,11 @@
         "build": "tsc"
       },
       "exports": {
-        "environment": "legacy-production-env"
+        "environment": {
+          "value": "legacy-production-env",
+          "type": "string",
+          "field": "variables.environment"
+        }
       },
       "childBlueprints": {}
     }

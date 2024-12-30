@@ -133,10 +133,12 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 		testInstanceID,
 		"coreInfra",
 		state.InstanceState{
-			Exports: map[string]*core.MappingNode{
+			Exports: map[string]*state.ExportState{
 				"region": {
-					Scalar: &core.ScalarValue{
-						StringValue: &childBlueprintRegion,
+					Value: &core.MappingNode{
+						Scalar: &core.ScalarValue{
+							StringValue: &childBlueprintRegion,
+						},
 					},
 				},
 			},

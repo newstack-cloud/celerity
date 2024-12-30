@@ -8,13 +8,9 @@ import (
 )
 
 // Link provides the interface for the implementation of a link between two resources.
-// This provides error handling methods in order to roll back changes to resource A and resource B,
-// however, as intermediary resources always come after resource A and B updates,
-// any errors that could cause inconsistencies between multiple intermediary resources
-// should be handled by the link implementation.
 type Link interface {
 	// StageChanges must detail the changes that will be made when a deployment of the loaded blueprint
-	// for the link between two resources and blueprint instance provided in resourceInfo.
+	// for the link between two resources.
 	// Unlike resources, links do not map to a specification for a single deployable unit,
 	// so link implementations must specify the changes that will be made across multiple resources.
 	StageChanges(
@@ -23,20 +19,29 @@ type Link interface {
 	) (*LinkStageChangesOutput, error)
 	// UpdateResourceA deals with applying the changes to the first of the two linked resources
 	// for the creation or removal of a link between two resources.
+	// The value of the `LinkData` field returned in the output will be combined
+	// with the LinkData output from updating resource B and intermediary resources
+	// to form the final LinkData that will be persisted in the state of the blueprint instance.
 	// Parameters are passed into UpdateResourceA for extra context, blueprint variables will have already
 	// been substituted at this stage and must be used instead of the passed in params argument
 	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
 	UpdateResourceA(ctx context.Context, input *LinkUpdateResourceInput) (*LinkUpdateResourceOutput, error)
 	// UpdateResourceB deals with applying the changes to the second of the two linked resources
 	// for the creation or removal of a link between two resources.
-	// Parameters are passed into UpdateResourceA for extra context, blueprint variables will have already
+	// The value of the `LinkData` field returned in the output will be combined
+	// with the LinkData output from updating resource A and intermediary resources
+	// to form the final LinkData that will be persisted in the state of the blueprint instance.
+	// Parameters are passed into UpdateResourceB for extra context, blueprint variables will have already
 	// been substituted at this stage and must be used instead of the passed in params argument
 	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
 	UpdateResourceB(ctx context.Context, input *LinkUpdateResourceInput) (*LinkUpdateResourceOutput, error)
 	// UpdateIntermediaryResources deals with creating, updating or deleting intermediary resources
 	// that are required for the link between two resources.
 	// This is called for both the creation and removal of a link between two resources.
-	// Parameters are passed into UpdateResourceA for extra context, blueprint variables will have already
+	// The value of the `LinkData` field returned in the output will be combined
+	// with the LinkData output from updating resource A and B
+	// to form the final LinkData that will be persisted in the state of the blueprint instance.
+	// Parameters are passed into UpdateIntermediaryResources for extra context, blueprint variables will have already
 	// been substituted at this stage and must be used instead of the passed in params argument
 	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
 	UpdateIntermediaryResources(
@@ -55,18 +60,6 @@ type Link interface {
 	// A soft link is where it does not matter which resource type in the relationship
 	// is created first.
 	GetKind(ctx context.Context, input *LinkGetKindInput) (*LinkGetKindOutput, error)
-	// HandleResourceAError deals with handling errors in
-	// the deployment of the first of the two linked resources.
-	// This is useful to roll back changes made to resource B in the case
-	// resource B was updated first.
-	// This will also be called on failure to update intermediary resources.
-	HandleResourceAError(ctx context.Context, input *LinkHandleResourceErrorInput) error
-	// HandleResourceTypeBError deals with handling errors
-	// in the second of the two linked resources.
-	// This is useful to roll back changes made to resource A in the case
-	// resource A was updated first.
-	// This will also be called on failure to update intermediary resources.
-	HandleResourceBError(ctx context.Context, input *LinkHandleResourceErrorInput) error
 }
 
 // LinkStageChangesInput provides the input required to
@@ -86,12 +79,26 @@ type LinkStageChangesOutput struct {
 
 // LinkUpdateResourceInput provides the input required to
 // update a resource in a link relationship
-// with data that will contribute to "activating" the link.
+// with data that will contribute to "activating" or "de-activating" the link.
 type LinkUpdateResourceInput struct {
-	Changes      *LinkChanges
-	ResourceInfo *ResourceInfo
-	Params       core.BlueprintParams
+	Changes        *LinkChanges
+	ResourceInfo   *ResourceInfo
+	LinkUpdateType LinkUpdateType
+	Params         core.BlueprintParams
 }
+
+// LinkUpdateType represents the type of update that is being carried out
+// for a link between two resources.
+type LinkUpdateType int
+
+const (
+	// LinkUpdateTypeCreate is used when a link is being created.
+	LinkUpdateTypeCreate LinkUpdateType = iota
+	// LinkUpdateTypeDestroy is used when a link is being destroyed.
+	LinkUpdateTypeDestroy
+	// LinkUpdateTypeUpdate is used when a link is being updated.
+	LinkUpdateTypeUpdate
+)
 
 // LinkUpdateResourceOutput provides the output from updating
 // a resource in a link relationship.
@@ -102,10 +109,11 @@ type LinkUpdateResourceOutput struct {
 // LinkUpdateIntermediaryResourcesInput provides the input required to
 // update intermediary resources in a link relationship.
 type LinkUpdateIntermediaryResourcesInput struct {
-	ResourceAInfo *ResourceInfo
-	ResourceBInfo *ResourceInfo
-	Changes       *LinkChanges
-	Params        core.BlueprintParams
+	ResourceAInfo  *ResourceInfo
+	ResourceBInfo  *ResourceInfo
+	Changes        *LinkChanges
+	LinkUpdateType LinkUpdateType
+	Params         core.BlueprintParams
 }
 
 type LinkUpdateIntermediaryResourcesOutput struct {

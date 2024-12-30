@@ -1,14 +1,13 @@
 {
-  "instanceId": "blueprint-instance-6",
+  "instanceId": "blueprint-instance-2",
   "status": 1,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,
   "resourceIds": {
     "ordersTable_0": "test-orders-table-0-id",
     "ordersTable_1": "test-orders-table-1-id",
-    "saveOrderFunction": "test-save-order-function-id",
-    "invoicesTable": "test-invoices-table-id",
-    "preprocessOrderFunction": "test-preprocess-order-function-id"
+    "preprocessOrderFunction": "test-preprocess-order-function-id",
+    "invoicesTable": "test-invoices-table-id"
   },
   "resources": {
     "test-orders-table-0-id": {
@@ -16,7 +15,7 @@
       "resourceName": "ordersTable_0",
       "resourceTemplateName": "ordersTable",
       "resourceType": "aws/dynamodb/table",
-      "instanceId": "blueprint-instance-6",
+      "instanceId": "blueprint-instance-2",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
@@ -52,7 +51,7 @@
       "resourceName": "ordersTable_1",
       "resourceTemplateName": "ordersTable",
       "resourceType": "aws/dynamodb/table",
-      "instanceId": "blueprint-instance-6",
+      "instanceId": "blueprint-instance-2",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
@@ -87,7 +86,7 @@
       "resourceId": "test-preprocess-order-function-id",
       "resourceName": "preprocessOrderFunction",
       "resourceType": "aws/lambda/function",
-      "instanceId": "blueprint-instance-6",
+      "instanceId": "blueprint-instance-2",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
@@ -95,30 +94,14 @@
       "resourceSpecData": {
         "handler": "src/preprocessOrder.handler"
       },
-      "description": "Function that pre-processes a newly received order.",
-      "failureReasons": []
-    },
-    "test-save-order-function-id": {
-      "resourceId": "test-save-order-function-id",
-      "resourceName": "saveOrderFunction",
-      "resourceType": "aws/lambda/function",
-      "instanceId": "blueprint-instance-6",
-      "status": 2,
-      "preciseStatus": 3,
-      "lastDeployedTimestamp": 1733145428,
-      "lastDeployAttemptTimestamp": 1733145428,
-      "resourceSpecData": {
-        "handler": "src/saveOrder.handler"
-      },
-      "description": "Function that saves an order to the database.",
-      "dependsOnResources": ["test-preprocess-order-function-id"],
+      "description": "Function that preprocesses an order before it is saved to a database.",
       "failureReasons": []
     },
     "test-invoices-table-id": {
       "resourceId": "test-invoices-table-id",
       "resourceName": "invoicesTable",
       "resourceType": "aws/dynamodb/table",
-      "instanceId": "blueprint-instance-6",
+      "instanceId": "blueprint-instance-2",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
@@ -133,17 +116,17 @@
     }
   },
   "links": {
-    "saveOrderFunction::ordersTable_0": {
+    "preprocessOrderFunction::ordersTable_0": {
       "linkId": "test-link-1",
-      "linkName": "saveOrderFunction::ordersTable_0",
-      "instanceId": "blueprint-instance-6",
+      "linkName": "preprocessOrderFunction::ordersTable_0",
+      "instanceId": "blueprint-instance-2",
       "status": 2,
       "preciseStatus": 8,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
       "intermediaryResourceStates": [],
       "linkData": {
-        "saveOrderFunction": {
+        "preprocessOrderFunction": {
           "environmentVariables": {
             "TABLE_NAME_ordersTable_0": "legacy-production-orders-1",
             "TABLE_REGION_ordersTable_0": "eu-west-1"
@@ -159,17 +142,17 @@
       },
       "failureReasons": []
     },
-    "saveOrderFunction::ordersTable_1": {
+    "preprocessOrderFunction::ordersTable_1": {
       "linkId": "test-link-2",
-      "linkName": "saveOrderFunction::ordersTable_1",
-      "instanceId": "blueprint-instance-6",
+      "linkName": "preprocessOrderFunction::ordersTable_1",
+      "instanceId": "blueprint-instance-2",
       "status": 2,
       "preciseStatus": 8,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
       "intermediaryResourceStates": [],
       "linkData": {
-        "saveOrderFunction": {
+        "preprocessOrderFunction": {
           "environmentVariables": {
             "TABLE_NAME_ordersTable_1": "legacy-production-orders-2",
             "TABLE_REGION_ordersTable_1": "eu-west-2"
@@ -184,11 +167,6 @@
         }
       },
       "failureReasons": []
-    }
-  },
-  "childDependencies": {
-    "coreInfra": {
-      "dependsOnResources": ["test-preprocess-order-function-id"]
     }
   },
   "metadata": {

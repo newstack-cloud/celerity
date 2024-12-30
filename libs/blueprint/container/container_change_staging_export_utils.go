@@ -3,6 +3,7 @@ package container
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 )
@@ -10,17 +11,27 @@ import (
 func collectExportChanges(
 	changes *intermediaryBlueprintChanges,
 	resolvedExports map[string]*subengine.ResolveResult,
-	currentExportsState map[string]*core.MappingNode,
+	currentExportsState map[string]*state.ExportState,
 ) {
 	for exportName, resolvedExport := range resolvedExports {
+		exportValue := extractExportValue(exportName, currentExportsState)
 		collectExportFieldChanges(
 			changes,
 			exportName,
 			resolvedExport.Resolved,
-			currentExportsState[exportName],
+			exportValue,
 			resolvedExport.ResolveOnDeploy,
 		)
 	}
+}
+
+func extractExportValue(exportName string, exports map[string]*state.ExportState) *core.MappingNode {
+	exportState, hasExport := exports[exportName]
+	if hasExport {
+		return exportState.Value
+	}
+
+	return nil
 }
 
 func collectExportFieldChanges(

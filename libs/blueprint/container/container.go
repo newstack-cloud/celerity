@@ -65,7 +65,7 @@ type BlueprintContainer interface {
 	Destroy(
 		ctx context.Context,
 		input *DestroyInput,
-		channels *DestroyChannels,
+		channels *DeployChannels,
 		paramOverrides core.BlueprintParams,
 	)
 	// SpecLinkInfo provides the chain link and warnings for potential issues
@@ -82,6 +82,12 @@ type BlueprintContainer interface {
 	// For example, extracting the references from an expanded version of a blueprint
 	// that contains resource templates.
 	RefChainCollector() validation.RefChainCollector
+	// todo: remove or uncomment this method depending on if it is needed.
+	// // ResourceTemplates holds a mapping of resource names to the name of the resource
+	// // template it was derived from.
+	// // This allows retention of information about the original resource template
+	// // that a resource was derived from in a source blueprint document.
+	// ResourceTemplates() map[string]string
 	// Diagnostics returns warning and informational diagnostics for the loaded blueprint
 	// that point out potential issues that may occur when executing
 	// a blueprint.
@@ -111,6 +117,8 @@ type DeployInput struct {
 	// Rollback is used to indicate that the changes being deployed represent a rollback.
 	// This is useful for ensuring the correct statuses are applied when changes within a child
 	// blueprint need to be rolled back due to a failure in the parent blueprint.
+	// The loaded blueprint is expected to be the version of the blueprint to roll back to
+	// for a given blueprint instance.
 	Rollback bool
 }
 
@@ -121,6 +129,11 @@ type DestroyInput struct {
 	// Changes contains a description of all the elements that need to be
 	// removed when destroying the blueprint instance.
 	Changes *BlueprintChanges
+	// Rollback is used to indicate that the blueprint instance is being destroyed
+	// as part of a rollback operation.
+	// This is useful for ensuring the correct statuses are applied when changes within a child
+	// blueprint need to be rolled back due to a failure in the parent blueprint.
+	Rollback bool
 }
 
 // BlueprintChanges provides a set of changes that will be made
@@ -191,8 +204,10 @@ type defaultBlueprintContainer struct {
 	// Should be a namespace to provider map.
 	providers                      map[string]provider.Provider
 	resourceRegistry               resourcehelpers.Registry
+	linkRegistry                   provider.LinkRegistry
 	spec                           speccore.BlueprintSpec
 	linkInfo                       links.SpecLinkInfo
+	resourceTemplates              map[string]string
 	refChainCollector              validation.RefChainCollector
 	substitutionResolver           subengine.SubstitutionResolver
 	changeStager                   ResourceChangeStager
@@ -201,11 +216,18 @@ type defaultBlueprintContainer struct {
 	resourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
 	childExportFieldCache          *core.Cache[*subengine.ChildExportFieldInfo]
 	diagnostics                    []*core.Diagnostic
-	createChildBlueprintLoader     func(derivedFromTemplate []string) Loader
+	createChildBlueprintLoader     ChildBlueprintLoaderFactory
 	clock                          core.Clock
 	idGenerator                    core.IDGenerator
 	defaultRetryPolicy             *provider.RetryPolicy
 }
+
+// ChildBlueprintLoaderFactory provides a factory function for creating a new loader
+// for child or derived blueprints.
+type ChildBlueprintLoaderFactory func(
+	derivedFromTemplate []string,
+	resourceTemplates map[string]string,
+) Loader
 
 // BlueprintContainerDependencies provides the dependencies
 // required to create a new instance of a blueprint container.
@@ -213,7 +235,9 @@ type BlueprintContainerDependencies struct {
 	StateContainer                 state.Container
 	Providers                      map[string]provider.Provider
 	ResourceRegistry               resourcehelpers.Registry
+	LinkRegistry                   provider.LinkRegistry
 	LinkInfo                       links.SpecLinkInfo
+	ResourceTemplates              map[string]string
 	RefChainCollector              validation.RefChainCollector
 	SubstitutionResolver           subengine.SubstitutionResolver
 	ChangeStager                   ResourceChangeStager
@@ -221,7 +245,7 @@ type BlueprintContainerDependencies struct {
 	ResourceCache                  *core.Cache[*provider.ResolvedResource]
 	ResourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
 	ChildExportFieldCache          *core.Cache[*subengine.ChildExportFieldInfo]
-	ChildBlueprintLoaderFactory    func(derivedFromTemplate []string) Loader
+	ChildBlueprintLoaderFactory    ChildBlueprintLoaderFactory
 	Clock                          core.Clock
 	IDGenerator                    core.IDGenerator
 	DefaultRetryPolicy             *provider.RetryPolicy
@@ -240,8 +264,10 @@ func NewDefaultBlueprintContainer(
 		deps.StateContainer,
 		deps.Providers,
 		deps.ResourceRegistry,
+		deps.LinkRegistry,
 		spec,
 		deps.LinkInfo,
+		deps.ResourceTemplates,
 		deps.RefChainCollector,
 		deps.SubstitutionResolver,
 		deps.ChangeStager,
@@ -273,6 +299,10 @@ func (c *defaultBlueprintContainer) RefChainCollector() validation.RefChainColle
 	return c.refChainCollector
 }
 
+// func (c *defaultBlueprintContainer) ResourceTemplates() map[string]string {
+// 	return c.resourceTemplates
+// }
+
 func (c *defaultBlueprintContainer) getRetryPolicy(
 	ctx context.Context,
 	resourceProviders map[string]provider.Provider,
@@ -283,7 +313,43 @@ func (c *defaultBlueprintContainer) getRetryPolicy(
 		return c.defaultRetryPolicy, nil
 	}
 
-	return provider.RetryPolicy(ctx)
+	retryPolicy, err := provider.RetryPolicy(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if retryPolicy == nil {
+		return c.defaultRetryPolicy, nil
+	}
+
+	return retryPolicy, nil
+}
+
+func (c *defaultBlueprintContainer) getLinkRetryPolicy(
+	ctx context.Context,
+	logicalLinkName string,
+	instanceState *state.InstanceState,
+) (*provider.RetryPolicy, error) {
+	resourceTypeA, resourceTypeB, err := getResourceTypesForLink(logicalLinkName, instanceState)
+	if err != nil {
+		return nil, err
+	}
+
+	provider, err := c.linkRegistry.Provider(resourceTypeA, resourceTypeB)
+	if err != nil {
+		return nil, err
+	}
+
+	retryPolicy, err := provider.RetryPolicy(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if retryPolicy == nil {
+		return c.defaultRetryPolicy, nil
+	}
+
+	return retryPolicy, nil
 }
 
 type linkPendingCompletion struct {
@@ -317,7 +383,7 @@ func (r *LinkIDInfo) LogicalName() string {
 	return r.LinkName
 }
 
-func (r *LinkIDInfo) Type() state.ElementType {
+func (r *LinkIDInfo) Kind() state.ElementKind {
 	return state.LinkElement
 }
 
@@ -335,7 +401,7 @@ func (r *ResourceIDInfo) LogicalName() string {
 	return r.ResourceName
 }
 
-func (r *ResourceIDInfo) Type() state.ElementType {
+func (r *ResourceIDInfo) Kind() state.ElementKind {
 	return state.ResourceElement
 }
 
@@ -353,7 +419,7 @@ func (r *ChildBlueprintIDInfo) LogicalName() string {
 	return r.ChildName
 }
 
-func (r *ChildBlueprintIDInfo) Type() state.ElementType {
+func (r *ChildBlueprintIDInfo) Kind() state.ElementKind {
 	return state.ChildElement
 }
 
@@ -361,21 +427,4 @@ type processedBlueprintDeps struct {
 	resourceProviderMap map[string]provider.Provider
 	blueprintContainer  BlueprintContainer
 	parallelGroups      [][]*DeploymentNode
-}
-
-// DestroyChannels contains all the channels required to stream
-// destroy events.
-type DestroyChannels struct {
-	// ResourceDestroyChan receives messages about the status of deleting resources.
-	ResourceDestroyChan chan ResourceDeployUpdateMessage
-	// LinkDestroyChan receives messages about the status of deleting links.
-	LinkUpdateChan chan LinkDeployUpdateMessage
-	// ChildDestroyChan receives messages about the status of deleting child blueprints.
-	ChildDestroyChan chan ChildDeployUpdateMessage
-	// FinishChan is used to signal that the blueprint instance removal has finished,
-	// the message will contain the final status of the destroy operation.
-	FinishChan chan DeploymentFinishedMessage
-	// ErrChan is used to signal that an unexpected error occurred during the destroy
-	// operation.
-	ErrChan chan error
 }

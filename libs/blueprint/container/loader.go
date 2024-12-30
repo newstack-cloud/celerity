@@ -165,10 +165,18 @@ type defaultLoader struct {
 	funcRegistry             provider.FunctionRegistry
 	resourceRegistry         resourcehelpers.Registry
 	dataSourceRegistry       provider.DataSourceRegistry
+	linkRegistry             provider.LinkRegistry
 	clock                    bpcore.Clock
 	resolveWorkingDir        corefunctions.WorkingDirResolver
 	idGenerator              bpcore.IDGenerator
 	defaultRetryPolicy       *provider.RetryPolicy
+	// A mapping of resource names to the templates they were derived from.
+	// This is only populated for a loader when loading a derived blueprint
+	// where templates are not used in the derived blueprint but were
+	// used in the original.
+	// This is primarily useful for rollback operations where a simplified
+	// blueprint is derived from the previous state of a blueprint instance.
+	resourceTemplates map[string]string
 }
 
 type LoaderOption func(loader *defaultLoader)
@@ -241,21 +249,75 @@ func WithLoaderDerivedFromTemplates(derivedFromTemplates []string) LoaderOption 
 	}
 }
 
-// WithIDGenerator sets the ID generator to be used by blueprint containers
+// WithLoaderIDGenerator sets the ID generator to be used by blueprint containers
 // created by the loader in the deployment process.
 //
 // When this option is not provided, a UUID generator is used.
-func WithIDGenerator(idGenerator bpcore.IDGenerator) LoaderOption {
+func WithLoaderIDGenerator(idGenerator bpcore.IDGenerator) LoaderOption {
 	return func(loader *defaultLoader) {
 		loader.idGenerator = idGenerator
 	}
 }
 
-// WithDefaultRetryPolicy sets the default retry policy to be used for deployments
+// WithLoaderDefaultRetryPolicy sets the default retry policy to be used for deployments
 // in blueprint containers created by the loader.
-func WithDefaultRetryPolicy(retryPolicy *provider.RetryPolicy) LoaderOption {
+func WithLoaderDefaultRetryPolicy(retryPolicy *provider.RetryPolicy) LoaderOption {
 	return func(loader *defaultLoader) {
 		loader.defaultRetryPolicy = retryPolicy
+	}
+}
+
+// WithLoaderResourceRegistry sets the resource registry to be used by the loader.
+//
+// When this option is not provided, the default resource registry that is
+// derived from the given providers and transformers is used.
+func WithLoaderResourceRegistry(resourceRegistry resourcehelpers.Registry) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.resourceRegistry = resourceRegistry
+	}
+}
+
+// WithLoaderFunctionRegistry sets the function registry to be used by the loader.
+//
+// When this option is not provided, the default function registry that is
+// derived from the given providers is used.
+func WithLoaderFunctionRegistry(funcRegistry provider.FunctionRegistry) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.funcRegistry = funcRegistry
+	}
+}
+
+// WithLoaderDataSourceRegistry sets the data source registry to be used by the loader.
+//
+// When this option is not provided, the default data source registry that is
+// derived from the given providers is used.
+func WithLoaderDataSourceRegistry(dataSourceRegistry provider.DataSourceRegistry) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.dataSourceRegistry = dataSourceRegistry
+	}
+}
+
+// WithLoaderLinkRegistry sets the link registry to be used by the loader.
+//
+// When this option is not provided, the default link registry that is
+// derived from the given providers is used.
+func WithLoaderLinkRegistry(linkRegistry provider.LinkRegistry) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.linkRegistry = linkRegistry
+	}
+}
+
+// WithLoaderResourceTemplates sets the resource templates to be used by the loader.
+// Resource templates are a mapping of resource names to the templates they were derived from.
+// This is useful when loading a derived blueprint where templates are not used but were
+// in the original.
+// This is primarily useful for rollback operations where a simplified
+// blueprint is derived from the previous state of a blueprint instance.
+//
+// When this option is not provided, an empty map will be used.
+func WithLoaderResourceTemplates(resourceTemplates map[string]string) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.resourceTemplates = resourceTemplates
 	}
 }
 
@@ -285,6 +347,7 @@ func NewDefaultLoader(
 	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers)
 	funcRegistry := provider.NewFunctionRegistry(providers)
 	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
+	linkRegistry := provider.NewLinkRegistry(providers)
 	internalProviders := copyProviderMap(providers)
 
 	loader := &defaultLoader{
@@ -297,11 +360,13 @@ func NewDefaultLoader(
 		funcRegistry:             funcRegistry,
 		resourceRegistry:         resourceRegistry,
 		dataSourceRegistry:       dataSourceRegistry,
+		linkRegistry:             linkRegistry,
 		clock:                    &bpcore.SystemClock{},
 		resolveWorkingDir:        os.Getwd,
 		derivedFromTemplates:     []string{},
 		idGenerator:              bpcore.NewUUIDGenerator(),
 		defaultRetryPolicy:       provider.DefaultRetryPolicy,
+		resourceTemplates:        map[string]string{},
 	}
 
 	for _, opt := range opts {
@@ -320,7 +385,10 @@ func NewDefaultLoader(
 	return loader
 }
 
-func (l *defaultLoader) forChildBlueprint(derivedFromTemplate []string) Loader {
+func (l *defaultLoader) forChildBlueprint(
+	derivedFromTemplate []string,
+	resourceTemplates map[string]string,
+) Loader {
 	return NewDefaultLoader(
 		l.providers,
 		l.specTransformers,
@@ -334,8 +402,13 @@ func (l *defaultLoader) forChildBlueprint(derivedFromTemplate []string) Loader {
 		WithLoaderClock(l.clock),
 		WithLoaderResolveWorkingDir(l.resolveWorkingDir),
 		WithLoaderDerivedFromTemplates(derivedFromTemplate),
-		WithIDGenerator(l.idGenerator),
-		WithDefaultRetryPolicy(l.defaultRetryPolicy),
+		WithLoaderIDGenerator(l.idGenerator),
+		WithLoaderDefaultRetryPolicy(l.defaultRetryPolicy),
+		WithLoaderResourceRegistry(l.resourceRegistry),
+		WithLoaderFunctionRegistry(l.funcRegistry),
+		WithLoaderDataSourceRegistry(l.dataSourceRegistry),
+		WithLoaderLinkRegistry(l.linkRegistry),
+		WithLoaderResourceTemplates(resourceTemplates),
 	)
 }
 
@@ -387,7 +460,9 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				StateContainer:              l.stateContainer,
 				Providers:                   map[string]provider.Provider{},
 				ResourceRegistry:            l.resourceRegistry,
+				LinkRegistry:                l.linkRegistry,
 				LinkInfo:                    nil,
+				ResourceTemplates:           l.resourceTemplates,
 				RefChainCollector:           refChainCollector,
 				SubstitutionResolver:        nil,
 				ChildBlueprintLoaderFactory: l.forChildBlueprint,
@@ -400,7 +475,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	}
 
 	resourceTypeProviderMap := createResourceTypeProviderMap(blueprintSpec, l.providers)
-	linkInfo, err := links.NewDefaultLinkInfoProvider(resourceTypeProviderMap, blueprintSpec, params)
+	linkInfo, err := links.NewDefaultLinkInfoProvider(resourceTypeProviderMap, l.linkRegistry, blueprintSpec, params)
 	if err != nil {
 		// Ensure the spec is returned when parsing and
 		// validation was successful but loading link information failed.
@@ -410,7 +485,9 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				StateContainer:              l.stateContainer,
 				Providers:                   map[string]provider.Provider{},
 				ResourceRegistry:            l.resourceRegistry,
+				LinkRegistry:                l.linkRegistry,
 				LinkInfo:                    nil,
+				ResourceTemplates:           l.resourceTemplates,
 				RefChainCollector:           refChainCollector,
 				SubstitutionResolver:        nil,
 				ChildBlueprintLoaderFactory: l.forChildBlueprint,
@@ -445,6 +522,8 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			Providers:                      l.providers,
 			ResourceRegistry:               l.resourceRegistry,
 			LinkInfo:                       linkInfo,
+			ResourceTemplates:              l.resourceTemplates,
+			LinkRegistry:                   l.linkRegistry,
 			RefChainCollector:              refChainCollector,
 			SubstitutionResolver:           substitutionResolver,
 			ChangeStager:                   l.resourceChangeStager,

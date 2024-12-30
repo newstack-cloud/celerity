@@ -249,6 +249,16 @@ func flattenMapLists[Value any](m map[string][]Value) []Value {
 	return flattened
 }
 
+func invertMap[Value comparable](m map[string][]Value) map[Value]string {
+	inverted := map[Value]string{}
+	for key, values := range m {
+		for _, value := range values {
+			inverted[value] = key
+		}
+	}
+	return inverted
+}
+
 func createLogicalLinkName(resourceAName string, resourceBName string) string {
 	return fmt.Sprintf(
 		"%s::%s",
@@ -412,7 +422,7 @@ func collectDependentResource(
 	currentNodeResourceState := getResourceStateByName(instanceState, currentResourceName)
 	if currentNodeResourceState != nil {
 		elementTypeDependencies := getResourceElementTypeDependencies(
-			dependeeStateElement.Type(),
+			dependeeStateElement.Kind(),
 			currentNodeResourceState,
 		)
 		if slices.Contains(
@@ -429,7 +439,7 @@ func collectDependentResource(
 }
 
 func getResourceElementTypeDependencies(
-	dependeeType state.ElementType,
+	dependeeType state.ElementKind,
 	dependentResourceState *state.ResourceState,
 ) []string {
 	dependencies := []string{}
@@ -456,7 +466,7 @@ func collectDependentChildBlueprint(
 	childDependencies := getChildDependencies(instanceState, currentChildName)
 	if currentNodeChildState != nil {
 		elementTypeDependencies := getChildElementTypeDependencies(
-			dependeeStateElement.Type(),
+			dependeeStateElement.Kind(),
 			childDependencies,
 		)
 		if slices.Contains(
@@ -473,7 +483,7 @@ func collectDependentChildBlueprint(
 }
 
 func getChildElementTypeDependencies(
-	dependeeType state.ElementType,
+	dependeeType state.ElementKind,
 	childDependencies *state.ChildDependencyInfo,
 ) []string {
 	dependencies := []string{}
@@ -599,6 +609,23 @@ func getChildDependencies(
 	return childDeps
 }
 
+func getResourceInfoFromStateForLinkRemoval(
+	instanceState *state.InstanceState,
+	resourceName string,
+) *provider.ResourceInfo {
+	resourceState := getResourceStateByName(instanceState, resourceName)
+	if resourceState == nil {
+		return nil
+	}
+
+	return &provider.ResourceInfo{
+		ResourceID:           resourceState.ResourceID,
+		ResourceName:         resourceName,
+		InstanceID:           instanceState.InstanceID,
+		CurrentResourceState: resourceState,
+	}
+}
+
 func getPartiallyResolvedResourceFromChanges(
 	changes *BlueprintChanges,
 	resourceName string,
@@ -616,6 +643,59 @@ func getPartiallyResolvedResourceFromChanges(
 	}
 
 	return resourceChanges.AppliedResourceInfo.ResourceWithResolvedSubs
+}
+
+func extractLinkDirectDependencies(logicalLinkName string) *linkDependencyInfo {
+	parts := strings.Split(logicalLinkName, "::")
+	if len(parts) != 2 {
+		return nil
+	}
+
+	return &linkDependencyInfo{
+		resourceAName: parts[0],
+		resourceBName: parts[1],
+	}
+}
+
+func getResourceTypesForLink(linkName string, currentState *state.InstanceState) (string, string, error) {
+	linkDependencyInfo := extractLinkDirectDependencies(linkName)
+	if linkDependencyInfo == nil {
+		return "", "", errInvalidLogicalLinkName(
+			linkName,
+			currentState.InstanceID,
+		)
+	}
+
+	resourceAState := getResourceStateByName(currentState, linkDependencyInfo.resourceAName)
+	if resourceAState == nil {
+		return "", "", errResourceNotFoundInState(
+			currentState.InstanceID,
+			linkDependencyInfo.resourceAName,
+		)
+	}
+
+	resourceBState := getResourceStateByName(currentState, linkDependencyInfo.resourceBName)
+	if resourceBState == nil {
+		return "", "", errResourceNotFoundInState(
+			currentState.InstanceID,
+			linkDependencyInfo.resourceBName,
+		)
+	}
+
+	return resourceAState.ResourceType, resourceBState.ResourceType, nil
+}
+
+func getNamespacedLogicalName(element state.Element) string {
+	switch element.Kind() {
+	case state.ResourceElement:
+		return core.ResourceElementID(element.LogicalName())
+	case state.ChildElement:
+		return core.ChildElementID(element.LogicalName())
+	case state.LinkElement:
+		return linkElementID(element.LogicalName())
+	default:
+		return ""
+	}
 }
 
 func copyPointerMap[Item any](input map[string]*Item) map[string]Item {

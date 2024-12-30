@@ -37,6 +37,10 @@ const (
 	// reason for a blueprint spec load error is due to
 	// the custom variable type not being found in a specific provider.
 	ErrorReasonCodeProviderCustomVariableTypeNotFound errors.ErrorReasonCode = "custom_variable_type_not_found"
+	// ErrorReasonCodeLinkImplementationNotFound is provided when the
+	// reason for a blueprint spec load error is due to
+	// the link implementation not being found for a specific resource type pair.
+	ErrorReasonCodeLinkImplementationNotFound errors.ErrorReasonCode = "link_implementation_not_found"
 )
 
 func errDataSourceTypeProviderNotFound(
@@ -139,6 +143,28 @@ func errFunctionAlreadyProvided(
 	}
 }
 
+func errLinkImplementationNotFound(
+	resourceTypeA string,
+	resourceTypeB string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeLinkImplementationNotFound,
+		Err: fmt.Errorf(
+			"link implementation for resource types %q and %q was not found",
+			resourceTypeA,
+			resourceTypeB,
+		),
+	}
+}
+
+// IsLinkImplementationNotFoundError returns true if an error
+// is for the case when a link implementation is not found in the registered
+// providers.
+func IsLinkImplementationNotFoundError(err error) bool {
+	runErr, isRunErr := err.(*errors.RunError)
+	return isRunErr && runErr.ReasonCode == ErrorReasonCodeLinkImplementationNotFound
+}
+
 // ErrUnknownResourceDefSchemaType is returned when the schema definition for a resource type
 // contains an unknown resource definition schema type.
 func ErrUnknownResourceDefSchemaType(
@@ -227,5 +253,66 @@ func (e *ResourceDestroyError) Error() string {
 // IsResourceDestroyError returns true if the error is a resource destroy error.
 func IsResourceDestroyError(err error) bool {
 	_, ok := err.(*ResourceDestroyError)
+	return ok
+}
+
+// LinkUpdateResourceAError is an error that indicates a failure to update
+// resource A in a link relationship.
+type LinkUpdateResourceAError struct {
+	FailureReasons []string
+}
+
+func (e *LinkUpdateResourceAError) Error() string {
+	if len(e.FailureReasons) == 1 {
+		return fmt.Sprintf("link resource A update failed: %s", e.FailureReasons[0])
+	}
+
+	return fmt.Sprintf("link resource A update failed with %d failures", len(e.FailureReasons))
+}
+
+// IsLinkUpdateResourceAError returns true if the error is a link update resource A error.
+func IsLinkUpdateResourceAError(err error) bool {
+	_, ok := err.(*LinkUpdateResourceAError)
+	return ok
+}
+
+// LinkUpdateResourceBError is an error that indicates a failure to update
+// resource B in a link relationship.
+type LinkUpdateResourceBError struct {
+	FailureReasons []string
+}
+
+func (e *LinkUpdateResourceBError) Error() string {
+	if len(e.FailureReasons) == 1 {
+		return fmt.Sprintf("link resource B update failed: %s", e.FailureReasons[0])
+	}
+
+	return fmt.Sprintf("link resource B update failed with %d failures", len(e.FailureReasons))
+}
+
+// IsLinkUpdateResourceBError returns true if the error is a link update resource B error.
+func IsLinkUpdateResourceBError(err error) bool {
+	_, ok := err.(*LinkUpdateResourceBError)
+	return ok
+}
+
+// LinkUpdateIntermediaryResourcesError is an error that indicates a failure to update
+// intermediary resources in a link relationship.
+type LinkUpdateIntermediaryResourcesError struct {
+	FailureReasons []string
+}
+
+func (e *LinkUpdateIntermediaryResourcesError) Error() string {
+	if len(e.FailureReasons) == 1 {
+		return fmt.Sprintf("link intermediary resources update failed: %s", e.FailureReasons[0])
+	}
+
+	return fmt.Sprintf("link intermediary resources update failed with %d failures", len(e.FailureReasons))
+}
+
+// IsLinkUpdateIntermediaryResourcesError returns true if
+// the error is a link update intermediary resources error.
+func IsLinkUpdateIntermediaryResourcesError(err error) bool {
+	_, ok := err.(*LinkUpdateIntermediaryResourcesError)
 	return ok
 }

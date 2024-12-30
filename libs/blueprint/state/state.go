@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 )
 
 // Container provides an interface for services
@@ -98,6 +99,9 @@ type LinksContainer interface {
 	// Get deals with retrieving the state for a given link
 	// in the provided blueprint instance.
 	Get(ctx context.Context, instanceID string, linkID string) (LinkState, error)
+	// GetByName deals with retrieving the state for a given link
+	// in the provided blueprint instance by its logical name ({resourceA}::{resourceB}).
+	GetByName(ctx context.Context, instanceID string, linkName string) (LinkState, error)
 	// Save deals with persisting a link in a blueprint instance.
 	Save(ctx context.Context, instanceID string, linkState LinkState) error
 	// UpdateStatus deals with updating the status of the latest deployment of a given link.
@@ -142,17 +146,17 @@ type MetadataContainer interface {
 // to persisting and retrieving exported fields for a blueprint instance.
 type ExportsContainer interface {
 	// GetAll deals with retrieving exported fields for a given blueprint instance.
-	GetAll(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
+	GetAll(ctx context.Context, instanceID string) (map[string]*ExportState, error)
 	// Get deals with retrieving an exported field for a given blueprint instance.
-	Get(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error)
+	Get(ctx context.Context, instanceID string, exportName string) (ExportState, error)
 	// SaveAll deals with persisting exported fields for a given blueprint instance.
-	SaveAll(ctx context.Context, instanceID string, exports map[string]*core.MappingNode) error
+	SaveAll(ctx context.Context, instanceID string, exports map[string]*ExportState) error
 	// Save deals with persisting an exported field for a given blueprint instance.
-	Save(ctx context.Context, instanceID string, exportName string, export *core.MappingNode) error
+	Save(ctx context.Context, instanceID string, exportName string, export ExportState) error
 	// RemoveAll deals with removing all exported fields for a given blueprint instance.
-	RemoveAll(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
+	RemoveAll(ctx context.Context, instanceID string) (map[string]*ExportState, error)
 	// Remove deals with removing an exported field for a given blueprint instance.
-	Remove(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error)
+	Remove(ctx context.Context, instanceID string, exportName string) (ExportState, error)
 }
 
 // Element provides a convenience interface for elements in blueprint state
@@ -160,19 +164,19 @@ type ExportsContainer interface {
 type Element interface {
 	ID() string
 	LogicalName() string
-	Type() ElementType
+	Kind() ElementKind
 }
 
-// ElementType represents the type of an element in a blueprint instance.
-type ElementType string
+// ElementKind represents the kind of an element in a blueprint instance.
+type ElementKind string
 
 const (
 	// ChildElement represents a child blueprint in a blueprint instance.
-	ChildElement ElementType = "child"
+	ChildElement ElementKind = "child"
 	// ResourceElement represents a resource in a blueprint instance.
-	ResourceElement ElementType = "resource"
+	ResourceElement ElementKind = "resource"
 	// LinkElement represents a link in a blueprint instance.
-	LinkElement ElementType = "link"
+	LinkElement ElementKind = "link"
 )
 
 // ResourceState provides the current state of a resource
@@ -236,7 +240,7 @@ func (r *ResourceState) LogicalName() string {
 	return r.ResourceName
 }
 
-func (r *ResourceState) Type() ElementType {
+func (r *ResourceState) Kind() ElementKind {
 	return ResourceElement
 }
 
@@ -296,7 +300,7 @@ type InstanceState struct {
 	// additional information that is relevant to the application/tool
 	// making use of the framework.
 	Metadata        map[string]*core.MappingNode `json:"metadata"`
-	Exports         map[string]*core.MappingNode `json:"exports"`
+	Exports         map[string]*ExportState      `json:"exports"`
 	ChildBlueprints map[string]*InstanceState    `json:"childBlueprints"`
 	// ChildDependencies holds a mapping of child blueprint names to their dependencies.
 	ChildDependencies map[string]*ChildDependencyInfo `json:"childDependencies,omitempty"`
@@ -308,6 +312,18 @@ type InstanceState struct {
 	LastDriftDetectedTimestamp *int `json:"lastDriftDetectedTimestamp,omitempty"`
 	// Durations holds duration information for the latest deployment of the blueprint instance.
 	Durations *InstanceCompletionDuration `json:"durations,omitempty"`
+}
+
+// ExportState holds state that is persisted for an export
+// in a blueprint instance.
+type ExportState struct {
+	// Value holds the resolved exported value.
+	Value *core.MappingNode `json:"value"`
+	// Type holds the type of the exported value.
+	Type schema.ExportType `json:"type"`
+	// Field holds the path of a field in a blueprint element
+	// that should be exported.
+	Field string `json:"field"`
 }
 
 // InstanceStatusInfo holds information about the status of a blueprint instance
@@ -339,7 +355,7 @@ func (b *ChildBlueprint) LogicalName() string {
 	return b.ChildName
 }
 
-func (b *ChildBlueprint) Type() ElementType {
+func (b *ChildBlueprint) Kind() ElementKind {
 	return ChildElement
 }
 
@@ -396,7 +412,7 @@ func (l *LinkState) LogicalName() string {
 	return l.LinkName
 }
 
-func (l *LinkState) Type() ElementType {
+func (l *LinkState) Kind() ElementKind {
 	return LinkElement
 }
 
@@ -443,21 +459,28 @@ type ResourceCompletionDurations struct {
 // LinkCompletionDurations holds duration information
 // for the deployment of a link change.
 type LinkCompletionDurations struct {
-	// ResourceAUpdateDuration is the duration in milliseconds for the resource A to be updated.
+	// ResourceAUpdate is the duration information for the update of resource A in the link.
 	// This will only be present if the link has reached resource A updated status.
-	ResourceAUpdateDuration *float64 `json:"resourceAUpdateDuration,omitempty"`
-	// ResourceBUpdateDuration is the duration in milliseconds for the resource B to be updated.
+	ResourceAUpdate *LinkComponentCompletionDurations `json:"resourceAUpdate,omitempty"`
+	// ResourceBUpdate is the duration information for the update of resource B in the link.
 	// This will only be present if the link has reached resource B updated status.
-	ResourceBUpdateDuration *float64 `json:"resourceBUpdateDuration,omitempty"`
-	// IntermediaryResourcesDuration is the duration in milliseconds for intermediary resources
-	// to be updated.
+	ResourceBUpdate *LinkComponentCompletionDurations `json:"resourceBUpdate,omitempty"`
+	// IntermediaryResources is the duration information for the update, creation or removal
+	// of intermediary resources in the link.
 	// This will only be present if the link has reached intermediary resources updated status.
-	IntermediaryResourcesDuration *float64 `json:"intermediaryResourcesDuration,omitempty"`
+	IntermediaryResources *LinkComponentCompletionDurations `json:"intermediaryResources,omitempty"`
 	// TotalDuration is the duration in milliseconds for the link change to reach the final
 	// status.
 	TotalDuration *float64 `json:"totalDuration,omitempty"`
+}
+
+type LinkComponentCompletionDurations struct {
+	// TotalDuration is the duration in milliseconds for the link component
+	// change to reach the final status.
+	TotalDuration *float64 `json:"totalDuration,omitempty"`
 	// AttemptDurations holds a list of durations in milliseconds
-	// for each attempt to deploy the link.
+	// for each attempt to deploy the link component.
+	// Attempt durations are in order as per the "Attempt" field in a status update message.
 	AttemptDurations []float64 `json:"attemptDurations,omitempty"`
 }
 

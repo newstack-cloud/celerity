@@ -320,9 +320,10 @@ type ResourceGetExternalStateOutput struct {
 // ResourceDestroyInput provides the input data needed to delete
 // a resource.
 type ResourceDestroyInput struct {
-	InstanceID string
-	ResourceID string
-	Params     core.BlueprintParams
+	InstanceID    string
+	ResourceID    string
+	ResourceState *state.ResourceState
+	Params        core.BlueprintParams
 }
 
 // Changes provides a set of modified fields along with a version

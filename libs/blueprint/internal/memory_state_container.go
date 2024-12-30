@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -38,8 +39,9 @@ func NewMemoryStateContainer() state.Container {
 			mu:            mu,
 		},
 		linksContainer: &memoryLinksContainer{
-			instances: instances,
-			mu:        mu,
+			instances:         instances,
+			instanceLinkIDMap: map[string]map[string]string{},
+			mu:                mu,
 		},
 		childrenContainer: &memoryChildrenContainer{
 			instances: instances,
@@ -90,7 +92,7 @@ func (c *memoryInstancesContainer) Get(ctx context.Context, instanceID string) (
 	defer c.mu.RUnlock()
 
 	if instance, ok := c.instances[instanceID]; ok {
-		return *instance, nil
+		return copyInstance(instance, instanceID), nil
 	}
 
 	return state.InstanceState{}, state.InstanceNotFoundError(instanceID)
@@ -155,7 +157,7 @@ func (c *memoryResourcesContainer) Get(ctx context.Context, instanceID string, r
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
 			if resourceState, ok := instance.Resources[resourceID]; ok {
-				return *resourceState, nil
+				return copyResource(resourceState), nil
 			}
 		}
 	}
@@ -346,8 +348,9 @@ func (c *memoryResourcesContainer) RemoveDrift(
 }
 
 type memoryLinksContainer struct {
-	instances map[string]*state.InstanceState
-	mu        *sync.RWMutex
+	instances         map[string]*state.InstanceState
+	instanceLinkIDMap map[string]map[string]string
+	mu                *sync.RWMutex
 }
 
 func (c *memoryLinksContainer) Get(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
@@ -356,13 +359,34 @@ func (c *memoryLinksContainer) Get(ctx context.Context, instanceID string, linkI
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
-			if linkState, ok := instance.Links[linkID]; ok {
-				return *linkState, nil
+			hasLinkIDMap := c.hasInstanceLinkIDMap(instance)
+			if !hasLinkIDMap {
+				c.populateLinkIDMap(instance)
+			}
+			linkName := c.getLinkName(instanceID, linkID)
+			if linkState, ok := instance.Links[linkName]; ok {
+				return copyLink(linkState), nil
 			}
 		}
 	}
 
 	return state.LinkState{}, state.LinkNotFoundError(linkID)
+}
+
+func (c *memoryLinksContainer) GetByName(ctx context.Context, instanceID string, linkName string) (state.LinkState, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if instance, ok := c.instances[instanceID]; ok {
+		if instance != nil {
+			if linkState, ok := instance.Links[linkName]; ok {
+				return copyLink(linkState), nil
+			}
+		}
+	}
+
+	elementID := fmt.Sprintf("instance:%s:link:%s", instanceID, linkName)
+	return state.LinkState{}, state.LinkNotFoundError(elementID)
 }
 
 func (c *memoryLinksContainer) Save(ctx context.Context, instanceID string, linkState state.LinkState) error {
@@ -391,7 +415,12 @@ func (c *memoryLinksContainer) UpdateStatus(
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
-			link, ok := instance.Links[linkID]
+			hasLinkIDMap := c.hasInstanceLinkIDMap(instance)
+			if !hasLinkIDMap {
+				c.populateLinkIDMap(instance)
+			}
+			linkName := c.getLinkName(instanceID, linkID)
+			link, ok := instance.Links[linkName]
 			if ok {
 				link.Status = statusInfo.Status
 				link.PreciseStatus = statusInfo.PreciseStatus
@@ -408,15 +437,41 @@ func (c *memoryLinksContainer) UpdateStatus(
 	return state.LinkNotFoundError(linkID)
 }
 
+func (c *memoryLinksContainer) hasInstanceLinkIDMap(instance *state.InstanceState) bool {
+	_, ok := c.instanceLinkIDMap[instance.InstanceID]
+	return ok
+}
+
+func (c *memoryLinksContainer) populateLinkIDMap(instance *state.InstanceState) {
+	c.instanceLinkIDMap[instance.InstanceID] = map[string]string{}
+	for linkName, link := range instance.Links {
+		c.instanceLinkIDMap[instance.InstanceID][link.LinkID] = linkName
+	}
+}
+
+func (c *memoryLinksContainer) getLinkName(instanceID string, linkID string) string {
+	linkIDMap, ok := c.instanceLinkIDMap[instanceID]
+	if !ok {
+		return ""
+	}
+
+	return linkIDMap[linkID]
+}
+
 func (c *memoryLinksContainer) Remove(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
-			link, ok := instance.Links[linkID]
+			hasLinkIDMap := c.hasInstanceLinkIDMap(instance)
+			if !hasLinkIDMap {
+				c.populateLinkIDMap(instance)
+			}
+			linkName := c.getLinkName(instanceID, linkID)
+			link, ok := instance.Links[linkName]
 			if ok {
-				delete(instance.Links, linkID)
+				delete(instance.Links, linkName)
 				return *link, nil
 			}
 		}
@@ -482,38 +537,39 @@ type memoryExportsContainer struct {
 	mu        *sync.RWMutex
 }
 
-func (c *memoryExportsContainer) GetAll(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
+func (c *memoryExportsContainer) GetAll(ctx context.Context, instanceID string) (map[string]*state.ExportState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
-			return instance.Exports, nil
+			return copyExports(instance.Exports), nil
 		}
 	}
 
 	return nil, state.InstanceNotFoundError(instanceID)
 }
 
-func (c *memoryExportsContainer) Get(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
+func (c *memoryExportsContainer) Get(ctx context.Context, instanceID string, exportName string) (state.ExportState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
 			if export, ok := instance.Exports[exportName]; ok {
-				return export, nil
+				exportCopy := copyExport(export)
+				return *exportCopy, nil
 			}
 		}
 	}
 
-	return nil, errors.New("export not found")
+	return state.ExportState{}, errors.New("export not found")
 }
 
 func (c *memoryExportsContainer) SaveAll(
 	ctx context.Context,
 	instanceID string,
-	exports map[string]*core.MappingNode,
+	exports map[string]*state.ExportState,
 ) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -533,14 +589,14 @@ func (c *memoryExportsContainer) Save(
 	ctx context.Context,
 	instanceID string,
 	exportName string,
-	export *core.MappingNode,
+	export state.ExportState,
 ) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
-			instance.Exports[exportName] = export
+			instance.Exports[exportName] = &export
 		} else {
 			return state.InstanceNotFoundError(instanceID)
 		}
@@ -549,7 +605,7 @@ func (c *memoryExportsContainer) Save(
 	return nil
 }
 
-func (c *memoryExportsContainer) RemoveAll(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error) {
+func (c *memoryExportsContainer) RemoveAll(ctx context.Context, instanceID string) (map[string]*state.ExportState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -564,7 +620,7 @@ func (c *memoryExportsContainer) RemoveAll(ctx context.Context, instanceID strin
 	return nil, state.InstanceNotFoundError(instanceID)
 }
 
-func (c *memoryExportsContainer) Remove(ctx context.Context, instanceID string, exportName string) (*core.MappingNode, error) {
+func (c *memoryExportsContainer) Remove(ctx context.Context, instanceID string, exportName string) (state.ExportState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -573,12 +629,12 @@ func (c *memoryExportsContainer) Remove(ctx context.Context, instanceID string, 
 			export, ok := instance.Exports[exportName]
 			if ok {
 				delete(instance.Exports, exportName)
-				return export, nil
+				return *export, nil
 			}
 		}
 	}
 
-	return nil, errors.New("export not found")
+	return state.ExportState{}, errors.New("export not found")
 }
 
 type memoryChildrenContainer struct {
@@ -593,7 +649,7 @@ func (c *memoryChildrenContainer) Get(ctx context.Context, instanceID string, ch
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
 			if child, ok := instance.ChildBlueprints[childName]; ok {
-				return *child, nil
+				return copyInstance(child, instanceID), nil
 			} else {
 				itemID := fmt.Sprintf("instance:%s:child:%s", instanceID, childName)
 				return state.InstanceState{}, state.InstanceNotFoundError(itemID)
@@ -644,4 +700,174 @@ func (c *memoryChildrenContainer) Remove(ctx context.Context, instanceID string,
 
 	itemID := fmt.Sprintf("instance:%s:child:%s", instanceID, childName)
 	return state.InstanceState{}, state.InstanceNotFoundError(itemID)
+}
+
+func copyInstance(instanceState *state.InstanceState, path string) state.InstanceState {
+	instanceCopy := *instanceState
+	if instanceState.Resources != nil {
+		instanceCopy.Resources = make(map[string]*state.ResourceState)
+		for resourceID, resource := range instanceState.Resources {
+			resCopy := copyResource(resource)
+			instanceCopy.Resources[resourceID] = &resCopy
+		}
+	}
+	if instanceState.Links != nil {
+		instanceCopy.Links = make(map[string]*state.LinkState)
+		for linkName, link := range instanceState.Links {
+			linkCopy := copyLink(link)
+			instanceCopy.Links[linkName] = &linkCopy
+		}
+	}
+	if instanceState.Metadata != nil {
+		instanceCopy.Metadata = make(map[string]*core.MappingNode)
+		for key, value := range instanceState.Metadata {
+			instanceCopy.Metadata[key] = value
+		}
+	}
+	if instanceState.Exports != nil {
+		instanceCopy.Exports = make(map[string]*state.ExportState)
+		for exportName, export := range instanceState.Exports {
+			exportCopy := copyExport(export)
+			instanceCopy.Exports[exportName] = exportCopy
+		}
+	}
+	if instanceState.ChildBlueprints != nil {
+		instanceCopy.ChildBlueprints = make(map[string]*state.InstanceState)
+		for childName, childState := range instanceState.ChildBlueprints {
+			if instancePathContains(path, childState.InstanceID) {
+				// Avoid circular references
+				continue
+			}
+			copy := copyInstance(childState, fmt.Sprintf("%s/%s", path, childState.InstanceID))
+			instanceCopy.ChildBlueprints[childName] = &copy
+		}
+	}
+	return instanceCopy
+}
+
+func instancePathContains(path string, instanceID string) bool {
+	parts := strings.Split(path, "/")
+	for _, part := range parts {
+		if part == instanceID {
+			return true
+		}
+	}
+	return false
+}
+
+func copyResource(resourceState *state.ResourceState) state.ResourceState {
+	if resourceState == nil {
+		return state.ResourceState{}
+	}
+
+	metadataCopy := copyResourceMetadata(resourceState.Metadata)
+
+	return state.ResourceState{
+		ResourceID:           resourceState.ResourceID,
+		ResourceName:         resourceState.ResourceName,
+		ResourceType:         resourceState.ResourceType,
+		ResourceTemplateName: resourceState.ResourceTemplateName,
+		InstanceID:           resourceState.InstanceID,
+		Status:               resourceState.Status,
+		PreciseStatus:        resourceState.PreciseStatus,
+		Description:          resourceState.Description,
+		Metadata:             &metadataCopy,
+		DependsOnResources:   resourceState.DependsOnResources,
+		DependsOnChildren:    resourceState.DependsOnChildren,
+		FailureReasons:       resourceState.FailureReasons,
+		// The spec data pointer will be copied, no part of the blueprint container
+		// implementation should modify the spec data in instance state so it is safe
+		// to copy the pointer instead of making a deep copy.
+		ResourceSpecData:           resourceState.ResourceSpecData,
+		LastDeployedTimestamp:      resourceState.LastDeployedTimestamp,
+		LastDeployAttemptTimestamp: resourceState.LastDeployAttemptTimestamp,
+		Drifted:                    resourceState.Drifted,
+		Durations:                  resourceState.Durations,
+	}
+}
+
+func copyResourceMetadata(metadata *state.ResourceMetadataState) state.ResourceMetadataState {
+	if metadata == nil {
+		return state.ResourceMetadataState{}
+	}
+
+	return state.ResourceMetadataState{
+		DisplayName: metadata.DisplayName,
+		Annotations: metadata.Annotations,
+		Labels:      metadata.Labels,
+		Custom:      metadata.Custom,
+	}
+}
+
+func copyLink(linkState *state.LinkState) state.LinkState {
+	if linkState == nil {
+		return state.LinkState{}
+	}
+
+	return state.LinkState{
+		LinkID:                     linkState.LinkID,
+		LinkName:                   linkState.LinkName,
+		InstanceID:                 linkState.InstanceID,
+		Status:                     linkState.Status,
+		PreciseStatus:              linkState.PreciseStatus,
+		LastDeployedTimestamp:      linkState.LastDeployedTimestamp,
+		LastDeployAttemptTimestamp: linkState.LastDeployAttemptTimestamp,
+		IntermediaryResourceStates: copyIntermediaryResources(
+			linkState.IntermediaryResourceStates,
+		),
+		LinkData:       linkState.LinkData,
+		FailureReasons: linkState.FailureReasons,
+		Durations:      linkState.Durations,
+	}
+}
+
+func copyIntermediaryResources(
+	intermediaryResourceStates []*state.LinkIntermediaryResourceState,
+) []*state.LinkIntermediaryResourceState {
+	if intermediaryResourceStates == nil {
+		return nil
+	}
+
+	intermediaryResourcesCopy := []*state.LinkIntermediaryResourceState{}
+	for i, value := range intermediaryResourceStates {
+		intermediaryResourcesCopy[i] = &state.LinkIntermediaryResourceState{
+			ResourceID:                 value.ResourceID,
+			InstanceID:                 value.InstanceID,
+			LastDeployedTimestamp:      value.LastDeployedTimestamp,
+			LastDeployAttemptTimestamp: value.LastDeployAttemptTimestamp,
+			ResourceSpecData:           value.ResourceSpecData,
+		}
+	}
+
+	return intermediaryResourcesCopy
+}
+
+func copyExports(
+	exports map[string]*state.ExportState,
+) map[string]*state.ExportState {
+	if exports == nil {
+		return nil
+	}
+
+	exportsCopy := make(map[string]*state.ExportState)
+	for exportName, export := range exports {
+		exportCopy := copyExport(export)
+		exportsCopy[exportName] = exportCopy
+	}
+
+	return exportsCopy
+}
+
+func copyExport(
+	exportState *state.ExportState,
+) *state.ExportState {
+	if exportState == nil {
+		return nil
+	}
+
+	return &state.ExportState{
+		Value: exportState.Value,
+		Type:  exportState.Type,
+		Field: exportState.Field,
+	}
 }

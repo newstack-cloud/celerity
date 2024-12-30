@@ -71,6 +71,7 @@ func (l *ChainLinkNode) Equal(otherLink *ChainLinkNode) bool {
 
 type defaultSpecLinkInfo struct {
 	resourceProviders        map[string]provider.Provider
+	linkRegistry             provider.LinkRegistry
 	spec                     speccore.BlueprintSpec
 	chains                   []*ChainLinkNode
 	linkMap                  map[string]*ChainLinkNode
@@ -86,11 +87,13 @@ type defaultSpecLinkInfo struct {
 // to a provider.
 func NewDefaultLinkInfoProvider(
 	resourceTypeProviderMap map[string]provider.Provider,
+	linkRegistry provider.LinkRegistry,
 	spec speccore.BlueprintSpec,
 	blueprintParams bpcore.BlueprintParams,
 ) (SpecLinkInfo, error) {
 	return &defaultSpecLinkInfo{
 		resourceProviders:        resourceTypeProviderMap,
+		linkRegistry:             linkRegistry,
 		spec:                     spec,
 		chains:                   []*ChainLinkNode{},
 		linkMap:                  make(map[string]*ChainLinkNode),
@@ -315,8 +318,14 @@ func (l *defaultSpecLinkInfo) checkCanLinkTo(
 	linkToResourceType := linkToResource.Resource.Type.Value
 	resourceProvider, rpExists := l.resourceProviders[linkFromResourceType]
 	if rpExists {
-		linkImplementation, err := resourceProvider.Link(ctx, linkFromResourceType, linkToResourceType)
+		linkImplementation, err := l.linkRegistry.Link(ctx, linkFromResourceType, linkToResourceType)
 		if err != nil {
+			if provider.IsLinkImplementationNotFoundError(err) {
+				return &linkCheckInfo{
+					linkImplementation: nil,
+					canLinkTo:          false,
+				}, nil
+			}
 			return nil, err
 		}
 		linkFromResourceType, err := resourceProvider.Resource(ctx, linkFromResourceType)

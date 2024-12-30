@@ -1,5 +1,5 @@
 {
-  "instanceId": "blueprint-instance-7-child-core-infra",
+  "instanceId": "blueprint-instance-2-child-core-infra",
   "status": 1,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,
@@ -11,7 +11,7 @@
       "resourceId": "complex-resource-id",
       "resourceName": "complexResource",
       "resourceType": "example/complex",
-      "instanceId": "blueprint-instance-7-child-core-infra",
+      "instanceId": "blueprint-instance-2-child-core-infra",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,

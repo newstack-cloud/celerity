@@ -4,7 +4,10 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
+	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -235,7 +238,17 @@ func (r *DynamoDBStreamResource) Destroy(
 	return nil
 }
 
-type LambdaFunctionResource struct{}
+type LambdaFunctionResource struct {
+	// Tracks the number of destroy attempts for each unique resource ID.
+	// This is used to emulate transient failures when destroying resources,
+	// the blueprint container will retry destroying the resource until the
+	// destroy attempt count exceeds the max destroy attempts.
+	CurrentDestroyAttempts map[string]int
+	// Resource IDs for which the lambda function resource implementation
+	// should fail with a terminal error.
+	FailResourceIDs []string
+	mu              sync.Mutex
+}
 
 func (r *LambdaFunctionResource) CanLinkTo(
 	ctx context.Context,
@@ -336,6 +349,29 @@ func (r *LambdaFunctionResource) Destroy(
 	ctx context.Context,
 	input *provider.ResourceDestroyInput,
 ) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if slices.Contains(r.FailResourceIDs, input.ResourceID) {
+		return &provider.ResourceDestroyError{
+			FailureReasons: []string{"destroy failed due to terminal error"},
+		}
+	}
+
+	attemptCount, exists := r.CurrentDestroyAttempts[input.ResourceID]
+	if !exists {
+		attemptCount = 0
+	}
+	attemptCount += 1
+	r.CurrentDestroyAttempts[input.ResourceID] = attemptCount
+
+	// Provider retry policy allows for a maximum of 3 attempts before failing.
+	if attemptCount < 3 {
+		return &provider.RetryableError{
+			ChildError: errors.New("destroy failed due to transient error"),
+		}
+	}
+
 	return nil
 }
 

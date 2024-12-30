@@ -2,7 +2,6 @@ package container
 
 import (
 	"slices"
-	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
@@ -117,7 +116,7 @@ func collectElementDependencies(
 ) []state.Element {
 	dependencies := []state.Element{}
 
-	if element.Type() == state.ResourceElement {
+	if element.Kind() == state.ResourceElement {
 		resourceState := getResourceStateByName(currentState, element.LogicalName())
 		if resourceState != nil {
 			childDependencies := collectElementChildDependenciesForResource(
@@ -136,7 +135,7 @@ func collectElementDependencies(
 		}
 	}
 
-	if element.Type() == state.ChildElement {
+	if element.Kind() == state.ChildElement {
 		childDependencyInfo := getChildDependencies(currentState, element.LogicalName())
 		if childDependencyInfo != nil {
 			childDependencies := collectElementChildDependenciesForChild(
@@ -155,7 +154,7 @@ func collectElementDependencies(
 		}
 	}
 
-	if element.Type() == state.LinkElement {
+	if element.Kind() == state.LinkElement {
 		linkDependencyInfo := extractLinkDirectDependencies(element.LogicalName())
 		if linkDependencyInfo != nil {
 			resourceDependencies := collectElementResourceDependenciesForLink(
@@ -168,18 +167,6 @@ func collectElementDependencies(
 	}
 
 	return dependencies
-}
-
-func extractLinkDirectDependencies(logicalLinkName string) *linkDependencyInfo {
-	parts := strings.Split(logicalLinkName, "::")
-	if len(parts) != 2 {
-		return nil
-	}
-
-	return &linkDependencyInfo{
-		resourceAName: parts[0],
-		resourceBName: parts[1],
-	}
 }
 
 func collectElementChildDependenciesForResource(
@@ -254,12 +241,12 @@ func collectElementDependenciesOfType(
 	dependenciesOfType []string,
 	elementsWithDeps []*ElementWithAllDeps,
 	currentState *state.InstanceState,
-	elementType state.ElementType,
+	elementKind state.ElementKind,
 ) []state.Element {
 	dependencies := []state.Element{}
 
 	for _, dependency := range dependenciesOfType {
-		elementWithDeps := findElement(elementsWithDeps, dependency, elementType)
+		elementWithDeps := findElement(elementsWithDeps, dependency, elementKind)
 		if elementWithDeps != nil {
 			if len(elementWithDeps.AllDependencies) == 0 {
 				elementDeps := collectElementDependencies(
@@ -284,14 +271,14 @@ func collectElementDependenciesOfType(
 func findElement(
 	elementsWithDeps []*ElementWithAllDeps,
 	id string,
-	elementType state.ElementType,
+	elementKind state.ElementKind,
 ) *ElementWithAllDeps {
 	i := 0
 	element := (*ElementWithAllDeps)(nil)
 	for element == nil && i < len(elementsWithDeps) {
 		elementWithDeps := elementsWithDeps[i]
 		if elementWithDeps.Element.ID() == id &&
-			elementWithDeps.Element.Type() == elementType {
+			elementWithDeps.Element.Kind() == elementKind {
 			element = elementWithDeps
 		}
 		i += 1
@@ -319,7 +306,7 @@ func containsElement(
 ) bool {
 	return slices.ContainsFunc(elements, func(current state.Element) bool {
 		return current.LogicalName() == element.LogicalName() &&
-			current.Type() == element.Type()
+			current.Kind() == element.Kind()
 	})
 }
 

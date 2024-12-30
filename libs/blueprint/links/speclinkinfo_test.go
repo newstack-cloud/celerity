@@ -15,6 +15,7 @@ import (
 
 type SpecLinkInfoTestSuite struct {
 	resourceProviders map[string]provider.Provider
+	linkRegistry      provider.LinkRegistry
 }
 
 var _ = Suite(&SpecLinkInfoTestSuite{})
@@ -31,11 +32,12 @@ func (s *SpecLinkInfoTestSuite) SetUpSuite(c *C) {
 		"aws/iam/role":               awsProvider,
 		"stratosaws/iam/role":        awsProvider,
 	}
+	s.linkRegistry = provider.NewLinkRegistry(s.resourceProviders)
 }
 
 func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_1(c *C) {
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
-		s.resourceProviders, &testBlueprintSpec{
+		s.resourceProviders, s.linkRegistry, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema1,
 		}, nil)
 	if err != nil {
@@ -62,7 +64,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_1(c *C) {
 
 func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_2(c *C) {
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
-		s.resourceProviders, &testBlueprintSpec{
+		s.resourceProviders, s.linkRegistry, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema2,
 		}, nil)
 	if err != nil {
@@ -89,7 +91,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_2(c *C) {
 
 func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_for_a_blueprint_with_circular_soft_links(c *C) {
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
-		s.resourceProviders, &testBlueprintSpec{
+		s.resourceProviders, s.linkRegistry, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema5,
 		}, nil)
 	if err != nil {
@@ -111,39 +113,9 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_for_a_blueprint_with_ci
 	}
 }
 
-func (s *SpecLinkInfoTestSuite) Test_get_links_fails_when_a_link_implementation_does_not_exist_for_linked_resources(c *C) {
-	specLinkInfo, err := NewDefaultLinkInfoProvider(
-		s.resourceProviders, &testBlueprintSpec{
-			schema: testSpecLinkInfoBlueprintSchema3,
-		}, nil)
-	if err != nil {
-		c.Error(err)
-		c.FailNow()
-	}
-
-	_, err = specLinkInfo.Links(context.Background())
-	if err == nil {
-		c.Error("expected an error for missing link implementation")
-		c.FailNow()
-	}
-	linkError, isLinkError := err.(*LinkError)
-	if !isLinkError {
-		c.Error("expected error to be an instance of a LinkError")
-		c.FailNow()
-	}
-
-	if linkError.ReasonCode != LinkErrorReasonCodeMissingLinkImpl {
-		c.Errorf(
-			"expected link error reason code to be %s, found %s",
-			LinkErrorReasonCodeMissingLinkImpl,
-			linkError.ReasonCode,
-		)
-	}
-}
-
 func (s *SpecLinkInfoTestSuite) Test_get_links_fails_when_circular_hard_links_are_discovered(c *C) {
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
-		s.resourceProviders, &testBlueprintSpec{
+		s.resourceProviders, s.linkRegistry, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema4,
 		}, nil)
 	if err != nil {
@@ -199,7 +171,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_link_warnings_from_spec_for_a_blueprint
 	// Re-use schema fixture 1 as it has the standalone IAM role
 	// and the IAM role resource type is not a common terminal.
 	specLinkInfo, err := NewDefaultLinkInfoProvider(
-		s.resourceProviders, &testBlueprintSpec{
+		s.resourceProviders, s.linkRegistry, &testBlueprintSpec{
 			schema: testSpecLinkInfoBlueprintSchema1,
 		}, nil)
 	if err != nil {
@@ -519,44 +491,6 @@ var testSpecLinkInfoBlueprintSchema2 = &schema.Blueprint{
 			"standaloneRole2": {
 				Type:     &schema.ResourceTypeWrapper{Value: "aws/iam/role"},
 				Metadata: &schema.Metadata{},
-			},
-		},
-	},
-}
-
-// Missing link implementation.
-// A lambda can link to another lambda as per bootstrap_test.go
-// fixture set up, however there is no link implementation for
-// lambda to lambda links.
-var testSpecLinkInfoBlueprintSchema3 = &schema.Blueprint{
-	Resources: &schema.ResourceMap{
-		Values: map[string]*schema.Resource{
-			"exchangeRatesFunction": {
-				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
-				Metadata: &schema.Metadata{
-					Labels: &schema.StringMap{
-						Values: map[string]string{
-							"app": "exchangeRates",
-						},
-					},
-				},
-				LinkSelector: &schema.LinkSelector{
-					ByLabel: &schema.StringMap{
-						Values: map[string]string{
-							"app": "exchangeRates",
-						},
-					},
-				},
-			},
-			"saveExchangeRatesFunction": {
-				Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
-				Metadata: &schema.Metadata{
-					Labels: &schema.StringMap{
-						Values: map[string]string{
-							"app": "exchangeRates",
-						},
-					},
-				},
 			},
 		},
 	},

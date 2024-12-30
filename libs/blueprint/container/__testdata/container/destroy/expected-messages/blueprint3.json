@@ -1,0 +1,49 @@
+{
+  "resourceDeployUpdateMessages": [
+    [
+      {
+        "instanceId": "blueprint-instance-3",
+        "resourceId": "test-failing-order-function-id",
+        "resourceName": "failingOrderFunction",
+        "group": 0,
+        "status": 4,
+        "preciseStatus": 8,
+        "attempt": 0,
+        "canRetry": false,
+        "updateTimestamp": -1
+      },
+      {
+        "instanceId": "blueprint-instance-3",
+        "resourceId": "test-failing-order-function-id",
+        "resourceName": "failingOrderFunction",
+        "group": 0,
+        "status": 6,
+        "preciseStatus": 10,
+        "failureReasons": ["destroy failed due to terminal error"],
+        "attempt": 0,
+        "canRetry": false,
+        "updateTimestamp": -1,
+        "durations": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        }
+      }
+    ]
+  ],
+  "childDeployUpdateMessages": [],
+  "linkDeployUpdateMessages": [],
+  "deploymentUpdateMessages": [],
+  "finishedMessage": {
+    "instanceId": "blueprint-instance-3",
+    "status": 9,
+    "failureReasons": [
+      "failed to destroy the blueprint instance due to 1 failure",
+      "failed to destroy \"resources.failingOrderFunction\""
+    ],
+    "finishTimestamp": -1,
+    "updateTimestamp": -1,
+    "durations": {
+      "totalDuration": -1
+    }
+  }
+}

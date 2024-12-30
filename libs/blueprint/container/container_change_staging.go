@@ -24,6 +24,7 @@ func (c *defaultBlueprintContainer) StageChanges(
 	channels *ChangeStagingChannels,
 	paramOverrides core.BlueprintParams,
 ) error {
+	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, input.InstanceID)
 
 	instanceTreePath := getInstanceTreePath(paramOverrides, input.InstanceID)
 	if exceedsMaxDepth(instanceTreePath, MaxBlueprintDepth) {
@@ -34,17 +35,22 @@ func (c *defaultBlueprintContainer) StageChanges(
 	}
 
 	if input.Destroy {
-		go c.stageInstanceRemoval(ctx, input.InstanceID, channels)
+		go c.stageInstanceRemoval(ctxWithInstanceID, input.InstanceID, channels)
 		return nil
 	}
 
-	processed, err := c.processBlueprint(ctx, subengine.ResolveForChangeStaging, nil, paramOverrides)
+	processed, err := c.processBlueprint(
+		ctxWithInstanceID,
+		subengine.ResolveForChangeStaging,
+		/* changes */ nil,
+		paramOverrides,
+	)
 	if err != nil {
 		return err
 	}
 
 	go c.stageChanges(
-		ctx,
+		ctxWithInstanceID,
 		input.InstanceID,
 		processed.parallelGroups,
 		paramOverrides,
@@ -112,6 +118,7 @@ func (c *defaultBlueprintContainer) stageChanges(
 		)
 
 		err := c.listenToAndProcessGroupChanges(
+			ctx,
 			group,
 			internalChannels,
 			channels,
@@ -163,6 +170,7 @@ func collectChildrenToRecreate(state *stageChangesState) []string {
 }
 
 func (c *defaultBlueprintContainer) listenToAndProcessGroupChanges(
+	ctx context.Context,
 	group []*DeploymentNode,
 	internalChannels *ChangeStagingChannels,
 	externalChannels *ChangeStagingChannels,
@@ -185,6 +193,8 @@ func (c *defaultBlueprintContainer) listenToAndProcessGroupChanges(
 	for (len(collected) < len(group) || waitingForLinkChanges) &&
 		err == nil {
 		select {
+		case <-ctx.Done():
+			err = ctx.Err()
 		case changes := <-internalChannels.ResourceChangesChan:
 			elementName := core.ResourceElementID(changes.ResourceName)
 			collected[elementName] = &changesWrapper{
@@ -651,7 +661,7 @@ func (c *defaultBlueprintContainer) stageLinkChanges(
 
 	var currentLinkStatePtr *state.LinkState
 	links := c.stateContainer.Links()
-	currentLinkState, err := links.Get(
+	currentLinkState, err := links.GetByName(
 		ctx,
 		resourceAInfo.InstanceID,
 		createLogicalLinkName(resourceAInfo.ResourceName, resourceBInfo.ResourceName),
@@ -756,7 +766,10 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 			/* keepExisting */ true,
 		)
 
-	childLoader := c.createChildBlueprintLoader([]string{})
+	childLoader := c.createChildBlueprintLoader(
+		/* derivedFromTemplate */ []string{},
+		/* resourceTemplates */ map[string]string{},
+	)
 
 	var childContainer BlueprintContainer
 	if childBlueprintInfo.AbsolutePath != nil {
@@ -819,7 +832,7 @@ func (c *defaultBlueprintContainer) stageChildBlueprintChanges(
 		return
 	}
 
-	c.waitForChildChanges(includeName, childState, childChannels, channels)
+	c.waitForChildChanges(ctx, includeName, childState, childChannels, channels)
 }
 
 func (c *defaultBlueprintContainer) getChildState(
@@ -845,6 +858,7 @@ func (c *defaultBlueprintContainer) getChildState(
 }
 
 func (c *defaultBlueprintContainer) waitForChildChanges(
+	ctx context.Context,
 	includeName string,
 	childState *state.InstanceState,
 	childChannels *ChangeStagingChannels,
@@ -861,6 +875,8 @@ func (c *defaultBlueprintContainer) waitForChildChanges(
 	var stagingErr error
 	for !receivedFullChildChanges && stagingErr == nil {
 		select {
+		case <-ctx.Done():
+			stagingErr = ctx.Err()
 		case <-childChannels.ResourceChangesChan:
 		case <-childChannels.LinkChangesChan:
 		case <-childChannels.ChildChangesChan:
@@ -1451,6 +1467,7 @@ func (c *defaultBlueprintContainer) expandResourceTemplates(
 
 	loader := c.createChildBlueprintLoader(
 		flattenMapLists(expandResult.ResourceTemplateMap),
+		invertMap(expandResult.ResourceTemplateMap),
 	)
 	return loader.LoadFromSchema(ctx, afterConditionsApplied, params)
 }

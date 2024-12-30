@@ -2,7 +2,9 @@ package container
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
@@ -24,11 +26,18 @@ func newTestAWSProvider() provider.Provider {
 		Resources: map[string]provider.Resource{
 			"aws/dynamodb/table":  &internal.DynamoDBTableResource{},
 			"aws/dynamodb/stream": &internal.DynamoDBStreamResource{},
-			"aws/lambda/function": &internal.LambdaFunctionResource{},
+			"aws/lambda/function": &internal.LambdaFunctionResource{
+				CurrentDestroyAttempts: map[string]int{},
+				FailResourceIDs: []string{
+					"test-failing-order-function-id",
+				},
+			},
 		},
 		Links: map[string]provider.Link{
-			"aws/apigateway/api::aws/lambda/function":  &testApiGatewayLambdaLink{},
-			"aws/lambda/function::aws/dynamodb/table":  &testLambdaDynamoDBTableLink{},
+			"aws/apigateway/api::aws/lambda/function": &testApiGatewayLambdaLink{},
+			"aws/lambda/function::aws/dynamodb/table": &testLambdaDynamoDBTableLink{
+				resourceAUpdateAttempts: map[string]int{},
+			},
 			"aws/dynamodb/table::aws/dynamodb/stream":  &testDynamoDBTableStreamLink{},
 			"aws/dynamodb/stream::aws/lambda/function": &testDynamoDBStreamLambdaLink{},
 			"aws/lambda/function::aws/lambda/function": &testLambdaLambdaLink{},
@@ -44,6 +53,15 @@ func newTestAWSProvider() provider.Provider {
 		},
 		DataSources: map[string]provider.DataSource{
 			"aws/vpc": &internal.VPCDataSource{},
+		},
+		ProviderRetryPolicy: &provider.RetryPolicy{
+			MaxRetries: 2,
+			// The first retry delay is 1 second
+			FirstRetryDelay: 1,
+			// The maximum delay between retries is 10 seconds.
+			MaxDelay:      10,
+			BackoffFactor: 0.5,
+			Jitter:        true,
 		},
 	}
 }
@@ -93,20 +111,6 @@ func (l *testApiGatewayLambdaLink) GetKind(ctx context.Context, input *provider.
 	}, nil
 }
 
-func (l *testApiGatewayLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testApiGatewayLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 func (l *testApiGatewayLambdaLink) UpdateResourceA(
 	ctx context.Context,
 	input *provider.LinkUpdateResourceInput,
@@ -128,7 +132,14 @@ func (l *testApiGatewayLambdaLink) UpdateIntermediaryResources(
 	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
 }
 
-type testLambdaDynamoDBTableLink struct{}
+type testLambdaDynamoDBTableLink struct {
+	// Tracks the number of resource A update attempts for each unique resource ID.
+	// This is used to emulate transient failures when updating links,
+	// the blueprint container will retry updating resource A for the link until the
+	// update attempt count exceeds the max update attempts.
+	resourceAUpdateAttempts map[string]int
+	mu                      sync.Mutex
+}
 
 func (l *testLambdaDynamoDBTableLink) StageChanges(
 	ctx context.Context,
@@ -280,25 +291,32 @@ func (l *testLambdaDynamoDBTableLink) GetKind(ctx context.Context, input *provid
 	}, nil
 }
 
-func (l *testLambdaDynamoDBTableLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testLambdaDynamoDBTableLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 func (l *testLambdaDynamoDBTableLink) UpdateResourceA(
 	ctx context.Context,
 	input *provider.LinkUpdateResourceInput,
 ) (*provider.LinkUpdateResourceOutput, error) {
-	return &provider.LinkUpdateResourceOutput{}, nil
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	attemptCount, exists := l.resourceAUpdateAttempts[input.ResourceInfo.ResourceID]
+	if !exists {
+		attemptCount = 0
+	}
+	attemptCount += 1
+	l.resourceAUpdateAttempts[input.ResourceInfo.ResourceID] = attemptCount
+
+	// Provider retry policy allows for a maximum of 3 attempts before failing.
+	if attemptCount < 3 {
+		return nil, &provider.RetryableError{
+			ChildError: errors.New("resource A update failed due to transient error"),
+		}
+	}
+
+	return &provider.LinkUpdateResourceOutput{
+		LinkData: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{},
+		},
+	}, nil
 }
 
 func (l *testLambdaDynamoDBTableLink) UpdateResourceB(
@@ -346,20 +364,6 @@ func (l *testDynamoDBTableStreamLink) GetKind(ctx context.Context, input *provid
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
 	}, nil
-}
-
-func (l *testDynamoDBTableStreamLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testDynamoDBTableStreamLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 func (l *testDynamoDBTableStreamLink) UpdateResourceA(
@@ -416,20 +420,6 @@ func (l *testDynamoDBStreamLambdaLink) GetKind(ctx context.Context, input *provi
 	}, nil
 }
 
-func (l *testDynamoDBStreamLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testDynamoDBStreamLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 func (l *testDynamoDBStreamLambdaLink) UpdateResourceA(
 	ctx context.Context,
 	input *provider.LinkUpdateResourceInput,
@@ -482,20 +472,6 @@ func (l *testDynamoDBTableLambdaLink) GetKind(ctx context.Context, input *provid
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
 	}, nil
-}
-
-func (l *testDynamoDBTableLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testDynamoDBTableLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 func (l *testDynamoDBTableLambdaLink) UpdateResourceA(
@@ -552,20 +528,6 @@ func (l *testLambdaLambdaLink) GetKind(ctx context.Context, input *provider.Link
 	}, nil
 }
 
-func (l *testLambdaLambdaLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testLambdaLambdaLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 func (l *testLambdaLambdaLink) UpdateResourceA(
 	ctx context.Context,
 	input *provider.LinkUpdateResourceInput,
@@ -618,20 +580,6 @@ func (l *testSubnetVPCLink) GetKind(ctx context.Context, input *provider.LinkGet
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
 	}, nil
-}
-
-func (l *testSubnetVPCLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testSubnetVPCLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 func (l *testSubnetVPCLink) UpdateResourceA(
@@ -688,20 +636,6 @@ func (l *testSecurityGroupVPCLink) GetKind(ctx context.Context, input *provider.
 	}, nil
 }
 
-func (l *testSecurityGroupVPCLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testSecurityGroupVPCLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 func (l *testSecurityGroupVPCLink) UpdateResourceA(
 	ctx context.Context,
 	input *provider.LinkUpdateResourceInput,
@@ -754,20 +688,6 @@ func (l *testRouteTableVPCLink) GetKind(ctx context.Context, input *provider.Lin
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
 	}, nil
-}
-
-func (l *testRouteTableVPCLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testRouteTableVPCLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 func (l *testRouteTableVPCLink) UpdateResourceA(
@@ -824,20 +744,6 @@ func (l *testRouteRouteTableLink) GetKind(ctx context.Context, input *provider.L
 	}, nil
 }
 
-func (l *testRouteRouteTableLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testRouteRouteTableLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
 func (l *testRouteRouteTableLink) UpdateResourceA(
 	ctx context.Context,
 	input *provider.LinkUpdateResourceInput,
@@ -890,20 +796,6 @@ func (l *testRouteInternetGatewayLink) GetKind(ctx context.Context, input *provi
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
 	}, nil
-}
-
-func (l *testRouteInternetGatewayLink) HandleResourceAError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
-}
-
-func (l *testRouteInternetGatewayLink) HandleResourceBError(
-	ctx context.Context,
-	input *provider.LinkHandleResourceErrorInput,
-) error {
-	return nil
 }
 
 func (l *testRouteInternetGatewayLink) UpdateResourceA(

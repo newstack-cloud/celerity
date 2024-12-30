@@ -13,6 +13,7 @@ type ProviderMock struct {
 	DataSources         map[string]provider.DataSource
 	Links               map[string]provider.Link
 	CustomVariableTypes map[string]provider.CustomVariableType
+	ProviderRetryPolicy *provider.RetryPolicy
 }
 
 func (p *ProviderMock) Namespace(ctx context.Context) (string, error) {
@@ -69,5 +70,5 @@ func (p *ProviderMock) Function(ctx context.Context, functionName string) (provi
 }
 
 func (p *ProviderMock) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
-	return nil, nil
+	return p.ProviderRetryPolicy, nil
 }
