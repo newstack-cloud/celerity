@@ -35,7 +35,7 @@ func (s *FileSystemChildResolverSuite) Test_resolves_blueprint_file() {
 	absPath := path.Join(workingDir, "__testdata/fs.test.blueprint.yml")
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &absPath,
 			},
 		},
@@ -51,7 +51,7 @@ func (s *FileSystemChildResolverSuite) Test_returns_error_when_path_is_empty() {
 	path := ""
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
@@ -74,7 +74,7 @@ func (s *FileSystemChildResolverSuite) Test_returns_error_when_file_does_not_exi
 	absPath := path.Join(workingDir, "__testdata/fs.missing.test.blueprint.yml")
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &absPath,
 			},
 		},

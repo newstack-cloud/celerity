@@ -32,7 +32,7 @@ func (r *fsChildResolver) Resolve(
 	// Read the child blueprint from the file system,
 	// the file system is expected to be relative to the absolute root
 	// path on the current system.
-	path := includes.StringValue(include.Path)
+	path := core.StringValue(include.Path)
 	if path == "" {
 		return nil, includes.ErrInvalidPath(includeName, "file system")
 	}

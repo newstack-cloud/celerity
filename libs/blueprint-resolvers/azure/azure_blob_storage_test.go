@@ -53,19 +53,19 @@ func (s *AzureBlobStorageChildResolverSuite) Test_resolves_blueprint_file() {
 	sourceType := "azure/blob-storage"
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
 		Metadata: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"sourceType": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &sourceType,
 					},
 				},
 				"container": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &container,
 					},
 				},
@@ -83,7 +83,7 @@ func (s *AzureBlobStorageChildResolverSuite) Test_returns_error_when_path_is_emp
 	path := ""
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
@@ -104,7 +104,7 @@ func (s *AzureBlobStorageChildResolverSuite) Test_returns_error_when_metadata_is
 	path := "azure.test.blueprint.yml"
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
@@ -125,14 +125,14 @@ func (s *AzureBlobStorageChildResolverSuite) Test_returns_error_when_bucket_is_m
 	sourceType := "azure/blob-storage"
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
 		Metadata: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"sourceType": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &sourceType,
 					},
 				},
@@ -156,19 +156,19 @@ func (s *AzureBlobStorageChildResolverSuite) Test_returns_error_when_file_does_n
 	sourceType := "azure/blob-storage"
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
 		Metadata: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"sourceType": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &sourceType,
 					},
 				},
 				"container": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &container,
 					},
 				},

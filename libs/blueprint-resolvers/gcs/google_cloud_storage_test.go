@@ -31,19 +31,19 @@ func (s *GCSChildResolverSuite) Test_resolves_blueprint_file() {
 	sourceType := "gcloud/storage"
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
 		Metadata: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"sourceType": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &sourceType,
 					},
 				},
 				"bucket": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &bucket,
 					},
 				},
@@ -61,7 +61,7 @@ func (s *GCSChildResolverSuite) Test_returns_error_when_path_is_empty() {
 	path := ""
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
@@ -82,7 +82,7 @@ func (s *GCSChildResolverSuite) Test_returns_error_when_metadata_is_not_set() {
 	path := "gcs.test.blueprint.yml"
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
@@ -103,14 +103,14 @@ func (s *GCSChildResolverSuite) Test_returns_error_when_bucket_is_missing_from_m
 	sourceType := "gcloud/storage"
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
 		Metadata: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"sourceType": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &sourceType,
 					},
 				},
@@ -134,19 +134,19 @@ func (s *GCSChildResolverSuite) Test_returns_error_when_file_does_not_exist() {
 	sourceType := "gcloud/storage"
 	include := &subengine.ResolvedInclude{
 		Path: &core.MappingNode{
-			Literal: &core.ScalarValue{
+			Scalar: &core.ScalarValue{
 				StringValue: &path,
 			},
 		},
 		Metadata: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"sourceType": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &sourceType,
 					},
 				},
 				"bucket": {
-					Literal: &core.ScalarValue{
+					Scalar: &core.ScalarValue{
 						StringValue: &bucket,
 					},
 				},

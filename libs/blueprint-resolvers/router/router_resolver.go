@@ -51,7 +51,7 @@ func (r *routerChildResolver) Resolve(
 	params core.BlueprintParams,
 ) (*includes.ChildBlueprintInfo, error) {
 
-	sourceType := includes.StringValue(include.Metadata.Fields["sourceType"])
+	sourceType := core.StringValue(include.Metadata.Fields["sourceType"])
 	if sourceType == "" {
 		return r.defaultResolver.Resolve(ctx, includeName, include, params)
 	}

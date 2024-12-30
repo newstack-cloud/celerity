@@ -46,8 +46,8 @@ func (r *gcsChildResolver) Resolve(
 		return nil, err
 	}
 
-	path := includes.StringValue(include.Path)
-	bucket := includes.StringValue(include.Metadata.Fields["bucket"])
+	path := core.StringValue(include.Path)
+	bucket := core.StringValue(include.Metadata.Fields["bucket"])
 
 	client, err := createClient(ctx, r.endpoint)
 	if err != nil {

@@ -46,9 +46,9 @@ func (r *s3ChildResolver) Resolve(
 		return nil, err
 	}
 
-	path := includes.StringValue(include.Path)
-	bucket := includes.StringValue(include.Metadata.Fields["bucket"])
-	region := includes.StringValue(include.Metadata.Fields["region"])
+	path := core.StringValue(include.Path)
+	bucket := core.StringValue(include.Metadata.Fields["bucket"])
+	region := core.StringValue(include.Metadata.Fields["region"])
 
 	conf, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	if err != nil {

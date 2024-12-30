@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 )
@@ -19,7 +20,7 @@ func ValidateInclude(
 	resolverName string,
 ) error {
 
-	path := includes.StringValue(include.Path)
+	path := core.StringValue(include.Path)
 	if path == "" {
 		return includes.ErrInvalidPath(includeName, resolverName)
 	}
@@ -33,7 +34,7 @@ func ValidateInclude(
 	}
 
 	for _, field := range requiredFields {
-		fieldValue := includes.StringValue(metadata.Fields[field])
+		fieldValue := core.StringValue(metadata.Fields[field])
 		if fieldValue == "" {
 			return includes.ErrInvalidMetadata(
 				includeName,

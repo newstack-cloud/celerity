@@ -46,8 +46,8 @@ func (r *azureBlobStorageChildResolver) Resolve(
 		return nil, err
 	}
 
-	path := includes.StringValue(include.Path)
-	container := includes.StringValue(include.Metadata.Fields["container"])
+	path := core.StringValue(include.Path)
+	container := core.StringValue(include.Metadata.Fields["container"])
 
 	stream, err := r.client.DownloadStream(ctx, container, path, nil)
 	if err != nil {
