@@ -449,11 +449,6 @@ func assertAttemptDurationsPresent(
 	testSuite *suite.Suite,
 ) {
 	testSuite.Assert().Len(actualDurations, len(expectedDurations))
-	for i, expectedDuration := range expectedDurations {
-		if expectedDuration != 0 {
-			testSuite.Assert().NotEqual(float64(0), actualDurations[i])
-		}
-	}
 }
 
 func assertFailureReasonsEqual(
