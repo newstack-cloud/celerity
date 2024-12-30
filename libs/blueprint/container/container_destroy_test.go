@@ -22,6 +22,7 @@ type ContainerDestroyTestSuite struct {
 	blueprint1Fixture blueprintDeployFixture
 	blueprint2Fixture blueprintDeployFixture
 	blueprint3Fixture blueprintDeployFixture
+	blueprint4Fixture blueprintDeployFixture
 	stateContainer    state.Container
 	suite.Suite
 }
@@ -55,39 +56,31 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		WithLoaderValidateRuntimeValues(true),
 	)
 
-	blueprint1Container, err := loader.Load(
-		context.Background(),
-		"__testdata/container/destroy/blueprint1.yml",
-		baseBlueprintParams(),
-	)
-	s.Require().NoError(err)
 	s.blueprint1Fixture, err = createBlueprintDeployFixture(
-		blueprint1Container,
-		"__testdata/container/destroy/expected-messages/blueprint1.json",
+		"destroy",
+		1,
+		loader,
 	)
 	s.Require().NoError(err)
 
-	blueprint2Container, err := loader.Load(
-		context.Background(),
-		"__testdata/container/destroy/blueprint2.yml",
-		baseBlueprintParams(),
-	)
-	s.Require().NoError(err)
 	s.blueprint2Fixture, err = createBlueprintDeployFixture(
-		blueprint2Container,
-		"__testdata/container/destroy/expected-messages/blueprint2.json",
+		"destroy",
+		2,
+		loader,
 	)
 	s.Require().NoError(err)
 
-	blueprint3Container, err := loader.Load(
-		context.Background(),
-		"__testdata/container/destroy/blueprint3.yml",
-		baseBlueprintParams(),
+	s.blueprint3Fixture, err = createBlueprintDeployFixture(
+		"destroy",
+		3,
+		loader,
 	)
 	s.Require().NoError(err)
-	s.blueprint3Fixture, err = createBlueprintDeployFixture(
-		blueprint3Container,
-		"__testdata/container/destroy/expected-messages/blueprint3.json",
+
+	s.blueprint4Fixture, err = createBlueprintDeployFixture(
+		"destroy",
+		4,
+		loader,
 	)
 	s.Require().NoError(err)
 }
@@ -249,18 +242,67 @@ func (s *ContainerDestroyTestSuite) Test_fails_to_destroys_blueprint_instance_du
 	s.Assert().Equal("blueprint-instance-3", instance.InstanceID)
 }
 
+func (s *ContainerDestroyTestSuite) Test_fails_to_destroys_blueprint_instance_due_to_terminal_link_impl_error() {
+	channels := CreateDeployChannels()
+	s.blueprint4Fixture.blueprintContainer.Destroy(
+		context.Background(),
+		&DestroyInput{
+			InstanceID: "blueprint-instance-4",
+			Changes:    blueprint4RemovalChanges(),
+			Rollback:   false,
+		},
+		channels,
+		blueprintDestroyParams(),
+	)
+
+	linkDeployUpdateMessages := []LinkDeployUpdateMessage{}
+	finishedMessage := (*DeploymentFinishedMessage)(nil)
+	var err error
+	for err == nil &&
+		finishedMessage == nil {
+		select {
+		case <-channels.ResourceUpdateChan:
+		case <-channels.ChildUpdateChan:
+		case msg := <-channels.LinkUpdateChan:
+			linkDeployUpdateMessages = append(linkDeployUpdateMessages, msg)
+		case msg := <-channels.FinishChan:
+			finishedMessage = &msg
+		case <-channels.DeploymentUpdateChan:
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Require().NoError(err)
+
+	actualMessages := &actualMessages{
+		resourceDeployUpdateMessages: []ResourceDeployUpdateMessage{},
+		childDeployUpdateMessages:    []ChildDeployUpdateMessage{},
+		linkDeployUpdateMessages:     linkDeployUpdateMessages,
+		deploymentUpdateMessages:     []DeploymentUpdateMessage{},
+		finishedMessage:              finishedMessage,
+	}
+	assertDeployMessageOrder(actualMessages, s.blueprint4Fixture.expected, &s.Suite)
+
+	instance, err := s.stateContainer.Instances().Get(context.Background(), "blueprint-instance-4")
+	s.Assert().NoError(err)
+	s.Assert().Equal("blueprint-instance-4", instance.InstanceID)
+}
+
 func (s *ContainerDestroyTestSuite) populateCurrentState(stateContainer state.Container) error {
-	err := s.populateBlueprintCurrentState(stateContainer, "blueprint-instance-1", 1)
-	if err != nil {
-		return err
+	fixtureInstances := []int{1, 2, 3, 4}
+	for _, instanceNo := range fixtureInstances {
+		err := s.populateBlueprintCurrentState(
+			stateContainer,
+			fmt.Sprintf("blueprint-instance-%d", instanceNo),
+			instanceNo,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = s.populateBlueprintCurrentState(stateContainer, "blueprint-instance-2", 2)
-	if err != nil {
-		return err
-	}
-
-	return s.populateBlueprintCurrentState(stateContainer, "blueprint-instance-3", 3)
+	return nil
 }
 
 func (s *ContainerDestroyTestSuite) populateBlueprintCurrentState(
@@ -379,6 +421,37 @@ func blueprint3RemovalChanges() *BlueprintChanges {
 		RemovedLinks: []string{
 			"failingOrderFunction::ordersTable_0",
 			"failingOrderFunction::ordersTable_1",
+		},
+		RemovedExports: []string{
+			"environment",
+		},
+		ChildChanges: map[string]BlueprintChanges{
+			"coreInfra": {
+				RemovedResources: []string{
+					"complexResource",
+				},
+				RemovedChildren: []string{},
+				RemovedLinks:    []string{},
+				RemovedExports:  []string{},
+			},
+		},
+	}
+}
+
+func blueprint4RemovalChanges() *BlueprintChanges {
+	return &BlueprintChanges{
+		RemovedResources: []string{
+			"ordersTableFailingLink_0",
+			"ordersTable_1",
+			"preprocessOrderFunction",
+			"invoicesTable",
+		},
+		RemovedChildren: []string{
+			"coreInfra",
+		},
+		RemovedLinks: []string{
+			"preprocessOrderFunction::ordersTableFailingLink_0",
+			"preprocessOrderFunction::ordersTable_1",
 		},
 		RemovedExports: []string{
 			"environment",

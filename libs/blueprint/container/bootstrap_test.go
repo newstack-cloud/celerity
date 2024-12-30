@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -37,6 +38,9 @@ func newTestAWSProvider() provider.Provider {
 			"aws/apigateway/api::aws/lambda/function": &testApiGatewayLambdaLink{},
 			"aws/lambda/function::aws/dynamodb/table": &testLambdaDynamoDBTableLink{
 				resourceAUpdateAttempts: map[string]int{},
+				failResourceBNames: []string{
+					"ordersTableFailingLink_0",
+				},
 			},
 			"aws/dynamodb/table::aws/dynamodb/stream":  &testDynamoDBTableStreamLink{},
 			"aws/dynamodb/stream::aws/lambda/function": &testDynamoDBStreamLambdaLink{},
@@ -138,7 +142,10 @@ type testLambdaDynamoDBTableLink struct {
 	// the blueprint container will retry updating resource A for the link until the
 	// update attempt count exceeds the max update attempts.
 	resourceAUpdateAttempts map[string]int
-	mu                      sync.Mutex
+	// A list of logical resource names that should fail
+	// with a terminal error when updating resource B.
+	failResourceBNames []string
+	mu                 sync.Mutex
 }
 
 func (l *testLambdaDynamoDBTableLink) StageChanges(
@@ -323,6 +330,15 @@ func (l *testLambdaDynamoDBTableLink) UpdateResourceB(
 	ctx context.Context,
 	input *provider.LinkUpdateResourceInput,
 ) (*provider.LinkUpdateResourceOutput, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if slices.Contains(l.failResourceBNames, input.ResourceInfo.ResourceName) {
+		return nil, &provider.LinkUpdateResourceBError{
+			FailureReasons: []string{"resource B update failed due to terminal error"},
+		}
+	}
+
 	return &provider.LinkUpdateResourceOutput{}, nil
 }
 

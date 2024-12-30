@@ -1,7 +1,9 @@
 package container
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/stretchr/testify/suite"
@@ -467,6 +469,28 @@ func assertFailureReasonsEqual(
 }
 
 func createBlueprintDeployFixture(
+	deployType string,
+	fixtureNo int,
+	loader Loader,
+) (blueprintDeployFixture, error) {
+	blueprintContainer, err := loader.Load(
+		context.Background(),
+		fmt.Sprintf("__testdata/container/%s/blueprint%d.yml", deployType, fixtureNo),
+		baseBlueprintParams(),
+	)
+	if err != nil {
+		return blueprintDeployFixture{}, err
+	}
+
+	expectedMessagesFilePath := fmt.Sprintf(
+		"__testdata/container/%s/expected-messages/blueprint%d.json",
+		deployType,
+		fixtureNo,
+	)
+	return createBlueprintDeployFixtureFromFile(blueprintContainer, expectedMessagesFilePath)
+}
+
+func createBlueprintDeployFixtureFromFile(
 	container BlueprintContainer,
 	expectedMessagesFilePath string,
 ) (blueprintDeployFixture, error) {

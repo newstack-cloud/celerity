@@ -232,7 +232,7 @@ func (c *defaultBlueprintContainer) updateLinkResourceA(
 	linkInfo *deploymentElementInfo,
 	updateResourceARetryInfo *retryInfo,
 	deployCtx *deployContext,
-) (*provider.LinkUpdateResourceOutput, error) {
+) (*provider.LinkUpdateResourceOutput, bool, error) {
 	updateResourceAStartTime := c.clock.Now()
 	deployCtx.channels.LinkUpdateChan <- c.createLinkUpdatingResourceAMessage(
 		linkInfo,
@@ -261,7 +261,7 @@ func (c *defaultBlueprintContainer) updateLinkResourceA(
 
 		if provider.IsLinkUpdateResourceAError(err) {
 			linkUpdateResourceAError := err.(*provider.LinkUpdateResourceAError)
-			return nil, c.handleUpdateResourceATerminalFailure(
+			stop, err := c.handleUpdateResourceATerminalFailure(
 				linkInfo,
 				updateResourceARetryInfo,
 				updateResourceAStartTime,
@@ -271,13 +271,14 @@ func (c *defaultBlueprintContainer) updateLinkResourceA(
 				},
 				deployCtx,
 			)
+			return nil, stop, err
 		}
 
 		// For errors that are not wrapped in a provider error, the error is assumed to be fatal
 		// and the deployment process will be stopped without reporting a failure state.
 		// It is really important that adequate guidance is provided for provider developers
 		// to ensure that all errors are wrapped in the appropriate provider error.
-		return nil, err
+		return nil, true, err
 	}
 
 	deployCtx.channels.LinkUpdateChan <- c.createLinkResourceAUpdatedMessage(
@@ -288,7 +289,7 @@ func (c *defaultBlueprintContainer) updateLinkResourceA(
 		updateResourceAStartTime,
 	)
 
-	return resourceAOutput, nil
+	return resourceAOutput, false, nil
 }
 
 func (c *defaultBlueprintContainer) handleUpdateLinkResourceARetry(
@@ -299,7 +300,7 @@ func (c *defaultBlueprintContainer) handleUpdateLinkResourceARetry(
 	updateResourceAStartTime time.Time,
 	updateInfo *linkUpdateResourceInfo,
 	deployCtx *deployContext,
-) (*provider.LinkUpdateResourceOutput, error) {
+) (*provider.LinkUpdateResourceOutput, bool, error) {
 	currentAttemptDuration := c.clock.Since(updateResourceAStartTime)
 	nextRetryInfo := addRetryAttempt(updateResourceARetryInfo, currentAttemptDuration)
 	deployCtx.channels.LinkUpdateChan <- LinkDeployUpdateMessage{
@@ -341,7 +342,7 @@ func (c *defaultBlueprintContainer) handleUpdateLinkResourceARetry(
 		)
 	}
 
-	return nil, nil
+	return nil, true, nil
 }
 
 func (c *defaultBlueprintContainer) handleUpdateResourceATerminalFailure(
@@ -350,7 +351,7 @@ func (c *defaultBlueprintContainer) handleUpdateResourceATerminalFailure(
 	updateResourceAStartTime time.Time,
 	updateInfo *linkUpdateResourceInfo,
 	deployCtx *deployContext,
-) error {
+) (bool, error) {
 	currentAttemptDuration := c.clock.Since(updateResourceAStartTime)
 	deployCtx.channels.LinkUpdateChan <- LinkDeployUpdateMessage{
 		InstanceID: linkInfo.instanceID,
@@ -372,7 +373,7 @@ func (c *defaultBlueprintContainer) handleUpdateResourceATerminalFailure(
 		),
 	}
 
-	return nil
+	return true, nil
 }
 
 func (c *defaultBlueprintContainer) createLinkUpdatingResourceAMessage(
@@ -434,7 +435,7 @@ func (c *defaultBlueprintContainer) updateLinkResourceB(
 	linkInfo *deploymentElementInfo,
 	updateResourceBRetryInfo *retryInfo,
 	deployCtx *deployContext,
-) (*provider.LinkUpdateResourceOutput, error) {
+) (*provider.LinkUpdateResourceOutput, bool, error) {
 	updateResourceBStartTime := c.clock.Now()
 	deployCtx.channels.LinkUpdateChan <- c.createLinkUpdatingResourceBMessage(
 		linkInfo,
@@ -463,7 +464,7 @@ func (c *defaultBlueprintContainer) updateLinkResourceB(
 
 		if provider.IsLinkUpdateResourceBError(err) {
 			linkUpdateResourceBError := err.(*provider.LinkUpdateResourceBError)
-			return nil, c.handleUpdateResourceBTerminalFailure(
+			stop, err := c.handleUpdateResourceBTerminalFailure(
 				linkInfo,
 				updateResourceBRetryInfo,
 				updateResourceBStartTime,
@@ -473,13 +474,14 @@ func (c *defaultBlueprintContainer) updateLinkResourceB(
 				},
 				deployCtx,
 			)
+			return nil, stop, err
 		}
 
 		// For errors that are not wrapped in a provider error, the error is assumed to be fatal
 		// and the deployment process will be stopped without reporting a failure state.
 		// It is really important that adequate guidance is provided for provider developers
 		// to ensure that all errors are wrapped in the appropriate provider error.
-		return nil, err
+		return nil, true, err
 	}
 
 	deployCtx.channels.LinkUpdateChan <- c.createLinkResourceBUpdatedMessage(
@@ -490,7 +492,7 @@ func (c *defaultBlueprintContainer) updateLinkResourceB(
 		updateResourceBStartTime,
 	)
 
-	return resourceBOutput, nil
+	return resourceBOutput, false, nil
 }
 
 func (c *defaultBlueprintContainer) handleUpdateLinkResourceBRetry(
@@ -501,7 +503,7 @@ func (c *defaultBlueprintContainer) handleUpdateLinkResourceBRetry(
 	updateResourceBStartTime time.Time,
 	updateInfo *linkUpdateResourceInfo,
 	deployCtx *deployContext,
-) (*provider.LinkUpdateResourceOutput, error) {
+) (*provider.LinkUpdateResourceOutput, bool, error) {
 	currentAttemptDuration := c.clock.Since(updateResourceBStartTime)
 	nextRetryInfo := addRetryAttempt(updateResourceBRetryInfo, currentAttemptDuration)
 	deployCtx.channels.LinkUpdateChan <- LinkDeployUpdateMessage{
@@ -543,7 +545,7 @@ func (c *defaultBlueprintContainer) handleUpdateLinkResourceBRetry(
 		)
 	}
 
-	return nil, nil
+	return nil, true, nil
 }
 
 func (c *defaultBlueprintContainer) handleUpdateResourceBTerminalFailure(
@@ -552,7 +554,7 @@ func (c *defaultBlueprintContainer) handleUpdateResourceBTerminalFailure(
 	updateResourceBStartTime time.Time,
 	updateInfo *linkUpdateResourceInfo,
 	deployCtx *deployContext,
-) error {
+) (bool, error) {
 	currentAttemptDuration := c.clock.Since(updateResourceBStartTime)
 	accumDurationInfo := getLinkDurationInfo(linkInfo, deployCtx.state)
 	durations := determineLinkUpdateResourceBFinishedDurations(
@@ -578,7 +580,7 @@ func (c *defaultBlueprintContainer) handleUpdateResourceBTerminalFailure(
 		Durations:           durations,
 	}
 
-	return nil
+	return true, nil
 }
 
 func (c *defaultBlueprintContainer) createLinkUpdatingResourceBMessage(

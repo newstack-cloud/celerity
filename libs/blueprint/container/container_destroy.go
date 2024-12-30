@@ -875,7 +875,7 @@ func (c *defaultBlueprintContainer) destroyLink(
 		deployCtx.instanceStateSnapshot,
 		linkDependencyInfo.resourceAName,
 	)
-	_, err := c.updateLinkResourceA(
+	_, stop, err := c.updateLinkResourceA(
 		ctx,
 		linkImplementation,
 		&provider.LinkUpdateResourceInput{
@@ -890,12 +890,15 @@ func (c *defaultBlueprintContainer) destroyLink(
 	if err != nil {
 		return err
 	}
+	if stop {
+		return nil
+	}
 
 	resourceBInfo := getResourceInfoFromStateForLinkRemoval(
 		deployCtx.instanceStateSnapshot,
 		linkDependencyInfo.resourceBName,
 	)
-	_, err = c.updateLinkResourceB(
+	_, stop, err = c.updateLinkResourceB(
 		ctx,
 		linkImplementation,
 		&provider.LinkUpdateResourceInput{
@@ -909,6 +912,9 @@ func (c *defaultBlueprintContainer) destroyLink(
 	)
 	if err != nil {
 		return err
+	}
+	if stop {
+		return nil
 	}
 
 	_, err = c.updateLinkIntermediaryResources(
