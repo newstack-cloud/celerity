@@ -18,6 +18,8 @@ func Select(confProvider *config.Provider, logger *zap.Logger) core.DeployEngine
 			map[string]provider.Provider{},
 			map[string]transform.SpecTransformer{},
 			/* stateContainer */ nil,
+			/* resourceChangeStager */ nil,
+			/* childResolver */ nil,
 			validation.NewRefChainCollector,
 			container.WithLoaderTransformSpec(false),
 			container.WithLoaderValidateAfterTransform(false),
