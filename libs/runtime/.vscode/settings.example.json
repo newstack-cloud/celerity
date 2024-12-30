@@ -1,7 +1,0 @@
-{
-  "editor.formatOnSave": true,
-  "python.defaultInterpreterPath": "path-to-your-pipenv-virtual-env-python",
-  "python.autoComplete.extraPaths": ["${workspaceFolder}"],
-  "python.analysis.extraPaths": ["${workspaceFolder}"],
-  "python.terminal.activateEnvironment": false
-}

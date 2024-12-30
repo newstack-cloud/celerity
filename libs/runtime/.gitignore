@@ -9,7 +9,7 @@
 # Env vars loaded into Docker.
 .env
 
-.vscode/settings.json
+.vscode
 
 # Cache for service_test_tools.py
 .mypy_cache
