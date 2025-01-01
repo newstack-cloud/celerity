@@ -68,6 +68,11 @@ const (
 	// an invalid logical link name being provided when preparing to deploy
 	// or destroy a link between resources.
 	ErrorReasonCodeInvalidLogicalLinkName errors.ErrorReasonCode = "invalid_logical_link_name"
+	// ErrorReasonCodeDeployMissingInstanceID
+	// is provided when the reason for an error
+	// during deployment is due to a missing instance ID
+	// when deploying changes that modify existing resources or child blueprints.
+	ErrorReasonCodeDeployMissingInstanceID errors.ErrorReasonCode = "deploy_missing_instance_id"
 	// ErrorReasonCodeChildBlueprintError
 	// is provided when the reason for an error
 	// during deployment or change staging is due to
@@ -212,6 +217,17 @@ func errInvalidLogicalLinkName(linkName string, instanceID string) error {
 				"must be of the form `{resourceA}::{resourceB}`",
 			linkName,
 			instanceID,
+		),
+	}
+}
+
+func errInstanceIDRequiredForChanges() error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeDeployMissingInstanceID,
+		Err: fmt.Errorf(
+			"an instance ID is required for deployments where " +
+				"the provided change set contains modifications " +
+				"to existing resources or child blueprints",
 		),
 	}
 }

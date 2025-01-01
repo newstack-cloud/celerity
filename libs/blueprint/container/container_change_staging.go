@@ -16,6 +16,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
+	commoncore "github.com/two-hundred/celerity/libs/common/core"
 )
 
 func (c *defaultBlueprintContainer) StageChanges(
@@ -285,6 +286,14 @@ func applyResourceChangesToState(changes ResourceChangesMessage, state *stageCha
 		}
 		state.outputChanges.ResourceChanges[changes.ResourceName] = &changes.Changes
 	}
+
+	state.outputChanges.ResolveOnDeploy = append(
+		state.outputChanges.ResolveOnDeploy,
+		commoncore.Map(
+			changes.Changes.FieldChangesKnownOnDeploy,
+			toFullResourcePath(changes.ResourceName),
+		)...,
+	)
 }
 
 func addElementsThatMustBeRecreatedToState(dependents *CollectedElements, state *stageChangesState) {
@@ -331,6 +340,13 @@ func applyLinkChangesToState(changes LinkChangesMessage, state *stageChangesStat
 			}
 			resourceChanges.OutboundLinkChanges[changes.ResourceBName] = changes.Changes
 		}
+		state.outputChanges.ResolveOnDeploy = append(
+			state.outputChanges.ResolveOnDeploy,
+			commoncore.Map(
+				changes.Changes.FieldChangesKnownOnDeploy,
+				toFullLinkPath(changes.ResourceAName, changes.ResourceBName),
+			)...,
+		)
 	}
 }
 

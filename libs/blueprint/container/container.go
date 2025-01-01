@@ -34,6 +34,9 @@ type BlueprintContainer interface {
 		paramOverrides core.BlueprintParams,
 	) error
 	// Deploy deals with deploying the blueprint for the given instance ID.
+	// When an instance ID is omitted, the container will treat the deployment
+	// as a new instance of the blueprint where the provided change set only includes
+	// new resources, children and links.
 	// Deploying a blueprint involves creating, updating and destroying resources
 	// based on the staged changes.
 	// This will stream updates to the provided channels for each resource, child blueprint and link
@@ -41,15 +44,16 @@ type BlueprintContainer interface {
 	// Deploy should also be used as the mechanism to rollback a blueprint to a previous
 	// revision managed in version control or a data store for blueprint source documents.
 	//
-	// There is no synchronous error handling, all unexpected errors will be sent to the provided error
-	// channel. Most errors should be handled by the container and sent to the appropriate channel
+	// There is synchronous and asynchronous error handling, synchronous errors will be returned
+	// during the initial setup phase of the deployment process.
+	// Most errors should be handled by the container and sent to the appropriate channel
 	// as a deployment update message.
 	Deploy(
 		ctx context.Context,
 		input *DeployInput,
 		channels *DeployChannels,
 		paramOverrides core.BlueprintParams,
-	)
+	) error
 	// Destroy deals with destroying all the resources, child blueprints and links
 	// for a blueprint instance.
 	// Like Deploy, Destroy requires changes to be staged and passed in to ensure that

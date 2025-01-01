@@ -3334,6 +3334,8 @@
   },
   RemovedExports: ([]string) {
   },
-  ResolveOnDeploy: ([]string) {
+  ResolveOnDeploy: ([]string) (len=2) {
+    (string) (len=91) "link(saveOrderFunction::ordersTable_0).saveOrderFunction[\"iam.policyStatements\"].0.resource",
+    (string) (len=91) "link(saveOrderFunction::ordersTable_1).saveOrderFunction[\"iam.policyStatements\"].0.resource"
   }
 })

@@ -2,6 +2,8 @@ package container
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -118,9 +120,13 @@ func determineInstanceDestroyedStatus(rollingBack bool) core.InstanceStatus {
 	return core.InstanceStatusDestroyed
 }
 
-func determineInstanceDeployFailedStatus(rollingBack bool) core.InstanceStatus {
-	if rollingBack {
+func determineInstanceDeployFailedStatus(rollingBack bool, newInstance bool) core.InstanceStatus {
+	if rollingBack && newInstance {
 		return core.InstanceStatusDestroyRollbackFailed
+	}
+
+	if !newInstance {
+		return core.InstanceStatusUpdateFailed
 	}
 
 	return core.InstanceStatusDeployFailed
@@ -134,6 +140,36 @@ func determineInstanceDestroyingStatus(rollingBack bool) core.InstanceStatus {
 	}
 
 	return core.InstanceStatusDestroying
+}
+
+func determineInstanceDeployingStatus(rollingBack bool, newInstance bool) core.InstanceStatus {
+	if rollingBack && newInstance {
+		// If the context is deploying an instance as a part of the rollback
+		// process, the status should be rolling back the destruction of the
+		// instance.
+		return core.InstanceStatusDestroyRollingBack
+	}
+
+	if !newInstance {
+		return core.InstanceStatusUpdating
+	}
+
+	return core.InstanceStatusDeploying
+}
+
+func determineInstanceDeployedStatus(rollingBack bool, newInstance bool) core.InstanceStatus {
+	if rollingBack && newInstance {
+		// If the context is deploying an instance as a part of the rollback
+		// process, the status should be rolling back the destruction of the
+		// instance.
+		return core.InstanceStatusDestroyRollbackComplete
+	}
+
+	if !newInstance {
+		return core.InstanceStatusUpdated
+	}
+
+	return core.InstanceStatusDeployed
 }
 
 func determineLinkUpdatingStatus(
@@ -413,6 +449,29 @@ func determineOperation(deployCtx *deployContext) string {
 	}
 
 	return "deploy"
+}
+
+func checkDeploymentForNewInstance(input *DeployInput) (bool, error) {
+	if input.Changes == nil {
+		return input.InstanceID == "", nil
+	}
+
+	hasExistingResourceChanges := len(input.Changes.ResourceChanges) > 0 ||
+		len(input.Changes.RemovedResources) > 0
+
+	hasExistingChildChanges := len(input.Changes.ChildChanges) > 0 ||
+		len(input.Changes.RemovedChildren) > 0 ||
+		len(input.Changes.RecreateChildren) > 0
+
+	if input.InstanceID == "" && (hasExistingResourceChanges || hasExistingChildChanges) {
+		return false, errInstanceIDRequiredForChanges()
+	}
+
+	isForNewInstance := input.InstanceID == "" &&
+		!hasExistingResourceChanges &&
+		!hasExistingChildChanges
+
+	return isForNewInstance, nil
 }
 
 func isResourceDestroyEvent(preciseStatus core.PreciseResourceStatus, rollingBack bool) bool {
@@ -824,6 +883,23 @@ func stashLinkDurationInfo(
 	deployState.linkDurationInfo[linkName] = copyLinkCompletionDurations(durationInfo)
 }
 
+func getPrepareDuration(state *deploymentState) *time.Duration {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	return state.prepareDuration
+}
+
+func stashPrepareDuration(
+	prepareDuration time.Duration,
+	state *deploymentState,
+) {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	state.prepareDuration = &prepareDuration
+}
+
 func copyLinkCompletionDurations(durations *state.LinkCompletionDurations) *state.LinkCompletionDurations {
 	if durations == nil {
 		return &state.LinkCompletionDurations{}
@@ -914,6 +990,55 @@ func finishedToChildUpdateMessage(
 		UpdateTimestamp:  msg.UpdateTimestamp,
 		Durations:        msg.Durations,
 	}
+}
+
+func getResourceChangeInfo(
+	resourceName string,
+	changes *BlueprintChanges,
+) *resourceChangeDeployInfo {
+	for changeResourceName, resourceChanges := range changes.ResourceChanges {
+		if changeResourceName == resourceName {
+			return &resourceChangeDeployInfo{
+				isNew:   false,
+				changes: &resourceChanges,
+			}
+		}
+	}
+
+	for newResourceName, resourceChanges := range changes.NewResources {
+		if newResourceName == resourceName {
+			return &resourceChangeDeployInfo{
+				isNew:   true,
+				changes: &resourceChanges,
+			}
+		}
+	}
+
+	return nil
+}
+
+func getResolvedResourceFromChanges(
+	changes *provider.Changes,
+) *provider.ResolvedResource {
+	if changes == nil {
+		return nil
+	}
+
+	return changes.AppliedResourceInfo.ResourceWithResolvedSubs
+}
+
+type resourceChangeDeployInfo struct {
+	isNew   bool
+	changes *provider.Changes
+}
+
+func resourceHasFieldsToResolve(
+	resourceName string,
+	resolvePaths []string,
+) bool {
+	return slices.ContainsFunc(resolvePaths, func(path string) bool {
+		return strings.HasPrefix(path, core.ResourceElementID(resourceName))
+	})
 }
 
 func createRetryInfo(policy *provider.RetryPolicy) *retryInfo {

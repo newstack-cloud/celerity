@@ -685,6 +685,33 @@ func getResourceTypesForLink(linkName string, currentState *state.InstanceState)
 	return resourceAState.ResourceType, resourceBState.ResourceType, nil
 }
 
+func toFullLinkPath(
+	resourceAName string,
+	resourceBName string,
+) func(string, int) string {
+	return func(linkFieldPath string, _ int) string {
+		linkName := linkElementID(
+			createLogicalLinkName(resourceAName, resourceBName),
+		)
+		if strings.HasPrefix(linkFieldPath, "[") {
+			return fmt.Sprintf("%s%s", linkName, linkFieldPath)
+		}
+		return fmt.Sprintf("%s.%s", linkName, linkFieldPath)
+	}
+}
+
+func toFullResourcePath(
+	resourceName string,
+) func(string, int) string {
+	return func(resourceFieldPath string, _ int) string {
+		resourceName := core.ResourceElementID(resourceName)
+		if strings.HasPrefix(resourceFieldPath, "[") {
+			return fmt.Sprintf("%s%s", resourceName, resourceFieldPath)
+		}
+		return fmt.Sprintf("%s.%s", resourceName, resourceFieldPath)
+	}
+}
+
 func getNamespacedLogicalName(element state.Element) string {
 	switch element.Kind() {
 	case state.ResourceElement:

@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
+	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 const (
@@ -20,6 +22,50 @@ func (c *defaultBlueprintContainer) Deploy(
 	input *DeployInput,
 	channels *DeployChannels,
 	paramOverrides core.BlueprintParams,
+) error {
+	instanceID, err := c.getInstanceID(input)
+	if err != nil {
+		return err
+	}
+
+	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, instanceID)
+	state := &deploymentState{
+		pendingLinks:               map[string]*linkPendingCompletion{},
+		resourceNamePendingLinkMap: map[string][]string{},
+		destroyed:                  map[string]state.Element{},
+		created:                    map[string]state.Element{},
+		updated:                    map[string]state.Element{},
+		linkDurationInfo:           map[string]*state.LinkCompletionDurations{},
+	}
+
+	isNewInstance, err := checkDeploymentForNewInstance(input)
+	if err != nil {
+		return err
+	}
+
+	go c.deploy(
+		ctxWithInstanceID,
+		&DeployInput{
+			InstanceID: instanceID,
+			Changes:    input.Changes,
+			Rollback:   input.Rollback,
+		},
+		channels,
+		state,
+		isNewInstance,
+		paramOverrides,
+	)
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) deploy(
+	ctx context.Context,
+	input *DeployInput,
+	channels *DeployChannels,
+	state *deploymentState,
+	isNewInstance bool,
+	paramOverrides core.BlueprintParams,
 ) {
 	instanceTreePath := getInstanceTreePath(paramOverrides, input.InstanceID)
 	if exceedsMaxDepth(instanceTreePath, MaxBlueprintDepth) {
@@ -30,36 +76,10 @@ func (c *defaultBlueprintContainer) Deploy(
 		return
 	}
 
-	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, input.InstanceID)
-	state := &deploymentState{
-		pendingLinks:               map[string]*linkPendingCompletion{},
-		resourceNamePendingLinkMap: map[string][]string{},
-		destroyed:                  map[string]state.Element{},
-		created:                    map[string]state.Element{},
-		updated:                    map[string]state.Element{},
-		linkDurationInfo:           map[string]*state.LinkCompletionDurations{},
-	}
-
-	c.deploy(
-		ctxWithInstanceID,
-		input,
-		channels,
-		state,
-		paramOverrides,
-	)
-}
-
-func (c *defaultBlueprintContainer) deploy(
-	ctx context.Context,
-	input *DeployInput,
-	channels *DeployChannels,
-	state *deploymentState,
-	paramOverrides core.BlueprintParams,
-) {
 	if input.Changes == nil {
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
 			input.InstanceID,
-			determineInstanceDeployFailedStatus(input.Rollback),
+			determineInstanceDeployFailedStatus(input.Rollback, isNewInstance),
 			[]string{emptyChangesDeployFailedMessage(input.Rollback)},
 			/* elapsedTime */ 0,
 			/* prepareElapsedTime */ nil,
@@ -79,7 +99,7 @@ func (c *defaultBlueprintContainer) deploy(
 	if err != nil {
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
 			input.InstanceID,
-			determineInstanceDeployFailedStatus(input.Rollback),
+			determineInstanceDeployFailedStatus(input.Rollback, isNewInstance),
 			[]string{prepareFailureMessage},
 			c.clock.Since(startTime),
 			/* prepareElapsedTime */ nil,
@@ -99,7 +119,7 @@ func (c *defaultBlueprintContainer) deploy(
 	if err != nil {
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
 			input.InstanceID,
-			determineInstanceDeployFailedStatus(input.Rollback),
+			determineInstanceDeployFailedStatus(input.Rollback, isNewInstance),
 			[]string{prepareFailureMessage},
 			c.clock.Since(startTime),
 			/* prepareElapsedTime */ nil,
@@ -120,24 +140,124 @@ func (c *defaultBlueprintContainer) deploy(
 
 	flattenedNodes := core.Flatten(processed.parallelGroups)
 
-	_, err = c.removeElements(
+	sentFinishedMessage, err := c.removeElements(
 		ctx,
 		input,
 		deployCtx,
 		flattenedNodes,
 	)
 	if err != nil {
-		channels.ErrChan <- err
+		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
+		return
+	}
+	if sentFinishedMessage {
 		return
 	}
 
-	// Get all components to be deployed or updated.
-	// Order components based on dependencies in the blueprint.
-	// Group components so those that are not connected can be deployed in parallel.
+	err = c.saveNewInstance(
+		ctx,
+		input.InstanceID,
+		isNewInstance,
+		determineInstanceDeployingStatus(input.Rollback, isNewInstance),
+	)
+	if err != nil {
+		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
+		return
+	}
+
+	sentFinishedMessage, err = c.deployElements(
+		ctx,
+		input,
+		deployCtx,
+		processed.parallelGroups,
+		isNewInstance,
+	)
+	if err != nil {
+		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
+		return
+	}
+	if sentFinishedMessage {
+		return
+	}
+
+	channels.FinishChan <- c.createDeploymentFinishedMessage(
+		input.InstanceID,
+		determineInstanceDeployedStatus(input.Rollback, isNewInstance),
+		[]string{},
+		c.clock.Since(startTime),
+		/* prepareElapsedTime */ nil,
+	)
+}
+
+func (c *defaultBlueprintContainer) getInstanceID(input *DeployInput) (string, error) {
+	if input.InstanceID == "" {
+		return c.idGenerator.GenerateID()
+	}
+
+	return input.InstanceID, nil
+}
+
+func (c *defaultBlueprintContainer) saveNewInstance(
+	ctx context.Context,
+	instanceID string,
+	isNewInstance bool,
+	currentStatus core.InstanceStatus,
+) error {
+	if !isNewInstance {
+		return nil
+	}
+
+	return c.stateContainer.Instances().Save(
+		ctx,
+		state.InstanceState{
+			InstanceID: instanceID,
+			Status:     currentStatus,
+		},
+	)
+}
+
+func (c *defaultBlueprintContainer) deployElements(
+	ctx context.Context,
+	input *DeployInput,
+	deployCtx *deployContext,
+	groups [][]*DeploymentNode,
+	newInstance bool,
+) (bool, error) {
+	internalChannels := CreateDeployChannels()
+	prepareElapsedTime := getPrepareDuration(deployCtx.state)
+	if len(groups) == 0 {
+		deployCtx.channels.FinishChan <- c.createDeploymentFinishedMessage(
+			input.InstanceID,
+			determineInstanceDeployedStatus(input.Rollback, newInstance),
+			[]string{},
+			c.clock.Since(deployCtx.startTime),
+			prepareElapsedTime,
+		)
+		return true, nil
+	}
+
+	c.startDeploymentFromFirstGroup(
+		ctx,
+		input.InstanceID,
+		groups,
+		input.Changes,
+		deployCtx,
+	)
+
+	stopProcessing, err := c.listenToAndProcessDeploymentEvents(
+		ctx,
+		input.InstanceID,
+		deployCtx,
+		internalChannels,
+	)
+
+	return stopProcessing, err
+
+	// Deploy the first group of elements concurrently.
+
 	// Unlike with change staging, groups are not executed as a unit, they are used as
 	// pools to look for components that can be deployed based on the current state of deployment.
 	// For each component to be created or updated (including recreated children):
-	//  - If resource, resolve condition, check if condition is met, if not, skip deployment.
 	//  - call Deploy method component (resource or child blueprint)
 	//      - handle specialised provider errors (retryable, resource deploy errors etc.)
 	//  - If component is resource and is in config complete status, check if any of its dependents
@@ -148,6 +268,134 @@ func (c *defaultBlueprintContainer) deploy(
 	//     - If so, deploy the link.
 	//	- On failure that can not be retried, roll back all changes successfully made for the current deployment.
 	//     - See notes on deployment rollback for how this should be implemented for different states.
+}
+
+func (c *defaultBlueprintContainer) startDeploymentFromFirstGroup(
+	ctx context.Context,
+	instanceID string,
+	groups [][]*DeploymentNode,
+	changes *BlueprintChanges,
+	deployCtx *deployContext,
+) {
+	instanceTreePath := getInstanceTreePath(deployCtx.paramOverrides, instanceID)
+
+	for _, node := range groups[0] {
+		if node.Type() == "resource" {
+			go c.prepareAndDeployResource(
+				ctx,
+				instanceID,
+				node.ChainLinkNode,
+				changes,
+				deployCtx,
+			)
+		} else if node.Type() == "child" {
+			includeTreePath := getIncludeTreePath(deployCtx.paramOverrides, node.Name())
+			go c.prepareAndDeployChild(
+				ctx,
+				instanceID,
+				instanceTreePath,
+				includeTreePath,
+				node.ChildNode,
+				changes,
+				deployCtx,
+			)
+		}
+	}
+}
+
+func (c *defaultBlueprintContainer) prepareAndDeployResource(
+	ctx context.Context,
+	instanceID string,
+	chainLinkNode *links.ChainLinkNode,
+	changes *BlueprintChanges,
+	deployCtx *deployContext,
+) {
+	resourceChangeInfo := getResourceChangeInfo(chainLinkNode.ResourceName, changes)
+	if resourceChangeInfo == nil {
+		// todo: write error to channel
+		return
+	}
+	partiallyResolvedResource := getResolvedResourceFromChanges(resourceChangeInfo.changes)
+	if partiallyResolvedResource == nil {
+		// todo: write error to channel
+		return
+	}
+	resolvedResource, err := c.resolveResourceForDeployment(
+		ctx,
+		partiallyResolvedResource,
+		chainLinkNode,
+		changes.ResolveOnDeploy,
+	)
+	if err != nil {
+		// todo: write error to channel
+		return
+	}
+
+	_, err = c.getProviderResourceImplementation(
+		ctx,
+		chainLinkNode.ResourceName,
+		resolvedResource.Type.Value,
+		deployCtx.resourceProviders,
+	)
+	if err != nil {
+		// todo: write error to channel
+		return
+	}
+}
+
+func (c *defaultBlueprintContainer) resolveResourceForDeployment(
+	ctx context.Context,
+	partiallyResolvedResource *provider.ResolvedResource,
+	node *links.ChainLinkNode,
+	resolveOnDeploy []string,
+) (*provider.ResolvedResource, error) {
+	if !resourceHasFieldsToResolve(node.ResourceName, resolveOnDeploy) {
+		return partiallyResolvedResource, nil
+	}
+
+	// todo: update change staging so ResolveOnDeploy is populated!!!
+
+	resolveResourceResult, err := c.substitutionResolver.ResolveInResource(
+		ctx,
+		node.ResourceName,
+		node.Resource,
+		&subengine.ResolveResourceTargetInfo{
+			ResolveFor:        subengine.ResolveForDeployment,
+			PartiallyResolved: partiallyResolvedResource,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the resolved resource so that it can be used in resolving other elements
+	// that reference fields in the current resource.
+	c.resourceCache.Set(
+		node.ResourceName,
+		resolveResourceResult.ResolvedResource,
+	)
+
+	return resolveResourceResult.ResolvedResource, nil
+}
+
+func (c *defaultBlueprintContainer) prepareAndDeployChild(
+	ctx context.Context,
+	instanceID string,
+	instanceTreePath string,
+	includeTreePath string,
+	childNode *validation.ReferenceChainNode,
+	changes *BlueprintChanges,
+	deployCtx *deployContext,
+) {
+}
+
+func (c *defaultBlueprintContainer) listenToAndProcessDeploymentEvents(
+	ctx context.Context,
+	instanceID string,
+	deployCtx *deployContext,
+	internalChannels *DeployChannels,
+) (bool, error) {
+	return false, nil
 }
 
 func (c *defaultBlueprintContainer) handleResourceUpdateMessage(

@@ -85,7 +85,7 @@ func (c *defaultBlueprintContainer) destroy(
 
 	resourceProviderMap := c.resourceProviderMapFromState(&currentInstanceState)
 
-	finished, err := c.removeElements(
+	sentFinishedMessage, err := c.removeElements(
 		ctx,
 		&DeployInput{
 			InstanceID: input.InstanceID,
@@ -109,11 +109,11 @@ func (c *defaultBlueprintContainer) destroy(
 		return
 	}
 
-	if finished {
+	if sentFinishedMessage {
 		return
 	}
 
-	sentFinishedMessage := c.removeBlueprintInstanceFromState(ctx, input, channels, startTime, instances)
+	sentFinishedMessage = c.removeBlueprintInstanceFromState(ctx, input, channels, startTime, instances)
 	if sentFinishedMessage {
 		return
 	}
@@ -191,15 +191,16 @@ func (c *defaultBlueprintContainer) removeElements(
 		// elements to be removed, they will always be processed first, this allows us to more
 		// accurately track duration as the prepare phase is complete once the elements to be
 		// removed have been collected, ordered and grouped.
-		// In the case where there are no elements to be removed, the prepare duration
-		// will be stashed in the deploy phase.
+		// In the case where there are no elements to be removed, this will still be called
+		// for a deployment, as removal of existing elements is always processed first,
+		// this is a reliable way to track the prepare duration and send the status change.
 		stashPrepareDuration(
 			c.clock.Since(deployCtx.startTime),
 			deployCtx.state,
 		)
 		deployCtx.channels.DeploymentUpdateChan <- DeploymentUpdateMessage{
 			InstanceID:      input.InstanceID,
-			Status:          core.InstanceStatusDeploying,
+			Status:          determineInstanceDeployingStatus(input.Rollback, false /* newInstance */),
 			UpdateTimestamp: c.clock.Now().Unix(),
 		}
 	}
@@ -230,7 +231,7 @@ func (c *defaultBlueprintContainer) removeGroupedElements(
 	var err error
 	for !stopProcessing && i < len(parallelGroups) {
 		group := parallelGroups[i]
-		c.stageGroupRemovals(
+		c.removeGroupElements(
 			ctx,
 			instanceID,
 			group,
@@ -477,17 +478,7 @@ func (c *defaultBlueprintContainer) handleLinkDestroyEvent(
 	return nil
 }
 
-func stashPrepareDuration(
-	prepareDuration time.Duration,
-	state *deploymentState,
-) {
-	state.mu.Lock()
-	defer state.mu.Unlock()
-
-	state.prepareDuration = &prepareDuration
-}
-
-func (c *defaultBlueprintContainer) stageGroupRemovals(
+func (c *defaultBlueprintContainer) removeGroupElements(
 	ctx context.Context,
 	instanceID string,
 	group []state.Element,
