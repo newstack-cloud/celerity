@@ -226,6 +226,7 @@ type defaultBlueprintContainer struct {
 	defaultRetryPolicy             *provider.RetryPolicy
 	createDeploymentState          func() DeploymentState
 	createChangeStagingState       func() ChangeStagingState
+	blueprintPreparer              BlueprintPreparer
 }
 
 // ChildBlueprintLoaderFactory provides a factory function for creating a new loader
@@ -267,6 +268,7 @@ type BlueprintContainerDependencies struct {
 	DefaultRetryPolicy             *provider.RetryPolicy
 	DeploymentStateFactory         DeploymentStateFactory
 	ChangeStagingStateFactory      ChangeStagingStateFactory
+	BlueprintPreparer              BlueprintPreparer
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -300,6 +302,7 @@ func NewDefaultBlueprintContainer(
 		deps.DefaultRetryPolicy,
 		deps.DeploymentStateFactory,
 		deps.ChangeStagingStateFactory,
+		deps.BlueprintPreparer,
 	}
 }
 
@@ -443,10 +446,4 @@ func (r *ChildBlueprintIDInfo) LogicalName() string {
 
 func (r *ChildBlueprintIDInfo) Kind() state.ElementKind {
 	return state.ChildElement
-}
-
-type processedBlueprintDeps struct {
-	resourceProviderMap map[string]provider.Provider
-	blueprintContainer  BlueprintContainer
-	parallelGroups      [][]*DeploymentNode
 }

@@ -102,10 +102,12 @@ func (c *defaultBlueprintContainer) deploy(
 	// Use the same behaviour as change staging to extract the nodes
 	// that need to be deployed or updated where they are grouped for concurrent deployment
 	// and in order based on links, references and use of the `dependsOn` property.
-	processed, err := c.processBlueprint(
+	prepareResult, err := c.blueprintPreparer.Prepare(
 		ctx,
+		c.spec.Schema(),
 		subengine.ResolveForDeployment,
 		input.Changes,
+		c.linkInfo,
 		paramOverrides,
 	)
 	if err != nil {
@@ -127,11 +129,11 @@ func (c *defaultBlueprintContainer) deploy(
 		channels:              channels,
 		paramOverrides:        paramOverrides,
 		instanceStateSnapshot: &currentInstanceState,
-		resourceProviders:     processed.resourceProviderMap,
-		deploymentGroups:      processed.parallelGroups,
+		resourceProviders:     prepareResult.ResourceProviderMap,
+		deploymentGroups:      prepareResult.ParallelGroups,
 	}
 
-	flattenedNodes := core.Flatten(processed.parallelGroups)
+	flattenedNodes := core.Flatten(prepareResult.ParallelGroups)
 
 	sentFinishedMessage, err := c.removeElements(
 		ctx,

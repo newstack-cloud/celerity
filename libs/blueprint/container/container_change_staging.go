@@ -38,10 +38,12 @@ func (c *defaultBlueprintContainer) StageChanges(
 		return nil
 	}
 
-	processed, err := c.processBlueprint(
+	prepareResult, err := c.blueprintPreparer.Prepare(
 		ctxWithInstanceID,
+		c.spec.Schema(),
 		subengine.ResolveForChangeStaging,
 		/* changes */ nil,
+		c.linkInfo,
 		paramOverrides,
 	)
 	if err != nil {
@@ -51,10 +53,10 @@ func (c *defaultBlueprintContainer) StageChanges(
 	go c.stageChanges(
 		ctxWithInstanceID,
 		input.InstanceID,
-		processed.parallelGroups,
+		prepareResult.ParallelGroups,
 		paramOverrides,
-		processed.resourceProviderMap,
-		processed.blueprintContainer.BlueprintSpec().Schema(),
+		prepareResult.ResourceProviderMap,
+		prepareResult.BlueprintContainer.BlueprintSpec().Schema(),
 		channels,
 	)
 
@@ -984,172 +986,6 @@ func (c *defaultBlueprintContainer) resolveExport(
 	}
 
 	return nil, nil
-}
-
-func (c *defaultBlueprintContainer) applyResourceConditions(
-	ctx context.Context,
-	blueprint *schema.Blueprint,
-	resolveFor subengine.ResolveForStage,
-	changes *BlueprintChanges,
-) (*schema.Blueprint, error) {
-
-	if blueprint.Resources == nil {
-		return blueprint, nil
-	}
-
-	resourcesAfterConditions := map[string]*schema.Resource{}
-	for resourceName, resource := range blueprint.Resources.Values {
-		if resource.Condition != nil {
-			partiallyResolved := getPartiallyResolvedResourceFromChanges(changes, resourceName)
-			resolveResourceResult, err := c.substitutionResolver.ResolveInResource(
-				ctx,
-				resourceName,
-				resource,
-				&subengine.ResolveResourceTargetInfo{
-					ResolveFor:        resolveFor,
-					PartiallyResolved: partiallyResolved,
-				},
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			conditionKnownOnDeploy := isConditionKnownOnDeploy(
-				resourceName,
-				resolveResourceResult.ResolveOnDeploy,
-			)
-			if resolveFor == subengine.ResolveForChangeStaging &&
-				(conditionKnownOnDeploy ||
-					evaluateCondition(resolveResourceResult.ResolvedResource.Condition)) {
-
-				c.resourceCache.Set(resourceName, resolveResourceResult.ResolvedResource)
-
-				resourcesAfterConditions[resourceName] = resource
-			}
-		} else {
-			resourcesAfterConditions[resourceName] = resource
-		}
-	}
-
-	return &schema.Blueprint{
-		Version:   blueprint.Version,
-		Transform: blueprint.Transform,
-		Variables: blueprint.Variables,
-		Values:    blueprint.Values,
-		Include:   blueprint.Include,
-		Resources: &schema.ResourceMap{
-			Values: resourcesAfterConditions,
-		},
-		DataSources: blueprint.DataSources,
-		Exports:     blueprint.Exports,
-		Metadata:    blueprint.Metadata,
-	}, nil
-}
-
-func (c *defaultBlueprintContainer) processBlueprint(
-	ctx context.Context,
-	resolveFor subengine.ResolveForStage,
-	changes *BlueprintChanges,
-	paramOverrides core.BlueprintParams,
-) (*processedBlueprintDeps, error) {
-	expandedBlueprintContainer, err := c.expandResourceTemplates(
-		ctx,
-		resolveFor,
-		changes,
-		paramOverrides,
-	)
-	if err != nil {
-		return nil, wrapErrorForChildContext(err, paramOverrides)
-	}
-
-	chains, err := expandedBlueprintContainer.SpecLinkInfo().Links(ctx)
-	if err != nil {
-		return nil, wrapErrorForChildContext(err, paramOverrides)
-	}
-
-	// We must use the ref chain collector from the expanded blueprint to correctly
-	// order and resolve references for resources expanded from templates
-	// in the blueprint.
-	refChainCollector := expandedBlueprintContainer.RefChainCollector()
-
-	childrenRefNodes := extractChildRefNodes(expandedBlueprintContainer.BlueprintSpec().Schema(), refChainCollector)
-	orderedNodes, err := OrderItemsForDeployment(ctx, chains, childrenRefNodes, refChainCollector, paramOverrides)
-	if err != nil {
-		return nil, wrapErrorForChildContext(err, paramOverrides)
-	}
-	parallelGroups, err := GroupOrderedNodes(orderedNodes, refChainCollector)
-	if err != nil {
-		return nil, wrapErrorForChildContext(err, paramOverrides)
-	}
-
-	expandedResourceProviderMap := createResourceProviderMap(
-		expandedBlueprintContainer.BlueprintSpec(),
-		c.providers,
-	)
-
-	return &processedBlueprintDeps{
-		blueprintContainer:  expandedBlueprintContainer,
-		parallelGroups:      parallelGroups,
-		resourceProviderMap: expandedResourceProviderMap,
-	}, nil
-}
-
-func (c *defaultBlueprintContainer) expandResourceTemplates(
-	ctx context.Context,
-	resolveFor subengine.ResolveForStage,
-	changes *BlueprintChanges,
-	params core.BlueprintParams,
-) (BlueprintContainer, error) {
-
-	chains, err := c.linkInfo.Links(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	expandResult, err := ExpandResourceTemplates(
-		ctx,
-		c.spec.Schema(),
-		c.substitutionResolver,
-		chains,
-		c.resourceTemplateInputElemCache,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	populateDefaultsIn := c.spec.Schema()
-	if len(expandResult.ResourceTemplateMap) > 0 {
-		populateDefaultsIn = expandResult.ExpandedBlueprint
-	}
-
-	// Populate defaults before applying conditions to ensure that the
-	// resolved resources that are cached when applying conditions
-	// are populated with the default values.
-	applyConditionsTo, err := PopulateResourceSpecDefaults(
-		ctx,
-		populateDefaultsIn,
-		params,
-		c.resourceRegistry,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	afterConditionsApplied, err := c.applyResourceConditions(
-		ctx,
-		applyConditionsTo,
-		resolveFor,
-		changes,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	loader := c.createChildBlueprintLoader(
-		flattenMapLists(expandResult.ResourceTemplateMap),
-		invertMap(expandResult.ResourceTemplateMap),
-	)
-	return loader.LoadFromSchema(ctx, afterConditionsApplied, params)
 }
 
 func (c *defaultBlueprintContainer) stageInstanceRemoval(

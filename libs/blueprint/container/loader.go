@@ -563,6 +563,14 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		blueprintSpec,
 		params,
 	)
+	blueprintPreparer := NewDefaultBlueprintPreparer(
+		l.providers,
+		substitutionResolver,
+		resourceTemplateInputElemCache,
+		l.resourceRegistry,
+		resourceCache,
+		l.forChildBlueprint,
+	)
 	container := NewDefaultBlueprintContainer(
 		blueprintSpec,
 		&BlueprintContainerDependencies{
@@ -585,6 +593,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			DefaultRetryPolicy:             l.defaultRetryPolicy,
 			DeploymentStateFactory:         l.deploymentStateFactory,
 			ChangeStagingStateFactory:      l.changeStagingStateFactory,
+			BlueprintPreparer:              blueprintPreparer,
 		},
 		diagnostics,
 	)
