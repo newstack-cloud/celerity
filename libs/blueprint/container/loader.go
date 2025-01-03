@@ -611,6 +611,15 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		substitutionResolver,
 		resourceCache,
 	)
+	// As the child change stager uses the child export field cache and
+	// substitution resolver, it must be created for each blueprint container that is loaded.
+	childChangeStager := NewDefaultChildChangeStager(
+		l.childResolver,
+		l.forChildBlueprint,
+		l.stateContainer,
+		childExportFieldCache,
+		substitutionResolver,
+	)
 
 	return &BlueprintContainerDependencies{
 		StateContainer:                 l.stateContainer,
@@ -634,6 +643,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ChangeStagingStateFactory:      l.changeStagingStateFactory,
 		BlueprintPreparer:              blueprintPreparer,
 		LinkChangeStager:               linkChangeStager,
+		ChildChangeStager:              childChangeStager,
 	}
 }
 

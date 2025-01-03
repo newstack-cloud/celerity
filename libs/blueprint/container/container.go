@@ -228,6 +228,7 @@ type defaultBlueprintContainer struct {
 	createChangeStagingState       func() ChangeStagingState
 	blueprintPreparer              BlueprintPreparer
 	linkChangeStager               LinkChangeStager
+	childChangeStager              ChildChangeStager
 }
 
 // ChildBlueprintLoaderFactory provides a factory function for creating a new loader
@@ -271,6 +272,7 @@ type BlueprintContainerDependencies struct {
 	ChangeStagingStateFactory      ChangeStagingStateFactory
 	BlueprintPreparer              BlueprintPreparer
 	LinkChangeStager               LinkChangeStager
+	ChildChangeStager              ChildChangeStager
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -306,6 +308,7 @@ func NewDefaultBlueprintContainer(
 		deps.ChangeStagingStateFactory,
 		deps.BlueprintPreparer,
 		deps.LinkChangeStager,
+		deps.ChildChangeStager,
 	}
 }
 
