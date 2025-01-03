@@ -160,16 +160,18 @@ type defaultLoader struct {
 	// A list of resource names derived from resource templates.
 	// "elem" and "i" references should be allowed in resources
 	// derived from templates where the `each` property is not set.
-	derivedFromTemplates     []string
-	refChainCollectorFactory func() validation.RefChainCollector
-	funcRegistry             provider.FunctionRegistry
-	resourceRegistry         resourcehelpers.Registry
-	dataSourceRegistry       provider.DataSourceRegistry
-	linkRegistry             provider.LinkRegistry
-	clock                    bpcore.Clock
-	resolveWorkingDir        corefunctions.WorkingDirResolver
-	idGenerator              bpcore.IDGenerator
-	defaultRetryPolicy       *provider.RetryPolicy
+	derivedFromTemplates      []string
+	refChainCollectorFactory  func() validation.RefChainCollector
+	funcRegistry              provider.FunctionRegistry
+	resourceRegistry          resourcehelpers.Registry
+	dataSourceRegistry        provider.DataSourceRegistry
+	linkRegistry              provider.LinkRegistry
+	clock                     bpcore.Clock
+	resolveWorkingDir         corefunctions.WorkingDirResolver
+	idGenerator               bpcore.IDGenerator
+	defaultRetryPolicy        *provider.RetryPolicy
+	deploymentStateFactory    DeploymentStateFactory
+	changeStagingStateFactory ChangeStagingStateFactory
 	// A mapping of resource names to the templates they were derived from.
 	// This is only populated for a loader when loading a derived blueprint
 	// where templates are not used in the derived blueprint but were
@@ -307,6 +309,26 @@ func WithLoaderLinkRegistry(linkRegistry provider.LinkRegistry) LoaderOption {
 	}
 }
 
+// WithLoaderDeploymentStateFactory sets the deployment state factory to be used by the loader.
+//
+// When this option is not provided, the default deployment state factory is used
+// to create an ephemeral, thread-safe store for deployment state.
+func WithLoaderDeploymentStateFactory(deploymentStateFactory DeploymentStateFactory) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.deploymentStateFactory = deploymentStateFactory
+	}
+}
+
+// WithLoaderChangeStagingStateFactory sets the change staging state factory to be used by the loader.
+//
+// When this option is not provided, the default change staging state factory is used
+// to create an ephemeral, thread-safe store for staging changes.
+func WithLoaderChangeStagingStateFactory(changeStagingStateFactory ChangeStagingStateFactory) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.changeStagingStateFactory = changeStagingStateFactory
+	}
+}
+
 // WithLoaderResourceTemplates sets the resource templates to be used by the loader.
 // Resource templates are a mapping of resource names to the templates they were derived from.
 // This is useful when loading a derived blueprint where templates are not used but were
@@ -318,6 +340,26 @@ func WithLoaderLinkRegistry(linkRegistry provider.LinkRegistry) LoaderOption {
 func WithLoaderResourceTemplates(resourceTemplates map[string]string) LoaderOption {
 	return func(loader *defaultLoader) {
 		loader.resourceTemplates = resourceTemplates
+	}
+}
+
+// WithLoaderResourceChangeStager sets the resource change stager to be used in blueprint
+// containers created by the loader.
+//
+// When this option is not provided, the default resource change stager is used.
+func WithLoaderResourceChangeStager(changeStager ResourceChangeStager) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.resourceChangeStager = changeStager
+	}
+}
+
+// WithLoaderRefChainCollectorFactory sets the reference chain collector factory to be used by the loader.
+//
+// When this option is not provided, the default reference chain collector factory
+// provided by the validation package is used.
+func WithLoaderRefChainCollectorFactory(factory func() validation.RefChainCollector) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.refChainCollectorFactory = factory
 	}
 }
 
@@ -339,9 +381,7 @@ func NewDefaultLoader(
 	providers map[string]provider.Provider,
 	specTransformers map[string]transform.SpecTransformer,
 	stateContainer state.Container,
-	resourceChangeStager ResourceChangeStager,
 	childResolver includes.ChildResolver,
-	refChainCollectorFactory func() validation.RefChainCollector,
 	opts ...LoaderOption,
 ) Loader {
 	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers)
@@ -351,22 +391,24 @@ func NewDefaultLoader(
 	internalProviders := copyProviderMap(providers)
 
 	loader := &defaultLoader{
-		providers:                internalProviders,
-		specTransformers:         specTransformers,
-		stateContainer:           stateContainer,
-		resourceChangeStager:     resourceChangeStager,
-		childResolver:            childResolver,
-		refChainCollectorFactory: refChainCollectorFactory,
-		funcRegistry:             funcRegistry,
-		resourceRegistry:         resourceRegistry,
-		dataSourceRegistry:       dataSourceRegistry,
-		linkRegistry:             linkRegistry,
-		clock:                    &bpcore.SystemClock{},
-		resolveWorkingDir:        os.Getwd,
-		derivedFromTemplates:     []string{},
-		idGenerator:              bpcore.NewUUIDGenerator(),
-		defaultRetryPolicy:       provider.DefaultRetryPolicy,
-		resourceTemplates:        map[string]string{},
+		providers:                 internalProviders,
+		specTransformers:          specTransformers,
+		stateContainer:            stateContainer,
+		resourceChangeStager:      NewDefaultResourceChangeStager(),
+		childResolver:             childResolver,
+		refChainCollectorFactory:  validation.NewRefChainCollector,
+		funcRegistry:              funcRegistry,
+		resourceRegistry:          resourceRegistry,
+		dataSourceRegistry:        dataSourceRegistry,
+		linkRegistry:              linkRegistry,
+		clock:                     &bpcore.SystemClock{},
+		resolveWorkingDir:         os.Getwd,
+		derivedFromTemplates:      []string{},
+		idGenerator:               bpcore.NewUUIDGenerator(),
+		defaultRetryPolicy:        provider.DefaultRetryPolicy,
+		deploymentStateFactory:    NewDefaultDeploymentState,
+		changeStagingStateFactory: NewDefaultChangeStagingState,
+		resourceTemplates:         map[string]string{},
 	}
 
 	for _, opt := range opts {
@@ -393,9 +435,7 @@ func (l *defaultLoader) forChildBlueprint(
 		l.providers,
 		l.specTransformers,
 		l.stateContainer,
-		l.resourceChangeStager,
 		l.childResolver,
-		l.refChainCollectorFactory,
 		WithLoaderValidateRuntimeValues(l.validateRuntimeValues),
 		WithLoaderValidateAfterTransform(l.validateAfterTransform),
 		WithLoaderTransformSpec(l.transformSpec),
@@ -408,7 +448,11 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderFunctionRegistry(l.funcRegistry),
 		WithLoaderDataSourceRegistry(l.dataSourceRegistry),
 		WithLoaderLinkRegistry(l.linkRegistry),
+		WithLoaderDeploymentStateFactory(l.deploymentStateFactory),
+		WithLoaderChangeStagingStateFactory(l.changeStagingStateFactory),
 		WithLoaderResourceTemplates(resourceTemplates),
+		WithLoaderResourceChangeStager(l.resourceChangeStager),
+		WithLoaderRefChainCollectorFactory(l.refChainCollectorFactory),
 	)
 }
 
@@ -469,6 +513,8 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				Clock:                       l.clock,
 				IDGenerator:                 l.idGenerator,
 				DefaultRetryPolicy:          l.defaultRetryPolicy,
+				DeploymentStateFactory:      l.deploymentStateFactory,
+				ChangeStagingStateFactory:   l.changeStagingStateFactory,
 			},
 			diagnostics,
 		), diagnostics, err
@@ -494,6 +540,8 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 				Clock:                       l.clock,
 				IDGenerator:                 l.idGenerator,
 				DefaultRetryPolicy:          l.defaultRetryPolicy,
+				DeploymentStateFactory:      l.deploymentStateFactory,
+				ChangeStagingStateFactory:   l.changeStagingStateFactory,
 			},
 			diagnostics,
 		), diagnostics, err
@@ -535,6 +583,8 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 			Clock:                          l.clock,
 			IDGenerator:                    l.idGenerator,
 			DefaultRetryPolicy:             l.defaultRetryPolicy,
+			DeploymentStateFactory:         l.deploymentStateFactory,
+			ChangeStagingStateFactory:      l.changeStagingStateFactory,
 		},
 		diagnostics,
 	)

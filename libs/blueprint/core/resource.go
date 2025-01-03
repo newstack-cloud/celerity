@@ -118,6 +118,12 @@ const (
 	// and the current resource that was successfully
 	// removed could not be rolled back (recreated).
 	PreciseResourceStatusDestroyRollbackFailed
+	// PreciseResourceStatusDestroyRollbackConfigComplete is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// removed has been rolled back (recreated)
+	// but is not yet in a stable state.
+	PreciseResourceStatusDestroyRollbackConfigComplete
 	// PreciseResourceStatusDestroyRollbackComplete is used when
 	// another change in the same blueprint has failed
 	// and the current resource that was successfully
@@ -149,6 +155,12 @@ const (
 	// and the current resource that was successfully
 	// updated could not be rolled back.
 	PreciseResourceStatusUpdateRollbackFailed
+	// PreciseResourceStatusUpdateRollbackConfigComplete is used when
+	// another change in the same blueprint has failed
+	// and the current resource that was successfully
+	// updated has been rolled back to the previous state
+	// but is not yet in a stable state.
+	PreciseResourceStatusUpdateRollbackConfigComplete
 	// PreciseResourceStatusUpdateRollbackComplete is used when
 	// another change in the same blueprint has failed
 	// and the current resource that was successfully

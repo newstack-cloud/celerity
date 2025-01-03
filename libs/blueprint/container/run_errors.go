@@ -73,6 +73,16 @@ const (
 	// during deployment is due to a missing instance ID
 	// when deploying changes that modify existing resources or child blueprints.
 	ErrorReasonCodeDeployMissingInstanceID errors.ErrorReasonCode = "deploy_missing_instance_id"
+	// ErrorReasonCodeDeployMissingResourceChanges
+	// is provided when the reason for an error
+	// during deployment is due to missing changes for a resource
+	// that is being deployed.
+	ErrorReasonCodeDeployMissingResourceChanges errors.ErrorReasonCode = "deploy_missing_resource_changes"
+	// ErrorReasonCodeDeployMissingPartiallyResolvedResource
+	// is provided when the reason for an error
+	// during deployment is due to a missing partially resolved resource
+	// for a resource that is being deployed.
+	ErrorReasonCodeDeployMissingPartiallyResolvedResource errors.ErrorReasonCode = "deploy_missing_partially_resolved_resource"
 	// ErrorReasonCodeChildBlueprintError
 	// is provided when the reason for an error
 	// during deployment or change staging is due to
@@ -228,6 +238,29 @@ func errInstanceIDRequiredForChanges() error {
 			"an instance ID is required for deployments where " +
 				"the provided change set contains modifications " +
 				"to existing resources or child blueprints",
+		),
+	}
+}
+
+func errMissingResourceChanges(resourceName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeDeployMissingResourceChanges,
+		Err: fmt.Errorf(
+			"no changes provided for resource %q, at "+
+				"least one change is required in the provided set of changes",
+			resourceName,
+		),
+	}
+}
+
+func errMissingPartiallyResolvedResource(resourceName string) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeDeployMissingPartiallyResolvedResource,
+		Err: fmt.Errorf(
+			"resource %q is missing from the partially resolved resources, "+
+				"a partially resolved resource must be provided "+
+				"for each resource in the given set of changes",
+			resourceName,
 		),
 	}
 }

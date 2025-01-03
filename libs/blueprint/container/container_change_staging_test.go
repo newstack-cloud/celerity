@@ -65,11 +65,11 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 		providers,
 		specTransformers,
 		stateContainer,
-		resourceChangeStager,
 		newFSChildResolver(),
-		validation.NewRefChainCollector,
 		WithLoaderTransformSpec(false),
 		WithLoaderValidateRuntimeValues(true),
+		WithLoaderResourceChangeStager(resourceChangeStager),
+		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
 	)
 
 	blueprint1Container, err := loader.Load(

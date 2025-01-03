@@ -104,6 +104,8 @@ type ResourceInfo struct {
 	// the state is stored and how it is retrieved,
 	// the state should be provided to resource plugins by the blueprint
 	// engine.
+	// If this is a nil pointer, it means that the resource is new and does not have
+	// a current state.
 	CurrentResourceState *state.ResourceState `json:"currentResourceState"`
 	// ResourceWithResolvedSubs holds a version of a resource for which all ${..}
 	// substitutions have been applied.

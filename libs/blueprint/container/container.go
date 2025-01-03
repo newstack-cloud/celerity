@@ -224,6 +224,8 @@ type defaultBlueprintContainer struct {
 	clock                          core.Clock
 	idGenerator                    core.IDGenerator
 	defaultRetryPolicy             *provider.RetryPolicy
+	createDeploymentState          func() DeploymentState
+	createChangeStagingState       func() ChangeStagingState
 }
 
 // ChildBlueprintLoaderFactory provides a factory function for creating a new loader
@@ -232,6 +234,16 @@ type ChildBlueprintLoaderFactory func(
 	derivedFromTemplate []string,
 	resourceTemplates map[string]string,
 ) Loader
+
+// DeploymentStateFactory provides a factory function for creating a new instance
+// of a deployment state that is used as an ephemeral store for tracking the state
+// of a deployment operation.
+type DeploymentStateFactory func() DeploymentState
+
+// ChangeStagingStateFactory provides a factory function for creating a new instance
+// of a change staging state that is used as an ephemeral store for tracking the state
+// of a change staging operation.
+type ChangeStagingStateFactory func() ChangeStagingState
 
 // BlueprintContainerDependencies provides the dependencies
 // required to create a new instance of a blueprint container.
@@ -253,6 +265,8 @@ type BlueprintContainerDependencies struct {
 	Clock                          core.Clock
 	IDGenerator                    core.IDGenerator
 	DefaultRetryPolicy             *provider.RetryPolicy
+	DeploymentStateFactory         DeploymentStateFactory
+	ChangeStagingStateFactory      ChangeStagingStateFactory
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -284,6 +298,8 @@ func NewDefaultBlueprintContainer(
 		deps.Clock,
 		deps.IDGenerator,
 		deps.DefaultRetryPolicy,
+		deps.DeploymentStateFactory,
+		deps.ChangeStagingStateFactory,
 	}
 }
 
@@ -356,7 +372,9 @@ func (c *defaultBlueprintContainer) getLinkRetryPolicy(
 	return retryPolicy, nil
 }
 
-type linkPendingCompletion struct {
+// LinkPendingCompletion holds information about the completion status of a link
+// between two resources for change staging and deployment.
+type LinkPendingCompletion struct {
 	resourceANode    *links.ChainLinkNode
 	resourceBNode    *links.ChainLinkNode
 	resourceAPending bool

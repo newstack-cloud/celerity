@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -29,14 +28,7 @@ func (c *defaultBlueprintContainer) Deploy(
 	}
 
 	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, instanceID)
-	state := &deploymentState{
-		pendingLinks:               map[string]*linkPendingCompletion{},
-		resourceNamePendingLinkMap: map[string][]string{},
-		destroyed:                  map[string]state.Element{},
-		created:                    map[string]state.Element{},
-		updated:                    map[string]state.Element{},
-		linkDurationInfo:           map[string]*state.LinkCompletionDurations{},
-	}
+	state := c.createDeploymentState()
 
 	isNewInstance, err := checkDeploymentForNewInstance(input)
 	if err != nil {
@@ -63,7 +55,7 @@ func (c *defaultBlueprintContainer) deploy(
 	ctx context.Context,
 	input *DeployInput,
 	channels *DeployChannels,
-	state *deploymentState,
+	state DeploymentState,
 	isNewInstance bool,
 	paramOverrides core.BlueprintParams,
 ) {
@@ -136,6 +128,7 @@ func (c *defaultBlueprintContainer) deploy(
 		paramOverrides:        paramOverrides,
 		instanceStateSnapshot: &currentInstanceState,
 		resourceProviders:     processed.resourceProviderMap,
+		deploymentGroups:      processed.parallelGroups,
 	}
 
 	flattenedNodes := core.Flatten(processed.parallelGroups)
@@ -169,7 +162,6 @@ func (c *defaultBlueprintContainer) deploy(
 		ctx,
 		input,
 		deployCtx,
-		processed.parallelGroups,
 		isNewInstance,
 	)
 	if err != nil {
@@ -220,12 +212,11 @@ func (c *defaultBlueprintContainer) deployElements(
 	ctx context.Context,
 	input *DeployInput,
 	deployCtx *deployContext,
-	groups [][]*DeploymentNode,
 	newInstance bool,
 ) (bool, error) {
 	internalChannels := CreateDeployChannels()
-	prepareElapsedTime := getPrepareDuration(deployCtx.state)
-	if len(groups) == 0 {
+	prepareElapsedTime := deployCtx.state.GetPrepareDuration()
+	if len(deployCtx.deploymentGroups) == 0 {
 		deployCtx.channels.FinishChan <- c.createDeploymentFinishedMessage(
 			input.InstanceID,
 			determineInstanceDeployedStatus(input.Rollback, newInstance),
@@ -239,7 +230,6 @@ func (c *defaultBlueprintContainer) deployElements(
 	c.startDeploymentFromFirstGroup(
 		ctx,
 		input.InstanceID,
-		groups,
 		input.Changes,
 		deployCtx,
 	)
@@ -248,6 +238,7 @@ func (c *defaultBlueprintContainer) deployElements(
 		ctx,
 		input.InstanceID,
 		deployCtx,
+		input.Changes,
 		internalChannels,
 	)
 
@@ -273,13 +264,12 @@ func (c *defaultBlueprintContainer) deployElements(
 func (c *defaultBlueprintContainer) startDeploymentFromFirstGroup(
 	ctx context.Context,
 	instanceID string,
-	groups [][]*DeploymentNode,
 	changes *BlueprintChanges,
 	deployCtx *deployContext,
 ) {
 	instanceTreePath := getInstanceTreePath(deployCtx.paramOverrides, instanceID)
 
-	for _, node := range groups[0] {
+	for _, node := range deployCtx.deploymentGroups[0] {
 		if node.Type() == "resource" {
 			go c.prepareAndDeployResource(
 				ctx,
@@ -312,12 +302,16 @@ func (c *defaultBlueprintContainer) prepareAndDeployResource(
 ) {
 	resourceChangeInfo := getResourceChangeInfo(chainLinkNode.ResourceName, changes)
 	if resourceChangeInfo == nil {
-		// todo: write error to channel
+		deployCtx.channels.ErrChan <- errMissingResourceChanges(
+			chainLinkNode.ResourceName,
+		)
 		return
 	}
 	partiallyResolvedResource := getResolvedResourceFromChanges(resourceChangeInfo.changes)
 	if partiallyResolvedResource == nil {
-		// todo: write error to channel
+		deployCtx.channels.ErrChan <- errMissingPartiallyResolvedResource(
+			chainLinkNode.ResourceName,
+		)
 		return
 	}
 	resolvedResource, err := c.resolveResourceForDeployment(
@@ -327,20 +321,250 @@ func (c *defaultBlueprintContainer) prepareAndDeployResource(
 		changes.ResolveOnDeploy,
 	)
 	if err != nil {
-		// todo: write error to channel
+		deployCtx.channels.ErrChan <- err
 		return
 	}
 
-	_, err = c.getProviderResourceImplementation(
+	resourceID, err := c.getResourceID(resourceChangeInfo.changes)
+	if err != nil {
+		deployCtx.channels.ErrChan <- err
+		return
+	}
+
+	resourceImplementation, err := c.getProviderResourceImplementation(
 		ctx,
 		chainLinkNode.ResourceName,
 		resolvedResource.Type.Value,
 		deployCtx.resourceProviders,
 	)
 	if err != nil {
-		// todo: write error to channel
+		deployCtx.channels.ErrChan <- err
 		return
 	}
+
+	policy, err := c.getRetryPolicy(ctx, deployCtx.resourceProviders, chainLinkNode.ResourceName)
+	if err != nil {
+		deployCtx.channels.ErrChan <- err
+		return
+	}
+
+	// The resource state is made available in a change set at the time
+	// changes were staged, this is primarily to provide a convenient way
+	// to surface the current state to users during the "planning" phase.
+	// As there can be a significant delay between change staging and deployment,
+	// we'll replace the current state in the change set with the latest snapshot
+	// of the resource state.
+	resourceState := getResourceStateByName(
+		deployCtx.instanceStateSnapshot,
+		chainLinkNode.ResourceName,
+	)
+
+	err = c.deployResource(
+		ctx,
+		&resourceDeployInfo{
+			instanceID:   instanceID,
+			resourceID:   resourceID,
+			resourceName: chainLinkNode.ResourceName,
+			resourceImpl: resourceImplementation,
+			changes: prepareResourceChangesForDeployment(
+				resourceChangeInfo.changes,
+				resolvedResource,
+				resourceState,
+				resourceID,
+				instanceID,
+			),
+			isNew: resourceChangeInfo.isNew,
+		},
+		deployCtx,
+		createRetryInfo(policy),
+	)
+	if err != nil {
+		deployCtx.channels.ErrChan <- err
+	}
+}
+
+func (c *defaultBlueprintContainer) getResourceID(changes *provider.Changes) (string, error) {
+	if changes.AppliedResourceInfo.ResourceID == "" {
+		return c.idGenerator.GenerateID()
+	}
+
+	return changes.AppliedResourceInfo.ResourceID, nil
+}
+
+func (c *defaultBlueprintContainer) deployResource(
+	ctx context.Context,
+	resourceInfo *resourceDeployInfo,
+	deployCtx *deployContext,
+	resourceRetryInfo *retryInfo,
+) error {
+	resourceDeploymentStartTime := c.clock.Now()
+	deployCtx.channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
+		InstanceID:   resourceInfo.instanceID,
+		ResourceID:   resourceInfo.resourceID,
+		ResourceName: resourceInfo.resourceName,
+		Group:        deployCtx.currentGroupIndex,
+		Status: determineResourceDeployingStatus(
+			deployCtx.rollback,
+			resourceInfo.isNew,
+		),
+		PreciseStatus: determinePreciseResourceDeployingStatus(
+			deployCtx.rollback,
+			resourceInfo.isNew,
+		),
+		UpdateTimestamp: c.clock.Now().Unix(),
+		Attempt:         resourceRetryInfo.attempt,
+	}
+
+	output, err := resourceInfo.resourceImpl.Deploy(
+		ctx,
+		&provider.ResourceDeployInput{
+			Changes: resourceInfo.changes,
+			Params:  deployCtx.paramOverrides,
+		},
+	)
+	if err != nil {
+		if provider.IsRetryableError(err) {
+			retryErr := err.(*provider.RetryableError)
+			return c.handleDeployResourceRetry(
+				ctx,
+				resourceInfo,
+				resourceRetryInfo,
+				resourceDeploymentStartTime,
+				[]string{retryErr.ChildError.Error()},
+				deployCtx,
+			)
+		}
+
+		if provider.IsResourceDeployError(err) {
+			resourceDeployError := err.(*provider.ResourceDeployError)
+			return c.handleDeployResourceTerminalFailure(
+				resourceInfo,
+				resourceRetryInfo,
+				resourceDeploymentStartTime,
+				resourceDeployError.FailureReasons,
+				deployCtx,
+			)
+		}
+
+		// For errors that are not wrapped in a provider error, the error is assumed
+		// to be fatal and the deployment process will be stopped without reporting
+		// a failure status.
+		// It is really important that adequate guidance is provided for provider developers
+		// to ensure that all errors are wrapped in the appropriate provider error.
+		return err
+	}
+
+	deployCtx.state.SetResourceSpecState(resourceInfo.resourceName, output.SpecState)
+	// At this point, we mark the resource as "config complete", the listener
+	// should be able to determine if the resource is stable and ready for dependent
+	// resources to be deployed.
+	// Once the resource is stable, a status update will be sent with the appropriate
+	// "deployed" status.
+	deployCtx.channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
+		InstanceID:   resourceInfo.instanceID,
+		ResourceID:   resourceInfo.resourceID,
+		ResourceName: resourceInfo.resourceName,
+		Group:        deployCtx.currentGroupIndex,
+		Status: determineResourceConfigCompleteStatus(
+			deployCtx.rollback,
+			resourceInfo.isNew,
+		),
+		PreciseStatus: determinePreciseResourceConfigCompleteStatus(
+			deployCtx.rollback,
+			resourceInfo.isNew,
+		),
+		UpdateTimestamp: c.clock.Now().Unix(),
+		Attempt:         resourceRetryInfo.attempt,
+		Durations: determineResourceDeployConfigCompleteDurations(
+			resourceRetryInfo,
+			c.clock.Since(resourceDeploymentStartTime),
+		),
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleDeployResourceRetry(
+	ctx context.Context,
+	resourceInfo *resourceDeployInfo,
+	resourceRetryInfo *retryInfo,
+	resourceDeploymentStartTime time.Time,
+	failureReasons []string,
+	deployCtx *deployContext,
+) error {
+	currentAttemptDuration := c.clock.Since(resourceDeploymentStartTime)
+	nextRetryInfo := addRetryAttempt(resourceRetryInfo, currentAttemptDuration)
+	deployCtx.channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
+		InstanceID:   resourceInfo.instanceID,
+		ResourceID:   resourceInfo.resourceID,
+		ResourceName: resourceInfo.resourceName,
+		Group:        deployCtx.currentGroupIndex,
+		Status: determineResourceDeployFailedStatus(
+			deployCtx.rollback,
+			resourceInfo.isNew,
+		),
+		PreciseStatus: determinePreciseResourceDeployFailedStatus(
+			deployCtx.rollback,
+			resourceInfo.isNew,
+		),
+		FailureReasons:  failureReasons,
+		CanRetry:        !nextRetryInfo.exceededMaxRetries,
+		UpdateTimestamp: c.clock.Now().Unix(),
+		// Attempt durations will be accumulated and sent in the status updates
+		// for each subsequent retry.
+		// Total duration will be calculated if retry limit is exceeded.
+		Durations: determineResourceRetryFailureDurations(
+			nextRetryInfo,
+		),
+	}
+
+	if !nextRetryInfo.exceededMaxRetries {
+		waitTimeMs := provider.CalculateRetryWaitTimeMS(nextRetryInfo.policy, nextRetryInfo.attempt)
+		time.Sleep(time.Duration(waitTimeMs) * time.Millisecond)
+		return c.deployResource(
+			ctx,
+			resourceInfo,
+			deployCtx,
+			nextRetryInfo,
+		)
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleDeployResourceTerminalFailure(
+	resourceInfo *resourceDeployInfo,
+	resourceRetryInfo *retryInfo,
+	resourceDeploymentStartTime time.Time,
+	failureReasons []string,
+	deployCtx *deployContext,
+) error {
+	currentAttemptDuration := c.clock.Since(resourceDeploymentStartTime)
+	deployCtx.channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
+		InstanceID:   resourceInfo.instanceID,
+		ResourceID:   resourceInfo.resourceID,
+		ResourceName: resourceInfo.resourceName,
+		Group:        deployCtx.currentGroupIndex,
+		Status: determineResourceDeployFailedStatus(
+			deployCtx.rollback,
+			resourceInfo.isNew,
+		),
+		PreciseStatus: determinePreciseResourceDeployFailedStatus(
+			deployCtx.rollback,
+			resourceInfo.isNew,
+		),
+		FailureReasons:  failureReasons,
+		Attempt:         resourceRetryInfo.attempt,
+		CanRetry:        false,
+		UpdateTimestamp: c.clock.Now().Unix(),
+		Durations: determineResourceDeployFinishedDurations(
+			resourceRetryInfo,
+			currentAttemptDuration,
+			/* configCompleteDuration */ nil,
+		),
+	}
+
+	return nil
 }
 
 func (c *defaultBlueprintContainer) resolveResourceForDeployment(
@@ -352,8 +576,6 @@ func (c *defaultBlueprintContainer) resolveResourceForDeployment(
 	if !resourceHasFieldsToResolve(node.ResourceName, resolveOnDeploy) {
 		return partiallyResolvedResource, nil
 	}
-
-	// todo: update change staging so ResolveOnDeploy is populated!!!
 
 	resolveResourceResult, err := c.substitutionResolver.ResolveInResource(
 		ctx,
@@ -393,8 +615,65 @@ func (c *defaultBlueprintContainer) listenToAndProcessDeploymentEvents(
 	ctx context.Context,
 	instanceID string,
 	deployCtx *deployContext,
+	changes *BlueprintChanges,
 	internalChannels *DeployChannels,
 ) (bool, error) {
+	finished := map[string]*deployUpdateMessageWrapper{}
+	// For this to work, the blueprint changes provided must match
+	// the loaded blueprint.
+	// The count must reflect the number of elements that will be deployed
+	// taking resources, links and child blueprints into account.
+	elementsToDeploy := countElementsToDeploy(changes)
+
+	var err error
+	for (len(finished) < elementsToDeploy) &&
+		err == nil {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+		case msg := <-internalChannels.ResourceUpdateChan:
+			err = c.handleResourceUpdateMessage(ctx, instanceID, msg, deployCtx, finished)
+		case msg := <-internalChannels.ChildUpdateChan:
+			err = c.handleChildUpdateMessage(ctx, instanceID, msg, deployCtx, finished)
+		case msg := <-internalChannels.LinkUpdateChan:
+			err = c.handleLinkUpdateMessage(ctx, instanceID, msg, deployCtx, finished)
+		case err = <-internalChannels.ErrChan:
+		}
+	}
+
+	if err != nil {
+		return true, err
+	}
+
+	failed := getFailedElementDeploymentsAndUpdateState(finished, changes, deployCtx)
+	if len(failed) > 0 {
+		deployCtx.channels.FinishChan <- c.createDeploymentFinishedMessage(
+			instanceID,
+			determineFinishedFailureStatus(
+				/* destroyingInstance */ false,
+				deployCtx.rollback,
+			),
+			finishedFailureMessages(deployCtx, failed),
+			c.clock.Since(deployCtx.startTime),
+			/* prepareElapsedTime */
+			deployCtx.state.GetPrepareDuration(),
+		)
+		return true, nil
+	}
+
+	// TODO: Implement
+	// On config complete event for resources, determine
+	// the next element to deploy based on references or links,
+	// determine if the next element requires the resource to be stable,
+	// if so, in a separate goroutine, wait for the resource to be stable
+	// and continue to process when is stable (also dispatch status update when stable).
+	// If the next element does not require the resource to be stable, deploy the next element
+	// in a separate goroutine.
+	// Similarly to change staging, keep track of links that are pending completion
+	// and deploy them when the resources they depend on are ready.
+	// Should links require resources to be stable? Should this be a part of the provider
+	// interface for links?
+
 	return false, nil
 }
 
@@ -420,6 +699,34 @@ func (c *defaultBlueprintContainer) handleResourceUpdateMessage(
 		return c.handleResourceDestroyEvent(ctx, msg, deployCtx, finished, elementName)
 	}
 
+	if isResourceUpdateEvent(msg.PreciseStatus, deployCtx.rollback) {
+		return c.handleResourceUpdateEvent(ctx, msg, deployCtx, finished, elementName)
+	}
+
+	if isResourceCreationEvent(msg.PreciseStatus, deployCtx.rollback) {
+		return c.handleResourceCreationEvent(ctx, msg, deployCtx, finished, elementName)
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
+	ctx context.Context,
+	msg ResourceDeployUpdateMessage,
+	deployCtx *deployContext,
+	finished map[string]*deployUpdateMessageWrapper,
+	elementName string,
+) error {
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleResourceCreationEvent(
+	ctx context.Context,
+	msg ResourceDeployUpdateMessage,
+	deployCtx *deployContext,
+	finished map[string]*deployUpdateMessageWrapper,
+	elementName string,
+) error {
 	return nil
 }
 
@@ -445,6 +752,34 @@ func (c *defaultBlueprintContainer) handleChildUpdateMessage(
 		return c.handleChildDestroyEvent(ctx, msg, deployCtx, finished, elementName)
 	}
 
+	if isChildUpdateEvent(msg.Status, deployCtx.rollback) {
+		return c.handleChildUpdateEvent(ctx, msg, deployCtx, finished, elementName)
+	}
+
+	if isChildDeployEvent(msg.Status, deployCtx.rollback) {
+		return c.handleChildDeployEvent(ctx, msg, deployCtx, finished, elementName)
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleChildUpdateEvent(
+	ctx context.Context,
+	msg ChildDeployUpdateMessage,
+	deployCtx *deployContext,
+	finished map[string]*deployUpdateMessageWrapper,
+	elementName string,
+) error {
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleChildDeployEvent(
+	ctx context.Context,
+	msg ChildDeployUpdateMessage,
+	deployCtx *deployContext,
+	finished map[string]*deployUpdateMessageWrapper,
+	elementName string,
+) error {
 	return nil
 }
 
@@ -470,6 +805,34 @@ func (c *defaultBlueprintContainer) handleLinkUpdateMessage(
 		return c.handleLinkDestroyEvent(ctx, msg, deployCtx, finished, elementName)
 	}
 
+	if isLinkUpdateEvent(msg.Status, deployCtx.rollback) {
+		return c.handleLinkUpdateEvent(ctx, msg, deployCtx, finished, elementName)
+	}
+
+	if isLinkCreationEvent(msg.Status, deployCtx.rollback) {
+		return c.handleLinkCreationEvent(ctx, msg, deployCtx, finished, elementName)
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleLinkUpdateEvent(
+	ctx context.Context,
+	msg LinkDeployUpdateMessage,
+	deployCtx *deployContext,
+	finished map[string]*deployUpdateMessageWrapper,
+	elementName string,
+) error {
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleLinkCreationEvent(
+	ctx context.Context,
+	msg LinkDeployUpdateMessage,
+	deployCtx *deployContext,
+	finished map[string]*deployUpdateMessageWrapper,
+	elementName string,
+) error {
 	return nil
 }
 
@@ -657,12 +1020,13 @@ func (c *defaultBlueprintContainer) createLinkResourceAUpdatedMessage(
 		updateResourceARetryInfo,
 		c.clock.Since(updateResourceAStartTime),
 	)
-	stashLinkDurationInfo(linkInfo, durations, deployCtx.state)
+	linkName := linkInfo.element.LogicalName()
+	deployCtx.state.SetLinkDurationInfo(linkName, durations)
 
 	return LinkDeployUpdateMessage{
 		InstanceID: linkInfo.instanceID,
 		LinkID:     linkInfo.element.ID(),
-		LinkName:   linkInfo.element.LogicalName(),
+		LinkName:   linkName,
 		// We are still in the process of updating the link,
 		// resource B and intermediary resources still need to be updated.
 		Status: determineLinkUpdatingStatus(
@@ -804,13 +1168,14 @@ func (c *defaultBlueprintContainer) handleUpdateResourceBTerminalFailure(
 	deployCtx *deployContext,
 ) (bool, error) {
 	currentAttemptDuration := c.clock.Since(updateResourceBStartTime)
-	accumDurationInfo := getLinkDurationInfo(linkInfo, deployCtx.state)
+	linkName := linkInfo.element.LogicalName()
+	accumDurationInfo := deployCtx.state.GetLinkDurationInfo(linkName)
 	durations := determineLinkUpdateResourceBFinishedDurations(
 		updateResourceBRetryInfo,
 		currentAttemptDuration,
 		accumDurationInfo,
 	)
-	stashLinkDurationInfo(linkInfo, durations, deployCtx.state)
+	deployCtx.state.SetLinkDurationInfo(linkName, durations)
 	deployCtx.channels.LinkUpdateChan <- LinkDeployUpdateMessage{
 		InstanceID: linkInfo.instanceID,
 		LinkID:     linkInfo.element.ID(),
@@ -860,13 +1225,14 @@ func (c *defaultBlueprintContainer) createLinkResourceBUpdatedMessage(
 	linkUpdateType provider.LinkUpdateType,
 	updateResourceBStartTime time.Time,
 ) LinkDeployUpdateMessage {
-	accumDurationInfo := getLinkDurationInfo(linkInfo, deployCtx.state)
+	linkName := linkInfo.element.LogicalName()
+	accumDurationInfo := deployCtx.state.GetLinkDurationInfo(linkName)
 	durations := determineLinkUpdateResourceBFinishedDurations(
 		updateResourceBRetryInfo,
 		c.clock.Since(updateResourceBStartTime),
 		accumDurationInfo,
 	)
-	stashLinkDurationInfo(linkInfo, durations, deployCtx.state)
+	deployCtx.state.SetLinkDurationInfo(linkName, durations)
 	return LinkDeployUpdateMessage{
 		InstanceID: linkInfo.instanceID,
 		LinkID:     linkInfo.element.ID(),
@@ -957,13 +1323,14 @@ func (c *defaultBlueprintContainer) createLinkIntermediariesUpdatedMessage(
 	linkUpdateType provider.LinkUpdateType,
 	updateIntermediariesStartTime time.Time,
 ) LinkDeployUpdateMessage {
-	accumDurationInfo := getLinkDurationInfo(linkInfo, deployCtx.state)
+	linkName := linkInfo.element.LogicalName()
+	accumDurationInfo := deployCtx.state.GetLinkDurationInfo(linkName)
 	durations := determineLinkUpdateIntermediariesFinishedDurations(
 		updateIntermediariesRetryInfo,
 		c.clock.Since(updateIntermediariesStartTime),
 		accumDurationInfo,
 	)
-	stashLinkDurationInfo(linkInfo, durations, deployCtx.state)
+	deployCtx.state.SetLinkDurationInfo(linkName, durations)
 
 	return LinkDeployUpdateMessage{
 		InstanceID: linkInfo.instanceID,
@@ -1047,13 +1414,14 @@ func (c *defaultBlueprintContainer) handleUpdateIntermediaryResourcesTerminalFai
 	deployCtx *deployContext,
 ) error {
 	currentAttemptDuration := c.clock.Since(updateIntermediariesStartTime)
-	accumDurationInfo := getLinkDurationInfo(linkInfo, deployCtx.state)
+	linkName := linkInfo.element.LogicalName()
+	accumDurationInfo := deployCtx.state.GetLinkDurationInfo(linkName)
 	durations := determineLinkUpdateIntermediariesFinishedDurations(
 		updateIntermediariesRetryInfo,
 		currentAttemptDuration,
 		accumDurationInfo,
 	)
-	stashLinkDurationInfo(linkInfo, durations, deployCtx.state)
+	deployCtx.state.SetLinkDurationInfo(linkName, durations)
 
 	deployCtx.channels.LinkUpdateChan <- LinkDeployUpdateMessage{
 		InstanceID: linkInfo.instanceID,
@@ -1125,58 +1493,18 @@ func (c *defaultBlueprintContainer) createDeploymentFinishedMessage(
 	return msg
 }
 
-// Keeps track of state regarding when links are ready to be processed
-// along with elements that have been successfully processed.
-// All instance state including statuses of resources, links and child blueprints
-// are stored in the state container.
-// This is a temporary representation of the state of the deployment
-// that is not persisted.
-type deploymentState struct {
-	// A mapping of a logical link name to the pending link completion state for links
-	// that need to be deployed or updated.
-	// A link ID in this context is made up of the resource names of the two resources
-	// that are linked together.
-	// For example, if resource A is linked to resource B, the link name would be "A::B".
-	// This is used to keep track of when links are ready to be deployed or updated.
-	// This does not hold the state of the link, only information about when the link is ready
-	// to be deployed or updated.
-	// Link removals are not tracked here as they do not depend on resource state changes,
-	// removal of links happens before resources in the link relationship are processed.
-	pendingLinks map[string]*linkPendingCompletion
-	// A mapping of resource names to pending links that include the resource.
-	resourceNamePendingLinkMap map[string][]string
-	// Elements that have been successfully destroyed.
-	// This is a mapping of namespaced logical names (e.g. resources.resourceA) to an element
-	// representing identifiers and the kind of the element.
-	destroyed map[string]state.Element
-	// Elements that have been successfully created/deployed.
-	// This is a mapping of namespaced logical names (e.g. resources.resourceA) to an element
-	// representing identifiers and the kind of the element.
-	created map[string]state.Element
-	// Elements that have been successfully updated.
-	// This is a mapping of namespaced logical names (e.g. resources.resourceA) to an element
-	// representing identifiers and the kind of the element.
-	updated map[string]state.Element
-	// The duration of the preparation phase for the deployment of a blueprint instance.
-	prepareDuration *time.Duration
-	// A mapping of logical link name to the current duration information for the progress
-	// of the link deployment.
-	linkDurationInfo map[string]*state.LinkCompletionDurations
-	// Mutex is required as resources can be deployed concurrently.
-	mu sync.Mutex
-}
-
 type deployContext struct {
 	startTime  time.Time
 	rollback   bool
 	destroying bool
-	state      *deploymentState
+	state      DeploymentState
 	channels   *DeployChannels
 	// A snapshot of the instance state taken before deployment.
 	instanceStateSnapshot *state.InstanceState
 	paramOverrides        core.BlueprintParams
 	resourceProviders     map[string]provider.Provider
 	currentGroupIndex     int
+	deploymentGroups      [][]*DeploymentNode
 }
 
 func deployContextWithChannels(
@@ -1193,6 +1521,7 @@ func deployContextWithChannels(
 		paramOverrides:        deployCtx.paramOverrides,
 		resourceProviders:     deployCtx.resourceProviders,
 		currentGroupIndex:     deployCtx.currentGroupIndex,
+		deploymentGroups:      deployCtx.deploymentGroups,
 	}
 }
 
@@ -1210,6 +1539,7 @@ func deployContextWithGroup(
 		paramOverrides:        deployCtx.paramOverrides,
 		resourceProviders:     deployCtx.resourceProviders,
 		currentGroupIndex:     groupIndex,
+		deploymentGroups:      deployCtx.deploymentGroups,
 	}
 }
 
@@ -1239,6 +1569,15 @@ type linkUpdateIntermediaryResourcesInfo struct {
 type deploymentElementInfo struct {
 	element    state.Element
 	instanceID string
+}
+
+type resourceDeployInfo struct {
+	instanceID   string
+	resourceID   string
+	resourceName string
+	resourceImpl provider.Resource
+	changes      *provider.Changes
+	isNew        bool
 }
 
 // DeployChannels contains all the channels required to stream
@@ -1277,7 +1616,7 @@ type ResourceDeployUpdateMessage struct {
 	ResourceName string `json:"resourceName"`
 	// Group is the group number the resource belongs to relative to the ordering
 	// for components in the current blueprint associated with the instance ID.
-	// A group is a collection of items that can be deployed at the same time.
+	// A group is a collection of items that can be deployed or destroyed at the same time.
 	Group int `json:"group"`
 	// Status holds the high-level status of the resource.
 	Status core.ResourceStatus `json:"status"`

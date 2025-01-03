@@ -49,11 +49,11 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		providers,
 		specTransformers,
 		stateContainer,
-		resourceChangeStager,
 		newFSChildResolver(),
-		validation.NewRefChainCollector,
 		WithLoaderTransformSpec(false),
 		WithLoaderValidateRuntimeValues(true),
+		WithLoaderResourceChangeStager(resourceChangeStager),
+		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
 	)
 
 	s.blueprint1Fixture, err = createBlueprintDeployFixture(

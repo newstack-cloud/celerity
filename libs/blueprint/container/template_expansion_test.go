@@ -64,9 +64,9 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 		s.providers,
 		map[string]transform.SpecTransformer{},
 		s.stateContainer,
-		s.resourceChangeStager,
 		newFSChildResolver(),
-		validation.NewRefChainCollector,
+		WithLoaderResourceChangeStager(s.resourceChangeStager),
+		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
 	)
 	for name, filePath := range inputFiles {
 		specBytes, err := os.ReadFile(filePath)

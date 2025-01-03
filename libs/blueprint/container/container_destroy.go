@@ -21,10 +21,7 @@ func (c *defaultBlueprintContainer) Destroy(
 	paramOverrides core.BlueprintParams,
 ) {
 	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, input.InstanceID)
-	state := &deploymentState{
-		destroyed:        map[string]state.Element{},
-		linkDurationInfo: map[string]*state.LinkCompletionDurations{},
-	}
+	state := c.createDeploymentState()
 	go c.destroy(
 		ctxWithInstanceID,
 		input,
@@ -38,7 +35,7 @@ func (c *defaultBlueprintContainer) destroy(
 	ctx context.Context,
 	input *DestroyInput,
 	channels *DeployChannels,
-	state *deploymentState,
+	state DeploymentState,
 	paramOverrides core.BlueprintParams,
 ) {
 	instanceTreePath := getInstanceTreePath(paramOverrides, input.InstanceID)
@@ -194,10 +191,7 @@ func (c *defaultBlueprintContainer) removeElements(
 		// In the case where there are no elements to be removed, this will still be called
 		// for a deployment, as removal of existing elements is always processed first,
 		// this is a reliable way to track the prepare duration and send the status change.
-		stashPrepareDuration(
-			c.clock.Since(deployCtx.startTime),
-			deployCtx.state,
-		)
+		deployCtx.state.SetPrepareDuration(c.clock.Since(deployCtx.startTime))
 		deployCtx.channels.DeploymentUpdateChan <- DeploymentUpdateMessage{
 			InstanceID:      input.InstanceID,
 			Status:          determineInstanceDeployingStatus(input.Rollback, false /* newInstance */),
@@ -290,10 +284,8 @@ func (c *defaultBlueprintContainer) listenToAndProcessGroupRemovals(
 			determineFinishedFailureStatus(deployCtx.destroying, deployCtx.rollback),
 			finishedFailureMessages(deployCtx, failed),
 			c.clock.Since(deployCtx.startTime),
-			// prepareDuration is written to once, before the first group is processed;
-			// this makes it is safe to read it here without locking.
 			/* prepareElapsedTime */
-			deployCtx.state.prepareDuration,
+			deployCtx.state.GetPrepareDuration(),
 		)
 		return true, nil
 	}
@@ -635,9 +627,10 @@ func (c *defaultBlueprintContainer) destroyResource(
 		PreciseStatus:   determinePreciseResourceDestroyedStatus(deployCtx.rollback),
 		UpdateTimestamp: c.clock.Now().Unix(),
 		Attempt:         resourceRetryInfo.attempt,
-		Durations: determineResourceDestroyFinishedDurations(
+		Durations: determineResourceDeployFinishedDurations(
 			resourceRetryInfo,
 			c.clock.Since(resourceRemovalStartTime),
+			/* configCompleteDuration */ nil,
 		),
 	}
 
@@ -708,9 +701,10 @@ func (c *defaultBlueprintContainer) handleDestroyResourceTerminalFailure(
 		Attempt:         resourceRetryInfo.attempt,
 		CanRetry:        false,
 		UpdateTimestamp: c.clock.Now().Unix(),
-		Durations: determineResourceDestroyFinishedDurations(
+		Durations: determineResourceDeployFinishedDurations(
 			resourceRetryInfo,
 			currentAttemptDuration,
+			/* configCompleteDuration */ nil,
 		),
 	}
 
