@@ -304,7 +304,13 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 	params core.BlueprintParams,
 ) error {
 
-	resourceInfo, resolveResourceResult, err := c.getResourceInfo(ctx, stageResourceInfo)
+	resourceInfo, resolveResourceResult, err := getResourceInfo(
+		ctx,
+		stageResourceInfo,
+		c.substitutionResolver,
+		c.resourceCache,
+		c.stateContainer,
+	)
 	if err != nil {
 		return err
 	}
@@ -363,53 +369,6 @@ func (c *defaultBlueprintContainer) stageResourceChanges(
 	return nil
 }
 
-func (c *defaultBlueprintContainer) getResourceInfo(
-	ctx context.Context,
-	stageInfo *stageResourceChangeInfo,
-) (*provider.ResourceInfo, *subengine.ResolveInResourceResult, error) {
-	resolveResourceResult, err := c.substitutionResolver.ResolveInResource(
-		ctx,
-		stageInfo.node.ResourceName,
-		stageInfo.node.Resource,
-		&subengine.ResolveResourceTargetInfo{
-			ResolveFor: subengine.ResolveForChangeStaging,
-		},
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	_, cached := c.resourceCache.Get(stageInfo.node.ResourceName)
-	if !cached {
-		c.resourceCache.Set(
-			stageInfo.node.ResourceName,
-			resolveResourceResult.ResolvedResource,
-		)
-	}
-
-	var currentResourceStatePtr *state.ResourceState
-	resources := c.stateContainer.Resources()
-	currentResourceState, err := resources.GetByName(
-		ctx,
-		stageInfo.instanceID,
-		stageInfo.node.ResourceName,
-	)
-	if err != nil {
-		if !state.IsResourceNotFound(err) {
-			return nil, nil, err
-		}
-	} else {
-		currentResourceStatePtr = &currentResourceState
-	}
-
-	return &provider.ResourceInfo{
-		ResourceID:               stageInfo.resourceID,
-		ResourceName:             stageInfo.node.ResourceName,
-		InstanceID:               stageInfo.instanceID,
-		CurrentResourceState:     currentResourceStatePtr,
-		ResourceWithResolvedSubs: resolveResourceResult.ResolvedResource,
-	}, resolveResourceResult, nil
-}
-
 func (c *defaultBlueprintContainer) prepareAndStageLinkChanges(
 	ctx context.Context,
 	currentResourceInfo *provider.ResourceInfo,
@@ -431,13 +390,13 @@ func (c *defaultBlueprintContainer) prepareAndStageLinkChanges(
 		// For deployment, multiple links could be modifying the same resource,
 		// to ensure consistency in state, links involving the same resource will be
 		// both staged and deployed synchronously.
-		err = c.stageLinkChanges(
+		err = c.linkChangeStager.StageChanges(
 			ctx,
 			linkImpl,
 			currentResourceInfo,
 			readyToStage,
-			linkChangesChan,
 			stagingState,
+			linkChangesChan,
 			params,
 		)
 		if err != nil {
@@ -446,85 +405,6 @@ func (c *defaultBlueprintContainer) prepareAndStageLinkChanges(
 	}
 
 	return nil
-}
-
-func (c *defaultBlueprintContainer) stageLinkChanges(
-	ctx context.Context,
-	linkImpl provider.Link,
-	currentResourceInfo *provider.ResourceInfo,
-	readyToStage *LinkPendingCompletion,
-	linkChangesChan chan LinkChangesMessage,
-	stagingState ChangeStagingState,
-	params core.BlueprintParams,
-) error {
-	resourceAInfo, err := c.getResourceInfoForLink(ctx, readyToStage.resourceANode, currentResourceInfo)
-	if err != nil {
-		return err
-	}
-
-	resourceBInfo, err := c.getResourceInfoForLink(ctx, readyToStage.resourceBNode, currentResourceInfo)
-	if err != nil {
-		return err
-	}
-
-	var currentLinkStatePtr *state.LinkState
-	links := c.stateContainer.Links()
-	currentLinkState, err := links.GetByName(
-		ctx,
-		resourceAInfo.InstanceID,
-		createLogicalLinkName(resourceAInfo.ResourceName, resourceBInfo.ResourceName),
-	)
-	if err != nil {
-		if !state.IsLinkNotFound(err) {
-			return err
-		}
-	} else {
-		currentLinkStatePtr = &currentLinkState
-	}
-
-	resourceAChanges := stagingState.GetResourceChanges(resourceAInfo.ResourceName)
-	resourceBChanges := stagingState.GetResourceChanges(resourceBInfo.ResourceName)
-
-	output, err := linkImpl.StageChanges(ctx, &provider.LinkStageChangesInput{
-		ResourceAChanges: resourceAChanges,
-		ResourceBChanges: resourceBChanges,
-		CurrentLinkState: currentLinkStatePtr,
-		Params:           params,
-	})
-	if err != nil {
-		return err
-	}
-
-	stagingState.MarkLinkAsNoLongerPending(
-		readyToStage.resourceANode,
-		readyToStage.resourceBNode,
-	)
-
-	linkChangesChan <- LinkChangesMessage{
-		ResourceAName: resourceAInfo.ResourceName,
-		ResourceBName: resourceBInfo.ResourceName,
-		Changes:       getChangesFromStageLinkChangesOutput(output),
-		New:           currentLinkStatePtr == nil,
-		Removed:       false,
-	}
-
-	return nil
-}
-
-func (c *defaultBlueprintContainer) getResourceInfoForLink(
-	ctx context.Context,
-	node *links.ChainLinkNode,
-	currentResourceInfo *provider.ResourceInfo,
-) (*provider.ResourceInfo, error) {
-	if node.ResourceName != currentResourceInfo.ResourceName {
-		resourceInfo, _, err := c.getResourceInfo(ctx, &stageResourceChangeInfo{
-			node:       node,
-			instanceID: currentResourceInfo.InstanceID,
-		})
-		return resourceInfo, err
-	}
-
-	return currentResourceInfo, nil
 }
 
 func (c *defaultBlueprintContainer) stageChildBlueprintChanges(

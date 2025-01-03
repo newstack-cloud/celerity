@@ -685,6 +685,56 @@ func getResourceTypesForLink(linkName string, currentState *state.InstanceState)
 	return resourceAState.ResourceType, resourceBState.ResourceType, nil
 }
 
+func getResourceInfo(
+	ctx context.Context,
+	stageInfo *stageResourceChangeInfo,
+	substitutionResolver subengine.SubstitutionResolver,
+	resourceCache *core.Cache[*provider.ResolvedResource],
+	stateContainer state.Container,
+) (*provider.ResourceInfo, *subengine.ResolveInResourceResult, error) {
+	resolveResourceResult, err := substitutionResolver.ResolveInResource(
+		ctx,
+		stageInfo.node.ResourceName,
+		stageInfo.node.Resource,
+		&subengine.ResolveResourceTargetInfo{
+			ResolveFor: subengine.ResolveForChangeStaging,
+		},
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	_, cached := resourceCache.Get(stageInfo.node.ResourceName)
+	if !cached {
+		resourceCache.Set(
+			stageInfo.node.ResourceName,
+			resolveResourceResult.ResolvedResource,
+		)
+	}
+
+	var currentResourceStatePtr *state.ResourceState
+	resources := stateContainer.Resources()
+	currentResourceState, err := resources.GetByName(
+		ctx,
+		stageInfo.instanceID,
+		stageInfo.node.ResourceName,
+	)
+	if err != nil {
+		if !state.IsResourceNotFound(err) {
+			return nil, nil, err
+		}
+	} else {
+		currentResourceStatePtr = &currentResourceState
+	}
+
+	return &provider.ResourceInfo{
+		ResourceID:               stageInfo.resourceID,
+		ResourceName:             stageInfo.node.ResourceName,
+		InstanceID:               stageInfo.instanceID,
+		CurrentResourceState:     currentResourceStatePtr,
+		ResourceWithResolvedSubs: resolveResourceResult.ResolvedResource,
+	}, resolveResourceResult, nil
+}
+
 func toFullLinkPath(
 	resourceAName string,
 	resourceBName string,

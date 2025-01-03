@@ -500,22 +500,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		// but validation failed.
 		return NewDefaultBlueprintContainer(
 			blueprintSpec,
-			&BlueprintContainerDependencies{
-				StateContainer:              l.stateContainer,
-				Providers:                   map[string]provider.Provider{},
-				ResourceRegistry:            l.resourceRegistry,
-				LinkRegistry:                l.linkRegistry,
-				LinkInfo:                    nil,
-				ResourceTemplates:           l.resourceTemplates,
-				RefChainCollector:           refChainCollector,
-				SubstitutionResolver:        nil,
-				ChildBlueprintLoaderFactory: l.forChildBlueprint,
-				Clock:                       l.clock,
-				IDGenerator:                 l.idGenerator,
-				DefaultRetryPolicy:          l.defaultRetryPolicy,
-				DeploymentStateFactory:      l.deploymentStateFactory,
-				ChangeStagingStateFactory:   l.changeStagingStateFactory,
-			},
+			l.buildPartialBlueprintContainerDependencies(refChainCollector),
 			diagnostics,
 		), diagnostics, err
 	}
@@ -527,74 +512,19 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		// validation was successful but loading link information failed.
 		return NewDefaultBlueprintContainer(
 			blueprintSpec,
-			&BlueprintContainerDependencies{
-				StateContainer:              l.stateContainer,
-				Providers:                   map[string]provider.Provider{},
-				ResourceRegistry:            l.resourceRegistry,
-				LinkRegistry:                l.linkRegistry,
-				LinkInfo:                    nil,
-				ResourceTemplates:           l.resourceTemplates,
-				RefChainCollector:           refChainCollector,
-				SubstitutionResolver:        nil,
-				ChildBlueprintLoaderFactory: l.forChildBlueprint,
-				Clock:                       l.clock,
-				IDGenerator:                 l.idGenerator,
-				DefaultRetryPolicy:          l.defaultRetryPolicy,
-				DeploymentStateFactory:      l.deploymentStateFactory,
-				ChangeStagingStateFactory:   l.changeStagingStateFactory,
-			},
+			l.buildPartialBlueprintContainerDependencies(refChainCollector),
 			diagnostics,
 		), diagnostics, err
 	}
 
-	resourceCache := bpcore.NewCache[*provider.ResolvedResource]()
-	resourceTemplateInputElemCache := bpcore.NewCache[[]*bpcore.MappingNode]()
-	childExportFieldCache := bpcore.NewCache[*subengine.ChildExportFieldInfo]()
-	substitutionResolver := subengine.NewDefaultSubstitutionResolver(
-		&subengine.Registries{
-			FuncRegistry:       l.funcRegistry,
-			ResourceRegistry:   l.resourceRegistry,
-			DataSourceRegistry: l.dataSourceRegistry,
-		},
-		l.stateContainer,
-		resourceCache,
-		resourceTemplateInputElemCache,
-		childExportFieldCache,
-		blueprintSpec,
-		params,
-	)
-	blueprintPreparer := NewDefaultBlueprintPreparer(
-		l.providers,
-		substitutionResolver,
-		resourceTemplateInputElemCache,
-		l.resourceRegistry,
-		resourceCache,
-		l.forChildBlueprint,
-	)
 	container := NewDefaultBlueprintContainer(
 		blueprintSpec,
-		&BlueprintContainerDependencies{
-			StateContainer:                 l.stateContainer,
-			Providers:                      l.providers,
-			ResourceRegistry:               l.resourceRegistry,
-			LinkInfo:                       linkInfo,
-			ResourceTemplates:              l.resourceTemplates,
-			LinkRegistry:                   l.linkRegistry,
-			RefChainCollector:              refChainCollector,
-			SubstitutionResolver:           substitutionResolver,
-			ChangeStager:                   l.resourceChangeStager,
-			ChildResolver:                  l.childResolver,
-			ResourceCache:                  resourceCache,
-			ResourceTemplateInputElemCache: resourceTemplateInputElemCache,
-			ChildExportFieldCache:          childExportFieldCache,
-			ChildBlueprintLoaderFactory:    l.forChildBlueprint,
-			Clock:                          l.clock,
-			IDGenerator:                    l.idGenerator,
-			DefaultRetryPolicy:             l.defaultRetryPolicy,
-			DeploymentStateFactory:         l.deploymentStateFactory,
-			ChangeStagingStateFactory:      l.changeStagingStateFactory,
-			BlueprintPreparer:              blueprintPreparer,
-		},
+		l.buildFullBlueprintContainerDependencies(
+			refChainCollector,
+			blueprintSpec,
+			linkInfo,
+			params,
+		),
 		diagnostics,
 	)
 
@@ -621,6 +551,90 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 	}
 
 	return container, diagnostics, nil
+}
+
+func (l *defaultLoader) buildPartialBlueprintContainerDependencies(
+	refChainCollector validation.RefChainCollector,
+) *BlueprintContainerDependencies {
+	return &BlueprintContainerDependencies{
+		StateContainer:              l.stateContainer,
+		Providers:                   map[string]provider.Provider{},
+		ResourceRegistry:            l.resourceRegistry,
+		LinkRegistry:                l.linkRegistry,
+		LinkInfo:                    nil,
+		ResourceTemplates:           l.resourceTemplates,
+		RefChainCollector:           refChainCollector,
+		SubstitutionResolver:        nil,
+		ChildBlueprintLoaderFactory: l.forChildBlueprint,
+		Clock:                       l.clock,
+		IDGenerator:                 l.idGenerator,
+		DefaultRetryPolicy:          l.defaultRetryPolicy,
+		DeploymentStateFactory:      l.deploymentStateFactory,
+		ChangeStagingStateFactory:   l.changeStagingStateFactory,
+	}
+}
+
+func (l *defaultLoader) buildFullBlueprintContainerDependencies(
+	refChainCollector validation.RefChainCollector,
+	blueprintSpec *internalBlueprintSpec,
+	linkInfo links.SpecLinkInfo,
+	params bpcore.BlueprintParams,
+) *BlueprintContainerDependencies {
+	resourceCache := bpcore.NewCache[*provider.ResolvedResource]()
+	resourceTemplateInputElemCache := bpcore.NewCache[[]*bpcore.MappingNode]()
+	childExportFieldCache := bpcore.NewCache[*subengine.ChildExportFieldInfo]()
+	substitutionResolver := subengine.NewDefaultSubstitutionResolver(
+		&subengine.Registries{
+			FuncRegistry:       l.funcRegistry,
+			ResourceRegistry:   l.resourceRegistry,
+			DataSourceRegistry: l.dataSourceRegistry,
+		},
+		l.stateContainer,
+		resourceCache,
+		resourceTemplateInputElemCache,
+		childExportFieldCache,
+		blueprintSpec,
+		params,
+	)
+	blueprintPreparer := NewDefaultBlueprintPreparer(
+		l.providers,
+		substitutionResolver,
+		resourceTemplateInputElemCache,
+		l.resourceRegistry,
+		resourceCache,
+		l.forChildBlueprint,
+	)
+	// As the link change stager uses the resource cache and substitution resolver,
+	// it must be created for each blueprint container that is loaded.
+	linkChangeStager := NewDefaultLinkChangeStager(
+		l.stateContainer,
+		substitutionResolver,
+		resourceCache,
+	)
+
+	return &BlueprintContainerDependencies{
+		StateContainer:                 l.stateContainer,
+		Providers:                      l.providers,
+		ResourceRegistry:               l.resourceRegistry,
+		LinkInfo:                       linkInfo,
+		ResourceTemplates:              l.resourceTemplates,
+		LinkRegistry:                   l.linkRegistry,
+		RefChainCollector:              refChainCollector,
+		SubstitutionResolver:           substitutionResolver,
+		ChangeStager:                   l.resourceChangeStager,
+		ChildResolver:                  l.childResolver,
+		ResourceCache:                  resourceCache,
+		ResourceTemplateInputElemCache: resourceTemplateInputElemCache,
+		ChildExportFieldCache:          childExportFieldCache,
+		ChildBlueprintLoaderFactory:    l.forChildBlueprint,
+		Clock:                          l.clock,
+		IDGenerator:                    l.idGenerator,
+		DefaultRetryPolicy:             l.defaultRetryPolicy,
+		DeploymentStateFactory:         l.deploymentStateFactory,
+		ChangeStagingStateFactory:      l.changeStagingStateFactory,
+		BlueprintPreparer:              blueprintPreparer,
+		LinkChangeStager:               linkChangeStager,
+	}
 }
 
 func (l *defaultLoader) collectLinksAsReferences(
