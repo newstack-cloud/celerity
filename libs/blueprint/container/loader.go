@@ -173,6 +173,7 @@ type defaultLoader struct {
 	deploymentStateFactory    DeploymentStateFactory
 	changeStagingStateFactory ChangeStagingStateFactory
 	resourceDestroyer         ResourceDestroyer
+	childBlueprintDestroyer   ChildBlueprintDestroyer
 	// A mapping of resource names to the templates they were derived from.
 	// This is only populated for a loader when loading a derived blueprint
 	// where templates are not used in the derived blueprint but were
@@ -364,12 +365,22 @@ func WithLoaderRefChainCollectorFactory(factory func() validation.RefChainCollec
 	}
 }
 
-// WithLoaderResourceDestroyer sets the destroy service used in blueprint containers created by the loader.
+// WithLoaderResourceDestroyer sets the resource destroy service used in blueprint containers created by the loader.
 //
 // When this option is not provided, the default resource destroyer is used.
 func WithLoaderResourceDestroyer(resourceDestroyer ResourceDestroyer) LoaderOption {
 	return func(loader *defaultLoader) {
 		loader.resourceDestroyer = resourceDestroyer
+	}
+}
+
+// WithLoaderChildBlueprintDestroyer sets the child blueprint destroy service
+// used in blueprint containers created by the loader.
+//
+// When this option is not provided, the default child blueprint destroyer is used.
+func WithLoaderChildBlueprintDestroyer(childBlueprintDestroyer ChildBlueprintDestroyer) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.childBlueprintDestroyer = childBlueprintDestroyer
 	}
 }
 
@@ -421,6 +432,7 @@ func NewDefaultLoader(
 		changeStagingStateFactory: NewDefaultChangeStagingState,
 		resourceTemplates:         map[string]string{},
 		resourceDestroyer:         NewDefaultResourceDestroyer(clock, provider.DefaultRetryPolicy),
+		childBlueprintDestroyer:   NewDefaultChildBlueprintDestroyer(),
 	}
 
 	for _, opt := range opts {
@@ -466,6 +478,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderResourceChangeStager(l.resourceChangeStager),
 		WithLoaderRefChainCollectorFactory(l.refChainCollectorFactory),
 		WithLoaderResourceDestroyer(l.resourceDestroyer),
+		WithLoaderChildBlueprintDestroyer(l.childBlueprintDestroyer),
 	)
 }
 
@@ -658,6 +671,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		LinkChangeStager:               linkChangeStager,
 		ChildChangeStager:              childChangeStager,
 		ResourceDestroyer:              l.resourceDestroyer,
+		ChildBlueprintDestroyer:        l.childBlueprintDestroyer,
 	}
 }
 

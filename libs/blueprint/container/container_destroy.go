@@ -488,12 +488,13 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 			)
 		} else if element.Kind() == state.ChildElement {
 			includeTreePath := getIncludeTreePath(deployCtx.ParamOverrides, element.LogicalName())
-			go c.prepareAndDestroyChild(
+			go c.childBlueprintDestroyer.Destroy(
 				ctx,
 				element,
 				instanceID,
 				instanceTreePath,
 				includeTreePath,
+				c,
 				deployCtx,
 			)
 		} else if element.Kind() == state.LinkElement {
@@ -503,87 +504,6 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 				instanceID,
 				deployCtx,
 			)
-		}
-	}
-}
-
-func (c *defaultBlueprintContainer) prepareAndDestroyChild(
-	ctx context.Context,
-	element state.Element,
-	parentInstanceID string,
-	parentInstanceTreePath string,
-	includeTreePath string,
-	deployCtx *DeployContext,
-) {
-	childState := getChildStateByName(deployCtx.InstanceStateSnapshot, element.LogicalName())
-	if childState == nil {
-		deployCtx.Channels.ErrChan <- errChildNotFoundInState(
-			element.LogicalName(),
-			parentInstanceID,
-		)
-		return
-	}
-	destroyChildChanges := createDestroyChangesFromChildState(childState)
-
-	childParams := deployCtx.ParamOverrides.
-		WithContextVariables(
-			createContextVarsForChildBlueprint(
-				parentInstanceID,
-				parentInstanceTreePath,
-				includeTreePath,
-			),
-			/* keepExisting */ true,
-		)
-
-	// Create an intermediary set of channels so we can dispatch child blueprint-wide
-	// events to the parent blueprint's channels.
-	// Resource and link events will be passed through to be surfaced to the user,
-	// trusting that they wil be handled within the Destroy call for the child blueprint.
-	childChannels := CreateDeployChannels()
-	// Destroy does not make use of the loaded blueprint spec directly.
-	// For this reason, we don't need to load an entirely new container
-	// for destroying a child blueprint instance.
-	// Destroy relies purely on the provided blueprint changes and the current state
-	// of the instance persisted in the state container.
-	c.Destroy(
-		ctx,
-		&DestroyInput{
-			InstanceID: element.ID(),
-			Changes:    destroyChildChanges,
-			Rollback:   deployCtx.Rollback,
-		},
-		childChannels,
-		childParams,
-	)
-
-	finished := false
-	var err error
-	for !finished && err == nil {
-		select {
-		case <-ctx.Done():
-			err = ctx.Err()
-		case msg := <-childChannels.DeploymentUpdateChan:
-			deployCtx.Channels.ChildUpdateChan <- updateToChildUpdateMessage(
-				&msg,
-				parentInstanceID,
-				element,
-				deployCtx.CurrentGroupIndex,
-			)
-		case msg := <-childChannels.FinishChan:
-			deployCtx.Channels.ChildUpdateChan <- finishedToChildUpdateMessage(
-				&msg,
-				parentInstanceID,
-				element,
-				deployCtx.CurrentGroupIndex,
-			)
-			finished = true
-		case msg := <-childChannels.ResourceUpdateChan:
-			deployCtx.Channels.ResourceUpdateChan <- msg
-		case msg := <-childChannels.LinkUpdateChan:
-			deployCtx.Channels.LinkUpdateChan <- msg
-		case msg := <-childChannels.ChildUpdateChan:
-			deployCtx.Channels.ChildUpdateChan <- msg
-		case err = <-childChannels.ErrChan:
 		}
 	}
 }
