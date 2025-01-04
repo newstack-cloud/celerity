@@ -174,6 +174,7 @@ type defaultLoader struct {
 	changeStagingStateFactory ChangeStagingStateFactory
 	resourceDestroyer         ResourceDestroyer
 	childBlueprintDestroyer   ChildBlueprintDestroyer
+	linkDeployer              LinkDeployer
 	// A mapping of resource names to the templates they were derived from.
 	// This is only populated for a loader when loading a derived blueprint
 	// where templates are not used in the derived blueprint but were
@@ -384,6 +385,16 @@ func WithLoaderChildBlueprintDestroyer(childBlueprintDestroyer ChildBlueprintDes
 	}
 }
 
+// WithLoaderLinkDeployer sets the link deployment service
+// used in blueprint containers created by the loader.
+//
+// When this option is not provided, the default link deployer is used.
+func WithLoaderLinkDeployer(linkDeployer LinkDeployer) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.linkDeployer = linkDeployer
+	}
+}
+
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
 // The map of providers must be a map of provider namespaces
@@ -433,6 +444,7 @@ func NewDefaultLoader(
 		resourceTemplates:         map[string]string{},
 		resourceDestroyer:         NewDefaultResourceDestroyer(clock, provider.DefaultRetryPolicy),
 		childBlueprintDestroyer:   NewDefaultChildBlueprintDestroyer(),
+		linkDeployer:              NewDefaultLinkDeployer(clock),
 	}
 
 	for _, opt := range opts {
@@ -479,6 +491,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderRefChainCollectorFactory(l.refChainCollectorFactory),
 		WithLoaderResourceDestroyer(l.resourceDestroyer),
 		WithLoaderChildBlueprintDestroyer(l.childBlueprintDestroyer),
+		WithLoaderLinkDeployer(l.linkDeployer),
 	)
 }
 
@@ -672,6 +685,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ChildChangeStager:              childChangeStager,
 		ResourceDestroyer:              l.resourceDestroyer,
 		ChildBlueprintDestroyer:        l.childBlueprintDestroyer,
+		LinkDeployer:                   l.linkDeployer,
 	}
 }
 

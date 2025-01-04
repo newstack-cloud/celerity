@@ -546,12 +546,11 @@ func (c *defaultBlueprintContainer) prepareAndDestroyLink(
 		return
 	}
 
-	err = c.destroyLink(
+	_, err = c.linkDeployer.Deploy(
 		ctx,
-		&deploymentElementInfo{
-			element:    linkElement,
-			instanceID: instanceID,
-		},
+		linkElement,
+		instanceID,
+		provider.LinkUpdateTypeDestroy,
 		linkImplementation,
 		deployCtx,
 		retryPolicy,
@@ -559,83 +558,6 @@ func (c *defaultBlueprintContainer) prepareAndDestroyLink(
 	if err != nil {
 		deployCtx.Channels.ErrChan <- err
 	}
-}
-
-func (c *defaultBlueprintContainer) destroyLink(
-	ctx context.Context,
-	linkInfo *deploymentElementInfo,
-	linkImplementation provider.Link,
-	deployCtx *DeployContext,
-	retryPolicy *provider.RetryPolicy,
-) error {
-	linkDependencyInfo := extractLinkDirectDependencies(
-		linkInfo.element.LogicalName(),
-	)
-
-	resourceAInfo := getResourceInfoFromStateForLinkRemoval(
-		deployCtx.InstanceStateSnapshot,
-		linkDependencyInfo.resourceAName,
-	)
-	_, stop, err := c.updateLinkResourceA(
-		ctx,
-		linkImplementation,
-		&provider.LinkUpdateResourceInput{
-			ResourceInfo:   resourceAInfo,
-			LinkUpdateType: provider.LinkUpdateTypeDestroy,
-			Params:         deployCtx.ParamOverrides,
-		},
-		linkInfo,
-		createRetryInfo(retryPolicy),
-		deployCtx,
-	)
-	if err != nil {
-		return err
-	}
-	if stop {
-		return nil
-	}
-
-	resourceBInfo := getResourceInfoFromStateForLinkRemoval(
-		deployCtx.InstanceStateSnapshot,
-		linkDependencyInfo.resourceBName,
-	)
-	_, stop, err = c.updateLinkResourceB(
-		ctx,
-		linkImplementation,
-		&provider.LinkUpdateResourceInput{
-			ResourceInfo:   resourceBInfo,
-			LinkUpdateType: provider.LinkUpdateTypeDestroy,
-			Params:         deployCtx.ParamOverrides,
-		},
-		linkInfo,
-		createRetryInfo(retryPolicy),
-		deployCtx,
-	)
-	if err != nil {
-		return err
-	}
-	if stop {
-		return nil
-	}
-
-	_, err = c.updateLinkIntermediaryResources(
-		ctx,
-		linkImplementation,
-		&provider.LinkUpdateIntermediaryResourcesInput{
-			ResourceAInfo:  resourceAInfo,
-			ResourceBInfo:  resourceBInfo,
-			LinkUpdateType: provider.LinkUpdateTypeDestroy,
-			Params:         deployCtx.ParamOverrides,
-		},
-		linkInfo,
-		createRetryInfo(retryPolicy),
-		deployCtx,
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (c *defaultBlueprintContainer) getProviderLinkImplementation(

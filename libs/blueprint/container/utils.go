@@ -623,23 +623,6 @@ func getChildDependencies(
 	return childDeps
 }
 
-func getResourceInfoFromStateForLinkRemoval(
-	instanceState *state.InstanceState,
-	resourceName string,
-) *provider.ResourceInfo {
-	resourceState := getResourceStateByName(instanceState, resourceName)
-	if resourceState == nil {
-		return nil
-	}
-
-	return &provider.ResourceInfo{
-		ResourceID:           resourceState.ResourceID,
-		ResourceName:         resourceName,
-		InstanceID:           instanceState.InstanceID,
-		CurrentResourceState: resourceState,
-	}
-}
-
 func getPartiallyResolvedResourceFromChanges(
 	changes *BlueprintChanges,
 	resourceName string,
