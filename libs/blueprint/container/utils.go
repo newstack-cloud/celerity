@@ -556,6 +556,20 @@ func filterOutRecreated(
 	return filtered
 }
 
+func getProviderResourceImplementation(
+	ctx context.Context,
+	resourceName string,
+	resourceType string,
+	resourceProviders map[string]provider.Provider,
+) (provider.Resource, error) {
+	resourceProvider, hasResourceProvider := resourceProviders[resourceName]
+	if !hasResourceProvider {
+		return nil, fmt.Errorf("no provider found for resource %q", resourceName)
+	}
+
+	return resourceProvider.Resource(ctx, resourceType)
+}
+
 func getResourceStateByName(
 	instanceState *state.InstanceState,
 	resourceName string,

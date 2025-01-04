@@ -229,6 +229,7 @@ type defaultBlueprintContainer struct {
 	blueprintPreparer              BlueprintPreparer
 	linkChangeStager               LinkChangeStager
 	childChangeStager              ChildChangeStager
+	resourceDestroyer              ResourceDestroyer
 }
 
 // ChildBlueprintLoaderFactory provides a factory function for creating a new loader
@@ -273,6 +274,7 @@ type BlueprintContainerDependencies struct {
 	BlueprintPreparer              BlueprintPreparer
 	LinkChangeStager               LinkChangeStager
 	ChildChangeStager              ChildChangeStager
+	ResourceDestroyer              ResourceDestroyer
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -309,6 +311,7 @@ func NewDefaultBlueprintContainer(
 		deps.BlueprintPreparer,
 		deps.LinkChangeStager,
 		deps.ChildChangeStager,
+		deps.ResourceDestroyer,
 	}
 }
 
@@ -331,28 +334,6 @@ func (c *defaultBlueprintContainer) RefChainCollector() validation.RefChainColle
 // func (c *defaultBlueprintContainer) ResourceTemplates() map[string]string {
 // 	return c.resourceTemplates
 // }
-
-func (c *defaultBlueprintContainer) getRetryPolicy(
-	ctx context.Context,
-	resourceProviders map[string]provider.Provider,
-	resourceName string,
-) (*provider.RetryPolicy, error) {
-	provider, ok := resourceProviders[resourceName]
-	if !ok {
-		return c.defaultRetryPolicy, nil
-	}
-
-	retryPolicy, err := provider.RetryPolicy(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if retryPolicy == nil {
-		return c.defaultRetryPolicy, nil
-	}
-
-	return retryPolicy, nil
-}
 
 func (c *defaultBlueprintContainer) getLinkRetryPolicy(
 	ctx context.Context,
@@ -379,77 +360,4 @@ func (c *defaultBlueprintContainer) getLinkRetryPolicy(
 	}
 
 	return retryPolicy, nil
-}
-
-// LinkPendingCompletion holds information about the completion status of a link
-// between two resources for change staging and deployment.
-type LinkPendingCompletion struct {
-	resourceANode    *links.ChainLinkNode
-	resourceBNode    *links.ChainLinkNode
-	resourceAPending bool
-	resourceBPending bool
-	linkPending      bool
-}
-
-// CollectedElements holds resources, children and links that have been collected
-// for an action in the deployment process for a blueprint instance.
-type CollectedElements struct {
-	Resources []*ResourceIDInfo
-	Children  []*ChildBlueprintIDInfo
-	Links     []*LinkIDInfo
-	Total     int
-}
-
-// LinkIDInfo provides the globally unique ID and logical name of a link.
-type LinkIDInfo struct {
-	LinkID   string
-	LinkName string
-}
-
-func (r *LinkIDInfo) ID() string {
-	return r.LinkID
-}
-
-func (r *LinkIDInfo) LogicalName() string {
-	return r.LinkName
-}
-
-func (r *LinkIDInfo) Kind() state.ElementKind {
-	return state.LinkElement
-}
-
-// ResourceIDInfo provides the globally unique ID and logical name of a resource.
-type ResourceIDInfo struct {
-	ResourceID   string
-	ResourceName string
-}
-
-func (r *ResourceIDInfo) ID() string {
-	return r.ResourceID
-}
-
-func (r *ResourceIDInfo) LogicalName() string {
-	return r.ResourceName
-}
-
-func (r *ResourceIDInfo) Kind() state.ElementKind {
-	return state.ResourceElement
-}
-
-// ChildBlueprintIDInfo provides the globally unique ID and logical name of a child blueprint.
-type ChildBlueprintIDInfo struct {
-	ChildInstanceID string
-	ChildName       string
-}
-
-func (r *ChildBlueprintIDInfo) ID() string {
-	return r.ChildInstanceID
-}
-
-func (r *ChildBlueprintIDInfo) LogicalName() string {
-	return r.ChildName
-}
-
-func (r *ChildBlueprintIDInfo) Kind() state.ElementKind {
-	return state.ChildElement
 }

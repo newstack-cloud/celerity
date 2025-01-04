@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"strings"
 
@@ -250,7 +249,7 @@ func (c *defaultBlueprintContainer) prepareAndStageResourceChanges(
 	resourceProviders map[string]provider.Provider,
 	params core.BlueprintParams,
 ) {
-	resourceImplementation, err := c.getProviderResourceImplementation(
+	resourceImplementation, err := getProviderResourceImplementation(
 		ctx,
 		node.ResourceName,
 		node.Resource.Type.Value,
@@ -277,20 +276,6 @@ func (c *defaultBlueprintContainer) prepareAndStageResourceChanges(
 		channels.ErrChan <- err
 		return
 	}
-}
-
-func (c *defaultBlueprintContainer) getProviderResourceImplementation(
-	ctx context.Context,
-	resourceName string,
-	resourceType string,
-	resourceProviders map[string]provider.Provider,
-) (provider.Resource, error) {
-	resourceProvider, hasResourceProvider := resourceProviders[resourceName]
-	if !hasResourceProvider {
-		return nil, fmt.Errorf("no provider found for resource %q", resourceName)
-	}
-
-	return resourceProvider.Resource(ctx, resourceType)
 }
 
 func (c *defaultBlueprintContainer) stageResourceChanges(

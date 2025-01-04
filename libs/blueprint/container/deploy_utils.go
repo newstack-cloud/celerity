@@ -1,6 +1,7 @@
 package container
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strings"
@@ -533,7 +534,7 @@ func determineFinishedFailureStatus(destroyingInstance bool, rollingBack bool) c
 	return core.InstanceStatusDeployFailed
 }
 
-func finishedFailureMessages(deployCtx *deployContext, failedElements []string) []string {
+func finishedFailureMessages(deployCtx *DeployContext, failedElements []string) []string {
 	operation := determineOperation(deployCtx)
 	messages := []string{
 		fmt.Sprintf(
@@ -551,16 +552,16 @@ func finishedFailureMessages(deployCtx *deployContext, failedElements []string) 
 	return messages
 }
 
-func determineOperation(deployCtx *deployContext) string {
-	if deployCtx.destroying && !deployCtx.rollback {
+func determineOperation(deployCtx *DeployContext) string {
+	if deployCtx.Destroying && !deployCtx.Rollback {
 		return "destroy"
 	}
 
-	if deployCtx.destroying && deployCtx.rollback {
+	if deployCtx.Destroying && deployCtx.Rollback {
 		return "roll back deployment of"
 	}
 
-	if !deployCtx.destroying && deployCtx.rollback {
+	if !deployCtx.Destroying && deployCtx.Rollback {
 		return "roll back destruction of"
 	}
 
@@ -1076,7 +1077,7 @@ func getFailedRemovalsAndUpdateState(
 func getFailedElementDeploymentsAndUpdateState(
 	finished map[string]*deployUpdateMessageWrapper,
 	changes *BlueprintChanges,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 ) []string {
 	failed := []string{}
 
@@ -1104,11 +1105,10 @@ func getFailedElementDeploymentsAndUpdateState(
 	return failed
 }
 
-// A lock must be held on the deployment state before calling this function.
 func getFailedResourceDeploymentsAndUpdateState(
 	finished map[string]*deployUpdateMessageWrapper,
 	changes *BlueprintChanges,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 ) []string {
 	failed := []string{}
 
@@ -1144,12 +1144,12 @@ func getFailedResourceDeploymentsAndUpdateState(
 func checkResourceUpdateFailedAndUpdateState(
 	resourceElementName string,
 	finished map[string]*deployUpdateMessageWrapper,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 	wasSuccessful func(*deployUpdateMessageWrapper, bool) bool,
 ) bool {
 	if msgWrapper, ok := finished[resourceElementName]; ok {
-		if wasSuccessful(msgWrapper, deployCtx.rollback) {
-			deployCtx.state.SetUpdatedElement(&ResourceIDInfo{
+		if wasSuccessful(msgWrapper, deployCtx.Rollback) {
+			deployCtx.State.SetUpdatedElement(&ResourceIDInfo{
 				ResourceID:   msgWrapper.resourceUpdateMessage.ResourceID,
 				ResourceName: msgWrapper.resourceUpdateMessage.ResourceName,
 			})
@@ -1160,11 +1160,10 @@ func checkResourceUpdateFailedAndUpdateState(
 	return true
 }
 
-// A lock must be held on the deployment state before calling this function.
 func getFailedLinkDeploymentsAndUpdateState(
 	finished map[string]*deployUpdateMessageWrapper,
 	changes *BlueprintChanges,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 ) []string {
 	failed := []string{}
 
@@ -1192,7 +1191,7 @@ func getFailedLinkDeploymentsAndUpdateState(
 func checkLinkDeploymentsFailedAndUpdateState(
 	linkChanges map[string]provider.LinkChanges,
 	finished map[string]*deployUpdateMessageWrapper,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 	wasSuccessful func(*deployUpdateMessageWrapper, bool) bool,
 ) []string {
 	failedLinks := []string{}
@@ -1200,8 +1199,8 @@ func checkLinkDeploymentsFailedAndUpdateState(
 	for linkName := range linkChanges {
 		linkElementName := linkElementID(linkName)
 		if msgWrapper, ok := finished[linkElementName]; ok {
-			if wasSuccessful(msgWrapper, deployCtx.rollback) {
-				deployCtx.state.SetCreatedElement(&LinkIDInfo{
+			if wasSuccessful(msgWrapper, deployCtx.Rollback) {
+				deployCtx.State.SetCreatedElement(&LinkIDInfo{
 					LinkID:   msgWrapper.linkUpdateMessage.LinkID,
 					LinkName: linkName,
 				})
@@ -1219,7 +1218,7 @@ func checkLinkDeploymentsFailedAndUpdateState(
 func getFailedChildDeploymentsAndUpdateState(
 	finished map[string]*deployUpdateMessageWrapper,
 	changes *BlueprintChanges,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 ) []string {
 	failed := []string{}
 
@@ -1503,6 +1502,29 @@ func countElementsToDeploy(changes *BlueprintChanges) int {
 		len(changes.RecreateChildren) +
 		len(changes.ChildChanges) +
 		linksToDeployCount
+}
+
+func getRetryPolicy(
+	ctx context.Context,
+	resourceProviders map[string]provider.Provider,
+	resourceName string,
+	defaultRetryPolicy *provider.RetryPolicy,
+) (*provider.RetryPolicy, error) {
+	provider, ok := resourceProviders[resourceName]
+	if !ok {
+		return defaultRetryPolicy, nil
+	}
+
+	retryPolicy, err := provider.RetryPolicy(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if retryPolicy == nil {
+		return defaultRetryPolicy, nil
+	}
+
+	return retryPolicy, nil
 }
 
 func createRetryInfo(policy *provider.RetryPolicy) *retryInfo {

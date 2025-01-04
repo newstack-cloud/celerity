@@ -172,6 +172,7 @@ type defaultLoader struct {
 	defaultRetryPolicy        *provider.RetryPolicy
 	deploymentStateFactory    DeploymentStateFactory
 	changeStagingStateFactory ChangeStagingStateFactory
+	resourceDestroyer         ResourceDestroyer
 	// A mapping of resource names to the templates they were derived from.
 	// This is only populated for a loader when loading a derived blueprint
 	// where templates are not used in the derived blueprint but were
@@ -363,6 +364,15 @@ func WithLoaderRefChainCollectorFactory(factory func() validation.RefChainCollec
 	}
 }
 
+// WithLoaderResourceDestroyer sets the destroy service used in blueprint containers created by the loader.
+//
+// When this option is not provided, the default resource destroyer is used.
+func WithLoaderResourceDestroyer(resourceDestroyer ResourceDestroyer) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.resourceDestroyer = resourceDestroyer
+	}
+}
+
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
 // The map of providers must be a map of provider namespaces
@@ -389,6 +399,7 @@ func NewDefaultLoader(
 	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
 	linkRegistry := provider.NewLinkRegistry(providers)
 	internalProviders := copyProviderMap(providers)
+	clock := &bpcore.SystemClock{}
 
 	loader := &defaultLoader{
 		providers:                 internalProviders,
@@ -401,7 +412,7 @@ func NewDefaultLoader(
 		resourceRegistry:          resourceRegistry,
 		dataSourceRegistry:        dataSourceRegistry,
 		linkRegistry:              linkRegistry,
-		clock:                     &bpcore.SystemClock{},
+		clock:                     clock,
 		resolveWorkingDir:         os.Getwd,
 		derivedFromTemplates:      []string{},
 		idGenerator:               bpcore.NewUUIDGenerator(),
@@ -409,6 +420,7 @@ func NewDefaultLoader(
 		deploymentStateFactory:    NewDefaultDeploymentState,
 		changeStagingStateFactory: NewDefaultChangeStagingState,
 		resourceTemplates:         map[string]string{},
+		resourceDestroyer:         NewDefaultResourceDestroyer(clock, provider.DefaultRetryPolicy),
 	}
 
 	for _, opt := range opts {
@@ -453,6 +465,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderResourceTemplates(resourceTemplates),
 		WithLoaderResourceChangeStager(l.resourceChangeStager),
 		WithLoaderRefChainCollectorFactory(l.refChainCollectorFactory),
+		WithLoaderResourceDestroyer(l.resourceDestroyer),
 	)
 }
 
@@ -644,6 +657,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		BlueprintPreparer:              blueprintPreparer,
 		LinkChangeStager:               linkChangeStager,
 		ChildChangeStager:              childChangeStager,
+		ResourceDestroyer:              l.resourceDestroyer,
 	}
 }
 

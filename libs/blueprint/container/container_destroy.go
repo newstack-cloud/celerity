@@ -89,15 +89,15 @@ func (c *defaultBlueprintContainer) destroy(
 			Changes:    input.Changes,
 			Rollback:   input.Rollback,
 		},
-		&deployContext{
-			startTime:             startTime,
-			state:                 state,
-			rollback:              input.Rollback,
-			destroying:            true,
-			channels:              channels,
-			paramOverrides:        paramOverrides,
-			instanceStateSnapshot: &currentInstanceState,
-			resourceProviders:     resourceProviderMap,
+		&DeployContext{
+			StartTime:             startTime,
+			State:                 state,
+			Rollback:              input.Rollback,
+			Destroying:            true,
+			Channels:              channels,
+			ParamOverrides:        paramOverrides,
+			InstanceStateSnapshot: &currentInstanceState,
+			ResourceProviders:     resourceProviderMap,
 		},
 		[]*DeploymentNode{},
 	)
@@ -160,7 +160,7 @@ func (c *defaultBlueprintContainer) resourceProviderMapFromState(
 func (c *defaultBlueprintContainer) removeElements(
 	ctx context.Context,
 	input *DeployInput,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 	nodesToBeDeployed []*DeploymentNode,
 ) (bool, error) {
 
@@ -179,11 +179,11 @@ func (c *defaultBlueprintContainer) removeElements(
 
 	orderedElements := OrderElementsForRemoval(
 		elementsToRemove,
-		deployCtx.instanceStateSnapshot,
+		deployCtx.InstanceStateSnapshot,
 	)
 	groupedElements := GroupOrderedElementsForRemoval(orderedElements)
 
-	if !deployCtx.destroying {
+	if !deployCtx.Destroying {
 		// Stash the prepare duration here for both destroy and deploy as where there are
 		// elements to be removed, they will always be processed first, this allows us to more
 		// accurately track duration as the prepare phase is complete once the elements to be
@@ -191,8 +191,8 @@ func (c *defaultBlueprintContainer) removeElements(
 		// In the case where there are no elements to be removed, this will still be called
 		// for a deployment, as removal of existing elements is always processed first,
 		// this is a reliable way to track the prepare duration and send the status change.
-		deployCtx.state.SetPrepareDuration(c.clock.Since(deployCtx.startTime))
-		deployCtx.channels.DeploymentUpdateChan <- DeploymentUpdateMessage{
+		deployCtx.State.SetPrepareDuration(c.clock.Since(deployCtx.StartTime))
+		deployCtx.Channels.DeploymentUpdateChan <- DeploymentUpdateMessage{
 			InstanceID:      input.InstanceID,
 			Status:          determineInstanceDeployingStatus(input.Rollback, false /* newInstance */),
 			UpdateTimestamp: c.clock.Now().Unix(),
@@ -216,7 +216,7 @@ func (c *defaultBlueprintContainer) removeGroupedElements(
 	ctx context.Context,
 	parallelGroups [][]state.Element,
 	instanceID string,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 ) (bool, error) {
 	internalChannels := CreateDeployChannels()
 
@@ -229,8 +229,8 @@ func (c *defaultBlueprintContainer) removeGroupedElements(
 			ctx,
 			instanceID,
 			group,
-			deployContextWithGroup(
-				deployContextWithChannels(deployCtx, internalChannels),
+			DeployContextWithGroup(
+				DeployContextWithChannels(deployCtx, internalChannels),
 				i,
 			),
 		)
@@ -252,7 +252,7 @@ func (c *defaultBlueprintContainer) listenToAndProcessGroupRemovals(
 	ctx context.Context,
 	instanceID string,
 	group []state.Element,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 	internalChannels *DeployChannels,
 ) (bool, error) {
 	finished := map[string]*deployUpdateMessageWrapper{}
@@ -277,15 +277,15 @@ func (c *defaultBlueprintContainer) listenToAndProcessGroupRemovals(
 		return true, err
 	}
 
-	failed := getFailedRemovalsAndUpdateState(finished, group, deployCtx.state, deployCtx.rollback)
+	failed := getFailedRemovalsAndUpdateState(finished, group, deployCtx.State, deployCtx.Rollback)
 	if len(failed) > 0 {
-		deployCtx.channels.FinishChan <- c.createDeploymentFinishedMessage(
+		deployCtx.Channels.FinishChan <- c.createDeploymentFinishedMessage(
 			instanceID,
-			determineFinishedFailureStatus(deployCtx.destroying, deployCtx.rollback),
+			determineFinishedFailureStatus(deployCtx.Destroying, deployCtx.Rollback),
 			finishedFailureMessages(deployCtx, failed),
-			c.clock.Since(deployCtx.startTime),
+			c.clock.Since(deployCtx.StartTime),
 			/* prepareElapsedTime */
-			deployCtx.state.GetPrepareDuration(),
+			deployCtx.State.GetPrepareDuration(),
 		)
 		return true, nil
 	}
@@ -296,12 +296,12 @@ func (c *defaultBlueprintContainer) listenToAndProcessGroupRemovals(
 func (c *defaultBlueprintContainer) handleResourceDestroyEvent(
 	ctx context.Context,
 	msg ResourceDeployUpdateMessage,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
 ) error {
 	resources := c.stateContainer.Resources()
-	if startedDestroyingResource(msg.PreciseStatus, deployCtx.rollback) {
+	if startedDestroyingResource(msg.PreciseStatus, deployCtx.Rollback) {
 		err := resources.UpdateStatus(
 			ctx,
 			msg.InstanceID,
@@ -316,12 +316,12 @@ func (c *defaultBlueprintContainer) handleResourceDestroyEvent(
 		}
 	}
 
-	if finishedDestroyingResource(msg, deployCtx.rollback) {
+	if finishedDestroyingResource(msg, deployCtx.Rollback) {
 		finished[elementName] = &deployUpdateMessageWrapper{
 			resourceUpdateMessage: &msg,
 		}
 
-		if wasResourceDestroyedSuccessfully(msg.PreciseStatus, deployCtx.rollback) {
+		if wasResourceDestroyedSuccessfully(msg.PreciseStatus, deployCtx.Rollback) {
 			_, err := resources.Remove(
 				ctx,
 				msg.InstanceID,
@@ -348,20 +348,20 @@ func (c *defaultBlueprintContainer) handleResourceDestroyEvent(
 		}
 	}
 
-	deployCtx.channels.ResourceUpdateChan <- msg
+	deployCtx.Channels.ResourceUpdateChan <- msg
 	return nil
 }
 
 func (c *defaultBlueprintContainer) handleChildDestroyEvent(
 	ctx context.Context,
 	msg ChildDeployUpdateMessage,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
 ) error {
 	instances := c.stateContainer.Instances()
 	children := c.stateContainer.Children()
-	if startedDestroyingChild(msg.Status, deployCtx.rollback) {
+	if startedDestroyingChild(msg.Status, deployCtx.Rollback) {
 		err := instances.UpdateStatus(
 			ctx,
 			msg.ChildInstanceID,
@@ -374,12 +374,12 @@ func (c *defaultBlueprintContainer) handleChildDestroyEvent(
 		}
 	}
 
-	if finishedDestroyingChild(msg, deployCtx.rollback) {
+	if finishedDestroyingChild(msg, deployCtx.Rollback) {
 		finished[elementName] = &deployUpdateMessageWrapper{
 			childUpdateMessage: &msg,
 		}
 
-		if wasChildDestroyedSuccessfully(msg.Status, deployCtx.rollback) {
+		if wasChildDestroyedSuccessfully(msg.Status, deployCtx.Rollback) {
 			_, err := children.Remove(
 				ctx,
 				msg.ParentInstanceID,
@@ -403,19 +403,19 @@ func (c *defaultBlueprintContainer) handleChildDestroyEvent(
 		}
 	}
 
-	deployCtx.channels.ChildUpdateChan <- msg
+	deployCtx.Channels.ChildUpdateChan <- msg
 	return nil
 }
 
 func (c *defaultBlueprintContainer) handleLinkDestroyEvent(
 	ctx context.Context,
 	msg LinkDeployUpdateMessage,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
 ) error {
 	links := c.stateContainer.Links()
-	if startedDestroyingLink(msg.Status, deployCtx.rollback) {
+	if startedDestroyingLink(msg.Status, deployCtx.Rollback) {
 		err := links.UpdateStatus(
 			ctx,
 			msg.InstanceID,
@@ -434,12 +434,12 @@ func (c *defaultBlueprintContainer) handleLinkDestroyEvent(
 		}
 	}
 
-	if finishedDestroyingLink(msg, deployCtx.rollback) {
+	if finishedDestroyingLink(msg, deployCtx.Rollback) {
 		finished[elementName] = &deployUpdateMessageWrapper{
 			linkUpdateMessage: &msg,
 		}
 
-		if wasLinkDestroyedSuccessfully(msg.Status, deployCtx.rollback) {
+		if wasLinkDestroyedSuccessfully(msg.Status, deployCtx.Rollback) {
 			_, err := links.Remove(
 				ctx,
 				msg.InstanceID,
@@ -466,7 +466,7 @@ func (c *defaultBlueprintContainer) handleLinkDestroyEvent(
 		}
 	}
 
-	deployCtx.channels.LinkUpdateChan <- msg
+	deployCtx.Channels.LinkUpdateChan <- msg
 	return nil
 }
 
@@ -474,20 +474,20 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 	ctx context.Context,
 	instanceID string,
 	group []state.Element,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 ) {
-	instanceTreePath := getInstanceTreePath(deployCtx.paramOverrides, instanceID)
+	instanceTreePath := getInstanceTreePath(deployCtx.ParamOverrides, instanceID)
 
 	for _, element := range group {
 		if element.Kind() == state.ResourceElement {
-			go c.prepareAndDestroyResource(
+			go c.resourceDestroyer.Destroy(
 				ctx,
 				element,
 				instanceID,
 				deployCtx,
 			)
 		} else if element.Kind() == state.ChildElement {
-			includeTreePath := getIncludeTreePath(deployCtx.paramOverrides, element.LogicalName())
+			includeTreePath := getIncludeTreePath(deployCtx.ParamOverrides, element.LogicalName())
 			go c.prepareAndDestroyChild(
 				ctx,
 				element,
@@ -507,221 +507,17 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 	}
 }
 
-func (c *defaultBlueprintContainer) prepareAndDestroyResource(
-	ctx context.Context,
-	resourceElement state.Element,
-	instanceID string,
-	deployCtx *deployContext,
-) {
-	resourceState := getResourceStateByName(
-		deployCtx.instanceStateSnapshot,
-		resourceElement.LogicalName(),
-	)
-	if resourceState == nil {
-		deployCtx.channels.ErrChan <- errResourceNotFoundInState(
-			resourceElement.LogicalName(),
-			instanceID,
-		)
-		return
-	}
-
-	resourceImplementation, err := c.getProviderResourceImplementation(
-		ctx,
-		resourceElement.LogicalName(),
-		resourceState.ResourceType,
-		deployCtx.resourceProviders,
-	)
-	if err != nil {
-		deployCtx.channels.ErrChan <- err
-		return
-	}
-
-	policy, err := c.getRetryPolicy(ctx, deployCtx.resourceProviders, resourceElement.LogicalName())
-	if err != nil {
-		deployCtx.channels.ErrChan <- err
-		return
-	}
-
-	err = c.destroyResource(
-		ctx,
-		&deploymentElementInfo{
-			element:    resourceElement,
-			instanceID: instanceID,
-		},
-		resourceImplementation,
-		deployCtx,
-		createRetryInfo(policy),
-	)
-	if err != nil {
-		deployCtx.channels.ErrChan <- err
-	}
-}
-
-func (c *defaultBlueprintContainer) destroyResource(
-	ctx context.Context,
-	resourceInfo *deploymentElementInfo,
-	resourceImplementation provider.Resource,
-	deployCtx *deployContext,
-	resourceRetryInfo *retryInfo,
-) error {
-	resourceRemovalStartTime := c.clock.Now()
-	deployCtx.channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
-		InstanceID:      resourceInfo.instanceID,
-		ResourceID:      resourceInfo.element.ID(),
-		ResourceName:    resourceInfo.element.LogicalName(),
-		Group:           deployCtx.currentGroupIndex,
-		Status:          determineResourceDestroyingStatus(deployCtx.rollback),
-		PreciseStatus:   determinePreciseResourceDestroyingStatus(deployCtx.rollback),
-		UpdateTimestamp: c.clock.Now().Unix(),
-		Attempt:         resourceRetryInfo.attempt,
-	}
-
-	resourceState := getResourceStateByName(
-		deployCtx.instanceStateSnapshot,
-		resourceInfo.element.LogicalName(),
-	)
-	err := resourceImplementation.Destroy(ctx, &provider.ResourceDestroyInput{
-		InstanceID:    resourceInfo.instanceID,
-		ResourceID:    resourceInfo.element.ID(),
-		ResourceState: resourceState,
-		Params:        deployCtx.paramOverrides,
-	})
-	if err != nil {
-		if provider.IsRetryableError(err) {
-			retryErr := err.(*provider.RetryableError)
-			return c.handleDestroyResourceRetry(
-				ctx,
-				resourceInfo,
-				resourceImplementation,
-				resourceRetryInfo,
-				resourceRemovalStartTime,
-				[]string{retryErr.ChildError.Error()},
-				deployCtx,
-			)
-		}
-
-		if provider.IsResourceDestroyError(err) {
-			resourceDestroyErr := err.(*provider.ResourceDestroyError)
-			return c.handleDestroyResourceTerminalFailure(
-				resourceInfo,
-				resourceRetryInfo,
-				resourceRemovalStartTime,
-				resourceDestroyErr.FailureReasons,
-				deployCtx,
-			)
-		}
-
-		// For errors that are not wrapped in a provider error, the error is assumed to be fatal
-		// and the deployment process will be stopped without reporting a failure state.
-		// It is really important that adequate guidance is provided for provider developers
-		// to ensure that all errors are wrapped in the appropriate provider error.
-		return err
-	}
-
-	deployCtx.channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
-		InstanceID:      resourceInfo.instanceID,
-		ResourceID:      resourceInfo.element.ID(),
-		ResourceName:    resourceInfo.element.LogicalName(),
-		Group:           deployCtx.currentGroupIndex,
-		Status:          determineResourceDestroyedStatus(deployCtx.rollback),
-		PreciseStatus:   determinePreciseResourceDestroyedStatus(deployCtx.rollback),
-		UpdateTimestamp: c.clock.Now().Unix(),
-		Attempt:         resourceRetryInfo.attempt,
-		Durations: determineResourceDeployFinishedDurations(
-			resourceRetryInfo,
-			c.clock.Since(resourceRemovalStartTime),
-			/* configCompleteDuration */ nil,
-		),
-	}
-
-	return nil
-}
-
-func (c *defaultBlueprintContainer) handleDestroyResourceRetry(
-	ctx context.Context,
-	resourceInfo *deploymentElementInfo,
-	resourceImplementation provider.Resource,
-	resourceRetryInfo *retryInfo,
-	resourceRemovalStartTime time.Time,
-	failureReasons []string,
-	deployCtx *deployContext,
-) error {
-	currentAttemptDuration := c.clock.Since(resourceRemovalStartTime)
-	nextRetryInfo := addRetryAttempt(resourceRetryInfo, currentAttemptDuration)
-	deployCtx.channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
-		InstanceID:      resourceInfo.instanceID,
-		ResourceID:      resourceInfo.element.ID(),
-		ResourceName:    resourceInfo.element.LogicalName(),
-		Group:           deployCtx.currentGroupIndex,
-		Status:          determineResourceDestroyFailedStatus(deployCtx.rollback),
-		PreciseStatus:   determinePreciseResourceDestroyFailedStatus(deployCtx.rollback),
-		FailureReasons:  failureReasons,
-		Attempt:         resourceRetryInfo.attempt,
-		CanRetry:        !nextRetryInfo.exceededMaxRetries,
-		UpdateTimestamp: c.clock.Now().Unix(),
-		// Attempt durations will be accumulated and sent in the status updates
-		// for each subsequent retry.
-		// Total duration will be calculated if retry limit is exceeded.
-		Durations: determineResourceRetryFailureDurations(
-			nextRetryInfo,
-		),
-	}
-
-	if !nextRetryInfo.exceededMaxRetries {
-		waitTimeMS := provider.CalculateRetryWaitTimeMS(nextRetryInfo.policy, nextRetryInfo.attempt)
-		time.Sleep(time.Duration(waitTimeMS) * time.Millisecond)
-		return c.destroyResource(
-			ctx,
-			resourceInfo,
-			resourceImplementation,
-			deployCtx,
-			nextRetryInfo,
-		)
-	}
-
-	return nil
-}
-
-func (c *defaultBlueprintContainer) handleDestroyResourceTerminalFailure(
-	resourceInfo *deploymentElementInfo,
-	resourceRetryInfo *retryInfo,
-	resourceRemovalStartTime time.Time,
-	failureReasons []string,
-	deployCtx *deployContext,
-) error {
-	currentAttemptDuration := c.clock.Since(resourceRemovalStartTime)
-	deployCtx.channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
-		InstanceID:      resourceInfo.instanceID,
-		ResourceID:      resourceInfo.element.ID(),
-		ResourceName:    resourceInfo.element.LogicalName(),
-		Group:           deployCtx.currentGroupIndex,
-		Status:          determineResourceDestroyFailedStatus(deployCtx.rollback),
-		PreciseStatus:   determinePreciseResourceDestroyFailedStatus(deployCtx.rollback),
-		FailureReasons:  failureReasons,
-		Attempt:         resourceRetryInfo.attempt,
-		CanRetry:        false,
-		UpdateTimestamp: c.clock.Now().Unix(),
-		Durations: determineResourceDeployFinishedDurations(
-			resourceRetryInfo,
-			currentAttemptDuration,
-			/* configCompleteDuration */ nil,
-		),
-	}
-
-	return nil
-}
-
 func (c *defaultBlueprintContainer) prepareAndDestroyChild(
 	ctx context.Context,
 	element state.Element,
 	parentInstanceID string,
 	parentInstanceTreePath string,
 	includeTreePath string,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 ) {
-	childState := getChildStateByName(deployCtx.instanceStateSnapshot, element.LogicalName())
+	childState := getChildStateByName(deployCtx.InstanceStateSnapshot, element.LogicalName())
 	if childState == nil {
-		deployCtx.channels.ErrChan <- errChildNotFoundInState(
+		deployCtx.Channels.ErrChan <- errChildNotFoundInState(
 			element.LogicalName(),
 			parentInstanceID,
 		)
@@ -729,7 +525,7 @@ func (c *defaultBlueprintContainer) prepareAndDestroyChild(
 	}
 	destroyChildChanges := createDestroyChangesFromChildState(childState)
 
-	childParams := deployCtx.paramOverrides.
+	childParams := deployCtx.ParamOverrides.
 		WithContextVariables(
 			createContextVarsForChildBlueprint(
 				parentInstanceID,
@@ -754,7 +550,7 @@ func (c *defaultBlueprintContainer) prepareAndDestroyChild(
 		&DestroyInput{
 			InstanceID: element.ID(),
 			Changes:    destroyChildChanges,
-			Rollback:   deployCtx.rollback,
+			Rollback:   deployCtx.Rollback,
 		},
 		childChannels,
 		childParams,
@@ -767,26 +563,26 @@ func (c *defaultBlueprintContainer) prepareAndDestroyChild(
 		case <-ctx.Done():
 			err = ctx.Err()
 		case msg := <-childChannels.DeploymentUpdateChan:
-			deployCtx.channels.ChildUpdateChan <- updateToChildUpdateMessage(
+			deployCtx.Channels.ChildUpdateChan <- updateToChildUpdateMessage(
 				&msg,
 				parentInstanceID,
 				element,
-				deployCtx.currentGroupIndex,
+				deployCtx.CurrentGroupIndex,
 			)
 		case msg := <-childChannels.FinishChan:
-			deployCtx.channels.ChildUpdateChan <- finishedToChildUpdateMessage(
+			deployCtx.Channels.ChildUpdateChan <- finishedToChildUpdateMessage(
 				&msg,
 				parentInstanceID,
 				element,
-				deployCtx.currentGroupIndex,
+				deployCtx.CurrentGroupIndex,
 			)
 			finished = true
 		case msg := <-childChannels.ResourceUpdateChan:
-			deployCtx.channels.ResourceUpdateChan <- msg
+			deployCtx.Channels.ResourceUpdateChan <- msg
 		case msg := <-childChannels.LinkUpdateChan:
-			deployCtx.channels.LinkUpdateChan <- msg
+			deployCtx.Channels.LinkUpdateChan <- msg
 		case msg := <-childChannels.ChildUpdateChan:
-			deployCtx.channels.ChildUpdateChan <- msg
+			deployCtx.Channels.ChildUpdateChan <- msg
 		case err = <-childChannels.ErrChan:
 		}
 	}
@@ -796,14 +592,14 @@ func (c *defaultBlueprintContainer) prepareAndDestroyLink(
 	ctx context.Context,
 	linkElement state.Element,
 	instanceID string,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 ) {
 	linkState := getLinkStateByName(
-		deployCtx.instanceStateSnapshot,
+		deployCtx.InstanceStateSnapshot,
 		linkElement.LogicalName(),
 	)
 	if linkState == nil {
-		deployCtx.channels.ErrChan <- errLinkNotFoundInState(
+		deployCtx.Channels.ErrChan <- errLinkNotFoundInState(
 			linkElement.LogicalName(),
 			instanceID,
 		)
@@ -813,20 +609,20 @@ func (c *defaultBlueprintContainer) prepareAndDestroyLink(
 	linkImplementation, err := c.getProviderLinkImplementation(
 		ctx,
 		linkElement.LogicalName(),
-		deployCtx.instanceStateSnapshot,
+		deployCtx.InstanceStateSnapshot,
 	)
 	if err != nil {
-		deployCtx.channels.ErrChan <- err
+		deployCtx.Channels.ErrChan <- err
 		return
 	}
 
 	retryPolicy, err := c.getLinkRetryPolicy(
 		ctx,
 		linkElement.LogicalName(),
-		deployCtx.instanceStateSnapshot,
+		deployCtx.InstanceStateSnapshot,
 	)
 	if err != nil {
-		deployCtx.channels.ErrChan <- err
+		deployCtx.Channels.ErrChan <- err
 		return
 	}
 
@@ -841,7 +637,7 @@ func (c *defaultBlueprintContainer) prepareAndDestroyLink(
 		retryPolicy,
 	)
 	if err != nil {
-		deployCtx.channels.ErrChan <- err
+		deployCtx.Channels.ErrChan <- err
 	}
 }
 
@@ -849,7 +645,7 @@ func (c *defaultBlueprintContainer) destroyLink(
 	ctx context.Context,
 	linkInfo *deploymentElementInfo,
 	linkImplementation provider.Link,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 	retryPolicy *provider.RetryPolicy,
 ) error {
 	linkDependencyInfo := extractLinkDirectDependencies(
@@ -857,7 +653,7 @@ func (c *defaultBlueprintContainer) destroyLink(
 	)
 
 	resourceAInfo := getResourceInfoFromStateForLinkRemoval(
-		deployCtx.instanceStateSnapshot,
+		deployCtx.InstanceStateSnapshot,
 		linkDependencyInfo.resourceAName,
 	)
 	_, stop, err := c.updateLinkResourceA(
@@ -866,7 +662,7 @@ func (c *defaultBlueprintContainer) destroyLink(
 		&provider.LinkUpdateResourceInput{
 			ResourceInfo:   resourceAInfo,
 			LinkUpdateType: provider.LinkUpdateTypeDestroy,
-			Params:         deployCtx.paramOverrides,
+			Params:         deployCtx.ParamOverrides,
 		},
 		linkInfo,
 		createRetryInfo(retryPolicy),
@@ -880,7 +676,7 @@ func (c *defaultBlueprintContainer) destroyLink(
 	}
 
 	resourceBInfo := getResourceInfoFromStateForLinkRemoval(
-		deployCtx.instanceStateSnapshot,
+		deployCtx.InstanceStateSnapshot,
 		linkDependencyInfo.resourceBName,
 	)
 	_, stop, err = c.updateLinkResourceB(
@@ -889,7 +685,7 @@ func (c *defaultBlueprintContainer) destroyLink(
 		&provider.LinkUpdateResourceInput{
 			ResourceInfo:   resourceBInfo,
 			LinkUpdateType: provider.LinkUpdateTypeDestroy,
-			Params:         deployCtx.paramOverrides,
+			Params:         deployCtx.ParamOverrides,
 		},
 		linkInfo,
 		createRetryInfo(retryPolicy),
@@ -909,7 +705,7 @@ func (c *defaultBlueprintContainer) destroyLink(
 			ResourceAInfo:  resourceAInfo,
 			ResourceBInfo:  resourceBInfo,
 			LinkUpdateType: provider.LinkUpdateTypeDestroy,
-			Params:         deployCtx.paramOverrides,
+			Params:         deployCtx.ParamOverrides,
 		},
 		linkInfo,
 		createRetryInfo(retryPolicy),
@@ -938,7 +734,7 @@ func (c *defaultBlueprintContainer) getProviderLinkImplementation(
 
 func (c *defaultBlueprintContainer) collectElementsToRemove(
 	changes *BlueprintChanges,
-	deployCtx *deployContext,
+	deployCtx *DeployContext,
 	nodesToBeDeployed []*DeploymentNode,
 ) (*CollectedElements, bool, error) {
 	if len(changes.RemovedChildren) == 0 &&
@@ -948,40 +744,40 @@ func (c *defaultBlueprintContainer) collectElementsToRemove(
 	}
 
 	resourcesToRemove, err := c.collectResourcesToRemove(
-		deployCtx.instanceStateSnapshot,
+		deployCtx.InstanceStateSnapshot,
 		changes,
 		nodesToBeDeployed,
 	)
 	if err != nil {
 		message := getDeploymentErrorSpecificMessage(err, prepareFailureMessage)
-		deployCtx.channels.FinishChan <- c.createDeploymentFinishedMessage(
-			deployCtx.instanceStateSnapshot.InstanceID,
-			determineFinishedFailureStatus(deployCtx.destroying, deployCtx.rollback),
+		deployCtx.Channels.FinishChan <- c.createDeploymentFinishedMessage(
+			deployCtx.InstanceStateSnapshot.InstanceID,
+			determineFinishedFailureStatus(deployCtx.Destroying, deployCtx.Rollback),
 			[]string{message},
-			c.clock.Since(deployCtx.startTime),
+			c.clock.Since(deployCtx.StartTime),
 			/* prepareElapsedTime */ nil,
 		)
 		return &CollectedElements{}, true, nil
 	}
 
 	childrenToRemove, err := c.collectChildrenToRemove(
-		deployCtx.instanceStateSnapshot,
+		deployCtx.InstanceStateSnapshot,
 		changes,
 		nodesToBeDeployed,
 	)
 	if err != nil {
 		message := getDeploymentErrorSpecificMessage(err, prepareFailureMessage)
-		deployCtx.channels.FinishChan <- c.createDeploymentFinishedMessage(
-			deployCtx.instanceStateSnapshot.InstanceID,
-			determineFinishedFailureStatus(deployCtx.destroying, deployCtx.rollback),
+		deployCtx.Channels.FinishChan <- c.createDeploymentFinishedMessage(
+			deployCtx.InstanceStateSnapshot.InstanceID,
+			determineFinishedFailureStatus(deployCtx.Destroying, deployCtx.Rollback),
 			[]string{message},
-			c.clock.Since(deployCtx.startTime),
+			c.clock.Since(deployCtx.StartTime),
 			/* prepareElapsedTime */ nil,
 		)
 		return &CollectedElements{}, true, nil
 	}
 
-	linksToRemove := c.collectLinksToRemove(deployCtx.instanceStateSnapshot, changes)
+	linksToRemove := c.collectLinksToRemove(deployCtx.InstanceStateSnapshot, changes)
 
 	return &CollectedElements{
 		Resources: resourcesToRemove,
