@@ -4,10 +4,8 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
@@ -206,34 +204,27 @@ type NewBlueprintDefinition struct {
 type defaultBlueprintContainer struct {
 	stateContainer state.Container
 	// Should be a namespace to provider map.
-	providers                      map[string]provider.Provider
-	resourceRegistry               resourcehelpers.Registry
-	linkRegistry                   provider.LinkRegistry
-	spec                           speccore.BlueprintSpec
-	linkInfo                       links.SpecLinkInfo
-	resourceTemplates              map[string]string
-	refChainCollector              validation.RefChainCollector
-	substitutionResolver           subengine.SubstitutionResolver
-	changeStager                   ResourceChangeStager
-	childResolver                  includes.ChildResolver
-	resourceCache                  *core.Cache[*provider.ResolvedResource]
-	resourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
-	childExportFieldCache          *core.Cache[*subengine.ChildExportFieldInfo]
-	diagnostics                    []*core.Diagnostic
-	createChildBlueprintLoader     ChildBlueprintLoaderFactory
-	clock                          core.Clock
-	idGenerator                    core.IDGenerator
-	defaultRetryPolicy             *provider.RetryPolicy
-	createDeploymentState          func() DeploymentState
-	createChangeStagingState       func() ChangeStagingState
-	blueprintPreparer              BlueprintPreparer
-	linkChangeStager               LinkChangeStager
-	childChangeStager              ChildChangeStager
-	resourceDestroyer              ResourceDestroyer
-	childBlueprintDestroyer        ChildBlueprintDestroyer
-	linkDestroyer                  LinkDestroyer
-	resourceDeployer               ResourceDeployer
-	childDeployer                  ChildBlueprintDeployer
+	providers                map[string]provider.Provider
+	spec                     speccore.BlueprintSpec
+	linkInfo                 links.SpecLinkInfo
+	resourceTemplates        map[string]string
+	refChainCollector        validation.RefChainCollector
+	substitutionResolver     subengine.SubstitutionResolver
+	changeStager             ResourceChangeStager
+	resourceCache            *core.Cache[*provider.ResolvedResource]
+	diagnostics              []*core.Diagnostic
+	clock                    core.Clock
+	idGenerator              core.IDGenerator
+	createDeploymentState    func() DeploymentState
+	createChangeStagingState func() ChangeStagingState
+	blueprintPreparer        BlueprintPreparer
+	linkChangeStager         LinkChangeStager
+	childChangeStager        ChildChangeStager
+	resourceDestroyer        ResourceDestroyer
+	childBlueprintDestroyer  ChildBlueprintDestroyer
+	linkDestroyer            LinkDestroyer
+	resourceDeployer         ResourceDeployer
+	childDeployer            ChildBlueprintDeployer
 }
 
 // ChildBlueprintLoaderFactory provides a factory function for creating a new loader
@@ -256,33 +247,26 @@ type ChangeStagingStateFactory func() ChangeStagingState
 // BlueprintContainerDependencies provides the dependencies
 // required to create a new instance of a blueprint container.
 type BlueprintContainerDependencies struct {
-	StateContainer                 state.Container
-	Providers                      map[string]provider.Provider
-	ResourceRegistry               resourcehelpers.Registry
-	LinkRegistry                   provider.LinkRegistry
-	LinkInfo                       links.SpecLinkInfo
-	ResourceTemplates              map[string]string
-	RefChainCollector              validation.RefChainCollector
-	SubstitutionResolver           subengine.SubstitutionResolver
-	ChangeStager                   ResourceChangeStager
-	ChildResolver                  includes.ChildResolver
-	ResourceCache                  *core.Cache[*provider.ResolvedResource]
-	ResourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
-	ChildExportFieldCache          *core.Cache[*subengine.ChildExportFieldInfo]
-	ChildBlueprintLoaderFactory    ChildBlueprintLoaderFactory
-	Clock                          core.Clock
-	IDGenerator                    core.IDGenerator
-	DefaultRetryPolicy             *provider.RetryPolicy
-	DeploymentStateFactory         DeploymentStateFactory
-	ChangeStagingStateFactory      ChangeStagingStateFactory
-	BlueprintPreparer              BlueprintPreparer
-	LinkChangeStager               LinkChangeStager
-	ChildChangeStager              ChildChangeStager
-	ResourceDestroyer              ResourceDestroyer
-	ChildBlueprintDestroyer        ChildBlueprintDestroyer
-	LinkDestroyer                  LinkDestroyer
-	ResourceDeployer               ResourceDeployer
-	ChildBlueprintDeployer         ChildBlueprintDeployer
+	StateContainer            state.Container
+	Providers                 map[string]provider.Provider
+	LinkInfo                  links.SpecLinkInfo
+	ResourceTemplates         map[string]string
+	RefChainCollector         validation.RefChainCollector
+	SubstitutionResolver      subengine.SubstitutionResolver
+	ChangeStager              ResourceChangeStager
+	ResourceCache             *core.Cache[*provider.ResolvedResource]
+	Clock                     core.Clock
+	IDGenerator               core.IDGenerator
+	DeploymentStateFactory    DeploymentStateFactory
+	ChangeStagingStateFactory ChangeStagingStateFactory
+	BlueprintPreparer         BlueprintPreparer
+	LinkChangeStager          LinkChangeStager
+	ChildChangeStager         ChildChangeStager
+	ResourceDestroyer         ResourceDestroyer
+	ChildBlueprintDestroyer   ChildBlueprintDestroyer
+	LinkDestroyer             LinkDestroyer
+	ResourceDeployer          ResourceDeployer
+	ChildBlueprintDeployer    ChildBlueprintDeployer
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -297,23 +281,16 @@ func NewDefaultBlueprintContainer(
 	return &defaultBlueprintContainer{
 		deps.StateContainer,
 		deps.Providers,
-		deps.ResourceRegistry,
-		deps.LinkRegistry,
 		spec,
 		deps.LinkInfo,
 		deps.ResourceTemplates,
 		deps.RefChainCollector,
 		deps.SubstitutionResolver,
 		deps.ChangeStager,
-		deps.ChildResolver,
 		deps.ResourceCache,
-		deps.ResourceTemplateInputElemCache,
-		deps.ChildExportFieldCache,
 		diagnostics,
-		deps.ChildBlueprintLoaderFactory,
 		deps.Clock,
 		deps.IDGenerator,
-		deps.DefaultRetryPolicy,
 		deps.DeploymentStateFactory,
 		deps.ChangeStagingStateFactory,
 		deps.BlueprintPreparer,
