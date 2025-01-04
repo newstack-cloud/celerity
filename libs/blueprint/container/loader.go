@@ -174,7 +174,7 @@ type defaultLoader struct {
 	changeStagingStateFactory ChangeStagingStateFactory
 	resourceDestroyer         ResourceDestroyer
 	childBlueprintDestroyer   ChildBlueprintDestroyer
-	linkDeployer              LinkDeployer
+	linkDestroyer             LinkDestroyer
 	// A mapping of resource names to the templates they were derived from.
 	// This is only populated for a loader when loading a derived blueprint
 	// where templates are not used in the derived blueprint but were
@@ -385,13 +385,13 @@ func WithLoaderChildBlueprintDestroyer(childBlueprintDestroyer ChildBlueprintDes
 	}
 }
 
-// WithLoaderLinkDeployer sets the link deployment service
+// WithLoaderLinkDestroyer sets the link destroy service
 // used in blueprint containers created by the loader.
 //
-// When this option is not provided, the default link deployer is used.
-func WithLoaderLinkDeployer(linkDeployer LinkDeployer) LoaderOption {
+// When this option is not provided, the default link destroyer is used.
+func WithLoaderLinkDestroyer(linkDestroyer LinkDestroyer) LoaderOption {
 	return func(loader *defaultLoader) {
-		loader.linkDeployer = linkDeployer
+		loader.linkDestroyer = linkDestroyer
 	}
 }
 
@@ -422,6 +422,11 @@ func NewDefaultLoader(
 	linkRegistry := provider.NewLinkRegistry(providers)
 	internalProviders := copyProviderMap(providers)
 	clock := &bpcore.SystemClock{}
+	linkDestroyer := NewDefaultLinkDestroyer(
+		NewDefaultLinkDeployer(clock),
+		linkRegistry,
+		provider.DefaultRetryPolicy,
+	)
 
 	loader := &defaultLoader{
 		providers:                 internalProviders,
@@ -444,7 +449,7 @@ func NewDefaultLoader(
 		resourceTemplates:         map[string]string{},
 		resourceDestroyer:         NewDefaultResourceDestroyer(clock, provider.DefaultRetryPolicy),
 		childBlueprintDestroyer:   NewDefaultChildBlueprintDestroyer(),
-		linkDeployer:              NewDefaultLinkDeployer(clock),
+		linkDestroyer:             linkDestroyer,
 	}
 
 	for _, opt := range opts {
@@ -491,7 +496,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderRefChainCollectorFactory(l.refChainCollectorFactory),
 		WithLoaderResourceDestroyer(l.resourceDestroyer),
 		WithLoaderChildBlueprintDestroyer(l.childBlueprintDestroyer),
-		WithLoaderLinkDeployer(l.linkDeployer),
+		WithLoaderLinkDestroyer(l.linkDestroyer),
 	)
 }
 
@@ -685,7 +690,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ChildChangeStager:              childChangeStager,
 		ResourceDestroyer:              l.resourceDestroyer,
 		ChildBlueprintDestroyer:        l.childBlueprintDestroyer,
-		LinkDeployer:                   l.linkDeployer,
+		LinkDestroyer:                  l.linkDestroyer,
 	}
 }
 

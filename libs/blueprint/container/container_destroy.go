@@ -498,7 +498,7 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 				deployCtx,
 			)
 		} else if element.Kind() == state.LinkElement {
-			go c.prepareAndDestroyLink(
+			go c.linkDestroyer.Destroy(
 				ctx,
 				element,
 				instanceID,
@@ -506,72 +506,6 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 			)
 		}
 	}
-}
-
-func (c *defaultBlueprintContainer) prepareAndDestroyLink(
-	ctx context.Context,
-	linkElement state.Element,
-	instanceID string,
-	deployCtx *DeployContext,
-) {
-	linkState := getLinkStateByName(
-		deployCtx.InstanceStateSnapshot,
-		linkElement.LogicalName(),
-	)
-	if linkState == nil {
-		deployCtx.Channels.ErrChan <- errLinkNotFoundInState(
-			linkElement.LogicalName(),
-			instanceID,
-		)
-		return
-	}
-
-	linkImplementation, err := c.getProviderLinkImplementation(
-		ctx,
-		linkElement.LogicalName(),
-		deployCtx.InstanceStateSnapshot,
-	)
-	if err != nil {
-		deployCtx.Channels.ErrChan <- err
-		return
-	}
-
-	retryPolicy, err := c.getLinkRetryPolicy(
-		ctx,
-		linkElement.LogicalName(),
-		deployCtx.InstanceStateSnapshot,
-	)
-	if err != nil {
-		deployCtx.Channels.ErrChan <- err
-		return
-	}
-
-	_, err = c.linkDeployer.Deploy(
-		ctx,
-		linkElement,
-		instanceID,
-		provider.LinkUpdateTypeDestroy,
-		linkImplementation,
-		deployCtx,
-		retryPolicy,
-	)
-	if err != nil {
-		deployCtx.Channels.ErrChan <- err
-	}
-}
-
-func (c *defaultBlueprintContainer) getProviderLinkImplementation(
-	ctx context.Context,
-	linkName string,
-	currentState *state.InstanceState,
-) (provider.Link, error) {
-
-	resourceTypeA, resourceTypeB, err := getResourceTypesForLink(linkName, currentState)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.linkRegistry.Link(ctx, resourceTypeA, resourceTypeB)
 }
 
 func (c *defaultBlueprintContainer) collectElementsToRemove(

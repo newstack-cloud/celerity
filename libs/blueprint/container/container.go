@@ -231,7 +231,7 @@ type defaultBlueprintContainer struct {
 	childChangeStager              ChildChangeStager
 	resourceDestroyer              ResourceDestroyer
 	childBlueprintDestroyer        ChildBlueprintDestroyer
-	linkDeployer                   LinkDeployer
+	linkDestroyer                  LinkDestroyer
 }
 
 // ChildBlueprintLoaderFactory provides a factory function for creating a new loader
@@ -278,7 +278,7 @@ type BlueprintContainerDependencies struct {
 	ChildChangeStager              ChildChangeStager
 	ResourceDestroyer              ResourceDestroyer
 	ChildBlueprintDestroyer        ChildBlueprintDestroyer
-	LinkDeployer                   LinkDeployer
+	LinkDestroyer                  LinkDestroyer
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -317,7 +317,7 @@ func NewDefaultBlueprintContainer(
 		deps.ChildChangeStager,
 		deps.ResourceDestroyer,
 		deps.ChildBlueprintDestroyer,
-		deps.LinkDeployer,
+		deps.LinkDestroyer,
 	}
 }
 
@@ -340,30 +340,3 @@ func (c *defaultBlueprintContainer) RefChainCollector() validation.RefChainColle
 // func (c *defaultBlueprintContainer) ResourceTemplates() map[string]string {
 // 	return c.resourceTemplates
 // }
-
-func (c *defaultBlueprintContainer) getLinkRetryPolicy(
-	ctx context.Context,
-	logicalLinkName string,
-	instanceState *state.InstanceState,
-) (*provider.RetryPolicy, error) {
-	resourceTypeA, resourceTypeB, err := getResourceTypesForLink(logicalLinkName, instanceState)
-	if err != nil {
-		return nil, err
-	}
-
-	provider, err := c.linkRegistry.Provider(resourceTypeA, resourceTypeB)
-	if err != nil {
-		return nil, err
-	}
-
-	retryPolicy, err := provider.RetryPolicy(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if retryPolicy == nil {
-		return c.defaultRetryPolicy, nil
-	}
-
-	return retryPolicy, nil
-}
