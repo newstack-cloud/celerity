@@ -664,6 +664,15 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		childExportFieldCache,
 		substitutionResolver,
 	)
+	// As the resource deployer uses the resource cache and substitution resolver,
+	// it must be created for each blueprint container that is loaded.
+	resourceDeployer := NewDefaultResourceDeployer(
+		l.clock,
+		l.idGenerator,
+		l.defaultRetryPolicy,
+		substitutionResolver,
+		resourceCache,
+	)
 
 	return &BlueprintContainerDependencies{
 		StateContainer:                 l.stateContainer,
@@ -691,6 +700,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ResourceDestroyer:              l.resourceDestroyer,
 		ChildBlueprintDestroyer:        l.childBlueprintDestroyer,
 		LinkDestroyer:                  l.linkDestroyer,
+		ResourceDeployer:               resourceDeployer,
 	}
 }
 
