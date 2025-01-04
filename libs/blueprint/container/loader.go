@@ -673,6 +673,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		substitutionResolver,
 		resourceCache,
 	)
+	childBlueprintDeployer := NewDefaultChildBlueprintDeployer()
 
 	return &BlueprintContainerDependencies{
 		StateContainer:                 l.stateContainer,
@@ -701,6 +702,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ChildBlueprintDestroyer:        l.childBlueprintDestroyer,
 		LinkDestroyer:                  l.linkDestroyer,
 		ResourceDeployer:               resourceDeployer,
+		ChildBlueprintDeployer:         childBlueprintDeployer,
 	}
 }
 

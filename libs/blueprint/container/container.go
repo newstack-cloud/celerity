@@ -233,6 +233,7 @@ type defaultBlueprintContainer struct {
 	childBlueprintDestroyer        ChildBlueprintDestroyer
 	linkDestroyer                  LinkDestroyer
 	resourceDeployer               ResourceDeployer
+	childDeployer                  ChildBlueprintDeployer
 }
 
 // ChildBlueprintLoaderFactory provides a factory function for creating a new loader
@@ -281,6 +282,7 @@ type BlueprintContainerDependencies struct {
 	ChildBlueprintDestroyer        ChildBlueprintDestroyer
 	LinkDestroyer                  LinkDestroyer
 	ResourceDeployer               ResourceDeployer
+	ChildBlueprintDeployer         ChildBlueprintDeployer
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -321,6 +323,7 @@ func NewDefaultBlueprintContainer(
 		deps.ChildBlueprintDestroyer,
 		deps.LinkDestroyer,
 		deps.ResourceDeployer,
+		deps.ChildBlueprintDeployer,
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 const (
@@ -281,7 +280,7 @@ func (c *defaultBlueprintContainer) startDeploymentFromFirstGroup(
 			)
 		} else if node.Type() == "child" {
 			includeTreePath := getIncludeTreePath(deployCtx.ParamOverrides, node.Name())
-			go c.prepareAndDeployChild(
+			go c.childDeployer.Deploy(
 				ctx,
 				instanceID,
 				instanceTreePath,
@@ -292,17 +291,6 @@ func (c *defaultBlueprintContainer) startDeploymentFromFirstGroup(
 			)
 		}
 	}
-}
-
-func (c *defaultBlueprintContainer) prepareAndDeployChild(
-	ctx context.Context,
-	instanceID string,
-	instanceTreePath string,
-	includeTreePath string,
-	childNode *validation.ReferenceChainNode,
-	changes *BlueprintChanges,
-	deployCtx *DeployContext,
-) {
 }
 
 func (c *defaultBlueprintContainer) listenToAndProcessDeploymentEvents(
