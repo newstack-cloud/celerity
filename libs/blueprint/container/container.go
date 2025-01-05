@@ -211,7 +211,6 @@ type defaultBlueprintContainer struct {
 	refChainCollector        validation.RefChainCollector
 	substitutionResolver     subengine.SubstitutionResolver
 	changeStager             ResourceChangeStager
-	resourceCache            *core.Cache[*provider.ResolvedResource]
 	diagnostics              []*core.Diagnostic
 	clock                    core.Clock
 	idGenerator              core.IDGenerator
@@ -254,7 +253,6 @@ type BlueprintContainerDependencies struct {
 	RefChainCollector         validation.RefChainCollector
 	SubstitutionResolver      subengine.SubstitutionResolver
 	ChangeStager              ResourceChangeStager
-	ResourceCache             *core.Cache[*provider.ResolvedResource]
 	Clock                     core.Clock
 	IDGenerator               core.IDGenerator
 	DeploymentStateFactory    DeploymentStateFactory
@@ -287,7 +285,6 @@ func NewDefaultBlueprintContainer(
 		deps.RefChainCollector,
 		deps.SubstitutionResolver,
 		deps.ChangeStager,
-		deps.ResourceCache,
 		diagnostics,
 		deps.Clock,
 		deps.IDGenerator,

@@ -675,7 +675,6 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		RefChainCollector:         refChainCollector,
 		SubstitutionResolver:      substitutionResolver,
 		ChangeStager:              resourceChangeStager,
-		ResourceCache:             resourceCache,
 		Clock:                     l.clock,
 		IDGenerator:               l.idGenerator,
 		DeploymentStateFactory:    l.deploymentStateFactory,
