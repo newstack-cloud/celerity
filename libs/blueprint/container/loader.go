@@ -148,6 +148,12 @@ func (s *internalBlueprintSpec) Schema() *schema.Blueprint {
 	return s.schema
 }
 
+// DependenciesOverrider is a function that customises the dependencies
+// used to instantiate a blueprint container on each call to load a blueprint.
+type DependenciesOverrider func(
+	depsToOverride *BlueprintContainerDependencies,
+) *BlueprintContainerDependencies
+
 type defaultLoader struct {
 	providers              map[string]provider.Provider
 	specTransformers       map[string]transform.SpecTransformer
@@ -174,6 +180,11 @@ type defaultLoader struct {
 	resourceDestroyer         ResourceDestroyer
 	childBlueprintDestroyer   ChildBlueprintDestroyer
 	linkDestroyer             LinkDestroyer
+	// Allows for customisation of the blueprint container dependencies
+	// used for instantiating the blueprint container.
+	// This allows users to override the default implementations of services
+	// that are instantiated on each call to load a blueprint.
+	overrideContainerDependencies DependenciesOverrider
 	// A mapping of resource names to the templates they were derived from.
 	// This is only populated for a loader when loading a derived blueprint
 	// where templates are not used in the derived blueprint but were
@@ -384,6 +395,17 @@ func WithLoaderLinkDestroyer(linkDestroyer LinkDestroyer) LoaderOption {
 	}
 }
 
+// WithLoaderDependenciesOverrider sets the dependencies overrider to be used by the loader
+// to customise the dependencies used to instantiate a blueprint container on each call to load a blueprint.
+//
+// When this option is not provided, the initial, default dependencies
+// will be used.
+func WithLoaderDependenciesOverrider(overrider DependenciesOverrider) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.overrideContainerDependencies = overrider
+	}
+}
+
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
 // The map of providers must be a map of provider namespaces
@@ -484,6 +506,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderResourceDestroyer(l.resourceDestroyer),
 		WithLoaderChildBlueprintDestroyer(l.childBlueprintDestroyer),
 		WithLoaderLinkDestroyer(l.linkDestroyer),
+		WithLoaderDependenciesOverrider(l.overrideContainerDependencies),
 	)
 }
 
@@ -667,7 +690,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		linkChangeStager,
 	)
 
-	return &BlueprintContainerDependencies{
+	initialDependencies := &BlueprintContainerDependencies{
 		StateContainer:            l.stateContainer,
 		Providers:                 l.providers,
 		LinkInfo:                  linkInfo,
@@ -688,6 +711,12 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ResourceDeployer:          resourceDeployer,
 		ChildBlueprintDeployer:    childBlueprintDeployer,
 	}
+
+	if l.overrideContainerDependencies != nil {
+		return l.overrideContainerDependencies(initialDependencies)
+	}
+
+	return initialDependencies
 }
 
 func (l *defaultLoader) collectLinksAsReferences(
