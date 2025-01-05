@@ -30,7 +30,6 @@ type ContainerDestroyTestSuite struct {
 func (s *ContainerDestroyTestSuite) SetupTest() {
 	stateContainer := internal.NewMemoryStateContainer()
 	s.stateContainer = stateContainer
-	resourceChangeStager := NewDefaultResourceChangeStager()
 	err := s.populateCurrentState(stateContainer)
 	s.Require().NoError(err)
 
@@ -52,7 +51,6 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		newFSChildResolver(),
 		WithLoaderTransformSpec(false),
 		WithLoaderValidateRuntimeValues(true),
-		WithLoaderResourceChangeStager(resourceChangeStager),
 		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
 	)
 

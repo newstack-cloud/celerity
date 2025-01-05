@@ -152,7 +152,6 @@ type defaultLoader struct {
 	providers              map[string]provider.Provider
 	specTransformers       map[string]transform.SpecTransformer
 	stateContainer         state.Container
-	resourceChangeStager   ResourceChangeStager
 	childResolver          includes.ChildResolver
 	validateRuntimeValues  bool
 	validateAfterTransform bool
@@ -346,16 +345,6 @@ func WithLoaderResourceTemplates(resourceTemplates map[string]string) LoaderOpti
 	}
 }
 
-// WithLoaderResourceChangeStager sets the resource change stager to be used in blueprint
-// containers created by the loader.
-//
-// When this option is not provided, the default resource change stager is used.
-func WithLoaderResourceChangeStager(changeStager ResourceChangeStager) LoaderOption {
-	return func(loader *defaultLoader) {
-		loader.resourceChangeStager = changeStager
-	}
-}
-
 // WithLoaderRefChainCollectorFactory sets the reference chain collector factory to be used by the loader.
 //
 // When this option is not provided, the default reference chain collector factory
@@ -432,7 +421,6 @@ func NewDefaultLoader(
 		providers:                 internalProviders,
 		specTransformers:          specTransformers,
 		stateContainer:            stateContainer,
-		resourceChangeStager:      NewDefaultResourceChangeStager(),
 		childResolver:             childResolver,
 		refChainCollectorFactory:  validation.NewRefChainCollector,
 		funcRegistry:              funcRegistry,
@@ -492,7 +480,6 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderDeploymentStateFactory(l.deploymentStateFactory),
 		WithLoaderChangeStagingStateFactory(l.changeStagingStateFactory),
 		WithLoaderResourceTemplates(resourceTemplates),
-		WithLoaderResourceChangeStager(l.resourceChangeStager),
 		WithLoaderRefChainCollectorFactory(l.refChainCollectorFactory),
 		WithLoaderResourceDestroyer(l.resourceDestroyer),
 		WithLoaderChildBlueprintDestroyer(l.childBlueprintDestroyer),
@@ -670,6 +657,15 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		resourceCache,
 	)
 	childBlueprintDeployer := NewDefaultChildBlueprintDeployer()
+	// As the resource change stager uses the resource cache and substitution resolver,
+	// it must be created for each blueprint container that is loaded.
+	resourceChangeStager := NewDefaultResourceChangeStager(
+		substitutionResolver,
+		resourceCache,
+		l.stateContainer,
+		NewDefaultResourceChangeGenerator(),
+		linkChangeStager,
+	)
 
 	return &BlueprintContainerDependencies{
 		StateContainer:            l.stateContainer,
@@ -678,7 +674,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ResourceTemplates:         l.resourceTemplates,
 		RefChainCollector:         refChainCollector,
 		SubstitutionResolver:      substitutionResolver,
-		ChangeStager:              l.resourceChangeStager,
+		ChangeStager:              resourceChangeStager,
 		ResourceCache:             resourceCache,
 		Clock:                     l.clock,
 		IDGenerator:               l.idGenerator,

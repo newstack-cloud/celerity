@@ -26,7 +26,6 @@ type ExpandResourceTemplatesTestSuite struct {
 	funcRegistry                   provider.FunctionRegistry
 	resourceRegistry               resourcehelpers.Registry
 	dataSourceRegistry             provider.DataSourceRegistry
-	resourceChangeStager           ResourceChangeStager
 	providers                      map[string]provider.Provider
 	resourceCache                  *core.Cache[*provider.ResolvedResource]
 	resourceTemplateInputElemCache *core.Cache[[]*core.MappingNode]
@@ -65,7 +64,6 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 		map[string]transform.SpecTransformer{},
 		s.stateContainer,
 		newFSChildResolver(),
-		WithLoaderResourceChangeStager(s.resourceChangeStager),
 		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
 	)
 	for name, filePath := range inputFiles {
@@ -85,7 +83,6 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 
 func (s *ExpandResourceTemplatesTestSuite) SetupTest() {
 	s.stateContainer = internal.NewMemoryStateContainer()
-	s.resourceChangeStager = NewDefaultResourceChangeStager()
 	s.funcRegistry = provider.NewFunctionRegistry(s.providers)
 	s.resourceRegistry = resourcehelpers.NewRegistry(
 		s.providers,

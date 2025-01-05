@@ -46,7 +46,6 @@ type ContainerChangeStagingTestSuite struct {
 
 func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 	stateContainer := internal.NewMemoryStateContainer()
-	resourceChangeStager := NewDefaultResourceChangeStager()
 	err := s.populateCurrentState(stateContainer)
 	s.Require().NoError(err)
 
@@ -68,7 +67,6 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 		newFSChildResolver(),
 		WithLoaderTransformSpec(false),
 		WithLoaderValidateRuntimeValues(true),
-		WithLoaderResourceChangeStager(resourceChangeStager),
 		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
 	)
 

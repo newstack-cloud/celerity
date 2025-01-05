@@ -9,17 +9,17 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 )
 
-type ResourceChangeStagerTestSuite struct {
-	resourceChangeStager *defaultResourceChangeStager
+type ResourceChangeGeneratorTestSuite struct {
+	resourceChangeGenerator *defaultResourceChangeGenerator
 	suite.Suite
 }
 
-func (s *ResourceChangeStagerTestSuite) SetupSuite() {
-	s.resourceChangeStager = &defaultResourceChangeStager{}
+func (s *ResourceChangeGeneratorTestSuite) SetupSuite() {
+	s.resourceChangeGenerator = &defaultResourceChangeGenerator{}
 }
 
-func (s *ResourceChangeStagerTestSuite) Test_stage_changes_for_existing_resource() {
-	changes, err := s.resourceChangeStager.StageChanges(
+func (s *ResourceChangeGeneratorTestSuite) Test_generates_changes_for_existing_resource() {
+	changes, err := s.resourceChangeGenerator.GenerateChanges(
 		context.Background(),
 		s.resourceInfoFixture1(),
 		&internal.ExampleComplexResource{},
@@ -37,8 +37,8 @@ func (s *ResourceChangeStagerTestSuite) Test_stage_changes_for_existing_resource
 	s.Require().NoError(err)
 }
 
-func (s *ResourceChangeStagerTestSuite) Test_stage_changes_for_new_resource() {
-	changes, err := s.resourceChangeStager.StageChanges(
+func (s *ResourceChangeGeneratorTestSuite) Test_generates_changes_for_new_resource() {
+	changes, err := s.resourceChangeGenerator.GenerateChanges(
 		context.Background(),
 		s.resourceInfoFixture2(),
 		&internal.ExampleComplexResource{},
@@ -55,8 +55,8 @@ func (s *ResourceChangeStagerTestSuite) Test_stage_changes_for_new_resource() {
 	s.Require().NoError(err)
 }
 
-func (s *ResourceChangeStagerTestSuite) Test_does_not_produce_changes_for_fields_exceeding_max_depth() {
-	changes, err := s.resourceChangeStager.StageChanges(
+func (s *ResourceChangeGeneratorTestSuite) Test_does_not_generate_changes_for_fields_exceeding_max_depth() {
+	changes, err := s.resourceChangeGenerator.GenerateChanges(
 		context.Background(),
 		s.resourceInfoFixture3(),
 		&internal.ExampleComplexResource{},
@@ -69,8 +69,8 @@ func (s *ResourceChangeStagerTestSuite) Test_does_not_produce_changes_for_fields
 	s.Require().NoError(err)
 }
 
-func (s *ResourceChangeStagerTestSuite) Test_stage_changes_for_existing_resource_with_new_resource_type() {
-	changes, err := s.resourceChangeStager.StageChanges(
+func (s *ResourceChangeGeneratorTestSuite) Test_generates_changes_for_existing_resource_with_new_resource_type() {
+	changes, err := s.resourceChangeGenerator.GenerateChanges(
 		context.Background(),
 		s.resourceInfoFixture4(),
 		&internal.ExampleComplexResource{},
@@ -88,6 +88,6 @@ func (s *ResourceChangeStagerTestSuite) Test_stage_changes_for_existing_resource
 	s.Require().NoError(err)
 }
 
-func TestResourceChangeStagerTestSuite(t *testing.T) {
-	suite.Run(t, new(ResourceChangeStagerTestSuite))
+func TestResourceChangeGeneratorTestSuite(t *testing.T) {
+	suite.Run(t, new(ResourceChangeGeneratorTestSuite))
 }

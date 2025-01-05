@@ -7,7 +7,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-func (s *ResourceChangeStagerTestSuite) resourceInfoFixture2() *provider.ResourceInfo {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture2() *provider.ResourceInfo {
 
 	return &provider.ResourceInfo{
 		ResourceID:               "",
@@ -18,7 +18,7 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture2() *provider.Resourc
 	}
 }
 
-func (s *ResourceChangeStagerTestSuite) resourceInfoFixture2NewResolvedResource() *provider.ResolvedResource {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture2NewResolvedResource() *provider.ResolvedResource {
 	newDisplayName := "Test Complex Resource Updated"
 	secondAnnotationValue := "second-annotation-value"
 	thirdAnnotationValue := "third-annotation-value"

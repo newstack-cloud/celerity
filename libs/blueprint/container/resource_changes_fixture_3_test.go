@@ -9,7 +9,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3() *provider.ResourceInfo {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3() *provider.ResourceInfo {
 
 	return &provider.ResourceInfo{
 		ResourceID:               "test-resource-1",
@@ -20,7 +20,7 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3() *provider.Resourc
 	}
 }
 
-func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3CurrentState() *state.ResourceState {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3CurrentState() *state.ResourceState {
 	itemID := "test-item-1"
 	currentEndpoint1 := "http://example.com/1"
 	currentPrimaryPort := 8080
@@ -182,7 +182,7 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3CurrentState() *stat
 	}
 }
 
-func (s *ResourceChangeStagerTestSuite) resourceInfoFixture3NewResolvedResource() *provider.ResolvedResource {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResource() *provider.ResolvedResource {
 	newDisplayName := "Test Complex Resource Updated"
 	firstAnnotationValue := "first-annotation-value"
 	secondAnnotationValue := "second-annotation-value"

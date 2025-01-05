@@ -6,7 +6,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-func (s *ResourceChangeStagerTestSuite) resourceInfoFixture4() *provider.ResourceInfo {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture4() *provider.ResourceInfo {
 
 	return &provider.ResourceInfo{
 		ResourceID:           "test-resource-4",
@@ -18,7 +18,7 @@ func (s *ResourceChangeStagerTestSuite) resourceInfoFixture4() *provider.Resourc
 	}
 }
 
-func (s *ResourceChangeStagerTestSuite) resourceInfoFixture4CurrentState() *state.ResourceState {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture4CurrentState() *state.ResourceState {
 	return &state.ResourceState{
 		ResourceID:   "test-resource-1",
 		ResourceName: "complexResource",

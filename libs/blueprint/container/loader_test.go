@@ -68,7 +68,6 @@ func (s *LoaderTestSuite) SetupSuite() {
 	}
 
 	stateContainer := internal.NewMemoryStateContainer()
-	resourceChangeStager := NewDefaultResourceChangeStager()
 	providers := map[string]provider.Provider{
 		"aws": newTestAWSProvider(),
 		"core": providerhelpers.NewCoreProvider(
@@ -87,7 +86,6 @@ func (s *LoaderTestSuite) SetupSuite() {
 		stateContainer,
 		newFSChildResolver(),
 		WithLoaderTransformSpec(true),
-		WithLoaderResourceChangeStager(resourceChangeStager),
 		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
 	)
 	s.loaderValidateAfterTransform = NewDefaultLoader(
@@ -97,7 +95,6 @@ func (s *LoaderTestSuite) SetupSuite() {
 		newFSChildResolver(),
 		WithLoaderTransformSpec(true),
 		WithLoaderValidateAfterTransform(true),
-		WithLoaderResourceChangeStager(resourceChangeStager),
 		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
 	)
 	providersWithoutCore := map[string]provider.Provider{
@@ -108,7 +105,6 @@ func (s *LoaderTestSuite) SetupSuite() {
 		specTransformers,
 		stateContainer,
 		newFSChildResolver(),
-		WithLoaderResourceChangeStager(resourceChangeStager),
 		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
 	)
 }
