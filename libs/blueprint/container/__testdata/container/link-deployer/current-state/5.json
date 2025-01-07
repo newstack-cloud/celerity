@@ -1,0 +1,120 @@
+{
+  "instanceId": "link-deploy-test--blueprint-instance-5",
+  "status": 1,
+  "lastDeployedTimestamp": 1733145428,
+  "lastDeployAttemptTimestamp": 1733145428,
+  "resourceIds": {
+    "ordersTable": "test-orders-table-id",
+    "saveOrderFunction": "test-save-order-function-id",
+    "invoicesTable": "test-invoices-table-id"
+  },
+  "resources": {
+    "test-orders-table-id": {
+      "resourceId": "test-orders-table-id",
+      "resourceName": "ordersTable",
+      "resourceTemplateName": "ordersTable",
+      "resourceType": "aws/dynamodb/table",
+      "instanceId": "link-deploy-test--blueprint-instance-5",
+      "status": 2,
+      "preciseStatus": 3,
+      "lastDeployedTimestamp": 1733145428,
+      "lastDeployAttemptTimestamp": 1733145428,
+      "resourceSpecData": {
+        "tableName": "legacy-production-orders-1",
+        "region": "eu-west-1",
+        "id": "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-1"
+      },
+      "description": "Table that stores orders for an application.",
+      "metadata": {
+        "displayName": "legacy-production-env Orders Table",
+        "annotations": {
+          "aws.dynamodb.trigger": false,
+          "aws.dynamodb.vpc": "vpc-1234567890abcdef0",
+          "aws.dynamodb.legacy.flag1": true
+        },
+        "labels": {
+          "app": "orders"
+        },
+        "custom": {
+          "visual": {
+            "x": 150,
+            "y": 350,
+            "label": "legacy-production-env Orders Table"
+          }
+        }
+      },
+      "failureReasons": []
+    },
+    "test-save-order-function-id": {
+      "resourceId": "test-save-order-function-id",
+      "resourceName": "saveOrderFunction",
+      "resourceType": "aws/lambda/function",
+      "instanceId": "link-deploy-test--blueprint-instance-5",
+      "status": 2,
+      "preciseStatus": 3,
+      "lastDeployedTimestamp": 1733145428,
+      "lastDeployAttemptTimestamp": 1733145428,
+      "resourceSpecData": {
+        "handler": "src/saveOrder.handler"
+      },
+      "description": "Function that saves an order to the database.",
+      "failureReasons": []
+    },
+    "test-invoices-table-id": {
+      "resourceId": "test-invoices-table-id",
+      "resourceName": "invoicesTable",
+      "resourceType": "aws/dynamodb/table",
+      "instanceId": "link-deploy-test--blueprint-instance-5",
+      "status": 2,
+      "preciseStatus": 3,
+      "lastDeployedTimestamp": 1733145428,
+      "lastDeployAttemptTimestamp": 1733145428,
+      "resourceSpecData": {
+        "tableName": "legacy-production-invoices",
+        "region": "eu-west-2",
+        "id": "arn:aws:dynamodb:eu-west-2:123456789012:table/legacy-production-invoices"
+      },
+      "description": "Table that stores invoices for an application.",
+      "failureReasons": []
+    }
+  },
+  "links": {
+    "saveOrderFunction::ordersTable": {
+      "linkId": "test-link-5",
+      "linkName": "saveOrderFunction::ordersTable",
+      "instanceId": "link-deploy-test--blueprint-instance-5",
+      "status": 2,
+      "preciseStatus": 8,
+      "lastDeployedTimestamp": 1733145428,
+      "lastDeployAttemptTimestamp": 1733145428,
+      "intermediaryResourceStates": [],
+      "linkData": {
+        "saveOrderFunction": {
+          "environmentVariables": {
+            "TABLE_NAME_ordersTable": "legacy-production-orders",
+            "TABLE_REGION_ordersTable": "us-west-2"
+          },
+          "iam.policyStatements": {
+            "0": {
+              "effect": "Allow",
+              "action": ["dynamodb:PutItem"],
+              "resource": "arn:aws:dynamodb:us-west-2:123456789012:table/legacy-production-orders"
+            }
+          }
+        }
+      },
+      "failureReasons": []
+    }
+  },
+  "metadata": {
+    "build": "tsc"
+  },
+  "exports": {
+    "environment": {
+      "value": "legacy-production-env",
+      "type": "string",
+      "field": "variables.environment"
+    }
+  },
+  "childBlueprints": {}
+}

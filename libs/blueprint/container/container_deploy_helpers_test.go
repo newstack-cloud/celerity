@@ -35,11 +35,14 @@ func assertDeployMessageOrder(
 		expected.DeploymentUpdateMessages,
 		testSuite,
 	)
-	assertFinishedMessage(
-		*actual.finishedMessage,
-		*expected.FinishedMessage,
-		testSuite,
-	)
+
+	if expected.FinishedMessage != nil {
+		assertFinishedMessage(
+			*actual.finishedMessage,
+			*expected.FinishedMessage,
+			testSuite,
+		)
+	}
 }
 
 // Assert that the order of messages for each resource from a deployment
@@ -489,13 +492,7 @@ func createBlueprintDeployFixtureFromFile(
 	container BlueprintContainer,
 	expectedMessagesFilePath string,
 ) (blueprintDeployFixture, error) {
-	expectedMessagesBytes, err := os.ReadFile(expectedMessagesFilePath)
-	if err != nil {
-		return blueprintDeployFixture{}, err
-	}
-
-	expectedMessages := &expectedMessages{}
-	err = json.Unmarshal(expectedMessagesBytes, expectedMessages)
+	expectedMessages, err := loadExpectedMessagesFromFile(expectedMessagesFilePath)
 	if err != nil {
 		return blueprintDeployFixture{}, err
 	}
@@ -504,6 +501,23 @@ func createBlueprintDeployFixtureFromFile(
 		blueprintContainer: container,
 		expected:           expectedMessages,
 	}, nil
+}
+
+func loadExpectedMessagesFromFile(
+	expectedMessagesFilePath string,
+) (*expectedMessages, error) {
+	expectedMessagesBytes, err := os.ReadFile(expectedMessagesFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	expectedMessages := &expectedMessages{}
+	err = json.Unmarshal(expectedMessagesBytes, expectedMessages)
+	if err != nil {
+		return nil, err
+	}
+
+	return expectedMessages, nil
 }
 
 type blueprintDeployFixture struct {

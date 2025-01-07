@@ -66,6 +66,11 @@ func (d *defaultLinkDeployer) Deploy(
 		deployCtx.InstanceStateSnapshot,
 		linkDependencyInfo.resourceAName,
 	)
+	resourceBInfo := getResourceInfoFromStateForLinkDeployment(
+		deployCtx.InstanceStateSnapshot,
+		linkDependencyInfo.resourceBName,
+	)
+
 	linkInfo := &deploymentElementInfo{
 		element:    linkElement,
 		instanceID: instanceID,
@@ -74,9 +79,10 @@ func (d *defaultLinkDeployer) Deploy(
 		ctx,
 		linkImplementation,
 		&provider.LinkUpdateResourceInput{
-			ResourceInfo:   resourceAInfo,
-			LinkUpdateType: linkUpdateType,
-			Params:         deployCtx.ParamOverrides,
+			ResourceInfo:      resourceAInfo,
+			OtherResourceInfo: resourceBInfo,
+			LinkUpdateType:    linkUpdateType,
+			Params:            deployCtx.ParamOverrides,
 		},
 		linkInfo,
 		createRetryInfo(retryPolicy),
@@ -89,17 +95,14 @@ func (d *defaultLinkDeployer) Deploy(
 		return nil, nil
 	}
 
-	resourceBInfo := getResourceInfoFromStateForLinkDeployment(
-		deployCtx.InstanceStateSnapshot,
-		linkDependencyInfo.resourceBName,
-	)
 	resourceBOutput, stop, err := d.updateLinkResourceB(
 		ctx,
 		linkImplementation,
 		&provider.LinkUpdateResourceInput{
-			ResourceInfo:   resourceBInfo,
-			LinkUpdateType: linkUpdateType,
-			Params:         deployCtx.ParamOverrides,
+			ResourceInfo:      resourceBInfo,
+			OtherResourceInfo: resourceAInfo,
+			LinkUpdateType:    linkUpdateType,
+			Params:            deployCtx.ParamOverrides,
 		},
 		linkInfo,
 		createRetryInfo(retryPolicy),
@@ -112,7 +115,7 @@ func (d *defaultLinkDeployer) Deploy(
 		return nil, nil
 	}
 
-	intermediaryResourcesOutput, err := d.updateLinkIntermediaryResources(
+	intermediaryResourcesOutput, failed, err := d.updateLinkIntermediaryResources(
 		ctx,
 		linkImplementation,
 		&provider.LinkUpdateIntermediaryResourcesInput{
@@ -127,6 +130,10 @@ func (d *defaultLinkDeployer) Deploy(
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if failed {
+		return nil, nil
 	}
 
 	return createLinkDeployResult(
@@ -557,7 +564,7 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 	linkInfo *deploymentElementInfo,
 	updateIntermediariesRetryInfo *retryInfo,
 	deployCtx *DeployContext,
-) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+) (*provider.LinkUpdateIntermediaryResourcesOutput, bool, error) {
 	updateIntermediariesStartTime := d.clock.Now()
 	deployCtx.Channels.LinkUpdateChan <- d.createLinkUpdatingIntermediaryResourcesMessage(
 		linkInfo,
@@ -586,7 +593,7 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 
 		if provider.IsLinkUpdateIntermediaryResourcesError(err) {
 			linkUpdateIntermediariesError := err.(*provider.LinkUpdateIntermediaryResourcesError)
-			return nil, d.handleUpdateIntermediaryResourcesTerminalFailure(
+			return nil, true, d.handleUpdateIntermediaryResourcesTerminalFailure(
 				linkInfo,
 				updateIntermediariesRetryInfo,
 				updateIntermediariesStartTime,
@@ -602,7 +609,7 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 		// and the deployment process will be stopped without reporting a failure state.
 		// It is really important that adequate guidance is provided for provider developers
 		// to ensure that all errors are wrapped in the appropriate provider error.
-		return nil, err
+		return nil, true, err
 	}
 
 	deployCtx.Channels.LinkUpdateChan <- d.createLinkIntermediariesUpdatedMessage(
@@ -613,7 +620,7 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 		updateIntermediariesStartTime,
 	)
 
-	return intermediaryResourcesOutput, nil
+	return intermediaryResourcesOutput, false, nil
 }
 
 func (d *defaultLinkDeployer) createLinkIntermediariesUpdatedMessage(
@@ -658,7 +665,7 @@ func (d *defaultLinkDeployer) handleUpdateLinkIntermediaryResourcesRetry(
 	updateIntermediaryResourcesStartTime time.Time,
 	updateInfo *linkUpdateIntermediaryResourcesInfo,
 	deployCtx *DeployContext,
-) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+) (*provider.LinkUpdateIntermediaryResourcesOutput, bool, error) {
 	currentAttemptDuration := d.clock.Since(updateIntermediaryResourcesStartTime)
 	nextRetryInfo := addRetryAttempt(
 		updateIntermediaryResourcesRetryInfo,
@@ -703,7 +710,7 @@ func (d *defaultLinkDeployer) handleUpdateLinkIntermediaryResourcesRetry(
 		)
 	}
 
-	return nil, nil
+	return nil, true, nil
 }
 
 func (d *defaultLinkDeployer) handleUpdateIntermediaryResourcesTerminalFailure(
@@ -787,12 +794,49 @@ func createLinkDeployResult(
 	resourceBOutput *provider.LinkUpdateResourceOutput,
 	intermediaryResourcesOutput *provider.LinkUpdateIntermediaryResourcesOutput,
 ) *LinkDeployResult {
+	resourceAOutputLinkData := getResourceOutputLinkData(resourceAOutput)
+	resourceBOutputLinkData := getResourceOutputLinkData(resourceBOutput)
+	intermediaryResourcesOutputLinkData := getIntermediaryResourcesOutputLinkData(
+		intermediaryResourcesOutput,
+	)
+	intermediaryResourceStates := getIntermediaryResourcesOutputStates(
+		intermediaryResourcesOutput,
+	)
+
 	return &LinkDeployResult{
-		IntermediaryResourceStates: intermediaryResourcesOutput.IntermediaryResourceStates,
+		IntermediaryResourceStates: intermediaryResourceStates,
 		LinkData: core.MergeMaps(
-			resourceAOutput.LinkData,
-			resourceBOutput.LinkData,
-			intermediaryResourcesOutput.LinkData,
+			resourceAOutputLinkData,
+			resourceBOutputLinkData,
+			intermediaryResourcesOutputLinkData,
 		),
 	}
+}
+
+func getResourceOutputLinkData(output *provider.LinkUpdateResourceOutput) *core.MappingNode {
+	if output == nil {
+		return nil
+	}
+
+	return output.LinkData
+}
+
+func getIntermediaryResourcesOutputLinkData(
+	output *provider.LinkUpdateIntermediaryResourcesOutput,
+) *core.MappingNode {
+	if output == nil {
+		return nil
+	}
+
+	return output.LinkData
+}
+
+func getIntermediaryResourcesOutputStates(
+	output *provider.LinkUpdateIntermediaryResourcesOutput,
+) []*state.LinkIntermediaryResourceState {
+	if output == nil {
+		return nil
+	}
+
+	return output.IntermediaryResourceStates
 }

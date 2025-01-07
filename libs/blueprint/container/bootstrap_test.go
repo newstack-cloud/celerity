@@ -11,6 +11,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/linkhelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
 func createParams() core.BlueprintParams {
@@ -38,9 +39,12 @@ func newTestAWSProvider() provider.Provider {
 			"aws/apigateway/api::aws/lambda/function": &testApiGatewayLambdaLink{},
 			"aws/lambda/function::aws/dynamodb/table": &testLambdaDynamoDBTableLink{
 				resourceAUpdateAttempts: map[string]int{},
+				failResourceANames:      []string{},
 				failResourceBNames: []string{
 					"ordersTableFailingLink_0",
 				},
+				failIntermediariesUpdateLinkNames: []string{},
+				skipRetryFailuresForInstance:      []string{},
 			},
 			"aws/dynamodb/table::aws/dynamodb/stream":  &testDynamoDBTableStreamLink{},
 			"aws/dynamodb/stream::aws/lambda/function": &testDynamoDBStreamLambdaLink{},
@@ -60,12 +64,13 @@ func newTestAWSProvider() provider.Provider {
 		},
 		ProviderRetryPolicy: &provider.RetryPolicy{
 			MaxRetries: 2,
-			// The first retry delay is 1 second
-			FirstRetryDelay: 1,
-			// The maximum delay between retries is 10 seconds.
-			MaxDelay:      10,
+			// The first retry delay is 1 millisecond
+			FirstRetryDelay: 0.001,
+			// The maximum delay between retries is 10 milliseconds.
+			MaxDelay:      0.01,
 			BackoffFactor: 0.5,
-			Jitter:        true,
+			// Make the retry behaviour more deterministic for tests by disabling jitter.
+			Jitter: false,
 		},
 	}
 }
@@ -143,9 +148,17 @@ type testLambdaDynamoDBTableLink struct {
 	// update attempt count exceeds the max update attempts.
 	resourceAUpdateAttempts map[string]int
 	// A list of logical resource names that should fail
+	// with a terminal error when updating resource A.
+	failResourceANames []string
+	// A list of logical resource names that should fail
 	// with a terminal error when updating resource B.
 	failResourceBNames []string
-	mu                 sync.Mutex
+	// A list of logical link names that should fail
+	// with a terminal error when updating intermediary resources.
+	failIntermediariesUpdateLinkNames []string
+	// Instance IDs
+	skipRetryFailuresForInstance []string
+	mu                           sync.Mutex
 }
 
 func (l *testLambdaDynamoDBTableLink) StageChanges(
@@ -305,6 +318,12 @@ func (l *testLambdaDynamoDBTableLink) UpdateResourceA(
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	if slices.Contains(l.failResourceANames, input.ResourceInfo.ResourceName) {
+		return nil, &provider.LinkUpdateResourceAError{
+			FailureReasons: []string{"resource A update failed due to terminal error"},
+		}
+	}
+
 	attemptCount, exists := l.resourceAUpdateAttempts[input.ResourceInfo.ResourceID]
 	if !exists {
 		attemptCount = 0
@@ -313,15 +332,28 @@ func (l *testLambdaDynamoDBTableLink) UpdateResourceA(
 	l.resourceAUpdateAttempts[input.ResourceInfo.ResourceID] = attemptCount
 
 	// Provider retry policy allows for a maximum of 3 attempts before failing.
-	if attemptCount < 3 {
+	if attemptCount < 3 && !slices.Contains(l.skipRetryFailuresForInstance, input.ResourceInfo.InstanceID) {
 		return nil, &provider.RetryableError{
 			ChildError: errors.New("resource A update failed due to transient error"),
 		}
 	}
 
+	tableNameEnvVar := fmt.Sprintf("TABLE_NAME_%s", input.OtherResourceInfo.ResourceName)
+	tableRegionEnvVar := fmt.Sprintf("TABLE_REGION_%s", input.OtherResourceInfo.ResourceName)
 	return &provider.LinkUpdateResourceOutput{
 		LinkData: &core.MappingNode{
-			Fields: map[string]*core.MappingNode{},
+			Fields: map[string]*core.MappingNode{
+				input.ResourceInfo.ResourceName: {
+					Fields: map[string]*core.MappingNode{
+						"environmentVariables": {
+							Fields: map[string]*core.MappingNode{
+								tableNameEnvVar:   core.MappingNodeFromString("production-orders"),
+								tableRegionEnvVar: core.MappingNodeFromString("eu-west-2"),
+							},
+						},
+					},
+				},
+			},
 		},
 	}, nil
 }
@@ -339,14 +371,38 @@ func (l *testLambdaDynamoDBTableLink) UpdateResourceB(
 		}
 	}
 
-	return &provider.LinkUpdateResourceOutput{}, nil
+	return &provider.LinkUpdateResourceOutput{
+		LinkData: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{
+				input.ResourceInfo.ResourceName: core.MappingNodeFromString("testResourceBValue"),
+			},
+		},
+	}, nil
 }
 
 func (l *testLambdaDynamoDBTableLink) UpdateIntermediaryResources(
 	ctx context.Context,
 	input *provider.LinkUpdateIntermediaryResourcesInput,
 ) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
-	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
+	linkName := fmt.Sprintf(
+		"%s::%s",
+		input.ResourceAInfo.ResourceName,
+		input.ResourceBInfo.ResourceName,
+	)
+	if slices.Contains(l.failIntermediariesUpdateLinkNames, linkName) {
+		return nil, &provider.LinkUpdateIntermediaryResourcesError{
+			FailureReasons: []string{"intermediary resources update failed due to terminal error"},
+		}
+	}
+
+	return &provider.LinkUpdateIntermediaryResourcesOutput{
+		IntermediaryResourceStates: []*state.LinkIntermediaryResourceState{},
+		LinkData: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{
+				"testIntermediaryResource": core.MappingNodeFromString("testIntermediaryResourceValue"),
+			},
+		},
+	}, nil
 }
 
 type testDynamoDBTableStreamLink struct{}

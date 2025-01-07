@@ -75,10 +75,12 @@ type RetryPolicy struct {
 	MaxRetries int
 	// FirstRetryDelay is the delay in seconds that should be used before the first retry
 	// attempt.
-	FirstRetryDelay int
+	// Fractional seconds are supported.
+	FirstRetryDelay float64
 	// MaxDelay represents the maximum interval in seconds to wait between retries.
 	// If -1 is provided, no maximum delay is enforced.
-	MaxDelay int
+	// Fractional seconds are supported.
+	MaxDelay float64
 	// BackoffFactor is the factor that should be used to calculate the backoff
 	// time between retries.
 	// This AWS blog post from 2015 provides a good insight into how exponential backoff works:

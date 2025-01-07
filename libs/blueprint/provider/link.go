@@ -81,10 +81,11 @@ type LinkStageChangesOutput struct {
 // update a resource in a link relationship
 // with data that will contribute to "activating" or "de-activating" the link.
 type LinkUpdateResourceInput struct {
-	Changes        *LinkChanges
-	ResourceInfo   *ResourceInfo
-	LinkUpdateType LinkUpdateType
-	Params         core.BlueprintParams
+	Changes           *LinkChanges
+	ResourceInfo      *ResourceInfo
+	OtherResourceInfo *ResourceInfo
+	LinkUpdateType    LinkUpdateType
+	Params            core.BlueprintParams
 }
 
 // LinkUpdateType represents the type of update that is being carried out
