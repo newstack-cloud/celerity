@@ -1,0 +1,41 @@
+{
+  "instanceId": "child-deploy-test--blueprint-instance-1-parent",
+  "status": 1,
+  "lastDeployedTimestamp": 1733145428,
+  "lastDeployAttemptTimestamp": 1733145428,
+  "resourceIds": {},
+  "resources": {},
+  "links": {},
+  "metadata": {
+    "build": "tsc"
+  },
+  "exports": {
+    "environment": {
+      "value": "legacy-production-env",
+      "type": "string",
+      "field": "variables.environment"
+    }
+  },
+  "childBlueprints": {
+    "networking": {
+      "instanceId": "child-deploy-test--blueprint-instance-1-networking",
+      "status": 1,
+      "lastDeployedTimestamp": 1733145428,
+      "lastDeployAttemptTimestamp": 1733145428,
+      "resourceIds": {},
+      "resources": {},
+      "links": {},
+      "metadata": {
+        "build": "tsc"
+      },
+      "exports": {
+        "environment": {
+          "value": "legacy-production-env",
+          "type": "string",
+          "field": "variables.environment"
+        }
+      },
+      "childBlueprints": {}
+    }
+  }
+}

@@ -693,7 +693,14 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		substitutionResolver,
 		resourceCache,
 	)
-	childBlueprintDeployer := NewDefaultChildBlueprintDeployer()
+	// As the child blueprint deployer uses the substitution resolver,
+	// it must be created for each blueprint container that is loaded.
+	childBlueprintDeployer := NewDefaultChildBlueprintDeployer(
+		substitutionResolver,
+		l.childResolver,
+		l.forChildBlueprint,
+		l.stateContainer,
+	)
 	// As the resource change stager uses the resource cache and substitution resolver,
 	// it must be created for each blueprint container that is loaded.
 	resourceChangeStager := NewDefaultResourceChangeStager(

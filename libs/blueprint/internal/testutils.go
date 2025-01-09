@@ -328,6 +328,17 @@ func LoadInstanceState(
 	return currentState, nil
 }
 
+func LoadStringFromFile(
+	filePath string,
+) (string, error) {
+	fileBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	return string(fileBytes), nil
+}
+
 type StaticIDGenerator struct {
 	ID string
 }

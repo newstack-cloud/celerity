@@ -2,6 +2,8 @@ package container
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -776,4 +778,127 @@ type DeploymentFinishedMessage struct {
 	// - InstanceStatusUpdated
 	// - InstanceStatusUpdateFailed
 	Durations *state.InstanceCompletionDuration `json:"durations,omitempty"`
+}
+
+// DeployEvent contains an event that is emitted during the deployment process.
+// This is used like a sum type to represent the different types of events that can be emitted.
+type DeployEvent struct {
+	// ResourceUpdateEvent is an event that is emitted when a resource is updated.
+	ResourceUpdateEvent *ResourceDeployUpdateMessage
+	// LinkUpdateEvent is an event that is emitted when a link is updated.
+	LinkUpdateEvent *LinkDeployUpdateMessage
+	// ChildUpdateEvent is an event that is emitted when a child blueprint is updated.
+	ChildUpdateEvent *ChildDeployUpdateMessage
+	// DeploymentUpdateEvent is an event that is emitted when the
+	// deployment status of the blueprint instance is updated.
+	DeploymentUpdateEvent *DeploymentUpdateMessage
+	// FinishEvent is an event that is emitted when the deployment
+	// of the blueprint instance has finished.
+	FinishEvent *DeploymentFinishedMessage
+}
+
+type intermediaryDeployEvent struct {
+	EventType EventType       `json:"type"`
+	Message   json.RawMessage `json:"message"`
+}
+
+// EventType is a type that represents the different types of events that can be
+// emitted during the deployment process.
+type EventType string
+
+const (
+	// EventTypeResourceUpdate is an event type that represents a resource update event.
+	EventTypeResourceUpdate EventType = "resourceUpdate"
+	// EventTypeLinkUpdate is an event type that represents a link update event.
+	EventTypeLinkUpdate EventType = "linkUpdate"
+	// EventTypeChildUpdate is an event type that represents a child blueprint update event.
+	EventTypeChildUpdate EventType = "childUpdate"
+	// EventTypeDeploymentUpdate is an event type that represents a
+	// blueprint instance deployment update event.
+	EventTypeDeploymentUpdate EventType = "deploymentUpdate"
+	// EventTypeFinish is an event type that represents a
+	// blueprint instance deployment finish event.
+	EventTypeFinish EventType = "finish"
+)
+
+func (e *DeployEvent) MarshalJSON() ([]byte, error) {
+	if e.ResourceUpdateEvent != nil {
+		return e.marshalEventMessage(
+			EventTypeResourceUpdate,
+			e.ResourceUpdateEvent,
+		)
+	}
+
+	if e.LinkUpdateEvent != nil {
+		return e.marshalEventMessage(
+			EventTypeLinkUpdate,
+			e.LinkUpdateEvent,
+		)
+	}
+
+	if e.ChildUpdateEvent != nil {
+		return e.marshalEventMessage(
+			EventTypeChildUpdate,
+			e.ChildUpdateEvent,
+		)
+	}
+
+	if e.DeploymentUpdateEvent != nil {
+		return e.marshalEventMessage(
+			EventTypeDeploymentUpdate,
+			e.DeploymentUpdateEvent,
+		)
+	}
+
+	if e.FinishEvent != nil {
+		return e.marshalEventMessage(
+			EventTypeFinish,
+			e.FinishEvent,
+		)
+	}
+
+	return nil, errors.New("no event message set")
+}
+
+func (e *DeployEvent) marshalEventMessage(
+	eventType EventType,
+	eventMessage any,
+) ([]byte, error) {
+	msgBytes, err := json.Marshal(eventMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(intermediaryDeployEvent{
+		EventType: eventType,
+		Message:   msgBytes,
+	})
+}
+
+func (e *DeployEvent) UnmarshalJSON(data []byte) error {
+	intermediaryEvent := &intermediaryDeployEvent{}
+	err := json.Unmarshal(data, intermediaryEvent)
+	if err != nil {
+		return err
+	}
+
+	switch intermediaryEvent.EventType {
+	case EventTypeResourceUpdate:
+		e.ResourceUpdateEvent = &ResourceDeployUpdateMessage{}
+		return json.Unmarshal(intermediaryEvent.Message, e.ResourceUpdateEvent)
+	case EventTypeLinkUpdate:
+		e.LinkUpdateEvent = &LinkDeployUpdateMessage{}
+		return json.Unmarshal(intermediaryEvent.Message, e.LinkUpdateEvent)
+	case EventTypeChildUpdate:
+		e.ChildUpdateEvent = &ChildDeployUpdateMessage{}
+		return json.Unmarshal(intermediaryEvent.Message, e.ChildUpdateEvent)
+	case EventTypeDeploymentUpdate:
+		e.DeploymentUpdateEvent = &DeploymentUpdateMessage{}
+		return json.Unmarshal(intermediaryEvent.Message, e.DeploymentUpdateEvent)
+	case EventTypeFinish:
+		e.FinishEvent = &DeploymentFinishedMessage{}
+		return json.Unmarshal(intermediaryEvent.Message, e.FinishEvent)
+	}
+
+	return errors.New("no valid event type set")
 }

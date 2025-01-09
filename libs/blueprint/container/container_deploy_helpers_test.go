@@ -7,10 +7,14 @@ import (
 	"os"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
+	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 func assertDeployMessageOrder(
@@ -523,6 +527,23 @@ func loadExpectedMessagesFromFile(
 	return expectedMessages, nil
 }
 
+func loadBlueprintChangesFromFile(
+	changesFilePath string,
+) (*BlueprintChanges, error) {
+	changesFileBytes, err := os.ReadFile(changesFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	changes := &BlueprintChanges{}
+	err = json.Unmarshal(changesFileBytes, changes)
+	if err != nil {
+		return nil, err
+	}
+
+	return changes, nil
+}
+
 type blueprintDeployFixture struct {
 	blueprintContainer BlueprintContainer
 	expected           *expectedMessages
@@ -558,4 +579,151 @@ func (s *staticResourceSubstitutionResolver) ResolveInResource(
 		ResolvedResource: s.resolvedResource,
 		ResolveOnDeploy:  []string{},
 	}, nil
+}
+
+type dynamicIncludeSubstitutionResolver struct {
+	resolvedIncludeFactory func(include *schema.Include) *subengine.ResolvedInclude
+}
+
+func (s *dynamicIncludeSubstitutionResolver) ResolveInInclude(
+	ctx context.Context,
+	includeName string,
+	include *schema.Include,
+	resolveTargetInfo *subengine.ResolveIncludeTargetInfo,
+) (*subengine.ResolveInIncludeResult, error) {
+	return &subengine.ResolveInIncludeResult{
+		ResolvedInclude: s.resolvedIncludeFactory(include),
+		ResolveOnDeploy: []string{},
+	}, nil
+}
+
+type stubBlueprintContainerLoader struct {
+	deployEventSequence []*DeployEvent
+}
+
+func (s *stubBlueprintContainerLoader) Load(
+	ctx context.Context,
+	blueprintSpecFile string,
+	params core.BlueprintParams,
+) (BlueprintContainer, error) {
+	return &stubBlueprintContainer{
+		deployEventSequence: s.deployEventSequence,
+	}, nil
+}
+
+func (s *stubBlueprintContainerLoader) Validate(
+	ctx context.Context,
+	blueprintSpecFile string,
+	params core.BlueprintParams,
+) (*ValidationResult, error) {
+	return nil, nil
+}
+
+func (s *stubBlueprintContainerLoader) LoadString(
+	ctx context.Context,
+	blueprintSpec string,
+	inputFormat schema.SpecFormat,
+	params core.BlueprintParams,
+) (BlueprintContainer, error) {
+	return &stubBlueprintContainer{
+		deployEventSequence: s.deployEventSequence,
+	}, nil
+}
+
+func (s *stubBlueprintContainerLoader) ValidateString(
+	ctx context.Context,
+	blueprintSpec string,
+	inputFormat schema.SpecFormat,
+	params core.BlueprintParams,
+) (*ValidationResult, error) {
+	return nil, nil
+}
+
+func (s *stubBlueprintContainerLoader) LoadFromSchema(
+	ctx context.Context,
+	blueprintSchema *schema.Blueprint,
+	params core.BlueprintParams,
+) (BlueprintContainer, error) {
+	return &stubBlueprintContainer{
+		deployEventSequence: s.deployEventSequence,
+	}, nil
+}
+
+func (s *stubBlueprintContainerLoader) ValidateFromSchema(
+	ctx context.Context,
+	blueprintSchema *schema.Blueprint,
+	params core.BlueprintParams,
+) (*ValidationResult, error) {
+	return nil, nil
+}
+
+type stubBlueprintContainer struct {
+	deployEventSequence []*DeployEvent
+}
+
+func (c *stubBlueprintContainer) StageChanges(
+	ctx context.Context,
+	input *StageChangesInput,
+	channels *ChangeStagingChannels,
+	paramOverrides core.BlueprintParams,
+) error {
+	return nil
+}
+
+func (c *stubBlueprintContainer) Deploy(
+	ctx context.Context,
+	input *DeployInput,
+	channels *DeployChannels,
+	paramOverrides core.BlueprintParams,
+) error {
+	go func() {
+		for _, event := range c.deployEventSequence {
+			if event.ChildUpdateEvent != nil {
+				channels.ChildUpdateChan <- *event.ChildUpdateEvent
+			}
+
+			if event.ResourceUpdateEvent != nil {
+				channels.ResourceUpdateChan <- *event.ResourceUpdateEvent
+			}
+
+			if event.LinkUpdateEvent != nil {
+				channels.LinkUpdateChan <- *event.LinkUpdateEvent
+			}
+
+			if event.DeploymentUpdateEvent != nil {
+				channels.DeploymentUpdateChan <- *event.DeploymentUpdateEvent
+			}
+
+			if event.FinishEvent != nil {
+				channels.FinishChan <- *event.FinishEvent
+			}
+		}
+	}()
+
+	return nil
+}
+
+func (c *stubBlueprintContainer) Destroy(
+	ctx context.Context,
+	input *DestroyInput,
+	channels *DeployChannels,
+	paramOverrides core.BlueprintParams,
+) {
+	// do nothing, this is a stub to fulfil the BlueprintContainer interface.
+}
+
+func (c *stubBlueprintContainer) SpecLinkInfo() links.SpecLinkInfo {
+	return nil
+}
+
+func (c *stubBlueprintContainer) BlueprintSpec() speccore.BlueprintSpec {
+	return nil
+}
+
+func (c *stubBlueprintContainer) RefChainCollector() validation.RefChainCollector {
+	return nil
+}
+
+func (c *stubBlueprintContainer) Diagnostics() []*core.Diagnostic {
+	return []*core.Diagnostic{}
 }

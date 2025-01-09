@@ -332,23 +332,6 @@ func loadSchemaResourceFromFile(
 	return schemaResource, nil
 }
 
-func loadBlueprintChangesFromFile(
-	changesFilePath string,
-) (*BlueprintChanges, error) {
-	changesFileBytes, err := os.ReadFile(changesFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	changes := &BlueprintChanges{}
-	err = json.Unmarshal(changesFileBytes, changes)
-	if err != nil {
-		return nil, err
-	}
-
-	return changes, nil
-}
-
 func isResourceDeployFinishedMessage(
 	msg ResourceDeployUpdateMessage,
 	rollback bool,

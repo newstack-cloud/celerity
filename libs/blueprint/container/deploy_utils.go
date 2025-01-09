@@ -1434,7 +1434,7 @@ func updateToChildUpdateMessage(
 ) ChildDeployUpdateMessage {
 	return ChildDeployUpdateMessage{
 		ParentInstanceID: parentInstanceID,
-		ChildInstanceID:  element.ID(),
+		ChildInstanceID:  msg.InstanceID,
 		ChildName:        element.LogicalName(),
 		Group:            groupIndex,
 		Status:           msg.Status,
@@ -1450,7 +1450,7 @@ func finishedToChildUpdateMessage(
 ) ChildDeployUpdateMessage {
 	return ChildDeployUpdateMessage{
 		ParentInstanceID: parentInstanceID,
-		ChildInstanceID:  element.ID(),
+		ChildInstanceID:  msg.InstanceID,
 		ChildName:        element.LogicalName(),
 		Group:            groupIndex,
 		Status:           msg.Status,

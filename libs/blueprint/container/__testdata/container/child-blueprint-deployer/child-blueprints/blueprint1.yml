@@ -1,0 +1,26 @@
+version: 2025-02-01
+variables:
+  environment:
+    type: string
+  region:
+    type: string
+    description: "The region to deploy the resources."
+
+resources:
+  saveOrderFunction:
+    type: aws/lambda/function
+    description: "Function that saves an order to the database."
+    linkSelector:
+      byLabel:
+        app: orders
+    spec:
+      handler: "src/saveOrder.handler"
+
+exports:
+  environment:
+    type: string
+    field: variables.environment
+    description: "The environment for the blueprint."
+
+metadata:
+  build: esbuild

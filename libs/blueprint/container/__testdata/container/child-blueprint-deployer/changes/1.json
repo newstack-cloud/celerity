@@ -1,0 +1,55 @@
+{
+  "newResources": {
+    "saveOrderFunction": {
+      "appliedResourceInfo": {
+        "resourceId": "",
+        "resourceName": "saveOrderFunction",
+        "instanceId": "child-deploy-test--blueprint-instance-1",
+        "currentResourceState": null,
+        "resourceWithResolvedSubs": {
+          "type": "aws/lambda/function",
+          "description": "Function that saves an order to the database.",
+          "linkSelector": {
+            "byLabel": {
+              "app": "orders"
+            }
+          },
+          "spec": {
+            "handler": "src/saveOrder.handler"
+          }
+        }
+      },
+      "mustRecreate": false,
+      "modifiedFields": [],
+      "newFields": [
+        {
+          "fieldPath": "spec.handler",
+          "prevValue": null,
+          "newValue": "src/saveOrder.handler"
+        }
+      ],
+      "removedFields": [],
+      "unchangedFields": [],
+      "computedFields": ["id"],
+      "fieldChangesKnownOnDeploy": [],
+      "conditionKnownOnDeploy": false,
+      "newOutboundLinks": {},
+      "outboundLinkChanges": {},
+      "removedOutboundLinks": []
+    }
+  },
+  "resourceChanges": {},
+  "removedResources": [],
+  "removedLinks": [],
+  "newChildren": {},
+  "childChanges": {},
+  "recreateChildren": [],
+  "removedChildren": [],
+  "newExports": {
+    "environment": {}
+  },
+  "exportChanges": {},
+  "unchangedExports": [],
+  "removedExports": [],
+  "resolveOnDeploy": []
+}

@@ -2,14 +2,11 @@ package container
 
 import (
 	"context"
-	"fmt"
 	"slices"
-	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -65,82 +62,24 @@ func (d *defaultChildChangeStager) StageChanges(
 	paramOverrides core.BlueprintParams,
 	channels *ChangeStagingChannels,
 ) {
-
-	includeName := strings.TrimPrefix(node.ElementName, "children.")
-
-	resolvedInclude, err := d.resolveIncludeForChildBlueprint(
+	loadResult, err := loadChildBlueprint(
 		ctx,
-		node,
-		includeName,
+		&childBlueprintLoadInput{
+			parentInstanceID:       parentInstanceID,
+			parentInstanceTreePath: parentInstanceTreePath,
+			instanceTreePath:       node.ElementName,
+			includeTreePath:        includeTreePath,
+			node:                   node,
+			resolveFor:             subengine.ResolveForChangeStaging,
+		},
+		d.substitutionResolver,
+		d.childResolver,
+		d.createChildBlueprintLoader,
+		d.stateContainer,
+		paramOverrides,
 	)
 	if err != nil {
 		channels.ErrChan <- err
-		return
-	}
-
-	childBlueprintInfo, err := d.childResolver.Resolve(ctx, includeName, resolvedInclude, paramOverrides)
-	if err != nil {
-		channels.ErrChan <- err
-		return
-	}
-
-	childParams := paramOverrides.
-		WithBlueprintVariables(
-			extractIncludeVariables(resolvedInclude),
-			/* keepExisting */ false,
-		).
-		WithContextVariables(
-			createContextVarsForChildBlueprint(
-				parentInstanceID,
-				parentInstanceTreePath,
-				includeTreePath,
-			),
-			/* keepExisting */ true,
-		)
-
-	childLoader := d.createChildBlueprintLoader(
-		/* derivedFromTemplate */ []string{},
-		/* resourceTemplates */ map[string]string{},
-	)
-
-	var childContainer BlueprintContainer
-	if childBlueprintInfo.AbsolutePath != nil {
-		childContainer, err = childLoader.Load(ctx, *childBlueprintInfo.AbsolutePath, childParams)
-		if err != nil {
-			channels.ErrChan <- err
-			return
-		}
-	} else {
-		format, err := extractChildBlueprintFormat(includeName, resolvedInclude)
-		if err != nil {
-			channels.ErrChan <- err
-			return
-		}
-
-		childContainer, err = childLoader.LoadString(
-			ctx,
-			*childBlueprintInfo.BlueprintSource,
-			format,
-			childParams,
-		)
-		if err != nil {
-			channels.ErrChan <- err
-			return
-		}
-	}
-
-	childState, err := d.getChildState(ctx, parentInstanceID, includeName)
-	if err != nil {
-		channels.ErrChan <- err
-		return
-	}
-
-	if hasBlueprintCycle(parentInstanceTreePath, childState.InstanceID) {
-		channels.ErrChan <- errBlueprintCycleDetected(
-			includeName,
-			parentInstanceTreePath,
-			childState.InstanceID,
-		)
 		return
 	}
 
@@ -151,76 +90,26 @@ func (d *defaultChildChangeStager) StageChanges(
 		CompleteChan:        make(chan BlueprintChanges),
 		ErrChan:             make(chan error),
 	}
-	err = childContainer.StageChanges(
+	err = loadResult.childContainer.StageChanges(
 		ctx,
 		&StageChangesInput{
-			InstanceID: childState.InstanceID,
+			InstanceID: loadResult.childState.InstanceID,
 		},
 		childChannels,
-		childParams,
+		loadResult.childParams,
 	)
 	if err != nil {
 		channels.ErrChan <- err
 		return
 	}
 
-	d.waitForChildChanges(ctx, includeName, childState, childChannels, channels)
-}
-
-func (d *defaultChildChangeStager) resolveIncludeForChildBlueprint(
-	ctx context.Context,
-	node *validation.ReferenceChainNode,
-	includeName string,
-) (*subengine.ResolvedInclude, error) {
-	include, isInclude := node.Element.(*schema.Include)
-	if !isInclude {
-		return nil, fmt.Errorf("child blueprint node is not an include")
-	}
-
-	resolvedIncludeResult, err := d.substitutionResolver.ResolveInInclude(
+	d.waitForChildChanges(
 		ctx,
-		includeName,
-		include,
-		&subengine.ResolveIncludeTargetInfo{
-			ResolveFor: subengine.ResolveForChangeStaging,
-		},
+		loadResult.includeName,
+		loadResult.childState,
+		childChannels,
+		channels,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(resolvedIncludeResult.ResolveOnDeploy) > 0 {
-		return nil, fmt.Errorf(
-			"child blueprint include %q has unresolved substitutions, "+
-				"changes can only be staged for child blueprints when "+
-				"all the information required to fetch and load the blueprint is available",
-			node.ElementName,
-		)
-	}
-
-	return resolvedIncludeResult.ResolvedInclude, nil
-}
-
-func (d *defaultChildChangeStager) getChildState(
-	ctx context.Context,
-	parentInstanceID string,
-	includeName string,
-) (*state.InstanceState, error) {
-	children := d.stateContainer.Children()
-	childState, err := children.Get(ctx, parentInstanceID, includeName)
-	if err != nil {
-		if !state.IsInstanceNotFound(err) {
-			return nil, err
-		} else {
-			// Change staging includes describing the planned state for a new blueprint,
-			// an empty instance ID will be used to indicate that the blueprint instance is new.
-			return &state.InstanceState{
-				InstanceID: "",
-			}, nil
-		}
-	}
-
-	return &childState, nil
 }
 
 func (d *defaultChildChangeStager) waitForChildChanges(
