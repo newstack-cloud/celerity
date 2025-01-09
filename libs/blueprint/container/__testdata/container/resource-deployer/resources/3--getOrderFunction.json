@@ -1,0 +1,12 @@
+{
+  "type": "aws/lambda/function",
+  "description": "Function that gets an order from the database.",
+  "linkSelector": {
+    "byLabel": {
+      "app": "orders"
+    }
+  },
+  "spec": {
+    "handler": "src/getOrder.handler"
+  }
+}

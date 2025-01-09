@@ -32,12 +32,21 @@ type DeploymentState interface {
 	// SetPrepareDuration sets the duration of the preparation phase for the deployment
 	// of a blueprint instance.
 	SetPrepareDuration(prepareDuration time.Duration)
+	// SetResourceDurationInfo sets the duration information for the "config completion"
+	// stage of the deployment of a resource.
+	SetResourceDurationInfo(resourceName string, durations *state.ResourceCompletionDurations)
+	// GetResourceDurationInfo returns the duration information for the "config completion"
+	// stage of the deployment of a resource.
+	GetResourceDurationInfo(resourceName string) *state.ResourceCompletionDurations
 	// GetPrepareDuration returns the duration of the preparation phase for the deployment
 	// of a blueprint instance.
 	GetPrepareDuration() *time.Duration
 	// SetResourceSpecState sets the spec state for a resource that has been created
 	// or updated.
 	SetResourceSpecState(resourceName string, specState *core.MappingNode)
+	// GetResourceSpecState returns the spec state for a resource that has been created
+	// or updated.
+	GetResourceSpecState(resourceName string) *core.MappingNode
 }
 
 // NewDefaultDeploymentState creates a new instance of the default
@@ -52,6 +61,7 @@ func NewDefaultDeploymentState() DeploymentState {
 		resourceSpecStates:         make(map[string]*core.MappingNode),
 		updated:                    make(map[string]state.Element),
 		linkDurationInfo:           make(map[string]*state.LinkCompletionDurations),
+		resourceDurationInfo:       make(map[string]*state.ResourceCompletionDurations),
 	}
 }
 
@@ -91,9 +101,12 @@ type defaultDeploymentState struct {
 	updated map[string]state.Element
 	// The duration of the preparation phase for the deployment of a blueprint instance.
 	prepareDuration *time.Duration
-	// A mapping of logical link name to the current duration information for the progress
+	// A mapping of logical link names to the current duration information for the progress
 	// of the link deployment.
 	linkDurationInfo map[string]*state.LinkCompletionDurations
+	// A mapping of logical resource names to the current duration information for a resource
+	// that has reached the "config completion" stage of deployment.
+	resourceDurationInfo map[string]*state.ResourceCompletionDurations
 	// Mutex is required as resources can be deployed concurrently.
 	mu sync.Mutex
 }
@@ -140,6 +153,27 @@ func (d *defaultDeploymentState) GetLinkDurationInfo(linkName string) *state.Lin
 	return copyLinkCompletionDurations(durationInfo)
 }
 
+func (d *defaultDeploymentState) SetResourceDurationInfo(resourceName string, durations *state.ResourceCompletionDurations) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	d.resourceDurationInfo[resourceName] = copyResourceCompletionDurations(durations)
+}
+
+func (d *defaultDeploymentState) GetResourceDurationInfo(resourceName string) *state.ResourceCompletionDurations {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	durationInfo, hasDurationInfo := d.resourceDurationInfo[resourceName]
+	if !hasDurationInfo {
+		return &state.ResourceCompletionDurations{}
+	}
+
+	// Make a copy of durations so any modifications made to the returned value
+	// does not affect the value in the deployment state.
+	return copyResourceCompletionDurations(durationInfo)
+}
+
 func (d *defaultDeploymentState) SetPrepareDuration(prepareDuration time.Duration) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -161,6 +195,20 @@ func (d *defaultDeploymentState) SetResourceSpecState(resourceName string, specS
 	d.resourceSpecStates[resourceName] = specState
 }
 
+func (d *defaultDeploymentState) GetResourceSpecState(resourceName string) *core.MappingNode {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	specState, hasSpecState := d.resourceSpecStates[resourceName]
+	if !hasSpecState {
+		return nil
+	}
+
+	// Copy the spec state so that modifications to the returned value
+	// do not affect the value in the deployment state.
+	return core.CopyMappingNode(specState)
+}
+
 func copyLinkCompletionDurations(durations *state.LinkCompletionDurations) *state.LinkCompletionDurations {
 	if durations == nil {
 		return &state.LinkCompletionDurations{}
@@ -178,8 +226,34 @@ func copyLinkComponentCompletionDurations(durations *state.LinkComponentCompleti
 		return nil
 	}
 
+	totalDurationCopy := copyFloatPtr(durations.TotalDuration)
+
 	return &state.LinkComponentCompletionDurations{
-		TotalDuration:    durations.TotalDuration,
+		TotalDuration:    totalDurationCopy,
 		AttemptDurations: append([]float64{}, durations.AttemptDurations...),
 	}
+}
+
+func copyResourceCompletionDurations(durations *state.ResourceCompletionDurations) *state.ResourceCompletionDurations {
+	if durations == nil {
+		return nil
+	}
+
+	totalDurationCopy := copyFloatPtr(durations.TotalDuration)
+	configCompleteDurationCopy := copyFloatPtr(durations.ConfigCompleteDuration)
+
+	return &state.ResourceCompletionDurations{
+		ConfigCompleteDuration: configCompleteDurationCopy,
+		TotalDuration:          totalDurationCopy,
+		AttemptDurations:       append([]float64{}, durations.AttemptDurations...),
+	}
+}
+
+func copyFloatPtr(value *float64) *float64 {
+	if value == nil {
+		return nil
+	}
+
+	valueCopy := *value
+	return &valueCopy
 }

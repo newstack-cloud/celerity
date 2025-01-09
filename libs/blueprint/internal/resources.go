@@ -244,10 +244,22 @@ type LambdaFunctionResource struct {
 	// the blueprint container will retry destroying the resource until the
 	// destroy attempt count exceeds the max destroy attempts.
 	CurrentDestroyAttempts map[string]int
+	// Tracks the number of deploy attempts for each unique resource ID.
+	// This is used to emulate transient failures when deploying resources,
+	// the blueprint container will retry deploying the resource until the
+	// deploy attempt count exceeds the max deploy attempts.
+	CurrentDeployAttemps map[string]int
 	// Resource IDs for which the lambda function resource implementation
 	// should fail with a terminal error.
 	FailResourceIDs []string
-	mu              sync.Mutex
+	// A mapping of resource IDs to their respective stub resource stabilisation
+	// configuration.
+	StabiliseResourceIDs map[string]*StubResourceStabilisationConfig
+	// Tracks the number of stabilise calls have been made for a resource ID.
+	CurrentStabiliseCalls map[string]int
+	// A list of instance IDs for which retry failures should be skipped.
+	SkipRetryFailuresForInstances []string
+	mu                            sync.Mutex
 }
 
 func (r *LambdaFunctionResource) CanLinkTo(
@@ -328,14 +340,84 @@ func (r *LambdaFunctionResource) Deploy(
 	ctx context.Context,
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
-	return &provider.ResourceDeployOutput{}, nil
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if slices.Contains(r.FailResourceIDs, input.ResourceID) {
+		return nil, &provider.ResourceDeployError{
+			FailureReasons: []string{"deploy failed due to terminal error"},
+		}
+	}
+
+	if !slices.Contains(r.SkipRetryFailuresForInstances, input.InstanceID) {
+		attemptCount, exists := r.CurrentDeployAttemps[input.ResourceID]
+		if !exists {
+			attemptCount = 0
+		}
+		attemptCount += 1
+		r.CurrentDeployAttemps[input.ResourceID] = attemptCount
+
+		// Provider retry policy allows for a maximum of 3 attempts before failing.
+		if attemptCount < 3 {
+			return nil, &provider.RetryableError{
+				ChildError: errors.New("deploy failed due to transient error"),
+			}
+		}
+	}
+
+	id := fmt.Sprintf(
+		"arn:aws:lambda:us-east-1:123456789012:function:%s",
+		input.Changes.AppliedResourceInfo.ResourceName,
+	)
+
+	return &provider.ResourceDeployOutput{
+		SpecState: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{
+				"id":      core.MappingNodeFromString(id),
+				"handler": input.Changes.AppliedResourceInfo.ResourceWithResolvedSubs.Spec.Fields["handler"],
+			},
+		},
+	}, nil
 }
 
 func (r *LambdaFunctionResource) HasStabilised(
 	ctx context.Context,
 	input *provider.ResourceHasStabilisedInput,
 ) (*provider.ResourceHasStabilisedOutput, error) {
-	return &provider.ResourceHasStabilisedOutput{}, nil
+	if r.StabiliseResourceIDs == nil || r.CurrentStabiliseCalls == nil {
+		return &provider.ResourceHasStabilisedOutput{
+			Stabilised: false,
+		}, nil
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	stubConfig, exists := r.StabiliseResourceIDs[input.ResourceID]
+	if !exists {
+		return &provider.ResourceHasStabilisedOutput{
+			Stabilised: false,
+		}, nil
+	}
+
+	stabiliseCalls, exists := r.CurrentStabiliseCalls[input.ResourceID]
+	if !exists {
+		stabiliseCalls = 0
+	}
+
+	stabiliseCalls += 1
+	r.CurrentStabiliseCalls[input.ResourceID] = stabiliseCalls
+
+	if stabiliseCalls < stubConfig.StabilisesAfterAttempts ||
+		stubConfig.StabilisesAfterAttempts == -1 {
+		return &provider.ResourceHasStabilisedOutput{
+			Stabilised: false,
+		}, nil
+	}
+
+	return &provider.ResourceHasStabilisedOutput{
+		Stabilised: true,
+	}, nil
 }
 
 func (r *LambdaFunctionResource) GetExternalState(

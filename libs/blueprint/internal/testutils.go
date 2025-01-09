@@ -327,3 +327,20 @@ func LoadInstanceState(
 
 	return currentState, nil
 }
+
+type StaticIDGenerator struct {
+	ID string
+}
+
+func (m *StaticIDGenerator) GenerateID() (string, error) {
+	return m.ID, nil
+}
+
+// StubResourceStabilisationConfig provides configuration for the test
+// resource implementations to simulate eventual resource stabilisation.
+type StubResourceStabilisationConfig struct {
+	// The number of attempts to wait for a resource to stabilise
+	// before giving up.
+	// Set this to -1 for a resource that should never stabilise.
+	StabilisesAfterAttempts int
+}

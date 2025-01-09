@@ -1,0 +1,12 @@
+{
+  "type": "aws/lambda/function",
+  "description": "Function that saves an order to the database.",
+  "linkSelector": {
+    "byLabel": {
+      "app": "orders"
+    }
+  },
+  "spec": {
+    "handler": "src/saveOrder.handler"
+  }
+}

@@ -7,7 +7,10 @@ import (
 	"os"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 )
 
 func assertDeployMessageOrder(
@@ -539,4 +542,20 @@ type actualMessages struct {
 	linkDeployUpdateMessages     []LinkDeployUpdateMessage
 	deploymentUpdateMessages     []DeploymentUpdateMessage
 	finishedMessage              *DeploymentFinishedMessage
+}
+
+type staticResourceSubstitutionResolver struct {
+	resolvedResource *provider.ResolvedResource
+}
+
+func (s *staticResourceSubstitutionResolver) ResolveInResource(
+	ctx context.Context,
+	resourceName string,
+	resource *schema.Resource,
+	resolveTargetInfo *subengine.ResolveResourceTargetInfo,
+) (*subengine.ResolveInResourceResult, error) {
+	return &subengine.ResolveInResourceResult{
+		ResolvedResource: s.resolvedResource,
+		ResolveOnDeploy:  []string{},
+	}, nil
 }

@@ -1,0 +1,36 @@
+{
+  "resourceDeployUpdateMessages": [
+    [
+      {
+        "instanceId": "resource-deploy-test--blueprint-instance-5",
+        "resourceId": "test-failing-update-order-function-id",
+        "resourceName": "updateOrderFunction",
+        "group": 0,
+        "status": 7,
+        "preciseStatus": 15,
+        "attempt": 0,
+        "canRetry": false,
+        "updateTimestamp": -1
+      },
+      {
+        "instanceId": "resource-deploy-test--blueprint-instance-5",
+        "resourceId": "test-failing-update-order-function-id",
+        "resourceName": "updateOrderFunction",
+        "group": 0,
+        "status": 9,
+        "preciseStatus": 18,
+        "failureReasons": ["deploy failed due to terminal error"],
+        "attempt": 0,
+        "canRetry": false,
+        "updateTimestamp": -1,
+        "durations": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        }
+      }
+    ]
+  ],
+  "childDeployUpdateMessages": [],
+  "linkDeployUpdateMessages": [],
+  "deploymentUpdateMessages": []
+}

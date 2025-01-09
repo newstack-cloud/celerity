@@ -2,7 +2,8 @@ package core
 
 import "time"
 
-// Clock is an interface that provides the current time.
+// Clock is an interface that provides the current time and a way
+// to measure time elapsed since a given time.
 type Clock interface {
 	// Now returns the current time.
 	Now() time.Time

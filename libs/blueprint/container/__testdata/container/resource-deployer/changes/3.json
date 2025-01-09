@@ -1,0 +1,53 @@
+{
+  "newResources": {
+    "getOrderFunction": {
+      "appliedResourceInfo": {
+        "resourceId": "",
+        "resourceName": "getOrderFunction",
+        "instanceId": "resource-deploy-test--blueprint-instance-3",
+        "currentResourceState": null,
+        "resourceWithResolvedSubs": {
+          "type": "aws/lambda/function",
+          "description": "Function that gets an order from the database.",
+          "linkSelector": {
+            "byLabel": {
+              "app": "orders"
+            }
+          },
+          "spec": {
+            "handler": "src/getOrder.handler"
+          }
+        }
+      },
+      "mustRecreate": false,
+      "modifiedFields": [],
+      "newFields": [
+        {
+          "fieldPath": "spec.handler",
+          "prevValue": null,
+          "newValue": "src/getOrder.handler"
+        }
+      ],
+      "removedFields": [],
+      "unchangedFields": [],
+      "computedFields": ["id"],
+      "fieldChangesKnownOnDeploy": [],
+      "conditionKnownOnDeploy": false,
+      "newOutboundLinks": {},
+      "outboundLinkChanges": {},
+      "removedOutboundLinks": []
+    }
+  },
+  "resourceChanges": {},
+  "removedResources": [],
+  "removedLinks": [],
+  "newChildren": {},
+  "childChanges": {},
+  "recreateChildren": [],
+  "removedChildren": [],
+  "newExports": {},
+  "exportChanges": {},
+  "unchangedExports": [],
+  "removedExports": [],
+  "resolveOnDeploy": []
+}

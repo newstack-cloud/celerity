@@ -257,8 +257,10 @@ type ResourceIsCommonTerminalOutput struct {
 // ResourceDeployInput provides the input data needed for a resource to
 // be deployed.
 type ResourceDeployInput struct {
-	Changes *Changes
-	Params  core.BlueprintParams
+	InstanceID string
+	ResourceID string
+	Changes    *Changes
+	Params     core.BlueprintParams
 }
 
 // ResourceGetTypeInput provides the input data needed for a resource to
@@ -294,15 +296,16 @@ type ResourceDeployOutput struct {
 // ResourceHasStabilisedInput provides the input data needed for a resource to
 // determine if it has stabilised after being deployed.
 type ResourceHasStabilisedInput struct {
-	InstanceID string
-	ResourceID string
-	Params     core.BlueprintParams
+	InstanceID   string
+	ResourceID   string
+	ResourceSpec *core.MappingNode
+	Params       core.BlueprintParams
 }
 
 // ResourceHasStabilisedOutput provides the output data from determining if a resource
 // has stabilised after being deployed.
 type ResourceHasStabilisedOutput struct {
-	HasStabilised bool
+	Stabilised bool
 }
 
 // ResourceGetExternalStateInput provides the input data needed for a resource to

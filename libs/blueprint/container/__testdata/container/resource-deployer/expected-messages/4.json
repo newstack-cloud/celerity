@@ -1,0 +1,51 @@
+{
+  "resourceDeployUpdateMessages": [
+    [
+      {
+        "instanceId": "resource-deploy-test--blueprint-instance-4",
+        "resourceId": "update-order-function",
+        "resourceName": "updateOrderFunction",
+        "group": 0,
+        "status": 10,
+        "preciseStatus": 19,
+        "attempt": 0,
+        "canRetry": false,
+        "updateTimestamp": -1
+      },
+      {
+        "instanceId": "resource-deploy-test--blueprint-instance-4",
+        "resourceId": "update-order-function",
+        "resourceName": "updateOrderFunction",
+        "group": 0,
+        "status": 10,
+        "preciseStatus": 21,
+        "attempt": 0,
+        "canRetry": false,
+        "updateTimestamp": -1,
+        "durations": {
+          "configCompleteDuration": -1,
+          "attemptDurations": [-1]
+        }
+      },
+      {
+        "instanceId": "resource-deploy-test--blueprint-instance-4",
+        "resourceId": "update-order-function",
+        "resourceName": "updateOrderFunction",
+        "group": 0,
+        "status": 12,
+        "preciseStatus": 22,
+        "attempt": 0,
+        "canRetry": false,
+        "updateTimestamp": -1,
+        "durations": {
+          "configCompleteDuration": -1,
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        }
+      }
+    ]
+  ],
+  "childDeployUpdateMessages": [],
+  "linkDeployUpdateMessages": [],
+  "deploymentUpdateMessages": []
+}

@@ -30,8 +30,36 @@ func newTestAWSProvider() provider.Provider {
 			"aws/dynamodb/stream": &internal.DynamoDBStreamResource{},
 			"aws/lambda/function": &internal.LambdaFunctionResource{
 				CurrentDestroyAttempts: map[string]int{},
+				CurrentDeployAttemps:   map[string]int{},
 				FailResourceIDs: []string{
 					"test-failing-order-function-id",
+					"test-failing-update-order-function-id",
+				},
+				StabiliseResourceIDs: map[string]*internal.StubResourceStabilisationConfig{
+					"test-resource-id": {
+						StabilisesAfterAttempts: 3,
+					},
+					"process-order-function": {
+						StabilisesAfterAttempts: 2,
+					},
+					"get-order-function": {
+						StabilisesAfterAttempts: 1,
+					},
+					"update-order-function": {
+						StabilisesAfterAttempts: 1,
+					},
+					"list-orders-function": {
+						// This function will never stabilise.
+						StabilisesAfterAttempts: -1,
+					},
+				},
+				CurrentStabiliseCalls: map[string]int{},
+				SkipRetryFailuresForInstances: []string{
+					"resource-deploy-test--blueprint-instance-2",
+					"resource-deploy-test--blueprint-instance-3",
+					"resource-deploy-test--blueprint-instance-4",
+					"resource-deploy-test--blueprint-instance-5",
+					"resource-deploy-test--blueprint-instance-6",
 				},
 			},
 		},

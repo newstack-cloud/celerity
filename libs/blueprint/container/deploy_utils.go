@@ -289,6 +289,39 @@ func determinePreciseResourceConfigCompleteStatus(rollingBack bool, newResource 
 	return core.PreciseResourceStatusConfigComplete
 }
 
+func determineResourceDeployedStatus(rollingBack bool, newResource bool) core.ResourceStatus {
+	if rollingBack {
+		return core.ResourceStatusRollbackComplete
+	}
+
+	if !newResource {
+		return core.ResourceStatusUpdated
+	}
+
+	return core.ResourceStatusCreated
+}
+
+func determinePreciseResourceDeployedStatus(rollingBack bool, newResource bool) core.PreciseResourceStatus {
+	if rollingBack && newResource {
+		// If the context is deploying a new resource as a part of the rollback
+		// process, the status should be the rollback complete state for a destruction
+		// rollback.
+		return core.PreciseResourceStatusDestroyRollbackComplete
+	}
+
+	if rollingBack && !newResource {
+		// If the context is re-deploying an existing resource as a part of the rollback
+		// process, the status should be the rollback complete state for an update rollback.
+		return core.PreciseResourceStatusUpdateRollbackComplete
+	}
+
+	if !newResource {
+		return core.PreciseResourceStatusUpdated
+	}
+
+	return core.PreciseResourceStatusCreated
+}
+
 func determineLinkUpdatingStatus(
 	rollingBack bool,
 	linkUpdateType provider.LinkUpdateType,
@@ -865,16 +898,26 @@ func determineResourceRetryFailureDurations(
 
 func determineResourceDeployConfigCompleteDurations(
 	currentRetryInfo *retryInfo,
-	currentConfigCompleteDuration time.Duration,
+	currentAttemptDuration time.Duration,
 ) *state.ResourceCompletionDurations {
-	configCompleteMS := core.FractionalMilliseconds(currentConfigCompleteDuration)
-	configCompleteDurationPtr := &configCompleteMS
+	updatedAttemptDurations := append(
+		currentRetryInfo.attemptDurations,
+		core.FractionalMilliseconds(currentAttemptDuration),
+	)
+
+	configCompleteDurations := core.Sum(updatedAttemptDurations)
+
+	configCompleteDurationPtr := &configCompleteDurations
 	return &state.ResourceCompletionDurations{
 		ConfigCompleteDuration: configCompleteDurationPtr,
-		AttemptDurations:       currentRetryInfo.attemptDurations,
+		AttemptDurations:       updatedAttemptDurations,
 	}
 }
 
+// This only applies to reaching the "config complete" stage for deployments
+// and is used for resource destruction durations.
+// This is not used to calculate the final durations once a resource has been
+// confirmed to be stable.
 func determineResourceDeployFinishedDurations(
 	currentRetryInfo *retryInfo,
 	currentAttemptDuration time.Duration,
@@ -896,6 +939,20 @@ func determineResourceDeployFinishedDurations(
 		ConfigCompleteDuration: configCompleteDurationPtr,
 		TotalDuration:          &totalDuration,
 		AttemptDurations:       updatedAttemptDurations,
+	}
+}
+
+func addTotalToResourceCompletionDurations(
+	durations *state.ResourceCompletionDurations,
+	stabilisePollingDuration time.Duration,
+) *state.ResourceCompletionDurations {
+	stabilisePollingMS := core.FractionalMilliseconds(stabilisePollingDuration)
+	totalDuration := core.Sum(durations.AttemptDurations) + stabilisePollingMS
+	totalDurationPtr := &totalDuration
+	return &state.ResourceCompletionDurations{
+		TotalDuration:          totalDurationPtr,
+		ConfigCompleteDuration: durations.ConfigCompleteDuration,
+		AttemptDurations:       durations.AttemptDurations,
 	}
 }
 

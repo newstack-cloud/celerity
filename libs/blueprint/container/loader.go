@@ -165,21 +165,22 @@ type defaultLoader struct {
 	// A list of resource names derived from resource templates.
 	// "elem" and "i" references should be allowed in resources
 	// derived from templates where the `each` property is not set.
-	derivedFromTemplates      []string
-	refChainCollectorFactory  func() validation.RefChainCollector
-	funcRegistry              provider.FunctionRegistry
-	resourceRegistry          resourcehelpers.Registry
-	dataSourceRegistry        provider.DataSourceRegistry
-	linkRegistry              provider.LinkRegistry
-	clock                     bpcore.Clock
-	resolveWorkingDir         corefunctions.WorkingDirResolver
-	idGenerator               bpcore.IDGenerator
-	defaultRetryPolicy        *provider.RetryPolicy
-	deploymentStateFactory    DeploymentStateFactory
-	changeStagingStateFactory ChangeStagingStateFactory
-	resourceDestroyer         ResourceDestroyer
-	childBlueprintDestroyer   ChildBlueprintDestroyer
-	linkDestroyer             LinkDestroyer
+	derivedFromTemplates           []string
+	refChainCollectorFactory       func() validation.RefChainCollector
+	funcRegistry                   provider.FunctionRegistry
+	resourceRegistry               resourcehelpers.Registry
+	dataSourceRegistry             provider.DataSourceRegistry
+	linkRegistry                   provider.LinkRegistry
+	clock                          bpcore.Clock
+	resolveWorkingDir              corefunctions.WorkingDirResolver
+	idGenerator                    bpcore.IDGenerator
+	defaultRetryPolicy             *provider.RetryPolicy
+	resourceStabilityPollingConfig *ResourceStabilityPollingConfig
+	deploymentStateFactory         DeploymentStateFactory
+	changeStagingStateFactory      ChangeStagingStateFactory
+	resourceDestroyer              ResourceDestroyer
+	childBlueprintDestroyer        ChildBlueprintDestroyer
+	linkDestroyer                  LinkDestroyer
 	// Allows for customisation of the blueprint container dependencies
 	// used for instantiating the blueprint container.
 	// This allows users to override the default implementations of services
@@ -406,6 +407,16 @@ func WithLoaderDependenciesOverrider(overrider DependenciesOverrider) LoaderOpti
 	}
 }
 
+// WithLoaderResourceStabilityPollingConfig sets the resource stability polling configuration
+// to be used for deployment orchestration when waiting for resources to become stable.
+//
+// When this option is not provided, the default resource stability polling configuration is used.
+func WithLoaderResourceStabilityPollingConfig(config *ResourceStabilityPollingConfig) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.resourceStabilityPollingConfig = config
+	}
+}
+
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
 // The map of providers must be a map of provider namespaces
@@ -440,26 +451,27 @@ func NewDefaultLoader(
 	)
 
 	loader := &defaultLoader{
-		providers:                 internalProviders,
-		specTransformers:          specTransformers,
-		stateContainer:            stateContainer,
-		childResolver:             childResolver,
-		refChainCollectorFactory:  validation.NewRefChainCollector,
-		funcRegistry:              funcRegistry,
-		resourceRegistry:          resourceRegistry,
-		dataSourceRegistry:        dataSourceRegistry,
-		linkRegistry:              linkRegistry,
-		clock:                     clock,
-		resolveWorkingDir:         os.Getwd,
-		derivedFromTemplates:      []string{},
-		idGenerator:               bpcore.NewUUIDGenerator(),
-		defaultRetryPolicy:        provider.DefaultRetryPolicy,
-		deploymentStateFactory:    NewDefaultDeploymentState,
-		changeStagingStateFactory: NewDefaultChangeStagingState,
-		resourceTemplates:         map[string]string{},
-		resourceDestroyer:         NewDefaultResourceDestroyer(clock, provider.DefaultRetryPolicy),
-		childBlueprintDestroyer:   NewDefaultChildBlueprintDestroyer(),
-		linkDestroyer:             linkDestroyer,
+		providers:                      internalProviders,
+		specTransformers:               specTransformers,
+		stateContainer:                 stateContainer,
+		childResolver:                  childResolver,
+		refChainCollectorFactory:       validation.NewRefChainCollector,
+		funcRegistry:                   funcRegistry,
+		resourceRegistry:               resourceRegistry,
+		dataSourceRegistry:             dataSourceRegistry,
+		linkRegistry:                   linkRegistry,
+		clock:                          clock,
+		resolveWorkingDir:              os.Getwd,
+		derivedFromTemplates:           []string{},
+		idGenerator:                    bpcore.NewUUIDGenerator(),
+		defaultRetryPolicy:             provider.DefaultRetryPolicy,
+		resourceStabilityPollingConfig: DefaultResourceStabilityPollingConfig,
+		deploymentStateFactory:         NewDefaultDeploymentState,
+		changeStagingStateFactory:      NewDefaultChangeStagingState,
+		resourceTemplates:              map[string]string{},
+		resourceDestroyer:              NewDefaultResourceDestroyer(clock, provider.DefaultRetryPolicy),
+		childBlueprintDestroyer:        NewDefaultChildBlueprintDestroyer(),
+		linkDestroyer:                  linkDestroyer,
 	}
 
 	for _, opt := range opts {
@@ -507,6 +519,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderChildBlueprintDestroyer(l.childBlueprintDestroyer),
 		WithLoaderLinkDestroyer(l.linkDestroyer),
 		WithLoaderDependenciesOverrider(l.overrideContainerDependencies),
+		WithLoaderResourceStabilityPollingConfig(l.resourceStabilityPollingConfig),
 	)
 }
 
@@ -676,6 +689,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		l.clock,
 		l.idGenerator,
 		l.defaultRetryPolicy,
+		l.resourceStabilityPollingConfig,
 		substitutionResolver,
 		resourceCache,
 	)

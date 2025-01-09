@@ -1,0 +1,12 @@
+{
+  "type": "aws/lambda/function",
+  "description": "Function that updates an order.",
+  "linkSelector": {
+    "byLabel": {
+      "app": "orders"
+    }
+  },
+  "spec": {
+    "handler": "src/updateOrder.handler"
+  }
+}

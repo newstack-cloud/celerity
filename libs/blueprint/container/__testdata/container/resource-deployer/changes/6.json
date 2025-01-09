@@ -1,0 +1,67 @@
+{
+  "newResources": {},
+  "resourceChanges": {
+    "listOrdersFunction": {
+      "appliedResourceInfo": {
+        "resourceId": "list-orders-function",
+        "resourceName": "listOrdersFunction",
+        "instanceId": "resource-deploy-test--blueprint-instance-6",
+        "currentResourceState": {
+          "resourceId": "list-orders-function",
+          "resourceName": "listOrdersFunction",
+          "resourceType": "aws/lambda/function",
+          "instanceId": "resource-deploy-test--blueprint-instance-6",
+          "status": 2,
+          "preciseStatus": 3,
+          "lastDeployedTimestamp": 1733145428,
+          "lastDeployAttemptTimestamp": 1733145428,
+          "resourceSpecData": {
+            "handler": "src/orderHandlers.listOrders"
+          },
+          "description": "Function that lists orders in the system.",
+          "failureReasons": []
+        },
+        "resourceWithResolvedSubs": {
+          "type": "aws/lambda/function",
+          "description": "Function that lists orders in the system.",
+          "linkSelector": {
+            "byLabel": {
+              "app": "orders"
+            }
+          },
+          "spec": {
+            "handler": "src/listOrders.handler"
+          }
+        }
+      },
+      "mustRecreate": false,
+      "modifiedFields": [
+        {
+          "fieldPath": "spec.handler",
+          "prevValue": "src/orderHandlers.listOrders",
+          "newValue": "src/listOrders.handler"
+        }
+      ],
+      "newFields": [],
+      "removedFields": [],
+      "unchangedFields": [],
+      "computedFields": ["id"],
+      "fieldChangesKnownOnDeploy": [],
+      "conditionKnownOnDeploy": false,
+      "newOutboundLinks": {},
+      "outboundLinkChanges": {},
+      "removedOutboundLinks": []
+    }
+  },
+  "removedResources": [],
+  "removedLinks": [],
+  "newChildren": {},
+  "childChanges": {},
+  "recreateChildren": [],
+  "removedChildren": [],
+  "newExports": {},
+  "exportChanges": {},
+  "unchangedExports": [],
+  "removedExports": [],
+  "resolveOnDeploy": []
+}

@@ -7,7 +7,12 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
+)
+
+const (
+	resourceStabilisingTimeoutFailureMessage = "Resource failed to stabilise within the configured timeout"
 )
 
 // ResourceDeployer provides an interface for a service that deploys
@@ -22,6 +27,18 @@ type ResourceDeployer interface {
 	)
 }
 
+// ResourceSubstitutionResolver provides an interface for a service that
+// is responsible for resolving substitutions in a resource definition.
+type ResourceSubstitutionResolver interface {
+	// ResolveInResource resolves substitutions in a resource.
+	ResolveInResource(
+		ctx context.Context,
+		resourceName string,
+		resource *schema.Resource,
+		resolveTargetInfo *subengine.ResolveResourceTargetInfo,
+	) (*subengine.ResolveInResourceResult, error)
+}
+
 // NewDefaultResourceDeployer creates a new instance of the default
 // implementation of the service that deploys a resource as a part of
 // the deployment process for a blueprint instance.
@@ -29,24 +46,27 @@ func NewDefaultResourceDeployer(
 	clock core.Clock,
 	idGenerator core.IDGenerator,
 	defaultRetryPolicy *provider.RetryPolicy,
-	substitutionResolver subengine.SubstitutionResolver,
+	stabilityPollingConfig *ResourceStabilityPollingConfig,
+	substitutionResolver ResourceSubstitutionResolver,
 	resourceCache *core.Cache[*provider.ResolvedResource],
 ) ResourceDeployer {
 	return &defaultResourceDeployer{
-		clock:                clock,
-		idGenerator:          idGenerator,
-		defaultRetryPolicy:   defaultRetryPolicy,
-		substitutionResolver: substitutionResolver,
-		resourceCache:        resourceCache,
+		clock:                  clock,
+		idGenerator:            idGenerator,
+		defaultRetryPolicy:     defaultRetryPolicy,
+		substitutionResolver:   substitutionResolver,
+		stabilityPollingConfig: stabilityPollingConfig,
+		resourceCache:          resourceCache,
 	}
 }
 
 type defaultResourceDeployer struct {
-	clock                core.Clock
-	idGenerator          core.IDGenerator
-	defaultRetryPolicy   *provider.RetryPolicy
-	substitutionResolver subengine.SubstitutionResolver
-	resourceCache        *core.Cache[*provider.ResolvedResource]
+	clock                  core.Clock
+	idGenerator            core.IDGenerator
+	defaultRetryPolicy     *provider.RetryPolicy
+	stabilityPollingConfig *ResourceStabilityPollingConfig
+	substitutionResolver   ResourceSubstitutionResolver
+	resourceCache          *core.Cache[*provider.ResolvedResource]
 }
 
 func (d *defaultResourceDeployer) Deploy(
@@ -171,8 +191,10 @@ func (d *defaultResourceDeployer) deployResource(
 	output, err := resourceInfo.resourceImpl.Deploy(
 		ctx,
 		&provider.ResourceDeployInput{
-			Changes: resourceInfo.changes,
-			Params:  deployCtx.ParamOverrides,
+			InstanceID: resourceInfo.instanceID,
+			ResourceID: resourceInfo.resourceID,
+			Changes:    resourceInfo.changes,
+			Params:     deployCtx.ParamOverrides,
 		},
 	)
 	if err != nil {
@@ -208,12 +230,11 @@ func (d *defaultResourceDeployer) deployResource(
 	}
 
 	deployCtx.State.SetResourceSpecState(resourceInfo.resourceName, output.SpecState)
-	// At this point, we mark the resource as "config complete", the listener
-	// should be able to determine if the resource is stable and ready for dependent
-	// resources to be deployed.
+	// At this point, we mark the resource as "config complete", a separate coroutine
+	// is invoked asynchronously to poll the resource for stability.
 	// Once the resource is stable, a status update will be sent with the appropriate
 	// "deployed" status.
-	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
+	configCompleteMsg := ResourceDeployUpdateMessage{
 		InstanceID:   resourceInfo.instanceID,
 		ResourceID:   resourceInfo.resourceID,
 		ResourceName: resourceInfo.resourceName,
@@ -233,8 +254,141 @@ func (d *defaultResourceDeployer) deployResource(
 			d.clock.Since(resourceDeploymentStartTime),
 		),
 	}
+	deployCtx.Channels.ResourceUpdateChan <- configCompleteMsg
+	deployCtx.State.SetResourceDurationInfo(
+		resourceInfo.resourceName,
+		configCompleteMsg.Durations,
+	)
+
+	go d.pollForResourceStability(
+		ctx,
+		resourceInfo,
+		resourceRetryInfo,
+		deployCtx,
+	)
 
 	return nil
+}
+
+func (d *defaultResourceDeployer) pollForResourceStability(
+	ctx context.Context,
+	resourceInfo *resourceDeployInfo,
+	resourceRetryInfo *retryInfo,
+	deployCtx *DeployContext,
+) {
+	pollingStabilisationStartTime := d.clock.Now()
+
+	ctxWithPollingTimeout, cancel := context.WithTimeout(
+		ctx,
+		d.stabilityPollingConfig.PollingTimeout,
+	)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctxWithPollingTimeout.Done():
+			deployCtx.Channels.ResourceUpdateChan <- d.createResourceStabiliseTimeoutMessage(
+				resourceInfo,
+				resourceRetryInfo,
+				pollingStabilisationStartTime,
+				deployCtx,
+			)
+			return
+		case <-time.After(d.stabilityPollingConfig.PollingInterval):
+			output, err := resourceInfo.resourceImpl.HasStabilised(
+				ctxWithPollingTimeout,
+				&provider.ResourceHasStabilisedInput{
+					InstanceID: resourceInfo.instanceID,
+					ResourceID: resourceInfo.resourceID,
+					ResourceSpec: deployCtx.State.GetResourceSpecState(
+						resourceInfo.resourceName,
+					),
+					Params: deployCtx.ParamOverrides,
+				},
+			)
+			if err != nil {
+				deployCtx.Channels.ErrChan <- err
+				return
+			}
+
+			if output.Stabilised {
+				deployCtx.Channels.ResourceUpdateChan <- d.createResourceStabilisedMessage(
+					resourceInfo,
+					resourceRetryInfo,
+					pollingStabilisationStartTime,
+					deployCtx,
+				)
+				return
+			}
+		}
+	}
+}
+
+func (d *defaultResourceDeployer) createResourceStabiliseTimeoutMessage(
+	resourceInfo *resourceDeployInfo,
+	resourceRetryInfo *retryInfo,
+	pollingStabilisationStartTime time.Time,
+	deployCtx *DeployContext,
+) ResourceDeployUpdateMessage {
+	configCompleteDurationInfo := deployCtx.State.GetResourceDurationInfo(
+		resourceInfo.resourceName,
+	)
+
+	return ResourceDeployUpdateMessage{
+		InstanceID:   resourceInfo.instanceID,
+		ResourceID:   resourceInfo.resourceID,
+		ResourceName: resourceInfo.resourceName,
+		Group:        deployCtx.CurrentGroupIndex,
+		Status: determineResourceDeployFailedStatus(
+			deployCtx.Rollback,
+			resourceInfo.isNew,
+		),
+		PreciseStatus: determinePreciseResourceDeployFailedStatus(
+			deployCtx.Rollback,
+			resourceInfo.isNew,
+		),
+		FailureReasons:  []string{resourceStabilisingTimeoutFailureMessage},
+		Attempt:         resourceRetryInfo.attempt,
+		CanRetry:        false,
+		UpdateTimestamp: d.clock.Now().Unix(),
+		Durations: addTotalToResourceCompletionDurations(
+			configCompleteDurationInfo,
+			d.clock.Since(pollingStabilisationStartTime),
+		),
+	}
+}
+
+func (d *defaultResourceDeployer) createResourceStabilisedMessage(
+	resourceInfo *resourceDeployInfo,
+	resourceRetryInfo *retryInfo,
+	pollingStabilisationStartTime time.Time,
+	deployCtx *DeployContext,
+) ResourceDeployUpdateMessage {
+	configCompleteDurationInfo := deployCtx.State.GetResourceDurationInfo(
+		resourceInfo.resourceName,
+	)
+
+	return ResourceDeployUpdateMessage{
+		InstanceID:   resourceInfo.instanceID,
+		ResourceID:   resourceInfo.resourceID,
+		ResourceName: resourceInfo.resourceName,
+		Group:        deployCtx.CurrentGroupIndex,
+		Status: determineResourceDeployedStatus(
+			deployCtx.Rollback,
+			resourceInfo.isNew,
+		),
+		PreciseStatus: determinePreciseResourceDeployedStatus(
+			deployCtx.Rollback,
+			resourceInfo.isNew,
+		),
+		Attempt:         resourceRetryInfo.attempt,
+		CanRetry:        false,
+		UpdateTimestamp: d.clock.Now().Unix(),
+		Durations: addTotalToResourceCompletionDurations(
+			configCompleteDurationInfo,
+			d.clock.Since(pollingStabilisationStartTime),
+		),
+	}
 }
 
 func (d *defaultResourceDeployer) handleDeployResourceRetry(
@@ -260,6 +414,7 @@ func (d *defaultResourceDeployer) handleDeployResourceRetry(
 			deployCtx.Rollback,
 			resourceInfo.isNew,
 		),
+		Attempt:         resourceRetryInfo.attempt,
 		FailureReasons:  failureReasons,
 		CanRetry:        !nextRetryInfo.exceededMaxRetries,
 		UpdateTimestamp: d.clock.Now().Unix(),
@@ -351,6 +506,24 @@ func (d *defaultResourceDeployer) resolveResourceForDeployment(
 	)
 
 	return resolveResourceResult.ResolvedResource, nil
+}
+
+// ResourceStabilityPollingConfig represents the configuration for
+// polling resources for stability.
+type ResourceStabilityPollingConfig struct {
+	// PollingInterval is the interval at which the resource will be polled
+	// for stability.
+	PollingInterval time.Duration
+	// PollingTimeout is the maximum amount of time that the resource will be
+	// polled for stability.
+	PollingTimeout time.Duration
+}
+
+// DefaultResourceStabilityPollingConfig is a reasonable default configuration
+// for polling resources for stability.
+var DefaultResourceStabilityPollingConfig = &ResourceStabilityPollingConfig{
+	PollingInterval: 5 * time.Second,
+	PollingTimeout:  30 * time.Minute,
 }
 
 func (d *defaultResourceDeployer) getResourceID(changes *provider.Changes) (string, error) {

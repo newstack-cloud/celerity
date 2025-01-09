@@ -24,56 +24,10 @@ func (s *LinkDeployerTestSuite) SetupTest() {
 	s.deployer = &defaultLinkDeployer{
 		clock: &core.SystemClock{},
 	}
-	fixtures := []*linkDeployerFixtureInfo{
-		{
-			number:   1,
-			linkName: "saveOrderFunction::ordersTable",
-			failure:  false,
-		},
-		{
-			number:   2,
-			linkName: "saveOrderFunction::ordersTable",
-			failure:  false,
-		},
-		{
-			number:   3,
-			linkName: "saveOrderFunction::ordersTable",
-			failure:  false,
-		},
-		{
-			number:   4,
-			linkName: "saveOrderFunction::ordersTable",
-			failure:  false,
-		},
-		{
-			number:   5,
-			linkName: "saveOrderFunction::ordersTable",
-			failure:  false,
-		},
-		{
-			number:   6,
-			linkName: "saveOrderFunction::ordersTable",
-			failure:  false,
-		},
-		{
-			number:   7,
-			linkName: "saveOrderFunction::ordersTableFail",
-			failure:  true,
-		},
-		{
-			number:   8,
-			linkName: "saveOrderFunctionFail::ordersTable",
-			failure:  true,
-		},
-		{
-			number:   9,
-			linkName: "saveOrderFunctionFail2::ordersTableFail2",
-			failure:  true,
-		},
-	}
+	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*linkDeployerFixture{}
 
-	for _, fixtureInfo := range fixtures {
+	for _, fixtureInfo := range fixtureInputs {
 		fixture, err := s.createFixture(
 			fixtureInfo.number,
 			fixtureInfo.linkName,
@@ -250,6 +204,56 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 	}
 	assertDeployMessageOrder(actualMessages, fixture.expectedMessages, &s.Suite)
 	s.Assert().Equal(fixture.expectedOutput, result)
+}
+
+func (s *LinkDeployerTestSuite) fixtureInputs() []*linkDeployerFixtureInfo {
+	return []*linkDeployerFixtureInfo{
+		{
+			number:   1,
+			linkName: "saveOrderFunction::ordersTable",
+			failure:  false,
+		},
+		{
+			number:   2,
+			linkName: "saveOrderFunction::ordersTable",
+			failure:  false,
+		},
+		{
+			number:   3,
+			linkName: "saveOrderFunction::ordersTable",
+			failure:  false,
+		},
+		{
+			number:   4,
+			linkName: "saveOrderFunction::ordersTable",
+			failure:  false,
+		},
+		{
+			number:   5,
+			linkName: "saveOrderFunction::ordersTable",
+			failure:  false,
+		},
+		{
+			number:   6,
+			linkName: "saveOrderFunction::ordersTable",
+			failure:  false,
+		},
+		{
+			number:   7,
+			linkName: "saveOrderFunction::ordersTableFail",
+			failure:  true,
+		},
+		{
+			number:   8,
+			linkName: "saveOrderFunctionFail::ordersTable",
+			failure:  true,
+		},
+		{
+			number:   9,
+			linkName: "saveOrderFunctionFail2::ordersTableFail2",
+			failure:  true,
+		},
+	}
 }
 
 func (s *LinkDeployerTestSuite) createFixture(
