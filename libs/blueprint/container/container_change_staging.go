@@ -13,6 +13,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	commoncore "github.com/two-hundred/celerity/libs/common/core"
 )
 
 func (c *defaultBlueprintContainer) StageChanges(
@@ -121,6 +122,12 @@ func (c *defaultBlueprintContainer) stageChanges(
 	}
 
 	err = c.resolveAndCollectExportChanges(ctx, instanceID, blueprint, state)
+	if err != nil {
+		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
+		return
+	}
+
+	err = c.resolveAndCollectMetadataChanges(ctx, instanceID, blueprint, state)
 	if err != nil {
 		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
 		return
@@ -437,6 +444,53 @@ func (c *defaultBlueprintContainer) resolveExport(
 	}
 
 	return nil, nil
+}
+
+func (c *defaultBlueprintContainer) resolveAndCollectMetadataChanges(
+	ctx context.Context,
+	instanceID string,
+	blueprint *schema.Blueprint,
+	stagingState ChangeStagingState,
+) error {
+	if blueprint.Metadata == nil {
+		return nil
+	}
+
+	result, err := c.substitutionResolver.ResolveInMappingNode(
+		ctx,
+		"metadata",
+		blueprint.Metadata,
+		&subengine.ResolveMappingNodeTargetInfo{
+			ResolveFor: subengine.ResolveForChangeStaging,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	metadata := c.stateContainer.Metadata()
+	blueprintMetadataState, err := metadata.Get(ctx, instanceID)
+	if err != nil {
+		if !state.IsInstanceNotFound(err) {
+			return err
+		}
+	}
+	metadataChanges := MetadataChanges{
+		NewFields:       []provider.FieldChange{},
+		ModifiedFields:  []provider.FieldChange{},
+		RemovedFields:   []string{},
+		UnchangedFields: []string{},
+	}
+	resolveOnDeploy := commoncore.Map(
+		result.ResolveOnDeploy,
+		func(fieldPath string, _ int) string {
+			return substitutions.RenderFieldPath("metadata", fieldPath)
+		},
+	)
+	collectMetadataChanges(&metadataChanges, result, blueprintMetadataState)
+	stagingState.UpdateMetadataChanges(&metadataChanges, resolveOnDeploy)
+
+	return nil
 }
 
 func (c *defaultBlueprintContainer) stageInstanceRemoval(

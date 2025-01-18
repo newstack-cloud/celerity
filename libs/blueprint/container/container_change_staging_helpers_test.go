@@ -31,6 +31,7 @@ func normaliseBlueprintChanges(changes *BlueprintChanges) *BlueprintChanges {
 		RemovedExports:   internal.OrderStringSlice(changes.RemovedExports),
 		UnchangedExports: internal.OrderStringSlice(changes.UnchangedExports),
 		ResolveOnDeploy:  internal.OrderStringSlice(changes.ResolveOnDeploy),
+		MetadataChanges:  normaliseMetadataChanges(changes.MetadataChanges),
 	}
 
 	return normalisedChanges
@@ -64,4 +65,13 @@ func normaliseNewChildMap(newChildMap map[string]NewBlueprintDefinition) map[str
 		}
 	}
 	return newMap
+}
+
+func normaliseMetadataChanges(changes MetadataChanges) MetadataChanges {
+	return MetadataChanges{
+		NewFields:       internal.OrderFieldChanges(changes.NewFields),
+		ModifiedFields:  internal.OrderFieldChanges(changes.ModifiedFields),
+		UnchangedFields: internal.OrderStringSlice(changes.UnchangedFields),
+		RemovedFields:   internal.OrderStringSlice(changes.RemovedFields),
+	}
 }

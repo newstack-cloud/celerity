@@ -44,6 +44,11 @@ type ChangeStagingState interface {
 	MarkLinkAsNoLongerPending(resourceANode, resourceBNode *links.ChainLinkNode)
 	// UpdateExportChanges updates the export changes in the staging state.
 	UpdateExportChanges(collectedExportChanges *intermediaryBlueprintChanges)
+	// UpdateMetadataChanges updates the blueprint-wide metadata changes in the staging state.
+	UpdateMetadataChanges(
+		changes *MetadataChanges,
+		resolveOnDeploy []string,
+	)
 	// ExtractBlueprintChanges extracts the changes that have been staged
 	// for the deployment to be sent to the client initiating the change staging operation.
 	ExtractBlueprintChanges() BlueprintChanges
@@ -97,6 +102,7 @@ type intermediaryBlueprintChanges struct {
 	NewExports       map[string]*provider.FieldChange
 	ExportChanges    map[string]*provider.FieldChange
 	RemovedExports   []string
+	MetadataChanges  *MetadataChanges
 	UnchangedExports []string
 	ResolveOnDeploy  []string
 }
@@ -306,6 +312,20 @@ func (c *defaultChangeStagingState) UpdateExportChanges(
 	)
 }
 
+func (c *defaultChangeStagingState) UpdateMetadataChanges(
+	changes *MetadataChanges,
+	resolveOnDeploy []string,
+) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.outputChanges.MetadataChanges = changes
+	c.outputChanges.ResolveOnDeploy = append(
+		c.outputChanges.ResolveOnDeploy,
+		resolveOnDeploy...,
+	)
+}
+
 func (c *defaultChangeStagingState) ExtractBlueprintChanges() BlueprintChanges {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -325,6 +345,7 @@ func (c *defaultChangeStagingState) ExtractBlueprintChanges() BlueprintChanges {
 		RemovedChildren:  c.outputChanges.RemovedChildren,
 		NewExports:       copyPointerMap(c.outputChanges.NewExports),
 		ExportChanges:    copyPointerMap(c.outputChanges.ExportChanges),
+		MetadataChanges:  *c.outputChanges.MetadataChanges,
 		RemovedExports:   c.outputChanges.RemovedExports,
 		ResolveOnDeploy:  c.outputChanges.ResolveOnDeploy,
 	}

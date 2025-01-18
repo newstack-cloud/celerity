@@ -41,7 +41,16 @@
       RemovedExports: ([]string) (len=1) {
         (string) (len=11) "environment"
       },
-      MetadataChanges: (map[string]provider.FieldChange) <nil>,
+      MetadataChanges: (container.MetadataChanges) {
+        NewFields: ([]provider.FieldChange) {
+        },
+        ModifiedFields: ([]provider.FieldChange) {
+        },
+        UnchangedFields: ([]string) {
+        },
+        RemovedFields: ([]string) {
+        }
+      },
       ResolveOnDeploy: ([]string) {
       }
     }
@@ -58,7 +67,16 @@
   RemovedExports: ([]string) (len=1) {
     (string) (len=11) "environment"
   },
-  MetadataChanges: (map[string]provider.FieldChange) <nil>,
+  MetadataChanges: (container.MetadataChanges) {
+    NewFields: ([]provider.FieldChange) {
+    },
+    ModifiedFields: ([]provider.FieldChange) {
+    },
+    UnchangedFields: ([]string) {
+    },
+    RemovedFields: ([]string) {
+    }
+  },
   ResolveOnDeploy: ([]string) {
   }
 })

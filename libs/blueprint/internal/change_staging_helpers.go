@@ -19,21 +19,14 @@ func NormaliseResourceChanges(changes *provider.Changes, excludeResourceInfo boo
 		MustRecreate:              changes.MustRecreate,
 		ModifiedFields:            OrderFieldChanges(changes.ModifiedFields),
 		NewFields:                 OrderFieldChanges(changes.NewFields),
-		RemovedFields:             orderStringSlice(changes.RemovedFields),
-		UnchangedFields:           orderStringSlice(changes.UnchangedFields),
-		FieldChangesKnownOnDeploy: orderStringSlice(changes.FieldChangesKnownOnDeploy),
-		ComputedFields:            orderStringSlice(changes.ComputedFields),
+		RemovedFields:             OrderStringSlice(changes.RemovedFields),
+		UnchangedFields:           OrderStringSlice(changes.UnchangedFields),
+		FieldChangesKnownOnDeploy: OrderStringSlice(changes.FieldChangesKnownOnDeploy),
+		ComputedFields:            OrderStringSlice(changes.ComputedFields),
 		NewOutboundLinks:          changes.NewOutboundLinks,
 		OutboundLinkChanges:       changes.OutboundLinkChanges,
 		RemovedOutboundLinks:      changes.RemovedOutboundLinks,
 	}
-}
-
-func orderStringSlice(fields []string) []string {
-	orderedFields := make([]string, len(fields))
-	copy(orderedFields, fields)
-	slices.Sort(orderedFields)
-	return orderedFields
 }
 
 func OrderFieldChanges(fieldChanges []provider.FieldChange) []provider.FieldChange {

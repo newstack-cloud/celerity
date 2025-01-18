@@ -3289,7 +3289,63 @@
       },
       RemovedExports: ([]string) {
       },
-      MetadataChanges: (map[string]provider.FieldChange) <nil>,
+      MetadataChanges: (container.MetadataChanges) {
+        NewFields: ([]provider.FieldChange) {
+        },
+        ModifiedFields: ([]provider.FieldChange) (len=1) {
+          (provider.FieldChange) {
+            FieldPath: (string) (len=14) "metadata.build",
+            PrevValue: (*core.MappingNode)({
+              Scalar: (*core.ScalarValue)({
+                IntValue: (*int)(<nil>),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)((len=3) "tsc"),
+                SourceMeta: (*source.Meta)(<nil>)
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
+            }),
+            NewValue: (*core.MappingNode)({
+              Scalar: (*core.ScalarValue)({
+                IntValue: (*int)(<nil>),
+                BoolValue: (*bool)(<nil>),
+                FloatValue: (*float64)(<nil>),
+                StringValue: (*string)((len=7) "esbuild"),
+                SourceMeta: (*source.Meta)({
+                  Position: (source.Position) {
+                    Line: (int) 41,
+                    Column: (int) 10
+                  },
+                  EndPosition: (*source.Position)({
+                    Line: (int) 41,
+                    Column: (int) 17
+                  })
+                })
+              }),
+              Fields: (map[string]*core.MappingNode) <nil>,
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)({
+                Position: (source.Position) {
+                  Line: (int) 41,
+                  Column: (int) 10
+                },
+                EndPosition: (*source.Position)(<nil>)
+              }),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
+            }),
+            MustRecreate: (bool) false
+          }
+        },
+        UnchangedFields: ([]string) {
+        },
+        RemovedFields: ([]string) {
+        }
+      },
       ResolveOnDeploy: ([]string) {
       }
     }
@@ -3340,7 +3396,63 @@
   },
   RemovedExports: ([]string) {
   },
-  MetadataChanges: (map[string]provider.FieldChange) <nil>,
+  MetadataChanges: (container.MetadataChanges) {
+    NewFields: ([]provider.FieldChange) {
+    },
+    ModifiedFields: ([]provider.FieldChange) (len=1) {
+      (provider.FieldChange) {
+        FieldPath: (string) (len=14) "metadata.build",
+        PrevValue: (*core.MappingNode)({
+          Scalar: (*core.ScalarValue)({
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=3) "tsc"),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          Fields: (map[string]*core.MappingNode) <nil>,
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        }),
+        NewValue: (*core.MappingNode)({
+          Scalar: (*core.ScalarValue)({
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=7) "esbuild"),
+            SourceMeta: (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 145,
+                Column: (int) 10
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 145,
+                Column: (int) 17
+              })
+            })
+          }),
+          Fields: (map[string]*core.MappingNode) <nil>,
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)({
+            Position: (source.Position) {
+              Line: (int) 145,
+              Column: (int) 10
+            },
+            EndPosition: (*source.Position)(<nil>)
+          }),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        }),
+        MustRecreate: (bool) false
+      }
+    },
+    UnchangedFields: ([]string) {
+    },
+    RemovedFields: ([]string) {
+    }
+  },
   ResolveOnDeploy: ([]string) (len=2) {
     (string) (len=91) "link(saveOrderFunction::ordersTable_0).saveOrderFunction[\"iam.policyStatements\"].0.resource",
     (string) (len=91) "link(saveOrderFunction::ordersTable_1).saveOrderFunction[\"iam.policyStatements\"].0.resource"

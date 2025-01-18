@@ -187,13 +187,24 @@ type BlueprintChanges struct {
 	// RemovedExports contains the names of fields that will no longer be exported.
 	RemovedExports []string `json:"removedExports"`
 	// MetadataChanges contains changes to blueprint-wide metadata.
-	MetadataChanges map[string]provider.FieldChange `json:"metadataChanges"`
+	MetadataChanges MetadataChanges `json:"metadataChanges"`
 	// ResolveOnDeploy contains paths to properties in blueprint elements
 	// that contain substitutions that can not be resolved until the blueprint
 	// is deployed.
 	// This includes properties in resources, data sources, blueprint-wide metadata
 	// and exported fields.
 	ResolveOnDeploy []string `json:"resolveOnDeploy"`
+}
+
+type MetadataChanges struct {
+	// NewFields contains new fields that will be added to the blueprint-wide metadata.
+	NewFields []provider.FieldChange `json:"newFields"`
+	// ModifiedFields contains changes to existing fields in the blueprint-wide metadata.
+	ModifiedFields []provider.FieldChange `json:"modifiedFields"`
+	// UnchangedFields contains the names of fields that will not be changed.
+	UnchangedFields []string `json:"unchangedFields"`
+	// RemovedFields contains the names of fields that will no longer be present.
+	RemovedFields []string `json:"removedFields"`
 }
 
 // NewBlueprintDefinition provides a definition for a new child blueprint
