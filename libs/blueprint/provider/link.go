@@ -48,10 +48,10 @@ type Link interface {
 		ctx context.Context,
 		input *LinkUpdateIntermediaryResourcesInput,
 	) (*LinkUpdateIntermediaryResourcesOutput, error)
-	// GetPriorityResourceType retrieves the resource type in the relationship
-	// that must be deployed first. This will be empty for links where one resource type does not
+	// GetPriorityResourceType retrieves the resource in the relationship
+	// that must be deployed first. This will be empty for links where one resource does not
 	// need to be deployed before the other.
-	GetPriorityResourceType(ctx context.Context, input *LinkGetPriorityResourceTypeInput) (*LinkGetPriorityResourceTypeOutput, error)
+	GetPriorityResource(ctx context.Context, input *LinkGetPriorityResourceInput) (*LinkGetPriorityResourceOutput, error)
 	// GetType deals with retrieving the type of the link in relation to the two resource
 	// types it provides a relationship between.
 	GetType(ctx context.Context, input *LinkGetTypeInput) (*LinkGetTypeOutput, error)
@@ -68,7 +68,7 @@ type LinkStageChangesInput struct {
 	ResourceAChanges *Changes
 	ResourceBChanges *Changes
 	CurrentLinkState *state.LinkState
-	Params           core.BlueprintParams
+	LinkContext      LinkContext
 }
 
 // LinkStageChangesOutput provides the output from staging changes
@@ -85,7 +85,7 @@ type LinkUpdateResourceInput struct {
 	ResourceInfo      *ResourceInfo
 	OtherResourceInfo *ResourceInfo
 	LinkUpdateType    LinkUpdateType
-	Params            core.BlueprintParams
+	LinkContext       LinkContext
 }
 
 // LinkUpdateType represents the type of update that is being carried out
@@ -114,7 +114,7 @@ type LinkUpdateIntermediaryResourcesInput struct {
 	ResourceBInfo  *ResourceInfo
 	Changes        *LinkChanges
 	LinkUpdateType LinkUpdateType
-	Params         core.BlueprintParams
+	LinkContext    LinkContext
 }
 
 type LinkUpdateIntermediaryResourcesOutput struct {
@@ -122,21 +122,35 @@ type LinkUpdateIntermediaryResourcesOutput struct {
 	LinkData                   *core.MappingNode
 }
 
-// LinkPriorityResourceTypeOutput provides the input for retrieving
+// LinkGetPriorityResourceInput provides the input for retrieving
 // the priority resource type in a link relationship.
-type LinkGetPriorityResourceTypeInput struct {
-	Params core.BlueprintParams
+type LinkGetPriorityResourceInput struct {
+	LinkContext LinkContext
 }
 
-// LinkPriorityResourceTypeOutput provides the output for retrieving
-// the priority resource type in a link relationship.
-type LinkGetPriorityResourceTypeOutput struct {
+// LinkPriorityResourceOutput provides the output for retrieving
+// the priority resource in a link relationship.
+type LinkGetPriorityResourceOutput struct {
+	PriorityResource     LinkPriorityResource
 	PriorityResourceType string
 }
 
+// LinkPriorityResource holds the type of resource that must be deployed first
+// in a link relationship.
+type LinkPriorityResource int
+
+const (
+	// LinkPriorityResourceNone is used when there is no priority resource in the link relationship.
+	LinkPriorityResourceNone LinkPriorityResource = iota
+	// LinkPriorityResourceA is used when the priority resource is the first resource in the link relationship.
+	LinkPriorityResourceA
+	// LinkPriorityResourceB is used when the priority resource is the second resource in the link relationship.
+	LinkPriorityResourceB
+)
+
 // LinkGetKindInput provides the input for retrieving the kind of link.
 type LinkGetKindInput struct {
-	Params core.BlueprintParams
+	LinkContext LinkContext
 }
 
 // LinkGetKindOutput provides the output for retrieving the kind of link.
@@ -147,7 +161,7 @@ type LinkGetKindOutput struct {
 // LinkGetTypeOutput provides the output for retrieving the type of link
 // with respect to the two resource types it provides a relationship between.
 type LinkGetTypeInput struct {
-	Params core.BlueprintParams
+	LinkContext LinkContext
 }
 
 // LinkGetTypeOutput provides the output for retrieving the type of link
@@ -160,7 +174,7 @@ type LinkGetTypeOutput struct {
 // related to the deployment of a resource type in a link relationship.
 type LinkHandleResourceErrorInput struct {
 	ResourceInfo *ResourceInfo
-	Params       core.BlueprintParams
+	LinkContext  LinkContext
 }
 
 // LinkKind provides a way to categorise links to help determine the order
@@ -192,4 +206,22 @@ type LinkChanges struct {
 	// FieldChangesKnownOnDeploy holds a list of field names
 	// for which changes will be known when the host blueprint is deployed.
 	FieldChangesKnownOnDeploy []string `json:"fieldChangesKnownOnDeploy"`
+}
+
+// LinkContext provides access to information about providers
+// and configuration in the current environment.
+// Links can live in intermediary provider plugins that can represent a link
+// between resources in different providers, for this reason, the LinkContext
+// provides access to configuration for all providers loaded into the current
+// environment.
+type LinkContext interface {
+	// ProviderConfigVariable retrieves a configuration value that was loaded
+	// for the specified provider.
+	ProviderConfigVariable(providerNamespace string, varName string) (*core.ScalarValue, bool)
+	// ContextVariable retrieves a context-wide variable
+	// for the current environment, this differs from values extracted
+	// from context.Context, as these context variables are specific
+	// to the components that implement the interfaces of the blueprint library
+	// and can be shared between processes over a network or similar.
+	ContextVariable(name string) (*core.ScalarValue, bool)
 }

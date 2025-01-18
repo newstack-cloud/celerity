@@ -8,9 +8,13 @@ type BlueprintParams interface {
 	// with the given namespace in the form a map of key-value pairs.
 	// It's up to the caller to validate the provider config at runtime.
 	ProviderConfig(namespace string) map[string]*ScalarValue
+	// TransformerConfig retrieves the config for the transformer
+	// with the given namespace in the form a map of key-value pairs.
+	// It's up to the caller to validate the transformer config at runtime.
+	TransformerConfig(namespace string) map[string]*ScalarValue
 	// ContextVariable retrieves a context-wide variable
-	// for, this differs from values extracted from context.Context
-	// as these context variables are specific to the components
+	// for the current environment, this differs from values extracted
+	// from context.Context as these context variables are specific to the components
 	// that implement the interfaces of the blueprint library.
 	ContextVariable(name string) *ScalarValue
 	// BlueprintVariable retrieves a variable value
@@ -41,6 +45,7 @@ type BlueprintParams interface {
 // loading blueprint source files.
 type ParamsImpl struct {
 	ProviderConf       map[string]map[string]*ScalarValue
+	TransformerConf    map[string]map[string]*ScalarValue
 	ContextVariables   map[string]*ScalarValue
 	BlueprintVariables map[string]*ScalarValue
 }
@@ -50,11 +55,13 @@ type ParamsImpl struct {
 // and blueprint variables.
 func NewDefaultParams(
 	providerConfig map[string]map[string]*ScalarValue,
+	transformerConfig map[string]map[string]*ScalarValue,
 	contextVariables map[string]*ScalarValue,
 	blueprintVariables map[string]*ScalarValue,
 ) BlueprintParams {
 	return &ParamsImpl{
 		ProviderConf:       providerConfig,
+		TransformerConf:    transformerConfig,
 		ContextVariables:   contextVariables,
 		BlueprintVariables: blueprintVariables,
 	}
@@ -62,6 +69,10 @@ func NewDefaultParams(
 
 func (p *ParamsImpl) ProviderConfig(namespace string) map[string]*ScalarValue {
 	return p.ProviderConf[namespace]
+}
+
+func (p *ParamsImpl) TransformerConfig(namespace string) map[string]*ScalarValue {
+	return p.TransformerConf[namespace]
 }
 
 func (p *ParamsImpl) ContextVariable(name string) *ScalarValue {

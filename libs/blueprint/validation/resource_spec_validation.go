@@ -71,12 +71,16 @@ func ValidateResourceSpec(
 		errs = append(errs, err)
 	}
 
+	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
 	customOutput, err := resourceRegistry.CustomValidate(
 		ctx,
 		resourceType,
 		&provider.ResourceValidateInput{
 			SchemaResource: resource,
-			Params:         params,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				params,
+			),
 		},
 	)
 	if customOutput != nil {
@@ -101,11 +105,15 @@ func loadResourceSpecDefinition(
 	params core.BlueprintParams,
 	resourceRegistry resourcehelpers.Registry,
 ) (*provider.ResourceSpecDefinition, error) {
+	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
 	specDefOutput, err := resourceRegistry.GetSpecDefinition(
 		ctx,
 		resourceType,
 		&provider.ResourceGetSpecDefinitionInput{
-			Params: params,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				params,
+			),
 		},
 	)
 	if err != nil {

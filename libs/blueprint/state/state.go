@@ -126,6 +126,22 @@ type ChildrenContainer interface {
 	// Save deals with persisting a blueprint instance and assigning
 	// it as a child of the provided blueprint instance.
 	Save(ctx context.Context, instanceID string, childName string, childState InstanceState) error
+	// Attach a blueprint instance as a child of the specified parent instance.
+	// Both the parent and child blueprint instances must already exist.
+	Attach(
+		ctx context.Context,
+		parentInstanceID string,
+		childInstanceID string,
+		childName string,
+	) error
+	// SaveDependencies deals with persisting the dependencies of a child blueprint
+	// in relation to other elements in the parent blueprint instance.
+	SaveDependencies(
+		ctx context.Context,
+		instanceID string,
+		childName string,
+		dependencies *DependencyInfo,
+	) error
 	// Remove deals with removing the state of a child blueprint from
 	// a given blueprint instance.
 	Remove(ctx context.Context, instanceID string, childName string) (InstanceState, error)
@@ -197,6 +213,9 @@ type ResourceState struct {
 	InstanceID           string                     `json:"instanceId"`
 	Status               core.ResourceStatus        `json:"status"`
 	PreciseStatus        core.PreciseResourceStatus `json:"preciseStatus"`
+	// LastStatusUpdateTimestamp holds the unix timestamp when the link deployment
+	// status was last updated.
+	LastStatusUpdateTimestamp int `json:"lastStatusUpdateTimestamp,omitempty"`
 	// LastDeployedTimestamp holds the unix timestamp when the resource was last deployed.
 	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`
 	// LastDeployAttempTimestamp holds the unix timestamp when an attempt was last made to deploy the resource.
@@ -270,10 +289,13 @@ type ResourceDriftState struct {
 // ResourceStatusInfo holds information about the status of a resource
 // that is primarily used when updating the status of a resource.
 type ResourceStatusInfo struct {
-	Status         core.ResourceStatus          `json:"status"`
-	PreciseStatus  core.PreciseResourceStatus   `json:"preciseStatus"`
-	Durations      *ResourceCompletionDurations `json:"durations,omitempty"`
-	FailureReasons []string                     `json:"failureReasons,omitempty"`
+	Status                     core.ResourceStatus          `json:"status"`
+	PreciseStatus              core.PreciseResourceStatus   `json:"preciseStatus"`
+	LastDeployedTimestamp      *int                         `json:"lastDeployedTimestamp,omitempty"`
+	LastDeployAttemptTimestamp *int                         `json:"lastDeployAttemptTimestamp,omitempty"`
+	LastStatusUpdateTimestamp  *int                         `json:"lastStatusUpdateTimestamp,omitempty"`
+	Durations                  *ResourceCompletionDurations `json:"durations,omitempty"`
+	FailureReasons             []string                     `json:"failureReasons,omitempty"`
 }
 
 // InstanceState stores the state of a blueprint instance
@@ -281,6 +303,9 @@ type ResourceStatusInfo struct {
 type InstanceState struct {
 	InstanceID string              `json:"instanceId"`
 	Status     core.InstanceStatus `json:"status"`
+	// LastStatusUpdateTimestamp holds the unix timestamp when the blueprint instance deployment
+	// status was last updated.
+	LastStatusUpdateTimestamp int `json:"lastStatusUpdateTimestamp,omitempty"`
 	// LastDeployedTimestamp holds the unix timestamp when the blueprint instance was last deployed.
 	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`
 	// LastDeployAttempTimestamp holds the unix timestamp when an attempt
@@ -303,7 +328,7 @@ type InstanceState struct {
 	Exports         map[string]*ExportState      `json:"exports"`
 	ChildBlueprints map[string]*InstanceState    `json:"childBlueprints"`
 	// ChildDependencies holds a mapping of child blueprint names to their dependencies.
-	ChildDependencies map[string]*ChildDependencyInfo `json:"childDependencies,omitempty"`
+	ChildDependencies map[string]*DependencyInfo `json:"childDependencies,omitempty"`
 	// Drifted indicates whether or not the blueprint instance has drifted
 	// due to changes to resources in the upstream provider.
 	Drifted bool `json:"drifted,omitempty"`
@@ -329,8 +354,12 @@ type ExportState struct {
 // InstanceStatusInfo holds information about the status of a blueprint instance
 // that is primarily used when updating the status of a blueprint instance.
 type InstanceStatusInfo struct {
-	Status    core.InstanceStatus         `json:"status"`
-	Durations *InstanceCompletionDuration `json:"durations,omitempty"`
+	Status                     core.InstanceStatus         `json:"status"`
+	FailureReasons             []string                    `json:"failureReasons,omitempty"`
+	LastDeployedTimestamp      *int                        `json:"lastDeployedTimestamp,omitempty"`
+	LastDeployAttemptTimestamp *int                        `json:"lastDeployAttemptTimestamp,omitempty"`
+	LastStatusUpdateTimestamp  *int                        `json:"lastStatusUpdateTimestamp,omitempty"`
+	Durations                  *InstanceCompletionDuration `json:"durations,omitempty"`
 }
 
 // ChildBlueprint holds the state of a child blueprint
@@ -360,11 +389,13 @@ func (b *ChildBlueprint) Kind() ElementKind {
 }
 
 // ChildDependencyInfo holds information about the dependencies
-// of a child blueprint.
-type ChildDependencyInfo struct {
-	// DependsOnResources holds a list of resource IDs that the child blueprint depends on.
+// of a child blueprint or resource.
+type DependencyInfo struct {
+	// DependsOnResources holds a list of resource IDs that the
+	// child blueprint or resource depends on.
 	DependsOnResources []string `json:"dependsOnResources,omitempty"`
-	// DependsOnChildren holds a list of child blueprint names that the child blueprint depends on.
+	// DependsOnChildren holds a list of child blueprint names that the
+	// child blueprint or resource depends on.
 	DependsOnChildren []string `json:"dependsOnChildren,omitempty"`
 }
 
@@ -383,6 +414,9 @@ type LinkState struct {
 	InstanceID    string                 `json:"instanceId"`
 	Status        core.LinkStatus        `json:"status"`
 	PreciseStatus core.PreciseLinkStatus `json:"preciseStatus"`
+	// LastStatusUpdateTimestamp holds the unix timestamp when the link deployment
+	// status was last updated.
+	LastStatusUpdateTimestamp int `json:"lastStatusUpdateTimestamp,omitempty"`
 	// LastDeployedTimestamp holds the unix timestamp when the link was last deployed.
 	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`
 	// LastDeployAttempTimestamp holds the unix timestamp when an attempt was last made to deploy the link.
@@ -435,10 +469,13 @@ type LinkIntermediaryResourceState struct {
 // LinkStatusInfo holds information about the status of a link
 // that is primarily used when updating the status of a link.
 type LinkStatusInfo struct {
-	Status         core.LinkStatus          `json:"status"`
-	PreciseStatus  core.PreciseLinkStatus   `json:"preciseStatus"`
-	Durations      *LinkCompletionDurations `json:"durations,omitempty"`
-	FailureReasons []string                 `json:"failureReasons,omitempty"`
+	Status                     core.LinkStatus          `json:"status"`
+	PreciseStatus              core.PreciseLinkStatus   `json:"preciseStatus"`
+	LastDeployedTimestamp      *int                     `json:"lastDeployedTimestamp,omitempty"`
+	LastDeployAttemptTimestamp *int                     `json:"lastDeployAttemptTimestamp,omitempty"`
+	LastStatusUpdateTimestamp  *int                     `json:"lastStatusUpdateTimestamp,omitempty"`
+	Durations                  *LinkCompletionDurations `json:"durations,omitempty"`
+	FailureReasons             []string                 `json:"failureReasons,omitempty"`
 }
 
 // ResourceCompletionDurations holds duration information

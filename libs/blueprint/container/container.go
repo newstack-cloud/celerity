@@ -6,6 +6,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
@@ -84,12 +85,11 @@ type BlueprintContainer interface {
 	// For example, extracting the references from an expanded version of a blueprint
 	// that contains resource templates.
 	RefChainCollector() validation.RefChainCollector
-	// todo: remove or uncomment this method depending on if it is needed.
-	// // ResourceTemplates holds a mapping of resource names to the name of the resource
-	// // template it was derived from.
-	// // This allows retention of information about the original resource template
-	// // that a resource was derived from in a source blueprint document.
-	// ResourceTemplates() map[string]string
+	// ResourceTemplates holds a mapping of resource names to the name of the resource
+	// template it was derived from.
+	// This allows retention of information about the original resource template
+	// that a resource was derived from in a source blueprint document.
+	ResourceTemplates() map[string]string
 	// Diagnostics returns warning and informational diagnostics for the loaded blueprint
 	// that point out potential issues that may occur when executing
 	// a blueprint.
@@ -186,10 +186,13 @@ type BlueprintChanges struct {
 	UnchangedExports []string `json:"unchangedExports"`
 	// RemovedExports contains the names of fields that will no longer be exported.
 	RemovedExports []string `json:"removedExports"`
+	// MetadataChanges contains changes to blueprint-wide metadata.
+	MetadataChanges map[string]provider.FieldChange `json:"metadataChanges"`
 	// ResolveOnDeploy contains paths to properties in blueprint elements
 	// that contain substitutions that can not be resolved until the blueprint
 	// is deployed.
-	// This includes properties in resources and exported fields.
+	// This includes properties in resources, data sources, blueprint-wide metadata
+	// and exported fields.
 	ResolveOnDeploy []string `json:"resolveOnDeploy"`
 }
 
@@ -205,6 +208,8 @@ type defaultBlueprintContainer struct {
 	stateContainer state.Container
 	// Should be a namespace to provider map.
 	providers                map[string]provider.Provider
+	resourceRegistry         resourcehelpers.Registry
+	linkRegistry             provider.LinkRegistry
 	spec                     speccore.BlueprintSpec
 	linkInfo                 links.SpecLinkInfo
 	resourceTemplates        map[string]string
@@ -222,8 +227,10 @@ type defaultBlueprintContainer struct {
 	resourceDestroyer        ResourceDestroyer
 	childBlueprintDestroyer  ChildBlueprintDestroyer
 	linkDestroyer            LinkDestroyer
+	linkDeployer             LinkDeployer
 	resourceDeployer         ResourceDeployer
 	childDeployer            ChildBlueprintDeployer
+	defaultRetryPolicy       *provider.RetryPolicy
 }
 
 // ChildBlueprintLoaderFactory provides a factory function for creating a new loader
@@ -248,6 +255,8 @@ type ChangeStagingStateFactory func() ChangeStagingState
 type BlueprintContainerDependencies struct {
 	StateContainer            state.Container
 	Providers                 map[string]provider.Provider
+	ResourceRegistry          resourcehelpers.Registry
+	LinkRegistry              provider.LinkRegistry
 	LinkInfo                  links.SpecLinkInfo
 	ResourceTemplates         map[string]string
 	RefChainCollector         validation.RefChainCollector
@@ -263,8 +272,10 @@ type BlueprintContainerDependencies struct {
 	ResourceDestroyer         ResourceDestroyer
 	ChildBlueprintDestroyer   ChildBlueprintDestroyer
 	LinkDestroyer             LinkDestroyer
+	LinkDeployer              LinkDeployer
 	ResourceDeployer          ResourceDeployer
 	ChildBlueprintDeployer    ChildBlueprintDeployer
+	DefaultRetryPolicy        *provider.RetryPolicy
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -279,6 +290,8 @@ func NewDefaultBlueprintContainer(
 	return &defaultBlueprintContainer{
 		deps.StateContainer,
 		deps.Providers,
+		deps.ResourceRegistry,
+		deps.LinkRegistry,
 		spec,
 		deps.LinkInfo,
 		deps.ResourceTemplates,
@@ -296,8 +309,10 @@ func NewDefaultBlueprintContainer(
 		deps.ResourceDestroyer,
 		deps.ChildBlueprintDestroyer,
 		deps.LinkDestroyer,
+		deps.LinkDeployer,
 		deps.ResourceDeployer,
 		deps.ChildBlueprintDeployer,
+		deps.DefaultRetryPolicy,
 	}
 }
 
@@ -317,6 +332,6 @@ func (c *defaultBlueprintContainer) RefChainCollector() validation.RefChainColle
 	return c.refChainCollector
 }
 
-// func (c *defaultBlueprintContainer) ResourceTemplates() map[string]string {
-// 	return c.resourceTemplates
-// }
+func (c *defaultBlueprintContainer) ResourceTemplates() map[string]string {
+	return c.resourceTemplates
+}

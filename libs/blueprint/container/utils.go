@@ -295,7 +295,7 @@ func getIncludeTreePath(
 	params core.BlueprintParams,
 	includeChildIDName string,
 ) string {
-	childName := strings.TrimPrefix(includeChildIDName, "children.")
+	childName := core.ToLogicalChildName(includeChildIDName)
 	includeName := ""
 	if childName != "" {
 		includeName = fmt.Sprintf("include.%s", childName)
@@ -402,9 +402,9 @@ func findDependents(
 	}
 
 	for _, node := range nodesToBeDeployed {
-		if node.Type() == "resource" {
+		if node.Type() == DeploymentNodeTypeResource {
 			collectDependentResource(node, dependeeElement, instanceState, dependents)
-		} else if node.Type() == "child" {
+		} else if node.Type() == DeploymentNodeTypeChild {
 			collectDependentChildBlueprint(node, dependeeElement, instanceState, dependents)
 		}
 	}
@@ -461,7 +461,7 @@ func collectDependentChildBlueprint(
 	instanceState *state.InstanceState,
 	dependents *CollectedElements,
 ) {
-	currentChildName := strings.TrimPrefix(potentialDependentNode.ChildNode.ElementName, "children.")
+	currentChildName := core.ToLogicalChildName(potentialDependentNode.ChildNode.ElementName)
 	currentNodeChildState := getChildStateByName(instanceState, currentChildName)
 	childDependencies := getChildDependencies(instanceState, currentChildName)
 	if currentNodeChildState != nil {
@@ -484,7 +484,7 @@ func collectDependentChildBlueprint(
 
 func getChildElementTypeDependencies(
 	dependeeType state.ElementKind,
-	childDependencies *state.ChildDependencyInfo,
+	childDependencies *state.DependencyInfo,
 ) []string {
 	dependencies := []string{}
 
@@ -614,7 +614,7 @@ func getLinkStateByName(
 func getChildDependencies(
 	instanceState *state.InstanceState,
 	childName string,
-) *state.ChildDependencyInfo {
+) *state.DependencyInfo {
 	childDeps, hasChildDeps := instanceState.ChildDependencies[childName]
 	if !hasChildDeps {
 		return nil
@@ -654,7 +654,10 @@ func extractLinkDirectDependencies(logicalLinkName string) *linkDependencyInfo {
 	}
 }
 
-func getResourceTypesForLink(linkName string, currentState *state.InstanceState) (string, string, error) {
+func getResourceTypesForLink(
+	linkName string,
+	currentState *state.InstanceState,
+) (string, string, error) {
 	linkDependencyInfo := extractLinkDirectDependencies(linkName)
 	if linkDependencyInfo == nil {
 		return "", "", errInvalidLogicalLinkName(
@@ -730,6 +733,92 @@ func getResourceInfo(
 		CurrentResourceState:     currentResourceStatePtr,
 		ResourceWithResolvedSubs: resolveResourceResult.ResolvedResource,
 	}, resolveResourceResult, nil
+}
+
+// This must only be called when a lock has already been held on the ephemeral state
+// that the provided maps belong to.
+func addPendingLinksToEphemeralState(
+	node *links.ChainLinkNode,
+	alreadyPendingLinks []string,
+	pendingLinks map[string]*LinkPendingCompletion,
+	resourceNameLinkMap map[string][]string,
+) {
+	for _, linksToNode := range node.LinksTo {
+		linkName := createLogicalLinkName(node.ResourceName, linksToNode.ResourceName)
+		if !slices.Contains(alreadyPendingLinks, linkName) {
+			completionState := &LinkPendingCompletion{
+				resourceANode:    node,
+				resourceBNode:    linksToNode,
+				resourceAPending: false,
+				resourceBPending: true,
+				linkPending:      true,
+			}
+			pendingLinks[linkName] = completionState
+			resourceNameLinkMap[node.ResourceName] = append(
+				resourceNameLinkMap[node.ResourceName],
+				linkName,
+			)
+			resourceNameLinkMap[linksToNode.ResourceName] = append(
+				resourceNameLinkMap[linksToNode.ResourceName],
+				linkName,
+			)
+		}
+	}
+
+	for _, linkedFromNode := range node.LinkedFrom {
+		linkName := createLogicalLinkName(linkedFromNode.ResourceName, node.ResourceName)
+		if !slices.Contains(alreadyPendingLinks, linkName) {
+			completionState := &LinkPendingCompletion{
+				resourceANode:    linkedFromNode,
+				resourceBNode:    node,
+				resourceAPending: true,
+				resourceBPending: false,
+				linkPending:      true,
+			}
+			pendingLinks[linkName] = completionState
+			resourceNameLinkMap[linkedFromNode.ResourceName] = append(
+				resourceNameLinkMap[linkedFromNode.ResourceName],
+				linkName,
+			)
+			resourceNameLinkMap[node.ResourceName] = append(
+				resourceNameLinkMap[node.ResourceName],
+				linkName,
+			)
+		}
+	}
+}
+
+// This must only be called when a lock has already been held on the ephemeral state
+// that the provided maps belong to.
+func updatePendingLinksInEphemeralState(
+	node *links.ChainLinkNode,
+	pendingLinkNames []string,
+	pendingLinks map[string]*LinkPendingCompletion,
+) []*LinkPendingCompletion {
+	linksReadyToBeStaged := []*LinkPendingCompletion{}
+
+	for _, linkName := range pendingLinkNames {
+		completionState := pendingLinks[linkName]
+		if completionState.resourceANode.ResourceName == node.ResourceName {
+			completionState.resourceAPending = false
+		} else if completionState.resourceBNode.ResourceName == node.ResourceName {
+			completionState.resourceBPending = false
+		}
+
+		if !completionState.resourceAPending && !completionState.resourceBPending {
+			linksReadyToBeStaged = append(linksReadyToBeStaged, completionState)
+		}
+	}
+
+	return linksReadyToBeStaged
+}
+
+func getResourceType(resource *schema.Resource) string {
+	if resource.Type == nil {
+		return ""
+	}
+
+	return resource.Type.Value
 }
 
 func toFullLinkPath(

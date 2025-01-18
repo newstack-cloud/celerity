@@ -119,8 +119,12 @@ func validateCustomVariableOptions(
 	params bpcore.BlueprintParams,
 	customVariableType provider.CustomVariableType,
 ) ([]string, error) {
+	providerNamespace := provider.ExtractProviderFromItemType(string(varSchema.Type.Value))
 	optionsOutput, err := customVariableType.Options(ctx, &provider.CustomVariableTypeOptionsInput{
-		Params: params,
+		ProviderContext: provider.NewProviderContextFromParams(
+			providerNamespace,
+			params,
+		),
 	})
 	if err != nil {
 		return nil, errCustomVariableOptions(

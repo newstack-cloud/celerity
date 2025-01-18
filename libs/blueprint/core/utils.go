@@ -118,6 +118,12 @@ func ResourceElementID(resourceName string) string {
 	return fmt.Sprintf("resources.%s", resourceName)
 }
 
+// ToLogicalResourceName converts a resource element ID to a logical resource name
+// (e.g. "resources.resource1" -> "resource1").
+func ToLogicalResourceName(resourceElementID string) string {
+	return strings.TrimPrefix(resourceElementID, "resources.")
+}
+
 // VariableElementID generates an element ID for a variable that is used
 // primarily for resolving substitutions.
 func VariableElementID(variableName string) string {
@@ -134,6 +140,12 @@ func ValueElementID(valueName string) string {
 // primarily for resolving substitutions.
 func ChildElementID(childName string) string {
 	return fmt.Sprintf("children.%s", childName)
+}
+
+// ToLogicalChildName converts a child element ID to a logical child name
+// (e.g. "children.child1" -> "child1").
+func ToLogicalChildName(childElementID string) string {
+	return strings.TrimPrefix(childElementID, "children.")
 }
 
 // DataSourceElementID generates an element ID for a data source that is used

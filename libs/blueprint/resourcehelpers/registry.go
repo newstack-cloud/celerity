@@ -55,6 +55,20 @@ type Registry interface {
 		resourceType string,
 		input *provider.ResourceDestroyInput,
 	) error
+
+	// StabilisedDependencies lists the resource types that are required to be stable
+	// when a resource that is a dependency of the given resource type is being deployed.
+	StabilisedDependencies(
+		ctx context.Context,
+		resourceType string,
+		input *provider.ResourceStabilisedDependenciesInput,
+	) (*provider.ResourceStabilisedDependenciesOutput, error)
+
+	// WithParams creates a new registry derived from the current registry
+	// with the given parameters.
+	WithParams(
+		params core.BlueprintParams,
+	) Registry
 }
 
 type registryFromProviders struct {
@@ -63,6 +77,7 @@ type registryFromProviders struct {
 	resourceCache         *core.Cache[provider.Resource]
 	abstractResourceCache *core.Cache[transform.AbstractResource]
 	resourceTypes         []string
+	params                core.BlueprintParams
 	mu                    sync.Mutex
 }
 
@@ -71,10 +86,12 @@ type registryFromProviders struct {
 func NewRegistry(
 	providers map[string]provider.Provider,
 	transformers map[string]transform.SpecTransformer,
+	params core.BlueprintParams,
 ) Registry {
 	return &registryFromProviders{
 		providers:             providers,
 		transformers:          transformers,
+		params:                params,
 		resourceCache:         core.NewCache[provider.Resource](),
 		abstractResourceCache: core.NewCache[transform.AbstractResource](),
 		resourceTypes:         []string{},
@@ -93,10 +110,14 @@ func (r *registryFromProviders) GetSpecDefinition(
 			return nil, errMultipleRunErrors([]error{err, abstractErr})
 		}
 
+		transformerNamespace := transform.ExtractTransformerFromItemType(resourceType)
 		output, err := abstractResourceImpl.GetSpecDefinition(
 			ctx,
 			&transform.AbstractResourceGetSpecDefinitionInput{
-				Params: input.Params,
+				TransformerContext: transform.NewTransformerContextFromParams(
+					transformerNamespace,
+					r.params,
+				),
 			},
 		)
 		if err != nil {
@@ -123,10 +144,14 @@ func (r *registryFromProviders) GetTypeDescription(
 			return nil, errMultipleRunErrors([]error{err, abstractErr})
 		}
 
+		transformerNamespace := transform.ExtractTransformerFromItemType(resourceType)
 		output, err := abstractResourceImpl.GetTypeDescription(
 			ctx,
 			&transform.AbstractResourceGetTypeDescriptionInput{
-				Params: input.Params,
+				TransformerContext: transform.NewTransformerContextFromParams(
+					transformerNamespace,
+					r.params,
+				),
 			},
 		)
 		if err != nil {
@@ -226,9 +251,13 @@ func (r *registryFromProviders) CustomValidate(
 			return nil, errMultipleRunErrors([]error{err, abstractErr})
 		}
 
+		transformerNamespace := transform.ExtractTransformerFromItemType(resourceType)
 		output, err := abstractResourceImpl.CustomValidate(ctx, &transform.AbstractResourceValidateInput{
 			SchemaResource: input.SchemaResource,
-			Params:         input.Params,
+			TransformerContext: transform.NewTransformerContextFromParams(
+				transformerNamespace,
+				r.params,
+			),
 		})
 		if err != nil {
 			return nil, err
@@ -265,6 +294,32 @@ func (r *registryFromProviders) Destroy(
 	}
 
 	return resourceImpl.Destroy(ctx, input)
+}
+
+func (r *registryFromProviders) StabilisedDependencies(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	resourceImpl, err := r.getResourceType(ctx, resourceType)
+	if err != nil {
+		return nil, err
+	}
+
+	return resourceImpl.StabilisedDependencies(ctx, input)
+}
+
+func (r *registryFromProviders) WithParams(
+	params core.BlueprintParams,
+) Registry {
+	return &registryFromProviders{
+		providers:             r.providers,
+		transformers:          r.transformers,
+		resourceCache:         r.resourceCache,
+		abstractResourceCache: r.abstractResourceCache,
+		resourceTypes:         r.resourceTypes,
+		params:                params,
+	}
 }
 
 func (r *registryFromProviders) getResourceType(ctx context.Context, resourceType string) (provider.Resource, error) {

@@ -98,6 +98,9 @@ func (c *defaultBlueprintContainer) destroy(
 			ParamOverrides:        paramOverrides,
 			InstanceStateSnapshot: &currentInstanceState,
 			ResourceProviders:     resourceProviderMap,
+			InputChanges:          input.Changes,
+			ResourceTemplates:     map[string]string{},
+			ResourceRegistry:      c.resourceRegistry.WithParams(paramOverrides),
 		},
 		[]*DeploymentNode{},
 	)
@@ -302,6 +305,11 @@ func (c *defaultBlueprintContainer) handleResourceDestroyEvent(
 ) error {
 	resources := c.stateContainer.Resources()
 	if startedDestroyingResource(msg.PreciseStatus, deployCtx.Rollback) {
+		element := &ResourceIDInfo{
+			ResourceID:   msg.ResourceID,
+			ResourceName: msg.ResourceName,
+		}
+		deployCtx.State.SetElementInProgress(element)
 		err := resources.UpdateStatus(
 			ctx,
 			msg.InstanceID,
@@ -362,6 +370,11 @@ func (c *defaultBlueprintContainer) handleChildDestroyEvent(
 	instances := c.stateContainer.Instances()
 	children := c.stateContainer.Children()
 	if startedDestroyingChild(msg.Status, deployCtx.Rollback) {
+		element := &ChildBlueprintIDInfo{
+			ChildInstanceID: msg.ChildInstanceID,
+			ChildName:       msg.ChildName,
+		}
+		deployCtx.State.SetElementInProgress(element)
 		err := instances.UpdateStatus(
 			ctx,
 			msg.ChildInstanceID,
@@ -416,6 +429,11 @@ func (c *defaultBlueprintContainer) handleLinkDestroyEvent(
 ) error {
 	links := c.stateContainer.Links()
 	if startedDestroyingLink(msg.Status, deployCtx.Rollback) {
+		element := &LinkIDInfo{
+			LinkID:   msg.LinkID,
+			LinkName: msg.LinkName,
+		}
+		deployCtx.State.SetElementInProgress(element)
 		err := links.UpdateStatus(
 			ctx,
 			msg.InstanceID,

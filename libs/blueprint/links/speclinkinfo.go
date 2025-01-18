@@ -328,12 +328,16 @@ func (l *defaultSpecLinkInfo) checkCanLinkTo(
 			}
 			return nil, err
 		}
-		linkFromResourceType, err := resourceProvider.Resource(ctx, linkFromResourceType)
+		linkFromResourceTypeImpl, err := resourceProvider.Resource(ctx, linkFromResourceType)
 		if err != nil {
 			return nil, err
 		}
-		linkFromResourceOutput, err := linkFromResourceType.CanLinkTo(ctx, &provider.ResourceCanLinkToInput{
-			Params: l.blueprintParams,
+		providerNamespace := provider.ExtractProviderFromItemType(linkFromResourceType)
+		linkFromResourceOutput, err := linkFromResourceTypeImpl.CanLinkTo(ctx, &provider.ResourceCanLinkToInput{
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				l.blueprintParams,
+			),
 		})
 		if err != nil {
 			return nil, err
@@ -638,19 +642,24 @@ func (l *defaultSpecLinkInfo) getResourceLinkInfo(
 	resourceProvider provider.Provider,
 	resourceType string,
 ) ([]string, bool, error) {
+	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
 	resourceImplementation, err := resourceProvider.Resource(ctx, resourceType)
 	if err != nil {
 		return nil, false, err
 	}
+	providerContext := provider.NewProviderContextFromParams(
+		providerNamespace,
+		l.blueprintParams,
+	)
 	canLinkToOutput, err := resourceImplementation.CanLinkTo(ctx, &provider.ResourceCanLinkToInput{
-		Params: l.blueprintParams,
+		ProviderContext: providerContext,
 	})
 	if err != nil {
 		return nil, false, err
 	}
 
 	commonTerminalOutput, err := resourceImplementation.IsCommonTerminal(ctx, &provider.ResourceIsCommonTerminalInput{
-		Params: l.blueprintParams,
+		ProviderContext: providerContext,
 	})
 	if err != nil {
 		return nil, false, err
@@ -743,8 +752,9 @@ func collectCircularLinkInfo(
 		// otherwise we'll be infinitely going in circles searching for circular links!
 		if len(linkedTo.LinksTo) > 0 && linkedToAncestorEntry == nil {
 			linkImpl := ChainLinkNode.LinkImplementations[linkedTo.ResourceName]
+			linkCtx := provider.NewLinkContextFromParams(blueprintParams)
 			linkKindOutput, err := linkImpl.GetKind(ctx, &provider.LinkGetKindInput{
-				Params: blueprintParams,
+				LinkContext: linkCtx,
 			})
 			if err != nil {
 				return nil, err

@@ -93,7 +93,8 @@ func OrderItemsForDeployment(
 		nodeA := combined[i]
 		nodeB := combined[j]
 
-		if nodeA.Type() == "resource" && nodeB.Type() == "resource" {
+		if nodeA.Type() == DeploymentNodeTypeResource &&
+			nodeB.Type() == DeploymentNodeTypeResource {
 			return resourceAHasPriority(
 				ctx,
 				nodeA.ChainLinkNode,
@@ -104,7 +105,8 @@ func OrderItemsForDeployment(
 			)
 		}
 
-		if nodeA.Type() == "resource" && nodeB.Type() == "child" {
+		if nodeA.Type() == DeploymentNodeTypeResource &&
+			nodeB.Type() == DeploymentNodeTypeChild {
 			return resourceHasPriorityOverChild(
 				nodeA.ChainLinkNode,
 				nodeB.ChildNode,
@@ -112,7 +114,8 @@ func OrderItemsForDeployment(
 			)
 		}
 
-		if nodeA.Type() == "child" && nodeB.Type() == "resource" {
+		if nodeA.Type() == DeploymentNodeTypeChild &&
+			nodeB.Type() == DeploymentNodeTypeResource {
 			return childHasPriorityOverResource(
 				nodeA.ChildNode,
 				nodeB.ChainLinkNode,
@@ -120,7 +123,8 @@ func OrderItemsForDeployment(
 			)
 		}
 
-		if nodeA.Type() == "child" && nodeB.Type() == "child" {
+		if nodeA.Type() == DeploymentNodeTypeChild &&
+			nodeB.Type() == DeploymentNodeTypeChild {
 			return childAHasPriority(
 				nodeA.ChildNode,
 				nodeB.ChildNode,
@@ -253,9 +257,11 @@ func hasPriorityOver(
 ) func(*links.ChainLinkNode, int) bool {
 	return func(candidatePriorityLink *links.ChainLinkNode, index int) bool {
 		linkImplementation, hasLinkImplementation := candidatePriorityLink.LinkImplementations[otherLink.ResourceName]
+		candidatePriorityResource := provider.LinkPriorityResourceA
 		if !hasLinkImplementation {
 			// The relationship could be either way.
 			linkImplementation, hasLinkImplementation = otherLink.LinkImplementations[candidatePriorityLink.ResourceName]
+			candidatePriorityResource = provider.LinkPriorityResourceB
 		}
 
 		if !hasLinkImplementation {
@@ -265,10 +271,11 @@ func hasPriorityOver(
 			return false
 		}
 
-		priorityResourceTypeOutput, err := linkImplementation.GetPriorityResourceType(
+		linkCtx := provider.NewLinkContextFromParams(params)
+		priorityResourceOutput, err := linkImplementation.GetPriorityResource(
 			ctx,
-			&provider.LinkGetPriorityResourceTypeInput{
-				Params: params,
+			&provider.LinkGetPriorityResourceInput{
+				LinkContext: linkCtx,
 			},
 		)
 		if err != nil {
@@ -277,14 +284,14 @@ func hasPriorityOver(
 		}
 
 		kindOutput, err := linkImplementation.GetKind(ctx, &provider.LinkGetKindInput{
-			Params: params,
+			LinkContext: linkCtx,
 		})
 		if err != nil {
 			*captureError = err
 			return false
 		}
 		isHardLink := kindOutput.Kind == provider.LinkKindHard
-		return priorityResourceTypeOutput.PriorityResourceType == candidatePriorityLink.Resource.Type.Value && isHardLink
+		return priorityResourceOutput.PriorityResource == candidatePriorityResource && isHardLink
 	}
 }
 
@@ -368,12 +375,14 @@ func combineChainsAndChildren(
 	deploymentNodes := []*DeploymentNode{}
 	for _, chain := range chains {
 		deploymentNodes = append(deploymentNodes, &DeploymentNode{
-			ChainLinkNode: chain,
+			ChainLinkNode:      chain,
+			DirectDependencies: []*DeploymentNode{},
 		})
 	}
 	for _, child := range children {
 		deploymentNodes = append(deploymentNodes, &DeploymentNode{
-			ChildNode: child,
+			ChildNode:          child,
+			DirectDependencies: []*DeploymentNode{},
 		})
 	}
 	return deploymentNodes
@@ -384,6 +393,15 @@ func combineChainsAndChildren(
 type DeploymentNode struct {
 	ChainLinkNode *links.ChainLinkNode
 	ChildNode     *validation.ReferenceChainNode
+	// DirectDependencies holds the direct dependencies of the given deployment
+	// node.
+	// This isn't populated upon creation of the deployment node,
+	// as ordering of the nodes does not compare every node,
+	// the dependencies list would be incomplete.
+	// This is primarily used for the deployment process where the container
+	// will populate the direct dependencies of each node as a part of the
+	// preparation phase.
+	DirectDependencies []*DeploymentNode
 }
 
 func (d *DeploymentNode) Name() string {
@@ -393,14 +411,28 @@ func (d *DeploymentNode) Name() string {
 	return d.ChildNode.ElementName
 }
 
-func (d *DeploymentNode) Type() string {
+func (d *DeploymentNode) Type() DeploymentNodeType {
 	if d.ChainLinkNode != nil {
-		return "resource"
+		return DeploymentNodeTypeResource
 	}
 
 	if d.ChildNode != nil {
-		return "child"
+		return DeploymentNodeTypeChild
 	}
 
 	return ""
 }
+
+// DeploymentNodeType is the type of a deployment node extracted
+// from a source blueprint.
+type DeploymentNodeType string
+
+const (
+	// DeploymentNodeTypeResource is a deployment node that represents a resource
+	// to be deployed.
+	DeploymentNodeTypeResource DeploymentNodeType = "resource"
+
+	// DeploymentNodeTypeChild is a deployment node that represents a child blueprint
+	// to be deployed.
+	DeploymentNodeTypeChild DeploymentNodeType = "child"
+)

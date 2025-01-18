@@ -694,12 +694,12 @@ func groupFixture3RefChains(
 
 func collectNodesAsRefs(nodes []*DeploymentNode, collector validation.RefChainCollector) error {
 	for _, node := range nodes {
-		if node.Type() == "resource" {
+		if node.Type() == DeploymentNodeTypeResource {
 			err := collectLinksFromChain(context.TODO(), node.ChainLinkNode, collector)
 			if err != nil {
 				return err
 			}
-		} else if node.Type() == "child" {
+		} else if node.Type() == DeploymentNodeTypeChild {
 			collector.Collect(node.Name(), node.ChildNode.Element, "", []string{})
 		}
 	}

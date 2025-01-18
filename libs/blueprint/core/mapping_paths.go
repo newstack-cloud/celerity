@@ -55,6 +55,135 @@ func GetPathValue(path string, node *MappingNode, maxTraverseDepth int) (*Mappin
 	return current, nil
 }
 
+// InjectPathValue injects a value into a MappingNode using a path.
+// This will return an error if the provided path is invalid
+// or if the path is not reachable in the given node.
+// Structures such as an arrays and field mappings will be created
+// if they do not exist in the injectInto node and the path is valid.
+//
+// A path supports the following acessors:
+//
+// - "." for fields
+// - "[\"<field>\"]" for fields with special characters
+// - "[<index>]" for array items
+//
+// "$" represents the root of the path and must always be the first character
+// in the path.
+//
+// Example:
+//
+//	core.InjectPathValue("$[\"cluster.v1\"].config.endpoints[0]", value, injectInto, 3)
+func InjectPathValue(
+	path string,
+	value *MappingNode,
+	injectInto *MappingNode,
+	maxTraverseDepth int,
+) error {
+	parsedPath, err := parsePath(path)
+	if err != nil {
+		return err
+	}
+
+	current := injectInto
+	pathExists := true
+	i := 0
+	maxDepth := int(math.Min(float64(maxTraverseDepth), float64(len(parsedPath))))
+	for pathExists && current != nil && i < maxDepth {
+		pathItem := parsedPath[i]
+		if pathItem.FieldName != "" && current.Fields != nil {
+			injectIntoFields(current, pathItem, parsedPath, i, value)
+			current = current.Fields[pathItem.FieldName]
+		} else if pathItem.ArrayIndex != nil && current.Items != nil {
+			injectIntoItems(current, pathItem, parsedPath, i, value)
+			arrayIndex := math.Min(
+				float64(*pathItem.ArrayIndex),
+				float64(len(current.Items)-1),
+			)
+			current = current.Items[int(arrayIndex)]
+		} else {
+			pathExists = false
+		}
+
+		i += 1
+	}
+
+	if !pathExists {
+		return fmt.Errorf(
+			"path %q could not be injected into the mapping node, "+
+				"the structure of the mapping node does not match the path",
+			path,
+		)
+	}
+
+	if maxDepth < len(parsedPath) {
+		return fmt.Errorf(
+			"path %q could not be injected into the mapping node, "+
+				"the path goes beyond the maximum depth of the node",
+			path,
+		)
+	}
+
+	return nil
+}
+
+func injectIntoFields(
+	target *MappingNode,
+	pathItem *pathItem,
+	parsedPath []*pathItem,
+	i int,
+	valueToInject *MappingNode,
+) {
+	_, hasValue := target.Fields[pathItem.FieldName]
+	if !hasValue {
+		if i == len(parsedPath)-1 {
+			target.Fields[pathItem.FieldName] = valueToInject
+		} else {
+			target.Fields[pathItem.FieldName] = createFieldsOrItems(parsedPath, i+1)
+		}
+	}
+}
+
+func injectIntoItems(
+	target *MappingNode,
+	pathItem *pathItem,
+	parsedPath []*pathItem,
+	i int,
+	valueToInject *MappingNode,
+) {
+	if *pathItem.ArrayIndex >= len(target.Items) {
+		// When the array index exceeds the last index of the array,
+		// the value will be injected at the end of the array.
+		// This is to ensure that the array is contiguous instead of having
+		// to create empty items in between.
+		if i == len(parsedPath)-1 {
+			target.Items = append(target.Items, valueToInject)
+		} else {
+			target.Items = append(target.Items, createFieldsOrItems(parsedPath, i+1))
+		}
+	}
+}
+
+func createFieldsOrItems(parsedPath []*pathItem, nextIndex int) *MappingNode {
+	if nextIndex >= len(parsedPath) {
+		return &MappingNode{}
+	}
+
+	nextPathItem := parsedPath[nextIndex]
+	if nextPathItem.FieldName != "" {
+		return &MappingNode{
+			Fields: map[string]*MappingNode{},
+		}
+	}
+
+	if nextPathItem.ArrayIndex != nil {
+		return &MappingNode{
+			Items: []*MappingNode{},
+		}
+	}
+
+	return &MappingNode{}
+}
+
 // Represents a single item in a path used to access
 // values in a MappingNode.
 type pathItem struct {

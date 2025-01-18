@@ -79,6 +79,7 @@ func (s *SubResolverTestContainer) populateDependencies() {
 	s.resourceRegistry = resourcehelpers.NewRegistry(
 		providers,
 		map[string]transform.SpecTransformer{},
+		/* params */ nil,
 	)
 	s.dataSourceRegistry = provider.NewDataSourceRegistry(
 		providers,

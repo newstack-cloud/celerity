@@ -7,8 +7,8 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
@@ -50,7 +50,7 @@ func CollectChanges(
 	linkFieldPathWithoutRoot := removeRootFromFieldPath(linkFieldPath, "$")
 	resourceFieldPathWithoutRoot := removeRootFromFieldPath(resourceFieldPath, "$")
 	if IsFieldKnownOnDeploy(resourceChanges, resourceFieldPathWithoutRoot) ||
-		IsComputedField(resourceChanges, resourceFieldPathWithoutRoot) {
+		resourcehelpers.IsComputedField(resourceChanges, resourceFieldPathWithoutRoot) {
 		collectIn.FieldChangesKnownOnDeploy = append(collectIn.FieldChangesKnownOnDeploy, linkFieldPathWithoutRoot)
 		return nil
 	}
@@ -230,98 +230,4 @@ func IsFieldKnownOnDeploy(changes *provider.Changes, fieldPath string) bool {
 	}
 
 	return slices.Contains(changes.FieldChangesKnownOnDeploy, fieldPath)
-}
-
-// IsComputedField returns whether the given field path is a computed field
-// in the given set of resource changes.
-func IsComputedField(changes *provider.Changes, fieldPath string) bool {
-	if changes == nil {
-		return false
-	}
-
-	foundMatch := false
-	i := 0
-	for !foundMatch && i < len(changes.ComputedFields) {
-		computedField := changes.ComputedFields[i]
-		foundMatch = computedField == fieldPath
-		if !foundMatch &&
-			(strings.Contains(changes.ComputedFields[i], "[0]") ||
-				strings.Contains(changes.ComputedFields[i], "[\"<key>\"]")) {
-			// Compare each path item to match a placeholder for an array item
-			// or map key-value pair with the given field path.
-			// The computed field path will always be in a resource spec,
-			// so we can safely use a resource property path representations
-			// to reuse existing path parsing logic in the substitutions package.
-			computedFieldPropPath := parseResourcePropertyPath(computedField)
-			fieldPropPath := parseResourcePropertyPath(fieldPath)
-
-			if len(computedFieldPropPath) == len(fieldPropPath) {
-				foundMatch = parsedPathMatchesComputedField(computedFieldPropPath, fieldPropPath)
-			}
-		}
-		i += 1
-	}
-
-	return foundMatch
-}
-
-func parsedPathMatchesComputedField(
-	computedFieldPropPath []*substitutions.SubstitutionPathItem,
-	fieldPropPath []*substitutions.SubstitutionPathItem,
-) bool {
-
-	pathsMatch := true
-	i := 0
-	for pathsMatch && i < len(computedFieldPropPath) {
-		computedFieldPathItem := computedFieldPropPath[i]
-		fieldPathItem := fieldPropPath[i]
-		pathsMatch = pathsMatch && (pathItemMatchesForField(computedFieldPathItem, fieldPathItem) ||
-			pathItemMatchesForArrayItem(computedFieldPathItem, fieldPathItem))
-		i += 1
-	}
-
-	return pathsMatch
-}
-
-func pathItemMatchesForField(
-	computedFieldPathItem *substitutions.SubstitutionPathItem,
-	fieldPathItem *substitutions.SubstitutionPathItem,
-) bool {
-	return computedFieldPathItem.FieldName != "" &&
-		fieldPathItem.FieldName != "" &&
-		(computedFieldPathItem.FieldName == fieldPathItem.FieldName ||
-			computedFieldPathItem.FieldName == "__key__")
-}
-
-func pathItemMatchesForArrayItem(
-	computedFieldPathItem *substitutions.SubstitutionPathItem,
-	fieldPathItem *substitutions.SubstitutionPathItem,
-) bool {
-	return computedFieldPathItem.ArrayIndex != nil &&
-		fieldPathItem.ArrayIndex != nil &&
-		(*computedFieldPathItem.ArrayIndex == *fieldPathItem.ArrayIndex ||
-			// 0 is a placeholder for any array item in the computed field path.
-			*computedFieldPathItem.ArrayIndex == 0)
-}
-
-func parseResourcePropertyPath(
-	fieldPath string,
-) []*substitutions.SubstitutionPathItem {
-	path := fmt.Sprintf("resources.test.%s", fieldPath)
-	// ["<key>"] is not valid in the substitutions language.
-	// Undersocres are allowed, so we'll use underscores instead of
-	// angle brackets for the key placeholder.
-	finalPath := strings.ReplaceAll(path, "[\"<key>\"]", "[\"__key__\"]")
-	sub, err := substitutions.ParseSubstitution(
-		"",
-		finalPath,
-		nil,
-		/* outputLinkeInfo */ false,
-		/* ignoreParentColumn */ true,
-	)
-	if err != nil {
-		return []*substitutions.SubstitutionPathItem{}
-	}
-
-	return sub.ResourceProperty.Path[1:]
 }

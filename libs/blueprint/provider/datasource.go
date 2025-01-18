@@ -39,7 +39,7 @@ type DataSource interface {
 // a data source definition in a blueprint.
 type DataSourceValidateInput struct {
 	SchemaDataSource *schema.DataSource
-	Params           core.BlueprintParams
+	ProviderContext  Context
 }
 
 // DataSourceValidateOutput provides the output from validating a data source
@@ -120,7 +120,7 @@ type DataSourceFetchInput struct {
 	// DataSourceWithResolvedSubs holds a version of a data source for which all ${..}
 	// substitutions have been applied.
 	DataSourceWithResolvedSubs *ResolvedDataSource
-	Params                     core.BlueprintParams
+	ProviderContext            Context
 }
 
 // DataSourceFetchOutput provides the output from fetching data from an upstream
@@ -132,7 +132,7 @@ type DataSourceFetchOutput struct {
 // DataSourceGetTypeInput provides the input required to
 // retrieve the namespaced type for a data source in a blueprint.
 type DataSourceGetTypeInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // DataSourceGetTypeOutput provides the output from retrieving the namespaced type
@@ -144,7 +144,7 @@ type DataSourceGetTypeOutput struct {
 // DataSourceGetTypeDescriptionInput provides the input data needed for a data source to
 // retrieve a description of the type of a data source in a blueprint spec.
 type DataSourceGetTypeDescriptionInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // DataSourceGetTypeDescriptionOutput provides the output data from retrieving a description
@@ -157,7 +157,7 @@ type DataSourceGetTypeDescriptionOutput struct {
 // DataSourceGetFilterFieldsOutput provides the output from retrieving the fields
 // that can be used in a filter for a data source.
 type DataSourceGetFilterFieldsInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // DataSourceGetFilterFieldsOutput provides the output from retrieving the fields
@@ -169,7 +169,7 @@ type DataSourceGetFilterFieldsOutput struct {
 // DataSourceGetSpecDefinitionInput provides the input data needed for a data source to
 // provide a spec definition.
 type DataSourceGetSpecDefinitionInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // DataSourceGetSpecDefinitionOutput provides the output data from providing a spec definition

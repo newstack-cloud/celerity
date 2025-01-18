@@ -156,6 +156,7 @@ func (d *defaultResourceDeployer) Deploy(
 			),
 			isNew: resourceChangeInfo.isNew,
 		},
+		resolvedResource.Type.Value,
 		deployCtx,
 		createRetryInfo(policy),
 	)
@@ -167,6 +168,7 @@ func (d *defaultResourceDeployer) Deploy(
 func (d *defaultResourceDeployer) deployResource(
 	ctx context.Context,
 	resourceInfo *resourceDeployInfo,
+	resourceType string,
 	deployCtx *DeployContext,
 	resourceRetryInfo *retryInfo,
 ) error {
@@ -188,13 +190,17 @@ func (d *defaultResourceDeployer) deployResource(
 		Attempt:         resourceRetryInfo.attempt,
 	}
 
+	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
 	output, err := resourceInfo.resourceImpl.Deploy(
 		ctx,
 		&provider.ResourceDeployInput{
 			InstanceID: resourceInfo.instanceID,
 			ResourceID: resourceInfo.resourceID,
 			Changes:    resourceInfo.changes,
-			Params:     deployCtx.ParamOverrides,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				deployCtx.ParamOverrides,
+			),
 		},
 	)
 	if err != nil {
@@ -229,7 +235,26 @@ func (d *defaultResourceDeployer) deployResource(
 		return err
 	}
 
-	deployCtx.State.SetResourceSpecState(resourceInfo.resourceName, output.SpecState)
+	resolvedResource := getResolvedResourceFromChanges(resourceInfo.changes)
+	mergedSpecState, err := MergeResourceSpec(
+		resolvedResource,
+		resourceInfo.resourceName,
+		output.ComputedFieldValues,
+		resourceInfo.changes.ComputedFields,
+	)
+	if err != nil {
+		return err
+	}
+
+	deployCtx.State.SetResourceData(
+		resourceInfo.resourceName,
+		&CollectedResourceData{
+			Spec: mergedSpecState,
+			Metadata: resolvedMetadataToState(
+				extractResolvedMetadataFromResourceInfo(resourceInfo),
+			),
+		},
+	)
 	// At this point, we mark the resource as "config complete", a separate coroutine
 	// is invoked asynchronously to poll the resource for stability.
 	// Once the resource is stable, a status update will be sent with the appropriate
@@ -295,15 +320,22 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 			)
 			return
 		case <-time.After(d.stabilityPollingConfig.PollingInterval):
+			resourceData := deployCtx.State.GetResourceData(resourceInfo.resourceName)
+			resolvedResource := getResolvedResourceFromChanges(resourceInfo.changes)
+			providerNamespace := provider.ExtractProviderFromItemType(
+				getResourceTypeFromResolved(resolvedResource),
+			)
 			output, err := resourceInfo.resourceImpl.HasStabilised(
 				ctxWithPollingTimeout,
 				&provider.ResourceHasStabilisedInput{
-					InstanceID: resourceInfo.instanceID,
-					ResourceID: resourceInfo.resourceID,
-					ResourceSpec: deployCtx.State.GetResourceSpecState(
-						resourceInfo.resourceName,
+					InstanceID:       resourceInfo.instanceID,
+					ResourceID:       resourceInfo.resourceID,
+					ResourceSpec:     resourceData.Spec,
+					ResourceMetadata: resourceData.Metadata,
+					ProviderContext: provider.NewProviderContextFromParams(
+						providerNamespace,
+						deployCtx.ParamOverrides,
 					),
-					Params: deployCtx.ParamOverrides,
 				},
 			)
 			if err != nil {
@@ -429,9 +461,12 @@ func (d *defaultResourceDeployer) handleDeployResourceRetry(
 	if !nextRetryInfo.exceededMaxRetries {
 		waitTimeMs := provider.CalculateRetryWaitTimeMS(nextRetryInfo.policy, nextRetryInfo.attempt)
 		time.Sleep(time.Duration(waitTimeMs) * time.Millisecond)
+		resolvedResource := getResolvedResourceFromChanges(resourceInfo.changes)
+		resourceType := getResourceTypeFromResolved(resolvedResource)
 		return d.deployResource(
 			ctx,
 			resourceInfo,
+			resourceType,
 			deployCtx,
 			nextRetryInfo,
 		)

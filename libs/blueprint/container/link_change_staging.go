@@ -81,11 +81,12 @@ func (d *defaultLinkChangeStager) StageChanges(
 	resourceAChanges := changeStagingState.GetResourceChanges(resourceAInfo.ResourceName)
 	resourceBChanges := changeStagingState.GetResourceChanges(resourceBInfo.ResourceName)
 
+	linkCtx := provider.NewLinkContextFromParams(params)
 	output, err := linkImpl.StageChanges(ctx, &provider.LinkStageChangesInput{
 		ResourceAChanges: resourceAChanges,
 		ResourceBChanges: resourceBChanges,
 		CurrentLinkState: currentLinkStatePtr,
-		Params:           params,
+		LinkContext:      linkCtx,
 	})
 	if err != nil {
 		return err

@@ -391,11 +391,15 @@ func validateResourcePropertySubSpec(
 		return earlyResolveType, diagnostics, nil
 	}
 
+	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
 	specDefOutput, err := resourceRegistry.GetSpecDefinition(
 		ctx,
 		resourceType,
 		&provider.ResourceGetSpecDefinitionInput{
-			Params: params,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				params,
+			),
 		},
 	)
 	if err != nil {

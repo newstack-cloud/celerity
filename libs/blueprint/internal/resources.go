@@ -371,11 +371,8 @@ func (r *LambdaFunctionResource) Deploy(
 	)
 
 	return &provider.ResourceDeployOutput{
-		SpecState: &core.MappingNode{
-			Fields: map[string]*core.MappingNode{
-				"id":      core.MappingNodeFromString(id),
-				"handler": input.Changes.AppliedResourceInfo.ResourceWithResolvedSubs.Spec.Fields["handler"],
-			},
+		ComputedFieldValues: map[string]*core.MappingNode{
+			"spec.id": core.MappingNodeFromString(id),
 		},
 	}, nil
 }

@@ -196,7 +196,7 @@ func collectElementResourceDependenciesForResource(
 }
 
 func collectElementResourceDependenciesForChild(
-	childDependencyInfo *state.ChildDependencyInfo,
+	childDependencyInfo *state.DependencyInfo,
 	elementsWithDeps []*ElementWithAllDeps,
 	currentState *state.InstanceState,
 ) []state.Element {
@@ -209,7 +209,7 @@ func collectElementResourceDependenciesForChild(
 }
 
 func collectElementChildDependenciesForChild(
-	childDependencyInfo *state.ChildDependencyInfo,
+	childDependencyInfo *state.DependencyInfo,
 	elementsWithDeps []*ElementWithAllDeps,
 	currentState *state.InstanceState,
 ) []state.Element {

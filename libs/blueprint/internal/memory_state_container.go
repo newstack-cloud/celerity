@@ -702,6 +702,50 @@ func (c *memoryChildrenContainer) Remove(ctx context.Context, instanceID string,
 	return state.InstanceState{}, state.InstanceNotFoundError(itemID)
 }
 
+func (c *memoryChildrenContainer) Attach(
+	ctx context.Context,
+	parentInstanceID string,
+	childInstanceID string,
+	childName string,
+) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if parent, ok := c.instances[parentInstanceID]; ok {
+		if child, ok := c.instances[childInstanceID]; ok {
+			if parent.ChildBlueprints == nil {
+				parent.ChildBlueprints = make(map[string]*state.InstanceState)
+			}
+			parent.ChildBlueprints[childName] = child
+		} else {
+			return state.InstanceNotFoundError(childInstanceID)
+		}
+	} else {
+		return state.InstanceNotFoundError(parentInstanceID)
+	}
+
+	return nil
+}
+
+func (c *memoryChildrenContainer) SaveDependencies(
+	ctx context.Context,
+	instanceID string,
+	childName string,
+	dependencies *state.DependencyInfo,
+) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if instance, ok := c.instances[instanceID]; ok {
+		if instance.ChildDependencies == nil {
+			instance.ChildDependencies = make(map[string]*state.DependencyInfo)
+		}
+		instance.ChildDependencies[childName] = dependencies
+	}
+
+	return state.InstanceNotFoundError(instanceID)
+}
+
 func copyInstance(instanceState *state.InstanceState, path string) state.InstanceState {
 	instanceCopy := *instanceState
 	if instanceState.Resources != nil {

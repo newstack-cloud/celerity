@@ -906,12 +906,14 @@ func (l *testApiGatewayLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testApiGatewayLambdaLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testApiGatewayLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceB,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -965,12 +967,14 @@ func (l *testSQSQueueLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testSQSQueueLambdaLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testSQSQueueLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1024,12 +1028,14 @@ func (l *testLambdaDynamoDBTableLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testLambdaDynamoDBTableLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testLambdaDynamoDBTableLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1084,12 +1090,14 @@ func (l *testStratosLambdaDynamoDBTableLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testStratosLambdaDynamoDBTableLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testStratosLambdaDynamoDBTableLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1143,12 +1151,14 @@ func (l *testLambdaSQSQueueLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testLambdaSQSQueueLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testLambdaSQSQueueLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1202,12 +1212,14 @@ func (l *testDynamoDBTableStreamLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testDynamoDBTableStreamLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testDynamoDBTableStreamLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1262,12 +1274,14 @@ func (l *testDynamoDBStreamLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testDynamoDBStreamLambdaLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testDynamoDBStreamLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1322,12 +1336,14 @@ func (l *testDynamoDBStreamStratosLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testDynamoDBStreamStratosLambdaLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testDynamoDBStreamStratosLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1382,12 +1398,14 @@ func (l *testIAMRoleLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testIAMRoleLambdaLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testIAMRoleLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1442,12 +1460,14 @@ func (l *testStratosIAMRoleLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testStratosIAMRoleLambdaLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testStratosIAMRoleLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1501,12 +1521,14 @@ func (l *testLambdaIAMRoleLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testLambdaIAMRoleLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testLambdaIAMRoleLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!
@@ -1561,12 +1583,14 @@ func (l *testLambdaStratosIAMRoleLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-// GetPriorityResourceType is not used for spec link info!
-func (l *testLambdaStratosIAMRoleLink) GetPriorityResourceType(
+// GetPriorityResource is not used for spec link info!
+func (l *testLambdaStratosIAMRoleLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{}, nil
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResourceNone,
+	}, nil
 }
 
 // GetType is not used for spec link info!

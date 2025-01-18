@@ -41,6 +41,7 @@
       RemovedExports: ([]string) (len=1) {
         (string) (len=11) "environment"
       },
+      MetadataChanges: (map[string]provider.FieldChange) <nil>,
       ResolveOnDeploy: ([]string) {
       }
     }
@@ -57,6 +58,7 @@
   RemovedExports: ([]string) (len=1) {
     (string) (len=11) "environment"
   },
+  MetadataChanges: (map[string]provider.FieldChange) <nil>,
   ResolveOnDeploy: ([]string) {
   }
 })

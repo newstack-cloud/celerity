@@ -170,6 +170,7 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 				State:                 deployState,
 				InstanceStateSnapshot: fixture.instanceStateSnapshot,
 				ParamOverrides:        deployLinkParams(),
+				ResourceTemplates:     map[string]string{},
 			},
 			provider.DefaultRetryPolicy,
 		)
@@ -327,6 +328,7 @@ func (s *LinkDeployerTestSuite) createFixtureDeployExpectedOutput(
 
 func deployLinkParams() core.BlueprintParams {
 	return core.NewDefaultParams(
+		map[string]map[string]*core.ScalarValue{},
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},

@@ -724,6 +724,10 @@ func (c *stubBlueprintContainer) RefChainCollector() validation.RefChainCollecto
 	return nil
 }
 
+func (c *stubBlueprintContainer) ResourceTemplates() map[string]string {
+	return map[string]string{}
+}
+
 func (c *stubBlueprintContainer) Diagnostics() []*core.Diagnostic {
 	return []*core.Diagnostic{}
 }

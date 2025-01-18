@@ -83,6 +83,11 @@ const (
 	// during deployment is due to a missing partially resolved resource
 	// for a resource that is being deployed.
 	ErrorReasonCodeDeployMissingPartiallyResolvedResource errors.ErrorReasonCode = "deploy_missing_partially_resolved_resource"
+	// ErrorReasonCodeUnexpectedComputedField
+	// is provided when the reason for an error
+	// during deployment due to an unexpected computed field
+	// being returned by a resource plugin implementation's deploy method.
+	ErrorReasonCodeUnexpectedComputedField errors.ErrorReasonCode = "unexpected_computed_field"
 	// ErrorReasonCodeChildBlueprintError
 	// is provided when the reason for an error
 	// during deployment or change staging is due to
@@ -261,6 +266,24 @@ func errMissingPartiallyResolvedResource(resourceName string) error {
 				"a partially resolved resource must be provided "+
 				"for each resource in the given set of changes",
 			resourceName,
+		),
+	}
+}
+
+func errUnexpectedComputedField(
+	computedField string,
+	resourceName string,
+	expectedComputedFields []string,
+) error {
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeUnexpectedComputedField,
+		Err: fmt.Errorf(
+			"unexpected computed field %q found in resource %q, "+
+				"computed fields returned by the resource deploy method "+
+				"can include the following: %v",
+			computedField,
+			resourceName,
+			strings.Join(expectedComputedFields, ", "),
 		),
 	}
 }

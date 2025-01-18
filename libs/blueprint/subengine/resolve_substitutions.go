@@ -1822,12 +1822,17 @@ func (r *defaultSubstitutionResolver) resolveDataSourceProperty(
 		return extractDataSourceProperty(resolveCtx.currentElementName, resolvedDataSource, cached, dataSourceProperty)
 	}
 
+	providerNamespace := provider.ExtractProviderFromItemType(resolvedDataSource.Type.Value)
+
 	dataOutput, err := r.dataSourceRegistry.Fetch(
 		ctx,
 		resolvedDataSource.Type.Value,
 		&provider.DataSourceFetchInput{
 			DataSourceWithResolvedSubs: resolvedDataSource,
-			Params:                     r.params,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				r.params,
+			),
 		},
 	)
 	if err != nil {
@@ -1969,11 +1974,15 @@ func (r *defaultSubstitutionResolver) resolveResourceSpecProperty(
 	}
 
 	resourceType := string(blueprintResource.Type.Value)
+	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
 	output, err := r.resourceRegistry.GetSpecDefinition(
 		ctx,
 		resourceType,
 		&provider.ResourceGetSpecDefinitionInput{
-			Params: r.params,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				r.params,
+			),
 		},
 	)
 	if err != nil {

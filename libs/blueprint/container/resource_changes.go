@@ -44,11 +44,16 @@ func (s *defaultResourceChangeGenerator) GenerateChanges(
 	resolveOnDeploy []string,
 	params bpcore.BlueprintParams,
 ) (*provider.Changes, error) {
-
+	resolvedResource := resourceInfo.ResourceWithResolvedSubs
+	resourceType := getResourceTypeFromResolved(resolvedResource)
+	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
 	specDefinitionOutput, err := resourceImplementation.GetSpecDefinition(
 		ctx,
 		&provider.ResourceGetSpecDefinitionInput{
-			Params: params,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				params,
+			),
 		},
 	)
 	if err != nil {

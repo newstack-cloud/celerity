@@ -115,11 +115,15 @@ func (d *defaultResourceDestroyer) destroyResource(
 		deployCtx.InstanceStateSnapshot,
 		resourceInfo.element.LogicalName(),
 	)
+	providerNamespace := provider.ExtractProviderFromItemType(resourceState.ResourceType)
 	err := resourceImplementation.Destroy(ctx, &provider.ResourceDestroyInput{
 		InstanceID:    resourceInfo.instanceID,
 		ResourceID:    resourceInfo.element.ID(),
 		ResourceState: resourceState,
-		Params:        deployCtx.ParamOverrides,
+		ProviderContext: provider.NewProviderContextFromParams(
+			providerNamespace,
+			deployCtx.ParamOverrides,
+		),
 	})
 	if err != nil {
 		if provider.IsRetryableError(err) {

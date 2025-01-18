@@ -27,11 +27,15 @@ func PopulateResourceSpecDefaults(
 	}
 	for resourceName, resource := range blueprint.Resources.Values {
 		if resource.Type != nil {
+			providerNamespace := provider.ExtractProviderFromItemType(resource.Type.Value)
 			specDefOutput, err := resourceRegistry.GetSpecDefinition(
 				ctx,
 				resource.Type.Value,
 				&provider.ResourceGetSpecDefinitionInput{
-					Params: params,
+					ProviderContext: provider.NewProviderContextFromParams(
+						providerNamespace,
+						params,
+					),
 				},
 			)
 			if err != nil {

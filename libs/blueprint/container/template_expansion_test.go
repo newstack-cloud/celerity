@@ -87,6 +87,7 @@ func (s *ExpandResourceTemplatesTestSuite) SetupTest() {
 	s.resourceRegistry = resourcehelpers.NewRegistry(
 		s.providers,
 		map[string]transform.SpecTransformer{},
+		/* params */ nil,
 	)
 	s.dataSourceRegistry = provider.NewDataSourceRegistry(
 		s.providers,
@@ -263,6 +264,7 @@ func expandResourceTemplatesTestParams() core.BlueprintParams {
 		},
 	}
 	return core.NewDefaultParams(
+		map[string]map[string]*core.ScalarValue{},
 		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		blueprintVars,

@@ -168,8 +168,4 @@ const (
 	// and the current link for which intermediary resources were succsefully updated
 	// has been rolled back.
 	PreciseLinkStatusIntermediaryResourceUpdateRollbackComplete
-	// PreciseLinkStatusComplete is used when
-	// all components of the link have been successfully updated,
-	// created or destroyed.
-	PreciseLinkStatusComplete
 )

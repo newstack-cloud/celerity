@@ -761,6 +761,140 @@ func startedDestroyingResource(
 	return preciseStatus == core.PreciseResourceStatusDestroying
 }
 
+func startedUpdatingResource(
+	preciseStatus core.PreciseResourceStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		return preciseStatus == core.PreciseResourceStatusUpdateRollingBack
+	}
+
+	return preciseStatus == core.PreciseResourceStatusUpdating
+}
+
+func resourceUpdateConfigComplete(
+	preciseStatus core.PreciseResourceStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		return preciseStatus == core.PreciseResourceStatusUpdateRollbackConfigComplete
+	}
+
+	return preciseStatus == core.PreciseResourceStatusUpdateConfigComplete
+}
+
+// This function should be used when the caller needs to know if the resource has
+// finished updating, regardless of success or failure.
+// This will report false if the current message represents a failure that can be retried.
+func finishedUpdatingResource(
+	msg ResourceDeployUpdateMessage,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		finishedRollingBack := msg.PreciseStatus == core.PreciseResourceStatusUpdateRollbackComplete ||
+			msg.PreciseStatus == core.PreciseResourceStatusUpdateRollbackFailed
+
+		return finishedRollingBack && !msg.CanRetry
+	}
+
+	finishedUpdating := msg.PreciseStatus == core.PreciseResourceStatusUpdated ||
+		msg.PreciseStatus == core.PreciseResourceStatusUpdateFailed
+
+	return finishedUpdating && !msg.CanRetry
+}
+
+func startedCreatingResource(
+	preciseStatus core.PreciseResourceStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		return preciseStatus == core.PreciseResourceStatusCreateRollingBack
+	}
+
+	return preciseStatus == core.PreciseResourceStatusCreating
+}
+
+func resourceCreationConfigComplete(
+	preciseStatus core.PreciseResourceStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		return preciseStatus == core.PreciseResourceStatusDestroyRollbackConfigComplete
+	}
+
+	return preciseStatus == core.PreciseResourceStatusConfigComplete
+}
+
+// This function should be used when the caller needs to know if resource
+// creation has finished, regardless of success or failure.
+// This will report false if the current message represents a failure that can be retried.
+func finishedCreatingResource(
+	msg ResourceDeployUpdateMessage,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		finishedRollingBack := msg.PreciseStatus == core.PreciseResourceStatusDestroyRollbackComplete ||
+			msg.PreciseStatus == core.PreciseResourceStatusDestroyRollbackFailed
+
+		return finishedRollingBack && !msg.CanRetry
+	}
+
+	finishedCreation := msg.PreciseStatus == core.PreciseResourceStatusCreated ||
+		msg.PreciseStatus == core.PreciseResourceStatusCreateFailed
+
+	return finishedCreation && !msg.CanRetry
+}
+
+func startedUpdatingChild(
+	status core.InstanceStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		return status == core.InstanceStatusUpdateRollingBack
+	}
+
+	return status == core.InstanceStatusUpdating
+}
+
+func finishedUpdatingChild(
+	status core.InstanceStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		return status == core.InstanceStatusUpdateRollbackComplete ||
+			status == core.InstanceStatusUpdateRollbackFailed
+	}
+
+	return status == core.InstanceStatusUpdated ||
+		status == core.InstanceStatusUpdateFailed
+}
+
+func startedDeployingChild(
+	status core.InstanceStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		// In the context of rolling back, deploying a child instance is to roll back
+		// the destruction of the child instance.
+		return status == core.InstanceStatusDestroyRollingBack
+	}
+
+	return status == core.InstanceStatusDeploying
+}
+
+func finishedDeployingChild(
+	status core.InstanceStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		return status == core.InstanceStatusDestroyRollbackComplete ||
+			status == core.InstanceStatusDestroyRollbackFailed
+	}
+
+	return status == core.InstanceStatusDeployed ||
+		status == core.InstanceStatusDeployFailed
+}
+
 func startedDestroyingChild(
 	status core.InstanceStatus,
 	rollingBack bool,
@@ -772,6 +906,72 @@ func startedDestroyingChild(
 	}
 
 	return status == core.InstanceStatusDestroying
+}
+
+func startedUpdatingLink(
+	status core.LinkStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		// In the context of rolling back, updating a link is to roll back
+		// the latest changes made to the link.
+		return status == core.LinkStatusUpdateRollingBack
+	}
+
+	return status == core.LinkStatusUpdating
+}
+
+// This function should be used when the caller needs to know if the link has
+// finished updating, regardless of success or failure.
+// This will report false if the current message represents a failure that can be retried.
+func finishedUpdatingLink(
+	msg LinkDeployUpdateMessage,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		rollbackFinished := msg.Status == core.LinkStatusUpdateRollbackComplete ||
+			msg.Status == core.LinkStatusUpdateRollbackFailed
+
+		return rollbackFinished && !msg.CanRetryCurrentStage
+	}
+
+	updateFinished := msg.Status == core.LinkStatusUpdated ||
+		msg.Status == core.LinkStatusUpdateFailed
+
+	return updateFinished && !msg.CanRetryCurrentStage
+}
+
+func startedCreatingLink(
+	status core.LinkStatus,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		// In the context of rolling back, creating a link is to roll back
+		// the destruction of the link.
+		return status == core.LinkStatusDestroyRollingBack
+	}
+
+	return status == core.LinkStatusCreating
+}
+
+// This function should be used when the caller needs to know if creation of the link
+// has finished, regardless of success or failure.
+// This will report false if the current message represents a failure that can be retried.
+func finishedCreatingLink(
+	msg LinkDeployUpdateMessage,
+	rollingBack bool,
+) bool {
+	if rollingBack {
+		rollbackFinished := msg.Status == core.LinkStatusDestroyRollbackComplete ||
+			msg.Status == core.LinkStatusDestroyRollbackFailed
+
+		return rollbackFinished && !msg.CanRetryCurrentStage
+	}
+
+	creationFinished := msg.Status == core.LinkStatusCreated ||
+		msg.Status == core.LinkStatusCreateFailed
+
+	return creationFinished && !msg.CanRetryCurrentStage
 }
 
 func startedDestroyingLink(
@@ -878,6 +1078,32 @@ func wasLinkDestroyedSuccessfully(
 	}
 
 	return status == core.LinkStatusDestroyed
+}
+
+func wasDeploymentSuccessful(
+	msg *DeploymentFinishedMessage,
+	rollingBack bool,
+	isNew bool,
+) bool {
+	if rollingBack && isNew {
+		// If the context is deploying a new blueprint instance as a part of the rollback
+		// process, the status should be a successful rollback of the destruction
+		// of the instance.
+		return msg.Status == core.InstanceStatusDestroyRollbackComplete
+	}
+
+	if rollingBack && !isNew {
+		// If the context is deploying updates for an existing blueprint instance
+		// as a part of the rollback process, the status should be a successful
+		// rollback of the latest changes made to the instance.
+		return msg.Status == core.InstanceStatusUpdateRollbackComplete
+	}
+
+	if !isNew {
+		return msg.Status == core.InstanceStatusUpdated
+	}
+
+	return msg.Status == core.InstanceStatusDeployed
 }
 
 func determineResourceRetryFailureDurations(
@@ -1495,6 +1721,59 @@ func getResolvedResourceFromChanges(
 	return changes.AppliedResourceInfo.ResourceWithResolvedSubs
 }
 
+func getDeploymentNode(
+	element state.Element,
+	groups [][]*DeploymentNode,
+	groupIndex int,
+) *DeploymentNode {
+	if groupIndex < 0 || groupIndex >= len(groups) {
+		return nil
+	}
+
+	group := groups[groupIndex]
+
+	node := (*DeploymentNode)(nil)
+	i := 0
+	for node == nil && i < len(group) {
+		current := group[i]
+		if node.Type() == DeploymentNodeTypeResource {
+			if current.ChainLinkNode.ResourceName == element.LogicalName() {
+				node = current
+			}
+		} else {
+			if node.ChildNode.ElementName == element.LogicalName() {
+				node = current
+			}
+		}
+
+		i += 1
+	}
+
+	return node
+}
+
+func createDeployFinishedInstanceStatusInfo(
+	msg *DeploymentFinishedMessage,
+	rollingBack bool,
+	isNew bool,
+) state.InstanceStatusInfo {
+	updateTimestamp := int(msg.UpdateTimestamp)
+	instanceStatusInfo := state.InstanceStatusInfo{
+		Status:                     msg.Status,
+		Durations:                  msg.Durations,
+		FailureReasons:             msg.FailureReasons,
+		LastDeployAttemptTimestamp: &updateTimestamp,
+		LastStatusUpdateTimestamp:  &updateTimestamp,
+	}
+
+	if wasDeploymentSuccessful(msg, rollingBack, isNew) {
+		finishTimestamp := int(msg.FinishTimestamp)
+		instanceStatusInfo.LastDeployedTimestamp = &finishTimestamp
+	}
+
+	return instanceStatusInfo
+}
+
 type resourceChangeDeployInfo struct {
 	isNew   bool
 	changes *provider.Changes
@@ -1592,6 +1871,185 @@ func createRetryInfo(policy *provider.RetryPolicy) *retryInfo {
 		attemptDurations:   []float64{},
 		exceededMaxRetries: false,
 	}
+}
+
+func createElementFromDeploymentNode(
+	node *DeploymentNode,
+) state.Element {
+	if node.Type() == DeploymentNodeTypeResource {
+		return &ResourceIDInfo{
+			ResourceID:   "",
+			ResourceName: node.ChainLinkNode.ResourceName,
+		}
+	}
+
+	return &ChildBlueprintIDInfo{
+		ChildInstanceID: "",
+		ChildName:       core.ToLogicalChildName(node.ChildNode.ElementName),
+	}
+}
+
+func dependencyMustStabilise(
+	dependant *DeploymentNode,
+	dependency *DeploymentNode,
+	resourceTypesMustStabilise []string,
+) bool {
+	if dependency.Type() == DeploymentNodeTypeResource &&
+		dependant.Type() == DeploymentNodeTypeResource {
+		dependencyResource := dependency.ChainLinkNode.Resource
+		dependencyResourceType := getResourceType(dependencyResource)
+
+		return slices.Contains(
+			resourceTypesMustStabilise,
+			dependencyResourceType,
+		)
+	}
+
+	// Either or both the dependant and dependency are not resources,
+	// so the dependency should be considered as in progress.
+	// If the dependency is a child blueprint, it must be fully deployed before
+	// the dependant can be deployed.
+	// If the dependency is a resource and the dependant is a child blueprint,
+	// the resource must be stable before the child blueprint can be deployed.
+	return true
+}
+
+func readyToDeployAfterDependency(
+	dependant *DeploymentNode,
+	dependency *DeploymentNode,
+	stabilisedDeps []string,
+	configComplete bool,
+) bool {
+	if configComplete {
+		// Child blueprints are not deployed until all resources they depend on are stable,
+		// only resources can be deployed on config complete.
+		return dependant.Type() == DeploymentNodeTypeResource &&
+			// The dependant can only be deployed on config complete if the dependency
+			// is not required to be stable before the dependant can be deployed.
+			!dependencyMustStabilise(dependant, dependency, stabilisedDeps)
+	}
+
+	// If we are not waiting for config completion, the dependant can be deployed
+	// given that the dependency has already been deployed.
+	return true
+}
+
+func getChildChanges(changes *BlueprintChanges, childName string) *BlueprintChanges {
+	childChanges, hasChildChanges := changes.ChildChanges[childName]
+	if hasChildChanges {
+		return &childChanges
+	}
+
+	newChildDefinition, hasNewChildDefinition := changes.NewChildren[childName]
+	if hasNewChildDefinition {
+		return &BlueprintChanges{
+			NewResources: newChildDefinition.NewResources,
+			NewChildren:  newChildDefinition.NewChildren,
+			NewExports:   newChildDefinition.NewExports,
+		}
+	}
+
+	return nil
+}
+
+func getLinkUpdateTypeFromState(linkState state.LinkState) provider.LinkUpdateType {
+	if linkState.LinkID == "" {
+		return provider.LinkUpdateTypeCreate
+	}
+
+	return provider.LinkUpdateTypeUpdate
+}
+
+func getLinkRetryPolicy(
+	ctx context.Context,
+	logicalLinkName string,
+	instanceState *state.InstanceState,
+	linkRegistry provider.LinkRegistry,
+	defaultRetryPolicy *provider.RetryPolicy,
+) (*provider.RetryPolicy, error) {
+	resourceTypeA, resourceTypeB, err := getResourceTypesForLink(logicalLinkName, instanceState)
+	if err != nil {
+		return nil, err
+	}
+
+	provider, err := linkRegistry.Provider(resourceTypeA, resourceTypeB)
+	if err != nil {
+		return nil, err
+	}
+
+	retryPolicy, err := provider.RetryPolicy(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if retryPolicy == nil {
+		return defaultRetryPolicy, nil
+	}
+
+	return retryPolicy, nil
+}
+
+func resolvedMetadataToState(
+	resolvedMetadata *provider.ResolvedResourceMetadata,
+) *state.ResourceMetadataState {
+	if resolvedMetadata == nil {
+		return nil
+	}
+
+	annotations := map[string]*core.MappingNode{}
+	if resolvedMetadata.Annotations != nil {
+		annotations = resolvedMetadata.Annotations.Fields
+	}
+
+	labels := map[string]string{}
+	if resolvedMetadata.Labels != nil {
+		labels = resolvedMetadata.Labels.Values
+	}
+
+	return &state.ResourceMetadataState{
+		DisplayName: core.StringValue(resolvedMetadata.DisplayName),
+		Annotations: annotations,
+		Labels:      labels,
+		Custom:      resolvedMetadata.Custom,
+	}
+}
+
+func extractResolvedMetadataFromResourceInfo(
+	resourceInfo *resourceDeployInfo,
+) *provider.ResolvedResourceMetadata {
+	if resourceInfo.changes == nil {
+		return nil
+	}
+
+	appliedResourceInfo := resourceInfo.changes.AppliedResourceInfo
+	if appliedResourceInfo.ResourceWithResolvedSubs == nil {
+		return nil
+	}
+
+	return appliedResourceInfo.ResourceWithResolvedSubs.Metadata
+}
+
+func extractNodeDependencyInfo(node *DeploymentNode) *state.DependencyInfo {
+	dependencyInfo := &state.DependencyInfo{
+		DependsOnResources: []string{},
+		DependsOnChildren:  []string{},
+	}
+
+	for _, dependency := range node.DirectDependencies {
+		if dependency.Type() == DeploymentNodeTypeResource {
+			dependencyInfo.DependsOnResources = append(
+				dependencyInfo.DependsOnResources,
+				dependency.ChainLinkNode.ResourceName,
+			)
+		} else {
+			dependencyInfo.DependsOnChildren = append(
+				dependencyInfo.DependsOnChildren,
+				core.ToLogicalChildName(dependency.ChildNode.ElementName),
+			)
+		}
+	}
+
+	return dependencyInfo
 }
 
 // This is used during the deploy and destroy process to provide an equivalent

@@ -78,6 +78,7 @@ func (s *ChildBlueprintDeployerTestSuite) runDeployTest(
 			InstanceStateSnapshot: fixture.parentInstanceStateSnapshot,
 			ParamOverrides:        deployLinkParams(),
 			ResourceProviders:     map[string]provider.Provider{},
+			ResourceTemplates:     map[string]string{},
 		},
 	)
 

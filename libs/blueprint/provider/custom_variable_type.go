@@ -28,7 +28,7 @@ type CustomVariableType interface {
 // CustomVariableTypeOptionsInput provides the input required to load
 // the fixed set of possible values for a custom variable type.
 type CustomVariableTypeOptionsInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // CustomVariableTypeOptionsOutput provides
@@ -41,7 +41,7 @@ type CustomVariableTypeOptionsOutput struct {
 // CustomVariableTypeGetTypeInput provides the input required to
 // retrieve the namespaced type for a custom variable type.
 type CustomVariableTypeGetTypeInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // CustomVariableTypeGetTypeOutput provides the output from retrieving the namespaced type
@@ -53,7 +53,7 @@ type CustomVariableTypeGetTypeOutput struct {
 // CustomVariableTypeGetDescriptionInput provides the input required to
 // retrieve a description for a custom variable type.
 type CustomVariableTypeGetDescriptionInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // CustomVariableTypeGetDescriptionOutput provides the output from retrieving the description

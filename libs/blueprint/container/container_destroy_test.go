@@ -470,6 +470,7 @@ func blueprint4RemovalChanges() *BlueprintChanges {
 func blueprintDestroyParams() core.BlueprintParams {
 	return core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 	)

@@ -67,10 +67,12 @@ func (d *defaultLinkDestroyer) Destroy(
 		return
 	}
 
-	retryPolicy, err := d.getLinkRetryPolicy(
+	retryPolicy, err := getLinkRetryPolicy(
 		ctx,
 		element.LogicalName(),
 		deployCtx.InstanceStateSnapshot,
+		d.linkRegistry,
+		d.defaultRetryPolicy,
 	)
 	if err != nil {
 		deployCtx.Channels.ErrChan <- err
@@ -103,31 +105,4 @@ func (d *defaultLinkDestroyer) getProviderLinkImplementation(
 	}
 
 	return d.linkRegistry.Link(ctx, resourceTypeA, resourceTypeB)
-}
-
-func (d *defaultLinkDestroyer) getLinkRetryPolicy(
-	ctx context.Context,
-	logicalLinkName string,
-	instanceState *state.InstanceState,
-) (*provider.RetryPolicy, error) {
-	resourceTypeA, resourceTypeB, err := getResourceTypesForLink(logicalLinkName, instanceState)
-	if err != nil {
-		return nil, err
-	}
-
-	provider, err := d.linkRegistry.Provider(resourceTypeA, resourceTypeB)
-	if err != nil {
-		return nil, err
-	}
-
-	retryPolicy, err := provider.RetryPolicy(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if retryPolicy == nil {
-		return d.defaultRetryPolicy, nil
-	}
-
-	return retryPolicy, nil
 }

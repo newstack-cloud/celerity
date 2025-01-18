@@ -75,6 +75,7 @@ func (d *defaultLinkDeployer) Deploy(
 		element:    linkElement,
 		instanceID: instanceID,
 	}
+	linkCtx := provider.NewLinkContextFromParams(deployCtx.ParamOverrides)
 	resourceAOutput, stop, err := d.updateLinkResourceA(
 		ctx,
 		linkImplementation,
@@ -82,7 +83,7 @@ func (d *defaultLinkDeployer) Deploy(
 			ResourceInfo:      resourceAInfo,
 			OtherResourceInfo: resourceBInfo,
 			LinkUpdateType:    linkUpdateType,
-			Params:            deployCtx.ParamOverrides,
+			LinkContext:       linkCtx,
 		},
 		linkInfo,
 		createRetryInfo(retryPolicy),
@@ -102,7 +103,7 @@ func (d *defaultLinkDeployer) Deploy(
 			ResourceInfo:      resourceBInfo,
 			OtherResourceInfo: resourceAInfo,
 			LinkUpdateType:    linkUpdateType,
-			Params:            deployCtx.ParamOverrides,
+			LinkContext:       linkCtx,
 		},
 		linkInfo,
 		createRetryInfo(retryPolicy),
@@ -122,7 +123,7 @@ func (d *defaultLinkDeployer) Deploy(
 			ResourceAInfo:  resourceAInfo,
 			ResourceBInfo:  resourceBInfo,
 			LinkUpdateType: linkUpdateType,
-			Params:         deployCtx.ParamOverrides,
+			LinkContext:    linkCtx,
 		},
 		linkInfo,
 		createRetryInfo(retryPolicy),

@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
@@ -39,7 +38,7 @@ func loadChildBlueprint(
 	paramOverrides core.BlueprintParams,
 ) (*childBlueprintLoadResult, error) {
 
-	includeName := strings.TrimPrefix(input.node.ElementName, "children.")
+	includeName := core.ToLogicalChildName(input.node.ElementName)
 
 	resolvedInclude, err := resolveIncludeForChildBlueprint(
 		ctx,

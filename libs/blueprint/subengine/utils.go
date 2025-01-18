@@ -748,7 +748,7 @@ func expandResolveDataSourceResultWithError(
 }
 
 func resourceNameFromElementID(elementID string) string {
-	return strings.TrimPrefix(elementID, "resources.")
+	return bpcore.ToLogicalResourceName(elementID)
 }
 
 type resourceTemplateNameParts struct {

@@ -1,4 +1,4 @@
-package linkhelpers
+package resourcehelpers
 
 import (
 	"testing"
@@ -7,11 +7,11 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
-type LinkHelpersTestSuite struct {
+type ComputedFieldHelpersTestSuite struct {
 	suite.Suite
 }
 
-func (s *LinkHelpersTestSuite) Test_check_matches_computed_field_for_array_item() {
+func (s *ComputedFieldHelpersTestSuite) Test_check_matches_computed_field_for_array_item() {
 	isComputed := IsComputedField(
 		&provider.Changes{
 			// [0] is a placeholder for any item in the `spec.configuration` array.
@@ -22,7 +22,7 @@ func (s *LinkHelpersTestSuite) Test_check_matches_computed_field_for_array_item(
 	s.Assert().True(isComputed)
 }
 
-func (s *LinkHelpersTestSuite) Test_check_matches_computed_field_for_map_key_value_pair_1() {
+func (s *ComputedFieldHelpersTestSuite) Test_check_matches_computed_field_for_map_key_value_pair_1() {
 	isComputed := IsComputedField(
 		&provider.Changes{
 			// ["<key>"] is a placeholder for any key-value pair in the `spec.configuration` map.
@@ -33,7 +33,7 @@ func (s *LinkHelpersTestSuite) Test_check_matches_computed_field_for_map_key_val
 	s.Assert().True(isComputed)
 }
 
-func (s *LinkHelpersTestSuite) Test_check_matches_computed_field_for_map_key_value_pair_2() {
+func (s *ComputedFieldHelpersTestSuite) Test_check_matches_computed_field_for_map_key_value_pair_2() {
 	isComputed := IsComputedField(
 		&provider.Changes{
 			// ["<key>"] is a placeholder for any key-value pair in the `spec.configuration` map.
@@ -44,7 +44,7 @@ func (s *LinkHelpersTestSuite) Test_check_matches_computed_field_for_map_key_val
 	s.Assert().True(isComputed)
 }
 
-func (s *LinkHelpersTestSuite) Test_check_matches_computed_field_for_complex_path() {
+func (s *ComputedFieldHelpersTestSuite) Test_check_matches_computed_field_for_complex_path() {
 	isComputed := IsComputedField(
 		&provider.Changes{
 			ComputedFields: []string{"spec.configuration[0].metadata[\"<key>\"].values[0][\"<key>\"]"},
@@ -54,7 +54,7 @@ func (s *LinkHelpersTestSuite) Test_check_matches_computed_field_for_complex_pat
 	s.Assert().True(isComputed)
 }
 
-func (s *LinkHelpersTestSuite) Test_check_does_not_match_computed_field_for_complex_path() {
+func (s *ComputedFieldHelpersTestSuite) Test_check_does_not_match_computed_field_for_complex_path() {
 	isComputed := IsComputedField(
 		&provider.Changes{
 			ComputedFields: []string{"spec.configuration[0].metadata[\"<key>\"].values[0][\"<key>\"]"},
@@ -66,6 +66,6 @@ func (s *LinkHelpersTestSuite) Test_check_does_not_match_computed_field_for_comp
 	s.Assert().False(isComputed)
 }
 
-func TestLinkHelpersTestSuite(t *testing.T) {
-	suite.Run(t, new(LinkHelpersTestSuite))
+func TestComputedFieldHelpersTestSuite(t *testing.T) {
+	suite.Run(t, new(ComputedFieldHelpersTestSuite))
 }

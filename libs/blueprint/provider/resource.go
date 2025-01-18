@@ -196,8 +196,8 @@ func (c *ResolvedResourceCondition) MarshalJSON() ([]byte, error) {
 // ResourceValidateParams provides the input data needed for a resource to
 // be validated.
 type ResourceValidateInput struct {
-	SchemaResource *schema.Resource
-	Params         core.BlueprintParams
+	SchemaResource  *schema.Resource
+	ProviderContext Context
 }
 
 // ResourceValidateOutput provides the output data from validating a resource
@@ -209,7 +209,7 @@ type ResourceValidateOutput struct {
 // ResourceGetSpecDefinitionInput provides the input data needed for a resource to
 // provide a spec definition.
 type ResourceGetSpecDefinitionInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // ResourceGetSpecDefinitionOutput provides the output data from providing a spec definition
@@ -221,7 +221,7 @@ type ResourceGetSpecDefinitionOutput struct {
 // ResourceCanLinkToInput provides the input data needed for a resource to
 // determine what types of resources it can link to.
 type ResourceCanLinkToInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // ResourceCanLinkToOutput provides the output data from determining what types of resources
@@ -233,7 +233,7 @@ type ResourceCanLinkToOutput struct {
 // ResourceStabilisedDependenciesInput provides the input data needed for a resource to
 // determine what resource types must be stabilised before the current resource can be deployed.
 type ResourceStabilisedDependenciesInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // ResourceStabilisedDependenciesOutput provides the output data from determining what resource types
@@ -245,7 +245,7 @@ type ResourceStabilisedDependenciesOutput struct {
 // ResourceIsCommonTerminalInput provides the input data needed for a resource to
 // determine if it is a common terminal resource.
 type ResourceIsCommonTerminalInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // ResourceIsCommonTerminalOutput provides the output data from determining if a resource
@@ -257,16 +257,16 @@ type ResourceIsCommonTerminalOutput struct {
 // ResourceDeployInput provides the input data needed for a resource to
 // be deployed.
 type ResourceDeployInput struct {
-	InstanceID string
-	ResourceID string
-	Changes    *Changes
-	Params     core.BlueprintParams
+	InstanceID      string
+	ResourceID      string
+	Changes         *Changes
+	ProviderContext Context
 }
 
 // ResourceGetTypeInput provides the input data needed for a resource to
 // determine the type of a resource in a blueprint spec.
 type ResourceGetTypeInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // ResourceGetTypeOutput provides the output data from determining the type of a resource
@@ -278,7 +278,7 @@ type ResourceGetTypeOutput struct {
 // ResourceGetTypeDescriptionInput provides the input data needed for a resource to
 // retrieve a description of the type of a resource in a blueprint spec.
 type ResourceGetTypeDescriptionInput struct {
-	Params core.BlueprintParams
+	ProviderContext Context
 }
 
 // ResourceGetTypeDescriptionOutput provides the output data from retrieving a description
@@ -289,17 +289,33 @@ type ResourceGetTypeDescriptionOutput struct {
 }
 
 // ResourceDeployOutput provides the output data from deploying a resource.
+// This should contain any computed fields that are known after the resource
+// has been deployed.
 type ResourceDeployOutput struct {
-	SpecState *core.MappingNode
+	// ComputedFieldValues holds a mapping of computed field paths
+	// to their values.
+	// Examples of computed fields are the ARN of an AWS Lambda function
+	// or the ID of a Google Cloud Storage bucket.
+	// Some examples of valid computed field paths are:
+	// - `spec.arn`
+	// - `spec.id`
+	// - `spec.arns[0]`
+	// - `spec.identifiers["id.v1"]`
+	// - `spec["identifiers.1"].arn`
+	//
+	// The computed fields will be injected into the final resource state that
+	// will be persisted as a part of the blueprint instance state.
+	ComputedFieldValues map[string]*core.MappingNode
 }
 
 // ResourceHasStabilisedInput provides the input data needed for a resource to
 // determine if it has stabilised after being deployed.
 type ResourceHasStabilisedInput struct {
-	InstanceID   string
-	ResourceID   string
-	ResourceSpec *core.MappingNode
-	Params       core.BlueprintParams
+	InstanceID       string
+	ResourceID       string
+	ResourceSpec     *core.MappingNode
+	ResourceMetadata *state.ResourceMetadataState
+	ProviderContext  Context
 }
 
 // ResourceHasStabilisedOutput provides the output data from determining if a resource
@@ -311,9 +327,9 @@ type ResourceHasStabilisedOutput struct {
 // ResourceGetExternalStateInput provides the input data needed for a resource to
 // get the external state of a resource.
 type ResourceGetExternalStateInput struct {
-	InstanceID string
-	ResourceID string
-	Params     core.BlueprintParams
+	InstanceID      string
+	ResourceID      string
+	ProviderContext Context
 }
 
 // ResourceGetExternalStateOutput provides the output data from
@@ -325,10 +341,10 @@ type ResourceGetExternalStateOutput struct {
 // ResourceDestroyInput provides the input data needed to delete
 // a resource.
 type ResourceDestroyInput struct {
-	InstanceID    string
-	ResourceID    string
-	ResourceState *state.ResourceState
-	Params        core.BlueprintParams
+	InstanceID      string
+	ResourceID      string
+	ResourceState   *state.ResourceState
+	ProviderContext Context
 }
 
 // Changes provides a set of modified fields along with a version
@@ -344,7 +360,7 @@ type Changes struct {
 	NewFields           []FieldChange `json:"newFields"`
 	RemovedFields       []string      `json:"removedFields"`
 	UnchangedFields     []string      `json:"unchangedFields"`
-	// ComputedFields holds a list of field names that are computed
+	// ComputedFields holds a list of field paths that are computed
 	// at deploy time. This is primarily useful to give fast access to
 	// information about which fields are computed without having to inspect
 	// the spec schema in link implementations.

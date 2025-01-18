@@ -17,6 +17,7 @@ import (
 func createParams() core.BlueprintParams {
 	return core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 	)
@@ -124,11 +125,12 @@ func (l *testApiGatewayLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testApiGatewayLambdaLink) GetPriorityResourceType(
+func (l *testApiGatewayLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceB,
 		PriorityResourceType: "aws/lambda/function",
 	}, nil
 }
@@ -315,11 +317,12 @@ func (l *testLambdaDynamoDBTableLink) policyStatementActionFromAccessType(access
 	}
 }
 
-func (l *testLambdaDynamoDBTableLink) GetPriorityResourceType(
+func (l *testLambdaDynamoDBTableLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceB,
 		PriorityResourceType: "aws/dynamodb/table",
 	}, nil
 }
@@ -442,11 +445,12 @@ func (l *testDynamoDBTableStreamLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testDynamoDBTableStreamLink) GetPriorityResourceType(
+func (l *testDynamoDBTableStreamLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceA,
 		PriorityResourceType: "aws/dynamodb/table",
 	}, nil
 }
@@ -496,11 +500,12 @@ func (l *testDynamoDBStreamLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testDynamoDBStreamLambdaLink) GetPriorityResourceType(
+func (l *testDynamoDBStreamLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceB,
 		PriorityResourceType: "aws/lambda/function",
 	}, nil
 }
@@ -550,11 +555,12 @@ func (l *testDynamoDBTableLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testDynamoDBTableLambdaLink) GetPriorityResourceType(
+func (l *testDynamoDBTableLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceA,
 		PriorityResourceType: "aws/dynamodb/table",
 	}, nil
 }
@@ -604,11 +610,12 @@ func (l *testLambdaLambdaLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testLambdaLambdaLink) GetPriorityResourceType(
+func (l *testLambdaLambdaLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceNone,
 		PriorityResourceType: "aws/lambda/function",
 	}, nil
 }
@@ -658,11 +665,12 @@ func (l *testSubnetVPCLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testSubnetVPCLink) GetPriorityResourceType(
+func (l *testSubnetVPCLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceB,
 		PriorityResourceType: "aws/ec2/vpc",
 	}, nil
 }
@@ -712,11 +720,12 @@ func (l *testSecurityGroupVPCLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testSecurityGroupVPCLink) GetPriorityResourceType(
+func (l *testSecurityGroupVPCLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceB,
 		PriorityResourceType: "aws/ec2/vpc",
 	}, nil
 }
@@ -766,11 +775,12 @@ func (l *testRouteTableVPCLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testRouteTableVPCLink) GetPriorityResourceType(
+func (l *testRouteTableVPCLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceB,
 		PriorityResourceType: "aws/ec2/vpc",
 	}, nil
 }
@@ -820,11 +830,12 @@ func (l *testRouteRouteTableLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testRouteRouteTableLink) GetPriorityResourceType(
+func (l *testRouteRouteTableLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceB,
 		PriorityResourceType: "aws/ec2/routeTable",
 	}, nil
 }
@@ -874,11 +885,12 @@ func (l *testRouteInternetGatewayLink) StageChanges(
 	return &provider.LinkStageChangesOutput{}, nil
 }
 
-func (l *testRouteInternetGatewayLink) GetPriorityResourceType(
+func (l *testRouteInternetGatewayLink) GetPriorityResource(
 	ctx context.Context,
-	input *provider.LinkGetPriorityResourceTypeInput,
-) (*provider.LinkGetPriorityResourceTypeOutput, error) {
-	return &provider.LinkGetPriorityResourceTypeOutput{
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource:     provider.LinkPriorityResourceB,
 		PriorityResourceType: "aws/ec2/internetGateway",
 	}, nil
 }

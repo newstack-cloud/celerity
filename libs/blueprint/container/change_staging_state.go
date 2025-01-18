@@ -1,7 +1,6 @@
 package container
 
 import (
-	"slices"
 	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/links"
@@ -163,82 +162,18 @@ func (c *defaultChangeStagingState) UpdateLinkStagingState(
 	hasLinks := len(node.LinksTo) > 0 || len(node.LinkedFrom) > 0
 	pendingLinkNames := c.resourceNameLinkMap[node.ResourceName]
 	if hasLinks {
-		c.addPendingLinksToStagingState(node, pendingLinkNames)
+		addPendingLinksToEphemeralState(
+			node,
+			pendingLinkNames,
+			c.pendingLinks,
+			c.resourceNameLinkMap,
+		)
 	}
-	return c.updatePendingLinksInStagingState(node, pendingLinkNames)
-}
-
-// This must only be called when a lock has already been held on the staging state.
-func (c *defaultChangeStagingState) addPendingLinksToStagingState(
-	node *links.ChainLinkNode,
-	alreadyPendingLinks []string,
-) {
-	for _, linksToNode := range node.LinksTo {
-		linkName := createLogicalLinkName(node.ResourceName, linksToNode.ResourceName)
-		if !slices.Contains(alreadyPendingLinks, linkName) {
-			completionState := &LinkPendingCompletion{
-				resourceANode:    node,
-				resourceBNode:    linksToNode,
-				resourceAPending: false,
-				resourceBPending: true,
-				linkPending:      true,
-			}
-			c.pendingLinks[linkName] = completionState
-			c.resourceNameLinkMap[node.ResourceName] = append(
-				c.resourceNameLinkMap[node.ResourceName],
-				linkName,
-			)
-			c.resourceNameLinkMap[linksToNode.ResourceName] = append(
-				c.resourceNameLinkMap[linksToNode.ResourceName],
-				linkName,
-			)
-		}
-	}
-
-	for _, linkedFromNode := range node.LinkedFrom {
-		linkName := createLogicalLinkName(linkedFromNode.ResourceName, node.ResourceName)
-		if !slices.Contains(alreadyPendingLinks, linkName) {
-			completionState := &LinkPendingCompletion{
-				resourceANode:    linkedFromNode,
-				resourceBNode:    node,
-				resourceAPending: true,
-				resourceBPending: false,
-				linkPending:      true,
-			}
-			c.pendingLinks[linkName] = completionState
-			c.resourceNameLinkMap[linkedFromNode.ResourceName] = append(
-				c.resourceNameLinkMap[linkedFromNode.ResourceName],
-				linkName,
-			)
-			c.resourceNameLinkMap[node.ResourceName] = append(
-				c.resourceNameLinkMap[node.ResourceName],
-				linkName,
-			)
-		}
-	}
-}
-
-// This must only be called when a lock has already been held on the staging state.
-func (c *defaultChangeStagingState) updatePendingLinksInStagingState(
-	node *links.ChainLinkNode,
-	pendingLinkNames []string,
-) []*LinkPendingCompletion {
-	linksReadyToBeStaged := []*LinkPendingCompletion{}
-
-	for _, linkName := range pendingLinkNames {
-		completionState := c.pendingLinks[linkName]
-		if completionState.resourceANode.ResourceName == node.ResourceName {
-			completionState.resourceAPending = false
-		} else if completionState.resourceBNode.ResourceName == node.ResourceName {
-			completionState.resourceBPending = false
-		}
-
-		if !completionState.resourceAPending && !completionState.resourceBPending {
-			linksReadyToBeStaged = append(linksReadyToBeStaged, completionState)
-		}
-	}
-
-	return linksReadyToBeStaged
+	return updatePendingLinksInEphemeralState(
+		node,
+		pendingLinkNames,
+		c.pendingLinks,
+	)
 }
 
 func (c *defaultChangeStagingState) MustRecreateResourceOnRemovedDependencies(
@@ -262,7 +197,7 @@ func (c *defaultChangeStagingState) CountPendingLinksForGroup(group []*Deploymen
 
 	count := 0
 	for _, node := range group {
-		if node.Type() == "resource" {
+		if node.Type() == DeploymentNodeTypeResource {
 			pendingLinkNames := c.resourceNameLinkMap[node.ChainLinkNode.ResourceName]
 			for _, linkName := range pendingLinkNames {
 				if c.pendingLinks[linkName].linkPending {

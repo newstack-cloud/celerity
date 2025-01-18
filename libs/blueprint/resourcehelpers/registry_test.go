@@ -40,7 +40,7 @@ func (s *RegistryTestSuite) SetUpTest(c *C) {
 	}
 
 	s.testResource = testRes.(*testExampleResource)
-	s.resourceRegistry = NewRegistry(providers, transformers)
+	s.resourceRegistry = NewRegistry(providers, transformers, nil /* params */)
 }
 
 func (s *RegistryTestSuite) Test_get_spec_definition(c *C) {

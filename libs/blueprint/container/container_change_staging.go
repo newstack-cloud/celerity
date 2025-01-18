@@ -184,7 +184,7 @@ func (c *defaultBlueprintContainer) listenToAndProcessGroupChanges(
 func countPendingLinksContainedInGroup(group []*DeploymentNode) int {
 	count := 0
 	for _, node := range group {
-		if node.Type() == "resource" {
+		if node.Type() == DeploymentNodeTypeResource {
 			for _, otherNode := range node.ChainLinkNode.LinksTo {
 				if groupContainsResourceLinkNode(group, otherNode) {
 					count += 1
@@ -198,7 +198,7 @@ func countPendingLinksContainedInGroup(group []*DeploymentNode) int {
 
 func groupContainsResourceLinkNode(group []*DeploymentNode, resourceLinkNode *links.ChainLinkNode) bool {
 	return slices.ContainsFunc(group, func(compareWith *DeploymentNode) bool {
-		return compareWith.Type() == "resource" &&
+		return compareWith.Type() == DeploymentNodeTypeResource &&
 			compareWith.ChainLinkNode.ResourceName == resourceLinkNode.ResourceName
 	})
 }
@@ -215,7 +215,7 @@ func (c *defaultBlueprintContainer) stageGroupChanges(
 	instanceTreePath := getInstanceTreePath(paramOverrides, instanceID)
 
 	for _, node := range group {
-		if node.Type() == "resource" {
+		if node.Type() == DeploymentNodeTypeResource {
 			go c.changeStager.StageChanges(
 				ctx,
 				instanceID,
@@ -225,7 +225,7 @@ func (c *defaultBlueprintContainer) stageGroupChanges(
 				resourceProviders,
 				paramOverrides,
 			)
-		} else if node.Type() == "child" {
+		} else if node.Type() == DeploymentNodeTypeChild {
 			includeTreePath := getIncludeTreePath(paramOverrides, node.Name())
 			go c.childChangeStager.StageChanges(
 				ctx,

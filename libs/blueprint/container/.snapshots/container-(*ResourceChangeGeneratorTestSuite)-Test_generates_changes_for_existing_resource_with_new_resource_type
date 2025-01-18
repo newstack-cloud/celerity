@@ -11,6 +11,7 @@
       InstanceID: (string) "",
       Status: (core.ResourceStatus) 2,
       PreciseStatus: (core.PreciseResourceStatus) 3,
+      LastStatusUpdateTimestamp: (int) 0,
       LastDeployedTimestamp: (int) 1732969676,
       LastDeployAttemptTimestamp: (int) 1732969676,
       ResourceSpecData: (*core.MappingNode)({

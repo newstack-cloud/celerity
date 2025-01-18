@@ -37,7 +37,7 @@ func GroupOrderedNodes(
 		)
 
 		hasLinkInCurrentGroup := false
-		if node.Type() == "resource" {
+		if node.Type() == DeploymentNodeTypeResource {
 			hasLinkInCurrentGroup = hasLinkInGroup(
 				node.ChainLinkNode,
 				nodeGroupMap,

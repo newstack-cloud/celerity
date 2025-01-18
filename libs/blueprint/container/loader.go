@@ -181,6 +181,7 @@ type defaultLoader struct {
 	resourceDestroyer              ResourceDestroyer
 	childBlueprintDestroyer        ChildBlueprintDestroyer
 	linkDestroyer                  LinkDestroyer
+	linkDeployer                   LinkDeployer
 	// Allows for customisation of the blueprint container dependencies
 	// used for instantiating the blueprint container.
 	// This allows users to override the default implementations of services
@@ -396,6 +397,16 @@ func WithLoaderLinkDestroyer(linkDestroyer LinkDestroyer) LoaderOption {
 	}
 }
 
+// WithLoaderLinkDeployer sets the link deploy service
+// used in blueprint containers created by the loader.
+//
+// When this option is not provided, the default link deployer is used.
+func WithLoaderLinkDeployer(linkDeployer LinkDeployer) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.linkDeployer = linkDeployer
+	}
+}
+
 // WithLoaderDependenciesOverrider sets the dependencies overrider to be used by the loader
 // to customise the dependencies used to instantiate a blueprint container on each call to load a blueprint.
 //
@@ -438,14 +449,17 @@ func NewDefaultLoader(
 	childResolver includes.ChildResolver,
 	opts ...LoaderOption,
 ) Loader {
-	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers)
+	// This resource registry instance is used as a parent to spawn child registries
+	// with params from the caller for each method.
+	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers, nil /* params */)
 	funcRegistry := provider.NewFunctionRegistry(providers)
 	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
 	linkRegistry := provider.NewLinkRegistry(providers)
 	internalProviders := copyProviderMap(providers)
 	clock := &bpcore.SystemClock{}
+	linkDeployer := NewDefaultLinkDeployer(clock)
 	linkDestroyer := NewDefaultLinkDestroyer(
-		NewDefaultLinkDeployer(clock),
+		linkDeployer,
 		linkRegistry,
 		provider.DefaultRetryPolicy,
 	)
@@ -472,6 +486,7 @@ func NewDefaultLoader(
 		resourceDestroyer:              NewDefaultResourceDestroyer(clock, provider.DefaultRetryPolicy),
 		childBlueprintDestroyer:        NewDefaultChildBlueprintDestroyer(),
 		linkDestroyer:                  linkDestroyer,
+		linkDeployer:                   linkDeployer,
 	}
 
 	for _, opt := range opts {
@@ -518,6 +533,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderResourceDestroyer(l.resourceDestroyer),
 		WithLoaderChildBlueprintDestroyer(l.childBlueprintDestroyer),
 		WithLoaderLinkDestroyer(l.linkDestroyer),
+		WithLoaderLinkDeployer(l.linkDeployer),
 		WithLoaderDependenciesOverrider(l.overrideContainerDependencies),
 		WithLoaderResourceStabilityPollingConfig(l.resourceStabilityPollingConfig),
 	)
@@ -646,10 +662,11 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 	resourceCache := bpcore.NewCache[*provider.ResolvedResource]()
 	resourceTemplateInputElemCache := bpcore.NewCache[[]*bpcore.MappingNode]()
 	childExportFieldCache := bpcore.NewCache[*subengine.ChildExportFieldInfo]()
+	resourceRegistry := l.resourceRegistry.WithParams(params)
 	substitutionResolver := subengine.NewDefaultSubstitutionResolver(
 		&subengine.Registries{
 			FuncRegistry:       l.funcRegistry,
-			ResourceRegistry:   l.resourceRegistry,
+			ResourceRegistry:   resourceRegistry,
 			DataSourceRegistry: l.dataSourceRegistry,
 		},
 		l.stateContainer,
@@ -663,7 +680,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		l.providers,
 		substitutionResolver,
 		resourceTemplateInputElemCache,
-		l.resourceRegistry,
+		resourceRegistry,
 		resourceCache,
 		l.forChildBlueprint,
 	)
@@ -714,6 +731,8 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 	initialDependencies := &BlueprintContainerDependencies{
 		StateContainer:            l.stateContainer,
 		Providers:                 l.providers,
+		ResourceRegistry:          resourceRegistry,
+		LinkRegistry:              l.linkRegistry,
 		LinkInfo:                  linkInfo,
 		ResourceTemplates:         l.resourceTemplates,
 		RefChainCollector:         refChainCollector,
@@ -729,8 +748,10 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ResourceDestroyer:         l.resourceDestroyer,
 		ChildBlueprintDestroyer:   l.childBlueprintDestroyer,
 		LinkDestroyer:             l.linkDestroyer,
+		LinkDeployer:              l.linkDeployer,
 		ResourceDeployer:          resourceDeployer,
 		ChildBlueprintDeployer:    childBlueprintDeployer,
+		DefaultRetryPolicy:        l.defaultRetryPolicy,
 	}
 
 	if l.overrideContainerDependencies != nil {
@@ -1065,7 +1086,7 @@ func (l *defaultLoader) validateValue(
 		params,
 		l.funcRegistry,
 		refChainCollector,
-		l.resourceRegistry,
+		l.resourceRegistry.WithParams(params),
 	)
 	if err != nil {
 		currentValErrs = append(currentValErrs, err)
@@ -1099,7 +1120,7 @@ func (l *defaultLoader) validateIncludes(
 			params,
 			l.funcRegistry,
 			refChainCollector,
-			l.resourceRegistry,
+			l.resourceRegistry.WithParams(params),
 		)
 		if err != nil {
 			includeErrors[name] = err
@@ -1139,7 +1160,7 @@ func (l *defaultLoader) validateExports(
 			params,
 			l.funcRegistry,
 			refChainCollector,
-			l.resourceRegistry,
+			l.resourceRegistry.WithParams(params),
 		)
 		if err != nil {
 			exportErrors[name] = err
@@ -1174,7 +1195,7 @@ func (l *defaultLoader) validateMetadata(
 		params,
 		l.funcRegistry,
 		refChainCollector,
-		l.resourceRegistry,
+		l.resourceRegistry.WithParams(params),
 	)
 }
 
@@ -1287,7 +1308,7 @@ func (l *defaultLoader) validateDataSource(
 		params,
 		l.funcRegistry,
 		refChainCollector,
-		l.resourceRegistry,
+		l.resourceRegistry.WithParams(params),
 		l.dataSourceRegistry,
 	)
 	*diagnostics = append(*diagnostics, validateDataSourceDiagnostics...)
@@ -1357,7 +1378,7 @@ func (l *defaultLoader) validateResource(
 		params,
 		l.funcRegistry,
 		refChainCollector,
-		l.resourceRegistry,
+		l.resourceRegistry.WithParams(params),
 		slices.Contains(l.derivedFromTemplates, name),
 	)
 	*diagnostics = append(*diagnostics, validateResourceDiagnostics...)

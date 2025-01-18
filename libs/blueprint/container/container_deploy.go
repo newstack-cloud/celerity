@@ -2,14 +2,15 @@ package container
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
+	"slices"
 	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
+	commoncore "github.com/two-hundred/celerity/libs/common/core"
 )
 
 const (
@@ -35,6 +36,17 @@ func (c *defaultBlueprintContainer) Deploy(
 		return err
 	}
 
+	interceptDeploymentUpdateChan := make(chan DeploymentUpdateMessage)
+	interceptDeploymentFinishChan := make(chan DeploymentFinishedMessage)
+	rewiredChannels := &DeployChannels{
+		ResourceUpdateChan:   channels.ResourceUpdateChan,
+		ChildUpdateChan:      channels.ChildUpdateChan,
+		LinkUpdateChan:       channels.LinkUpdateChan,
+		ErrChan:              channels.ErrChan,
+		DeploymentUpdateChan: interceptDeploymentUpdateChan,
+		FinishChan:           interceptDeploymentFinishChan,
+	}
+
 	go c.deploy(
 		ctxWithInstanceID,
 		&DeployInput{
@@ -42,10 +54,32 @@ func (c *defaultBlueprintContainer) Deploy(
 			Changes:    input.Changes,
 			Rollback:   input.Rollback,
 		},
-		channels,
+		rewiredChannels,
 		state,
 		isNewInstance,
 		paramOverrides,
+	)
+
+	// Intercept the top-level instance deployment events
+	// to ensure that the instance state is updated with status information
+	// for failures.
+	// Instead of making a call to persist the instance status updates
+	// at every point a blueprint instance level update is made, before calling deploy
+	// the channels are re-wired to intercept the top-level instance
+	// deployment events, persist the status updates and then pass
+	// the events to the caller-provided channels.
+	//
+	// This will ensure that the status will be persisted before the message reaches
+	// the caller-provided channels, so even though this is called asynchronously,
+	// it will ensure that no top-level status updates received by the caller go out of sync
+	// with the status information in the persisted state.
+	go c.persistInstanceDeploymentStatusUpdates(
+		ctxWithInstanceID,
+		instanceID,
+		isNewInstance,
+		input.Rollback,
+		rewiredChannels,
+		channels,
 	)
 
 	return nil
@@ -55,7 +89,7 @@ func (c *defaultBlueprintContainer) deploy(
 	ctx context.Context,
 	input *DeployInput,
 	channels *DeployChannels,
-	state DeploymentState,
+	deployState DeploymentState,
 	isNewInstance bool,
 	paramOverrides core.BlueprintParams,
 ) {
@@ -89,14 +123,16 @@ func (c *defaultBlueprintContainer) deploy(
 	instances := c.stateContainer.Instances()
 	currentInstanceState, err := instances.Get(ctx, input.InstanceID)
 	if err != nil {
-		channels.FinishChan <- c.createDeploymentFinishedMessage(
-			input.InstanceID,
-			determineInstanceDeployFailedStatus(input.Rollback, isNewInstance),
-			[]string{prepareFailureMessage},
-			c.clock.Since(startTime),
-			/* prepareElapsedTime */ nil,
-		)
-		return
+		if !state.IsInstanceNotFound(err) {
+			channels.FinishChan <- c.createDeploymentFinishedMessage(
+				input.InstanceID,
+				determineInstanceDeployFailedStatus(input.Rollback, isNewInstance),
+				[]string{prepareFailureMessage},
+				c.clock.Since(startTime),
+				/* prepareElapsedTime */ nil,
+			)
+			return
+		}
 	}
 
 	// Use the same behaviour as change staging to extract the nodes
@@ -123,7 +159,7 @@ func (c *defaultBlueprintContainer) deploy(
 
 	deployCtx := &DeployContext{
 		StartTime:             startTime,
-		State:                 state,
+		State:                 deployState,
 		Rollback:              input.Rollback,
 		Destroying:            false,
 		Channels:              channels,
@@ -131,9 +167,26 @@ func (c *defaultBlueprintContainer) deploy(
 		InstanceStateSnapshot: &currentInstanceState,
 		ResourceProviders:     prepareResult.ResourceProviderMap,
 		DeploymentGroups:      prepareResult.ParallelGroups,
+		InputChanges:          input.Changes,
+		ResourceTemplates:     prepareResult.BlueprintContainer.ResourceTemplates(),
+		ResourceRegistry:      c.resourceRegistry.WithParams(paramOverrides),
 	}
 
 	flattenedNodes := core.Flatten(prepareResult.ParallelGroups)
+	// Ensure all direct dependencies are populated between nodes
+	// in the deployment groups, this provides the information needed
+	// to determine which elements can be deployed next upon completion
+	// of others.
+	err = PopulateDirectDependencies(
+		ctx,
+		flattenedNodes,
+		c.refChainCollector,
+		paramOverrides,
+	)
+	if err != nil {
+		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
+		return
+	}
 
 	sentFinishedMessage, err := c.removeElements(
 		ctx,
@@ -181,6 +234,49 @@ func (c *defaultBlueprintContainer) deploy(
 		c.clock.Since(startTime),
 		/* prepareElapsedTime */ nil,
 	)
+}
+
+func (c *defaultBlueprintContainer) persistInstanceDeploymentStatusUpdates(
+	ctx context.Context,
+	instanceID string,
+	isNewInstance bool,
+	rollingBack bool,
+	listenToChannels *DeployChannels,
+	forwardToChannels *DeployChannels,
+) {
+	finished := false
+	for !finished {
+		select {
+		case msg := <-listenToChannels.DeploymentUpdateChan:
+			updateTimestamp := int(msg.UpdateTimestamp)
+			err := c.stateContainer.Instances().UpdateStatus(
+				ctx,
+				instanceID,
+				state.InstanceStatusInfo{
+					Status:                    msg.Status,
+					LastStatusUpdateTimestamp: &updateTimestamp,
+				},
+			)
+			if err != nil {
+				forwardToChannels.ErrChan <- err
+				return
+			}
+			forwardToChannels.DeploymentUpdateChan <- msg
+		case msg := <-listenToChannels.FinishChan:
+			statusInfo := createDeployFinishedInstanceStatusInfo(&msg, rollingBack, isNewInstance)
+			err := c.stateContainer.Instances().UpdateStatus(
+				ctx,
+				instanceID,
+				statusInfo,
+			)
+			if err != nil {
+				forwardToChannels.ErrChan <- err
+				return
+			}
+			forwardToChannels.FinishChan <- msg
+			finished = true
+		}
+	}
 }
 
 func (c *defaultBlueprintContainer) getInstanceID(input *DeployInput) (string, error) {
@@ -236,31 +332,13 @@ func (c *defaultBlueprintContainer) deployElements(
 		deployCtx,
 	)
 
-	stopProcessing, err := c.listenToAndProcessDeploymentEvents(
+	return c.listenToAndProcessDeploymentEvents(
 		ctx,
 		input.InstanceID,
 		deployCtx,
 		input.Changes,
 		internalChannels,
 	)
-
-	return stopProcessing, err
-
-	// Deploy the first group of elements concurrently.
-
-	// Unlike with change staging, groups are not executed as a unit, they are used as
-	// pools to look for components that can be deployed based on the current state of deployment.
-	// For each component to be created or updated (including recreated children):
-	//  - call Deploy method component (resource or child blueprint)
-	//      - handle specialised provider errors (retryable, resource deploy errors etc.)
-	//  - If component is resource and is in config complete status, check if any of its dependents
-	//    require the resource to be stable before they can be deployed.
-	//    - If so, wait for the resource to be stable before deploying the dependent.
-	//    - If not, begin deploying the dependent.
-	//  - Check if there are any links that can be deployed based on the current state of deployment.
-	//     - If so, deploy the link.
-	//	- On failure that can not be retried, roll back all changes successfully made for the current deployment.
-	//     - See notes on deployment rollback for how this should be implemented for different states.
 }
 
 func (c *defaultBlueprintContainer) startDeploymentFromFirstGroup(
@@ -272,26 +350,58 @@ func (c *defaultBlueprintContainer) startDeploymentFromFirstGroup(
 	instanceTreePath := getInstanceTreePath(deployCtx.ParamOverrides, instanceID)
 
 	for _, node := range deployCtx.DeploymentGroups[0] {
-		if node.Type() == "resource" {
-			go c.resourceDeployer.Deploy(
-				ctx,
-				instanceID,
-				node.ChainLinkNode,
-				changes,
-				deployCtx,
-			)
-		} else if node.Type() == "child" {
-			includeTreePath := getIncludeTreePath(deployCtx.ParamOverrides, node.Name())
-			go c.childDeployer.Deploy(
-				ctx,
-				instanceID,
-				instanceTreePath,
-				includeTreePath,
-				node.ChildNode,
-				changes,
-				deployCtx,
-			)
-		}
+		c.deployNode(
+			ctx,
+			node,
+			instanceID,
+			instanceTreePath,
+			changes,
+			deployCtx,
+		)
+	}
+}
+
+func (c *defaultBlueprintContainer) deployNode(
+	ctx context.Context,
+	node *DeploymentNode,
+	instanceID string,
+	instanceTreePath string,
+	changes *BlueprintChanges,
+	deployCtx *DeployContext,
+) {
+	if node.Type() == DeploymentNodeTypeResource {
+		deployCtx.State.SetElementDependencies(
+			&ResourceIDInfo{
+				ResourceName: node.ChainLinkNode.ResourceName,
+			},
+			extractNodeDependencyInfo(node),
+		)
+		go c.resourceDeployer.Deploy(
+			ctx,
+			instanceID,
+			node.ChainLinkNode,
+			changes,
+			deployCtx,
+		)
+	} else if node.Type() == DeploymentNodeTypeChild {
+		includeTreePath := getIncludeTreePath(deployCtx.ParamOverrides, node.Name())
+		childName := core.ToLogicalChildName(node.Name())
+		deployCtx.State.SetElementDependencies(
+			&ChildBlueprintIDInfo{
+				ChildName: childName,
+			},
+			extractNodeDependencyInfo(node),
+		)
+		childChanges := getChildChanges(changes, childName)
+		go c.childDeployer.Deploy(
+			ctx,
+			instanceID,
+			instanceTreePath,
+			includeTreePath,
+			node.ChildNode,
+			childChanges,
+			deployCtx,
+		)
 	}
 }
 
@@ -342,21 +452,9 @@ func (c *defaultBlueprintContainer) listenToAndProcessDeploymentEvents(
 			/* prepareElapsedTime */
 			deployCtx.State.GetPrepareDuration(),
 		)
+
 		return true, nil
 	}
-
-	// TODO: Implement
-	// On config complete event for resources, determine
-	// the next element to deploy based on references or links,
-	// determine if the next element requires the resource to be stable,
-	// if so, in a separate goroutine, wait for the resource to be stable
-	// and continue to process when is stable (also dispatch status update when stable).
-	// If the next element does not require the resource to be stable, deploy the next element
-	// in a separate goroutine.
-	// Similarly to change staging, keep track of links that are pending completion
-	// and deploy them when the resources they depend on are ready.
-	// Should links require resources to be stable? Should this be a part of the provider
-	// interface for links?
 
 	return false, nil
 }
@@ -401,7 +499,395 @@ func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
 ) error {
+	resources := c.stateContainer.Resources()
+	element := &ResourceIDInfo{
+		ResourceID:   msg.ResourceID,
+		ResourceName: msg.ResourceName,
+	}
+
+	if startedUpdatingResource(msg.PreciseStatus, deployCtx.Rollback) {
+		deployCtx.State.SetElementInProgress(element)
+		updateTimestamp := int(msg.UpdateTimestamp)
+		err := resources.UpdateStatus(
+			ctx,
+			msg.InstanceID,
+			msg.ResourceID,
+			state.ResourceStatusInfo{
+				Status:                    msg.Status,
+				PreciseStatus:             msg.PreciseStatus,
+				LastStatusUpdateTimestamp: &updateTimestamp,
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if resourceUpdateConfigComplete(msg.PreciseStatus, deployCtx.Rollback) {
+		err := c.handleResourceConfigComplete(
+			ctx,
+			msg,
+			element,
+			deployCtx,
+			resources,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	// This will not persist the current status update if the message
+	// represents a failure that can be retried.
+	// The initiator of the deployment process will receive failure messages
+	// that can be retried so that the end user can be informed when
+	// a resource update is taking longer due to a failure that can be retried.
+	// For historical purposes, how many attempts have been made to deploy a resource
+	// will be persisted under the durations section of the resource state.
+	if finishedUpdatingResource(msg, deployCtx.Rollback) {
+		msgWrapper := &deployUpdateMessageWrapper{
+			resourceUpdateMessage: &msg,
+		}
+		finished[elementName] = msgWrapper
+
+		if updateWasSuccessful(
+			msgWrapper,
+			deployCtx.Rollback,
+		) {
+			return c.handleSuccessfulResourceDeployment(
+				ctx,
+				msg,
+				deployCtx,
+				element,
+				resources,
+				deployCtx.State.SetUpdatedElement,
+			)
+		} else {
+			updateTimestamp := int(msg.UpdateTimestamp)
+			currentTimestamp := int(c.clock.Now().Unix())
+			return resources.UpdateStatus(
+				ctx,
+				msg.InstanceID,
+				msg.ResourceID,
+				state.ResourceStatusInfo{
+					Status:                     msg.Status,
+					PreciseStatus:              msg.PreciseStatus,
+					LastDeployAttemptTimestamp: &currentTimestamp,
+					LastStatusUpdateTimestamp:  &updateTimestamp,
+					Durations:                  msg.Durations,
+					FailureReasons:             msg.FailureReasons,
+				},
+			)
+		}
+	}
+
 	return nil
+}
+
+func (c *defaultBlueprintContainer) buildResourceState(
+	msg ResourceDeployUpdateMessage,
+	dependencyInfo *state.DependencyInfo,
+	deployCtx *DeployContext,
+) state.ResourceState {
+	resourceTemplateName := deployCtx.ResourceTemplates[msg.ResourceName]
+	resourceData := deployCtx.State.GetResourceData(msg.ResourceName)
+	resourceState := state.ResourceState{
+		ResourceID:                 msg.ResourceID,
+		ResourceName:               msg.ResourceName,
+		ResourceTemplateName:       resourceTemplateName,
+		InstanceID:                 msg.InstanceID,
+		Status:                     msg.Status,
+		PreciseStatus:              msg.PreciseStatus,
+		Durations:                  msg.Durations,
+		FailureReasons:             msg.FailureReasons,
+		DependsOnResources:         dependencyInfo.DependsOnResources,
+		DependsOnChildren:          dependencyInfo.DependsOnChildren,
+		LastStatusUpdateTimestamp:  int(msg.UpdateTimestamp),
+		LastDeployAttemptTimestamp: int(c.clock.Now().Unix()),
+	}
+
+	if resourceData != nil {
+		resourceState.Metadata = resourceData.Metadata
+		resourceState.Description = resourceData.Description
+	}
+
+	wrappedMsg := &deployUpdateMessageWrapper{
+		resourceUpdateMessage: &msg,
+	}
+	successfulUpdate := updateWasSuccessful(
+		wrappedMsg,
+		deployCtx.Rollback,
+	)
+	successfulCreation := creationWasSuccessful(
+		wrappedMsg,
+		deployCtx.Rollback,
+	)
+	if successfulUpdate || successfulCreation {
+		if resourceData != nil {
+			resourceState.ResourceSpecData = resourceData.Spec
+		}
+
+		resourceState.LastDeployedTimestamp = int(c.clock.Now().Unix())
+	}
+
+	return resourceState
+}
+
+func (c *defaultBlueprintContainer) prepareAndDeployLinks(
+	ctx context.Context,
+	instanceID string,
+	linksReadyToBeDeployed []*LinkPendingCompletion,
+	deployCtx *DeployContext,
+) error {
+	if len(linksReadyToBeDeployed) == 0 {
+		// Make sure that the latest instance state is only loaded
+		// if it is needed for links ready to be deployed.
+		return nil
+	}
+
+	// Get the latest instance state that will be fully updated with the current
+	// state of the resources that the links depend on.
+	instances := c.stateContainer.Instances()
+	latestInstanceState, err := instances.Get(ctx, instanceID)
+	if err != nil {
+		return err
+	}
+
+	// Links are staged in series to reflect what happens with deployment.
+	// For deployment, multiple links could be modifying the same resource,
+	// to ensure consistency in state, links involving the same resource will be
+	// both staged and deployed synchronously.
+	for _, readyToDeploy := range linksReadyToBeDeployed {
+		linkImpl, err := getLinkImplementation(
+			readyToDeploy.resourceANode,
+			readyToDeploy.resourceBNode,
+		)
+		if err != nil {
+			return err
+		}
+
+		err = c.deployLink(
+			ctx,
+			linkImpl,
+			readyToDeploy,
+			&latestInstanceState,
+			deployCtx,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) deployLink(
+	ctx context.Context,
+	linkImpl provider.Link,
+	readyToDeploy *LinkPendingCompletion,
+	latestInstanceState *state.InstanceState,
+	deployCtx *DeployContext,
+) error {
+	links := c.stateContainer.Links()
+	linkName := createLogicalLinkName(
+		readyToDeploy.resourceANode.ResourceName,
+		readyToDeploy.resourceBNode.ResourceName,
+	)
+	linkState, err := links.GetByName(ctx, latestInstanceState.InstanceID, linkName)
+	if err != nil && !state.IsLinkNotFound(err) {
+		return err
+	}
+	linkID, err := c.getLinkID(linkState)
+	if err != nil {
+		return err
+	}
+
+	linkUpdateType := getLinkUpdateTypeFromState(linkState)
+
+	retryPolicy, err := getLinkRetryPolicy(
+		ctx,
+		linkName,
+		// We must use a fresh snapshot of the state that includes
+		// the resources that the link depends on.
+		// When a new blueprint instance is being deployed or
+		// new resources are being added, those
+		// that the link is for will not be in the instance snapshot taken
+		// before deployment.
+		latestInstanceState,
+		c.linkRegistry,
+		c.defaultRetryPolicy,
+	)
+	if err != nil {
+		return err
+	}
+
+	result, err := c.linkDeployer.Deploy(
+		ctx,
+		&LinkIDInfo{
+			LinkID:   linkID,
+			LinkName: linkName,
+		},
+		latestInstanceState.InstanceID,
+		linkUpdateType,
+		linkImpl,
+		deployCtx,
+		retryPolicy,
+	)
+	if err != nil {
+		return err
+	}
+
+	deployCtx.State.SetLinkDeployResult(linkName, result)
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) getLinkID(linkState state.LinkState) (string, error) {
+	if linkState.LinkID != "" {
+		return linkState.LinkID, nil
+	}
+
+	return c.idGenerator.GenerateID()
+}
+
+func (c *defaultBlueprintContainer) deployNextElementsAfterResource(
+	ctx context.Context,
+	instanceID string,
+	deployCtx *DeployContext,
+	deployedResource *ResourceIDInfo,
+	configComplete bool,
+) {
+	if deployCtx.CurrentGroupIndex == len(deployCtx.DeploymentGroups)-1 {
+		// No more groups to deploy.
+		return
+	}
+
+	elementName := core.ResourceElementID(deployedResource.ResourceName)
+	nextGroup := deployCtx.DeploymentGroups[deployCtx.CurrentGroupIndex+1]
+	for _, node := range nextGroup {
+		dependencyNode := commoncore.Find(
+			node.DirectDependencies,
+			func(dep *DeploymentNode, _ int) bool {
+				return dep.Name() == elementName
+			},
+		)
+
+		stabilisedDependencies, err := c.getStabilisedDependencies(
+			ctx,
+			node,
+			deployCtx.ResourceRegistry,
+			deployCtx.ParamOverrides,
+		)
+		if err != nil {
+			deployCtx.Channels.ErrChan <- err
+			return
+		}
+
+		otherDependenciesInProgress := c.checkDependenciesInProgress(
+			node,
+			stabilisedDependencies,
+			[]string{elementName},
+			deployCtx.State,
+		)
+
+		if dependencyNode != nil &&
+			!otherDependenciesInProgress &&
+			readyToDeployAfterDependency(
+				node,
+				dependencyNode,
+				stabilisedDependencies,
+				configComplete,
+			) {
+			instanceTreePath := getInstanceTreePath(deployCtx.ParamOverrides, instanceID)
+			c.deployNode(
+				ctx,
+				node,
+				instanceID,
+				instanceTreePath,
+				deployCtx.InputChanges,
+				deployCtx,
+			)
+		}
+	}
+}
+
+func (c *defaultBlueprintContainer) getStabilisedDependencies(
+	ctx context.Context,
+	node *DeploymentNode,
+	resourceRegistry resourcehelpers.Registry,
+	paramOverrides core.BlueprintParams,
+) ([]string, error) {
+	if node.Type() == DeploymentNodeTypeResource {
+		dependentResource := node.ChainLinkNode.Resource
+		dependentResourceType := getResourceType(dependentResource)
+
+		providerNamespace := provider.ExtractProviderFromItemType(dependentResourceType)
+		stabilisedDepsOutput, err := resourceRegistry.StabilisedDependencies(
+			ctx,
+			dependentResourceType,
+			&provider.ResourceStabilisedDependenciesInput{
+				ProviderContext: provider.NewProviderContextFromParams(
+					providerNamespace,
+					paramOverrides,
+				),
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return stabilisedDepsOutput.StabilisedDependencies, nil
+	}
+
+	return []string{}, nil
+}
+
+func (c *defaultBlueprintContainer) checkDependenciesInProgress(
+	dependant *DeploymentNode,
+	dependantStabilisedDeps []string,
+	ignoreElements []string,
+	state DeploymentState,
+) bool {
+	atLeastOneInProgress := false
+	i := 0
+	for !atLeastOneInProgress && i < len(dependant.DirectDependencies) {
+		dependency := dependant.DirectDependencies[i]
+		if !slices.Contains(ignoreElements, dependency.Name()) {
+			dependencyElement := createElementFromDeploymentNode(dependency)
+			inProgress := state.IsElementInProgress(dependencyElement)
+			if inProgress {
+				atLeastOneInProgress = true
+			} else {
+				// The dependency is considered in progress if it has a "config complete"
+				// status and the dependant is a resource that requires the dependency to be stable
+				// before it can be deployed.
+				atLeastOneInProgress = c.configCompleteDependencyMustStabilise(
+					state,
+					dependant,
+					dependantStabilisedDeps,
+					dependencyElement,
+					dependency,
+				)
+			}
+		}
+		i += 1
+	}
+
+	return atLeastOneInProgress
+}
+
+func (c *defaultBlueprintContainer) configCompleteDependencyMustStabilise(
+	state DeploymentState,
+	dependant *DeploymentNode,
+	dependantStabilisedDeps []string,
+	dependencyElement state.Element,
+	dependency *DeploymentNode,
+) bool {
+	configComplete := state.IsElementConfigComplete(dependencyElement)
+	if configComplete {
+		return dependencyMustStabilise(dependant, dependency, dependantStabilisedDeps)
+	}
+
+	return false
 }
 
 func (c *defaultBlueprintContainer) handleResourceCreationEvent(
@@ -411,6 +897,176 @@ func (c *defaultBlueprintContainer) handleResourceCreationEvent(
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
 ) error {
+	resources := c.stateContainer.Resources()
+	element := &ResourceIDInfo{
+		ResourceID:   msg.ResourceID,
+		ResourceName: msg.ResourceName,
+	}
+
+	if startedCreatingResource(msg.PreciseStatus, deployCtx.Rollback) {
+		deployCtx.State.SetElementInProgress(element)
+		updateTimestamp := int(msg.UpdateTimestamp)
+		err := resources.UpdateStatus(
+			ctx,
+			msg.InstanceID,
+			msg.ResourceID,
+			state.ResourceStatusInfo{
+				Status:                    msg.Status,
+				PreciseStatus:             msg.PreciseStatus,
+				LastStatusUpdateTimestamp: &updateTimestamp,
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if resourceCreationConfigComplete(msg.PreciseStatus, deployCtx.Rollback) {
+		err := c.handleResourceConfigComplete(
+			ctx,
+			msg,
+			element,
+			deployCtx,
+			resources,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	// This will not persist the current status update if the message
+	// represents a failure that can be retried.
+	// The initiator of the deployment process will receive failure messages
+	// that can be retried so that the end user can be informed when
+	// a resource deployment is taking longer due to a failure that can be retried.
+	// For historical purposes, how many attempts have been made to deploy a resource
+	// will be persisted under the durations section of the resource state.
+	if finishedCreatingResource(msg, deployCtx.Rollback) {
+		msgWrapper := &deployUpdateMessageWrapper{
+			resourceUpdateMessage: &msg,
+		}
+		finished[elementName] = msgWrapper
+
+		resourceCreationSuccessful := creationWasSuccessful(
+			msgWrapper,
+			deployCtx.Rollback,
+		)
+
+		if resourceCreationSuccessful {
+			return c.handleSuccessfulResourceDeployment(
+				ctx,
+				msg,
+				deployCtx,
+				element,
+				resources,
+				deployCtx.State.SetCreatedElement,
+			)
+		} else {
+			updateTimestamp := int(msg.UpdateTimestamp)
+			currentTimestamp := int(c.clock.Now().Unix())
+			return resources.UpdateStatus(
+				ctx,
+				msg.InstanceID,
+				msg.ResourceID,
+				state.ResourceStatusInfo{
+					Status:                     msg.Status,
+					PreciseStatus:              msg.PreciseStatus,
+					LastDeployAttemptTimestamp: &currentTimestamp,
+					LastStatusUpdateTimestamp:  &updateTimestamp,
+					Durations:                  msg.Durations,
+					FailureReasons:             msg.FailureReasons,
+				},
+			)
+		}
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleSuccessfulResourceDeployment(
+	ctx context.Context,
+	msg ResourceDeployUpdateMessage,
+	deployCtx *DeployContext,
+	element *ResourceIDInfo,
+	resources state.ResourcesContainer,
+	saveElementInEphemeralState func(state.Element),
+) error {
+	// Update the ephemeral deploy state before persisting
+	// the status update with the state container
+	// to make sure deployment state is consistent
+	// as the deploy state will be used across multiple goroutines
+	// to determine the next elements to deploy.
+	saveElementInEphemeralState(element)
+
+	resourceDeps := deployCtx.State.GetElementDependencies(element)
+	err := resources.Save(
+		ctx,
+		msg.InstanceID,
+		c.buildResourceState(msg, resourceDeps, deployCtx),
+	)
+	if err != nil {
+		return err
+	}
+
+	node := getDeploymentNode(
+		element,
+		deployCtx.DeploymentGroups,
+		deployCtx.CurrentGroupIndex,
+	)
+	linksReadyToBeDeployed := deployCtx.State.UpdateLinkDeploymentState(
+		node.ChainLinkNode,
+	)
+
+	go c.prepareAndDeployLinks(
+		ctx,
+		msg.InstanceID,
+		linksReadyToBeDeployed,
+		deployCtx,
+	)
+
+	c.deployNextElementsAfterResource(
+		ctx,
+		msg.InstanceID,
+		deployCtx,
+		element,
+		/* configComplete */ false,
+	)
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleResourceConfigComplete(
+	ctx context.Context,
+	msg ResourceDeployUpdateMessage,
+	element *ResourceIDInfo,
+	deployCtx *DeployContext,
+	resources state.ResourcesContainer,
+) error {
+	deployCtx.State.SetElementConfigComplete(element)
+	updateTimestamp := int(msg.UpdateTimestamp)
+	err := resources.UpdateStatus(
+		ctx,
+		msg.InstanceID,
+		msg.ResourceID,
+		state.ResourceStatusInfo{
+			Status:                    msg.Status,
+			PreciseStatus:             msg.PreciseStatus,
+			Durations:                 msg.Durations,
+			LastStatusUpdateTimestamp: &updateTimestamp,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	c.deployNextElementsAfterResource(
+		ctx,
+		msg.InstanceID,
+		deployCtx,
+		element,
+		/* configComplete */ true,
+	)
+
 	return nil
 }
 
@@ -454,7 +1110,129 @@ func (c *defaultBlueprintContainer) handleChildUpdateEvent(
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
 ) error {
+	children := c.stateContainer.Children()
+	element := &ChildBlueprintIDInfo{
+		ChildInstanceID: msg.ChildInstanceID,
+		ChildName:       msg.ChildName,
+	}
+
+	if startedUpdatingChild(msg.Status, deployCtx.Rollback) {
+		deployCtx.State.SetElementInProgress(element)
+	}
+
+	if finishedUpdatingChild(msg.Status, deployCtx.Rollback) {
+		msgWrapper := &deployUpdateMessageWrapper{
+			childUpdateMessage: &msg,
+		}
+		finished[elementName] = msgWrapper
+
+		childUpdateSuccessful := updateWasSuccessful(
+			msgWrapper,
+			deployCtx.Rollback,
+		)
+		if childUpdateSuccessful {
+			// Update the ephemeral deploy state before persisting
+			// the status update with the state container
+			// to make sure deployment state is consistent
+			// as the deploy state will be used across multiple goroutines
+			// to determine the next elements to deploy.
+			deployCtx.State.SetUpdatedElement(element)
+		}
+
+		err := children.Attach(
+			ctx,
+			msg.ParentInstanceID,
+			msg.ChildInstanceID,
+			msg.ChildName,
+		)
+		if err != nil {
+			return err
+		}
+
+		dependencies := deployCtx.State.GetElementDependencies(element)
+		err = children.SaveDependencies(
+			ctx,
+			msg.ParentInstanceID,
+			msg.ChildName,
+			dependencies,
+		)
+		if err != nil {
+			return err
+		}
+
+		if childUpdateSuccessful {
+			c.deployNextElementsAfterChild(
+				ctx,
+				msg.ParentInstanceID,
+				deployCtx,
+				element,
+			)
+		}
+	}
+
 	return nil
+}
+
+func (c *defaultBlueprintContainer) deployNextElementsAfterChild(
+	ctx context.Context,
+	instanceID string,
+	deployCtx *DeployContext,
+	deployedChild *ChildBlueprintIDInfo,
+) {
+	if deployCtx.CurrentGroupIndex == len(deployCtx.DeploymentGroups)-1 {
+		// No more groups to deploy.
+		return
+	}
+
+	elementName := core.ChildElementID(deployedChild.ChildName)
+	nextGroup := deployCtx.DeploymentGroups[deployCtx.CurrentGroupIndex+1]
+	for _, node := range nextGroup {
+		dependencyNode := commoncore.Find(
+			node.DirectDependencies,
+			func(dep *DeploymentNode, _ int) bool {
+				return dep.Name() == elementName
+			},
+		)
+
+		// The next element may be a resource that depends on another resource
+		// that is expected to be stable before the resource in question can be deployed.
+		// For this reason, even when we are choosing elements to deploy after a child blueprint,
+		// other dependencies must be considered and stabilised dependencies must be checked.
+		stabilisedDependencies, err := c.getStabilisedDependencies(
+			ctx,
+			node,
+			deployCtx.ResourceRegistry,
+			deployCtx.ParamOverrides,
+		)
+		if err != nil {
+			deployCtx.Channels.ErrChan <- err
+			return
+		}
+
+		otherDependenciesInProgress := c.checkDependenciesInProgress(
+			node,
+			stabilisedDependencies,
+			[]string{elementName},
+			deployCtx.State,
+		)
+
+		if dependencyNode != nil &&
+			!otherDependenciesInProgress &&
+			readyToDeployAfterDependency(
+				node,
+				dependencyNode,
+				stabilisedDependencies,
+				/* configComplete */ false,
+			) {
+			go c.resourceDeployer.Deploy(
+				ctx,
+				instanceID,
+				node.ChainLinkNode,
+				deployCtx.InputChanges,
+				deployCtx,
+			)
+		}
+	}
 }
 
 func (c *defaultBlueprintContainer) handleChildDeployEvent(
@@ -464,6 +1242,66 @@ func (c *defaultBlueprintContainer) handleChildDeployEvent(
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
 ) error {
+	children := c.stateContainer.Children()
+	element := &ChildBlueprintIDInfo{
+		ChildInstanceID: msg.ChildInstanceID,
+		ChildName:       msg.ChildName,
+	}
+
+	if startedDeployingChild(msg.Status, deployCtx.Rollback) {
+		deployCtx.State.SetElementInProgress(element)
+	}
+
+	if finishedDeployingChild(msg.Status, deployCtx.Rollback) {
+		msgWrapper := &deployUpdateMessageWrapper{
+			childUpdateMessage: &msg,
+		}
+		finished[elementName] = msgWrapper
+
+		childDeploySuccessful := creationWasSuccessful(
+			msgWrapper,
+			deployCtx.Rollback,
+		)
+		if childDeploySuccessful {
+			// Update the ephemeral deploy state before persisting
+			// the status update with the state container
+			// to make sure deployment state is consistent
+			// as the deploy state will be used across multiple goroutines
+			// to determine the next elements to deploy.
+			deployCtx.State.SetCreatedElement(element)
+		}
+
+		err := children.Attach(
+			ctx,
+			msg.ParentInstanceID,
+			msg.ChildInstanceID,
+			msg.ChildName,
+		)
+		if err != nil {
+			return err
+		}
+
+		dependencies := deployCtx.State.GetElementDependencies(element)
+		err = children.SaveDependencies(
+			ctx,
+			msg.ParentInstanceID,
+			msg.ChildName,
+			dependencies,
+		)
+		if err != nil {
+			return err
+		}
+
+		if childDeploySuccessful {
+			c.deployNextElementsAfterChild(
+				ctx,
+				msg.ParentInstanceID,
+				deployCtx,
+				element,
+			)
+		}
+	}
+
 	return nil
 }
 
@@ -507,7 +1345,109 @@ func (c *defaultBlueprintContainer) handleLinkUpdateEvent(
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
 ) error {
+	links := c.stateContainer.Links()
+	element := &LinkIDInfo{
+		LinkID:   msg.LinkID,
+		LinkName: msg.LinkName,
+	}
+
+	if startedUpdatingLink(msg.Status, deployCtx.Rollback) {
+		deployCtx.State.SetElementInProgress(element)
+		updateTimestamp := int(msg.UpdateTimestamp)
+		err := links.UpdateStatus(
+			ctx,
+			msg.InstanceID,
+			msg.LinkID,
+			state.LinkStatusInfo{
+				Status:                    msg.Status,
+				PreciseStatus:             msg.PreciseStatus,
+				LastStatusUpdateTimestamp: &updateTimestamp,
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	// This will not persist the current status update if the message
+	// represents a failure that can be retried.
+	// The initiator of the deployment process will receive failure messages
+	// that can be retried so that the end user can be informed when
+	// a link update is taking longer due to a failure that can be retried.
+	// For historical purposes, how many attempts have been made to update a link
+	// will be persisted under the durations section of the link state.
+	if finishedUpdatingLink(msg, deployCtx.Rollback) {
+		msgWrapper := &deployUpdateMessageWrapper{
+			linkUpdateMessage: &msg,
+		}
+		finished[elementName] = msgWrapper
+
+		linkUpdateSuccessful := updateWasSuccessful(
+			msgWrapper,
+			deployCtx.Rollback,
+		)
+		if linkUpdateSuccessful {
+			// Update the ephemeral deploy state before persisting
+			// the status update with the state container
+			// to make sure deployment state is consistent
+			// as the deploy state will be used across multiple goroutines
+			// to determine the next elements to deploy.
+			deployCtx.State.SetUpdatedElement(element)
+		}
+
+		// Instead of just updating the status, ensure that the link data
+		// and intermediary resource states are also persisted.
+		return links.Save(
+			ctx,
+			msg.InstanceID,
+			c.buildLinkState(msg, deployCtx),
+		)
+	}
+
 	return nil
+}
+
+func (c *defaultBlueprintContainer) buildLinkState(
+	msg LinkDeployUpdateMessage,
+	deployCtx *DeployContext,
+) state.LinkState {
+	linkDeployResult := deployCtx.State.GetLinkDeployResult(msg.LinkName)
+	linkState := state.LinkState{
+		LinkID:                     msg.LinkID,
+		LinkName:                   msg.LinkName,
+		InstanceID:                 msg.InstanceID,
+		Status:                     msg.Status,
+		PreciseStatus:              msg.PreciseStatus,
+		Durations:                  msg.Durations,
+		FailureReasons:             msg.FailureReasons,
+		LastStatusUpdateTimestamp:  int(msg.UpdateTimestamp),
+		LastDeployAttemptTimestamp: int(c.clock.Now().Unix()),
+	}
+
+	wrappedMsg := &deployUpdateMessageWrapper{
+		linkUpdateMessage: &msg,
+	}
+	successfulUpdate := updateWasSuccessful(
+		wrappedMsg,
+		deployCtx.Rollback,
+	)
+	successfulCreation := creationWasSuccessful(
+		wrappedMsg,
+		deployCtx.Rollback,
+	)
+
+	if successfulUpdate || successfulCreation {
+		if linkDeployResult != nil {
+			if linkDeployResult.LinkData != nil {
+				linkState.LinkData = linkDeployResult.LinkData.Fields
+			}
+			linkState.IntermediaryResourceStates = linkDeployResult.IntermediaryResourceStates
+		}
+
+		linkState.LastDeployedTimestamp = int(c.clock.Now().Unix())
+	}
+
+	return linkState
 }
 
 func (c *defaultBlueprintContainer) handleLinkCreationEvent(
@@ -517,6 +1457,65 @@ func (c *defaultBlueprintContainer) handleLinkCreationEvent(
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
 ) error {
+	links := c.stateContainer.Links()
+	element := &LinkIDInfo{
+		LinkID:   msg.LinkID,
+		LinkName: msg.LinkName,
+	}
+
+	if startedCreatingLink(msg.Status, deployCtx.Rollback) {
+		deployCtx.State.SetElementInProgress(element)
+		updateTimestamp := int(msg.UpdateTimestamp)
+		err := links.UpdateStatus(
+			ctx,
+			msg.InstanceID,
+			msg.LinkID,
+			state.LinkStatusInfo{
+				Status:                    msg.Status,
+				PreciseStatus:             msg.PreciseStatus,
+				LastStatusUpdateTimestamp: &updateTimestamp,
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	// This will not persist the current status update if the message
+	// represents a failure that can be retried.
+	// The initiator of the deployment process will receive failure messages
+	// that can be retried so that the end user can be informed when
+	// a link creation is taking longer due to a failure that can be retried.
+	// For historical purposes, how many attempts have been made to create a link
+	// will be persisted under the durations section of the link state.
+	if finishedCreatingLink(msg, deployCtx.Rollback) {
+		msgWrapper := &deployUpdateMessageWrapper{
+			linkUpdateMessage: &msg,
+		}
+		finished[elementName] = msgWrapper
+
+		linkCreationSuccessful := creationWasSuccessful(
+			msgWrapper,
+			deployCtx.Rollback,
+		)
+		if linkCreationSuccessful {
+			// Update the ephemeral deploy state before persisting
+			// the status update with the state container
+			// to make sure deployment state is consistent
+			// as the deploy state will be used across multiple goroutines
+			// to determine the next elements to deploy.
+			deployCtx.State.SetCreatedElement(element)
+		}
+
+		// Instead of just updating the status, ensure that the link data
+		// and intermediary resource states are also persisted.
+		return links.Save(
+			ctx,
+			msg.InstanceID,
+			c.buildLinkState(msg, deployCtx),
+		)
+	}
+
 	return nil
 }
 
@@ -601,304 +1600,4 @@ type DeployChannels struct {
 	FinishChan chan DeploymentFinishedMessage
 	// ErrChan is used to signal that an unexpected error occurred during deployment of changes.
 	ErrChan chan error
-}
-
-// ResourceDeployUpdateMessage provides a message containing status updates
-// for resources being deployed.
-// Deployment messages report on status changes for resources,
-// the state of a resource will need to be fetched from the state container
-// to get further information about the state of the resource.
-type ResourceDeployUpdateMessage struct {
-	// InstanceID is the ID of the blueprint instance
-	// the message is associated with.
-	// As updates are sent for parent and child blueprints,
-	// this ID is used to differentiate between them.
-	InstanceID string `json:"instanceId"`
-	// ResourceID is the globally unique ID of the resource.
-	ResourceID string `json:"resourceId"`
-	// ResourceName is the logical name of the resource
-	// as defined in the source blueprint.
-	ResourceName string `json:"resourceName"`
-	// Group is the group number the resource belongs to relative to the ordering
-	// for components in the current blueprint associated with the instance ID.
-	// A group is a collection of items that can be deployed or destroyed at the same time.
-	Group int `json:"group"`
-	// Status holds the high-level status of the resource.
-	Status core.ResourceStatus `json:"status"`
-	// PreciseStatus holds the detailed status of the resource.
-	PreciseStatus core.PreciseResourceStatus `json:"preciseStatus"`
-	// FailureReasons holds a list of reasons why the resource failed to deploy
-	// if the status update is for a failure.
-	FailureReasons []string `json:"failureReasons,omitempty"`
-	// Attempt is the current attempt number for deploying or destroying the resource.
-	Attempt int `json:"attempt"`
-	// CanRetry indicates if the operation for the resource can be retried
-	// after this attempt.
-	CanRetry bool `json:"canRetry"`
-	// UpdateTimestamp is the unix timestamp in seconds for
-	// when the status update occurred.
-	UpdateTimestamp int64 `json:"updateTimestamp"`
-	// Durations holds duration information for a resource deployment.
-	// Duration information is attached on one of the following precise status updates:
-	// - PreciseResourceStatusConfigComplete
-	// - PreciseResourceStatusCreated
-	// - PreciseResourceStatusCreateFailed
-	// - PreciseResourceStatusCreateRollbackFailed
-	// - PreciseResourceStatusCreateRollbackComplete
-	// - PreciseResourceStatusDestroyed
-	// - PreciseResourceStatusDestroyFailed
-	// - PreciseResourceStatusDestroyRollbackFailed
-	// - PreciseResourceStatusDestroyRollbackComplete
-	// - PreciseResourceStatusUpdateConfigComplete
-	// - PreciseResourceStatusUpdated
-	// - PreciseResourceStatusUpdateFailed
-	// - PreciseResourceStatusUpdateRollbackFailed
-	// - PreciseResourceStatusUpdateRollbackComplete
-	Durations *state.ResourceCompletionDurations `json:"durations,omitempty"`
-}
-
-// ResourceChangesMessage provides a message containing status updates
-// for resources being deployed.
-// Deployment messages report on status changes for resources,
-// the state of a resource will need to be fetched from the state container
-// to get further information about the state of the resource.
-type LinkDeployUpdateMessage struct {
-	// InstanceID is the ID of the blueprint instance
-	// the message is associated with.
-	// As updates are sent for parent and child blueprints,
-	// this ID is used to differentiate between them.
-	InstanceID string `json:"instanceId"`
-	// LinkID is the globally unique ID of the link.
-	LinkID string `json:"linkId"`
-	// LinkName is the logic name of the link in the blueprint.
-	// This is a combination of the 2 resources that are linked.
-	// For example, if a link is between a VPC and a subnet,
-	// the link name would be "vpc::subnet".
-	LinkName string `json:"linkName"`
-	// Status holds the high-level status of the link.
-	Status core.LinkStatus `json:"status"`
-	// PreciseStatus holds the detailed status of the link.
-	PreciseStatus core.PreciseLinkStatus `json:"preciseStatus"`
-	// FailureReasons holds a list of reasons why the link failed to deploy
-	// if the status update is for a failure.
-	FailureReasons []string `json:"failureReasons,omitempty"`
-	// Attempt is the current attempt number for applying the changes
-	// for the current stage of the link deployment/removal.
-	CurrentStageAttempt int `json:"currentStageAttempt"`
-	// CanRetryCurrentStage indicates if the operation for the link can be retried
-	// after this attempt of the current stage.
-	CanRetryCurrentStage bool `json:"canRetryCurrentStage"`
-	// UpdateTimestamp is the unix timestamp in seconds for
-	// when the status update occurred.
-	UpdateTimestamp int64 `json:"updateTimestamp"`
-	// Durations holds duration information for a link deployment.
-	// Duration information is attached on one of the following precise status updates:
-	// - PreciseLinkStatusResourceAUpdated
-	// - PreciseLinkStatusResourceAUpdateFailed
-	// - PreciseLinkStatusResourceBUpdated
-	// - PreciseLinkStatusResourceBUpdateFailed
-	// - PreciseLinkStatusIntermediaryResourcesUpdated
-	// - PreciseLinkStatusIntermediaryResourceUpdateFailed
-	// - PreciseLinkStatusComplete
-	Durations *state.LinkCompletionDurations `json:"durations,omitempty"`
-}
-
-// ChildDeployUpdateMessage provides a message containing status updates
-// for child blueprints being deployed.
-// Deployment messages report on status changes for child blueprints,
-// the state of a child blueprint will need to be fetched from the state container
-// to get further information about the state of the child blueprint.
-type ChildDeployUpdateMessage struct {
-	// ParentInstanceID is the ID of the parent blueprint instance
-	// the message is associated with.
-	ParentInstanceID string `json:"parentInstanceId"`
-	// ChildInstanceID is the ID of the child blueprint instance
-	// the message is associated with.
-	ChildInstanceID string `json:"childInstanceId"`
-	// ChildName is the logical name of the child blueprint
-	// as defined in the source blueprint as an include.
-	ChildName string `json:"childName"`
-	// Group is the group number the child blueprint belongs to relative to the ordering
-	// for components in the current blueprint associated with the parent instance ID.
-	Group int `json:"group"`
-	// Status holds the status of the child blueprint.
-	Status core.InstanceStatus `json:"status"`
-	// FailureReasons holds a list of reasons why the child blueprint failed to deploy
-	// if the status update is for a failure.
-	FailureReasons []string `json:"failureReasons,omitempty"`
-	// UpdateTimestamp is the unix timestamp in seconds for
-	// when the status update occurred.
-	UpdateTimestamp int64 `json:"updateTimestamp"`
-	// Durations holds duration information for a child blueprint deployment.
-	// Duration information is attached on one of the following status updates:
-	// - InstanceStatusDeployed
-	// - InstanceStatusDeployFailed
-	// - InstanceStatusDestroyed
-	// - InstanceStatusUpdated
-	// - InstanceStatusUpdateFailed
-	Durations *state.InstanceCompletionDuration `json:"durations,omitempty"`
-}
-
-// DeploymentUpdateMessage provides a message containing a blueprint-wide status update
-// for the deployment of a blueprint instance.
-type DeploymentUpdateMessage struct {
-	// InstanceID is the ID of the blueprint instance
-	// the message is associated with.
-	InstanceID string `json:"instanceId"`
-	// Status holds the status of the instance deployment.
-	Status core.InstanceStatus `json:"status"`
-	// UpdateTimestamp is the unix timestamp in seconds for
-	// when the status update occurred.
-	UpdateTimestamp int64 `json:"updateTimestamp"`
-}
-
-// DeploymentFinishedMessage provides a message containing the final status
-// of the blueprint instance deployment.
-type DeploymentFinishedMessage struct {
-	// InstanceID is the ID of the blueprint instance
-	// the message is associated with.
-	InstanceID string `json:"instanceId"`
-	// Status holds the status of the instance deployment.
-	Status core.InstanceStatus `json:"status"`
-	// FailureReasons holds a list of reasons why the instance failed to deploy
-	// if the final status is a failure.
-	FailureReasons []string `json:"failureReasons,omitempty"`
-	// FinishTimestamp is the unix timestamp in seconds for
-	// when the deployment finished.
-	FinishTimestamp int64 `json:"finishTimestamp"`
-	// UpdateTimestamp is the unix timestamp in seconds for
-	// when the status update occurred.
-	UpdateTimestamp int64 `json:"updateTimestamp"`
-	// Durations holds duration information for the blueprint deployment.
-	// Duration information is attached on one of the following status updates:
-	// - InstanceStatusDeploying (preparation phase duration only)
-	// - InstanceStatusDeployed
-	// - InstanceStatusDeployFailed
-	// - InstanceStatusDestroyed
-	// - InstanceStatusUpdated
-	// - InstanceStatusUpdateFailed
-	Durations *state.InstanceCompletionDuration `json:"durations,omitempty"`
-}
-
-// DeployEvent contains an event that is emitted during the deployment process.
-// This is used like a sum type to represent the different types of events that can be emitted.
-type DeployEvent struct {
-	// ResourceUpdateEvent is an event that is emitted when a resource is updated.
-	ResourceUpdateEvent *ResourceDeployUpdateMessage
-	// LinkUpdateEvent is an event that is emitted when a link is updated.
-	LinkUpdateEvent *LinkDeployUpdateMessage
-	// ChildUpdateEvent is an event that is emitted when a child blueprint is updated.
-	ChildUpdateEvent *ChildDeployUpdateMessage
-	// DeploymentUpdateEvent is an event that is emitted when the
-	// deployment status of the blueprint instance is updated.
-	DeploymentUpdateEvent *DeploymentUpdateMessage
-	// FinishEvent is an event that is emitted when the deployment
-	// of the blueprint instance has finished.
-	FinishEvent *DeploymentFinishedMessage
-}
-
-type intermediaryDeployEvent struct {
-	EventType EventType       `json:"type"`
-	Message   json.RawMessage `json:"message"`
-}
-
-// EventType is a type that represents the different types of events that can be
-// emitted during the deployment process.
-type EventType string
-
-const (
-	// EventTypeResourceUpdate is an event type that represents a resource update event.
-	EventTypeResourceUpdate EventType = "resourceUpdate"
-	// EventTypeLinkUpdate is an event type that represents a link update event.
-	EventTypeLinkUpdate EventType = "linkUpdate"
-	// EventTypeChildUpdate is an event type that represents a child blueprint update event.
-	EventTypeChildUpdate EventType = "childUpdate"
-	// EventTypeDeploymentUpdate is an event type that represents a
-	// blueprint instance deployment update event.
-	EventTypeDeploymentUpdate EventType = "deploymentUpdate"
-	// EventTypeFinish is an event type that represents a
-	// blueprint instance deployment finish event.
-	EventTypeFinish EventType = "finish"
-)
-
-func (e *DeployEvent) MarshalJSON() ([]byte, error) {
-	if e.ResourceUpdateEvent != nil {
-		return e.marshalEventMessage(
-			EventTypeResourceUpdate,
-			e.ResourceUpdateEvent,
-		)
-	}
-
-	if e.LinkUpdateEvent != nil {
-		return e.marshalEventMessage(
-			EventTypeLinkUpdate,
-			e.LinkUpdateEvent,
-		)
-	}
-
-	if e.ChildUpdateEvent != nil {
-		return e.marshalEventMessage(
-			EventTypeChildUpdate,
-			e.ChildUpdateEvent,
-		)
-	}
-
-	if e.DeploymentUpdateEvent != nil {
-		return e.marshalEventMessage(
-			EventTypeDeploymentUpdate,
-			e.DeploymentUpdateEvent,
-		)
-	}
-
-	if e.FinishEvent != nil {
-		return e.marshalEventMessage(
-			EventTypeFinish,
-			e.FinishEvent,
-		)
-	}
-
-	return nil, errors.New("no event message set")
-}
-
-func (e *DeployEvent) marshalEventMessage(
-	eventType EventType,
-	eventMessage any,
-) ([]byte, error) {
-	msgBytes, err := json.Marshal(eventMessage)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(intermediaryDeployEvent{
-		EventType: eventType,
-		Message:   msgBytes,
-	})
-}
-
-func (e *DeployEvent) UnmarshalJSON(data []byte) error {
-	intermediaryEvent := &intermediaryDeployEvent{}
-	err := json.Unmarshal(data, intermediaryEvent)
-	if err != nil {
-		return err
-	}
-
-	switch intermediaryEvent.EventType {
-	case EventTypeResourceUpdate:
-		e.ResourceUpdateEvent = &ResourceDeployUpdateMessage{}
-		return json.Unmarshal(intermediaryEvent.Message, e.ResourceUpdateEvent)
-	case EventTypeLinkUpdate:
-		e.LinkUpdateEvent = &LinkDeployUpdateMessage{}
-		return json.Unmarshal(intermediaryEvent.Message, e.LinkUpdateEvent)
-	case EventTypeChildUpdate:
-		e.ChildUpdateEvent = &ChildDeployUpdateMessage{}
-		return json.Unmarshal(intermediaryEvent.Message, e.ChildUpdateEvent)
-	case EventTypeDeploymentUpdate:
-		e.DeploymentUpdateEvent = &DeploymentUpdateMessage{}
-		return json.Unmarshal(intermediaryEvent.Message, e.DeploymentUpdateEvent)
-	case EventTypeFinish:
-		e.FinishEvent = &DeploymentFinishedMessage{}
-		return json.Unmarshal(intermediaryEvent.Message, e.FinishEvent)
-	}
-
-	return errors.New("no valid event type set")
 }

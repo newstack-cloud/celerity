@@ -414,6 +414,7 @@
           InstanceID: (string) (len=20) "blueprint-instance-7",
           Status: (core.ResourceStatus) 2,
           PreciseStatus: (core.PreciseResourceStatus) 3,
+          LastStatusUpdateTimestamp: (int) 0,
           LastDeployedTimestamp: (int) 1733145428,
           LastDeployAttemptTimestamp: (int) 1733145428,
           ResourceSpecData: (*core.MappingNode)({
@@ -1175,6 +1176,7 @@
           InstanceID: (string) (len=20) "blueprint-instance-7",
           Status: (core.ResourceStatus) 2,
           PreciseStatus: (core.PreciseResourceStatus) 3,
+          LastStatusUpdateTimestamp: (int) 0,
           LastDeployedTimestamp: (int) 1733145428,
           LastDeployAttemptTimestamp: (int) 1733145428,
           ResourceSpecData: (*core.MappingNode)({
@@ -1936,6 +1938,7 @@
           InstanceID: (string) (len=20) "blueprint-instance-7",
           Status: (core.ResourceStatus) 2,
           PreciseStatus: (core.PreciseResourceStatus) 3,
+          LastStatusUpdateTimestamp: (int) 0,
           LastDeployedTimestamp: (int) 1733145428,
           LastDeployAttemptTimestamp: (int) 1733145428,
           ResourceSpecData: (*core.MappingNode)({
@@ -2268,6 +2271,7 @@
               InstanceID: (string) (len=37) "blueprint-instance-7-child-core-infra",
               Status: (core.ResourceStatus) 2,
               PreciseStatus: (core.PreciseResourceStatus) 3,
+              LastStatusUpdateTimestamp: (int) 0,
               LastDeployedTimestamp: (int) 1733145428,
               LastDeployAttemptTimestamp: (int) 1733145428,
               ResourceSpecData: (*core.MappingNode)({
@@ -3285,6 +3289,7 @@
       },
       RemovedExports: ([]string) {
       },
+      MetadataChanges: (map[string]provider.FieldChange) <nil>,
       ResolveOnDeploy: ([]string) {
       }
     }
@@ -3335,6 +3340,7 @@
   },
   RemovedExports: ([]string) {
   },
+  MetadataChanges: (map[string]provider.FieldChange) <nil>,
   ResolveOnDeploy: ([]string) (len=2) {
     (string) (len=91) "link(saveOrderFunction::ordersTable_0).saveOrderFunction[\"iam.policyStatements\"].0.resource",
     (string) (len=91) "link(saveOrderFunction::ordersTable_1).saveOrderFunction[\"iam.policyStatements\"].0.resource"

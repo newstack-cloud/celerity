@@ -145,12 +145,16 @@ func ValidateDataSource(
 		errs = append(errs, validateExportsErr)
 	}
 
+	providerNamespace := provider.ExtractProviderFromItemType(dataSource.Type.Value)
 	customValidateOutput, err := dataSourceRegistry.CustomValidate(
 		ctx,
 		dataSource.Type.Value,
 		&provider.DataSourceValidateInput{
 			SchemaDataSource: dataSource,
-			Params:           params,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				params,
+			),
 		},
 	)
 	if err != nil {
@@ -440,11 +444,15 @@ func loadDataSourceSpecDefinition(
 	params bpcore.BlueprintParams,
 	dataSourceRegistry provider.DataSourceRegistry,
 ) (*provider.DataSourceSpecDefinition, error) {
+	providerNamespace := provider.ExtractProviderFromItemType(dataSourceType)
 	specDefOutput, err := dataSourceRegistry.GetSpecDefinition(
 		ctx,
 		dataSourceType,
 		&provider.DataSourceGetSpecDefinitionInput{
-			Params: params,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				params,
+			),
 		},
 	)
 	if err != nil {
@@ -501,6 +509,7 @@ func validateDataSourceFilter(
 		)
 	}
 
+	providerNamespace := provider.ExtractProviderFromItemType(dataSourceType)
 	// Currently, only simple validation is provided for filter components.
 	// This may be expanded in the future to include more complex validation
 	// to check whether a given operator is supported for a specific field
@@ -509,7 +518,10 @@ func validateDataSourceFilter(
 		ctx,
 		dataSourceType,
 		&provider.DataSourceGetFilterFieldsInput{
-			Params: params,
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				params,
+			),
 		},
 	)
 	if err != nil {

@@ -133,6 +133,7 @@ func (s *ResourceDeployerTestSuite) runDeployTest(
 			InstanceStateSnapshot: fixture.instanceStateSnapshot,
 			ParamOverrides:        deployLinkParams(),
 			ResourceProviders:     s.resourceProviders,
+			ResourceTemplates:     map[string]string{},
 		},
 	)
 
@@ -161,10 +162,10 @@ func (s *ResourceDeployerTestSuite) runDeployTest(
 		deploymentUpdateMessages:     []DeploymentUpdateMessage{},
 	}
 	assertDeployMessageOrder(actualMessages, fixture.expectedMessages, &s.Suite)
-	cachedOutput := deployState.GetResourceSpecState(fixture.chainLinkNode.ResourceName)
+	cachedOutput := deployState.GetResourceData(fixture.chainLinkNode.ResourceName)
 	if !fixture.failure {
 		s.Assert().NotNil(cachedOutput)
-		s.Assert().Equal(fixture.expectedCachedOutput, cachedOutput)
+		s.Assert().Equal(fixture.expectedCachedOutput, cachedOutput.Spec)
 	}
 }
 

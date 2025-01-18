@@ -1,6 +1,10 @@
 package provider
 
-import "context"
+import (
+	"context"
+
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+)
 
 // Provider is the interface for an implementation of a provider
 // of a set of resource and data source types that can be used in a blueprint.
@@ -64,6 +68,23 @@ type Provider interface {
 	// A retry policy is optional and if not provided, a default retry policy
 	// provided by the host tool will be used.
 	RetryPolicy(ctx context.Context) (*RetryPolicy, error)
+}
+
+// Context provides access to information about the current provider
+// and environment that a provider plugin is running in.
+// This is not to be confused with the conventional Go context.Context
+// used for setting deadlines, cancelling requests and storing request-scoped
+// values in a Go program.
+type Context interface {
+	// ProviderConfigVariable retrieves a configuration value that was loaded
+	// for the current provider.
+	ProviderConfigVariable(name string) (*core.ScalarValue, bool)
+	// ContextVariable retrieves a context-wide variable
+	// for the current environment, this differs from values extracted
+	// from context.Context, as these context variables are specific
+	// to the components that implement the interfaces of the blueprint library
+	// and can be shared between processes over a network or similar.
+	ContextVariable(name string) (*core.ScalarValue, bool)
 }
 
 // RetryPolicy defines the retry policy that should be used for the provider

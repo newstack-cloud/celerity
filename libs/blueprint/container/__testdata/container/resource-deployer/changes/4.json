@@ -45,7 +45,7 @@
       "newFields": [],
       "removedFields": [],
       "unchangedFields": [],
-      "computedFields": ["id"],
+      "computedFields": ["spec.id"],
       "fieldChangesKnownOnDeploy": [],
       "conditionKnownOnDeploy": false,
       "newOutboundLinks": {},

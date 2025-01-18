@@ -88,8 +88,8 @@ type SpecTransformerTransformOutput struct {
 // AbstractResourceValidateInput provides the input required to validate
 // an abstract resource before transformation.
 type AbstractResourceValidateInput struct {
-	SchemaResource *schema.Resource
-	Params         core.BlueprintParams
+	SchemaResource     *schema.Resource
+	TransformerContext Context
 }
 
 // AbstractResourceValidateOutput provides the output from validating an abstract resource
@@ -101,7 +101,7 @@ type AbstractResourceValidateOutput struct {
 // AbstractResourceGetSpecDefinitionInput provides the input from providing a spec definition
 // for an abstract resource.
 type AbstractResourceGetSpecDefinitionInput struct {
-	Params core.BlueprintParams
+	TransformerContext Context
 }
 
 // AbstractResourceGetSpecDefinitionOutput provides the output from providing a spec definition
@@ -113,7 +113,7 @@ type AbstractResourceGetSpecDefinitionOutput struct {
 // AbstractResourceCanLinkToInput provides the input data needed for a resource to
 // determine what types of resources it can link to.
 type AbstractResourceCanLinkToInput struct {
-	Params core.BlueprintParams
+	TransformerContext Context
 }
 
 // AbstractResourceCanLinkToOutput provides the output data from determining what types of resources
@@ -125,7 +125,7 @@ type AbstractResourceCanLinkToOutput struct {
 // AbstractResourceIsCommonTerminalInput provides the input data needed for a resource to
 // determine if it is a common terminal resource.
 type AbstractResourceIsCommonTerminalInput struct {
-	Params core.BlueprintParams
+	TransformerContext Context
 }
 
 // AbstractResourceIsCommonTerminalOutput provides the output data from determining if a resource
@@ -137,7 +137,7 @@ type AbstractResourceIsCommonTerminalOutput struct {
 // AbstractResourceGetTypeInput provides the input data needed for an abstract resource to
 // determine the type of a resource in a blueprint spec.
 type AbstractResourceGetTypeInput struct {
-	Params core.BlueprintParams
+	TransformerContext Context
 }
 
 // AbstractResourceGetTypeOutput provides the output data from determining the type of an
@@ -149,7 +149,7 @@ type AbstractResourceGetTypeOutput struct {
 // AbstractResourceGetTypeDescriptionInput provides the input data needed for a resource to
 // retrieve a description of the type of an abstract resource in a blueprint spec.
 type AbstractResourceGetTypeDescriptionInput struct {
-	Params core.BlueprintParams
+	TransformerContext Context
 }
 
 // AbstractResourceGetTypeDescriptionOutput provides the output data from retrieving a description
@@ -157,4 +157,21 @@ type AbstractResourceGetTypeDescriptionInput struct {
 type AbstractResourceGetTypeDescriptionOutput struct {
 	MarkdownDescription  string
 	PlainTextDescription string
+}
+
+// Context provides access to information about the current transformer
+// and environment that a transformer plugin is running in.
+// This is not to be confused with the conventional Go context.Context
+// used for setting deadlines, cancelling requests and storing request-scoped
+// values in a Go program.
+type Context interface {
+	// TransformerConfigVariable retrieves a configuration value that was loaded
+	// for the current provider.
+	TransformerConfigVariable(name string) (*core.ScalarValue, bool)
+	// ContextVariable retrieves a context-wide variable
+	// for the current environment, this differs from values extracted
+	// from context.Context, as these context variables are specific
+	// to the components that implement the interfaces of the blueprint library
+	// and can be shared between processes over a network or similar.
+	ContextVariable(name string) (*core.ScalarValue, bool)
 }
