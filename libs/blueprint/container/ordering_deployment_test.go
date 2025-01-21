@@ -148,7 +148,7 @@ func inExpected(expectedItemNames []string) func(*DeploymentNode, int) bool {
 	}
 }
 
-var testProviderImpl = newTestAWSProvider()
+var testProviderImpl = newTestAWSProvider(false /* alwaysStabilise */)
 
 func orderFixture1() (orderChainLinkNodeFixture, error) {
 	var inputChains = orderFixture1Chains()
@@ -522,12 +522,14 @@ func orderFixture3() (orderChainLinkNodeFixture, error) {
 			"resources.ordersStream",
 			"resources.statsAccumulatorFunction",
 			"resources.standaloneFunction",
+			"resources.processOrdersFunction",
 		},
 		orderedExpected: [][]string{
 			{"resources.ordersTable", "resources.ordersStream"},
 			{"resources.ordersTable", "resources.getOrdersFunction"},
 			{"resources.ordersTable", "resources.createOrderFunction"},
 			{"resources.ordersTable", "resources.updateOrderFunction"},
+			{"resources.ordersTable", "resources.processOrdersFunction"},
 			{"resources.standaloneFunction", "resources.statsAccumulatorFunction"},
 		},
 	}, nil
@@ -588,8 +590,6 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 	}
 
 	dynamoDBTableStreamLink, _ := testProviderImpl.Link(context.TODO(), "aws/dynamodb/table", "aws/dynamodb/stream")
-	// The only hard link in this chain is between the orders table
-	// and the orders stream.
 	ordersTable := &links.ChainLinkNode{
 		ResourceName: "ordersTable",
 		Resource: &schema.Resource{
@@ -598,7 +598,7 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 		LinkImplementations: map[string]provider.Link{
 			"ordersStream": dynamoDBTableStreamLink,
 		},
-		Paths:      []string{},
+		Paths:      []string{"/processOrdersFunction"},
 		LinkedFrom: []*links.ChainLinkNode{},
 	}
 
@@ -620,6 +620,20 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 			updateOrderFunction,
 		},
 		LinksTo: []*links.ChainLinkNode{},
+	}
+
+	lambdaFunctionOrdersTableLink, _ := testProviderImpl.Link(context.TODO(), "aws/lambda/function", "aws/dynamodb/table")
+	processOrdersFunction := &links.ChainLinkNode{
+		ResourceName: "processOrdersFunction",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{Value: "aws/lambda/function"},
+		},
+		Paths: []string{},
+		LinkImplementations: map[string]provider.Link{
+			"ordersTable": lambdaFunctionOrdersTableLink,
+		},
+		LinkedFrom: []*links.ChainLinkNode{},
+		LinksTo:    []*links.ChainLinkNode{},
 	}
 
 	// Includes transitive soft circular link.
@@ -657,6 +671,9 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 	ordersTable.LinksTo = []*links.ChainLinkNode{
 		ordersStream,
 	}
+	processOrdersFunction.LinksTo = []*links.ChainLinkNode{
+		ordersTable,
+	}
 	ordersStream.LinksTo = []*links.ChainLinkNode{
 		statsAccumulatorFunction,
 	}
@@ -668,6 +685,7 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 		orderApi,
 		ordersTable,
 		standaloneFunction,
+		processOrdersFunction,
 	}
 }
 
@@ -706,6 +724,18 @@ func orderFixture3RefChains(
 		nil,
 		"resources.statsAccumulatorFunction",
 		[]string{validation.CreateDependencyRefTag("resources.statsAccumulatorFunction")},
+	)
+
+	// Collect an extra reference to catch an edge case where a link relationship was taken
+	// into account when checking if a node references another via a `dependsOn` declaration
+	// or a reference.
+	// If the link is taken into account in this situation, processOrdersFunction will incorrectly
+	// be ordered before ordersTable.
+	collector.Collect(
+		"datasources.network",
+		nil,
+		"resources.ordersTable",
+		[]string{"subRef:resources.ordersTable"},
 	)
 
 	return collector, nil

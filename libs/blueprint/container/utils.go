@@ -86,7 +86,9 @@ func collectResourceFromLink(
 	// Soft links do not require a specific order of deployment/resolution.
 	if linkKind == provider.LinkKindHard {
 		resourceID := core.ResourceElementID(link.ResourceName)
-		err := refChainCollector.Collect(resourceID, link, referencedByResourceID, []string{"link"})
+		err := refChainCollector.Collect(resourceID, link, referencedByResourceID, []string{
+			validation.CreateLinkTag(referencedByResourceID),
+		})
 		if err != nil {
 			return err
 		}
@@ -726,8 +728,15 @@ func getResourceInfo(
 		currentResourceStatePtr = &currentResourceState
 	}
 
+	// The resource ID may not be known until we've loaded the current state
+	// of the resource.
+	resourceID := stageInfo.resourceID
+	if resourceID == "" && currentResourceStatePtr != nil {
+		resourceID = currentResourceStatePtr.ResourceID
+	}
+
 	return &provider.ResourceInfo{
-		ResourceID:               stageInfo.resourceID,
+		ResourceID:               resourceID,
 		ResourceName:             stageInfo.node.ResourceName,
 		InstanceID:               stageInfo.instanceID,
 		CurrentResourceState:     currentResourceStatePtr,

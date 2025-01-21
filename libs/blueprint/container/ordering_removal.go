@@ -63,16 +63,19 @@ func OrderElementsForRemoval(
 func sortElementsByDependencies(
 	elements []*ElementWithAllDeps,
 ) {
-	for i, elemA := range elements {
-		for j, elemB := range elements {
-			if i != j {
-				if (hasDependency(elemA, elemB) && i > j) ||
-					(hasDependency(elemB, elemA) && i < j) {
-					// If a has a dependency on b and a is after b, swap.
-					// If b has a dependency on a and b is after a, swap.
-					elements[i], elements[j] = elements[j], elements[i]
-				}
+	n := len(elements)
+	for {
+		swapped := false
+		for i := 1; i < n; i += 1 {
+			elemA := elements[i-1]
+			elemB := elements[i]
+			if hasDependency(elemB, elemA) {
+				// If b has a dependency on a and b is after a, swap.
+				elements[i-1], elements[i] = elements[i], elements[i-1]
 			}
+		}
+		if !swapped {
+			break
 		}
 	}
 }
