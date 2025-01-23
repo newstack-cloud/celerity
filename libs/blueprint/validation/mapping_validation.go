@@ -6,6 +6,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -27,7 +28,7 @@ func ValidateMappingNode(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if mappingNode == nil {
@@ -61,7 +62,7 @@ func validateMappingNode(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -154,7 +155,7 @@ func validateMappingNodeFields(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -197,7 +198,7 @@ func validateMappingNodeItems(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -239,7 +240,7 @@ func validateMappingNodeStringWithSubstitutions(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}

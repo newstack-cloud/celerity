@@ -10,6 +10,7 @@ import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -45,7 +46,7 @@ func ValidateSubstitution(
 	usedInPropertyPath string,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) (string, []*bpcore.Diagnostic, error) {
 
@@ -186,7 +187,7 @@ func validateValueSubstitution(
 	bpSchema *schema.Blueprint,
 	usedIn string,
 	usedInPropertyPath string,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	valName := subVal.ValueName
@@ -273,7 +274,7 @@ func validateResourcePropertySubstitution(
 	usedIn string,
 	usedInPropertyPath string,
 	params bpcore.BlueprintParams,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	nextLocation *source.Meta,
 ) (string, []*bpcore.Diagnostic, error) {
@@ -719,7 +720,7 @@ func validateDataSourcePropertySubstitution(
 	bpSchema *schema.Blueprint,
 	usedIn string,
 	usedInPropertyPath string,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	dataSourceName := subDataSourceProp.DataSourceName
@@ -799,7 +800,7 @@ func validateChildSubstitution(
 	bpSchema *schema.Blueprint,
 	usedIn string,
 	usedInPropertyPath string,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	childName := subChild.ChildName
@@ -836,7 +837,7 @@ func validateFunctionSubstitution(
 	usedInPropertyPath string,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -970,7 +971,7 @@ func validateLinkFuncArg(
 	arg *substitutions.SubstitutionFunctionArg,
 	usedIn string,
 	bpSchema *schema.Blueprint,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) error {
 	if funcName == string(substitutions.SubstitutionFunctionLink) {
 		if arg.Value != nil && arg.Value.StringValue != nil {
@@ -1104,7 +1105,7 @@ func validateSubFuncArgument(
 	funcName string,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}

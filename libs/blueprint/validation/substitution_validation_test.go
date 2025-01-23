@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -17,7 +18,7 @@ import (
 
 type SubstitutionValidationTestSuite struct {
 	functionRegistry  provider.FunctionRegistry
-	refChainCollector RefChainCollector
+	refChainCollector refgraph.RefChainCollector
 	resourceRegistry  resourcehelpers.Registry
 }
 
@@ -34,7 +35,7 @@ func (s *SubstitutionValidationTestSuite) SetUpTest(c *C) {
 			"link":       corefunctions.NewLinkFunction(nil, nil),
 		},
 	}
-	s.refChainCollector = NewRefChainCollector()
+	s.refChainCollector = refgraph.NewRefChainCollector()
 	s.resourceRegistry = &internal.ResourceRegistryMock{
 		Resources: map[string]provider.Resource{
 			"exampleResource":                      &testExampleResource{},

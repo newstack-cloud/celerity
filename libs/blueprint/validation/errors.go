@@ -6,6 +6,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -1692,7 +1693,7 @@ func errInvalidValueType(
 // ErrReferenceCycles is used to wrap errors that occurred during reference cycle validation.
 // This error is used to collect and surface reference cycle errors for pure substitution reference
 // cycles and link <-> substitution reference cycles.
-func ErrReferenceCycles(rootRefChains []*ReferenceChainNode) error {
+func ErrReferenceCycles(rootRefChains []*refgraph.ReferenceChainNode) error {
 	var errs []error
 	for _, refChain := range rootRefChains {
 		errs = append(errs, &errors.LoadError{

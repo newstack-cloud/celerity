@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -26,7 +27,7 @@ var (
 
 type ResourceValidationTestSuite struct {
 	funcRegistry      provider.FunctionRegistry
-	refChainCollector RefChainCollector
+	refChainCollector refgraph.RefChainCollector
 	resourceRegistry  resourcehelpers.Registry
 }
 
@@ -43,7 +44,7 @@ func (s *ResourceValidationTestSuite) SetUpTest(c *C) {
 			"split":      corefunctions.NewSplitFunction(),
 		},
 	}
-	s.refChainCollector = NewRefChainCollector()
+	s.refChainCollector = refgraph.NewRefChainCollector()
 	s.resourceRegistry = &internal.ResourceRegistryMock{
 		Resources: map[string]provider.Resource{
 			"aws/ecs/service": newTestECSServiceResource(),
@@ -894,7 +895,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_each_dire
 		},
 	}
 
-	refChainCollector := NewRefChainCollector()
+	refChainCollector := refgraph.NewRefChainCollector()
 	refChainCollector.Collect(
 		"resources.testService",
 		testServiceResource,
@@ -976,7 +977,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_indirectl
 	}
 
 	testServiceIDWithPrefixValueID := "values.testServiceIdWithPrefix"
-	refChainCollector := NewRefChainCollector()
+	refChainCollector := refgraph.NewRefChainCollector()
 	refChainCollector.Collect(
 		testServiceIDWithPrefixValueID,
 		testServiceIDWithPrefixValue,
@@ -1057,7 +1058,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_each_dire
 		},
 	}
 
-	refChainCollector := NewRefChainCollector()
+	refChainCollector := refgraph.NewRefChainCollector()
 	refChainCollector.Collect(
 		testNetworkingStackID,
 		testNetworkingStack,
@@ -1150,7 +1151,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_indirectl
 	}
 
 	testNetworkingStackVPCValueID := "values.testNetworkingStackVPC"
-	refChainCollector := NewRefChainCollector()
+	refChainCollector := refgraph.NewRefChainCollector()
 	refChainCollector.Collect(
 		testNetworkingStackVPCValueID,
 		testNetworkingStackVPCValue,

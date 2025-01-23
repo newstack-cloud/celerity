@@ -6,6 +6,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -63,7 +64,7 @@ func ValidateResource(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	resourceDerivedFromTemplate bool,
 ) ([]*bpcore.Diagnostic, error) {
@@ -236,7 +237,7 @@ func validateResourceMetadata(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -319,7 +320,7 @@ func validateResourceMetadataDisplayName(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.DisplayName == nil {
@@ -409,7 +410,7 @@ func validateResourceMetadataAnnotations(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.Annotations == nil || metadataSchema.Annotations.Values == nil {
@@ -456,7 +457,7 @@ func validateResourceDependencies(
 	resourceName string,
 	dependsOn *schema.DependsOnList,
 	blueprint *schema.Blueprint,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) ([]*bpcore.Diagnostic, error) {
 	if dependsOn == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -519,7 +520,7 @@ func validateResourceCondition(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	depth int,
 ) ([]*bpcore.Diagnostic, error) {
@@ -630,7 +631,7 @@ func validateConditionValue(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if conditionValue == nil {
@@ -741,7 +742,7 @@ func validateResourceEach(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if each == nil {
@@ -855,7 +856,7 @@ func handleResolvedTypeExpectingArray(
 // and the full set of references have been collected.
 func ValidateResourceEachDependencies(
 	blueprint *schema.Blueprint,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) error {
 	if blueprint.Resources == nil {
 		return nil
@@ -889,7 +890,7 @@ func ValidateResourceEachDependencies(
 }
 
 func checkEachResourceOrChildDependencies(
-	nodes []*ReferenceChainNode,
+	nodes []*refgraph.ReferenceChainNode,
 	resourceIdentifier string,
 	eachLocation *source.Meta,
 	errs []error,

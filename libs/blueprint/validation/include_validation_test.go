@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -16,7 +17,7 @@ import (
 
 type IncludeValidationTestSuite struct {
 	funcRegistry      provider.FunctionRegistry
-	refChainCollector RefChainCollector
+	refChainCollector refgraph.RefChainCollector
 	resourceRegistry  resourcehelpers.Registry
 }
 
@@ -36,7 +37,7 @@ func (s *IncludeValidationTestSuite) SetUpTest(c *C) {
 			"cwd":        corefunctions.NewCWDFunction(getWorkingDir),
 		},
 	}
-	s.refChainCollector = NewRefChainCollector()
+	s.refChainCollector = refgraph.NewRefChainCollector()
 	s.resourceRegistry = &internal.ResourceRegistryMock{
 		Resources: map[string]provider.Resource{},
 	}

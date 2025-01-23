@@ -7,6 +7,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -141,7 +142,7 @@ func validateDescription(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
@@ -273,4 +274,12 @@ func CreateSubRefPropTag(usedIn string, usedInPropPath string) string {
 // defined in a blueprint resource with the "dependsOn" property.
 func CreateDependencyRefTag(usedIn string) string {
 	return fmt.Sprintf("dependencyOf:%s", usedIn)
+}
+
+// CreateLinkTag creates a reference chain node tag for a dependency resource
+// that is linked to or from another resource.
+// This should contain the name of the resource that depends on the resource being
+// tagged.
+func CreateLinkTag(linkDependencyOf string) string {
+	return fmt.Sprintf("link:%s", linkDependencyOf)
 }

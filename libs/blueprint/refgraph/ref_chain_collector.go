@@ -1,4 +1,4 @@
-package validation
+package refgraph
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ type ReferenceChainNode struct {
 	// there is a relationship between two elements at any depth in the chain.
 	Paths []string
 	// Tags provide a way to categorise a reference chain node.
-	// For example, "link" could be used to indicate that the reference chain node
+	// For example, "link:{dependant}" could be used to indicate that the reference chain node
 	// that represents a link derived from link selectors in the blueprint.
 	Tags []string
 }
@@ -40,6 +40,12 @@ type RefChainCollector interface {
 	Collect(elementName string, element interface{}, referencedBy string, tags []string) error
 	// Chain returns the reference chain node for the given element name.
 	Chain(elementName string) *ReferenceChainNode
+	// ChainsByDependencies returns a list of root nodes representing elements
+	// that have no dependencies (i.e. they do not reference any other elements).
+	ChainsByDependencies() []*ReferenceChainNode
+	// ChainsByLeafDependants returns a list of root nodes representing elements
+	// that are not referenced by any other elements.
+	ChainsByLeafDependants() []*ReferenceChainNode
 	// FindByTag returns a list of reference chain nodes that have the given tag.
 	FindByTag(tag string) []*ReferenceChainNode
 	// FindCircularReferences returns a list of reference chain nodes for which there are
@@ -62,12 +68,12 @@ func NewRefChainCollector() RefChainCollector {
 }
 
 func (s *refChainCollectorImpl) Collect(elementName string, element interface{}, referencedBy string, tags []string) error {
-	chain, addedToExistingParent, err := s.createOrUpdateChain(elementName, element, referencedBy, tags)
+	chain, alreadyExistsOrAddedToParent, err := s.createOrUpdateChain(elementName, element, referencedBy, tags)
 	if err != nil {
 		return err
 	}
 
-	if !addedToExistingParent {
+	if !alreadyExistsOrAddedToParent {
 		s.chains = append(s.chains, chain)
 	}
 	s.refMap[elementName] = chain
@@ -84,6 +90,26 @@ func (s *refChainCollectorImpl) FindCircularReferences() []*ReferenceChainNode {
 
 func (s *refChainCollectorImpl) Chain(elementName string) *ReferenceChainNode {
 	return s.refMap[elementName]
+}
+
+func (s *refChainCollectorImpl) ChainsByDependencies() []*ReferenceChainNode {
+	chainsByDeps := []*ReferenceChainNode{}
+	for _, chain := range s.refMap {
+		if len(chain.References) == 0 {
+			chainsByDeps = append(chainsByDeps, chain)
+		}
+	}
+	return chainsByDeps
+}
+
+func (s *refChainCollectorImpl) ChainsByLeafDependants() []*ReferenceChainNode {
+	chainsByLeafDependants := []*ReferenceChainNode{}
+	for _, chain := range s.refMap {
+		if len(chain.ReferencedBy) == 0 {
+			chainsByLeafDependants = append(chainsByLeafDependants, chain)
+		}
+	}
+	return chainsByLeafDependants
 }
 
 func (s *refChainCollectorImpl) FindByTag(tag string) []*ReferenceChainNode {
@@ -142,7 +168,8 @@ func (s *refChainCollectorImpl) createOrUpdateChain(
 
 	var parent *ReferenceChainNode
 	addedToExistingParent := false
-	if existingParent, parentExists := s.refMap[referencedBy]; referencedBy != "" && parentExists {
+	existingParent, parentExists := s.refMap[referencedBy]
+	if referencedBy != "" && parentExists {
 		parent = existingParent
 		addedToExistingParent = true
 	} else if referencedBy != "" && !parentExists {
@@ -168,7 +195,7 @@ func (s *refChainCollectorImpl) createOrUpdateChain(
 
 	elementChain.Tags = append(elementChain.Tags, tags...)
 
-	return elementChain, addedToExistingParent, nil
+	return elementChain, addedToExistingParent || elementChainExists, nil
 }
 
 func updatePathsForReferencedElements(elementChain *ReferenceChainNode) {

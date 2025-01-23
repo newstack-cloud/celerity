@@ -7,6 +7,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -38,7 +39,7 @@ func ValidateDataSource(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
@@ -210,7 +211,7 @@ func validateDataSourceMetadata(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -282,7 +283,7 @@ func validateDataSourceMetadataDisplayName(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.DisplayName == nil {
@@ -336,7 +337,7 @@ func validateDataSourceMetadataAnnotations(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.Annotations == nil || metadataSchema.Annotations.Values == nil {
@@ -385,7 +386,7 @@ func validateMetadataAnnotation(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if annotation == nil {
@@ -479,7 +480,7 @@ func validateDataSourceFilter(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
@@ -591,7 +592,7 @@ func validateDataSourceFilterSearch(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 
@@ -629,7 +630,7 @@ func validateDataSourceFilterSearchValue(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
 	if searchValue == nil {
@@ -726,7 +727,7 @@ func validateDataSourceExports(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	specDefinition *provider.DataSourceSpecDefinition,
 ) ([]*bpcore.Diagnostic, error) {
@@ -777,7 +778,7 @@ func validateDataSourceExport(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	specDefinition *provider.DataSourceSpecDefinition,
 ) ([]*bpcore.Diagnostic, error) {

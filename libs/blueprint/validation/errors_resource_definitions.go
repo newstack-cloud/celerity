@@ -69,6 +69,25 @@ func errResourceDefMissingRequiredField(
 	}
 }
 
+func errResourceDefUnknownField(
+	path string,
+	field string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to an unknown field %q "+
+				"at path %q, only fields that match the resource definition schema are allowed",
+			field,
+			path,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errInvalidResourceDefSubType(
 	resolvedType string,
 	path string,

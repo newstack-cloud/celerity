@@ -7,6 +7,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -24,7 +25,7 @@ func validateResourceDefinition(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 	depth int,
@@ -196,7 +197,7 @@ func validateResourceDefinitionObject(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 	depth int,
@@ -263,7 +264,17 @@ func validateResourceDefinitionObject(
 				errs = append(errs, err)
 			}
 		}
+	}
 
+	for fieldName, fieldNode := range node.Fields {
+		fieldPath := fmt.Sprintf("%s.%s", path, fieldName)
+		if _, hasAttr := validateAgainstSchema.Attributes[fieldName]; !hasAttr {
+			errs = append(errs, errResourceDefUnknownField(
+				fieldPath,
+				fieldName,
+				selectMappingNodeLocation(fieldNode, parentLocation),
+			))
+		}
 	}
 
 	if len(errs) > 0 {
@@ -284,7 +295,7 @@ func validateResourceDefinitionMap(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 	depth int,
@@ -360,7 +371,7 @@ func validateResourceDefinitionArray(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 	depth int,
@@ -434,7 +445,7 @@ func validateResourceDefinitionString(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 ) ([]*core.Diagnostic, error) {
@@ -506,7 +517,7 @@ func validateResourceDefinitionInteger(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 ) ([]*core.Diagnostic, error) {
@@ -579,7 +590,7 @@ func validateResourceDefinitionFloat(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 ) ([]*core.Diagnostic, error) {
@@ -652,7 +663,7 @@ func validateResourceDefinitionBoolean(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 ) ([]*core.Diagnostic, error) {
@@ -726,7 +737,7 @@ func validateResourceDefinitionUnion(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 	depth int,
@@ -788,7 +799,7 @@ func validateResourceDefinitionSubstitution(
 	bpSchema *schema.Blueprint,
 	params core.BlueprintParams,
 	funcRegistry provider.FunctionRegistry,
-	refChainCollector RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	path string,
 ) ([]*core.Diagnostic, error) {
