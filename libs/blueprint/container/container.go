@@ -245,6 +245,7 @@ type defaultBlueprintContainer struct {
 	resourceDeployer         ResourceDeployer
 	childDeployer            ChildBlueprintDeployer
 	defaultRetryPolicy       *provider.RetryPolicy
+	logger                   core.Logger
 }
 
 // ChildBlueprintLoaderFactory provides a factory function for creating a new loader
@@ -290,6 +291,7 @@ type BlueprintContainerDependencies struct {
 	ResourceDeployer          ResourceDeployer
 	ChildBlueprintDeployer    ChildBlueprintDeployer
 	DefaultRetryPolicy        *provider.RetryPolicy
+	Logger                    core.Logger
 }
 
 // NewDefaultBlueprintContainer creates a new instance of the default
@@ -327,6 +329,7 @@ func NewDefaultBlueprintContainer(
 		deps.ResourceDeployer,
 		deps.ChildBlueprintDeployer,
 		deps.DefaultRetryPolicy,
+		deps.Logger,
 	}
 }
 

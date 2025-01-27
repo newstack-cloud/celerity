@@ -74,6 +74,10 @@ func (d *defaultLinkDeployer) Deploy(
 	)
 
 	if linkUpdateType == provider.LinkUpdateTypeCreate {
+		deployCtx.Logger.Info(
+			"persisting skeleton state for new link",
+			core.StringLogField("linkId", linkElement.ID()),
+		)
 		links := d.stateContainer.Links()
 		err := links.Save(
 			ctx,
@@ -174,9 +178,19 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 		input.LinkUpdateType,
 	)
 
+	deployCtx.Logger.Info(
+		"calling link plugin implementation to update resource A",
+		core.IntegerLogField("attempt", int64(updateResourceARetryInfo.attempt)),
+	)
+
 	resourceAOutput, err := linkImplementation.UpdateResourceA(ctx, input)
 	if err != nil {
 		if provider.IsRetryableError(err) {
+			deployCtx.Logger.Debug(
+				"retryable error occurred during resource A update",
+				core.IntegerLogField("attempt", int64(updateResourceARetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			retryErr := err.(*provider.RetryableError)
 			return d.handleUpdateLinkResourceARetry(
 				ctx,
@@ -193,6 +207,11 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 		}
 
 		if provider.IsLinkUpdateResourceAError(err) {
+			deployCtx.Logger.Debug(
+				"terminal error occurred during resource A update",
+				core.IntegerLogField("attempt", int64(updateResourceARetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			linkUpdateResourceAError := err.(*provider.LinkUpdateResourceAError)
 			stop, err := d.handleUpdateResourceATerminalFailure(
 				linkInfo,
@@ -207,6 +226,12 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 			return nil, stop, err
 		}
 
+		deployCtx.Logger.Warn(
+			"an unknown error occurred during link resource A update, "+
+				"plugins should wrap all errors in the appropriate provider error",
+			core.IntegerLogField("attempt", int64(updateResourceARetryInfo.attempt)),
+			core.ErrorLogField("error", err),
+		)
 		// For errors that are not wrapped in a provider error, the error is assumed to be fatal
 		// and the deployment process will be stopped without reporting a failure state.
 		// It is really important that adequate guidance is provided for provider developers
@@ -274,6 +299,12 @@ func (d *defaultLinkDeployer) handleUpdateLinkResourceARetry(
 			deployCtx,
 		)
 	}
+
+	deployCtx.Logger.Debug(
+		"link resource A update failed after reaching the maximum number of retries",
+		core.IntegerLogField("attempt", int64(nextRetryInfo.attempt)),
+		core.IntegerLogField("maxRetries", int64(nextRetryInfo.policy.MaxRetries)),
+	)
 
 	return nil, true, nil
 }
@@ -378,9 +409,19 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 		input.LinkUpdateType,
 	)
 
+	deployCtx.Logger.Info(
+		"calling link plugin implementation to update resource B",
+		core.IntegerLogField("attempt", int64(updateResourceBRetryInfo.attempt)),
+	)
+
 	resourceBOutput, err := linkImplementation.UpdateResourceB(ctx, input)
 	if err != nil {
 		if provider.IsRetryableError(err) {
+			deployCtx.Logger.Debug(
+				"retryable error occurred during resource B update",
+				core.IntegerLogField("attempt", int64(updateResourceBRetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			retryErr := err.(*provider.RetryableError)
 			return d.handleUpdateLinkResourceBRetry(
 				ctx,
@@ -397,6 +438,11 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 		}
 
 		if provider.IsLinkUpdateResourceBError(err) {
+			deployCtx.Logger.Debug(
+				"terminal error occurred during resource B update",
+				core.IntegerLogField("attempt", int64(updateResourceBRetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			linkUpdateResourceBError := err.(*provider.LinkUpdateResourceBError)
 			stop, err := d.handleUpdateResourceBTerminalFailure(
 				linkInfo,
@@ -411,6 +457,12 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 			return nil, stop, err
 		}
 
+		deployCtx.Logger.Warn(
+			"an unknown error occurred during link resource B update, "+
+				"plugins should wrap all errors in the appropriate provider error",
+			core.IntegerLogField("attempt", int64(updateResourceBRetryInfo.attempt)),
+			core.ErrorLogField("error", err),
+		)
 		// For errors that are not wrapped in a provider error, the error is assumed to be fatal
 		// and the deployment process will be stopped without reporting a failure state.
 		// It is really important that adequate guidance is provided for provider developers
@@ -478,6 +530,12 @@ func (d *defaultLinkDeployer) handleUpdateLinkResourceBRetry(
 			deployCtx,
 		)
 	}
+
+	deployCtx.Logger.Debug(
+		"link resource B update failed after reaching the maximum number of retries",
+		core.IntegerLogField("attempt", int64(nextRetryInfo.attempt)),
+		core.IntegerLogField("maxRetries", int64(nextRetryInfo.policy.MaxRetries)),
+	)
 
 	return nil, true, nil
 }
@@ -590,9 +648,19 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 		input.LinkUpdateType,
 	)
 
+	deployCtx.Logger.Info(
+		"calling link plugin implementation to update intermediary resources",
+		core.IntegerLogField("attempt", int64(updateIntermediariesRetryInfo.attempt)),
+	)
+
 	intermediaryResourcesOutput, err := linkImplementation.UpdateIntermediaryResources(ctx, input)
 	if err != nil {
 		if provider.IsRetryableError(err) {
+			deployCtx.Logger.Debug(
+				"retryable error occurred during intermediary resources update",
+				core.IntegerLogField("attempt", int64(updateIntermediariesRetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			retryErr := err.(*provider.RetryableError)
 			return d.handleUpdateLinkIntermediaryResourcesRetry(
 				ctx,
@@ -611,6 +679,11 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 		}
 
 		if provider.IsLinkUpdateIntermediaryResourcesError(err) {
+			deployCtx.Logger.Debug(
+				"terminal error occurred during intermediary resources update",
+				core.IntegerLogField("attempt", int64(updateIntermediariesRetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			linkUpdateIntermediariesError := err.(*provider.LinkUpdateIntermediaryResourcesError)
 			return d.handleUpdateIntermediaryResourcesTerminalFailure(
 				linkInfo,
@@ -624,6 +697,12 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 			)
 		}
 
+		deployCtx.Logger.Warn(
+			"an unknown error occurred during link intermediary resources update, "+
+				"plugins should wrap all errors in the appropriate provider error",
+			core.IntegerLogField("attempt", int64(updateIntermediariesRetryInfo.attempt)),
+			core.ErrorLogField("error", err),
+		)
 		// For errors that are not wrapped in a provider error, the error is assumed to be fatal
 		// and the deployment process will be stopped without reporting a failure state.
 		// It is really important that adequate guidance is provided for provider developers
@@ -743,6 +822,12 @@ func (d *defaultLinkDeployer) handleUpdateLinkIntermediaryResourcesRetry(
 			deployCtx,
 		)
 	}
+
+	deployCtx.Logger.Debug(
+		"link intermediary resources update failed after reaching the maximum number of retries",
+		core.IntegerLogField("attempt", int64(nextRetryInfo.attempt)),
+		core.IntegerLogField("maxRetries", int64(nextRetryInfo.policy.MaxRetries)),
+	)
 
 	return nil
 }

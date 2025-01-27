@@ -21,6 +21,7 @@ type ResourceChangeStager interface {
 		channels *ChangeStagingChannels,
 		resourceProviders map[string]provider.Provider,
 		params core.BlueprintParams,
+		logger core.Logger,
 	)
 }
 
@@ -58,7 +59,13 @@ func (s *defaultResourceChangeStager) StageChanges(
 	channels *ChangeStagingChannels,
 	resourceProviders map[string]provider.Provider,
 	params core.BlueprintParams,
+	logger core.Logger,
 ) {
+	resourceTypeLogField := core.StringLogField("resourceType", node.Resource.Type.Value)
+	logger.Debug(
+		"loading resource plugin implementation",
+		resourceTypeLogField,
+	)
 	resourceImplementation, err := getProviderResourceImplementation(
 		ctx,
 		node.ResourceName,
@@ -66,6 +73,11 @@ func (s *defaultResourceChangeStager) StageChanges(
 		resourceProviders,
 	)
 	if err != nil {
+		logger.Debug(
+			"failed to load resource plugin implementation",
+			core.ErrorLogField("error", err),
+			resourceTypeLogField,
+		)
 		channels.ErrChan <- err
 		return
 	}
@@ -81,6 +93,7 @@ func (s *defaultResourceChangeStager) StageChanges(
 		channels.LinkChangesChan,
 		stagingState,
 		params,
+		logger,
 	)
 	if err != nil {
 		channels.ErrChan <- err
@@ -96,8 +109,14 @@ func (s *defaultResourceChangeStager) stageChanges(
 	linkChangesChan chan LinkChangesMessage,
 	stagingState ChangeStagingState,
 	params core.BlueprintParams,
+	logger core.Logger,
 ) error {
-
+	resourceIDLogger := logger.WithFields(
+		core.StringLogField("resourceId", stageResourceInfo.resourceID),
+	)
+	resourceIDLogger.Debug(
+		"resolving substitutions in resource definition and loading resource state",
+	)
 	resourceInfo, resolveResourceResult, err := getResourceInfo(
 		ctx,
 		stageResourceInfo,
@@ -106,9 +125,16 @@ func (s *defaultResourceChangeStager) stageChanges(
 		s.stateContainer,
 	)
 	if err != nil {
+		resourceIDLogger.Debug(
+			"failed to resolve substitutions in resource definition and load resource state",
+			core.ErrorLogField("error", err),
+		)
 		return err
 	}
 
+	resourceIDLogger.Info(
+		"generating change set for resource",
+	)
 	changes, err := s.changeGenerator.GenerateChanges(
 		ctx,
 		resourceInfo,
@@ -117,6 +143,10 @@ func (s *defaultResourceChangeStager) stageChanges(
 		params,
 	)
 	if err != nil {
+		resourceIDLogger.Debug(
+			"failed to generate change set for resource",
+			core.ErrorLogField("error", err),
+		)
 		return err
 	}
 
@@ -140,6 +170,7 @@ func (s *defaultResourceChangeStager) stageChanges(
 		),
 	}
 
+	resourceIDLogger.Debug("applying resource changes to internal, ephemeral state")
 	// We must make sure that resource changes are applied to the internal changing state
 	// before we can stage links that are dependent on the resource changes.
 	// Otherwise, we can end up with inconsistent state where links are staged before the
@@ -153,6 +184,7 @@ func (s *defaultResourceChangeStager) stageChanges(
 
 	changesChan <- changesMsg
 
+	resourceIDLogger.Info("preparing and staging link changes for resource")
 	err = s.prepareAndStageLinkChanges(
 		ctx,
 		resourceInfo,
@@ -160,6 +192,7 @@ func (s *defaultResourceChangeStager) stageChanges(
 		linkChangesChan,
 		stagingState,
 		params,
+		resourceIDLogger,
 	)
 	if err != nil {
 		return err
@@ -175,13 +208,31 @@ func (s *defaultResourceChangeStager) prepareAndStageLinkChanges(
 	linkChangesChan chan LinkChangesMessage,
 	stagingState ChangeStagingState,
 	params core.BlueprintParams,
+	logger core.Logger,
 ) error {
 	for _, readyToStage := range linksReadyToBeStaged {
+		resourceAName := getResourceNameFromLinkChainNode(readyToStage.resourceANode)
+		resourceBName := getResourceNameFromLinkChainNode(readyToStage.resourceBNode)
+		logicalLinkName := createLogicalLinkName(
+			resourceAName,
+			resourceBName,
+		)
+		linkLogger := logger.Named("link").WithFields(
+			core.StringLogField("resourceA", resourceAName),
+			core.StringLogField("resourceB", resourceBName),
+			core.StringLogField("linkName", logicalLinkName),
+		)
+
+		linkLogger.Info("loading link plugin implementation")
 		linkImpl, _, err := getLinkImplementation(
 			readyToStage.resourceANode,
 			readyToStage.resourceBNode,
 		)
 		if err != nil {
+			linkLogger.Debug(
+				"failed to load link plugin implementation",
+				core.ErrorLogField("error", err),
+			)
 			return err
 		}
 
@@ -197,6 +248,7 @@ func (s *defaultResourceChangeStager) prepareAndStageLinkChanges(
 			stagingState,
 			linkChangesChan,
 			params,
+			linkLogger,
 		)
 		if err != nil {
 			return err

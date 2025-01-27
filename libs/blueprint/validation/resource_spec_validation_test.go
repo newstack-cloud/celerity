@@ -67,6 +67,7 @@ func (s *ResourceSpecValidationTestSuite) Test_successfully_valid_resource(c *C)
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, IsNil)
@@ -118,6 +119,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -178,6 +180,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -216,6 +219,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -270,6 +274,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_computed_field_
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -322,6 +327,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_missing_require
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -374,6 +380,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -412,6 +419,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -456,6 +464,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -502,6 +511,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -549,6 +559,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_type_fo
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -614,6 +625,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_union_invalid_s
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -658,6 +670,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -701,6 +714,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -744,6 +758,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)

@@ -18,12 +18,11 @@ import (
 type ChildChangeStager interface {
 	StageChanges(
 		ctx context.Context,
-		parentInstanceID string,
-		parentInstanceTreePath string,
-		includeTreePath string,
+		childInstanceInfo *ChildInstanceInfo,
 		node *refgraph.ReferenceChainNode,
 		paramOverrides core.BlueprintParams,
 		channels *ChangeStagingChannels,
+		logger core.Logger,
 	)
 }
 
@@ -55,22 +54,22 @@ type defaultChildChangeStager struct {
 
 func (d *defaultChildChangeStager) StageChanges(
 	ctx context.Context,
-	parentInstanceID string,
-	parentInstanceTreePath string,
-	includeTreePath string,
+	childInstanceInfo *ChildInstanceInfo,
 	node *refgraph.ReferenceChainNode,
 	paramOverrides core.BlueprintParams,
 	channels *ChangeStagingChannels,
+	logger core.Logger,
 ) {
 	loadResult, err := loadChildBlueprint(
 		ctx,
 		&childBlueprintLoadInput{
-			parentInstanceID:       parentInstanceID,
-			parentInstanceTreePath: parentInstanceTreePath,
+			parentInstanceID:       childInstanceInfo.ParentInstanceID,
+			parentInstanceTreePath: childInstanceInfo.ParentInstanceTreePath,
 			instanceTreePath:       node.ElementName,
-			includeTreePath:        includeTreePath,
+			includeTreePath:        childInstanceInfo.IncludeTreePath,
 			node:                   node,
 			resolveFor:             subengine.ResolveForChangeStaging,
+			logger:                 logger,
 		},
 		d.substitutionResolver,
 		d.childResolver,
@@ -205,4 +204,12 @@ func (d *defaultChildChangeStager) cacheChildExportField(
 			ResolveOnDeploy: willResolveOnDeploy,
 		},
 	)
+}
+
+// ChildInstanceInfo provides information about a child blueprint instance
+// that is being deployed as part of a parent blueprint.
+type ChildInstanceInfo struct {
+	ParentInstanceID       string
+	ParentInstanceTreePath string
+	IncludeTreePath        string
 }

@@ -62,6 +62,8 @@ func (s *ContainerDeployTestSuite) SetupTest() {
 		PollingInterval: 10 * time.Millisecond,
 		PollingTimeout:  1 * time.Second,
 	}
+	logger, err := internal.NewTestLogger()
+	s.Require().NoError(err)
 	loader := NewDefaultLoader(
 		providers,
 		specTransformers,
@@ -71,6 +73,7 @@ func (s *ContainerDeployTestSuite) SetupTest() {
 		WithLoaderValidateRuntimeValues(true),
 		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
 		WithLoaderResourceStabilityPollingConfig(resStabilityPollingConfig),
+		WithLoaderLogger(logger),
 	)
 
 	s.fixture1Params = blueprint1DeployParams(

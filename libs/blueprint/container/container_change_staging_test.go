@@ -63,6 +63,8 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 		),
 	}
 	specTransformers := map[string]transform.SpecTransformer{}
+	logger, err := internal.NewTestLogger()
+	s.Require().NoError(err)
 	loader := NewDefaultLoader(
 		providers,
 		specTransformers,
@@ -71,6 +73,7 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 		WithLoaderTransformSpec(false),
 		WithLoaderValidateRuntimeValues(true),
 		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
+		WithLoaderLogger(logger),
 	)
 
 	blueprint1Container, err := loader.Load(

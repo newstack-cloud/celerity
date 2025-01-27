@@ -57,6 +57,7 @@ func (d *defaultLinkDestroyer) Destroy(
 		return
 	}
 
+	deployCtx.Logger.Info("loading link plugin implementation for destruction")
 	linkImplementation, err := d.getProviderLinkImplementation(
 		ctx,
 		element.LogicalName(),
@@ -67,6 +68,7 @@ func (d *defaultLinkDestroyer) Destroy(
 		return
 	}
 
+	deployCtx.Logger.Info("loading provider retry policy for link destruction")
 	retryPolicy, err := getLinkRetryPolicy(
 		ctx,
 		element.LogicalName(),

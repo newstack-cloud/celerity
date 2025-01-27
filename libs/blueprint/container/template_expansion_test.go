@@ -62,12 +62,18 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 			core.SystemClock{},
 		),
 	}
+	logger, err := internal.NewTestLogger()
+	if err != nil {
+		s.FailNow(err.Error())
+	}
+
 	loader := NewDefaultLoader(
 		s.providers,
 		map[string]transform.SpecTransformer{},
 		s.stateContainer,
 		newFSChildResolver(),
 		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
+		WithLoaderLogger(logger),
 	)
 	for name, filePath := range inputFiles {
 		specBytes, err := os.ReadFile(filePath)

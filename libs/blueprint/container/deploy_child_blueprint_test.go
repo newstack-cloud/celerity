@@ -22,11 +22,15 @@ import (
 type ChildBlueprintDeployerTestSuite struct {
 	suite.Suite
 	fixtures map[int]*childBlueprintDeployerFixture
+	logger   core.Logger
 }
 
 func (s *ChildBlueprintDeployerTestSuite) SetupTest() {
 	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*childBlueprintDeployerFixture{}
+	logger, err := internal.NewTestLogger()
+	s.Require().NoError(err)
+	s.logger = logger
 
 	for _, fixtureInfo := range fixtureInputs {
 		fixture, err := s.createFixture(
@@ -79,6 +83,7 @@ func (s *ChildBlueprintDeployerTestSuite) runDeployTest(
 			ParamOverrides:        deployLinkParams(),
 			ResourceProviders:     map[string]provider.Provider{},
 			ResourceTemplates:     map[string]string{},
+			Logger:                s.logger,
 		},
 	)
 

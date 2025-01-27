@@ -114,6 +114,7 @@ func (s *DataSourceValidationTestSuite) Test_succeeds_without_any_issues_for_a_v
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, IsNil)
@@ -156,6 +157,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_is_missi
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -232,6 +234,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -310,6 +313,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_data_source_typ
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -368,6 +372,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_i
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -437,6 +442,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_operator
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -507,6 +513,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_unsupported_fil
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -577,6 +584,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_unsupported_exp
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -641,6 +649,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_no_exported_fie
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -678,6 +687,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_providing_a_disp
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -716,6 +726,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_providing_a_desc
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -755,6 +766,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_spec_definition_
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -793,6 +805,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_no_filter_fields
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -833,6 +846,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_filter_field_is_
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -871,6 +885,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_invalid_search_v
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 1)
 	c.Assert(diagnostics[0].Level, Equals, core.DiagnosticLevelWarning)
@@ -918,6 +933,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_empty_field_expo
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -963,6 +979,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_exported_field_i
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1006,6 +1023,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_exported_field_h
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1051,6 +1069,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_for_exported_field_ty
 		s.refChainCollector,
 		s.resourceRegistry,
 		s.dataSourceRegistry,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)

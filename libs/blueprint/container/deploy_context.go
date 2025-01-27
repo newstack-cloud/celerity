@@ -34,6 +34,7 @@ type DeployContext struct {
 	// with the parameter overrides supplied in a container "Deploy" or "Destroy"
 	// method call.
 	ResourceRegistry resourcehelpers.Registry
+	Logger           core.Logger
 }
 
 func DeployContextWithChannels(
@@ -55,6 +56,7 @@ func DeployContextWithChannels(
 		ResourceTemplates:     deployCtx.ResourceTemplates,
 		PreparedContainer:     deployCtx.PreparedContainer,
 		ResourceRegistry:      deployCtx.ResourceRegistry,
+		Logger:                deployCtx.Logger,
 	}
 }
 
@@ -77,6 +79,7 @@ func DeployContextWithGroup(
 		ResourceTemplates:     deployCtx.ResourceTemplates,
 		PreparedContainer:     deployCtx.PreparedContainer,
 		ResourceRegistry:      deployCtx.ResourceRegistry,
+		Logger:                deployCtx.Logger,
 	}
 }
 
@@ -99,5 +102,29 @@ func DeployContextWithInstanceSnapshot(
 		ResourceTemplates:     deployCtx.ResourceTemplates,
 		PreparedContainer:     deployCtx.PreparedContainer,
 		ResourceRegistry:      deployCtx.ResourceRegistry,
+		Logger:                deployCtx.Logger,
+	}
+}
+
+func DeployContextWithLogger(
+	deployCtx *DeployContext,
+	logger core.Logger,
+) *DeployContext {
+	return &DeployContext{
+		StartTime:             deployCtx.StartTime,
+		State:                 deployCtx.State,
+		Channels:              deployCtx.Channels,
+		Rollback:              deployCtx.Rollback,
+		Destroying:            deployCtx.Destroying,
+		InstanceStateSnapshot: deployCtx.InstanceStateSnapshot,
+		ParamOverrides:        deployCtx.ParamOverrides,
+		ResourceProviders:     deployCtx.ResourceProviders,
+		CurrentGroupIndex:     deployCtx.CurrentGroupIndex,
+		DeploymentGroups:      deployCtx.DeploymentGroups,
+		InputChanges:          deployCtx.InputChanges,
+		ResourceTemplates:     deployCtx.ResourceTemplates,
+		PreparedContainer:     deployCtx.PreparedContainer,
+		ResourceRegistry:      deployCtx.ResourceRegistry,
+		Logger:                logger,
 	}
 }

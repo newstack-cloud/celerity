@@ -26,6 +26,7 @@ type childBlueprintLoadInput struct {
 	includeTreePath        string
 	node                   *refgraph.ReferenceChainNode
 	resolveFor             subengine.ResolveForStage
+	logger                 core.Logger
 }
 
 func loadChildBlueprint(
@@ -40,6 +41,7 @@ func loadChildBlueprint(
 
 	includeName := core.ToLogicalChildName(input.node.ElementName)
 
+	input.logger.Debug("resolving include definition for child blueprint")
 	resolvedInclude, err := resolveIncludeForChildBlueprint(
 		ctx,
 		input.node,
@@ -51,6 +53,10 @@ func loadChildBlueprint(
 		return nil, err
 	}
 
+	input.logger.Debug(
+		"resolving child blueprint document",
+		core.StringLogField("path", core.StringValue(resolvedInclude.Path)),
+	)
 	childBlueprintInfo, err := childResolver.Resolve(ctx, includeName, resolvedInclude, paramOverrides)
 	if err != nil {
 		return nil, err
@@ -98,12 +104,21 @@ func loadChildBlueprint(
 		}
 	}
 
+	input.logger.Debug(
+		"loading child blueprint state",
+		core.StringLogField("instanceID", input.parentInstanceID),
+	)
 	childState, err := getChildState(ctx, input.parentInstanceID, includeName, stateContainer)
 	if err != nil {
 		return nil, err
 	}
 
 	if hasBlueprintCycle(input.parentInstanceTreePath, childState.InstanceID) {
+		input.logger.Debug(
+			"detected blueprint cycle",
+			core.StringLogField("instanceID", childState.InstanceID),
+			core.StringLogField("parentInstanceTreePath", input.parentInstanceTreePath),
+		)
 		return nil, errBlueprintCycleDetected(
 			includeName,
 			input.parentInstanceTreePath,

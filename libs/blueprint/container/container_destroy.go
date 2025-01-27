@@ -109,6 +109,9 @@ func (c *defaultBlueprintContainer) destroy(
 		InputChanges:          input.Changes,
 		ResourceTemplates:     map[string]string{},
 		ResourceRegistry:      c.resourceRegistry.WithParams(paramOverrides),
+		Logger: c.logger.Named("destroy").WithFields(
+			core.StringLogField("instanceId", input.InstanceID),
+		),
 	}
 	sentFinishedMessage, err := c.removeElements(
 		ctx,
@@ -543,13 +546,21 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 
 	for _, element := range group {
 		if element.Kind() == state.ResourceElement {
+			resourceLogger := deployCtx.Logger.Named("destroyResource").WithFields(
+				core.StringLogField("resourceName", element.LogicalName()),
+			)
+			resourceLogger.Info("destroying resource")
 			go c.resourceDestroyer.Destroy(
 				ctx,
 				element,
 				instanceID,
-				deployCtx,
+				DeployContextWithLogger(deployCtx, resourceLogger),
 			)
 		} else if element.Kind() == state.ChildElement {
+			childLogger := deployCtx.Logger.Named("destroyChild").WithFields(
+				core.StringLogField("childName", element.LogicalName()),
+			)
+			childLogger.Info("destroying child")
 			includeTreePath := getIncludeTreePath(deployCtx.ParamOverrides, element.LogicalName())
 			go c.childBlueprintDestroyer.Destroy(
 				ctx,
@@ -558,14 +569,18 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 				instanceTreePath,
 				includeTreePath,
 				c,
-				deployCtx,
+				DeployContextWithLogger(deployCtx, childLogger),
 			)
 		} else if element.Kind() == state.LinkElement {
+			linkLogger := deployCtx.Logger.Named("destroyLink").WithFields(
+				core.StringLogField("linkName", element.LogicalName()),
+			)
+			linkLogger.Info("destroying link")
 			go c.linkDestroyer.Destroy(
 				ctx,
 				element,
 				instanceID,
-				deployCtx,
+				DeployContextWithLogger(deployCtx, linkLogger),
 			)
 		}
 	}

@@ -55,6 +55,7 @@ func (d *defaultResourceDestroyer) Destroy(
 		return
 	}
 
+	deployCtx.Logger.Info("loading resource plugin implementation for destruction")
 	resourceImplementation, err := getProviderResourceImplementation(
 		ctx,
 		resourceElement.LogicalName(),
@@ -66,6 +67,7 @@ func (d *defaultResourceDestroyer) Destroy(
 		return
 	}
 
+	deployCtx.Logger.Info("loading provider retry policy for resource destruction")
 	policy, err := getRetryPolicy(
 		ctx,
 		deployCtx.ResourceProviders,
@@ -111,6 +113,11 @@ func (d *defaultResourceDestroyer) destroyResource(
 		Attempt:         resourceRetryInfo.attempt,
 	}
 
+	deployCtx.Logger.Info(
+		"calling resource plugin implementation to destroy resource",
+		core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+	)
+
 	resourceState := getResourceStateByName(
 		deployCtx.InstanceStateSnapshot,
 		resourceInfo.element.LogicalName(),
@@ -127,6 +134,11 @@ func (d *defaultResourceDestroyer) destroyResource(
 	})
 	if err != nil {
 		if provider.IsRetryableError(err) {
+			deployCtx.Logger.Debug(
+				"retryable error occurred during resource destruction",
+				core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			retryErr := err.(*provider.RetryableError)
 			return d.handleDestroyResourceRetry(
 				ctx,
@@ -140,6 +152,11 @@ func (d *defaultResourceDestroyer) destroyResource(
 		}
 
 		if provider.IsResourceDestroyError(err) {
+			deployCtx.Logger.Debug(
+				"terminal error occurred during resource destruction",
+				core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			resourceDestroyErr := err.(*provider.ResourceDestroyError)
 			return d.handleDestroyResourceTerminalFailure(
 				resourceInfo,
@@ -150,6 +167,12 @@ func (d *defaultResourceDestroyer) destroyResource(
 			)
 		}
 
+		deployCtx.Logger.Warn(
+			"an unknown error occurred during resource destruction, "+
+				"plugins should wrap all errors in the appropriate provider error",
+			core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+			core.ErrorLogField("error", err),
+		)
 		// For errors that are not wrapped in a provider error, the error is assumed to be fatal
 		// and the deployment process will be stopped without reporting a failure state.
 		// It is really important that adequate guidance is provided for provider developers
@@ -217,6 +240,12 @@ func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 			nextRetryInfo,
 		)
 	}
+
+	deployCtx.Logger.Debug(
+		"resource destruction failed after reaching the maximum number of retries",
+		core.IntegerLogField("attempt", int64(nextRetryInfo.attempt)),
+		core.IntegerLogField("maxRetries", int64(nextRetryInfo.policy.MaxRetries)),
+	)
 
 	return nil
 }

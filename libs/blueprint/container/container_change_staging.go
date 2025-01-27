@@ -22,9 +22,12 @@ func (c *defaultBlueprintContainer) StageChanges(
 	paramOverrides core.BlueprintParams,
 ) error {
 	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, input.InstanceID)
-
+	changeStagingLogger := c.logger.Named("stageChanges").WithFields(
+		core.StringLogField("instanceID", input.InstanceID),
+	)
 	instanceTreePath := getInstanceTreePath(paramOverrides, input.InstanceID)
 	if exceedsMaxDepth(instanceTreePath, MaxBlueprintDepth) {
+		changeStagingLogger.Debug("max nested blueprint depth exceeded")
 		return errMaxBlueprintDepthExceeded(
 			instanceTreePath,
 			MaxBlueprintDepth,
@@ -32,10 +35,14 @@ func (c *defaultBlueprintContainer) StageChanges(
 	}
 
 	if input.Destroy {
+		changeStagingLogger.Info("staging changes for destroying blueprint instance")
 		go c.stageInstanceRemoval(ctxWithInstanceID, input.InstanceID, channels)
 		return nil
 	}
 
+	changeStagingLogger.Info(
+		"preparing blueprint (expanding templates, applying resource conditions etc.) for change staging",
+	)
 	prepareResult, err := c.blueprintPreparer.Prepare(
 		ctxWithInstanceID,
 		c.spec.Schema(),
@@ -56,6 +63,7 @@ func (c *defaultBlueprintContainer) StageChanges(
 		prepareResult.ResourceProviderMap,
 		prepareResult.BlueprintContainer.BlueprintSpec().Schema(),
 		channels,
+		changeStagingLogger,
 	)
 
 	return nil
@@ -69,6 +77,7 @@ func (c *defaultBlueprintContainer) stageChanges(
 	resourceProviders map[string]provider.Provider,
 	blueprint *schema.Blueprint,
 	channels *ChangeStagingChannels,
+	changeStagingLogger core.Logger,
 ) {
 	state := c.createChangeStagingState()
 	resourceChangesChan := make(chan ResourceChangesMessage)
@@ -90,8 +99,10 @@ func (c *defaultBlueprintContainer) stageChanges(
 	// that have been removed in the source blueprint being staged for deployment.
 	// A message is dispatched to the external channels for each removal so that the caller
 	// can gather and display removals in the same way as other changes.
+	changeStagingLogger.Info("staging removals for resources, links and child blueprints")
 	err := c.stageRemovals(ctx, instanceID, state, parallelGroups, channels)
 	if err != nil {
+		changeStagingLogger.Debug("error staging removals", core.ErrorLogField("error", err))
 		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
 		return
 	}
@@ -105,6 +116,7 @@ func (c *defaultBlueprintContainer) stageChanges(
 			paramOverrides,
 			resourceProviders,
 			internalChannels,
+			changeStagingLogger,
 		)
 
 		err := c.listenToAndProcessGroupChanges(
@@ -217,10 +229,18 @@ func (c *defaultBlueprintContainer) stageGroupChanges(
 	paramOverrides core.BlueprintParams,
 	resourceProviders map[string]provider.Provider,
 	channels *ChangeStagingChannels,
+	changeStagingLogger core.Logger,
 ) {
 	instanceTreePath := getInstanceTreePath(paramOverrides, instanceID)
 
 	for _, node := range group {
+		changeStagingLogger.Info(
+			"staging changes for element",
+			core.StringLogField("element", node.Name()),
+		)
+		nodeLogger := changeStagingLogger.Named("element").WithFields(
+			core.StringLogField("elementName", node.Name()),
+		)
 		if node.Type() == DeploymentNodeTypeResource {
 			go c.changeStager.StageChanges(
 				ctx,
@@ -230,17 +250,21 @@ func (c *defaultBlueprintContainer) stageGroupChanges(
 				channels,
 				resourceProviders,
 				paramOverrides,
+				nodeLogger,
 			)
 		} else if node.Type() == DeploymentNodeTypeChild {
 			includeTreePath := getIncludeTreePath(paramOverrides, node.Name())
 			go c.childChangeStager.StageChanges(
 				ctx,
-				instanceID,
-				instanceTreePath,
-				includeTreePath,
+				&ChildInstanceInfo{
+					ParentInstanceID:       instanceID,
+					ParentInstanceTreePath: instanceTreePath,
+					IncludeTreePath:        includeTreePath,
+				},
 				node.ChildNode,
 				paramOverrides,
 				channels,
+				nodeLogger,
 			)
 		}
 	}

@@ -30,6 +30,9 @@ func (c *defaultBlueprintContainer) Deploy(
 	}
 
 	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, instanceID)
+	deployLogger := c.logger.Named("deploy").WithFields(
+		core.StringLogField("instanceId", input.InstanceID),
+	)
 	state := c.createDeploymentState()
 
 	isNewInstance, err := checkDeploymentForNewInstance(input)
@@ -42,6 +45,7 @@ func (c *defaultBlueprintContainer) Deploy(
 		instanceID,
 		isNewInstance,
 		core.InstanceStatusNotDeployed,
+		deployLogger,
 	)
 	if err != nil {
 		return err
@@ -69,6 +73,7 @@ func (c *defaultBlueprintContainer) Deploy(
 		state,
 		isNewInstance,
 		paramOverrides,
+		deployLogger,
 	)
 
 	// Intercept the top-level instance deployment events
@@ -103,9 +108,11 @@ func (c *defaultBlueprintContainer) deploy(
 	deployState DeploymentState,
 	isNewInstance bool,
 	paramOverrides core.BlueprintParams,
+	deployLogger core.Logger,
 ) {
 	instanceTreePath := getInstanceTreePath(paramOverrides, input.InstanceID)
 	if exceedsMaxDepth(instanceTreePath, MaxBlueprintDepth) {
+		deployLogger.Debug("max nested blueprint depth exceeded")
 		channels.ErrChan <- errMaxBlueprintDepthExceeded(
 			instanceTreePath,
 			MaxBlueprintDepth,
@@ -114,6 +121,7 @@ func (c *defaultBlueprintContainer) deploy(
 	}
 
 	if input.Changes == nil {
+		deployLogger.Debug("no changes provided for deployment, exiting deployment early")
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
 			input.InstanceID,
 			determineInstanceDeployFailedStatus(input.Rollback, isNewInstance),
@@ -126,10 +134,15 @@ func (c *defaultBlueprintContainer) deploy(
 
 	startTime := c.clock.Now()
 
+	deployLogger.Info("loading current state for blueprint instance")
 	instances := c.stateContainer.Instances()
 	currentInstanceState, err := instances.Get(ctx, input.InstanceID)
 	if err != nil {
 		if !state.IsInstanceNotFound(err) {
+			deployLogger.Debug(
+				"failed to load instance state while preparing to deploy",
+				core.ErrorLogField("error", err),
+			)
 			channels.FinishChan <- c.createDeploymentFinishedMessage(
 				input.InstanceID,
 				determineInstanceDeployFailedStatus(input.Rollback, isNewInstance),
@@ -142,6 +155,7 @@ func (c *defaultBlueprintContainer) deploy(
 	}
 
 	if isInstanceInProgress(&currentInstanceState, input.Rollback) {
+		deployLogger.Info("instance is already in progress, exiting deployment early")
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
 			input.InstanceID,
 			determineInstanceDeployFailedStatus(input.Rollback, isNewInstance),
@@ -161,6 +175,9 @@ func (c *defaultBlueprintContainer) deploy(
 		UpdateTimestamp: startTime.Unix(),
 	}
 
+	deployLogger.Info(
+		"preparing blueprint (expanding templates, applying resource conditions etc.) for deployment",
+	)
 	// Use the same behaviour as change staging to extract the nodes
 	// that need to be deployed or updated where they are grouped for concurrent deployment
 	// and in order based on links, references and use of the `dependsOn` property.
@@ -201,6 +218,7 @@ func (c *defaultBlueprintContainer) deploy(
 		InputChanges:      input.Changes,
 		ResourceTemplates: prepareResult.BlueprintContainer.ResourceTemplates(),
 		ResourceRegistry:  c.resourceRegistry.WithParams(paramOverrides),
+		Logger:            deployLogger,
 	}
 
 	flattenedNodes := core.Flatten(prepareResult.ParallelGroups)
@@ -443,11 +461,14 @@ func (c *defaultBlueprintContainer) saveNewInstance(
 	instanceID string,
 	isNewInstance bool,
 	currentStatus core.InstanceStatus,
+	deployLogger core.Logger,
 ) error {
 	if !isNewInstance {
+		deployLogger.Debug("instance already exists, skipping saving new instance")
 		return nil
 	}
 
+	deployLogger.Debug("saving new blueprint instance skeleton state")
 	return c.stateContainer.Instances().Save(
 		ctx,
 		state.InstanceState{

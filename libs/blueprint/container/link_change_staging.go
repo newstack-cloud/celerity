@@ -21,6 +21,7 @@ type LinkChangeStager interface {
 		changeStagingState ChangeStagingState,
 		linkChangesChan chan LinkChangesMessage,
 		params core.BlueprintParams,
+		logger core.Logger,
 	) error
 }
 
@@ -52,17 +53,31 @@ func (d *defaultLinkChangeStager) StageChanges(
 	changeStagingState ChangeStagingState,
 	linkChangesChan chan LinkChangesMessage,
 	params core.BlueprintParams,
+	logger core.Logger,
 ) error {
+	logger.Debug("loading resource A info for link")
 	resourceAInfo, err := d.getResourceInfoForLink(ctx, readyToStage.resourceANode, currentResourceInfo)
 	if err != nil {
+		logger.Debug(
+			"failed to load resource A info for link",
+			core.ErrorLogField("error", err),
+		)
 		return err
 	}
 
+	logger.Debug("loading resource B info for link")
 	resourceBInfo, err := d.getResourceInfoForLink(ctx, readyToStage.resourceBNode, currentResourceInfo)
 	if err != nil {
+		logger.Debug(
+			"failed to load resource B info for link",
+			core.ErrorLogField("error", err),
+		)
 		return err
 	}
 
+	logger.Debug(
+		"loading current link state",
+	)
 	var currentLinkStatePtr *state.LinkState
 	links := d.stateContainer.Links()
 	currentLinkState, err := links.GetByName(
@@ -72,6 +87,10 @@ func (d *defaultLinkChangeStager) StageChanges(
 	)
 	if err != nil {
 		if !state.IsLinkNotFound(err) {
+			logger.Debug(
+				"failed to load current link state",
+				core.ErrorLogField("error", err),
+			)
 			return err
 		}
 	} else {
@@ -81,6 +100,7 @@ func (d *defaultLinkChangeStager) StageChanges(
 	resourceAChanges := changeStagingState.GetResourceChanges(resourceAInfo.ResourceName)
 	resourceBChanges := changeStagingState.GetResourceChanges(resourceBInfo.ResourceName)
 
+	logger.Info("calling link plugin implementation to stage changes")
 	linkCtx := provider.NewLinkContextFromParams(params)
 	output, err := linkImpl.StageChanges(ctx, &provider.LinkStageChangesInput{
 		ResourceAChanges: resourceAChanges,
@@ -89,6 +109,10 @@ func (d *defaultLinkChangeStager) StageChanges(
 		LinkContext:      linkCtx,
 	})
 	if err != nil {
+		logger.Debug(
+			"link plugin failed to stage changes",
+			core.ErrorLogField("error", err),
+		)
 		return err
 	}
 

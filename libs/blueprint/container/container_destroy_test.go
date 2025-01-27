@@ -47,6 +47,8 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		),
 	}
 	specTransformers := map[string]transform.SpecTransformer{}
+	logger, err := internal.NewTestLogger()
+	s.Require().NoError(err)
 	loader := NewDefaultLoader(
 		providers,
 		specTransformers,
@@ -55,6 +57,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		WithLoaderTransformSpec(false),
 		WithLoaderValidateRuntimeValues(true),
 		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
+		WithLoaderLogger(logger),
 	)
 
 	s.blueprint1Fixture, err = createBlueprintDeployFixture(

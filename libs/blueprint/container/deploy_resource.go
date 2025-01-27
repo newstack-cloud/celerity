@@ -209,6 +209,11 @@ func (d *defaultResourceDeployer) deployResource(
 		Attempt:         resourceRetryInfo.attempt,
 	}
 
+	deployCtx.Logger.Info(
+		"calling resource plugin implementation to deploy resource",
+		core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+	)
+
 	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
 	output, err := resourceInfo.resourceImpl.Deploy(
 		ctx,
@@ -224,6 +229,11 @@ func (d *defaultResourceDeployer) deployResource(
 	)
 	if err != nil {
 		if provider.IsRetryableError(err) {
+			deployCtx.Logger.Debug(
+				"retryable error occurred during resource deployment",
+				core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			retryErr := err.(*provider.RetryableError)
 			return d.handleDeployResourceRetry(
 				ctx,
@@ -236,6 +246,11 @@ func (d *defaultResourceDeployer) deployResource(
 		}
 
 		if provider.IsResourceDeployError(err) {
+			deployCtx.Logger.Debug(
+				"terminal error occurred during resource deployment",
+				core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+				core.ErrorLogField("error", err),
+			)
 			resourceDeployError := err.(*provider.ResourceDeployError)
 			return d.handleDeployResourceTerminalFailure(
 				resourceInfo,
@@ -246,6 +261,12 @@ func (d *defaultResourceDeployer) deployResource(
 			)
 		}
 
+		deployCtx.Logger.Warn(
+			"an unknown error occurred during resource deployment, "+
+				"plugins should wrap all errors in the appropriate provider error",
+			core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+			core.ErrorLogField("error", err),
+		)
 		// For errors that are not wrapped in a provider error, the error is assumed
 		// to be fatal and the deployment process will be stopped without reporting
 		// a failure status.
@@ -254,6 +275,9 @@ func (d *defaultResourceDeployer) deployResource(
 		return err
 	}
 
+	deployCtx.Logger.Debug(
+		"merging user-defined resource spec with computed field values returned by the plugin",
+	)
 	resolvedResource := getResolvedResourceFromChanges(resourceInfo.changes)
 	mergedSpecState, err := MergeResourceSpec(
 		resolvedResource,
@@ -344,6 +368,9 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 			providerNamespace := provider.ExtractProviderFromItemType(
 				getResourceTypeFromResolved(resolvedResource),
 			)
+			deployCtx.Logger.Debug(
+				"checking if resource has stabilised with resource plugin implementation",
+			)
 			output, err := resourceInfo.resourceImpl.HasStabilised(
 				ctxWithPollingTimeout,
 				&provider.ResourceHasStabilisedInput{
@@ -358,6 +385,10 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 				},
 			)
 			if err != nil {
+				deployCtx.Logger.Debug(
+					"error occurred while checking resource for stability",
+					core.ErrorLogField("error", err),
+				)
 				deployCtx.Channels.ErrChan <- err
 				return
 			}
@@ -490,6 +521,12 @@ func (d *defaultResourceDeployer) handleDeployResourceRetry(
 			nextRetryInfo,
 		)
 	}
+
+	deployCtx.Logger.Debug(
+		"resource deployment failed after reaching the maximum number of retries",
+		core.IntegerLogField("attempt", int64(nextRetryInfo.attempt)),
+		core.IntegerLogField("maxRetries", int64(nextRetryInfo.policy.MaxRetries)),
+	)
 
 	return nil
 }

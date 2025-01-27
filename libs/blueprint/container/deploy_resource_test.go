@@ -25,6 +25,7 @@ type ResourceDeployerTestSuite struct {
 	fixtures          map[int]*resourceDeployerFixture
 	resourceProviders map[string]provider.Provider
 	stateContainer    state.Container
+	logger            core.Logger
 }
 
 func (s *ResourceDeployerTestSuite) SetupTest() {
@@ -50,6 +51,10 @@ func (s *ResourceDeployerTestSuite) SetupTest() {
 	)
 	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*resourceDeployerFixture{}
+
+	logger, err := internal.NewTestLogger()
+	s.Require().NoError(err)
+	s.logger = logger
 
 	for _, fixtureInfo := range fixtureInputs {
 		fixture, err := s.createFixture(
@@ -145,6 +150,7 @@ func (s *ResourceDeployerTestSuite) runDeployTest(
 			ParamOverrides:        deployLinkParams(),
 			ResourceProviders:     s.resourceProviders,
 			ResourceTemplates:     map[string]string{},
+			Logger:                s.logger,
 		},
 	)
 

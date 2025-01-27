@@ -913,6 +913,14 @@ func getNamespacedLogicalName(element state.Element) string {
 	}
 }
 
+func getResourceNameFromLinkChainNode(node *links.ChainLinkNode) string {
+	if node == nil {
+		return ""
+	}
+
+	return node.ResourceName
+}
+
 func copyPointerMap[Item any](input map[string]*Item) map[string]Item {
 	output := map[string]Item{}
 	for key, value := range input {

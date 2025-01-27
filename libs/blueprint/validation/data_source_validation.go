@@ -42,11 +42,13 @@ func ValidateDataSource(
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	dataSourceRegistry provider.DataSourceRegistry,
+	logger bpcore.Logger,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
 	var errs []error
 
+	logger.Debug("Validating data source type")
 	validateTypeDiagnostics, validateTypeErr := validateDataSourceType(
 		ctx,
 		name,
@@ -59,6 +61,7 @@ func ValidateDataSource(
 		errs = append(errs, validateTypeErr)
 	}
 
+	logger.Debug("Validating data source metadata")
 	validateMetadataDiagnostics, validateMetadataErr := validateDataSourceMetadata(
 		ctx,
 		name,
@@ -74,6 +77,7 @@ func ValidateDataSource(
 		errs = append(errs, validateMetadataErr)
 	}
 
+	logger.Debug("Validating data source description")
 	validateDescriptionDiagnostics, validateDescErr := validateDescription(
 		ctx,
 		bpcore.DataSourceElementID(name),
@@ -97,6 +101,7 @@ func ValidateDataSource(
 		return diagnostics, ErrMultipleValidationErrors(errs)
 	}
 
+	logger.Debug("Validating data source filter")
 	validateFilterDiagnostics, validateFilterErr := validateDataSourceFilter(
 		ctx,
 		name,
@@ -128,6 +133,7 @@ func ValidateDataSource(
 		return diagnostics, ErrMultipleValidationErrors(errs)
 	}
 
+	logger.Debug("Validating data source exports")
 	validateExportsDiagnostics, validateExportsErr := validateDataSourceExports(
 		ctx,
 		name,
@@ -146,6 +152,7 @@ func ValidateDataSource(
 		errs = append(errs, validateExportsErr)
 	}
 
+	logger.Debug("Running custom validation for data source")
 	providerNamespace := provider.ExtractProviderFromItemType(dataSource.Type.Value)
 	customValidateOutput, err := dataSourceRegistry.CustomValidate(
 		ctx,

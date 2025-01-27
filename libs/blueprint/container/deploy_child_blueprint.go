@@ -78,6 +78,7 @@ func (d *defaultChildBlueprintDeployer) Deploy(
 			includeTreePath:        includeTreePath,
 			node:                   childNode,
 			resolveFor:             subengine.ResolveForDeployment,
+			logger:                 deployCtx.Logger,
 		},
 		d.substitutionResolver,
 		d.childResolver,

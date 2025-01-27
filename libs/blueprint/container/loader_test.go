@@ -84,6 +84,10 @@ func (s *LoaderTestSuite) SetupSuite() {
 	specTransformers := map[string]transform.SpecTransformer{
 		"serverless-2024": &internal.ServerlessTransformer{},
 	}
+	logger, err := internal.NewTestLogger()
+	if err != nil {
+		s.FailNow(err.Error())
+	}
 	s.loader = NewDefaultLoader(
 		providers,
 		specTransformers,
@@ -91,6 +95,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 		newFSChildResolver(),
 		WithLoaderTransformSpec(true),
 		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
+		WithLoaderLogger(logger),
 	)
 	s.loaderValidateAfterTransform = NewDefaultLoader(
 		providers,
@@ -100,6 +105,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 		WithLoaderTransformSpec(true),
 		WithLoaderValidateAfterTransform(true),
 		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
+		WithLoaderLogger(logger),
 	)
 	providersWithoutCore := map[string]provider.Provider{
 		"aws": newTestAWSProvider(
@@ -113,6 +119,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 		stateContainer,
 		newFSChildResolver(),
 		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
+		WithLoaderLogger(logger),
 	)
 }
 

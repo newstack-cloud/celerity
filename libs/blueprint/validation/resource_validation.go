@@ -67,6 +67,7 @@ func ValidateResource(
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	resourceDerivedFromTemplate bool,
+	logger bpcore.Logger,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -84,6 +85,7 @@ func ValidateResource(
 		errs = append(errs, validateTypeErr)
 	}
 
+	logger.Debug("Validating resource metadata")
 	validateMetadataDiagnostics, validateMetadataErr := validateResourceMetadata(
 		ctx,
 		name,
@@ -100,6 +102,7 @@ func ValidateResource(
 		errs = append(errs, validateMetadataErr)
 	}
 
+	logger.Debug("Validating resource dependencies")
 	validateResDepsDiagnostics, validateResDepsErr := validateResourceDependencies(
 		ctx,
 		name,
@@ -112,6 +115,7 @@ func ValidateResource(
 		errs = append(errs, validateResDepsErr)
 	}
 
+	logger.Debug("Validating resource condition")
 	validateResConditionDiagnostics, validateResConditionErr := validateResourceCondition(
 		ctx,
 		name,
@@ -129,6 +133,7 @@ func ValidateResource(
 		errs = append(errs, validateResConditionErr)
 	}
 
+	logger.Debug("Validating resource each property (for resource templates)")
 	validateEachDiagnostics, validateEachErr := validateResourceEach(
 		ctx,
 		name,
@@ -145,6 +150,7 @@ func ValidateResource(
 		errs = append(errs, validateEachErr)
 	}
 
+	logger.Debug("Validating resource link selector")
 	validateLSDiagnostics, validateLSErr := validateResourceLinkSelector(
 		name,
 		resource.LinkSelector,
@@ -155,6 +161,7 @@ func ValidateResource(
 	}
 
 	if resource.Type != nil {
+		logger.Debug("Validating resource spec")
 		validateSpecDiagnostics, validateSpecErr := ValidateResourceSpec(
 			ctx,
 			name,
@@ -174,6 +181,7 @@ func ValidateResource(
 		}
 	}
 
+	logger.Debug("Validating resource description")
 	validateDescriptionDiagnostics, validateDescErr := validateDescription(
 		ctx,
 		bpcore.ResourceElementID(name),

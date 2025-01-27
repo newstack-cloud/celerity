@@ -195,6 +195,7 @@ type defaultLoader struct {
 	// This is primarily useful for rollback operations where a simplified
 	// blueprint is derived from the previous state of a blueprint instance.
 	resourceTemplates map[string]string
+	logger            bpcore.Logger
 }
 
 type LoaderOption func(loader *defaultLoader)
@@ -429,6 +430,15 @@ func WithLoaderResourceStabilityPollingConfig(config *ResourceStabilityPollingCo
 	}
 }
 
+// WithLoaderLogger sets the logger to be used by the loader.
+//
+// When this option is not provided, a default, no-op logger is used.
+func WithLoaderLogger(logger bpcore.Logger) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.logger = logger.Named("loader")
+	}
+}
+
 // NewDefaultLoader creates a new instance of the default
 // implementation of a blueprint container loader.
 // The map of providers must be a map of provider namespaces
@@ -488,6 +498,7 @@ func NewDefaultLoader(
 		childBlueprintDestroyer:        NewDefaultChildBlueprintDestroyer(),
 		linkDestroyer:                  linkDestroyer,
 		linkDeployer:                   linkDeployer,
+		logger:                         bpcore.NewNopLogger(),
 	}
 
 	for _, opt := range opts {
@@ -537,6 +548,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderLinkDeployer(l.linkDeployer),
 		WithLoaderDependenciesOverrider(l.overrideContainerDependencies),
 		WithLoaderResourceStabilityPollingConfig(l.resourceStabilityPollingConfig),
+		WithLoaderLogger(l.logger),
 	)
 }
 
@@ -651,6 +663,7 @@ func (l *defaultLoader) buildPartialBlueprintContainerDependencies(
 		IDGenerator:               l.idGenerator,
 		DeploymentStateFactory:    l.deploymentStateFactory,
 		ChangeStagingStateFactory: l.changeStagingStateFactory,
+		Logger:                    l.logger.Named("container"),
 	}
 }
 
@@ -754,6 +767,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ResourceDeployer:          resourceDeployer,
 		ChildBlueprintDeployer:    childBlueprintDeployer,
 		DefaultRetryPolicy:        l.defaultRetryPolicy,
+		Logger:                    l.logger.Named("container"),
 	}
 
 	if l.overrideContainerDependencies != nil {
@@ -793,11 +807,13 @@ func (l *defaultLoader) loadSpec(
 ) (*internalBlueprintSpec, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
+	l.logger.Info("Loading blueprint spec")
 	blueprintSchema, err := loadBlueprintSpec(loadInfo, formatLoader, loader)
 	if err != nil {
 		return &internalBlueprintSpec{}, diagnostics, err
 	}
 
+	l.logger.Info("Validating blueprint top-level properties")
 	var bpValidationDiagnostics []*bpcore.Diagnostic
 	validationErrors := []error{}
 	bpValidationDiagnostics, err = l.validateBlueprint(ctx, blueprintSchema)
@@ -806,6 +822,7 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
+	l.logger.Info("Validating blueprint variables")
 	var variableDiagnostics []*bpcore.Diagnostic
 	variableDiagnostics, err = l.validateVariables(ctx, blueprintSchema, params, refChainCollector)
 	diagnostics = append(diagnostics, variableDiagnostics...)
@@ -813,6 +830,7 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
+	l.logger.Info("Validating blueprint values")
 	var valueDiagnostics []*bpcore.Diagnostic
 	valueDiagnostics, err = l.validateValues(ctx, blueprintSchema, params, refChainCollector)
 	diagnostics = append(diagnostics, valueDiagnostics...)
@@ -820,6 +838,7 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
+	l.logger.Info("Validating blueprint includes")
 	var includeDiagnostics []*bpcore.Diagnostic
 	includeDiagnostics, err = l.validateIncludes(ctx, blueprintSchema, params, refChainCollector)
 	diagnostics = append(diagnostics, includeDiagnostics...)
@@ -827,6 +846,7 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
+	l.logger.Info("Validating blueprint exports")
 	var exportDiagnostics []*bpcore.Diagnostic
 	exportDiagnostics, err = l.validateExports(ctx, blueprintSchema, params, refChainCollector)
 	diagnostics = append(diagnostics, exportDiagnostics...)
@@ -834,6 +854,7 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
+	l.logger.Info("Validating blueprint top-level metadata")
 	var metadataDiagnostics []*bpcore.Diagnostic
 	metadataDiagnostics, err = l.validateMetadata(ctx, blueprintSchema, params, refChainCollector)
 	diagnostics = append(diagnostics, metadataDiagnostics...)
@@ -841,6 +862,7 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
+	l.logger.Info("Validating blueprint data sources")
 	var dataSourceDiagnostics []*bpcore.Diagnostic
 	dataSourceDiagnostics, err = l.validateDataSources(ctx, blueprintSchema, params, refChainCollector)
 	diagnostics = append(diagnostics, dataSourceDiagnostics...)
@@ -848,6 +870,7 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
+	l.logger.Info("Validating blueprint resources")
 	var resourceDiagnostics []*bpcore.Diagnostic
 	resourceDiagnostics, err = l.validateResources(ctx, blueprintSchema, params, refChainCollector)
 	diagnostics = append(diagnostics, resourceDiagnostics...)
@@ -855,6 +878,7 @@ func (l *defaultLoader) loadSpec(
 		validationErrors = append(validationErrors, err)
 	}
 
+	l.logger.Info("Validating and applying blueprint transforms")
 	transformers, transformDiagnostics, err := l.validateAndApplyTransforms(ctx, blueprintSchema)
 	diagnostics = append(diagnostics, transformDiagnostics...)
 	if err != nil {
@@ -865,6 +889,7 @@ func (l *defaultLoader) loadSpec(
 	}
 
 	if l.validateAfterTransform && len(transformers) > 0 {
+		l.logger.Info("Validating blueprint resources after transformations")
 		// Validate after transformations to help with catching bugs in transformer implementations.
 		// This ultimately prevents transformers from expanding their abstractions into invalid
 		// representations of the lower level resources.
@@ -1273,8 +1298,19 @@ func (l *defaultLoader) validateDataSources(
 	// report issues for all the problematic resources.
 	dataSourceErrors := map[string][]error{}
 	for name, dataSourceSchema := range bpSchema.DataSources.Values {
+		dataSourceLogger := l.logger.WithFields(
+			bpcore.StringLogField("dataSourceName", name),
+		)
+		dataSourceLogger.Debug("Validating data source")
 		currentDataSourceErrs := l.validateDataSource(
-			ctx, &diagnostics, name, dataSourceSchema, bpSchema, params, refChainCollector,
+			ctx,
+			&diagnostics,
+			name,
+			dataSourceSchema,
+			bpSchema,
+			params,
+			refChainCollector,
+			dataSourceLogger,
 		)
 		if len(currentDataSourceErrs) > 0 {
 			dataSourceErrors[name] = currentDataSourceErrs
@@ -1296,6 +1332,7 @@ func (l *defaultLoader) validateDataSource(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	refChainCollector refgraph.RefChainCollector,
+	dataSourceLogger bpcore.Logger,
 ) []error {
 	currentDataSourceErrs := []error{}
 	err := validation.ValidateDataSourceName(name, bpSchema.DataSources)
@@ -1315,6 +1352,7 @@ func (l *defaultLoader) validateDataSource(
 		refChainCollector,
 		l.resourceRegistry.WithParams(params),
 		l.dataSourceRegistry,
+		dataSourceLogger,
 	)
 	*diagnostics = append(*diagnostics, validateDataSourceDiagnostics...)
 	if err != nil {
@@ -1339,8 +1377,19 @@ func (l *defaultLoader) validateResources(
 	// report issues for all the problematic resources.
 	resourceErrors := map[string][]error{}
 	for name, resourceSchema := range bpSchema.Resources.Values {
+		resourceLogger := l.logger.WithFields(
+			bpcore.StringLogField("resourceName", name),
+		)
+		resourceLogger.Debug("Validating resource")
 		currentResouceErrs := l.validateResource(
-			ctx, &diagnostics, name, resourceSchema, bpSchema, params, refChainCollector,
+			ctx,
+			&diagnostics,
+			name,
+			resourceSchema,
+			bpSchema,
+			params,
+			refChainCollector,
+			resourceLogger,
 		)
 		if len(currentResouceErrs) > 0 {
 			resourceErrors[name] = currentResouceErrs
@@ -1362,12 +1411,15 @@ func (l *defaultLoader) validateResource(
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
 	refChainCollector refgraph.RefChainCollector,
+	resourceLogger bpcore.Logger,
 ) []error {
 	currentResouceErrs := []error{}
 	err := validation.ValidateResourceName(name, bpSchema.Resources)
 	if err != nil {
 		currentResouceErrs = append(currentResouceErrs, err)
 	}
+
+	resourceLogger.Info("Pre-validating resource spec")
 	err = validation.PreValidateResourceSpec(ctx, name, resourceSchema, bpSchema.Resources)
 	if err != nil {
 		currentResouceErrs = append(currentResouceErrs, err)
@@ -1385,6 +1437,7 @@ func (l *defaultLoader) validateResource(
 		refChainCollector,
 		l.resourceRegistry.WithParams(params),
 		slices.Contains(l.derivedFromTemplates, name),
+		resourceLogger,
 	)
 	*diagnostics = append(*diagnostics, validateResourceDiagnostics...)
 	if err != nil {

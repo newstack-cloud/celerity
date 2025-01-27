@@ -19,6 +19,7 @@ type LinkDeployerTestSuite struct {
 	deployer       *defaultLinkDeployer
 	fixtures       map[int]*linkDeployerFixture
 	stateContainer state.Container
+	logger         core.Logger
 }
 
 func (s *LinkDeployerTestSuite) SetupTest() {
@@ -29,6 +30,10 @@ func (s *LinkDeployerTestSuite) SetupTest() {
 	}
 	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*linkDeployerFixture{}
+
+	logger, err := internal.NewTestLogger()
+	s.Require().NoError(err)
+	s.logger = logger
 
 	for _, fixtureInfo := range fixtureInputs {
 		fixture, err := s.createFixture(
@@ -178,6 +183,7 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 				InstanceStateSnapshot: fixture.instanceStateSnapshot,
 				ParamOverrides:        deployLinkParams(),
 				ResourceTemplates:     map[string]string{},
+				Logger:                s.logger,
 			},
 			provider.DefaultRetryPolicy,
 		)

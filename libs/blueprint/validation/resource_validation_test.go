@@ -177,6 +177,7 @@ func (s *ResourceValidationTestSuite) Test_reports_errors_when_resource_type_is_
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -214,6 +215,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_providing_a_displa
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -252,6 +254,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_providing_a_descri
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -291,6 +294,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_metadata_label_key
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -329,6 +333,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_metadata_label_val
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -374,6 +379,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_annotation_key_has
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -413,6 +419,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_nested_condition_i
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -464,6 +471,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_condition_resolves
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -523,6 +531,7 @@ func (s *ResourceValidationTestSuite) Test_produces_warning_when_condition_resol
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 
 	c.Assert(err, IsNil)
@@ -578,6 +587,7 @@ func (s *ResourceValidationTestSuite) Test_produces_warning_when_each_resolves_a
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 
 	c.Assert(err, IsNil)
@@ -623,6 +633,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_each_resolves_inco
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -662,6 +673,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_link_selector_labe
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -700,6 +712,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_link_selector_labe
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -748,6 +761,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_has_a_mis
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -796,6 +810,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_dependenc
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -845,6 +860,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_depends_o
 		s.refChainCollector,
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
