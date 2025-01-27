@@ -390,18 +390,31 @@ func (c *memoryLinksContainer) GetByName(ctx context.Context, instanceID string,
 }
 
 func (c *memoryLinksContainer) Save(ctx context.Context, instanceID string, linkState state.LinkState) error {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
-			instance.Links[linkState.LinkID] = &linkState
+			if instance.Links == nil {
+				instance.Links = make(map[string]*state.LinkState)
+			}
+			instance.Links[linkState.LinkName] = &linkState
+			c.saveLinkIDMapEntry(instance, linkState.LinkID, linkState.LinkName)
 		} else {
 			return state.InstanceNotFoundError(instanceID)
 		}
 	}
 
 	return nil
+}
+
+// A lock must be held before calling this function.
+func (c *memoryLinksContainer) saveLinkIDMapEntry(instance *state.InstanceState, linkID string, linkName string) {
+	hasLinkIDMap := c.hasInstanceLinkIDMap(instance)
+	if !hasLinkIDMap {
+		c.populateLinkIDMap(instance)
+	}
+	c.instanceLinkIDMap[instance.InstanceID][linkID] = linkName
 }
 
 func (c *memoryLinksContainer) UpdateStatus(
@@ -741,9 +754,11 @@ func (c *memoryChildrenContainer) SaveDependencies(
 			instance.ChildDependencies = make(map[string]*state.DependencyInfo)
 		}
 		instance.ChildDependencies[childName] = dependencies
+	} else {
+		return state.InstanceNotFoundError(instanceID)
 	}
 
-	return state.InstanceNotFoundError(instanceID)
+	return nil
 }
 
 func copyInstance(instanceState *state.InstanceState, path string) state.InstanceState {
@@ -753,6 +768,12 @@ func copyInstance(instanceState *state.InstanceState, path string) state.Instanc
 		for resourceID, resource := range instanceState.Resources {
 			resCopy := copyResource(resource)
 			instanceCopy.Resources[resourceID] = &resCopy
+		}
+	}
+	if instanceState.ResourceIDs != nil {
+		instanceCopy.ResourceIDs = make(map[string]string)
+		for resourceName, resourceID := range instanceState.ResourceIDs {
+			instanceCopy.ResourceIDs[resourceName] = resourceID
 		}
 	}
 	if instanceState.Links != nil {
@@ -786,6 +807,12 @@ func copyInstance(instanceState *state.InstanceState, path string) state.Instanc
 			instanceCopy.ChildBlueprints[childName] = &copy
 		}
 	}
+	if instanceState.ChildDependencies != nil {
+		instanceCopy.ChildDependencies = make(map[string]*state.DependencyInfo)
+		for childName, dependencyInfo := range instanceState.ChildDependencies {
+			instanceCopy.ChildDependencies[childName] = copyDependencyInfo(dependencyInfo)
+		}
+	}
 	return instanceCopy
 }
 
@@ -806,6 +833,12 @@ func copyResource(resourceState *state.ResourceState) state.ResourceState {
 
 	metadataCopy := copyResourceMetadata(resourceState.Metadata)
 
+	dependsOnResources := make([]string, len(resourceState.DependsOnResources))
+	copy(dependsOnResources, resourceState.DependsOnResources)
+
+	dependsOnChildren := make([]string, len(resourceState.DependsOnChildren))
+	copy(dependsOnChildren, resourceState.DependsOnChildren)
+
 	return state.ResourceState{
 		ResourceID:           resourceState.ResourceID,
 		ResourceName:         resourceState.ResourceName,
@@ -816,8 +849,8 @@ func copyResource(resourceState *state.ResourceState) state.ResourceState {
 		PreciseStatus:        resourceState.PreciseStatus,
 		Description:          resourceState.Description,
 		Metadata:             &metadataCopy,
-		DependsOnResources:   resourceState.DependsOnResources,
-		DependsOnChildren:    resourceState.DependsOnChildren,
+		DependsOnResources:   dependsOnResources,
+		DependsOnChildren:    dependsOnChildren,
 		FailureReasons:       resourceState.FailureReasons,
 		// The spec data pointer will be copied, no part of the blueprint container
 		// implementation should modify the spec data in instance state so it is safe
@@ -913,5 +946,24 @@ func copyExport(
 		Value: exportState.Value,
 		Type:  exportState.Type,
 		Field: exportState.Field,
+	}
+}
+
+func copyDependencyInfo(
+	dependencyInfo *state.DependencyInfo,
+) *state.DependencyInfo {
+	if dependencyInfo == nil {
+		return nil
+	}
+
+	dependsOnResources := make([]string, len(dependencyInfo.DependsOnResources))
+	copy(dependsOnResources, dependencyInfo.DependsOnResources)
+
+	dependsOnChildren := make([]string, len(dependencyInfo.DependsOnChildren))
+	copy(dependsOnChildren, dependencyInfo.DependsOnChildren)
+
+	return &state.DependencyInfo{
+		DependsOnResources: dependsOnResources,
+		DependsOnChildren:  dependsOnChildren,
 	}
 }

@@ -177,3 +177,59 @@ func (l *ScalarValue) Equal(otherScalar *ScalarValue) bool {
 
 	return false
 }
+
+// StringValueFromScalar extracts a Go string from a string
+// scalar value. If the scalar is nil, an empty string is returned.
+func StringValueFromScalar(scalar *ScalarValue) string {
+	if scalar == nil {
+		return ""
+	}
+
+	if scalar.StringValue != nil {
+		return *scalar.StringValue
+	}
+
+	return ""
+}
+
+// IntValueFromScalar extracts a Go int from an int
+// scalar value. If the scalar is nil, 0 is returned.
+func IntValueFromScalar(scalar *ScalarValue) int {
+	if scalar == nil {
+		return 0
+	}
+
+	if scalar.IntValue != nil {
+		return *scalar.IntValue
+	}
+
+	return 0
+}
+
+// BoolValueFromScalar extracts a Go bool from a bool
+// scalar value. If the scalar is nil, false is returned.
+func BoolValueFromScalar(scalar *ScalarValue) bool {
+	if scalar == nil {
+		return false
+	}
+
+	if scalar.BoolValue != nil {
+		return *scalar.BoolValue
+	}
+
+	return false
+}
+
+// FloatValueFromScalar extracts a Go float64 from a float64
+// scalar value. If the scalar is nil, 0.0 is returned.
+func FloatValueFromScalar(scalar *ScalarValue) float64 {
+	if scalar == nil {
+		return 0.0
+	}
+
+	if scalar.FloatValue != nil {
+		return *scalar.FloatValue
+	}
+
+	return 0.0
+}

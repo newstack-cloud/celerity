@@ -215,10 +215,18 @@ func (p *defaultBlueprintPreparer) applyResourceConditions(
 				resourceName,
 				resolveResourceResult.ResolveOnDeploy,
 			)
-			if resolveFor == subengine.ResolveForChangeStaging &&
-				(conditionKnownOnDeploy ||
-					evaluateCondition(resolveResourceResult.ResolvedResource.Condition)) {
+			conditionPasses := evaluateCondition(resolveResourceResult.ResolvedResource.Condition)
+			// During change staging, if a condition can not be resolved, we include the resource
+			// in the prepared blueprint with a nil condition so the resource is accounted for when
+			// generating changes.
+			// The `ConditionKnownOnDeploy` field of a change set for a resource informs the user
+			// that whether or not the resource will be included in the final deployment
+			// will be determined at deploy time.
+			includeForChangeStaging := resolveFor == subengine.ResolveForChangeStaging &&
+				(conditionKnownOnDeploy || conditionPasses)
+			includeForDeployment := resolveFor == subengine.ResolveForDeployment && conditionPasses
 
+			if includeForChangeStaging || includeForDeployment {
 				p.resourceCache.Set(resourceName, resolveResourceResult.ResolvedResource)
 
 				resourcesAfterConditions[resourceName] = resource

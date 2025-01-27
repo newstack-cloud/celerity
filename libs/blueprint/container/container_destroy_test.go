@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -13,9 +12,9 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 type ContainerDestroyTestSuite struct {
@@ -30,11 +29,15 @@ type ContainerDestroyTestSuite struct {
 func (s *ContainerDestroyTestSuite) SetupTest() {
 	stateContainer := internal.NewMemoryStateContainer()
 	s.stateContainer = stateContainer
-	err := s.populateCurrentState(stateContainer)
+	fixtureInstances := []int{1, 2, 3, 4}
+	err := populateCurrentState(fixtureInstances, stateContainer, "destroy")
 	s.Require().NoError(err)
 
 	providers := map[string]provider.Provider{
-		"aws":     newTestAWSProvider(),
+		"aws": newTestAWSProvider(
+			/* alwaysStabilise */ false,
+			/* skipRetryFailuresForLinkNames */ []string{},
+		),
 		"example": newTestExampleProvider(),
 		"core": providerhelpers.NewCoreProvider(
 			stateContainer.Links(),
@@ -51,13 +54,14 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		newFSChildResolver(),
 		WithLoaderTransformSpec(false),
 		WithLoaderValidateRuntimeValues(true),
-		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
+		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
 	)
 
 	s.blueprint1Fixture, err = createBlueprintDeployFixture(
 		"destroy",
 		1,
 		loader,
+		baseBlueprintParams(),
 	)
 	s.Require().NoError(err)
 
@@ -65,6 +69,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		"destroy",
 		2,
 		loader,
+		baseBlueprintParams(),
 	)
 	s.Require().NoError(err)
 
@@ -72,6 +77,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		"destroy",
 		3,
 		loader,
+		baseBlueprintParams(),
 	)
 	s.Require().NoError(err)
 
@@ -79,6 +85,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		"destroy",
 		4,
 		loader,
+		baseBlueprintParams(),
 	)
 	s.Require().NoError(err)
 }
@@ -285,62 +292,6 @@ func (s *ContainerDestroyTestSuite) Test_fails_to_destroys_blueprint_instance_du
 	instance, err := s.stateContainer.Instances().Get(context.Background(), "blueprint-instance-4")
 	s.Assert().NoError(err)
 	s.Assert().Equal("blueprint-instance-4", instance.InstanceID)
-}
-
-func (s *ContainerDestroyTestSuite) populateCurrentState(stateContainer state.Container) error {
-	fixtureInstances := []int{1, 2, 3, 4}
-	for _, instanceNo := range fixtureInstances {
-		err := s.populateBlueprintCurrentState(
-			stateContainer,
-			fmt.Sprintf("blueprint-instance-%d", instanceNo),
-			instanceNo,
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *ContainerDestroyTestSuite) populateBlueprintCurrentState(
-	stateContainer state.Container,
-	instanceID string,
-	blueprintNo int,
-) error {
-	blueprintCurrentState, err := internal.LoadInstanceState(
-		fmt.Sprintf(
-			"__testdata/container/destroy/current-state/blueprint%d.json",
-			blueprintNo,
-		),
-	)
-	if err != nil {
-		return err
-	}
-	err = stateContainer.Instances().Save(
-		context.Background(),
-		*blueprintCurrentState,
-	)
-	if err != nil {
-		return err
-	}
-
-	blueprintChildCurrentState, err := internal.LoadInstanceState(
-		fmt.Sprintf(
-			"__testdata/container/destroy/current-state/blueprint%d-child-core-infra.json",
-			blueprintNo,
-		),
-	)
-	if err != nil {
-		return err
-	}
-
-	return stateContainer.Children().Save(
-		context.Background(),
-		instanceID,
-		"coreInfra",
-		*blueprintChildCurrentState,
-	)
 }
 
 func blueprint1RemovalChanges() *BlueprintChanges {

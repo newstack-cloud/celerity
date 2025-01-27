@@ -32,6 +32,22 @@ func CreateDeployChannels() *DeployChannels {
 	}
 }
 
+func isInstanceInProgress(instance *state.InstanceState, rollingBack bool) bool {
+	if instance == nil {
+		return false
+	}
+
+	if rollingBack {
+		return instance.Status == core.InstanceStatusDeployRollingBack ||
+			instance.Status == core.InstanceStatusUpdateRollingBack ||
+			instance.Status == core.InstanceStatusDestroyRollingBack
+	}
+
+	return instance.Status == core.InstanceStatusDeploying ||
+		instance.Status == core.InstanceStatusUpdating ||
+		instance.Status == core.InstanceStatusDestroying
+}
+
 func determineResourceDestroyingStatus(rollingBack bool) core.ResourceStatus {
 	if rollingBack {
 		return core.ResourceStatusRollingBack
@@ -111,6 +127,20 @@ func emptyChangesDestroyFailedMessage(rollingBack bool) string {
 
 	return "an empty set of changes was provided " +
 		"for the blueprint instance to be destroyed"
+}
+
+func instanceInProgressDeployFailedMessage(instanceID string, rollingBack bool) string {
+	if rollingBack {
+		return fmt.Sprintf(
+			"a rollback is already in progress for the blueprint instance (%s)",
+			instanceID,
+		)
+	}
+
+	return fmt.Sprintf(
+		"a deployment or removal is already in progress for the blueprint instance (%s)",
+		instanceID,
+	)
 }
 
 func determineInstanceDestroyedStatus(rollingBack bool) core.InstanceStatus {
@@ -845,17 +875,6 @@ func finishedCreatingResource(
 	return finishedCreation && !msg.CanRetry
 }
 
-func startedUpdatingChild(
-	status core.InstanceStatus,
-	rollingBack bool,
-) bool {
-	if rollingBack {
-		return status == core.InstanceStatusUpdateRollingBack
-	}
-
-	return status == core.InstanceStatusUpdating
-}
-
 func finishedUpdatingChild(
 	status core.InstanceStatus,
 	rollingBack bool,
@@ -867,19 +886,6 @@ func finishedUpdatingChild(
 
 	return status == core.InstanceStatusUpdated ||
 		status == core.InstanceStatusUpdateFailed
-}
-
-func startedDeployingChild(
-	status core.InstanceStatus,
-	rollingBack bool,
-) bool {
-	if rollingBack {
-		// In the context of rolling back, deploying a child instance is to roll back
-		// the destruction of the child instance.
-		return status == core.InstanceStatusDestroyRollingBack
-	}
-
-	return status == core.InstanceStatusDeploying
 }
 
 func finishedDeployingChild(
@@ -1286,9 +1292,23 @@ func determineLinkUpdateIntermediariesFinishedDurations(
 func sumLinkComponentCompletionDurations(
 	durations *state.LinkCompletionDurations,
 ) float64 {
-	return *durations.ResourceAUpdate.TotalDuration +
-		*durations.ResourceBUpdate.TotalDuration +
-		*durations.IntermediaryResources.TotalDuration
+	return getLinkComponentTotalDuration(durations.ResourceAUpdate) +
+		getLinkComponentTotalDuration(durations.ResourceBUpdate) +
+		getLinkComponentTotalDuration(durations.IntermediaryResources)
+}
+
+func getLinkComponentTotalDuration(
+	componentDurations *state.LinkComponentCompletionDurations,
+) float64 {
+	if componentDurations == nil {
+		return 0
+	}
+
+	if componentDurations.TotalDuration == nil {
+		return 0
+	}
+
+	return *componentDurations.TotalDuration
 }
 
 func addRetryAttempt(retryInfoToUpdate *retryInfo, currentAttemptDuration time.Duration) *retryInfo {
@@ -1450,8 +1470,9 @@ func getFailedLinkDeploymentsAndUpdateState(
 ) []string {
 	failed := []string{}
 
-	for _, updateResourceChanges := range changes.ResourceChanges {
+	for resourceName, updateResourceChanges := range changes.ResourceChanges {
 		linkCreationFailed := checkLinkDeploymentsFailedAndUpdateState(
+			resourceName,
 			updateResourceChanges.NewOutboundLinks,
 			finished,
 			deployCtx,
@@ -1460,6 +1481,7 @@ func getFailedLinkDeploymentsAndUpdateState(
 		failed = append(failed, linkCreationFailed...)
 
 		linkUpdateFailed := checkLinkDeploymentsFailedAndUpdateState(
+			resourceName,
 			updateResourceChanges.OutboundLinkChanges,
 			finished,
 			deployCtx,
@@ -1472,6 +1494,7 @@ func getFailedLinkDeploymentsAndUpdateState(
 }
 
 func checkLinkDeploymentsFailedAndUpdateState(
+	linkFromResourceName string,
 	linkChanges map[string]provider.LinkChanges,
 	finished map[string]*deployUpdateMessageWrapper,
 	deployCtx *DeployContext,
@@ -1479,8 +1502,11 @@ func checkLinkDeploymentsFailedAndUpdateState(
 ) []string {
 	failedLinks := []string{}
 
-	for linkName := range linkChanges {
-		linkElementName := linkElementID(linkName)
+	for linkToResourceName := range linkChanges {
+		linkName := createLogicalLinkName(linkFromResourceName, linkToResourceName)
+		linkElementName := linkElementID(
+			linkName,
+		)
 		if msgWrapper, ok := finished[linkElementName]; ok {
 			if wasSuccessful(msgWrapper, deployCtx.Rollback) {
 				deployCtx.State.SetCreatedElement(&LinkIDInfo{
@@ -1505,46 +1531,66 @@ func getFailedChildDeploymentsAndUpdateState(
 ) []string {
 	failed := []string{}
 
-	// for childName := range changes.ChildChanges {
-	// 	childDeployFailed := checkChildDeploymentFailedAndUpdateState(
-	// 		childName,
-	// 		finished,
-	// 		deployCtx,
-	// 		updateWasSuccessful,
-	// 	)
-	// 	if childDeployFailed {
-	// 		childElementName := core.ChildElementID(childName)
-	// 		failed = append(failed, childElementName)
-	// 	}
-	// }
+	for childName := range changes.ChildChanges {
+		childDeployFailed := checkChildDeploymentFailedAndUpdateState(
+			childName,
+			finished,
+			deployCtx,
+			updateWasSuccessful,
+		)
+		if childDeployFailed {
+			childElementName := core.ChildElementID(childName)
+			failed = append(failed, childElementName)
+		}
+	}
 
-	// for childName := range changes.NewChildren {
-	// 	childDeployFailed := checkChildDeploymentFailedAndUpdateState(
-	// 		childName,
-	// 		finished,
-	// 		deployCtx,
-	// 		creationWasSuccessful,
-	// 	)
-	// 	if childDeployFailed {
-	// 		childElementName := core.ChildElementID(childName)
-	// 		failed = append(failed, childElementName)
-	// 	}
-	// }
+	for childName := range changes.NewChildren {
+		childDeployFailed := checkChildDeploymentFailedAndUpdateState(
+			childName,
+			finished,
+			deployCtx,
+			creationWasSuccessful,
+		)
+		if childDeployFailed {
+			childElementName := core.ChildElementID(childName)
+			failed = append(failed, childElementName)
+		}
+	}
 
-	// for _, childName := range changes.RecreateChildren {
-	// 	childDeployFailed := checkChildDeploymentFailedAndUpdateState(
-	// 		childName,
-	// 		finished,
-	// 		deployCtx,
-	// 		creationWasSuccessful,
-	// 	)
-	// 	if childDeployFailed {
-	// 		childElementName := core.ChildElementID(childName)
-	// 		failed = append(failed, childElementName)
-	// 	}
-	// }
+	for _, childName := range changes.RecreateChildren {
+		childDeployFailed := checkChildDeploymentFailedAndUpdateState(
+			childName,
+			finished,
+			deployCtx,
+			creationWasSuccessful,
+		)
+		if childDeployFailed {
+			childElementName := core.ChildElementID(childName)
+			failed = append(failed, childElementName)
+		}
+	}
 
 	return failed
+}
+
+func checkChildDeploymentFailedAndUpdateState(
+	childName string,
+	finished map[string]*deployUpdateMessageWrapper,
+	deployCtx *DeployContext,
+	wasSuccessful func(*deployUpdateMessageWrapper, bool) bool,
+) bool {
+	childElementName := core.ChildElementID(childName)
+	if msgWrapper, ok := finished[childElementName]; ok {
+		if wasSuccessful(msgWrapper, deployCtx.Rollback) {
+			deployCtx.State.SetUpdatedElement(&ChildBlueprintIDInfo{
+				ChildInstanceID: msgWrapper.childUpdateMessage.ChildInstanceID,
+				ChildName:       msgWrapper.childUpdateMessage.ChildName,
+			})
+			return false
+		}
+	}
+
+	return true
 }
 
 func removalWasSuccessful(
@@ -1736,12 +1782,12 @@ func getDeploymentNode(
 	i := 0
 	for node == nil && i < len(group) {
 		current := group[i]
-		if node.Type() == DeploymentNodeTypeResource {
+		if current.Type() == DeploymentNodeTypeResource {
 			if current.ChainLinkNode.ResourceName == element.LogicalName() {
 				node = current
 			}
 		} else {
-			if node.ChildNode.ElementName == element.LogicalName() {
+			if current.ChildNode.ElementName == element.LogicalName() {
 				node = current
 			}
 		}
@@ -1920,6 +1966,10 @@ func readyToDeployAfterDependency(
 	stabilisedDeps []string,
 	configComplete bool,
 ) bool {
+	if dependant == nil || dependency == nil {
+		return false
+	}
+
 	if configComplete {
 		// Child blueprints are not deployed until all resources they depend on are stable,
 		// only resources can be deployed on config complete.
@@ -2050,6 +2100,37 @@ func extractNodeDependencyInfo(node *DeploymentNode) *state.DependencyInfo {
 	}
 
 	return dependencyInfo
+}
+
+func addRemovedResourcesToProvidersMap(
+	resourceProviderMap map[string]provider.Provider,
+	currentInstanceState *state.InstanceState,
+	providers map[string]provider.Provider,
+) map[string]provider.Provider {
+	if currentInstanceState == nil {
+		return resourceProviderMap
+	}
+
+	updatedResourceProviderMap := map[string]provider.Provider{}
+	for resourceName, provider := range resourceProviderMap {
+		updatedResourceProviderMap[resourceName] = provider
+	}
+
+	for resourceName, resourceID := range currentInstanceState.ResourceIDs {
+		_, hasResourceProvider := updatedResourceProviderMap[resourceName]
+		if !hasResourceProvider {
+			resource, stateHasResource := currentInstanceState.Resources[resourceID]
+			if stateHasResource {
+				providerNamespace := provider.ExtractProviderFromItemType(resource.ResourceType)
+				provider, hasProvider := providers[providerNamespace]
+				if hasProvider {
+					updatedResourceProviderMap[resourceName] = provider
+				}
+			}
+		}
+	}
+
+	return updatedResourceProviderMap
 }
 
 // This is used during the deploy and destroy process to provide an equivalent

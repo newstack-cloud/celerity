@@ -5,16 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
+	"strings"
 
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 func assertDeployMessageOrder(
@@ -106,13 +109,12 @@ func assertResourceMessagesEqual(
 ) {
 	for i, message := range messages {
 		expected := expectedMessages[i]
-		testSuite.Assert().Equal(expected.InstanceID, message.InstanceID, "actual message: %+v", message)
-		testSuite.Assert().Equal(expected.ResourceID, message.ResourceID, "actual message: %+v", message)
+		assertAllowForDynamicValue(expected.InstanceID, message.InstanceID, message, testSuite)
+		assertAllowForDynamicValue(expected.ResourceID, message.ResourceID, message, testSuite)
 		testSuite.Assert().Equal(expected.ResourceName, message.ResourceName, "actual message: %+v", message)
-		testSuite.Assert().Equal(expected.Group, message.Group, "actual message: %+v", message)
 		testSuite.Assert().Equal(expected.Status, message.Status, "actual message: %+v", message)
 		testSuite.Assert().Equal(expected.PreciseStatus, message.PreciseStatus, "actual message: %+v", message)
-		assertFailureReasonsEqual(expected.FailureReasons, message.FailureReasons, testSuite)
+		assertSlicesEqual(expected.FailureReasons, message.FailureReasons, testSuite)
 		testSuite.Assert().Equal(expected.Attempt, message.Attempt, "actual message: %+v", message)
 		testSuite.Assert().Equal(expected.CanRetry, message.CanRetry, "actual message: %+v", message)
 		assertTimestampPresent(expected.UpdateTimestamp, message.UpdateTimestamp, testSuite)
@@ -197,12 +199,12 @@ func assertChildMessagesEqual(
 ) {
 	for i, message := range messages {
 		expected := expectedMessages[i]
-		testSuite.Assert().Equal(expected.ParentInstanceID, message.ParentInstanceID, "actual message: %+v", message)
-		testSuite.Assert().Equal(expected.ChildInstanceID, message.ChildInstanceID, "actual message: %+v", message)
+		assertAllowForDynamicValue(expected.ParentInstanceID, message.ParentInstanceID, message, testSuite)
+		assertAllowForDynamicValue(expected.ChildInstanceID, message.ChildInstanceID, message, testSuite)
 		testSuite.Assert().Equal(expected.ChildName, message.ChildName, "actual message: %+v", message)
 		testSuite.Assert().Equal(expected.Group, message.Group, "actual message: %+v", message)
 		testSuite.Assert().Equal(expected.Status, message.Status, "actual message: %+v", message)
-		assertFailureReasonsEqual(expected.FailureReasons, message.FailureReasons, testSuite)
+		assertSlicesEqual(expected.FailureReasons, message.FailureReasons, testSuite)
 		assertTimestampPresent(expected.UpdateTimestamp, message.UpdateTimestamp, testSuite)
 		assertChildMessageDurations(expected.Durations, message.Durations, testSuite)
 	}
@@ -252,7 +254,7 @@ func assertLinkUpdateMessageOrder(
 	for _, expectedSequence := range expectedPerLink {
 		if len(expectedSequence) > 0 {
 			messagesForLink := getMessagesForLink(messages, expectedSequence[0].LinkName)
-			testSuite.Assert().Len(messagesForLink, len(expectedSequence))
+			testSuite.Assert().Len(messagesForLink, len(expectedSequence), "expected: %+v", expectedSequence)
 			assertLinkMessagesEqual(messagesForLink, expectedSequence, testSuite)
 		}
 	}
@@ -278,12 +280,12 @@ func assertLinkMessagesEqual(
 ) {
 	for i, message := range messages {
 		expected := expectedMessages[i]
-		testSuite.Assert().Equal(expected.InstanceID, message.InstanceID, "actual message: %+v", message)
-		testSuite.Assert().Equal(expected.LinkID, message.LinkID, "actual message: %+v", message)
+		assertAllowForDynamicValue(expected.InstanceID, message.InstanceID, message, testSuite)
+		assertAllowForDynamicValue(expected.LinkID, message.LinkID, message, testSuite)
 		testSuite.Assert().Equal(expected.LinkName, message.LinkName, "actual message: %+v", message)
 		testSuite.Assert().Equal(expected.Status, message.Status, "actual message: %+v", message)
 		testSuite.Assert().Equal(expected.PreciseStatus, message.PreciseStatus, "actual message: %+v", message)
-		assertFailureReasonsEqual(expected.FailureReasons, message.FailureReasons, testSuite)
+		assertSlicesEqual(expected.FailureReasons, message.FailureReasons, testSuite)
 		testSuite.Assert().Equal(expected.CurrentStageAttempt, message.CurrentStageAttempt, "actual message: %+v", message)
 		testSuite.Assert().Equal(expected.CanRetryCurrentStage, message.CanRetryCurrentStage, "actual message: %+v", message)
 		assertTimestampPresent(expected.UpdateTimestamp, message.UpdateTimestamp, testSuite)
@@ -368,24 +370,10 @@ func assertDeploymentUpdateMessageOrder(
 ) {
 	for _, expectedSequence := range expectedPerDeployment {
 		if len(expectedSequence) > 0 {
-			messagesForDeployment := getMessagesForDeployment(messages, expectedSequence[0].InstanceID)
-			testSuite.Assert().Len(messagesForDeployment, len(expectedSequence))
-			assertDeploymentMessagesEqual(messagesForDeployment, expectedSequence, testSuite)
+			testSuite.Assert().Len(messages, len(expectedSequence))
+			assertDeploymentMessagesEqual(messages, expectedSequence, testSuite)
 		}
 	}
-}
-
-func getMessagesForDeployment(
-	messages []DeploymentUpdateMessage,
-	instanceID string,
-) []DeploymentUpdateMessage {
-	deploymentMessages := []DeploymentUpdateMessage{}
-	for _, message := range messages {
-		if message.InstanceID == instanceID {
-			deploymentMessages = append(deploymentMessages, message)
-		}
-	}
-	return deploymentMessages
 }
 
 func assertDeploymentMessagesEqual(
@@ -395,7 +383,7 @@ func assertDeploymentMessagesEqual(
 ) {
 	for i, message := range messages {
 		expected := expectedMessages[i]
-		testSuite.Assert().Equal(expected.InstanceID, message.InstanceID)
+		assertAllowForDynamicValue(expected.InstanceID, message.InstanceID, message, testSuite)
 		testSuite.Assert().Equal(expected.Status, message.Status)
 		assertTimestampPresent(expected.UpdateTimestamp, message.UpdateTimestamp, testSuite)
 	}
@@ -418,9 +406,9 @@ func assertFinishedMessage(
 	expected DeploymentFinishedMessage,
 	testSuite *suite.Suite,
 ) {
-	testSuite.Assert().Equal(expected.InstanceID, message.InstanceID)
+	assertAllowForDynamicValue(expected.InstanceID, message.InstanceID, message, testSuite)
 	testSuite.Assert().Equal(expected.Status, message.Status)
-	assertFailureReasonsEqual(expected.FailureReasons, message.FailureReasons, testSuite)
+	assertSlicesEqual(expected.FailureReasons, message.FailureReasons, testSuite)
 	assertTimestampPresent(expected.FinishTimestamp, message.FinishTimestamp, testSuite)
 	assertTimestampPresent(expected.UpdateTimestamp, message.UpdateTimestamp, testSuite)
 	assertFinishedMessageDurations(expected.Durations, message.Durations, testSuite)
@@ -461,15 +449,249 @@ func assertAttemptDurationsPresent(
 	testSuite.Assert().Len(actualDurations, len(expectedDurations))
 }
 
-func assertFailureReasonsEqual(
-	expectedFailureReasons []string,
-	actualFailureReasons []string,
+func assertSlicesEqual(
+	expected []string,
+	actual []string,
 	testSuite *suite.Suite,
 ) {
-	if expectedFailureReasons != nil {
-		testSuite.Assert().Equal(expectedFailureReasons, actualFailureReasons)
+	if expected != nil {
+		expectedCopy := make([]string, len(expected))
+		copy(expectedCopy, expected)
+		slices.Sort(expectedCopy)
+
+		actualCopy := make([]string, len(actual))
+		copy(actualCopy, actual)
+		slices.Sort(actualCopy)
+
+		testSuite.Assert().Equal(expectedCopy, actualCopy)
 	} else {
-		testSuite.Assert().Empty(actualFailureReasons)
+		testSuite.Assert().Empty(actual)
+	}
+}
+
+func assertMapsEqual[Item any](
+	expected map[string]Item,
+	actual map[string]Item,
+	testSuite *suite.Suite,
+) {
+	if expected != nil {
+		testSuite.Assert().Equal(expected, actual)
+	} else {
+		testSuite.Assert().Empty(actual)
+	}
+}
+
+func assertInstanceStateEquals(
+	expected *state.InstanceState,
+	actual *state.InstanceState,
+	testSuite *suite.Suite,
+) {
+	assertAllowForDynamicValue(expected.InstanceID, actual.InstanceID, actual, testSuite)
+	testSuite.Assert().Equal(expected.Status, actual.Status)
+	assertResourceIDsMapKeysEqual(expected.ResourceIDs, actual.ResourceIDs, testSuite)
+	assertChildDependenciesEqual(expected.ChildDependencies, actual.ChildDependencies, testSuite)
+
+	for expectedResourceID, expectedResourceState := range expected.Resources {
+		// The expected resources can have a placeholder in the form of "{idOf::resourceName}"
+		// for the resource map key.
+		resourceID, hasResourceID := getResourceIDForAssertion(expectedResourceID, actual.ResourceIDs)
+		testSuite.Assert().True(
+			hasResourceID,
+			"expected resource ID: %s actual resource IDs: %+v",
+			expectedResourceID,
+			actual.ResourceIDs,
+		)
+		actualResourceState, ok := actual.Resources[resourceID]
+		testSuite.Assert().True(ok)
+		assertResourceStateEquals(expectedResourceState, actualResourceState, testSuite)
+	}
+
+	for childName, expectedChildState := range expected.ChildBlueprints {
+		actualChildState, ok := actual.ChildBlueprints[childName]
+		testSuite.Assert().True(ok)
+		assertInstanceStateEquals(expectedChildState, actualChildState, testSuite)
+	}
+
+	for linkName, expectedLinkState := range expected.Links {
+		actualLinkState, ok := actual.Links[linkName]
+		testSuite.Assert().True(ok)
+		assertLinkStateEquals(expectedLinkState, actualLinkState, testSuite)
+	}
+
+	assertTimestampPresent(
+		int64(expected.LastStatusUpdateTimestamp),
+		int64(actual.LastStatusUpdateTimestamp),
+		testSuite,
+	)
+	assertTimestampPresent(
+		int64(expected.LastDeployAttemptTimestamp),
+		int64(actual.LastDeployAttemptTimestamp),
+		testSuite,
+	)
+	assertTimestampPresent(
+		int64(expected.LastDeployedTimestamp),
+		int64(actual.LastDeployedTimestamp),
+		testSuite,
+	)
+	assertFinishedMessageDurations(expected.Durations, actual.Durations, testSuite)
+}
+
+func getResourceIDForAssertion(
+	expectedResourceID string,
+	actualResourceIDs map[string]string,
+) (string, bool) {
+	if strings.HasPrefix(expectedResourceID, "{idOf::") && strings.HasSuffix(expectedResourceID, "}") {
+		// The resource ID placeholder is in the form of "{idOf::resourceName}"
+		// so we can extract the resource name by removing the first 7 characters
+		// and the last character.
+		resourceName := expectedResourceID[7 : len(expectedResourceID)-1]
+		resourceID, hasResourceID := actualResourceIDs[resourceName]
+		return resourceID, hasResourceID
+	}
+
+	return expectedResourceID, true
+}
+
+// Make sure that each resource name in the expected map are also present in the actual map.
+// As resource IDs can be dynamically generated, for more robust testing, we will only
+// make sure that each expected resource name has an ID mapping.
+func assertResourceIDsMapKeysEqual(
+	expected map[string]string,
+	actual map[string]string,
+	testSuite *suite.Suite,
+) {
+	testSuite.Assert().Len(actual, len(expected))
+	expectedNames := []string{}
+	for expectedName := range expected {
+		expectedNames = append(expectedNames, expectedName)
+	}
+
+	actualNames := []string{}
+	for actualName := range actual {
+		actualNames = append(actualNames, actualName)
+	}
+
+	slices.Sort(expectedNames)
+	slices.Sort(actualNames)
+	testSuite.Assert().Equal(expectedNames, actualNames)
+}
+
+func assertResourceStateEquals(
+	expected *state.ResourceState,
+	actual *state.ResourceState,
+	testSuite *suite.Suite,
+) {
+	assertAllowForDynamicValue(expected.ResourceID, actual.ResourceID, actual, testSuite)
+	testSuite.Assert().Equal(expected.Status, actual.Status)
+	testSuite.Assert().Equal(expected.PreciseStatus, actual.PreciseStatus)
+	testSuite.Assert().Equal(expected.ResourceName, actual.ResourceName)
+	testSuite.Assert().Equal(expected.ResourceType, actual.ResourceType)
+	testSuite.Assert().Equal(expected.ResourceTemplateName, actual.ResourceTemplateName)
+	assertAllowForDynamicValue(expected.InstanceID, actual.InstanceID, actual, testSuite)
+	testSuite.Assert().Equal(expected.ResourceSpecData, actual.ResourceSpecData)
+	testSuite.Assert().Equal(expected.Description, actual.Description)
+	assertResourceMetadataEquals(expected.Metadata, actual.Metadata, testSuite)
+	assertSlicesEqual(expected.DependsOnResources, actual.DependsOnResources, testSuite)
+	assertSlicesEqual(expected.DependsOnChildren, actual.DependsOnChildren, testSuite)
+	assertSlicesEqual(expected.FailureReasons, actual.FailureReasons, testSuite)
+	assertTimestampPresent(
+		int64(expected.LastStatusUpdateTimestamp),
+		int64(actual.LastStatusUpdateTimestamp),
+		testSuite,
+	)
+	assertTimestampPresent(
+		int64(expected.LastDeployAttemptTimestamp),
+		int64(actual.LastDeployAttemptTimestamp),
+		testSuite,
+	)
+	assertTimestampPresent(
+		int64(expected.LastDeployedTimestamp),
+		int64(actual.LastDeployedTimestamp),
+		testSuite,
+	)
+	assertResourceMessageDurations(expected.Durations, actual.Durations, testSuite)
+}
+
+func assertResourceMetadataEquals(
+	expected *state.ResourceMetadataState,
+	actual *state.ResourceMetadataState,
+	testSuite *suite.Suite,
+) {
+	if expected == nil {
+		testSuite.Assert().Nil(actual)
+		return
+	}
+
+	testSuite.Assert().NotNil(actual)
+	testSuite.Assert().Equal(expected.DisplayName, actual.DisplayName)
+	assertMapsEqual(expected.Annotations, actual.Annotations, testSuite)
+	assertMapsEqual(expected.Labels, actual.Labels, testSuite)
+	testSuite.Assert().Equal(expected.Custom, actual.Custom)
+}
+
+func assertLinkStateEquals(
+	expected *state.LinkState,
+	actual *state.LinkState,
+	testSuite *suite.Suite,
+) {
+	assertAllowForDynamicValue(expected.LinkID, actual.LinkID, actual, testSuite)
+	testSuite.Assert().Equal(expected.Status, actual.Status)
+	testSuite.Assert().Equal(expected.PreciseStatus, actual.PreciseStatus)
+	testSuite.Assert().Equal(expected.LinkName, actual.LinkName)
+	assertAllowForDynamicValue(expected.InstanceID, actual.InstanceID, actual, testSuite)
+	assertMapsEqual(expected.LinkData, actual.LinkData, testSuite)
+	assertSlicesEqual(expected.FailureReasons, actual.FailureReasons, testSuite)
+	assertTimestampPresent(
+		int64(expected.LastStatusUpdateTimestamp),
+		int64(actual.LastStatusUpdateTimestamp),
+		testSuite,
+	)
+	assertTimestampPresent(
+		int64(expected.LastDeployAttemptTimestamp),
+		int64(actual.LastDeployAttemptTimestamp),
+		testSuite,
+	)
+	assertTimestampPresent(
+		int64(expected.LastDeployedTimestamp),
+		int64(actual.LastDeployedTimestamp),
+		testSuite,
+	)
+	assertLinkMessageDurations(expected.Durations, actual.Durations, testSuite)
+}
+
+func assertChildDependenciesEqual(
+	expected map[string]*state.DependencyInfo,
+	actual map[string]*state.DependencyInfo,
+	testSuite *suite.Suite,
+) {
+	testSuite.Assert().Len(actual, len(expected))
+	for expectedChildName, expectedDependencyInfo := range expected {
+		actualDependencyInfo, ok := actual[expectedChildName]
+		testSuite.Assert().True(ok)
+
+		assertDependencyInfoEqual(expectedDependencyInfo, actualDependencyInfo, testSuite)
+	}
+}
+
+func assertDependencyInfoEqual(
+	expected *state.DependencyInfo,
+	actual *state.DependencyInfo,
+	testSuite *suite.Suite,
+) {
+	assertSlicesEqual(expected.DependsOnResources, actual.DependsOnResources, testSuite)
+	assertSlicesEqual(expected.DependsOnChildren, actual.DependsOnChildren, testSuite)
+}
+
+func assertAllowForDynamicValue(
+	expected string,
+	actual string,
+	value interface{},
+	testSuite *suite.Suite,
+) {
+	if expected == "{dynamicValue}" {
+		testSuite.Assert().NotEmpty(actual, "actual containing value: %+v", value)
+	} else {
+		testSuite.Assert().Equal(expected, actual, "actual containing value: %+v", value)
 	}
 }
 
@@ -477,11 +699,12 @@ func createBlueprintDeployFixture(
 	deployType string,
 	fixtureNo int,
 	loader Loader,
+	params core.BlueprintParams,
 ) (blueprintDeployFixture, error) {
 	blueprintContainer, err := loader.Load(
 		context.Background(),
 		fmt.Sprintf("__testdata/container/%s/blueprint%d.yml", deployType, fixtureNo),
-		baseBlueprintParams(),
+		params,
 	)
 	if err != nil {
 		return blueprintDeployFixture{}, err
@@ -492,21 +715,41 @@ func createBlueprintDeployFixture(
 		deployType,
 		fixtureNo,
 	)
-	return createBlueprintDeployFixtureFromFile(blueprintContainer, expectedMessagesFilePath)
+	expectedInstanceStateFilePath := fmt.Sprintf(
+		"__testdata/container/%s/expected-state/blueprint%d.json",
+		deployType,
+		fixtureNo,
+	)
+	return createBlueprintDeployFixtureFromFile(
+		blueprintContainer,
+		expectedMessagesFilePath,
+		expectedInstanceStateFilePath,
+	)
 }
 
 func createBlueprintDeployFixtureFromFile(
 	container BlueprintContainer,
 	expectedMessagesFilePath string,
+	expectedInstanceStateFilePath string,
 ) (blueprintDeployFixture, error) {
 	expectedMessages, err := loadExpectedMessagesFromFile(expectedMessagesFilePath)
 	if err != nil {
 		return blueprintDeployFixture{}, err
 	}
 
+	expectedInstanceState, err := internal.LoadInstanceState(expectedInstanceStateFilePath)
+	if err != nil {
+		// Expected instance state is not required for all tests.
+		return blueprintDeployFixture{
+			blueprintContainer: container,
+			expected:           expectedMessages,
+		}, nil
+	}
+
 	return blueprintDeployFixture{
-		blueprintContainer: container,
-		expected:           expectedMessages,
+		blueprintContainer:    container,
+		expected:              expectedMessages,
+		expectedInstanceState: expectedInstanceState,
 	}, nil
 }
 
@@ -544,9 +787,73 @@ func loadBlueprintChangesFromFile(
 	return changes, nil
 }
 
+func populateCurrentState(
+	fixtureInstances []int,
+	stateContainer state.Container,
+	containerTestType string,
+) error {
+	for _, instanceNo := range fixtureInstances {
+		err := populateBlueprintCurrentState(
+			stateContainer,
+			fmt.Sprintf("blueprint-instance-%d", instanceNo),
+			instanceNo,
+			containerTestType,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func populateBlueprintCurrentState(
+	stateContainer state.Container,
+	instanceID string,
+	blueprintNo int,
+	containerTestType string,
+) error {
+	blueprintCurrentState, err := internal.LoadInstanceState(
+		fmt.Sprintf(
+			"__testdata/container/%s/current-state/blueprint%d.json",
+			containerTestType,
+			blueprintNo,
+		),
+	)
+	if err != nil {
+		return err
+	}
+	err = stateContainer.Instances().Save(
+		context.Background(),
+		*blueprintCurrentState,
+	)
+	if err != nil {
+		return err
+	}
+
+	blueprintChildCurrentState, err := internal.LoadInstanceState(
+		fmt.Sprintf(
+			"__testdata/container/%s/current-state/blueprint%d-child-core-infra.json",
+			containerTestType,
+			blueprintNo,
+		),
+	)
+	if err != nil {
+		return err
+	}
+
+	return stateContainer.Children().Save(
+		context.Background(),
+		instanceID,
+		"coreInfra",
+		*blueprintChildCurrentState,
+	)
+}
+
 type blueprintDeployFixture struct {
-	blueprintContainer BlueprintContainer
-	expected           *expectedMessages
+	blueprintContainer    BlueprintContainer
+	expected              *expectedMessages
+	expectedInstanceState *state.InstanceState
 }
 
 type expectedMessages struct {
@@ -720,7 +1027,7 @@ func (c *stubBlueprintContainer) BlueprintSpec() speccore.BlueprintSpec {
 	return nil
 }
 
-func (c *stubBlueprintContainer) RefChainCollector() validation.RefChainCollector {
+func (c *stubBlueprintContainer) RefChainCollector() refgraph.RefChainCollector {
 	return nil
 }
 

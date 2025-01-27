@@ -1,0 +1,440 @@
+{
+  "instanceId": "blueprint-instance-1",
+  "status": 14,
+  "lastDeployedTimestamp": -1,
+  "lastDeployAttemptTimestamp": -1,
+  "resourceIds": {
+    "invoiceStream": "{dynamicValue}",
+    "invoicesTable": "test-invoices-table-id",
+    "ordersTable_0": "test-orders-table-0-id",
+    "ordersTable_1": "test-orders-table-1-id",
+    "ordersTable_2": "{dynamicValue}",
+    "processInvoiceFunction": "{dynamicValue}",
+    "saveOrderFunction": "test-save-order-function-id"
+  },
+  "resources": {
+    "{idOf::ordersTable_2}": {
+      "resourceId": "{dynamicValue}",
+      "resourceName": "ordersTable_2",
+      "resourceType": "aws/dynamodb/table",
+      "resourceTemplateName": "ordersTable",
+      "instanceId": "blueprint-instance-1",
+      "status": 2,
+      "preciseStatus": 3,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "resourceSpecData": {
+        "global": false,
+        "region": "US-WEST-2",
+        "tableName": "production-orders-eu-west-1"
+      },
+      "metadata": {
+        "displayName": "production-env Orders Table",
+        "annotations": {
+          "aws.dynamodb.trigger": true,
+          "aws.dynamodb.vpc": null,
+          "custom.coreInfraRegion": null
+        },
+        "labels": {
+          "app": "orders"
+        },
+        "custom": {
+          "visual": {
+            "label": "production-env Orders Table",
+            "x": 100,
+            "y": 200
+          }
+        }
+      },
+      "failureReasons": null,
+      "durations": {
+        "configCompleteDuration": -1,
+        "totalDuration": -1,
+        "attemptDurations": [-1]
+      }
+    },
+    "{idOf::invoiceStream}": {
+      "resourceId": "{dynamicValue}",
+      "resourceName": "invoiceStream",
+      "resourceType": "aws/dynamodb/stream",
+      "instanceId": "blueprint-instance-1",
+      "status": 2,
+      "preciseStatus": 3,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "resourceSpecData": {
+        "label": "production-env Invoices Stream",
+        "region": "US-WEST-2"
+      },
+      "metadata": {
+        "displayName": "production-env Invoices Stream",
+        "labels": {
+          "app": "invoices"
+        }
+      },
+      "dependsOnResources": ["processInvoiceFunction"],
+      "dependsOnChildren": ["coreInfra"],
+      "failureReasons": null,
+      "durations": {
+        "configCompleteDuration": -1,
+        "totalDuration": -1,
+        "attemptDurations": [-1]
+      }
+    },
+    "{idOf::processInvoiceFunction}": {
+      "resourceId": "{dynamicValue}",
+      "resourceName": "processInvoiceFunction",
+      "resourceType": "aws/lambda/function",
+      "instanceId": "blueprint-instance-1",
+      "status": 2,
+      "preciseStatus": 3,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "resourceSpecData": {
+        "handler": "src/processInvoice.handler",
+        "id": "arn:aws:lambda:us-east-1:123456789012:function:processInvoiceFunction"
+      },
+      "metadata": {
+        "labels": {
+          "app": "invoices"
+        }
+      },
+      "failureReasons": null,
+      "durations": {
+        "configCompleteDuration": -1,
+        "totalDuration": -1,
+        "attemptDurations": [-1, -1, -1]
+      }
+    },
+    "test-orders-table-0-id": {
+      "resourceId": "test-orders-table-0-id",
+      "resourceName": "ordersTable_0",
+      "resourceType": "aws/dynamodb/table",
+      "resourceTemplateName": "ordersTable",
+      "instanceId": "blueprint-instance-1",
+      "status": 8,
+      "preciseStatus": 17,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "resourceSpecData": {
+        "global": false,
+        "region": "US-WEST-2",
+        "tableName": "production-orders-us-west-2"
+      },
+      "metadata": {
+        "displayName": "production-env Orders Table",
+        "annotations": {
+          "aws.dynamodb.trigger": true,
+          "aws.dynamodb.vpc": null,
+          "custom.coreInfraRegion": null
+        },
+        "labels": {
+          "app": "orders"
+        },
+        "custom": {
+          "visual": {
+            "label": "production-env Orders Table",
+            "x": 100,
+            "y": 200
+          }
+        }
+      },
+      "failureReasons": null,
+      "durations": {
+        "configCompleteDuration": -1,
+        "totalDuration": -1,
+        "attemptDurations": [-1]
+      }
+    },
+    "test-orders-table-1-id": {
+      "resourceId": "test-orders-table-1-id",
+      "resourceName": "ordersTable_1",
+      "resourceType": "aws/dynamodb/table",
+      "resourceTemplateName": "ordersTable",
+      "instanceId": "blueprint-instance-1",
+      "status": 8,
+      "preciseStatus": 17,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "resourceSpecData": {
+        "global": false,
+        "region": "US-WEST-2",
+        "tableName": "production-orders-us-east-1"
+      },
+      "metadata": {
+        "displayName": "production-env Orders Table",
+        "annotations": {
+          "aws.dynamodb.trigger": true,
+          "aws.dynamodb.vpc": null,
+          "custom.coreInfraRegion": null
+        },
+        "labels": {
+          "app": "orders"
+        },
+        "custom": {
+          "visual": {
+            "label": "production-env Orders Table",
+            "x": 100,
+            "y": 200
+          }
+        }
+      },
+      "failureReasons": null,
+      "durations": {
+        "configCompleteDuration": -1,
+        "totalDuration": -1,
+        "attemptDurations": [-1]
+      }
+    },
+    "test-save-order-function-id": {
+      "resourceId": "test-save-order-function-id",
+      "resourceName": "saveOrderFunction",
+      "resourceType": "aws/lambda/function",
+      "instanceId": "blueprint-instance-1",
+      "status": 8,
+      "preciseStatus": 17,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "resourceSpecData": {
+        "handler": "src/saveOrder.handler",
+        "id": "arn:aws:lambda:us-east-1:123456789012:function:saveOrderFunction"
+      },
+      "metadata": {},
+      "dependsOnResources": ["ordersTable_0", "ordersTable_1", "ordersTable_2"],
+      "failureReasons": null,
+      "durations": {
+        "configCompleteDuration": -1,
+        "totalDuration": -1,
+        "attemptDurations": [-1, -1, -1]
+      }
+    }
+  },
+  "links": {
+    "invoiceStream::processInvoiceFunction": {
+      "linkId": "{dynamicValue}",
+      "linkName": "invoiceStream::processInvoiceFunction",
+      "instanceId": "blueprint-instance-1",
+      "status": 2,
+      "preciseStatus": 14,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "intermediaryResourceStates": null,
+      "linkData": {},
+      "failureReasons": null,
+      "durations": {
+        "resourceAUpdate": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "resourceBUpdate": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "intermediaryResources": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "totalDuration": -1
+      }
+    },
+    "saveOrderFunction::ordersTable_0": {
+      "linkId": "test-link-1",
+      "linkName": "saveOrderFunction::ordersTable_0",
+      "instanceId": "blueprint-instance-1",
+      "status": 14,
+      "preciseStatus": 14,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "intermediaryResourceStates": null,
+      "linkData": {
+        "ordersTable_0": "testResourceBValue",
+        "saveOrderFunction": {
+          "environmentVariables": {
+            "TABLE_NAME_ordersTable_0": "production-orders",
+            "TABLE_REGION_ordersTable_0": "eu-west-2"
+          }
+        },
+        "testIntermediaryResource": "testIntermediaryResourceValue"
+      },
+      "failureReasons": null,
+      "durations": {
+        "resourceAUpdate": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "resourceBUpdate": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "intermediaryResources": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "totalDuration": -1
+      }
+    },
+    "saveOrderFunction::ordersTable_1": {
+      "linkId": "test-link-2",
+      "linkName": "saveOrderFunction::ordersTable_1",
+      "instanceId": "blueprint-instance-1",
+      "status": 14,
+      "preciseStatus": 14,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "intermediaryResourceStates": null,
+      "linkData": {
+        "ordersTable_1": "testResourceBValue",
+        "saveOrderFunction": {
+          "environmentVariables": {
+            "TABLE_NAME_ordersTable_1": "production-orders",
+            "TABLE_REGION_ordersTable_1": "eu-west-2"
+          }
+        },
+        "testIntermediaryResource": "testIntermediaryResourceValue"
+      },
+      "failureReasons": null,
+      "durations": {
+        "resourceAUpdate": {
+          "totalDuration": -1,
+          "attemptDurations": [-1, -1, -1]
+        },
+        "resourceBUpdate": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "intermediaryResources": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "totalDuration": -1
+      }
+    },
+    "saveOrderFunction::ordersTable_2": {
+      "linkId": "{dynamicValue}",
+      "linkName": "saveOrderFunction::ordersTable_2",
+      "instanceId": "blueprint-instance-1",
+      "status": 2,
+      "preciseStatus": 14,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "intermediaryResourceStates": null,
+      "linkData": {
+        "ordersTable_2": "testResourceBValue",
+        "saveOrderFunction": {
+          "environmentVariables": {
+            "TABLE_NAME_ordersTable_2": "production-orders",
+            "TABLE_REGION_ordersTable_2": "eu-west-2"
+          }
+        },
+        "testIntermediaryResource": "testIntermediaryResourceValue"
+      },
+      "failureReasons": null,
+      "durations": {
+        "resourceAUpdate": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "resourceBUpdate": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "intermediaryResources": {
+          "totalDuration": -1,
+          "attemptDurations": [-1]
+        },
+        "totalDuration": -1
+      }
+    }
+  },
+  "metadata": {
+    "build": "esbuild"
+  },
+  "exports": {
+    "environment": {
+      "value": "production-env",
+      "type": "string",
+      "field": "variables.environment"
+    }
+  },
+  "childBlueprints": {
+    "coreInfra": {
+      "instanceId": "blueprint-instance-1-child-core-infra",
+      "status": 14,
+      "lastDeployedTimestamp": -1,
+      "lastDeployAttemptTimestamp": -1,
+      "resourceIds": {
+        "complexResource": "complex-resource-id"
+      },
+      "resources": {
+        "complex-resource-id": {
+          "resourceId": "complex-resource-id",
+          "resourceName": "complexResource",
+          "resourceType": "example/complex",
+          "instanceId": "blueprint-instance-1-child-core-infra",
+          "status": 8,
+          "preciseStatus": 17,
+          "lastDeployedTimestamp": -1,
+          "lastDeployAttemptTimestamp": -1,
+          "resourceSpecData": {
+            "itemConfig": {
+              "endpoints": ["https://example.com/1", "https://example.com/2"],
+              "ipv4": true,
+              "metadata": {
+                "environment": "production-env",
+                "region": "us-west-2"
+              },
+              "primaryPort": 80
+            },
+            "otherItemConfig": {
+              "default": {
+                "value1": "Contents of value 1",
+                "value2": "Contents of value 2"
+              }
+            },
+            "vendorConfig": [
+              {
+                "vendorId": "example-vendor-id",
+                "vendorNamespace": "example-vendor-namespace"
+              }
+            ]
+          },
+          "metadata": {},
+          "failureReasons": null,
+          "durations": {
+            "configCompleteDuration": -1,
+            "totalDuration": -1,
+            "attemptDurations": [-1]
+          }
+        }
+      },
+      "links": {},
+      "metadata": {
+        "build": "esbuild"
+      },
+      "exports": {
+        "environment": {
+          "value": "production-env",
+          "type": "string",
+          "field": "variables.environment"
+        },
+        "region": {
+          "value": "US-WEST-2",
+          "type": "string",
+          "field": "values.region"
+        }
+      },
+      "childBlueprints": {},
+      "durations": {
+        "prepareDuration": -1,
+        "totalDuration": -1
+      }
+    }
+  },
+  "childDependencies": {
+    "coreInfra": {}
+  },
+  "durations": {
+    "prepareDuration": -1,
+    "totalDuration": -1
+  }
+}

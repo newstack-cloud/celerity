@@ -9,7 +9,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -381,7 +380,12 @@ func (c *defaultBlueprintContainer) resolveAndCollectExportChanges(
 
 	resolvedExports := map[string]*subengine.ResolveResult{}
 	for exportName, export := range blueprint.Exports.Values {
-		resolvedExport, err := c.resolveExport(ctx, exportName, export)
+		resolvedExport, err := c.resolveExport(
+			ctx,
+			exportName,
+			export,
+			subengine.ResolveForChangeStaging,
+		)
 		if err != nil {
 			return err
 		}
@@ -411,39 +415,6 @@ func (c *defaultBlueprintContainer) resolveAndCollectExportChanges(
 	stagingState.UpdateExportChanges(collectedExportChanges)
 
 	return nil
-}
-
-func (c *defaultBlueprintContainer) resolveExport(
-	ctx context.Context,
-	exportName string,
-	export *schema.Export,
-) (*subengine.ResolveResult, error) {
-	if export.Field != nil && export.Field.StringValue != nil {
-		exportFieldAsSub, err := substitutions.ParseSubstitution(
-			"exports",
-			*export.Field.StringValue,
-			/* parentSourceStart */ &source.Meta{Position: source.Position{}},
-			/* outputLineInfo */ false,
-			/* ignoreParentColumn */ true,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		return c.substitutionResolver.ResolveSubstitution(
-			ctx,
-			&substitutions.StringOrSubstitution{
-				SubstitutionValue: exportFieldAsSub,
-			},
-			core.ExportElementID(exportName),
-			"field",
-			&subengine.ResolveTargetInfo{
-				ResolveFor: subengine.ResolveForChangeStaging,
-			},
-		)
-	}
-
-	return nil, nil
 }
 
 func (c *defaultBlueprintContainer) resolveAndCollectMetadataChanges(

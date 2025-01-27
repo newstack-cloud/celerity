@@ -1,6 +1,6 @@
 {
   "instanceId": "blueprint-instance-2-child-core-infra",
-  "status": 1,
+  "status": 2,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,
   "resourceIds": {

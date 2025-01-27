@@ -40,8 +40,15 @@ resources:
     linkSelector:
       byLabel:
         app: "orders1"
+    metadata:
+      custom:
+        # This dependency causes a cyclic dependency that should be caught with the
+        # reference chain collector functionality to detect cyclic dependencies
+        # for the special case where string literals are used for resource names
+        # when passed as arguments to the "link" function.
+        linkInfo: '${link("saveOrderFunction", "getOrderFunction")}'
     spec:
-      name: "Orders"
+      tableName: "Orders"
 
   saveOrderFunction:
     type: aws/lambda/function
@@ -62,11 +69,5 @@ resources:
     metadata:
       labels:
         app: "orders2"
-      custom:
-        # This dependency causes a cyclic dependency that should be caught with the
-        # reference chain collector functionality to detect cyclic dependencies
-        # for the special case where string literals are used for resource names
-        # when passed as arguments to the "link" function.
-        linkInfo: '${link("ordersTable", "saveOrderFunction")}'
     spec:
       handler: "src/orders.getOrder"

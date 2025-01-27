@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	commoncore "github.com/two-hundred/celerity/libs/common/core"
@@ -32,6 +33,16 @@ func (c *defaultBlueprintContainer) Deploy(
 	state := c.createDeploymentState()
 
 	isNewInstance, err := checkDeploymentForNewInstance(input)
+	if err != nil {
+		return err
+	}
+
+	err = c.saveNewInstance(
+		ctx,
+		instanceID,
+		isNewInstance,
+		core.InstanceStatusNotDeployed,
+	)
 	if err != nil {
 		return err
 	}
@@ -73,7 +84,7 @@ func (c *defaultBlueprintContainer) Deploy(
 	// the caller-provided channels, so even though this is called asynchronously,
 	// it will ensure that no top-level status updates received by the caller go out of sync
 	// with the status information in the persisted state.
-	go c.persistInstanceDeploymentStatusUpdates(
+	go c.saveInstanceDeploymentState(
 		ctxWithInstanceID,
 		instanceID,
 		isNewInstance,
@@ -114,11 +125,6 @@ func (c *defaultBlueprintContainer) deploy(
 	}
 
 	startTime := c.clock.Now()
-	channels.DeploymentUpdateChan <- DeploymentUpdateMessage{
-		InstanceID:      input.InstanceID,
-		Status:          core.InstanceStatusPreparing,
-		UpdateTimestamp: startTime.Unix(),
-	}
 
 	instances := c.stateContainer.Instances()
 	currentInstanceState, err := instances.Get(ctx, input.InstanceID)
@@ -133,6 +139,26 @@ func (c *defaultBlueprintContainer) deploy(
 			)
 			return
 		}
+	}
+
+	if isInstanceInProgress(&currentInstanceState, input.Rollback) {
+		channels.FinishChan <- c.createDeploymentFinishedMessage(
+			input.InstanceID,
+			determineInstanceDeployFailedStatus(input.Rollback, isNewInstance),
+			[]string{instanceInProgressDeployFailedMessage(input.InstanceID, input.Rollback)},
+			c.clock.Since(startTime),
+			/* prepareElapsedTime */ nil,
+		)
+		return
+	}
+
+	// Send the preparing status update after retrieving the current state
+	// and checking if there is a deployment in progress for the provided
+	// instance ID.
+	channels.DeploymentUpdateChan <- DeploymentUpdateMessage{
+		InstanceID:      input.InstanceID,
+		Status:          core.InstanceStatusPreparing,
+		UpdateTimestamp: startTime.Unix(),
 	}
 
 	// Use the same behaviour as change staging to extract the nodes
@@ -165,11 +191,16 @@ func (c *defaultBlueprintContainer) deploy(
 		Channels:              channels,
 		ParamOverrides:        paramOverrides,
 		InstanceStateSnapshot: &currentInstanceState,
-		ResourceProviders:     prepareResult.ResourceProviderMap,
-		DeploymentGroups:      prepareResult.ParallelGroups,
-		InputChanges:          input.Changes,
-		ResourceTemplates:     prepareResult.BlueprintContainer.ResourceTemplates(),
-		ResourceRegistry:      c.resourceRegistry.WithParams(paramOverrides),
+		ResourceProviders: addRemovedResourcesToProvidersMap(
+			prepareResult.ResourceProviderMap,
+			&currentInstanceState,
+			c.providers,
+		),
+		DeploymentGroups:  prepareResult.ParallelGroups,
+		PreparedContainer: prepareResult.BlueprintContainer,
+		InputChanges:      input.Changes,
+		ResourceTemplates: prepareResult.BlueprintContainer.ResourceTemplates(),
+		ResourceRegistry:  c.resourceRegistry.WithParams(paramOverrides),
 	}
 
 	flattenedNodes := core.Flatten(prepareResult.ParallelGroups)
@@ -193,23 +224,13 @@ func (c *defaultBlueprintContainer) deploy(
 		input,
 		deployCtx,
 		flattenedNodes,
+		isNewInstance,
 	)
 	if err != nil {
 		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
 		return
 	}
 	if sentFinishedMessage {
-		return
-	}
-
-	err = c.saveNewInstance(
-		ctx,
-		input.InstanceID,
-		isNewInstance,
-		determineInstanceDeployingStatus(input.Rollback, isNewInstance),
-	)
-	if err != nil {
-		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
 		return
 	}
 
@@ -227,16 +248,146 @@ func (c *defaultBlueprintContainer) deploy(
 		return
 	}
 
+	// Only generate and save exports and metadata for the blueprint
+	// instance if the deployment was successful.
+	err = c.saveExportsAndMetadata(
+		ctx,
+		input,
+		deployCtx,
+	)
+	if err != nil {
+		channels.ErrChan <- wrapErrorForChildContext(err, paramOverrides)
+		return
+	}
+
 	channels.FinishChan <- c.createDeploymentFinishedMessage(
 		input.InstanceID,
 		determineInstanceDeployedStatus(input.Rollback, isNewInstance),
 		[]string{},
 		c.clock.Since(startTime),
-		/* prepareElapsedTime */ nil,
+		deployCtx.State.GetPrepareDuration(),
 	)
 }
 
-func (c *defaultBlueprintContainer) persistInstanceDeploymentStatusUpdates(
+func (c *defaultBlueprintContainer) saveExportsAndMetadata(
+	ctx context.Context,
+	input *DeployInput,
+	deployCtx *DeployContext,
+) error {
+	blueprint := deployCtx.PreparedContainer.BlueprintSpec().Schema()
+	if blueprint.Exports != nil {
+		err := c.saveExports(
+			ctx,
+			input.InstanceID,
+			blueprint,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if blueprint.Metadata != nil {
+		err := c.saveMetadata(
+			ctx,
+			input.InstanceID,
+			blueprint,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) saveExports(
+	ctx context.Context,
+	instanceID string,
+	blueprint *schema.Blueprint,
+) error {
+	exports := map[string]*state.ExportState{}
+	for exportName, export := range blueprint.Exports.Values {
+		resolveResult, err := c.substitutionResolver.ResolveInExport(
+			ctx,
+			exportName,
+			export,
+			&subengine.ResolveExportTargetInfo{
+				ResolveFor: subengine.ResolveForDeployment,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		field := core.StringValueFromScalar(resolveResult.ResolvedExport.Field)
+
+		resolveValueResult, err := c.resolveExport(
+			ctx,
+			exportName,
+			export,
+			subengine.ResolveForDeployment,
+		)
+		if err != nil {
+			return err
+		}
+
+		exports[exportName] = &state.ExportState{
+			Type:        resolveResult.ResolvedExport.Type.Value,
+			Value:       resolveValueResult.Resolved,
+			Description: core.StringValue(resolveResult.ResolvedExport.Description),
+			Field:       field,
+		}
+	}
+
+	if len(exports) > 0 {
+		exportStore := c.stateContainer.Exports()
+		err := exportStore.SaveAll(
+			ctx,
+			instanceID,
+			exports,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) saveMetadata(
+	ctx context.Context,
+	instanceID string,
+	blueprint *schema.Blueprint,
+) error {
+	result, err := c.substitutionResolver.ResolveInMappingNode(
+		ctx,
+		"metadata",
+		blueprint.Metadata,
+		&subengine.ResolveMappingNodeTargetInfo{
+			ResolveFor: subengine.ResolveForDeployment,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	metadata := result.ResolvedMappingNode
+	if metadata != nil && core.IsObjectMappingNode(metadata) {
+		metadataStore := c.stateContainer.Metadata()
+		err := metadataStore.Save(
+			ctx,
+			instanceID,
+			metadata.Fields,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *defaultBlueprintContainer) saveInstanceDeploymentState(
 	ctx context.Context,
 	instanceID string,
 	isNewInstance bool,
@@ -330,6 +481,7 @@ func (c *defaultBlueprintContainer) deployElements(
 		input.InstanceID,
 		input.Changes,
 		deployCtx,
+		internalChannels,
 	)
 
 	return c.listenToAndProcessDeploymentEvents(
@@ -346,6 +498,7 @@ func (c *defaultBlueprintContainer) startDeploymentFromFirstGroup(
 	instanceID string,
 	changes *BlueprintChanges,
 	deployCtx *DeployContext,
+	internalChannels *DeployChannels,
 ) {
 	instanceTreePath := getInstanceTreePath(deployCtx.ParamOverrides, instanceID)
 
@@ -356,7 +509,10 @@ func (c *defaultBlueprintContainer) startDeploymentFromFirstGroup(
 			instanceID,
 			instanceTreePath,
 			changes,
-			deployCtx,
+			DeployContextWithGroup(
+				DeployContextWithChannels(deployCtx, internalChannels),
+				0,
+			),
 		)
 	}
 }
@@ -370,12 +526,18 @@ func (c *defaultBlueprintContainer) deployNode(
 	deployCtx *DeployContext,
 ) {
 	if node.Type() == DeploymentNodeTypeResource {
+		resourceElem := &ResourceIDInfo{
+			ResourceName: node.ChainLinkNode.ResourceName,
+		}
 		deployCtx.State.SetElementDependencies(
-			&ResourceIDInfo{
-				ResourceName: node.ChainLinkNode.ResourceName,
-			},
+			resourceElem,
 			extractNodeDependencyInfo(node),
 		)
+		// Mark resource as in progress at source to avoid re-deploying
+		// resources that are already being deployed when in intermediary
+		// states between initiating the deployment and the listener receiving
+		// the in-progress message.
+		deployCtx.State.SetElementInProgress(resourceElem)
 		go c.resourceDeployer.Deploy(
 			ctx,
 			instanceID,
@@ -386,12 +548,19 @@ func (c *defaultBlueprintContainer) deployNode(
 	} else if node.Type() == DeploymentNodeTypeChild {
 		includeTreePath := getIncludeTreePath(deployCtx.ParamOverrides, node.Name())
 		childName := core.ToLogicalChildName(node.Name())
+
+		childElem := &ChildBlueprintIDInfo{
+			ChildName: childName,
+		}
 		deployCtx.State.SetElementDependencies(
-			&ChildBlueprintIDInfo{
-				ChildName: childName,
-			},
+			childElem,
 			extractNodeDependencyInfo(node),
 		)
+		// Mark child as in progress at source to avoid re-deploying
+		// child blueprints that are already being deployed when in intermediary
+		// states between initiating the deployment and the listener receiving
+		// the in-progress message.
+		deployCtx.State.SetElementInProgress(childElem)
 		childChanges := getChildChanges(changes, childName)
 		go c.childDeployer.Deploy(
 			ctx,
@@ -426,10 +595,30 @@ func (c *defaultBlueprintContainer) listenToAndProcessDeploymentEvents(
 		case <-ctx.Done():
 			err = ctx.Err()
 		case msg := <-internalChannels.ResourceUpdateChan:
-			err = c.handleResourceUpdateMessage(ctx, instanceID, msg, deployCtx, finished)
+			err = c.handleResourceUpdateMessage(
+				ctx,
+				instanceID,
+				msg,
+				// As this handler spans multiple deployment groups,
+				// the deploy context must always be enhanced with the group index
+				// of the message being processed to ensure logic to determine
+				// which elements to deploy next functions correctly.
+				DeployContextWithGroup(deployCtx, msg.Group),
+				finished,
+				internalChannels,
+			)
 		case msg := <-internalChannels.ChildUpdateChan:
-			err = c.handleChildUpdateMessage(ctx, instanceID, msg, deployCtx, finished)
+			err = c.handleChildUpdateMessage(
+				ctx,
+				instanceID,
+				msg,
+				DeployContextWithGroup(deployCtx, msg.Group),
+				finished,
+				internalChannels,
+			)
 		case msg := <-internalChannels.LinkUpdateChan:
+			// Link messages are not associated with a group, so the deploy context
+			// does not need to be enhanced like it is for resource and child messages.
 			err = c.handleLinkUpdateMessage(ctx, instanceID, msg, deployCtx, finished)
 		case err = <-internalChannels.ErrChan:
 		}
@@ -465,6 +654,7 @@ func (c *defaultBlueprintContainer) handleResourceUpdateMessage(
 	msg ResourceDeployUpdateMessage,
 	deployCtx *DeployContext,
 	finished map[string]*deployUpdateMessageWrapper,
+	internalChannels *DeployChannels,
 ) error {
 	if msg.InstanceID != instanceID {
 		// If message is for a child blueprint, pass through to the client
@@ -482,11 +672,11 @@ func (c *defaultBlueprintContainer) handleResourceUpdateMessage(
 	}
 
 	if isResourceUpdateEvent(msg.PreciseStatus, deployCtx.Rollback) {
-		return c.handleResourceUpdateEvent(ctx, msg, deployCtx, finished, elementName)
+		return c.handleResourceUpdateEvent(ctx, msg, deployCtx, finished, elementName, internalChannels)
 	}
 
 	if isResourceCreationEvent(msg.PreciseStatus, deployCtx.Rollback) {
-		return c.handleResourceCreationEvent(ctx, msg, deployCtx, finished, elementName)
+		return c.handleResourceCreationEvent(ctx, msg, deployCtx, finished, elementName, internalChannels)
 	}
 
 	return nil
@@ -498,6 +688,7 @@ func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
 	deployCtx *DeployContext,
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
+	internalChannels *DeployChannels,
 ) error {
 	resources := c.stateContainer.Resources()
 	element := &ResourceIDInfo{
@@ -506,7 +697,6 @@ func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
 	}
 
 	if startedUpdatingResource(msg.PreciseStatus, deployCtx.Rollback) {
-		deployCtx.State.SetElementInProgress(element)
 		updateTimestamp := int(msg.UpdateTimestamp)
 		err := resources.UpdateStatus(
 			ctx,
@@ -530,6 +720,7 @@ func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
 			element,
 			deployCtx,
 			resources,
+			internalChannels,
 		)
 		if err != nil {
 			return err
@@ -553,18 +744,22 @@ func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
 			msgWrapper,
 			deployCtx.Rollback,
 		) {
-			return c.handleSuccessfulResourceDeployment(
+			err := c.handleSuccessfulResourceDeployment(
 				ctx,
 				msg,
 				deployCtx,
 				element,
 				resources,
 				deployCtx.State.SetUpdatedElement,
+				internalChannels,
 			)
+			if err != nil {
+				return err
+			}
 		} else {
 			updateTimestamp := int(msg.UpdateTimestamp)
 			currentTimestamp := int(c.clock.Now().Unix())
-			return resources.UpdateStatus(
+			err := resources.UpdateStatus(
 				ctx,
 				msg.InstanceID,
 				msg.ResourceID,
@@ -577,9 +772,15 @@ func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
 					FailureReasons:             msg.FailureReasons,
 				},
 			)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
+	// This must always be called, there must be no early returns in the function body
+	// before this point other than for errors.
+	deployCtx.Channels.ResourceUpdateChan <- msg
 	return nil
 }
 
@@ -589,11 +790,14 @@ func (c *defaultBlueprintContainer) buildResourceState(
 	deployCtx *DeployContext,
 ) state.ResourceState {
 	resourceTemplateName := deployCtx.ResourceTemplates[msg.ResourceName]
+	blueprintResource := deployCtx.PreparedContainer.BlueprintSpec().ResourceSchema(msg.ResourceName)
+	resourceType := getResourceType(blueprintResource)
 	resourceData := deployCtx.State.GetResourceData(msg.ResourceName)
 	resourceState := state.ResourceState{
 		ResourceID:                 msg.ResourceID,
 		ResourceName:               msg.ResourceName,
 		ResourceTemplateName:       resourceTemplateName,
+		ResourceType:               resourceType,
 		InstanceID:                 msg.InstanceID,
 		Status:                     msg.Status,
 		PreciseStatus:              msg.PreciseStatus,
@@ -637,11 +841,12 @@ func (c *defaultBlueprintContainer) prepareAndDeployLinks(
 	instanceID string,
 	linksReadyToBeDeployed []*LinkPendingCompletion,
 	deployCtx *DeployContext,
-) error {
+	internalChannels *DeployChannels,
+) {
 	if len(linksReadyToBeDeployed) == 0 {
 		// Make sure that the latest instance state is only loaded
 		// if it is needed for links ready to be deployed.
-		return nil
+		return
 	}
 
 	// Get the latest instance state that will be fully updated with the current
@@ -649,7 +854,8 @@ func (c *defaultBlueprintContainer) prepareAndDeployLinks(
 	instances := c.stateContainer.Instances()
 	latestInstanceState, err := instances.Get(ctx, instanceID)
 	if err != nil {
-		return err
+		internalChannels.ErrChan <- err
+		return
 	}
 
 	// Links are staged in series to reflect what happens with deployment.
@@ -657,12 +863,13 @@ func (c *defaultBlueprintContainer) prepareAndDeployLinks(
 	// to ensure consistency in state, links involving the same resource will be
 	// both staged and deployed synchronously.
 	for _, readyToDeploy := range linksReadyToBeDeployed {
-		linkImpl, err := getLinkImplementation(
+		linkImpl, _, err := getLinkImplementation(
 			readyToDeploy.resourceANode,
 			readyToDeploy.resourceBNode,
 		)
 		if err != nil {
-			return err
+			internalChannels.ErrChan <- err
+			return
 		}
 
 		err = c.deployLink(
@@ -670,14 +877,13 @@ func (c *defaultBlueprintContainer) prepareAndDeployLinks(
 			linkImpl,
 			readyToDeploy,
 			&latestInstanceState,
-			deployCtx,
+			DeployContextWithChannels(deployCtx, internalChannels),
 		)
 		if err != nil {
-			return err
+			internalChannels.ErrChan <- err
+			return
 		}
 	}
-
-	return nil
 }
 
 func (c *defaultBlueprintContainer) deployLink(
@@ -692,6 +898,25 @@ func (c *defaultBlueprintContainer) deployLink(
 		readyToDeploy.resourceANode.ResourceName,
 		readyToDeploy.resourceBNode.ResourceName,
 	)
+	element := &LinkIDInfo{
+		LinkName: linkName,
+	}
+	if deployCtx.State.CheckUpdateElementDeploymentStarted(
+		element,
+		/* otherConditionToStart */ true,
+	) {
+		// Link is already being deployed.
+		return nil
+	}
+
+	// Mark link as in progress at source to avoid re-deploying
+	// links that are already being deployed when in intermediary
+	// states between initiating the deployment and the listener receiving
+	// the in-progress message.
+	deployCtx.State.SetElementInProgress(
+		element,
+	)
+
 	linkState, err := links.GetByName(ctx, latestInstanceState.InstanceID, linkName)
 	if err != nil && !state.IsLinkNotFound(err) {
 		return err
@@ -720,7 +945,7 @@ func (c *defaultBlueprintContainer) deployLink(
 		return err
 	}
 
-	result, err := c.linkDeployer.Deploy(
+	return c.linkDeployer.Deploy(
 		ctx,
 		&LinkIDInfo{
 			LinkID:   linkID,
@@ -729,16 +954,11 @@ func (c *defaultBlueprintContainer) deployLink(
 		latestInstanceState.InstanceID,
 		linkUpdateType,
 		linkImpl,
-		deployCtx,
+		// For the same reason as with the retry policy, we must use a fresh snapshot
+		// of the state that includes the resources that the link depends on.
+		DeployContextWithInstanceSnapshot(deployCtx, latestInstanceState),
 		retryPolicy,
 	)
-	if err != nil {
-		return err
-	}
-
-	deployCtx.State.SetLinkDeployResult(linkName, result)
-
-	return nil
 }
 
 func (c *defaultBlueprintContainer) getLinkID(linkState state.LinkState) (string, error) {
@@ -755,6 +975,7 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterResource(
 	deployCtx *DeployContext,
 	deployedResource *ResourceIDInfo,
 	configComplete bool,
+	internalChannels *DeployChannels,
 ) {
 	if deployCtx.CurrentGroupIndex == len(deployCtx.DeploymentGroups)-1 {
 		// No more groups to deploy.
@@ -770,6 +991,7 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterResource(
 				return dep.Name() == elementName
 			},
 		)
+		isDependant := dependencyNode != nil
 
 		stabilisedDependencies, err := c.getStabilisedDependencies(
 			ctx,
@@ -789,14 +1011,28 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterResource(
 			deployCtx.State,
 		)
 
-		if dependencyNode != nil &&
+		readyToDeployAfterResource := readyToDeployAfterDependency(
+			node,
+			dependencyNode,
+			stabilisedDependencies,
+			configComplete,
+		)
+
+		dependenciesComplete := (isDependant &&
 			!otherDependenciesInProgress &&
-			readyToDeployAfterDependency(
-				node,
-				dependencyNode,
-				stabilisedDependencies,
-				configComplete,
-			) {
+			readyToDeployAfterResource) ||
+			(!isDependant && !otherDependenciesInProgress)
+
+		canDeploy := c.checkUpdateNodeCanDeploy(
+			node,
+			deployCtx.State,
+			// Elements that have no dependencies can appear in any group
+			// as the ordering only ensures that elements with dependencies
+			// are deployed after their dependencies.
+			dependenciesComplete || len(node.DirectDependencies) == 0,
+		)
+
+		if canDeploy {
 			instanceTreePath := getInstanceTreePath(deployCtx.ParamOverrides, instanceID)
 			c.deployNode(
 				ctx,
@@ -804,7 +1040,10 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterResource(
 				instanceID,
 				instanceTreePath,
 				deployCtx.InputChanges,
-				deployCtx,
+				DeployContextWithGroup(
+					DeployContextWithChannels(deployCtx, internalChannels),
+					deployCtx.CurrentGroupIndex+1,
+				),
 			)
 		}
 	}
@@ -839,6 +1078,19 @@ func (c *defaultBlueprintContainer) getStabilisedDependencies(
 	}
 
 	return []string{}, nil
+}
+
+func (c *defaultBlueprintContainer) checkUpdateNodeCanDeploy(
+	node *DeploymentNode,
+	state DeploymentState,
+	otherConditionToStart bool,
+) bool {
+	element := createElementFromDeploymentNode(node)
+	deploymentStarted := state.CheckUpdateElementDeploymentStarted(
+		element,
+		otherConditionToStart,
+	)
+	return !deploymentStarted && otherConditionToStart
 }
 
 func (c *defaultBlueprintContainer) checkDependenciesInProgress(
@@ -896,6 +1148,7 @@ func (c *defaultBlueprintContainer) handleResourceCreationEvent(
 	deployCtx *DeployContext,
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
+	internalChannels *DeployChannels,
 ) error {
 	resources := c.stateContainer.Resources()
 	element := &ResourceIDInfo{
@@ -904,7 +1157,6 @@ func (c *defaultBlueprintContainer) handleResourceCreationEvent(
 	}
 
 	if startedCreatingResource(msg.PreciseStatus, deployCtx.Rollback) {
-		deployCtx.State.SetElementInProgress(element)
 		updateTimestamp := int(msg.UpdateTimestamp)
 		err := resources.UpdateStatus(
 			ctx,
@@ -928,6 +1180,7 @@ func (c *defaultBlueprintContainer) handleResourceCreationEvent(
 			element,
 			deployCtx,
 			resources,
+			internalChannels,
 		)
 		if err != nil {
 			return err
@@ -953,18 +1206,22 @@ func (c *defaultBlueprintContainer) handleResourceCreationEvent(
 		)
 
 		if resourceCreationSuccessful {
-			return c.handleSuccessfulResourceDeployment(
+			err := c.handleSuccessfulResourceDeployment(
 				ctx,
 				msg,
 				deployCtx,
 				element,
 				resources,
 				deployCtx.State.SetCreatedElement,
+				internalChannels,
 			)
+			if err != nil {
+				return err
+			}
 		} else {
 			updateTimestamp := int(msg.UpdateTimestamp)
 			currentTimestamp := int(c.clock.Now().Unix())
-			return resources.UpdateStatus(
+			err := resources.UpdateStatus(
 				ctx,
 				msg.InstanceID,
 				msg.ResourceID,
@@ -977,9 +1234,15 @@ func (c *defaultBlueprintContainer) handleResourceCreationEvent(
 					FailureReasons:             msg.FailureReasons,
 				},
 			)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
+	// This must always be called, there must be no early returns in the function body
+	// before this point other than for errors.
+	deployCtx.Channels.ResourceUpdateChan <- msg
 	return nil
 }
 
@@ -990,6 +1253,7 @@ func (c *defaultBlueprintContainer) handleSuccessfulResourceDeployment(
 	element *ResourceIDInfo,
 	resources state.ResourcesContainer,
 	saveElementInEphemeralState func(state.Element),
+	internalChannels *DeployChannels,
 ) error {
 	// Update the ephemeral deploy state before persisting
 	// the status update with the state container
@@ -1022,14 +1286,18 @@ func (c *defaultBlueprintContainer) handleSuccessfulResourceDeployment(
 		msg.InstanceID,
 		linksReadyToBeDeployed,
 		deployCtx,
+		internalChannels,
 	)
 
-	c.deployNextElementsAfterResource(
+	// To avoid blocking the handler from processing other messages
+	// run the logic to deploy the next elements in a separate goroutine.
+	go c.deployNextElementsAfterResource(
 		ctx,
 		msg.InstanceID,
 		deployCtx,
 		element,
 		/* configComplete */ false,
+		internalChannels,
 	)
 
 	return nil
@@ -1041,6 +1309,7 @@ func (c *defaultBlueprintContainer) handleResourceConfigComplete(
 	element *ResourceIDInfo,
 	deployCtx *DeployContext,
 	resources state.ResourcesContainer,
+	internalChannels *DeployChannels,
 ) error {
 	deployCtx.State.SetElementConfigComplete(element)
 	updateTimestamp := int(msg.UpdateTimestamp)
@@ -1059,12 +1328,15 @@ func (c *defaultBlueprintContainer) handleResourceConfigComplete(
 		return err
 	}
 
-	c.deployNextElementsAfterResource(
+	// To avoid blocking the handler from processing other messages
+	// run the logic to deploy the next elements in a separate goroutine.
+	go c.deployNextElementsAfterResource(
 		ctx,
 		msg.InstanceID,
 		deployCtx,
 		element,
 		/* configComplete */ true,
+		internalChannels,
 	)
 
 	return nil
@@ -1076,6 +1348,7 @@ func (c *defaultBlueprintContainer) handleChildUpdateMessage(
 	msg ChildDeployUpdateMessage,
 	deployCtx *DeployContext,
 	finished map[string]*deployUpdateMessageWrapper,
+	internalChannels *DeployChannels,
 ) error {
 	if msg.ParentInstanceID != instanceID {
 		// If message is for a child blueprint, pass through to the client
@@ -1093,11 +1366,11 @@ func (c *defaultBlueprintContainer) handleChildUpdateMessage(
 	}
 
 	if isChildUpdateEvent(msg.Status, deployCtx.Rollback) {
-		return c.handleChildUpdateEvent(ctx, msg, deployCtx, finished, elementName)
+		return c.handleChildUpdateEvent(ctx, msg, deployCtx, finished, elementName, internalChannels)
 	}
 
 	if isChildDeployEvent(msg.Status, deployCtx.Rollback) {
-		return c.handleChildDeployEvent(ctx, msg, deployCtx, finished, elementName)
+		return c.handleChildDeployEvent(ctx, msg, deployCtx, finished, elementName, internalChannels)
 	}
 
 	return nil
@@ -1109,15 +1382,12 @@ func (c *defaultBlueprintContainer) handleChildUpdateEvent(
 	deployCtx *DeployContext,
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
+	internalChannels *DeployChannels,
 ) error {
 	children := c.stateContainer.Children()
 	element := &ChildBlueprintIDInfo{
 		ChildInstanceID: msg.ChildInstanceID,
 		ChildName:       msg.ChildName,
-	}
-
-	if startedUpdatingChild(msg.Status, deployCtx.Rollback) {
-		deployCtx.State.SetElementInProgress(element)
 	}
 
 	if finishedUpdatingChild(msg.Status, deployCtx.Rollback) {
@@ -1161,15 +1431,21 @@ func (c *defaultBlueprintContainer) handleChildUpdateEvent(
 		}
 
 		if childUpdateSuccessful {
-			c.deployNextElementsAfterChild(
+			// To avoid blocking the handler from processing other messages
+			// run the logic to deploy the next elements in a separate goroutine.
+			go c.deployNextElementsAfterChild(
 				ctx,
 				msg.ParentInstanceID,
 				deployCtx,
 				element,
+				internalChannels,
 			)
 		}
 	}
 
+	// This must always be called, there must be no early returns in the function body
+	// before this point other than for errors.
+	deployCtx.Channels.ChildUpdateChan <- msg
 	return nil
 }
 
@@ -1178,6 +1454,7 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterChild(
 	instanceID string,
 	deployCtx *DeployContext,
 	deployedChild *ChildBlueprintIDInfo,
+	internalChannels *DeployChannels,
 ) {
 	if deployCtx.CurrentGroupIndex == len(deployCtx.DeploymentGroups)-1 {
 		// No more groups to deploy.
@@ -1193,6 +1470,7 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterChild(
 				return dep.Name() == elementName
 			},
 		)
+		isDependant := dependencyNode != nil
 
 		// The next element may be a resource that depends on another resource
 		// that is expected to be stable before the resource in question can be deployed.
@@ -1216,20 +1494,39 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterChild(
 			deployCtx.State,
 		)
 
-		if dependencyNode != nil &&
+		readyToDeployAfterChild := readyToDeployAfterDependency(
+			node,
+			dependencyNode,
+			stabilisedDependencies,
+			/* configComplete */ false,
+		)
+
+		dependenciesComplete := (isDependant &&
 			!otherDependenciesInProgress &&
-			readyToDeployAfterDependency(
-				node,
-				dependencyNode,
-				stabilisedDependencies,
-				/* configComplete */ false,
-			) {
-			go c.resourceDeployer.Deploy(
+			readyToDeployAfterChild) ||
+			(!isDependant && !otherDependenciesInProgress)
+
+		canDeploy := c.checkUpdateNodeCanDeploy(
+			node,
+			deployCtx.State,
+			// Elements that have no dependencies can appear in any group
+			// as the ordering only ensures that elements with dependencies
+			// are deployed after their dependencies.
+			dependenciesComplete || len(node.DirectDependencies) == 0,
+		)
+
+		if canDeploy {
+			instanceTreePath := getInstanceTreePath(deployCtx.ParamOverrides, instanceID)
+			c.deployNode(
 				ctx,
+				node,
 				instanceID,
-				node.ChainLinkNode,
+				instanceTreePath,
 				deployCtx.InputChanges,
-				deployCtx,
+				DeployContextWithGroup(
+					DeployContextWithChannels(deployCtx, internalChannels),
+					deployCtx.CurrentGroupIndex+1,
+				),
 			)
 		}
 	}
@@ -1241,15 +1538,12 @@ func (c *defaultBlueprintContainer) handleChildDeployEvent(
 	deployCtx *DeployContext,
 	finished map[string]*deployUpdateMessageWrapper,
 	elementName string,
+	internalChannels *DeployChannels,
 ) error {
 	children := c.stateContainer.Children()
 	element := &ChildBlueprintIDInfo{
 		ChildInstanceID: msg.ChildInstanceID,
 		ChildName:       msg.ChildName,
-	}
-
-	if startedDeployingChild(msg.Status, deployCtx.Rollback) {
-		deployCtx.State.SetElementInProgress(element)
 	}
 
 	if finishedDeployingChild(msg.Status, deployCtx.Rollback) {
@@ -1293,15 +1587,21 @@ func (c *defaultBlueprintContainer) handleChildDeployEvent(
 		}
 
 		if childDeploySuccessful {
-			c.deployNextElementsAfterChild(
+			// To avoid blocking the handler from processing other messages
+			// run the logic to deploy the next elements in a separate goroutine.
+			go c.deployNextElementsAfterChild(
 				ctx,
 				msg.ParentInstanceID,
 				deployCtx,
 				element,
+				internalChannels,
 			)
 		}
 	}
 
+	// This must always be called, there must be no early returns in the function body
+	// before this point other than for errors.
+	deployCtx.Channels.ChildUpdateChan <- msg
 	return nil
 }
 
@@ -1352,7 +1652,6 @@ func (c *defaultBlueprintContainer) handleLinkUpdateEvent(
 	}
 
 	if startedUpdatingLink(msg.Status, deployCtx.Rollback) {
-		deployCtx.State.SetElementInProgress(element)
 		updateTimestamp := int(msg.UpdateTimestamp)
 		err := links.UpdateStatus(
 			ctx,
@@ -1393,17 +1692,23 @@ func (c *defaultBlueprintContainer) handleLinkUpdateEvent(
 			// as the deploy state will be used across multiple goroutines
 			// to determine the next elements to deploy.
 			deployCtx.State.SetUpdatedElement(element)
-		}
 
-		// Instead of just updating the status, ensure that the link data
-		// and intermediary resource states are also persisted.
-		return links.Save(
-			ctx,
-			msg.InstanceID,
-			c.buildLinkState(msg, deployCtx),
-		)
+			// Instead of just updating the status, ensure that the link data
+			// and intermediary resource states are also persisted.
+			err := links.Save(
+				ctx,
+				msg.InstanceID,
+				c.buildLinkState(msg, deployCtx),
+			)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
+	// This must always be called, there must be no early returns in the function body
+	// before this point other than for errors.
+	deployCtx.Channels.LinkUpdateChan <- msg
 	return nil
 }
 
@@ -1464,7 +1769,6 @@ func (c *defaultBlueprintContainer) handleLinkCreationEvent(
 	}
 
 	if startedCreatingLink(msg.Status, deployCtx.Rollback) {
-		deployCtx.State.SetElementInProgress(element)
 		updateTimestamp := int(msg.UpdateTimestamp)
 		err := links.UpdateStatus(
 			ctx,
@@ -1509,13 +1813,19 @@ func (c *defaultBlueprintContainer) handleLinkCreationEvent(
 
 		// Instead of just updating the status, ensure that the link data
 		// and intermediary resource states are also persisted.
-		return links.Save(
+		err := links.Save(
 			ctx,
 			msg.InstanceID,
 			c.buildLinkState(msg, deployCtx),
 		)
+		if err != nil {
+			return err
+		}
 	}
 
+	// This must always be called, there must be no early returns in the function body
+	// before this point other than for errors.
+	deployCtx.Channels.LinkUpdateChan <- msg
 	return nil
 }
 

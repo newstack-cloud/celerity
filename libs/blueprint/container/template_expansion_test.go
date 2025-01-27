@@ -12,12 +12,12 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 type ExpandResourceTemplatesTestSuite struct {
@@ -51,7 +51,10 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 
 	s.stateContainer = internal.NewMemoryStateContainer()
 	s.providers = map[string]provider.Provider{
-		"aws": newTestAWSProvider(),
+		"aws": newTestAWSProvider(
+			/* alwaysStabilise */ false,
+			/* skipRetryFailuresForLinkNames */ []string{},
+		),
 		"core": providerhelpers.NewCoreProvider(
 			s.stateContainer.Links(),
 			core.BlueprintInstanceIDFromContext,
@@ -64,7 +67,7 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 		map[string]transform.SpecTransformer{},
 		s.stateContainer,
 		newFSChildResolver(),
-		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
+		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
 	)
 	for name, filePath := range inputFiles {
 		specBytes, err := os.ReadFile(filePath)

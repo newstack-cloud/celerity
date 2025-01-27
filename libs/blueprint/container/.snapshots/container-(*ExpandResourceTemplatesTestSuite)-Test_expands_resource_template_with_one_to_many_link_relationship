@@ -515,7 +515,7 @@
           Spec: (*core.MappingNode)({
             Scalar: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) (len=1) {
-              (string) (len=4) "name": (*core.MappingNode)({
+              (string) (len=9) "tableName": (*core.MappingNode)({
                 Scalar: (*core.ScalarValue)(<nil>),
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
@@ -537,11 +537,11 @@
                           SourceMeta: (*source.Meta)({
                             Position: (source.Position) {
                               Line: (int) 51,
-                              Column: (int) 16
+                              Column: (int) 21
                             },
                             EndPosition: (*source.Position)({
                               Line: (int) 51,
-                              Column: (int) 25
+                              Column: (int) 30
                             })
                           })
                         }),
@@ -556,22 +556,22 @@
                         SourceMeta: (*source.Meta)({
                           Position: (source.Position) {
                             Line: (int) 51,
-                            Column: (int) 16
+                            Column: (int) 21
                           },
                           EndPosition: (*source.Position)({
                             Line: (int) 51,
-                            Column: (int) 25
+                            Column: (int) 30
                           })
                         })
                       }),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
                           Line: (int) 51,
-                          Column: (int) 13
+                          Column: (int) 18
                         },
                         EndPosition: (*source.Position)({
                           Line: (int) 51,
-                          Column: (int) 25
+                          Column: (int) 30
                         })
                       })
                     })
@@ -579,18 +579,18 @@
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
                       Line: (int) 51,
-                      Column: (int) 13
+                      Column: (int) 18
                     },
                     EndPosition: (*source.Position)({
                       Line: (int) 51,
-                      Column: (int) 27
+                      Column: (int) 32
                     })
                   })
                 }),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
                     Line: (int) 51,
-                    Column: (int) 13
+                    Column: (int) 18
                   },
                   EndPosition: (*source.Position)(<nil>)
                 }),
@@ -607,7 +607,7 @@
               EndPosition: (*source.Position)(<nil>)
             }),
             FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
-              (string) (len=4) "name": (*source.Meta)({
+              (string) (len=9) "tableName": (*source.Meta)({
                 Position: (source.Position) {
                   Line: (int) 51,
                   Column: (int) 7
@@ -685,7 +685,7 @@
           Spec: (*core.MappingNode)({
             Scalar: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) (len=1) {
-              (string) (len=4) "name": (*core.MappingNode)({
+              (string) (len=9) "tableName": (*core.MappingNode)({
                 Scalar: (*core.ScalarValue)(<nil>),
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
@@ -707,11 +707,11 @@
                           SourceMeta: (*source.Meta)({
                             Position: (source.Position) {
                               Line: (int) 51,
-                              Column: (int) 16
+                              Column: (int) 21
                             },
                             EndPosition: (*source.Position)({
                               Line: (int) 51,
-                              Column: (int) 25
+                              Column: (int) 30
                             })
                           })
                         }),
@@ -726,22 +726,22 @@
                         SourceMeta: (*source.Meta)({
                           Position: (source.Position) {
                             Line: (int) 51,
-                            Column: (int) 16
+                            Column: (int) 21
                           },
                           EndPosition: (*source.Position)({
                             Line: (int) 51,
-                            Column: (int) 25
+                            Column: (int) 30
                           })
                         })
                       }),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
                           Line: (int) 51,
-                          Column: (int) 13
+                          Column: (int) 18
                         },
                         EndPosition: (*source.Position)({
                           Line: (int) 51,
-                          Column: (int) 25
+                          Column: (int) 30
                         })
                       })
                     })
@@ -749,18 +749,18 @@
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
                       Line: (int) 51,
-                      Column: (int) 13
+                      Column: (int) 18
                     },
                     EndPosition: (*source.Position)({
                       Line: (int) 51,
-                      Column: (int) 27
+                      Column: (int) 32
                     })
                   })
                 }),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
                     Line: (int) 51,
-                    Column: (int) 13
+                    Column: (int) 18
                   },
                   EndPosition: (*source.Position)(<nil>)
                 }),
@@ -777,7 +777,7 @@
               EndPosition: (*source.Position)(<nil>)
             }),
             FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
-              (string) (len=4) "name": (*source.Meta)({
+              (string) (len=9) "tableName": (*source.Meta)({
                 Position: (source.Position) {
                   Line: (int) 51,
                   Column: (int) 7
@@ -855,7 +855,7 @@
           Spec: (*core.MappingNode)({
             Scalar: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) (len=1) {
-              (string) (len=4) "name": (*core.MappingNode)({
+              (string) (len=9) "tableName": (*core.MappingNode)({
                 Scalar: (*core.ScalarValue)(<nil>),
                 Fields: (map[string]*core.MappingNode) <nil>,
                 Items: ([]*core.MappingNode) <nil>,
@@ -877,11 +877,11 @@
                           SourceMeta: (*source.Meta)({
                             Position: (source.Position) {
                               Line: (int) 51,
-                              Column: (int) 16
+                              Column: (int) 21
                             },
                             EndPosition: (*source.Position)({
                               Line: (int) 51,
-                              Column: (int) 25
+                              Column: (int) 30
                             })
                           })
                         }),
@@ -896,22 +896,22 @@
                         SourceMeta: (*source.Meta)({
                           Position: (source.Position) {
                             Line: (int) 51,
-                            Column: (int) 16
+                            Column: (int) 21
                           },
                           EndPosition: (*source.Position)({
                             Line: (int) 51,
-                            Column: (int) 25
+                            Column: (int) 30
                           })
                         })
                       }),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
                           Line: (int) 51,
-                          Column: (int) 13
+                          Column: (int) 18
                         },
                         EndPosition: (*source.Position)({
                           Line: (int) 51,
-                          Column: (int) 25
+                          Column: (int) 30
                         })
                       })
                     })
@@ -919,18 +919,18 @@
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
                       Line: (int) 51,
-                      Column: (int) 13
+                      Column: (int) 18
                     },
                     EndPosition: (*source.Position)({
                       Line: (int) 51,
-                      Column: (int) 27
+                      Column: (int) 32
                     })
                   })
                 }),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
                     Line: (int) 51,
-                    Column: (int) 13
+                    Column: (int) 18
                   },
                   EndPosition: (*source.Position)(<nil>)
                 }),
@@ -947,7 +947,7 @@
               EndPosition: (*source.Position)(<nil>)
             }),
             FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
-              (string) (len=4) "name": (*source.Meta)({
+              (string) (len=9) "tableName": (*source.Meta)({
                 Position: (source.Position) {
                   Line: (int) 51,
                   Column: (int) 7

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
@@ -21,7 +22,7 @@ type GroupOrderedNodesTestSuite struct {
 
 type groupDeploymentNodeFixture struct {
 	orderedNodes      []*DeploymentNode
-	refChainCollector validation.RefChainCollector
+	refChainCollector refgraph.RefChainCollector
 	// All the resource names or child blueprint names that are expected to be in each group.
 	// The order of the groups matter but the order of the resources or child blueprints
 	// in each group doesn't.
@@ -100,7 +101,10 @@ func (s *GroupOrderedNodesTestSuite) assertExpectedGroups(
 	}
 }
 
-var testGroupProviderImpl = newTestAWSProvider()
+var testGroupProviderImpl = newTestAWSProvider(
+	/* alwaysStabilise */ false,
+	/* skipRetryFailuresForLinkNames */ []string{},
+)
 
 func groupFixture1() (groupDeploymentNodeFixture, error) {
 	orderedNodes := groupFixture1Nodes()
@@ -288,8 +292,8 @@ func groupFixture1Nodes() []*DeploymentNode {
 
 func groupFixture1RefChains(
 	nodes []*DeploymentNode,
-) (validation.RefChainCollector, error) {
-	collector := validation.NewRefChainCollector()
+) (refgraph.RefChainCollector, error) {
+	collector := refgraph.NewRefChainCollector()
 	collectNodesAsRefs(nodes, collector)
 
 	collector.Collect(
@@ -452,8 +456,8 @@ func groupFixture2Nodes() []*DeploymentNode {
 
 func groupFixture2RefChains(
 	nodes []*DeploymentNode,
-) (validation.RefChainCollector, error) {
-	collector := validation.NewRefChainCollector()
+) (refgraph.RefChainCollector, error) {
+	collector := refgraph.NewRefChainCollector()
 	collectNodesAsRefs(nodes, collector)
 
 	collector.Collect("resources.vpc1", nil, "resources.sg1", []string{"subRef:resources.sg1"})
@@ -616,10 +620,10 @@ func groupFixture3Nodes() []*DeploymentNode {
 		ordersTable,
 	}
 
-	billingStack := &validation.ReferenceChainNode{
+	billingStack := &refgraph.ReferenceChainNode{
 		ElementName: "children.billingStack",
 	}
-	logisticsStack := &validation.ReferenceChainNode{
+	logisticsStack := &refgraph.ReferenceChainNode{
 		ElementName: "children.logisticsStack",
 	}
 
@@ -640,8 +644,8 @@ func groupFixture3Nodes() []*DeploymentNode {
 
 func groupFixture3RefChains(
 	nodes []*DeploymentNode,
-) (validation.RefChainCollector, error) {
-	collector := validation.NewRefChainCollector()
+) (refgraph.RefChainCollector, error) {
+	collector := refgraph.NewRefChainCollector()
 	collectNodesAsRefs(nodes, collector)
 
 	collector.Collect(
@@ -692,7 +696,7 @@ func groupFixture3RefChains(
 	return collector, nil
 }
 
-func collectNodesAsRefs(nodes []*DeploymentNode, collector validation.RefChainCollector) error {
+func collectNodesAsRefs(nodes []*DeploymentNode, collector refgraph.RefChainCollector) error {
 	for _, node := range nodes {
 		if node.Type() == DeploymentNodeTypeResource {
 			err := collectLinksFromChain(context.TODO(), node.ChainLinkNode, collector)

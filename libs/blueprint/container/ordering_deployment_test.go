@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/libs/common/core"
@@ -21,7 +22,7 @@ type OrderingForDeploymentTestSuite struct {
 
 type orderChainLinkNodeFixture struct {
 	inputChains       []*links.ChainLinkNode
-	refChainCollector validation.RefChainCollector
+	refChainCollector refgraph.RefChainCollector
 	// All the resource names that are expected to be present
 	// in the ordered flattened list of nodes (resources and children)
 	// to be deployed.
@@ -52,11 +53,11 @@ func (s *OrderingForDeploymentTestSuite) SetupSuite() {
 	s.orderFixture3 = orderFixture3
 }
 
-func (s *OrderingForDeploymentTestSuite) Test_order_items_for_deployment_with_circular_links() {
+func (s *OrderingForDeploymentTestSuite) Test_order_items_for_deployment_with_circular_soft_links() {
 	orderedItems, err := OrderItemsForDeployment(
 		context.TODO(),
 		s.orderFixture1.inputChains,
-		[]*validation.ReferenceChainNode{},
+		[]*refgraph.ReferenceChainNode{},
 		s.orderFixture1.refChainCollector,
 		nil,
 	)
@@ -79,7 +80,7 @@ func (s *OrderingForDeploymentTestSuite) Test_order_items_for_deployment_without
 	orderedItems, err := OrderItemsForDeployment(
 		context.TODO(),
 		s.orderFixture2.inputChains,
-		[]*validation.ReferenceChainNode{},
+		[]*refgraph.ReferenceChainNode{},
 		s.orderFixture2.refChainCollector,
 		nil,
 	)
@@ -102,7 +103,7 @@ func (s *OrderingForDeploymentTestSuite) Test_order_items_based_on_references() 
 	orderedItems, err := OrderItemsForDeployment(
 		context.TODO(),
 		s.orderFixture3.inputChains,
-		[]*validation.ReferenceChainNode{},
+		[]*refgraph.ReferenceChainNode{},
 		s.orderFixture3.refChainCollector,
 		nil,
 	)
@@ -148,7 +149,10 @@ func inExpected(expectedItemNames []string) func(*DeploymentNode, int) bool {
 	}
 }
 
-var testProviderImpl = newTestAWSProvider(false /* alwaysStabilise */)
+var testProviderImpl = newTestAWSProvider(
+	/* alwaysStabilise */ false,
+	/* skipRetryFailuresForLinkNames */ []string{},
+)
 
 func orderFixture1() (orderChainLinkNodeFixture, error) {
 	var inputChains = orderFixture1Chains()
@@ -322,8 +326,8 @@ func orderFixture1Chains() []*links.ChainLinkNode {
 
 func orderFixture1RefChains(
 	linkChains []*links.ChainLinkNode,
-) (validation.RefChainCollector, error) {
-	collector := validation.NewRefChainCollector()
+) (refgraph.RefChainCollector, error) {
+	collector := refgraph.NewRefChainCollector()
 	for _, link := range linkChains {
 		err := collectLinksFromChain(context.TODO(), link, collector)
 		if err != nil {
@@ -489,8 +493,8 @@ func orderFixture2Chain() []*links.ChainLinkNode {
 
 func orderFixture2RefChains(
 	linkChains []*links.ChainLinkNode,
-) (validation.RefChainCollector, error) {
-	collector := validation.NewRefChainCollector()
+) (refgraph.RefChainCollector, error) {
+	collector := refgraph.NewRefChainCollector()
 	for _, link := range linkChains {
 		err := collectLinksFromChain(context.TODO(), link, collector)
 		if err != nil {
@@ -618,6 +622,7 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 			getOrdersFunction,
 			createOrderFunction,
 			updateOrderFunction,
+			ordersTable,
 		},
 		LinksTo: []*links.ChainLinkNode{},
 	}
@@ -691,8 +696,8 @@ func orderFixture3Chains() []*links.ChainLinkNode {
 
 func orderFixture3RefChains(
 	linkChains []*links.ChainLinkNode,
-) (validation.RefChainCollector, error) {
-	collector := validation.NewRefChainCollector()
+) (refgraph.RefChainCollector, error) {
+	collector := refgraph.NewRefChainCollector()
 	for _, link := range linkChains {
 		err := collectLinksFromChain(context.TODO(), link, collector)
 		if err != nil {

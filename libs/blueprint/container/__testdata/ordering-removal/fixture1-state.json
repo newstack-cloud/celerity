@@ -110,8 +110,8 @@
         "handler": "src/saveOrder.handler"
       },
       "description": "Function that saves an order to the database.",
-      "dependsOnResources": ["test-preprocess-order-function-id"],
-      "dependsOnChildren": ["blueprint-instance-child-core-infra"],
+      "dependsOnResources": ["preprocessOrderFunction"],
+      "dependsOnChildren": ["coreInfra"],
       "failureReasons": []
     },
     "test-invoices-table-id": {
@@ -314,8 +314,8 @@
   },
   "childDependencies": {
     "coreInfra": {
-      "dependsOnChildren": ["blueprint-instance-child-networking"],
-      "dependsOnResources": ["test-preprocess-order-function-id"]
+      "dependsOnChildren": ["networking"],
+      "dependsOnResources": ["preprocessOrderFunction"]
     }
   }
 }

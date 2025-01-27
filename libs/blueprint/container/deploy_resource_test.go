@@ -24,10 +24,12 @@ type ResourceDeployerTestSuite struct {
 	deployer          ResourceDeployer
 	fixtures          map[int]*resourceDeployerFixture
 	resourceProviders map[string]provider.Provider
+	stateContainer    state.Container
 }
 
 func (s *ResourceDeployerTestSuite) SetupTest() {
 	resourceCache := core.NewCache[*provider.ResolvedResource]()
+	s.stateContainer = internal.NewMemoryStateContainer()
 	s.deployer = NewDefaultResourceDeployer(
 		&core.SystemClock{},
 		&internal.StaticIDGenerator{
@@ -44,6 +46,7 @@ func (s *ResourceDeployerTestSuite) SetupTest() {
 			resolvedResource: s.createResolvedResource(),
 		},
 		resourceCache,
+		s.stateContainer,
 	)
 	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*resourceDeployerFixture{}
@@ -57,10 +60,18 @@ func (s *ResourceDeployerTestSuite) SetupTest() {
 			fixtureInfo.failure,
 		)
 		s.Require().NoError(err)
+		err = s.stateContainer.Instances().Save(
+			context.Background(),
+			*fixture.instanceStateSnapshot,
+		)
+		s.Require().NoError(err)
 		s.fixtures[fixtureInfo.number] = fixture
 	}
 
-	awsProvider := newTestAWSProvider()
+	awsProvider := newTestAWSProvider(
+		/* alwaysStabilise */ false,
+		/* skipRetryFailuresForLinkNames */ []string{},
+	)
 
 	s.resourceProviders = map[string]provider.Provider{
 		"saveOrderFunction":    awsProvider,
@@ -167,6 +178,14 @@ func (s *ResourceDeployerTestSuite) runDeployTest(
 		s.Assert().NotNil(cachedOutput)
 		s.Assert().Equal(fixture.expectedCachedOutput, cachedOutput.Spec)
 	}
+
+	resourceState, err := s.stateContainer.Resources().Get(
+		ctx,
+		fixture.instanceID,
+		actualMessages.resourceDeployUpdateMessages[0].ResourceID,
+	)
+	s.Assert().NoError(err)
+	s.Assert().NotNil(resourceState)
 }
 
 func (s *ResourceDeployerTestSuite) createResourceDeployExpectedCachedOutput(

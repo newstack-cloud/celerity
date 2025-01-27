@@ -79,7 +79,7 @@ func (d *defaultLinkDestroyer) Destroy(
 		return
 	}
 
-	_, err = d.linkDeployer.Deploy(
+	err = d.linkDeployer.Deploy(
 		ctx,
 		element,
 		instanceID,

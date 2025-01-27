@@ -2,14 +2,10 @@ package container
 
 import (
 	"context"
-	"fmt"
-	"slices"
-	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -81,356 +77,21 @@ import (
 func OrderItemsForDeployment(
 	ctx context.Context,
 	chains []*links.ChainLinkNode,
-	children []*validation.ReferenceChainNode,
-	refChainCollector validation.RefChainCollector,
+	children []*refgraph.ReferenceChainNode,
+	refChainCollector refgraph.RefChainCollector,
 	params bpcore.BlueprintParams,
 ) ([]*DeploymentNode, error) {
 	flattened := flattenChains(chains, []*links.ChainLinkNode{})
 	combined := combineChainsAndChildren(flattened, children)
-	var sortErr error
+	refChains := refChainCollector.ChainsByDependencies()
+	refChainsDeepCopy := refgraph.DeepCopyReferenceChains(refChains)
 
-	// Compare each node to every other node to determine the order based on dependencies
-	// that can occur by implicit links, references or explicit `dependsOn` declarations.
-	// Each node must be compared to every other node as when trying to use an efficient
-	// sort algorithm, important comparisons may be missed.
-	sortCompareAll(combined, func(nodeA, nodeB *DeploymentNode) int {
-
-		if nodeA.Type() == DeploymentNodeTypeResource &&
-			nodeB.Type() == DeploymentNodeTypeResource {
-			return checkResourceAPriority(
-				ctx,
-				nodeA.ChainLinkNode,
-				nodeB.ChainLinkNode,
-				refChainCollector,
-				params,
-				&sortErr,
-			)
-		}
-
-		if nodeA.Type() == DeploymentNodeTypeResource &&
-			nodeB.Type() == DeploymentNodeTypeChild {
-			return checkResourcePriorityOverChild(
-				nodeA.ChainLinkNode,
-				nodeB.ChildNode,
-				refChainCollector,
-			)
-		}
-
-		if nodeA.Type() == DeploymentNodeTypeChild &&
-			nodeB.Type() == DeploymentNodeTypeResource {
-			return checkChildPriorityOverResource(
-				nodeA.ChildNode,
-				nodeB.ChainLinkNode,
-				refChainCollector,
-			)
-		}
-
-		if nodeA.Type() == DeploymentNodeTypeChild &&
-			nodeB.Type() == DeploymentNodeTypeChild {
-			return checkChildAHasPriority(
-				nodeA.ChildNode,
-				nodeB.ChildNode,
-			)
-		}
-
-		return 1
-	})
-	return combined, sortErr
-}
-
-func checkResourceAPriority(
-	ctx context.Context,
-	linkA *links.ChainLinkNode,
-	linkB *links.ChainLinkNode,
-	refChainCollector validation.RefChainCollector,
-	params bpcore.BlueprintParams,
-	sortErr *error,
-) int {
-	pathsWithLinkA := core.Filter(linkB.Paths, isResourceAncestor(linkA.ResourceName))
-	linkAIsAncestor := len(pathsWithLinkA) > 0
-
-	pathsWithLinkB := core.Filter(linkA.Paths, isResourceAncestor(linkB.ResourceName))
-	linkAIsDescendant := len(pathsWithLinkB) > 0
-
-	directParentsOfLinkB := getDirectParentsForPaths(pathsWithLinkA, linkB)
-
-	// link A has priority in two cases.
-	// 1, if at least one of the direct parents of link B
-	// (for which link A is an ancestor) is the priority resource type
-	// in the link relationship.
-	// 2, if at least one of the direct children of link B
-	// (for which link A is a descendant) is the priority resource type
-	// in the link relationship.
-	parentPriorityInfo, internalSortErr := checkLinkPriority(ctx, directParentsOfLinkB, linkB, params)
-	if internalSortErr != nil {
-		*sortErr = internalSortErr
-		return -1
-	}
-	isParentWithPriority := parentPriorityInfo.hasPriority
-
-	// Only check children of link B for priority if they are ancestors of link A.
-	filteredLinkBChildren := getAncestors(linkA, linkB.LinksTo)
-	childPriorityInfo, internalSortErr := checkLinkPriority(ctx, filteredLinkBChildren, linkB, params)
-	if internalSortErr != nil {
-		*sortErr = internalSortErr
-		return -1
-	}
-	isChildWithPriority := childPriorityInfo.hasPriority
-
-	noPriorityBetweenLinks := !parentPriorityInfo.hasHardLinks && !childPriorityInfo.hasHardLinks
-
-	// If A references B or any of B's descendants then A does not have priority regardless
-	// of the link relationship. (An explicit reference is a dependency)
-	linkAReferencesLinkB := linkResourceReferences(refChainCollector, linkA, linkB)
-	linkAHasPriority := (isParentWithPriority || isChildWithPriority) && !linkAReferencesLinkB
-
-	// If link B references link A but is not connected via a link relationship,
-	// then link A has priority.
-	// For example, let's say link A is an "orders" NoSQL table in a blueprint
-	// and link B is a "createOrders" serverless function.
-	// The "createOrders" function references the "orders" table in its environment variables
-	// as the source for the table name made available to the function code.
-	// There is no linkSelector initated link between the two resources, however, the "orders"
-	// table (link A) needs to be deployed before the "createOrders" function (link B) so the function can source
-	// the table name from the environment variables.
-	linkBReferencesLinkA := linkResourceReferences(refChainCollector, linkB, linkA)
-
-	if linkBReferencesLinkA || ((linkAIsAncestor || linkAIsDescendant) && linkAHasPriority) {
-		return -1
-	}
-
-	if noPriorityBetweenLinks && !linkAReferencesLinkB {
-		// When there is no priority between the links and there is no reference between the links,
-		// the order of the links is irrelevant.
-		return 0
-	}
-
-	// Resource B has priority over resource A.
-	return 1
-}
-
-func checkResourcePriorityOverChild(
-	resourceNode *links.ChainLinkNode,
-	childNode *validation.ReferenceChainNode,
-	refChainCollector validation.RefChainCollector,
-) int {
-	resourceElementName := bpcore.ResourceElementID(resourceNode.ResourceName)
-	resourceRef := refChainCollector.Chain(resourceElementName)
-	if resourceRef == nil {
-		return 0
-	}
-
-	// If resource (A) references child (B) or any of B's descendants then B has priority over A.
-	resourceReferencesChild := referencesResourceOrDescendants(resourceElementName, resourceRef.References, childNode)
-	if resourceReferencesChild {
-		// B has priority over A so they should be swapped
-		// so B comes first.
-		return 1
-	}
-
-	return -1
-}
-
-func checkChildPriorityOverResource(
-	childNode *validation.ReferenceChainNode,
-	resourceNode *links.ChainLinkNode,
-	refChainCollector validation.RefChainCollector,
-) int {
-	resourceElementName := bpcore.ResourceElementID(resourceNode.ResourceName)
-	resourceRef := refChainCollector.Chain(resourceElementName)
-	if resourceRef == nil {
-		return 0
-	}
-
-	// If child (A) references resource (B) or any of B's descendants then B has priority.
-	childReferencesResource := referencesResourceOrDescendants(childNode.ElementName, childNode.References, resourceRef)
-	if childReferencesResource {
-		// The resource (B) has priority over the child (A) so they should be swapped
-		// so B comes first.
-		return 1
-	}
-
-	return -1
-}
-
-func checkChildAHasPriority(
-	childA *validation.ReferenceChainNode,
-	childB *validation.ReferenceChainNode,
-) int {
-	// If child A references child B or any of B's descendants then B has priority.
-	childAReferencesChildB := referencesResourceOrDescendants(childA.ElementName, childA.References, childB)
-	if childAReferencesChildB {
-		// B has priority over A so they should be swapped
-		// so B comes first.
-		return 1
-	}
-
-	return -1
-}
-
-func getDirectParentsForPaths(paths []string, link *links.ChainLinkNode) []*links.ChainLinkNode {
-	return core.Filter(link.LinkedFrom, isLastInAtLeastOnePath(paths))
-}
-
-func isLastInAtLeastOnePath(paths []string) func(*links.ChainLinkNode, int) bool {
-	return func(candidateParentLink *links.ChainLinkNode, index int) bool {
-		return len(core.Filter(paths, isLastInPath(candidateParentLink))) > 0
-	}
-}
-
-func isLastInPath(link *links.ChainLinkNode) func(string, int) bool {
-	return func(path string, index int) bool {
-		return strings.HasSuffix(path, fmt.Sprintf("/%s", link.ResourceName))
-	}
-}
-
-func getAncestors(
-	descendantLink *links.ChainLinkNode,
-	candidateAncestors []*links.ChainLinkNode,
-) []*links.ChainLinkNode {
-	return core.Filter(candidateAncestors, isAncestorOf(descendantLink))
-}
-
-func isAncestorOf(descendantLink *links.ChainLinkNode) func(*links.ChainLinkNode, int) bool {
-	return func(candidateAncestor *links.ChainLinkNode, index int) bool {
-		return slices.ContainsFunc(descendantLink.Paths, isAncestorPath(candidateAncestor))
-	}
-}
-
-func isAncestorPath(ancestorLink *links.ChainLinkNode) func(string) bool {
-	return func(descendantPath string) bool {
-		return strings.HasSuffix(descendantPath, fmt.Sprintf("/%s", ancestorLink.ResourceName))
-	}
-}
-
-type linkPriorityInfo struct {
-	hasPriority  bool
-	hasHardLinks bool
-}
-
-func checkLinkPriority(
-	ctx context.Context,
-	candidatePriorityLinks []*links.ChainLinkNode,
-	otherLink *links.ChainLinkNode,
-	params bpcore.BlueprintParams,
-) (*linkPriorityInfo, error) {
-	priorityInfo := &linkPriorityInfo{
-		hasPriority:  false,
-		hasHardLinks: false,
-	}
-
-	i := 0
-	for !priorityInfo.hasPriority && i < len(candidatePriorityLinks) {
-		candidatePriorityLink := candidatePriorityLinks[i]
-		linkImplementation, hasLinkImplementation := candidatePriorityLink.LinkImplementations[otherLink.ResourceName]
-		candidatePriorityResource := provider.LinkPriorityResourceA
-		if !hasLinkImplementation {
-			// The relationship could be either way.
-			linkImplementation, hasLinkImplementation = otherLink.LinkImplementations[candidatePriorityLink.ResourceName]
-			candidatePriorityResource = provider.LinkPriorityResourceB
-		}
-
-		if hasLinkImplementation {
-			linkCtx := provider.NewLinkContextFromParams(params)
-			priorityResourceOutput, err := linkImplementation.GetPriorityResource(
-				ctx,
-				&provider.LinkGetPriorityResourceInput{
-					LinkContext: linkCtx,
-				},
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			kindOutput, err := linkImplementation.GetKind(ctx, &provider.LinkGetKindInput{
-				LinkContext: linkCtx,
-			})
-			if err != nil {
-				return nil, err
-			}
-			isHardLink := kindOutput.Kind == provider.LinkKindHard
-			if isHardLink {
-				priorityInfo.hasHardLinks = true
-			}
-			priorityInfo.hasPriority = priorityResourceOutput.PriorityResource == candidatePriorityResource && isHardLink
-		}
-
-		i += 1
-	}
-
-	return priorityInfo, nil
-}
-
-func linkResourceReferences(
-	refChainCollector validation.RefChainCollector,
-	linkA *links.ChainLinkNode,
-	linkB *links.ChainLinkNode,
-) bool {
-	resourceRefA := refChainCollector.Chain(bpcore.ResourceElementID(linkA.ResourceName))
-	resourceRefB := refChainCollector.Chain(bpcore.ResourceElementID(linkB.ResourceName))
-
-	if resourceRefA == nil || resourceRefB == nil {
-		return false
-	}
-
-	return referencesResourceOrDescendants(resourceRefA.ElementName, resourceRefA.References, resourceRefB)
-}
-
-func referencesResourceOrDescendants(
-	referencedByElementName string,
-	searchIn []*validation.ReferenceChainNode,
-	searchFor *validation.ReferenceChainNode,
-) bool {
-	if len(searchIn) == 0 || searchFor == nil {
-		return false
-	}
-
-	if slices.ContainsFunc(searchIn, compareElementNameForSubRef(referencedByElementName, searchFor)) {
-		return true
-	}
-
-	// Ensure we skip links as they are handled separately.
-	// Checking for descendants must only be for explicit references of resources
-	// or dependencies through the use of the `dependsOn` field.
-	isLinkReference := slices.Contains(
-		searchFor.Tags,
-		validation.CreateLinkTag(referencedByElementName),
+	return refgraph.TopologicalSortReferences(
+		refChainsDeepCopy,
+		combined,
+		refgraph.ReferenceSortDirectionReferencedBy,
+		/* empty */ nil,
 	)
-
-	if !isLinkReference {
-		for _, childSearchFor := range searchFor.References {
-			// Avoid cyclic references.
-			if childSearchFor.ElementName != referencedByElementName &&
-				referencesResourceOrDescendants(referencedByElementName, searchIn, childSearchFor) {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func compareElementNameForSubRef(referencedByElementName string, searchFor *validation.ReferenceChainNode) func(*validation.ReferenceChainNode) bool {
-	return func(current *validation.ReferenceChainNode) bool {
-		return current.ElementName == searchFor.ElementName &&
-			// Only match if the reference has a "subRef:{referencedFrom}"
-			// tag or a "dependencyOf:{referencedFrom}" tag.
-			// Links are collected to combine cycle detection logic for
-			// links, explicit dependencies and references during the validation phase.
-			// References and explicit dependencies are treated as hard links.
-			// Tags are used to differentiate between links, dependencies and references
-			// to allow this logic to skip links that are handled separately.
-			slices.ContainsFunc(searchFor.Tags, func(tag string) bool {
-				return tag == validation.CreateSubRefTag(referencedByElementName) ||
-					tag == validation.CreateDependencyRefTag(referencedByElementName)
-			})
-	}
-}
-
-func isResourceAncestor(resourceName string) func(string, int) bool {
-	return func(path string, index int) bool {
-		return strings.Contains(path, fmt.Sprintf("/%s", resourceName))
-	}
 }
 
 func flattenChains(chains []*links.ChainLinkNode, flattenedAccum []*links.ChainLinkNode) []*links.ChainLinkNode {
@@ -448,7 +109,7 @@ func flattenChains(chains []*links.ChainLinkNode, flattenedAccum []*links.ChainL
 
 func combineChainsAndChildren(
 	chains []*links.ChainLinkNode,
-	children []*validation.ReferenceChainNode,
+	children []*refgraph.ReferenceChainNode,
 ) []*DeploymentNode {
 	deploymentNodes := []*DeploymentNode{}
 	for _, chain := range chains {
@@ -466,34 +127,11 @@ func combineChainsAndChildren(
 	return deploymentNodes
 }
 
-func sortCompareAll(
-	nodes []*DeploymentNode,
-	// If a < b, return a negative integer.
-	// If a > b, return a positive integer.
-	// If a == b, return 0.
-	compare func(a, b *DeploymentNode) int,
-) {
-	n := len(nodes)
-	for {
-		swapped := false
-		for i := 1; i < n; i += 1 {
-			result := compare(nodes[i-1], nodes[i])
-			if result > 0 {
-				nodes[i-1], nodes[i] = nodes[i], nodes[i-1]
-				swapped = true
-			}
-		}
-		if !swapped {
-			break
-		}
-	}
-}
-
 // DeploymentNode is a node that represents a resource or a child blueprint
 // to be deployed (or staged for deployment).
 type DeploymentNode struct {
 	ChainLinkNode *links.ChainLinkNode
-	ChildNode     *validation.ReferenceChainNode
+	ChildNode     *refgraph.ReferenceChainNode
 	// DirectDependencies holds the direct dependencies of the given deployment
 	// node.
 	// This isn't populated upon creation of the deployment node,

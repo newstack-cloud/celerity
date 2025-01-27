@@ -55,7 +55,7 @@ resources:
       labels:
         app: orders
     spec:
-      name: "${elem.name}"
+      tableName: "${elem.name}"
 
 include:
   coreInfra:

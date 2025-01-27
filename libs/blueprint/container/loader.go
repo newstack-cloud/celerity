@@ -12,6 +12,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -166,7 +167,7 @@ type defaultLoader struct {
 	// "elem" and "i" references should be allowed in resources
 	// derived from templates where the `each` property is not set.
 	derivedFromTemplates           []string
-	refChainCollectorFactory       func() validation.RefChainCollector
+	refChainCollectorFactory       func() refgraph.RefChainCollector
 	funcRegistry                   provider.FunctionRegistry
 	resourceRegistry               resourcehelpers.Registry
 	dataSourceRegistry             provider.DataSourceRegistry
@@ -362,7 +363,7 @@ func WithLoaderResourceTemplates(resourceTemplates map[string]string) LoaderOpti
 //
 // When this option is not provided, the default reference chain collector factory
 // provided by the validation package is used.
-func WithLoaderRefChainCollectorFactory(factory func() validation.RefChainCollector) LoaderOption {
+func WithLoaderRefChainCollectorFactory(factory func() refgraph.RefChainCollector) LoaderOption {
 	return func(loader *defaultLoader) {
 		loader.refChainCollectorFactory = factory
 	}
@@ -457,7 +458,7 @@ func NewDefaultLoader(
 	linkRegistry := provider.NewLinkRegistry(providers)
 	internalProviders := copyProviderMap(providers)
 	clock := &bpcore.SystemClock{}
-	linkDeployer := NewDefaultLinkDeployer(clock)
+	linkDeployer := NewDefaultLinkDeployer(clock, stateContainer)
 	linkDestroyer := NewDefaultLinkDestroyer(
 		linkDeployer,
 		linkRegistry,
@@ -469,7 +470,7 @@ func NewDefaultLoader(
 		specTransformers:               specTransformers,
 		stateContainer:                 stateContainer,
 		childResolver:                  childResolver,
-		refChainCollectorFactory:       validation.NewRefChainCollector,
+		refChainCollectorFactory:       refgraph.NewRefChainCollector,
 		funcRegistry:                   funcRegistry,
 		resourceRegistry:               resourceRegistry,
 		dataSourceRegistry:             dataSourceRegistry,
@@ -637,7 +638,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 }
 
 func (l *defaultLoader) buildPartialBlueprintContainerDependencies(
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) *BlueprintContainerDependencies {
 	return &BlueprintContainerDependencies{
 		StateContainer:            l.stateContainer,
@@ -654,7 +655,7 @@ func (l *defaultLoader) buildPartialBlueprintContainerDependencies(
 }
 
 func (l *defaultLoader) buildFullBlueprintContainerDependencies(
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	blueprintSpec *internalBlueprintSpec,
 	linkInfo links.SpecLinkInfo,
 	params bpcore.BlueprintParams,
@@ -709,6 +710,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		l.resourceStabilityPollingConfig,
 		substitutionResolver,
 		resourceCache,
+		l.stateContainer,
 	)
 	// As the child blueprint deployer uses the substitution resolver,
 	// it must be created for each blueprint container that is loaded.
@@ -764,7 +766,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 func (l *defaultLoader) collectLinksAsReferences(
 	ctx context.Context,
 	linkInfo links.SpecLinkInfo,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) error {
 	chains, err := linkInfo.Links(ctx)
 	if err != nil {
@@ -787,7 +789,7 @@ func (l *defaultLoader) loadSpec(
 	params bpcore.BlueprintParams,
 	loader schema.Loader,
 	formatLoader func(string) (schema.SpecFormat, error),
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) (*internalBlueprintSpec, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -857,7 +859,8 @@ func (l *defaultLoader) loadSpec(
 	diagnostics = append(diagnostics, transformDiagnostics...)
 	if err != nil {
 		return &internalBlueprintSpec{
-			schema: blueprintSchema,
+			resourceSchemas: getResourcesFromBlueprint(blueprintSchema),
+			schema:          blueprintSchema,
 		}, diagnostics, err
 	}
 
@@ -875,12 +878,14 @@ func (l *defaultLoader) loadSpec(
 
 	if len(validationErrors) > 0 {
 		return &internalBlueprintSpec{
-			schema: blueprintSchema,
+			resourceSchemas: getResourcesFromBlueprint(blueprintSchema),
+			schema:          blueprintSchema,
 		}, diagnostics, validation.ErrMultipleValidationErrors(validationErrors)
 	}
 
 	return &internalBlueprintSpec{
-		schema: blueprintSchema,
+		resourceSchemas: getResourcesFromBlueprint(blueprintSchema),
+		schema:          blueprintSchema,
 	}, diagnostics, nil
 }
 
@@ -973,7 +978,7 @@ func (l *defaultLoader) validateVariables(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if bpSchema.Variables == nil {
@@ -1004,7 +1009,7 @@ func (l *defaultLoader) validateVariable(
 	varSchema *schema.Variable,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) []error {
 	currentVarErrs := []error{}
 	err := validation.ValidateVariableName(name, bpSchema.Variables)
@@ -1041,7 +1046,7 @@ func (l *defaultLoader) validateValues(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if bpSchema.Values == nil {
@@ -1070,7 +1075,7 @@ func (l *defaultLoader) validateValue(
 	valSchema *schema.Value,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) []error {
 	currentValErrs := []error{}
 	err := validation.ValidateValueName(name, bpSchema.Values)
@@ -1101,7 +1106,7 @@ func (l *defaultLoader) validateIncludes(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if bpSchema.Include == nil {
@@ -1141,7 +1146,7 @@ func (l *defaultLoader) validateExports(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if bpSchema.Exports == nil {
@@ -1179,7 +1184,7 @@ func (l *defaultLoader) validateMetadata(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) ([]*bpcore.Diagnostic, error) {
 	if bpSchema.Metadata == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -1258,7 +1263,7 @@ func (l *defaultLoader) validateDataSources(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if bpSchema.DataSources == nil {
@@ -1290,7 +1295,7 @@ func (l *defaultLoader) validateDataSource(
 	dataSourceSchema *schema.DataSource,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) []error {
 	currentDataSourceErrs := []error{}
 	err := validation.ValidateDataSourceName(name, bpSchema.DataSources)
@@ -1324,7 +1329,7 @@ func (l *defaultLoader) validateResources(
 	ctx context.Context,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if bpSchema.Resources == nil {
@@ -1356,7 +1361,7 @@ func (l *defaultLoader) validateResource(
 	resourceSchema *schema.Resource,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) []error {
 	currentResouceErrs := []error{}
 	err := validation.ValidateResourceName(name, bpSchema.Resources)
@@ -1501,4 +1506,13 @@ func getSchemaFromContainer(
 		}
 	}
 	return schema
+}
+
+func getResourcesFromBlueprint(
+	blueprintSchema *schema.Blueprint,
+) map[string]*schema.Resource {
+	if blueprintSchema.Resources == nil {
+		return map[string]*schema.Resource{}
+	}
+	return blueprintSchema.Resources.Values
 }

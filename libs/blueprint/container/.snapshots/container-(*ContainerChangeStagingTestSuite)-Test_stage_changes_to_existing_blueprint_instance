@@ -387,10 +387,10 @@
       },
       RemovedFields: ([]string) {
       },
-      UnchangedFields: ([]string) (len=1) {
-        (string) (len=7) "spec.id"
+      UnchangedFields: ([]string) {
       },
-      ComputedFields: ([]string) {
+      ComputedFields: ([]string) (len=1) {
+        (string) (len=7) "spec.id"
       },
       FieldChangesKnownOnDeploy: ([]string) {
       },
@@ -403,7 +403,7 @@
   ResourceChanges: (map[string]provider.Changes) (len=3) {
     (string) (len=13) "ordersTable_0": (provider.Changes) {
       AppliedResourceInfo: (provider.ResourceInfo) {
-        ResourceID: (string) "",
+        ResourceID: (string) (len=22) "test-orders-table-0-id",
         ResourceName: (string) (len=13) "ordersTable_0",
         InstanceID: (string) (len=20) "blueprint-instance-1",
         CurrentResourceState: (*state.ResourceState)({
@@ -1165,7 +1165,7 @@
     },
     (string) (len=13) "ordersTable_1": (provider.Changes) {
       AppliedResourceInfo: (provider.ResourceInfo) {
-        ResourceID: (string) "",
+        ResourceID: (string) (len=22) "test-orders-table-1-id",
         ResourceName: (string) (len=13) "ordersTable_1",
         InstanceID: (string) (len=20) "blueprint-instance-1",
         CurrentResourceState: (*state.ResourceState)({
@@ -1927,7 +1927,7 @@
     },
     (string) (len=17) "saveOrderFunction": (provider.Changes) {
       AppliedResourceInfo: (provider.ResourceInfo) {
-        ResourceID: (string) "",
+        ResourceID: (string) (len=27) "test-save-order-function-id",
         ResourceName: (string) (len=17) "saveOrderFunction",
         InstanceID: (string) (len=20) "blueprint-instance-1",
         CurrentResourceState: (*state.ResourceState)({
@@ -2074,11 +2074,11 @@
       },
       RemovedFields: ([]string) {
       },
-      UnchangedFields: ([]string) (len=2) {
-        (string) (len=12) "spec.handler",
-        (string) (len=7) "spec.id"
+      UnchangedFields: ([]string) (len=1) {
+        (string) (len=12) "spec.handler"
       },
-      ComputedFields: ([]string) {
+      ComputedFields: ([]string) (len=1) {
+        (string) (len=7) "spec.id"
       },
       FieldChangesKnownOnDeploy: ([]string) {
       },
@@ -2257,7 +2257,7 @@
       ResourceChanges: (map[string]provider.Changes) (len=1) {
         (string) (len=15) "complexResource": (provider.Changes) {
           AppliedResourceInfo: (provider.ResourceInfo) {
-            ResourceID: (string) "",
+            ResourceID: (string) (len=19) "complex-resource-id",
             ResourceName: (string) (len=15) "complexResource",
             InstanceID: (string) (len=35) "blueprint-instance-child-core-infra",
             CurrentResourceState: (*state.ResourceState)({

@@ -12,6 +12,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
@@ -69,7 +70,10 @@ func (s *LoaderTestSuite) SetupSuite() {
 
 	stateContainer := internal.NewMemoryStateContainer()
 	providers := map[string]provider.Provider{
-		"aws": newTestAWSProvider(),
+		"aws": newTestAWSProvider(
+			/* alwaysStabilise */ false,
+			/* skipRetryFailuresForLinkNames */ []string{},
+		),
 		"core": providerhelpers.NewCoreProvider(
 			stateContainer.Links(),
 			core.BlueprintInstanceIDFromContext,
@@ -86,7 +90,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 		stateContainer,
 		newFSChildResolver(),
 		WithLoaderTransformSpec(true),
-		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
+		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
 	)
 	s.loaderValidateAfterTransform = NewDefaultLoader(
 		providers,
@@ -95,17 +99,20 @@ func (s *LoaderTestSuite) SetupSuite() {
 		newFSChildResolver(),
 		WithLoaderTransformSpec(true),
 		WithLoaderValidateAfterTransform(true),
-		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
+		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
 	)
 	providersWithoutCore := map[string]provider.Provider{
-		"aws": newTestAWSProvider(),
+		"aws": newTestAWSProvider(
+			/* alwaysStabilise */ false,
+			/* skipRetryFailuresForLinkNames */ []string{},
+		),
 	}
 	s.loaderDefaultCore = NewDefaultLoader(
 		providersWithoutCore,
 		specTransformers,
 		stateContainer,
 		newFSChildResolver(),
-		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
+		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
 	)
 }
 

@@ -27,6 +27,9 @@ type DeployContext struct {
 	// A mapping of resource names to the name of the resource
 	// templates they were derived from.
 	ResourceTemplates map[string]string
+	// Holds the container for the blueprint after preparation/pre-processing
+	// including template expansion and applying resource conditions.
+	PreparedContainer BlueprintContainer
 	// Provides a deployment-scoped registry for resources that will be packed
 	// with the parameter overrides supplied in a container "Deploy" or "Destroy"
 	// method call.
@@ -50,6 +53,7 @@ func DeployContextWithChannels(
 		DeploymentGroups:      deployCtx.DeploymentGroups,
 		InputChanges:          deployCtx.InputChanges,
 		ResourceTemplates:     deployCtx.ResourceTemplates,
+		PreparedContainer:     deployCtx.PreparedContainer,
 		ResourceRegistry:      deployCtx.ResourceRegistry,
 	}
 }
@@ -71,6 +75,29 @@ func DeployContextWithGroup(
 		DeploymentGroups:      deployCtx.DeploymentGroups,
 		InputChanges:          deployCtx.InputChanges,
 		ResourceTemplates:     deployCtx.ResourceTemplates,
+		PreparedContainer:     deployCtx.PreparedContainer,
+		ResourceRegistry:      deployCtx.ResourceRegistry,
+	}
+}
+
+func DeployContextWithInstanceSnapshot(
+	deployCtx *DeployContext,
+	instanceSnapshot *state.InstanceState,
+) *DeployContext {
+	return &DeployContext{
+		StartTime:             deployCtx.StartTime,
+		State:                 deployCtx.State,
+		Channels:              deployCtx.Channels,
+		Rollback:              deployCtx.Rollback,
+		Destroying:            deployCtx.Destroying,
+		InstanceStateSnapshot: instanceSnapshot,
+		ParamOverrides:        deployCtx.ParamOverrides,
+		ResourceProviders:     deployCtx.ResourceProviders,
+		CurrentGroupIndex:     deployCtx.CurrentGroupIndex,
+		DeploymentGroups:      deployCtx.DeploymentGroups,
+		InputChanges:          deployCtx.InputChanges,
+		ResourceTemplates:     deployCtx.ResourceTemplates,
+		PreparedContainer:     deployCtx.PreparedContainer,
 		ResourceRegistry:      deployCtx.ResourceRegistry,
 	}
 }

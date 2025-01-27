@@ -37,7 +37,7 @@ resources:
     each: "${children.coreInfra.endpoints}"
     description: "Table that stores orders for an application."
     spec:
-      name: "Orders"
+      tableName: "Orders"
 
   saveOrderFunction:
     type: aws/lambda/function

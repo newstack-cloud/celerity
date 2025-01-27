@@ -13,10 +13,10 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 type ChildBlueprintDeployerTestSuite struct {
@@ -174,11 +174,11 @@ func (s *ChildBlueprintDeployerTestSuite) createFixture(
 		return nil, err
 	}
 
-	childNode := &validation.ReferenceChainNode{
+	childNode := &refgraph.ReferenceChainNode{
 		ElementName:  core.ChildElementID(childName),
 		Element:      blueprintInclude,
-		References:   []*validation.ReferenceChainNode{},
-		ReferencedBy: []*validation.ReferenceChainNode{},
+		References:   []*refgraph.ReferenceChainNode{},
+		ReferencedBy: []*refgraph.ReferenceChainNode{},
 		Paths:        []string{},
 		Tags:         []string{},
 	}
@@ -282,7 +282,7 @@ type childBlueprintDeployerFixture struct {
 	parentInstanceTreePath      string
 	parentInstanceStateSnapshot *state.InstanceState
 	includeTreePath             string
-	childNode                   *validation.ReferenceChainNode
+	childNode                   *refgraph.ReferenceChainNode
 	childInstanceID             string
 	changes                     *BlueprintChanges
 	deployEventSequence         []*DeployEvent

@@ -41,7 +41,12 @@ resources:
       byLabel:
         app: "orders1"
     spec:
-      name: "Orders"
+      # Orders table is a hard dependency of saveOrderFunction
+      # and saveOrderFunction is a hard dependency of getOrderFunction.
+      # due to the explicit reference to getOrderFunction in the spec,
+      # this should be picked up as a circular reference and the blueprint loader
+      # should fail with a circular reference error.
+      tableName: "Orders ${resources.getOrderFunction.spec.handler}"
 
   saveOrderFunction:
     type: aws/lambda/function
@@ -56,15 +61,10 @@ resources:
       handler: "src/orders.saveOrder"
 
   getOrderFunction:
-    type: aws/lambda/function
+    type: aws/lambda2/function
     description: "Function that gets an order from the database."
     metadata:
       labels:
-        # Orders table is a hard dependency of saveOrderFunction
-        # and getOrderFunction is a hard dependency of saveOrderFunction.
-        # due to the explicit reference to ordersTable in the spec,
-        # this should be picked up as a circular reference and the blueprint loader
-        # should fail with a circular reference error.
         app: "orders2"
     spec:
-      handler: "src/${resources.ordersTable.spec.id}"
+      handler: "src/orders/handlers.getOrder"

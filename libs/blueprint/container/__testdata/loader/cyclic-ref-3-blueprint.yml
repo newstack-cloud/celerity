@@ -44,7 +44,7 @@ resources:
       byLabel:
         app: "orders"
     spec:
-      name: "Orders"
+      tableName: "Orders"
 
   saveOrderFunction:
     type: aws/lambda/function

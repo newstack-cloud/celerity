@@ -5,6 +5,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
@@ -18,7 +19,7 @@ import (
 // connected.
 func GroupOrderedNodes(
 	orderedNodes []*DeploymentNode,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) ([][]*DeploymentNode, error) {
 	if len(orderedNodes) == 0 {
 		return [][]*DeploymentNode{}, nil
@@ -61,7 +62,7 @@ func GroupOrderedNodes(
 
 func hasReferenceInGroup(
 	node *DeploymentNode,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	nodeGroupMap map[string]int,
 	currentGroupIndex int,
 ) bool {

@@ -36,6 +36,13 @@ type DeploymentState interface {
 	// IsElementConfigComplete checks if an element has had its configuration
 	// completed in the deployment process.
 	IsElementConfigComplete(element state.Element) bool
+	// CheckUpdateElementDeploymentStarted checks if the deployment of an element has already started
+	// and updates the deployment state at the same time.
+	// This makes checking and writing the deployment started state atomic while taking into account
+	// other factors that should be considered when checking if the deployment should be started.
+	// This is primarily useful for avoiding starting the deployment of an element
+	// multiple times.
+	CheckUpdateElementDeploymentStarted(element state.Element, otherConditionToStart bool) bool
 	// SetLinkDurationInfo stores the duration information for multiple stages
 	// of the deployment of a link.
 	SetLinkDurationInfo(linkName string, durations *state.LinkCompletionDurations)
@@ -100,6 +107,7 @@ func NewDefaultDeploymentState() DeploymentState {
 		configComplete:             make(map[string]state.Element),
 		destroyed:                  make(map[string]state.Element),
 		created:                    make(map[string]state.Element),
+		deploymentStarted:          make(map[string]state.Element),
 		resourceData:               make(map[string]*CollectedResourceData),
 		linkDeploymentResults:      make(map[string]*LinkDeployResult),
 		updated:                    make(map[string]state.Element),
@@ -147,6 +155,10 @@ type defaultDeploymentState struct {
 	// This is a mapping of namespaced logical names (e.g. resources.resourceA) to an element
 	// representing identifiers and the kind of the element.
 	inProgress map[string]state.Element
+	// Elements for which the deployment process has started.
+	// Elements should be added to this map when a deployment operation has started
+	// for the element.
+	deploymentStarted map[string]state.Element
 	// Holds the resource spec and metadata for resources that have been deployed.
 	resourceData map[string]*CollectedResourceData
 	// A mapping of logical link names to the result of the deployment of links.
@@ -207,6 +219,21 @@ func (d *defaultDeploymentState) SetElementInProgress(element state.Element) {
 	defer d.mu.Unlock()
 
 	d.inProgress[getNamespacedLogicalName(element)] = element
+	// To create a clean interface for setting elements in progress,
+	// also set the deployment started state when setting in progress state.
+	// The difference between the two states is that deployment started state
+	// will only be set once and remain for the duration of the deployment
+	// while an element is no longer considered in progress once the element
+	// has finished deploying.
+	//
+	// This may lead to duplicate writes of the deployment started state
+	// as for nodes that depend on others, it will also be set as a part of
+	// the atomic CheckUpdateElementDeploymentStarted operation.
+	// This is acceptable as the cost of duplicate writes to a hash map is low
+	// and allows for a cleaner interface without callers having to worry about
+	// calling numerous methods to update in progress and deployment started states
+	// for an element.
+	d.deploymentStarted[getNamespacedLogicalName(element)] = element
 }
 
 func (d *defaultDeploymentState) IsElementInProgress(element state.Element) bool {
@@ -231,6 +258,27 @@ func (d *defaultDeploymentState) IsElementConfigComplete(element state.Element) 
 
 	_, isConfigComplete := d.configComplete[getNamespacedLogicalName(element)]
 	return isConfigComplete
+}
+
+func (d *defaultDeploymentState) CheckUpdateElementDeploymentStarted(
+	element state.Element,
+	otherConditionToStart bool,
+) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	_, hasDeploymentStarted := d.deploymentStarted[getNamespacedLogicalName(element)]
+
+	if !hasDeploymentStarted && otherConditionToStart {
+		d.deploymentStarted[getNamespacedLogicalName(element)] = element
+		// We need to report the state before the update
+		// as this is an atomic operation to check if an element is already
+		// deploying and update the state at the same time to avoid
+		// starting the deployment of an element multiple times.
+		return false
+	}
+
+	return hasDeploymentStarted
 }
 
 func (d *defaultDeploymentState) SetLinkDurationInfo(linkName string, durations *state.LinkCompletionDurations) {

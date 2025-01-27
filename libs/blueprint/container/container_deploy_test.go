@@ -1,0 +1,504 @@
+package container
+
+import (
+	"context"
+	"errors"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	bperrors "github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/internal"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/blueprint/transform"
+)
+
+type ContainerDeployTestSuite struct {
+	blueprint1Fixture blueprintDeployFixture
+	blueprint2Fixture blueprintDeployFixture
+	blueprint3Fixture blueprintDeployFixture
+	blueprint4Fixture blueprintDeployFixture
+	stateContainer    state.Container
+	fixture1Params    core.BlueprintParams
+	fixture2Params    core.BlueprintParams
+	fixture3Params    core.BlueprintParams
+	fixture4Params    core.BlueprintParams
+	suite.Suite
+}
+
+func (s *ContainerDeployTestSuite) SetupTest() {
+	stateContainer := internal.NewMemoryStateContainer()
+	s.stateContainer = stateContainer
+	fixtureInstances := []int{1, 3, 4}
+	err := populateCurrentState(fixtureInstances, stateContainer, "deploy")
+	s.Require().NoError(err)
+
+	skipRetryFailureForLinkNames := []string{
+		// Transient failures are expected for "saveOrderFunction::ordersTable_0"
+		// but not the other links between lambda functions and DynamoDB tables
+		// in the same input blueprint.
+		"saveOrderFunction::ordersTable_0",
+		"saveOrderFunction::ordersTable_2",
+	}
+	providers := map[string]provider.Provider{
+		"aws":     newTestAWSProvider(true /* alwaysStabilise */, skipRetryFailureForLinkNames),
+		"example": newTestExampleProvider(),
+		"core": providerhelpers.NewCoreProvider(
+			stateContainer.Links(),
+			core.BlueprintInstanceIDFromContext,
+			os.Getwd,
+			core.SystemClock{},
+		),
+	}
+	specTransformers := map[string]transform.SpecTransformer{}
+	// Speed up tests by reducing the polling interval for resource stability checks.
+	resStabilityPollingConfig := &ResourceStabilityPollingConfig{
+		PollingInterval: 10 * time.Millisecond,
+		PollingTimeout:  1 * time.Second,
+	}
+	loader := NewDefaultLoader(
+		providers,
+		specTransformers,
+		stateContainer,
+		newFSChildResolver(),
+		WithLoaderTransformSpec(false),
+		WithLoaderValidateRuntimeValues(true),
+		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
+		WithLoaderResourceStabilityPollingConfig(resStabilityPollingConfig),
+	)
+
+	s.fixture1Params = blueprint1DeployParams(
+		/* includeInvoices */ false,
+	)
+	s.blueprint1Fixture, err = createBlueprintDeployFixture(
+		"deploy",
+		1,
+		loader,
+		s.fixture1Params,
+	)
+	s.Require().NoError(err)
+
+	s.fixture2Params = blueprint1DeployParams(
+		/* includeInvoices */ true,
+	)
+	s.blueprint2Fixture, err = createBlueprintDeployFixture(
+		"deploy",
+		2,
+		loader,
+		s.fixture2Params,
+	)
+	s.Require().NoError(err)
+
+	s.fixture3Params = blueprint3DeployParams()
+	s.blueprint3Fixture, err = createBlueprintDeployFixture(
+		"deploy",
+		3,
+		loader,
+		s.fixture3Params,
+	)
+	s.Require().NoError(err)
+
+	s.fixture4Params = blueprint3DeployParams()
+	s.blueprint4Fixture, err = createBlueprintDeployFixture(
+		"deploy",
+		4,
+		loader,
+		s.fixture4Params,
+	)
+	s.Require().NoError(err)
+}
+
+func (s *ContainerDeployTestSuite) Test_deploys_updates_to_existing_blueprint_instance() {
+	channels := CreateDeployChannels()
+	// Stage changes before deploying to get a change set derived from the test fixture
+	// state without having to manually create a change set fixture.
+	changes, changeStagingErr := s.stageChanges(
+		context.Background(),
+		"blueprint-instance-1",
+		s.blueprint1Fixture.blueprintContainer,
+		s.fixture1Params,
+	)
+	s.Require().NoError(changeStagingErr)
+
+	s.blueprint1Fixture.blueprintContainer.Deploy(
+		context.Background(),
+		&DeployInput{
+			InstanceID: "blueprint-instance-1",
+			Changes:    changes,
+			Rollback:   false,
+		},
+		channels,
+		s.fixture1Params,
+	)
+
+	resourceUpdateMessages := []ResourceDeployUpdateMessage{}
+	childDeployUpdateMessages := []ChildDeployUpdateMessage{}
+	linkDeployUpdateMessages := []LinkDeployUpdateMessage{}
+	deploymentUpdateMessages := []DeploymentUpdateMessage{}
+	finishedMessage := (*DeploymentFinishedMessage)(nil)
+	var err error
+	for err == nil &&
+		finishedMessage == nil {
+		select {
+		case msg := <-channels.ResourceUpdateChan:
+			resourceUpdateMessages = append(resourceUpdateMessages, msg)
+		case msg := <-channels.ChildUpdateChan:
+			childDeployUpdateMessages = append(childDeployUpdateMessages, msg)
+		case msg := <-channels.LinkUpdateChan:
+			linkDeployUpdateMessages = append(linkDeployUpdateMessages, msg)
+		case msg := <-channels.FinishChan:
+			finishedMessage = &msg
+		case msg := <-channels.DeploymentUpdateChan:
+			deploymentUpdateMessages = append(deploymentUpdateMessages, msg)
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Require().NoError(err)
+
+	actualMessages := &actualMessages{
+		resourceDeployUpdateMessages: resourceUpdateMessages,
+		childDeployUpdateMessages:    childDeployUpdateMessages,
+		linkDeployUpdateMessages:     linkDeployUpdateMessages,
+		deploymentUpdateMessages:     deploymentUpdateMessages,
+		finishedMessage:              finishedMessage,
+	}
+	assertDeployMessageOrder(actualMessages, s.blueprint1Fixture.expected, &s.Suite)
+
+	instanceState, err := s.stateContainer.Instances().Get(context.Background(), "blueprint-instance-1")
+	s.Require().NoError(err)
+	assertInstanceStateEquals(
+		s.blueprint1Fixture.expectedInstanceState,
+		&instanceState,
+		&s.Suite,
+	)
+}
+
+func (s *ContainerDeployTestSuite) Test_deploys_new_blueprint_instance() {
+	channels := CreateDeployChannels()
+	// Stage changes before deploying to get a change set derived from the test fixture
+	// state without having to manually create a change set fixture.
+	changes, changeStagingErr := s.stageChanges(
+		context.Background(),
+		/* instanceID */ "",
+		s.blueprint2Fixture.blueprintContainer,
+		s.fixture2Params,
+	)
+	s.Require().NoError(changeStagingErr)
+
+	s.blueprint2Fixture.blueprintContainer.Deploy(
+		context.Background(),
+		&DeployInput{
+			// An ID must not be provided for a new blueprint instance,
+			// the container will generate it.
+			Changes:  changes,
+			Rollback: false,
+		},
+		channels,
+		s.fixture2Params,
+	)
+
+	resourceUpdateMessages := []ResourceDeployUpdateMessage{}
+	childDeployUpdateMessages := []ChildDeployUpdateMessage{}
+	linkDeployUpdateMessages := []LinkDeployUpdateMessage{}
+	deploymentUpdateMessages := []DeploymentUpdateMessage{}
+	finishedMessage := (*DeploymentFinishedMessage)(nil)
+	var err error
+	for err == nil &&
+		finishedMessage == nil {
+		select {
+		case msg := <-channels.ResourceUpdateChan:
+			resourceUpdateMessages = append(resourceUpdateMessages, msg)
+		case msg := <-channels.ChildUpdateChan:
+			childDeployUpdateMessages = append(childDeployUpdateMessages, msg)
+		case msg := <-channels.LinkUpdateChan:
+			linkDeployUpdateMessages = append(linkDeployUpdateMessages, msg)
+		case msg := <-channels.FinishChan:
+			finishedMessage = &msg
+		case msg := <-channels.DeploymentUpdateChan:
+			deploymentUpdateMessages = append(deploymentUpdateMessages, msg)
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Require().NoError(err)
+
+	actualMessages := &actualMessages{
+		resourceDeployUpdateMessages: resourceUpdateMessages,
+		childDeployUpdateMessages:    childDeployUpdateMessages,
+		linkDeployUpdateMessages:     linkDeployUpdateMessages,
+		deploymentUpdateMessages:     deploymentUpdateMessages,
+		finishedMessage:              finishedMessage,
+	}
+	assertDeployMessageOrder(actualMessages, s.blueprint2Fixture.expected, &s.Suite)
+
+	instanceState, err := s.stateContainer.Instances().Get(
+		context.Background(),
+		actualMessages.finishedMessage.InstanceID,
+	)
+	s.Require().NoError(err)
+	assertInstanceStateEquals(
+		s.blueprint2Fixture.expectedInstanceState,
+		&instanceState,
+		&s.Suite,
+	)
+}
+
+func (s *ContainerDeployTestSuite) Test_fails_to_deploy_blueprint_with_cycle() {
+	channels := CreateDeployChannels()
+	changes := fixture3Changes()
+
+	// Ensure the parent blueprint is attached as a child of the core infra
+	// to create a cycle in state to ensure the cycle check is tested.
+	attachErr := s.stateContainer.Children().Attach(
+		context.Background(),
+		"blueprint-instance-3-child-core-infra",
+		"blueprint-instance-3",
+		"appInfra",
+	)
+	s.Require().NoError(attachErr)
+
+	s.blueprint3Fixture.blueprintContainer.Deploy(
+		context.Background(),
+		&DeployInput{
+			InstanceID: "blueprint-instance-3",
+			Changes:    changes,
+			Rollback:   false,
+		},
+		channels,
+		s.fixture3Params,
+	)
+
+	var err error
+	var finishMsg *DeploymentFinishedMessage
+	for err == nil && finishMsg == nil {
+		select {
+		case <-channels.ResourceUpdateChan:
+		case <-channels.ChildUpdateChan:
+		case <-channels.LinkUpdateChan:
+		case msg := <-channels.FinishChan:
+			finishMsg = &msg
+		case <-channels.DeploymentUpdateChan:
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Assert().Error(err)
+	runErr, isRunErr := err.(*bperrors.RunError)
+	s.Assert().True(isRunErr)
+	s.Assert().Equal(
+		ErrorReasonCodeBlueprintCycleDetected,
+		runErr.ReasonCode,
+	)
+}
+
+func (s *ContainerDeployTestSuite) Test_fails_to_deploy_blueprint_instance_already_being_deployed() {
+	channels := CreateDeployChannels()
+	// Stage changes before deploying to get a change set derived from the test fixture
+	// state without having to manually create a change set fixture.
+	changes, changeStagingErr := s.stageChanges(
+		context.Background(),
+		"blueprint-instance-4",
+		s.blueprint4Fixture.blueprintContainer,
+		s.fixture4Params,
+	)
+	s.Require().NoError(changeStagingErr)
+
+	s.blueprint3Fixture.blueprintContainer.Deploy(
+		context.Background(),
+		&DeployInput{
+			InstanceID: "blueprint-instance-4",
+			Changes:    changes,
+			Rollback:   false,
+		},
+		channels,
+		s.fixture4Params,
+	)
+
+	var err error
+	var finishMsg *DeploymentFinishedMessage
+	for err == nil && finishMsg == nil {
+		select {
+		case <-channels.ResourceUpdateChan:
+		case <-channels.ChildUpdateChan:
+		case <-channels.LinkUpdateChan:
+		case msg := <-channels.FinishChan:
+			finishMsg = &msg
+		case <-channels.DeploymentUpdateChan:
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Assert().NoError(err)
+	s.Assert().NotNil(finishMsg)
+	s.Assert().Equal(core.InstanceStatusUpdateFailed, finishMsg.Status)
+	s.Assert().Equal([]string{
+		instanceInProgressDeployFailedMessage("blueprint-instance-4", false),
+	}, finishMsg.FailureReasons)
+}
+
+func (s *ContainerDeployTestSuite) stageChanges(
+	ctx context.Context,
+	instanceID string,
+	container BlueprintContainer,
+	params core.BlueprintParams,
+) (*BlueprintChanges, error) {
+	changeStagingChannels := createChangeStagingChannels()
+	err := container.StageChanges(
+		ctx,
+		&StageChangesInput{
+			InstanceID: instanceID,
+		},
+		changeStagingChannels,
+		params,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	changes := &BlueprintChanges{}
+	for {
+		select {
+		case <-changeStagingChannels.ChildChangesChan:
+		case <-changeStagingChannels.LinkChangesChan:
+		case <-changeStagingChannels.ResourceChangesChan:
+		case changeSet := <-changeStagingChannels.CompleteChan:
+			changes = &changeSet
+			return changes, nil
+		case err := <-changeStagingChannels.ErrChan:
+			return nil, err
+		case <-time.After(60 * time.Second):
+			return nil, errors.New(timeoutMessage)
+		}
+	}
+}
+
+func blueprint1DeployParams(includeInvoices bool) core.BlueprintParams {
+	environment := "production-env"
+	enableOrderTableTrigger := true
+	region := "us-west-2"
+	deployOrdersTableToRegions := "[\"us-west-2\",\"us-east-1\",\"eu-west-1\"]"
+	orderTablesConfig := `
+		[
+			{
+				"name": "orders-us-west-2"
+			},
+			{
+				"name": "orders-us-east-1"
+			},
+			{
+				"name": "orders-eu-west-1"
+			}
+		]
+	`
+	blueprintVars := map[string]*core.ScalarValue{
+		"environment": {
+			StringValue: &environment,
+		},
+		"enableOrderTableTrigger": {
+			BoolValue: &enableOrderTableTrigger,
+		},
+		"region": {
+			StringValue: &region,
+		},
+		"deployOrdersTableToRegions": {
+			StringValue: &deployOrdersTableToRegions,
+		},
+		"includeInvoices": {
+			BoolValue: &includeInvoices,
+		},
+		"orderTablesConfig": {
+			StringValue: &orderTablesConfig,
+		},
+	}
+
+	return core.NewDefaultParams(
+		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+		blueprintVars,
+	)
+}
+
+func blueprint3DeployParams() core.BlueprintParams {
+	region := "us-west-2"
+	environment := "production-env"
+
+	return core.NewDefaultParams(
+		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{
+			"region": {
+				StringValue: &region,
+			},
+			"environment": {
+				StringValue: &environment,
+			},
+		},
+	)
+}
+
+func fixture3Changes() *BlueprintChanges {
+	changes := &BlueprintChanges{
+		ChildChanges: map[string]BlueprintChanges{
+			"coreInfra": {
+				ResourceChanges: map[string]provider.Changes{
+					"complexResource": {
+						AppliedResourceInfo: provider.ResourceInfo{
+							ResourceID:   "complex-resource-id",
+							ResourceName: "complexResource",
+							InstanceID:   "blueprint-instance-3-child-core-infra",
+							ResourceWithResolvedSubs: &provider.ResolvedResource{
+								Type: &schema.ResourceTypeWrapper{
+									Value: "example/complex",
+								},
+								Spec: &core.MappingNode{
+									Fields: map[string]*core.MappingNode{
+										"itemConfig": {
+											Fields: map[string]*core.MappingNode{
+												"endpoints": {
+													Items: []*core.MappingNode{
+														core.MappingNodeFromString("https://example.com/1"),
+														core.MappingNodeFromString("https://example.com/2"),
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						ModifiedFields: []provider.FieldChange{
+							{
+								FieldPath: "spec.itemConfig.endpoints[0]",
+								PrevValue: core.MappingNodeFromString("https://old.example.com/1"),
+								NewValue:  core.MappingNodeFromString("https://example.com/1"),
+							},
+						},
+					},
+				},
+				ChildChanges: map[string]BlueprintChanges{},
+			},
+		},
+	}
+	// Ensure there is a change set for the cyclic reference to ensure the max depth check
+	// is tested, as an empty change set for the cyclic reference would not trigger the check.
+	changes.ChildChanges["coreInfra"].ChildChanges["appInfra"] = *changes
+
+	return changes
+}
+
+func TestContainerDeployTestSuite(t *testing.T) {
+	suite.Run(t, new(ContainerDeployTestSuite))
+}

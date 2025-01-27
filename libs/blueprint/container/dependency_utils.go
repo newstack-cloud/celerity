@@ -6,7 +6,7 @@ import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -21,7 +21,7 @@ import (
 func PopulateDirectDependencies(
 	ctx context.Context,
 	allNodes []*DeploymentNode,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	params bpcore.BlueprintParams,
 ) error {
 	for _, possibleDependency := range allNodes {
@@ -52,7 +52,7 @@ func checkDependency(
 	ctx context.Context,
 	dependent *DeploymentNode,
 	possibleDependency *DeploymentNode,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	params bpcore.BlueprintParams,
 ) (bool, error) {
 	if possibleDependency.Type() == DeploymentNodeTypeResource {
@@ -76,7 +76,7 @@ func checkHasDependencyOnResource(
 	ctx context.Context,
 	node *DeploymentNode,
 	dependsOnResourceName string,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	params bpcore.BlueprintParams,
 ) (bool, error) {
 	if node.Type() == DeploymentNodeTypeResource {
@@ -122,7 +122,7 @@ func checkHasDependencyOnResource(
 func checkHasDependencyOnChildBlueprint(
 	node *DeploymentNode,
 	dependsOnChildName string,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) (bool, error) {
 	dependsOnElementName := bpcore.ChildElementID(dependsOnChildName)
 	return nodeReferencesElement(node, refChainCollector, dependsOnElementName)
@@ -130,7 +130,7 @@ func checkHasDependencyOnChildBlueprint(
 
 func nodeReferencesElement(
 	node *DeploymentNode,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	dependsOnElementName string,
 ) (bool, error) {
 	refChainNode := getRefChainNode(node, refChainCollector)
@@ -138,7 +138,7 @@ func nodeReferencesElement(
 	if refChainNode != nil {
 		referencedChainNode := core.Find(
 			refChainNode.References,
-			func(node *validation.ReferenceChainNode, _ int) bool {
+			func(node *refgraph.ReferenceChainNode, _ int) bool {
 				return node.ElementName == dependsOnElementName
 			},
 		)
@@ -152,8 +152,8 @@ func nodeReferencesElement(
 
 func getRefChainNode(
 	node *DeploymentNode,
-	refChainCollector validation.RefChainCollector,
-) *validation.ReferenceChainNode {
+	refChainCollector refgraph.RefChainCollector,
+) *refgraph.ReferenceChainNode {
 	if node.Type() == DeploymentNodeTypeChild {
 		return node.ChildNode
 	}

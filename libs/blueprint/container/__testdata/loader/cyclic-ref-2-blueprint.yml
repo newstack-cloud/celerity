@@ -41,16 +41,16 @@ resources:
       byLabel:
         app: "orders"
     spec:
-      name: "Orders"
+      # Order function will be selected by orders table, as it is a hard link type
+      # and the dynamoDB table has priority, this should be picked up as a circular reference
+      # and the blueprint loader should fail with a circular reference error.
+      tableName: "Orders ${resources.saveOrderFunction.spec.handler}"
 
   saveOrderFunction:
     type: aws/lambda/function
     description: "Function that saves an order to the database."
     metadata:
       labels:
-        # Order function will be selected by orders table, as it is a hard link type,
-        # this should be picked up as a circular reference and the blueprint loader
-        # should fail with a circular reference error.
         app: "orders"
     spec:
-      handler: "src/${resources.ordersTable.spec.id}"
+      handler: "src/handlers.saveOrder"

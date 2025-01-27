@@ -41,7 +41,7 @@ resources:
       custom:
         otherInfo: "${resources.saveOrderFunction.spec.id}"
     spec:
-      name: "Orders"
+      tableName: "Orders"
 
   saveOrderFunction:
     type: aws/lambda/function

@@ -9,6 +9,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
@@ -50,11 +51,19 @@ func copyProviderMap(m map[string]provider.Provider) map[string]provider.Provide
 func collectLinksFromChain(
 	ctx context.Context,
 	chain *links.ChainLinkNode,
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 ) error {
-	referencedByResourceID := core.ResourceElementID(chain.ResourceName)
+	// Always collect the resource that the chain is starting from to account for the case
+	// when the chain is a single resource, none of the links are hard or the root resource
+	// in the chain is not the priority resource in the link relationship.
+	resourceID := core.ResourceElementID(chain.ResourceName)
+	err := refChainCollector.Collect(resourceID, chain, "", []string{})
+	if err != nil {
+		return err
+	}
+
 	for _, link := range chain.LinksTo {
-		linkImplementation, err := getLinkImplementation(chain, link)
+		linkImplementation, fromResource, err := getLinkImplementation(chain, link)
 		if err != nil {
 			return err
 		}
@@ -64,8 +73,39 @@ func collectLinksFromChain(
 			return err
 		}
 
-		if !alreadyCollected(refChainCollector, link, referencedByResourceID) {
-			err = collectResourceFromLink(ctx, refChainCollector, link, linkKindOutput.Kind, referencedByResourceID)
+		priorityResourceOutput, err := linkImplementation.GetPriorityResource(
+			ctx,
+			&provider.LinkGetPriorityResourceInput{},
+		)
+		if err != nil {
+			return err
+		}
+
+		dependency := chain
+		referencedByResourceID := core.ResourceElementID(link.ResourceName)
+
+		// The dependency is the resource that has the priority in the link relationship.
+		// For this reason we need to check the priority resource in the relationship
+		// and which resource is A or B in the selected link implementation.
+		linkedToHasPriority := (fromResource == link.ResourceName &&
+			priorityResourceOutput.PriorityResource == provider.LinkPriorityResourceA) ||
+			(fromResource == chain.ResourceName &&
+				priorityResourceOutput.PriorityResource == provider.LinkPriorityResourceB)
+
+		if linkedToHasPriority && linkKindOutput.Kind == provider.LinkKindHard {
+			dependency = link
+			referencedByResourceID = core.ResourceElementID(chain.ResourceName)
+		}
+
+		if !alreadyCollected(refChainCollector, dependency, referencedByResourceID) {
+			err = collectResourceFromLink(
+				ctx,
+				refChainCollector,
+				dependency,
+				linkKindOutput.Kind,
+				referencedByResourceID,
+				link,
+			)
 			if err != nil {
 				return err
 			}
@@ -77,16 +117,17 @@ func collectLinksFromChain(
 
 func collectResourceFromLink(
 	ctx context.Context,
-	refChainCollector validation.RefChainCollector,
-	link *links.ChainLinkNode,
+	refChainCollector refgraph.RefChainCollector,
+	dependency *links.ChainLinkNode,
 	linkKind provider.LinkKind,
 	referencedByResourceID string,
+	childLink *links.ChainLinkNode,
 ) error {
 	// Only collect link for cycle detection if it is a hard link.
 	// Soft links do not require a specific order of deployment/resolution.
 	if linkKind == provider.LinkKindHard {
-		resourceID := core.ResourceElementID(link.ResourceName)
-		err := refChainCollector.Collect(resourceID, link, referencedByResourceID, []string{
+		resourceID := core.ResourceElementID(dependency.ResourceName)
+		err := refChainCollector.Collect(resourceID, dependency, referencedByResourceID, []string{
 			validation.CreateLinkTag(referencedByResourceID),
 		})
 		if err != nil {
@@ -96,7 +137,7 @@ func collectResourceFromLink(
 
 	// There is no risk of infinite recursion due to cyclic links as at this point,
 	// any pure link cycles have been detected and reported.
-	err := collectLinksFromChain(ctx, link, refChainCollector)
+	err := collectLinksFromChain(ctx, childLink, refChainCollector)
 	if err != nil {
 		return err
 	}
@@ -105,7 +146,7 @@ func collectResourceFromLink(
 }
 
 func alreadyCollected(
-	refChainCollector validation.RefChainCollector,
+	refChainCollector refgraph.RefChainCollector,
 	link *links.ChainLinkNode,
 	referencedByResourceID string,
 ) bool {
@@ -114,7 +155,7 @@ func alreadyCollected(
 	return collected != nil &&
 		slices.ContainsFunc(
 			collected.ReferencedBy,
-			func(current *validation.ReferenceChainNode) bool {
+			func(current *refgraph.ReferenceChainNode) bool {
 				return current.ElementName == referencedByResourceID
 			},
 		)
@@ -133,25 +174,27 @@ func getChangesFromStageLinkChangesOutput(
 func getLinkImplementation(
 	linkA *links.ChainLinkNode,
 	linkB *links.ChainLinkNode,
-) (provider.Link, error) {
+) (provider.Link, string, error) {
 	linkImplementation, hasLinkImplementation := linkA.LinkImplementations[linkB.ResourceName]
+	fromResource := linkA.ResourceName
 	if !hasLinkImplementation {
 		// The relationship could be either way.
 		linkImplementation, hasLinkImplementation = linkB.LinkImplementations[linkA.ResourceName]
+		fromResource = linkB.ResourceName
 	}
 
 	if !hasLinkImplementation {
-		return nil, fmt.Errorf("no link implementation found between %s and %s", linkA.ResourceName, linkB.ResourceName)
+		return nil, "", fmt.Errorf("no link implementation found between %s and %s", linkA.ResourceName, linkB.ResourceName)
 	}
 
-	return linkImplementation, nil
+	return linkImplementation, fromResource, nil
 }
 
 func extractChildRefNodes(
 	blueprint *schema.Blueprint,
-	refChainCollector validation.RefChainCollector,
-) []*validation.ReferenceChainNode {
-	childRefNodes := []*validation.ReferenceChainNode{}
+	refChainCollector refgraph.RefChainCollector,
+) []*refgraph.ReferenceChainNode {
+	childRefNodes := []*refgraph.ReferenceChainNode{}
 	if blueprint.Include == nil {
 		return childRefNodes
 	}

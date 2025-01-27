@@ -16,13 +16,16 @@ import (
 
 type LinkDeployerTestSuite struct {
 	suite.Suite
-	deployer *defaultLinkDeployer
-	fixtures map[int]*linkDeployerFixture
+	deployer       *defaultLinkDeployer
+	fixtures       map[int]*linkDeployerFixture
+	stateContainer state.Container
 }
 
 func (s *LinkDeployerTestSuite) SetupTest() {
+	s.stateContainer = internal.NewMemoryStateContainer()
 	s.deployer = &defaultLinkDeployer{
-		clock: &core.SystemClock{},
+		clock:          &core.SystemClock{},
+		stateContainer: s.stateContainer,
 	}
 	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*linkDeployerFixture{}
@@ -36,6 +39,11 @@ func (s *LinkDeployerTestSuite) SetupTest() {
 			// In all cases, the test link implementation will produce
 			// the same output for destroy, create and update deployments.
 			s.createFixtureDeployExpectedOutput(fixtureInfo.failure),
+		)
+		s.Require().NoError(err)
+		s.stateContainer.Instances().Save(
+			context.Background(),
+			*fixture.instanceStateSnapshot,
 		)
 		s.Require().NoError(err)
 		s.fixtures[fixtureInfo.number] = fixture
@@ -132,9 +140,8 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 	ctx := context.Background()
 	channels := CreateDeployChannels()
 	deployState := NewDefaultDeploymentState()
-	resultChan := make(chan *LinkDeployResult)
 	go func() {
-		result, _ := s.deployer.Deploy(
+		s.deployer.Deploy(
 			ctx,
 			fixture.linkElement,
 			fixture.instanceID,
@@ -174,7 +181,6 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 			},
 			provider.DefaultRetryPolicy,
 		)
-		resultChan <- result
 	}()
 
 	linkDeployUpdateMessages := []LinkDeployUpdateMessage{}
@@ -195,8 +201,7 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 	}
 	s.Require().NoError(err)
 
-	result := <-resultChan
-
+	result := deployState.GetLinkDeployResult(fixture.linkElement.LinkName)
 	actualMessages := &actualMessages{
 		resourceDeployUpdateMessages: []ResourceDeployUpdateMessage{},
 		childDeployUpdateMessages:    []ChildDeployUpdateMessage{},
@@ -205,6 +210,14 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 	}
 	assertDeployMessageOrder(actualMessages, fixture.expectedMessages, &s.Suite)
 	s.Assert().Equal(fixture.expectedOutput, result)
+
+	linkState, err := s.stateContainer.Links().Get(
+		ctx,
+		fixture.instanceID,
+		actualMessages.linkDeployUpdateMessages[0].LinkID,
+	)
+	s.Assert().NoError(err)
+	s.Assert().NotNil(linkState)
 }
 
 func (s *LinkDeployerTestSuite) fixtureInputs() []*linkDeployerFixtureInfo {

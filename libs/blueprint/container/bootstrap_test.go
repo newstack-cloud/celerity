@@ -23,7 +23,7 @@ func createParams() core.BlueprintParams {
 	)
 }
 
-func newTestAWSProvider() provider.Provider {
+func newTestAWSProvider(alwaysStabilise bool, skipRetryFailuresForLinkNames []string) provider.Provider {
 	return &internal.ProviderMock{
 		NamespaceValue: "aws",
 		Resources: map[string]provider.Resource{
@@ -54,6 +54,7 @@ func newTestAWSProvider() provider.Provider {
 						StabilisesAfterAttempts: -1,
 					},
 				},
+				AlwaysStabilise:       alwaysStabilise,
 				CurrentStabiliseCalls: map[string]int{},
 				SkipRetryFailuresForInstances: []string{
 					"resource-deploy-test--blueprint-instance-2",
@@ -63,6 +64,7 @@ func newTestAWSProvider() provider.Provider {
 					"resource-deploy-test--blueprint-instance-6",
 				},
 			},
+			"aws/lambda2/function": &internal.Lambda2FunctionResource{},
 		},
 		Links: map[string]provider.Link{
 			"aws/apigateway/api::aws/lambda/function": &testApiGatewayLambdaLink{},
@@ -74,16 +76,18 @@ func newTestAWSProvider() provider.Provider {
 				},
 				failIntermediariesUpdateLinkNames: []string{},
 				skipRetryFailuresForInstance:      []string{},
+				skipRetryFailuresForLinkNames:     skipRetryFailuresForLinkNames,
 			},
-			"aws/dynamodb/table::aws/dynamodb/stream":  &testDynamoDBTableStreamLink{},
-			"aws/dynamodb/stream::aws/lambda/function": &testDynamoDBStreamLambdaLink{},
-			"aws/lambda/function::aws/lambda/function": &testLambdaLambdaLink{},
-			"aws/dynamodb/table::aws/lambda/function":  &testDynamoDBTableLambdaLink{},
-			"aws/ec2/subnet::aws/ec2/vpc":              &testSubnetVPCLink{},
-			"aws/ec2/securityGroup::aws/ec2/vpc":       &testSecurityGroupVPCLink{},
-			"aws/ec2/routeTable::aws/ec2/vpc":          &testRouteTableVPCLink{},
-			"aws/ec2/route::aws/ec2/routeTable":        &testRouteRouteTableLink{},
-			"aws/ec2/route::aws/ec2/internetGateway":   &testRouteInternetGatewayLink{},
+			"aws/dynamodb/table::aws/dynamodb/stream":   &testDynamoDBTableStreamLink{},
+			"aws/dynamodb/stream::aws/lambda/function":  &testDynamoDBStreamLambdaLink{},
+			"aws/lambda/function::aws/lambda/function":  &testLambdaLambdaLink{},
+			"aws/lambda/function::aws/lambda2/function": &testLambdaLambda2Link{},
+			"aws/dynamodb/table::aws/lambda/function":   &testDynamoDBTableLambdaLink{},
+			"aws/ec2/subnet::aws/ec2/vpc":               &testSubnetVPCLink{},
+			"aws/ec2/securityGroup::aws/ec2/vpc":        &testSecurityGroupVPCLink{},
+			"aws/ec2/routeTable::aws/ec2/vpc":           &testRouteTableVPCLink{},
+			"aws/ec2/route::aws/ec2/routeTable":         &testRouteRouteTableLink{},
+			"aws/ec2/route::aws/ec2/internetGateway":    &testRouteInternetGatewayLink{},
 		},
 		CustomVariableTypes: map[string]provider.CustomVariableType{
 			"aws/ec2/instanceType": &internal.InstanceTypeCustomVariableType{},
@@ -92,7 +96,7 @@ func newTestAWSProvider() provider.Provider {
 			"aws/vpc": &internal.VPCDataSource{},
 		},
 		ProviderRetryPolicy: &provider.RetryPolicy{
-			MaxRetries: 2,
+			MaxRetries: 3,
 			// The first retry delay is 1 millisecond
 			FirstRetryDelay: 0.001,
 			// The maximum delay between retries is 10 milliseconds.
@@ -172,7 +176,7 @@ func (l *testApiGatewayLambdaLink) UpdateIntermediaryResources(
 }
 
 type testLambdaDynamoDBTableLink struct {
-	// Tracks the number of resource A update attempts for each unique resource ID.
+	// Tracks the number of resource A update attempts for each unique link name.
 	// This is used to emulate transient failures when updating links,
 	// the blueprint container will retry updating resource A for the link until the
 	// update attempt count exceeds the max update attempts.
@@ -188,7 +192,10 @@ type testLambdaDynamoDBTableLink struct {
 	failIntermediariesUpdateLinkNames []string
 	// Instance IDs
 	skipRetryFailuresForInstance []string
-	mu                           sync.Mutex
+	// Logical link names (resourceAName::resourceBName) for which behaviour to
+	// emulate transient failures should be skipped.
+	skipRetryFailuresForLinkNames []string
+	mu                            sync.Mutex
 }
 
 func (l *testLambdaDynamoDBTableLink) StageChanges(
@@ -355,15 +362,21 @@ func (l *testLambdaDynamoDBTableLink) UpdateResourceA(
 		}
 	}
 
-	attemptCount, exists := l.resourceAUpdateAttempts[input.ResourceInfo.ResourceID]
+	logicalLinkName := createLogicalLinkName(
+		input.ResourceInfo.ResourceName,
+		input.OtherResourceInfo.ResourceName,
+	)
+	attemptCount, exists := l.resourceAUpdateAttempts[logicalLinkName]
 	if !exists {
 		attemptCount = 0
 	}
 	attemptCount += 1
-	l.resourceAUpdateAttempts[input.ResourceInfo.ResourceID] = attemptCount
+	l.resourceAUpdateAttempts[logicalLinkName] = attemptCount
 
 	// Provider retry policy allows for a maximum of 3 attempts before failing.
-	if attemptCount < 3 && !slices.Contains(l.skipRetryFailuresForInstance, input.ResourceInfo.InstanceID) {
+	if attemptCount < 3 &&
+		!slices.Contains(l.skipRetryFailuresForInstance, input.ResourceInfo.InstanceID) &&
+		!slices.Contains(l.skipRetryFailuresForLinkNames, logicalLinkName) {
 		return nil, &provider.RetryableError{
 			ChildError: errors.New("resource A update failed due to transient error"),
 		}
@@ -650,6 +663,63 @@ func (l *testLambdaLambdaLink) UpdateResourceB(
 }
 
 func (l *testLambdaLambdaLink) UpdateIntermediaryResources(
+	ctx context.Context,
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return &provider.LinkUpdateIntermediaryResourcesOutput{}, nil
+}
+
+type testLambdaLambda2Link struct{}
+
+func (l *testLambdaLambda2Link) StageChanges(
+	ctx context.Context,
+	input *provider.LinkStageChangesInput,
+) (*provider.LinkStageChangesOutput, error) {
+	return &provider.LinkStageChangesOutput{}, nil
+}
+
+func (l *testLambdaLambda2Link) GetPriorityResource(
+	ctx context.Context,
+	input *provider.LinkGetPriorityResourceInput,
+) (*provider.LinkGetPriorityResourceOutput, error) {
+	return &provider.LinkGetPriorityResourceOutput{
+		// Lambda -> Lambda2 exists so there can be a relationship between
+		// 2 lambda functions where one has priority for certain test cases.
+		PriorityResource:     provider.LinkPriorityResourceA,
+		PriorityResourceType: "aws/lambda/function",
+	}, nil
+}
+
+func (l *testLambdaLambda2Link) GetType(
+	ctx context.Context,
+	input *provider.LinkGetTypeInput,
+) (*provider.LinkGetTypeOutput, error) {
+	return &provider.LinkGetTypeOutput{
+		Type: "aws/lambda/function::aws/lambda2/function",
+	}, nil
+}
+
+func (l *testLambdaLambda2Link) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+	return &provider.LinkGetKindOutput{
+		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testLambdaLambda2Link) UpdateResourceA(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testLambdaLambda2Link) UpdateResourceB(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+) (*provider.LinkUpdateResourceOutput, error) {
+	return &provider.LinkUpdateResourceOutput{}, nil
+}
+
+func (l *testLambdaLambda2Link) UpdateIntermediaryResources(
 	ctx context.Context,
 	input *provider.LinkUpdateIntermediaryResourcesInput,
 ) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {

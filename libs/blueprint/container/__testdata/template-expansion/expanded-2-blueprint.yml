@@ -48,7 +48,7 @@ resources:
       labels:
         app: orders
     spec:
-      name: "Orders"
+      tableName: "Orders"
 
 include:
   coreInfra:

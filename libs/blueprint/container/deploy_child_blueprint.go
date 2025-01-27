@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 // ChildBlueprintDeployer provides an interface for a service that deploys a child
@@ -18,7 +18,7 @@ type ChildBlueprintDeployer interface {
 		parentInstanceID string,
 		parentInstanceTreePath string,
 		includeTreePath string,
-		childNode *validation.ReferenceChainNode,
+		childNode *refgraph.ReferenceChainNode,
 		changes *BlueprintChanges,
 		deployCtx *DeployContext,
 	)
@@ -65,7 +65,7 @@ func (d *defaultChildBlueprintDeployer) Deploy(
 	parentInstanceID string,
 	parentInstanceTreePath string,
 	includeTreePath string,
-	childNode *validation.ReferenceChainNode,
+	childNode *refgraph.ReferenceChainNode,
 	changes *BlueprintChanges,
 	deployCtx *DeployContext,
 ) {
@@ -165,6 +165,7 @@ func (d *defaultChildBlueprintDeployer) waitForChildDeployment(
 		case msg := <-childChannels.ChildUpdateChan:
 			deployCtx.Channels.ChildUpdateChan <- msg
 		case err = <-childChannels.ErrChan:
+			deployCtx.Channels.ErrChan <- err
 		}
 	}
 }

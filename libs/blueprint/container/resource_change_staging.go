@@ -139,14 +139,19 @@ func (s *defaultResourceChangeStager) stageChanges(
 			resolveResourceResult.ResolveOnDeploy,
 		),
 	}
-	changesChan <- changesMsg
 
 	// We must make sure that resource changes are applied to the internal changing state
 	// before we can stage links that are dependent on the resource changes.
 	// Otherwise, we can end up with inconsistent state where links are staged before the
 	// resource changes are applied, leading to incorrect link changes being reported.
+	//
+	// The ephemeral state must also be updated before broadcasting the change message
+	// to ensure that the state is consistent to prevent bugs due to state updates
+	// that have not settled.
 	stagingState.ApplyResourceChanges(changesMsg)
 	linksReadyToBeStaged := stagingState.UpdateLinkStagingState(stageResourceInfo.node)
+
+	changesChan <- changesMsg
 
 	err = s.prepareAndStageLinkChanges(
 		ctx,
@@ -172,7 +177,7 @@ func (s *defaultResourceChangeStager) prepareAndStageLinkChanges(
 	params core.BlueprintParams,
 ) error {
 	for _, readyToStage := range linksReadyToBeStaged {
-		linkImpl, err := getLinkImplementation(
+		linkImpl, _, err := getLinkImplementation(
 			readyToStage.resourceANode,
 			readyToStage.resourceBNode,
 		)

@@ -37,11 +37,15 @@ resources:
   ordersTable:
     type: aws/dynamodb/table
     description: "Table that stores orders for an application."
+    # This dependency causes a cyclic dependency that should be caught with the
+    # reference chain collector functionality to detect cyclic dependencies
+    # across links, references and explicit dependencies.
+    dependsOn: "getOrderFunction"
     linkSelector:
       byLabel:
         app: "orders1"
     spec:
-      name: "Orders"
+      tableName: "Orders"
 
   saveOrderFunction:
     type: aws/lambda/function
@@ -56,12 +60,8 @@ resources:
       handler: "src/orders.saveOrder"
 
   getOrderFunction:
-    type: aws/lambda/function
+    type: aws/lambda2/function
     description: "Function that gets an order from the database."
-    # This dependency causes a cyclic dependency that should be caught with the
-    # reference chain collector functionality to detect cyclic dependencies
-    # across links, references and explicit dependencies.
-    dependsOn: "ordersTable"
     metadata:
       labels:
         app: "orders2"

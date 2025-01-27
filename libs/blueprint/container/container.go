@@ -6,11 +6,14 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
+	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 )
 
 // BlueprintContainer provides the interface for a service that manages
@@ -84,7 +87,7 @@ type BlueprintContainer interface {
 	// references for a blueprint.
 	// For example, extracting the references from an expanded version of a blueprint
 	// that contains resource templates.
-	RefChainCollector() validation.RefChainCollector
+	RefChainCollector() refgraph.RefChainCollector
 	// ResourceTemplates holds a mapping of resource names to the name of the resource
 	// template it was derived from.
 	// This allows retention of information about the original resource template
@@ -224,7 +227,7 @@ type defaultBlueprintContainer struct {
 	spec                     speccore.BlueprintSpec
 	linkInfo                 links.SpecLinkInfo
 	resourceTemplates        map[string]string
-	refChainCollector        validation.RefChainCollector
+	refChainCollector        refgraph.RefChainCollector
 	substitutionResolver     subengine.SubstitutionResolver
 	changeStager             ResourceChangeStager
 	diagnostics              []*core.Diagnostic
@@ -270,7 +273,7 @@ type BlueprintContainerDependencies struct {
 	LinkRegistry              provider.LinkRegistry
 	LinkInfo                  links.SpecLinkInfo
 	ResourceTemplates         map[string]string
-	RefChainCollector         validation.RefChainCollector
+	RefChainCollector         refgraph.RefChainCollector
 	SubstitutionResolver      subengine.SubstitutionResolver
 	ChangeStager              ResourceChangeStager
 	Clock                     core.Clock
@@ -339,10 +342,44 @@ func (c *defaultBlueprintContainer) Diagnostics() []*core.Diagnostic {
 	return c.diagnostics
 }
 
-func (c *defaultBlueprintContainer) RefChainCollector() validation.RefChainCollector {
+func (c *defaultBlueprintContainer) RefChainCollector() refgraph.RefChainCollector {
 	return c.refChainCollector
 }
 
 func (c *defaultBlueprintContainer) ResourceTemplates() map[string]string {
 	return c.resourceTemplates
+}
+
+func (c *defaultBlueprintContainer) resolveExport(
+	ctx context.Context,
+	exportName string,
+	export *schema.Export,
+	resolveFor subengine.ResolveForStage,
+) (*subengine.ResolveResult, error) {
+	if export.Field != nil && export.Field.StringValue != nil {
+		exportFieldAsSub, err := substitutions.ParseSubstitution(
+			"exports",
+			*export.Field.StringValue,
+			/* parentSourceStart */ &source.Meta{Position: source.Position{}},
+			/* outputLineInfo */ false,
+			/* ignoreParentColumn */ true,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return c.substitutionResolver.ResolveSubstitution(
+			ctx,
+			&substitutions.StringOrSubstitution{
+				SubstitutionValue: exportFieldAsSub,
+			},
+			core.ExportElementID(exportName),
+			"field",
+			&subengine.ResolveTargetInfo{
+				ResolveFor: resolveFor,
+			},
+		)
+	}
+
+	return nil, nil
 }

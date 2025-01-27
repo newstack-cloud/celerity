@@ -43,10 +43,11 @@ func (s *OrderingForRemovalTestSuite) SetupSuite() {
 }
 
 func (s *OrderingForRemovalTestSuite) Test_orders_elements_for_removal() {
-	orderedElements := OrderElementsForRemoval(
+	orderedElements, err := OrderElementsForRemoval(
 		s.orderRemovalFixture1.elementsToRemove,
 		s.orderRemovalFixture1.currentState,
 	)
+	s.Require().NoError(err)
 	s.Assert().Len(orderedElements, len(s.orderRemovalFixture1.expectedPresent))
 	s.Assert().Len(
 		core.Filter(

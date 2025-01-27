@@ -6,10 +6,10 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 type childBlueprintLoadResult struct {
@@ -24,7 +24,7 @@ type childBlueprintLoadInput struct {
 	parentInstanceTreePath string
 	instanceTreePath       string
 	includeTreePath        string
-	node                   *validation.ReferenceChainNode
+	node                   *refgraph.ReferenceChainNode
 	resolveFor             subengine.ResolveForStage
 }
 
@@ -146,7 +146,7 @@ func getChildState(
 
 func resolveIncludeForChildBlueprint(
 	ctx context.Context,
-	node *validation.ReferenceChainNode,
+	node *refgraph.ReferenceChainNode,
 	includeName string,
 	resolveFor subengine.ResolveForStage,
 	substitutionResolver IncludeSubstitutionResolver,

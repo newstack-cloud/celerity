@@ -113,7 +113,9 @@ func (r *DynamoDBTableResource) HasStabilised(
 	ctx context.Context,
 	input *provider.ResourceHasStabilisedInput,
 ) (*provider.ResourceHasStabilisedOutput, error) {
-	return &provider.ResourceHasStabilisedOutput{}, nil
+	return &provider.ResourceHasStabilisedOutput{
+		Stabilised: true,
+	}, nil
 }
 
 func (r *DynamoDBTableResource) GetExternalState(
@@ -221,7 +223,9 @@ func (r *DynamoDBStreamResource) HasStabilised(
 	ctx context.Context,
 	input *provider.ResourceHasStabilisedInput,
 ) (*provider.ResourceHasStabilisedOutput, error) {
-	return &provider.ResourceHasStabilisedOutput{}, nil
+	return &provider.ResourceHasStabilisedOutput{
+		Stabilised: true,
+	}, nil
 }
 
 func (r *DynamoDBStreamResource) GetExternalState(
@@ -255,6 +259,9 @@ type LambdaFunctionResource struct {
 	// A mapping of resource IDs to their respective stub resource stabilisation
 	// configuration.
 	StabiliseResourceIDs map[string]*StubResourceStabilisationConfig
+	// Override stabilisation config to always report the resource as stabilised
+	// on first check.
+	AlwaysStabilise bool
 	// Tracks the number of stabilise calls have been made for a resource ID.
 	CurrentStabiliseCalls map[string]int
 	// A list of instance IDs for which retry failures should be skipped.
@@ -267,7 +274,7 @@ func (r *LambdaFunctionResource) CanLinkTo(
 	input *provider.ResourceCanLinkToInput,
 ) (*provider.ResourceCanLinkToOutput, error) {
 	return &provider.ResourceCanLinkToOutput{
-		CanLinkTo: []string{"aws/dynamodb/table", "aws/lambda/function"},
+		CanLinkTo: []string{"aws/dynamodb/table", "aws/lambda/function", "aws/lambda2/function"},
 	}, nil
 }
 
@@ -325,7 +332,8 @@ func (r *LambdaFunctionResource) GetSpecDefinition(
 				Type: provider.ResourceDefinitionsSchemaTypeObject,
 				Attributes: map[string]*provider.ResourceDefinitionsSchema{
 					"id": {
-						Type: provider.ResourceDefinitionsSchemaTypeString,
+						Type:     provider.ResourceDefinitionsSchemaTypeString,
+						Computed: true,
 					},
 					"handler": {
 						Type: provider.ResourceDefinitionsSchemaTypeString,
@@ -381,6 +389,12 @@ func (r *LambdaFunctionResource) HasStabilised(
 	ctx context.Context,
 	input *provider.ResourceHasStabilisedInput,
 ) (*provider.ResourceHasStabilisedOutput, error) {
+	if r.AlwaysStabilise {
+		return &provider.ResourceHasStabilisedOutput{
+			Stabilised: true,
+		}, nil
+	}
+
 	if r.StabiliseResourceIDs == nil || r.CurrentStabiliseCalls == nil {
 		return &provider.ResourceHasStabilisedOutput{
 			Stabilised: false,
@@ -451,6 +465,122 @@ func (r *LambdaFunctionResource) Destroy(
 		}
 	}
 
+	return nil
+}
+
+type Lambda2FunctionResource struct{}
+
+func (r *Lambda2FunctionResource) CanLinkTo(
+	ctx context.Context,
+	input *provider.ResourceCanLinkToInput,
+) (*provider.ResourceCanLinkToOutput, error) {
+	return &provider.ResourceCanLinkToOutput{
+		CanLinkTo: []string{"aws/lambda/function"},
+	}, nil
+}
+
+func (r *Lambda2FunctionResource) StabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
+func (r *Lambda2FunctionResource) IsCommonTerminal(
+	ctx context.Context,
+	input *provider.ResourceIsCommonTerminalInput,
+) (*provider.ResourceIsCommonTerminalOutput, error) {
+	return &provider.ResourceIsCommonTerminalOutput{
+		IsCommonTerminal: true,
+	}, nil
+}
+
+func (r *Lambda2FunctionResource) GetType(
+	ctx context.Context,
+	input *provider.ResourceGetTypeInput,
+) (*provider.ResourceGetTypeOutput, error) {
+	return &provider.ResourceGetTypeOutput{
+		Type: "aws/lambda2/function",
+	}, nil
+}
+
+func (r *Lambda2FunctionResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "# AWS Lambda\n\nA Lambda function in AWS.",
+	}, nil
+}
+
+func (r *Lambda2FunctionResource) CustomValidate(
+	ctx context.Context,
+	input *provider.ResourceValidateInput,
+) (*provider.ResourceValidateOutput, error) {
+	return &provider.ResourceValidateOutput{
+		Diagnostics: []*core.Diagnostic{},
+	}, nil
+}
+
+func (r *Lambda2FunctionResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.ResourceSpecDefinition{
+			Schema: &provider.ResourceDefinitionsSchema{
+				Type: provider.ResourceDefinitionsSchemaTypeObject,
+				Attributes: map[string]*provider.ResourceDefinitionsSchema{
+					"id": {
+						Type:     provider.ResourceDefinitionsSchemaTypeString,
+						Computed: true,
+					},
+					"handler": {
+						Type: provider.ResourceDefinitionsSchemaTypeString,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
+func (r *Lambda2FunctionResource) Deploy(
+	ctx context.Context,
+	input *provider.ResourceDeployInput,
+) (*provider.ResourceDeployOutput, error) {
+	id := fmt.Sprintf(
+		"arn:aws:lambda:us-east-1:123456789012:function:%s",
+		input.Changes.AppliedResourceInfo.ResourceName,
+	)
+
+	return &provider.ResourceDeployOutput{
+		ComputedFieldValues: map[string]*core.MappingNode{
+			"spec.id": core.MappingNodeFromString(id),
+		},
+	}, nil
+}
+
+func (r *Lambda2FunctionResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{
+		Stabilised: true,
+	}, nil
+}
+
+func (r *Lambda2FunctionResource) GetExternalState(
+	ctx context.Context,
+	input *provider.ResourceGetExternalStateInput,
+) (*provider.ResourceGetExternalStateOutput, error) {
+	return &provider.ResourceGetExternalStateOutput{}, nil
+}
+
+func (r *Lambda2FunctionResource) Destroy(
+	ctx context.Context,
+	input *provider.ResourceDestroyInput,
+) error {
 	return nil
 }
 
@@ -697,7 +827,9 @@ func (r *ExampleComplexResource) HasStabilised(
 	ctx context.Context,
 	input *provider.ResourceHasStabilisedInput,
 ) (*provider.ResourceHasStabilisedOutput, error) {
-	return &provider.ResourceHasStabilisedOutput{}, nil
+	return &provider.ResourceHasStabilisedOutput{
+		Stabilised: true,
+	}, nil
 }
 
 func (r *ExampleComplexResource) GetExternalState(

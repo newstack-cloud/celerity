@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 )
 
@@ -49,6 +50,7 @@ func NewDefaultResourceDeployer(
 	stabilityPollingConfig *ResourceStabilityPollingConfig,
 	substitutionResolver ResourceSubstitutionResolver,
 	resourceCache *core.Cache[*provider.ResolvedResource],
+	stateContainer state.Container,
 ) ResourceDeployer {
 	return &defaultResourceDeployer{
 		clock:                  clock,
@@ -57,6 +59,7 @@ func NewDefaultResourceDeployer(
 		substitutionResolver:   substitutionResolver,
 		stabilityPollingConfig: stabilityPollingConfig,
 		resourceCache:          resourceCache,
+		stateContainer:         stateContainer,
 	}
 }
 
@@ -67,6 +70,7 @@ type defaultResourceDeployer struct {
 	stabilityPollingConfig *ResourceStabilityPollingConfig
 	substitutionResolver   ResourceSubstitutionResolver
 	resourceCache          *core.Cache[*provider.ResolvedResource]
+	stateContainer         state.Container
 }
 
 func (d *defaultResourceDeployer) Deploy(
@@ -105,6 +109,21 @@ func (d *defaultResourceDeployer) Deploy(
 	if err != nil {
 		deployCtx.Channels.ErrChan <- err
 		return
+	}
+
+	if resourceChangeInfo.isNew {
+		resources := d.stateContainer.Resources()
+		err := resources.Save(ctx, instanceID, state.ResourceState{
+			ResourceID:    resourceID,
+			ResourceName:  chainLinkNode.ResourceName,
+			ResourceType:  resolvedResource.Type.Value,
+			Status:        core.ResourceStatusUnknown,
+			PreciseStatus: core.PreciseResourceStatusUnknown,
+		})
+		if err != nil {
+			deployCtx.Channels.ErrChan <- err
+			return
+		}
 	}
 
 	resourceImplementation, err := getProviderResourceImplementation(

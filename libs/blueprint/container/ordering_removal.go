@@ -3,7 +3,9 @@ package container
 import (
 	"slices"
 
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 // OrderElementsForRemoval orders resources, children and links for removal based on dependencies
@@ -33,7 +35,7 @@ import (
 func OrderElementsForRemoval(
 	elements *CollectedElements,
 	currentState *state.InstanceState,
-) []*ElementWithAllDeps {
+) ([]*ElementWithAllDeps, error) {
 	combinedList := []state.Element{}
 	for _, resourceInfo := range elements.Resources {
 		combinedList = append(combinedList, resourceInfo)
@@ -49,35 +51,17 @@ func OrderElementsForRemoval(
 
 	combinedListWithDeps := collectElementsWithDependencies(combinedList, currentState)
 
-	// Instead of trying to use an efficient sort algorithm,
-	// we have to compare each element with all other elements to determine
-	// order based on dependencies,
-	// This is because there are elements that are not connected to each other
-	// and an efficient sort algorithm will not be able to correctly determine the order
-	// if the two elements to compare are not connected.
-	sortElementsByDependencies(combinedListWithDeps)
+	refChainCollector := refgraph.NewRefChainCollector()
+	collectReferencesFromElements(combinedListWithDeps, refChainCollector)
+	refChains := refChainCollector.ChainsByLeafDependants()
+	refChainsDeepCopy := refgraph.DeepCopyReferenceChains(refChains)
 
-	return combinedListWithDeps
-}
-
-func sortElementsByDependencies(
-	elements []*ElementWithAllDeps,
-) {
-	n := len(elements)
-	for {
-		swapped := false
-		for i := 1; i < n; i += 1 {
-			elemA := elements[i-1]
-			elemB := elements[i]
-			if hasDependency(elemB, elemA) {
-				// If b has a dependency on a and b is after a, swap.
-				elements[i-1], elements[i] = elements[i], elements[i-1]
-			}
-		}
-		if !swapped {
-			break
-		}
-	}
+	return refgraph.TopologicalSortReferences(
+		refChainsDeepCopy,
+		combinedListWithDeps,
+		refgraph.ReferenceSortDirectionReferences,
+		/* empty */ nil,
+	)
 }
 
 func hasDependency(
@@ -102,11 +86,13 @@ func collectElementsWithDependencies(
 	}
 
 	for _, elementWithDeps := range elementsWithDeps {
-		elementWithDeps.AllDependencies = collectElementDependencies(
+		allDependencies, directDependencies := collectElementDependencies(
 			elementWithDeps.Element,
 			elementsWithDeps,
 			currentState,
 		)
+		elementWithDeps.AllDependencies = allDependencies
+		elementWithDeps.DirectDependencies = directDependencies
 	}
 
 	return elementsWithDeps
@@ -116,8 +102,9 @@ func collectElementDependencies(
 	element state.Element,
 	elementsWithDeps []*ElementWithAllDeps,
 	currentState *state.InstanceState,
-) []state.Element {
-	dependencies := []state.Element{}
+) ([]state.Element, []state.Element) {
+	allDeps := []state.Element{}
+	directDeps := []state.Element{}
 
 	if element.Kind() == state.ResourceElement {
 		resourceState := getResourceStateByName(currentState, element.LogicalName())
@@ -127,14 +114,18 @@ func collectElementDependencies(
 				elementsWithDeps,
 				currentState,
 			)
-			dependencies = append(dependencies, childDependencies...)
+			allDeps = append(allDeps, childDependencies...)
+			directChildDeps := filterElementsByLogicalName(childDependencies, resourceState.DependsOnChildren)
+			directDeps = append(directDeps, directChildDeps...)
 
 			resourceDependencies := collectElementResourceDependenciesForResource(
 				resourceState,
 				elementsWithDeps,
 				currentState,
 			)
-			dependencies = append(dependencies, resourceDependencies...)
+			allDeps = append(allDeps, resourceDependencies...)
+			directResourceDeps := filterElementsByLogicalName(resourceDependencies, resourceState.DependsOnResources)
+			directDeps = append(directDeps, directResourceDeps...)
 		}
 	}
 
@@ -146,14 +137,24 @@ func collectElementDependencies(
 				elementsWithDeps,
 				currentState,
 			)
-			dependencies = append(dependencies, childDependencies...)
+			allDeps = append(allDeps, childDependencies...)
+			directChildDeps := filterElementsByLogicalName(
+				childDependencies,
+				childDependencyInfo.DependsOnChildren,
+			)
+			directDeps = append(directDeps, directChildDeps...)
 
 			resourceDependencies := collectElementResourceDependenciesForChild(
 				childDependencyInfo,
 				elementsWithDeps,
 				currentState,
 			)
-			dependencies = append(dependencies, resourceDependencies...)
+			allDeps = append(allDeps, resourceDependencies...)
+			directResourceDeps := filterElementsByLogicalName(
+				resourceDependencies,
+				childDependencyInfo.DependsOnResources,
+			)
+			directDeps = append(directDeps, directResourceDeps...)
 		}
 	}
 
@@ -165,11 +166,25 @@ func collectElementDependencies(
 				elementsWithDeps,
 				currentState,
 			)
-			dependencies = append(dependencies, resourceDependencies...)
+			allDeps = append(allDeps, resourceDependencies...)
+			directResourceDeps := filterElementsByLogicalName(
+				resourceDependencies,
+				[]string{linkDependencyInfo.resourceAName, linkDependencyInfo.resourceBName},
+			)
+			directDeps = append(directDeps, directResourceDeps...)
 		}
 	}
 
-	return dependencies
+	return allDeps, directDeps
+}
+
+func filterElementsByLogicalName(
+	elements []state.Element,
+	includeNames []string,
+) []state.Element {
+	return core.Filter(elements, func(current state.Element, _ int) bool {
+		return slices.Contains(includeNames, current.LogicalName())
+	})
 }
 
 func collectElementChildDependenciesForResource(
@@ -252,17 +267,16 @@ func collectElementDependenciesOfType(
 		elementWithDeps := findElement(elementsWithDeps, dependency, elementKind)
 		if elementWithDeps != nil {
 			if len(elementWithDeps.AllDependencies) == 0 {
-				elementDeps := collectElementDependencies(
+				allDeps, directDeps := collectElementDependencies(
 					elementWithDeps.Element,
 					elementsWithDeps,
 					currentState,
 				)
-				elementWithDeps.AllDependencies = elementDeps
+				elementWithDeps.AllDependencies = allDeps
+				elementWithDeps.DirectDependencies = directDeps
 			}
 
 			dependencies = append(dependencies, elementWithDeps.Element)
-			// Ensure all transitive dependencies are collected in order for the sorting
-			// to work correctly.
 			dependencies = addUniqueElements(dependencies, elementWithDeps.AllDependencies)
 		}
 
@@ -273,14 +287,14 @@ func collectElementDependenciesOfType(
 
 func findElement(
 	elementsWithDeps []*ElementWithAllDeps,
-	id string,
+	logicalName string,
 	elementKind state.ElementKind,
 ) *ElementWithAllDeps {
 	i := 0
 	element := (*ElementWithAllDeps)(nil)
 	for element == nil && i < len(elementsWithDeps) {
 		elementWithDeps := elementsWithDeps[i]
-		if elementWithDeps.Element.ID() == id &&
+		if elementWithDeps.Element.LogicalName() == logicalName &&
 			elementWithDeps.Element.Kind() == elementKind {
 			element = elementWithDeps
 		}
@@ -313,13 +327,48 @@ func containsElement(
 	})
 }
 
+func collectReferencesFromElements(
+	elements []*ElementWithAllDeps,
+	refChainCollector refgraph.RefChainCollector,
+) {
+	for _, element := range elements {
+		// Collect element to make sure elements with no dependencies are included.
+		refChainCollector.Collect(
+			getNamespacedLogicalName(element.Element),
+			element.Element,
+			"",
+			[]string{},
+		)
+
+		// Only collect direct dependencies that can be used in the
+		// topological sort algorithm.
+		for _, dependency := range element.DirectDependencies {
+			refChainCollector.Collect(
+				getNamespacedLogicalName(dependency),
+				dependency,
+				element.Name(),
+				[]string{},
+			)
+		}
+	}
+}
+
 // ElementsWithAllDeps stores a representation of an element in a blueprint
 // with all of its dependencies, both direct and transitive.
 // This is primarily used for collecting and ordering elements for removal.
 type ElementWithAllDeps struct {
 	Element state.Element
 	// All collected dependencies for an element, both direct and transitive.
+	// This is particularly useful for grouping a pre-sorted list of elements
+	// to remove into sets of elements that can be processed in parallel.
 	AllDependencies []state.Element
+	// A list of direct dependencies for an element, particularly useful
+	// for building a reference chain for sorting.
+	DirectDependencies []state.Element
+}
+
+func (e *ElementWithAllDeps) Name() string {
+	return getNamespacedLogicalName(e.Element)
 }
 
 type linkDependencyInfo struct {

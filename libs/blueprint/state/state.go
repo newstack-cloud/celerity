@@ -346,6 +346,8 @@ type ExportState struct {
 	Value *core.MappingNode `json:"value"`
 	// Type holds the type of the exported value.
 	Type schema.ExportType `json:"type"`
+	// Description holds a human-friendly description of the export.
+	Description string `json:"description,omitempty"`
 	// Field holds the path of a field in a blueprint element
 	// that should be exported.
 	Field string `json:"field"`

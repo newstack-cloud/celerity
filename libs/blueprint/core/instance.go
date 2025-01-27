@@ -76,4 +76,9 @@ const (
 	// a blueprint instance update has been successfully rolled back
 	// to a previous state.
 	InstanceStatusUpdateRollbackComplete
+	// InstanceStatusNotDeployed is used when
+	// a blueprint instance has not had its first deployment.
+	// This is useful for persisting a skeleton for an instance
+	// before the first deployment of a new blueprint instance.
+	InstanceStatusNotDeployed
 )

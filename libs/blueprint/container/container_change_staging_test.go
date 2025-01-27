@@ -15,9 +15,9 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 const (
@@ -50,7 +50,10 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	providers := map[string]provider.Provider{
-		"aws":     newTestAWSProvider(),
+		"aws": newTestAWSProvider(
+			/* alwaysStabilise */ false,
+			/* skipRetryFailuresForLinkNames */ []string{},
+		),
 		"example": newTestExampleProvider(),
 		"core": providerhelpers.NewCoreProvider(
 			stateContainer.Links(),
@@ -67,7 +70,7 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 		newFSChildResolver(),
 		WithLoaderTransformSpec(false),
 		WithLoaderValidateRuntimeValues(true),
-		WithLoaderRefChainCollectorFactory(validation.NewRefChainCollector),
+		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
 	)
 
 	blueprint1Container, err := loader.Load(

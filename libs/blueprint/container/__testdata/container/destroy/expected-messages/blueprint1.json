@@ -5,7 +5,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-orders-table-0-id",
         "resourceName": "ordersTable_0",
-        "group": 0,
         "status": 4,
         "preciseStatus": 8,
         "attempt": 0,
@@ -16,7 +15,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-orders-table-0-id",
         "resourceName": "ordersTable_0",
-        "group": 0,
         "status": 5,
         "preciseStatus": 9,
         "attempt": 0,
@@ -33,7 +31,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-orders-table-1-id",
         "resourceName": "ordersTable_1",
-        "group": 0,
         "status": 4,
         "preciseStatus": 8,
         "attempt": 0,
@@ -44,7 +41,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-orders-table-1-id",
         "resourceName": "ordersTable_1",
-        "group": 0,
         "status": 5,
         "preciseStatus": 9,
         "attempt": 0,
@@ -61,7 +57,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-invoices-table-id",
         "resourceName": "invoicesTable",
-        "group": 0,
         "status": 4,
         "preciseStatus": 8,
         "attempt": 0,
@@ -72,7 +67,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-invoices-table-id",
         "resourceName": "invoicesTable",
-        "group": 0,
         "status": 5,
         "preciseStatus": 9,
         "attempt": 0,
@@ -89,7 +83,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-save-order-function-id",
         "resourceName": "saveOrderFunction",
-        "group": 0,
         "status": 4,
         "preciseStatus": 8,
         "attempt": 0,
@@ -100,7 +93,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-save-order-function-id",
         "resourceName": "saveOrderFunction",
-        "group": 0,
         "status": 6,
         "preciseStatus": 10,
         "failureReasons": ["destroy failed due to transient error"],
@@ -115,7 +107,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-save-order-function-id",
         "resourceName": "saveOrderFunction",
-        "group": 0,
         "status": 4,
         "preciseStatus": 8,
         "attempt": 1,
@@ -126,7 +117,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-save-order-function-id",
         "resourceName": "saveOrderFunction",
-        "group": 0,
         "status": 6,
         "preciseStatus": 10,
         "failureReasons": ["destroy failed due to transient error"],
@@ -141,7 +131,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-save-order-function-id",
         "resourceName": "saveOrderFunction",
-        "group": 0,
         "status": 4,
         "preciseStatus": 8,
         "attempt": 2,
@@ -152,7 +141,6 @@
         "instanceId": "blueprint-instance-1",
         "resourceId": "test-save-order-function-id",
         "resourceName": "saveOrderFunction",
-        "group": 0,
         "status": 5,
         "preciseStatus": 9,
         "attempt": 2,
@@ -169,7 +157,6 @@
         "instanceId": "blueprint-instance-1-child-core-infra",
         "resourceId": "complex-resource-id",
         "resourceName": "complexResource",
-        "group": 0,
         "status": 4,
         "preciseStatus": 8,
         "attempt": 0,
@@ -180,7 +167,6 @@
         "instanceId": "blueprint-instance-1-child-core-infra",
         "resourceId": "complex-resource-id",
         "resourceName": "complexResource",
-        "group": 0,
         "status": 5,
         "preciseStatus": 9,
         "attempt": 0,
@@ -199,7 +185,6 @@
         "parentInstanceId": "blueprint-instance-1",
         "childInstanceId": "blueprint-instance-1-child-core-infra",
         "childName": "coreInfra",
-        "group": 0,
         "status": 7,
         "updateTimestamp": -1
       },
@@ -207,7 +192,6 @@
         "parentInstanceId": "blueprint-instance-1",
         "childInstanceId": "blueprint-instance-1-child-core-infra",
         "childName": "coreInfra",
-        "group": 0,
         "status": 8,
         "updateTimestamp": -1,
         "durations": {
@@ -258,15 +242,41 @@
         "instanceId": "blueprint-instance-1",
         "linkId": "test-link-2",
         "linkName": "saveOrderFunction::ordersTable_1",
+        "status": 9,
+        "preciseStatus": 3,
+        "failureReasons": ["resource A update failed due to transient error"],
+        "currentStageAttempt": 1,
+        "canRetryCurrentStage": true,
+        "updateTimestamp": -1,
+        "durations": {
+          "resourceAUpdate": {
+            "attemptDurations": [-1, -1]
+          }
+        }
+      },
+      {
+        "instanceId": "blueprint-instance-1",
+        "linkId": "test-link-2",
+        "linkName": "saveOrderFunction::ordersTable_1",
+        "status": 7,
+        "preciseStatus": 1,
+        "currentStageAttempt": 2,
+        "canRetryCurrentStage": false,
+        "updateTimestamp": -1
+      },
+      {
+        "instanceId": "blueprint-instance-1",
+        "linkId": "test-link-2",
+        "linkName": "saveOrderFunction::ordersTable_1",
         "status": 7,
         "preciseStatus": 2,
-        "currentStageAttempt": 1,
+        "currentStageAttempt": 2,
         "canRetryCurrentStage": false,
         "updateTimestamp": -1,
         "durations": {
           "resourceAUpdate": {
             "totalDuration": -1,
-            "attemptDurations": [-1, -1]
+            "attemptDurations": [-1, -1, -1]
           }
         }
       },
@@ -292,7 +302,7 @@
         "durations": {
           "resourceAUpdate": {
             "totalDuration": -1,
-            "attemptDurations": [-1, -1]
+            "attemptDurations": [-1, -1, -1]
           },
           "resourceBUpdate": {
             "totalDuration": -1,
@@ -322,7 +332,7 @@
         "durations": {
           "resourceAUpdate": {
             "totalDuration": -1,
-            "attemptDurations": [-1, -1]
+            "attemptDurations": [-1, -1, -1]
           },
           "resourceBUpdate": {
             "totalDuration": -1,
@@ -377,15 +387,41 @@
         "instanceId": "blueprint-instance-1",
         "linkId": "test-link-1",
         "linkName": "saveOrderFunction::ordersTable_0",
+        "status": 9,
+        "preciseStatus": 3,
+        "failureReasons": ["resource A update failed due to transient error"],
+        "currentStageAttempt": 1,
+        "canRetryCurrentStage": true,
+        "updateTimestamp": -1,
+        "durations": {
+          "resourceAUpdate": {
+            "attemptDurations": [-1, -1]
+          }
+        }
+      },
+      {
+        "instanceId": "blueprint-instance-1",
+        "linkId": "test-link-1",
+        "linkName": "saveOrderFunction::ordersTable_0",
+        "status": 7,
+        "preciseStatus": 1,
+        "currentStageAttempt": 2,
+        "canRetryCurrentStage": false,
+        "updateTimestamp": -1
+      },
+      {
+        "instanceId": "blueprint-instance-1",
+        "linkId": "test-link-1",
+        "linkName": "saveOrderFunction::ordersTable_0",
         "status": 7,
         "preciseStatus": 2,
-        "currentStageAttempt": 1,
+        "currentStageAttempt": 2,
         "canRetryCurrentStage": false,
         "updateTimestamp": -1,
         "durations": {
           "resourceAUpdate": {
             "totalDuration": -1,
-            "attemptDurations": [-1, -1]
+            "attemptDurations": [-1, -1, -1]
           }
         }
       },
@@ -411,7 +447,7 @@
         "durations": {
           "resourceAUpdate": {
             "totalDuration": -1,
-            "attemptDurations": [-1, -1]
+            "attemptDurations": [-1, -1, -1]
           },
           "resourceBUpdate": {
             "totalDuration": -1,
@@ -441,7 +477,7 @@
         "durations": {
           "resourceAUpdate": {
             "totalDuration": -1,
-            "attemptDurations": [-1, -1]
+            "attemptDurations": [-1, -1, -1]
           },
           "resourceBUpdate": {
             "totalDuration": -1,

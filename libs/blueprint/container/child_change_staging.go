@@ -7,10 +7,10 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 // ChildChangeStager provides an interface for a service that stages changes for
@@ -21,7 +21,7 @@ type ChildChangeStager interface {
 		parentInstanceID string,
 		parentInstanceTreePath string,
 		includeTreePath string,
-		node *validation.ReferenceChainNode,
+		node *refgraph.ReferenceChainNode,
 		paramOverrides core.BlueprintParams,
 		channels *ChangeStagingChannels,
 	)
@@ -58,7 +58,7 @@ func (d *defaultChildChangeStager) StageChanges(
 	parentInstanceID string,
 	parentInstanceTreePath string,
 	includeTreePath string,
-	node *validation.ReferenceChainNode,
+	node *refgraph.ReferenceChainNode,
 	paramOverrides core.BlueprintParams,
 	channels *ChangeStagingChannels,
 ) {
