@@ -5,7 +5,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/libs/deploy-engine/core"
 	"go.uber.org/zap"
 )
@@ -23,7 +22,6 @@ func Setup(router *mux.Router) (io.WriteCloser, error) {
 		/* stateContainer */ nil,
 		/* resourceChangeStager */ nil,
 		/* childResolver */ nil,
-		validation.NewRefChainCollector,
 		container.WithLoaderTransformSpec(false),
 		container.WithLoaderValidateAfterTransform(false),
 		container.WithLoaderValidateRuntimeValues(false),
