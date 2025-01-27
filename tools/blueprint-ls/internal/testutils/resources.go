@@ -112,6 +112,6 @@ func (r *DynamoDBTableResource) HasStabilised(
 	input *provider.ResourceHasStabilisedInput,
 ) (*provider.ResourceHasStabilisedOutput, error) {
 	return &provider.ResourceHasStabilisedOutput{
-		HasStabilised: true,
+		Stabilised: true,
 	}, nil
 }

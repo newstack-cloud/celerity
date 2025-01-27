@@ -8,8 +8,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 )
 
 type FunctionRegistryMock struct {
@@ -170,6 +172,24 @@ func (r *ResourceRegistryMock) Destroy(
 		return fmt.Errorf("resource %s not found", resourceType)
 	}
 	return res.Destroy(ctx, input)
+}
+
+func (r *ResourceRegistryMock) StabilisedDependencies(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	res, ok := r.Resources[resourceType]
+	if !ok {
+		return nil, fmt.Errorf("resource %s not found", resourceType)
+	}
+	return res.StabilisedDependencies(ctx, input)
+}
+
+func (r *ResourceRegistryMock) WithParams(
+	params core.BlueprintParams,
+) resourcehelpers.Registry {
+	return r
 }
 
 type DataSourceRegistryMock struct {

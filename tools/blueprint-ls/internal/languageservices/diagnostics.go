@@ -63,6 +63,7 @@ func (s *DiagnosticsService) ValidateTextDocument(
 		schema.YAMLSpecFormat,
 		core.NewDefaultParams(
 			map[string]map[string]*core.ScalarValue{},
+			map[string]map[string]*core.ScalarValue{},
 			map[string]*core.ScalarValue{},
 			map[string]*core.ScalarValue{},
 		),

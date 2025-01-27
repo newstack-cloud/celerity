@@ -10,7 +10,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/languageserver"
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/languageservices"
@@ -46,7 +45,7 @@ func main() {
 	}
 
 	functionRegistry := provider.NewFunctionRegistry(providers)
-	resourceRegistry := resourcehelpers.NewRegistry(providers, transformers)
+	resourceRegistry := resourcehelpers.NewRegistry(providers, transformers, nil)
 	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
 	customVarTypeRegistry := provider.NewCustomVariableTypeRegistry(providers)
 
@@ -65,7 +64,6 @@ func main() {
 		/* stateContainer */ nil,
 		/* resourceChangeStager */ nil,
 		/* childResolver */ nil,
-		validation.NewRefChainCollector,
 		// Disable runtime value validation as it is not needed for diagnostics.
 		container.WithLoaderValidateRuntimeValues(false),
 		// Disable spec transformation as it is not needed for diagnostics.
