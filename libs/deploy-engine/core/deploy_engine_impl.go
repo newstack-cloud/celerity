@@ -117,6 +117,7 @@ func (b *deployEngineImpl) validateBlueprint(params *ValidateParams, fs afero.Fs
 
 	blueprintParams := core.NewDefaultParams(
 		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 	)
