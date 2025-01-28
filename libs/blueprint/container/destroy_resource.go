@@ -99,7 +99,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 	resourceInfo *deploymentElementInfo,
 	resourceImplementation provider.Resource,
 	deployCtx *DeployContext,
-	resourceRetryInfo *retryInfo,
+	resourceRetryInfo *retryContext,
 ) error {
 	resourceRemovalStartTime := d.clock.Now()
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
@@ -144,8 +144,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 				ctx,
 				resourceInfo,
 				resourceImplementation,
-				resourceRetryInfo,
-				resourceRemovalStartTime,
+				retryContextWithStartTime(resourceRetryInfo, resourceRemovalStartTime),
 				[]string{retryErr.ChildError.Error()},
 				deployCtx,
 			)
@@ -160,8 +159,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 			resourceDestroyErr := err.(*provider.ResourceDestroyError)
 			return d.handleDestroyResourceTerminalFailure(
 				resourceInfo,
-				resourceRetryInfo,
-				resourceRemovalStartTime,
+				retryContextWithStartTime(resourceRetryInfo, resourceRemovalStartTime),
 				resourceDestroyErr.FailureReasons,
 				deployCtx,
 			)
@@ -203,12 +201,13 @@ func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 	ctx context.Context,
 	resourceInfo *deploymentElementInfo,
 	resourceImplementation provider.Resource,
-	resourceRetryInfo *retryInfo,
-	resourceRemovalStartTime time.Time,
+	resourceRetryInfo *retryContext,
 	failureReasons []string,
 	deployCtx *DeployContext,
 ) error {
-	currentAttemptDuration := d.clock.Since(resourceRemovalStartTime)
+	currentAttemptDuration := d.clock.Since(
+		resourceRetryInfo.attemptStartTime,
+	)
 	nextRetryInfo := addRetryAttempt(resourceRetryInfo, currentAttemptDuration)
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
 		InstanceID:      resourceInfo.instanceID,
@@ -252,12 +251,13 @@ func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 
 func (d *defaultResourceDestroyer) handleDestroyResourceTerminalFailure(
 	resourceInfo *deploymentElementInfo,
-	resourceRetryInfo *retryInfo,
-	resourceRemovalStartTime time.Time,
+	resourceRetryInfo *retryContext,
 	failureReasons []string,
 	deployCtx *DeployContext,
 ) error {
-	currentAttemptDuration := d.clock.Since(resourceRemovalStartTime)
+	currentAttemptDuration := d.clock.Since(
+		resourceRetryInfo.attemptStartTime,
+	)
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
 		InstanceID:      resourceInfo.instanceID,
 		ResourceID:      resourceInfo.element.ID(),

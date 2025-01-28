@@ -194,15 +194,25 @@ func NewNopLogger() Logger {
 	return &NopLogger{}
 }
 
-func (l *NopLogger) Info(msg string, fields ...LogField) {}
+func (l *NopLogger) Info(msg string, fields ...LogField) {
+	// no-op does nothing for info logs.
+}
 
-func (l *NopLogger) Debug(msg string, fields ...LogField) {}
+func (l *NopLogger) Debug(msg string, fields ...LogField) {
+	// no-op does nothing for debug logs.
+}
 
-func (l *NopLogger) Warn(msg string, fields ...LogField) {}
+func (l *NopLogger) Warn(msg string, fields ...LogField) {
+	// no-op does nothing for warning logs.
+}
 
-func (l *NopLogger) Error(msg string, fields ...LogField) {}
+func (l *NopLogger) Error(msg string, fields ...LogField) {
+	// no-op does nothing for error logs.
+}
 
-func (l *NopLogger) Fatal(msg string, fields ...LogField) {}
+func (l *NopLogger) Fatal(msg string, fields ...LogField) {
+	// no-op does nothing for fatal logs.
+}
 
 func (l *NopLogger) WithFields(fields ...LogField) Logger {
 	return l

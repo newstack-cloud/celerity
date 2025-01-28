@@ -556,7 +556,7 @@ func determinePreciseLinkIntermediariesUpdatedStatus(rollingBack bool) core.Prec
 }
 
 func determineLinkUpdateIntermediariesRetryFailureDurations(
-	currentRetryInfo *retryInfo,
+	currentRetryInfo *retryContext,
 ) *state.LinkCompletionDurations {
 	if currentRetryInfo.exceededMaxRetries {
 		totalDuration := core.Sum(currentRetryInfo.attemptDurations)
@@ -1113,7 +1113,7 @@ func wasDeploymentSuccessful(
 }
 
 func determineResourceRetryFailureDurations(
-	currentRetryInfo *retryInfo,
+	currentRetryInfo *retryContext,
 ) *state.ResourceCompletionDurations {
 	if currentRetryInfo.exceededMaxRetries {
 		totalDuration := core.Sum(currentRetryInfo.attemptDurations)
@@ -1129,7 +1129,7 @@ func determineResourceRetryFailureDurations(
 }
 
 func determineResourceDeployConfigCompleteDurations(
-	currentRetryInfo *retryInfo,
+	currentRetryInfo *retryContext,
 	currentAttemptDuration time.Duration,
 ) *state.ResourceCompletionDurations {
 	updatedAttemptDurations := append(
@@ -1151,7 +1151,7 @@ func determineResourceDeployConfigCompleteDurations(
 // This is not used to calculate the final durations once a resource has been
 // confirmed to be stable.
 func determineResourceDeployFinishedDurations(
-	currentRetryInfo *retryInfo,
+	currentRetryInfo *retryContext,
 	currentAttemptDuration time.Duration,
 	configCompleteDuration *time.Duration,
 ) *state.ResourceCompletionDurations {
@@ -1189,7 +1189,7 @@ func addTotalToResourceCompletionDurations(
 }
 
 func determineLinkUpdateResourceARetryFailureDurations(
-	currentRetryInfo *retryInfo,
+	currentRetryInfo *retryContext,
 ) *state.LinkCompletionDurations {
 	if currentRetryInfo.exceededMaxRetries {
 		totalDuration := core.Sum(currentRetryInfo.attemptDurations)
@@ -1209,7 +1209,7 @@ func determineLinkUpdateResourceARetryFailureDurations(
 }
 
 func determineLinkUpdateResourceAFinishedDurations(
-	currentRetryInfo *retryInfo,
+	currentRetryInfo *retryContext,
 	currentAttemptDuration time.Duration,
 ) *state.LinkCompletionDurations {
 	updatedAttemptDurations := append(
@@ -1226,7 +1226,7 @@ func determineLinkUpdateResourceAFinishedDurations(
 }
 
 func determineLinkUpdateResourceBRetryFailureDurations(
-	currentRetryInfo *retryInfo,
+	currentRetryInfo *retryContext,
 ) *state.LinkCompletionDurations {
 	if currentRetryInfo.exceededMaxRetries {
 		totalDuration := core.Sum(currentRetryInfo.attemptDurations)
@@ -1246,7 +1246,7 @@ func determineLinkUpdateResourceBRetryFailureDurations(
 }
 
 func determineLinkUpdateResourceBFinishedDurations(
-	currentRetryInfo *retryInfo,
+	currentRetryInfo *retryContext,
 	currentAttemptDuration time.Duration,
 	accumDurationInfo *state.LinkCompletionDurations,
 ) *state.LinkCompletionDurations {
@@ -1267,7 +1267,7 @@ func determineLinkUpdateResourceBFinishedDurations(
 }
 
 func determineLinkUpdateIntermediariesFinishedDurations(
-	currentRetryInfo *retryInfo,
+	currentRetryInfo *retryContext,
 	currentAttemptDuration time.Duration,
 	accumDurationInfo *state.LinkCompletionDurations,
 ) *state.LinkCompletionDurations {
@@ -1311,9 +1311,9 @@ func getLinkComponentTotalDuration(
 	return *componentDurations.TotalDuration
 }
 
-func addRetryAttempt(retryInfoToUpdate *retryInfo, currentAttemptDuration time.Duration) *retryInfo {
+func addRetryAttempt(retryInfoToUpdate *retryContext, currentAttemptDuration time.Duration) *retryContext {
 	nextAttempt := retryInfoToUpdate.attempt + 1
-	return &retryInfo{
+	return &retryContext{
 		policy:  retryInfoToUpdate.policy,
 		attempt: nextAttempt,
 		attemptDurations: append(
@@ -1321,6 +1321,7 @@ func addRetryAttempt(retryInfoToUpdate *retryInfo, currentAttemptDuration time.D
 			core.FractionalMilliseconds(currentAttemptDuration),
 		),
 		exceededMaxRetries: nextAttempt > retryInfoToUpdate.policy.MaxRetries,
+		attemptStartTime:   retryInfoToUpdate.attemptStartTime,
 	}
 }
 
@@ -1909,8 +1910,8 @@ func getRetryPolicy(
 	return retryPolicy, nil
 }
 
-func createRetryInfo(policy *provider.RetryPolicy) *retryInfo {
-	return &retryInfo{
+func createRetryInfo(policy *provider.RetryPolicy) *retryContext {
+	return &retryContext{
 		policy: policy,
 		// Start at 0 for first attempt as retries are counted from 1.
 		attempt:            0,

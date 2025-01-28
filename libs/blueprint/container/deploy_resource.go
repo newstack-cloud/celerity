@@ -189,7 +189,7 @@ func (d *defaultResourceDeployer) deployResource(
 	resourceInfo *resourceDeployInfo,
 	resourceType string,
 	deployCtx *DeployContext,
-	resourceRetryInfo *retryInfo,
+	resourceRetryInfo *retryContext,
 ) error {
 	resourceDeploymentStartTime := d.clock.Now()
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
@@ -238,8 +238,10 @@ func (d *defaultResourceDeployer) deployResource(
 			return d.handleDeployResourceRetry(
 				ctx,
 				resourceInfo,
-				resourceRetryInfo,
-				resourceDeploymentStartTime,
+				retryContextWithStartTime(
+					resourceRetryInfo,
+					resourceDeploymentStartTime,
+				),
 				[]string{retryErr.ChildError.Error()},
 				deployCtx,
 			)
@@ -254,8 +256,10 @@ func (d *defaultResourceDeployer) deployResource(
 			resourceDeployError := err.(*provider.ResourceDeployError)
 			return d.handleDeployResourceTerminalFailure(
 				resourceInfo,
-				resourceRetryInfo,
-				resourceDeploymentStartTime,
+				retryContextWithStartTime(
+					resourceRetryInfo,
+					resourceDeploymentStartTime,
+				),
 				resourceDeployError.FailureReasons,
 				deployCtx,
 			)
@@ -341,7 +345,7 @@ func (d *defaultResourceDeployer) deployResource(
 func (d *defaultResourceDeployer) pollForResourceStability(
 	ctx context.Context,
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryInfo,
+	resourceRetryInfo *retryContext,
 	deployCtx *DeployContext,
 ) {
 	pollingStabilisationStartTime := d.clock.Now()
@@ -408,7 +412,7 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 
 func (d *defaultResourceDeployer) createResourceStabiliseTimeoutMessage(
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryInfo,
+	resourceRetryInfo *retryContext,
 	pollingStabilisationStartTime time.Time,
 	deployCtx *DeployContext,
 ) ResourceDeployUpdateMessage {
@@ -442,7 +446,7 @@ func (d *defaultResourceDeployer) createResourceStabiliseTimeoutMessage(
 
 func (d *defaultResourceDeployer) createResourceStabilisedMessage(
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryInfo,
+	resourceRetryInfo *retryContext,
 	pollingStabilisationStartTime time.Time,
 	deployCtx *DeployContext,
 ) ResourceDeployUpdateMessage {
@@ -476,12 +480,13 @@ func (d *defaultResourceDeployer) createResourceStabilisedMessage(
 func (d *defaultResourceDeployer) handleDeployResourceRetry(
 	ctx context.Context,
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryInfo,
-	resourceDeploymentStartTime time.Time,
+	resourceRetryInfo *retryContext,
 	failureReasons []string,
 	deployCtx *DeployContext,
 ) error {
-	currentAttemptDuration := d.clock.Since(resourceDeploymentStartTime)
+	currentAttemptDuration := d.clock.Since(
+		resourceRetryInfo.attemptStartTime,
+	)
 	nextRetryInfo := addRetryAttempt(resourceRetryInfo, currentAttemptDuration)
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
 		InstanceID:   resourceInfo.instanceID,
@@ -533,12 +538,11 @@ func (d *defaultResourceDeployer) handleDeployResourceRetry(
 
 func (d *defaultResourceDeployer) handleDeployResourceTerminalFailure(
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryInfo,
-	resourceDeploymentStartTime time.Time,
+	resourceRetryInfo *retryContext,
 	failureReasons []string,
 	deployCtx *DeployContext,
 ) error {
-	currentAttemptDuration := d.clock.Since(resourceDeploymentStartTime)
+	currentAttemptDuration := d.clock.Since(resourceRetryInfo.attemptStartTime)
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
 		InstanceID:   resourceInfo.instanceID,
 		ResourceID:   resourceInfo.resourceID,

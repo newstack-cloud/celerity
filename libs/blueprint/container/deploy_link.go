@@ -151,8 +151,10 @@ func (d *defaultLinkDeployer) Deploy(
 		},
 		linkInfo,
 		createRetryInfo(retryPolicy),
-		resourceAOutput,
-		resourceBOutput,
+		&linkUpdateResourceOutputs{
+			resourceAOutput: resourceAOutput,
+			resourceBOutput: resourceBOutput,
+		},
 		deployCtx,
 	)
 	if err != nil {
@@ -167,7 +169,7 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 	linkImplementation provider.Link,
 	input *provider.LinkUpdateResourceInput,
 	linkInfo *deploymentElementInfo,
-	updateResourceARetryInfo *retryInfo,
+	updateResourceARetryInfo *retryContext,
 	deployCtx *DeployContext,
 ) (*provider.LinkUpdateResourceOutput, bool, error) {
 	updateResourceAStartTime := d.clock.Now()
@@ -196,8 +198,10 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 				ctx,
 				linkInfo,
 				linkImplementation,
-				updateResourceARetryInfo,
-				updateResourceAStartTime,
+				retryContextWithStartTime(
+					updateResourceARetryInfo,
+					updateResourceAStartTime,
+				),
 				&linkUpdateResourceInfo{
 					failureReasons: []string{retryErr.ChildError.Error()},
 					input:          input,
@@ -215,8 +219,10 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 			linkUpdateResourceAError := err.(*provider.LinkUpdateResourceAError)
 			stop, err := d.handleUpdateResourceATerminalFailure(
 				linkInfo,
-				updateResourceARetryInfo,
-				updateResourceAStartTime,
+				retryContextWithStartTime(
+					updateResourceARetryInfo,
+					updateResourceAStartTime,
+				),
 				&linkUpdateResourceInfo{
 					failureReasons: linkUpdateResourceAError.FailureReasons,
 					input:          input,
@@ -227,8 +233,7 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 		}
 
 		deployCtx.Logger.Warn(
-			"an unknown error occurred during link resource A update, "+
-				"plugins should wrap all errors in the appropriate provider error",
+			unknownErrorWarningText("link resource A update"),
 			core.IntegerLogField("attempt", int64(updateResourceARetryInfo.attempt)),
 			core.ErrorLogField("error", err),
 		)
@@ -242,9 +247,11 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 	deployCtx.Channels.LinkUpdateChan <- d.createLinkResourceAUpdatedMessage(
 		linkInfo,
 		deployCtx,
-		updateResourceARetryInfo,
+		retryContextWithStartTime(
+			updateResourceARetryInfo,
+			updateResourceAStartTime,
+		),
 		input.LinkUpdateType,
-		updateResourceAStartTime,
 	)
 
 	return resourceAOutput, false, nil
@@ -254,12 +261,11 @@ func (d *defaultLinkDeployer) handleUpdateLinkResourceARetry(
 	ctx context.Context,
 	linkInfo *deploymentElementInfo,
 	linkImplementation provider.Link,
-	updateResourceARetryInfo *retryInfo,
-	updateResourceAStartTime time.Time,
+	updateResourceARetryInfo *retryContext,
 	updateInfo *linkUpdateResourceInfo,
 	deployCtx *DeployContext,
 ) (*provider.LinkUpdateResourceOutput, bool, error) {
-	currentAttemptDuration := d.clock.Since(updateResourceAStartTime)
+	currentAttemptDuration := d.clock.Since(updateResourceARetryInfo.attemptStartTime)
 	nextRetryInfo := addRetryAttempt(updateResourceARetryInfo, currentAttemptDuration)
 	deployCtx.Channels.LinkUpdateChan <- LinkDeployUpdateMessage{
 		InstanceID: linkInfo.instanceID,
@@ -311,12 +317,11 @@ func (d *defaultLinkDeployer) handleUpdateLinkResourceARetry(
 
 func (d *defaultLinkDeployer) handleUpdateResourceATerminalFailure(
 	linkInfo *deploymentElementInfo,
-	updateResourceARetryInfo *retryInfo,
-	updateResourceAStartTime time.Time,
+	updateResourceARetryInfo *retryContext,
 	updateInfo *linkUpdateResourceInfo,
 	deployCtx *DeployContext,
 ) (bool, error) {
-	currentAttemptDuration := d.clock.Since(updateResourceAStartTime)
+	currentAttemptDuration := d.clock.Since(updateResourceARetryInfo.attemptStartTime)
 	deployCtx.Channels.LinkUpdateChan <- LinkDeployUpdateMessage{
 		InstanceID: linkInfo.instanceID,
 		LinkID:     linkInfo.element.ID(),
@@ -343,7 +348,7 @@ func (d *defaultLinkDeployer) handleUpdateResourceATerminalFailure(
 func (d *defaultLinkDeployer) createLinkUpdatingResourceAMessage(
 	linkInfo *deploymentElementInfo,
 	deployCtx *DeployContext,
-	updateResourceARetryInfo *retryInfo,
+	updateResourceARetryInfo *retryContext,
 	linkUpdateType provider.LinkUpdateType,
 ) LinkDeployUpdateMessage {
 	return LinkDeployUpdateMessage{
@@ -365,13 +370,12 @@ func (d *defaultLinkDeployer) createLinkUpdatingResourceAMessage(
 func (d *defaultLinkDeployer) createLinkResourceAUpdatedMessage(
 	linkInfo *deploymentElementInfo,
 	deployCtx *DeployContext,
-	updateResourceARetryInfo *retryInfo,
+	updateResourceARetryInfo *retryContext,
 	linkUpdateType provider.LinkUpdateType,
-	updateResourceAStartTime time.Time,
 ) LinkDeployUpdateMessage {
 	durations := determineLinkUpdateResourceAFinishedDurations(
 		updateResourceARetryInfo,
-		d.clock.Since(updateResourceAStartTime),
+		d.clock.Since(updateResourceARetryInfo.attemptStartTime),
 	)
 	linkName := linkInfo.element.LogicalName()
 	deployCtx.State.SetLinkDurationInfo(linkName, durations)
@@ -398,7 +402,7 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 	linkImplementation provider.Link,
 	input *provider.LinkUpdateResourceInput,
 	linkInfo *deploymentElementInfo,
-	updateResourceBRetryInfo *retryInfo,
+	updateResourceBRetryInfo *retryContext,
 	deployCtx *DeployContext,
 ) (*provider.LinkUpdateResourceOutput, bool, error) {
 	updateResourceBStartTime := d.clock.Now()
@@ -427,8 +431,10 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 				ctx,
 				linkInfo,
 				linkImplementation,
-				updateResourceBRetryInfo,
-				updateResourceBStartTime,
+				retryContextWithStartTime(
+					updateResourceBRetryInfo,
+					updateResourceBStartTime,
+				),
 				&linkUpdateResourceInfo{
 					failureReasons: []string{retryErr.ChildError.Error()},
 					input:          input,
@@ -446,8 +452,10 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 			linkUpdateResourceBError := err.(*provider.LinkUpdateResourceBError)
 			stop, err := d.handleUpdateResourceBTerminalFailure(
 				linkInfo,
-				updateResourceBRetryInfo,
-				updateResourceBStartTime,
+				retryContextWithStartTime(
+					updateResourceBRetryInfo,
+					updateResourceBStartTime,
+				),
 				&linkUpdateResourceInfo{
 					failureReasons: linkUpdateResourceBError.FailureReasons,
 					input:          input,
@@ -458,8 +466,7 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 		}
 
 		deployCtx.Logger.Warn(
-			"an unknown error occurred during link resource B update, "+
-				"plugins should wrap all errors in the appropriate provider error",
+			unknownErrorWarningText("link resource B update"),
 			core.IntegerLogField("attempt", int64(updateResourceBRetryInfo.attempt)),
 			core.ErrorLogField("error", err),
 		)
@@ -473,9 +480,11 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 	deployCtx.Channels.LinkUpdateChan <- d.createLinkResourceBUpdatedMessage(
 		linkInfo,
 		deployCtx,
-		updateResourceBRetryInfo,
+		retryContextWithStartTime(
+			updateResourceBRetryInfo,
+			updateResourceBStartTime,
+		),
 		input.LinkUpdateType,
-		updateResourceBStartTime,
 	)
 
 	return resourceBOutput, false, nil
@@ -485,12 +494,11 @@ func (d *defaultLinkDeployer) handleUpdateLinkResourceBRetry(
 	ctx context.Context,
 	linkInfo *deploymentElementInfo,
 	linkImplementation provider.Link,
-	updateResourceBRetryInfo *retryInfo,
-	updateResourceBStartTime time.Time,
+	updateResourceBRetryInfo *retryContext,
 	updateInfo *linkUpdateResourceInfo,
 	deployCtx *DeployContext,
 ) (*provider.LinkUpdateResourceOutput, bool, error) {
-	currentAttemptDuration := d.clock.Since(updateResourceBStartTime)
+	currentAttemptDuration := d.clock.Since(updateResourceBRetryInfo.attemptStartTime)
 	nextRetryInfo := addRetryAttempt(updateResourceBRetryInfo, currentAttemptDuration)
 	deployCtx.Channels.LinkUpdateChan <- LinkDeployUpdateMessage{
 		InstanceID: linkInfo.instanceID,
@@ -542,12 +550,11 @@ func (d *defaultLinkDeployer) handleUpdateLinkResourceBRetry(
 
 func (d *defaultLinkDeployer) handleUpdateResourceBTerminalFailure(
 	linkInfo *deploymentElementInfo,
-	updateResourceBRetryInfo *retryInfo,
-	updateResourceBStartTime time.Time,
+	updateResourceBRetryInfo *retryContext,
 	updateInfo *linkUpdateResourceInfo,
 	deployCtx *DeployContext,
 ) (bool, error) {
-	currentAttemptDuration := d.clock.Since(updateResourceBStartTime)
+	currentAttemptDuration := d.clock.Since(updateResourceBRetryInfo.attemptStartTime)
 	linkName := linkInfo.element.LogicalName()
 	accumDurationInfo := deployCtx.State.GetLinkDurationInfo(linkName)
 	durations := determineLinkUpdateResourceBFinishedDurations(
@@ -579,7 +586,7 @@ func (d *defaultLinkDeployer) handleUpdateResourceBTerminalFailure(
 func (d *defaultLinkDeployer) createLinkUpdatingResourceBMessage(
 	linkInfo *deploymentElementInfo,
 	deployCtx *DeployContext,
-	updateResourceBRetryInfo *retryInfo,
+	updateResourceBRetryInfo *retryContext,
 	linkUpdateType provider.LinkUpdateType,
 ) LinkDeployUpdateMessage {
 	return LinkDeployUpdateMessage{
@@ -601,15 +608,14 @@ func (d *defaultLinkDeployer) createLinkUpdatingResourceBMessage(
 func (d *defaultLinkDeployer) createLinkResourceBUpdatedMessage(
 	linkInfo *deploymentElementInfo,
 	deployCtx *DeployContext,
-	updateResourceBRetryInfo *retryInfo,
+	updateResourceBRetryInfo *retryContext,
 	linkUpdateType provider.LinkUpdateType,
-	updateResourceBStartTime time.Time,
 ) LinkDeployUpdateMessage {
 	linkName := linkInfo.element.LogicalName()
 	accumDurationInfo := deployCtx.State.GetLinkDurationInfo(linkName)
 	durations := determineLinkUpdateResourceBFinishedDurations(
 		updateResourceBRetryInfo,
-		d.clock.Since(updateResourceBStartTime),
+		d.clock.Since(updateResourceBRetryInfo.attemptStartTime),
 		accumDurationInfo,
 	)
 	deployCtx.State.SetLinkDurationInfo(linkName, durations)
@@ -635,9 +641,8 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 	linkImplementation provider.Link,
 	input *provider.LinkUpdateIntermediaryResourcesInput,
 	linkInfo *deploymentElementInfo,
-	updateIntermediariesRetryInfo *retryInfo,
-	resourceAOutput *provider.LinkUpdateResourceOutput,
-	resourceBOutput *provider.LinkUpdateResourceOutput,
+	updateIntermediariesRetryInfo *retryContext,
+	resourceOutputs *linkUpdateResourceOutputs,
 	deployCtx *DeployContext,
 ) error {
 	updateIntermediariesStartTime := d.clock.Now()
@@ -666,14 +671,15 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 				ctx,
 				linkInfo,
 				linkImplementation,
-				updateIntermediariesRetryInfo,
-				updateIntermediariesStartTime,
+				retryContextWithStartTime(
+					updateIntermediariesRetryInfo,
+					updateIntermediariesStartTime,
+				),
 				&linkUpdateIntermediaryResourcesInfo{
 					failureReasons: []string{retryErr.ChildError.Error()},
 					input:          input,
 				},
-				resourceAOutput,
-				resourceBOutput,
+				resourceOutputs,
 				deployCtx,
 			)
 		}
@@ -687,8 +693,10 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 			linkUpdateIntermediariesError := err.(*provider.LinkUpdateIntermediaryResourcesError)
 			return d.handleUpdateIntermediaryResourcesTerminalFailure(
 				linkInfo,
-				updateIntermediariesRetryInfo,
-				updateIntermediariesStartTime,
+				retryContextWithStartTime(
+					updateIntermediariesRetryInfo,
+					updateIntermediariesStartTime,
+				),
 				&linkUpdateIntermediaryResourcesInfo{
 					failureReasons: linkUpdateIntermediariesError.FailureReasons,
 					input:          input,
@@ -698,8 +706,7 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 		}
 
 		deployCtx.Logger.Warn(
-			"an unknown error occurred during link intermediary resources update, "+
-				"plugins should wrap all errors in the appropriate provider error",
+			unknownErrorWarningText("link intermediary resources update"),
 			core.IntegerLogField("attempt", int64(updateIntermediariesRetryInfo.attempt)),
 			core.ErrorLogField("error", err),
 		)
@@ -715,8 +722,8 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 	// This makes sure that the link deploy result is available in the ephemeral state
 	// when the status update handler persists the results to the state container.
 	result := createLinkDeployResult(
-		resourceAOutput,
-		resourceBOutput,
+		resourceOutputs.resourceAOutput,
+		resourceOutputs.resourceBOutput,
 		intermediaryResourcesOutput,
 	)
 	deployCtx.State.SetLinkDeployResult(linkInfo.element.LogicalName(), result)
@@ -726,7 +733,6 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 		deployCtx,
 		updateIntermediariesRetryInfo,
 		input.LinkUpdateType,
-		updateIntermediariesStartTime,
 	)
 
 	return nil
@@ -735,15 +741,14 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 func (d *defaultLinkDeployer) createLinkIntermediariesUpdatedMessage(
 	linkInfo *deploymentElementInfo,
 	deployCtx *DeployContext,
-	updateIntermediariesRetryInfo *retryInfo,
+	updateIntermediariesRetryInfo *retryContext,
 	linkUpdateType provider.LinkUpdateType,
-	updateIntermediariesStartTime time.Time,
 ) LinkDeployUpdateMessage {
 	linkName := linkInfo.element.LogicalName()
 	accumDurationInfo := deployCtx.State.GetLinkDurationInfo(linkName)
 	durations := determineLinkUpdateIntermediariesFinishedDurations(
 		updateIntermediariesRetryInfo,
-		d.clock.Since(updateIntermediariesStartTime),
+		d.clock.Since(updateIntermediariesRetryInfo.attemptStartTime),
 		accumDurationInfo,
 	)
 	deployCtx.State.SetLinkDurationInfo(linkName, durations)
@@ -770,14 +775,14 @@ func (d *defaultLinkDeployer) handleUpdateLinkIntermediaryResourcesRetry(
 	ctx context.Context,
 	linkInfo *deploymentElementInfo,
 	linkImplementation provider.Link,
-	updateIntermediaryResourcesRetryInfo *retryInfo,
-	updateIntermediaryResourcesStartTime time.Time,
+	updateIntermediaryResourcesRetryInfo *retryContext,
 	updateInfo *linkUpdateIntermediaryResourcesInfo,
-	resourceAOutput *provider.LinkUpdateResourceOutput,
-	resourceBOutput *provider.LinkUpdateResourceOutput,
+	resourceOutputs *linkUpdateResourceOutputs,
 	deployCtx *DeployContext,
 ) error {
-	currentAttemptDuration := d.clock.Since(updateIntermediaryResourcesStartTime)
+	currentAttemptDuration := d.clock.Since(
+		updateIntermediaryResourcesRetryInfo.attemptStartTime,
+	)
 	nextRetryInfo := addRetryAttempt(
 		updateIntermediaryResourcesRetryInfo,
 		currentAttemptDuration,
@@ -817,8 +822,7 @@ func (d *defaultLinkDeployer) handleUpdateLinkIntermediaryResourcesRetry(
 			updateInfo.input,
 			linkInfo,
 			nextRetryInfo,
-			resourceAOutput,
-			resourceBOutput,
+			resourceOutputs,
 			deployCtx,
 		)
 	}
@@ -834,12 +838,13 @@ func (d *defaultLinkDeployer) handleUpdateLinkIntermediaryResourcesRetry(
 
 func (d *defaultLinkDeployer) handleUpdateIntermediaryResourcesTerminalFailure(
 	linkInfo *deploymentElementInfo,
-	updateIntermediariesRetryInfo *retryInfo,
-	updateIntermediariesStartTime time.Time,
+	updateIntermediariesRetryInfo *retryContext,
 	updateInfo *linkUpdateIntermediaryResourcesInfo,
 	deployCtx *DeployContext,
 ) error {
-	currentAttemptDuration := d.clock.Since(updateIntermediariesStartTime)
+	currentAttemptDuration := d.clock.Since(
+		updateIntermediariesRetryInfo.attemptStartTime,
+	)
 	linkName := linkInfo.element.LogicalName()
 	accumDurationInfo := deployCtx.State.GetLinkDurationInfo(linkName)
 	durations := determineLinkUpdateIntermediariesFinishedDurations(
@@ -872,7 +877,7 @@ func (d *defaultLinkDeployer) handleUpdateIntermediaryResourcesTerminalFailure(
 func (d *defaultLinkDeployer) createLinkUpdatingIntermediaryResourcesMessage(
 	linkInfo *deploymentElementInfo,
 	deployCtx *DeployContext,
-	updateIntermediariesRetryInfo *retryInfo,
+	updateIntermediariesRetryInfo *retryContext,
 	linkUpdateType provider.LinkUpdateType,
 ) LinkDeployUpdateMessage {
 	return LinkDeployUpdateMessage{
@@ -958,4 +963,14 @@ func getIntermediaryResourcesOutputStates(
 	}
 
 	return output.IntermediaryResourceStates
+}
+
+func unknownErrorWarningText(operation string) string {
+	return "an unknown error occurred during " + operation + ", " +
+		"plugins should wrap all errors in the appropriate provider error"
+}
+
+type linkUpdateResourceOutputs struct {
+	resourceAOutput *provider.LinkUpdateResourceOutput
+	resourceBOutput *provider.LinkUpdateResourceOutput
 }

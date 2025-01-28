@@ -748,6 +748,36 @@ func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
 		}
 	}
 
+	err := c.handleFinishedUpdatingResource(
+		ctx,
+		msg,
+		elementName,
+		element,
+		finished,
+		internalChannels,
+		deployCtx,
+	)
+	if err != nil {
+		return err
+	}
+
+	// This must always be called, there must be no early returns in the function body
+	// before this point other than for errors.
+	deployCtx.Channels.ResourceUpdateChan <- msg
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleFinishedUpdatingResource(
+	ctx context.Context,
+	msg ResourceDeployUpdateMessage,
+	elementName string,
+	element *ResourceIDInfo,
+	finished map[string]*deployUpdateMessageWrapper,
+	internalChannels *DeployChannels,
+	deployCtx *DeployContext,
+) error {
+	resources := c.stateContainer.Resources()
+
 	// This will not persist the current status update if the message
 	// represents a failure that can be retried.
 	// The initiator of the deployment process will receive failure messages
@@ -799,9 +829,6 @@ func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
 		}
 	}
 
-	// This must always be called, there must be no early returns in the function body
-	// before this point other than for errors.
-	deployCtx.Channels.ResourceUpdateChan <- msg
 	return nil
 }
 
@@ -1208,6 +1235,36 @@ func (c *defaultBlueprintContainer) handleResourceCreationEvent(
 		}
 	}
 
+	err := c.handleFinishedCreatingResource(
+		ctx,
+		msg,
+		elementName,
+		element,
+		finished,
+		internalChannels,
+		deployCtx,
+	)
+	if err != nil {
+		return err
+	}
+
+	// This must always be called, there must be no early returns in the function body
+	// before this point other than for errors.
+	deployCtx.Channels.ResourceUpdateChan <- msg
+	return nil
+}
+
+func (c *defaultBlueprintContainer) handleFinishedCreatingResource(
+	ctx context.Context,
+	msg ResourceDeployUpdateMessage,
+	elementName string,
+	element *ResourceIDInfo,
+	finished map[string]*deployUpdateMessageWrapper,
+	internalChannels *DeployChannels,
+	deployCtx *DeployContext,
+) error {
+	resources := c.stateContainer.Resources()
+
 	// This will not persist the current status update if the message
 	// represents a failure that can be retried.
 	// The initiator of the deployment process will receive failure messages
@@ -1261,9 +1318,6 @@ func (c *defaultBlueprintContainer) handleResourceCreationEvent(
 		}
 	}
 
-	// This must always be called, there must be no early returns in the function body
-	// before this point other than for errors.
-	deployCtx.Channels.ResourceUpdateChan <- msg
 	return nil
 }
 
@@ -1884,11 +1938,22 @@ type deployUpdateMessageWrapper struct {
 	childUpdateMessage    *ChildDeployUpdateMessage
 }
 
-type retryInfo struct {
+type retryContext struct {
 	attempt            int
 	exceededMaxRetries bool
 	policy             *provider.RetryPolicy
 	attemptDurations   []float64
+	attemptStartTime   time.Time
+}
+
+func retryContextWithStartTime(retryCtx *retryContext, startTime time.Time) *retryContext {
+	return &retryContext{
+		attempt:            retryCtx.attempt,
+		exceededMaxRetries: retryCtx.exceededMaxRetries,
+		policy:             retryCtx.policy,
+		attemptDurations:   retryCtx.attemptDurations,
+		attemptStartTime:   startTime,
+	}
 }
 
 type linkUpdateResourceInfo struct {
