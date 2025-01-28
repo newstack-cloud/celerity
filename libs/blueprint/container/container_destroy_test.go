@@ -13,6 +13,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
 )
@@ -65,6 +66,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		1,
 		loader,
 		baseBlueprintParams(),
+		schema.YAMLSpecFormat,
 	)
 	s.Require().NoError(err)
 
@@ -73,6 +75,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		2,
 		loader,
 		baseBlueprintParams(),
+		schema.YAMLSpecFormat,
 	)
 	s.Require().NoError(err)
 
@@ -81,6 +84,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		3,
 		loader,
 		baseBlueprintParams(),
+		schema.YAMLSpecFormat,
 	)
 	s.Require().NoError(err)
 
@@ -89,6 +93,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		4,
 		loader,
 		baseBlueprintParams(),
+		schema.YAMLSpecFormat,
 	)
 	s.Require().NoError(err)
 }

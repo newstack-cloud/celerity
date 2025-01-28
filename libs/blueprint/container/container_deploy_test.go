@@ -62,7 +62,7 @@ func (s *ContainerDeployTestSuite) SetupTest() {
 		PollingInterval: 10 * time.Millisecond,
 		PollingTimeout:  1 * time.Second,
 	}
-	logger, err := internal.NewTestLogger()
+	logger := core.NewNopLogger()
 	s.Require().NoError(err)
 	loader := NewDefaultLoader(
 		providers,
@@ -84,6 +84,7 @@ func (s *ContainerDeployTestSuite) SetupTest() {
 		1,
 		loader,
 		s.fixture1Params,
+		schema.YAMLSpecFormat,
 	)
 	s.Require().NoError(err)
 
@@ -95,6 +96,7 @@ func (s *ContainerDeployTestSuite) SetupTest() {
 		2,
 		loader,
 		s.fixture2Params,
+		schema.JSONSpecFormat,
 	)
 	s.Require().NoError(err)
 
@@ -104,6 +106,7 @@ func (s *ContainerDeployTestSuite) SetupTest() {
 		3,
 		loader,
 		s.fixture3Params,
+		schema.YAMLSpecFormat,
 	)
 	s.Require().NoError(err)
 
@@ -113,6 +116,7 @@ func (s *ContainerDeployTestSuite) SetupTest() {
 		4,
 		loader,
 		s.fixture4Params,
+		schema.YAMLSpecFormat,
 	)
 	s.Require().NoError(err)
 }

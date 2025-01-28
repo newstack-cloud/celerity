@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -186,7 +187,6 @@ func (m *MappingNode) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON fulfils the json.Unmarshaler interface
 // to unmarshal a serialised blueprint mapping node.
 func (m *MappingNode) UnmarshalJSON(data []byte) error {
-
 	var items []*MappingNode
 	if err := json.Unmarshal(data, &items); err == nil {
 		m.Items = items
@@ -212,7 +212,9 @@ func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {
 	// Remove the quotes from the string
 	normalised := dataStr
 	if len(dataStr) >= 2 && dataStr[0] == '"' && dataStr[len(dataStr)-1] == '"' {
-		normalised = dataStr[1 : len(dataStr)-1]
+		withoutSurroundingQuotes := dataStr[1 : len(dataStr)-1]
+		// Remove a single escape character for escaped quotes inside the string.
+		normalised = strings.ReplaceAll(withoutSurroundingQuotes, `\"`, `"`)
 	}
 	strSubs, err := substitutions.ParseSubstitutionValues("", normalised, nil, false, true, 0)
 

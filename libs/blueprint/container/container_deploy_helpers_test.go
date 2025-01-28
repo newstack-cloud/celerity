@@ -700,10 +700,16 @@ func createBlueprintDeployFixture(
 	fixtureNo int,
 	loader Loader,
 	params core.BlueprintParams,
+	blueprintFormat schema.SpecFormat,
 ) (blueprintDeployFixture, error) {
+	extension := "yml"
+	if blueprintFormat == schema.JSONSpecFormat {
+		extension = "json"
+	}
+
 	blueprintContainer, err := loader.Load(
 		context.Background(),
-		fmt.Sprintf("__testdata/container/%s/blueprint%d.yml", deployType, fixtureNo),
+		fmt.Sprintf("__testdata/container/%s/blueprint%d.%s", deployType, fixtureNo, extension),
 		params,
 	)
 	if err != nil {
