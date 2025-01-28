@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -48,8 +49,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		),
 	}
 	specTransformers := map[string]transform.SpecTransformer{}
-	logger, err := internal.NewTestLogger()
-	s.Require().NoError(err)
+	logger := core.NewNopLogger()
 	loader := NewDefaultLoader(
 		providers,
 		specTransformers,
@@ -302,8 +302,8 @@ func (s *ContainerDestroyTestSuite) Test_fails_to_destroys_blueprint_instance_du
 	s.Assert().Equal("blueprint-instance-4", instance.InstanceID)
 }
 
-func blueprint1RemovalChanges() *BlueprintChanges {
-	return &BlueprintChanges{
+func blueprint1RemovalChanges() *changes.BlueprintChanges {
+	return &changes.BlueprintChanges{
 		RemovedResources: []string{
 			"ordersTable_0",
 			"ordersTable_1",
@@ -320,7 +320,7 @@ func blueprint1RemovalChanges() *BlueprintChanges {
 		RemovedExports: []string{
 			"environment",
 		},
-		ChildChanges: map[string]BlueprintChanges{
+		ChildChanges: map[string]changes.BlueprintChanges{
 			"coreInfra": {
 				RemovedResources: []string{
 					"complexResource",
@@ -333,8 +333,8 @@ func blueprint1RemovalChanges() *BlueprintChanges {
 	}
 }
 
-func blueprint2RemovalChanges() *BlueprintChanges {
-	return &BlueprintChanges{
+func blueprint2RemovalChanges() *changes.BlueprintChanges {
+	return &changes.BlueprintChanges{
 		RemovedResources: []string{
 			"ordersTable_0",
 			"ordersTable_1",
@@ -351,7 +351,7 @@ func blueprint2RemovalChanges() *BlueprintChanges {
 		RemovedExports: []string{
 			"environment",
 		},
-		ChildChanges: map[string]BlueprintChanges{
+		ChildChanges: map[string]changes.BlueprintChanges{
 			"coreInfra": {
 				RemovedResources: []string{
 					"complexResource",
@@ -364,8 +364,8 @@ func blueprint2RemovalChanges() *BlueprintChanges {
 	}
 }
 
-func blueprint3RemovalChanges() *BlueprintChanges {
-	return &BlueprintChanges{
+func blueprint3RemovalChanges() *changes.BlueprintChanges {
+	return &changes.BlueprintChanges{
 		RemovedResources: []string{
 			"ordersTable_0",
 			"ordersTable_1",
@@ -382,7 +382,7 @@ func blueprint3RemovalChanges() *BlueprintChanges {
 		RemovedExports: []string{
 			"environment",
 		},
-		ChildChanges: map[string]BlueprintChanges{
+		ChildChanges: map[string]changes.BlueprintChanges{
 			"coreInfra": {
 				RemovedResources: []string{
 					"complexResource",
@@ -395,8 +395,8 @@ func blueprint3RemovalChanges() *BlueprintChanges {
 	}
 }
 
-func blueprint4RemovalChanges() *BlueprintChanges {
-	return &BlueprintChanges{
+func blueprint4RemovalChanges() *changes.BlueprintChanges {
+	return &changes.BlueprintChanges{
 		RemovedResources: []string{
 			"ordersTableFailingLink_0",
 			"ordersTable_1",
@@ -413,7 +413,7 @@ func blueprint4RemovalChanges() *BlueprintChanges {
 		RemovedExports: []string{
 			"environment",
 		},
-		ChildChanges: map[string]BlueprintChanges{
+		ChildChanges: map[string]changes.BlueprintChanges{
 			"coreInfra": {
 				RemovedResources: []string{
 					"complexResource",

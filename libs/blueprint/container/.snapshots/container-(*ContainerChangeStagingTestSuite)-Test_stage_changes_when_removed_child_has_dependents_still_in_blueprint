@@ -1,4 +1,4 @@
-(*container.BlueprintChanges)({
+(*changes.BlueprintChanges)({
   NewResources: (map[string]provider.Changes) (len=2) {
     (string) (len=13) "invoiceStream": (provider.Changes) {
       AppliedResourceInfo: (provider.ResourceInfo) {
@@ -2251,10 +2251,10 @@
   },
   RemovedLinks: ([]string) {
   },
-  NewChildren: (map[string]container.NewBlueprintDefinition) {
+  NewChildren: (map[string]changes.NewBlueprintDefinition) {
   },
-  ChildChanges: (map[string]container.BlueprintChanges) (len=1) {
-    (string) (len=9) "coreInfra": (container.BlueprintChanges) {
+  ChildChanges: (map[string]changes.BlueprintChanges) (len=1) {
+    (string) (len=9) "coreInfra": (changes.BlueprintChanges) {
       NewResources: (map[string]provider.Changes) {
       },
       ResourceChanges: (map[string]provider.Changes) (len=1) {
@@ -3222,9 +3222,9 @@
       },
       RemovedLinks: ([]string) {
       },
-      NewChildren: (map[string]container.NewBlueprintDefinition) {
+      NewChildren: (map[string]changes.NewBlueprintDefinition) {
       },
-      ChildChanges: (map[string]container.BlueprintChanges) {
+      ChildChanges: (map[string]changes.BlueprintChanges) {
       },
       RecreateChildren: ([]string) {
       },
@@ -3289,7 +3289,7 @@
       },
       RemovedExports: ([]string) {
       },
-      MetadataChanges: (container.MetadataChanges) {
+      MetadataChanges: (changes.MetadataChanges) {
         NewFields: ([]provider.FieldChange) {
         },
         ModifiedFields: ([]provider.FieldChange) (len=1) {
@@ -3396,7 +3396,7 @@
   },
   RemovedExports: ([]string) {
   },
-  MetadataChanges: (container.MetadataChanges) {
+  MetadataChanges: (changes.MetadataChanges) {
     NewFields: ([]provider.FieldChange) {
     },
     ModifiedFields: ([]provider.FieldChange) (len=1) {

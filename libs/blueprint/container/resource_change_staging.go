@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -31,7 +32,7 @@ func NewDefaultResourceChangeStager(
 	substitutionResolver subengine.SubstitutionResolver,
 	resourceCache *core.Cache[*provider.ResolvedResource],
 	stateContainer state.Container,
-	changeGenerator ResourceChangeGenerator,
+	changeGenerator changes.ResourceChangeGenerator,
 	linkChangeStager LinkChangeStager,
 ) ResourceChangeStager {
 	return &defaultResourceChangeStager{
@@ -47,7 +48,7 @@ type defaultResourceChangeStager struct {
 	substitutionResolver subengine.SubstitutionResolver
 	resourceCache        *core.Cache[*provider.ResolvedResource]
 	stateContainer       state.Container
-	changeGenerator      ResourceChangeGenerator
+	changeGenerator      changes.ResourceChangeGenerator
 	linkChangeStager     LinkChangeStager
 }
 

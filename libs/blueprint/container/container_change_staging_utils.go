@@ -1,6 +1,7 @@
 package container
 
 import (
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
@@ -9,7 +10,7 @@ import (
 )
 
 func collectExportChanges(
-	changes *intermediaryBlueprintChanges,
+	changes *changes.IntermediaryBlueprintChanges,
 	resolvedExports map[string]*subengine.ResolveResult,
 	currentExportsState map[string]*state.ExportState,
 ) {
@@ -35,7 +36,7 @@ func extractExportValue(exportName string, exports map[string]*state.ExportState
 }
 
 func collectExportFieldChanges(
-	changes *intermediaryBlueprintChanges,
+	changes *changes.IntermediaryBlueprintChanges,
 	exportName string,
 	newExportValue *core.MappingNode,
 	currentStateValue *core.MappingNode,
@@ -84,45 +85,4 @@ func collectExportFieldChanges(
 			substitutions.RenderFieldPath("exports", exportName),
 		)
 	}
-}
-
-func collectMetadataChanges(
-	collectIn *MetadataChanges,
-	resolveResult *subengine.ResolveInMappingNodeResult,
-	currentMetadata map[string]*core.MappingNode,
-) {
-
-	if resolveResult.ResolvedMappingNode == nil ||
-		!core.IsObjectMappingNode(resolveResult.ResolvedMappingNode) {
-		// Blueprint-wide metadata must always be an object/map.
-		return
-	}
-
-	changes := &provider.Changes{
-		NewFields:                 []provider.FieldChange{},
-		ModifiedFields:            []provider.FieldChange{},
-		RemovedFields:             []string{},
-		UnchangedFields:           []string{},
-		FieldChangesKnownOnDeploy: resolveResult.ResolveOnDeploy,
-	}
-	// To reuse the same logic used to collect changes in the `metadata.custom`
-	// field of a resource, collect changes in the resource provider.Changes structure
-	// and then map the collected changes to the MetadataChanges structure.
-	collectMappingNodeChanges(
-		changes,
-		resolveResult.ResolvedMappingNode,
-		&core.MappingNode{
-			Fields: currentMetadata,
-		},
-		&fieldChangeContext{
-			fieldsToResolveOnDeploy: resolveResult.ResolveOnDeploy,
-			currentPath:             "metadata",
-			depth:                   0,
-		},
-	)
-
-	collectIn.NewFields = changes.NewFields
-	collectIn.ModifiedFields = changes.ModifiedFields
-	collectIn.RemovedFields = changes.RemovedFields
-	collectIn.UnchangedFields = changes.UnchangedFields
 }

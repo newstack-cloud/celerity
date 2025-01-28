@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
@@ -778,13 +779,13 @@ func loadExpectedMessagesFromFile(
 
 func loadBlueprintChangesFromFile(
 	changesFilePath string,
-) (*BlueprintChanges, error) {
+) (*changes.BlueprintChanges, error) {
 	changesFileBytes, err := os.ReadFile(changesFilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	changes := &BlueprintChanges{}
+	changes := &changes.BlueprintChanges{}
 	err = json.Unmarshal(changesFileBytes, changes)
 	if err != nil {
 		return nil, err

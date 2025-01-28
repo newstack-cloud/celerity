@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -86,7 +87,7 @@ func (d *defaultChildChangeStager) StageChanges(
 		ResourceChangesChan: make(chan ResourceChangesMessage),
 		ChildChangesChan:    make(chan ChildChangesMessage),
 		LinkChangesChan:     make(chan LinkChangesMessage),
-		CompleteChan:        make(chan BlueprintChanges),
+		CompleteChan:        make(chan changes.BlueprintChanges),
 		ErrChan:             make(chan error),
 	}
 	err = loadResult.childContainer.StageChanges(
@@ -124,7 +125,7 @@ func (d *defaultChildChangeStager) waitForChildChanges(
 	// In the future, we may want to stream changes
 	// in child blueprints like with resources and links
 	// in the parent blueprint.
-	var changes BlueprintChanges
+	var changes changes.BlueprintChanges
 	receivedFullChildChanges := false
 	var stagingErr error
 	for !receivedFullChildChanges && stagingErr == nil {
@@ -150,7 +151,7 @@ func (d *defaultChildChangeStager) waitForChildChanges(
 
 func (d *defaultChildChangeStager) cacheChildExportFields(
 	childName string,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 ) {
 	for exportName, fieldChange := range changes.ExportChanges {
 		d.cacheChildExportField(
@@ -185,7 +186,7 @@ func (d *defaultChildChangeStager) cacheChildExportFields(
 
 func (d *defaultChildChangeStager) cacheChildExportField(
 	childName string,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	exportName string,
 	fieldChange provider.FieldChange,
 ) {

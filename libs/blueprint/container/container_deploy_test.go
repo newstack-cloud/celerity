@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	bperrors "github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
@@ -359,7 +360,7 @@ func (s *ContainerDeployTestSuite) stageChanges(
 	instanceID string,
 	container BlueprintContainer,
 	params core.BlueprintParams,
-) (*BlueprintChanges, error) {
+) (*changes.BlueprintChanges, error) {
 	changeStagingChannels := createChangeStagingChannels()
 	err := container.StageChanges(
 		ctx,
@@ -373,7 +374,7 @@ func (s *ContainerDeployTestSuite) stageChanges(
 		return nil, err
 	}
 
-	changes := &BlueprintChanges{}
+	changes := &changes.BlueprintChanges{}
 	for {
 		select {
 		case <-changeStagingChannels.ChildChangesChan:
@@ -456,9 +457,9 @@ func blueprint3DeployParams() core.BlueprintParams {
 	)
 }
 
-func fixture3Changes() *BlueprintChanges {
-	changes := &BlueprintChanges{
-		ChildChanges: map[string]BlueprintChanges{
+func fixture3Changes() *changes.BlueprintChanges {
+	changes := &changes.BlueprintChanges{
+		ChildChanges: map[string]changes.BlueprintChanges{
 			"coreInfra": {
 				ResourceChanges: map[string]provider.Changes{
 					"complexResource": {
@@ -495,7 +496,7 @@ func fixture3Changes() *BlueprintChanges {
 						},
 					},
 				},
-				ChildChanges: map[string]BlueprintChanges{},
+				ChildChanges: map[string]changes.BlueprintChanges{},
 			},
 		},
 	}

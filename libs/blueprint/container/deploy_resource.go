@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -23,7 +24,7 @@ type ResourceDeployer interface {
 		ctx context.Context,
 		instanceID string,
 		chainLinkNode *links.ChainLinkNode,
-		changes *BlueprintChanges,
+		changes *changes.BlueprintChanges,
 		deployCtx *DeployContext,
 	)
 }
@@ -77,7 +78,7 @@ func (d *defaultResourceDeployer) Deploy(
 	ctx context.Context,
 	instanceID string,
 	chainLinkNode *links.ChainLinkNode,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	deployCtx *DeployContext,
 ) {
 	resourceChangeInfo := getResourceChangeInfo(chainLinkNode.ResourceName, changes)
@@ -370,7 +371,7 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 			resourceData := deployCtx.State.GetResourceData(resourceInfo.resourceName)
 			resolvedResource := getResolvedResourceFromChanges(resourceInfo.changes)
 			providerNamespace := provider.ExtractProviderFromItemType(
-				getResourceTypeFromResolved(resolvedResource),
+				changes.GetResourceTypeFromResolved(resolvedResource),
 			)
 			deployCtx.Logger.Debug(
 				"checking if resource has stabilised with resource plugin implementation",
@@ -517,7 +518,7 @@ func (d *defaultResourceDeployer) handleDeployResourceRetry(
 		waitTimeMs := provider.CalculateRetryWaitTimeMS(nextRetryInfo.policy, nextRetryInfo.attempt)
 		time.Sleep(time.Duration(waitTimeMs) * time.Millisecond)
 		resolvedResource := getResolvedResourceFromChanges(resourceInfo.changes)
-		resourceType := getResourceTypeFromResolved(resolvedResource)
+		resourceType := changes.GetResourceTypeFromResolved(resolvedResource)
 		return d.deployResource(
 			ctx,
 			resourceInfo,

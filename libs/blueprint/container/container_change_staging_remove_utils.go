@@ -1,14 +1,17 @@
 package container
 
-import "github.com/two-hundred/celerity/libs/blueprint/state"
+import (
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
+)
 
-func getInstanceRemovalChanges(instance *state.InstanceState) BlueprintChanges {
+func getInstanceRemovalChanges(instance *state.InstanceState) changes.BlueprintChanges {
 	removedResources := getResourceNamesFromInstanceState(instance)
 	removedLinks := getLinkNamesFromInstanceState(instance)
 	childRemovalInfo := getChildRemovalInfoFromInstanceState(instance)
 	removedExports := getExportNamesFromInstanceState(instance)
 
-	return BlueprintChanges{
+	return changes.BlueprintChanges{
 		RemovedResources: removedResources,
 		RemovedLinks:     removedLinks,
 		// Capture both the names of the children that will be removed
@@ -46,7 +49,7 @@ func getExportNamesFromInstanceState(instance *state.InstanceState) []string {
 func getChildRemovalInfoFromInstanceState(instance *state.InstanceState) *childBlueprintRemovalInfo {
 	removalInfo := &childBlueprintRemovalInfo{
 		removedChildren: []string{},
-		childChanges:    map[string]BlueprintChanges{},
+		childChanges:    map[string]changes.BlueprintChanges{},
 	}
 	for childName, child := range instance.ChildBlueprints {
 		removalInfo.removedChildren = append(removalInfo.removedChildren, childName)
@@ -57,5 +60,5 @@ func getChildRemovalInfoFromInstanceState(instance *state.InstanceState) *childB
 
 type childBlueprintRemovalInfo struct {
 	removedChildren []string
-	childChanges    map[string]BlueprintChanges
+	childChanges    map[string]changes.BlueprintChanges
 }

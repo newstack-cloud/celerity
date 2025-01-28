@@ -31,8 +31,7 @@ func (s *LinkDeployerTestSuite) SetupTest() {
 	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*linkDeployerFixture{}
 
-	logger, err := internal.NewTestLogger()
-	s.Require().NoError(err)
+	logger := core.NewNopLogger()
 	s.logger = logger
 
 	for _, fixtureInfo := range fixtureInputs {

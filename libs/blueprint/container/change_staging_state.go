@@ -3,6 +3,7 @@ package container
 import (
 	"sync"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	commoncore "github.com/two-hundred/celerity/libs/common/core"
@@ -43,15 +44,15 @@ type ChangeStagingState interface {
 	// as no longer pending in the staging state.
 	MarkLinkAsNoLongerPending(resourceANode, resourceBNode *links.ChainLinkNode)
 	// UpdateExportChanges updates the export changes in the staging state.
-	UpdateExportChanges(collectedExportChanges *intermediaryBlueprintChanges)
+	UpdateExportChanges(collectedExportChanges *changes.IntermediaryBlueprintChanges)
 	// UpdateMetadataChanges updates the blueprint-wide metadata changes in the staging state.
 	UpdateMetadataChanges(
-		changes *MetadataChanges,
+		changes *changes.MetadataChanges,
 		resolveOnDeploy []string,
 	)
 	// ExtractBlueprintChanges extracts the changes that have been staged
 	// for the deployment to be sent to the client initiating the change staging operation.
-	ExtractBlueprintChanges() BlueprintChanges
+	ExtractBlueprintChanges() changes.BlueprintChanges
 }
 
 // NewDefaultChangeStagingState creates a new instance of the default
@@ -62,7 +63,7 @@ func NewDefaultChangeStagingState() ChangeStagingState {
 	return &defaultChangeStagingState{
 		pendingLinks:        make(map[string]*LinkPendingCompletion),
 		resourceNameLinkMap: make(map[string][]string),
-		outputChanges:       &intermediaryBlueprintChanges{},
+		outputChanges:       &changes.IntermediaryBlueprintChanges{},
 		mustRecreate: &CollectedElements{
 			Resources: []*ResourceIDInfo{},
 			Children:  []*ChildBlueprintIDInfo{},
@@ -84,27 +85,11 @@ type defaultChangeStagingState struct {
 	// This is an intermediary format that holds pointers to resource change sets to allow
 	// modification without needing to copy and patch resource change sets back in to the state
 	// each time resource change set state needs to be updated with link change sets.
-	outputChanges *intermediaryBlueprintChanges
+	outputChanges *changes.IntermediaryBlueprintChanges
 	// A set of elements that must be recreated due to removal of dependencies.
 	mustRecreate *CollectedElements
 	// Mutex is required as resources can be staged concurrently.
 	mu sync.Mutex
-}
-
-type intermediaryBlueprintChanges struct {
-	NewResources     map[string]*provider.Changes
-	ResourceChanges  map[string]*provider.Changes
-	RemovedResources []string
-	RemovedLinks     []string
-	NewChildren      map[string]*NewBlueprintDefinition
-	ChildChanges     map[string]*BlueprintChanges
-	RemovedChildren  []string
-	NewExports       map[string]*provider.FieldChange
-	ExportChanges    map[string]*provider.FieldChange
-	RemovedExports   []string
-	MetadataChanges  *MetadataChanges
-	UnchangedExports []string
-	ResolveOnDeploy  []string
 }
 
 func (c *defaultChangeStagingState) AddElementsThatMustBeRecreated(mustRecreate *CollectedElements) {
@@ -251,30 +236,30 @@ func (c *defaultChangeStagingState) ApplyLinkChanges(changes LinkChangesMessage)
 	}
 }
 
-func (c *defaultChangeStagingState) ApplyChildChanges(changes ChildChangesMessage) {
+func (c *defaultChangeStagingState) ApplyChildChanges(changesMsg ChildChangesMessage) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if changes.New {
+	if changesMsg.New {
 		if c.outputChanges.NewChildren == nil {
-			c.outputChanges.NewChildren = map[string]*NewBlueprintDefinition{}
+			c.outputChanges.NewChildren = map[string]*changes.NewBlueprintDefinition{}
 		}
 
-		c.outputChanges.NewChildren[changes.ChildBlueprintName] = &NewBlueprintDefinition{
-			NewResources: changes.Changes.NewResources,
-			NewChildren:  changes.Changes.NewChildren,
-			NewExports:   changes.Changes.NewExports,
+		c.outputChanges.NewChildren[changesMsg.ChildBlueprintName] = &changes.NewBlueprintDefinition{
+			NewResources: changesMsg.Changes.NewResources,
+			NewChildren:  changesMsg.Changes.NewChildren,
+			NewExports:   changesMsg.Changes.NewExports,
 		}
-	} else if changes.Removed {
+	} else if changesMsg.Removed {
 		c.outputChanges.RemovedChildren = append(
 			c.outputChanges.RemovedChildren,
-			changes.ChildBlueprintName,
+			changesMsg.ChildBlueprintName,
 		)
 	} else {
 		if c.outputChanges.ChildChanges == nil {
-			c.outputChanges.ChildChanges = map[string]*BlueprintChanges{}
+			c.outputChanges.ChildChanges = map[string]*changes.BlueprintChanges{}
 		}
-		c.outputChanges.ChildChanges[changes.ChildBlueprintName] = &changes.Changes
+		c.outputChanges.ChildChanges[changesMsg.ChildBlueprintName] = &changesMsg.Changes
 	}
 }
 
@@ -297,7 +282,7 @@ func (c *defaultChangeStagingState) MarkLinkAsNoLongerPending(
 }
 
 func (c *defaultChangeStagingState) UpdateExportChanges(
-	collectedExportChanges *intermediaryBlueprintChanges,
+	collectedExportChanges *changes.IntermediaryBlueprintChanges,
 ) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -313,7 +298,7 @@ func (c *defaultChangeStagingState) UpdateExportChanges(
 }
 
 func (c *defaultChangeStagingState) UpdateMetadataChanges(
-	changes *MetadataChanges,
+	changes *changes.MetadataChanges,
 	resolveOnDeploy []string,
 ) {
 	c.mu.Lock()
@@ -326,7 +311,7 @@ func (c *defaultChangeStagingState) UpdateMetadataChanges(
 	)
 }
 
-func (c *defaultChangeStagingState) ExtractBlueprintChanges() BlueprintChanges {
+func (c *defaultChangeStagingState) ExtractBlueprintChanges() changes.BlueprintChanges {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -334,7 +319,7 @@ func (c *defaultChangeStagingState) ExtractBlueprintChanges() BlueprintChanges {
 	// from child changes if present in child changes map.
 	recreateChildren := c.collectChildrenToRecreate()
 
-	return BlueprintChanges{
+	return changes.BlueprintChanges{
 		NewResources:     copyPointerMap(c.outputChanges.NewResources),
 		ResourceChanges:  copyPointerMap(c.outputChanges.ResourceChanges),
 		RemovedResources: c.outputChanges.RemovedResources,
@@ -363,7 +348,7 @@ func (c *defaultChangeStagingState) collectChildrenToRecreate() []string {
 }
 
 // A lock must be held on the staging state when calling this function.
-func getResourceChanges(resourceName string, changes *intermediaryBlueprintChanges) *provider.Changes {
+func getResourceChanges(resourceName string, changes *changes.IntermediaryBlueprintChanges) *provider.Changes {
 
 	newResourceChanges, hasNewResourceChanges := changes.NewResources[resourceName]
 	if hasNewResourceChanges {

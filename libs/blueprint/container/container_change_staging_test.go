@@ -10,6 +10,7 @@ import (
 
 	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	bperrors "github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
@@ -63,8 +64,7 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 		),
 	}
 	specTransformers := map[string]transform.SpecTransformer{}
-	logger, err := internal.NewTestLogger()
-	s.Require().NoError(err)
+	logger := core.NewNopLogger()
 	loader := NewDefaultLoader(
 		providers,
 		specTransformers,
@@ -150,7 +150,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_bluepri
 	resourceChangeMessages := []ResourceChangesMessage{}
 	childChangeMessages := []ChildChangesMessage{}
 	linkChangeMessages := []LinkChangesMessage{}
-	fullChangeSet := (*BlueprintChanges)(nil)
+	fullChangeSet := (*changes.BlueprintChanges)(nil)
 	for err == nil &&
 		(fullChangeSet == nil ||
 			len(resourceChangeMessages) < 6 ||
@@ -193,7 +193,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint
 	resourceChangeMessages := []ResourceChangesMessage{}
 	childChangeMessages := []ChildChangesMessage{}
 	linkChangeMessages := []LinkChangesMessage{}
-	fullChangeSet := (*BlueprintChanges)(nil)
+	fullChangeSet := (*changes.BlueprintChanges)(nil)
 	for err == nil &&
 		(fullChangeSet == nil ||
 			len(resourceChangeMessages) < 6 ||
@@ -234,7 +234,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_destroying_a_bl
 	)
 	s.Require().NoError(err)
 
-	fullChangeSet := (*BlueprintChanges)(nil)
+	fullChangeSet := (*changes.BlueprintChanges)(nil)
 	for err == nil && fullChangeSet == nil {
 		select {
 		// For destroy operations, we only expect to see the complete message
@@ -342,7 +342,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_when_removed_resour
 	resourceChangeMessages := []ResourceChangesMessage{}
 	childChangeMessages := []ChildChangesMessage{}
 	linkChangeMessages := []LinkChangesMessage{}
-	fullChangeSet := (*BlueprintChanges)(nil)
+	fullChangeSet := (*changes.BlueprintChanges)(nil)
 	for err == nil &&
 		(fullChangeSet == nil ||
 			len(resourceChangeMessages) < 7 ||
@@ -389,7 +389,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_when_removed_child_
 	resourceChangeMessages := []ResourceChangesMessage{}
 	childChangeMessages := []ChildChangesMessage{}
 	linkChangeMessages := []LinkChangesMessage{}
-	fullChangeSet := (*BlueprintChanges)(nil)
+	fullChangeSet := (*changes.BlueprintChanges)(nil)
 	for err == nil &&
 		(fullChangeSet == nil ||
 			len(resourceChangeMessages) < 6 ||

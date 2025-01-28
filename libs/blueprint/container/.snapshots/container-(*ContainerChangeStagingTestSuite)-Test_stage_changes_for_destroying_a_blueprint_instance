@@ -1,4 +1,4 @@
-(*container.BlueprintChanges)({
+(*changes.BlueprintChanges)({
   NewResources: (map[string]provider.Changes) {
   },
   ResourceChanges: (map[string]provider.Changes) {
@@ -13,10 +13,10 @@
     (string) (len=32) "saveOrderFunction::ordersTable_0",
     (string) (len=32) "saveOrderFunction::ordersTable_1"
   },
-  NewChildren: (map[string]container.NewBlueprintDefinition) {
+  NewChildren: (map[string]changes.NewBlueprintDefinition) {
   },
-  ChildChanges: (map[string]container.BlueprintChanges) (len=1) {
-    (string) (len=9) "coreInfra": (container.BlueprintChanges) {
+  ChildChanges: (map[string]changes.BlueprintChanges) (len=1) {
+    (string) (len=9) "coreInfra": (changes.BlueprintChanges) {
       NewResources: (map[string]provider.Changes) {
       },
       ResourceChanges: (map[string]provider.Changes) {
@@ -26,9 +26,9 @@
       },
       RemovedLinks: ([]string) {
       },
-      NewChildren: (map[string]container.NewBlueprintDefinition) {
+      NewChildren: (map[string]changes.NewBlueprintDefinition) {
       },
-      ChildChanges: (map[string]container.BlueprintChanges) {
+      ChildChanges: (map[string]changes.BlueprintChanges) {
       },
       RecreateChildren: ([]string) {
       },
@@ -41,7 +41,7 @@
       RemovedExports: ([]string) (len=1) {
         (string) (len=11) "environment"
       },
-      MetadataChanges: (container.MetadataChanges) {
+      MetadataChanges: (changes.MetadataChanges) {
         NewFields: ([]provider.FieldChange) {
         },
         ModifiedFields: ([]provider.FieldChange) {
@@ -67,7 +67,7 @@
   RemovedExports: ([]string) (len=1) {
     (string) (len=11) "environment"
   },
-  MetadataChanges: (container.MetadataChanges) {
+  MetadataChanges: (changes.MetadataChanges) {
     NewFields: ([]provider.FieldChange) {
     },
     ModifiedFields: ([]provider.FieldChange) {

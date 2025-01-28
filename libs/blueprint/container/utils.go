@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -574,7 +575,7 @@ func collectedElementsHasChild(
 
 func filterOutRecreated(
 	searchIn *CollectedElements,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 ) *CollectedElements {
 	filtered := &CollectedElements{
 		Resources: []*ResourceIDInfo{},
@@ -669,7 +670,7 @@ func getChildDependencies(
 }
 
 func getPartiallyResolvedResourceFromChanges(
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	resourceName string,
 ) *provider.ResolvedResource {
 	if changes == nil {
@@ -931,13 +932,4 @@ func copyPointerMap[Item any](input map[string]*Item) map[string]Item {
 
 func exceedsMaxDepth(path string, maxDepth int) bool {
 	return len(strings.Split(path, "/")) > maxDepth
-}
-
-func anyEmptyString(values ...string) bool {
-	for _, value := range values {
-		if strings.TrimSpace(value) == "" {
-			return true
-		}
-	}
-	return false
 }

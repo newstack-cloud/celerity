@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
@@ -149,9 +150,9 @@ func populateDefaultsInUnion(
 	}
 
 	if core.IsObjectMappingNode(specValue) {
-		matchInfo := checkMappingNodeTypesForFields(specValue.Fields, nil, definition)
-		if matchInfo.schema != nil {
-			return populateDefaultValues(specValue, matchInfo.schema, depth)
+		matchInfo := changes.CheckMappingNodeTypesForFields(specValue.Fields, nil, definition)
+		if matchInfo.Schema != nil {
+			return populateDefaultValues(specValue, matchInfo.Schema, depth)
 		}
 		// If we can't match against an object or map schema in the union,
 		// we will not populate defaults for the union.
@@ -163,7 +164,7 @@ func populateDefaultsInUnion(
 		// multiple array definitions.
 		// It is best to advise provider plugin developers to avoid using unions with
 		// multiple array definitions.
-		arraySchema := getArraySchema(definition.OneOf)
+		arraySchema := changes.GetArraySchema(definition.OneOf)
 		if arraySchema != nil {
 			return populateDefaultValues(specValue, arraySchema, depth)
 		}

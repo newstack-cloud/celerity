@@ -3,6 +3,7 @@ package container
 import (
 	"time"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
@@ -23,7 +24,7 @@ type DeployContext struct {
 	ResourceProviders     map[string]provider.Provider
 	CurrentGroupIndex     int
 	DeploymentGroups      [][]*DeploymentNode
-	InputChanges          *BlueprintChanges
+	InputChanges          *changes.BlueprintChanges
 	// A mapping of resource names to the name of the resource
 	// templates they were derived from.
 	ResourceTemplates map[string]string

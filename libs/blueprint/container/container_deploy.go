@@ -5,6 +5,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
@@ -517,7 +518,7 @@ func (c *defaultBlueprintContainer) deployElements(
 func (c *defaultBlueprintContainer) startDeploymentFromFirstGroup(
 	ctx context.Context,
 	instanceID string,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	deployCtx *DeployContext,
 	internalChannels *DeployChannels,
 ) {
@@ -543,7 +544,7 @@ func (c *defaultBlueprintContainer) deployNode(
 	node *DeploymentNode,
 	instanceID string,
 	instanceTreePath string,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	deployCtx *DeployContext,
 ) {
 	if node.Type() == DeploymentNodeTypeResource {
@@ -599,7 +600,7 @@ func (c *defaultBlueprintContainer) listenToAndProcessDeploymentEvents(
 	ctx context.Context,
 	instanceID string,
 	deployCtx *DeployContext,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	internalChannels *DeployChannels,
 ) (bool, error) {
 	finished := map[string]*deployUpdateMessageWrapper{}

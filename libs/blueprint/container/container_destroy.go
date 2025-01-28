@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
@@ -587,7 +588,7 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 }
 
 func (c *defaultBlueprintContainer) collectElementsToRemove(
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	deployCtx *DeployContext,
 	nodesToBeDeployed []*DeploymentNode,
 ) (*CollectedElements, bool, error) {
@@ -643,7 +644,7 @@ func (c *defaultBlueprintContainer) collectElementsToRemove(
 
 func (c *defaultBlueprintContainer) collectResourcesToRemove(
 	currentState *state.InstanceState,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	nodesToBeDeployed []*DeploymentNode,
 ) ([]*ResourceIDInfo, error) {
 	resourcesToRemove := []*ResourceIDInfo{}
@@ -678,7 +679,7 @@ func (c *defaultBlueprintContainer) collectResourcesToRemove(
 
 func (c *defaultBlueprintContainer) collectChildrenToRemove(
 	currentState *state.InstanceState,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	nodesToBeDeployed []*DeploymentNode,
 ) ([]*ChildBlueprintIDInfo, error) {
 	childrenToRemove := []*ChildBlueprintIDInfo{}
@@ -710,7 +711,7 @@ func (c *defaultBlueprintContainer) collectChildrenToRemove(
 
 func (c *defaultBlueprintContainer) collectLinksToRemove(
 	currentState *state.InstanceState,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 ) []*LinkIDInfo {
 	linksToRemove := []*LinkIDInfo{}
 	for _, linkToRemove := range changes.RemovedLinks {

@@ -1,6 +1,7 @@
 package container
 
 import (
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
@@ -10,37 +11,37 @@ func createChangeStagingChannels() *ChangeStagingChannels {
 		ResourceChangesChan: make(chan ResourceChangesMessage),
 		ChildChangesChan:    make(chan ChildChangesMessage),
 		LinkChangesChan:     make(chan LinkChangesMessage),
-		CompleteChan:        make(chan BlueprintChanges),
+		CompleteChan:        make(chan changes.BlueprintChanges),
 		ErrChan:             make(chan error),
 	}
 }
 
-func normaliseBlueprintChanges(changes *BlueprintChanges) *BlueprintChanges {
+func normaliseBlueprintChanges(bpChanges *changes.BlueprintChanges) *changes.BlueprintChanges {
 
-	normalisedChanges := &BlueprintChanges{
-		NewResources:     normaliseResourceChangeMap(changes.NewResources),
-		ResourceChanges:  normaliseResourceChangeMap(changes.ResourceChanges),
-		RemovedResources: internal.OrderStringSlice(changes.RemovedResources),
-		RemovedLinks:     internal.OrderStringSlice(changes.RemovedLinks),
-		NewChildren:      normaliseNewChildMap(changes.NewChildren),
-		ChildChanges:     normaliseChildChangesMap(changes.ChildChanges),
-		RemovedChildren:  internal.OrderStringSlice(changes.RemovedChildren),
-		RecreateChildren: internal.OrderStringSlice(changes.RecreateChildren),
-		NewExports:       changes.NewExports,
-		ExportChanges:    changes.ExportChanges,
-		RemovedExports:   internal.OrderStringSlice(changes.RemovedExports),
-		UnchangedExports: internal.OrderStringSlice(changes.UnchangedExports),
-		ResolveOnDeploy:  internal.OrderStringSlice(changes.ResolveOnDeploy),
-		MetadataChanges:  normaliseMetadataChanges(changes.MetadataChanges),
+	normalisedChanges := &changes.BlueprintChanges{
+		NewResources:     normaliseResourceChangeMap(bpChanges.NewResources),
+		ResourceChanges:  normaliseResourceChangeMap(bpChanges.ResourceChanges),
+		RemovedResources: internal.OrderStringSlice(bpChanges.RemovedResources),
+		RemovedLinks:     internal.OrderStringSlice(bpChanges.RemovedLinks),
+		NewChildren:      normaliseNewChildMap(bpChanges.NewChildren),
+		ChildChanges:     normaliseChildChangesMap(bpChanges.ChildChanges),
+		RemovedChildren:  internal.OrderStringSlice(bpChanges.RemovedChildren),
+		RecreateChildren: internal.OrderStringSlice(bpChanges.RecreateChildren),
+		NewExports:       bpChanges.NewExports,
+		ExportChanges:    bpChanges.ExportChanges,
+		RemovedExports:   internal.OrderStringSlice(bpChanges.RemovedExports),
+		UnchangedExports: internal.OrderStringSlice(bpChanges.UnchangedExports),
+		ResolveOnDeploy:  internal.OrderStringSlice(bpChanges.ResolveOnDeploy),
+		MetadataChanges:  normaliseMetadataChanges(bpChanges.MetadataChanges),
 	}
 
 	return normalisedChanges
 }
 
 func normaliseChildChangesMap(
-	childChangesMap map[string]BlueprintChanges,
-) map[string]BlueprintChanges {
-	newMap := map[string]BlueprintChanges{}
+	childChangesMap map[string]changes.BlueprintChanges,
+) map[string]changes.BlueprintChanges {
+	newMap := map[string]changes.BlueprintChanges{}
 	for childName, child := range childChangesMap {
 		newMap[childName] = *normaliseBlueprintChanges(&child)
 	}
@@ -55,10 +56,10 @@ func normaliseResourceChangeMap(changeMap map[string]provider.Changes) map[strin
 	return newChangeMap
 }
 
-func normaliseNewChildMap(newChildMap map[string]NewBlueprintDefinition) map[string]NewBlueprintDefinition {
-	newMap := map[string]NewBlueprintDefinition{}
+func normaliseNewChildMap(newChildMap map[string]changes.NewBlueprintDefinition) map[string]changes.NewBlueprintDefinition {
+	newMap := map[string]changes.NewBlueprintDefinition{}
 	for childName, child := range newChildMap {
-		newMap[childName] = NewBlueprintDefinition{
+		newMap[childName] = changes.NewBlueprintDefinition{
 			NewResources: normaliseResourceChangeMap(child.NewResources),
 			NewChildren:  normaliseNewChildMap(child.NewChildren),
 			NewExports:   child.NewExports,
@@ -67,11 +68,11 @@ func normaliseNewChildMap(newChildMap map[string]NewBlueprintDefinition) map[str
 	return newMap
 }
 
-func normaliseMetadataChanges(changes MetadataChanges) MetadataChanges {
-	return MetadataChanges{
-		NewFields:       internal.OrderFieldChanges(changes.NewFields),
-		ModifiedFields:  internal.OrderFieldChanges(changes.ModifiedFields),
-		UnchangedFields: internal.OrderStringSlice(changes.UnchangedFields),
-		RemovedFields:   internal.OrderStringSlice(changes.RemovedFields),
+func normaliseMetadataChanges(metadataChanges changes.MetadataChanges) changes.MetadataChanges {
+	return changes.MetadataChanges{
+		NewFields:       internal.OrderFieldChanges(metadataChanges.NewFields),
+		ModifiedFields:  internal.OrderFieldChanges(metadataChanges.ModifiedFields),
+		UnchangedFields: internal.OrderStringSlice(metadataChanges.UnchangedFields),
+		RemovedFields:   internal.OrderStringSlice(metadataChanges.RemovedFields),
 	}
 }

@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -18,7 +19,7 @@ type BlueprintPreparer interface {
 		ctx context.Context,
 		blueprint *schema.Blueprint,
 		resolveFor subengine.ResolveForStage,
-		changes *BlueprintChanges,
+		changes *changes.BlueprintChanges,
 		linkInfo links.SpecLinkInfo,
 		paramOverrides core.BlueprintParams,
 	) (*BlueprintPrepareResult, error)
@@ -66,7 +67,7 @@ func (p *defaultBlueprintPreparer) Prepare(
 	ctx context.Context,
 	blueprint *schema.Blueprint,
 	resolveFor subengine.ResolveForStage,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	linkInfo links.SpecLinkInfo,
 	paramOverrides core.BlueprintParams,
 ) (*BlueprintPrepareResult, error) {
@@ -127,7 +128,7 @@ func (p *defaultBlueprintPreparer) expandResourceTemplates(
 	ctx context.Context,
 	blueprint *schema.Blueprint,
 	resolveFor subengine.ResolveForStage,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	linkInfo links.SpecLinkInfo,
 	params core.BlueprintParams,
 ) (BlueprintContainer, error) {
@@ -187,7 +188,7 @@ func (p *defaultBlueprintPreparer) applyResourceConditions(
 	ctx context.Context,
 	blueprint *schema.Blueprint,
 	resolveFor subengine.ResolveForStage,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 ) (*schema.Blueprint, error) {
 
 	if blueprint.Resources == nil {

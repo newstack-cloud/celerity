@@ -84,10 +84,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 	specTransformers := map[string]transform.SpecTransformer{
 		"serverless-2024": &internal.ServerlessTransformer{},
 	}
-	logger, err := internal.NewTestLogger()
-	if err != nil {
-		s.FailNow(err.Error())
-	}
+	logger := core.NewNopLogger()
 	s.loader = NewDefaultLoader(
 		providers,
 		specTransformers,

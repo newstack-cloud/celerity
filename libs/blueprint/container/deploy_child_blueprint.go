@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
@@ -19,7 +20,7 @@ type ChildBlueprintDeployer interface {
 		parentInstanceTreePath string,
 		includeTreePath string,
 		childNode *refgraph.ReferenceChainNode,
-		changes *BlueprintChanges,
+		changes *changes.BlueprintChanges,
 		deployCtx *DeployContext,
 	)
 }
@@ -66,7 +67,7 @@ func (d *defaultChildBlueprintDeployer) Deploy(
 	parentInstanceTreePath string,
 	includeTreePath string,
 	childNode *refgraph.ReferenceChainNode,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	deployCtx *DeployContext,
 ) {
 	loadResult, err := loadChildBlueprint(

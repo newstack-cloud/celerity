@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -428,7 +429,7 @@ func (c *defaultBlueprintContainer) resolveAndCollectExportChanges(
 	}
 	// Collect export changes in a temporary structure to avoid locking the staging state
 	// for the entire duration of the operation.
-	collectedExportChanges := &intermediaryBlueprintChanges{
+	collectedExportChanges := &changes.IntermediaryBlueprintChanges{
 		NewExports:       map[string]*provider.FieldChange{},
 		ExportChanges:    map[string]*provider.FieldChange{},
 		RemovedExports:   []string{},
@@ -470,7 +471,7 @@ func (c *defaultBlueprintContainer) resolveAndCollectMetadataChanges(
 			return err
 		}
 	}
-	metadataChanges := MetadataChanges{
+	metadataChanges := changes.MetadataChanges{
 		NewFields:       []provider.FieldChange{},
 		ModifiedFields:  []provider.FieldChange{},
 		RemovedFields:   []string{},
@@ -482,7 +483,7 @@ func (c *defaultBlueprintContainer) resolveAndCollectMetadataChanges(
 			return substitutions.RenderFieldPath("metadata", fieldPath)
 		},
 	)
-	collectMetadataChanges(&metadataChanges, result, blueprintMetadataState)
+	changes.CollectMetadataChanges(&metadataChanges, result, blueprintMetadataState)
 	stagingState.UpdateMetadataChanges(&metadataChanges, resolveOnDeploy)
 
 	return nil
@@ -522,7 +523,7 @@ type ChangeStagingChannels struct {
 	// CompleteChan is used to signal that all changes have been staged
 	// containing the full set of changes that will be made to the blueprint instance
 	// when deploying the changes.
-	CompleteChan chan BlueprintChanges
+	CompleteChan chan changes.BlueprintChanges
 	// ErrChan is used to signal that an error occurred while staging changes.
 	ErrChan chan error
 }
@@ -545,10 +546,10 @@ type ResourceChangesMessage struct {
 // ChildChangesMessage provides a message containing the changes
 // that will be made to a child blueprint in a blueprint instance.
 type ChildChangesMessage struct {
-	ChildBlueprintName string           `json:"childBlueprintName"`
-	Removed            bool             `json:"removed"`
-	New                bool             `json:"new"`
-	Changes            BlueprintChanges `json:"changes"`
+	ChildBlueprintName string                   `json:"childBlueprintName"`
+	Removed            bool                     `json:"removed"`
+	New                bool                     `json:"new"`
+	Changes            changes.BlueprintChanges `json:"changes"`
 }
 
 // LinkChangesMessage provides a message containing the changes
@@ -569,5 +570,5 @@ type stageResourceChangeInfo struct {
 
 type changesWrapper struct {
 	resourceChanges *provider.Changes
-	childChanges    *BlueprintChanges
+	childChanges    *changes.BlueprintChanges
 }

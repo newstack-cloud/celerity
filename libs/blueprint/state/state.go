@@ -272,6 +272,8 @@ type ResourceMetadataState struct {
 	Custom      *core.MappingNode            `json:"custom,omitempty"`
 }
 
+// ResourceDriftState holds information about how a resource has drifted
+// from the current state persisted in the blueprint framework.
 type ResourceDriftState struct {
 	// A globally unique identifier for the resource.
 	ResourceID string `json:"resourceId"`
@@ -281,9 +283,37 @@ type ResourceDriftState struct {
 	// for the drifted version of the resource derived
 	// from the upstream provider.
 	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
+	// Difference holds the changes that have been detected
+	// in the resource state in the upstream provider.
+	// This holds a representation of changes from the current
+	// state to the drifted state.
+	Difference *ResourceDriftChanges `json:"difference"`
 	// Timestamp holds the unix timestamp of when the drift
 	// was detected.
 	Timestamp *int `json:"timestamp,omitempty"`
+}
+
+// ResourceDriftChanges holds the changes that have been detected
+// in the resource state in the upstream provider.
+type ResourceDriftChanges struct {
+	ModifiedFields  []*ResourceDriftFieldChange `json:"modifiedFields"`
+	NewFields       []*ResourceDriftFieldChange `json:"newFields"`
+	RemovedFields   []string                    `json:"removedFields"`
+	UnchangedFields []string                    `json:"unchangedFields"`
+}
+
+// ResourceDriftFieldChange represents a change in a field value
+// of a resource that is used in drift detection.
+type ResourceDriftFieldChange struct {
+	// FieldPath holds the path of the field in the resource spec.
+	// For example, "spec.template.spec.containers[0].image".
+	FieldPath string `json:"fieldPath"`
+	// StateValue holds the value of the field in the current state
+	// persisted in the blueprint framework.
+	StateValue *core.MappingNode `json:"stateValue"`
+	// DriftedValue holds the value of the field in the drifted state
+	// in the upstream provider.
+	DriftedValue *core.MappingNode `json:"driftedValue"`
 }
 
 // ResourceStatusInfo holds information about the status of a resource

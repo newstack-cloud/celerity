@@ -1,28 +1,30 @@
-package container
+package changes
 
 import (
-	"fmt"
-
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3() *provider.ResourceInfo {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture1() *provider.ResourceInfo {
 
 	return &provider.ResourceInfo{
 		ResourceID:               "test-resource-1",
 		InstanceID:               "test-instance-1",
 		ResourceName:             "complexResource",
-		CurrentResourceState:     s.resourceInfoFixture3CurrentState(),
-		ResourceWithResolvedSubs: s.resourceInfoFixture3NewResolvedResource(),
+		CurrentResourceState:     s.resourceInfoFixture1CurrentState(),
+		ResourceWithResolvedSubs: s.resourceInfoFixture1NewResolvedResource(),
 	}
 }
 
-func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3CurrentState() *state.ResourceState {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture1CurrentState() *state.ResourceState {
 	itemID := "test-item-1"
 	currentEndpoint1 := "http://example.com/1"
+	currentEndpoint2 := "http://example.com/2"
+	currentEndpoint3 := "http://example.com/3"
+	currentEndpoint4 := "http://example.com/4"
+	currentEndpoint5 := "http://example.com/5"
 	currentPrimaryPort := 8080
 	currentIpv4Enabled := true
 	currentSpecMetadataValue1 := "value1"
@@ -62,6 +64,26 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3CurrentState() *s
 								{
 									Scalar: &core.ScalarValue{
 										StringValue: &currentEndpoint1,
+									},
+								},
+								{
+									Scalar: &core.ScalarValue{
+										StringValue: &currentEndpoint2,
+									},
+								},
+								{
+									Scalar: &core.ScalarValue{
+										StringValue: &currentEndpoint3,
+									},
+								},
+								{
+									Scalar: &core.ScalarValue{
+										StringValue: &currentEndpoint4,
+									},
+								},
+								{
+									Scalar: &core.ScalarValue{
+										StringValue: &currentEndpoint5,
 									},
 								},
 							},
@@ -182,20 +204,20 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3CurrentState() *s
 	}
 }
 
-func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResource() *provider.ResolvedResource {
+func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture1NewResolvedResource() *provider.ResolvedResource {
 	newDisplayName := "Test Complex Resource Updated"
-	firstAnnotationValue := "first-annotation-value"
 	secondAnnotationValue := "second-annotation-value"
 	thirdAnnotationValue := "third-annotation-value"
 	newEndpoint1 := "http://example.com/new/1"
 	newEndpoint2 := "http://example.com/new/2"
-	newEndpoint3 := "http://example.com/new/3"
+	newEndpoint4 := "http://example.com/4"
 	newPrimaryPort := 8081
 	newIpv4Enabled := false
 	newSpecMetadataValue1 := "new-value1"
 	newScore := 1.309
 	newMetadataProtocol := "https"
-	otherItemValue := "other-item-value"
+	otherItemValue1 := "other-item-value-1"
+	otherItemValue2 := "other-item-value-2"
 	vendorTag := "vendor-tag-1"
 	localTag := "local-tag-1"
 
@@ -211,11 +233,8 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResour
 			},
 			Annotations: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
-					"test.annotation.v1": {
-						Scalar: &core.ScalarValue{
-							StringValue: &firstAnnotationValue,
-						},
-					},
+					// To be resolved on deployment
+					"test.annotation.v1": (*core.MappingNode)(nil),
 					"test.annotation.v2": {
 						Scalar: &core.ScalarValue{
 							StringValue: &secondAnnotationValue,
@@ -236,6 +255,8 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResour
 			},
 			Custom: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
+					// To be resolved on deployment
+					"url": (*core.MappingNode)(nil),
 					"protocol": {
 						Scalar: &core.ScalarValue{
 							StringValue: &newMetadataProtocol,
@@ -250,11 +271,6 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResour
 							},
 						},
 					},
-					// the resource change stager is expected to stop
-					// traversing nested structures at the max traversal depth
-					// (validation.MappingNodeMaxTraverseDepth)
-					// No entries should be added to the changes for this field.
-					"deeplyNested": buildDeeplyNestedMappingNode(250, "nested"),
 				},
 			},
 		},
@@ -274,9 +290,11 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResour
 										StringValue: &newEndpoint2,
 									},
 								},
+								// To be resolved on deployment
+								(*core.MappingNode)(nil),
 								{
 									Scalar: &core.ScalarValue{
-										StringValue: &newEndpoint3,
+										StringValue: &newEndpoint4,
 									},
 								},
 								// To be resolved on deployment
@@ -298,11 +316,6 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResour
 								FloatValue: &newScore,
 							},
 						},
-						// 25 levels deep exceeds validation.MappingNodeMaxTraverseDepth
-						// so the resource change stager should not traverse the full structure
-						// for the "deepConfig" field.
-						// No entries should be added to the changes for this field.
-						"deepConfig": buildDeeplyNestedMappingNode(25, "item"),
 						"metadata": {
 							Fields: map[string]*core.MappingNode{
 								"value1": {
@@ -316,8 +329,17 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResour
 					},
 				},
 				"otherItemConfig": {
-					Scalar: &core.ScalarValue{
-						StringValue: &otherItemValue,
+					Fields: map[string]*core.MappingNode{
+						"value1": {
+							Scalar: &core.ScalarValue{
+								StringValue: &otherItemValue1,
+							},
+						},
+						"value2": {
+							Scalar: &core.ScalarValue{
+								StringValue: &otherItemValue2,
+							},
+						},
 					},
 				},
 				"vendorTags": {
@@ -330,19 +352,6 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResour
 					},
 				},
 			},
-		},
-	}
-}
-
-func buildDeeplyNestedMappingNode(depth int, fieldPrefix string) *core.MappingNode {
-	if depth == 0 {
-		return nil
-	}
-
-	fieldName := fmt.Sprintf("%s%d", fieldPrefix, depth)
-	return &core.MappingNode{
-		Fields: map[string]*core.MappingNode{
-			fieldName: buildDeeplyNestedMappingNode(depth-1, fieldPrefix),
 		},
 	}
 }

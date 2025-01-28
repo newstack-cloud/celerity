@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
@@ -1327,8 +1328,8 @@ func addRetryAttempt(retryInfoToUpdate *retryContext, currentAttemptDuration tim
 
 func createDestroyChangesFromChildState(
 	childState *state.InstanceState,
-) *BlueprintChanges {
-	changes := &BlueprintChanges{
+) *changes.BlueprintChanges {
+	changes := &changes.BlueprintChanges{
 		RemovedResources: []string{},
 		RemovedLinks:     []string{},
 		RemovedChildren:  []string{},
@@ -1380,7 +1381,7 @@ func getFailedRemovalsAndUpdateState(
 
 func getFailedElementDeploymentsAndUpdateState(
 	finished map[string]*deployUpdateMessageWrapper,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	deployCtx *DeployContext,
 ) []string {
 	failed := []string{}
@@ -1411,7 +1412,7 @@ func getFailedElementDeploymentsAndUpdateState(
 
 func getFailedResourceDeploymentsAndUpdateState(
 	finished map[string]*deployUpdateMessageWrapper,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	deployCtx *DeployContext,
 ) []string {
 	failed := []string{}
@@ -1466,7 +1467,7 @@ func checkResourceUpdateFailedAndUpdateState(
 
 func getFailedLinkDeploymentsAndUpdateState(
 	finished map[string]*deployUpdateMessageWrapper,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	deployCtx *DeployContext,
 ) []string {
 	failed := []string{}
@@ -1527,7 +1528,7 @@ func checkLinkDeploymentsFailedAndUpdateState(
 
 func getFailedChildDeploymentsAndUpdateState(
 	finished map[string]*deployUpdateMessageWrapper,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 	deployCtx *DeployContext,
 ) []string {
 	failed := []string{}
@@ -1735,7 +1736,7 @@ func finishedToChildUpdateMessage(
 
 func getResourceChangeInfo(
 	resourceName string,
-	changes *BlueprintChanges,
+	changes *changes.BlueprintChanges,
 ) *resourceChangeDeployInfo {
 	for changeResourceName, resourceChanges := range changes.ResourceChanges {
 		if changeResourceName == resourceName {
@@ -1868,7 +1869,7 @@ func prepareResourceChangesForDeployment(
 	}
 }
 
-func countElementsToDeploy(changes *BlueprintChanges) int {
+func countElementsToDeploy(changes *changes.BlueprintChanges) int {
 	linksToDeployCount := 0
 	for _, newResourceChanges := range changes.NewResources {
 		linksToDeployCount += len(newResourceChanges.NewOutboundLinks)
@@ -1985,15 +1986,15 @@ func readyToDeployAfterDependency(
 	return true
 }
 
-func getChildChanges(changes *BlueprintChanges, childName string) *BlueprintChanges {
-	childChanges, hasChildChanges := changes.ChildChanges[childName]
+func getChildChanges(parentChanges *changes.BlueprintChanges, childName string) *changes.BlueprintChanges {
+	childChanges, hasChildChanges := parentChanges.ChildChanges[childName]
 	if hasChildChanges {
 		return &childChanges
 	}
 
-	newChildDefinition, hasNewChildDefinition := changes.NewChildren[childName]
+	newChildDefinition, hasNewChildDefinition := parentChanges.NewChildren[childName]
 	if hasNewChildDefinition {
-		return &BlueprintChanges{
+		return &changes.BlueprintChanges{
 			NewResources: newChildDefinition.NewResources,
 			NewChildren:  newChildDefinition.NewChildren,
 			NewExports:   newChildDefinition.NewExports,

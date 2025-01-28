@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -28,8 +29,7 @@ type ChildBlueprintDeployerTestSuite struct {
 func (s *ChildBlueprintDeployerTestSuite) SetupTest() {
 	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*childBlueprintDeployerFixture{}
-	logger, err := internal.NewTestLogger()
-	s.Require().NoError(err)
+	logger := core.NewNopLogger()
 	s.logger = logger
 
 	for _, fixtureInfo := range fixtureInputs {
@@ -289,7 +289,7 @@ type childBlueprintDeployerFixture struct {
 	includeTreePath             string
 	childNode                   *refgraph.ReferenceChainNode
 	childInstanceID             string
-	changes                     *BlueprintChanges
+	changes                     *changes.BlueprintChanges
 	deployEventSequence         []*DeployEvent
 	expectedMessages            *expectedMessages
 	failure                     bool

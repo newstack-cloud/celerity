@@ -1,4 +1,4 @@
-package container
+package changes
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func (s *defaultResourceChangeGenerator) GenerateChanges(
 	params bpcore.BlueprintParams,
 ) (*provider.Changes, error) {
 	resolvedResource := resourceInfo.ResourceWithResolvedSubs
-	resourceType := getResourceTypeFromResolved(resolvedResource)
+	resourceType := GetResourceTypeFromResolved(resolvedResource)
 	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
 	specDefinitionOutput, err := resourceImplementation.GetSpecDefinition(
 		ctx,
@@ -64,8 +64,8 @@ func (s *defaultResourceChangeGenerator) GenerateChanges(
 	// to comparing field changes between different resource types unlike an update
 	// where the resource type remains the same.
 	currentStateResourceType := getResourceTypeFromState(resourceInfo.CurrentResourceState)
-	newResourceType := getResourceTypeFromResolved(resourceInfo.ResourceWithResolvedSubs)
-	if !anyEmptyString(currentStateResourceType, newResourceType) &&
+	newResourceType := GetResourceTypeFromResolved(resourceInfo.ResourceWithResolvedSubs)
+	if !AnyEmptyString(currentStateResourceType, newResourceType) &&
 		newResourceType != currentStateResourceType {
 		return &provider.Changes{
 			AppliedResourceInfo: *resourceInfo,
@@ -135,7 +135,10 @@ func getResourceTypeFromState(resourceState *state.ResourceState) string {
 	return resourceState.ResourceType
 }
 
-func getResourceTypeFromResolved(resourceWithResolvedSubs *provider.ResolvedResource) string {
+// GetResourceTypeFromResolved extracts a resource type from a resolved resource
+// if possible. An empty string is returned if the resolved resource is nil or
+// the type is nil.
+func GetResourceTypeFromResolved(resourceWithResolvedSubs *provider.ResolvedResource) string {
 	if resourceWithResolvedSubs == nil ||
 		resourceWithResolvedSubs.Type == nil {
 		return ""
@@ -416,7 +419,7 @@ func collectUnionFieldChanges(
 ) {
 
 	mappingNodeTypeMatchInfo := checkMappingNodeTypes(unionValueInCurrentState, unionValueInNewSpec, schema)
-	if unionValueInCurrentState != nil && !mappingNodeTypeMatchInfo.typeMatches {
+	if unionValueInCurrentState != nil && !mappingNodeTypeMatchInfo.TypeMatches {
 		// Carry out a shallow comparison when the types don't match for the two values.
 		changes.ModifiedFields = append(changes.ModifiedFields, provider.FieldChange{
 			FieldPath:    fieldChangeCtx.currentPath,
@@ -430,7 +433,7 @@ func collectUnionFieldChanges(
 	collectSpecFieldChanges(
 		changes,
 		// Use the schema of the matching type to compare the values.
-		mappingNodeTypeMatchInfo.schema,
+		mappingNodeTypeMatchInfo.Schema,
 		unionValueInNewSpec,
 		unionValueInCurrentState,
 		&fieldChangeContext{
@@ -717,19 +720,21 @@ func isScalarOrNil(node *bpcore.MappingNode) bool {
 	return bpcore.IsNilMappingNode(node) || node.Scalar != nil
 }
 
-type mappingNodeTypeMatchInfo struct {
-	typeMatches bool
-	schema      *provider.ResourceDefinitionsSchema
+// MappingNodeTypeMatchInfo contains information about whether the types of two mapping nodes match
+// and the schema to be used for value comparisons.
+type MappingNodeTypeMatchInfo struct {
+	TypeMatches bool
+	Schema      *provider.ResourceDefinitionsSchema
 }
 
 func checkMappingNodeTypes(
 	currentValue, newValue *bpcore.MappingNode,
 	unionSchema *provider.ResourceDefinitionsSchema,
-) *mappingNodeTypeMatchInfo {
+) *MappingNodeTypeMatchInfo {
 	if currentValue == nil && newValue == nil {
-		return &mappingNodeTypeMatchInfo{
-			typeMatches: true,
-			schema:      unionSchema.OneOf[0],
+		return &MappingNodeTypeMatchInfo{
+			TypeMatches: true,
+			Schema:      unionSchema.OneOf[0],
 		}
 	}
 
@@ -745,45 +750,47 @@ func checkMappingNodeTypes(
 		// the first map schema present in the union schema will be used.
 		// It is best to advise provider plugin developers to use multiple precise object
 		// types in unions instead of multiple map definitions to avoid this issue.
-		return checkMappingNodeTypesForFields(getFields(currentValue), getFields(newValue), unionSchema)
+		return CheckMappingNodeTypesForFields(getFields(currentValue), getFields(newValue), unionSchema)
 	}
 
 	if isArrayOrNil(currentValue) && bpcore.IsArrayMappingNode(newValue) {
-		return &mappingNodeTypeMatchInfo{
-			typeMatches: true,
+		return &MappingNodeTypeMatchInfo{
+			TypeMatches: true,
 			// This does not guarantee selection of the correct schema in a union with
 			// multiple array definitions.
 			// This can impact the "MustRecreate" flag set on field schemas to determine
 			// whether a resource should be recreated when a specified field changes value.
 			// Provider plugin developers should ensure "MustRecreate" is set on the union
 			// type so all values that can populate a field are treated the same in this regard.
-			schema: getArraySchema(unionSchema.OneOf),
+			Schema: GetArraySchema(unionSchema.OneOf),
 		}
 	}
 
 	if isScalarOrNil(currentValue) && bpcore.IsScalarMappingNode(newValue) {
-		return &mappingNodeTypeMatchInfo{
-			typeMatches: true,
+		return &MappingNodeTypeMatchInfo{
+			TypeMatches: true,
 			// This does not guarantee selection of the correct schema in a union with
 			// multiple literal definitions.
 			// This can impact the "MustRecreate" flag set on field schemas to determine
 			// whether a resource should be recreated when a specified field changes value.
 			// Provider plugin developers should ensure "MustRecreate" is set on the union
 			// type so all values that can populate a field are treated the same in this regard.
-			schema: getScalarSchema(unionSchema.OneOf),
+			Schema: getScalarSchema(unionSchema.OneOf),
 		}
 	}
 
-	return &mappingNodeTypeMatchInfo{
-		typeMatches: false,
-		schema:      nil,
+	return &MappingNodeTypeMatchInfo{
+		TypeMatches: false,
+		Schema:      nil,
 	}
 }
 
-func checkMappingNodeTypesForFields(
+// CheckMappingNodeTypesForFields compares the fields in two mapping nodes to determine
+// whether the types of the fields match the types in the union schema.
+func CheckMappingNodeTypesForFields(
 	fieldsA, fieldsB map[string]*bpcore.MappingNode,
 	unionSchema *provider.ResourceDefinitionsSchema,
-) *mappingNodeTypeMatchInfo {
+) *MappingNodeTypeMatchInfo {
 	typeMatches := false
 	var schema *provider.ResourceDefinitionsSchema
 	// If the union schema has one or more object types, try to match against the object type
@@ -816,9 +823,9 @@ func checkMappingNodeTypesForFields(
 		}
 	}
 
-	return &mappingNodeTypeMatchInfo{
-		typeMatches: typeMatches,
-		schema:      schema,
+	return &MappingNodeTypeMatchInfo{
+		TypeMatches: typeMatches,
+		Schema:      schema,
 	}
 }
 
@@ -988,7 +995,8 @@ func getMapSchema(
 	return mapSchema
 }
 
-func getArraySchema(
+// GetArraySchema returns the first array schema in a list of schemas.
+func GetArraySchema(
 	schemas []*provider.ResourceDefinitionsSchema,
 ) *provider.ResourceDefinitionsSchema {
 	arraySchema := (*provider.ResourceDefinitionsSchema)(nil)

@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
@@ -739,7 +740,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		substitutionResolver,
 		resourceCache,
 		l.stateContainer,
-		NewDefaultResourceChangeGenerator(),
+		changes.NewDefaultResourceChangeGenerator(),
 		linkChangeStager,
 	)
 

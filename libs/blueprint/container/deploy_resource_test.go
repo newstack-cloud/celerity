@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
@@ -52,8 +53,7 @@ func (s *ResourceDeployerTestSuite) SetupTest() {
 	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*resourceDeployerFixture{}
 
-	logger, err := internal.NewTestLogger()
-	s.Require().NoError(err)
+	logger := core.NewNopLogger()
 	s.logger = logger
 
 	for _, fixtureInfo := range fixtureInputs {
@@ -387,7 +387,7 @@ type resourceDeployerFixture struct {
 	chainLinkNode         *links.ChainLinkNode
 	instanceID            string
 	instanceStateSnapshot *state.InstanceState
-	changes               *BlueprintChanges
+	changes               *changes.BlueprintChanges
 	expectedMessages      *expectedMessages
 	expectedCachedOutput  *core.MappingNode
 	failure               bool
