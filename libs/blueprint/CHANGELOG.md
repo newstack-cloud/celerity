@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Functionality to load, parse and validate blueprints that adheres to the [Blueprint Specification](https://www.celerityframework.com/docs/blueprint/specification).
 - Functionality to stage changes for updates and new deployments of a blueprint.
 - Functionality to resolve substitutions in all elements of a blueprint.
-- Functionality to deploy and destroy blueprints based on a set of changes produced during change staging.
+- Functionality to deploy and destroy blueprint instances based on a set of changes produced during change staging.
 - An interface and data types for persisting blueprint state.
 - Interfaces for interacting with resource providers that applications can build plugin systems on top of.
 - A set of core functions that can be used with substitutions along with tools for creating custom functions through a provider plugin.
