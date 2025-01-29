@@ -55,7 +55,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: test
 
     - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@master
+      uses: SonarSource/sonarqube-scan-action@master
       with:
         projectBaseDir: ${{ env.working-directory }}
       env:
