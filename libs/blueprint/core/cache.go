@@ -4,6 +4,11 @@ import "sync"
 
 // Cache provides an implementation of a cache
 // that can be used across go routines.
+// This is a thread safe cache to be used by internal
+// components of the blueprint framework,
+// not to be confused with the `cache.BlueprintCache` interface
+// which is utility interface on which applications can build
+// their own blueprint caching implementations.
 type Cache[Data any] struct {
 	data map[string]Data
 	mu   sync.RWMutex
