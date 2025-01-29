@@ -54,6 +54,7 @@ func (s *ContainerChangeStagingTestSuite) SetupSuite() {
 		"aws": newTestAWSProvider(
 			/* alwaysStabilise */ false,
 			/* skipRetryFailuresForLinkNames */ []string{},
+			stateContainer,
 		),
 		"example": newTestExampleProvider(),
 		"core": providerhelpers.NewCoreProvider(

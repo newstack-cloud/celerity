@@ -48,7 +48,7 @@ func (s *ContainerDeployTestSuite) SetupTest() {
 		"saveOrderFunction::ordersTable_2",
 	}
 	providers := map[string]provider.Provider{
-		"aws":     newTestAWSProvider(true /* alwaysStabilise */, skipRetryFailureForLinkNames),
+		"aws":     newTestAWSProvider(true /* alwaysStabilise */, skipRetryFailureForLinkNames, stateContainer),
 		"example": newTestExampleProvider(),
 		"core": providerhelpers.NewCoreProvider(
 			stateContainer.Links(),

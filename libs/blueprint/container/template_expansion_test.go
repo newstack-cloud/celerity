@@ -54,6 +54,7 @@ func (s *ExpandResourceTemplatesTestSuite) SetupSuite() {
 		"aws": newTestAWSProvider(
 			/* alwaysStabilise */ false,
 			/* skipRetryFailuresForLinkNames */ []string{},
+			s.stateContainer,
 		),
 		"core": providerhelpers.NewCoreProvider(
 			s.stateContainer.Links(),

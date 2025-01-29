@@ -9,6 +9,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
+	"github.com/two-hundred/celerity/libs/blueprint/drift"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -184,6 +185,8 @@ type defaultLoader struct {
 	childBlueprintDestroyer        ChildBlueprintDestroyer
 	linkDestroyer                  LinkDestroyer
 	linkDeployer                   LinkDeployer
+	driftChecker                   drift.Checker
+	driftCheckEnabled              bool
 	// Allows for customisation of the blueprint container dependencies
 	// used for instantiating the blueprint container.
 	// This allows users to override the default implementations of services
@@ -237,6 +240,16 @@ func WithLoaderValidateAfterTransform(validateAfterTransform bool) LoaderOption 
 func WithLoaderTransformSpec(transformSpec bool) LoaderOption {
 	return func(loader *defaultLoader) {
 		loader.transformSpec = transformSpec
+	}
+}
+
+// WithLoaderDriftCheckEnabled sets the flag to determine whether drift checking
+// should be enabled when staging changes for a blueprint.
+//
+// When this option is not provided, the default value is false.
+func WithLoaderDriftCheckEnabled(driftCheckEnabled bool) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.driftCheckEnabled = driftCheckEnabled
 	}
 }
 
@@ -410,6 +423,16 @@ func WithLoaderLinkDeployer(linkDeployer LinkDeployer) LoaderOption {
 	}
 }
 
+// WithLoaderDriftChecker sets the drift checker service
+// used in blueprint containers created by the loader.
+//
+// When this option is not provided, the default drift checker is used.
+func WithLoaderDriftChecker(driftChecker drift.Checker) LoaderOption {
+	return func(loader *defaultLoader) {
+		loader.driftChecker = driftChecker
+	}
+}
+
 // WithLoaderDependenciesOverrider sets the dependencies overrider to be used by the loader
 // to customise the dependencies used to instantiate a blueprint container on each call to load a blueprint.
 //
@@ -475,6 +498,14 @@ func NewDefaultLoader(
 		linkRegistry,
 		provider.DefaultRetryPolicy,
 	)
+	logger := bpcore.NewNopLogger()
+	driftChecker := drift.NewDefaultChecker(
+		stateContainer,
+		internalProviders,
+		changes.NewDefaultResourceChangeGenerator(),
+		clock,
+		logger.Named("driftChecker"),
+	)
 
 	loader := &defaultLoader{
 		providers:                      internalProviders,
@@ -499,7 +530,9 @@ func NewDefaultLoader(
 		childBlueprintDestroyer:        NewDefaultChildBlueprintDestroyer(),
 		linkDestroyer:                  linkDestroyer,
 		linkDeployer:                   linkDeployer,
-		logger:                         bpcore.NewNopLogger(),
+		driftChecker:                   driftChecker,
+		driftCheckEnabled:              false,
+		logger:                         logger,
 	}
 
 	for _, opt := range opts {
@@ -530,6 +563,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderValidateRuntimeValues(l.validateRuntimeValues),
 		WithLoaderValidateAfterTransform(l.validateAfterTransform),
 		WithLoaderTransformSpec(l.transformSpec),
+		WithLoaderDriftCheckEnabled(l.driftCheckEnabled),
 		WithLoaderClock(l.clock),
 		WithLoaderResolveWorkingDir(l.resolveWorkingDir),
 		WithLoaderDerivedFromTemplates(derivedFromTemplate),
@@ -547,6 +581,7 @@ func (l *defaultLoader) forChildBlueprint(
 		WithLoaderChildBlueprintDestroyer(l.childBlueprintDestroyer),
 		WithLoaderLinkDestroyer(l.linkDestroyer),
 		WithLoaderLinkDeployer(l.linkDeployer),
+		WithLoaderDriftChecker(l.driftChecker),
 		WithLoaderDependenciesOverrider(l.overrideContainerDependencies),
 		WithLoaderResourceStabilityPollingConfig(l.resourceStabilityPollingConfig),
 		WithLoaderLogger(l.logger),
@@ -597,6 +632,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		// but validation failed.
 		return NewDefaultBlueprintContainer(
 			blueprintSpec,
+			l.driftCheckEnabled,
 			l.buildPartialBlueprintContainerDependencies(refChainCollector),
 			diagnostics,
 		), diagnostics, err
@@ -609,6 +645,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		// validation was successful but loading link information failed.
 		return NewDefaultBlueprintContainer(
 			blueprintSpec,
+			l.driftCheckEnabled,
 			l.buildPartialBlueprintContainerDependencies(refChainCollector),
 			diagnostics,
 		), diagnostics, err
@@ -616,6 +653,7 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 
 	container := NewDefaultBlueprintContainer(
 		blueprintSpec,
+		l.driftCheckEnabled,
 		l.buildFullBlueprintContainerDependencies(
 			refChainCollector,
 			blueprintSpec,
@@ -765,6 +803,7 @@ func (l *defaultLoader) buildFullBlueprintContainerDependencies(
 		ChildBlueprintDestroyer:   l.childBlueprintDestroyer,
 		LinkDestroyer:             l.linkDestroyer,
 		LinkDeployer:              l.linkDeployer,
+		DriftChecker:              l.driftChecker,
 		ResourceDeployer:          resourceDeployer,
 		ChildBlueprintDeployer:    childBlueprintDeployer,
 		DefaultRetryPolicy:        l.defaultRetryPolicy,

@@ -23,15 +23,26 @@ func createParams() core.BlueprintParams {
 	)
 }
 
-func newTestAWSProvider(alwaysStabilise bool, skipRetryFailuresForLinkNames []string) provider.Provider {
+func newTestAWSProvider(
+	alwaysStabilise bool,
+	skipRetryFailuresForLinkNames []string,
+	stateContainer state.Container,
+) provider.Provider {
 	return &internal.ProviderMock{
 		NamespaceValue: "aws",
 		Resources: map[string]provider.Resource{
-			"aws/dynamodb/table":  &internal.DynamoDBTableResource{},
-			"aws/dynamodb/stream": &internal.DynamoDBStreamResource{},
+			"aws/dynamodb/table": &internal.DynamoDBTableResource{
+				FallbackToStateContainerForExternalState: true,
+				StateContainer:                           stateContainer,
+			},
+			"aws/dynamodb/stream": &internal.DynamoDBStreamResource{
+				FallbackToStateContainerForExternalState: true,
+				StateContainer:                           stateContainer,
+			},
 			"aws/lambda/function": &internal.LambdaFunctionResource{
-				CurrentDestroyAttempts: map[string]int{},
-				CurrentDeployAttemps:   map[string]int{},
+				CurrentDestroyAttempts:         map[string]int{},
+				CurrentDeployAttemps:           map[string]int{},
+				CurrentGetExternalStateAttemps: map[string]int{},
 				FailResourceIDs: []string{
 					"test-failing-order-function-id",
 					"test-failing-update-order-function-id",
@@ -63,8 +74,13 @@ func newTestAWSProvider(alwaysStabilise bool, skipRetryFailuresForLinkNames []st
 					"resource-deploy-test--blueprint-instance-5",
 					"resource-deploy-test--blueprint-instance-6",
 				},
+				FallbackToStateContainerForExternalState: true,
+				StateContainer:                           stateContainer,
 			},
-			"aws/lambda2/function": &internal.Lambda2FunctionResource{},
+			"aws/lambda2/function": &internal.Lambda2FunctionResource{
+				FallbackToStateContainerForExternalState: true,
+				StateContainer:                           stateContainer,
+			},
 		},
 		Links: map[string]provider.Link{
 			"aws/apigateway/api::aws/lambda/function": &testApiGatewayLambdaLink{},

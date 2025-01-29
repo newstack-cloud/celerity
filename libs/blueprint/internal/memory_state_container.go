@@ -345,7 +345,10 @@ func (c *memoryResourcesContainer) RemoveDrift(
 		}
 	}
 
-	return state.ResourceDriftState{}, state.ResourceNotFoundError(resourceID)
+	// No drift entry for a specific resource is fine,
+	// indicating drift had already been removed or was never set
+	// for the resource.
+	return state.ResourceDriftState{}, nil
 }
 
 type memoryLinksContainer struct {

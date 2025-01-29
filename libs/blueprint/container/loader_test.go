@@ -73,6 +73,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 		"aws": newTestAWSProvider(
 			/* alwaysStabilise */ false,
 			/* skipRetryFailuresForLinkNames */ []string{},
+			stateContainer,
 		),
 		"core": providerhelpers.NewCoreProvider(
 			stateContainer.Links(),
@@ -108,6 +109,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 		"aws": newTestAWSProvider(
 			/* alwaysStabilise */ false,
 			/* skipRetryFailuresForLinkNames */ []string{},
+			stateContainer,
 		),
 	}
 	s.loaderDefaultCore = NewDefaultLoader(

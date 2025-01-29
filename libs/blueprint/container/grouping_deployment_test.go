@@ -104,6 +104,7 @@ func (s *GroupOrderedNodesTestSuite) assertExpectedGroups(
 var testGroupProviderImpl = newTestAWSProvider(
 	/* alwaysStabilise */ false,
 	/* skipRetryFailuresForLinkNames */ []string{},
+	/* stateContainer */ nil,
 )
 
 func groupFixture1() (groupDeploymentNodeFixture, error) {

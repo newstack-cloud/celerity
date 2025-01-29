@@ -76,6 +76,7 @@ func (s *ResourceDeployerTestSuite) SetupTest() {
 	awsProvider := newTestAWSProvider(
 		/* alwaysStabilise */ false,
 		/* skipRetryFailuresForLinkNames */ []string{},
+		s.stateContainer,
 	)
 
 	s.resourceProviders = map[string]provider.Provider{

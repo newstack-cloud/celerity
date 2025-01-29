@@ -6,6 +6,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
 const (
@@ -88,6 +89,11 @@ const (
 	// during deployment due to an unexpected computed field
 	// being returned by a resource plugin implementation's deploy method.
 	ErrorReasonCodeUnexpectedComputedField errors.ErrorReasonCode = "unexpected_computed_field"
+	// ErrorReasonCodeDriftDetected
+	// is provided when the reason for an error
+	// during deployment or change staging is due to
+	// drift being detected in resources.
+	ErrorReasonCodeDriftDetected errors.ErrorReasonCode = "drift_detected"
 	// ErrorReasonCodeChildBlueprintError
 	// is provided when the reason for an error
 	// during deployment or change staging is due to
@@ -284,6 +290,24 @@ func errUnexpectedComputedField(
 			computedField,
 			resourceName,
 			strings.Join(expectedComputedFields, ", "),
+		),
+	}
+}
+
+func errDriftDetected(
+	driftResults map[string]*state.ResourceDriftState,
+) error {
+	var driftedResources []string
+	for resourceID := range driftResults {
+		driftedResources = append(driftedResources, resourceID)
+	}
+
+	return &errors.RunError{
+		ReasonCode: ErrorReasonCodeDriftDetected,
+		Err: fmt.Errorf(
+			"drift detected in resources: %v. This must be resolved before you can deploy a new update, "+
+				"you can load the state to see the drift details",
+			strings.Join(driftedResources, ", "),
 		),
 	}
 }

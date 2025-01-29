@@ -152,6 +152,7 @@ func inExpected(expectedItemNames []string) func(*DeploymentNode, int) bool {
 var testProviderImpl = newTestAWSProvider(
 	/* alwaysStabilise */ false,
 	/* skipRetryFailuresForLinkNames */ []string{},
+	/* stateContainer */ nil,
 )
 
 func orderFixture1() (orderChainLinkNodeFixture, error) {

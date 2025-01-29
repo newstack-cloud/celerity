@@ -11,12 +11,15 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
 type DynamoDBTableResource struct {
 	// A stub for the resource state value to return when requesting the state
 	// of the resource in the external provider.
-	ExternalState *core.MappingNode
+	ExternalState                            *core.MappingNode
+	FallbackToStateContainerForExternalState bool
+	StateContainer                           state.Container
 }
 
 func (r *DynamoDBTableResource) CanLinkTo(
@@ -126,6 +129,21 @@ func (r *DynamoDBTableResource) GetExternalState(
 	ctx context.Context,
 	input *provider.ResourceGetExternalStateInput,
 ) (*provider.ResourceGetExternalStateOutput, error) {
+	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
+		resource, err := r.StateContainer.Resources().Get(
+			ctx,
+			input.InstanceID,
+			input.ResourceID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &provider.ResourceGetExternalStateOutput{
+			ResourceSpecState: resource.ResourceSpecData,
+		}, nil
+	}
+
 	return &provider.ResourceGetExternalStateOutput{
 		ResourceSpecState: r.ExternalState,
 	}, nil
@@ -138,7 +156,13 @@ func (r *DynamoDBTableResource) Destroy(
 	return nil
 }
 
-type DynamoDBStreamResource struct{}
+type DynamoDBStreamResource struct {
+	// A stub for the resource state value to return when requesting the state
+	// of the resource in the external provider.
+	ExternalState                            *core.MappingNode
+	FallbackToStateContainerForExternalState bool
+	StateContainer                           state.Container
+}
 
 func (r *DynamoDBStreamResource) CanLinkTo(
 	ctx context.Context,
@@ -238,7 +262,24 @@ func (r *DynamoDBStreamResource) GetExternalState(
 	ctx context.Context,
 	input *provider.ResourceGetExternalStateInput,
 ) (*provider.ResourceGetExternalStateOutput, error) {
-	return &provider.ResourceGetExternalStateOutput{}, nil
+	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
+		resource, err := r.StateContainer.Resources().Get(
+			ctx,
+			input.InstanceID,
+			input.ResourceID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &provider.ResourceGetExternalStateOutput{
+			ResourceSpecState: resource.ResourceSpecData,
+		}, nil
+	}
+
+	return &provider.ResourceGetExternalStateOutput{
+		ResourceSpecState: r.ExternalState,
+	}, nil
 }
 
 func (r *DynamoDBStreamResource) Destroy(
@@ -279,8 +320,10 @@ type LambdaFunctionResource struct {
 	SkipRetryFailuresForInstances []string
 	// A stub for the resource state value to return when requesting the state
 	// of the resource in the external provider.
-	ExternalState *core.MappingNode
-	mu            sync.Mutex
+	ExternalState                            *core.MappingNode
+	FallbackToStateContainerForExternalState bool
+	StateContainer                           state.Container
+	mu                                       sync.Mutex
 }
 
 func (r *LambdaFunctionResource) CanLinkTo(
@@ -463,6 +506,21 @@ func (r *LambdaFunctionResource) GetExternalState(
 		}
 	}
 
+	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
+		resource, err := r.StateContainer.Resources().Get(
+			ctx,
+			input.InstanceID,
+			input.ResourceID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &provider.ResourceGetExternalStateOutput{
+			ResourceSpecState: resource.ResourceSpecData,
+		}, nil
+	}
+
 	return &provider.ResourceGetExternalStateOutput{
 		ResourceSpecState: r.ExternalState,
 	}, nil
@@ -498,7 +556,13 @@ func (r *LambdaFunctionResource) Destroy(
 	return nil
 }
 
-type Lambda2FunctionResource struct{}
+type Lambda2FunctionResource struct {
+	// A stub for the resource state value to return when requesting the state
+	// of the resource in the external provider.
+	ExternalState                            *core.MappingNode
+	FallbackToStateContainerForExternalState bool
+	StateContainer                           state.Container
+}
 
 func (r *Lambda2FunctionResource) CanLinkTo(
 	ctx context.Context,
@@ -604,7 +668,24 @@ func (r *Lambda2FunctionResource) GetExternalState(
 	ctx context.Context,
 	input *provider.ResourceGetExternalStateInput,
 ) (*provider.ResourceGetExternalStateOutput, error) {
-	return &provider.ResourceGetExternalStateOutput{}, nil
+	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
+		resource, err := r.StateContainer.Resources().Get(
+			ctx,
+			input.InstanceID,
+			input.ResourceID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &provider.ResourceGetExternalStateOutput{
+			ResourceSpecState: resource.ResourceSpecData,
+		}, nil
+	}
+
+	return &provider.ResourceGetExternalStateOutput{
+		ResourceSpecState: r.ExternalState,
+	}, nil
 }
 
 func (r *Lambda2FunctionResource) Destroy(
@@ -614,7 +695,13 @@ func (r *Lambda2FunctionResource) Destroy(
 	return nil
 }
 
-type ExampleComplexResource struct{}
+type ExampleComplexResource struct {
+	// A stub for the resource state value to return when requesting the state
+	// of the resource in the external provider.
+	ExternalState                            *core.MappingNode
+	FallbackToStateContainerForExternalState bool
+	StateContainer                           state.Container
+}
 
 func (r *ExampleComplexResource) CanLinkTo(
 	ctx context.Context,
@@ -866,7 +953,24 @@ func (r *ExampleComplexResource) GetExternalState(
 	ctx context.Context,
 	input *provider.ResourceGetExternalStateInput,
 ) (*provider.ResourceGetExternalStateOutput, error) {
-	return &provider.ResourceGetExternalStateOutput{}, nil
+	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
+		resource, err := r.StateContainer.Resources().Get(
+			ctx,
+			input.InstanceID,
+			input.ResourceID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &provider.ResourceGetExternalStateOutput{
+			ResourceSpecState: resource.ResourceSpecData,
+		}, nil
+	}
+
+	return &provider.ResourceGetExternalStateOutput{
+		ResourceSpecState: r.ExternalState,
+	}, nil
 }
 
 func (r *ExampleComplexResource) Destroy(

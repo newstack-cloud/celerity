@@ -39,6 +39,7 @@ func (s *ContainerDestroyTestSuite) SetupTest() {
 		"aws": newTestAWSProvider(
 			/* alwaysStabilise */ false,
 			/* skipRetryFailuresForLinkNames */ []string{},
+			stateContainer,
 		),
 		"example": newTestExampleProvider(),
 		"core": providerhelpers.NewCoreProvider(

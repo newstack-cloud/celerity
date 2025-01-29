@@ -5,6 +5,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/drift"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
@@ -166,6 +167,8 @@ type defaultBlueprintContainer struct {
 	childBlueprintDestroyer  ChildBlueprintDestroyer
 	linkDestroyer            LinkDestroyer
 	linkDeployer             LinkDeployer
+	driftChecker             drift.Checker
+	driftCheckEnabled        bool
 	resourceDeployer         ResourceDeployer
 	childDeployer            ChildBlueprintDeployer
 	defaultRetryPolicy       *provider.RetryPolicy
@@ -212,6 +215,7 @@ type BlueprintContainerDependencies struct {
 	ChildBlueprintDestroyer   ChildBlueprintDestroyer
 	LinkDestroyer             LinkDestroyer
 	LinkDeployer              LinkDeployer
+	DriftChecker              drift.Checker
 	ResourceDeployer          ResourceDeployer
 	ChildBlueprintDeployer    ChildBlueprintDeployer
 	DefaultRetryPolicy        *provider.RetryPolicy
@@ -224,6 +228,7 @@ type BlueprintContainerDependencies struct {
 // to a provider.
 func NewDefaultBlueprintContainer(
 	spec speccore.BlueprintSpec,
+	driftCheckEnabled bool,
 	deps *BlueprintContainerDependencies,
 	diagnostics []*core.Diagnostic,
 ) BlueprintContainer {
@@ -250,6 +255,8 @@ func NewDefaultBlueprintContainer(
 		deps.ChildBlueprintDestroyer,
 		deps.LinkDestroyer,
 		deps.LinkDeployer,
+		deps.DriftChecker,
+		driftCheckEnabled,
 		deps.ResourceDeployer,
 		deps.ChildBlueprintDeployer,
 		deps.DefaultRetryPolicy,
