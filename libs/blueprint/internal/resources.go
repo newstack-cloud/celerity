@@ -20,6 +20,12 @@ type DynamoDBTableResource struct {
 	ExternalState                            *core.MappingNode
 	FallbackToStateContainerForExternalState bool
 	StateContainer                           state.Container
+	// Tracks the number of stabilise calls have been made for a resource ID.
+	// Unlike the test lambda resource, this is not used to test polling behaviour,
+	// this is used to test that transient failures are handled correctly by the
+	// resource deployer.
+	CurrentStabiliseCalls map[string]int
+	mu                    sync.Mutex
 }
 
 func (r *DynamoDBTableResource) CanLinkTo(
@@ -120,6 +126,25 @@ func (r *DynamoDBTableResource) HasStabilised(
 	ctx context.Context,
 	input *provider.ResourceHasStabilisedInput,
 ) (*provider.ResourceHasStabilisedOutput, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.CurrentStabiliseCalls != nil {
+		attemptCount, exists := r.CurrentStabiliseCalls[input.ResourceID]
+		if !exists {
+			attemptCount = 0
+		}
+		attemptCount += 1
+		r.CurrentStabiliseCalls[input.ResourceID] = attemptCount
+
+		// Provider retry policy allows for a maximum of 3 attempts before failing.
+		if attemptCount < 3 {
+			return nil, &provider.RetryableError{
+				ChildError: errors.New("stabilisation check failed due to transient error"),
+			}
+		}
+	}
+
 	return &provider.ResourceHasStabilisedOutput{
 		Stabilised: true,
 	}, nil

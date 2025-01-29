@@ -376,8 +376,12 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 			deployCtx.Logger.Debug(
 				"checking if resource has stabilised with resource plugin implementation",
 			)
-			output, err := resourceInfo.resourceImpl.HasStabilised(
+			hasStabilisedRetryCtx := provider.CreateRetryContext(
+				resourceRetryInfo.Policy,
+			)
+			output, err := d.hasStabilised(
 				ctxWithPollingTimeout,
+				resourceInfo.resourceImpl,
 				&provider.ResourceHasStabilisedInput{
 					InstanceID:       resourceInfo.instanceID,
 					ResourceID:       resourceInfo.resourceID,
@@ -388,6 +392,8 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 						deployCtx.ParamOverrides,
 					),
 				},
+				hasStabilisedRetryCtx,
+				deployCtx.Logger,
 			)
 			if err != nil {
 				deployCtx.Logger.Debug(
@@ -409,6 +415,73 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 			}
 		}
 	}
+}
+
+func (d *defaultResourceDeployer) hasStabilised(
+	ctx context.Context,
+	resource provider.Resource,
+	input *provider.ResourceHasStabilisedInput,
+	retryCtx *provider.RetryContext,
+	logger core.Logger,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	stabiliseCheckStartTime := d.clock.Now()
+	hasStabilisedOutput, err := resource.HasStabilised(ctx, input)
+	if err != nil {
+		if provider.IsRetryableError(err) {
+			logger.Debug(
+				"retryable error occurred while checking if resource has stabilised",
+				core.IntegerLogField("attempt", int64(retryCtx.Attempt)),
+				core.ErrorLogField("error", err),
+			)
+			return d.handleHasStabilisedRetry(
+				ctx,
+				resource,
+				input,
+				provider.RetryContextWithStartTime(
+					retryCtx,
+					stabiliseCheckStartTime,
+				),
+				logger,
+			)
+		}
+
+		return nil, err
+	}
+
+	return hasStabilisedOutput, nil
+}
+
+func (d *defaultResourceDeployer) handleHasStabilisedRetry(
+	ctx context.Context,
+	resource provider.Resource,
+	input *provider.ResourceHasStabilisedInput,
+	retryCtx *provider.RetryContext,
+	logger core.Logger,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	currentAttemptDuration := d.clock.Since(
+		retryCtx.AttemptStartTime,
+	)
+	nextRetryCtx := provider.RetryContextWithNextAttempt(retryCtx, currentAttemptDuration)
+
+	if !nextRetryCtx.ExceededMaxRetries {
+		waitTimeMs := provider.CalculateRetryWaitTimeMS(nextRetryCtx.Policy, nextRetryCtx.Attempt)
+		time.Sleep(time.Duration(waitTimeMs) * time.Millisecond)
+		return d.hasStabilised(
+			ctx,
+			resource,
+			input,
+			nextRetryCtx,
+			logger,
+		)
+	}
+
+	logger.Debug(
+		"resource stabilisation check failed after reaching the maximum number of retries",
+		core.IntegerLogField("attempt", int64(nextRetryCtx.Attempt)),
+		core.IntegerLogField("maxRetries", int64(nextRetryCtx.Policy.MaxRetries)),
+	)
+
+	return nil, nil
 }
 
 func (d *defaultResourceDeployer) createResourceStabiliseTimeoutMessage(

@@ -34,6 +34,9 @@ func newTestAWSProvider(
 			"aws/dynamodb/table": &internal.DynamoDBTableResource{
 				FallbackToStateContainerForExternalState: true,
 				StateContainer:                           stateContainer,
+				// Used to emulate transient failures when checking if DynamoDB
+				// table has stabilised.
+				CurrentStabiliseCalls: map[string]int{},
 			},
 			"aws/dynamodb/stream": &internal.DynamoDBStreamResource{
 				FallbackToStateContainerForExternalState: true,
