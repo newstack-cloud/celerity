@@ -35,7 +35,7 @@ See [here](https://go.dev/wiki/Modules#publishing-a-release).
 ```markdown
 ## [0.2.0] - 2024-06-05
 
-### Fixed:
+### Fixed
 
 - Fixes bugs in the slice search utility function.
 
@@ -56,7 +56,7 @@ Be sure to add a release for the tag with notes following this template:
 Title: `Common - v0.2.0`
 
 ```markdown
-### Fixed:
+### Fixed
 
 - Fixes bugs in the slice search utility function.
 
