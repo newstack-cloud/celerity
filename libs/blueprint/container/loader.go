@@ -488,7 +488,6 @@ func NewDefaultLoader(
 	// with params from the caller for each method.
 	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers, nil /* params */)
 	funcRegistry := provider.NewFunctionRegistry(providers)
-	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
 	linkRegistry := provider.NewLinkRegistry(providers)
 	internalProviders := copyProviderMap(providers)
 	clock := &bpcore.SystemClock{}
@@ -499,13 +498,6 @@ func NewDefaultLoader(
 		provider.DefaultRetryPolicy,
 	)
 	logger := bpcore.NewNopLogger()
-	driftChecker := drift.NewDefaultChecker(
-		stateContainer,
-		internalProviders,
-		changes.NewDefaultResourceChangeGenerator(),
-		clock,
-		logger.Named("driftChecker"),
-	)
 
 	loader := &defaultLoader{
 		providers:                      internalProviders,
@@ -515,7 +507,6 @@ func NewDefaultLoader(
 		refChainCollectorFactory:       refgraph.NewRefChainCollector,
 		funcRegistry:                   funcRegistry,
 		resourceRegistry:               resourceRegistry,
-		dataSourceRegistry:             dataSourceRegistry,
 		linkRegistry:                   linkRegistry,
 		clock:                          clock,
 		resolveWorkingDir:              os.Getwd,
@@ -530,13 +521,33 @@ func NewDefaultLoader(
 		childBlueprintDestroyer:        NewDefaultChildBlueprintDestroyer(),
 		linkDestroyer:                  linkDestroyer,
 		linkDeployer:                   linkDeployer,
-		driftChecker:                   driftChecker,
 		driftCheckEnabled:              false,
 		logger:                         logger,
 	}
 
 	for _, opt := range opts {
 		opt(loader)
+	}
+
+	// As the drift checker and data source registry both depend on the logger,
+	// make sure that the default implementations are wired up to the user-defined
+	// logger if one is provided in the options.
+	if loader.driftChecker == nil {
+		loader.driftChecker = drift.NewDefaultChecker(
+			stateContainer,
+			internalProviders,
+			changes.NewDefaultResourceChangeGenerator(),
+			clock,
+			loader.logger.Named("driftChecker"),
+		)
+	}
+
+	if loader.dataSourceRegistry == nil {
+		loader.dataSourceRegistry = provider.NewDataSourceRegistry(
+			providers,
+			clock,
+			loader.logger.Named("dataSourceRegistry"),
+		)
 	}
 
 	if _, hasCore := internalProviders["core"]; !hasCore {

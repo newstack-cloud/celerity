@@ -101,6 +101,8 @@ func (s *ExpandResourceTemplatesTestSuite) SetupTest() {
 	)
 	s.dataSourceRegistry = provider.NewDataSourceRegistry(
 		s.providers,
+		core.SystemClock{},
+		core.NewNopLogger(),
 	)
 	s.resourceCache = core.NewCache[*provider.ResolvedResource]()
 	s.resourceTemplateInputElemCache = core.NewCache[[]*core.MappingNode]()

@@ -83,6 +83,8 @@ func (s *SubResolverTestContainer) populateDependencies() {
 	)
 	s.dataSourceRegistry = provider.NewDataSourceRegistry(
 		providers,
+		core.SystemClock{},
+		core.NewNopLogger(),
 	)
 	s.resourceCache = core.NewCache[*provider.ResolvedResource]()
 	s.resourceTemplateInputElemCache = core.NewCache[[]*core.MappingNode]()

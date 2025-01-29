@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
@@ -62,16 +63,24 @@ type dataSourceRegistryFromProviders struct {
 	providers       map[string]Provider
 	dataSourceCache *core.Cache[DataSource]
 	dataSourceTypes []string
+	logger          core.Logger
+	clock           core.Clock
 	mu              sync.Mutex
 }
 
 // NewDataSourceRegistry creates a new DataSourceRegistry from a map of providers,
 // matching against providers based on the data source type prefix.
-func NewDataSourceRegistry(providers map[string]Provider) DataSourceRegistry {
+func NewDataSourceRegistry(
+	providers map[string]Provider,
+	clock core.Clock,
+	logger core.Logger,
+) DataSourceRegistry {
 	return &dataSourceRegistryFromProviders{
 		providers:       providers,
 		dataSourceCache: core.NewCache[DataSource](),
 		dataSourceTypes: []string{},
+		clock:           clock,
+		logger:          logger,
 	}
 }
 
@@ -80,7 +89,7 @@ func (r *dataSourceRegistryFromProviders) GetSpecDefinition(
 	dataSourceType string,
 	input *DataSourceGetSpecDefinitionInput,
 ) (*DataSourceGetSpecDefinitionOutput, error) {
-	dataSourceImpl, err := r.getDataSourceType(ctx, dataSourceType)
+	dataSourceImpl, _, err := r.getDataSourceType(ctx, dataSourceType)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +102,7 @@ func (r *dataSourceRegistryFromProviders) GetTypeDescription(
 	dataSourceType string,
 	input *DataSourceGetTypeDescriptionInput,
 ) (*DataSourceGetTypeDescriptionOutput, error) {
-	dataSourceImpl, err := r.getDataSourceType(ctx, dataSourceType)
+	dataSourceImpl, _, err := r.getDataSourceType(ctx, dataSourceType)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +115,7 @@ func (r *dataSourceRegistryFromProviders) GetFilterFields(
 	dataSourceType string,
 	input *DataSourceGetFilterFieldsInput,
 ) (*DataSourceGetFilterFieldsOutput, error) {
-	dataSourceImpl, err := r.getDataSourceType(ctx, dataSourceType)
+	dataSourceImpl, _, err := r.getDataSourceType(ctx, dataSourceType)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +124,7 @@ func (r *dataSourceRegistryFromProviders) GetFilterFields(
 }
 
 func (r *dataSourceRegistryFromProviders) HasDataSourceType(ctx context.Context, dataSourceType string) (bool, error) {
-	dataSourceImpl, err := r.getDataSourceType(ctx, dataSourceType)
+	dataSourceImpl, _, err := r.getDataSourceType(ctx, dataSourceType)
 	if err != nil {
 		if runErr, isRunErr := err.(*errors.RunError); isRunErr {
 			if runErr.ReasonCode == ErrorReasonCodeProviderDataSourceTypeNotFound {
@@ -155,7 +164,7 @@ func (r *dataSourceRegistryFromProviders) CustomValidate(
 	dataSourceType string,
 	input *DataSourceValidateInput,
 ) (*DataSourceValidateOutput, error) {
-	dataSourceImpl, err := r.getDataSourceType(ctx, dataSourceType)
+	dataSourceImpl, _, err := r.getDataSourceType(ctx, dataSourceType)
 	if err != nil {
 		return nil, err
 	}
@@ -168,30 +177,148 @@ func (r *dataSourceRegistryFromProviders) Fetch(
 	dataSourceType string,
 	input *DataSourceFetchInput,
 ) (*DataSourceFetchOutput, error) {
-	dataSourceImpl, err := r.getDataSourceType(ctx, dataSourceType)
+	dataSourceImpl, dataSourceProvider, err := r.getDataSourceType(ctx, dataSourceType)
 	if err != nil {
 		return nil, err
 	}
 
-	return dataSourceImpl.Fetch(ctx, input)
+	fetchLogger := r.logger.Named("fetch").WithFields(
+		core.StringLogField("dataSourceType", dataSourceType),
+	)
+
+	fetchLogger.Debug(
+		"Loading retry policy for data source provider",
+	)
+	policy, err := r.getRetryPolicy(
+		ctx,
+		dataSourceProvider,
+		DefaultRetryPolicy,
+	)
+	if err != nil {
+		fetchLogger.Debug(
+			"Failed to load retry policy for data source provider",
+			core.ErrorLogField("error", err),
+		)
+		return nil, err
+	}
+
+	fetchLogger.Info(
+		"Fetching data from data source",
+	)
+	retryCtx := CreateRetryContext(policy)
+	return r.fetch(
+		ctx,
+		dataSourceImpl,
+		input,
+		retryCtx,
+		fetchLogger,
+	)
 }
 
-func (r *dataSourceRegistryFromProviders) getDataSourceType(ctx context.Context, dataSourceType string) (DataSource, error) {
+func (r *dataSourceRegistryFromProviders) fetch(
+	ctx context.Context,
+	dataSource DataSource,
+	input *DataSourceFetchInput,
+	retryCtx *RetryContext,
+	fetchLogger core.Logger,
+) (*DataSourceFetchOutput, error) {
+	fetchStartTime := r.clock.Now()
+	fetchOutput, err := dataSource.Fetch(ctx, input)
+	if err != nil {
+		if IsRetryableError(err) {
+			fetchLogger.Debug(
+				"retryable error occurred while attempting to fetch data from data source",
+				core.IntegerLogField("attempt", int64(retryCtx.Attempt)),
+				core.ErrorLogField("error", err),
+			)
+
+			return r.handleFetchRetry(
+				ctx,
+				dataSource,
+				input,
+				RetryContextWithStartTime(
+					retryCtx,
+					fetchStartTime,
+				),
+				fetchLogger,
+			)
+		}
+
+		return nil, err
+	}
+
+	return fetchOutput, nil
+}
+
+func (r *dataSourceRegistryFromProviders) handleFetchRetry(
+	ctx context.Context,
+	dataSource DataSource,
+	input *DataSourceFetchInput,
+	retryCtx *RetryContext,
+	fetchLogger core.Logger,
+) (*DataSourceFetchOutput, error) {
+	currentAttemptDuration := r.clock.Since(
+		retryCtx.AttemptStartTime,
+	)
+	nextRetryCtx := RetryContextWithNextAttempt(retryCtx, currentAttemptDuration)
+
+	if !nextRetryCtx.ExceededMaxRetries {
+		waitTimeMs := CalculateRetryWaitTimeMS(nextRetryCtx.Policy, nextRetryCtx.Attempt)
+		time.Sleep(time.Duration(waitTimeMs) * time.Millisecond)
+		return r.fetch(
+			ctx,
+			dataSource,
+			input,
+			nextRetryCtx,
+			fetchLogger,
+		)
+	}
+
+	fetchLogger.Debug(
+		"fetching data from data source failed after reaching the maximum number of retries",
+		core.IntegerLogField("attempt", int64(nextRetryCtx.Attempt)),
+		core.IntegerLogField("maxRetries", int64(nextRetryCtx.Policy.MaxRetries)),
+	)
+
+	return nil, nil
+}
+
+func (r *dataSourceRegistryFromProviders) getRetryPolicy(
+	ctx context.Context,
+	dataSourceProvider Provider,
+	defaultRetryPolicy *RetryPolicy,
+) (*RetryPolicy, error) {
+	retryPolicy, err := dataSourceProvider.RetryPolicy(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if retryPolicy == nil {
+		return defaultRetryPolicy, nil
+	}
+
+	return retryPolicy, nil
+}
+
+func (r *dataSourceRegistryFromProviders) getDataSourceType(
+	ctx context.Context,
+	dataSourceType string,
+) (DataSource, Provider, error) {
 	dataSource, cached := r.dataSourceCache.Get(dataSourceType)
 	if cached {
-		return dataSource, nil
+		return dataSource, nil, nil
 	}
 
 	providerNamespace := ExtractProviderFromItemType(dataSourceType)
 	provider, ok := r.providers[providerNamespace]
 	if !ok {
-		return nil, errDataSourceTypeProviderNotFound(providerNamespace, dataSourceType)
+		return nil, nil, errDataSourceTypeProviderNotFound(providerNamespace, dataSourceType)
 	}
 	dataSourceImpl, err := provider.DataSource(ctx, dataSourceType)
 	if err != nil {
-		return nil, errProviderDataSourceTypeNotFound(dataSourceType, providerNamespace)
+		return nil, nil, errProviderDataSourceTypeNotFound(dataSourceType, providerNamespace)
 	}
 	r.dataSourceCache.Set(dataSourceType, dataSourceImpl)
 
-	return dataSourceImpl, nil
+	return dataSourceImpl, provider, nil
 }

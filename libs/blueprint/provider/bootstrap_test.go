@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -98,7 +99,16 @@ func (p *testProvider) Function(ctx context.Context, functionName string) (Funct
 }
 
 func (p *testProvider) RetryPolicy(ctx context.Context) (*RetryPolicy, error) {
-	return nil, nil
+	return &RetryPolicy{
+		MaxRetries: 3,
+		// The first retry delay is 1 millisecond
+		FirstRetryDelay: 0.001,
+		// The maximum delay between retries is 10 milliseconds.
+		MaxDelay:      0.01,
+		BackoffFactor: 0.5,
+		// Make the retry behaviour more deterministic for tests by disabling jitter.
+		Jitter: false,
+	}, nil
 }
 
 type testSubstrFunction struct {
@@ -345,13 +355,20 @@ func (f *functionCallContextMock) SetCurrentLocation(location *source.Meta) {
 }
 
 type testExampleDataSource struct {
-	definition           *DataSourceSpecDefinition
-	filterFields         []string
-	markdownDescription  string
-	plainTextDescription string
+	definition               *DataSourceSpecDefinition
+	filterFields             []string
+	markdownDescription      string
+	plainTextDescription     string
+	emulateTransientFailures bool
+	// Tracks the number of fetch attempts for all calls for the data source type.
+	// This is used to emulate transient failures when fetching data from data sources,
+	// the data source registry will retry fetching data until the
+	// fetch attempt count exceeds the max deploy attempts.
+	currentFetchAttempts int
+	mu                   sync.Mutex
 }
 
-func newTestExampleDataSource() DataSource {
+func newTestExampleDataSource(emulateTransientFailures bool) DataSource {
 	return &testExampleDataSource{
 		definition: &DataSourceSpecDefinition{
 			Fields: map[string]*DataSourceSpecSchema{
@@ -360,9 +377,11 @@ func newTestExampleDataSource() DataSource {
 				},
 			},
 		},
-		filterFields:         []string{"metadata.id"},
-		markdownDescription:  "## test/exampleDataSource\n\nThis is a test data source.",
-		plainTextDescription: "test/exampleDataSource\n\nThis is a test data source.",
+		filterFields:             []string{"metadata.id"},
+		markdownDescription:      "## test/exampleDataSource\n\nThis is a test data source.",
+		plainTextDescription:     "test/exampleDataSource\n\nThis is a test data source.",
+		emulateTransientFailures: emulateTransientFailures,
+		currentFetchAttempts:     0,
 	}
 }
 
@@ -379,6 +398,20 @@ func (d *testExampleDataSource) Fetch(
 	ctx context.Context,
 	input *DataSourceFetchInput,
 ) (*DataSourceFetchOutput, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if d.emulateTransientFailures {
+		d.currentFetchAttempts += 1
+
+		// Provider retry policy allows for a maximum of 3 attempts before failing.
+		if d.currentFetchAttempts < 3 {
+			return nil, &RetryableError{
+				ChildError: errors.New("fetch failed due to transient error"),
+			}
+		}
+	}
+
 	testName := "test"
 	return &DataSourceFetchOutput{
 		Data: map[string]*core.MappingNode{

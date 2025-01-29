@@ -17,7 +17,9 @@ type DataSourceRegistryTestSuite struct {
 var _ = Suite(&DataSourceRegistryTestSuite{})
 
 func (s *DataSourceRegistryTestSuite) SetUpTest(c *C) {
-	testDataSource := newTestExampleDataSource()
+	testDataSource := newTestExampleDataSource(
+		/* emulateTransientFailures */ true,
+	)
 
 	providers := map[string]Provider{
 		"test": &testProvider{
@@ -29,7 +31,11 @@ func (s *DataSourceRegistryTestSuite) SetUpTest(c *C) {
 	}
 
 	s.testDataSource = testDataSource.(*testExampleDataSource)
-	s.dataSourceRegistry = NewDataSourceRegistry(providers)
+	s.dataSourceRegistry = NewDataSourceRegistry(
+		providers,
+		core.SystemClock{},
+		core.NewNopLogger(),
+	)
 }
 
 func (s *DataSourceRegistryTestSuite) Test_get_definition(c *C) {
