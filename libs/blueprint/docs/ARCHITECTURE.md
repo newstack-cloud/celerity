@@ -403,10 +403,10 @@ type Provider interface {
 }
 ```
 
-A provider deals with validating, syncing state with the external software or system the provider represents, staging changes for approval
+A provider deals with validating resource definitions, deriving "live" state from the external software or system the provider represents, staging resource changes for approval
 and deploying resources.
 
-A provider is also responsible for implementing data sources that allows for dependencies between blueprints and sourcing data from external systems that have were deployed or created outside of the blueprint lifecycle.
+A provider is also responsible for implementing data sources that allows for dependencies between blueprints and sourcing data from external systems that have been deployed or created outside of the blueprint lifecycle.
 
 _In the architecture diagram above, you will see the data source provider is a separate entity from the resource/link provider. This is purely like this to provide a clearer visualisation of the architecture and in code, data sources are a part of resource providers._
 
@@ -420,7 +420,7 @@ In the case where there are links between resources that span multiple providers
 
 The interface for a provider includes `context.Context` and returns an `error` to allow for provider implementations over the network boundary like with an RPC-based plugin system.
 
-The core framework does NOT come with any provider implementations, you must implement them yourself or use a library that extends the blueprint framework.
+The core framework does NOT come with any provider implementations, you must implement them yourself or use provider libraries that can be used to extend the blueprint framework.
 
 ## SpecTransformer (transformer.SpecTransformer)
 
