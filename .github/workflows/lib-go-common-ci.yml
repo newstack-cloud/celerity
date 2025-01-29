@@ -7,10 +7,10 @@ name: Go Common Library
 on:
   push:
     branches: [ main ]
-    paths: 'libs/common/**'
+    paths: ['libs/common/**']
   pull_request:
     branches: [ main ]
-    paths: 'libs/common/**'
+    paths: ['libs/common/**']
   workflow_dispatch:
     inputs: {}
 
