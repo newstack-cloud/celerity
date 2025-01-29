@@ -289,6 +289,7 @@ func (c *memoryResourcesContainer) SaveDrift(
 			resource, ok := instance.Resources[driftState.ResourceID]
 			if ok {
 				resource.Drifted = true
+				resource.LastDriftDetectedTimestamp = driftState.Timestamp
 			} else {
 				return state.ResourceNotFoundError(driftState.ResourceID)
 			}
@@ -859,6 +860,7 @@ func copyResource(resourceState *state.ResourceState) state.ResourceState {
 		LastDeployedTimestamp:      resourceState.LastDeployedTimestamp,
 		LastDeployAttemptTimestamp: resourceState.LastDeployAttemptTimestamp,
 		Drifted:                    resourceState.Drifted,
+		LastDriftDetectedTimestamp: resourceState.LastDriftDetectedTimestamp,
 		Durations:                  resourceState.Durations,
 	}
 }

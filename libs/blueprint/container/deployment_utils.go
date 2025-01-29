@@ -557,21 +557,21 @@ func determinePreciseLinkIntermediariesUpdatedStatus(rollingBack bool) core.Prec
 }
 
 func determineLinkUpdateIntermediariesRetryFailureDurations(
-	currentRetryInfo *retryContext,
+	currentRetryInfo *provider.RetryContext,
 ) *state.LinkCompletionDurations {
-	if currentRetryInfo.exceededMaxRetries {
-		totalDuration := core.Sum(currentRetryInfo.attemptDurations)
+	if currentRetryInfo.ExceededMaxRetries {
+		totalDuration := core.Sum(currentRetryInfo.AttemptDurations)
 		return &state.LinkCompletionDurations{
 			IntermediaryResources: &state.LinkComponentCompletionDurations{
 				TotalDuration:    &totalDuration,
-				AttemptDurations: currentRetryInfo.attemptDurations,
+				AttemptDurations: currentRetryInfo.AttemptDurations,
 			},
 		}
 	}
 
 	return &state.LinkCompletionDurations{
 		IntermediaryResources: &state.LinkComponentCompletionDurations{
-			AttemptDurations: currentRetryInfo.attemptDurations,
+			AttemptDurations: currentRetryInfo.AttemptDurations,
 		},
 	}
 }
@@ -1114,27 +1114,27 @@ func wasDeploymentSuccessful(
 }
 
 func determineResourceRetryFailureDurations(
-	currentRetryInfo *retryContext,
+	currentRetryInfo *provider.RetryContext,
 ) *state.ResourceCompletionDurations {
-	if currentRetryInfo.exceededMaxRetries {
-		totalDuration := core.Sum(currentRetryInfo.attemptDurations)
+	if currentRetryInfo.ExceededMaxRetries {
+		totalDuration := core.Sum(currentRetryInfo.AttemptDurations)
 		return &state.ResourceCompletionDurations{
 			TotalDuration:    &totalDuration,
-			AttemptDurations: currentRetryInfo.attemptDurations,
+			AttemptDurations: currentRetryInfo.AttemptDurations,
 		}
 	}
 
 	return &state.ResourceCompletionDurations{
-		AttemptDurations: currentRetryInfo.attemptDurations,
+		AttemptDurations: currentRetryInfo.AttemptDurations,
 	}
 }
 
 func determineResourceDeployConfigCompleteDurations(
-	currentRetryInfo *retryContext,
+	currentRetryInfo *provider.RetryContext,
 	currentAttemptDuration time.Duration,
 ) *state.ResourceCompletionDurations {
 	updatedAttemptDurations := append(
-		currentRetryInfo.attemptDurations,
+		currentRetryInfo.AttemptDurations,
 		core.FractionalMilliseconds(currentAttemptDuration),
 	)
 
@@ -1152,12 +1152,12 @@ func determineResourceDeployConfigCompleteDurations(
 // This is not used to calculate the final durations once a resource has been
 // confirmed to be stable.
 func determineResourceDeployFinishedDurations(
-	currentRetryInfo *retryContext,
+	currentRetryInfo *provider.RetryContext,
 	currentAttemptDuration time.Duration,
 	configCompleteDuration *time.Duration,
 ) *state.ResourceCompletionDurations {
 	updatedAttemptDurations := append(
-		currentRetryInfo.attemptDurations,
+		currentRetryInfo.AttemptDurations,
 		core.FractionalMilliseconds(currentAttemptDuration),
 	)
 
@@ -1190,31 +1190,31 @@ func addTotalToResourceCompletionDurations(
 }
 
 func determineLinkUpdateResourceARetryFailureDurations(
-	currentRetryInfo *retryContext,
+	currentRetryInfo *provider.RetryContext,
 ) *state.LinkCompletionDurations {
-	if currentRetryInfo.exceededMaxRetries {
-		totalDuration := core.Sum(currentRetryInfo.attemptDurations)
+	if currentRetryInfo.ExceededMaxRetries {
+		totalDuration := core.Sum(currentRetryInfo.AttemptDurations)
 		return &state.LinkCompletionDurations{
 			ResourceAUpdate: &state.LinkComponentCompletionDurations{
 				TotalDuration:    &totalDuration,
-				AttemptDurations: currentRetryInfo.attemptDurations,
+				AttemptDurations: currentRetryInfo.AttemptDurations,
 			},
 		}
 	}
 
 	return &state.LinkCompletionDurations{
 		ResourceAUpdate: &state.LinkComponentCompletionDurations{
-			AttemptDurations: currentRetryInfo.attemptDurations,
+			AttemptDurations: currentRetryInfo.AttemptDurations,
 		},
 	}
 }
 
 func determineLinkUpdateResourceAFinishedDurations(
-	currentRetryInfo *retryContext,
+	currentRetryInfo *provider.RetryContext,
 	currentAttemptDuration time.Duration,
 ) *state.LinkCompletionDurations {
 	updatedAttemptDurations := append(
-		currentRetryInfo.attemptDurations,
+		currentRetryInfo.AttemptDurations,
 		core.FractionalMilliseconds(currentAttemptDuration),
 	)
 	totalDuration := core.Sum(updatedAttemptDurations)
@@ -1227,32 +1227,32 @@ func determineLinkUpdateResourceAFinishedDurations(
 }
 
 func determineLinkUpdateResourceBRetryFailureDurations(
-	currentRetryInfo *retryContext,
+	currentRetryInfo *provider.RetryContext,
 ) *state.LinkCompletionDurations {
-	if currentRetryInfo.exceededMaxRetries {
-		totalDuration := core.Sum(currentRetryInfo.attemptDurations)
+	if currentRetryInfo.ExceededMaxRetries {
+		totalDuration := core.Sum(currentRetryInfo.AttemptDurations)
 		return &state.LinkCompletionDurations{
 			ResourceBUpdate: &state.LinkComponentCompletionDurations{
 				TotalDuration:    &totalDuration,
-				AttemptDurations: currentRetryInfo.attemptDurations,
+				AttemptDurations: currentRetryInfo.AttemptDurations,
 			},
 		}
 	}
 
 	return &state.LinkCompletionDurations{
 		ResourceBUpdate: &state.LinkComponentCompletionDurations{
-			AttemptDurations: currentRetryInfo.attemptDurations,
+			AttemptDurations: currentRetryInfo.AttemptDurations,
 		},
 	}
 }
 
 func determineLinkUpdateResourceBFinishedDurations(
-	currentRetryInfo *retryContext,
+	currentRetryInfo *provider.RetryContext,
 	currentAttemptDuration time.Duration,
 	accumDurationInfo *state.LinkCompletionDurations,
 ) *state.LinkCompletionDurations {
 	updatedAttemptDurations := append(
-		currentRetryInfo.attemptDurations,
+		currentRetryInfo.AttemptDurations,
 		core.FractionalMilliseconds(currentAttemptDuration),
 	)
 	totalDuration := core.Sum(updatedAttemptDurations)
@@ -1268,12 +1268,12 @@ func determineLinkUpdateResourceBFinishedDurations(
 }
 
 func determineLinkUpdateIntermediariesFinishedDurations(
-	currentRetryInfo *retryContext,
+	currentRetryInfo *provider.RetryContext,
 	currentAttemptDuration time.Duration,
 	accumDurationInfo *state.LinkCompletionDurations,
 ) *state.LinkCompletionDurations {
 	updatedAttemptDurations := append(
-		currentRetryInfo.attemptDurations,
+		currentRetryInfo.AttemptDurations,
 		core.FractionalMilliseconds(currentAttemptDuration),
 	)
 	stageTotalDuration := core.Sum(updatedAttemptDurations)
@@ -1310,20 +1310,6 @@ func getLinkComponentTotalDuration(
 	}
 
 	return *componentDurations.TotalDuration
-}
-
-func addRetryAttempt(retryInfoToUpdate *retryContext, currentAttemptDuration time.Duration) *retryContext {
-	nextAttempt := retryInfoToUpdate.attempt + 1
-	return &retryContext{
-		policy:  retryInfoToUpdate.policy,
-		attempt: nextAttempt,
-		attemptDurations: append(
-			retryInfoToUpdate.attemptDurations,
-			core.FractionalMilliseconds(currentAttemptDuration),
-		),
-		exceededMaxRetries: nextAttempt > retryInfoToUpdate.policy.MaxRetries,
-		attemptStartTime:   retryInfoToUpdate.attemptStartTime,
-	}
 }
 
 func createDestroyChangesFromChildState(
@@ -1909,16 +1895,6 @@ func getRetryPolicy(
 	}
 
 	return retryPolicy, nil
-}
-
-func createRetryInfo(policy *provider.RetryPolicy) *retryContext {
-	return &retryContext{
-		policy: policy,
-		// Start at 0 for first attempt as retries are counted from 1.
-		attempt:            0,
-		attemptDurations:   []float64{},
-		exceededMaxRetries: false,
-	}
 }
 
 func createElementFromDeploymentNode(

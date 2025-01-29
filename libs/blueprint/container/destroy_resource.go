@@ -87,7 +87,7 @@ func (d *defaultResourceDestroyer) Destroy(
 		},
 		resourceImplementation,
 		deployCtx,
-		createRetryInfo(policy),
+		provider.CreateRetryContext(policy),
 	)
 	if err != nil {
 		deployCtx.Channels.ErrChan <- err
@@ -99,7 +99,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 	resourceInfo *deploymentElementInfo,
 	resourceImplementation provider.Resource,
 	deployCtx *DeployContext,
-	resourceRetryInfo *retryContext,
+	resourceRetryInfo *provider.RetryContext,
 ) error {
 	resourceRemovalStartTime := d.clock.Now()
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
@@ -110,12 +110,12 @@ func (d *defaultResourceDestroyer) destroyResource(
 		Status:          determineResourceDestroyingStatus(deployCtx.Rollback),
 		PreciseStatus:   determinePreciseResourceDestroyingStatus(deployCtx.Rollback),
 		UpdateTimestamp: d.clock.Now().Unix(),
-		Attempt:         resourceRetryInfo.attempt,
+		Attempt:         resourceRetryInfo.Attempt,
 	}
 
 	deployCtx.Logger.Info(
 		"calling resource plugin implementation to destroy resource",
-		core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+		core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 	)
 
 	resourceState := getResourceStateByName(
@@ -136,7 +136,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 		if provider.IsRetryableError(err) {
 			deployCtx.Logger.Debug(
 				"retryable error occurred during resource destruction",
-				core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+				core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
 			retryErr := err.(*provider.RetryableError)
@@ -144,7 +144,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 				ctx,
 				resourceInfo,
 				resourceImplementation,
-				retryContextWithStartTime(resourceRetryInfo, resourceRemovalStartTime),
+				provider.RetryContextWithStartTime(resourceRetryInfo, resourceRemovalStartTime),
 				[]string{retryErr.ChildError.Error()},
 				deployCtx,
 			)
@@ -153,13 +153,13 @@ func (d *defaultResourceDestroyer) destroyResource(
 		if provider.IsResourceDestroyError(err) {
 			deployCtx.Logger.Debug(
 				"terminal error occurred during resource destruction",
-				core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+				core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
 			resourceDestroyErr := err.(*provider.ResourceDestroyError)
 			return d.handleDestroyResourceTerminalFailure(
 				resourceInfo,
-				retryContextWithStartTime(resourceRetryInfo, resourceRemovalStartTime),
+				provider.RetryContextWithStartTime(resourceRetryInfo, resourceRemovalStartTime),
 				resourceDestroyErr.FailureReasons,
 				deployCtx,
 			)
@@ -168,7 +168,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 		deployCtx.Logger.Warn(
 			"an unknown error occurred during resource destruction, "+
 				"plugins should wrap all errors in the appropriate provider error",
-			core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+			core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 			core.ErrorLogField("error", err),
 		)
 		// For errors that are not wrapped in a provider error, the error is assumed to be fatal
@@ -186,7 +186,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 		Status:          determineResourceDestroyedStatus(deployCtx.Rollback),
 		PreciseStatus:   determinePreciseResourceDestroyedStatus(deployCtx.Rollback),
 		UpdateTimestamp: d.clock.Now().Unix(),
-		Attempt:         resourceRetryInfo.attempt,
+		Attempt:         resourceRetryInfo.Attempt,
 		Durations: determineResourceDeployFinishedDurations(
 			resourceRetryInfo,
 			d.clock.Since(resourceRemovalStartTime),
@@ -201,14 +201,14 @@ func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 	ctx context.Context,
 	resourceInfo *deploymentElementInfo,
 	resourceImplementation provider.Resource,
-	resourceRetryInfo *retryContext,
+	resourceRetryInfo *provider.RetryContext,
 	failureReasons []string,
 	deployCtx *DeployContext,
 ) error {
 	currentAttemptDuration := d.clock.Since(
-		resourceRetryInfo.attemptStartTime,
+		resourceRetryInfo.AttemptStartTime,
 	)
-	nextRetryInfo := addRetryAttempt(resourceRetryInfo, currentAttemptDuration)
+	nextRetryInfo := provider.RetryContextWithNextAttempt(resourceRetryInfo, currentAttemptDuration)
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
 		InstanceID:      resourceInfo.instanceID,
 		ResourceID:      resourceInfo.element.ID(),
@@ -217,8 +217,8 @@ func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 		Status:          determineResourceDestroyFailedStatus(deployCtx.Rollback),
 		PreciseStatus:   determinePreciseResourceDestroyFailedStatus(deployCtx.Rollback),
 		FailureReasons:  failureReasons,
-		Attempt:         resourceRetryInfo.attempt,
-		CanRetry:        !nextRetryInfo.exceededMaxRetries,
+		Attempt:         resourceRetryInfo.Attempt,
+		CanRetry:        !nextRetryInfo.ExceededMaxRetries,
 		UpdateTimestamp: d.clock.Now().Unix(),
 		// Attempt durations will be accumulated and sent in the status updates
 		// for each subsequent retry.
@@ -228,8 +228,8 @@ func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 		),
 	}
 
-	if !nextRetryInfo.exceededMaxRetries {
-		waitTimeMS := provider.CalculateRetryWaitTimeMS(nextRetryInfo.policy, nextRetryInfo.attempt)
+	if !nextRetryInfo.ExceededMaxRetries {
+		waitTimeMS := provider.CalculateRetryWaitTimeMS(nextRetryInfo.Policy, nextRetryInfo.Attempt)
 		time.Sleep(time.Duration(waitTimeMS) * time.Millisecond)
 		return d.destroyResource(
 			ctx,
@@ -242,8 +242,8 @@ func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 
 	deployCtx.Logger.Debug(
 		"resource destruction failed after reaching the maximum number of retries",
-		core.IntegerLogField("attempt", int64(nextRetryInfo.attempt)),
-		core.IntegerLogField("maxRetries", int64(nextRetryInfo.policy.MaxRetries)),
+		core.IntegerLogField("attempt", int64(nextRetryInfo.Attempt)),
+		core.IntegerLogField("maxRetries", int64(nextRetryInfo.Policy.MaxRetries)),
 	)
 
 	return nil
@@ -251,12 +251,12 @@ func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 
 func (d *defaultResourceDestroyer) handleDestroyResourceTerminalFailure(
 	resourceInfo *deploymentElementInfo,
-	resourceRetryInfo *retryContext,
+	resourceRetryInfo *provider.RetryContext,
 	failureReasons []string,
 	deployCtx *DeployContext,
 ) error {
 	currentAttemptDuration := d.clock.Since(
-		resourceRetryInfo.attemptStartTime,
+		resourceRetryInfo.AttemptStartTime,
 	)
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
 		InstanceID:      resourceInfo.instanceID,
@@ -266,7 +266,7 @@ func (d *defaultResourceDestroyer) handleDestroyResourceTerminalFailure(
 		Status:          determineResourceDestroyFailedStatus(deployCtx.Rollback),
 		PreciseStatus:   determinePreciseResourceDestroyFailedStatus(deployCtx.Rollback),
 		FailureReasons:  failureReasons,
-		Attempt:         resourceRetryInfo.attempt,
+		Attempt:         resourceRetryInfo.Attempt,
 		CanRetry:        false,
 		UpdateTimestamp: d.clock.Now().Unix(),
 		Durations: determineResourceDeployFinishedDurations(

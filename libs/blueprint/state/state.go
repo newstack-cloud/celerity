@@ -359,12 +359,6 @@ type InstanceState struct {
 	ChildBlueprints map[string]*InstanceState    `json:"childBlueprints"`
 	// ChildDependencies holds a mapping of child blueprint names to their dependencies.
 	ChildDependencies map[string]*DependencyInfo `json:"childDependencies,omitempty"`
-	// Drifted indicates whether or not the blueprint instance has drifted
-	// due to changes to resources in the upstream provider.
-	Drifted bool `json:"drifted,omitempty"`
-	// LastDriftDetectedTimestamp holds the unix timestamp when drift in any of the resources
-	// in the blueprint instance was last detected.
-	LastDriftDetectedTimestamp *int `json:"lastDriftDetectedTimestamp,omitempty"`
 	// Durations holds duration information for the latest deployment of the blueprint instance.
 	Durations *InstanceCompletionDuration `json:"durations,omitempty"`
 }

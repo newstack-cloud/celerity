@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand/v2"
 	"strings"
+	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 )
@@ -45,6 +46,49 @@ func CalculateRetryWaitTimeMS(
 	}
 
 	return int(math.Trunc(computedWaitTimeMS))
+}
+
+// CreateRetryContext creates a new retry context
+// with state for the initial attempt with the provided retry policy.
+func CreateRetryContext(policy *RetryPolicy) *RetryContext {
+	return &RetryContext{
+		Policy: policy,
+		// Start at 0 for first attempt as retries are counted from 1.
+		Attempt:            0,
+		AttemptDurations:   []float64{},
+		ExceededMaxRetries: false,
+	}
+}
+
+// RetryContextWithStartTime creates a new retry context
+// with the provided start time for the current attempt.
+func RetryContextWithStartTime(retryCtx *RetryContext, startTime time.Time) *RetryContext {
+	return &RetryContext{
+		Attempt:            retryCtx.Attempt,
+		ExceededMaxRetries: retryCtx.ExceededMaxRetries,
+		Policy:             retryCtx.Policy,
+		AttemptDurations:   retryCtx.AttemptDurations,
+		AttemptStartTime:   startTime,
+	}
+}
+
+// RetryContextWithNextAttempt creates a new retry context
+// with state for the next retry attempt based on the provided retry context.
+func RetryContextWithNextAttempt(
+	retryCtx *RetryContext,
+	currentAttemptDuration time.Duration,
+) *RetryContext {
+	nextAttempt := retryCtx.Attempt + 1
+	return &RetryContext{
+		Policy:  retryCtx.Policy,
+		Attempt: nextAttempt,
+		AttemptDurations: append(
+			retryCtx.AttemptDurations,
+			core.FractionalMilliseconds(currentAttemptDuration),
+		),
+		ExceededMaxRetries: nextAttempt > retryCtx.Policy.MaxRetries,
+		AttemptStartTime:   retryCtx.AttemptStartTime,
+	}
 }
 
 type providerCtxFromParams struct {

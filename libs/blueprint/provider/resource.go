@@ -335,7 +335,7 @@ type ResourceGetExternalStateInput struct {
 // ResourceGetExternalStateOutput provides the output data from
 // retrieving the external state of a resource.
 type ResourceGetExternalStateOutput struct {
-	State *state.ResourceState
+	ResourceSpecState *core.MappingNode
 }
 
 // ResourceDestroyInput provides the input data needed to delete

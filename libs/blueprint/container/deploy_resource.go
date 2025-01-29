@@ -178,7 +178,7 @@ func (d *defaultResourceDeployer) Deploy(
 		},
 		resolvedResource.Type.Value,
 		deployCtx,
-		createRetryInfo(policy),
+		provider.CreateRetryContext(policy),
 	)
 	if err != nil {
 		deployCtx.Channels.ErrChan <- err
@@ -190,7 +190,7 @@ func (d *defaultResourceDeployer) deployResource(
 	resourceInfo *resourceDeployInfo,
 	resourceType string,
 	deployCtx *DeployContext,
-	resourceRetryInfo *retryContext,
+	resourceRetryInfo *provider.RetryContext,
 ) error {
 	resourceDeploymentStartTime := d.clock.Now()
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
@@ -207,12 +207,12 @@ func (d *defaultResourceDeployer) deployResource(
 			resourceInfo.isNew,
 		),
 		UpdateTimestamp: d.clock.Now().Unix(),
-		Attempt:         resourceRetryInfo.attempt,
+		Attempt:         resourceRetryInfo.Attempt,
 	}
 
 	deployCtx.Logger.Info(
 		"calling resource plugin implementation to deploy resource",
-		core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+		core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 	)
 
 	providerNamespace := provider.ExtractProviderFromItemType(resourceType)
@@ -232,14 +232,14 @@ func (d *defaultResourceDeployer) deployResource(
 		if provider.IsRetryableError(err) {
 			deployCtx.Logger.Debug(
 				"retryable error occurred during resource deployment",
-				core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+				core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
 			retryErr := err.(*provider.RetryableError)
 			return d.handleDeployResourceRetry(
 				ctx,
 				resourceInfo,
-				retryContextWithStartTime(
+				provider.RetryContextWithStartTime(
 					resourceRetryInfo,
 					resourceDeploymentStartTime,
 				),
@@ -251,13 +251,13 @@ func (d *defaultResourceDeployer) deployResource(
 		if provider.IsResourceDeployError(err) {
 			deployCtx.Logger.Debug(
 				"terminal error occurred during resource deployment",
-				core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+				core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
 			resourceDeployError := err.(*provider.ResourceDeployError)
 			return d.handleDeployResourceTerminalFailure(
 				resourceInfo,
-				retryContextWithStartTime(
+				provider.RetryContextWithStartTime(
 					resourceRetryInfo,
 					resourceDeploymentStartTime,
 				),
@@ -269,7 +269,7 @@ func (d *defaultResourceDeployer) deployResource(
 		deployCtx.Logger.Warn(
 			"an unknown error occurred during resource deployment, "+
 				"plugins should wrap all errors in the appropriate provider error",
-			core.IntegerLogField("attempt", int64(resourceRetryInfo.attempt)),
+			core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 			core.ErrorLogField("error", err),
 		)
 		// For errors that are not wrapped in a provider error, the error is assumed
@@ -321,7 +321,7 @@ func (d *defaultResourceDeployer) deployResource(
 			resourceInfo.isNew,
 		),
 		UpdateTimestamp: d.clock.Now().Unix(),
-		Attempt:         resourceRetryInfo.attempt,
+		Attempt:         resourceRetryInfo.Attempt,
 		Durations: determineResourceDeployConfigCompleteDurations(
 			resourceRetryInfo,
 			d.clock.Since(resourceDeploymentStartTime),
@@ -346,7 +346,7 @@ func (d *defaultResourceDeployer) deployResource(
 func (d *defaultResourceDeployer) pollForResourceStability(
 	ctx context.Context,
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryContext,
+	resourceRetryInfo *provider.RetryContext,
 	deployCtx *DeployContext,
 ) {
 	pollingStabilisationStartTime := d.clock.Now()
@@ -413,7 +413,7 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 
 func (d *defaultResourceDeployer) createResourceStabiliseTimeoutMessage(
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryContext,
+	resourceRetryInfo *provider.RetryContext,
 	pollingStabilisationStartTime time.Time,
 	deployCtx *DeployContext,
 ) ResourceDeployUpdateMessage {
@@ -435,7 +435,7 @@ func (d *defaultResourceDeployer) createResourceStabiliseTimeoutMessage(
 			resourceInfo.isNew,
 		),
 		FailureReasons:  []string{resourceStabilisingTimeoutFailureMessage},
-		Attempt:         resourceRetryInfo.attempt,
+		Attempt:         resourceRetryInfo.Attempt,
 		CanRetry:        false,
 		UpdateTimestamp: d.clock.Now().Unix(),
 		Durations: addTotalToResourceCompletionDurations(
@@ -447,7 +447,7 @@ func (d *defaultResourceDeployer) createResourceStabiliseTimeoutMessage(
 
 func (d *defaultResourceDeployer) createResourceStabilisedMessage(
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryContext,
+	resourceRetryInfo *provider.RetryContext,
 	pollingStabilisationStartTime time.Time,
 	deployCtx *DeployContext,
 ) ResourceDeployUpdateMessage {
@@ -468,7 +468,7 @@ func (d *defaultResourceDeployer) createResourceStabilisedMessage(
 			deployCtx.Rollback,
 			resourceInfo.isNew,
 		),
-		Attempt:         resourceRetryInfo.attempt,
+		Attempt:         resourceRetryInfo.Attempt,
 		CanRetry:        false,
 		UpdateTimestamp: d.clock.Now().Unix(),
 		Durations: addTotalToResourceCompletionDurations(
@@ -481,14 +481,14 @@ func (d *defaultResourceDeployer) createResourceStabilisedMessage(
 func (d *defaultResourceDeployer) handleDeployResourceRetry(
 	ctx context.Context,
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryContext,
+	resourceRetryInfo *provider.RetryContext,
 	failureReasons []string,
 	deployCtx *DeployContext,
 ) error {
 	currentAttemptDuration := d.clock.Since(
-		resourceRetryInfo.attemptStartTime,
+		resourceRetryInfo.AttemptStartTime,
 	)
-	nextRetryInfo := addRetryAttempt(resourceRetryInfo, currentAttemptDuration)
+	nextRetryInfo := provider.RetryContextWithNextAttempt(resourceRetryInfo, currentAttemptDuration)
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
 		InstanceID:   resourceInfo.instanceID,
 		ResourceID:   resourceInfo.resourceID,
@@ -502,9 +502,9 @@ func (d *defaultResourceDeployer) handleDeployResourceRetry(
 			deployCtx.Rollback,
 			resourceInfo.isNew,
 		),
-		Attempt:         resourceRetryInfo.attempt,
+		Attempt:         resourceRetryInfo.Attempt,
 		FailureReasons:  failureReasons,
-		CanRetry:        !nextRetryInfo.exceededMaxRetries,
+		CanRetry:        !nextRetryInfo.ExceededMaxRetries,
 		UpdateTimestamp: d.clock.Now().Unix(),
 		// Attempt durations will be accumulated and sent in the status updates
 		// for each subsequent retry.
@@ -514,8 +514,8 @@ func (d *defaultResourceDeployer) handleDeployResourceRetry(
 		),
 	}
 
-	if !nextRetryInfo.exceededMaxRetries {
-		waitTimeMs := provider.CalculateRetryWaitTimeMS(nextRetryInfo.policy, nextRetryInfo.attempt)
+	if !nextRetryInfo.ExceededMaxRetries {
+		waitTimeMs := provider.CalculateRetryWaitTimeMS(nextRetryInfo.Policy, nextRetryInfo.Attempt)
 		time.Sleep(time.Duration(waitTimeMs) * time.Millisecond)
 		resolvedResource := getResolvedResourceFromChanges(resourceInfo.changes)
 		resourceType := changes.GetResourceTypeFromResolved(resolvedResource)
@@ -530,8 +530,8 @@ func (d *defaultResourceDeployer) handleDeployResourceRetry(
 
 	deployCtx.Logger.Debug(
 		"resource deployment failed after reaching the maximum number of retries",
-		core.IntegerLogField("attempt", int64(nextRetryInfo.attempt)),
-		core.IntegerLogField("maxRetries", int64(nextRetryInfo.policy.MaxRetries)),
+		core.IntegerLogField("attempt", int64(nextRetryInfo.Attempt)),
+		core.IntegerLogField("maxRetries", int64(nextRetryInfo.Policy.MaxRetries)),
 	)
 
 	return nil
@@ -539,11 +539,11 @@ func (d *defaultResourceDeployer) handleDeployResourceRetry(
 
 func (d *defaultResourceDeployer) handleDeployResourceTerminalFailure(
 	resourceInfo *resourceDeployInfo,
-	resourceRetryInfo *retryContext,
+	resourceRetryInfo *provider.RetryContext,
 	failureReasons []string,
 	deployCtx *DeployContext,
 ) error {
-	currentAttemptDuration := d.clock.Since(resourceRetryInfo.attemptStartTime)
+	currentAttemptDuration := d.clock.Since(resourceRetryInfo.AttemptStartTime)
 	deployCtx.Channels.ResourceUpdateChan <- ResourceDeployUpdateMessage{
 		InstanceID:   resourceInfo.instanceID,
 		ResourceID:   resourceInfo.resourceID,
@@ -558,7 +558,7 @@ func (d *defaultResourceDeployer) handleDeployResourceTerminalFailure(
 			resourceInfo.isNew,
 		),
 		FailureReasons:  failureReasons,
-		Attempt:         resourceRetryInfo.attempt,
+		Attempt:         resourceRetryInfo.Attempt,
 		CanRetry:        false,
 		UpdateTimestamp: d.clock.Now().Unix(),
 		Durations: determineResourceDeployFinishedDurations(

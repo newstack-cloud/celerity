@@ -1939,24 +1939,6 @@ type deployUpdateMessageWrapper struct {
 	childUpdateMessage    *ChildDeployUpdateMessage
 }
 
-type retryContext struct {
-	attempt            int
-	exceededMaxRetries bool
-	policy             *provider.RetryPolicy
-	attemptDurations   []float64
-	attemptStartTime   time.Time
-}
-
-func retryContextWithStartTime(retryCtx *retryContext, startTime time.Time) *retryContext {
-	return &retryContext{
-		attempt:            retryCtx.attempt,
-		exceededMaxRetries: retryCtx.exceededMaxRetries,
-		policy:             retryCtx.policy,
-		attemptDurations:   retryCtx.attemptDurations,
-		attemptStartTime:   startTime,
-	}
-}
-
 type linkUpdateResourceInfo struct {
 	failureReasons []string
 	input          *provider.LinkUpdateResourceInput

@@ -13,7 +13,11 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
-type DynamoDBTableResource struct{}
+type DynamoDBTableResource struct {
+	// A stub for the resource state value to return when requesting the state
+	// of the resource in the external provider.
+	ExternalState *core.MappingNode
+}
 
 func (r *DynamoDBTableResource) CanLinkTo(
 	ctx context.Context,
@@ -122,7 +126,9 @@ func (r *DynamoDBTableResource) GetExternalState(
 	ctx context.Context,
 	input *provider.ResourceGetExternalStateInput,
 ) (*provider.ResourceGetExternalStateOutput, error) {
-	return &provider.ResourceGetExternalStateOutput{}, nil
+	return &provider.ResourceGetExternalStateOutput{
+		ResourceSpecState: r.ExternalState,
+	}, nil
 }
 
 func (r *DynamoDBTableResource) Destroy(
@@ -253,6 +259,11 @@ type LambdaFunctionResource struct {
 	// the blueprint container will retry deploying the resource until the
 	// deploy attempt count exceeds the max deploy attempts.
 	CurrentDeployAttemps map[string]int
+	// Tracks the number of get external state attempts for each unique resource ID.
+	// This is used to emulate transient failures when getting the external state
+	// of resources, the drift checker will retry getting the external state
+	// until the get external state attempt count exceeds the max get external state attempts.
+	CurrentGetExternalStateAttemps map[string]int
 	// Resource IDs for which the lambda function resource implementation
 	// should fail with a terminal error.
 	FailResourceIDs []string
@@ -266,7 +277,10 @@ type LambdaFunctionResource struct {
 	CurrentStabiliseCalls map[string]int
 	// A list of instance IDs for which retry failures should be skipped.
 	SkipRetryFailuresForInstances []string
-	mu                            sync.Mutex
+	// A stub for the resource state value to return when requesting the state
+	// of the resource in the external provider.
+	ExternalState *core.MappingNode
+	mu            sync.Mutex
 }
 
 func (r *LambdaFunctionResource) CanLinkTo(
@@ -435,7 +449,23 @@ func (r *LambdaFunctionResource) GetExternalState(
 	ctx context.Context,
 	input *provider.ResourceGetExternalStateInput,
 ) (*provider.ResourceGetExternalStateOutput, error) {
-	return &provider.ResourceGetExternalStateOutput{}, nil
+	attemptCount, exists := r.CurrentGetExternalStateAttemps[input.ResourceID]
+	if !exists {
+		attemptCount = 0
+	}
+	attemptCount += 1
+	r.CurrentGetExternalStateAttemps[input.ResourceID] = attemptCount
+
+	// Provider retry policy allows for a maximum of 3 attempts before failing.
+	if attemptCount < 3 {
+		return nil, &provider.RetryableError{
+			ChildError: errors.New("get external state failed due to transient error"),
+		}
+	}
+
+	return &provider.ResourceGetExternalStateOutput{
+		ResourceSpecState: r.ExternalState,
+	}, nil
 }
 
 func (r *LambdaFunctionResource) Destroy(
