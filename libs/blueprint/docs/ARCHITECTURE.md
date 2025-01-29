@@ -74,13 +74,13 @@ type Loader interface {
 The loader deals with loading a spec from a file, a pre-loaded schema or a string, unmarshalling the JSON or YAML
 and validating each resource in the spec with the configured resource providers.
 
-Pre-loaded schemas are useful for caching expanded blueprint schemas to make loading blueprints that have been previously loaded without modifications more efficient. You can make use of the [BlueprintCache](#blueprintcache-cacheblueprintcache) to store and retrieve expanded blueprint schemas either side of loading a blueprint.
+Pre-loaded schemas are useful for caching expanded blueprint schemas to make loading blueprints that have been previously loaded without modifications more efficient. You can implement the [BlueprintCache](#blueprintcache-cacheblueprintcache) interface to store and retrieve expanded blueprint schemas either side of loading a blueprint.
 
 This contains methods for loading a blueprint container that can be used to deploy
 and stage changes for instances or simply validating a spec without loading a blueprint container for it.
 
 A loader needs to be instantiated with a map of namespace -> resource providers and a state container.
-An example of a namespace would be `aws/`.
+An example of a namespace would be `aws`.
 
 The core framework comes with a default container loader that should meet all your needs.
 
@@ -91,28 +91,34 @@ type BlueprintContainer interface {
 
     StageChanges(
         ctx context.Context,
-        instanceID string,
+        input *StageChangesInput,
+        channels *ChangeStagingChannels,
         paramOverrides core.BlueprintParams,
-    ) (*BlueprintChanges, error)
+    ) error
 
     Deploy(
         ctx context.Context,
-        instanceID string,
-        changes *BlueprintChanges,
+        input *DeployInput,
+        channels *DeployChannels,
         paramOverrides core.BlueprintParams,
-    ) (string, error)
+    ) error
 
     Destroy(
         ctx context.Context,
-        instanceID string,
+        input *DeployInput,
+        channels *DeployChannels,
         paramOverrides core.BlueprintParams,
-    ) error
+    )
 
     SpecLinkInfo() links.SpecLinkInfo
 
     BlueprintSpec() speccore.BlueprintSpec
 
     Diagnostics() []*core.Diagnostic
+
+    RefChainCollector() refgraph.RefChainCollector
+
+    ResourceTemplates() map[string]string
 }
 ```
 
@@ -167,127 +173,200 @@ The core framework comes with a default blueprint spec that should meet all your
 ```go
 type Container interface {
 
-    GetInstance(
+    Instances() InstancesContainer
+
+    Resources() ResourcesContainer
+
+    Links() LinksContainer
+
+    Children() ChildrenContainer
+
+    Metadata() MetadataContainer
+
+    Exports() ExportsContainer
+}
+
+type InstancesContainer interface {
+
+    Get(ctx context.Context, instanceID string) (InstanceState, error)
+
+    Save(ctx context.Context, instanceState InstanceState) error
+
+    UpdateStatus(
         ctx context.Context,
         instanceID string,
-    ) (InstanceState, error)
-
-    SaveInstance(
-        ctx context.Context,
-        instanceState InstanceState,
+        statusInfo InstanceStatusInfo,
     ) error
 
-    RemoveInstance(
-        ctx context.Context,
-        instanceID string,
-    ) (InstanceState, error)
+    Remove(ctx context.Context, instanceID string) (InstanceState, error)
+}
 
-    GetResource(
+type ResourcesContainer interface {
+
+    Get(
         ctx context.Context,
         instanceID string,
         resourceID string,
     ) (ResourceState, error)
 
-    SaveResource(
+    GetByName(
         ctx context.Context,
         instanceID string,
-        index int,
+        resourceName string,
+    ) (ResourceState, error)
+
+    Save(
+        ctx context.Context,
+        instanceID string,
         resourceState ResourceState,
     ) error
 
-    RemoveResource(
+    UpdateStatus(
+        ctx context.Context,
+        instanceID string,
+        resourceID string,
+        statusInfo ResourceStatusInfo,
+    ) error
+
+    Remove(
         ctx context.Context,
         instanceID string,
         resourceID string,
     ) (ResourceState, error)
 
-    GetLink(
+    GetDrift(
+        ctx context.Context,
+        instanceID string,
+        resourceID string,
+    ) (ResourceDriftState, error)
+
+    SaveDrift(
+        ctx context.Context,
+        instanceID string,
+        resourceID string,
+        driftState ResourceDriftState,
+    ) error
+
+    RemoveDrift(
+        ctx context.Context,
+        instanceID string,
+        resourceID string,
+    ) (ResourceDriftState, error)
+}
+
+type LinksContainer interface {
+
+    Get(
         ctx context.Context,
         instanceID string,
         linkID string,
     ) (LinkState, error)
 
-    SaveLink(
+    GetByName(
+        ctx context.Context,
+        instanceID string,
+        linkName string,
+    ) (LinkState, error)
+
+    Save(
         ctx context.Context,
         instanceID string,
         linkState LinkState,
     ) error
 
-    RemoveLink(
+    UpdateStatus(
+        ctx context.Context,
+        instanceID string,
+        linkID string,
+        statusInfo LinkStatusInfo,
+    ) error
+
+    Remove(
         ctx context.Context,
         instanceID string,
         linkID string,
     ) (LinkState, error)
+}
 
-    GetMetadata(
-        ctx context.Context,
-        instanceID string,
-    ) (map[string]*core.MappingNode, error)
+type ChildrenContainer interface {
 
-    SaveMetadata(
-        ctx context.Context,
-        instanceID string,
-        metadata map[string]*core.MappingNode,
-    ) error
-
-    RemoveMetadata(
-        ctx context.Context,
-        instanceID string,
-    ) (map[string]*core.MappingNode, error)
-
-    GetExports(
-        ctx context.Context,
-        instanceID string,
-    ) (map[string]*core.MappingNode, error)
-
-    GetExport(
-        ctx context.Context,
-        instanceID string,
-        exportName string,
-    ) (*core.MappingNode, error)
-
-    SaveExports(
-        ctx context.Context,
-        instanceID string,
-        exports map[string]*core.MappingNode,
-    ) error
-
-    SaveExport(
-        ctx context.Context,
-        instanceID string,
-        exportName string,
-        export *core.MappingNode,
-    ) error
-
-    RemoveExports(
-        ctx context.Context,
-        instanceID string,
-    ) (map[string]*core.MappingNode, error)
-
-    RemoveExport(
-        ctx context.Context,
-        instanceID string,
-        exportName string,
-    ) (*core.MappingNode, error)
-
-    GetChild(
+    Get(
         ctx context.Context,
         instanceID string,
         childName string,
     ) (InstanceState, error)
 
-    SaveChild(
+    Save(
         ctx context.Context,
         instanceID string,
         childName string,
         childState InstanceState,
     ) error
 
-    RemoveChild(
+    Attach(
+        ctx context.Context,
+        parentInstanceID string,
+        childInstanceID string,
+        childName string,
+    ) error
+
+    SaveDependencies(
+        ctx context.Context,
+        instanceID string,
+        childName string,
+        dependencies *DependencyInfo,
+    ) error
+
+    Remove(
         ctx context.Context,
         instanceID string,
         childName string,
     ) (InstanceState, error)
+}
+
+type MetadataContainer interface {
+
+    Get(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
+
+    Save(
+        ctx context.Context,
+        instanceID string,
+        metadata map[string]*core.MappingNode,
+    ) error
+
+    Remove(ctx context.Context, instanceID string) (map[string]*core.MappingNode, error)
+}
+
+type ExportsContainer interface {
+
+    GetAll(ctx context.Context, instanceID string) (map[string]*ExportState, error)
+
+    Get(
+        ctx context.Context,
+        instanceId string,
+        exportName string,
+    ) (ExportState, error)
+
+    SaveAll(
+        ctx context.Context,
+        instanceID string,
+        exports map[string]*ExportState,
+    ) error
+
+    Save(
+        ctx context.Context,
+        instanceID string,
+        exportName string,
+        export ExportState,
+    ) error
+
+    RemoveAll(ctx context.Context, instanceID string) (map[string]*ExportState, error)
+
+    Remove(
+        ctx context.Context,
+        instanceID string,
+        exportName string,
+    ) (ExportState, error)
 }
 ```
 
@@ -300,7 +379,7 @@ The core blueprint framework does NOT come with any state container implementati
 ```go
 type Provider interface {
 
-	Namespace(ctx context.Context) (string, error)
+    Namespace(ctx context.Context) (string, error)
 
     Resource(ctx context.Context, resourceType string) (Resource, error)
 
@@ -310,15 +389,17 @@ type Provider interface {
 
     CustomVariableType(ctx context.Context, customVariableType string) (CustomVariableType, error)
 
-	Function(ctx context.Context, functionName string) (Function, error)
+    Function(ctx context.Context, functionName string) (Function, error)
 
-	ListFunctions(ctx context.Context) ([]string, error)
+    ListFunctions(ctx context.Context) ([]string, error)
 
-	ListResourceTypes(ctx context.Context) ([]string, error)
+    ListResourceTypes(ctx context.Context) ([]string, error)
 
-	ListDataSourceTypes(ctx context.Context) ([]string, error)
+    ListDataSourceTypes(ctx context.Context) ([]string, error)
 
     ListCustomVariableTypes(ctx context.Context) ([]string, error)
+
+    RetryPolicy(ctx context.Context) (*RetryPolicy, error)
 }
 ```
 
@@ -345,22 +426,15 @@ The core framework does NOT come with any provider implementations, you must imp
 
 ```go
 type SpecTransformer interface {
+
     Transform(
         ctx context.Context,
         input *SpecTransformerTransformInput,
     ) (*SpecTransformerTransformOutput, error)
 
-	ListAbstractResourceTypes(ctx context.Context) ([]string, error)
-
     AbstractResource(ctx context.Context, resourceType string) (AbstractResource, error)
-}
 
-type SpecTransformerTransformInput struct {
-	InputBlueprint *schema.Blueprint
-}
-
-type SpecTransformerTransformOutput struct {
-	TransformedBlueprint *schema.Blueprint
+    ListAbstractResourceTypes(ctx context.Context) ([]string, error)
 }
 ```
 
@@ -374,38 +448,59 @@ The interface for a transformer includes `context.Context` and returns an `error
 
 ```go
 type AbstractResource interface {
+
     CustomValidate(
         ctx context.Context,
         input *AbstractResourceValidateInput,
     ) (*AbstractResourceValidateOutput, error)
 
-	GetSpecDefinition(
-		ctx context.Context,
-		input *AbstractResourceGetSpecDefinitionInput,
-	) (*AbstractResourceGetSpecDefinitionOutput, error)
+    GetSpecDefinition(
+        ctx context.Context,
+        input *AbstractResourceGetSpecDefinitionInput,
+    ) (*AbstractResourceGetSpecDefinitionOutput, error)
 
-	GetStateDefinition(
-		ctx context.Context,
-		input *AbstractResourceGetStateDefinitionInput,
-	) (*AbstractResourceGetStateDefinitionOutput, error)
+    CanLinkTo(ctx context.Context, input *AbstractResourceCanLinkToInput) (*AbstractResourceCanLinkToOutput, error)
 
-	CanLinkTo(ctx context.Context, input *AbstractResourceCanLinkToInput) (*AbstractResourceCanLinkToOutput, error)
+    IsCommonTerminal(
+        ctx context.Context,
+        input *AbstractResourceIsCommonTerminalInput,
+    ) (*AbstractResourceIsCommonTerminalOutput, error)
 
-	IsCommonTerminal(
-		ctx context.Context,
-		input *AbstractResourceIsCommonTerminalInput,
-	) (*AbstractResourceIsCommonTerminalOutput, error)
+    GetType(ctx context.Context, input *AbstractResourceGetTypeInput) (*AbstractResourceGetTypeOutput, error)
 
-	GetType(ctx context.Context, input *AbstractResourceGetTypeInput) (*AbstractResourceGetTypeOutput, error)
-
-	GetTypeDescription(
-		ctx context.Context,
-		input *AbstractResourceGetTypeDescriptionInput,
-	) (*AbstractResourceGetTypeDescriptionOutput, error)
+    GetTypeDescription(
+        ctx context.Context,
+        input *AbstractResourceGetTypeDescriptionInput,
+    ) (*AbstractResourceGetTypeDescriptionOutput, error)
 }
 ```
 
 An abstract resource provides a way to validate a resource in an abstract (usually more concise) form before it is expanded into a more detailed form in the spec transformer implementation that the abstract resource belongs to.
+
+## DriftChecker (drift.Checker)
+
+```go
+type Checker interface {
+
+    CheckDrift(
+        ctx context.Context,
+        instanceID string,
+        params core.BlueprintParams,
+    ) (map[string]*state.ResourceDriftState, error)
+
+    CheckResourceDrift(
+        ctx context.Context,
+        instanceID string,
+        resourceID string,
+        params core.BlueprintParams,
+    ) (*state.ResourceDriftState, error)
+}
+```
+
+A drift checker checks for drift between the state of a resource in the external system and the state of the resource in the blueprint state container.
+Drift can be checked for a single resources or all resources in a blueprint instance.
+As a part of the check, the drift checker will in most cases update the state of the resources being checked, storing the drift including a set of differences along with metadata attached to the resource about whether it is in sync or not.
+A default drift checker is provided by the core blueprint framework that should meet all your needs.
 
 ## BlueprintCache (cache.BlueprintCache)
 
@@ -427,7 +522,7 @@ type BlueprintCache interface {
         ctx context.Context,
         key string,
         blueprint *schema.Blueprint,
-        expires time.Duration,
+        expiresAfter time.Duration,
     ) error
 
     Delete(
