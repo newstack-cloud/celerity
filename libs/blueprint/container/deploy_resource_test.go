@@ -188,7 +188,6 @@ func (s *ResourceDeployerTestSuite) runDeployTest(
 
 	resourceState, err := s.stateContainer.Resources().Get(
 		ctx,
-		fixture.instanceID,
 		actualMessages.resourceDeployUpdateMessages[0].ResourceID,
 	)
 	s.Assert().NoError(err)

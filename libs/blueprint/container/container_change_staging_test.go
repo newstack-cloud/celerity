@@ -473,11 +473,19 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprintCurrentState(
 		return err
 	}
 
-	return stateContainer.Children().Save(
+	err = stateContainer.Instances().Save(
+		context.Background(),
+		*blueprintChildCurrentState,
+	)
+	if err != nil {
+		return err
+	}
+
+	return stateContainer.Children().Attach(
 		context.Background(),
 		instanceID,
+		blueprintChildCurrentState.InstanceID,
 		"coreInfra",
-		*blueprintChildCurrentState,
 	)
 }
 
@@ -505,10 +513,8 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint3CyclicCurrentState(
 		return err
 	}
 
-	err = stateContainer.Children().Save(
+	err = stateContainer.Instances().Save(
 		context.Background(),
-		blueprint3InstanceID,
-		"coreInfra",
 		*blueprint3ChildCurrentState,
 	)
 	if err != nil {
@@ -516,11 +522,21 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint3CyclicCurrentState(
 	}
 
 	// Creates cycle between blueprint1 and blueprint3
-	return stateContainer.Children().Save(
+	err = stateContainer.Children().Attach(
+		context.Background(),
+		blueprint3InstanceID,
+		blueprint3ChildCurrentState.InstanceID,
+		"coreInfra",
+	)
+	if err != nil {
+		return err
+	}
+
+	return stateContainer.Children().Attach(
 		context.Background(),
 		blueprint3ChildInstanceID,
+		blueprint3CurrentState.InstanceID,
 		"ordersApi",
-		*blueprint3CurrentState,
 	)
 }
 
@@ -539,11 +555,19 @@ func (s *ContainerChangeStagingTestSuite) populateBlueprint7CurrentStateWithRemo
 		return err
 	}
 
-	return stateContainer.Children().Save(
+	err = stateContainer.Instances().Save(
+		context.Background(),
+		*blueprint7ChildToBeRemoved,
+	)
+	if err != nil {
+		return err
+	}
+
+	return stateContainer.Children().Attach(
 		context.Background(),
 		blueprint7InstanceID,
+		blueprint7ChildToBeRemoved.InstanceID,
 		"networking",
-		*blueprint7ChildToBeRemoved,
 	)
 }
 

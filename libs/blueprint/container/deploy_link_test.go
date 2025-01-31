@@ -218,7 +218,6 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 
 	linkState, err := s.stateContainer.Links().Get(
 		ctx,
-		fixture.instanceID,
 		actualMessages.linkDeployUpdateMessages[0].LinkID,
 	)
 	s.Assert().NoError(err)

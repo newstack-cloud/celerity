@@ -60,60 +60,56 @@ type InstancesContainer interface {
 // ResourcesContainer provides an interface for functionality related
 // to persisting and retrieving resource state in a blueprint instance.
 type ResourcesContainer interface {
-	// Get deals with retrieving the state for a given resource
-	// in the provided blueprint instance.
-	Get(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
+	// Get deals with retrieving resource state for a given globally unique
+	// resource ID.
+	Get(ctx context.Context, resourceID string) (ResourceState, error)
 	// GetByName deals with retrieving the state for a given resource
 	// in the provided blueprint instance by its logical name.
 	GetByName(ctx context.Context, instanceID string, resourceName string) (ResourceState, error)
 	// Save deals with persisting a resource in a blueprint instance.
+	// This both creates a resource with the given unique ID and attaches
+	// it to the blueprint instance ID in the provided resource state structure.
 	Save(
 		ctx context.Context,
-		instanceID string,
 		resourceState ResourceState,
 	) error
 	// UpdateStatus deals with updating the status of the latest deployment of a given resource.
 	UpdateStatus(
 		ctx context.Context,
-		instanceID string,
 		resourceID string,
 		statusInfo ResourceStatusInfo,
 	) error
-	// Remove deals with removing the state of a resource from
-	// a given blueprint instance.
-	Remove(ctx context.Context, instanceID string, resourceID string) (ResourceState, error)
-	// GetDrift deals with retrieving the current drift state for a given resource
-	// in the provided blueprint instance.
-	GetDrift(ctx context.Context, instanceID string, resourceID string) (ResourceDriftState, error)
-	// SaveDrift deals with persisting the drift state for a given resource
-	// in the provided blueprint instance.
-	SaveDrift(ctx context.Context, instanceID string, driftState ResourceDriftState) error
-	// RemoveDrift deals with removing the drift state for a given resource
-	// in the provided blueprint instance.
-	RemoveDrift(ctx context.Context, instanceID string, resourceID string) (ResourceDriftState, error)
+	// Remove deals with removing the state of a resource from the system.
+	Remove(ctx context.Context, resourceID string) (ResourceState, error)
+	// GetDrift deals with retrieving the current drift state for a given resource.
+	GetDrift(ctx context.Context, resourceID string) (ResourceDriftState, error)
+	// SaveDrift deals with persisting the drift state for a given resource.
+	SaveDrift(ctx context.Context, driftState ResourceDriftState) error
+	// RemoveDrift deals with removing the drift state for a given resource.
+	RemoveDrift(ctx context.Context, resourceID string) (ResourceDriftState, error)
 }
 
 // LinksContainer provides an interface for functionality related
 // to persisting and retrieving link state in a blueprint instance.
 type LinksContainer interface {
-	// Get deals with retrieving the state for a given link
-	// in the provided blueprint instance.
-	Get(ctx context.Context, instanceID string, linkID string) (LinkState, error)
+	// Get deals with retrieving the link state for a given globally unique
+	// link ID.
+	Get(ctx context.Context, linkID string) (LinkState, error)
 	// GetByName deals with retrieving the state for a given link
 	// in the provided blueprint instance by its logical name ({resourceA}::{resourceB}).
 	GetByName(ctx context.Context, instanceID string, linkName string) (LinkState, error)
-	// Save deals with persisting a link in a blueprint instance.
-	Save(ctx context.Context, instanceID string, linkState LinkState) error
+	// Save deals with persisting a link in the system and attaching it to the blueprint instance
+	// for the instance ID in the provided link state structure.
+	Save(ctx context.Context, linkState LinkState) error
 	// UpdateStatus deals with updating the status of the latest deployment of a given link.
 	UpdateStatus(
 		ctx context.Context,
-		instanceID string,
 		linkID string,
 		statusInfo LinkStatusInfo,
 	) error
 	// Remove deals with removing the state of a link from
-	// a given blueprint instance.
-	Remove(ctx context.Context, instanceID string, linkID string) (LinkState, error)
+	// the system
+	Remove(ctx context.Context, linkID string) (LinkState, error)
 }
 
 // ChildrenContainer provides an interface for functionality related
@@ -123,9 +119,6 @@ type ChildrenContainer interface {
 	// Get deals with retrieving the state for a given child blueprint
 	// in the provided blueprint instance.
 	Get(ctx context.Context, instanceID string, childName string) (InstanceState, error)
-	// Save deals with persisting a blueprint instance and assigning
-	// it as a child of the provided blueprint instance.
-	Save(ctx context.Context, instanceID string, childName string, childState InstanceState) error
 	// Attach a blueprint instance as a child of the specified parent instance.
 	// Both the parent and child blueprint instances must already exist.
 	Attach(

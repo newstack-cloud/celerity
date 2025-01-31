@@ -61,7 +61,6 @@ func (s *DriftCheckerTestSuite) Test_checks_drift_for_resources_in_blueprint() {
 	for _, resourceID := range resourceIDs {
 		stateAfterCheck, err := resources.Get(
 			context.Background(),
-			instance1ID,
 			resourceID,
 		)
 		s.Require().NoError(err)
@@ -72,7 +71,6 @@ func (s *DriftCheckerTestSuite) Test_checks_drift_for_resources_in_blueprint() {
 
 		persistedDriftState, err := resources.GetDrift(
 			context.Background(),
-			instance1ID,
 			resourceID,
 		)
 		s.Require().NoError(err)
@@ -96,7 +94,6 @@ func (s *DriftCheckerTestSuite) Test_checks_drift_for_a_single_resource() {
 
 	stateAfterCheck, err := resources.Get(
 		context.Background(),
-		instance1ID,
 		saveOrderFunctionID,
 	)
 	s.Require().NoError(err)
@@ -107,7 +104,6 @@ func (s *DriftCheckerTestSuite) Test_checks_drift_for_a_single_resource() {
 
 	persistedDriftState, err := resources.GetDrift(
 		context.Background(),
-		instance1ID,
 		saveOrderFunctionID,
 	)
 	s.Require().NoError(err)

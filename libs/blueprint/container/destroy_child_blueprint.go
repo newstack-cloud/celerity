@@ -121,6 +121,7 @@ func (d *defaultChildBlueprintDestroyer) Destroy(
 		case msg := <-childChannels.ChildUpdateChan:
 			deployCtx.Channels.ChildUpdateChan <- msg
 		case err = <-childChannels.ErrChan:
+			deployCtx.Channels.ErrChan <- err
 		}
 	}
 }

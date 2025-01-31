@@ -133,7 +133,7 @@ func (f *LinkFunction) Call(
 		)
 	}
 
-	linkState, err := f.linkStateRetriever.Get(
+	linkState, err := f.linkStateRetriever.GetByName(
 		ctx,
 		instanceId,
 		fmt.Sprintf("%s::%s", resourceAStr, resourceBStr),
@@ -204,5 +204,5 @@ func linkResourceStateToInterfaceMap(resourceState *state.LinkIntermediaryResour
 type LinkStateRetriever interface {
 	// Get deals with retrieving the state for a given link
 	// in the provided blueprint instance.
-	Get(ctx context.Context, instanceID string, linkID string) (state.LinkState, error)
+	GetByName(ctx context.Context, instanceID string, linkName string) (state.LinkState, error)
 }

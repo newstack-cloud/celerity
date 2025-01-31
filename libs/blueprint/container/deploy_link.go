@@ -81,7 +81,6 @@ func (d *defaultLinkDeployer) Deploy(
 		links := d.stateContainer.Links()
 		err := links.Save(
 			ctx,
-			instanceID,
 			state.LinkState{
 				LinkID:        linkElement.ID(),
 				LinkName:      linkElement.LogicalName(),

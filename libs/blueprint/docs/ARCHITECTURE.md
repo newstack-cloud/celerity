@@ -205,7 +205,6 @@ type ResourcesContainer interface {
 
     Get(
         ctx context.Context,
-        instanceID string,
         resourceID string,
     ) (ResourceState, error)
 
@@ -217,39 +216,33 @@ type ResourcesContainer interface {
 
     Save(
         ctx context.Context,
-        instanceID string,
         resourceState ResourceState,
     ) error
 
     UpdateStatus(
         ctx context.Context,
-        instanceID string,
         resourceID string,
         statusInfo ResourceStatusInfo,
     ) error
 
     Remove(
         ctx context.Context,
-        instanceID string,
         resourceID string,
     ) (ResourceState, error)
 
     GetDrift(
         ctx context.Context,
-        instanceID string,
         resourceID string,
     ) (ResourceDriftState, error)
 
     SaveDrift(
         ctx context.Context,
-        instanceID string,
         resourceID string,
         driftState ResourceDriftState,
     ) error
 
     RemoveDrift(
         ctx context.Context,
-        instanceID string,
         resourceID string,
     ) (ResourceDriftState, error)
 }
@@ -258,32 +251,27 @@ type LinksContainer interface {
 
     Get(
         ctx context.Context,
-        instanceID string,
         linkID string,
     ) (LinkState, error)
 
     GetByName(
         ctx context.Context,
-        instanceID string,
         linkName string,
     ) (LinkState, error)
 
     Save(
         ctx context.Context,
-        instanceID string,
         linkState LinkState,
     ) error
 
     UpdateStatus(
         ctx context.Context,
-        instanceID string,
         linkID string,
         statusInfo LinkStatusInfo,
     ) error
 
     Remove(
         ctx context.Context,
-        instanceID string,
         linkID string,
     ) (LinkState, error)
 }
@@ -295,13 +283,6 @@ type ChildrenContainer interface {
         instanceID string,
         childName string,
     ) (InstanceState, error)
-
-    Save(
-        ctx context.Context,
-        instanceID string,
-        childName string,
-        childState InstanceState,
-    ) error
 
     Attach(
         ctx context.Context,

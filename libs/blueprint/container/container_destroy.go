@@ -361,7 +361,6 @@ func (c *defaultBlueprintContainer) handleResourceDestroyEvent(
 		deployCtx.State.SetElementInProgress(element)
 		err := resources.UpdateStatus(
 			ctx,
-			msg.InstanceID,
 			msg.ResourceID,
 			state.ResourceStatusInfo{
 				Status:        msg.Status,
@@ -381,7 +380,6 @@ func (c *defaultBlueprintContainer) handleResourceDestroyEvent(
 		if wasResourceDestroyedSuccessfully(msg.PreciseStatus, deployCtx.Rollback) {
 			_, err := resources.Remove(
 				ctx,
-				msg.InstanceID,
 				msg.ResourceID,
 			)
 			if err != nil {
@@ -390,7 +388,6 @@ func (c *defaultBlueprintContainer) handleResourceDestroyEvent(
 		} else {
 			err := resources.UpdateStatus(
 				ctx,
-				msg.InstanceID,
 				msg.ResourceID,
 				state.ResourceStatusInfo{
 					Status:         msg.Status,
@@ -485,7 +482,6 @@ func (c *defaultBlueprintContainer) handleLinkDestroyEvent(
 		deployCtx.State.SetElementInProgress(element)
 		err := links.UpdateStatus(
 			ctx,
-			msg.InstanceID,
 			msg.LinkID,
 			state.LinkStatusInfo{
 				Status:        msg.Status,
@@ -509,7 +505,6 @@ func (c *defaultBlueprintContainer) handleLinkDestroyEvent(
 		if wasLinkDestroyedSuccessfully(msg.Status, deployCtx.Rollback) {
 			_, err := links.Remove(
 				ctx,
-				msg.InstanceID,
 				msg.LinkID,
 			)
 			if err != nil {
@@ -518,7 +513,6 @@ func (c *defaultBlueprintContainer) handleLinkDestroyEvent(
 		} else {
 			err := links.UpdateStatus(
 				ctx,
-				msg.InstanceID,
 				msg.LinkID,
 				state.LinkStatusInfo{
 					Status:         msg.Status,

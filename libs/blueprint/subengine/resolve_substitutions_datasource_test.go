@@ -92,9 +92,9 @@ func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in
 	resourceID := "test-orders-table-309428320"
 	err = s.stateContainer.Resources().Save(
 		context.Background(),
-		testInstanceID,
 		state.ResourceState{
 			ResourceID:   resourceID,
+			InstanceID:   testInstanceID,
 			ResourceName: "ordersTable",
 			ResourceSpecData: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{

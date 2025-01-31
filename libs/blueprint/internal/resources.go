@@ -157,7 +157,6 @@ func (r *DynamoDBTableResource) GetExternalState(
 	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
 		resource, err := r.StateContainer.Resources().Get(
 			ctx,
-			input.InstanceID,
 			input.ResourceID,
 		)
 		if err != nil {
@@ -290,7 +289,6 @@ func (r *DynamoDBStreamResource) GetExternalState(
 	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
 		resource, err := r.StateContainer.Resources().Get(
 			ctx,
-			input.InstanceID,
 			input.ResourceID,
 		)
 		if err != nil {
@@ -534,7 +532,6 @@ func (r *LambdaFunctionResource) GetExternalState(
 	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
 		resource, err := r.StateContainer.Resources().Get(
 			ctx,
-			input.InstanceID,
 			input.ResourceID,
 		)
 		if err != nil {
@@ -696,7 +693,6 @@ func (r *Lambda2FunctionResource) GetExternalState(
 	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
 		resource, err := r.StateContainer.Resources().Get(
 			ctx,
-			input.InstanceID,
 			input.ResourceID,
 		)
 		if err != nil {
@@ -981,7 +977,6 @@ func (r *ExampleComplexResource) GetExternalState(
 	if r.ExternalState == nil && r.FallbackToStateContainerForExternalState {
 		resource, err := r.StateContainer.Resources().Get(
 			ctx,
-			input.InstanceID,
 			input.ResourceID,
 		)
 		if err != nil {

@@ -146,7 +146,7 @@ func (c *defaultChecker) CheckResourceDrift(
 	resourceLogger.Info(
 		fmt.Sprintf("Fetching state for resource %s", resourceID),
 	)
-	resourceState, err := resources.Get(ctx, instanceID, resourceID)
+	resourceState, err := resources.Get(ctx, resourceID)
 	if err != nil {
 		resourceLogger.Debug(
 			fmt.Sprintf("Failed to fetch state for resource %s", resourceID),
@@ -242,7 +242,6 @@ func (c *defaultChecker) checkResourceDrift(
 		)
 		_, err = c.stateContainer.Resources().RemoveDrift(
 			ctx,
-			resource.InstanceID,
 			resource.ResourceID,
 		)
 		if err != nil {
@@ -268,7 +267,6 @@ func (c *defaultChecker) checkResourceDrift(
 
 	err = c.stateContainer.Resources().SaveDrift(
 		ctx,
-		resource.InstanceID,
 		driftState,
 	)
 	if err != nil {

@@ -5,7 +5,6 @@
   "lastDeployAttemptTimestamp": -1,
   "resourceIds": {
     "invoiceStream": "{dynamicValue}",
-    "invoicesTable": "test-invoices-table-id",
     "ordersTable_0": "test-orders-table-0-id",
     "ordersTable_1": "test-orders-table-1-id",
     "ordersTable_2": "{dynamicValue}",

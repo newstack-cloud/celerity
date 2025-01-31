@@ -23,6 +23,7 @@ const (
 	resolveInResourcePartialAnnotationsFixtureName = "resolve-in-resource-partial-annotations"
 	resolveInResourceTemplateFixtureName           = "resolve-in-resource-2"
 	testInstanceID                                 = "cb826a32-1052-4fde-aa6e-d449b9f50066"
+	testChildInstanceID                            = "05253564-cd77-4b92-81bc-e75f9478ec4d"
 )
 
 func (s *SubstitutionResourceResolverTestSuite) SetupSuite() {
@@ -128,11 +129,10 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 	s.Require().NoError(err)
 
 	childBlueprintRegion := "eu-west-1"
-	err = s.stateContainer.Children().Save(
+	err = s.stateContainer.Instances().Save(
 		context.Background(),
-		testInstanceID,
-		"coreInfra",
 		state.InstanceState{
+			InstanceID: testChildInstanceID,
 			Exports: map[string]*state.ExportState{
 				"region": {
 					Value: &core.MappingNode{
@@ -143,6 +143,14 @@ func (s *SubstitutionResourceResolverTestSuite) Test_resolves_substitutions_in_r
 				},
 			},
 		},
+	)
+	s.Require().NoError(err)
+
+	err = s.stateContainer.Children().Attach(
+		context.Background(),
+		testInstanceID,
+		testChildInstanceID,
+		"coreInfra",
 	)
 	s.Require().NoError(err)
 

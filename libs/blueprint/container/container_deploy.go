@@ -722,7 +722,6 @@ func (c *defaultBlueprintContainer) handleResourceUpdateEvent(
 		updateTimestamp := int(msg.UpdateTimestamp)
 		err := resources.UpdateStatus(
 			ctx,
-			msg.InstanceID,
 			msg.ResourceID,
 			state.ResourceStatusInfo{
 				Status:                    msg.Status,
@@ -813,7 +812,6 @@ func (c *defaultBlueprintContainer) handleFinishedUpdatingResource(
 			currentTimestamp := int(c.clock.Now().Unix())
 			err := resources.UpdateStatus(
 				ctx,
-				msg.InstanceID,
 				msg.ResourceID,
 				state.ResourceStatusInfo{
 					Status:                     msg.Status,
@@ -1209,7 +1207,6 @@ func (c *defaultBlueprintContainer) handleResourceCreationEvent(
 		updateTimestamp := int(msg.UpdateTimestamp)
 		err := resources.UpdateStatus(
 			ctx,
-			msg.InstanceID,
 			msg.ResourceID,
 			state.ResourceStatusInfo{
 				Status:                    msg.Status,
@@ -1302,7 +1299,6 @@ func (c *defaultBlueprintContainer) handleFinishedCreatingResource(
 			currentTimestamp := int(c.clock.Now().Unix())
 			err := resources.UpdateStatus(
 				ctx,
-				msg.InstanceID,
 				msg.ResourceID,
 				state.ResourceStatusInfo{
 					Status:                     msg.Status,
@@ -1341,7 +1337,6 @@ func (c *defaultBlueprintContainer) handleSuccessfulResourceDeployment(
 	resourceDeps := deployCtx.State.GetElementDependencies(element)
 	err := resources.Save(
 		ctx,
-		msg.InstanceID,
 		c.buildResourceState(msg, resourceDeps, deployCtx),
 	)
 	if err != nil {
@@ -1391,7 +1386,6 @@ func (c *defaultBlueprintContainer) handleResourceConfigComplete(
 	updateTimestamp := int(msg.UpdateTimestamp)
 	err := resources.UpdateStatus(
 		ctx,
-		msg.InstanceID,
 		msg.ResourceID,
 		state.ResourceStatusInfo{
 			Status:                    msg.Status,
@@ -1731,7 +1725,6 @@ func (c *defaultBlueprintContainer) handleLinkUpdateEvent(
 		updateTimestamp := int(msg.UpdateTimestamp)
 		err := links.UpdateStatus(
 			ctx,
-			msg.InstanceID,
 			msg.LinkID,
 			state.LinkStatusInfo{
 				Status:                    msg.Status,
@@ -1773,7 +1766,6 @@ func (c *defaultBlueprintContainer) handleLinkUpdateEvent(
 			// and intermediary resource states are also persisted.
 			err := links.Save(
 				ctx,
-				msg.InstanceID,
 				c.buildLinkState(msg, deployCtx),
 			)
 			if err != nil {
@@ -1848,7 +1840,6 @@ func (c *defaultBlueprintContainer) handleLinkCreationEvent(
 		updateTimestamp := int(msg.UpdateTimestamp)
 		err := links.UpdateStatus(
 			ctx,
-			msg.InstanceID,
 			msg.LinkID,
 			state.LinkStatusInfo{
 				Status:                    msg.Status,
@@ -1891,7 +1882,6 @@ func (c *defaultBlueprintContainer) handleLinkCreationEvent(
 		// and intermediary resource states are also persisted.
 		err := links.Save(
 			ctx,
-			msg.InstanceID,
 			c.buildLinkState(msg, deployCtx),
 		)
 		if err != nil {

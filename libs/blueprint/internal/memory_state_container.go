@@ -25,23 +25,28 @@ type MemoryStateContainer struct {
 
 func NewMemoryStateContainer() state.Container {
 	instances := map[string]*state.InstanceState{}
-	resourceDrift := map[string]map[string]*state.ResourceDriftState{}
+	resources := map[string]*state.ResourceState{}
+	resourceDrift := map[string]*state.ResourceDriftState{}
+	links := map[string]*state.LinkState{}
 
 	mu := &sync.RWMutex{}
 	return &MemoryStateContainer{
 		instancesContainer: &memoryInstancesContainer{
 			instances: instances,
+			resources: resources,
+			links:     links,
 			mu:        mu,
 		},
 		resourcesContainer: &memoryResourcesContainer{
 			instances:     instances,
+			resources:     resources,
 			resourceDrift: resourceDrift,
 			mu:            mu,
 		},
 		linksContainer: &memoryLinksContainer{
-			instances:         instances,
-			instanceLinkIDMap: map[string]map[string]string{},
-			mu:                mu,
+			instances: instances,
+			links:     links,
+			mu:        mu,
 		},
 		childrenContainer: &memoryChildrenContainer{
 			instances: instances,
@@ -84,6 +89,8 @@ func (c *MemoryStateContainer) Children() state.ChildrenContainer {
 
 type memoryInstancesContainer struct {
 	instances map[string]*state.InstanceState
+	resources map[string]*state.ResourceState
+	links     map[string]*state.LinkState
 	mu        *sync.RWMutex
 }
 
@@ -102,10 +109,39 @@ func (c *memoryInstancesContainer) Save(
 	ctx context.Context,
 	instanceState state.InstanceState,
 ) error {
+	// Lock before recursively saving the instance and all its children
+	// as unique instances in the store.
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	return c.save(instanceState)
+}
+
+func (c *memoryInstancesContainer) save(
+	instanceState state.InstanceState,
+) error {
+
 	c.instances[instanceState.InstanceID] = &instanceState
+
+	for _, resource := range instanceState.Resources {
+		if resource.ResourceID != "" {
+			c.resources[resource.ResourceID] = resource
+		}
+
+	}
+
+	for _, link := range instanceState.Links {
+		if link.LinkID != "" {
+			c.links[link.LinkID] = link
+		}
+	}
+
+	for _, child := range instanceState.ChildBlueprints {
+		err := c.save(*child)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -146,19 +182,18 @@ func (c *memoryInstancesContainer) Remove(ctx context.Context, instanceID string
 
 type memoryResourcesContainer struct {
 	instances     map[string]*state.InstanceState
-	resourceDrift map[string]map[string]*state.ResourceDriftState
+	resources     map[string]*state.ResourceState
+	resourceDrift map[string]*state.ResourceDriftState
 	mu            *sync.RWMutex
 }
 
-func (c *memoryResourcesContainer) Get(ctx context.Context, instanceID string, resourceID string) (state.ResourceState, error) {
+func (c *memoryResourcesContainer) Get(ctx context.Context, resourceID string) (state.ResourceState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
-		if instance != nil {
-			if resourceState, ok := instance.Resources[resourceID]; ok {
-				return copyResource(resourceState), nil
-			}
+	if resourceState, ok := c.resources[resourceID]; ok {
+		if resourceState != nil {
+			return copyResource(resourceState), nil
 		}
 	}
 
@@ -188,13 +223,12 @@ func (c *memoryResourcesContainer) GetByName(
 
 func (c *memoryResourcesContainer) Save(
 	ctx context.Context,
-	instanceID string,
 	resourceState state.ResourceState,
 ) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
+	if instance, ok := c.instances[resourceState.InstanceID]; ok {
 		if instance != nil {
 			if instance.Resources == nil {
 				instance.Resources = make(map[string]*state.ResourceState)
@@ -204,6 +238,8 @@ func (c *memoryResourcesContainer) Save(
 				instance.ResourceIDs = make(map[string]string)
 			}
 			instance.ResourceIDs[resourceState.ResourceName] = resourceState.ResourceID
+
+			c.resources[resourceState.ResourceID] = &resourceState
 		} else {
 			return state.ResourceNotFoundError(resourceState.ResourceID)
 		}
@@ -214,27 +250,22 @@ func (c *memoryResourcesContainer) Save(
 
 func (c *memoryResourcesContainer) UpdateStatus(
 	ctx context.Context,
-	instanceID string,
 	resourceID string,
 	statusInfo state.ResourceStatusInfo,
 ) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
-		if instance != nil {
-			resource, ok := instance.Resources[resourceID]
-			if ok {
-				resource.Status = statusInfo.Status
-				resource.PreciseStatus = statusInfo.PreciseStatus
-				resource.FailureReasons = statusInfo.FailureReasons
-				if statusInfo.Durations != nil {
-					resource.Durations = statusInfo.Durations
-				}
-
-				return nil
-			}
+	resource, ok := c.resources[resourceID]
+	if ok {
+		resource.Status = statusInfo.Status
+		resource.PreciseStatus = statusInfo.PreciseStatus
+		resource.FailureReasons = statusInfo.FailureReasons
+		if statusInfo.Durations != nil {
+			resource.Durations = statusInfo.Durations
 		}
+
+		return nil
 	}
 
 	return state.ResourceNotFoundError(resourceID)
@@ -242,34 +273,32 @@ func (c *memoryResourcesContainer) UpdateStatus(
 
 func (c *memoryResourcesContainer) Remove(
 	ctx context.Context,
-	instanceID string,
 	resourceID string,
 ) (state.ResourceState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
+	resource, ok := c.resources[resourceID]
+	if ok {
+		delete(c.resources, resourceID)
+		instance := c.instances[resource.InstanceID]
 		if instance != nil {
-			resource, ok := instance.Resources[resourceID]
-			if ok {
-				delete(instance.Resources, resourceID)
-				return *resource, nil
-			}
+			delete(instance.Resources, resourceID)
+			delete(instance.ResourceIDs, resource.ResourceName)
 		}
+		return *resource, nil
 	}
 
 	return state.ResourceState{}, state.ResourceNotFoundError(resourceID)
 }
 
-func (c *memoryResourcesContainer) GetDrift(ctx context.Context, instanceID string, resourceID string) (state.ResourceDriftState, error) {
+func (c *memoryResourcesContainer) GetDrift(ctx context.Context, resourceID string) (state.ResourceDriftState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
-		if driftEntries != nil {
-			if driftState, ok := driftEntries[resourceID]; ok {
-				return *driftState, nil
-			}
+	if driftState, ok := c.resourceDrift[resourceID]; ok {
+		if driftState != nil {
+			return *driftState, nil
 		}
 	}
 
@@ -278,71 +307,43 @@ func (c *memoryResourcesContainer) GetDrift(ctx context.Context, instanceID stri
 
 func (c *memoryResourcesContainer) SaveDrift(
 	ctx context.Context,
-	instanceID string,
 	driftState state.ResourceDriftState,
 ) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
-		if instance != nil {
-			resource, ok := instance.Resources[driftState.ResourceID]
-			if ok {
-				resource.Drifted = true
-				resource.LastDriftDetectedTimestamp = driftState.Timestamp
-			} else {
-				return state.ResourceNotFoundError(driftState.ResourceID)
-			}
-		} else {
-			return state.InstanceNotFoundError(instanceID)
-		}
+	resource, ok := c.resources[driftState.ResourceID]
+	if ok {
+		resource.Drifted = true
+		resource.LastDriftDetectedTimestamp = driftState.Timestamp
 	} else {
-		return state.InstanceNotFoundError(instanceID)
+		return state.ResourceNotFoundError(driftState.ResourceID)
 	}
 
-	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
-		driftEntries[driftState.ResourceID] = &driftState
-	} else {
-		c.resourceDrift[instanceID] = map[string]*state.ResourceDriftState{
-			driftState.ResourceID: &driftState,
-		}
-	}
+	c.resourceDrift[driftState.ResourceID] = &driftState
 
 	return nil
 }
 
 func (c *memoryResourcesContainer) RemoveDrift(
 	ctx context.Context,
-	instanceID string,
 	resourceID string,
 ) (state.ResourceDriftState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
-		if instance != nil {
-			resource, ok := instance.Resources[resourceID]
-			if ok {
-				resource.Drifted = false
-				resource.LastDriftDetectedTimestamp = nil
-			} else {
-				return state.ResourceDriftState{}, state.ResourceNotFoundError(resourceID)
-			}
-		} else {
-			return state.ResourceDriftState{}, state.InstanceNotFoundError(instanceID)
-		}
+	resource, ok := c.resources[resourceID]
+	if ok {
+		resource.Drifted = false
+		resource.LastDriftDetectedTimestamp = nil
 	} else {
-		return state.ResourceDriftState{}, state.InstanceNotFoundError(instanceID)
+		return state.ResourceDriftState{}, state.ResourceNotFoundError(resourceID)
 	}
 
-	if driftEntries, ok := c.resourceDrift[instanceID]; ok {
-		if driftEntries != nil {
-			driftState, ok := driftEntries[resourceID]
-			if ok {
-				delete(driftEntries, resourceID)
-				return *driftState, nil
-			}
-		}
+	driftState, ok := c.resourceDrift[resourceID]
+	if ok {
+		delete(c.resourceDrift, resourceID)
+		return *driftState, nil
 	}
 
 	// No drift entry for a specific resource is fine,
@@ -352,26 +353,17 @@ func (c *memoryResourcesContainer) RemoveDrift(
 }
 
 type memoryLinksContainer struct {
-	instances         map[string]*state.InstanceState
-	instanceLinkIDMap map[string]map[string]string
-	mu                *sync.RWMutex
+	instances map[string]*state.InstanceState
+	links     map[string]*state.LinkState
+	mu        *sync.RWMutex
 }
 
-func (c *memoryLinksContainer) Get(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
+func (c *memoryLinksContainer) Get(ctx context.Context, linkID string) (state.LinkState, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
-		if instance != nil {
-			hasLinkIDMap := c.hasInstanceLinkIDMap(instance)
-			if !hasLinkIDMap {
-				c.populateLinkIDMap(instance)
-			}
-			linkName := c.getLinkName(instanceID, linkID)
-			if linkState, ok := instance.Links[linkName]; ok {
-				return copyLink(linkState), nil
-			}
-		}
+	if linkState, ok := c.links[linkID]; ok {
+		return copyLink(linkState), nil
 	}
 
 	return state.LinkState{}, state.LinkNotFoundError(linkID)
@@ -393,105 +385,60 @@ func (c *memoryLinksContainer) GetByName(ctx context.Context, instanceID string,
 	return state.LinkState{}, state.LinkNotFoundError(elementID)
 }
 
-func (c *memoryLinksContainer) Save(ctx context.Context, instanceID string, linkState state.LinkState) error {
+func (c *memoryLinksContainer) Save(ctx context.Context, linkState state.LinkState) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
+	if instance, ok := c.instances[linkState.InstanceID]; ok {
 		if instance != nil {
 			if instance.Links == nil {
 				instance.Links = make(map[string]*state.LinkState)
 			}
 			instance.Links[linkState.LinkName] = &linkState
-			c.saveLinkIDMapEntry(instance, linkState.LinkID, linkState.LinkName)
+			c.links[linkState.LinkID] = &linkState
 		} else {
-			return state.InstanceNotFoundError(instanceID)
+			return state.InstanceNotFoundError(linkState.InstanceID)
 		}
 	}
 
 	return nil
 }
 
-// A lock must be held before calling this function.
-func (c *memoryLinksContainer) saveLinkIDMapEntry(instance *state.InstanceState, linkID string, linkName string) {
-	hasLinkIDMap := c.hasInstanceLinkIDMap(instance)
-	if !hasLinkIDMap {
-		c.populateLinkIDMap(instance)
-	}
-	c.instanceLinkIDMap[instance.InstanceID][linkID] = linkName
-}
-
 func (c *memoryLinksContainer) UpdateStatus(
 	ctx context.Context,
-	instanceID string,
 	linkID string,
 	statusInfo state.LinkStatusInfo,
 ) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
-		if instance != nil {
-			hasLinkIDMap := c.hasInstanceLinkIDMap(instance)
-			if !hasLinkIDMap {
-				c.populateLinkIDMap(instance)
-			}
-			linkName := c.getLinkName(instanceID, linkID)
-			link, ok := instance.Links[linkName]
-			if ok {
-				link.Status = statusInfo.Status
-				link.PreciseStatus = statusInfo.PreciseStatus
-				link.FailureReasons = statusInfo.FailureReasons
-				if statusInfo.Durations != nil {
-					link.Durations = statusInfo.Durations
-				}
-
-				return nil
-			}
+	link, ok := c.links[linkID]
+	if ok {
+		link.Status = statusInfo.Status
+		link.PreciseStatus = statusInfo.PreciseStatus
+		link.FailureReasons = statusInfo.FailureReasons
+		if statusInfo.Durations != nil {
+			link.Durations = statusInfo.Durations
 		}
+
+		return nil
 	}
 
 	return state.LinkNotFoundError(linkID)
 }
 
-func (c *memoryLinksContainer) hasInstanceLinkIDMap(instance *state.InstanceState) bool {
-	_, ok := c.instanceLinkIDMap[instance.InstanceID]
-	return ok
-}
-
-func (c *memoryLinksContainer) populateLinkIDMap(instance *state.InstanceState) {
-	c.instanceLinkIDMap[instance.InstanceID] = map[string]string{}
-	for linkName, link := range instance.Links {
-		c.instanceLinkIDMap[instance.InstanceID][link.LinkID] = linkName
-	}
-}
-
-func (c *memoryLinksContainer) getLinkName(instanceID string, linkID string) string {
-	linkIDMap, ok := c.instanceLinkIDMap[instanceID]
-	if !ok {
-		return ""
-	}
-
-	return linkIDMap[linkID]
-}
-
-func (c *memoryLinksContainer) Remove(ctx context.Context, instanceID string, linkID string) (state.LinkState, error) {
+func (c *memoryLinksContainer) Remove(ctx context.Context, linkID string) (state.LinkState, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if instance, ok := c.instances[instanceID]; ok {
+	link, ok := c.links[linkID]
+	if ok {
+		delete(c.links, linkID)
+		instance := c.instances[link.InstanceID]
 		if instance != nil {
-			hasLinkIDMap := c.hasInstanceLinkIDMap(instance)
-			if !hasLinkIDMap {
-				c.populateLinkIDMap(instance)
-			}
-			linkName := c.getLinkName(instanceID, linkID)
-			link, ok := instance.Links[linkName]
-			if ok {
-				delete(instance.Links, linkName)
-				return *link, nil
-			}
+			delete(instance.Links, link.LinkName)
 		}
+		return *link, nil
 	}
 
 	return state.LinkState{}, state.LinkNotFoundError(linkID)
@@ -675,30 +622,6 @@ func (c *memoryChildrenContainer) Get(ctx context.Context, instanceID string, ch
 	}
 
 	return state.InstanceState{}, state.InstanceNotFoundError(instanceID)
-}
-
-func (c *memoryChildrenContainer) Save(
-	ctx context.Context,
-	instanceID string,
-	childName string,
-	childState state.InstanceState,
-) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if instance, ok := c.instances[instanceID]; ok {
-		if instance != nil {
-			if instance.ChildBlueprints == nil {
-				instance.ChildBlueprints = make(map[string]*state.InstanceState)
-			}
-			instance.ChildBlueprints[childName] = &childState
-			c.instances[childState.InstanceID] = &childState
-		} else {
-			return state.InstanceNotFoundError(instanceID)
-		}
-	}
-
-	return nil
 }
 
 func (c *memoryChildrenContainer) Remove(ctx context.Context, instanceID string, childName string) (state.InstanceState, error) {

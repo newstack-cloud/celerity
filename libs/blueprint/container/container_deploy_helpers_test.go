@@ -849,11 +849,19 @@ func populateBlueprintCurrentState(
 		return err
 	}
 
-	return stateContainer.Children().Save(
+	err = stateContainer.Instances().Save(
+		context.Background(),
+		*blueprintChildCurrentState,
+	)
+	if err != nil {
+		return err
+	}
+
+	return stateContainer.Children().Attach(
 		context.Background(),
 		instanceID,
+		blueprintChildCurrentState.InstanceID,
 		"coreInfra",
-		*blueprintChildCurrentState,
 	)
 }
 

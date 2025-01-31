@@ -108,9 +108,9 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 	resourceID := "test-orders-table-309428320"
 	err = s.stateContainer.Resources().Save(
 		context.Background(),
-		testInstanceID,
 		state.ResourceState{
 			ResourceID:   resourceID,
+			InstanceID:   testInstanceID,
 			ResourceName: "ordersTable",
 			ResourceSpecData: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
@@ -136,11 +136,10 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 	// coreInfra.region is used in the metadata and should be resolved using the child blueprint
 	// state.
 	childBlueprintRegion := "eu-west-1"
-	err = s.stateContainer.Children().Save(
+	err = s.stateContainer.Instances().Save(
 		context.Background(),
-		testInstanceID,
-		"coreInfra",
 		state.InstanceState{
+			InstanceID: testChildInstanceID,
 			Exports: map[string]*state.ExportState{
 				"region": {
 					Value: &core.MappingNode{
@@ -151,6 +150,14 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 				},
 			},
 		},
+	)
+	s.Require().NoError(err)
+
+	err = s.stateContainer.Children().Attach(
+		context.Background(),
+		testInstanceID,
+		testChildInstanceID,
+		"coreInfra",
 	)
 	s.Require().NoError(err)
 
