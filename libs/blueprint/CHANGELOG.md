@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Updated
 
-- Removes redundant instance ID arguments from state container methods when interacting with resources and links by globally unique identifiers.
+- **Breaking change** - Removes redundant instance ID arguments from state container methods when interacting with resources and links by globally unique identifiers.
 - Updates the in-memory state container implementation used in automated tests to store resource and link data in a way that it can be directly accessed when given a globally unique identifier.
 
-_Breaking changes will occur in early 0.x versions of this framework_
+_Breaking changes will occur in early 0.x releases of this framework._
 
 ## [0.1.0] - 2025-01-29
 
