@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-02-04
+
+### Updated
+
+- **Breaking change** - Simplifies redundant entity type prefixed field names in state structures. (e.g. `ResourceName` -> `Name`) The exception to this change involves the id fields due to the `ID` name being used for the method that fulfils the Element interface. For this reason ResourceID, InstanceID and LinkID will remain in the Go structs but will be serialised to "id" when marshalling to JSON.'
+
+_Breaking changes will occur in early 0.x releases of this framework._
+
 ## [0.2.0] - 2025-01-31
 
 ### Updated
