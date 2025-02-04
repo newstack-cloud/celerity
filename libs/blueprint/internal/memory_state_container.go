@@ -237,7 +237,7 @@ func (c *memoryResourcesContainer) Save(
 			if instance.ResourceIDs == nil {
 				instance.ResourceIDs = make(map[string]string)
 			}
-			instance.ResourceIDs[resourceState.ResourceName] = resourceState.ResourceID
+			instance.ResourceIDs[resourceState.Name] = resourceState.ResourceID
 
 			c.resources[resourceState.ResourceID] = &resourceState
 		} else {
@@ -284,7 +284,7 @@ func (c *memoryResourcesContainer) Remove(
 		instance := c.instances[resource.InstanceID]
 		if instance != nil {
 			delete(instance.Resources, resourceID)
-			delete(instance.ResourceIDs, resource.ResourceName)
+			delete(instance.ResourceIDs, resource.Name)
 		}
 		return *resource, nil
 	}
@@ -394,7 +394,7 @@ func (c *memoryLinksContainer) Save(ctx context.Context, linkState state.LinkSta
 			if instance.Links == nil {
 				instance.Links = make(map[string]*state.LinkState)
 			}
-			instance.Links[linkState.LinkName] = &linkState
+			instance.Links[linkState.Name] = &linkState
 			c.links[linkState.LinkID] = &linkState
 		} else {
 			return state.InstanceNotFoundError(linkState.InstanceID)
@@ -436,7 +436,7 @@ func (c *memoryLinksContainer) Remove(ctx context.Context, linkID string) (state
 		delete(c.links, linkID)
 		instance := c.instances[link.InstanceID]
 		if instance != nil {
-			delete(instance.Links, link.LinkName)
+			delete(instance.Links, link.Name)
 		}
 		return *link, nil
 	}
@@ -767,22 +767,22 @@ func copyResource(resourceState *state.ResourceState) state.ResourceState {
 	copy(dependsOnChildren, resourceState.DependsOnChildren)
 
 	return state.ResourceState{
-		ResourceID:           resourceState.ResourceID,
-		ResourceName:         resourceState.ResourceName,
-		ResourceType:         resourceState.ResourceType,
-		ResourceTemplateName: resourceState.ResourceTemplateName,
-		InstanceID:           resourceState.InstanceID,
-		Status:               resourceState.Status,
-		PreciseStatus:        resourceState.PreciseStatus,
-		Description:          resourceState.Description,
-		Metadata:             &metadataCopy,
-		DependsOnResources:   dependsOnResources,
-		DependsOnChildren:    dependsOnChildren,
-		FailureReasons:       resourceState.FailureReasons,
+		ResourceID:         resourceState.ResourceID,
+		Name:               resourceState.Name,
+		Type:               resourceState.Type,
+		TemplateName:       resourceState.TemplateName,
+		InstanceID:         resourceState.InstanceID,
+		Status:             resourceState.Status,
+		PreciseStatus:      resourceState.PreciseStatus,
+		Description:        resourceState.Description,
+		Metadata:           &metadataCopy,
+		DependsOnResources: dependsOnResources,
+		DependsOnChildren:  dependsOnChildren,
+		FailureReasons:     resourceState.FailureReasons,
 		// The spec data pointer will be copied, no part of the blueprint container
 		// implementation should modify the spec data in instance state so it is safe
 		// to copy the pointer instead of making a deep copy.
-		ResourceSpecData:           resourceState.ResourceSpecData,
+		SpecData:                   resourceState.SpecData,
 		LastDeployedTimestamp:      resourceState.LastDeployedTimestamp,
 		LastDeployAttemptTimestamp: resourceState.LastDeployAttemptTimestamp,
 		Drifted:                    resourceState.Drifted,
@@ -811,7 +811,7 @@ func copyLink(linkState *state.LinkState) state.LinkState {
 
 	return state.LinkState{
 		LinkID:                     linkState.LinkID,
-		LinkName:                   linkState.LinkName,
+		Name:                       linkState.Name,
 		InstanceID:                 linkState.InstanceID,
 		Status:                     linkState.Status,
 		PreciseStatus:              linkState.PreciseStatus,
@@ -820,7 +820,7 @@ func copyLink(linkState *state.LinkState) state.LinkState {
 		IntermediaryResourceStates: copyIntermediaryResources(
 			linkState.IntermediaryResourceStates,
 		),
-		LinkData:       linkState.LinkData,
+		Data:           linkState.Data,
 		FailureReasons: linkState.FailureReasons,
 		Durations:      linkState.Durations,
 	}

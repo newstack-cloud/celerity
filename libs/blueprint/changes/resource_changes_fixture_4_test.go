@@ -20,15 +20,15 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture4() *provider.Reso
 
 func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture4CurrentState() *state.ResourceState {
 	return &state.ResourceState{
-		ResourceID:   "test-resource-1",
-		ResourceName: "complexResource",
+		ResourceID: "test-resource-1",
+		Name:       "complexResource",
 		// Resource type is being updated from "example/old-complex" to "example/complex"
-		ResourceType:               "example/old-complex",
+		Type:                       "example/old-complex",
 		Status:                     core.ResourceStatusCreated,
 		PreciseStatus:              core.PreciseResourceStatusCreated,
 		LastDeployedTimestamp:      1732969676,
 		LastDeployAttemptTimestamp: 1732969676,
-		ResourceSpecData:           &core.MappingNode{},
+		SpecData:                   &core.MappingNode{},
 		Metadata:                   &state.ResourceMetadataState{},
 	}
 }

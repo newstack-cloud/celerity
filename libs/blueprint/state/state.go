@@ -194,18 +194,18 @@ const (
 // along with reasons for failure when a resource is in a failure state.
 type ResourceState struct {
 	// A globally unique identifier for the resource.
-	ResourceID string `json:"resourceId"`
+	ResourceID string `json:"id"`
 	// The logical name of the resource in the blueprint.
-	ResourceName string `json:"resourceName"`
+	Name string `json:"name"`
 	// The type of the resource as defined in the source blueprint.
-	ResourceType string `json:"resourceType"`
+	Type string `json:"type"`
 	// The name of the resource template in the source blueprint
 	// that the resource is derived from.
 	// This will be empty if the resource is not derived from a resource template.
-	ResourceTemplateName string                     `json:"resourceTemplateName,omitempty"`
-	InstanceID           string                     `json:"instanceId"`
-	Status               core.ResourceStatus        `json:"status"`
-	PreciseStatus        core.PreciseResourceStatus `json:"preciseStatus"`
+	TemplateName  string                     `json:"templateName,omitempty"`
+	InstanceID    string                     `json:"instanceId"`
+	Status        core.ResourceStatus        `json:"status"`
+	PreciseStatus core.PreciseResourceStatus `json:"preciseStatus"`
 	// LastStatusUpdateTimestamp holds the unix timestamp when the link deployment
 	// status was last updated.
 	LastStatusUpdateTimestamp int `json:"lastStatusUpdateTimestamp,omitempty"`
@@ -213,10 +213,10 @@ type ResourceState struct {
 	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`
 	// LastDeployAttempTimestamp holds the unix timestamp when an attempt was last made to deploy the resource.
 	LastDeployAttemptTimestamp int `json:"lastDeployAttemptTimestamp"`
-	// ResourceSpecData holds the resolved resource spec
+	// SpecData holds the resolved resource spec
 	// for the currently deployed version of the resource along with computed
 	// fields derived from the deployed resource in the provider.
-	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
+	SpecData *core.MappingNode `json:"specData"`
 	// Description holds a human-friendly description of the resource derived
 	// from a source blueprint.
 	Description string `json:"description,omitempty"`
@@ -249,7 +249,7 @@ func (r *ResourceState) ID() string {
 }
 
 func (r *ResourceState) LogicalName() string {
-	return r.ResourceName
+	return r.Name
 }
 
 func (r *ResourceState) Kind() ElementKind {
@@ -268,14 +268,14 @@ type ResourceMetadataState struct {
 // ResourceDriftState holds information about how a resource has drifted
 // from the current state persisted in the blueprint framework.
 type ResourceDriftState struct {
-	// A globally unique identifier for the resource.
+	// A globally unique identifier for the resource the drift state is for.
 	ResourceID string `json:"resourceId"`
-	// The logical name of the resource in the blueprint.
+	// The logical name of the resource in the blueprint the drift state is for.
 	ResourceName string `json:"resourceName"`
-	// ResourceSpecData holds the resource spec
+	// SpecData holds the resource spec
 	// for the drifted version of the resource derived
 	// from the upstream provider.
-	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
+	SpecData *core.MappingNode `json:"specData"`
 	// Difference holds the changes that have been detected
 	// in the resource state in the upstream provider.
 	// This holds a representation of changes from the current
@@ -324,7 +324,7 @@ type ResourceStatusInfo struct {
 // InstanceState stores the state of a blueprint instance
 // including resources, metadata, exported fields and child blueprints.
 type InstanceState struct {
-	InstanceID string              `json:"instanceId"`
+	InstanceID string              `json:"id"`
 	Status     core.InstanceStatus `json:"status"`
 	// LastStatusUpdateTimestamp holds the unix timestamp when the blueprint instance deployment
 	// status was last updated.
@@ -424,12 +424,12 @@ type DependencyInfo struct {
 // managed by a provider's implementation of a link.
 type LinkState struct {
 	// A globally unique identifier for the link.
-	LinkID string `json:"linkId"`
+	LinkID string `json:"id"`
 	// The logic name of the link in the blueprint.
 	// This is a combination of the logical names of the 2 resources that are linked.
 	// For example, if a link is between a VPC and a subnet,
 	// the link name would be "vpc::subnet".
-	LinkName      string                 `json:"linkName"`
+	Name          string                 `json:"name"`
 	InstanceID    string                 `json:"instanceId"`
 	Status        core.LinkStatus        `json:"status"`
 	PreciseStatus core.PreciseLinkStatus `json:"preciseStatus"`
@@ -449,7 +449,7 @@ type LinkState struct {
 	// stored in intermediary resources.
 	// This should hold information that may include values that are populated
 	// in one or both of the resources in the link relationship.
-	LinkData map[string]*core.MappingNode `json:"linkData"`
+	Data map[string]*core.MappingNode `json:"data"`
 	// Holds the latest reasons for failures in deploying a link,
 	// this only ever holds the results of the latest deployment attempt.
 	FailureReasons []string `json:"failureReasons"`
@@ -462,7 +462,7 @@ func (l *LinkState) ID() string {
 }
 
 func (l *LinkState) LogicalName() string {
-	return l.LinkName
+	return l.Name
 }
 
 func (l *LinkState) Kind() ElementKind {
@@ -473,7 +473,7 @@ func (l *LinkState) Kind() ElementKind {
 // of an intermediary resources created for a link.
 type LinkIntermediaryResourceState struct {
 	// A globally unique identifier for the resource.
-	ResourceID string `json:"resourceId"`
+	ResourceID string `json:"id"`
 	InstanceID string `json:"instanceId"`
 	// LastDeployedTimestamp holds the unix timestamp when the resource was last deployed.
 	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`

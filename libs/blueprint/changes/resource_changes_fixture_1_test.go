@@ -44,13 +44,13 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture1CurrentState() *s
 
 	return &state.ResourceState{
 		ResourceID:                 "test-resource-1",
-		ResourceName:               "complexResource",
-		ResourceType:               "example/complex",
+		Name:                       "complexResource",
+		Type:                       "example/complex",
 		Status:                     core.ResourceStatusCreated,
 		PreciseStatus:              core.PreciseResourceStatusCreated,
 		LastDeployedTimestamp:      1732969676,
 		LastDeployAttemptTimestamp: 1732969676,
-		ResourceSpecData: &core.MappingNode{
+		SpecData: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"id": {
 					Scalar: &core.ScalarValue{

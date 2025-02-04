@@ -842,9 +842,9 @@ func (c *defaultBlueprintContainer) buildResourceState(
 	resourceData := deployCtx.State.GetResourceData(msg.ResourceName)
 	resourceState := state.ResourceState{
 		ResourceID:                 msg.ResourceID,
-		ResourceName:               msg.ResourceName,
-		ResourceTemplateName:       resourceTemplateName,
-		ResourceType:               resourceType,
+		Name:                       msg.ResourceName,
+		TemplateName:               resourceTemplateName,
+		Type:                       resourceType,
 		InstanceID:                 msg.InstanceID,
 		Status:                     msg.Status,
 		PreciseStatus:              msg.PreciseStatus,
@@ -874,7 +874,7 @@ func (c *defaultBlueprintContainer) buildResourceState(
 	)
 	if successfulUpdate || successfulCreation {
 		if resourceData != nil {
-			resourceState.ResourceSpecData = resourceData.Spec
+			resourceState.SpecData = resourceData.Spec
 		}
 
 		resourceState.LastDeployedTimestamp = int(c.clock.Now().Unix())
@@ -1787,7 +1787,7 @@ func (c *defaultBlueprintContainer) buildLinkState(
 	linkDeployResult := deployCtx.State.GetLinkDeployResult(msg.LinkName)
 	linkState := state.LinkState{
 		LinkID:                     msg.LinkID,
-		LinkName:                   msg.LinkName,
+		Name:                       msg.LinkName,
 		InstanceID:                 msg.InstanceID,
 		Status:                     msg.Status,
 		PreciseStatus:              msg.PreciseStatus,
@@ -1812,7 +1812,7 @@ func (c *defaultBlueprintContainer) buildLinkState(
 	if successfulUpdate || successfulCreation {
 		if linkDeployResult != nil {
 			if linkDeployResult.LinkData != nil {
-				linkState.LinkData = linkDeployResult.LinkData.Fields
+				linkState.Data = linkDeployResult.LinkData.Fields
 			}
 			linkState.IntermediaryResourceStates = linkDeployResult.IntermediaryResourceStates
 		}

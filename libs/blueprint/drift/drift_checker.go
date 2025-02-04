@@ -165,14 +165,14 @@ func (c *defaultChecker) checkResourceDrift(
 ) (*state.ResourceDriftState, error) {
 	resourceLogger.Debug(
 		"Loading resource plugin implementation for resource type",
-		core.StringLogField("resourceType", resource.ResourceType),
+		core.StringLogField("resourceType", resource.Type),
 	)
-	providerNamespace := provider.ExtractProviderFromItemType(resource.ResourceType)
-	resourceImpl, resourceProvider, err := c.getResourceImplementation(ctx, providerNamespace, resource.ResourceType)
+	providerNamespace := provider.ExtractProviderFromItemType(resource.Type)
+	resourceImpl, resourceProvider, err := c.getResourceImplementation(ctx, providerNamespace, resource.Type)
 	if err != nil {
 		resourceLogger.Debug(
 			"Failed to load resource plugin implementation for resource type",
-			core.StringLogField("resourceType", resource.ResourceType),
+			core.StringLogField("resourceType", resource.Type),
 			core.ErrorLogField("error", err),
 		)
 		return nil, err
@@ -258,11 +258,11 @@ func (c *defaultChecker) checkResourceDrift(
 
 	currentTime := int(c.clock.Now().Unix())
 	driftState := state.ResourceDriftState{
-		ResourceID:       resource.ResourceID,
-		ResourceName:     resource.ResourceName,
-		ResourceSpecData: resource.ResourceSpecData,
-		Difference:       toResourceDriftChanges(resourceChanges),
-		Timestamp:        &currentTime,
+		ResourceID:   resource.ResourceID,
+		ResourceName: resource.Name,
+		SpecData:     resource.SpecData,
+		Difference:   toResourceDriftChanges(resourceChanges),
+		Timestamp:    &currentTime,
 	}
 
 	err = c.stateContainer.Resources().SaveDrift(
@@ -385,11 +385,11 @@ func createDriftedResourceInfo(
 	resourceFromExternalState := externalStateOutput.ResourceSpecState
 	return &provider.ResourceInfo{
 		ResourceID:           resource.ResourceID,
-		ResourceName:         resource.ResourceName,
+		ResourceName:         resource.Name,
 		CurrentResourceState: resource,
 		ResourceWithResolvedSubs: &provider.ResolvedResource{
 			Type: &schema.ResourceTypeWrapper{
-				Value: resource.ResourceType,
+				Value: resource.Type,
 			},
 			Description: core.MappingNodeFromString(resource.Description),
 			Metadata:    createResolvedResourceMetadata(resource),

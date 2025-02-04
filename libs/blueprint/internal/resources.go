@@ -164,7 +164,7 @@ func (r *DynamoDBTableResource) GetExternalState(
 		}
 
 		return &provider.ResourceGetExternalStateOutput{
-			ResourceSpecState: resource.ResourceSpecData,
+			ResourceSpecState: resource.SpecData,
 		}, nil
 	}
 
@@ -296,7 +296,7 @@ func (r *DynamoDBStreamResource) GetExternalState(
 		}
 
 		return &provider.ResourceGetExternalStateOutput{
-			ResourceSpecState: resource.ResourceSpecData,
+			ResourceSpecState: resource.SpecData,
 		}, nil
 	}
 
@@ -539,7 +539,7 @@ func (r *LambdaFunctionResource) GetExternalState(
 		}
 
 		return &provider.ResourceGetExternalStateOutput{
-			ResourceSpecState: resource.ResourceSpecData,
+			ResourceSpecState: resource.SpecData,
 		}, nil
 	}
 
@@ -700,7 +700,7 @@ func (r *Lambda2FunctionResource) GetExternalState(
 		}
 
 		return &provider.ResourceGetExternalStateOutput{
-			ResourceSpecState: resource.ResourceSpecData,
+			ResourceSpecState: resource.SpecData,
 		}, nil
 	}
 
@@ -984,7 +984,7 @@ func (r *ExampleComplexResource) GetExternalState(
 		}
 
 		return &provider.ResourceGetExternalStateOutput{
-			ResourceSpecState: resource.ResourceSpecData,
+			ResourceSpecState: resource.SpecData,
 		}, nil
 	}
 

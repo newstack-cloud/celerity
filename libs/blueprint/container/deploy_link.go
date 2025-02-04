@@ -83,7 +83,7 @@ func (d *defaultLinkDeployer) Deploy(
 			ctx,
 			state.LinkState{
 				LinkID:        linkElement.ID(),
-				LinkName:      linkElement.LogicalName(),
+				Name:          linkElement.LogicalName(),
 				InstanceID:    instanceID,
 				Status:        core.LinkStatusUnknown,
 				PreciseStatus: core.PreciseLinkStatusUnknown,

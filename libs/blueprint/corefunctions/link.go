@@ -187,7 +187,7 @@ func linkStateToInterfaceMap(linkState state.LinkState) map[string]interface{} {
 
 	return map[string]interface{}{
 		"intermediaryResourceStates": intermediaryResourceStates,
-		"linkData":                   linkState.LinkData,
+		"linkData":                   linkState.Data,
 	}
 }
 

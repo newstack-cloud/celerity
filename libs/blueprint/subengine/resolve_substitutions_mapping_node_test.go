@@ -109,10 +109,10 @@ func (s *SubstitutionMappingNodeResolverTestSuite) Test_resolves_substitutions_i
 	err = s.stateContainer.Resources().Save(
 		context.Background(),
 		state.ResourceState{
-			ResourceID:   resourceID,
-			InstanceID:   testInstanceID,
-			ResourceName: "ordersTable",
-			ResourceSpecData: &core.MappingNode{
+			ResourceID: resourceID,
+			InstanceID: testInstanceID,
+			Name:       "ordersTable",
+			SpecData: &core.MappingNode{
 				Fields: map[string]*core.MappingNode{
 					"id": {
 						Scalar: &core.ScalarValue{

@@ -124,12 +124,12 @@ func (s *DriftCheckerTestSuite) populateCurrentState() error {
 			Resources: map[string]*state.ResourceState{
 				saveOrderFunctionID: {
 					ResourceID:    saveOrderFunctionID,
-					ResourceName:  saveOrderFunctionName,
-					ResourceType:  "aws/lambda/function",
+					Name:          saveOrderFunctionName,
+					Type:          "aws/lambda/function",
 					InstanceID:    instance1ID,
 					Status:        core.ResourceStatusCreated,
 					PreciseStatus: core.PreciseResourceStatusCreated,
-					ResourceSpecData: &core.MappingNode{
+					SpecData: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"id": core.MappingNodeFromString(
 								"arn:aws:lambda:us-east-1:123456789012:function:save-order-function",
@@ -141,12 +141,12 @@ func (s *DriftCheckerTestSuite) populateCurrentState() error {
 				},
 				ordersTableID: {
 					ResourceID:    ordersTableID,
-					ResourceName:  ordersTableName,
-					ResourceType:  "aws/dynamodb/table",
+					Name:          ordersTableName,
+					Type:          "aws/dynamodb/table",
 					InstanceID:    instance1ID,
 					Status:        core.ResourceStatusCreated,
 					PreciseStatus: core.PreciseResourceStatusCreated,
-					ResourceSpecData: &core.MappingNode{
+					SpecData: &core.MappingNode{
 						Fields: map[string]*core.MappingNode{
 							"tableName": core.MappingNodeFromString("ORDERS_TABLE"),
 							"region":    core.MappingNodeFromString("us-east-1"),
@@ -203,11 +203,11 @@ func normaliseResourceDriftState(
 ) *state.ResourceDriftState {
 	replacementTimestamp := -1
 	return &state.ResourceDriftState{
-		ResourceID:       driftState.ResourceID,
-		ResourceName:     driftState.ResourceName,
-		ResourceSpecData: driftState.ResourceSpecData,
-		Difference:       normaliseResourceDriftDifference(driftState.Difference),
-		Timestamp:        &replacementTimestamp,
+		ResourceID:   driftState.ResourceID,
+		ResourceName: driftState.ResourceName,
+		SpecData:     driftState.SpecData,
+		Difference:   normaliseResourceDriftDifference(driftState.Difference),
+		Timestamp:    &replacementTimestamp,
 	}
 }
 

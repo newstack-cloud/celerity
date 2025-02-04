@@ -1,5 +1,5 @@
 {
-  "instanceId": "{dynamicValue}",
+  "id": "{dynamicValue}",
   "status": 2,
   "lastDeployedTimestamp": 0,
   "lastDeployAttemptTimestamp": 0,
@@ -14,15 +14,15 @@
   },
   "resources": {
     "{idOf::invoicesTable}": {
-      "resourceId": "{dynamicValue}",
-      "resourceName": "invoicesTable",
-      "resourceType": "aws/dynamodb/table",
+      "id": "{dynamicValue}",
+      "name": "invoicesTable",
+      "type": "aws/dynamodb/table",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
-      "resourceSpecData": {
+      "specData": {
         "global": false,
         "region": "US-WEST-2",
         "tableName": "production-invoices"
@@ -42,16 +42,16 @@
       }
     },
     "{idOf::ordersTable_0}": {
-      "resourceId": "{dynamicValue}",
-      "resourceName": "ordersTable_0",
-      "resourceType": "aws/dynamodb/table",
-      "resourceTemplateName": "ordersTable",
+      "id": "{dynamicValue}",
+      "name": "ordersTable_0",
+      "type": "aws/dynamodb/table",
+      "templateName": "ordersTable",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
-      "resourceSpecData": {
+      "specData": {
         "global": false,
         "region": "US-WEST-2",
         "tableName": "production-orders-us-west-2"
@@ -82,16 +82,16 @@
       }
     },
     "{idOf::ordersTable_2}": {
-      "resourceId": "{dynamicValue}",
-      "resourceName": "ordersTable_2",
-      "resourceType": "aws/dynamodb/table",
-      "resourceTemplateName": "ordersTable",
+      "id": "{dynamicValue}",
+      "name": "ordersTable_2",
+      "type": "aws/dynamodb/table",
+      "templateName": "ordersTable",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
-      "resourceSpecData": {
+      "specData": {
         "global": false,
         "region": "US-WEST-2",
         "tableName": "production-orders-eu-west-1"
@@ -122,15 +122,15 @@
       }
     },
     "{idOf::processInvoiceFunction}": {
-      "resourceId": "{dynamicValue}",
-      "resourceName": "processInvoiceFunction",
-      "resourceType": "aws/lambda/function",
+      "id": "{dynamicValue}",
+      "name": "processInvoiceFunction",
+      "type": "aws/lambda/function",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
-      "resourceSpecData": {
+      "specData": {
         "handler": "src/processInvoice.handler",
         "id": "arn:aws:lambda:us-east-1:123456789012:function:processInvoiceFunction"
       },
@@ -148,15 +148,15 @@
       }
     },
     "{idOf::invoiceStream}": {
-      "resourceId": "{dynamicValue}",
-      "resourceName": "invoiceStream",
-      "resourceType": "aws/dynamodb/stream",
+      "id": "{dynamicValue}",
+      "name": "invoiceStream",
+      "type": "aws/dynamodb/stream",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
-      "resourceSpecData": {
+      "specData": {
         "label": "production-env Invoices Stream",
         "region": "US-WEST-2"
       },
@@ -176,16 +176,16 @@
       }
     },
     "{idOf::ordersTable_1}": {
-      "resourceId": "{dynamicValue}",
-      "resourceName": "ordersTable_1",
-      "resourceType": "aws/dynamodb/table",
-      "resourceTemplateName": "ordersTable",
+      "id": "{dynamicValue}",
+      "name": "ordersTable_1",
+      "type": "aws/dynamodb/table",
+      "templateName": "ordersTable",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
-      "resourceSpecData": {
+      "specData": {
         "global": false,
         "region": "US-WEST-2",
         "tableName": "production-orders-us-east-1"
@@ -216,15 +216,15 @@
       }
     },
     "{idOf::saveOrderFunction}": {
-      "resourceId": "{dynamicValue}",
-      "resourceName": "saveOrderFunction",
-      "resourceType": "aws/lambda/function",
+      "id": "{dynamicValue}",
+      "name": "saveOrderFunction",
+      "type": "aws/lambda/function",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
-      "resourceSpecData": {
+      "specData": {
         "handler": "src/saveOrder.handler",
         "id": "arn:aws:lambda:us-east-1:123456789012:function:saveOrderFunction"
       },
@@ -240,15 +240,15 @@
   },
   "links": {
     "invoiceStream::processInvoiceFunction": {
-      "linkId": "{dynamicValue}",
-      "linkName": "invoiceStream::processInvoiceFunction",
+      "id": "{dynamicValue}",
+      "name": "invoiceStream::processInvoiceFunction",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 14,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
       "intermediaryResourceStates": [],
-      "linkData": {},
+      "data": {},
       "failureReasons": null,
       "durations": {
         "resourceAUpdate": {
@@ -267,15 +267,15 @@
       }
     },
     "invoicesTable::invoiceStream": {
-      "linkId": "{dynamicValue}",
-      "linkName": "invoicesTable::invoiceStream",
+      "id": "{dynamicValue}",
+      "name": "invoicesTable::invoiceStream",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 14,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
       "intermediaryResourceStates": [],
-      "linkData": {},
+      "data": {},
       "failureReasons": null,
       "durations": {
         "resourceAUpdate": {
@@ -294,15 +294,15 @@
       }
     },
     "invoicesTable::processInvoiceFunction": {
-      "linkId": "{dynamicValue}",
-      "linkName": "invoicesTable::processInvoiceFunction",
+      "id": "{dynamicValue}",
+      "name": "invoicesTable::processInvoiceFunction",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 14,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
       "intermediaryResourceStates": [],
-      "linkData": {},
+      "data": {},
       "failureReasons": null,
       "durations": {
         "resourceAUpdate": {
@@ -321,15 +321,15 @@
       }
     },
     "saveOrderFunction::ordersTable_0": {
-      "linkId": "{dynamicValue}",
-      "linkName": "saveOrderFunction::ordersTable_0",
+      "id": "{dynamicValue}",
+      "name": "saveOrderFunction::ordersTable_0",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 14,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
       "intermediaryResourceStates": [],
-      "linkData": {
+      "data": {
         "ordersTable_0": "testResourceBValue",
         "saveOrderFunction": {
           "environmentVariables": {
@@ -357,15 +357,15 @@
       }
     },
     "saveOrderFunction::ordersTable_1": {
-      "linkId": "{dynamicValue}",
-      "linkName": "saveOrderFunction::ordersTable_1",
+      "id": "{dynamicValue}",
+      "name": "saveOrderFunction::ordersTable_1",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 14,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
       "intermediaryResourceStates": [],
-      "linkData": {
+      "data": {
         "ordersTable_1": "testResourceBValue",
         "saveOrderFunction": {
           "environmentVariables": {
@@ -393,15 +393,15 @@
       }
     },
     "saveOrderFunction::ordersTable_2": {
-      "linkId": "{dynamicValue}",
-      "linkName": "saveOrderFunction::ordersTable_2",
+      "id": "{dynamicValue}",
+      "name": "saveOrderFunction::ordersTable_2",
       "instanceId": "{dynamicValue}",
       "status": 2,
       "preciseStatus": 14,
       "lastDeployedTimestamp": -1,
       "lastDeployAttemptTimestamp": -1,
       "intermediaryResourceStates": [],
-      "linkData": {
+      "data": {
         "ordersTable_2": "testResourceBValue",
         "saveOrderFunction": {
           "environmentVariables": {
@@ -441,7 +441,7 @@
   },
   "childBlueprints": {
     "coreInfra": {
-      "instanceId": "{dynamicValue}",
+      "id": "{dynamicValue}",
       "status": 2,
       "lastDeployedTimestamp": 0,
       "lastDeployAttemptTimestamp": 0,
@@ -450,15 +450,15 @@
       },
       "resources": {
         "{idOf::complexResource}": {
-          "resourceId": "{dynamicValue}",
-          "resourceName": "complexResource",
-          "resourceType": "example/complex",
+          "id": "{dynamicValue}",
+          "name": "complexResource",
+          "type": "example/complex",
           "instanceId": "{dynamicValue}",
           "status": 2,
           "preciseStatus": 3,
           "lastDeployedTimestamp": -1,
           "lastDeployAttemptTimestamp": -1,
-          "resourceSpecData": {
+          "specData": {
             "itemConfig": {
               "endpoints": ["https://example.com/1", "https://example.com/2"],
               "ipv4": true,

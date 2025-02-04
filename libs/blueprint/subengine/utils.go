@@ -469,7 +469,7 @@ func getResourceSpecPropertyFromState(
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
 	value, err := getResourcePropertyValueFromMappingNode(
-		resourceState.ResourceSpecData,
+		resourceState.SpecData,
 		property.Path[1:],
 		property,
 		resolveCtx,

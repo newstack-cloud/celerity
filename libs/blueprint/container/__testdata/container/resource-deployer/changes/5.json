@@ -7,15 +7,15 @@
         "resourceName": "updateOrderFunction",
         "instanceId": "resource-deploy-test--blueprint-instance-5",
         "currentResourceState": {
-          "resourceId": "test-failing-update-order-function-id",
-          "resourceName": "updateOrderFunction",
-          "resourceType": "aws/lambda/function",
+          "id": "test-failing-update-order-function-id",
+          "name": "updateOrderFunction",
+          "type": "aws/lambda/function",
           "instanceId": "resource-deploy-test--blueprint-instance-5",
           "status": 2,
           "preciseStatus": 3,
           "lastDeployedTimestamp": 1733145428,
           "lastDeployAttemptTimestamp": 1733145428,
-          "resourceSpecData": {
+          "specData": {
             "handler": "src/orderHandlers.updateOrder"
           },
           "description": "Function that updates an order.",

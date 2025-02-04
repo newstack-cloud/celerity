@@ -408,16 +408,16 @@
         InstanceID: (string) (len=20) "blueprint-instance-6",
         CurrentResourceState: (*state.ResourceState)({
           ResourceID: (string) (len=22) "test-orders-table-0-id",
-          ResourceName: (string) (len=13) "ordersTable_0",
-          ResourceType: (string) (len=18) "aws/dynamodb/table",
-          ResourceTemplateName: (string) (len=11) "ordersTable",
+          Name: (string) (len=13) "ordersTable_0",
+          Type: (string) (len=18) "aws/dynamodb/table",
+          TemplateName: (string) (len=11) "ordersTable",
           InstanceID: (string) (len=20) "blueprint-instance-6",
           Status: (core.ResourceStatus) 2,
           PreciseStatus: (core.PreciseResourceStatus) 3,
           LastStatusUpdateTimestamp: (int) 0,
           LastDeployedTimestamp: (int) 1733145428,
           LastDeployAttemptTimestamp: (int) 1733145428,
-          ResourceSpecData: (*core.MappingNode)({
+          SpecData: (*core.MappingNode)({
             Scalar: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) (len=3) {
               (string) (len=2) "id": (*core.MappingNode)({
@@ -1170,16 +1170,16 @@
         InstanceID: (string) (len=20) "blueprint-instance-6",
         CurrentResourceState: (*state.ResourceState)({
           ResourceID: (string) (len=22) "test-orders-table-1-id",
-          ResourceName: (string) (len=13) "ordersTable_1",
-          ResourceType: (string) (len=18) "aws/dynamodb/table",
-          ResourceTemplateName: (string) (len=11) "ordersTable",
+          Name: (string) (len=13) "ordersTable_1",
+          Type: (string) (len=18) "aws/dynamodb/table",
+          TemplateName: (string) (len=11) "ordersTable",
           InstanceID: (string) (len=20) "blueprint-instance-6",
           Status: (core.ResourceStatus) 2,
           PreciseStatus: (core.PreciseResourceStatus) 3,
           LastStatusUpdateTimestamp: (int) 0,
           LastDeployedTimestamp: (int) 1733145428,
           LastDeployAttemptTimestamp: (int) 1733145428,
-          ResourceSpecData: (*core.MappingNode)({
+          SpecData: (*core.MappingNode)({
             Scalar: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) (len=3) {
               (string) (len=2) "id": (*core.MappingNode)({
@@ -1932,16 +1932,16 @@
         InstanceID: (string) (len=20) "blueprint-instance-6",
         CurrentResourceState: (*state.ResourceState)({
           ResourceID: (string) (len=27) "test-save-order-function-id",
-          ResourceName: (string) (len=17) "saveOrderFunction",
-          ResourceType: (string) (len=19) "aws/lambda/function",
-          ResourceTemplateName: (string) "",
+          Name: (string) (len=17) "saveOrderFunction",
+          Type: (string) (len=19) "aws/lambda/function",
+          TemplateName: (string) "",
           InstanceID: (string) (len=20) "blueprint-instance-6",
           Status: (core.ResourceStatus) 2,
           PreciseStatus: (core.PreciseResourceStatus) 3,
           LastStatusUpdateTimestamp: (int) 0,
           LastDeployedTimestamp: (int) 1733145428,
           LastDeployAttemptTimestamp: (int) 1733145428,
-          ResourceSpecData: (*core.MappingNode)({
+          SpecData: (*core.MappingNode)({
             Scalar: (*core.ScalarValue)(<nil>),
             Fields: (map[string]*core.MappingNode) (len=1) {
               (string) (len=7) "handler": (*core.MappingNode)({
@@ -2265,16 +2265,16 @@
             InstanceID: (string) (len=37) "blueprint-instance-6-child-core-infra",
             CurrentResourceState: (*state.ResourceState)({
               ResourceID: (string) (len=19) "complex-resource-id",
-              ResourceName: (string) (len=15) "complexResource",
-              ResourceType: (string) (len=15) "example/complex",
-              ResourceTemplateName: (string) "",
+              Name: (string) (len=15) "complexResource",
+              Type: (string) (len=15) "example/complex",
+              TemplateName: (string) "",
               InstanceID: (string) (len=37) "blueprint-instance-6-child-core-infra",
               Status: (core.ResourceStatus) 2,
               PreciseStatus: (core.PreciseResourceStatus) 3,
               LastStatusUpdateTimestamp: (int) 0,
               LastDeployedTimestamp: (int) 1733145428,
               LastDeployAttemptTimestamp: (int) 1733145428,
-              ResourceSpecData: (*core.MappingNode)({
+              SpecData: (*core.MappingNode)({
                 Scalar: (*core.ScalarValue)(<nil>),
                 Fields: (map[string]*core.MappingNode) (len=5) {
                   (string) (len=2) "id": (*core.MappingNode)({

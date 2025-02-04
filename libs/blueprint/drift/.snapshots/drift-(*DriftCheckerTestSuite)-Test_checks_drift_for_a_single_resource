@@ -1,7 +1,7 @@
 (*state.ResourceDriftState)({
   ResourceID: (string) (len=19) "save-order-function",
   ResourceName: (string) (len=17) "saveOrderFunction",
-  ResourceSpecData: (*core.MappingNode)({
+  SpecData: (*core.MappingNode)({
     Scalar: (*core.ScalarValue)(<nil>),
     Fields: (map[string]*core.MappingNode) (len=2) {
       (string) (len=7) "handler": (*core.MappingNode)({

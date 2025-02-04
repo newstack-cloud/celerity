@@ -1323,11 +1323,11 @@ func createDestroyChangesFromChildState(
 	}
 
 	for _, resource := range childState.Resources {
-		changes.RemovedResources = append(changes.RemovedResources, resource.ResourceName)
+		changes.RemovedResources = append(changes.RemovedResources, resource.Name)
 	}
 
 	for _, link := range childState.Links {
-		changes.RemovedLinks = append(changes.RemovedLinks, link.LinkName)
+		changes.RemovedLinks = append(changes.RemovedLinks, link.Name)
 	}
 
 	for childName := range childState.ChildBlueprints {
@@ -2099,7 +2099,7 @@ func addRemovedResourcesToProvidersMap(
 		if !hasResourceProvider {
 			resource, stateHasResource := currentInstanceState.Resources[resourceID]
 			if stateHasResource {
-				providerNamespace := provider.ExtractProviderFromItemType(resource.ResourceType)
+				providerNamespace := provider.ExtractProviderFromItemType(resource.Type)
 				provider, hasProvider := providers[providerNamespace]
 				if hasProvider {
 					updatedResourceProviderMap[resourceName] = provider

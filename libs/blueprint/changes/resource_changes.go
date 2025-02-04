@@ -124,7 +124,7 @@ func getResourceSpecFromState(resourceState *state.ResourceState) *bpcore.Mappin
 		return nil
 	}
 
-	return resourceState.ResourceSpecData
+	return resourceState.SpecData
 }
 
 func getResourceTypeFromState(resourceState *state.ResourceState) string {
@@ -132,7 +132,7 @@ func getResourceTypeFromState(resourceState *state.ResourceState) string {
 		return ""
 	}
 
-	return resourceState.ResourceType
+	return resourceState.Type
 }
 
 // GetResourceTypeFromResolved extracts a resource type from a resolved resource

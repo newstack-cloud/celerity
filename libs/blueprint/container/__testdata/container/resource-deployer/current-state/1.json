@@ -1,5 +1,5 @@
 {
-  "instanceId": "resource-deploy-test--blueprint-instance-1",
+  "id": "resource-deploy-test--blueprint-instance-1",
   "status": 1,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,
@@ -9,16 +9,16 @@
   },
   "resources": {
     "test-orders-table-id": {
-      "resourceId": "test-orders-table-id",
-      "resourceName": "ordersTable",
-      "resourceTemplateName": "ordersTable",
-      "resourceType": "aws/dynamodb/table",
+      "id": "test-orders-table-id",
+      "name": "ordersTable",
+      "templateName": "ordersTable",
+      "type": "aws/dynamodb/table",
       "instanceId": "resource-deploy-test--blueprint-instance-1",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
-      "resourceSpecData": {
+      "specData": {
         "tableName": "legacy-production-orders-1",
         "region": "eu-west-1",
         "id": "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-1"
@@ -45,15 +45,15 @@
       "failureReasons": []
     },
     "test-invoices-table-id": {
-      "resourceId": "test-invoices-table-id",
-      "resourceName": "invoicesTable",
-      "resourceType": "aws/dynamodb/table",
+      "id": "test-invoices-table-id",
+      "name": "invoicesTable",
+      "type": "aws/dynamodb/table",
       "instanceId": "resource-deploy-test--blueprint-instance-1",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
-      "resourceSpecData": {
+      "specData": {
         "tableName": "legacy-production-invoices",
         "region": "eu-west-2",
         "id": "arn:aws:dynamodb:eu-west-2:123456789012:table/legacy-production-invoices"

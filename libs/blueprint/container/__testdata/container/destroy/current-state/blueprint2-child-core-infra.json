@@ -1,5 +1,5 @@
 {
-  "instanceId": "blueprint-instance-2-child-core-infra",
+  "id": "blueprint-instance-2-child-core-infra",
   "status": 2,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,
@@ -8,15 +8,15 @@
   },
   "resources": {
     "complex-resource-id": {
-      "resourceId": "complex-resource-id",
-      "resourceName": "complexResource",
-      "resourceType": "example/complex",
+      "id": "complex-resource-id",
+      "name": "complexResource",
+      "type": "example/complex",
       "instanceId": "blueprint-instance-2-child-core-infra",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
-      "resourceSpecData": {
+      "specData": {
         "id": "complex-resource-provider/complex-resource-id",
         "itemConfig": {
           "endpoints": [

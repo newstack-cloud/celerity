@@ -52,7 +52,7 @@ func (s *LinkFunctionTestSuite) SetUpTest(c *C) {
 						},
 					},
 				},
-				LinkData: map[string]*core.MappingNode{
+				Data: map[string]*core.MappingNode{
 					"aws.lambda.http": {
 						Scalar: &core.ScalarValue{BoolValue: &awsLambdaHTTP},
 					},

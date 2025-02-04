@@ -728,7 +728,7 @@ func getResourceTypesForLink(
 		)
 	}
 
-	return resourceAState.ResourceType, resourceBState.ResourceType, nil
+	return resourceAState.Type, resourceBState.Type, nil
 }
 
 func getResourceInfo(

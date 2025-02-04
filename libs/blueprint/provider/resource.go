@@ -128,7 +128,7 @@ type ResolvedResource struct {
 // ResolvedResourceMetadata provides a resolved version of the metadata
 // for a resource where all substitutions have been applied.
 type ResolvedResourceMetadata struct {
-	DisplayName *core.MappingNode `json:",omitempty"`
+	DisplayName *core.MappingNode `json:"displayName,omitempty"`
 	Annotations *core.MappingNode `json:"annotations,omitempty"`
 	Labels      *schema.StringMap `json:"labels,omitempty"`
 	Custom      *core.MappingNode `json:"custom,omitempty"`

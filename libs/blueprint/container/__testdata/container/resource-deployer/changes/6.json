@@ -7,15 +7,15 @@
         "resourceName": "listOrdersFunction",
         "instanceId": "resource-deploy-test--blueprint-instance-6",
         "currentResourceState": {
-          "resourceId": "list-orders-function",
-          "resourceName": "listOrdersFunction",
-          "resourceType": "aws/lambda/function",
+          "id": "list-orders-function",
+          "name": "listOrdersFunction",
+          "type": "aws/lambda/function",
           "instanceId": "resource-deploy-test--blueprint-instance-6",
           "status": 2,
           "preciseStatus": 3,
           "lastDeployedTimestamp": 1733145428,
           "lastDeployAttemptTimestamp": 1733145428,
-          "resourceSpecData": {
+          "specData": {
             "handler": "src/orderHandlers.listOrders"
           },
           "description": "Function that lists orders in the system.",

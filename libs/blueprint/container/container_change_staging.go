@@ -341,7 +341,7 @@ func (c *defaultBlueprintContainer) stageResourceRemovals(
 	for _, resourceState := range instanceState.Resources {
 		inDeployNodes := slices.ContainsFunc(flattenedNodes, func(node *DeploymentNode) bool {
 			return node.ChainLinkNode != nil &&
-				node.ChainLinkNode.ResourceName == resourceState.ResourceName
+				node.ChainLinkNode.ResourceName == resourceState.Name
 		})
 		if !inDeployNodes {
 			dependents := findDependents(
@@ -353,7 +353,7 @@ func (c *defaultBlueprintContainer) stageResourceRemovals(
 				dependents,
 			)
 			changes := ResourceChangesMessage{
-				ResourceName: resourceState.ResourceName,
+				ResourceName: resourceState.Name,
 				Removed:      true,
 			}
 			stagingState.ApplyResourceChanges(changes)

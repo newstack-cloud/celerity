@@ -116,9 +116,9 @@ func (d *defaultResourceDeployer) Deploy(
 		resources := d.stateContainer.Resources()
 		err := resources.Save(ctx, state.ResourceState{
 			ResourceID:    resourceID,
-			ResourceName:  chainLinkNode.ResourceName,
+			Name:          chainLinkNode.ResourceName,
 			InstanceID:    instanceID,
-			ResourceType:  resolvedResource.Type.Value,
+			Type:          resolvedResource.Type.Value,
 			Status:        core.ResourceStatusUnknown,
 			PreciseStatus: core.PreciseResourceStatusUnknown,
 		})

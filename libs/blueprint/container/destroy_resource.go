@@ -59,7 +59,7 @@ func (d *defaultResourceDestroyer) Destroy(
 	resourceImplementation, err := getProviderResourceImplementation(
 		ctx,
 		resourceElement.LogicalName(),
-		resourceState.ResourceType,
+		resourceState.Type,
 		deployCtx.ResourceProviders,
 	)
 	if err != nil {
@@ -122,7 +122,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 		deployCtx.InstanceStateSnapshot,
 		resourceInfo.element.LogicalName(),
 	)
-	providerNamespace := provider.ExtractProviderFromItemType(resourceState.ResourceType)
+	providerNamespace := provider.ExtractProviderFromItemType(resourceState.Type)
 	err := resourceImplementation.Destroy(ctx, &provider.ResourceDestroyInput{
 		InstanceID:    resourceInfo.instanceID,
 		ResourceID:    resourceInfo.element.ID(),

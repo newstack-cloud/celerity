@@ -25,7 +25,7 @@ func getInstanceRemovalChanges(instance *state.InstanceState) changes.BlueprintC
 func getResourceNamesFromInstanceState(instance *state.InstanceState) []string {
 	names := make([]string, 0)
 	for _, resource := range instance.Resources {
-		names = append(names, resource.ResourceName)
+		names = append(names, resource.Name)
 	}
 	return names
 }
@@ -33,7 +33,7 @@ func getResourceNamesFromInstanceState(instance *state.InstanceState) []string {
 func getLinkNamesFromInstanceState(instance *state.InstanceState) []string {
 	ids := make([]string, 0)
 	for _, link := range instance.Links {
-		ids = append(ids, link.LinkName)
+		ids = append(ids, link.Name)
 	}
 	return ids
 }

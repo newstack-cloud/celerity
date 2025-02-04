@@ -185,8 +185,8 @@ func (c *defaultBlueprintContainer) resourceProviderMapFromState(
 ) map[string]provider.Provider {
 	resourceProviderMap := map[string]provider.Provider{}
 	for _, resourceState := range currentInstanceState.Resources {
-		providerNamespace := strings.Split(resourceState.ResourceType, "/")[0]
-		resourceProviderMap[resourceState.ResourceName] = c.providers[providerNamespace]
+		providerNamespace := strings.Split(resourceState.Type, "/")[0]
+		resourceProviderMap[resourceState.Name] = c.providers[providerNamespace]
 	}
 	return resourceProviderMap
 }
@@ -664,7 +664,7 @@ func (c *defaultBlueprintContainer) collectResourcesToRemove(
 			}
 			resourcesToRemove = append(resourcesToRemove, &ResourceIDInfo{
 				ResourceID:   toBeRemovedResourceState.ResourceID,
-				ResourceName: toBeRemovedResourceState.ResourceName,
+				ResourceName: toBeRemovedResourceState.Name,
 			})
 		}
 	}

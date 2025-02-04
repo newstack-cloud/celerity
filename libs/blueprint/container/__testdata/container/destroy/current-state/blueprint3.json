@@ -1,5 +1,5 @@
 {
-  "instanceId": "blueprint-instance-3",
+  "id": "blueprint-instance-3",
   "status": 2,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,
@@ -11,16 +11,16 @@
   },
   "resources": {
     "test-orders-table-0-id": {
-      "resourceId": "test-orders-table-0-id",
-      "resourceName": "ordersTable_0",
-      "resourceTemplateName": "ordersTable",
-      "resourceType": "aws/dynamodb/table",
+      "id": "test-orders-table-0-id",
+      "name": "ordersTable_0",
+      "templateName": "ordersTable",
+      "type": "aws/dynamodb/table",
       "instanceId": "blueprint-instance-3",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
-      "resourceSpecData": {
+      "specData": {
         "tableName": "legacy-production-orders-1",
         "region": "eu-west-1",
         "id": "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-1"
@@ -47,16 +47,16 @@
       "failureReasons": []
     },
     "test-orders-table-1-id": {
-      "resourceId": "test-orders-table-1-id",
-      "resourceName": "ordersTable_1",
-      "resourceTemplateName": "ordersTable",
-      "resourceType": "aws/dynamodb/table",
+      "id": "test-orders-table-1-id",
+      "name": "ordersTable_1",
+      "templateName": "ordersTable",
+      "type": "aws/dynamodb/table",
       "instanceId": "blueprint-instance-3",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
-      "resourceSpecData": {
+      "specData": {
         "tableName": "legacy-production-orders-2",
         "region": "eu-west-2",
         "id": "arn:aws:dynamodb:eu-west-2:123456789012:table/legacy-production-orders-2"
@@ -83,30 +83,30 @@
       "failureReasons": []
     },
     "test-failing-order-function-id": {
-      "resourceId": "test-failing-order-function-id",
-      "resourceName": "failingOrderFunction",
-      "resourceType": "aws/lambda/function",
+      "id": "test-failing-order-function-id",
+      "name": "failingOrderFunction",
+      "type": "aws/lambda/function",
       "instanceId": "blueprint-instance-3",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
-      "resourceSpecData": {
+      "specData": {
         "handler": "src/failingOrder.handler"
       },
       "description": "Function that failinges an order before it is saved to a database.",
       "failureReasons": []
     },
     "test-invoices-table-id": {
-      "resourceId": "test-invoices-table-id",
-      "resourceName": "invoicesTable",
-      "resourceType": "aws/dynamodb/table",
+      "id": "test-invoices-table-id",
+      "name": "invoicesTable",
+      "type": "aws/dynamodb/table",
       "instanceId": "blueprint-instance-3",
       "status": 2,
       "preciseStatus": 3,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
-      "resourceSpecData": {
+      "specData": {
         "tableName": "legacy-production-invoices",
         "region": "eu-west-2",
         "id": "arn:aws:dynamodb:eu-west-2:123456789012:table/legacy-production-invoices"
@@ -117,15 +117,15 @@
   },
   "links": {
     "failingOrderFunction::ordersTable_0": {
-      "linkId": "test-link-1",
-      "linkName": "failingOrderFunction::ordersTable_0",
+      "id": "test-link-1",
+      "name": "failingOrderFunction::ordersTable_0",
       "instanceId": "blueprint-instance-3",
       "status": 2,
       "preciseStatus": 8,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
       "intermediaryResourceStates": [],
-      "linkData": {
+      "data": {
         "failingOrderFunction": {
           "environmentVariables": {
             "TABLE_NAME_ordersTable_0": "legacy-production-orders-1",
@@ -143,15 +143,15 @@
       "failureReasons": []
     },
     "failingOrderFunction::ordersTable_1": {
-      "linkId": "test-link-2",
-      "linkName": "failingOrderFunction::ordersTable_1",
+      "id": "test-link-2",
+      "name": "failingOrderFunction::ordersTable_1",
       "instanceId": "blueprint-instance-3",
       "status": 2,
       "preciseStatus": 8,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
       "intermediaryResourceStates": [],
-      "linkData": {
+      "data": {
         "failingOrderFunction": {
           "environmentVariables": {
             "TABLE_NAME_ordersTable_1": "legacy-production-orders-2",

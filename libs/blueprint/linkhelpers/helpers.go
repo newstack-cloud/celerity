@@ -22,7 +22,7 @@ func GetLinkDataFromState(state *state.LinkState) *core.MappingNode {
 	}
 
 	return &core.MappingNode{
-		Fields: state.LinkData,
+		Fields: state.Data,
 	}
 }
 
