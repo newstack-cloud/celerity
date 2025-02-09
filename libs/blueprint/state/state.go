@@ -225,7 +225,7 @@ type ResourceState struct {
 	// blueprint framework along with the storage of labels, annotations and a human-friendly
 	// display name for the resource.
 	Metadata *ResourceMetadataState `json:"metadata,omitempty"`
-	// DependsOnResources holds a list of resource IDs that the resource depends on,
+	// DependsOnResources holds a list of resource names that the resource depends on,
 	// this dependency is derived from "hard" links, references and the use of the dependsOn
 	// property in the source blueprint.
 	DependsOnResources []string `json:"dependsOnResources,omitempty"`
