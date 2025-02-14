@@ -624,22 +624,22 @@ func (c *memoryChildrenContainer) Get(ctx context.Context, instanceID string, ch
 	return state.InstanceState{}, state.InstanceNotFoundError(instanceID)
 }
 
-func (c *memoryChildrenContainer) Remove(ctx context.Context, instanceID string, childName string) (state.InstanceState, error) {
+func (c *memoryChildrenContainer) Detach(ctx context.Context, instanceID string, childName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if instance, ok := c.instances[instanceID]; ok {
 		if instance != nil {
-			child, ok := instance.ChildBlueprints[childName]
+			_, ok := instance.ChildBlueprints[childName]
 			if ok {
 				delete(instance.ChildBlueprints, childName)
-				return *child, nil
+				return nil
 			}
 		}
 	}
 
 	itemID := fmt.Sprintf("instance:%s:child:%s", instanceID, childName)
-	return state.InstanceState{}, state.InstanceNotFoundError(itemID)
+	return state.InstanceNotFoundError(itemID)
 }
 
 func (c *memoryChildrenContainer) Attach(

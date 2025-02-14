@@ -135,9 +135,11 @@ type ChildrenContainer interface {
 		childName string,
 		dependencies *DependencyInfo,
 	) error
-	// Remove deals with removing the state of a child blueprint from
-	// a given blueprint instance.
-	Remove(ctx context.Context, instanceID string, childName string) (InstanceState, error)
+	// Detach deals with removing the relationship between a child blueprint
+	// and its parent blueprint instance.
+	// This will not remove the child blueprint instance itself,
+	// instances.Remove should be used to completely remove the child blueprint instance.
+	Detach(ctx context.Context, instanceID string, childName string) error
 }
 
 // MetadataContainer provides an interface for functionality related

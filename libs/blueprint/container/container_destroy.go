@@ -415,6 +415,7 @@ func (c *defaultBlueprintContainer) handleChildDestroyEvent(
 ) error {
 	instances := c.stateContainer.Instances()
 	children := c.stateContainer.Children()
+
 	if startedDestroyingChild(msg.Status, deployCtx.Rollback) {
 		element := &ChildBlueprintIDInfo{
 			ChildInstanceID: msg.ChildInstanceID,
@@ -439,7 +440,7 @@ func (c *defaultBlueprintContainer) handleChildDestroyEvent(
 		}
 
 		if wasChildDestroyedSuccessfully(msg.Status, deployCtx.Rollback) {
-			_, err := children.Remove(
+			err := children.Detach(
 				ctx,
 				msg.ParentInstanceID,
 				msg.ChildName,
