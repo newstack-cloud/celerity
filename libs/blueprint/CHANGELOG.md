@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2025-02-14
+
+### Updated
+
+- **Breaking change** - Renamed the `Remove` method of the children state container to `Detach` to be consistent with the `Attach` method and to highlight that the method does not completely remove the child blueprint state but removes the connection between the parent and child blueprints.
+
+_Breaking changes will occur in early 0.x releases of this framework._
+
 ## [0.2.2] - 2025-02-09
 
 ### Fixed
