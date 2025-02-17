@@ -1,0 +1,1095 @@
+(state.InstanceState) {
+  InstanceID: (string) (len=20) "blueprint-instance-1",
+  Status: (core.InstanceStatus) 2,
+  LastStatusUpdateTimestamp: (int) 0,
+  LastDeployedTimestamp: (int) 1733145428,
+  LastDeployAttemptTimestamp: (int) 1733145428,
+  ResourceIDs: (map[string]string) (len=4) {
+    (string) (len=13) "invoicesTable": (string) (len=22) "test-invoices-table-id",
+    (string) (len=13) "ordersTable_0": (string) (len=22) "test-orders-table-0-id",
+    (string) (len=13) "ordersTable_1": (string) (len=22) "test-orders-table-1-id",
+    (string) (len=17) "saveOrderFunction": (string) (len=27) "test-save-order-function-id"
+  },
+  Resources: (map[string]*state.ResourceState) (len=4) {
+    (string) (len=22) "test-invoices-table-id": (*state.ResourceState)({
+      ResourceID: (string) (len=22) "test-invoices-table-id",
+      Name: (string) (len=13) "invoicesTable",
+      Type: (string) (len=18) "aws/dynamodb/table",
+      TemplateName: (string) "",
+      InstanceID: (string) (len=20) "blueprint-instance-1",
+      Status: (core.ResourceStatus) 2,
+      PreciseStatus: (core.PreciseResourceStatus) 3,
+      LastStatusUpdateTimestamp: (int) 0,
+      LastDeployedTimestamp: (int) 1733145428,
+      LastDeployAttemptTimestamp: (int) 1733145428,
+      SpecData: (*core.MappingNode)({
+        Scalar: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=2) "id": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=72) "arn:aws:dynamodb:eu-west-2:123456789012:table/legacy-production-invoices"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=6) "region": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=9) "eu-west-2"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=9) "tableName": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=26) "legacy-production-invoices"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          })
+        },
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>),
+        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+      }),
+      Description: (string) (len=46) "Table that stores invoices for an application.",
+      Metadata: (*state.ResourceMetadataState)({
+        DisplayName: (string) "",
+        Annotations: (map[string]*core.MappingNode) <nil>,
+        Labels: (map[string]string) <nil>,
+        Custom: (*core.MappingNode)(<nil>)
+      }),
+      DependsOnResources: ([]string) {
+      },
+      DependsOnChildren: ([]string) {
+      },
+      FailureReasons: ([]string) {
+      },
+      Drifted: (bool) false,
+      LastDriftDetectedTimestamp: (*int)(<nil>),
+      Durations: (*state.ResourceCompletionDurations)(<nil>)
+    }),
+    (string) (len=22) "test-orders-table-0-id": (*state.ResourceState)({
+      ResourceID: (string) (len=22) "test-orders-table-0-id",
+      Name: (string) (len=13) "ordersTable_0",
+      Type: (string) (len=18) "aws/dynamodb/table",
+      TemplateName: (string) (len=11) "ordersTable",
+      InstanceID: (string) (len=20) "blueprint-instance-1",
+      Status: (core.ResourceStatus) 2,
+      PreciseStatus: (core.PreciseResourceStatus) 3,
+      LastStatusUpdateTimestamp: (int) 0,
+      LastDeployedTimestamp: (int) 1733145428,
+      LastDeployAttemptTimestamp: (int) 1733145428,
+      SpecData: (*core.MappingNode)({
+        Scalar: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=2) "id": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=72) "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-1"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=6) "region": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=9) "eu-west-1"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=9) "tableName": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=26) "legacy-production-orders-1"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          })
+        },
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>),
+        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+      }),
+      Description: (string) (len=44) "Table that stores orders for an application.",
+      Metadata: (*state.ResourceMetadataState)({
+        DisplayName: (string) (len=34) "legacy-production-env Orders Table",
+        Annotations: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=25) "aws.dynamodb.legacy.flag1": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(true),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=20) "aws.dynamodb.trigger": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(false),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=16) "aws.dynamodb.vpc": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=21) "vpc-1234567890abcdef0"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          })
+        },
+        Labels: (map[string]string) (len=1) {
+          (string) (len=3) "app": (string) (len=6) "orders"
+        },
+        Custom: (*core.MappingNode)({
+          Scalar: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=1) {
+            (string) (len=6) "visual": (*core.MappingNode)({
+              Scalar: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=3) {
+                (string) (len=5) "label": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=34) "legacy-production-env Orders Table"),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                }),
+                (string) (len=1) "x": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(150),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                }),
+                (string) (len=1) "y": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(350),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
+            })
+          },
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        })
+      }),
+      DependsOnResources: ([]string) {
+      },
+      DependsOnChildren: ([]string) {
+      },
+      FailureReasons: ([]string) {
+      },
+      Drifted: (bool) true,
+      LastDriftDetectedTimestamp: (*int)(1733145728),
+      Durations: (*state.ResourceCompletionDurations)(<nil>)
+    }),
+    (string) (len=22) "test-orders-table-1-id": (*state.ResourceState)({
+      ResourceID: (string) (len=22) "test-orders-table-1-id",
+      Name: (string) (len=13) "ordersTable_1",
+      Type: (string) (len=18) "aws/dynamodb/table",
+      TemplateName: (string) (len=11) "ordersTable",
+      InstanceID: (string) (len=20) "blueprint-instance-1",
+      Status: (core.ResourceStatus) 2,
+      PreciseStatus: (core.PreciseResourceStatus) 3,
+      LastStatusUpdateTimestamp: (int) 0,
+      LastDeployedTimestamp: (int) 1733145428,
+      LastDeployAttemptTimestamp: (int) 1733145428,
+      SpecData: (*core.MappingNode)({
+        Scalar: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=2) "id": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=72) "arn:aws:dynamodb:eu-west-2:123456789012:table/legacy-production-orders-2"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=6) "region": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=9) "eu-west-2"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=9) "tableName": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=26) "legacy-production-orders-2"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          })
+        },
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>),
+        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+      }),
+      Description: (string) (len=44) "Table that stores orders for an application.",
+      Metadata: (*state.ResourceMetadataState)({
+        DisplayName: (string) (len=34) "legacy-production-env Orders Table",
+        Annotations: (map[string]*core.MappingNode) (len=3) {
+          (string) (len=25) "aws.dynamodb.legacy.flag1": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(true),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=20) "aws.dynamodb.trigger": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(false),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          (string) (len=16) "aws.dynamodb.vpc": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=21) "vpc-1234567890abcdef0"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          })
+        },
+        Labels: (map[string]string) (len=1) {
+          (string) (len=3) "app": (string) (len=6) "orders"
+        },
+        Custom: (*core.MappingNode)({
+          Scalar: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=1) {
+            (string) (len=6) "visual": (*core.MappingNode)({
+              Scalar: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=3) {
+                (string) (len=5) "label": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=34) "legacy-production-env Orders Table"),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                }),
+                (string) (len=1) "x": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(150),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                }),
+                (string) (len=1) "y": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(350),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
+            })
+          },
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        })
+      }),
+      DependsOnResources: ([]string) {
+      },
+      DependsOnChildren: ([]string) {
+      },
+      FailureReasons: ([]string) {
+      },
+      Drifted: (bool) false,
+      LastDriftDetectedTimestamp: (*int)(<nil>),
+      Durations: (*state.ResourceCompletionDurations)(<nil>)
+    }),
+    (string) (len=27) "test-save-order-function-id": (*state.ResourceState)({
+      ResourceID: (string) (len=27) "test-save-order-function-id",
+      Name: (string) (len=17) "saveOrderFunction",
+      Type: (string) (len=19) "aws/lambda/function",
+      TemplateName: (string) "",
+      InstanceID: (string) (len=20) "blueprint-instance-1",
+      Status: (core.ResourceStatus) 2,
+      PreciseStatus: (core.PreciseResourceStatus) 3,
+      LastStatusUpdateTimestamp: (int) 0,
+      LastDeployedTimestamp: (int) 1733145428,
+      LastDeployAttemptTimestamp: (int) 1733145428,
+      SpecData: (*core.MappingNode)({
+        Scalar: (*core.ScalarValue)(<nil>),
+        Fields: (map[string]*core.MappingNode) (len=1) {
+          (string) (len=7) "handler": (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=21) "src/saveOrder.handler"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          })
+        },
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>),
+        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+      }),
+      Description: (string) (len=45) "Function that saves an order to the database.",
+      Metadata: (*state.ResourceMetadataState)({
+        DisplayName: (string) "",
+        Annotations: (map[string]*core.MappingNode) <nil>,
+        Labels: (map[string]string) <nil>,
+        Custom: (*core.MappingNode)(<nil>)
+      }),
+      DependsOnResources: ([]string) {
+      },
+      DependsOnChildren: ([]string) {
+      },
+      FailureReasons: ([]string) {
+      },
+      Drifted: (bool) false,
+      LastDriftDetectedTimestamp: (*int)(<nil>),
+      Durations: (*state.ResourceCompletionDurations)(<nil>)
+    })
+  },
+  Links: (map[string]*state.LinkState) (len=2) {
+    (string) (len=32) "saveOrderFunction::ordersTable_0": (*state.LinkState)({
+      LinkID: (string) (len=11) "test-link-1",
+      Name: (string) (len=32) "saveOrderFunction::ordersTable_0",
+      InstanceID: (string) (len=20) "blueprint-instance-1",
+      Status: (core.LinkStatus) 2,
+      PreciseStatus: (core.PreciseLinkStatus) 8,
+      LastStatusUpdateTimestamp: (int) 0,
+      LastDeployedTimestamp: (int) 1733145428,
+      LastDeployAttemptTimestamp: (int) 1733145428,
+      IntermediaryResourceStates: ([]*state.LinkIntermediaryResourceState) {
+      },
+      Data: (map[string]*core.MappingNode) (len=1) {
+        (string) (len=17) "saveOrderFunction": (*core.MappingNode)({
+          Scalar: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=2) {
+            (string) (len=20) "environmentVariables": (*core.MappingNode)({
+              Scalar: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=2) {
+                (string) (len=24) "TABLE_NAME_ordersTable_0": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=26) "legacy-production-orders-1"),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                }),
+                (string) (len=26) "TABLE_REGION_ordersTable_0": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=9) "eu-west-1"),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
+            }),
+            (string) (len=20) "iam.policyStatements": (*core.MappingNode)({
+              Scalar: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=1) {
+                (string) (len=1) "0": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)(<nil>),
+                  Fields: (map[string]*core.MappingNode) (len=3) {
+                    (string) (len=6) "action": (*core.MappingNode)({
+                      Scalar: (*core.ScalarValue)(<nil>),
+                      Fields: (map[string]*core.MappingNode) <nil>,
+                      Items: ([]*core.MappingNode) (len=1) {
+                        (*core.MappingNode)({
+                          Scalar: (*core.ScalarValue)({
+                            IntValue: (*int)(<nil>),
+                            BoolValue: (*bool)(<nil>),
+                            FloatValue: (*float64)(<nil>),
+                            StringValue: (*string)((len=16) "dynamodb:PutItem"),
+                            SourceMeta: (*source.Meta)(<nil>)
+                          }),
+                          Fields: (map[string]*core.MappingNode) <nil>,
+                          Items: ([]*core.MappingNode) <nil>,
+                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                          SourceMeta: (*source.Meta)(<nil>),
+                          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                        })
+                      },
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                    }),
+                    (string) (len=6) "effect": (*core.MappingNode)({
+                      Scalar: (*core.ScalarValue)({
+                        IntValue: (*int)(<nil>),
+                        BoolValue: (*bool)(<nil>),
+                        FloatValue: (*float64)(<nil>),
+                        StringValue: (*string)((len=5) "Allow"),
+                        SourceMeta: (*source.Meta)(<nil>)
+                      }),
+                      Fields: (map[string]*core.MappingNode) <nil>,
+                      Items: ([]*core.MappingNode) <nil>,
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                    }),
+                    (string) (len=8) "resource": (*core.MappingNode)({
+                      Scalar: (*core.ScalarValue)({
+                        IntValue: (*int)(<nil>),
+                        BoolValue: (*bool)(<nil>),
+                        FloatValue: (*float64)(<nil>),
+                        StringValue: (*string)((len=72) "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-1"),
+                        SourceMeta: (*source.Meta)(<nil>)
+                      }),
+                      Fields: (map[string]*core.MappingNode) <nil>,
+                      Items: ([]*core.MappingNode) <nil>,
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                    })
+                  },
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
+            })
+          },
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        })
+      },
+      FailureReasons: ([]string) {
+      },
+      Durations: (*state.LinkCompletionDurations)(<nil>)
+    }),
+    (string) (len=32) "saveOrderFunction::ordersTable_1": (*state.LinkState)({
+      LinkID: (string) (len=11) "test-link-2",
+      Name: (string) (len=32) "saveOrderFunction::ordersTable_1",
+      InstanceID: (string) (len=20) "blueprint-instance-1",
+      Status: (core.LinkStatus) 2,
+      PreciseStatus: (core.PreciseLinkStatus) 8,
+      LastStatusUpdateTimestamp: (int) 0,
+      LastDeployedTimestamp: (int) 1733145428,
+      LastDeployAttemptTimestamp: (int) 1733145428,
+      IntermediaryResourceStates: ([]*state.LinkIntermediaryResourceState) {
+      },
+      Data: (map[string]*core.MappingNode) (len=1) {
+        (string) (len=17) "saveOrderFunction": (*core.MappingNode)({
+          Scalar: (*core.ScalarValue)(<nil>),
+          Fields: (map[string]*core.MappingNode) (len=2) {
+            (string) (len=20) "environmentVariables": (*core.MappingNode)({
+              Scalar: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=2) {
+                (string) (len=24) "TABLE_NAME_ordersTable_1": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=26) "legacy-production-orders-2"),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                }),
+                (string) (len=26) "TABLE_REGION_ordersTable_1": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)({
+                    IntValue: (*int)(<nil>),
+                    BoolValue: (*bool)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    StringValue: (*string)((len=9) "eu-west-2"),
+                    SourceMeta: (*source.Meta)(<nil>)
+                  }),
+                  Fields: (map[string]*core.MappingNode) <nil>,
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
+            }),
+            (string) (len=20) "iam.policyStatements": (*core.MappingNode)({
+              Scalar: (*core.ScalarValue)(<nil>),
+              Fields: (map[string]*core.MappingNode) (len=1) {
+                (string) (len=1) "0": (*core.MappingNode)({
+                  Scalar: (*core.ScalarValue)(<nil>),
+                  Fields: (map[string]*core.MappingNode) (len=3) {
+                    (string) (len=6) "action": (*core.MappingNode)({
+                      Scalar: (*core.ScalarValue)(<nil>),
+                      Fields: (map[string]*core.MappingNode) <nil>,
+                      Items: ([]*core.MappingNode) (len=1) {
+                        (*core.MappingNode)({
+                          Scalar: (*core.ScalarValue)({
+                            IntValue: (*int)(<nil>),
+                            BoolValue: (*bool)(<nil>),
+                            FloatValue: (*float64)(<nil>),
+                            StringValue: (*string)((len=16) "dynamodb:PutItem"),
+                            SourceMeta: (*source.Meta)(<nil>)
+                          }),
+                          Fields: (map[string]*core.MappingNode) <nil>,
+                          Items: ([]*core.MappingNode) <nil>,
+                          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                          SourceMeta: (*source.Meta)(<nil>),
+                          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                        })
+                      },
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                    }),
+                    (string) (len=6) "effect": (*core.MappingNode)({
+                      Scalar: (*core.ScalarValue)({
+                        IntValue: (*int)(<nil>),
+                        BoolValue: (*bool)(<nil>),
+                        FloatValue: (*float64)(<nil>),
+                        StringValue: (*string)((len=5) "Allow"),
+                        SourceMeta: (*source.Meta)(<nil>)
+                      }),
+                      Fields: (map[string]*core.MappingNode) <nil>,
+                      Items: ([]*core.MappingNode) <nil>,
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                    }),
+                    (string) (len=8) "resource": (*core.MappingNode)({
+                      Scalar: (*core.ScalarValue)({
+                        IntValue: (*int)(<nil>),
+                        BoolValue: (*bool)(<nil>),
+                        FloatValue: (*float64)(<nil>),
+                        StringValue: (*string)((len=72) "arn:aws:dynamodb:eu-west-2:123456789012:table/legacy-production-orders-2"),
+                        SourceMeta: (*source.Meta)(<nil>)
+                      }),
+                      Fields: (map[string]*core.MappingNode) <nil>,
+                      Items: ([]*core.MappingNode) <nil>,
+                      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>),
+                      FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                    })
+                  },
+                  Items: ([]*core.MappingNode) <nil>,
+                  StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                  SourceMeta: (*source.Meta)(<nil>),
+                  FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                })
+              },
+              Items: ([]*core.MappingNode) <nil>,
+              StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+              SourceMeta: (*source.Meta)(<nil>),
+              FieldsSourceMeta: (map[string]*source.Meta) <nil>
+            })
+          },
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        })
+      },
+      FailureReasons: ([]string) {
+      },
+      Durations: (*state.LinkCompletionDurations)(<nil>)
+    })
+  },
+  Metadata: (map[string]*core.MappingNode) (len=1) {
+    (string) (len=5) "build": (*core.MappingNode)({
+      Scalar: (*core.ScalarValue)({
+        IntValue: (*int)(<nil>),
+        BoolValue: (*bool)(<nil>),
+        FloatValue: (*float64)(<nil>),
+        StringValue: (*string)((len=3) "tsc"),
+        SourceMeta: (*source.Meta)(<nil>)
+      }),
+      Fields: (map[string]*core.MappingNode) <nil>,
+      Items: ([]*core.MappingNode) <nil>,
+      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>),
+      FieldsSourceMeta: (map[string]*source.Meta) <nil>
+    })
+  },
+  Exports: (map[string]*state.ExportState) (len=1) {
+    (string) (len=11) "environment": (*state.ExportState)({
+      Value: (*core.MappingNode)({
+        Scalar: (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=21) "legacy-production-env"),
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>),
+        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+      }),
+      Type: (schema.ExportType) (len=6) "string",
+      Description: (string) "",
+      Field: (string) (len=21) "variables.environment"
+    })
+  },
+  ChildBlueprints: (map[string]*state.InstanceState) (len=1) {
+    (string) (len=9) "coreInfra": (*state.InstanceState)({
+      InstanceID: (string) (len=37) "blueprint-instance-1-child-core-infra",
+      Status: (core.InstanceStatus) 2,
+      LastStatusUpdateTimestamp: (int) 0,
+      LastDeployedTimestamp: (int) 1733145428,
+      LastDeployAttemptTimestamp: (int) 1733145428,
+      ResourceIDs: (map[string]string) (len=1) {
+        (string) (len=15) "complexResource": (string) (len=19) "complex-resource-id"
+      },
+      Resources: (map[string]*state.ResourceState) (len=1) {
+        (string) (len=19) "complex-resource-id": (*state.ResourceState)({
+          ResourceID: (string) (len=19) "complex-resource-id",
+          Name: (string) (len=15) "complexResource",
+          Type: (string) (len=15) "example/complex",
+          TemplateName: (string) "",
+          InstanceID: (string) (len=37) "blueprint-instance-1-child-core-infra",
+          Status: (core.ResourceStatus) 2,
+          PreciseStatus: (core.PreciseResourceStatus) 3,
+          LastStatusUpdateTimestamp: (int) 0,
+          LastDeployedTimestamp: (int) 1733145428,
+          LastDeployAttemptTimestamp: (int) 1733145428,
+          SpecData: (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)(<nil>),
+            Fields: (map[string]*core.MappingNode) (len=5) {
+              (string) (len=2) "id": (*core.MappingNode)({
+                Scalar: (*core.ScalarValue)({
+                  IntValue: (*int)(<nil>),
+                  BoolValue: (*bool)(<nil>),
+                  FloatValue: (*float64)(<nil>),
+                  StringValue: (*string)((len=45) "complex-resource-provider/complex-resource-id"),
+                  SourceMeta: (*source.Meta)(<nil>)
+                }),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>),
+                FieldsSourceMeta: (map[string]*source.Meta) <nil>
+              }),
+              (string) (len=10) "itemConfig": (*core.MappingNode)({
+                Scalar: (*core.ScalarValue)(<nil>),
+                Fields: (map[string]*core.MappingNode) (len=2) {
+                  (string) (len=9) "endpoints": (*core.MappingNode)({
+                    Scalar: (*core.ScalarValue)(<nil>),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) (len=3) {
+                      (*core.MappingNode)({
+                        Scalar: (*core.ScalarValue)({
+                          IntValue: (*int)(<nil>),
+                          BoolValue: (*bool)(<nil>),
+                          FloatValue: (*float64)(<nil>),
+                          StringValue: (*string)((len=25) "https://old.example.com/1"),
+                          SourceMeta: (*source.Meta)(<nil>)
+                        }),
+                        Fields: (map[string]*core.MappingNode) <nil>,
+                        Items: ([]*core.MappingNode) <nil>,
+                        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                        SourceMeta: (*source.Meta)(<nil>),
+                        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                      }),
+                      (*core.MappingNode)({
+                        Scalar: (*core.ScalarValue)({
+                          IntValue: (*int)(<nil>),
+                          BoolValue: (*bool)(<nil>),
+                          FloatValue: (*float64)(<nil>),
+                          StringValue: (*string)((len=25) "https://old.example.com/2"),
+                          SourceMeta: (*source.Meta)(<nil>)
+                        }),
+                        Fields: (map[string]*core.MappingNode) <nil>,
+                        Items: ([]*core.MappingNode) <nil>,
+                        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                        SourceMeta: (*source.Meta)(<nil>),
+                        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                      }),
+                      (*core.MappingNode)({
+                        Scalar: (*core.ScalarValue)({
+                          IntValue: (*int)(<nil>),
+                          BoolValue: (*bool)(<nil>),
+                          FloatValue: (*float64)(<nil>),
+                          StringValue: (*string)((len=25) "https://old.example.com/3"),
+                          SourceMeta: (*source.Meta)(<nil>)
+                        }),
+                        Fields: (map[string]*core.MappingNode) <nil>,
+                        Items: ([]*core.MappingNode) <nil>,
+                        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                        SourceMeta: (*source.Meta)(<nil>),
+                        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                      })
+                    },
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>),
+                    FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                  }),
+                  (string) (len=4) "ipv4": (*core.MappingNode)({
+                    Scalar: (*core.ScalarValue)({
+                      IntValue: (*int)(<nil>),
+                      BoolValue: (*bool)(false),
+                      FloatValue: (*float64)(<nil>),
+                      StringValue: (*string)(<nil>),
+                      SourceMeta: (*source.Meta)(<nil>)
+                    }),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) <nil>,
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>),
+                    FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                  })
+                },
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>),
+                FieldsSourceMeta: (map[string]*source.Meta) <nil>
+              }),
+              (string) (len=15) "otherItemConfig": (*core.MappingNode)({
+                Scalar: (*core.ScalarValue)({
+                  IntValue: (*int)(<nil>),
+                  BoolValue: (*bool)(<nil>),
+                  FloatValue: (*float64)(<nil>),
+                  StringValue: (*string)((len=29) "old-example-other-config-item"),
+                  SourceMeta: (*source.Meta)(<nil>)
+                }),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) <nil>,
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>),
+                FieldsSourceMeta: (map[string]*source.Meta) <nil>
+              }),
+              (string) (len=12) "vendorConfig": (*core.MappingNode)({
+                Scalar: (*core.ScalarValue)(<nil>),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) (len=1) {
+                  (*core.MappingNode)({
+                    Scalar: (*core.ScalarValue)(<nil>),
+                    Fields: (map[string]*core.MappingNode) (len=2) {
+                      (string) (len=8) "vendorId": (*core.MappingNode)({
+                        Scalar: (*core.ScalarValue)({
+                          IntValue: (*int)(<nil>),
+                          BoolValue: (*bool)(<nil>),
+                          FloatValue: (*float64)(<nil>),
+                          StringValue: (*string)((len=21) "old-example-vendor-id"),
+                          SourceMeta: (*source.Meta)(<nil>)
+                        }),
+                        Fields: (map[string]*core.MappingNode) <nil>,
+                        Items: ([]*core.MappingNode) <nil>,
+                        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                        SourceMeta: (*source.Meta)(<nil>),
+                        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                      }),
+                      (string) (len=15) "vendorNamespace": (*core.MappingNode)({
+                        Scalar: (*core.ScalarValue)({
+                          IntValue: (*int)(<nil>),
+                          BoolValue: (*bool)(<nil>),
+                          FloatValue: (*float64)(<nil>),
+                          StringValue: (*string)((len=28) "old-example-vendor-namespace"),
+                          SourceMeta: (*source.Meta)(<nil>)
+                        }),
+                        Fields: (map[string]*core.MappingNode) <nil>,
+                        Items: ([]*core.MappingNode) <nil>,
+                        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                        SourceMeta: (*source.Meta)(<nil>),
+                        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                      })
+                    },
+                    Items: ([]*core.MappingNode) <nil>,
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>),
+                    FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                  })
+                },
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>),
+                FieldsSourceMeta: (map[string]*source.Meta) <nil>
+              }),
+              (string) (len=10) "vendorTags": (*core.MappingNode)({
+                Scalar: (*core.ScalarValue)(<nil>),
+                Fields: (map[string]*core.MappingNode) <nil>,
+                Items: ([]*core.MappingNode) (len=2) {
+                  (*core.MappingNode)({
+                    Scalar: (*core.ScalarValue)({
+                      IntValue: (*int)(<nil>),
+                      BoolValue: (*bool)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      StringValue: (*string)((len=24) "old-example-vendor-tag-1"),
+                      SourceMeta: (*source.Meta)(<nil>)
+                    }),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) <nil>,
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>),
+                    FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                  }),
+                  (*core.MappingNode)({
+                    Scalar: (*core.ScalarValue)({
+                      IntValue: (*int)(<nil>),
+                      BoolValue: (*bool)(<nil>),
+                      FloatValue: (*float64)(<nil>),
+                      StringValue: (*string)((len=24) "old-example-vendor-tag-2"),
+                      SourceMeta: (*source.Meta)(<nil>)
+                    }),
+                    Fields: (map[string]*core.MappingNode) <nil>,
+                    Items: ([]*core.MappingNode) <nil>,
+                    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                    SourceMeta: (*source.Meta)(<nil>),
+                    FieldsSourceMeta: (map[string]*source.Meta) <nil>
+                  })
+                },
+                StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+                SourceMeta: (*source.Meta)(<nil>),
+                FieldsSourceMeta: (map[string]*source.Meta) <nil>
+              })
+            },
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          Description: (string) (len=24) "A complex resource type.",
+          Metadata: (*state.ResourceMetadataState)({
+            DisplayName: (string) "",
+            Annotations: (map[string]*core.MappingNode) <nil>,
+            Labels: (map[string]string) <nil>,
+            Custom: (*core.MappingNode)(<nil>)
+          }),
+          DependsOnResources: ([]string) {
+          },
+          DependsOnChildren: ([]string) {
+          },
+          FailureReasons: ([]string) {
+          },
+          Drifted: (bool) false,
+          LastDriftDetectedTimestamp: (*int)(<nil>),
+          Durations: (*state.ResourceCompletionDurations)(<nil>)
+        })
+      },
+      Links: (map[string]*state.LinkState) {
+      },
+      Metadata: (map[string]*core.MappingNode) (len=1) {
+        (string) (len=5) "build": (*core.MappingNode)({
+          Scalar: (*core.ScalarValue)({
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=3) "tsc"),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          Fields: (map[string]*core.MappingNode) <nil>,
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        })
+      },
+      Exports: (map[string]*state.ExportState) (len=1) {
+        (string) (len=11) "environment": (*state.ExportState)({
+          Value: (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)({
+              IntValue: (*int)(<nil>),
+              BoolValue: (*bool)(<nil>),
+              FloatValue: (*float64)(<nil>),
+              StringValue: (*string)((len=21) "legacy-production-env"),
+              SourceMeta: (*source.Meta)(<nil>)
+            }),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+            SourceMeta: (*source.Meta)(<nil>),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
+          }),
+          Type: (schema.ExportType) (len=6) "string",
+          Description: (string) "",
+          Field: (string) (len=21) "variables.environment"
+        })
+      },
+      ChildBlueprints: (map[string]*state.InstanceState) {
+      },
+      ChildDependencies: (map[string]*state.DependencyInfo) <nil>,
+      Durations: (*state.InstanceCompletionDuration)(<nil>)
+    })
+  },
+  ChildDependencies: (map[string]*state.DependencyInfo) <nil>,
+  Durations: (*state.InstanceCompletionDuration)(<nil>)
+}

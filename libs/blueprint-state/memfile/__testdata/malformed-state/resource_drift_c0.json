@@ -1,0 +1,24 @@
+[
+  {
+    "resourceId": "test-orders-table-0-id",
+    "resourceName": "ordersTable_0",
+    "specData": {
+      "tableName": "legacy-production-orders-1",
+      "region": "eu-west-2",
+      "id": "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-1"
+    },
+    "difference": {
+      "modifiedFields": [
+        {
+          "fieldPath": "spec.region",
+          "stateValue": "eu-west-1",
+          "driftedValue": "eu-west-2"
+        }
+      ],
+      "newFields": [],
+      "removedFields": [],
+      "unchangedFields": []
+    },
+    "timestamp": 1733145728
+  }
+]

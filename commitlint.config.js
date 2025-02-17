@@ -26,6 +26,7 @@ module.exports = {
       [
         "blueprint",
         "blueprint-resolvers",
+        "blueprint-state",
         "blueprint-ls",
         "deploy-engine",
         "celerity-one",

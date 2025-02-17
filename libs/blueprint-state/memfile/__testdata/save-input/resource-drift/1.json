@@ -1,0 +1,20 @@
+{
+  "resourceId": "test-save-order-function-id",
+  "resourceName": "saveOrderFunction",
+  "specData": {
+    "handler": "src/handlersv2.saveOrder"
+  },
+  "difference": {
+    "modifiedFields": [
+      {
+        "fieldPath": "spec.handler",
+        "stateValue": "src/saveOrder.handler",
+        "driftedValue": "src/handlersv2.saveOrder"
+      }
+    ],
+    "newFields": [],
+    "removedFields": [],
+    "unchangedFields": []
+  },
+  "timestamp": 1733145728
+}

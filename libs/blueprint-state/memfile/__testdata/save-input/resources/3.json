@@ -1,0 +1,38 @@
+{
+  "id": "test-orders-table-0-id",
+  "name": "ordersTable_0",
+  "templateName": "ordersTable",
+  "type": "aws/dynamodb/table",
+  "instanceId": "blueprint-instance-1",
+  "status": 2,
+  "preciseStatus": 3,
+  "lastDeployedTimestamp": 1733145428,
+  "lastDeployAttemptTimestamp": 1733145428,
+  "specData": {
+    "tableName": "legacy-production-orders-1",
+    "region": "eu-west-1",
+    "id": "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-1-updated"
+  },
+  "description": "Updated table that stores orders for an application.",
+  "metadata": {
+    "displayName": "legacy-production-env Orders Table",
+    "annotations": {
+      "aws.dynamodb.trigger": false,
+      "aws.dynamodb.vpc": "vpc-1234567890abcdef0",
+      "aws.dynamodb.legacy.flag1": true
+    },
+    "labels": {
+      "app": "orders"
+    },
+    "custom": {
+      "visual": {
+        "x": 150,
+        "y": 350,
+        "label": "legacy-production-env Orders Table Updated"
+      }
+    }
+  },
+  "failureReasons": [],
+  "drifted": true,
+  "lastDriftDetectedTimestamp": 1733145728
+}

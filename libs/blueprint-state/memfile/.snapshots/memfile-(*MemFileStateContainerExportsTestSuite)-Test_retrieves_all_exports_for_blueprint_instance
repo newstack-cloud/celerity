@@ -1,0 +1,21 @@
+(map[string]*state.ExportState) (len=1) {
+  (string) (len=11) "environment": (*state.ExportState)({
+    Value: (*core.MappingNode)({
+      Scalar: (*core.ScalarValue)({
+        IntValue: (*int)(<nil>),
+        BoolValue: (*bool)(<nil>),
+        FloatValue: (*float64)(<nil>),
+        StringValue: (*string)((len=21) "legacy-production-env"),
+        SourceMeta: (*source.Meta)(<nil>)
+      }),
+      Fields: (map[string]*core.MappingNode) <nil>,
+      Items: ([]*core.MappingNode) <nil>,
+      StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+      SourceMeta: (*source.Meta)(<nil>),
+      FieldsSourceMeta: (map[string]*source.Meta) <nil>
+    }),
+    Type: (schema.ExportType) (len=6) "string",
+    Description: (string) "",
+    Field: (string) (len=21) "variables.environment"
+  })
+}

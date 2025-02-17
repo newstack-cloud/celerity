@@ -1,0 +1,15 @@
+{
+  "id": "test-remove-order-function-id",
+  "name": "removeOrderFunction",
+  "type": "aws/lambda/function",
+  "instanceId": "non-existent-instance",
+  "status": 2,
+  "preciseStatus": 3,
+  "lastDeployedTimestamp": 1733145428,
+  "lastDeployAttemptTimestamp": 1733145428,
+  "specData": {
+    "handler": "src/removeOrder.handler"
+  },
+  "description": "Function that removes an order from the database.",
+  "failureReasons": []
+}

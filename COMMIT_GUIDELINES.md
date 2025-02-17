@@ -33,6 +33,8 @@ a base for more advanced tooling to allow for efficient searches for decisions a
 This list will evolve as more applications and libraries are added to Celerity.
 
 - `blueprint` - This commit scope should be used for a commit that represents work that pertains to the blueprint library/framework.
+- `blueprint-resolvers` - This commit scope should be used for a commit that represents work that pertains to the blueprint resolvers library that provides a collection of child blueprint resolvers to load child blueprints from various locations.
+- `blueprint-state` - This commit scope should be used for a commit that represents work that pertains to the blueprint state library that provides core state container implementations to be used in the deploy engine or other applications built on top of the blueprint framework.
 - `blueprint-ls` - This commit scope should be used for a commit that represents work that pertains to the Blueprint Language Server.
 - `deploy-engine` - This commit scope should be used for a commit that represents work that pertains to the deploy engine that sits at the core of the deployment tooling.
 - `common` - This commit scope should be used for a commit that represents work that pertains to the common Go library.
