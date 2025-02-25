@@ -34,6 +34,8 @@ func (e *Error) Error() string {
 		return fmt.Sprintf("StateError: link %q not found", e.ItemID)
 	case ErrInstanceNotFound:
 		return fmt.Sprintf("StateError: instance %q not found", e.ItemID)
+	case ErrExportNotFound:
+		return fmt.Sprintf("StateError: export %q not found", e.ItemID)
 	default:
 		return "StateError: unknown error"
 	}
@@ -74,7 +76,7 @@ func InstanceNotFoundError(instanceID string) *Error {
 func ExportNotFoundError(instanceID string, exportName string) *Error {
 	exportItemID := fmt.Sprintf("instance:%s:export:%s", instanceID, exportName)
 	return &Error{
-		Code:   ErrResourceNotFound,
+		Code:   ErrExportNotFound,
 		ItemID: exportItemID,
 	}
 }
