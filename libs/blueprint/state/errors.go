@@ -21,6 +21,9 @@ const (
 	ErrLinkNotFound ErrorCode = "link_not_found"
 	// ErrInstanceNotFound is used when a blueprint instance could not be found.
 	ErrInstanceNotFound ErrorCode = "instance_not_found"
+	// ErrExportNotFound is the error code that is used when
+	// an export is not found in the state.
+	ErrExportNotFound ErrorCode = "export_not_found"
 )
 
 func (e *Error) Error() string {
@@ -66,6 +69,16 @@ func InstanceNotFoundError(instanceID string) *Error {
 	}
 }
 
+// ExportNotFoundError is a helper function that creates a new error
+// for when an export can not be found for the given blueprint instance.
+func ExportNotFoundError(instanceID string, exportName string) *Error {
+	exportItemID := fmt.Sprintf("instance:%s:export:%s", instanceID, exportName)
+	return &Error{
+		Code:   ErrResourceNotFound,
+		ItemID: exportItemID,
+	}
+}
+
 // IsResourceNotFound is a helper function that checks if the provided error
 // is a resource not found error.
 func IsResourceNotFound(err error) bool {
@@ -89,6 +102,15 @@ func IsLinkNotFound(err error) bool {
 func IsInstanceNotFound(err error) bool {
 	if e, ok := err.(*Error); ok {
 		return e.Code == ErrInstanceNotFound
+	}
+	return false
+}
+
+// IsExportNotFound is a helper function that checks if the provided error
+// is an export not found error.
+func IsExportNotFound(err error) bool {
+	if e, ok := err.(*Error); ok {
+		return e.Code == ErrExportNotFound
 	}
 	return false
 }
