@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-02-25
+
+### Fixed
+
+- Corrects error code used in the helper function to create export not found errors. This also adds a missing switch case for the display text to show for the export not found error code.
+
 ## [0.3.0] - 2025-02-25
 
 ### Added
