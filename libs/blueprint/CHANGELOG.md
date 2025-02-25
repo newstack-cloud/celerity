@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-02-25
+
+### Added
+
+- Helper functions to create and check for export not found errors to be used as a part of the state container interface. Implementations of the state container interface should use these functions to ensure that consistent error types are returned when a requested export is not present in a given blueprint instance.
+
 ## [0.2.3] - 2025-02-14
 
 ### Updated
