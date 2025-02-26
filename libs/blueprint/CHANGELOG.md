@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2025-02-26
+
+### Updated
+
+- **Breaking change** - Renamed the `StabilisedDependencies` method of the `provider.Resource` interface to `GetStabilisedDependencies` to be consistent with the names of other methods to retrieve information about a resource.
+
+_Breaking changes will occur in early 0.x releases of this framework._
+
 ## [0.3.1] - 2025-02-25
 
 ### Fixed
