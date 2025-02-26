@@ -8,7 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-type stateContainerImpl struct {
+type mfStateContainerImpl struct {
 	instancesContainer *instancesContainerImpl
 	resourcesContainer *resourcesContainerImpl
 	linksContainer     *linksContainerImpl
@@ -20,7 +20,7 @@ type stateContainerImpl struct {
 
 // Option is a type for options that can be passed to LoadStateContainer
 // when creating an in-memory state container with file persistence.
-type Option func(*stateContainerImpl)
+type Option func(*mfStateContainerImpl)
 
 // WithMaxGuideFileSize sets a guide for the maximum size of a state chunk file in bytes.
 // If a single record (instance or resource drift entry) exceeds this size,
@@ -28,8 +28,8 @@ type Option func(*stateContainerImpl)
 // This is only a guide, the actual size of the files are often likely to be larger.
 //
 // When not set, the default value is 1MB (1,048,576 bytes).
-func WithMaxGuideFileSize(maxGuideFileSize int64) func(*stateContainerImpl) {
-	return func(p *stateContainerImpl) {
+func WithMaxGuideFileSize(maxGuideFileSize int64) func(*mfStateContainerImpl) {
+	return func(p *mfStateContainerImpl) {
 		p.persister.maxGuideFileSize = maxGuideFileSize
 	}
 }
@@ -66,7 +66,7 @@ func LoadStateContainer(
 		lastResourceDriftChunk: getLastChunkFromIndex(state.resourceDriftIndex),
 	}
 
-	container := &stateContainerImpl{
+	container := &mfStateContainerImpl{
 		persister: persister,
 		instancesContainer: &instancesContainerImpl{
 			instances: state.instances,
@@ -124,27 +124,27 @@ func LoadStateContainer(
 	return container, nil
 }
 
-func (c *stateContainerImpl) Instances() state.InstancesContainer {
+func (c *mfStateContainerImpl) Instances() state.InstancesContainer {
 	return c.instancesContainer
 }
 
-func (c *stateContainerImpl) Resources() state.ResourcesContainer {
+func (c *mfStateContainerImpl) Resources() state.ResourcesContainer {
 	return c.resourcesContainer
 }
 
-func (c *stateContainerImpl) Links() state.LinksContainer {
+func (c *mfStateContainerImpl) Links() state.LinksContainer {
 	return c.linksContainer
 }
 
-func (c *stateContainerImpl) Children() state.ChildrenContainer {
+func (c *mfStateContainerImpl) Children() state.ChildrenContainer {
 	return c.childrenContainer
 }
 
-func (c *stateContainerImpl) Metadata() state.MetadataContainer {
+func (c *mfStateContainerImpl) Metadata() state.MetadataContainer {
 	return c.metadataContainer
 }
 
-func (c *stateContainerImpl) Exports() state.ExportsContainer {
+func (c *mfStateContainerImpl) Exports() state.ExportsContainer {
 	return c.exportContainer
 }
 

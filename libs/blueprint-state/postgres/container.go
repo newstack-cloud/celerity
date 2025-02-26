@@ -9,7 +9,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-type stateContainerImpl struct {
+type pgStateContainerImpl struct {
 	instancesContainer *instancesContainerImpl
 	resourcesContainer *resourcesContainerImpl
 	linksContainer     *linksContainerImpl
@@ -35,7 +35,7 @@ func LoadStateContainer(
 		connPool: connPool,
 	}
 
-	container := &stateContainerImpl{
+	container := &pgStateContainerImpl{
 		instancesContainer: instancesContainer,
 		resourcesContainer: &resourcesContainerImpl{
 			connPool: connPool,
@@ -58,26 +58,26 @@ func LoadStateContainer(
 	return container, nil
 }
 
-func (c *stateContainerImpl) Instances() state.InstancesContainer {
+func (c *pgStateContainerImpl) Instances() state.InstancesContainer {
 	return c.instancesContainer
 }
 
-func (c *stateContainerImpl) Resources() state.ResourcesContainer {
+func (c *pgStateContainerImpl) Resources() state.ResourcesContainer {
 	return c.resourcesContainer
 }
 
-func (c *stateContainerImpl) Links() state.LinksContainer {
+func (c *pgStateContainerImpl) Links() state.LinksContainer {
 	return c.linksContainer
 }
 
-func (c *stateContainerImpl) Children() state.ChildrenContainer {
+func (c *pgStateContainerImpl) Children() state.ChildrenContainer {
 	return c.childrenContainer
 }
 
-func (c *stateContainerImpl) Metadata() state.MetadataContainer {
+func (c *pgStateContainerImpl) Metadata() state.MetadataContainer {
 	return c.metadataContainer
 }
 
-func (c *stateContainerImpl) Exports() state.ExportsContainer {
+func (c *pgStateContainerImpl) Exports() state.ExportsContainer {
 	return c.exportContainer
 }
