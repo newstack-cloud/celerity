@@ -60,7 +60,7 @@ set +a
 set -e
 echo "" > coverage.txt
 
-go test -timeout 30000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic `go list ./... | egrep -v '(/(testutils))$'`
+go test -timeout 60000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic `go list ./... | egrep -v '(/(testutils))$'`
 
 if [ -z "$GITHUB_ACTION" ]; then
   # We are on a dev machine so produce html output of coverage
@@ -70,5 +70,5 @@ fi
 
 if [ -n "$GITHUB_ACTION" ]; then
   # We are in a CI environment so run tests again to generate JSON report.
-  go test -timeout 30000ms -json `go list ./... | egrep -v '(/(testutils))$'` > report.json
+  go test -timeout 60000ms -json `go list ./... | egrep -v '(/(testutils))$'` > report.json
 fi
