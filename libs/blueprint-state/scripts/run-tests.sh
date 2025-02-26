@@ -42,15 +42,25 @@ finish() {
 
 trap finish EXIT
 
-echo "Bringing up docker compose stack for test dependencies ..."
+setup_deps() {
+  echo "Bringing up docker compose stack for test dependencies ..."
 
-docker compose --env-file .env.test -f docker-compose.test-deps.yml up -d
+  docker compose --env-file .env.test -f docker-compose.test-deps.yml up -d
 
-echo "Waiting a few seconds to allow db migrations to complete ..."
-sleep 5
+  echo "Waiting a few seconds to allow db migrations to complete ..."
+  sleep 5
 
-echo "Populating test databases with seed data ..."
-./scripts/populate-seed-data.sh
+  echo "Populating test databases with seed data ..."
+  ./scripts/populate-seed-data.sh
+}
+
+teardown_deps() {
+  echo "Taking down test dependencies docker compose stack ..."
+  docker compose --env-file .env.test -f docker-compose.test-deps.yml down
+  docker compose --env-file .env.test -f docker-compose.test-deps.yml rm -v -f
+}
+
+setup_deps
 
 echo "Exporting environment variables for test suite ..."
 set -a
@@ -69,6 +79,11 @@ if [ -z "$GITHUB_ACTION" ]; then
 fi
 
 if [ -n "$GITHUB_ACTION" ]; then
+  echo ""
+  echo "Re-running tests to generate JSON report ..."
+  echo ""
+  teardown_deps
+  setup_deps
   # We are in a CI environment so run tests again to generate JSON report.
   go test -timeout 60000ms -json `go list ./... | egrep -v '(/(testutils))$'` > report.json
 fi
