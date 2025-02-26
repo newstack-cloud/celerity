@@ -17,7 +17,49 @@ A library that provides a collection of state container implementations to be us
 
 ### Postgres
 
-Migrations for the Postgres implementation can be found in the `postgres/migrations` directory. These migrations need to be applied to the database before the state container can be used. Each update to the migrations will need to be applied every time you upgrade the blueprint state library to a new version, for applications like the deploy engine this should be a part of a streamlined upgrade process.
+A set of database migrations are provided to manage the schema of the database required for the Postgres state container.
+See [Postgres migrations](./docs/POSTGRES_MIGRATIONS.md) for more information.
+
+#### Requirements
+
+- A postgres database/cluster that is using Postgres 17.0 and above.
+- Only UUIDs are supported for blueprint entity IDs, this means only `core.IDGenerator` imlpementations that generate UUIDs can be used.
+
+#### Example
+
+```go
+package main
+
+import (
+    "os"
+
+    "github.com/jackc/pgx/v5/pgxpool"
+    "github.com/two-hundred/celerity/libs/blueprint/core"
+    "github.com/two-hundred/celerity/libs/blueprint/state"
+    "github.com/two-hundred/celerity/libs/blueprint-state/postgres"
+)
+
+func main() {
+    stateContainer, err := setupStateContainer()
+    if err != nil {
+        panic(err)
+    }
+
+    // Use the state container ...
+    // For example, you could wire up the state container with a blueprint loader to carry out deployments.
+}
+
+func setupStateContainer() (state.Container, error) {
+    connPool, err := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
+    if err != nil {
+        panic(err)
+    }
+    logger := core.NewNopLogger()
+    // You'll generally want to name the logger to allow for filtering logs
+    // that get displayed based on scope or better debugging when an error occurs.
+    return postgres.LoadStateContainer(".deploy_state", connPool, logger.Named("state"))
+}
+```
 
 ### Redis OSS
 
@@ -36,15 +78,7 @@ import (
 )
 
 func main() {
-    // Set up code before ...
-    logger := setupLogger()
-    fs := afero.NewOsFs()
-    stateContainer, err := setupStateContainer(
-        // You'll generally want to name the logger to allow for filtering logs
-        // that get displayed based on scope or better debugging when an error occurs.
-        logger.Named("deployStateContainer"),
-        fs,
-    )
+    stateContainer, err := setupStateContainer()
     if err != nil {
         panic(err)
     }
@@ -56,6 +90,8 @@ func main() {
 func setupStateContainer() (state.Container, error) {
     fs := afero.NewOsFs()
     logger := core.NewNopLogger()
+    // You'll generally want to name the logger to allow for filtering logs
+    // that get displayed based on scope or better debugging when an error occurs.
     return memfile.LoadStateContainer(".deploy_state", fs, logger.Named("state"))
 }
 ```

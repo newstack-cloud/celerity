@@ -1,0 +1,54 @@
+{
+  "id": "89ddf77d-3c57-4ff8-b62e-424348cb89dc",
+  "status": 2,
+  "lastDeployedTimestamp": 1733145428,
+  "lastDeployAttemptTimestamp": 1733145428,
+  "resourceIds": {
+    "complexResource": "9f713177-84ca-419c-9411-7dd03f71dbad"
+  },
+  "resources": {
+    "9f713177-84ca-419c-9411-7dd03f71dbad": {
+      "id": "9f713177-84ca-419c-9411-7dd03f71dbad",
+      "name": "complexResource",
+      "type": "example/complex",
+      "instanceId": "89ddf77d-3c57-4ff8-b62e-424348cb89dc",
+      "status": 2,
+      "preciseStatus": 3,
+      "lastDeployedTimestamp": 1733145428,
+      "lastDeployAttemptTimestamp": 1733145428,
+      "specData": {
+        "id": "complex-resource-provider/complex-resource-id",
+        "itemConfig": {
+          "endpoints": [
+            "https://old.example.com/1",
+            "https://old.example.com/2",
+            "https://old.example.com/3"
+          ],
+          "ipv4": false
+        },
+        "otherItemConfig": "old-example-other-config-item",
+        "vendorTags": ["old-example-vendor-tag-1", "old-example-vendor-tag-2"],
+        "vendorConfig": [
+          {
+            "vendorNamespace": "old-example-vendor-namespace",
+            "vendorId": "old-example-vendor-id"
+          }
+        ]
+      },
+      "description": "A complex resource type.",
+      "failureReasons": []
+    }
+  },
+  "links": {},
+  "metadata": {
+    "build": "tsc"
+  },
+  "exports": {
+    "environment": {
+      "value": "legacy-production-env",
+      "type": "string",
+      "field": "variables.environment"
+    }
+  },
+  "childBlueprints": {}
+}

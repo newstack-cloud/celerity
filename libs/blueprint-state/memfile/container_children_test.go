@@ -2,14 +2,13 @@ package memfile
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"path"
 	"testing"
 
 	"github.com/bradleyjkemp/cupaloy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint-state/idutils"
 	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
@@ -24,7 +23,7 @@ const (
 
 type MemFileStateContainerChildrenTestSuite struct {
 	container                  state.Container
-	saveChildBlueprintFixtures map[int]saveBlueprintFixture
+	saveChildBlueprintFixtures map[int]internal.SaveBlueprintFixture
 	stateDir                   string
 	fs                         afero.Fs
 	suite.Suite
@@ -42,20 +41,10 @@ func (s *MemFileStateContainerChildrenTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.container = container
 
-	s.setupSaveChildBlueprintFixtures()
-}
-
-func (s *MemFileStateContainerChildrenTestSuite) setupSaveChildBlueprintFixtures() {
 	dirPath := path.Join("__testdata", "save-input", "children")
-	dirEntries, err := os.ReadDir(dirPath)
+	fixtures, err := internal.SetupSaveBlueprintFixtures(dirPath, []int{})
 	s.Require().NoError(err)
-
-	s.saveChildBlueprintFixtures = make(map[int]saveBlueprintFixture)
-	for i := 1; i <= len(dirEntries); i++ {
-		fixture, err := loadSaveBlueprintFixture(i)
-		s.Require().NoError(err)
-		s.saveChildBlueprintFixtures[i] = fixture
-	}
+	s.saveChildBlueprintFixtures = fixtures
 }
 
 func (s *MemFileStateContainerChildrenTestSuite) Test_retrieves_child_blueprint_instance() {
@@ -98,7 +87,7 @@ func (s *MemFileStateContainerChildrenTestSuite) Test_reports_child_instance_not
 	stateErr, isStateErr := err.(*state.Error)
 	s.Assert().True(isStateErr)
 	s.Assert().Equal(state.ErrInstanceNotFound, stateErr.Code)
-	itemID := relativeChildInstanceID(existingBlueprintInstanceID, nonExistentChildName)
+	itemID := idutils.ChildInBlueprintID(existingBlueprintInstanceID, nonExistentChildName)
 	s.Assert().Equal(stateErr.ItemID, itemID)
 }
 
@@ -110,14 +99,14 @@ func (s *MemFileStateContainerChildrenTestSuite) Test_attaches_child_blueprint_t
 
 	err := instances.Save(
 		context.Background(),
-		*fixture.instanceState,
+		*fixture.InstanceState,
 	)
 	s.Require().NoError(err)
 
 	err = children.Attach(
 		context.Background(),
 		existingBlueprintInstanceID,
-		fixture.instanceState.InstanceID,
+		fixture.InstanceState.InstanceID,
 		"networking",
 	)
 	s.Require().NoError(err)
@@ -128,8 +117,8 @@ func (s *MemFileStateContainerChildrenTestSuite) Test_attaches_child_blueprint_t
 		"networking",
 	)
 	s.Require().NoError(err)
-	internal.AssertInstanceStatesEqual(fixture.instanceState, &savedChild, &s.Suite)
-	s.assertPersistedChild(existingBlueprintInstanceID, "networking", fixture.instanceState)
+	internal.AssertInstanceStatesEqual(fixture.InstanceState, &savedChild, &s.Suite)
+	s.assertPersistedChild(existingBlueprintInstanceID, "networking", fixture.InstanceState)
 }
 
 func (s *MemFileStateContainerChildrenTestSuite) Test_reports_parent_instance_not_found_for_attaching() {
@@ -182,7 +171,7 @@ func (s *MemFileStateContainerChildrenTestSuite) Test_detaches_child_blueprint_f
 	stateErr, isStateErr := err.(*state.Error)
 	s.Assert().True(isStateErr)
 	s.Assert().Equal(state.ErrInstanceNotFound, stateErr.Code)
-	itemID := relativeChildInstanceID(existingBlueprintInstanceID, existingChildName)
+	itemID := idutils.ChildInBlueprintID(existingBlueprintInstanceID, existingChildName)
 	s.Assert().Equal(stateErr.ItemID, itemID)
 	s.assertChildDetachPersisted(existingBlueprintInstanceID, existingChildName)
 }
@@ -199,7 +188,7 @@ func (s *MemFileStateContainerChildrenTestSuite) Test_reports_child_instance_not
 	stateErr, isStateErr := err.(*state.Error)
 	s.Assert().True(isStateErr)
 	s.Assert().Equal(state.ErrInstanceNotFound, stateErr.Code)
-	itemID := fmt.Sprintf("instance:%s:child:%s", existingBlueprintInstanceID, nonExistentChildBlueprintID)
+	itemID := idutils.ChildInBlueprintID(existingBlueprintInstanceID, nonExistentChildBlueprintID)
 	s.Assert().Equal(itemID, stateErr.ItemID)
 }
 
@@ -278,7 +267,7 @@ func (s *MemFileStateContainerChildrenTestSuite) assertChildDetachPersisted(inst
 	stateErr, isStateErr := err.(*state.Error)
 	s.Assert().True(isStateErr)
 	s.Assert().Equal(state.ErrInstanceNotFound, stateErr.Code)
-	itemID := relativeChildInstanceID(instanceID, childName)
+	itemID := idutils.ChildInBlueprintID(instanceID, childName)
 	s.Assert().Equal(stateErr.ItemID, itemID)
 }
 
@@ -297,10 +286,6 @@ func (s *MemFileStateContainerChildrenTestSuite) assertPersistedDependencies(ins
 	s.Require().NoError(err)
 	savedDeps := instanceState.ChildDependencies[existingChildName]
 	s.Assert().Equal(expected, savedDeps)
-}
-
-func relativeChildInstanceID(parentInstanceID, childName string) string {
-	return fmt.Sprintf("instance:%s:child:%s", parentInstanceID, childName)
 }
 
 func TestMemFileStateContainerChildrenTestSuite(t *testing.T) {

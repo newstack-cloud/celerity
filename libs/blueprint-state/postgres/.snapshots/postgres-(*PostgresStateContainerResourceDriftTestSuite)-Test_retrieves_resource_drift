@@ -1,0 +1,69 @@
+(state.ResourceDriftState) {
+  ResourceID: (string) (len=36) "e78707ae-f21e-42e3-b3e1-ce295bf907dd",
+  ResourceName: (string) (len=17) "saveOrderFunction",
+  SpecData: (*core.MappingNode)({
+    Scalar: (*core.ScalarValue)(<nil>),
+    Fields: (map[string]*core.MappingNode) (len=1) {
+      (string) (len=7) "handler": (*core.MappingNode)({
+        Scalar: (*core.ScalarValue)({
+          IntValue: (*int)(<nil>),
+          BoolValue: (*bool)(<nil>),
+          FloatValue: (*float64)(<nil>),
+          StringValue: (*string)((len=24) "src/handlersv2.saveOrder"),
+          SourceMeta: (*source.Meta)(<nil>)
+        }),
+        Fields: (map[string]*core.MappingNode) <nil>,
+        Items: ([]*core.MappingNode) <nil>,
+        StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)(<nil>),
+        FieldsSourceMeta: (map[string]*source.Meta) <nil>
+      })
+    },
+    Items: ([]*core.MappingNode) <nil>,
+    StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+    SourceMeta: (*source.Meta)(<nil>),
+    FieldsSourceMeta: (map[string]*source.Meta) <nil>
+  }),
+  Difference: (*state.ResourceDriftChanges)({
+    ModifiedFields: ([]*state.ResourceDriftFieldChange) (len=1) {
+      (*state.ResourceDriftFieldChange)({
+        FieldPath: (string) (len=12) "spec.handler",
+        StateValue: (*core.MappingNode)({
+          Scalar: (*core.ScalarValue)({
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=21) "src/saveOrder.handler"),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          Fields: (map[string]*core.MappingNode) <nil>,
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        }),
+        DriftedValue: (*core.MappingNode)({
+          Scalar: (*core.ScalarValue)({
+            IntValue: (*int)(<nil>),
+            BoolValue: (*bool)(<nil>),
+            FloatValue: (*float64)(<nil>),
+            StringValue: (*string)((len=24) "src/handlersv2.saveOrder"),
+            SourceMeta: (*source.Meta)(<nil>)
+          }),
+          Fields: (map[string]*core.MappingNode) <nil>,
+          Items: ([]*core.MappingNode) <nil>,
+          StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
+          SourceMeta: (*source.Meta)(<nil>),
+          FieldsSourceMeta: (map[string]*source.Meta) <nil>
+        })
+      })
+    },
+    NewFields: ([]*state.ResourceDriftFieldChange) {
+    },
+    RemovedFields: ([]string) {
+    },
+    UnchangedFields: ([]string) {
+    }
+  }),
+  Timestamp: (*int)(1733145728)
+}

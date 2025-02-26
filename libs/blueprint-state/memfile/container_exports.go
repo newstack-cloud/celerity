@@ -45,7 +45,7 @@ func (c *exportContainerImpl) Get(
 			return *exportCopy, nil
 		}
 
-		return state.ExportState{}, errExportNotFound(instanceID, exportName)
+		return state.ExportState{}, state.ExportNotFoundError(instanceID, exportName)
 	}
 
 	return state.ExportState{}, state.InstanceNotFoundError(instanceID)
@@ -137,7 +137,7 @@ func (c *exportContainerImpl) Remove(
 			return *export, c.persister.updateInstance(instance)
 		}
 
-		return state.ExportState{}, errExportNotFound(instanceID, exportName)
+		return state.ExportState{}, state.ExportNotFoundError(instanceID, exportName)
 	}
 
 	return state.ExportState{}, state.InstanceNotFoundError(instanceID)

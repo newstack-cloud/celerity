@@ -4,6 +4,8 @@ import (
 	"slices"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
@@ -215,4 +217,169 @@ func orderResourceDriftFieldChanges(
 		return 0
 	})
 	return orderedFieldChanges
+}
+
+// AssertInstanceStatusInfo asserts that the actual instance status
+// info is equal to the expected instance status info.
+func AssertInstanceStatusInfo(
+	expected state.InstanceStatusInfo,
+	actual state.InstanceState,
+	s *suite.Suite,
+) {
+	s.Assert().Equal(expected.Status, actual.Status)
+	s.Assert().Equal(*expected.LastDeployedTimestamp, actual.LastDeployedTimestamp)
+	s.Assert().Equal(*expected.LastDeployAttemptTimestamp, actual.LastDeployAttemptTimestamp)
+	s.Assert().Equal(*expected.LastStatusUpdateTimestamp, actual.LastStatusUpdateTimestamp)
+	s.Assert().Equal(expected.Durations, actual.Durations)
+}
+
+// CreateTestInstanceStatusInfo creates instance status info for testing status updates.
+func CreateTestInstanceStatusInfo() state.InstanceStatusInfo {
+	lastDeployedTimestamp := 1739660528
+	lastDeployAttemptTimestamp := 1739660528
+	lastStatusUpdateTimestamp := 1739660528
+	prepareDuration := 1000.0
+	totalDuration := 2000.0
+	return state.InstanceStatusInfo{
+		Status:                     core.InstanceStatusDeployFailed,
+		LastDeployedTimestamp:      &lastDeployedTimestamp,
+		LastDeployAttemptTimestamp: &lastDeployAttemptTimestamp,
+		LastStatusUpdateTimestamp:  &lastStatusUpdateTimestamp,
+		Durations: &state.InstanceCompletionDuration{
+			PrepareDuration: &prepareDuration,
+			TotalDuration:   &totalDuration,
+		},
+	}
+}
+
+// AssertResourceStatusInfo asserts that the actual resource status
+// info is equal to the expected resource status info.
+func AssertResourceStatusInfo(
+	expected state.ResourceStatusInfo,
+	actual state.ResourceState,
+	s *suite.Suite,
+) {
+	s.Assert().Equal(expected.Status, actual.Status)
+	s.Assert().Equal(expected.PreciseStatus, actual.PreciseStatus)
+	s.Assert().Equal(*expected.LastDeployedTimestamp, actual.LastDeployedTimestamp)
+	s.Assert().Equal(*expected.LastDeployAttemptTimestamp, actual.LastDeployAttemptTimestamp)
+	s.Assert().Equal(*expected.LastStatusUpdateTimestamp, actual.LastStatusUpdateTimestamp)
+	s.Assert().Equal(expected.FailureReasons, actual.FailureReasons)
+	s.Assert().Equal(expected.Durations, actual.Durations)
+}
+
+// CreateTestResourceStatusInfo creates resource status info for testing status updates.
+func CreateTestResourceStatusInfo() state.ResourceStatusInfo {
+	lastDeployedTimestamp := 1739660528
+	lastDeployAttemptTimestamp := 1739660528
+	lastStatusUpdateTimestamp := 1739660528
+	configCompleteDuration := 1000.0
+	totalDuration := 2000.0
+	attemptDurations := []float64{2000.0}
+	return state.ResourceStatusInfo{
+		Status:                     core.ResourceStatusCreateFailed,
+		LastDeployedTimestamp:      &lastDeployedTimestamp,
+		LastDeployAttemptTimestamp: &lastDeployAttemptTimestamp,
+		LastStatusUpdateTimestamp:  &lastStatusUpdateTimestamp,
+		FailureReasons:             []string{"Failed to create resource due to network error"},
+		Durations: &state.ResourceCompletionDurations{
+			ConfigCompleteDuration: &configCompleteDuration,
+			TotalDuration:          &totalDuration,
+			AttemptDurations:       attemptDurations,
+		},
+	}
+}
+
+// IsEmptyDriftState checks if all the values in a given drift state
+// are empty.
+func IsEmptyDriftState(actual state.ResourceDriftState) bool {
+	return actual.ResourceID == "" &&
+		actual.ResourceName == "" &&
+		actual.SpecData == nil &&
+		actual.Difference == nil &&
+		actual.Timestamp == nil
+}
+
+// AssertLinkStatusInfo asserts that the actual link status
+// info is equal to the expected link status info.
+func AssertLinkStatusInfo(
+	expected state.LinkStatusInfo,
+	actual state.LinkState,
+	s *suite.Suite,
+) {
+	s.Assert().Equal(expected.Status, actual.Status)
+	s.Assert().Equal(expected.PreciseStatus, actual.PreciseStatus)
+	s.Assert().Equal(*expected.LastDeployedTimestamp, actual.LastDeployedTimestamp)
+	s.Assert().Equal(*expected.LastDeployAttemptTimestamp, actual.LastDeployAttemptTimestamp)
+	s.Assert().Equal(*expected.LastStatusUpdateTimestamp, actual.LastStatusUpdateTimestamp)
+	s.Assert().Equal(expected.FailureReasons, actual.FailureReasons)
+	s.Assert().Equal(expected.Durations, actual.Durations)
+}
+
+// CreateTestLinkStatusInfo creates link status info for testing status updates.
+func CreateTestLinkStatusInfo() state.LinkStatusInfo {
+	lastDeployedTimestamp := 1739660528
+	lastDeployAttemptTimestamp := 1739660528
+	lastStatusUpdateTimestamp := 1739660528
+	totalDuration := 2000.0
+	resourceAAttemptDurations := []float64{2000.0}
+	return state.LinkStatusInfo{
+		Status:                     core.LinkStatusCreateFailed,
+		LastDeployedTimestamp:      &lastDeployedTimestamp,
+		LastDeployAttemptTimestamp: &lastDeployAttemptTimestamp,
+		LastStatusUpdateTimestamp:  &lastStatusUpdateTimestamp,
+		FailureReasons:             []string{"Failed to update resource A due to network error"},
+		Durations: &state.LinkCompletionDurations{
+			TotalDuration: &totalDuration,
+			ResourceAUpdate: &state.LinkComponentCompletionDurations{
+				AttemptDurations: resourceAAttemptDurations,
+				TotalDuration:    &totalDuration,
+			},
+		},
+	}
+}
+
+const (
+	envVarsField = "variables.environment"
+)
+
+// SaveAllExportsInput returns a map of export states for testing
+// behaviour to save exports.
+func SaveAllExportsInput() map[string]*state.ExportState {
+	return map[string]*state.ExportState{
+		"environment": {
+			Value: core.MappingNodeFromString("production"),
+			Type:  schema.ExportTypeString,
+			Field: envVarsField,
+		},
+		"region": {
+			Value: core.MappingNodeFromString("us-west-1"),
+			Type:  schema.ExportTypeString,
+			Field: "variables.region",
+		},
+		"exampleId": {
+			Value: core.MappingNodeFromString("exampleId"),
+			Type:  schema.ExportTypeString,
+			Field: "spec.id",
+		},
+	}
+}
+
+// SaveSingleExportInput returns a single export state for testing
+// behaviour to save a single export.
+func SaveSingleExportInput() state.ExportState {
+	return state.ExportState{
+		Value: core.MappingNodeFromString("exampleId"),
+		Type:  schema.ExportTypeString,
+		Field: "spec.id",
+	}
+}
+
+// SaveMetadataInput returns a map of metadata for testing
+// behaviour to save metadata.
+func SaveMetadataInput() map[string]*core.MappingNode {
+	return map[string]*core.MappingNode{
+		"build":    core.MappingNodeFromString("esbuild"),
+		"otherKey": core.MappingNodeFromString("otherValue"),
+	}
 }

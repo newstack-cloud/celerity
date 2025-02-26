@@ -8,6 +8,7 @@ import (
 	"github.com/bradleyjkemp/cupaloy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
@@ -102,16 +103,16 @@ func (s *MemFileStateContainerExportsTestSuite) Test_reports_export_not_found_fo
 		"region",
 	)
 	s.Require().Error(err)
-	memFileErr, isMemFileErr := err.(*Error)
-	s.Assert().True(isMemFileErr)
-	s.Assert().Equal(ErrorReasonCodeExportNotFound, memFileErr.ReasonCode)
+	stateErr, isStateErr := err.(*state.Error)
+	s.Assert().True(isStateErr)
+	s.Assert().Equal(state.ErrExportNotFound, stateErr.Code)
 }
 
 func (s *MemFileStateContainerExportsTestSuite) Test_saves_multiple_exports_for_blueprint_instance() {
 	// SaveAll overrides any existing exports for the instance.
 	exportsContainer := s.container.Exports()
 
-	exports := saveAllExportsInput()
+	exports := internal.SaveAllExportsInput()
 
 	err := exportsContainer.SaveAll(
 		context.Background(),
@@ -134,7 +135,7 @@ func (s *MemFileStateContainerExportsTestSuite) Test_saves_multiple_exports_for_
 func (s *MemFileStateContainerExportsTestSuite) Test_reports_instance_not_found_for_saving_multiple_exports() {
 	exportsContainer := s.container.Exports()
 
-	exports := saveAllExportsInput()
+	exports := internal.SaveAllExportsInput()
 	err := exportsContainer.SaveAll(
 		context.Background(),
 		nonExistentInstanceID,
@@ -150,7 +151,7 @@ func (s *MemFileStateContainerExportsTestSuite) Test_reports_instance_not_found_
 func (s *MemFileStateContainerExportsTestSuite) Test_saves_single_export_for_blueprint_instance() {
 	exportsContainer := s.container.Exports()
 
-	export := saveSingleExportInput()
+	export := internal.SaveSingleExportInput()
 
 	err := exportsContainer.Save(
 		context.Background(),
@@ -174,7 +175,7 @@ func (s *MemFileStateContainerExportsTestSuite) Test_saves_single_export_for_blu
 func (s *MemFileStateContainerExportsTestSuite) Test_reports_instance_not_found_for_saving_single_export() {
 	exportsContainer := s.container.Exports()
 
-	export := saveSingleExportInput()
+	export := internal.SaveSingleExportInput()
 	err := exportsContainer.Save(
 		context.Background(),
 		nonExistentInstanceID,
@@ -253,9 +254,9 @@ func (s *MemFileStateContainerExportsTestSuite) Test_removes_single_export_from_
 		"environment",
 	)
 	s.Require().Error(err)
-	memFileErr, isMemFileErr := err.(*Error)
-	s.Assert().True(isMemFileErr)
-	s.Assert().Equal(ErrorReasonCodeExportNotFound, memFileErr.ReasonCode)
+	stateErr, isStateErr := err.(*state.Error)
+	s.Assert().True(isStateErr)
+	s.Assert().Equal(state.ErrExportNotFound, stateErr.Code)
 
 	s.assertExportRemovalPersisted(existingBlueprintInstanceID, "environment")
 }
@@ -284,9 +285,9 @@ func (s *MemFileStateContainerExportsTestSuite) Test_reports_export_not_found_fo
 		"environmentMissing",
 	)
 	s.Require().Error(err)
-	memFileErr, isMemFileErr := err.(*Error)
-	s.Assert().True(isMemFileErr)
-	s.Assert().Equal(ErrorReasonCodeExportNotFound, memFileErr.ReasonCode)
+	stateErr, isStateErr := err.(*state.Error)
+	s.Assert().True(isStateErr)
+	s.Assert().Equal(state.ErrExportNotFound, stateErr.Code)
 }
 
 func (s *MemFileStateContainerExportsTestSuite) assertPersistedExports(instanceID string, expected map[string]*state.ExportState) {
@@ -356,37 +357,9 @@ func (s *MemFileStateContainerExportsTestSuite) assertExportRemovalPersisted(ins
 		exportName,
 	)
 	s.Require().Error(err)
-	memFileErr, isMemFileErr := err.(*Error)
-	s.Assert().True(isMemFileErr)
-	s.Assert().Equal(ErrorReasonCodeExportNotFound, memFileErr.ReasonCode)
-}
-
-func saveAllExportsInput() map[string]*state.ExportState {
-	return map[string]*state.ExportState{
-		"environment": {
-			Value: core.MappingNodeFromString("production"),
-			Type:  schema.ExportTypeString,
-			Field: envVarsField,
-		},
-		"region": {
-			Value: core.MappingNodeFromString("us-west-1"),
-			Type:  schema.ExportTypeString,
-			Field: "variables.region",
-		},
-		"exampleId": {
-			Value: core.MappingNodeFromString("exampleId"),
-			Type:  schema.ExportTypeString,
-			Field: "spec.id",
-		},
-	}
-}
-
-func saveSingleExportInput() state.ExportState {
-	return state.ExportState{
-		Value: core.MappingNodeFromString("exampleId"),
-		Type:  schema.ExportTypeString,
-		Field: "spec.id",
-	}
+	stateErr, isStateErr := err.(*state.Error)
+	s.Assert().True(isStateErr)
+	s.Assert().Equal(state.ErrExportNotFound, stateErr.Code)
 }
 
 func TestMemFileStateContainerExportsTestSuite(t *testing.T) {

@@ -2,10 +2,10 @@ package memfile
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/spf13/afero"
+	"github.com/two-hundred/celerity/libs/blueprint-state/idutils"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
@@ -30,7 +30,7 @@ func (c *childrenContainerImpl) Get(
 		if child, ok := instance.ChildBlueprints[childName]; ok {
 			return copyInstance(child, instanceID), nil
 		} else {
-			itemID := fmt.Sprintf("instance:%s:child:%s", instanceID, childName)
+			itemID := idutils.ChildInBlueprintID(instanceID, childName)
 			return state.InstanceState{}, state.InstanceNotFoundError(itemID)
 		}
 	}
@@ -114,6 +114,6 @@ func (c *childrenContainerImpl) Detach(
 		}
 	}
 
-	itemID := fmt.Sprintf("instance:%s:child:%s", instanceID, childName)
+	itemID := idutils.ChildInBlueprintID(instanceID, childName)
 	return state.InstanceNotFoundError(itemID)
 }

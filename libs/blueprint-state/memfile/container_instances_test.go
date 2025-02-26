@@ -2,9 +2,6 @@ package memfile
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"os"
 	"path"
 	"testing"
 
@@ -25,7 +22,7 @@ type MemFileStateContainerInstancesTestSuite struct {
 	container             state.Container
 	stateDir              string
 	fs                    afero.Fs
-	saveBlueprintFixtures map[int]saveBlueprintFixture
+	saveBlueprintFixtures map[int]internal.SaveBlueprintFixture
 	suite.Suite
 }
 
@@ -41,20 +38,13 @@ func (s *MemFileStateContainerInstancesTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.container = container
 
-	s.setupSaveBlueprintFixtures()
-}
-
-func (s *MemFileStateContainerInstancesTestSuite) setupSaveBlueprintFixtures() {
 	dirPath := path.Join("__testdata", "save-input", "blueprints")
-	dirEntries, err := os.ReadDir(dirPath)
+	fixtures, err := internal.SetupSaveBlueprintFixtures(
+		dirPath,
+		/* updates */ []int{2},
+	)
 	s.Require().NoError(err)
-
-	s.saveBlueprintFixtures = make(map[int]saveBlueprintFixture)
-	for i := 1; i <= len(dirEntries); i++ {
-		fixture, err := loadSaveBlueprintFixture(i)
-		s.Require().NoError(err)
-		s.saveBlueprintFixtures[i] = fixture
-	}
+	s.saveBlueprintFixtures = fixtures
 }
 
 func (s *MemFileStateContainerInstancesTestSuite) Test_retrieves_instance() {
@@ -87,17 +77,17 @@ func (s *MemFileStateContainerInstancesTestSuite) Test_saves_new_instance_with_c
 	instances := s.container.Instances()
 	err := instances.Save(
 		context.Background(),
-		*fixture.instanceState,
+		*fixture.InstanceState,
 	)
 	s.Require().NoError(err)
 
 	savedState, err := instances.Get(
 		context.Background(),
-		fixture.instanceState.InstanceID,
+		fixture.InstanceState.InstanceID,
 	)
 	s.Require().NoError(err)
-	internal.AssertInstanceStatesEqual(fixture.instanceState, &savedState, &s.Suite)
-	s.assertPersistedInstance(fixture.instanceState)
+	internal.AssertInstanceStatesEqual(fixture.InstanceState, &savedState, &s.Suite)
+	s.assertPersistedInstance(fixture.InstanceState)
 }
 
 func (s *MemFileStateContainerInstancesTestSuite) Test_updates_existing_instance_with_child_blueprint() {
@@ -105,23 +95,23 @@ func (s *MemFileStateContainerInstancesTestSuite) Test_updates_existing_instance
 	instances := s.container.Instances()
 	err := instances.Save(
 		context.Background(),
-		*fixture.instanceState,
+		*fixture.InstanceState,
 	)
 	s.Require().NoError(err)
 
 	savedState, err := instances.Get(
 		context.Background(),
-		fixture.instanceState.InstanceID,
+		fixture.InstanceState.InstanceID,
 	)
 	s.Require().NoError(err)
-	internal.AssertInstanceStatesEqual(fixture.instanceState, &savedState, &s.Suite)
-	s.assertPersistedInstance(fixture.instanceState)
+	internal.AssertInstanceStatesEqual(fixture.InstanceState, &savedState, &s.Suite)
+	s.assertPersistedInstance(fixture.InstanceState)
 }
 
 func (s *MemFileStateContainerInstancesTestSuite) Test_updates_blueprint_instance_deployment_status() {
 	instances := s.container.Instances()
 
-	statusInfo := createTestInstanceStatusInfo()
+	statusInfo := internal.CreateTestInstanceStatusInfo()
 	err := instances.UpdateStatus(
 		context.Background(),
 		existingBlueprintInstanceID,
@@ -134,14 +124,14 @@ func (s *MemFileStateContainerInstancesTestSuite) Test_updates_blueprint_instanc
 		existingBlueprintInstanceID,
 	)
 	s.Require().NoError(err)
-	assertInstanceStatusInfo(statusInfo, savedState, &s.Suite)
+	internal.AssertInstanceStatusInfo(statusInfo, savedState, &s.Suite)
 	s.assertPersistedInstance(&savedState)
 }
 
 func (s *MemFileStateContainerInstancesTestSuite) Test_reports_instance_not_found_for_status_update() {
 	instances := s.container.Instances()
 
-	statusInfo := createTestInstanceStatusInfo()
+	statusInfo := internal.CreateTestInstanceStatusInfo()
 	err := instances.UpdateStatus(
 		context.Background(),
 		nonExistentInstanceID,
@@ -201,59 +191,6 @@ func (s *MemFileStateContainerInstancesTestSuite) assertInstanceRemovedFromPersi
 	stateErr, isStateErr := err.(*state.Error)
 	s.Assert().True(isStateErr)
 	s.Assert().Equal(state.ErrInstanceNotFound, stateErr.Code)
-}
-
-func assertInstanceStatusInfo(
-	expected state.InstanceStatusInfo,
-	actual state.InstanceState,
-	s *suite.Suite,
-) {
-	s.Assert().Equal(expected.Status, actual.Status)
-	s.Assert().Equal(*expected.LastDeployedTimestamp, actual.LastDeployedTimestamp)
-	s.Assert().Equal(*expected.LastDeployAttemptTimestamp, actual.LastDeployAttemptTimestamp)
-	s.Assert().Equal(*expected.LastStatusUpdateTimestamp, actual.LastStatusUpdateTimestamp)
-	s.Assert().Equal(expected.Durations, actual.Durations)
-}
-
-type saveBlueprintFixture struct {
-	instanceState *state.InstanceState
-}
-
-func loadSaveBlueprintFixture(fixtureNumber int) (saveBlueprintFixture, error) {
-	fileName := fmt.Sprintf("%d.json", fixtureNumber)
-	filePath := path.Join("__testdata", "save-input", "blueprints", fileName)
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return saveBlueprintFixture{}, err
-	}
-
-	instanceState := &state.InstanceState{}
-	err = json.Unmarshal(data, instanceState)
-	if err != nil {
-		return saveBlueprintFixture{}, err
-	}
-
-	return saveBlueprintFixture{
-		instanceState: instanceState,
-	}, nil
-}
-
-func createTestInstanceStatusInfo() state.InstanceStatusInfo {
-	lastDeployedTimestamp := 1739660528
-	lastDeployAttemptTimestamp := 1739660528
-	lastStatusUpdateTimestamp := 1739660528
-	prepareDuration := 1000.0
-	totalDuration := 2000.0
-	return state.InstanceStatusInfo{
-		Status:                     core.InstanceStatusDeployFailed,
-		LastDeployedTimestamp:      &lastDeployedTimestamp,
-		LastDeployAttemptTimestamp: &lastDeployAttemptTimestamp,
-		LastStatusUpdateTimestamp:  &lastStatusUpdateTimestamp,
-		Durations: &state.InstanceCompletionDuration{
-			PrepareDuration: &prepareDuration,
-			TotalDuration:   &totalDuration,
-		},
-	}
 }
 
 func TestMemFileStateContainerInstancesTestSuite(t *testing.T) {

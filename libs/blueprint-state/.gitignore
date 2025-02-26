@@ -11,6 +11,9 @@ gen-*.go
 # Test binary, built with `go test -c`
 *.test
 
+# Allow the `.env.test` file to be in version control for isolated test environment.
+!.env.test
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 coverage.txt
@@ -24,3 +27,7 @@ report.json
 
 # Any log files.
 *.log
+
+# Temporary directory for new-line delimited seed data for the postgres
+# database.
+postgres/__testdata/seed/tmp

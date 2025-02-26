@@ -2,9 +2,6 @@ package memfile
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"os"
 	"path"
 	"testing"
 
@@ -24,7 +21,7 @@ const (
 
 type MemFileStateContainerLinksTestSuite struct {
 	container        state.Container
-	saveLinkFixtures map[int]saveLinkFixture
+	saveLinkFixtures map[int]internal.SaveLinkFixture
 	stateDir         string
 	fs               afero.Fs
 	suite.Suite
@@ -42,20 +39,13 @@ func (s *MemFileStateContainerLinksTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.container = container
 
-	s.setupSaveLinkFixtures()
-}
-
-func (s *MemFileStateContainerLinksTestSuite) setupSaveLinkFixtures() {
 	dirPath := path.Join("__testdata", "save-input", "links")
-	dirEntries, err := os.ReadDir(dirPath)
+	fixtures, err := internal.SetupSaveLinkFixtures(
+		dirPath,
+		/* updates */ []int{3},
+	)
 	s.Require().NoError(err)
-
-	s.saveLinkFixtures = make(map[int]saveLinkFixture)
-	for i := 1; i <= len(dirEntries); i++ {
-		fixture, err := loadSaveLinkFixture(i)
-		s.Require().NoError(err)
-		s.saveLinkFixtures[i] = fixture
-	}
+	s.saveLinkFixtures = fixtures
 }
 
 func (s *MemFileStateContainerLinksTestSuite) Test_retrieves_link() {
@@ -115,17 +105,17 @@ func (s *MemFileStateContainerLinksTestSuite) Test_saves_new_link() {
 	links := s.container.Links()
 	err := links.Save(
 		context.Background(),
-		*fixture.linkState,
+		*fixture.LinkState,
 	)
 	s.Require().NoError(err)
 
 	savedState, err := links.Get(
 		context.Background(),
-		fixture.linkState.LinkID,
+		fixture.LinkState.LinkID,
 	)
 	s.Require().NoError(err)
-	internal.AssertLinkStatesEqual(fixture.linkState, &savedState, &s.Suite)
-	s.assertPersistedLink(fixture.linkState)
+	internal.AssertLinkStatesEqual(fixture.LinkState, &savedState, &s.Suite)
+	s.assertPersistedLink(fixture.LinkState)
 }
 
 func (s *MemFileStateContainerLinksTestSuite) Test_reports_instance_not_found_for_saving_link() {
@@ -135,7 +125,7 @@ func (s *MemFileStateContainerLinksTestSuite) Test_reports_instance_not_found_fo
 
 	err := links.Save(
 		context.Background(),
-		*fixture.linkState,
+		*fixture.LinkState,
 	)
 	s.Require().Error(err)
 	stateErr, isStateErr := err.(*state.Error)
@@ -148,23 +138,23 @@ func (s *MemFileStateContainerLinksTestSuite) Test_updates_existing_link() {
 	links := s.container.Links()
 	err := links.Save(
 		context.Background(),
-		*fixture.linkState,
+		*fixture.LinkState,
 	)
 	s.Require().NoError(err)
 
 	savedState, err := links.Get(
 		context.Background(),
-		fixture.linkState.LinkID,
+		fixture.LinkState.LinkID,
 	)
 	s.Require().NoError(err)
-	internal.AssertLinkStatesEqual(fixture.linkState, &savedState, &s.Suite)
-	s.assertPersistedLink(fixture.linkState)
+	internal.AssertLinkStatesEqual(fixture.LinkState, &savedState, &s.Suite)
+	s.assertPersistedLink(fixture.LinkState)
 }
 
 func (s *MemFileStateContainerLinksTestSuite) Test_updates_blueprint_link_deployment_status() {
 	links := s.container.Links()
 
-	statusInfo := createTestLinkStatusInfo()
+	statusInfo := internal.CreateTestLinkStatusInfo()
 	err := links.UpdateStatus(
 		context.Background(),
 		existingLinkID,
@@ -177,14 +167,14 @@ func (s *MemFileStateContainerLinksTestSuite) Test_updates_blueprint_link_deploy
 		existingLinkID,
 	)
 	s.Require().NoError(err)
-	assertLinkStatusInfo(statusInfo, savedState, &s.Suite)
+	internal.AssertLinkStatusInfo(statusInfo, savedState, &s.Suite)
 	s.assertPersistedLink(&savedState)
 }
 
 func (s *MemFileStateContainerLinksTestSuite) Test_reports_link_not_found_for_status_update() {
 	links := s.container.Links()
 
-	statusInfo := createTestLinkStatusInfo()
+	statusInfo := internal.CreateTestLinkStatusInfo()
 	err := links.UpdateStatus(
 		context.Background(),
 		nonExistentLinkID,
@@ -203,7 +193,7 @@ func (s *MemFileStateContainerLinksTestSuite) Test_reports_malformed_state_error
 	s.Require().NoError(err)
 
 	links := container.Links()
-	statusInfo := createTestLinkStatusInfo()
+	statusInfo := internal.CreateTestLinkStatusInfo()
 	err = links.UpdateStatus(
 		context.Background(),
 		existingLinkID,
@@ -280,65 +270,6 @@ func (s *MemFileStateContainerLinksTestSuite) assertLinkRemovedFromPersistence(l
 	stateErr, isStateErr := err.(*state.Error)
 	s.Assert().True(isStateErr)
 	s.Assert().Equal(state.ErrLinkNotFound, stateErr.Code)
-}
-
-func assertLinkStatusInfo(
-	expected state.LinkStatusInfo,
-	actual state.LinkState,
-	s *suite.Suite,
-) {
-	s.Assert().Equal(expected.Status, actual.Status)
-	s.Assert().Equal(expected.PreciseStatus, actual.PreciseStatus)
-	s.Assert().Equal(*expected.LastDeployedTimestamp, actual.LastDeployedTimestamp)
-	s.Assert().Equal(*expected.LastDeployAttemptTimestamp, actual.LastDeployAttemptTimestamp)
-	s.Assert().Equal(*expected.LastStatusUpdateTimestamp, actual.LastStatusUpdateTimestamp)
-	s.Assert().Equal(expected.FailureReasons, actual.FailureReasons)
-	s.Assert().Equal(expected.Durations, actual.Durations)
-}
-
-type saveLinkFixture struct {
-	linkState *state.LinkState
-}
-
-func loadSaveLinkFixture(fixtureNumber int) (saveLinkFixture, error) {
-	fileName := fmt.Sprintf("%d.json", fixtureNumber)
-	filePath := path.Join("__testdata", "save-input", "links", fileName)
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return saveLinkFixture{}, err
-	}
-
-	linkState := &state.LinkState{}
-	err = json.Unmarshal(data, linkState)
-	if err != nil {
-		return saveLinkFixture{}, err
-	}
-
-	return saveLinkFixture{
-		linkState: linkState,
-	}, nil
-}
-
-func createTestLinkStatusInfo() state.LinkStatusInfo {
-	lastDeployedTimestamp := 1739660528
-	lastDeployAttemptTimestamp := 1739660528
-	lastStatusUpdateTimestamp := 1739660528
-	totalDuration := 2000.0
-	resourceAAttemptDurations := []float64{2000.0}
-	return state.LinkStatusInfo{
-		Status:                     core.LinkStatusCreateFailed,
-		LastDeployedTimestamp:      &lastDeployedTimestamp,
-		LastDeployAttemptTimestamp: &lastDeployAttemptTimestamp,
-		LastStatusUpdateTimestamp:  &lastStatusUpdateTimestamp,
-		FailureReasons:             []string{"Failed to update resource A due to network error"},
-		Durations: &state.LinkCompletionDurations{
-			TotalDuration: &totalDuration,
-			ResourceAUpdate: &state.LinkComponentCompletionDurations{
-				AttemptDurations: resourceAAttemptDurations,
-				TotalDuration:    &totalDuration,
-			},
-		},
-	}
 }
 
 func TestMemFileStateContainerLinksTestSuite(t *testing.T) {

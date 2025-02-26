@@ -8,6 +8,7 @@ import (
 	"github.com/bradleyjkemp/cupaloy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
@@ -62,7 +63,7 @@ func (s *MemFileStateContainerMetadataTestSuite) Test_reports_instance_not_found
 func (s *MemFileStateContainerMetadataTestSuite) Test_saves_metadata_for_blueprint_instance() {
 	metadataContainer := s.container.Metadata()
 
-	metadata := saveMetadataInput()
+	metadata := internal.SaveMetadataInput()
 
 	err := metadataContainer.Save(
 		context.Background(),
@@ -84,7 +85,7 @@ func (s *MemFileStateContainerMetadataTestSuite) Test_saves_metadata_for_bluepri
 func (s *MemFileStateContainerMetadataTestSuite) Test_reports_instance_not_found_when_saving_metadata() {
 	metadataContainer := s.container.Metadata()
 
-	metadata := saveMetadataInput()
+	metadata := internal.SaveMetadataInput()
 	err := metadataContainer.Save(
 		context.Background(),
 		nonExistentInstanceID,
@@ -161,13 +162,6 @@ func (s *MemFileStateContainerMetadataTestSuite) assertMetadataRemovalPersisted(
 	)
 	s.Require().NoError(err)
 	s.Assert().Len(metadata, 0)
-}
-
-func saveMetadataInput() map[string]*core.MappingNode {
-	return map[string]*core.MappingNode{
-		"build":    core.MappingNodeFromString("esbuild"),
-		"otherKey": core.MappingNodeFromString("otherValue"),
-	}
 }
 
 func TestMemFileStateContainerMetadataTestSuite(t *testing.T) {

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "c0d6d914-21a6-4a99-afb3-f6f45eefbdd3",
+    "status": 2,
+    "preciseStatus": 8,
+    "lastDeployedTimestamp": 1733145428,
+    "lastDeployAttemptTimestamp": 1733145428,
+    "intermediaryResourcesState": [],
+    "data": {
+      "saveOrderFunction": {
+        "environmentVariables": {
+          "TABLE_NAME_ordersTable_0": "legacy-production-orders-1",
+          "TABLE_REGION_ordersTable_0": "eu-west-1"
+        },
+        "iam.policyStatements": {
+          "0": {
+            "effect": "Allow",
+            "action": ["dynamodb:PutItem"],
+            "resource": "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-1"
+          }
+        }
+      }
+    },
+    "failureReasons": []
+  },
+  {
+    "id": "e4a4a3be-f494-4dc8-87e0-3bd0ac33707b",
+    "status": 2,
+    "preciseStatus": 8,
+    "lastDeployedTimestamp": 1733145428,
+    "lastDeployAttemptTimestamp": 1733145428,
+    "intermediaryResourcesState": [],
+    "data": {
+      "saveOrderFunction": {
+        "environmentVariables": {
+          "TABLE_NAME_ordersTable_1": "legacy-production-orders-2",
+          "TABLE_REGION_ordersTable_1": "eu-west-2"
+        },
+        "iam.policyStatements": {
+          "0": {
+            "effect": "Allow",
+            "action": ["dynamodb:PutItem"],
+            "resource": "arn:aws:dynamodb:eu-west-2:123456789012:table/legacy-production-orders-2"
+          }
+        }
+      }
+    },
+    "failureReasons": []
+  },
+  {
+    "id": "fe050735-d406-43aa-8375-7fbc66eb3a7b",
+    "status": 2,
+    "preciseStatus": 8,
+    "lastDeployedTimestamp": 1733145428,
+    "lastDeployAttemptTimestamp": 1733145428,
+    "intermediaryResourcesState": [],
+    "data": {
+      "saveOrderFunction": {
+        "environmentVariables": {
+          "TABLE_NAME_ordersTable_0": "legacy-production-orders-old-1",
+          "TABLE_REGION_ordersTable_0": "eu-west-1"
+        },
+        "iam.policyStatements": {
+          "0": {
+            "effect": "Allow",
+            "action": ["dynamodb:PutItem"],
+            "resource": "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-old-1"
+          }
+        }
+      }
+    },
+    "failureReasons": []
+  },
+  {
+    "id": "7a3a3779-6add-484c-b050-50c63a6947a7",
+    "status": 2,
+    "preciseStatus": 8,
+    "lastDeployedTimestamp": 1733145428,
+    "lastDeployAttemptTimestamp": 1733145428,
+    "intermediaryResourcesState": [],
+    "data": {
+      "saveOrderFunction": {
+        "environmentVariables": {
+          "TABLE_NAME_ordersTable_1": "legacy-production-orders-old-2",
+          "TABLE_REGION_ordersTable_1": "eu-west-2"
+        },
+        "iam.policyStatements": {
+          "0": {
+            "effect": "Allow",
+            "action": ["dynamodb:PutItem"],
+            "resource": "arn:aws:dynamodb:eu-west-2:123456789012:table/legacy-production-orders-old-2"
+          }
+        }
+      }
+    },
+    "failureReasons": []
+  },
+  {
+    "id": "d97e379c-7e85-4c70-bd31-d7a6f9a5dbd6",
+    "status": 2,
+    "preciseStatus": 8,
+    "lastDeployedTimestamp": 1733145428,
+    "lastDeployAttemptTimestamp": 1733145428,
+    "intermediaryResourcesState": [],
+    "data": {
+      "saveOrderFunction": {
+        "environmentVariables": {
+          "TABLE_NAME_ordersTable_0": "legacy-production-orders-1",
+          "TABLE_REGION_ordersTable_0": "eu-west-1"
+        },
+        "iam.policyStatements": {
+          "0": {
+            "effect": "Allow",
+            "action": ["dynamodb:PutItem"],
+            "resource": "arn:aws:dynamodb:eu-west-1:123456789012:table/legacy-production-orders-1"
+          }
+        }
+      }
+    },
+    "failureReasons": []
+  }
+]

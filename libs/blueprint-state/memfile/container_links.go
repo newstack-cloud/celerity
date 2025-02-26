@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/spf13/afero"
+	"github.com/two-hundred/celerity/libs/blueprint-state/idutils"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
@@ -47,7 +48,7 @@ func (c *linksContainerImpl) GetByName(
 		}
 	}
 
-	elementID := fmt.Sprintf("instance:%s:link:%s", instanceID, linkName)
+	elementID := idutils.LinkInBlueprintID(instanceID, linkName)
 	return state.LinkState{}, state.LinkNotFoundError(elementID)
 }
 

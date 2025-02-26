@@ -2,9 +2,6 @@ package memfile
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"os"
 	"path"
 	"testing"
 
@@ -18,7 +15,7 @@ import (
 
 type MemFileStateContainerResourceDriftTestSuite struct {
 	container                 state.Container
-	saveResourceDriftFixtures map[int]saveResourceDriftFixture
+	saveResourceDriftFixtures map[int]internal.SaveResourceDriftFixture
 	stateDir                  string
 	fs                        afero.Fs
 	suite.Suite
@@ -36,7 +33,13 @@ func (s *MemFileStateContainerResourceDriftTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.container = container
 
-	s.setupSaveResourceDriftFixtures()
+	dirPath := path.Join("__testdata", "save-input", "resource-drift")
+	saveResourceDriftFixtures, err := internal.SetupSaveResourceDriftFixtures(
+		dirPath,
+		/* updates */ []int{2},
+	)
+	s.Require().NoError(err)
+	s.saveResourceDriftFixtures = saveResourceDriftFixtures
 }
 
 func (s *MemFileStateContainerResourceDriftTestSuite) Test_retrieves_resource_drift() {
@@ -69,17 +72,17 @@ func (s *MemFileStateContainerResourceDriftTestSuite) Test_saves_new_resource_dr
 	resources := s.container.Resources()
 	err := resources.SaveDrift(
 		context.Background(),
-		*fixture.driftState,
+		*fixture.DriftState,
 	)
 	s.Require().NoError(err)
 
 	savedDriftState, err := resources.GetDrift(
 		context.Background(),
-		fixture.driftState.ResourceID,
+		fixture.DriftState.ResourceID,
 	)
 	s.Require().NoError(err)
-	internal.AssertResourceDriftEqual(fixture.driftState, &savedDriftState, &s.Suite)
-	s.assertPersistedResourceDrift(fixture.driftState)
+	internal.AssertResourceDriftEqual(fixture.DriftState, &savedDriftState, &s.Suite)
+	s.assertPersistedResourceDrift(fixture.DriftState)
 }
 
 func (s *MemFileStateContainerResourceDriftTestSuite) Test_updates_existing_resource_drift() {
@@ -87,17 +90,17 @@ func (s *MemFileStateContainerResourceDriftTestSuite) Test_updates_existing_reso
 	resources := s.container.Resources()
 	err := resources.SaveDrift(
 		context.Background(),
-		*fixture.driftState,
+		*fixture.DriftState,
 	)
 	s.Require().NoError(err)
 
 	savedDriftState, err := resources.GetDrift(
 		context.Background(),
-		fixture.driftState.ResourceID,
+		fixture.DriftState.ResourceID,
 	)
 	s.Require().NoError(err)
-	internal.AssertResourceDriftEqual(fixture.driftState, &savedDriftState, &s.Suite)
-	s.assertPersistedResourceDrift(fixture.driftState)
+	internal.AssertResourceDriftEqual(fixture.DriftState, &savedDriftState, &s.Suite)
+	s.assertPersistedResourceDrift(fixture.DriftState)
 }
 
 func (s *MemFileStateContainerResourceDriftTestSuite) Test_reports_resource_not_found_for_saving_drift() {
@@ -107,7 +110,7 @@ func (s *MemFileStateContainerResourceDriftTestSuite) Test_reports_resource_not_
 
 	err := resources.SaveDrift(
 		context.Background(),
-		*fixture.driftState,
+		*fixture.DriftState,
 	)
 	s.Require().Error(err)
 	stateErr, isStateErr := err.(*state.Error)
@@ -144,7 +147,7 @@ func (s *MemFileStateContainerResourceDriftTestSuite) Test_removes_resource_drif
 	drift, err := resources.GetDrift(context.Background(), existingResourceID)
 	s.Require().NoError(err)
 	// The resource should still exist but the drift should be an empty value.
-	s.Assert().True(isEmptyDriftState(drift))
+	s.Assert().True(internal.IsEmptyDriftState(drift))
 
 	resource, err := resources.Get(context.Background(), existingResourceID)
 	s.Require().NoError(err)
@@ -174,7 +177,7 @@ func (s *MemFileStateContainerResourceDriftTestSuite) Test_does_nothing_for_miss
 		"test-save-order-function-id",
 	)
 	s.Require().NoError(err)
-	s.Assert().True(isEmptyDriftState(drift))
+	s.Assert().True(internal.IsEmptyDriftState(drift))
 }
 
 func (s *MemFileStateContainerResourceDriftTestSuite) Test_reports_malformed_state_error_for_removing_drift() {
@@ -192,19 +195,6 @@ func (s *MemFileStateContainerResourceDriftTestSuite) Test_reports_malformed_sta
 	memFileErr, isMemFileErr := err.(*Error)
 	s.Assert().True(isMemFileErr)
 	s.Assert().Equal(ErrorReasonCodeMalformedState, memFileErr.ReasonCode)
-}
-
-func (s *MemFileStateContainerResourceDriftTestSuite) setupSaveResourceDriftFixtures() {
-	dirPath := path.Join("__testdata", "save-input", "resource-drift")
-	dirEntries, err := os.ReadDir(dirPath)
-	s.Require().NoError(err)
-
-	s.saveResourceDriftFixtures = make(map[int]saveResourceDriftFixture)
-	for i := 1; i <= len(dirEntries); i++ {
-		fixture, err := loadSaveResourceDriftFixture(i)
-		s.Require().NoError(err)
-		s.saveResourceDriftFixtures[i] = fixture
-	}
 }
 
 func (s *MemFileStateContainerResourceDriftTestSuite) assertPersistedResourceDrift(expected *state.ResourceDriftState) {
@@ -239,42 +229,11 @@ func (s *MemFileStateContainerResourceDriftTestSuite) assertResourceDriftRemoved
 	resources := container.Resources()
 	drift, err := resources.GetDrift(context.Background(), resourceID)
 	s.Require().NoError(err)
-	s.Assert().True(isEmptyDriftState(drift))
+	s.Assert().True(internal.IsEmptyDriftState(drift))
 
 	resource, err := resources.Get(context.Background(), resourceID)
 	s.Require().NoError(err)
 	s.Assert().False(resource.Drifted)
-}
-
-type saveResourceDriftFixture struct {
-	driftState *state.ResourceDriftState
-}
-
-func loadSaveResourceDriftFixture(fixtureNumber int) (saveResourceDriftFixture, error) {
-	fileName := fmt.Sprintf("%d.json", fixtureNumber)
-	filePath := path.Join("__testdata", "save-input", "resource-drift", fileName)
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return saveResourceDriftFixture{}, err
-	}
-
-	driftState := &state.ResourceDriftState{}
-	err = json.Unmarshal(data, driftState)
-	if err != nil {
-		return saveResourceDriftFixture{}, err
-	}
-
-	return saveResourceDriftFixture{
-		driftState: driftState,
-	}, nil
-}
-
-func isEmptyDriftState(actual state.ResourceDriftState) bool {
-	return actual.ResourceID == "" &&
-		actual.ResourceName == "" &&
-		actual.SpecData == nil &&
-		actual.Difference == nil &&
-		actual.Timestamp == nil
 }
 
 func TestMemFileStateContainerResourceDriftTestSuite(t *testing.T) {

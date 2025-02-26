@@ -30,10 +30,6 @@ const (
 	// with a resource or link no longer exists but the resource or link
 	// still exists.
 	ErrorReasonCodeMalformedState ErrorReasonCode = "malformed_state"
-
-	// ErrorReasonCodeExportNotFound is the error code that is used when
-	// an export is not found in the state.
-	ErrorReasonCodeExportNotFound ErrorReasonCode = "export_not_found"
 )
 
 func errMalformedState(message string) error {
@@ -47,12 +43,5 @@ func errMalformedStateFile(message string) error {
 	return &Error{
 		ReasonCode: ErrorReasonCodeMalformedStateFile,
 		Err:        fmt.Errorf("malformed state file: %s", message),
-	}
-}
-
-func errExportNotFound(instanceID string, exportName string) error {
-	return &Error{
-		ReasonCode: ErrorReasonCodeExportNotFound,
-		Err:        fmt.Errorf("export %q not found in instance %q", exportName, instanceID),
 	}
 }

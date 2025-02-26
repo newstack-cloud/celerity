@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/spf13/afero"
+	"github.com/two-hundred/celerity/libs/blueprint-state/idutils"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
@@ -50,7 +51,7 @@ func (c *resourcesContainerImpl) GetByName(
 		}
 	}
 
-	itemID := fmt.Sprintf("instance:%s:resource:%s", instanceID, resourceName)
+	itemID := idutils.ReourceInBlueprintID(instanceID, resourceName)
 	return state.ResourceState{}, state.ResourceNotFoundError(itemID)
 }
 

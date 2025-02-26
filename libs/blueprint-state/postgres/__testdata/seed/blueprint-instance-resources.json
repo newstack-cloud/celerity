@@ -1,0 +1,82 @@
+[
+  {
+    "instanceId": "46324ee7-b515-4988-98b0-d5445746a997",
+    "resourceName": "ordersTable_0",
+    "resourceId": "6a21e4f0-c5ba-42bc-b25f-cfe84ac9a8bb"
+  },
+  {
+    "instanceId": "46324ee7-b515-4988-98b0-d5445746a997",
+    "resourceName": "ordersTable_1",
+    "resourceId": "9d171038-b7e0-417f-a79f-57eaab9a9a11"
+  },
+  {
+    "instanceId": "46324ee7-b515-4988-98b0-d5445746a997",
+    "resourceName": "saveOrderFunction",
+    "resourceId": "8e82a3ab-28af-4fbd-b842-776794e82364"
+  },
+  {
+    "instanceId": "46324ee7-b515-4988-98b0-d5445746a997",
+    "resourceName": "invoicesTable",
+    "resourceId": "8cfab95d-4025-4586-8ff8-a4edfa39082d"
+  },
+  {
+    "instanceId": "94203c13-a63a-4b22-83e5-2d2aa85657e8",
+    "resourceName": "complexResource",
+    "resourceId": "047d1509-f678-49be-939f-321d89743f74"
+  },
+  {
+    "instanceId": "899e3437-b325-49e8-bb2a-d38f7fe41c33",
+    "resourceName": "complexResource",
+    "resourceId": "2e02c8e3-8d69-4ff2-8b19-f686da7fa8a1"
+  },
+  {
+    "instanceId": "0b08445b-4549-4a03-931b-bdbcf4b2c985",
+    "resourceName": "ordersTable_0",
+    "resourceId": "cf33c61a-bec2-4c51-bd9a-a7c1254151d2"
+  },
+  {
+    "instanceId": "0b08445b-4549-4a03-931b-bdbcf4b2c985",
+    "resourceName": "ordersTable_1",
+    "resourceId": "acec9a4e-c36a-43c5-9b21-2f8b4a3e691b"
+  },
+  {
+    "instanceId": "0b08445b-4549-4a03-931b-bdbcf4b2c985",
+    "resourceName": "saveOrderFunction",
+    "resourceId": "18095197-ca71-4125-90d8-e4fb617bca89"
+  },
+  {
+    "instanceId": "0b08445b-4549-4a03-931b-bdbcf4b2c985",
+    "resourceName": "invoicesTable",
+    "resourceId": "710bf08b-8e98-4d1b-8a4e-6bb111fbc058"
+  },
+  {
+    "instanceId": "e98809b3-7008-46a5-8f2c-6ac06bcf9a93",
+    "resourceName": "complexResource",
+    "resourceId": "88c4393d-5cd4-418a-a85e-311840f3508a"
+  },
+  {
+    "instanceId": "0d4467c3-28ab-4793-91aa-29dc61d433e8",
+    "resourceName": "invoicesTable",
+    "resourceId": "eb5b3b43-5c85-4aa3-bfb8-70e9fb67fddb"
+  },
+  {
+    "instanceId": "e47fe692-8fe8-48bd-aa5c-8dd67c2f5bbe",
+    "resourceName": "saveOrderFunction",
+    "resourceId": "e78707ae-f21e-42e3-b3e1-ce295bf907dd"
+  },
+  {
+    "instanceId": "e47fe692-8fe8-48bd-aa5c-8dd67c2f5bbe",
+    "resourceName": "ordersTable_0",
+    "resourceId": "1710c9d9-4276-46a2-af77-fa59cb69a586"
+  },
+  {
+    "instanceId": "e47fe692-8fe8-48bd-aa5c-8dd67c2f5bbe",
+    "resourceName": "ordersTable_1",
+    "resourceId": "414bf1e7-b115-413e-9a85-dc93ad119c14"
+  },
+  {
+    "instanceId": "e47fe692-8fe8-48bd-aa5c-8dd67c2f5bbe",
+    "resourceName": "saveOrderFunction2",
+    "resourceId": "123cb494-c9b5-45fe-8794-c8e068abb70c"
+  }
+]

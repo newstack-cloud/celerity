@@ -35,6 +35,28 @@ if [ -n "$HELP" ]; then
   exit 0
 fi
 
+finish() {
+  echo "Taking down test dependencies docker compose stack ..."
+  docker compose --env-file .env.test -f docker-compose.test-deps.yml down
+}
+
+trap finish EXIT
+
+echo "Bringing up docker compose stack for test dependencies ..."
+
+docker compose --env-file .env.test -f docker-compose.test-deps.yml up -d
+
+echo "Waiting a few seconds to allow db migrations to complete ..."
+sleep 5
+
+echo "Populating test databases with seed data ..."
+./scripts/populate-seed-data.sh
+
+echo "Exporting environment variables for test suite ..."
+set -a
+source .env.test
+set +a
+
 set -e
 echo "" > coverage.txt
 

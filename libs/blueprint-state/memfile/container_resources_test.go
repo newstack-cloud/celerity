@@ -2,9 +2,6 @@ package memfile
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"os"
 	"path"
 	"testing"
 
@@ -24,7 +21,7 @@ const (
 
 type MemFileStateContainerResourcesTestSuite struct {
 	container            state.Container
-	saveResourceFixtures map[int]saveResourceFixture
+	saveResourceFixtures map[int]internal.SaveResourceFixture
 	stateDir             string
 	fs                   afero.Fs
 	suite.Suite
@@ -42,20 +39,13 @@ func (s *MemFileStateContainerResourcesTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.container = container
 
-	s.setupSaveResourceFixtures()
-}
-
-func (s *MemFileStateContainerResourcesTestSuite) setupSaveResourceFixtures() {
 	dirPath := path.Join("__testdata", "save-input", "resources")
-	dirEntries, err := os.ReadDir(dirPath)
+	saveResourceFixtures, err := internal.SetupSaveResourceFixtures(
+		dirPath,
+		/* updates */ []int{3},
+	)
 	s.Require().NoError(err)
-
-	s.saveResourceFixtures = make(map[int]saveResourceFixture)
-	for i := 1; i <= len(dirEntries); i++ {
-		fixture, err := loadSaveResourceFixture(i)
-		s.Require().NoError(err)
-		s.saveResourceFixtures[i] = fixture
-	}
+	s.saveResourceFixtures = saveResourceFixtures
 }
 
 func (s *MemFileStateContainerResourcesTestSuite) Test_retrieves_resource() {
@@ -115,17 +105,17 @@ func (s *MemFileStateContainerResourcesTestSuite) Test_saves_new_resource() {
 	resources := s.container.Resources()
 	err := resources.Save(
 		context.Background(),
-		*fixture.resourceState,
+		*fixture.ResourceState,
 	)
 	s.Require().NoError(err)
 
 	savedState, err := resources.Get(
 		context.Background(),
-		fixture.resourceState.ResourceID,
+		fixture.ResourceState.ResourceID,
 	)
 	s.Require().NoError(err)
-	internal.AssertResourceStatesEqual(fixture.resourceState, &savedState, &s.Suite)
-	s.assertPersistedResource(fixture.resourceState)
+	internal.AssertResourceStatesEqual(fixture.ResourceState, &savedState, &s.Suite)
+	s.assertPersistedResource(fixture.ResourceState)
 }
 
 func (s *MemFileStateContainerResourcesTestSuite) Test_reports_instance_not_found_for_saving_resource() {
@@ -135,7 +125,7 @@ func (s *MemFileStateContainerResourcesTestSuite) Test_reports_instance_not_foun
 
 	err := resources.Save(
 		context.Background(),
-		*fixture.resourceState,
+		*fixture.ResourceState,
 	)
 	s.Require().Error(err)
 	stateErr, isStateErr := err.(*state.Error)
@@ -148,23 +138,23 @@ func (s *MemFileStateContainerResourcesTestSuite) Test_updates_existing_resource
 	resources := s.container.Resources()
 	err := resources.Save(
 		context.Background(),
-		*fixture.resourceState,
+		*fixture.ResourceState,
 	)
 	s.Require().NoError(err)
 
 	savedState, err := resources.Get(
 		context.Background(),
-		fixture.resourceState.ResourceID,
+		fixture.ResourceState.ResourceID,
 	)
 	s.Require().NoError(err)
-	internal.AssertResourceStatesEqual(fixture.resourceState, &savedState, &s.Suite)
-	s.assertPersistedResource(fixture.resourceState)
+	internal.AssertResourceStatesEqual(fixture.ResourceState, &savedState, &s.Suite)
+	s.assertPersistedResource(fixture.ResourceState)
 }
 
 func (s *MemFileStateContainerResourcesTestSuite) Test_updates_blueprint_resource_deployment_status() {
 	resources := s.container.Resources()
 
-	statusInfo := createTestResourceStatusInfo()
+	statusInfo := internal.CreateTestResourceStatusInfo()
 	err := resources.UpdateStatus(
 		context.Background(),
 		existingResourceID,
@@ -177,14 +167,14 @@ func (s *MemFileStateContainerResourcesTestSuite) Test_updates_blueprint_resourc
 		existingResourceID,
 	)
 	s.Require().NoError(err)
-	assertResourceStatusInfo(statusInfo, savedState, &s.Suite)
+	internal.AssertResourceStatusInfo(statusInfo, savedState, &s.Suite)
 	s.assertPersistedResource(&savedState)
 }
 
 func (s *MemFileStateContainerResourcesTestSuite) Test_reports_resource_not_found_for_status_update() {
 	resources := s.container.Resources()
 
-	statusInfo := createTestResourceStatusInfo()
+	statusInfo := internal.CreateTestResourceStatusInfo()
 	err := resources.UpdateStatus(
 		context.Background(),
 		nonExistentResourceID,
@@ -203,7 +193,7 @@ func (s *MemFileStateContainerResourcesTestSuite) Test_reports_malformed_state_e
 	s.Require().NoError(err)
 
 	resources := container.Resources()
-	statusInfo := createTestResourceStatusInfo()
+	statusInfo := internal.CreateTestResourceStatusInfo()
 	err = resources.UpdateStatus(
 		context.Background(),
 		existingResourceID,
@@ -280,64 +270,6 @@ func (s *MemFileStateContainerResourcesTestSuite) assertResourceRemovedFromPersi
 	stateErr, isStateErr := err.(*state.Error)
 	s.Assert().True(isStateErr)
 	s.Assert().Equal(state.ErrResourceNotFound, stateErr.Code)
-}
-
-func assertResourceStatusInfo(
-	expected state.ResourceStatusInfo,
-	actual state.ResourceState,
-	s *suite.Suite,
-) {
-	s.Assert().Equal(expected.Status, actual.Status)
-	s.Assert().Equal(expected.PreciseStatus, actual.PreciseStatus)
-	s.Assert().Equal(*expected.LastDeployedTimestamp, actual.LastDeployedTimestamp)
-	s.Assert().Equal(*expected.LastDeployAttemptTimestamp, actual.LastDeployAttemptTimestamp)
-	s.Assert().Equal(*expected.LastStatusUpdateTimestamp, actual.LastStatusUpdateTimestamp)
-	s.Assert().Equal(expected.FailureReasons, actual.FailureReasons)
-	s.Assert().Equal(expected.Durations, actual.Durations)
-}
-
-type saveResourceFixture struct {
-	resourceState *state.ResourceState
-}
-
-func loadSaveResourceFixture(fixtureNumber int) (saveResourceFixture, error) {
-	fileName := fmt.Sprintf("%d.json", fixtureNumber)
-	filePath := path.Join("__testdata", "save-input", "resources", fileName)
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return saveResourceFixture{}, err
-	}
-
-	resourceState := &state.ResourceState{}
-	err = json.Unmarshal(data, resourceState)
-	if err != nil {
-		return saveResourceFixture{}, err
-	}
-
-	return saveResourceFixture{
-		resourceState: resourceState,
-	}, nil
-}
-
-func createTestResourceStatusInfo() state.ResourceStatusInfo {
-	lastDeployedTimestamp := 1739660528
-	lastDeployAttemptTimestamp := 1739660528
-	lastStatusUpdateTimestamp := 1739660528
-	configCompleteDuration := 1000.0
-	totalDuration := 2000.0
-	attemptDurations := []float64{2000.0}
-	return state.ResourceStatusInfo{
-		Status:                     core.ResourceStatusCreateFailed,
-		LastDeployedTimestamp:      &lastDeployedTimestamp,
-		LastDeployAttemptTimestamp: &lastDeployAttemptTimestamp,
-		LastStatusUpdateTimestamp:  &lastStatusUpdateTimestamp,
-		FailureReasons:             []string{"Failed to create resource due to network error"},
-		Durations: &state.ResourceCompletionDurations{
-			ConfigCompleteDuration: &configCompleteDuration,
-			TotalDuration:          &totalDuration,
-			AttemptDurations:       attemptDurations,
-		},
-	}
 }
 
 func TestMemFileStateContainerResourcesTestSuite(t *testing.T) {
