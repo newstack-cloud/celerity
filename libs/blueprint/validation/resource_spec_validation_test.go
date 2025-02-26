@@ -889,7 +889,7 @@ func (r *testResourceMissingSpecDef) CanLinkTo(
 }
 
 // StabilisedDependencies is not used for validation!
-func (r *testResourceMissingSpecDef) StabilisedDependencies(
+func (r *testResourceMissingSpecDef) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -990,7 +990,7 @@ func (r *testResourceMissingSchema) CanLinkTo(
 }
 
 // StabilisedDependencies is not used for validation!
-func (r *testResourceMissingSchema) StabilisedDependencies(
+func (r *testResourceMissingSchema) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -1093,7 +1093,7 @@ func (r *specValidationTestExampleResource) CanLinkTo(
 }
 
 // StabilisedDependencies is not used for validation!
-func (r *specValidationTestExampleResource) StabilisedDependencies(
+func (r *specValidationTestExampleResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {

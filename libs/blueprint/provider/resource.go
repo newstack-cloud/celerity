@@ -29,10 +29,10 @@ type Resource interface {
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
 	CanLinkTo(ctx context.Context, input *ResourceCanLinkToInput) (*ResourceCanLinkToOutput, error)
-	// StabilisedDependencies retrieves a list of resource types that must be stabilised
+	// GetStabilisedDependencies retrieves a list of resource types that must be stabilised
 	// before the current resource can be deployed when another resource of one of the specified types
 	// is a dependency of the current resource in a blueprint.
-	StabilisedDependencies(ctx context.Context, input *ResourceStabilisedDependenciesInput) (*ResourceStabilisedDependenciesOutput, error)
+	GetStabilisedDependencies(ctx context.Context, input *ResourceStabilisedDependenciesInput) (*ResourceStabilisedDependenciesOutput, error)
 	// IsCommonTerminal specifies whether this resource is expected to have a common use-case
 	// as a terminal resource that does not link out to other resources.
 	// This is useful for providing useful warnings to users about their blueprints

@@ -37,7 +37,7 @@ func (r *DynamoDBTableResource) CanLinkTo(
 	}, nil
 }
 
-func (r *DynamoDBTableResource) StabilisedDependencies(
+func (r *DynamoDBTableResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -197,7 +197,7 @@ func (r *DynamoDBStreamResource) CanLinkTo(
 	}, nil
 }
 
-func (r *DynamoDBStreamResource) StabilisedDependencies(
+func (r *DynamoDBStreamResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -358,7 +358,7 @@ func (r *LambdaFunctionResource) CanLinkTo(
 	}, nil
 }
 
-func (r *LambdaFunctionResource) StabilisedDependencies(
+func (r *LambdaFunctionResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -595,7 +595,7 @@ func (r *Lambda2FunctionResource) CanLinkTo(
 	}, nil
 }
 
-func (r *Lambda2FunctionResource) StabilisedDependencies(
+func (r *Lambda2FunctionResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -733,7 +733,7 @@ func (r *ExampleComplexResource) CanLinkTo(
 	}, nil
 }
 
-func (r *ExampleComplexResource) StabilisedDependencies(
+func (r *ExampleComplexResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {

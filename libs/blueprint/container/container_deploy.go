@@ -1040,7 +1040,7 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterResource(
 		)
 		isDependant := dependencyNode != nil
 
-		stabilisedDependencies, err := c.getStabilisedDependencies(
+		stabilisedDependencies, err := c.getGetStabilisedDependencies(
 			ctx,
 			node,
 			deployCtx.ResourceRegistry,
@@ -1096,7 +1096,7 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterResource(
 	}
 }
 
-func (c *defaultBlueprintContainer) getStabilisedDependencies(
+func (c *defaultBlueprintContainer) getGetStabilisedDependencies(
 	ctx context.Context,
 	node *DeploymentNode,
 	resourceRegistry resourcehelpers.Registry,
@@ -1107,7 +1107,7 @@ func (c *defaultBlueprintContainer) getStabilisedDependencies(
 		dependentResourceType := getResourceType(dependentResource)
 
 		providerNamespace := provider.ExtractProviderFromItemType(dependentResourceType)
-		stabilisedDepsOutput, err := resourceRegistry.StabilisedDependencies(
+		stabilisedDepsOutput, err := resourceRegistry.GetStabilisedDependencies(
 			ctx,
 			dependentResourceType,
 			&provider.ResourceStabilisedDependenciesInput{
@@ -1546,7 +1546,7 @@ func (c *defaultBlueprintContainer) deployNextElementsAfterChild(
 		// that is expected to be stable before the resource in question can be deployed.
 		// For this reason, even when we are choosing elements to deploy after a child blueprint,
 		// other dependencies must be considered and stabilised dependencies must be checked.
-		stabilisedDependencies, err := c.getStabilisedDependencies(
+		stabilisedDependencies, err := c.getGetStabilisedDependencies(
 			ctx,
 			node,
 			deployCtx.ResourceRegistry,

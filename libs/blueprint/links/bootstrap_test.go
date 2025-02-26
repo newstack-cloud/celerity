@@ -131,7 +131,7 @@ func (r *testApiGatewayResource) CanLinkTo(
 	}, nil
 }
 
-func (r *testApiGatewayResource) StabilisedDependencies(
+func (r *testApiGatewayResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -227,7 +227,7 @@ func (r *testSQSQueueResource) CanLinkTo(
 	}, nil
 }
 
-func (r *testSQSQueueResource) StabilisedDependencies(
+func (r *testSQSQueueResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -326,7 +326,7 @@ func (r *testLambdaFunctionResource) CanLinkTo(
 	}, nil
 }
 
-func (r *testLambdaFunctionResource) StabilisedDependencies(
+func (r *testLambdaFunctionResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -422,7 +422,7 @@ func (r *testStratosLambdaFunctionResource) CanLinkTo(
 	}, nil
 }
 
-func (r *testStratosLambdaFunctionResource) StabilisedDependencies(
+func (r *testStratosLambdaFunctionResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -518,7 +518,7 @@ func (r *testDynamoDBTableResource) CanLinkTo(
 	}, nil
 }
 
-func (r *testDynamoDBTableResource) StabilisedDependencies(
+func (r *testDynamoDBTableResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -614,7 +614,7 @@ func (r *testDynamoDBStreamResource) CanLinkTo(
 	}, nil
 }
 
-func (r *testDynamoDBStreamResource) StabilisedDependencies(
+func (r *testDynamoDBStreamResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -711,7 +711,7 @@ func (r *testIAMRoleResource) CanLinkTo(
 	}, nil
 }
 
-func (r *testIAMRoleResource) StabilisedDependencies(
+func (r *testIAMRoleResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -808,7 +808,7 @@ func (r *testStratosIAMRoleResource) CanLinkTo(
 	}, nil
 }
 
-func (r *testStratosIAMRoleResource) StabilisedDependencies(
+func (r *testStratosIAMRoleResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {

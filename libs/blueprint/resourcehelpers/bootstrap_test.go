@@ -142,7 +142,7 @@ func (r *testExampleResource) CanLinkTo(
 }
 
 // StabilisedDependencies is not used for validation!
-func (r *testExampleResource) StabilisedDependencies(
+func (r *testExampleResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {

@@ -58,7 +58,7 @@ type Registry interface {
 
 	// StabilisedDependencies lists the resource types that are required to be stable
 	// when a resource that is a dependency of the given resource type is being deployed.
-	StabilisedDependencies(
+	GetStabilisedDependencies(
 		ctx context.Context,
 		resourceType string,
 		input *provider.ResourceStabilisedDependenciesInput,
@@ -296,7 +296,7 @@ func (r *registryFromProviders) Destroy(
 	return resourceImpl.Destroy(ctx, input)
 }
 
-func (r *registryFromProviders) StabilisedDependencies(
+func (r *registryFromProviders) GetStabilisedDependencies(
 	ctx context.Context,
 	resourceType string,
 	input *provider.ResourceStabilisedDependenciesInput,
@@ -306,7 +306,7 @@ func (r *registryFromProviders) StabilisedDependencies(
 		return nil, err
 	}
 
-	return resourceImpl.StabilisedDependencies(ctx, input)
+	return resourceImpl.GetStabilisedDependencies(ctx, input)
 }
 
 func (r *registryFromProviders) WithParams(

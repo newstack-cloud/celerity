@@ -174,7 +174,7 @@ func (r *ResourceRegistryMock) Destroy(
 	return res.Destroy(ctx, input)
 }
 
-func (r *ResourceRegistryMock) StabilisedDependencies(
+func (r *ResourceRegistryMock) GetStabilisedDependencies(
 	ctx context.Context,
 	resourceType string,
 	input *provider.ResourceStabilisedDependenciesInput,
@@ -184,7 +184,7 @@ func (r *ResourceRegistryMock) StabilisedDependencies(
 		return nil, fmt.Errorf("resource %s not found", resourceType)
 	}
 
-	return res.StabilisedDependencies(ctx, input)
+	return res.GetStabilisedDependencies(ctx, input)
 }
 
 func (r *ResourceRegistryMock) WithParams(
