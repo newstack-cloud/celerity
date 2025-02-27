@@ -31,7 +31,7 @@ const (
 	// a resource is being updated.
 	ResourceStatusUpdating
 	// ResourceStatusUpdated is used when a resource
-	// has been sucessfully updated.
+	// has been successfully updated.
 	ResourceStatusUpdated
 	// ResourceStatusUpdateFailed is used when a resource
 	// has failed to update.

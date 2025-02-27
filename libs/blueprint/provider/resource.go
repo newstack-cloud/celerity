@@ -59,11 +59,8 @@ type Resource interface {
 	// This is important for resources that require a stable state before other resources can be deployed.
 	// This is only used when creating or updating a resource, not when destroying a resource.
 	HasStabilised(ctx context.Context, input *ResourceHasStabilisedInput) (*ResourceHasStabilisedOutput, error)
-	// GetExternalState deals with getting a the state of the resource from the resource provider.
+	// GetExternalState deals with getting the state of the resource from the resource provider.
 	// (e.g. AWS or Google Cloud)
-	// The blueprint instance and resource should be
-	// attached to the resource in the external provider
-	// in order to fetch its status and sync up.
 	GetExternalState(ctx context.Context, input *ResourceGetExternalStateInput) (*ResourceGetExternalStateOutput, error)
 	// Destroy deals with destroying a resource instance if its current
 	// state is successfully deployed or cleaning up a corrupt or partially deployed
@@ -327,9 +324,11 @@ type ResourceHasStabilisedOutput struct {
 // ResourceGetExternalStateInput provides the input data needed for a resource to
 // get the external state of a resource.
 type ResourceGetExternalStateInput struct {
-	InstanceID      string
-	ResourceID      string
-	ProviderContext Context
+	InstanceID              string
+	ResourceID              string
+	CurrentResourceSpec     *core.MappingNode
+	CurrentResourceMetadata *state.ResourceMetadataState
+	ProviderContext         Context
 }
 
 // ResourceGetExternalStateOutput provides the output data from

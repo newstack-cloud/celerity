@@ -208,7 +208,7 @@ type ResourceState struct {
 	InstanceID    string                     `json:"instanceId"`
 	Status        core.ResourceStatus        `json:"status"`
 	PreciseStatus core.PreciseResourceStatus `json:"preciseStatus"`
-	// LastStatusUpdateTimestamp holds the unix timestamp when the link deployment
+	// LastStatusUpdateTimestamp holds the unix timestamp when the resource deployment
 	// status was last updated.
 	LastStatusUpdateTimestamp int `json:"lastStatusUpdateTimestamp,omitempty"`
 	// LastDeployedTimestamp holds the unix timestamp when the resource was last deployed.
