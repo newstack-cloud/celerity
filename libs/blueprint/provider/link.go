@@ -48,7 +48,7 @@ type Link interface {
 		ctx context.Context,
 		input *LinkUpdateIntermediaryResourcesInput,
 	) (*LinkUpdateIntermediaryResourcesOutput, error)
-	// GetPriorityResourceType retrieves the resource in the relationship
+	// GetPriorityResource retrieves the resource in the relationship
 	// that must be deployed first. This will be empty for links where one resource does not
 	// need to be deployed before the other.
 	GetPriorityResource(ctx context.Context, input *LinkGetPriorityResourceInput) (*LinkGetPriorityResourceOutput, error)

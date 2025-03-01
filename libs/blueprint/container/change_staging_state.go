@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/two-hundred/celerity/libs/blueprint/changes"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	commoncore "github.com/two-hundred/celerity/libs/common/core"
@@ -208,7 +209,7 @@ func (c *defaultChangeStagingState) ApplyLinkChanges(changes LinkChangesMessage)
 	if changes.Removed {
 		c.outputChanges.RemovedLinks = append(
 			c.outputChanges.RemovedLinks,
-			createLogicalLinkName(changes.ResourceAName, changes.ResourceBName),
+			core.LogicalLinkName(changes.ResourceAName, changes.ResourceBName),
 		)
 		return
 	}
@@ -276,7 +277,7 @@ func (c *defaultChangeStagingState) MarkLinkAsNoLongerPending(
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	linkName := createLogicalLinkName(resourceANode.ResourceName, resourceBNode.ResourceName)
+	linkName := core.LogicalLinkName(resourceANode.ResourceName, resourceBNode.ResourceName)
 	pendingLink := c.pendingLinks[linkName]
 	pendingLink.linkPending = false
 }

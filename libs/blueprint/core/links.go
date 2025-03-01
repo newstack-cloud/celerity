@@ -12,7 +12,7 @@ const (
 	// an initial link deployment is currently in progress.
 	LinkStatusCreating
 	// LinkStatusCreated is used when
-	// a resource has been deployed
+	// a link has been deployed
 	// successfully.
 	LinkStatusCreated
 	// LinkStatusCreateFailed is used when
@@ -23,7 +23,7 @@ const (
 	// and the creation of the current link is being rolled back.
 	LinkStatusCreateRollingBack
 	// LinkStatusCreateRollbackFailed is used when
-	// another resource change in the same blueprint has failed
+	// another element change in the same blueprint has failed
 	// and the creation of the current link could not be rolled back.
 	LinkStatusCreateRollbackFailed
 	// LinkStatusCreateRollbackComplete is used when
@@ -141,7 +141,7 @@ const (
 	PreciseLinkStatusResourceBUpdateRollbackComplete
 	// PreciseLinkStatusUpdatingIntermediaryResources is used when
 	// intermediary resources are being created, updated or destroyed.
-	// This status is a high level indication of process,
+	// This status is a high level indication of progress,
 	// the status of each intermediary resource should be checked
 	// to determine the exact state of each intermediary resource
 	// in the link.

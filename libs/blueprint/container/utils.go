@@ -305,14 +305,6 @@ func invertMap[Value comparable](m map[string][]Value) map[Value]string {
 	return inverted
 }
 
-func createLogicalLinkName(resourceAName string, resourceBName string) string {
-	return fmt.Sprintf(
-		"%s::%s",
-		resourceAName,
-		resourceBName,
-	)
-}
-
 func getInstanceTreePath(
 	params core.BlueprintParams,
 	instanceID string,
@@ -797,7 +789,7 @@ func addPendingLinksToEphemeralState(
 	resourceNameLinkMap map[string][]string,
 ) {
 	for _, linksToNode := range node.LinksTo {
-		linkName := createLogicalLinkName(node.ResourceName, linksToNode.ResourceName)
+		linkName := core.LogicalLinkName(node.ResourceName, linksToNode.ResourceName)
 		if !slices.Contains(alreadyPendingLinks, linkName) {
 			completionState := &LinkPendingCompletion{
 				resourceANode:    node,
@@ -819,7 +811,7 @@ func addPendingLinksToEphemeralState(
 	}
 
 	for _, linkedFromNode := range node.LinkedFrom {
-		linkName := createLogicalLinkName(linkedFromNode.ResourceName, node.ResourceName)
+		linkName := core.LogicalLinkName(linkedFromNode.ResourceName, node.ResourceName)
 		if !slices.Contains(alreadyPendingLinks, linkName) {
 			completionState := &LinkPendingCompletion{
 				resourceANode:    linkedFromNode,
@@ -880,7 +872,7 @@ func toFullLinkPath(
 ) func(string, int) string {
 	return func(linkFieldPath string, _ int) string {
 		linkName := linkElementID(
-			createLogicalLinkName(resourceAName, resourceBName),
+			core.LogicalLinkName(resourceAName, resourceBName),
 		)
 		if strings.HasPrefix(linkFieldPath, "[") {
 			return fmt.Sprintf("%s%s", linkName, linkFieldPath)

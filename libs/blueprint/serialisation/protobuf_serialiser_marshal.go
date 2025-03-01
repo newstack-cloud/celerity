@@ -52,7 +52,7 @@ func toSchemaPB(blueprint *schema.Blueprint) (*schemapb.Blueprint, error) {
 		return nil, err
 	}
 
-	version, err := toScalarValuePB(blueprint.Version, false)
+	version, err := ToScalarValuePB(blueprint.Version, false)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func toVariablesPB(variables *schema.VariableMap) (map[string]*schemapb.Variable
 
 	var variablesPB = make(map[string]*schemapb.Variable)
 	for k, v := range variables.Values {
-		defaultValue, err := toScalarValuePB(v.Default, true)
+		defaultValue, err := ToScalarValuePB(v.Default, true)
 		if err != nil {
 			return nil, err
 		}
@@ -92,12 +92,12 @@ func toVariablesPB(variables *schema.VariableMap) (map[string]*schemapb.Variable
 			return nil, err
 		}
 
-		description, err := toScalarValuePB(v.Description, true)
+		description, err := ToScalarValuePB(v.Description, true)
 		if err != nil {
 			return nil, err
 		}
 
-		secret, err := toScalarValuePB(v.Secret, true)
+		secret, err := ToScalarValuePB(v.Secret, true)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +131,7 @@ func toValuesPB(values *schema.ValueMap) (map[string]*schemapb.Value, error) {
 			return nil, err
 		}
 
-		secretPB, err := toScalarValuePB(v.Secret, true)
+		secretPB, err := ToScalarValuePB(v.Secret, true)
 		if err != nil {
 			return nil, err
 		}
@@ -192,7 +192,7 @@ func toResourcesPB(resources *schema.ResourceMap) (map[string]*schemapb.Resource
 
 	resourcesPB := make(map[string]*schemapb.Resource)
 	for k, v := range resources.Values {
-		resourcePB, err := toResourcePB(v)
+		resourcePB, err := ToResourcePB(v)
 		if err != nil {
 			return nil, err
 		}
@@ -278,7 +278,7 @@ func toDataSourceFilterPB(filter *schema.DataSourceFilter) (*schemapb.DataSource
 		return nil, err
 	}
 
-	fieldPB, err := toScalarValuePB(filter.Field, false)
+	fieldPB, err := ToScalarValuePB(filter.Field, false)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +336,7 @@ func toDataSourceFieldExportPB(
 		return nil, err
 	}
 
-	aliasForPB, err := toScalarValuePB(export.AliasFor, true)
+	aliasForPB, err := ToScalarValuePB(export.AliasFor, true)
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +348,9 @@ func toDataSourceFieldExportPB(
 	}, nil
 }
 
-func toResourcePB(resource *schema.Resource) (*schemapb.Resource, error) {
+// ToResourcePB converts a schema.Resource to a schemapb.Resource
+// that can be stored and transmitted as a protobuf message.
+func ToResourcePB(resource *schema.Resource) (*schemapb.Resource, error) {
 	conditionPB, err := toConditionPB(resource.Condition)
 	if err != nil {
 		return nil, err
@@ -415,7 +417,7 @@ func toExportPB(export *schema.Export) (*schemapb.Export, error) {
 		return nil, err
 	}
 
-	field, err := toScalarValuePB(export.Field, false)
+	field, err := ToScalarValuePB(export.Field, false)
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +549,7 @@ func toMappingNodePB(mappingNode *core.MappingNode, optional bool) (*schemapb.Ma
 	}
 
 	if mappingNode.Scalar != nil {
-		scalarPB, err := toScalarValuePB(mappingNode.Scalar, false)
+		scalarPB, err := ToScalarValuePB(mappingNode.Scalar, false)
 		if err != nil {
 			return nil, err
 		}
@@ -926,7 +928,7 @@ func toSubstitutionFunctionArgPB(
 func toScalarValuesPB(scalarValues []*core.ScalarValue) ([]*schemapb.ScalarValue, error) {
 	var scalarValuesPB = make([]*schemapb.ScalarValue, len(scalarValues))
 	for i, v := range scalarValues {
-		scalarValuePB, err := toScalarValuePB(v, false)
+		scalarValuePB, err := ToScalarValuePB(v, false)
 		if err != nil {
 			return nil, err
 		}
@@ -936,7 +938,9 @@ func toScalarValuesPB(scalarValues []*core.ScalarValue) ([]*schemapb.ScalarValue
 	return scalarValuesPB, nil
 }
 
-func toScalarValuePB(scalarValue *core.ScalarValue, optional bool) (*schemapb.ScalarValue, error) {
+// ToScalarValuePB converts a core.ScalarValue to a schemapb.ScalarValue
+// that can be stored and transmitted as a protobuf message.x
+func ToScalarValuePB(scalarValue *core.ScalarValue, optional bool) (*schemapb.ScalarValue, error) {
 	if optional && scalarValue == nil {
 		return nil, nil
 	}

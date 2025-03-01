@@ -216,6 +216,7 @@ func IsRetryableError(err error) bool {
 // should be used for transient errors that can be retried.
 type ResourceDeployError struct {
 	FailureReasons []string
+	ChildError     error
 }
 
 func (e *ResourceDeployError) Error() string {
@@ -240,6 +241,7 @@ func IsResourceDeployError(err error) bool {
 // should be used for transient errors that can be retried.
 type ResourceDestroyError struct {
 	FailureReasons []string
+	ChildError     error
 }
 
 func (e *ResourceDestroyError) Error() string {
@@ -260,6 +262,7 @@ func IsResourceDestroyError(err error) bool {
 // resource A in a link relationship.
 type LinkUpdateResourceAError struct {
 	FailureReasons []string
+	ChildError     error
 }
 
 func (e *LinkUpdateResourceAError) Error() string {
@@ -280,6 +283,7 @@ func IsLinkUpdateResourceAError(err error) bool {
 // resource B in a link relationship.
 type LinkUpdateResourceBError struct {
 	FailureReasons []string
+	ChildError     error
 }
 
 func (e *LinkUpdateResourceBError) Error() string {
@@ -300,6 +304,7 @@ func IsLinkUpdateResourceBError(err error) bool {
 // intermediary resources in a link relationship.
 type LinkUpdateIntermediaryResourcesError struct {
 	FailureReasons []string
+	ChildError     error
 }
 
 func (e *LinkUpdateIntermediaryResourcesError) Error() string {

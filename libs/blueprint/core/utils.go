@@ -173,3 +173,17 @@ func ElementPropertyPath(elementID string, propertyName string) string {
 func ExpandedResourceName(resourceTemplateName string, index int) string {
 	return fmt.Sprintf("%s_%d", resourceTemplateName, index)
 }
+
+// LogicalLinkName generates a logical link name for a given pair of resource names
+// in the given order.
+// (e.g. "resourceA::resourceB").
+func LogicalLinkName(resourceAName string, resourceBName string) string {
+	return fmt.Sprintf("%s::%s", resourceAName, resourceBName)
+}
+
+// LinkType generates a link type identifier for a given pair of resource types
+// in the given order.
+// (e.g. "aws/lambda/function::aws/dynamodb/table").
+func LinkType(resourceTypeA string, resourceTypeB string) string {
+	return LogicalLinkName(resourceTypeA, resourceTypeB)
+}

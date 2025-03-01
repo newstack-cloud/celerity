@@ -185,10 +185,6 @@ func (c *functionCallContext) CurrentLocation() *source.Meta {
 	return c.location
 }
 
-func (c *functionCallContext) SetCurrentLocation(location *source.Meta) {
-	c.location = location
-}
-
 type resolvedFunctionCallValue struct {
 	value    *bpcore.MappingNode
 	function provider.FunctionRuntimeInfo

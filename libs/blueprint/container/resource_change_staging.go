@@ -214,7 +214,7 @@ func (s *defaultResourceChangeStager) prepareAndStageLinkChanges(
 	for _, readyToStage := range linksReadyToBeStaged {
 		resourceAName := getResourceNameFromLinkChainNode(readyToStage.resourceANode)
 		resourceBName := getResourceNameFromLinkChainNode(readyToStage.resourceBNode)
-		logicalLinkName := createLogicalLinkName(
+		logicalLinkName := core.LogicalLinkName(
 			resourceAName,
 			resourceBName,
 		)

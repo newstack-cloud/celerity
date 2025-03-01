@@ -423,11 +423,12 @@ type DependencyInfo struct {
 // LinkState provides a way to store some state for links between
 // resources.
 // This is useful for holding state about intermediary resources
-// managed by a provider's implementation of a link.
+// managed by a provider's implementation of a link in addition
+// to tracking the deployment status for a link.
 type LinkState struct {
 	// A globally unique identifier for the link.
 	LinkID string `json:"id"`
-	// The logic name of the link in the blueprint.
+	// The logical name of the link in the blueprint.
 	// This is a combination of the logical names of the 2 resources that are linked.
 	// For example, if a link is between a VPC and a subnet,
 	// the link name would be "vpc::subnet".
@@ -475,8 +476,10 @@ func (l *LinkState) Kind() ElementKind {
 // of an intermediary resources created for a link.
 type LinkIntermediaryResourceState struct {
 	// A globally unique identifier for the resource.
-	ResourceID string `json:"id"`
-	InstanceID string `json:"instanceId"`
+	ResourceID    string                     `json:"id"`
+	InstanceID    string                     `json:"instanceId"`
+	Status        core.ResourceStatus        `json:"status"`
+	PreciseStatus core.PreciseResourceStatus `json:"preciseStatus"`
 	// LastDeployedTimestamp holds the unix timestamp when the resource was last deployed.
 	LastDeployedTimestamp int `json:"lastDeployedTimestamp"`
 	// LastDeployAttempTimestamp holds the unix timestamp when an attempt was last made to deploy the resource.
@@ -485,6 +488,7 @@ type LinkIntermediaryResourceState struct {
 	// for the currently deployed version of the resource along with computed
 	// fields derived from the deployed resource in the provider.
 	ResourceSpecData *core.MappingNode `json:"resourceSpecData"`
+	FailureReasons   []string          `json:"failureReasons,omitempty"`
 }
 
 // LinkStatusInfo holds information about the status of a link

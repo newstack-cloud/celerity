@@ -227,8 +227,8 @@ type ObjectParameter struct {
 	// This will appear in logs and in tooling such as
 	// the language server.
 	Label string
-	// Type of values in the map, an argument will be validated
-	// against this type.
+	// The type of each named attribute in the object,
+	// an argument will be validated against this type.
 	AttributeTypes map[string]AttributeType
 	// Description is a human-readable description of
 	// the parameter. This will appear in logs and in
@@ -408,7 +408,7 @@ type AnyParameter struct {
 	// UnionTypes is a list of value type definitions that are allowed
 	// for the parameter.
 	// When provided, an any parameter type is expected to be validated
-	// as a union type where the argument must match one of the types
+	// as a union type where the argument must match one of the types.
 	UnionTypes []ValueTypeDefinition
 	// Description is a human-readable description of
 	// the parameter. This will appear in logs and in
@@ -743,7 +743,7 @@ func (v *ValueTypeDefinitionList) GetFormattedDescription() string {
 	return v.FormattedDescription
 }
 
-// ValueTypeDefinitionList is a value type definition
+// ValueTypeDefinitionMap is a value type definition
 // for a mapping of strings to values.
 type ValueTypeDefinitionMap struct {
 	// ElementType is the type definition for the values in the map.

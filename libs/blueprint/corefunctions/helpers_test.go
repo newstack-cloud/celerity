@@ -144,10 +144,6 @@ func (f *functionCallContextMock) CurrentLocation() *source.Meta {
 	return f.currentLocation
 }
 
-func (f *functionCallContextMock) SetCurrentLocation(location *source.Meta) {
-	f.currentLocation = location
-}
-
 type comparableInt int
 
 func (c comparableInt) Equal(other any) bool {

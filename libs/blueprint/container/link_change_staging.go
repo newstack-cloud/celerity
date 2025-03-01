@@ -83,7 +83,7 @@ func (d *defaultLinkChangeStager) StageChanges(
 	currentLinkState, err := links.GetByName(
 		ctx,
 		resourceAInfo.InstanceID,
-		createLogicalLinkName(resourceAInfo.ResourceName, resourceBInfo.ResourceName),
+		core.LogicalLinkName(resourceAInfo.ResourceName, resourceBInfo.ResourceName),
 	)
 	if err != nil {
 		if !state.IsLinkNotFound(err) {

@@ -350,10 +350,6 @@ func (f *functionCallContextMock) CurrentLocation() *source.Meta {
 	return f.currentLocation
 }
 
-func (f *functionCallContextMock) SetCurrentLocation(location *source.Meta) {
-	f.currentLocation = location
-}
-
 type testExampleDataSource struct {
 	definition               *DataSourceSpecDefinition
 	filterFields             []string

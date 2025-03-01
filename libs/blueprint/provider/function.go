@@ -18,7 +18,6 @@ type Function interface {
 	// the returned values from plugin function calls.
 	GetDefinition(ctx context.Context, input *FunctionGetDefinitionInput) (*FunctionGetDefinitionOutput, error)
 	// Call is the function that is called when a function is used in a blueprint.
-	// The function should return the result of the function call as a string.
 	// Tools built on top of the framework should provide custom error types
 	// that can be used to distinguish logical function call errors from other
 	// errors that may occur during a function call.
@@ -84,9 +83,6 @@ type FunctionCallContext interface {
 	// location in the source blueprint, this can and often will yield
 	// nil in situations where the location is not available.
 	CurrentLocation() *source.Meta
-	// SetCurrentLocation sets the current location in the blueprint
-	// where the function is being called.
-	SetCurrentLocation(location *source.Meta)
 }
 
 // FunctionCallOutput provides the output data from a substitution function
@@ -100,7 +96,7 @@ type FunctionCallOutput struct {
 // between functions.
 // The blueprint function framework is designed to work across process boundaries
 // so an actual function in memory can not be passed around, Instead, a function
-// runtime info is used , this contains the function name to be called and pre-configured
+// runtime info is used, this contains the function name to be called and pre-configured
 // arguments that can be used when the function is eventually called.
 //
 // Higher-order functions can only use named functions for the return value

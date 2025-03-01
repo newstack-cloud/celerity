@@ -381,7 +381,7 @@ func (l *testLambdaDynamoDBTableLink) UpdateResourceA(
 		}
 	}
 
-	logicalLinkName := createLogicalLinkName(
+	logicalLinkName := core.LogicalLinkName(
 		input.ResourceInfo.ResourceName,
 		input.OtherResourceInfo.ResourceName,
 	)

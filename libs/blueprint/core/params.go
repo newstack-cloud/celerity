@@ -8,19 +8,37 @@ type BlueprintParams interface {
 	// with the given namespace in the form a map of key-value pairs.
 	// It's up to the caller to validate the provider config at runtime.
 	ProviderConfig(namespace string) map[string]*ScalarValue
+	// AllProvidersConfig retrieves the config for all providers
+	// in the form of a map of key-value pairs.
+	AllProvidersConfig() map[string]map[string]*ScalarValue
 	// TransformerConfig retrieves the config for the transformer
 	// with the given namespace in the form a map of key-value pairs.
 	// It's up to the caller to validate the transformer config at runtime.
 	TransformerConfig(namespace string) map[string]*ScalarValue
+	// AllTransformersConfig retrieves the config for all transformers
+	// in the form of a map of key-value pairs.
+	AllTransformersConfig() map[string]map[string]*ScalarValue
 	// ContextVariable retrieves a context-wide variable
 	// for the current environment, this differs from values extracted
 	// from context.Context as these context variables are specific to the components
 	// that implement the interfaces of the blueprint library.
 	ContextVariable(name string) *ScalarValue
+	// AllContextVariables returns all context variables
+	// for the current environment.
+	// This is useful for exporting all context variables
+	// to a provider or transformer plugin running
+	// in a separate process.
+	AllContextVariables() map[string]*ScalarValue
 	// BlueprintVariable retrieves a variable value
 	// specific to a blueprint that will ultimately substitute
 	// variable placeholders in a blueprint.
 	BlueprintVariable(name string) *ScalarValue
+	// AllBlueprintVariables returns all blueprint variables
+	// for the current environment.
+	// This is useful for exporting all blueprint variables
+	// to a provider or transformer plugin running
+	// in a separate process.
+	AllBlueprintVariables() map[string]*ScalarValue
 	// WithBlueprintVariables returns a new BlueprintParams
 	// with the given variables added to the blueprint variables.
 	// If keepExisting is true, the existing blueprint variables
@@ -71,16 +89,32 @@ func (p *ParamsImpl) ProviderConfig(namespace string) map[string]*ScalarValue {
 	return p.ProviderConf[namespace]
 }
 
+func (p *ParamsImpl) AllProvidersConfig() map[string]map[string]*ScalarValue {
+	return p.ProviderConf
+}
+
 func (p *ParamsImpl) TransformerConfig(namespace string) map[string]*ScalarValue {
 	return p.TransformerConf[namespace]
+}
+
+func (p *ParamsImpl) AllTransformersConfig() map[string]map[string]*ScalarValue {
+	return p.TransformerConf
 }
 
 func (p *ParamsImpl) ContextVariable(name string) *ScalarValue {
 	return p.ContextVariables[name]
 }
 
+func (p *ParamsImpl) AllContextVariables() map[string]*ScalarValue {
+	return p.ContextVariables
+}
+
 func (p *ParamsImpl) BlueprintVariable(name string) *ScalarValue {
 	return p.BlueprintVariables[name]
+}
+
+func (p *ParamsImpl) AllBlueprintVariables() map[string]*ScalarValue {
+	return p.BlueprintVariables
 }
 
 func (b *ParamsImpl) WithBlueprintVariables(

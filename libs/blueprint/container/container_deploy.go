@@ -941,7 +941,7 @@ func (c *defaultBlueprintContainer) deployLink(
 	deployCtx *DeployContext,
 ) error {
 	links := c.stateContainer.Links()
-	linkName := createLogicalLinkName(
+	linkName := core.LogicalLinkName(
 		readyToDeploy.resourceANode.ResourceName,
 		readyToDeploy.resourceBNode.ResourceName,
 	)

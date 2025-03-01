@@ -1491,7 +1491,7 @@ func checkLinkDeploymentsFailedAndUpdateState(
 	failedLinks := []string{}
 
 	for linkToResourceName := range linkChanges {
-		linkName := createLogicalLinkName(linkFromResourceName, linkToResourceName)
+		linkName := core.LogicalLinkName(linkFromResourceName, linkToResourceName)
 		linkElementName := linkElementID(
 			linkName,
 		)

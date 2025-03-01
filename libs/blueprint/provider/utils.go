@@ -120,12 +120,20 @@ func (p *providerCtxFromParams) ProviderConfigVariable(name string) (*core.Scala
 	return configValue, ok
 }
 
+func (p *providerCtxFromParams) ProviderConfigVariables() map[string]*core.ScalarValue {
+	return p.blueprintParams.ProviderConfig(p.providerNamespace)
+}
+
 func (p *providerCtxFromParams) ContextVariable(name string) (*core.ScalarValue, bool) {
 	contextVar := p.blueprintParams.ContextVariable(name)
 	if contextVar == nil {
 		return nil, false
 	}
 	return contextVar, true
+}
+
+func (p *providerCtxFromParams) ContextVariables() map[string]*core.ScalarValue {
+	return p.blueprintParams.AllContextVariables()
 }
 
 type linkCtxFromParams struct {
