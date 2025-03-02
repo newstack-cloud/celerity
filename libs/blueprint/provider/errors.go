@@ -1,6 +1,7 @@
 package provider
 
 import (
+	nativeerrors "errors"
 	"fmt"
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
@@ -161,8 +162,14 @@ func errLinkImplementationNotFound(
 // is for the case when a link implementation is not found in the registered
 // providers.
 func IsLinkImplementationNotFoundError(err error) bool {
-	runErr, isRunErr := err.(*errors.RunError)
-	return isRunErr && runErr.ReasonCode == ErrorReasonCodeLinkImplementationNotFound
+	var runErr *errors.RunError
+	if nativeerrors.As(err, &runErr) {
+		if runErr.ReasonCode == ErrorReasonCodeLinkImplementationNotFound {
+			return true
+		}
+	}
+
+	return false
 }
 
 // ErrUnknownResourceDefSchemaType is returned when the schema definition for a resource type
@@ -200,12 +207,20 @@ func (e *RetryableError) Error() string {
 	return fmt.Sprintf("retryable error: %s", e.ChildError.Error())
 }
 
+// AsRetryableError returns true if the error is a retryable error.
+// Whether or not there will be another retry depends on the retry policy
+// configured for the provider or globally.
+// This will assign the error to the target.
+func AsRetryableError(err error, target **RetryableError) bool {
+	return nativeerrors.As(err, target)
+}
+
 // IsRetryableError returns true if the error is a retryable error.
 // Whether or not there will be another retry depends on the retry policy
 // configured for the provider or globally.
 func IsRetryableError(err error) bool {
-	_, ok := err.(*RetryableError)
-	return ok
+	var retryErr *RetryableError
+	return nativeerrors.As(err, &retryErr)
 }
 
 // ResourceDeployError is an error that indicates a failure to deploy a resource.
@@ -227,10 +242,10 @@ func (e *ResourceDeployError) Error() string {
 	return fmt.Sprintf("resource deployment failed with %d failures", len(e.FailureReasons))
 }
 
-// IsResourceDeployError returns true if the error is a resource deploy error.
-func IsResourceDeployError(err error) bool {
-	_, ok := err.(*ResourceDeployError)
-	return ok
+// AsResourceDeployError returns true if the error is a resource deploy error
+// and assigns the error to the target.
+func AsResourceDeployError(err error, target **ResourceDeployError) bool {
+	return nativeerrors.As(err, target)
 }
 
 // ResourceDestroyError is an error that indicates a failure to destroy a resource.
@@ -252,10 +267,10 @@ func (e *ResourceDestroyError) Error() string {
 	return fmt.Sprintf("resource removal failed with %d failures", len(e.FailureReasons))
 }
 
-// IsResourceDestroyError returns true if the error is a resource destroy error.
-func IsResourceDestroyError(err error) bool {
-	_, ok := err.(*ResourceDestroyError)
-	return ok
+// AsResourceDestroyError returns true if the error is a resource destroy error
+// and assigns the error to the target.
+func AsResourceDestroyError(err error, target **ResourceDestroyError) bool {
+	return nativeerrors.As(err, target)
 }
 
 // LinkUpdateResourceAError is an error that indicates a failure to update
@@ -273,10 +288,10 @@ func (e *LinkUpdateResourceAError) Error() string {
 	return fmt.Sprintf("link resource A update failed with %d failures", len(e.FailureReasons))
 }
 
-// IsLinkUpdateResourceAError returns true if the error is a link update resource A error.
-func IsLinkUpdateResourceAError(err error) bool {
-	_, ok := err.(*LinkUpdateResourceAError)
-	return ok
+// AsLinkUpdateResourceAError returns true if the error is a link update resource A error
+// and assigns the error to the target.
+func AsLinkUpdateResourceAError(err error, target **LinkUpdateResourceAError) bool {
+	return nativeerrors.As(err, target)
 }
 
 // LinkUpdateResourceBError is an error that indicates a failure to update
@@ -294,10 +309,10 @@ func (e *LinkUpdateResourceBError) Error() string {
 	return fmt.Sprintf("link resource B update failed with %d failures", len(e.FailureReasons))
 }
 
-// IsLinkUpdateResourceBError returns true if the error is a link update resource B error.
-func IsLinkUpdateResourceBError(err error) bool {
-	_, ok := err.(*LinkUpdateResourceBError)
-	return ok
+// AsLinkUpdateResourceBError returns true if the error is a link update resource B error
+// and assigns the error to the target.
+func AsLinkUpdateResourceBError(err error, target **LinkUpdateResourceBError) bool {
+	return nativeerrors.As(err, target)
 }
 
 // LinkUpdateIntermediaryResourcesError is an error that indicates a failure to update
@@ -315,9 +330,38 @@ func (e *LinkUpdateIntermediaryResourcesError) Error() string {
 	return fmt.Sprintf("link intermediary resources update failed with %d failures", len(e.FailureReasons))
 }
 
-// IsLinkUpdateIntermediaryResourcesError returns true if
-// the error is a link update intermediary resources error.
-func IsLinkUpdateIntermediaryResourcesError(err error) bool {
-	_, ok := err.(*LinkUpdateIntermediaryResourcesError)
-	return ok
+// AsLinkUpdateIntermediaryResourcesError returns true if
+// the error is a link update intermediary resources error
+// and assigns the error to the target.
+func AsLinkUpdateIntermediaryResourcesError(
+	err error,
+	target **LinkUpdateIntermediaryResourcesError,
+) bool {
+	return nativeerrors.As(err, target)
+}
+
+// BadInputError is an error that indicates an error due to unexpected user input.
+// This is primarily used to allow the framework to distinguish between unexpected errors
+// and errors that are due to user input.
+// This should be used by provider plugin implementations when the error is due to
+// user input that can not be recovered from, applications built on top of the blueprint framework
+// should ensure that this distinction is relayed to the user in a meaningful way.
+type BadInputError struct {
+	// The underlying error for that describes the bad input.
+	ChildError     error
+	FailureReasons []string
+}
+
+func (e *BadInputError) Error() string {
+	if len(e.FailureReasons) == 1 {
+		return fmt.Sprintf("bad input error: %s", e.FailureReasons[0])
+	}
+
+	return fmt.Sprintf("bad input provided with %d input errors", len(e.FailureReasons))
+}
+
+// AsBadInputError returns true if the error is a bad input error
+// and assigns the error to the target.
+func AsBadInputError(err error, target **BadInputError) bool {
+	return nativeerrors.As(err, target)
 }

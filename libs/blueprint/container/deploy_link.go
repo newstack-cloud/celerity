@@ -186,13 +186,13 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 
 	resourceAOutput, err := linkImplementation.UpdateResourceA(ctx, input)
 	if err != nil {
-		if provider.IsRetryableError(err) {
+		var retryErr *provider.RetryableError
+		if provider.AsRetryableError(err, &retryErr) {
 			deployCtx.Logger.Debug(
 				"retryable error occurred during resource A update",
 				core.IntegerLogField("attempt", int64(updateResourceARetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			retryErr := err.(*provider.RetryableError)
 			return d.handleUpdateLinkResourceARetry(
 				ctx,
 				linkInfo,
@@ -209,13 +209,13 @@ func (d *defaultLinkDeployer) updateLinkResourceA(
 			)
 		}
 
-		if provider.IsLinkUpdateResourceAError(err) {
+		var linkUpdateResourceAError *provider.LinkUpdateResourceAError
+		if provider.AsLinkUpdateResourceAError(err, &linkUpdateResourceAError) {
 			deployCtx.Logger.Debug(
 				"terminal error occurred during resource A update",
 				core.IntegerLogField("attempt", int64(updateResourceARetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			linkUpdateResourceAError := err.(*provider.LinkUpdateResourceAError)
 			stop, err := d.handleUpdateResourceATerminalFailure(
 				linkInfo,
 				provider.RetryContextWithStartTime(
@@ -419,13 +419,13 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 
 	resourceBOutput, err := linkImplementation.UpdateResourceB(ctx, input)
 	if err != nil {
-		if provider.IsRetryableError(err) {
+		var retryErr *provider.RetryableError
+		if provider.AsRetryableError(err, &retryErr) {
 			deployCtx.Logger.Debug(
 				"retryable error occurred during resource B update",
 				core.IntegerLogField("attempt", int64(updateResourceBRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			retryErr := err.(*provider.RetryableError)
 			return d.handleUpdateLinkResourceBRetry(
 				ctx,
 				linkInfo,
@@ -442,13 +442,13 @@ func (d *defaultLinkDeployer) updateLinkResourceB(
 			)
 		}
 
-		if provider.IsLinkUpdateResourceBError(err) {
+		var linkUpdateResourceBError *provider.LinkUpdateResourceBError
+		if provider.AsLinkUpdateResourceBError(err, &linkUpdateResourceBError) {
 			deployCtx.Logger.Debug(
 				"terminal error occurred during resource B update",
 				core.IntegerLogField("attempt", int64(updateResourceBRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			linkUpdateResourceBError := err.(*provider.LinkUpdateResourceBError)
 			stop, err := d.handleUpdateResourceBTerminalFailure(
 				linkInfo,
 				provider.RetryContextWithStartTime(
@@ -659,13 +659,13 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 
 	intermediaryResourcesOutput, err := linkImplementation.UpdateIntermediaryResources(ctx, input)
 	if err != nil {
-		if provider.IsRetryableError(err) {
+		var retryErr *provider.RetryableError
+		if provider.AsRetryableError(err, &retryErr) {
 			deployCtx.Logger.Debug(
 				"retryable error occurred during intermediary resources update",
 				core.IntegerLogField("attempt", int64(updateIntermediariesRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			retryErr := err.(*provider.RetryableError)
 			return d.handleUpdateLinkIntermediaryResourcesRetry(
 				ctx,
 				linkInfo,
@@ -683,13 +683,13 @@ func (d *defaultLinkDeployer) updateLinkIntermediaryResources(
 			)
 		}
 
-		if provider.IsLinkUpdateIntermediaryResourcesError(err) {
+		var linkUpdateIntermediariesError *provider.LinkUpdateIntermediaryResourcesError
+		if provider.AsLinkUpdateIntermediaryResourcesError(err, &linkUpdateIntermediariesError) {
 			deployCtx.Logger.Debug(
 				"terminal error occurred during intermediary resources update",
 				core.IntegerLogField("attempt", int64(updateIntermediariesRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			linkUpdateIntermediariesError := err.(*provider.LinkUpdateIntermediaryResourcesError)
 			return d.handleUpdateIntermediaryResourcesTerminalFailure(
 				linkInfo,
 				provider.RetryContextWithStartTime(

@@ -47,7 +47,7 @@ func toSchemaPB(blueprint *schema.Blueprint) (*schemapb.Blueprint, error) {
 		return nil, err
 	}
 
-	metadata, err := toMappingNodePB(blueprint.Metadata, true)
+	metadata, err := ToMappingNodePB(blueprint.Metadata, true)
 	if err != nil {
 		return nil, err
 	}
@@ -159,12 +159,12 @@ func toIncludesPB(includes *schema.IncludeMap) (map[string]*schemapb.Include, er
 			return nil, err
 		}
 
-		variablesPB, err := toMappingNodePB(v.Variables, false)
+		variablesPB, err := ToMappingNodePB(v.Variables, false)
 		if err != nil {
 			return nil, err
 		}
 
-		metadataPB, err := toMappingNodePB(v.Metadata, false)
+		metadataPB, err := ToMappingNodePB(v.Metadata, false)
 		if err != nil {
 			return nil, err
 		}
@@ -260,7 +260,7 @@ func toDataSourceMetadataPB(metadata *schema.DataSourceMetadata) (*schemapb.Data
 		return nil, err
 	}
 
-	customPB, err := toMappingNodePB(metadata.Custom, true)
+	customPB, err := ToMappingNodePB(metadata.Custom, true)
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +376,7 @@ func ToResourcePB(resource *schema.Resource) (*schemapb.Resource, error) {
 		return nil, err
 	}
 
-	specPB, err := toMappingNodePB(resource.Spec, false)
+	specPB, err := ToMappingNodePB(resource.Spec, false)
 	if err != nil {
 		return nil, err
 	}
@@ -501,7 +501,7 @@ func toResourceMetadataPB(metadata *schema.Metadata) (*schemapb.ResourceMetadata
 		return nil, err
 	}
 
-	customPB, err := toMappingNodePB(metadata.Custom, true)
+	customPB, err := ToMappingNodePB(metadata.Custom, true)
 	if err != nil {
 		return nil, err
 	}
@@ -539,7 +539,9 @@ func toAnnotationsPB(
 	return annotationsPB, nil
 }
 
-func toMappingNodePB(mappingNode *core.MappingNode, optional bool) (*schemapb.MappingNode, error) {
+// ToMappingNodePB converts a core.MappingNode to a schemapb.MappingNode
+// that can be stored and transmitted as a protobuf message.
+func ToMappingNodePB(mappingNode *core.MappingNode, optional bool) (*schemapb.MappingNode, error) {
 	if optional && mappingNode == nil {
 		return nil, nil
 	}
@@ -584,7 +586,7 @@ func toMappingNodePB(mappingNode *core.MappingNode, optional bool) (*schemapb.Ma
 func toMappingNodeFieldsPB(fields map[string]*core.MappingNode) (*schemapb.MappingNode, error) {
 	fieldsPB := make(map[string]*schemapb.MappingNode)
 	for k, v := range fields {
-		mappingNodePB, err := toMappingNodePB(v, true)
+		mappingNodePB, err := ToMappingNodePB(v, true)
 		if err != nil {
 			return nil, err
 		}
@@ -600,7 +602,7 @@ func toMappingNodeFieldsPB(fields map[string]*core.MappingNode) (*schemapb.Mappi
 func toMappingNodeItemsPB(items []*core.MappingNode) (*schemapb.MappingNode, error) {
 	itemsPB := make([]*schemapb.MappingNode, len(items))
 	for i, item := range items {
-		mappingNodePB, err := toMappingNodePB(item, true)
+		mappingNodePB, err := ToMappingNodePB(item, true)
 		if err != nil {
 			return nil, err
 		}
@@ -939,7 +941,7 @@ func toScalarValuesPB(scalarValues []*core.ScalarValue) ([]*schemapb.ScalarValue
 }
 
 // ToScalarValuePB converts a core.ScalarValue to a schemapb.ScalarValue
-// that can be stored and transmitted as a protobuf message.x
+// that can be stored and transmitted as a protobuf message.
 func ToScalarValuePB(scalarValue *core.ScalarValue, optional bool) (*schemapb.ScalarValue, error) {
 	if optional && scalarValue == nil {
 		return nil, nil

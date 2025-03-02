@@ -133,13 +133,13 @@ func (d *defaultResourceDestroyer) destroyResource(
 		),
 	})
 	if err != nil {
-		if provider.IsRetryableError(err) {
+		var retryErr *provider.RetryableError
+		if provider.AsRetryableError(err, &retryErr) {
 			deployCtx.Logger.Debug(
 				"retryable error occurred during resource destruction",
 				core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			retryErr := err.(*provider.RetryableError)
 			return d.handleDestroyResourceRetry(
 				ctx,
 				resourceInfo,
@@ -150,13 +150,13 @@ func (d *defaultResourceDestroyer) destroyResource(
 			)
 		}
 
-		if provider.IsResourceDestroyError(err) {
+		var resourceDestroyErr *provider.ResourceDestroyError
+		if provider.AsResourceDestroyError(err, &resourceDestroyErr) {
 			deployCtx.Logger.Debug(
 				"terminal error occurred during resource destruction",
 				core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			resourceDestroyErr := err.(*provider.ResourceDestroyError)
 			return d.handleDestroyResourceTerminalFailure(
 				resourceInfo,
 				provider.RetryContextWithStartTime(resourceRetryInfo, resourceRemovalStartTime),

@@ -230,13 +230,13 @@ func (d *defaultResourceDeployer) deployResource(
 		},
 	)
 	if err != nil {
-		if provider.IsRetryableError(err) {
+		var retryErr *provider.RetryableError
+		if provider.AsRetryableError(err, &retryErr) {
 			deployCtx.Logger.Debug(
 				"retryable error occurred during resource deployment",
 				core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			retryErr := err.(*provider.RetryableError)
 			return d.handleDeployResourceRetry(
 				ctx,
 				resourceInfo,
@@ -249,20 +249,20 @@ func (d *defaultResourceDeployer) deployResource(
 			)
 		}
 
-		if provider.IsResourceDeployError(err) {
+		var resourceDeployErr *provider.ResourceDeployError
+		if provider.AsResourceDeployError(err, &resourceDeployErr) {
 			deployCtx.Logger.Debug(
 				"terminal error occurred during resource deployment",
 				core.IntegerLogField("attempt", int64(resourceRetryInfo.Attempt)),
 				core.ErrorLogField("error", err),
 			)
-			resourceDeployError := err.(*provider.ResourceDeployError)
 			return d.handleDeployResourceTerminalFailure(
 				resourceInfo,
 				provider.RetryContextWithStartTime(
 					resourceRetryInfo,
 					resourceDeploymentStartTime,
 				),
-				resourceDeployError.FailureReasons,
+				resourceDeployErr.FailureReasons,
 				deployCtx,
 			)
 		}

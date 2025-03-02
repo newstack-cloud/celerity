@@ -54,7 +54,7 @@ func fromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
 		return nil, err
 	}
 
-	version, err := fromScalarValuePB(blueprintPB.Version, false)
+	version, err := FromScalarValuePB(blueprintPB.Version, false)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func fromVariablesPB(variablesPB map[string]*schemapb.Variable) (*schema.Variabl
 
 	var variables = make(map[string]*schema.Variable)
 	for k, v := range variablesPB {
-		defaultValue, err := fromScalarValuePB(v.Default, true)
+		defaultValue, err := FromScalarValuePB(v.Default, true)
 		if err != nil {
 			return nil, err
 		}
@@ -96,12 +96,12 @@ func fromVariablesPB(variablesPB map[string]*schemapb.Variable) (*schema.Variabl
 			return nil, err
 		}
 
-		description, err := fromScalarValuePB(v.Description, true)
+		description, err := FromScalarValuePB(v.Description, true)
 		if err != nil {
 			return nil, err
 		}
 
-		secret, err := fromScalarValuePB(v.Secret, true)
+		secret, err := FromScalarValuePB(v.Secret, true)
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +138,7 @@ func fromValuesPB(valuesPB map[string]*schemapb.Value) (*schema.ValueMap, error)
 			return nil, err
 		}
 
-		secret, err := fromScalarValuePB(v.Secret, true)
+		secret, err := FromScalarValuePB(v.Secret, true)
 		if err != nil {
 			return nil, err
 		}
@@ -203,7 +203,7 @@ func fromResourcesPB(resourcesPB map[string]*schemapb.Resource) (*schema.Resourc
 
 	resources := make(map[string]*schema.Resource)
 	for k, v := range resourcesPB {
-		resource, err := fromResourcePB(v)
+		resource, err := FromResourcePB(v)
 		if err != nil {
 			return nil, err
 		}
@@ -295,7 +295,7 @@ func fromDataSourceFilterPB(filterPB *schemapb.DataSourceFilter) (*schema.DataSo
 		return nil, err
 	}
 
-	field, err := fromScalarValuePB(filterPB.Field, false)
+	field, err := FromScalarValuePB(filterPB.Field, false)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +357,7 @@ func fromDataSourceFieldExportPB(
 		return nil, err
 	}
 
-	aliasFor, err := fromScalarValuePB(exportPB.AliasFor, true)
+	aliasFor, err := FromScalarValuePB(exportPB.AliasFor, true)
 	if err != nil {
 		return nil, err
 	}
@@ -371,7 +371,9 @@ func fromDataSourceFieldExportPB(
 	}, nil
 }
 
-func fromResourcePB(resourcePB *schemapb.Resource) (*schema.Resource, error) {
+// FromResourcePB converts a Resource protobuf message to a schema.Resource struct
+// to be used with the blueprint framework.
+func FromResourcePB(resourcePB *schemapb.Resource) (*schema.Resource, error) {
 	description, err := fromStringOrSubstitutionsPB(resourcePB.Description, true)
 	if err != nil {
 		return nil, err
@@ -558,7 +560,7 @@ func fromExportPB(exportPB *schemapb.Export) (*schema.Export, error) {
 		return nil, err
 	}
 
-	field, err := fromScalarValuePB(exportPB.Field, false)
+	field, err := FromScalarValuePB(exportPB.Field, false)
 	if err != nil {
 		return nil, err
 	}
@@ -580,7 +582,7 @@ func fromMappingNodePB(mappingNodePB *schemapb.MappingNode, optional bool) (*cor
 	}
 
 	if mappingNodePB.Scalar != nil {
-		scalar, err := fromScalarValuePB(mappingNodePB.Scalar, false)
+		scalar, err := FromScalarValuePB(mappingNodePB.Scalar, false)
 		if err != nil {
 			return nil, err
 		}
@@ -928,7 +930,9 @@ func fromSubstitutionFunctionArgPB(
 	}, nil
 }
 
-func fromScalarValuePB(scalarValue *schemapb.ScalarValue, optional bool) (*core.ScalarValue, error) {
+// FromScalarValuePB converts a ScalarValue protobuf message to a core.ScalarValue struct
+// to be used with the blueprint framework.
+func FromScalarValuePB(scalarValue *schemapb.ScalarValue, optional bool) (*core.ScalarValue, error) {
 	if optional && scalarValue == nil {
 		return nil, nil
 	}
@@ -964,7 +968,7 @@ func fromScalarValuePB(scalarValue *schemapb.ScalarValue, optional bool) (*core.
 func fromScalarValuesPB(scalarValuesPB []*schemapb.ScalarValue) ([]*core.ScalarValue, error) {
 	var scalarValues = make([]*core.ScalarValue, len(scalarValuesPB))
 	for i, v := range scalarValuesPB {
-		scalarValue, err := fromScalarValuePB(v, false)
+		scalarValue, err := FromScalarValuePB(v, false)
 		if err != nil {
 			return nil, err
 		}
