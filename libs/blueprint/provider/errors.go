@@ -242,6 +242,10 @@ func (e *ResourceDeployError) Error() string {
 	return fmt.Sprintf("resource deployment failed with %d failures", len(e.FailureReasons))
 }
 
+func (e *ResourceDeployError) GetFailureReasons() []string {
+	return e.FailureReasons
+}
+
 // AsResourceDeployError returns true if the error is a resource deploy error
 // and assigns the error to the target.
 func AsResourceDeployError(err error, target **ResourceDeployError) bool {
@@ -267,6 +271,10 @@ func (e *ResourceDestroyError) Error() string {
 	return fmt.Sprintf("resource removal failed with %d failures", len(e.FailureReasons))
 }
 
+func (e *ResourceDestroyError) GetFailureReasons() []string {
+	return e.FailureReasons
+}
+
 // AsResourceDestroyError returns true if the error is a resource destroy error
 // and assigns the error to the target.
 func AsResourceDestroyError(err error, target **ResourceDestroyError) bool {
@@ -286,6 +294,10 @@ func (e *LinkUpdateResourceAError) Error() string {
 	}
 
 	return fmt.Sprintf("link resource A update failed with %d failures", len(e.FailureReasons))
+}
+
+func (e *LinkUpdateResourceAError) GetFailureReasons() []string {
+	return e.FailureReasons
 }
 
 // AsLinkUpdateResourceAError returns true if the error is a link update resource A error
@@ -309,6 +321,10 @@ func (e *LinkUpdateResourceBError) Error() string {
 	return fmt.Sprintf("link resource B update failed with %d failures", len(e.FailureReasons))
 }
 
+func (e *LinkUpdateResourceBError) GetFailureReasons() []string {
+	return e.FailureReasons
+}
+
 // AsLinkUpdateResourceBError returns true if the error is a link update resource B error
 // and assigns the error to the target.
 func AsLinkUpdateResourceBError(err error, target **LinkUpdateResourceBError) bool {
@@ -328,6 +344,10 @@ func (e *LinkUpdateIntermediaryResourcesError) Error() string {
 	}
 
 	return fmt.Sprintf("link intermediary resources update failed with %d failures", len(e.FailureReasons))
+}
+
+func (e *LinkUpdateIntermediaryResourcesError) GetFailureReasons() []string {
+	return e.FailureReasons
 }
 
 // AsLinkUpdateIntermediaryResourcesError returns true if
@@ -360,8 +380,18 @@ func (e *BadInputError) Error() string {
 	return fmt.Sprintf("bad input provided with %d input errors", len(e.FailureReasons))
 }
 
+func (e *BadInputError) GetFailureReasons() []string {
+	return e.FailureReasons
+}
+
 // AsBadInputError returns true if the error is a bad input error
 // and assigns the error to the target.
 func AsBadInputError(err error, target **BadInputError) bool {
 	return nativeerrors.As(err, target)
+}
+
+// ErrorFailureReasons is an interface that should be implemented by errors
+// that provide a list of failure reasons.
+type ErrorFailureReasons interface {
+	GetFailureReasons() []string
 }
