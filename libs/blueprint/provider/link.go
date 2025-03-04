@@ -115,6 +115,11 @@ type LinkUpdateIntermediaryResourcesInput struct {
 	Changes        *LinkChanges
 	LinkUpdateType LinkUpdateType
 	LinkContext    LinkContext
+	// ResourceDeployService allows a link implementation to hook into
+	// the framework's existing mechanism to manage resource deployments,
+	// this is useful as it allows link implementations to use the same
+	// resources used in blueprints.
+	ResourceDeployService ResourceDeployService
 }
 
 type LinkUpdateIntermediaryResourcesOutput struct {
@@ -218,10 +223,16 @@ type LinkContext interface {
 	// ProviderConfigVariable retrieves a configuration value that was loaded
 	// for the specified provider.
 	ProviderConfigVariable(providerNamespace string, varName string) (*core.ScalarValue, bool)
+	// ProviderConfigVariables retrieves all configuration values that were loaded
+	// for the specified provider.
+	ProviderConfigVariables(providerNamespace string) map[string]*core.ScalarValue
 	// ContextVariable retrieves a context-wide variable
 	// for the current environment, this differs from values extracted
 	// from context.Context, as these context variables are specific
 	// to the components that implement the interfaces of the blueprint library
 	// and can be shared between processes over a network or similar.
 	ContextVariable(name string) (*core.ScalarValue, bool)
+	// ContextVariables returns all context variables
+	// for the current environment.
+	ContextVariables() map[string]*core.ScalarValue
 }

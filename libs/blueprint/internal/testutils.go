@@ -187,6 +187,19 @@ func (r *ResourceRegistryMock) GetStabilisedDependencies(
 	return res.GetStabilisedDependencies(ctx, input)
 }
 
+func (r *ResourceRegistryMock) HasStabilised(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	res, ok := r.Resources[resourceType]
+	if !ok {
+		return nil, fmt.Errorf("resource %s not found", resourceType)
+	}
+
+	return res.HasStabilised(ctx, input)
+}
+
 func (r *ResourceRegistryMock) WithParams(
 	params core.BlueprintParams,
 ) resourcehelpers.Registry {

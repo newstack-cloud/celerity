@@ -11,15 +11,17 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
 type LinkDeployerTestSuite struct {
 	suite.Suite
-	deployer       *defaultLinkDeployer
-	fixtures       map[int]*linkDeployerFixture
-	stateContainer state.Container
-	logger         core.Logger
+	deployer         *defaultLinkDeployer
+	fixtures         map[int]*linkDeployerFixture
+	stateContainer   state.Container
+	resourceRegistry resourcehelpers.Registry
+	logger           core.Logger
 }
 
 func (s *LinkDeployerTestSuite) SetupTest() {
@@ -27,6 +29,11 @@ func (s *LinkDeployerTestSuite) SetupTest() {
 	s.deployer = &defaultLinkDeployer{
 		clock:          &core.SystemClock{},
 		stateContainer: s.stateContainer,
+	}
+	s.resourceRegistry = &internal.ResourceRegistryMock{
+		Resources: map[string]provider.Resource{
+			"aws/iam/role": &internal.IAMRoleResource{},
+		},
 	}
 	fixtureInputs := s.fixtureInputs()
 	s.fixtures = map[int]*linkDeployerFixture{}
@@ -182,6 +189,7 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 				InstanceStateSnapshot: fixture.instanceStateSnapshot,
 				ParamOverrides:        deployLinkParams(),
 				ResourceTemplates:     map[string]string{},
+				ResourceRegistry:      s.resourceRegistry,
 				Logger:                s.logger,
 			},
 			provider.DefaultRetryPolicy,
@@ -323,7 +331,16 @@ func (s *LinkDeployerTestSuite) createFixtureDeployExpectedOutput(
 	}
 
 	return &LinkDeployResult{
-		IntermediaryResourceStates: []*state.LinkIntermediaryResourceState{},
+		IntermediaryResourceStates: []*state.LinkIntermediaryResourceState{
+			{
+				ResourceID: "testRoleID",
+				ResourceSpecData: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"id": core.MappingNodeFromString("arn:aws:iam:us-east-1:123456789012:role:testRole"),
+					},
+				},
+			},
+		},
 		LinkData: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"saveOrderFunction": {

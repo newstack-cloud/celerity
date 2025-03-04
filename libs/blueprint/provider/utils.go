@@ -162,10 +162,54 @@ func (p *linkCtxFromParams) ProviderConfigVariable(providerNamespace string, var
 	return configValue, ok
 }
 
+func (p *linkCtxFromParams) ProviderConfigVariables(providerNamespace string) map[string]*core.ScalarValue {
+	return p.blueprintParams.ProviderConfig(providerNamespace)
+}
+
 func (p *linkCtxFromParams) ContextVariable(name string) (*core.ScalarValue, bool) {
 	contextVar := p.blueprintParams.ContextVariable(name)
 	if contextVar == nil {
 		return nil, false
 	}
 	return contextVar, true
+}
+
+func (p *linkCtxFromParams) ContextVariables() map[string]*core.ScalarValue {
+	return p.blueprintParams.AllContextVariables()
+}
+
+// NewProviderContextFromLinkContext creates a new provider context
+// from a link context for the current environment.
+// This is primarily useful for link plugin implementations that need to
+// manage intermediary resource deployment by hooking into the `ResourceDeployService`
+// to deploy resources registered with the blueprint framework host application.
+func NewProviderContextFromLinkContext(
+	linkCtx LinkContext,
+	providerNamespace string,
+) Context {
+	return &providerCtxFromLinkCtx{
+		linkCtx:           linkCtx,
+		providerNamespace: providerNamespace,
+	}
+}
+
+type providerCtxFromLinkCtx struct {
+	linkCtx           LinkContext
+	providerNamespace string
+}
+
+func (p *providerCtxFromLinkCtx) ProviderConfigVariable(name string) (*core.ScalarValue, bool) {
+	return p.linkCtx.ProviderConfigVariable(p.providerNamespace, name)
+}
+
+func (p *providerCtxFromLinkCtx) ProviderConfigVariables() map[string]*core.ScalarValue {
+	return p.linkCtx.ProviderConfigVariables(p.providerNamespace)
+}
+
+func (p *providerCtxFromLinkCtx) ContextVariable(name string) (*core.ScalarValue, bool) {
+	return p.linkCtx.ContextVariable(name)
+}
+
+func (p *providerCtxFromLinkCtx) ContextVariables() map[string]*core.ScalarValue {
+	return p.linkCtx.ContextVariables()
 }

@@ -11,7 +11,15 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/linkhelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+)
+
+const (
+	ddbTableResourceType       = "aws/dynamodb/table"
+	iamRoleResourceType        = "aws/iam/role"
+	lambdaFunctionResourceType = "aws/lambda/function"
+	ec2VPCResourceType         = "aws/ec2/vpc"
 )
 
 func createParams() core.BlueprintParams {
@@ -31,7 +39,7 @@ func newTestAWSProvider(
 	return &internal.ProviderMock{
 		NamespaceValue: "aws",
 		Resources: map[string]provider.Resource{
-			"aws/dynamodb/table": &internal.DynamoDBTableResource{
+			ddbTableResourceType: &internal.DynamoDBTableResource{
 				FallbackToStateContainerForExternalState: true,
 				StateContainer:                           stateContainer,
 				// Used to emulate transient failures when checking if DynamoDB
@@ -42,7 +50,7 @@ func newTestAWSProvider(
 				FallbackToStateContainerForExternalState: true,
 				StateContainer:                           stateContainer,
 			},
-			"aws/lambda/function": &internal.LambdaFunctionResource{
+			lambdaFunctionResourceType: &internal.LambdaFunctionResource{
 				CurrentDestroyAttempts:         map[string]int{},
 				CurrentDeployAttemps:           map[string]int{},
 				CurrentGetExternalStateAttemps: map[string]int{},
@@ -84,6 +92,7 @@ func newTestAWSProvider(
 				FallbackToStateContainerForExternalState: true,
 				StateContainer:                           stateContainer,
 			},
+			iamRoleResourceType: &internal.IAMRoleResource{},
 		},
 		Links: map[string]provider.Link{
 			"aws/apigateway/api::aws/lambda/function": &testApiGatewayLambdaLink{},
@@ -154,7 +163,7 @@ func (l *testApiGatewayLambdaLink) GetPriorityResource(
 ) (*provider.LinkGetPriorityResourceOutput, error) {
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     provider.LinkPriorityResourceB,
-		PriorityResourceType: "aws/lambda/function",
+		PriorityResourceType: lambdaFunctionResourceType,
 	}, nil
 }
 
@@ -349,7 +358,7 @@ func (l *testLambdaDynamoDBTableLink) GetPriorityResource(
 ) (*provider.LinkGetPriorityResourceOutput, error) {
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     provider.LinkPriorityResourceB,
-		PriorityResourceType: "aws/dynamodb/table",
+		PriorityResourceType: ddbTableResourceType,
 	}, nil
 }
 
@@ -458,8 +467,54 @@ func (l *testLambdaDynamoDBTableLink) UpdateIntermediaryResources(
 		}
 	}
 
+	roleDeployOutput, err := input.ResourceDeployService.Deploy(
+		ctx,
+		iamRoleResourceType,
+		&provider.ResourceDeployInput{
+			InstanceID: input.ResourceAInfo.InstanceID,
+			ResourceID: "testRoleID",
+			Changes: &provider.Changes{
+				AppliedResourceInfo: provider.ResourceInfo{
+					ResourceID:   "testRoleID",
+					ResourceName: "testRole",
+					InstanceID:   input.ResourceAInfo.InstanceID,
+				},
+			},
+			ProviderContext: provider.NewProviderContextFromLinkContext(
+				input.LinkContext,
+				"aws",
+			),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvedResource := &provider.ResolvedResource{
+		Type: &schema.ResourceTypeWrapper{
+			Value: iamRoleResourceType,
+		},
+		Spec: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{},
+		},
+	}
+	roleSpecState, err := MergeResourceSpec(
+		resolvedResource,
+		"testRoleID",
+		roleDeployOutput.ComputedFieldValues,
+		[]string{"spec.id"},
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &provider.LinkUpdateIntermediaryResourcesOutput{
-		IntermediaryResourceStates: []*state.LinkIntermediaryResourceState{},
+		IntermediaryResourceStates: []*state.LinkIntermediaryResourceState{
+			{
+				ResourceID:       "testRoleID",
+				ResourceSpecData: roleSpecState,
+			},
+		},
 		LinkData: &core.MappingNode{
 			Fields: map[string]*core.MappingNode{
 				"testIntermediaryResource": core.MappingNodeFromString("testIntermediaryResourceValue"),
@@ -483,7 +538,7 @@ func (l *testDynamoDBTableStreamLink) GetPriorityResource(
 ) (*provider.LinkGetPriorityResourceOutput, error) {
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     provider.LinkPriorityResourceA,
-		PriorityResourceType: "aws/dynamodb/table",
+		PriorityResourceType: ddbTableResourceType,
 	}, nil
 }
 
@@ -538,7 +593,7 @@ func (l *testDynamoDBStreamLambdaLink) GetPriorityResource(
 ) (*provider.LinkGetPriorityResourceOutput, error) {
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     provider.LinkPriorityResourceB,
-		PriorityResourceType: "aws/lambda/function",
+		PriorityResourceType: lambdaFunctionResourceType,
 	}, nil
 }
 
@@ -593,7 +648,7 @@ func (l *testDynamoDBTableLambdaLink) GetPriorityResource(
 ) (*provider.LinkGetPriorityResourceOutput, error) {
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     provider.LinkPriorityResourceA,
-		PriorityResourceType: "aws/dynamodb/table",
+		PriorityResourceType: ddbTableResourceType,
 	}, nil
 }
 
@@ -648,7 +703,7 @@ func (l *testLambdaLambdaLink) GetPriorityResource(
 ) (*provider.LinkGetPriorityResourceOutput, error) {
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     provider.LinkPriorityResourceNone,
-		PriorityResourceType: "aws/lambda/function",
+		PriorityResourceType: lambdaFunctionResourceType,
 	}, nil
 }
 
@@ -705,7 +760,7 @@ func (l *testLambdaLambda2Link) GetPriorityResource(
 		// Lambda -> Lambda2 exists so there can be a relationship between
 		// 2 lambda functions where one has priority for certain test cases.
 		PriorityResource:     provider.LinkPriorityResourceA,
-		PriorityResourceType: "aws/lambda/function",
+		PriorityResourceType: lambdaFunctionResourceType,
 	}, nil
 }
 
@@ -760,7 +815,7 @@ func (l *testSubnetVPCLink) GetPriorityResource(
 ) (*provider.LinkGetPriorityResourceOutput, error) {
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     provider.LinkPriorityResourceB,
-		PriorityResourceType: "aws/ec2/vpc",
+		PriorityResourceType: ec2VPCResourceType,
 	}, nil
 }
 
@@ -815,7 +870,7 @@ func (l *testSecurityGroupVPCLink) GetPriorityResource(
 ) (*provider.LinkGetPriorityResourceOutput, error) {
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     provider.LinkPriorityResourceB,
-		PriorityResourceType: "aws/ec2/vpc",
+		PriorityResourceType: ec2VPCResourceType,
 	}, nil
 }
 
@@ -870,7 +925,7 @@ func (l *testRouteTableVPCLink) GetPriorityResource(
 ) (*provider.LinkGetPriorityResourceOutput, error) {
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     provider.LinkPriorityResourceB,
-		PriorityResourceType: "aws/ec2/vpc",
+		PriorityResourceType: ec2VPCResourceType,
 	}, nil
 }
 

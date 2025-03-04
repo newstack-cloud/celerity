@@ -999,3 +999,121 @@ func (r *ExampleComplexResource) Destroy(
 ) error {
 	return nil
 }
+
+// IAMRoleResource is a stub implementation of a resource that represents an IAM role.
+// This has been prepared primarily to be used in tests for intermediary resource
+// deployment as a part of a link plugin implementation.
+type IAMRoleResource struct{}
+
+func (r *IAMRoleResource) CanLinkTo(
+	ctx context.Context,
+	input *provider.ResourceCanLinkToInput,
+) (*provider.ResourceCanLinkToOutput, error) {
+	return &provider.ResourceCanLinkToOutput{
+		CanLinkTo: []string{},
+	}, nil
+}
+
+func (r *IAMRoleResource) GetStabilisedDependencies(
+	ctx context.Context,
+	input *provider.ResourceStabilisedDependenciesInput,
+) (*provider.ResourceStabilisedDependenciesOutput, error) {
+	return &provider.ResourceStabilisedDependenciesOutput{}, nil
+}
+
+func (r *IAMRoleResource) IsCommonTerminal(
+	ctx context.Context,
+	input *provider.ResourceIsCommonTerminalInput,
+) (*provider.ResourceIsCommonTerminalOutput, error) {
+	return &provider.ResourceIsCommonTerminalOutput{
+		IsCommonTerminal: false,
+	}, nil
+}
+
+func (r *IAMRoleResource) GetType(
+	ctx context.Context,
+	input *provider.ResourceGetTypeInput,
+) (*provider.ResourceGetTypeOutput, error) {
+	return &provider.ResourceGetTypeOutput{
+		Type: "aws/iam/role",
+	}, nil
+}
+
+func (r *IAMRoleResource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.ResourceGetTypeDescriptionInput,
+) (*provider.ResourceGetTypeDescriptionOutput, error) {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "",
+		MarkdownDescription:  "# AWS IAM Role\n\nAn IAM role for managing access to resources in AWS.",
+	}, nil
+}
+
+func (r *IAMRoleResource) CustomValidate(
+	ctx context.Context,
+	input *provider.ResourceValidateInput,
+) (*provider.ResourceValidateOutput, error) {
+	return &provider.ResourceValidateOutput{
+		Diagnostics: []*core.Diagnostic{},
+	}, nil
+}
+
+func (r *IAMRoleResource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.ResourceGetSpecDefinitionInput,
+) (*provider.ResourceGetSpecDefinitionOutput, error) {
+	return &provider.ResourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.ResourceSpecDefinition{
+			Schema: &provider.ResourceDefinitionsSchema{
+				Type: provider.ResourceDefinitionsSchemaTypeObject,
+				Attributes: map[string]*provider.ResourceDefinitionsSchema{
+					"id": {
+						Type:     provider.ResourceDefinitionsSchemaTypeString,
+						Computed: true,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
+func (r *IAMRoleResource) Deploy(
+	ctx context.Context,
+	input *provider.ResourceDeployInput,
+) (*provider.ResourceDeployOutput, error) {
+	id := fmt.Sprintf(
+		"arn:aws:iam:us-east-1:123456789012:role:%s",
+		input.Changes.AppliedResourceInfo.ResourceName,
+	)
+
+	return &provider.ResourceDeployOutput{
+		ComputedFieldValues: map[string]*core.MappingNode{
+			"spec.id": core.MappingNodeFromString(id),
+		},
+	}, nil
+}
+
+func (r *IAMRoleResource) HasStabilised(
+	ctx context.Context,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	return &provider.ResourceHasStabilisedOutput{
+		Stabilised: true,
+	}, nil
+}
+
+func (r *IAMRoleResource) GetExternalState(
+	ctx context.Context,
+	input *provider.ResourceGetExternalStateInput,
+) (*provider.ResourceGetExternalStateOutput, error) {
+	return &provider.ResourceGetExternalStateOutput{
+		ResourceSpecState: nil,
+	}, nil
+}
+
+func (r *IAMRoleResource) Destroy(
+	ctx context.Context,
+	input *provider.ResourceDestroyInput,
+) error {
+	return nil
+}

@@ -834,14 +834,17 @@ func copyIntermediaryResources(
 	}
 
 	intermediaryResourcesCopy := []*state.LinkIntermediaryResourceState{}
-	for i, value := range intermediaryResourceStates {
-		intermediaryResourcesCopy[i] = &state.LinkIntermediaryResourceState{
-			ResourceID:                 value.ResourceID,
-			InstanceID:                 value.InstanceID,
-			LastDeployedTimestamp:      value.LastDeployedTimestamp,
-			LastDeployAttemptTimestamp: value.LastDeployAttemptTimestamp,
-			ResourceSpecData:           value.ResourceSpecData,
-		}
+	for _, value := range intermediaryResourceStates {
+		intermediaryResourcesCopy = append(
+			intermediaryResourcesCopy,
+			&state.LinkIntermediaryResourceState{
+				ResourceID:                 value.ResourceID,
+				InstanceID:                 value.InstanceID,
+				LastDeployedTimestamp:      value.LastDeployedTimestamp,
+				LastDeployAttemptTimestamp: value.LastDeployAttemptTimestamp,
+				ResourceSpecData:           value.ResourceSpecData,
+			},
+		)
 	}
 
 	return intermediaryResourcesCopy
