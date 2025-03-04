@@ -64,6 +64,15 @@ type Registry interface {
 		input *provider.ResourceStabilisedDependenciesInput,
 	) (*provider.ResourceStabilisedDependenciesOutput, error)
 
+	// HasStabilised deals with checking if a resource has stabilised after being deployed.
+	// This is important for resources that require a stable state before other resources can be deployed.
+	// This is only used when creating or updating a resource, not when destroying a resource.
+	HasStabilised(
+		ctx context.Context,
+		resourceType string,
+		input *provider.ResourceHasStabilisedInput,
+	) (*provider.ResourceHasStabilisedOutput, error)
+
 	// WithParams creates a new registry derived from the current registry
 	// with the given parameters.
 	WithParams(
@@ -307,6 +316,19 @@ func (r *registryFromProviders) GetStabilisedDependencies(
 	}
 
 	return resourceImpl.GetStabilisedDependencies(ctx, input)
+}
+
+func (r *registryFromProviders) HasStabilised(
+	ctx context.Context,
+	resourceType string,
+	input *provider.ResourceHasStabilisedInput,
+) (*provider.ResourceHasStabilisedOutput, error) {
+	resourceImpl, err := r.getResourceType(ctx, resourceType)
+	if err != nil {
+		return nil, err
+	}
+
+	return resourceImpl.HasStabilised(ctx, input)
 }
 
 func (r *registryFromProviders) WithParams(
