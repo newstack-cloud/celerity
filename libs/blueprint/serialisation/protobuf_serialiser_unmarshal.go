@@ -49,7 +49,7 @@ func fromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
 		return nil, err
 	}
 
-	metadata, err := fromMappingNodePB(blueprintPB.Metadata, true)
+	metadata, err := FromMappingNodePB(blueprintPB.Metadata, true)
 	if err != nil {
 		return nil, err
 	}
@@ -168,12 +168,12 @@ func fromIncludesPB(includesPB map[string]*schemapb.Include) (*schema.IncludeMap
 			return nil, err
 		}
 
-		variables, err := fromMappingNodePB(v.Variables, false)
+		variables, err := FromMappingNodePB(v.Variables, false)
 		if err != nil {
 			return nil, err
 		}
 
-		metadata, err := fromMappingNodePB(v.Metadata, false)
+		metadata, err := FromMappingNodePB(v.Metadata, false)
 		if err != nil {
 			return nil, err
 		}
@@ -277,7 +277,7 @@ func fromDataSourceMetadataPB(metadataPB *schemapb.DataSourceMetadata) (*schema.
 		return nil, err
 	}
 
-	custom, err := fromMappingNodePB(metadataPB.Custom, true)
+	custom, err := FromMappingNodePB(metadataPB.Custom, true)
 	if err != nil {
 		return nil, err
 	}
@@ -403,7 +403,7 @@ func FromResourcePB(resourcePB *schemapb.Resource) (*schema.Resource, error) {
 		return nil, err
 	}
 
-	spec, err := fromMappingNodePB(resourcePB.Spec, false)
+	spec, err := FromMappingNodePB(resourcePB.Spec, false)
 	if err != nil {
 		return nil, err
 	}
@@ -480,7 +480,7 @@ func fromResourceMetadataPB(metadataPB *schemapb.ResourceMetadata) (*schema.Meta
 		return nil, err
 	}
 
-	custom, err := fromMappingNodePB(metadataPB.Custom, true)
+	custom, err := FromMappingNodePB(metadataPB.Custom, true)
 	if err != nil {
 		return nil, err
 	}
@@ -572,7 +572,9 @@ func fromExportPB(exportPB *schemapb.Export) (*schema.Export, error) {
 	}, nil
 }
 
-func fromMappingNodePB(mappingNodePB *schemapb.MappingNode, optional bool) (*core.MappingNode, error) {
+// FromMappingNodePB converts a MappingNode protobuf message to a core.MappingNode struct
+// to be used with the blueprint framework.
+func FromMappingNodePB(mappingNodePB *schemapb.MappingNode, optional bool) (*core.MappingNode, error) {
 	if optional && mappingNodePB == nil {
 		return nil, nil
 	}
@@ -617,7 +619,7 @@ func fromMappingNodePB(mappingNodePB *schemapb.MappingNode, optional bool) (*cor
 func fromMappingNodeFieldsPB(fieldsPB map[string]*schemapb.MappingNode) (*core.MappingNode, error) {
 	fields := make(map[string]*core.MappingNode)
 	for k, v := range fieldsPB {
-		mappingNode, err := fromMappingNodePB(v, true)
+		mappingNode, err := FromMappingNodePB(v, true)
 		if err != nil {
 			return nil, err
 		}
@@ -633,7 +635,7 @@ func fromMappingNodeFieldsPB(fieldsPB map[string]*schemapb.MappingNode) (*core.M
 func fromMappingNodeItemsPB(itemsPB []*schemapb.MappingNode) (*core.MappingNode, error) {
 	items := make([]*core.MappingNode, len(itemsPB))
 	for i, item := range itemsPB {
-		mappingNode, err := fromMappingNodePB(item, true)
+		mappingNode, err := FromMappingNodePB(item, true)
 		if err != nil {
 			return nil, err
 		}
