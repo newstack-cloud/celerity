@@ -125,6 +125,10 @@ func newTestExampleResource() provider.Resource {
 							},
 						},
 					},
+					"id": {
+						Type:     provider.ResourceDefinitionsSchemaTypeString,
+						Computed: true,
+					},
 				},
 			},
 		},
@@ -196,20 +200,24 @@ func (r *testExampleResource) GetSpecDefinition(
 	}, nil
 }
 
-// Deploy is not used for validation!
 func (r *testExampleResource) Deploy(
 	ctx context.Context,
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
-	return &provider.ResourceDeployOutput{}, nil
+	return &provider.ResourceDeployOutput{
+		ComputedFieldValues: map[string]*core.MappingNode{
+			"spec.id": core.MappingNodeFromString("test-example-resource-item-id-1"),
+		},
+	}, nil
 }
 
-// HasStabilised is not used for validation!
 func (r *testExampleResource) HasStabilised(
 	ctx context.Context,
 	input *provider.ResourceHasStabilisedInput,
 ) (*provider.ResourceHasStabilisedOutput, error) {
-	return &provider.ResourceHasStabilisedOutput{}, nil
+	return &provider.ResourceHasStabilisedOutput{
+		Stabilised: true,
+	}, nil
 }
 
 // GetExternalState is not used for validation!

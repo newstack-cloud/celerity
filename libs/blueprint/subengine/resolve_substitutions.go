@@ -14,7 +14,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/speccore"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -927,7 +926,7 @@ func (r *defaultSubstitutionResolver) resolveInMappingNode(
 	depth int,
 ) (*bpcore.MappingNode, error) {
 	// Depth counting starts at 0.
-	if mappingNode == nil || depth >= validation.MappingNodeMaxTraverseDepth {
+	if mappingNode == nil || depth >= bpcore.MappingNodeMaxTraverseDepth {
 		return nil, nil
 	}
 

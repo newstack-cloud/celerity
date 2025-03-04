@@ -2,6 +2,7 @@ package subengine
 
 import (
 	"os"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -79,6 +80,7 @@ func (s *SubResolverTestContainer) populateDependencies() {
 	s.resourceRegistry = resourcehelpers.NewRegistry(
 		providers,
 		map[string]transform.SpecTransformer{},
+		10*time.Millisecond,
 		/* params */ nil,
 	)
 	s.dataSourceRegistry = provider.NewDataSourceRegistry(

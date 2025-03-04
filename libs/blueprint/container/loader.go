@@ -484,9 +484,6 @@ func NewDefaultLoader(
 	childResolver includes.ChildResolver,
 	opts ...LoaderOption,
 ) Loader {
-	// This resource registry instance is used as a parent to spawn child registries
-	// with params from the caller for each method.
-	resourceRegistry := resourcehelpers.NewRegistry(providers, specTransformers, nil /* params */)
 	funcRegistry := provider.NewFunctionRegistry(providers)
 	linkRegistry := provider.NewLinkRegistry(providers)
 	internalProviders := copyProviderMap(providers)
@@ -506,7 +503,6 @@ func NewDefaultLoader(
 		childResolver:                  childResolver,
 		refChainCollectorFactory:       refgraph.NewRefChainCollector,
 		funcRegistry:                   funcRegistry,
-		resourceRegistry:               resourceRegistry,
 		linkRegistry:                   linkRegistry,
 		clock:                          clock,
 		resolveWorkingDir:              os.Getwd,
@@ -527,6 +523,17 @@ func NewDefaultLoader(
 
 	for _, opt := range opts {
 		opt(loader)
+	}
+
+	if loader.resourceRegistry == nil {
+		// This resource registry instance is used as a parent to spawn child registries
+		// with params from the caller for each method.
+		loader.resourceRegistry = resourcehelpers.NewRegistry(
+			providers,
+			specTransformers,
+			loader.resourceStabilityPollingConfig.PollingInterval,
+			/* params */ nil,
+		)
 	}
 
 	// As the drift checker and data source registry both depend on the logger,

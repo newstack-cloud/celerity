@@ -13,7 +13,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -435,7 +434,7 @@ func getPathValueFromMappingNode[Prop any](
 	current := node
 	pathExists := true
 	i := 0
-	maxDepth := int(math.Min(validation.MappingNodeMaxTraverseDepth, float64(len(path))))
+	maxDepth := int(math.Min(bpcore.MappingNodeMaxTraverseDepth, float64(len(path))))
 	for pathExists && current != nil && i < maxDepth {
 		pathItem := path[i]
 		if pathItem.FieldName != "" && current.Fields != nil {
@@ -455,7 +454,7 @@ func getPathValueFromMappingNode[Prop any](
 			property,
 			mappingNodeStartsAfter,
 			i,
-			validation.MappingNodeMaxTraverseDepth,
+			bpcore.MappingNodeMaxTraverseDepth,
 		)
 	}
 

@@ -11,7 +11,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -164,7 +163,7 @@ func collectSpecFieldChanges(
 	valueInCurrentState *bpcore.MappingNode,
 	fieldChangeCtx *fieldChangeContext,
 ) {
-	if fieldChangeCtx.depth > validation.MappingNodeMaxTraverseDepth {
+	if fieldChangeCtx.depth > bpcore.MappingNodeMaxTraverseDepth {
 		return
 	}
 

@@ -6,7 +6,6 @@ import (
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 func collectMappingNodeChanges(
@@ -15,7 +14,7 @@ func collectMappingNodeChanges(
 	currentValue *bpcore.MappingNode,
 	fieldChangeCtx *fieldChangeContext,
 ) {
-	if fieldChangeCtx.depth > validation.MappingNodeMaxTraverseDepth {
+	if fieldChangeCtx.depth > bpcore.MappingNodeMaxTraverseDepth {
 		return
 	}
 

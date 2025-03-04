@@ -9,6 +9,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/links"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/specmerge"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 )
@@ -285,7 +286,7 @@ func (d *defaultResourceDeployer) deployResource(
 		"merging user-defined resource spec with computed field values returned by the plugin",
 	)
 	resolvedResource := getResolvedResourceFromChanges(resourceInfo.changes)
-	mergedSpecState, err := MergeResourceSpec(
+	mergedSpecState, err := specmerge.MergeResourceSpec(
 		resolvedResource,
 		resourceInfo.resourceName,
 		output.ComputedFieldValues,

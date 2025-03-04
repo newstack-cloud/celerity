@@ -151,14 +151,14 @@ func (r *ResourceRegistryMock) CustomValidate(
 func (r *ResourceRegistryMock) Deploy(
 	ctx context.Context,
 	resourceType string,
-	input *provider.ResourceDeployInput,
+	input *provider.ResourceDeployServiceInput,
 ) (*provider.ResourceDeployOutput, error) {
 	res, ok := r.Resources[resourceType]
 	if !ok {
 		return nil, fmt.Errorf("resource %s not found", resourceType)
 	}
 
-	return res.Deploy(ctx, input)
+	return res.Deploy(ctx, input.DeployInput)
 }
 
 func (r *ResourceRegistryMock) Destroy(
@@ -185,19 +185,6 @@ func (r *ResourceRegistryMock) GetStabilisedDependencies(
 	}
 
 	return res.GetStabilisedDependencies(ctx, input)
-}
-
-func (r *ResourceRegistryMock) HasStabilised(
-	ctx context.Context,
-	resourceType string,
-	input *provider.ResourceHasStabilisedInput,
-) (*provider.ResourceHasStabilisedOutput, error) {
-	res, ok := r.Resources[resourceType]
-	if !ok {
-		return nil, fmt.Errorf("resource %s not found", resourceType)
-	}
-
-	return res.HasStabilised(ctx, input)
 }
 
 func (r *ResourceRegistryMock) WithParams(

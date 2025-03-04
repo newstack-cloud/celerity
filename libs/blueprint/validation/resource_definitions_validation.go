@@ -32,7 +32,7 @@ func validateResourceDefinition(
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
 	// Counting depth starts from 0.
-	if depth >= MappingNodeMaxTraverseDepth {
+	if depth >= core.MappingNodeMaxTraverseDepth {
 		return diagnostics, nil
 	}
 

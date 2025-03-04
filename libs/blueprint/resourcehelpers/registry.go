@@ -3,10 +3,14 @@ package resourcehelpers
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/specmerge"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
 )
 
@@ -43,10 +47,12 @@ type Registry interface {
 	) (*provider.ResourceValidateOutput, error)
 
 	// Deploy deals with the deployment of a resource of a given type.
+	// The caller can specify whether or not to wait until the resource is considered
+	// stable.
 	Deploy(
 		ctx context.Context,
 		resourceType string,
-		input *provider.ResourceDeployInput,
+		input *provider.ResourceDeployServiceInput,
 	) (*provider.ResourceDeployOutput, error)
 
 	// Destroy deals with the destruction of a resource of a given type.
@@ -64,15 +70,6 @@ type Registry interface {
 		input *provider.ResourceStabilisedDependenciesInput,
 	) (*provider.ResourceStabilisedDependenciesOutput, error)
 
-	// HasStabilised deals with checking if a resource has stabilised after being deployed.
-	// This is important for resources that require a stable state before other resources can be deployed.
-	// This is only used when creating or updating a resource, not when destroying a resource.
-	HasStabilised(
-		ctx context.Context,
-		resourceType string,
-		input *provider.ResourceHasStabilisedInput,
-	) (*provider.ResourceHasStabilisedOutput, error)
-
 	// WithParams creates a new registry derived from the current registry
 	// with the given parameters.
 	WithParams(
@@ -81,13 +78,14 @@ type Registry interface {
 }
 
 type registryFromProviders struct {
-	providers             map[string]provider.Provider
-	transformers          map[string]transform.SpecTransformer
-	resourceCache         *core.Cache[provider.Resource]
-	abstractResourceCache *core.Cache[transform.AbstractResource]
-	resourceTypes         []string
-	params                core.BlueprintParams
-	mu                    sync.Mutex
+	providers                    map[string]provider.Provider
+	transformers                 map[string]transform.SpecTransformer
+	resourceCache                *core.Cache[provider.Resource]
+	abstractResourceCache        *core.Cache[transform.AbstractResource]
+	resourceTypes                []string
+	params                       core.BlueprintParams
+	stabilisationPollingInterval time.Duration
+	mu                           sync.Mutex
 }
 
 // NewRegistry creates a new resource registry from a map of providers,
@@ -95,15 +93,17 @@ type registryFromProviders struct {
 func NewRegistry(
 	providers map[string]provider.Provider,
 	transformers map[string]transform.SpecTransformer,
+	stabilisationPollingInterval time.Duration,
 	params core.BlueprintParams,
 ) Registry {
 	return &registryFromProviders{
-		providers:             providers,
-		transformers:          transformers,
-		params:                params,
-		resourceCache:         core.NewCache[provider.Resource](),
-		abstractResourceCache: core.NewCache[transform.AbstractResource](),
-		resourceTypes:         []string{},
+		providers:                    providers,
+		transformers:                 transformers,
+		stabilisationPollingInterval: stabilisationPollingInterval,
+		params:                       params,
+		resourceCache:                core.NewCache[provider.Resource](),
+		abstractResourceCache:        core.NewCache[transform.AbstractResource](),
+		resourceTypes:                []string{},
 	}
 }
 
@@ -282,14 +282,81 @@ func (r *registryFromProviders) CustomValidate(
 func (r *registryFromProviders) Deploy(
 	ctx context.Context,
 	resourceType string,
-	input *provider.ResourceDeployInput,
+	input *provider.ResourceDeployServiceInput,
 ) (*provider.ResourceDeployOutput, error) {
 	resourceImpl, err := r.getResourceType(ctx, resourceType)
 	if err != nil {
 		return nil, err
 	}
 
-	return resourceImpl.Deploy(ctx, input)
+	output, err := resourceImpl.Deploy(ctx, input.DeployInput)
+	if err != nil {
+		return nil, err
+	}
+
+	if input.WaitUntilStable {
+		err = r.waitForStabilisedDependencies(
+			ctx,
+			resourceImpl,
+			input.DeployInput,
+			output,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return output, nil
+}
+
+func (r *registryFromProviders) waitForStabilisedDependencies(
+	ctx context.Context,
+	resourceImpl provider.Resource,
+	deployInput *provider.ResourceDeployInput,
+	deployOutput *provider.ResourceDeployOutput,
+) error {
+	resolvedResource := getResolvedResourceFromChanges(deployInput.Changes)
+	resourceName := getResourceNameFromChanges(deployInput.Changes)
+	expectedComputedFields := getComputedFieldsFromChanges(deployInput.Changes)
+	resourceSpec, err := specmerge.MergeResourceSpec(
+		resolvedResource,
+		resourceName,
+		deployOutput.ComputedFieldValues,
+		expectedComputedFields,
+	)
+	if err != nil {
+		return err
+	}
+
+	// The provided context must have a timeout set by the caller,
+	// unlike with the resource deployer in the container package,
+	// the resource registry is not configured with a polling timeout
+	// so without a deadline set on the context, the polling will continue indefinitely.
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(r.stabilisationPollingInterval):
+			output, err := resourceImpl.HasStabilised(
+				ctx,
+				&provider.ResourceHasStabilisedInput{
+					InstanceID:   deployInput.InstanceID,
+					ResourceID:   deployInput.ResourceID,
+					ResourceSpec: resourceSpec,
+					// Use the resolved resource and not the current resource state,
+					// as the new metadata is what is relevant for the stabilisation check.
+					ResourceMetadata: metadataStateFromResolvedResource(resolvedResource),
+					ProviderContext:  deployInput.ProviderContext,
+				},
+			)
+			if err != nil {
+				return err
+			}
+			if output.Stabilised {
+				return nil
+			}
+		}
+	}
 }
 
 func (r *registryFromProviders) Destroy(
@@ -318,29 +385,17 @@ func (r *registryFromProviders) GetStabilisedDependencies(
 	return resourceImpl.GetStabilisedDependencies(ctx, input)
 }
 
-func (r *registryFromProviders) HasStabilised(
-	ctx context.Context,
-	resourceType string,
-	input *provider.ResourceHasStabilisedInput,
-) (*provider.ResourceHasStabilisedOutput, error) {
-	resourceImpl, err := r.getResourceType(ctx, resourceType)
-	if err != nil {
-		return nil, err
-	}
-
-	return resourceImpl.HasStabilised(ctx, input)
-}
-
 func (r *registryFromProviders) WithParams(
 	params core.BlueprintParams,
 ) Registry {
 	return &registryFromProviders{
-		providers:             r.providers,
-		transformers:          r.transformers,
-		resourceCache:         r.resourceCache,
-		abstractResourceCache: r.abstractResourceCache,
-		resourceTypes:         r.resourceTypes,
-		params:                params,
+		providers:                    r.providers,
+		transformers:                 r.transformers,
+		resourceCache:                r.resourceCache,
+		abstractResourceCache:        r.abstractResourceCache,
+		resourceTypes:                r.resourceTypes,
+		stabilisationPollingInterval: r.stabilisationPollingInterval,
+		params:                       params,
 	}
 }
 
@@ -390,4 +445,64 @@ func (r *registryFromProviders) getAbstractResourceType(ctx context.Context, res
 	r.abstractResourceCache.Set(resourceType, abstractResource)
 
 	return abstractResource, nil
+}
+
+func getResolvedResourceFromChanges(changes *provider.Changes) *provider.ResolvedResource {
+	if changes == nil {
+		return nil
+	}
+
+	return changes.AppliedResourceInfo.ResourceWithResolvedSubs
+}
+
+func getResourceNameFromChanges(changes *provider.Changes) string {
+	if changes == nil {
+		return ""
+	}
+
+	return changes.AppliedResourceInfo.ResourceName
+}
+
+func getComputedFieldsFromChanges(changes *provider.Changes) []string {
+	if changes == nil {
+		return []string{}
+	}
+
+	return changes.ComputedFields
+}
+
+func metadataStateFromResolvedResource(
+	resolvedResource *provider.ResolvedResource,
+) *state.ResourceMetadataState {
+	if resolvedResource == nil || resolvedResource.Metadata == nil {
+		return nil
+	}
+
+	metadata := resolvedResource.Metadata
+	return &state.ResourceMetadataState{
+		DisplayName: core.StringValue(metadata.DisplayName),
+		Annotations: fieldsFromMappingNode(metadata.Annotations),
+		Labels:      getValuesFromStringMap(metadata.Labels),
+		Custom:      metadata.Custom,
+	}
+}
+
+func fieldsFromMappingNode(
+	mappingNode *core.MappingNode,
+) map[string]*core.MappingNode {
+	if mappingNode == nil {
+		return map[string]*core.MappingNode{}
+	}
+
+	return mappingNode.Fields
+}
+
+func getValuesFromStringMap(
+	stringMap *schema.StringMap,
+) map[string]string {
+	if stringMap == nil {
+		return map[string]string{}
+	}
+
+	return stringMap.Values
 }

@@ -252,7 +252,7 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResour
 					},
 					// the resource change stager is expected to stop
 					// traversing nested structures at the max traversal depth
-					// (validation.MappingNodeMaxTraverseDepth)
+					// (core.MappingNodeMaxTraverseDepth)
 					// No entries should be added to the changes for this field.
 					"deeplyNested": buildDeeplyNestedMappingNode(250, "nested"),
 				},
@@ -298,7 +298,7 @@ func (s *ResourceChangeGeneratorTestSuite) resourceInfoFixture3NewResolvedResour
 								FloatValue: &newScore,
 							},
 						},
-						// 25 levels deep exceeds validation.MappingNodeMaxTraverseDepth
+						// 25 levels deep exceeds core.MappingNodeMaxTraverseDepth
 						// so the resource change stager should not traverse the full structure
 						// for the "deepConfig" field.
 						// No entries should be added to the changes for this field.

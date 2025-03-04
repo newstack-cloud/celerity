@@ -1,4 +1,4 @@
-package validation
+package core
 
 // MappingNodeMaxTraverseDepth is the maximum depth allowed to traverse
 // a mapping node tree during validation and when resolving substitutions.

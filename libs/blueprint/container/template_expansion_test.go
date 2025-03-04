@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
@@ -97,6 +98,7 @@ func (s *ExpandResourceTemplatesTestSuite) SetupTest() {
 	s.resourceRegistry = resourcehelpers.NewRegistry(
 		s.providers,
 		map[string]transform.SpecTransformer{},
+		10*time.Millisecond,
 		/* params */ nil,
 	)
 	s.dataSourceRegistry = provider.NewDataSourceRegistry(

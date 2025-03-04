@@ -67,7 +67,7 @@ func validateMappingNode(
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
-	if depth > MappingNodeMaxTraverseDepth {
+	if depth > bpcore.MappingNodeMaxTraverseDepth {
 		// For performance and security reasons, validation is limited to a pre-determined depth.
 		// This should be handled gracefully with no errors and instead reporting
 		// info diagnostics to the user.
@@ -76,7 +76,7 @@ func validateMappingNode(
 			Level: bpcore.DiagnosticLevelInfo,
 			Message: fmt.Sprintf(
 				"Exceeded max traverse depth of %d. Skipping further validation.",
-				MappingNodeMaxTraverseDepth,
+				bpcore.MappingNodeMaxTraverseDepth,
 			),
 			Range: toDiagnosticRange(wrapperLocation, rangeEndLocation),
 		})

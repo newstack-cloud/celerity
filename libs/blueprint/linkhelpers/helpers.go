@@ -9,7 +9,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 // GetLinkDataFromState returns the link data from the given state,
@@ -58,7 +57,7 @@ func CollectChanges(
 	currentLinkDataValue, err := core.GetPathValue(
 		linkFieldPath,
 		currentLinkData,
-		validation.MappingNodeMaxTraverseDepth,
+		core.MappingNodeMaxTraverseDepth,
 	)
 	if err != nil {
 		return err
@@ -73,7 +72,7 @@ func CollectChanges(
 	resourceSpecValue, err := core.GetPathValue(
 		resourceFieldSearchPath,
 		resolvedResource.Spec,
-		validation.MappingNodeMaxTraverseDepth,
+		core.MappingNodeMaxTraverseDepth,
 	)
 	if err != nil {
 		return err
@@ -125,7 +124,7 @@ func CollectLinkDataChanges(
 	currentLinkDataValue, err := core.GetPathValue(
 		linkFieldPath,
 		currentLinkData,
-		validation.MappingNodeMaxTraverseDepth,
+		core.MappingNodeMaxTraverseDepth,
 	)
 	if err != nil {
 		return err

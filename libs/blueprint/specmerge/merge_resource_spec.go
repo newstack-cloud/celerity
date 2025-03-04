@@ -1,4 +1,4 @@
-package container
+package specmerge
 
 import (
 	"fmt"
@@ -6,8 +6,6 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 // MergeResourceSpec merges a partially resolved resource with computed field values.
@@ -31,12 +29,12 @@ func MergeResourceSpec(
 
 	mergedResource := core.CopyMappingNode(resolvedResource.Spec)
 	for computedFieldPath, computedFieldValue := range computedFieldValues {
-		if resourcehelpers.IsComputedFieldInList(expectedComputedFields, computedFieldPath) {
+		if IsComputedFieldInList(expectedComputedFields, computedFieldPath) {
 			err := core.InjectPathValue(
 				replaceSpecWithRoot(computedFieldPath),
 				computedFieldValue,
 				mergedResource,
-				validation.MappingNodeMaxTraverseDepth,
+				core.MappingNodeMaxTraverseDepth,
 			)
 			if err != nil {
 				return nil, err

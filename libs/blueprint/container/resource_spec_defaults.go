@@ -8,7 +8,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
 )
 
 // PopulateResourceSpecDefaults populates the default values for missing values
@@ -85,7 +84,7 @@ func populateDefaultValues(
 	definition *provider.ResourceDefinitionsSchema,
 	depth int,
 ) *core.MappingNode {
-	if depth > validation.MappingNodeMaxTraverseDepth {
+	if depth > core.MappingNodeMaxTraverseDepth {
 		return specValue
 	}
 

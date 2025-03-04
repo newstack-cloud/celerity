@@ -26,7 +26,7 @@ func preValidateMappingNodeRecursive(
 	depth int,
 	errors *[]error,
 ) {
-	if depth > MappingNodeMaxTraverseDepth {
+	if depth > core.MappingNodeMaxTraverseDepth {
 		return
 	}
 

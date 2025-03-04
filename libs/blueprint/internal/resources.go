@@ -827,7 +827,7 @@ func (r *ExampleComplexResource) GetSpecDefinition(
 									},
 									// Deep config exists to test out the max depth logic where changes
 									// beyond a certain depth should not be staged.
-									// See validation.MappingNodeMaxTraverseDepth for the max depth.
+									// See core.MappingNodeMaxTraverseDepth for the max depth.
 									"deepConfig": {
 										Type:       provider.ResourceDefinitionsSchemaTypeObject,
 										Attributes: createDeepObjectSchema(25, "item"),

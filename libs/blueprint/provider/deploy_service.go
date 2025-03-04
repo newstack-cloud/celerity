@@ -10,10 +10,12 @@ import (
 // or a resource plugin implementation.
 type ResourceDeployService interface {
 	// Deploy deals with the deployment of a resource of a given type.
+	// Callers can specify whether or not to wait for the resource to stabilise
+	// before returning.
 	Deploy(
 		ctx context.Context,
 		resourceType string,
-		input *ResourceDeployInput,
+		input *ResourceDeployServiceInput,
 	) (*ResourceDeployOutput, error)
 	// Destroy deals with the destruction of a resource of a given type.
 	Destroy(
@@ -21,12 +23,16 @@ type ResourceDeployService interface {
 		resourceType string,
 		input *ResourceDestroyInput,
 	) error
-	// HasStabilised deals with checking if a resource has stabilised after being deployed.
-	// This is important for resources that require a stable state before other resources can be deployed.
-	// This is only used when creating or updating a resource, not when destroying a resource.
-	HasStabilised(
-		ctx context.Context,
-		resourceType string,
-		input *ResourceHasStabilisedInput,
-	) (*ResourceHasStabilisedOutput, error)
+}
+
+// ResourceDeployServiceInput is the input for the Deploy method of the ResourceDeployService
+// that enhances the ResourceDeployInput with a flag to allow the caller
+// to specify whether or not to wait for the resource to stabilise before returning.
+type ResourceDeployServiceInput struct {
+	// DeployInput is the input for the resource deployment that is passed into the `Deploy`
+	// method of a `provider.Resource` implementation.
+	DeployInput *ResourceDeployInput
+	// WaitUntilStable specifies whether or not to
+	// wait for the resource to stabilise before returning.
+	WaitUntilStable bool
 }

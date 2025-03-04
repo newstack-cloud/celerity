@@ -106,7 +106,7 @@ func (s *MappingNodeValidationTestSuite) Test_succeeds_without_any_issues_for_a_
 }
 
 func (s *MappingNodeValidationTestSuite) Test_succeeds_with_info_diagnostic_for_exceeding_max_validation_traversal_depth(c *C) {
-	mappingNode := buildTestMappingNode(MappingNodeMaxTraverseDepth + 10)
+	mappingNode := buildTestMappingNode(core.MappingNodeMaxTraverseDepth + 10)
 
 	diagnostics, err := ValidateMappingNode(
 		context.TODO(),
@@ -126,7 +126,7 @@ func (s *MappingNodeValidationTestSuite) Test_succeeds_with_info_diagnostic_for_
 	c.Assert(diagnostics[0].Level, Equals, core.DiagnosticLevelInfo)
 	c.Assert(diagnostics[0].Message, Equals, fmt.Sprintf(
 		"Exceeded max traverse depth of %d. Skipping further validation.",
-		MappingNodeMaxTraverseDepth,
+		core.MappingNodeMaxTraverseDepth,
 	))
 }
 

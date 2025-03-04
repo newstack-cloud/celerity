@@ -12,6 +12,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/linkhelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/specmerge"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
@@ -467,23 +468,27 @@ func (l *testLambdaDynamoDBTableLink) UpdateIntermediaryResources(
 		}
 	}
 
+	deployInput := &provider.ResourceDeployInput{
+		InstanceID: input.ResourceAInfo.InstanceID,
+		ResourceID: "testRoleID",
+		Changes: &provider.Changes{
+			AppliedResourceInfo: provider.ResourceInfo{
+				ResourceID:   "testRoleID",
+				ResourceName: "testRole",
+				InstanceID:   input.ResourceAInfo.InstanceID,
+			},
+		},
+		ProviderContext: provider.NewProviderContextFromLinkContext(
+			input.LinkContext,
+			"aws",
+		),
+	}
 	roleDeployOutput, err := input.ResourceDeployService.Deploy(
 		ctx,
 		iamRoleResourceType,
-		&provider.ResourceDeployInput{
-			InstanceID: input.ResourceAInfo.InstanceID,
-			ResourceID: "testRoleID",
-			Changes: &provider.Changes{
-				AppliedResourceInfo: provider.ResourceInfo{
-					ResourceID:   "testRoleID",
-					ResourceName: "testRole",
-					InstanceID:   input.ResourceAInfo.InstanceID,
-				},
-			},
-			ProviderContext: provider.NewProviderContextFromLinkContext(
-				input.LinkContext,
-				"aws",
-			),
+		&provider.ResourceDeployServiceInput{
+			DeployInput:     deployInput,
+			WaitUntilStable: false,
 		},
 	)
 	if err != nil {
@@ -498,7 +503,7 @@ func (l *testLambdaDynamoDBTableLink) UpdateIntermediaryResources(
 			Fields: map[string]*core.MappingNode{},
 		},
 	}
-	roleSpecState, err := MergeResourceSpec(
+	roleSpecState, err := specmerge.MergeResourceSpec(
 		resolvedResource,
 		"testRoleID",
 		roleDeployOutput.ComputedFieldValues,

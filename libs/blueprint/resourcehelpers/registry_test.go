@@ -3,9 +3,12 @@ package resourcehelpers
 import (
 	"context"
 	"slices"
+	"time"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
 	. "gopkg.in/check.v1"
 )
@@ -40,7 +43,12 @@ func (s *RegistryTestSuite) SetUpTest(c *C) {
 	}
 
 	s.testResource = testRes.(*testExampleResource)
-	s.resourceRegistry = NewRegistry(providers, transformers, nil /* params */)
+	s.resourceRegistry = NewRegistry(
+		providers,
+		transformers,
+		time.Millisecond,
+		/* params */ nil,
+	)
 }
 
 func (s *RegistryTestSuite) Test_get_spec_definition(c *C) {
@@ -118,6 +126,49 @@ func (s *RegistryTestSuite) Test_list_resource_types(c *C) {
 		"test/exampleAbstractResource",
 	)
 	c.Assert(containsCachedTestExampleAbstractResource, Equals, true)
+}
+
+func (s *RegistryTestSuite) Test_deploy_resource(c *C) {
+	deployInput := &provider.ResourceDeployInput{
+		InstanceID: "test-blueprint-id",
+		ResourceID: "test-resource-id",
+		Changes: &provider.Changes{
+			AppliedResourceInfo: provider.ResourceInfo{
+				ResourceID:   "test-resource-id",
+				ResourceName: "testResource",
+				InstanceID:   "test-blueprint-id",
+				ResourceWithResolvedSubs: &provider.ResolvedResource{
+					Metadata: &provider.ResolvedResourceMetadata{
+						DisplayName: core.MappingNodeFromString("Test Example Resource"),
+						Annotations: &core.MappingNode{
+							Fields: map[string]*core.MappingNode{
+								"annotation.v1": core.MappingNodeFromString("annotationValue"),
+							},
+						},
+						Labels: &schema.StringMap{
+							Values: map[string]string{"key": "value"},
+						},
+					},
+				},
+			},
+			ComputedFields: []string{"spec.id"},
+		},
+	}
+
+	output, err := s.resourceRegistry.Deploy(
+		context.TODO(),
+		"test/exampleResource",
+		&provider.ResourceDeployServiceInput{
+			DeployInput:     deployInput,
+			WaitUntilStable: true,
+		},
+	)
+	c.Assert(err, IsNil)
+	c.Assert(output, DeepEquals, &provider.ResourceDeployOutput{
+		ComputedFieldValues: map[string]*core.MappingNode{
+			"spec.id": core.MappingNodeFromString("test-example-resource-item-id-1"),
+		},
+	})
 }
 
 func (s *RegistryTestSuite) Test_produces_error_for_missing_provider(c *C) {
