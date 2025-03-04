@@ -23,7 +23,7 @@ func createFunctionCallDependencies(
 ) *functionCallDependencies {
 	stack := function.NewStack()
 	scopedFunctionRegistry := rootRegistry.ForCallContext(stack)
-	functionCallContext := newFunctionCallContext(
+	functionCallContext := NewFunctionCallContext(
 		stack,
 		scopedFunctionRegistry,
 		params,
@@ -151,12 +151,15 @@ type functionCallContext struct {
 	location *source.Meta
 }
 
-func newFunctionCallContext(
+// NewFunctionCallContext creates a new call context that can be passed into function
+// plugin calls and can be used to generate a function call arguments service that
+// function plugins can call to retrieve arguments from.
+func NewFunctionCallContext(
 	stack function.Stack,
 	registry provider.FunctionRegistry,
 	params bpcore.BlueprintParams,
 	location *source.Meta,
-) *functionCallContext {
+) provider.FunctionCallContext {
 	return &functionCallContext{
 		stack,
 		registry,
