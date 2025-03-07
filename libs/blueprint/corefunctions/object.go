@@ -12,7 +12,7 @@ import (
 // such as the `object` function.
 type NamedArgument struct {
 	Name  string
-	Value interface{}
+	Value any
 }
 
 // ObjectFunction provides the implementation of
@@ -67,7 +67,7 @@ func (f *ObjectFunction) Call(
 		return nil, err
 	}
 
-	object := make(map[string]interface{})
+	object := make(map[string]any)
 	for _, param := range params {
 		object[param.Name] = param.Value
 	}

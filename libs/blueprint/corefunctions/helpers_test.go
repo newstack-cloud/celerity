@@ -116,6 +116,10 @@ func (f *functionCallArgsMock) GetMultipleVars(ctx context.Context, targets ...a
 	return nil
 }
 
+func (f *functionCallArgsMock) Export(ctx context.Context) ([]any, error) {
+	return f.args, nil
+}
+
 type functionCallContextMock struct {
 	params          *core.ParamsImpl
 	registry        *internal.FunctionRegistryMock
