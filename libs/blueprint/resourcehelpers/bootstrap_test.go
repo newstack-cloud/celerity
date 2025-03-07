@@ -103,6 +103,8 @@ type testExampleResource struct {
 	definition           *provider.ResourceSpecDefinition
 	markdownDescription  string
 	plainTextDescription string
+	markdownExamples     []string
+	plainTextExamples    []string
 }
 
 func newTestExampleResource() provider.Resource {
@@ -134,6 +136,8 @@ func newTestExampleResource() provider.Resource {
 		},
 		markdownDescription:  "## celerity/exampleResource\n\nThis is an example resource.",
 		plainTextDescription: "celerity/exampleResource\n\nThis is an example resource.",
+		markdownExamples:     []string{},
+		plainTextExamples:    []string{},
 	}
 }
 
@@ -179,6 +183,16 @@ func (r *testExampleResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		MarkdownDescription:  r.markdownDescription,
 		PlainTextDescription: r.plainTextDescription,
+	}, nil
+}
+
+func (r *testExampleResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  r.markdownExamples,
+		PlainTextExamples: r.plainTextExamples,
 	}, nil
 }
 

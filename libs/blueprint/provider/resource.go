@@ -45,6 +45,10 @@ type Resource interface {
 	// that can be used for documentation and tooling.
 	// Markdown and plain text formats are supported.
 	GetTypeDescription(ctx context.Context, input *ResourceGetTypeDescriptionInput) (*ResourceGetTypeDescriptionOutput, error)
+	// GetExamples deals with retrieving a list examples for a resource type in a blueprint spec
+	// that can be used for documentation and tooling.
+	// Markdown and plain text formats are supported.
+	GetExamples(ctx context.Context, input *ResourceGetExamplesInput) (*ResourceGetExamplesOutput, error)
 	// Deploy deals with deploying a resource with the upstream resource provider.
 	// The behaviour of deploy is to create or update the resource configuration and return the resource
 	// spec state once the configuration has been created or updated.
@@ -285,6 +289,19 @@ type ResourceGetTypeDescriptionOutput struct {
 	PlainTextDescription string
 }
 
+// ResourceGetExamplesInput provides the input data needed for a resource to
+// retrieve examples for a resource type in a blueprint spec.
+type ResourceGetExamplesInput struct {
+	ProviderContext Context
+}
+
+// ResourceGetExamplesOutput provides the output data from retrieving examples
+// for a resource type in a blueprint spec.
+type ResourceGetExamplesOutput struct {
+	MarkdownExamples  []string
+	PlainTextExamples []string
+}
+
 // ResourceDeployOutput provides the output data from deploying a resource.
 // This should contain any computed fields that are known after the resource
 // has been deployed.
@@ -441,6 +458,9 @@ type ResourceDefinitionsSchema struct {
 	// set a value to nil.
 	// The default value will not be used for computed value in a resource spec.
 	Default *core.MappingNode
+	// Examples holds a list of examples for the resource definition element.
+	// Examples are useful for documentation and tooling.
+	Examples []*core.MappingNode
 	// Computed specifies whether the value is computed by the provider
 	// and should not be set by the user.
 	// Computed values are expected to be populated by resource implementations

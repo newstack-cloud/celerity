@@ -72,6 +72,16 @@ func (r *DynamoDBTableResource) GetTypeDescription(
 	}, nil
 }
 
+func (r *DynamoDBTableResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
+	}, nil
+}
+
 func (r *DynamoDBTableResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
@@ -229,6 +239,16 @@ func (r *DynamoDBStreamResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: "",
 		MarkdownDescription:  "# DynamoDB Stream\n\nA table event stream in DynamoDB.",
+	}, nil
+}
+
+func (r *DynamoDBStreamResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 
@@ -390,6 +410,16 @@ func (r *LambdaFunctionResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: "",
 		MarkdownDescription:  "# AWS Lambda\n\nA Lambda function in AWS.",
+	}, nil
+}
+
+func (r *LambdaFunctionResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 
@@ -630,6 +660,16 @@ func (r *Lambda2FunctionResource) GetTypeDescription(
 	}, nil
 }
 
+func (r *Lambda2FunctionResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
+	}, nil
+}
+
 func (r *Lambda2FunctionResource) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
@@ -765,6 +805,16 @@ func (r *ExampleComplexResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: "",
 		MarkdownDescription:  "# An example resource with a complex specification",
+	}, nil
+}
+
+func (r *ExampleComplexResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 
@@ -1046,6 +1096,16 @@ func (r *IAMRoleResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: "",
 		MarkdownDescription:  "# AWS IAM Role\n\nAn IAM role for managing access to resources in AWS.",
+	}, nil
+}
+
+func (r *IAMRoleResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 

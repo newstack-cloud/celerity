@@ -925,6 +925,16 @@ func (r *testResourceMissingSpecDef) GetTypeDescription(
 	}, nil
 }
 
+func (r *testResourceMissingSpecDef) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
+	}, nil
+}
+
 func (r *testResourceMissingSpecDef) CustomValidate(
 	ctx context.Context,
 	input *provider.ResourceValidateInput,
@@ -1023,6 +1033,16 @@ func (r *testResourceMissingSchema) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		MarkdownDescription:  "",
 		PlainTextDescription: "",
+	}, nil
+}
+
+func (r *testResourceMissingSchema) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 
@@ -1126,6 +1146,16 @@ func (r *specValidationTestExampleResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		MarkdownDescription:  "",
 		PlainTextDescription: "",
+	}, nil
+}
+
+func (r *specValidationTestExampleResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 

@@ -166,6 +166,16 @@ func (r *testApiGatewayResource) GetTypeDescription(
 	}, nil
 }
 
+func (r *testApiGatewayResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
+	}, nil
+}
+
 // CustomValidate is not used for spec link info!
 func (r *testApiGatewayResource) CustomValidate(
 	ctx context.Context,
@@ -259,6 +269,16 @@ func (r *testSQSQueueResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: "",
 		MarkdownDescription:  "",
+	}, nil
+}
+
+func (r *testSQSQueueResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 
@@ -361,6 +381,16 @@ func (r *testLambdaFunctionResource) GetTypeDescription(
 	}, nil
 }
 
+func (r *testLambdaFunctionResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
+	}, nil
+}
+
 // CustomValidate is not used for spec link info!
 func (r *testLambdaFunctionResource) CustomValidate(
 	ctx context.Context,
@@ -454,6 +484,16 @@ func (r *testStratosLambdaFunctionResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: "",
 		MarkdownDescription:  "",
+	}, nil
+}
+
+func (r *testStratosLambdaFunctionResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 
@@ -553,6 +593,16 @@ func (r *testDynamoDBTableResource) GetTypeDescription(
 	}, nil
 }
 
+func (r *testDynamoDBTableResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
+	}, nil
+}
+
 // CustomValidate is not used for spec link info!
 func (r *testDynamoDBTableResource) CustomValidate(
 	ctx context.Context,
@@ -646,6 +696,16 @@ func (r *testDynamoDBStreamResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: "",
 		MarkdownDescription:  "",
+	}, nil
+}
+
+func (r *testDynamoDBStreamResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 
@@ -746,6 +806,16 @@ func (r *testIAMRoleResource) GetTypeDescription(
 	}, nil
 }
 
+func (r *testIAMRoleResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
+	}, nil
+}
+
 // CustomValidate is not used for spec link info!
 func (r *testIAMRoleResource) CustomValidate(
 	ctx context.Context,
@@ -840,6 +910,16 @@ func (r *testStratosIAMRoleResource) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: "",
 		MarkdownDescription:  "",
+	}, nil
+}
+
+func (r *testStratosIAMRoleResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  []string{},
+		PlainTextExamples: []string{},
 	}, nil
 }
 

@@ -388,7 +388,7 @@ func ToResourcePB(resource *schema.Resource) (*schemapb.Resource, error) {
 		Each:         eachPB,
 		Metadata:     resourceMetadataPB,
 		DependsOn:    dependsOn,
-		LinkSelector: toLinkSelectorPB(resource.LinkSelector),
+		LinkSelector: ToLinkSelectorPB(resource.LinkSelector),
 		Spec:         specPB,
 	}, nil
 }
@@ -429,7 +429,9 @@ func toExportPB(export *schema.Export) (*schemapb.Export, error) {
 	}, nil
 }
 
-func toLinkSelectorPB(linkSelector *schema.LinkSelector) *schemapb.LinkSelector {
+// ToLinkSelectorPB converts a schema.LinkSelector to a schemapb.LinkSelector
+// that can be stored and transmitted as a protobuf message.
+func ToLinkSelectorPB(linkSelector *schema.LinkSelector) *schemapb.LinkSelector {
 	if linkSelector == nil || linkSelector.ByLabel == nil {
 		return nil
 	}

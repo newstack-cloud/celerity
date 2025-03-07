@@ -144,6 +144,10 @@ func (f *functionCallArgs) GetMultipleVars(ctx context.Context, targets ...any) 
 	return nil
 }
 
+func (f *functionCallArgs) Export(ctx context.Context) ([]any, error) {
+	return f.args, nil
+}
+
 type functionCallContext struct {
 	stack    function.Stack
 	registry provider.FunctionRegistry

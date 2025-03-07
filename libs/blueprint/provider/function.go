@@ -54,6 +54,10 @@ type FunctionCallArguments interface {
 	// GetMultipleVars writes the arguments to the provided targets
 	// in the order they were passed to the function.
 	GetMultipleVars(ctx context.Context, targets ...any) error
+	// Export captures the arguments for the current context
+	// as a slice of any that can be serialised and transported
+	// across process boundaries.
+	Export(ctx context.Context) ([]any, error)
 }
 
 // FunctionCallContext provides useful context for functions
