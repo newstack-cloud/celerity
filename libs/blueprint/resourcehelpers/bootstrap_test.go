@@ -31,6 +31,10 @@ func (p *testProvider) Namespace(ctx context.Context) (string, error) {
 	return p.namespace, nil
 }
 
+func (p *testProvider) ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error) {
+	return nil, nil
+}
+
 func (p *testProvider) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {
 	resource, ok := p.resources[resourceType]
 	if !ok {
@@ -256,6 +260,12 @@ func (r *testExampleResource) Destroy(
 
 type testSpecTransformer struct {
 	abstractResources map[string]transform.AbstractResource
+}
+
+func (t *testSpecTransformer) ConfigDefinition(
+	ctx context.Context,
+) (*core.ConfigDefinition, error) {
+	return nil, nil
 }
 
 func (t *testSpecTransformer) Transform(

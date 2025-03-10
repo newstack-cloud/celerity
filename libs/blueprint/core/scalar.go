@@ -233,3 +233,18 @@ func FloatValueFromScalar(scalar *ScalarValue) float64 {
 
 	return 0.0
 }
+
+// ScalarType represents the type of a scalar value that can be
+// used in annotation and configuration definitions.
+type ScalarType string
+
+const (
+	// ScalarTypeString is the type of an element in a spec that is a string.
+	ScalarTypeString ScalarType = "string"
+	// ScalarTypeInteger is the type of an element in a spec that is an integer.
+	ScalarTypeInteger ScalarType = "integer"
+	// ScalarTypeFloat is the type of an element in a spec that is a float.
+	ScalarTypeFloat ScalarType = "float"
+	// ScalarTypeBool is the type of an element in a spec that is a boolean.
+	ScalarTypeBool ScalarType = "boolean"
+)

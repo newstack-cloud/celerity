@@ -17,6 +17,14 @@ const ServerlessTransformName = "serverless-2024"
 
 type ServerlessTransformer struct{}
 
+func (t *ServerlessTransformer) ConfigDefinition(
+	ctx context.Context,
+) (*core.ConfigDefinition, error) {
+	return &core.ConfigDefinition{
+		Fields: map[string]*core.ConfigFieldDefinition{},
+	}, nil
+}
+
 func (t *ServerlessTransformer) Transform(
 	ctx context.Context,
 	input *transform.SpecTransformerTransformInput,

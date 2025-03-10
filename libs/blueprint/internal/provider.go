@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
@@ -18,6 +19,10 @@ type ProviderMock struct {
 
 func (p *ProviderMock) Namespace(ctx context.Context) (string, error) {
 	return p.NamespaceValue, nil
+}
+
+func (p *ProviderMock) ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error) {
+	return nil, nil
 }
 
 func (p *ProviderMock) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {

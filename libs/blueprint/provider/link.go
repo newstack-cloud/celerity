@@ -55,6 +55,14 @@ type Link interface {
 	// GetType deals with retrieving the type of the link in relation to the two resource
 	// types it provides a relationship between.
 	GetType(ctx context.Context, input *LinkGetTypeInput) (*LinkGetTypeOutput, error)
+	// GetTypeDescription deals with retrieving the description for a link type in a blueprint spec
+	// that can be used for documentation and tooling.
+	// Markdown and plain text formats are supported.
+	GetTypeDescription(ctx context.Context, input *LinkGetTypeDescriptionInput) (*LinkGetTypeDescriptionOutput, error)
+	// GetAnnotationDefinitions retrieves the annotation definitions for the link type.
+	// Annotations provide a way to fine tune the behaviour of a link in a blueprint spec
+	// in the linked resource metadata sections.
+	GetAnnotationDefinitions(ctx context.Context, input *LinkGetAnnotationDefinitionsInput) (*LinkGetAnnotationDefinitionsOutput, error)
 	// GetKind tells us whether the link is a "hard" or "soft" link.
 	// A hard link is where the priority resource type must be created first.
 	// A soft link is where it does not matter which resource type in the relationship
@@ -173,6 +181,50 @@ type LinkGetTypeInput struct {
 // with respect to the two resource types it provides a relationship between.
 type LinkGetTypeOutput struct {
 	Type string
+}
+
+// LinkGetTypeDescriptionInput provides the input for retrieving the description
+// of a link type in a blueprint spec.
+type LinkGetTypeDescriptionInput struct {
+	LinkContext LinkContext
+}
+
+// LinkGetTypeDescriptionOutput provides the output for retrieving the description
+// of a link type in a blueprint spec.
+type LinkGetTypeDescriptionOutput struct {
+	MarkdownDescription  string
+	PlainTextDescription string
+	// A short summary of the link type that can be formatted
+	// in markdown, this is useful for listing link types in documentation.
+	MarkdownSummary string
+	// A short summary of the link type in plain text,
+	// this is useful for listing link types in documentation.
+	PlainTextSummary string
+}
+
+// LinkGetAnnotationDefinitionsInput provides the input for retrieving
+// the annotation definitions for the link type.
+type LinkGetAnnotationDefinitionsInput struct {
+	LinkContext LinkContext
+}
+
+// LinkGetAnnotationDefinitionsOutput provides the output for retrieving
+// the annotation definitions for the link type.
+type LinkGetAnnotationDefinitionsOutput struct {
+	AnnotationDefinitions map[string]*LinkAnnotationDefinition
+}
+
+// LinkAnnotationDefinition provides a way to define annotations
+// for a link type.
+type LinkAnnotationDefinition struct {
+	Name          string              `json:"name"`
+	Label         string              `json:"label"`
+	Type          core.ScalarType     `json:"type"`
+	Description   string              `json:"description"`
+	DefaultValue  *core.ScalarValue   `json:"defaultValue,omitempty"`
+	AllowedValues []*core.ScalarValue `json:"allowedValues,omitempty"`
+	Examples      []*core.ScalarValue `json:"examples,omitempty"`
+	Required      bool                `json:"required"`
 }
 
 // LinkHandleResourceErrorInput provides the input for handling errors

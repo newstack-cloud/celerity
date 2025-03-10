@@ -246,10 +246,10 @@ func hasMixedTypes(options []*bpcore.ScalarValue) bool {
 	return hasMoreThanOneType
 }
 
-func optionsMapToSlice(options map[string]*bpcore.ScalarValue) []*bpcore.ScalarValue {
+func optionsMapToSlice(options map[string]*provider.CustomVariableTypeOption) []*bpcore.ScalarValue {
 	result := make([]*bpcore.ScalarValue, 0, len(options))
 	for _, option := range options {
-		result = append(result, option)
+		result = append(result, option.Value)
 	}
 	return result
 }

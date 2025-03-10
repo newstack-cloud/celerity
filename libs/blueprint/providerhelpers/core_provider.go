@@ -90,6 +90,12 @@ func (p *coreProvider) Namespace(ctx context.Context) (string, error) {
 	return "core", nil
 }
 
+func (p *coreProvider) ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error) {
+	return &core.ConfigDefinition{
+		Fields: map[string]*core.ConfigFieldDefinition{},
+	}, nil
+}
+
 func (p *coreProvider) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {
 	return nil, fmt.Errorf(
 		"resource type %q not found in core provider, "+

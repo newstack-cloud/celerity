@@ -30,6 +30,10 @@ func (p *testProvider) Namespace(ctx context.Context) (string, error) {
 	return p.namespace, nil
 }
 
+func (p *testProvider) ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error) {
+	return nil, nil
+}
+
 func (p *testProvider) Resource(ctx context.Context, resourceType string) (Resource, error) {
 	resource, ok := p.resources[resourceType]
 	if !ok {
@@ -443,6 +447,16 @@ func (d *testExampleDataSource) GetTypeDescription(
 	}, nil
 }
 
+func (d *testExampleDataSource) GetExamples(
+	ctx context.Context,
+	input *DataSourceGetExamplesInput,
+) (*DataSourceGetExamplesOutput, error) {
+	return &DataSourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}
+
 func (d *testExampleDataSource) GetFilterFields(
 	ctx context.Context,
 	input *DataSourceGetFilterFieldsInput,
@@ -490,27 +504,41 @@ func (t *testEC2InstanceTypeCustomVariableType) Options(
 	t2xlarge := "t2.xlarge"
 	t22xlarge := "t2.2xlarge"
 	return &CustomVariableTypeOptionsOutput{
-		Options: map[string]*core.ScalarValue{
+		Options: map[string]*CustomVariableTypeOption{
 			t2nano: {
-				StringValue: &t2nano,
+				Value: &core.ScalarValue{
+					StringValue: &t2nano,
+				},
 			},
 			t2micro: {
-				StringValue: &t2micro,
+				Value: &core.ScalarValue{
+					StringValue: &t2micro,
+				},
 			},
 			t2small: {
-				StringValue: &t2small,
+				Value: &core.ScalarValue{
+					StringValue: &t2small,
+				},
 			},
 			t2medium: {
-				StringValue: &t2medium,
+				Value: &core.ScalarValue{
+					StringValue: &t2medium,
+				},
 			},
 			t2large: {
-				StringValue: &t2large,
+				Value: &core.ScalarValue{
+					StringValue: &t2large,
+				},
 			},
 			t2xlarge: {
-				StringValue: &t2xlarge,
+				Value: &core.ScalarValue{
+					StringValue: &t2xlarge,
+				},
 			},
 			t22xlarge: {
-				StringValue: &t22xlarge,
+				Value: &core.ScalarValue{
+					StringValue: &t22xlarge,
+				},
 			},
 		},
 	}, nil

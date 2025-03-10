@@ -71,6 +71,10 @@ func (p *testAWSProvider) Namespace(ctx context.Context) (string, error) {
 	return "aws", nil
 }
 
+func (p *testAWSProvider) ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error) {
+	return nil, nil
+}
+
 func (p *testAWSProvider) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {
 	return p.resources[resourceType], nil
 }
@@ -1004,6 +1008,22 @@ func (l *testApiGatewayLambdaLink) GetType(
 	return &provider.LinkGetTypeOutput{}, nil
 }
 
+// GetTypeDescription is not used for spec link info!
+func (l *testApiGatewayLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testApiGatewayLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
+}
+
 func (l *testApiGatewayLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
@@ -1065,6 +1085,22 @@ func (l *testSQSQueueLambdaLink) GetType(
 	return &provider.LinkGetTypeOutput{}, nil
 }
 
+// GetTypeDescription is not used for spec link info!
+func (l *testSQSQueueLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testSQSQueueLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
+}
+
 func (l *testSQSQueueLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
@@ -1124,6 +1160,22 @@ func (l *testLambdaDynamoDBTableLink) GetType(
 	input *provider.LinkGetTypeInput,
 ) (*provider.LinkGetTypeOutput, error) {
 	return &provider.LinkGetTypeOutput{}, nil
+}
+
+// GetTypeDescription is not used for spec link info!
+func (l *testLambdaDynamoDBTableLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testLambdaDynamoDBTableLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
 }
 
 func (l *testLambdaDynamoDBTableLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
@@ -1188,6 +1240,22 @@ func (l *testStratosLambdaDynamoDBTableLink) GetType(
 	return &provider.LinkGetTypeOutput{}, nil
 }
 
+// GetTypeDescription is not used for spec link info!
+func (l *testStratosLambdaDynamoDBTableLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testStratosLambdaDynamoDBTableLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
+}
+
 func (l *testStratosLambdaDynamoDBTableLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
@@ -1249,6 +1317,22 @@ func (l *testLambdaSQSQueueLink) GetType(
 	return &provider.LinkGetTypeOutput{}, nil
 }
 
+// GetTypeDescription is not used for spec link info!
+func (l *testLambdaSQSQueueLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testLambdaSQSQueueLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
+}
+
 func (l *testLambdaSQSQueueLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
@@ -1308,6 +1392,22 @@ func (l *testDynamoDBTableStreamLink) GetType(
 	input *provider.LinkGetTypeInput,
 ) (*provider.LinkGetTypeOutput, error) {
 	return &provider.LinkGetTypeOutput{}, nil
+}
+
+// GetTypeDescription is not used for spec link info!
+func (l *testDynamoDBTableStreamLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testDynamoDBTableStreamLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
 }
 
 func (l *testDynamoDBTableStreamLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
@@ -1372,6 +1472,22 @@ func (l *testDynamoDBStreamLambdaLink) GetType(
 	return &provider.LinkGetTypeOutput{}, nil
 }
 
+// GetTypeDescription is not used for spec link info!
+func (l *testDynamoDBStreamLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testDynamoDBStreamLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
+}
+
 func (l *testDynamoDBStreamLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		// For test purposes only, does not reflect reality!
@@ -1432,6 +1548,22 @@ func (l *testDynamoDBStreamStratosLambdaLink) GetType(
 	input *provider.LinkGetTypeInput,
 ) (*provider.LinkGetTypeOutput, error) {
 	return &provider.LinkGetTypeOutput{}, nil
+}
+
+// GetTypeDescription is not used for spec link info!
+func (l *testDynamoDBStreamStratosLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testDynamoDBStreamStratosLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
 }
 
 func (l *testDynamoDBStreamStratosLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
@@ -1496,6 +1628,22 @@ func (l *testIAMRoleLambdaLink) GetType(
 	return &provider.LinkGetTypeOutput{}, nil
 }
 
+// GetTypeDescription is not used for spec link info!
+func (l *testIAMRoleLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testIAMRoleLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
+}
+
 func (l *testIAMRoleLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		// For test purposes only, does not reflect reality!
@@ -1556,6 +1704,22 @@ func (l *testStratosIAMRoleLambdaLink) GetType(
 	input *provider.LinkGetTypeInput,
 ) (*provider.LinkGetTypeOutput, error) {
 	return &provider.LinkGetTypeOutput{}, nil
+}
+
+// GetTypeDescription is not used for spec link info!
+func (l *testStratosIAMRoleLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testStratosIAMRoleLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
 }
 
 func (l *testStratosIAMRoleLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
@@ -1619,6 +1783,22 @@ func (l *testLambdaIAMRoleLink) GetType(
 	return &provider.LinkGetTypeOutput{}, nil
 }
 
+// GetTypeDescription is not used for spec link info!
+func (l *testLambdaIAMRoleLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testLambdaIAMRoleLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
+}
+
 func (l *testLambdaIAMRoleLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		// For test purposes only, does not reflect reality!
@@ -1679,6 +1859,22 @@ func (l *testLambdaStratosIAMRoleLink) GetType(
 	input *provider.LinkGetTypeInput,
 ) (*provider.LinkGetTypeOutput, error) {
 	return &provider.LinkGetTypeOutput{}, nil
+}
+
+// GetTypeDescription is not used for spec link info!
+func (l *testLambdaStratosIAMRoleLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
+// GetAnnotationDefinitions is not used for spec link info!
+func (l *testLambdaStratosIAMRoleLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{}, nil
 }
 
 func (l *testLambdaStratosIAMRoleLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {

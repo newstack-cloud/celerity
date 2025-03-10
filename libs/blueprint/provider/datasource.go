@@ -33,6 +33,10 @@ type DataSource interface {
 	// Fetch deals with loading the data from the upstream data source
 	// and returning the exported fields defined in the spec.
 	Fetch(ctx context.Context, input *DataSourceFetchInput) (*DataSourceFetchOutput, error)
+	// GetExamples deals with retrieving a list examples for a data source type in a blueprint spec
+	// that can be used for documentation and tooling.
+	// Markdown and plain text formats are supported.
+	GetExamples(ctx context.Context, input *DataSourceGetExamplesInput) (*DataSourceGetExamplesOutput, error)
 }
 
 // DataSourceValidateInput provides the input required to validate
@@ -139,6 +143,8 @@ type DataSourceGetTypeInput struct {
 // for a data source in a blueprint.
 type DataSourceGetTypeOutput struct {
 	Type string
+	// A human-readable label for the data source type.
+	Label string
 }
 
 // DataSourceGetTypeDescriptionInput provides the input data needed for a data source to
@@ -152,6 +158,12 @@ type DataSourceGetTypeDescriptionInput struct {
 type DataSourceGetTypeDescriptionOutput struct {
 	MarkdownDescription  string
 	PlainTextDescription string
+	// A short summary of the data source type that can be formatted
+	// in markdown, this is useful for listing data source types in documentation.
+	MarkdownSummary string
+	// A short summary of the data source type in plain text,
+	// this is useful for listing data source types in documentation.
+	PlainTextSummary string
 }
 
 // DataSourceGetFilterFieldsOutput provides the output from retrieving the fields
@@ -164,6 +176,19 @@ type DataSourceGetFilterFieldsInput struct {
 // that can be used in a filter for a data source.
 type DataSourceGetFilterFieldsOutput struct {
 	Fields []string
+}
+
+// DataSourceGetExamplesInput provides the input data needed for a data source to
+// retrieve examples for a resoudata sourcerce type in a blueprint spec.
+type DataSourceGetExamplesInput struct {
+	ProviderContext Context
+}
+
+// DataSourceGetExamplesOutput provides the output data from retrieving examples
+// for a data source type in a blueprint spec.
+type DataSourceGetExamplesOutput struct {
+	MarkdownExamples  []string
+	PlainTextExamples []string
 }
 
 // DataSourceGetSpecDefinitionInput provides the input data needed for a data source to

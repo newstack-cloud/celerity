@@ -21,6 +21,9 @@ import (
 // Spec transformers are called straight after a schema has been successfully
 // parsed and variables have been validated.
 type SpecTransformer interface {
+	// ConfigDefinition retrieves a detailed definition of the
+	// configuration that is required for the transformer.
+	ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error)
 	// Transform a blueprint by expanding abstract resources
 	// into their final form along with any other transformations
 	// that are required.
@@ -51,6 +54,9 @@ type AbstractResource interface {
 	) (*AbstractResourceGetSpecDefinitionOutput, error)
 	// CanLinkTo specifices the list of resource types the current resource type
 	// can link to.
+	// For abstract resources, links do not have a one-to-one mapping to a link plugin implementation,
+	// the transformer should expand these links to the concrete resources for which there will be
+	// a link plugin implementation.
 	CanLinkTo(ctx context.Context, input *AbstractResourceCanLinkToInput) (*AbstractResourceCanLinkToOutput, error)
 	// IsCommonTerminal specifies whether this resource is expected to have a common use-case
 	// as a terminal resource that does not link out to other resources.
@@ -144,6 +150,8 @@ type AbstractResourceGetTypeInput struct {
 // abstract resource in a blueprint spec.
 type AbstractResourceGetTypeOutput struct {
 	Type string
+	// A human-readable label for the abstract resource type.
+	Label string
 }
 
 // AbstractResourceGetTypeDescriptionInput provides the input data needed for a resource to
@@ -157,6 +165,12 @@ type AbstractResourceGetTypeDescriptionInput struct {
 type AbstractResourceGetTypeDescriptionOutput struct {
 	MarkdownDescription  string
 	PlainTextDescription string
+	// A short summary of the abstract resource type that can be formatted
+	// in markdown, this is useful for listing abstract resource types in documentation.
+	MarkdownSummary string
+	// A short summary of the abstract resource type in plain text,
+	// this is useful for listing abstract resource types in documentation.
+	PlainTextSummary string
 }
 
 // Context provides access to information about the current transformer

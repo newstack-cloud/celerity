@@ -35,7 +35,19 @@ type CustomVariableTypeOptionsInput struct {
 // the output from loading the fixed set of possible values
 // for a custom variable type.
 type CustomVariableTypeOptionsOutput struct {
-	Options map[string]*core.ScalarValue
+	Options map[string]*CustomVariableTypeOption
+}
+
+type CustomVariableTypeOption struct {
+	// The value of the option.
+	Value *core.ScalarValue
+	// A human-readable label for the option.
+	Label string
+	// A human-readable plain text description for the option.
+	Description string
+	// A human-readable description for the option
+	// that can be formatted in markdown.
+	MarkdownDescription string
 }
 
 // CustomVariableTypeGetTypeInput provides the input required to
@@ -48,6 +60,8 @@ type CustomVariableTypeGetTypeInput struct {
 // for a custom variable type.
 type CustomVariableTypeGetTypeOutput struct {
 	Type string
+	// A human-readable label for the custom variable type.
+	Label string
 }
 
 // CustomVariableTypeGetDescriptionInput provides the input required to
@@ -61,4 +75,10 @@ type CustomVariableTypeGetDescriptionInput struct {
 type CustomVariableTypeGetDescriptionOutput struct {
 	MarkdownDescription  string
 	PlainTextDescription string
+	// A short summary of the custom variable type that can be formatted
+	// in markdown, this is useful for listing custom variable types in documentation.
+	MarkdownSummary string
+	// A short summary of the custom variable type in plain text,
+	// this is useful for listing custom variable types in documentation.
+	PlainTextSummary string
 }

@@ -19,6 +19,9 @@ type Provider interface {
 	// for all resource types in the provider.
 	// (e.g. "aws" for AWS resources such as "aws/lambda/function")
 	Namespace(ctx context.Context) (string, error)
+	// ConfigDefinition retrieves a detailed definition of the
+	// configuration that is required for the provider.
+	ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error)
 	// Resource retrieves a resource plugin to handle a resource in a blueprint for
 	// a given resource type.
 	Resource(ctx context.Context, resourceType string) (Resource, error)

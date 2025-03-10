@@ -177,9 +177,25 @@ func (l *testApiGatewayLambdaLink) GetType(
 	}, nil
 }
 
+func (l *testApiGatewayLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testApiGatewayLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
+	}, nil
+}
+
+func (l *testApiGatewayLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -372,9 +388,25 @@ func (l *testLambdaDynamoDBTableLink) GetType(
 	}, nil
 }
 
+func (l *testLambdaDynamoDBTableLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testLambdaDynamoDBTableLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testLambdaDynamoDBTableLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -556,9 +588,25 @@ func (l *testDynamoDBTableStreamLink) GetType(
 	}, nil
 }
 
+func (l *testDynamoDBTableStreamLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testDynamoDBTableStreamLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testDynamoDBTableStreamLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -611,9 +659,25 @@ func (l *testDynamoDBStreamLambdaLink) GetType(
 	}, nil
 }
 
+func (l *testDynamoDBStreamLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testDynamoDBStreamLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
+	}, nil
+}
+
+func (l *testDynamoDBStreamLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -666,9 +730,25 @@ func (l *testDynamoDBTableLambdaLink) GetType(
 	}, nil
 }
 
+func (l *testDynamoDBTableLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testDynamoDBTableLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testDynamoDBTableLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -721,9 +801,25 @@ func (l *testLambdaLambdaLink) GetType(
 	}, nil
 }
 
+func (l *testLambdaLambdaLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testLambdaLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testLambdaLambdaLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -778,9 +874,25 @@ func (l *testLambdaLambda2Link) GetType(
 	}, nil
 }
 
+func (l *testLambdaLambda2Link) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testLambdaLambda2Link) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testLambdaLambda2Link) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -833,9 +945,25 @@ func (l *testSubnetVPCLink) GetType(
 	}, nil
 }
 
+func (l *testSubnetVPCLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testSubnetVPCLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testSubnetVPCLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -888,9 +1016,25 @@ func (l *testSecurityGroupVPCLink) GetType(
 	}, nil
 }
 
+func (l *testSecurityGroupVPCLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testSecurityGroupVPCLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testSecurityGroupVPCLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -943,9 +1087,25 @@ func (l *testRouteTableVPCLink) GetType(
 	}, nil
 }
 
+func (l *testRouteTableVPCLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testRouteTableVPCLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testRouteTableVPCLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -998,9 +1158,25 @@ func (l *testRouteRouteTableLink) GetType(
 	}, nil
 }
 
+func (l *testRouteRouteTableLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testRouteRouteTableLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testRouteRouteTableLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 
@@ -1053,9 +1229,25 @@ func (l *testRouteInternetGatewayLink) GetType(
 	}, nil
 }
 
+func (l *testRouteInternetGatewayLink) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{}, nil
+}
+
 func (l *testRouteInternetGatewayLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindHard,
+	}, nil
+}
+
+func (l *testRouteInternetGatewayLink) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: map[string]*provider.LinkAnnotationDefinition{},
 	}, nil
 }
 

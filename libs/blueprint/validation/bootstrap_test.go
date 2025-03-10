@@ -32,27 +32,40 @@ func (t *testEC2InstanceTypeCustomVariableType) Options(
 	t2xlarge := "t2.xlarge"
 	t22xlarge := "t2.2xlarge"
 	return &provider.CustomVariableTypeOptionsOutput{
-		Options: map[string]*core.ScalarValue{
+		Options: map[string]*provider.CustomVariableTypeOption{
 			t2nano: {
-				StringValue: &t2nano,
+				Value: &core.ScalarValue{
+					StringValue: &t2nano,
+				},
 			},
 			t2micro: {
-				StringValue: &t2micro,
+				Value: &core.ScalarValue{
+					StringValue: &t2micro,
+				},
 			},
 			t2small: {
-				StringValue: &t2small,
+				Value: &core.ScalarValue{
+					StringValue: &t2small,
+				},
 			},
 			t2medium: {
-				StringValue: &t2medium,
+				Value: &core.ScalarValue{
+					StringValue: &t2medium,
+				},
 			},
 			t2large: {
-				StringValue: &t2large,
+				Value: &core.ScalarValue{
+					StringValue: &t2large,
+				},
 			},
 			t2xlarge: {
-				StringValue: &t2xlarge,
+				Value: &core.ScalarValue{
+					StringValue: &t2xlarge,
+				},
 			},
 			t22xlarge: {
-				StringValue: &t22xlarge,
+				Value: &core.ScalarValue{
+					StringValue: &t22xlarge},
 			},
 		},
 	}, nil
@@ -92,27 +105,41 @@ func (t *testInvalidEC2InstanceTypeCustomVariableType) Options(
 	t2xlarge := "t2.xlarge"
 	t22xlarge := true
 	return &provider.CustomVariableTypeOptionsOutput{
-		Options: map[string]*core.ScalarValue{
+		Options: map[string]*provider.CustomVariableTypeOption{
 			t2nano: {
-				StringValue: &t2nano,
+				Value: &core.ScalarValue{
+					StringValue: &t2nano,
+				},
 			},
 			"t2.micro": {
-				IntValue: &t2micro,
+				Value: &core.ScalarValue{
+					IntValue: &t2micro,
+				},
 			},
 			t2small: {
-				StringValue: &t2small,
+				Value: &core.ScalarValue{
+					StringValue: &t2small,
+				},
 			},
 			t2medium: {
-				StringValue: &t2medium,
+				Value: &core.ScalarValue{
+					StringValue: &t2medium,
+				},
 			},
 			"t2.large": {
-				FloatValue: &t2large,
+				Value: &core.ScalarValue{
+					FloatValue: &t2large,
+				},
 			},
 			t2xlarge: {
-				StringValue: &t2xlarge,
+				Value: &core.ScalarValue{
+					StringValue: &t2xlarge,
+				},
 			},
 			"t2.2xlarge": {
-				BoolValue: &t22xlarge,
+				Value: &core.ScalarValue{
+					BoolValue: &t22xlarge,
+				},
 			},
 		},
 	}, nil
@@ -180,27 +207,41 @@ func (t *testRegionCustomVariableType) Options(
 	euCentral1 := "eu-central-1"
 
 	return &provider.CustomVariableTypeOptionsOutput{
-		Options: map[string]*core.ScalarValue{
+		Options: map[string]*provider.CustomVariableTypeOption{
 			usEast1: {
-				StringValue: &usEast1,
+				Value: &core.ScalarValue{
+					StringValue: &usEast1,
+				},
 			},
 			usEast2: {
-				StringValue: &usEast2,
+				Value: &core.ScalarValue{
+					StringValue: &usEast2,
+				},
 			},
 			usWest1: {
-				StringValue: &usWest1,
+				Value: &core.ScalarValue{
+					StringValue: &usWest1,
+				},
 			},
 			usWest2: {
-				StringValue: &usWest2,
+				Value: &core.ScalarValue{
+					StringValue: &usWest2,
+				},
 			},
 			euWest1: {
-				StringValue: &euWest1,
+				Value: &core.ScalarValue{
+					StringValue: &euWest1,
+				},
 			},
 			euWest2: {
-				StringValue: &euWest2,
+				Value: &core.ScalarValue{
+					StringValue: &euWest2,
+				},
 			},
 			euCentral1: {
-				StringValue: &euCentral1,
+				Value: &core.ScalarValue{
+					StringValue: &euCentral1,
+				},
 			},
 		},
 	}, nil
@@ -633,6 +674,16 @@ func (d *testEC2InstanceDataSource) CustomValidate(
 	return &provider.DataSourceValidateOutput{}, nil
 }
 
+func (d *testEC2InstanceDataSource) GetExamples(
+	ctx context.Context,
+	input *provider.DataSourceGetExamplesInput,
+) (*provider.DataSourceGetExamplesOutput, error) {
+	return &provider.DataSourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}
+
 type testVPCDataSource struct{}
 
 func newTestVPCDataSource() provider.DataSource {
@@ -698,6 +749,16 @@ func (d *testVPCDataSource) CustomValidate(
 	return &provider.DataSourceValidateOutput{}, nil
 }
 
+func (d *testVPCDataSource) GetExamples(
+	ctx context.Context,
+	input *provider.DataSourceGetExamplesInput,
+) (*provider.DataSourceGetExamplesOutput, error) {
+	return &provider.DataSourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}
+
 type testVPC2DataSource struct{}
 
 func newTestVPC2DataSource() provider.DataSource {
@@ -755,6 +816,16 @@ func (d *testVPC2DataSource) CustomValidate(
 	input *provider.DataSourceValidateInput,
 ) (*provider.DataSourceValidateOutput, error) {
 	return &provider.DataSourceValidateOutput{}, nil
+}
+
+func (d *testVPC2DataSource) GetExamples(
+	ctx context.Context,
+	input *provider.DataSourceGetExamplesInput,
+) (*provider.DataSourceGetExamplesOutput, error) {
+	return &provider.DataSourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
 }
 
 type testVPC3DataSource struct{}
@@ -820,6 +891,16 @@ func (d *testVPC3DataSource) CustomValidate(
 	input *provider.DataSourceValidateInput,
 ) (*provider.DataSourceValidateOutput, error) {
 	return &provider.DataSourceValidateOutput{}, nil
+}
+
+func (d *testVPC3DataSource) GetExamples(
+	ctx context.Context,
+	input *provider.DataSourceGetExamplesInput,
+) (*provider.DataSourceGetExamplesOutput, error) {
+	return &provider.DataSourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
 }
 
 type testECSServiceResource struct{}

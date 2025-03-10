@@ -274,6 +274,8 @@ type ResourceGetTypeInput struct {
 // in a blueprint spec.
 type ResourceGetTypeOutput struct {
 	Type string
+	// A human-readable label for the resource type.
+	Label string
 }
 
 // ResourceGetTypeDescriptionInput provides the input data needed for a resource to
@@ -287,6 +289,12 @@ type ResourceGetTypeDescriptionInput struct {
 type ResourceGetTypeDescriptionOutput struct {
 	MarkdownDescription  string
 	PlainTextDescription string
+	// A short summary of the resource type that can be formatted
+	// in markdown, this is useful for listing resource types in documentation.
+	MarkdownSummary string
+	// A short summary of the resource type in plain text,
+	// this is useful for listing resource types in documentation.
+	PlainTextSummary string
 }
 
 // ResourceGetExamplesInput provides the input data needed for a resource to
