@@ -81,3 +81,13 @@ func (t *InstanceTypeCustomVariableType) GetDescription(
 		PlainTextDescription: "",
 	}, nil
 }
+
+func (t *InstanceTypeCustomVariableType) GetExamples(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetExamplesInput,
+) (*provider.CustomVariableTypeGetExamplesOutput, error) {
+	return &provider.CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}

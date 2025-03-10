@@ -90,6 +90,16 @@ func (t *testEC2InstanceTypeCustomVariableType) GetDescription(
 	}, nil
 }
 
+func (t *testEC2InstanceTypeCustomVariableType) GetExamples(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetExamplesInput,
+) (*provider.CustomVariableTypeGetExamplesOutput, error) {
+	return &provider.CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}
+
 type testInvalidEC2InstanceTypeCustomVariableType struct{}
 
 func (t *testInvalidEC2InstanceTypeCustomVariableType) Options(
@@ -164,6 +174,16 @@ func (t *testInvalidEC2InstanceTypeCustomVariableType) GetDescription(
 	}, nil
 }
 
+func (t *testInvalidEC2InstanceTypeCustomVariableType) GetExamples(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetExamplesInput,
+) (*provider.CustomVariableTypeGetExamplesOutput, error) {
+	return &provider.CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}
+
 type testFailToLoadOptionsCustomVariableType struct{}
 
 func (t *testFailToLoadOptionsCustomVariableType) Options(
@@ -189,6 +209,16 @@ func (t *testFailToLoadOptionsCustomVariableType) GetDescription(
 	return &provider.CustomVariableTypeGetDescriptionOutput{
 		MarkdownDescription:  "",
 		PlainTextDescription: "",
+	}, nil
+}
+
+func (t *testFailToLoadOptionsCustomVariableType) GetExamples(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetExamplesInput,
+) (*provider.CustomVariableTypeGetExamplesOutput, error) {
+	return &provider.CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
 	}, nil
 }
 
@@ -263,6 +293,16 @@ func (t *testRegionCustomVariableType) GetDescription(
 	return &provider.CustomVariableTypeGetDescriptionOutput{
 		MarkdownDescription:  "",
 		PlainTextDescription: "",
+	}, nil
+}
+
+func (t *testRegionCustomVariableType) GetExamples(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetExamplesInput,
+) (*provider.CustomVariableTypeGetExamplesOutput, error) {
+	return &provider.CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
 	}, nil
 }
 

@@ -562,3 +562,13 @@ func (t *testEC2InstanceTypeCustomVariableType) GetDescription(
 		PlainTextDescription: t.plainTextDescription,
 	}, nil
 }
+
+func (t *testEC2InstanceTypeCustomVariableType) GetExamples(
+	ctx context.Context,
+	input *CustomVariableTypeGetExamplesInput,
+) (*CustomVariableTypeGetExamplesOutput, error) {
+	return &CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}

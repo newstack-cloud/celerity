@@ -23,6 +23,9 @@ type CustomVariableType interface {
 	// In the returned options, each one is keyed by a label, essentially
 	// behaving as a runtime enum.
 	Options(ctx context.Context, input *CustomVariableTypeOptionsInput) (*CustomVariableTypeOptionsOutput, error)
+	// GetExamples loads a set of examples for how to use the custom
+	// variable type in a blueprint.
+	GetExamples(ctx context.Context, input *CustomVariableTypeGetExamplesInput) (*CustomVariableTypeGetExamplesOutput, error)
 }
 
 // CustomVariableTypeOptionsInput provides the input required to load
@@ -81,4 +84,17 @@ type CustomVariableTypeGetDescriptionOutput struct {
 	// A short summary of the custom variable type in plain text,
 	// this is useful for listing custom variable types in documentation.
 	PlainTextSummary string
+}
+
+// CustomVariableTypeGetExamplesInput provides the input required to
+// retrieve examples for a custom variable type.
+type CustomVariableTypeGetExamplesInput struct {
+	ProviderContext Context
+}
+
+// CustomVariableTypeGetExamplesOutput provides the output from retrieving examples
+// for a custom variable type.
+type CustomVariableTypeGetExamplesOutput struct {
+	PlainTextExamples []string
+	MarkdownExamples  []string
 }
