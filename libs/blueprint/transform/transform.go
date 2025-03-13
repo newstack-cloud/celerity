@@ -21,6 +21,10 @@ import (
 // Spec transformers are called straight after a schema has been successfully
 // parsed and variables have been validated.
 type SpecTransformer interface {
+	// GetTransformName retrieves the name of the transformer
+	// that is used to identify the transformer in blueprints,
+	// this is what is set in the `transform` field of a blueprint.
+	GetTransformName(ctx context.Context) (string, error)
 	// ConfigDefinition retrieves a detailed definition of the
 	// configuration that is required for the transformer.
 	ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error)
@@ -77,12 +81,17 @@ type AbstractResource interface {
 		ctx context.Context,
 		input *AbstractResourceGetTypeDescriptionInput,
 	) (*AbstractResourceGetTypeDescriptionOutput, error)
+	// GetExamples deals with retrieving a list examples for an abstract resource type in a blueprint spec
+	// that can be used for documentation and tooling.
+	// Markdown and plain text formats are supported.
+	GetExamples(ctx context.Context, input *AbstractResourceGetExamplesInput) (*AbstractResourceGetExamplesOutput, error)
 }
 
 // SpecTransformerTransformInput provides the input required to transform
 // a blueprint.
 type SpecTransformerTransformInput struct {
-	InputBlueprint *schema.Blueprint
+	InputBlueprint     *schema.Blueprint
+	TransformerContext Context
 }
 
 // SpecTransformerTransformOutput provides the output from transforming a blueprint
@@ -171,6 +180,19 @@ type AbstractResourceGetTypeDescriptionOutput struct {
 	// A short summary of the abstract resource type in plain text,
 	// this is useful for listing abstract resource types in documentation.
 	PlainTextSummary string
+}
+
+// AbstractResourceGetExamplesInput provides the input data needed for a resource to
+// retrieve examples for an abstract resource type in a blueprint spec.
+type AbstractResourceGetExamplesInput struct {
+	ProviderContext Context
+}
+
+// AbstractResourceGetExamplesOutput provides the output data from retrieving examples
+// for an abstract resource type in a blueprint spec.
+type AbstractResourceGetExamplesOutput struct {
+	MarkdownExamples  []string
+	PlainTextExamples []string
 }
 
 // Context provides access to information about the current transformer

@@ -17,6 +17,10 @@ const ServerlessTransformName = "serverless-2024"
 
 type ServerlessTransformer struct{}
 
+func (t *ServerlessTransformer) GetTransformName(ctx context.Context) (string, error) {
+	return ServerlessTransformName, nil
+}
+
 func (t *ServerlessTransformer) ConfigDefinition(
 	ctx context.Context,
 ) (*core.ConfigDefinition, error) {
@@ -177,4 +181,11 @@ func (r *serverlessFunctionResource) GetTypeDescription(
 	input *transform.AbstractResourceGetTypeDescriptionInput,
 ) (*transform.AbstractResourceGetTypeDescriptionOutput, error) {
 	return &transform.AbstractResourceGetTypeDescriptionOutput{}, nil
+}
+
+func (r *serverlessFunctionResource) GetExamples(
+	ctx context.Context,
+	input *transform.AbstractResourceGetExamplesInput,
+) (*transform.AbstractResourceGetExamplesOutput, error) {
+	return &transform.AbstractResourceGetExamplesOutput{}, nil
 }
