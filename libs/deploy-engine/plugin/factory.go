@@ -4,23 +4,23 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/deploy-engine/plugin/pluginservice"
+	"github.com/two-hundred/celerity/libs/deploy-engine/plugin/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/deploy-engine/plugin/providerserverv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 // CreatePluginInstance is a function that creates a new instance of a plugin.
-// This implements the pluginservice.PluginFactory interface.
-func CreatePluginInstance(info *pluginservice.PluginInstanceInfo) (interface{}, func(), error) {
-	if info.PluginType == pluginservice.PluginType_PLUGIN_TYPE_PROVIDER && info.ProtocolVersion == 1 {
+// This implements the pluginservicev1.PluginFactory interface.
+func CreatePluginInstance(info *pluginservicev1.PluginInstanceInfo) (any, func(), error) {
+	if info.PluginType == pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER && info.ProtocolVersion == 1 {
 		return createV1ProviderPlugin(info)
 	}
 
 	return nil, nil, errors.New("unsupported plugin type or protocol version")
 }
 
-func createV1ProviderPlugin(info *pluginservice.PluginInstanceInfo) (interface{}, func(), error) {
+func createV1ProviderPlugin(info *pluginservicev1.PluginInstanceInfo) (any, func(), error) {
 
 	conn, err := createGRPCConnection(info)
 	closeConn := func() {
@@ -40,7 +40,7 @@ func createV1ProviderPlugin(info *pluginservice.PluginInstanceInfo) (interface{}
 	return wrapped, closeConn, nil
 }
 
-func createGRPCConnection(info *pluginservice.PluginInstanceInfo) (*grpc.ClientConn, error) {
+func createGRPCConnection(info *pluginservicev1.PluginInstanceInfo) (*grpc.ClientConn, error) {
 	if info.UnixSocketPath != "" {
 		return grpc.NewClient("unix://"+info.UnixSocketPath, grpc.WithTransportCredentials(
 			insecure.NewCredentials(),

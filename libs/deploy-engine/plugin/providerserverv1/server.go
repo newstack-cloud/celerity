@@ -3,13 +3,13 @@ package providerserverv1
 import (
 	context "context"
 	"fmt"
+	"log"
 	"net"
 	"os"
-	"os/signal"
 	"strconv"
-	"syscall"
 
-	"github.com/two-hundred/celerity/libs/deploy-engine/plugin/pluginservice"
+	"github.com/two-hundred/celerity/libs/deploy-engine/plugin/pluginservicev1"
+	"github.com/two-hundred/celerity/libs/deploy-engine/utils"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -44,26 +44,39 @@ func WithTCPPort(port int) ServerOption {
 	}
 }
 
+// WithListener is a server option that sets the listener
+// that the server should use.
+func WithListener(listener net.Listener) ServerOption {
+	return func(s *Server) {
+		s.listener = listener
+	}
+}
+
 // Server is a plugin server.
 type Server struct {
 	pluginID       string
+	pluginMetadata *pluginservicev1.PluginMetadata
+	hostID         string
 	debug          bool
 	unixSocket     string
 	tcpPort        int
 	provider       ProviderServer
-	serviceFactory func() (pluginservice.ServiceClient, func(), error)
+	pluginService  pluginservicev1.ServiceClient
+	listener       net.Listener
 }
 
 func NewServer(
 	pluginID string,
+	pluginMetadata *pluginservicev1.PluginMetadata,
 	provider ProviderServer,
-	serviceFactory func() (pluginservice.ServiceClient, func(), error),
+	pluginServiceClient pluginservicev1.ServiceClient,
 	opts ...ServerOption,
 ) *Server {
 	server := &Server{
 		pluginID:       pluginID,
+		pluginMetadata: pluginMetadata,
 		provider:       provider,
-		serviceFactory: serviceFactory,
+		pluginService:  pluginServiceClient,
 	}
 
 	for _, opt := range opts {
@@ -73,10 +86,10 @@ func NewServer(
 	return server
 }
 
-func (s *Server) Serve() error {
+func (s *Server) Serve() (func(), error) {
 	listener, err := s.createListener()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// If the TCP port is not set and a unix socket is not provided,
@@ -92,15 +105,17 @@ func (s *Server) Serve() error {
 	grpcServer := grpc.NewServer(opts...)
 	RegisterProviderServer(grpcServer, s.provider)
 
-	go grpcServer.Serve(listener)
+	go func() {
+		if err := grpcServer.Serve(listener); err != nil {
+			log.Printf("failed to serve provider plugin server: %s", err)
+		}
+	}()
 
-	service, closeServiceConn, err := s.serviceFactory()
-	if err != nil {
-		return err
-	}
-	resp, err := service.Register(
+	closer := s.createCloser(grpcServer)
+
+	resp, err := s.pluginService.Register(
 		context.TODO(),
-		&pluginservice.PluginRegistrationRequest{
+		&pluginservicev1.PluginRegistrationRequest{
 			PluginId: s.pluginID,
 			// Process IDs are sufficient for plugin instance IDs,
 			// in the future we may want to allow for plugins that run in
@@ -108,59 +123,57 @@ func (s *Server) Serve() error {
 			InstanceId:      strconv.Itoa(os.Getpid()),
 			ProtocolVersion: protocolVersion,
 			Port:            int32(s.tcpPort),
+			Metadata:        s.pluginMetadata,
 			UnixSocket:      s.unixSocket,
 		},
 	)
 	if err != nil {
-		return err
+		return closer, err
 	}
-	closeServiceConn()
 
 	if !resp.Success {
-		return fmt.Errorf("failed to register plugin with host service: %s", resp.Message)
+		return closer, fmt.Errorf("failed to register plugin with host service: %s", resp.Message)
 	}
 
-	s.waitForShutdown()
+	s.hostID = resp.HostId
 
-	return nil
+	return closer, nil
 }
 
-func (s *Server) waitForShutdown() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(
-		c, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM,
-	)
-
-	<-c
-	service, closeServiceConn, err := s.serviceFactory()
-	if err != nil {
-		// todo: use logger instead of fmt.Fprintf
-		fmt.Fprintf(os.Stderr, "failed to create service client: %s\n", err)
-		return
+func (s *Server) createCloser(baseServer *grpc.Server) func() {
+	return func() {
+		if s.listener != nil {
+			err := s.listener.Close()
+			if err != nil {
+				log.Printf("failed to close listener for provider plugin server: %s", err)
+			}
+			s.deregisterPlugin()
+			baseServer.Stop()
+		}
 	}
+}
 
-	resp, err := service.Deregister(context.TODO(), &pluginservice.PluginDeregistrationRequest{
-		PluginId:   s.pluginID,
-		InstanceId: strconv.Itoa(os.Getpid()),
-	})
+func (s *Server) deregisterPlugin() {
+	resp, err := s.pluginService.Deregister(
+		context.TODO(),
+		&pluginservicev1.PluginDeregistrationRequest{
+			PluginType: pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER,
+			InstanceId: strconv.Itoa(os.Getpid()),
+			HostId:     s.hostID,
+		},
+	)
 	if err != nil {
 		// todo: use logger instead of fmt.Fprintf
 		fmt.Fprintf(os.Stderr, "failed to deregister plugin with host service: %s\n", err)
 	} else if !resp.Success {
 		fmt.Fprintf(os.Stderr, "failed to deregister plugin with host service: %s\n", resp.Message)
 	}
-
-	closeServiceConn()
 }
 
 func (s *Server) createListener() (net.Listener, error) {
-	if s.unixSocket != "" {
-		if err := os.Remove(s.unixSocket); err != nil && !os.IsNotExist(err) {
-			return nil, err
-		}
-
-		return net.Listen("unix", s.unixSocket)
-	}
-
-	return net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", s.tcpPort))
+	return utils.CreateListener(&utils.ListenerConfig{
+		Listener:   s.listener,
+		UnixSocket: s.unixSocket,
+		TCPPort:    s.tcpPort,
+	})
 }

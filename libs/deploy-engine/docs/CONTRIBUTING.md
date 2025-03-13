@@ -23,7 +23,7 @@ bash ./scripts/run-tests.sh
 
 ## Generating gRPC protobuf code
 
-The deploy engine uses gRPC for the provider and transform plugin system.
+The deploy engine uses gRPC for the plugin system that includes providers, transformers and the service hub/manager that plugins register with and use as a gateway to call functions provided by other plugins.
 
 1. Follow the instructions [here](https://grpc.io/docs/protoc-installation/#install-using-a-package-manager) to install the `protoc` compiler.
 
@@ -34,15 +34,23 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
 
-3. Run the following command from the `libs/deploy-engine` directory to generate the gRPC protobuf code for the plugin service that plugins register with:
+3. Run the following command from the `libs/deploy-engine` directory to generate gRPC protobuf code for shared protobuf messages used by the plugin system:
 
 ```bash
 protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
   --go-grpc_out=.. --go-grpc_opt=paths=source_relative \
-  deploy-engine/plugin/pluginservice/service.proto
+  deploy-engine/plugin/sharedtypesv1/types.proto
 ```
 
-4. Run the following command from the `libs/deploy-engine` directory to generate the gRPC protobuf code for provider plugins:
+4. Run the following command from the `libs/deploy-engine` directory to generate the gRPC protobuf code for the plugin service that plugins register with that also allows them to call functions:
+
+```bash
+protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
+  --go-grpc_out=.. --go-grpc_opt=paths=source_relative \
+  deploy-engine/plugin/pluginservicev1/service.proto
+```
+
+5. Run the following command from the `libs/deploy-engine` directory to generate the gRPC protobuf code for provider plugins:
 
 ```bash
 protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
@@ -50,7 +58,7 @@ protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
   deploy-engine/plugin/providerserverv1/provider.proto
 ```
 
-5. Run the following command from the `libs/deploy-engine` directory to generate the gRPC protobuf code for transform plugins:
+6. Run the following command from the `libs/deploy-engine` directory to generate the gRPC protobuf code for transform plugins:
 
 ```bash
 protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
@@ -60,7 +68,7 @@ protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
 
 ## Releasing
 
-To release a new version of the library, you need to create a new tag and push it to the repository.
+To release a new version of the deploy engine, you need to create a new tag and push it to the repository.
 
 The format must be `libs/deploy-engine/vX.Y.Z` where `X.Y.Z` is the semantic version number.
 The reason for this is that Go's mechanism for picking up modules from multi-repo packages is based on the sub-directory path being in the version tag.

@@ -2,10 +2,9 @@ package providerv1
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/two-hundred/celerity/libs/deploy-engine/plugin/providerserverv1"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
 // ContextFuncReturnValue is a function that takes a context,
@@ -16,28 +15,25 @@ type ContextFuncReturnValue[Arg any, Value any] func(context.Context, Arg) (Valu
 // and an argument and returns an error.
 type ContextFunc[Arg any] func(context.Context, Arg) error
 
-// PluginError provides a custom error type to be used in the plugin system,
-// this is converted to a logical error when returning to the deploy engine host
-// as opposed to a protocol error.
-type PluginError struct {
-	ErrorCode providerserverv1.ErrorCode
-	Message   string
-}
-
-func (p PluginError) Error() string {
-	return fmt.Sprintf("plugin error: %s", p.Message)
-}
-
 // Retryable wraps a function that only returns an error
-// and makes it retryable in the plugin system.
-func Retryable[Arg any](function ContextFunc[Arg]) ContextFunc[Arg] {
+// and makes it retryable in the plugin system if the error
+// meets the provided retryable criteria.
+// This is to be used inside the body of a plugin definition
+// handler and wrapped around all the functionality that needs
+// to be retried.
+func Retryable[Arg any](
+	function ContextFunc[Arg],
+	isErrorRetryable func(error) bool,
+) ContextFunc[Arg] {
 	return func(ctx context.Context, arg Arg) error {
 		err := function(ctx, arg)
 		if err != nil {
-			return PluginError{
-				ErrorCode: providerserverv1.ErrorCode_ERROR_CODE_TRANSIENT,
-				Message:   err.Error(),
+			if isErrorRetryable(err) {
+				return &provider.RetryableError{
+					ChildError: err,
+				}
 			}
+			return err
 		}
 		return nil
 	}
@@ -45,25 +41,31 @@ func Retryable[Arg any](function ContextFunc[Arg]) ContextFunc[Arg] {
 
 // RetryableReturnValue wraps a function that returns a value and an error
 // and makes it retryable in the plugin system.
+// This is to be used inside the body of a plugin definition
+// handler and wrapped around all the functionality that needs
+// to be retried.
 func RetryableReturnValue[Arg any, Value any](
 	function ContextFuncReturnValue[Arg, Value],
+	isErrorRetryable func(error) bool,
 ) ContextFuncReturnValue[Arg, Value] {
 	return func(ctx context.Context, arg Arg) (Value, error) {
 		val, err := function(ctx, arg)
 		if err != nil {
-			return val, PluginError{
-				ErrorCode: providerserverv1.ErrorCode_ERROR_CODE_TRANSIENT,
-				Message:   err.Error(),
+			if isErrorRetryable(err) {
+				return val, &provider.RetryableError{
+					ChildError: err,
+				}
 			}
+			return val, err
 		}
 		return val, nil
 	}
 }
 
 // Timeout wraps a function that only returns an error
-// and apples a timeout to it.
+// and applies a timeout to it.
 // Timeouts can be due to transient or permanent issues,
-// to retry a timeout error, wrap the timeout function with Retryable.
+// to combine timeout and retry behaviour, wrap the timeout function with Retryable.
 func Timeout[Arg any](function ContextFunc[Arg], timeout time.Duration) ContextFunc[Arg] {
 	return func(ctx context.Context, arg Arg) error {
 		timeoutCtx, cancel := context.WithTimeout(ctx, timeout)

@@ -3,13 +3,10 @@ package plugin
 import (
 	context "context"
 	"errors"
-	"os"
-	"strconv"
+	"net"
 
-	"github.com/two-hundred/celerity/libs/deploy-engine/plugin/pluginservice"
+	"github.com/two-hundred/celerity/libs/deploy-engine/plugin/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/deploy-engine/plugin/providerserverv1"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -18,8 +15,8 @@ var (
 	ErrUnsupportedProviderProtocolVersion = errors.New("unsupported provider protocol version")
 )
 
-// ServeProviderOptions are the options for serving the plugin.
-type ServeProviderOptions struct {
+// ServeProviderConfiguration contains configuration for serving the plugin.
+type ServeProviderConfiguration struct {
 	// The unique identifier for the provider plugin.
 	// In addition to being unique, the ID should point to the location
 	// where the provider plugin can be downloaded.
@@ -28,11 +25,23 @@ type ServeProviderOptions struct {
 	// For example:
 	// registry.celerityframework.com/celerity/aws
 	// celerity/aws
+	//
+	// The last portion of the ID is the unique name of the provider
+	// that is expected to be used as the namespace for resources, data sources
+	// and custom variable types used in blueprints.
+	// For example, the namespace for AWS resources is "aws"
+	// used in the resource type "aws/lambda/function".
 	ID string
+
 	// ProtocolVersion is the protocol version that should be
 	// used for the plugin.
 	// Currently, the only supported protocol version is 1.
 	ProtocolVersion uint32
+
+	// PluginMetadata is the metadata for the plugin.
+	// This is used to provide information about the plugin
+	// to the host service.
+	PluginMetadata *pluginservicev1.PluginMetadata
 
 	// Debug runs the provider plugin in a mode compatible with
 	// debugging processes such as delve.
@@ -48,64 +57,60 @@ type ServeProviderOptions struct {
 	// If this is not set and UnixSocketPath is not set, the provider
 	// plugin will listen on the next available port.
 	TCPPort int
+
+	// Listener is the listener that the provider plugin server should use.
+	// If this is provided, TCPPort and UnixSocketPath will be ignored.
+	Listener net.Listener
 }
 
-// Serves the plugin with the given providerServer and options.
+// ServeProviderV1 handles serving the v1 provider plugin with the given providerServer and options.
 // This will deal with registering the provider with the host service.
-func ServeProvider(ctx context.Context, providerServer interface{}, options ServeProviderOptions) error {
-	if options.ProtocolVersion != 1 {
-		return ErrUnsupportedProviderProtocolVersion
+func ServeProviderV1(
+	ctx context.Context,
+	providerServer any,
+	pluginServiceClient pluginservicev1.ServiceClient,
+	config ServeProviderConfiguration,
+) (func(), error) {
+	if config.ID == "" {
+		return nil, errors.New("ID is required for a provider plugin")
+	}
+
+	if config.PluginMetadata == nil {
+		return nil, errors.New("PluginMetadata is required for a provider plugin")
+	}
+
+	if config.ProtocolVersion != 1 {
+		return nil, ErrUnsupportedProviderProtocolVersion
 	}
 
 	provider, isv1Provider := providerServer.(providerserverv1.ProviderServer)
 	if !isv1Provider {
-		return errors.New("unsupported provider server type")
+		return nil, errors.New("unsupported provider server type")
 	}
 
 	opts := []providerserverv1.ServerOption{}
-	if options.Debug {
+	if config.Debug {
 		opts = append(opts, providerserverv1.WithDebug())
 	}
 
-	if options.TCPPort != 0 && options.UnixSocketPath != "" {
-		return errors.New("both TCPPort and UnixSocketPath cannot be set")
+	if config.TCPPort != 0 && config.UnixSocketPath != "" {
+		return nil, errors.New("both TCPPort and UnixSocketPath cannot be set")
 	}
 
-	if options.UnixSocketPath != "" {
-		opts = append(opts, providerserverv1.WithUnixSocket(options.UnixSocketPath))
+	if config.UnixSocketPath != "" {
+		opts = append(opts, providerserverv1.WithUnixSocket(config.UnixSocketPath))
 	}
 
-	if options.TCPPort != 0 {
-		opts = append(opts, providerserverv1.WithTCPPort(options.TCPPort))
+	if config.TCPPort != 0 {
+		opts = append(opts, providerserverv1.WithTCPPort(config.TCPPort))
 	}
 
 	server := providerserverv1.NewServer(
-		options.ID,
+		config.ID,
+		config.PluginMetadata,
 		provider,
-		createServiceClientFactory(),
+		pluginServiceClient,
 		opts...,
 	)
 	return server.Serve()
-}
-
-func createServiceClientFactory() func() (pluginservice.ServiceClient, func(), error) {
-	return func() (pluginservice.ServiceClient, func(), error) {
-		servicePort := os.Getenv("CELERITY_BUILD_ENGINE_PLUGIN_SERVICE_PORT")
-		if servicePort == "" {
-			servicePort = strconv.Itoa(pluginservice.DefaultPort)
-		}
-
-		conn, err := grpc.NewClient("127.0.0.1:"+servicePort, grpc.WithTransportCredentials(
-			insecure.NewCredentials(),
-		))
-		if err != nil {
-			return nil, nil, err
-		}
-
-		client := pluginservice.NewServiceClient(conn)
-		close := func() {
-			conn.Close()
-		}
-		return client, close, nil
-	}
 }

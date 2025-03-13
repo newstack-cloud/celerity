@@ -7,8 +7,8 @@ import (
 )
 
 // DeployEngine provides an interface for a service that provides
-// all the capabilities needed to validate and deploy a
-// Celerity project.
+// all the capabilities needed to validate, stage changes and deploy a
+// Celerity project or blueprint.
 type DeployEngine interface {
 	// Validates a Celerity project or blueprint.
 	// For a project, this should validate the project structure,
