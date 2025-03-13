@@ -4,6 +4,16 @@ package function
 // This is used to define the parameters and return types of a function that is used
 // to validate arguments passed into a function and the return value of a function.
 type Definition struct {
+	// Name is the name of the function that is used in a blueprint "${..}" substitution.
+	// This must be globally unique.
+	Name string
+	// Summary is a human-readable summary of the function
+	// to be used in documentation and tooling when listing
+	// functions.
+	Summary string
+	// FormattedSummary is a human-readable summary of the function
+	// that is formatted with markdown.
+	FormattedSummary string
 	// Description is a human-readable description of the function.
 	Description string
 	// FormattedDescription is a human-readable description of the function
@@ -227,9 +237,9 @@ type ObjectParameter struct {
 	// This will appear in logs and in tooling such as
 	// the language server.
 	Label string
-	// The type of each named attribute in the object,
-	// an argument will be validated against this type.
-	AttributeTypes map[string]AttributeType
+	// The type of the object that defines the attributes
+	// and their types.
+	ObjectValueType ValueTypeDefinition
 	// Description is a human-readable description of
 	// the parameter. This will appear in logs and in
 	// tooling such as the language server.
@@ -554,8 +564,9 @@ func (r *MapReturn) GetFormattedDescription() string {
 // ObjectReturn defines a return type for a predefined object structure
 // with known attributes.
 type ObjectReturn struct {
-	// AttributeTypes is a map of attribute names to attribute types.
-	AttributeTypes map[string]AttributeType
+	// The type of the object that defines the attributes
+	// and their types.
+	ObjectValueType ValueTypeDefinition
 	// Description is a human-readable description of
 	// the return value. This will appear in logs and in
 	// tooling such as the language server.
