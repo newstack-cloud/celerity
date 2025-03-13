@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/deploy-engine/core"
+	"github.com/two-hundred/celerity/apps/deploy-engine/core"
 )
 
 // EngineAPI provides a `DeployEngine` implementation

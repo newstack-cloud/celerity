@@ -5,7 +5,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/two-hundred/celerity/libs/deploy-engine/core"
+	"github.com/two-hundred/celerity/apps/deploy-engine/core"
 )
 
 var (

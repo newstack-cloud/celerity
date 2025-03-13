@@ -9,8 +9,8 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/two-hundred/celerity/apps/deploy-engine/core"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/deploy-engine/core"
 )
 
 var (

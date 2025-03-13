@@ -2,10 +2,10 @@ package engine
 
 import (
 	"github.com/two-hundred/celerity/apps/cli/internal/config"
+	"github.com/two-hundred/celerity/apps/deploy-engine/core"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/deploy-engine/core"
 	"go.uber.org/zap"
 )
 
