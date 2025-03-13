@@ -27,7 +27,7 @@ func NewFilterFunction() provider.Function {
 				&function.ListParameter{
 					Label: "items",
 					ElementType: &function.ValueTypeDefinitionAny{
-						Label:       "list",
+						Label:       "any",
 						Type:        function.ValueTypeAny,
 						Description: "A value of any type, every element in the containing list must be of the same type.",
 					},
