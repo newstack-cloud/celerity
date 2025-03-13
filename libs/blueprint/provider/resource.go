@@ -45,7 +45,7 @@ type Resource interface {
 	// that can be used for documentation and tooling.
 	// Markdown and plain text formats are supported.
 	GetTypeDescription(ctx context.Context, input *ResourceGetTypeDescriptionInput) (*ResourceGetTypeDescriptionOutput, error)
-	// GetExamples deals with retrieving a list examples for a resource type in a blueprint spec
+	// GetExamples deals with retrieving a list of examples for a resource type in a blueprint spec
 	// that can be used for documentation and tooling.
 	// Markdown and plain text formats are supported.
 	GetExamples(ctx context.Context, input *ResourceGetExamplesInput) (*ResourceGetExamplesOutput, error)

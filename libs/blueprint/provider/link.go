@@ -227,13 +227,6 @@ type LinkAnnotationDefinition struct {
 	Required      bool                `json:"required"`
 }
 
-// LinkHandleResourceErrorInput provides the input for handling errors
-// related to the deployment of a resource type in a link relationship.
-type LinkHandleResourceErrorInput struct {
-	ResourceInfo *ResourceInfo
-	LinkContext  LinkContext
-}
-
 // LinkKind provides a way to categorise links to help determine the order
 // in which resources need to be deployed when a blueprint instance is being deployed.
 type LinkKind string
