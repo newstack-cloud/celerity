@@ -5,8 +5,8 @@ use (
 	./libs/blueprint-resolvers
 	./libs/blueprint-state
 	./libs/common
-	./libs/deploy-engine
+	./libs/plugin-framework
 	./tools/blueprint-ls
 	./apps/cli
-	./apps/api
+	./apps/deploy-engine
 )

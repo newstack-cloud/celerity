@@ -33,6 +33,7 @@ The language server only supports `yaml` files due to [intended limitations](htt
 ## Runtime
 
 One of the main ideas behind Celerity is to remove the need to build applications differently depending on the target environment. This means that you can develop and test your applications locally, and then deploy them to a serverless or containerised environment without having to make any changes to the application code.
+You could say containers is the answer, however, when opting for this approach, you sacrifice a lot of the powerful tools that come with managed services built around FaaS. Celerity leverages the power of FaaS, managed services such as API Gateways and event buses where possible instead of bundling containerised application into cloud functions.
 
 The runtime allows you to run your Celerity applications in containerized/custom server environments. Celerity applications consist of a set of handlers and a declarative definition of the type of application that hosts these handlers. This approach is akin to the serverless model made popular by cloud providers with the likes of AWS Lambda and Google Cloud Functions. Celerity applications can run in FaaS-based serverless environments or in containerized/custom server environments, The runtime enables the latter.
 

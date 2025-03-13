@@ -1,0 +1,1353 @@
+edition = "2023";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
+import "blueprint/schema.proto";
+
+option features.field_presence = IMPLICIT;
+option go_package = "github.com/two-hundred/celerity/libs/plugin-framework/plugin/sharedtypesv1";
+
+package sharedtypesv1;
+
+// ConfigDefinitionResponse contains the response
+// for requesting the configuration definition
+// for a provider or transformer plugin.
+message ConfigDefinitionResponse {
+    oneof response {
+        ConfigDefinition config_definition = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// ConfigDefinition contains a detailed definition (schema)
+// of the configuration required for a provider or
+// transformer plugin.
+message ConfigDefinition {
+    map<string, ConfigFieldDefinition> fields = 1;
+}
+
+// ConfigFieldDefinition represents a field in a configuration
+// definition for a provider or transformer plugin.
+message ConfigFieldDefinition {
+    ScalarType type = 1;
+    string label = 2;
+    string description = 3;
+    schema.ScalarValue default_value = 4;
+    repeated schema.ScalarValue allowed_values = 5;
+    repeated schema.ScalarValue examples = 6;
+    bool required = 7;
+}
+
+// ScalarType represents the type of a scalar value that can be
+// used in annotation and configuration definitions.
+// This is translated to a string enum representation in the deploy engine.
+enum ScalarType {
+    SCALAR_TYPE_STRING = 0;
+    SCALAR_TYPE_INTEGER = 1;
+    SCALAR_TYPE_FLOAT = 2;
+    SCALAR_TYPE_BOOLEAN = 3;
+}
+
+// ExamplesResponse is the response
+// containing examples for entities (e.g. resources)
+// provided by a plugin.
+message ExamplesResponse {
+    oneof response {
+        Examples examples = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// Examples for entities (e.g. resources) provided by a plugin.
+message Examples {
+    // A human-readable list of examples in plain text.
+    repeated string examples = 1;
+    // A human-readable list of examples in markdown format
+    // that will usually be expected to contain code blocks.
+    repeated string formatted_examples = 2;
+}
+
+// ResourceTypeDescriptionResponse is the response
+// containing the description for a plugin entity (e.g. resource).
+message TypeDescriptionResponse {
+    oneof response {
+        TypeDescription description = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// TypeDescription provides a description for resource,
+// data source and custom variable types
+// that can be used for documentation and tooling.
+message TypeDescription {
+    string markdown_description = 1;
+    string plain_text_description = 2;
+    string markdown_summary = 3;
+    string plain_text_summary = 4;
+}
+
+// ResourceTypeResponse is the response
+// containing the type information for a concrete
+// or abstract resource type.
+message ResourceTypeResponse {
+    oneof response {
+        ResourceTypeInfo resource_type_info = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// ResourceTypeInfo provides information about a resource type
+// that can be used for documentation and tooling.
+message ResourceTypeInfo {
+    // The type of the resource.
+    ResourceType type = 1;
+    // The human-readable label for the resource type.
+    string label = 2;
+}
+
+// FunctionDefinitionRequest is the request input
+// for fetching the definition of a function.
+message FunctionDefinitionRequest {
+    string function_name = 1;
+    BlueprintParams params = 2;
+}
+
+// FunctionDefinitionResponse is the response
+// containing the definition of a function.
+message FunctionDefinitionResponse {
+    oneof response {
+        FunctionDefinition function_definition = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// FunctionCallRequest is the request input
+// for calling a function.
+message FunctionCallRequest {
+    string function_name = 1;
+    FunctionCallArgs args = 2;
+    FunctionCallContext call_context = 3;
+}
+
+// FunctionCallResponse is the response
+// containing the result of calling a function.
+message FunctionCallResponse {
+    oneof response {
+        FunctionCallResult function_result = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// FunctionCallResult contains the result of calling
+// a function.
+message FunctionCallResult {
+    google.protobuf.Any response_data = 1;
+    FunctionRuntimeInfo function_info = 2;
+}
+
+// FunctionRuntimeInfo provides information about a function to be passed
+// between functions.
+// The blueprint function framework is designed to work across process boundaries
+// so an actual function in memory can not be passed around, Instead, a function
+// runtime info is used, this contains the function name to be called and pre-configured
+// arguments that can be used when the function is eventually called.
+//
+// Higher-order functions can only use named functions for the return value
+// as the function name is used to look up the function definition and combine
+// the pre-configured arguments with the arguments passed to the function.
+message FunctionRuntimeInfo {
+    string function_name = 1;
+    // Partial args should be a serialised JSON array,
+    // this means partial args only need to be deserialised once.
+    google.protobuf.Any partial_args = 2;
+	// The offset of the arguments in the partial arguments.
+	// This should be rarely be used, but in the case where the captured
+	// arguments to be "partially applied" are not the first arguments
+	// in the function signature, this can be used to specify the offset
+	// of the arguments in the partial arguments list.
+    int32 args_offset = 3;
+}
+
+// FunctionCallArgs contains the arguments for calling
+// a provider function.
+message FunctionCallArgs {
+    // Arguments are expected to be stored in a serialised JSON array
+    // which allows the call args list to be deserialised once into a list instead
+    // of having to deserialise each argument individually.
+    // There is no concept of named args in the deploy engine host runtime,
+    // it is down to function implementation to handle derive named args
+    // from the list of arguments. (e.g. extract the first arg as a map)
+    google.protobuf.Any args = 1;
+}
+
+// FunctionCallContext contains the current environment
+// context for calling a function.
+message FunctionCallContext {
+    BlueprintParams params = 1;
+    repeated FunctionCall call_stack = 2;
+    SourceMeta current_location = 3;
+}
+
+// FunctionCall holds information for a function call
+// in a call stack.
+message FunctionCall {
+    // The file path of the source blueprint
+	// where the function call is located.
+	// This is especially useful for debugging projects with multiple
+	// blueprints or in a multi-stage validation/deployment process
+	// where the blueprint is one of many files that could have caused
+	// an error.   
+    string file_path = 1;
+    string function_name = 2;
+    // The location of the function call in the source blueprint
+    // that is captured in the schema and substitution parsing process.
+    SourceMeta location = 3;
+}
+
+// SourceMeta contains information about the location and range
+// of an element in a source blueprint document.
+message SourceMeta {
+    SourcePosition start_position = 1;
+    SourcePosition end_position = 2;
+}
+
+// SourcePosition contains information about the position
+// of an element in a source blueprint document.
+message SourcePosition {
+    int64 line = 1;
+    int64 column = 2;
+}
+
+// FunctionDefinition describes a function that can be used in a blueprint "${..}" substitution.
+// This is used to define the parameters and return types of a function that is used
+// to validate arguments passed into a function and the return value of a function.
+message FunctionDefinition {
+    // The globally unique name of the function.
+    string name = 1;
+    // A human-readable summary to be used in documentation and
+    // tooling when listing functions.
+    string summary = 2;
+    // A human-readable summary of the function that is formatted with markdown.
+    string formatted_summary = 3;
+    // A human-readable description of the function.
+    string description = 4;
+    // A human-readable description of the function that is
+    // formatted with markdown.
+    string formatted_description = 5;
+    // A definition of the parameters that are expected
+    // to be passed into the function.
+    // The order of the parameters is important as it will be used
+    // to match arguments passed into the function.
+    repeated FunctionParameter parameters = 6;
+    // A definition of the return type of the function.
+    // Return types are always expected as provider functions are
+    // expected to be pure functions that return an output based
+    // on the input arguments without side effects.
+    // Functions can also return other functions that can be shared,
+    // this especially useful for function composition and partial application
+    // of functions used in mapping over arrays or similar operations.
+    FunctionReturn return = 7;
+    // Determines whether or not the function is an internal function
+    // that should not be exposed to end-users.
+    // Some internal functions are required to enable capabilities
+    // such as function composition, piping and a small collection of other
+    // higher-order functions.
+    bool internal = 8;
+}
+
+// FunctionParameter is a parameter type definition for arguments
+// passed into a function.
+message FunctionParameter {
+    oneof parameter {
+        FunctionScalarParameter scalar_parameter = 1;
+        FunctionListParameter list_parameter = 2;
+        FunctionMapParameter map_parameter = 3;
+        FunctionObjectParameter object_parameter = 4;
+        FunctionTypeParameter function_type_parameter = 5;
+        FunctionVariadicParameter variadic_parameter = 6;
+        FunctionAnyParameter any_parameter = 7;
+    }
+}
+
+// ScalarParameter is a parameter type definition for primitive types.
+message FunctionScalarParameter {
+    // The name of the parameter for functions that support named arguments.
+    string name = 1;
+    // The usage name for the parameter.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string label = 2;
+    // Type of the parameter, an argument will be validated
+    // against this type.
+    FunctionValueTypeDefinition type = 3;
+    // A human-readable description of the parameter.
+    // This will appear in logs and tooling such as the
+    // language server.
+    string description = 4;
+    // A human-readable description of the parameter
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 5;
+    // Determines whether or not an argument passed in for
+    // this parameter can be null.
+    bool allow_null_value = 6;
+    // Determines whether or not the value can be omitted.
+    bool optional = 7;
+}
+
+// FunctionListParameter is a parameter type definition for lists.
+message FunctionListParameter {
+    // The name of the parameter for functions that support named arguments.
+    string name = 1;
+    // The usage name for the parameter.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string label = 2;
+    // Type of elements in the list, an argument will be validated
+    // against this type.
+    FunctionValueTypeDefinition element_type = 3;
+    // A human-readable description of the parameter.
+    // This will appear in logs and tooling such as the
+    // language server.
+    string description = 4;
+    // A human-readable description of the parameter
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 5;
+    // Determines whether or not an argument passed in for
+    // this parameter can be null.
+    bool allow_null_value = 6;
+    // Determines whether or not the value can be omitted.
+    bool optional = 7;
+}
+
+// FunctionMapParameter is a parameter type definition for maps.
+message FunctionMapParameter {
+    // The name of the parameter for functions that support named arguments.
+    string name = 1;
+    // The usage name for the parameter.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string label = 2;
+    // Type of values in the map, an argument will be validated
+    // against this type.
+    FunctionValueTypeDefinition element_type = 3;
+    // A human-readable description of the parameter.
+    // This will appear in logs and tooling such as the
+    // language server.
+    string description = 4;
+    // A human-readable description of the parameter
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 5;
+    // Determines whether or not an argument passed in for
+    // this parameter can be null.
+    bool allow_null_value = 6;
+    // Determines whether or not the value can be omitted.
+    bool optional = 7;
+}
+
+// FunctionObjectParameter is a parameter type definition for objects.
+message FunctionObjectParameter {
+    // The name of the parameter for functions that support named arguments.
+    string name = 1;
+    // The usage name for the parameter.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string label = 2;
+	// The type definition for an object including the type
+    // of each named attribute.
+    FunctionValueTypeDefinition object_value_type = 3;
+    // A human-readable description of the parameter.
+    // This will appear in logs and tooling such as the
+    // language server.
+    string description = 4;
+    // A human-readable description of the parameter
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 5;
+    // Determines whether or not an argument passed in for
+    // this parameter can be null.
+    bool allow_null_value = 6;
+    // Determines whether or not the value can be omitted.
+    bool optional = 7;
+}
+
+// FunctionTypeParameter is a parameter type definition for functions
+// that can be passed as arguments to other functions.
+message FunctionTypeParameter {
+    // The name of the parameter for functions that support named arguments.
+    string name = 1;
+    // The usage name for the parameter.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string label = 2;
+	// Type of function that represents the type signature
+	// that defines the parameters and return type of the function.
+    FunctionValueTypeDefinition function_type = 3;
+    // A human-readable description of the parameter.
+    // This will appear in logs and tooling such as the
+    // language server.
+    string description = 4;
+    // A human-readable description of the parameter
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 5;
+    // Determines whether or not an argument passed in for
+    // this parameter can be null.
+    bool allow_null_value = 6;
+    // Determines whether or not the value can be omitted.
+    bool optional = 7;
+}
+
+// FunctionVariadicParameter is a parameter type definition for variadic parameters
+// at the end of a parameter list.
+// A variadic parameter can be any number of arguments of any or a specific type.
+message FunctionVariadicParameter {
+    // The usage name for the parameter.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string label = 1;
+    // Type of the variadic parameter, an argument will be validated
+    // against this type.
+    FunctionValueTypeDefinition type = 2;
+    // Determines whether or not the variadic parameters
+	// must all be of the same type.
+	// This is false by default, meaning that variadic parameters
+	// can be of any type.
+	// The `type` field is only assessed if `single_type` is true.
+    bool single_type = 3;
+    // A human-readable description of the parameter.
+    // This will appear in logs and tooling such as the
+    // language server.
+    string description = 4;
+    // A human-readable description of the parameter
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 5;
+    // Determines whether or not an argument passed in for
+    // this parameter can be null.
+    bool allow_null_value = 6;
+    // Determines whether or not the variadic parameters
+	// are named arguments.
+	// Named and positional arguments cannot be mixed.
+	// If they are named arguments, all arguments do not need to be
+	// of the same type.
+    bool named = 7;
+}
+
+// FunctionAnyParameter is a parameter type definition for any type.
+// This can be used for union types as well as parameters that
+// can accept any type.
+message FunctionAnyParameter {
+    // The name of the parameter for functions that support named arguments.
+    string name = 1;
+    // The usage name for the parameter.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string label = 2;
+    // A list of value type definitions that are allowed for the parameter.
+    // When provided, an any parameter type is expected to be validated
+    // as a union type where arguments must match of these types.
+    repeated FunctionValueTypeDefinition union_types = 3;
+    // A human-readable description of the parameter.
+    // This will appear in logs and tooling such as the
+    // language server.
+    string description = 4;
+    // A human-readable description of the parameter
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 5;
+    // Determines whether or not an argument passed in for
+    // this parameter can be null.
+    bool allow_null_value = 6;
+    // Determines whether or not the value can be omitted.
+    bool optional = 7;
+}
+
+// FunctionReturn is a return type definition for the return value
+// of a function.
+message FunctionReturn {
+    oneof return {
+        FunctionScalarReturn scalar_return = 1;
+        FunctionListReturn list_return = 2;
+        FunctionMapReturn map_return = 3;
+        FunctionObjectReturn object_return = 4;
+        FunctionTypeReturn function_type_return = 5;
+        FunctionAnyReturn any_return = 6;
+    }
+}
+
+// FunctionScalarReturn defines a return type for primitive types.
+message FunctionScalarReturn {
+    // This is the type definition for the scalar return value,
+	// this should be a type definition that uses one of the scalar
+	// value types such as ValueTypeString, ValueTypeInt32, etc.
+    FunctionValueTypeDefinition type = 1;
+    // A human-readable description of the return value.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string description = 2;
+    // A human-readable description of the return value
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 3;
+}
+
+// FunctionListReturn defines a return type for a list
+// of values with a single type.
+message FunctionListReturn {
+    // The type definition for the elements in the list.
+    FunctionValueTypeDefinition element_type = 1;
+    // A human-readable description of the return value.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string description = 2;
+    // A human-readable description of the return value
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 3;
+}
+
+// FunctionMapReturn defines a return type for a map
+// of strings to values with a single type.
+message FunctionMapReturn {
+    // The type definition for the values in the map.
+    FunctionValueTypeDefinition element_type = 1;
+    // A human-readable description of the return value.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string description = 2;
+    // A human-readable description of the return value
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 3;
+}
+
+// FunctionObjectReturn defines a return type for an object
+// with named attributes and their types.
+message FunctionObjectReturn {
+    // The type definition for the object that is returned.
+    FunctionValueTypeDefinition object_value_type = 1;
+    // A human-readable description of the return value.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string description = 2;
+    // A human-readable description of the return value
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 3;
+}
+
+// FunctionTypeReturn defines a return type for a function
+// that can be returned from another function.
+message FunctionTypeReturn {
+    // The type definition for the function that is returned.
+    // This should be a type definition of the function signature
+    // that defines the parameters and return type of the function.
+    FunctionValueTypeDefinition function_type = 1;
+    // A human-readable description of the return value.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string description = 2;
+    // A human-readable description of the return value
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 3;
+}
+
+// FunctionAnyReturn defines a return type for any type.
+// This can be used for union types as well as return values
+// that can be of any type.
+message FunctionAnyReturn {
+    // This is the type definition for a return value that can be any type.
+    FunctionValueType type = 1;
+    // UnionTypes is a list of value type definitions that are allowed for the return value.
+    // When provided, an any return type is expected to be validated
+    // as a union type where the return value must match one of these types.
+    repeated FunctionValueTypeDefinition union_types = 2;
+    // A human-readable description of the return value.
+    // This will appear in logs and in tooling such as the
+    // language server.
+    string description = 3;
+    // A human-readable description of the return value
+    // that is formatted with markdown.
+    // This will appear in usage documentation, logs and in
+    // tooling such as the language server.
+    string formatted_description = 4;
+}
+
+// FunctionObjectAttributeType provides a wrapper around a value
+// type definition that allows specific attributes of an object to be null.
+message FunctionObjectAttributeType {
+    // The type definition for the attribute.
+    FunctionValueTypeDefinition type = 1;
+    // Determines whether or not the attribute can be null.
+    bool allow_null_value = 2;
+}
+
+// FunctionValueType is an enum for the value types that are supported for
+// function parameters and return types.
+// This is translated to a string enum representation in the deploy engine.
+enum FunctionValueType {
+    FUNCTION_VALUE_TYPE_STRING = 0;
+    FUNCTION_VALUE_TYPE_INT32 = 1;
+    FUNCTION_VALUE_TYPE_INT64 = 2;
+    FUNCTION_VALUE_TYPE_UINT32 = 3;
+    FUNCTION_VALUE_TYPE_UINT64 = 4;
+    FUNCTION_VALUE_TYPE_FLOAT32 = 5;
+    FUNCTION_VALUE_TYPE_FLOAT64 = 6;
+    FUNCTION_VALUE_TYPE_BOOL = 7;
+    FUNCTION_VALUE_TYPE_LIST = 8;
+    FUNCTION_VALUE_TYPE_MAP = 9;
+    FUNCTION_VALUE_TYPE_OBJECT = 10;
+    FUNCTION_VALUE_TYPE_FUNCTION = 11;
+    FUNCTION_VALUE_TYPE_ANY = 12;
+}
+
+// FunctionValueTypeDefinition provides a definition for a value type
+// that can be used for function parameters and return types.
+message FunctionValueTypeDefinition {
+    oneof value_type_definition {
+        FunctionScalarValueTypeDefinition scalar_value_type = 1;
+        FunctionListValueTypeDefinition list_value_type = 2;
+        FunctionMapValueTypeDefinition map_value_type = 3;
+        FunctionObjectValueTypeDefinition object_value_type = 4;
+        FunctionTypeValueTypeDefinition function_value_type = 5;
+        FunctionAnyValueTypeDefinition any_value_type = 6;
+    }
+}
+
+// FunctionScalarValueTypeDefinition is a value type
+// definition for scalar (primitive) types.
+message FunctionScalarValueTypeDefinition {
+    // The value type name for the scalar type.
+    FunctionValueType type = 1;
+    // Usage name for the value type.
+    string label = 2;
+    // A human-readable description of the value type.
+    string description = 3;
+    // A human-readable description of the value type
+    // that is formatted with markdown.
+    string formatted_description = 4;
+    // A list of string values that are allowed
+    // for values with this type.
+    // This is only taken into account when the type is a string.
+    repeated string string_choices = 5;
+}
+
+// FunctionListValueTypeDefinition is a value type
+// definition for lists of values.
+message FunctionListValueTypeDefinition {
+    // The type definition for the elements in the list.
+    FunctionValueTypeDefinition element_type = 1;
+    // Usage name for the value type.
+    string label = 2;
+    // A human-readable description of the value type.
+    string description = 3;
+    // A human-readable description of the value type
+    // that is formatted with markdown.
+    string formatted_description = 4;
+}
+
+// FunctionMapValueTypeDefinition is a value type
+// definition for a mapping of strings to values.
+message FunctionMapValueTypeDefinition {
+    // The type definition for the values in the map.
+    FunctionValueTypeDefinition element_type = 1;
+    // Usage name for the value type.
+    string label = 2;
+    // A human-readable description of the value type.
+    string description = 3;
+    // A human-readable description of the value type
+    // that is formatted with markdown.
+    string formatted_description = 4;
+}
+
+// FunctionObjectValueTypeDefinition is a value type
+// definition for objects with named attributes.
+message FunctionObjectValueTypeDefinition {
+    // The type definition for each named attribute in the object.
+    map<string, FunctionObjectAttributeType> attribute_types = 1;
+    // Usage name for the value type.
+    string label = 2;
+    // A human-readable description of the value type.
+    string description = 3;
+    // A human-readable description of the value type
+    // that is formatted with markdown.
+    string formatted_description = 4;
+}
+
+// FunctionTypeValueTypeDefinition is a value type
+// definition for functions that can be passed into
+// and returned from other functions.
+message FunctionTypeValueTypeDefinition {
+    // The type definition for the function.
+    FunctionDefinition function_type = 1;
+    // Usage name for the value type.
+    string label = 2;
+    // A human-readable description of the value type.
+    string description = 3;
+    // A human-readable description of the value type
+    // that is formatted with markdown.
+    string formatted_description = 4;
+}
+
+// FunctionAnyValueTypeDefinition is a value type
+// definition for any type.
+message FunctionAnyValueTypeDefinition {
+    // The value type name for an any type.
+    FunctionValueType type = 1;
+    // A list of value type definitions that are allowed for the value.
+    // When provided, an any value type is expected to be validated
+    // as a union type where the value must match one of these types.
+    repeated FunctionValueTypeDefinition union_types = 2;
+    // Usage name for the value type.
+    string label = 3;
+    // A human-readable description of the value type.
+    string description = 4;
+    // A human-readable description of the value type
+    // that is formatted with markdown.
+    string formatted_description = 5;
+}
+
+
+// DeployResourceRequest provides the input data needed for a resource
+// to be deployed.
+message DeployResourceRequest {
+    // The type of resource to carry out an action on or retrieve
+    // some information about.
+    ResourceType resource_type = 1;
+    string instance_id = 2;
+    string resource_id = 3;
+    Changes changes = 4;
+    // Runtime configuration for the current environment
+    // specific to the current provider.
+    ProviderContext context = 5;
+}
+
+// DeployResourceResponse is the response
+// containing the result of deploying a resource.
+message DeployResourceResponse {
+    oneof response {
+        DeployResourceCompleteResponse complete_response = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// DeployResourceCompleteResponse is the response
+// returned by the provider plugin when a resource has been deployed.
+// This should contain any computed fields that are known after the resource
+// has been deployed.
+message DeployResourceCompleteResponse {
+    // A mapping of computed field paths to their values.
+    // Examples of computed fields are the ARN of an AWS Lambda function
+    // or the ID of a Google Cloud Storage bucket.
+    // Some examples of valid computed field paths are:
+	// - `spec.arn`
+	// - `spec.id`
+	// - `spec.arns[0]`
+	// - `spec.identifiers["id.v1"]`
+	// - `spec["identifiers.1"].arn`
+	//
+	// The computed fields will be injected into the final resource state that
+	// will be persisted as a part of the blueprint instance state.
+    map<string, schema.MappingNode> computed_field_values = 1;
+}
+
+// ResourceHasStabilisedRequest is the request that contains the input data
+// needed for a resource to determine if it has stabilised after being deployed.
+message ResourceHasStabilisedRequest {
+    ResourceType resource_type = 1;
+    string instance_id = 2;
+    string resource_id = 3;
+    schema.MappingNode resource_spec = 4;
+    ResourceMetadataState resource_metadata = 5;
+    ProviderContext context = 6;
+}
+
+// ResourceHasStabilisedResponse is the response
+// containing the result of checking if a resource has stabilised.
+message ResourceHasStabilisedResponse {
+    oneof response {
+        ResourceStabilisationInfo resource_stabilisation_info = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// DestroyResourceRequest is the request that contains the input data
+// needed to destroy a resource instance.
+message DestroyResourceRequest {
+    ResourceType resource_type = 1;
+    string instance_id = 2;
+    string resource_id = 3;
+    ResourceState resource_state = 4;
+    ProviderContext context = 5;
+}
+
+// DestroyResourceResponse is the response
+// containing the result of destroying a resource.
+message DestroyResourceResponse {
+    oneof response {
+        DestroyResourceResult result = 1;
+        ErrorResponse error_response = 2;
+    }
+}
+
+// DestroyResourceResult contains the result
+// of destroying a resource.
+message DestroyResourceResult {
+    bool destroyed = 1;
+}
+
+// ResourceStabilisationInfo provides information about whether a resource
+// has stabilised after being deployed.
+message ResourceStabilisationInfo {
+    bool stabilised = 1;
+}
+
+// Changes provides a set of modified fields along with a version of the resource
+// schema (includes metadata labels and annotations) and spec
+// that has already had all it's variables substituted.
+message Changes {
+    // Provides a new version of the spec and schema for which variable
+    // substitution has been applied so the deploy phase has everything
+    // it needs to deploy the resource.
+    ResourceInfo applied_resource_info = 1;
+    bool must_recreate = 2;
+    repeated FieldChange modified_fields = 3;
+    repeated FieldChange new_fields = 4;
+    repeated string removed_fields = 5;
+    repeated string unchanged_fields = 6;
+    // A list of field paths that are computed at deploy time.
+    // This is primarily useful to give fast access to information
+    // about which fields are computed without having to inspect
+    // the spec schema in link implementations.
+    repeated string computed_fields = 7;
+    // A list of field names for which changes will be known when the host
+    // blueprint is deployed.
+    repeated string field_changes_known_on_deploy = 8;
+    // Specifies whether the condition
+    // for the resource will be known when the host blueprint is deployed.
+    // When a condition makes use of items in the blueprint that are not resolved
+    // until deployment, whether the resource will be deployed or not
+    // cannot be known during the change staging phase.
+    bool condition_known_on_deploy = 9;
+    // A mapping of the linked to resource name
+    // to the link changes representing the new links that will be created.
+    map<string, LinkChanges> new_outbound_links = 10;
+    // A mapping of the linked to resource name to any changes
+    // that will be made to existing links.
+    // The key is of the form `{resourceA}::{resourceB}`.
+    map<string, LinkChanges> outbound_link_changes = 11;
+    // A list of link identifiers that will be removed.
+    // The form of the link identifier is `{resourceA}::{resourceB}`.
+    repeated string removed_outbound_links = 12;
+}
+
+// FieldChange represents a change in a field value of
+// a resource or link that is used in change staging.
+message FieldChange {
+    string field_path = 1;
+    schema.MappingNode prev_value = 2;
+    schema.MappingNode new_value = 3;
+    // A flag that indicates whether the resource or link
+    // containing the field must be recreated in order to apply the change.
+    bool must_recreate = 4;
+}
+
+// LinkChanges provides a set of modified fields for a link between two resources.
+// The link field changes represent a set of changes that will be made to the
+// resources in the link relationship, these changes should be modelled as per the
+// structure of the linkData that is persisted in the state of a blueprint instance.
+// The linkData model should be organised by the resource type with a structure
+// that is a close approximation of the actual changes that will be made to each
+// resource during deployment in the upstream provider.
+message LinkChanges {
+    repeated FieldChange modified_fields = 1;
+    repeated FieldChange new_fields = 2;
+    repeated string removed_fields = 3;
+    repeated string unchanged_fields = 4;
+    // A list of field names for which changes
+    // will be known when the host blueprint is deployed.
+    repeated string field_changes_known_on_deploy = 5;
+}
+
+// ResourceInfo provides all the information needed for a resource including
+// the blueprint schema data with annotations, labels and the spec
+// as a core mapping node.
+message ResourceInfo {
+	// The ID of a resource when in the context
+	// of a blueprint instance when deploying or staging changes.
+	// Sometimes staging changes is independent of an instance and is used to compare
+	// two vesions of a blueprint in which
+	// case the resource ID will be empty.
+    string resource_id = 1;
+    // The name of the resource in the blueprint spec.
+	// This is useful for new resources that do not have any current resource state.
+    string resource_name = 2;
+    // The ID of the blueprint instance
+	// that the current resource belongs to.
+	// This could be empty if the resource is being staged
+	// for an initial deployment.
+    string instance_id = 3;
+    // The current state of the resource
+	// for which changes are being staged.
+	// If this is null, it means that the resource is new and does not have
+	// a current state.
+    ResourceState current_resource_state = 4;
+    // A version of a resource for which all ${..}
+    // substitutions have been applied.
+    ResolvedResource resource_with_resolved_subs = 5;
+}
+
+// ResourceState represents the current state of a resource in a blueprint instance.
+// This includes the status, derived data from the upstream resource provider
+// along with reasons for failure when a resource is in a failed state.
+message ResourceState {
+    // A globally unique identifier for the resource.
+    string id = 1;
+    // The logical name of the resource in the blueprint.
+    string name = 2;
+    // The type of the resource as defined in the source blueprint.
+    string type = 3;
+    // The name of the resource template in the source blueprint
+    // that the resource is derived from.
+    // This will be empty if the resource is not derived from a resource template.
+    string template_name = 4;
+    string instance_id = 5;
+    ResourceStatus status = 6;
+    PreciseResourceStatus precise_status = 7;
+    // The unix timestamp for when the resource deployment status was last updated.
+    int64 last_status_update_timestamp = 8;
+    // The unix timestamp for when the resource was last deployed.
+    int64 last_deployed_timestamp = 9;
+    // The unix timestamp for when an attempt was last made to deploy the resource.
+    int64 last_deploy_attempt_timestamp = 10;
+    // The resolved resource spec for the currently deployed
+    // version of the resource along with computed fields derived
+    // from the deployed resource in the provider.
+    schema.MappingNode spec_data = 11;
+    // A human-friendly description of the resource derived from a source blueprint.
+    string description = 12;
+    // Metadata for the resource that is derived from a source blueprint
+    // that includes additional information that allows for extensions built on top
+    // of the blueprint framework along with the storage of labels, annotations and a
+    // human-friendly display name for the resource.
+    ResourceMetadataState metadata = 13;
+    // A list of resource names that the response depends on,
+    // this dependency is derived from "hard" links, references and the use of the dependsOn
+    // property in the source blueprint.
+    repeated string depends_on_resources = 14;
+    // A list of child blueprint names that the resource depends on.
+    // This dependency is derived from references in the source blueprint.
+    repeated string depends_on_children = 15;
+    // A list of the latest reasons for failure in deploying a resource,
+    // this only ever holds the results of the latest deployment attempt.
+    repeated string failure_reasons = 16;
+    // Indicates whether or not the resource state has drifted
+    // due to changes in the upstream provider.
+    bool drifted = 17;
+    // The unix timestamp when drift was last detected.
+    google.protobuf.Int64Value last_drift_detected_timestamp = 18;
+    // Holds the duration information for the latest deployment of the resource.
+    ResourceCompletionDurations durations = 19;
+}
+
+
+// ResolvedResource provides a version of a resource for which all ${..}
+// substitutions have been applied.
+// Mapping nodes replace StringOrSubstitutions from the blueprint schema representation
+// of the resource.
+message ResolvedResource {
+    ResourceType type = 1;
+    schema.MappingNode description = 2;
+    ResolvedResourceMetadata metadata = 3;
+    ResolvedResourceCondition condition = 4;
+    schema.LinkSelector link_selector = 5;
+    schema.MappingNode spec = 6;
+}
+
+// ResolvedResourceMetadata provides a resolved version of the metadata
+// for a resource where all substitutions have been applied.
+message ResolvedResourceMetadata {
+    schema.MappingNode display_name = 1;
+    schema.MappingNode annotations = 2;
+    map<string, string> labels = 3;
+    schema.MappingNode custom = 4;
+}
+
+// ResolvedResourceCondition provides a resolved version of the condition
+// for a resource where all substitutions have been applied.
+message ResolvedResourceCondition {
+    // A list of conditions that must all be true.
+    repeated ResolvedResourceCondition and = 1;
+    // A list of conditions where at least one must be true.
+    repeated ResolvedResourceCondition or = 2;
+    // A condition that will be negated.
+    ResolvedResourceCondition not = 3;
+    // A condition expression that is expected to be a substitution that
+    // resolves to a boolean.
+    schema.MappingNode string_value = 4;
+}
+
+// ResourceCompletionDurations holds duration information
+// for the deployment of a resource change.
+message ResourceCompletionDurations {
+    // The duration in milliseconds for the resource to be configured.
+    // This will only be present of the resource has reached config complete status.
+    google.protobuf.DoubleValue config_complete_duration = 1;
+    // The duration in milliseconds for the resource change to reach the final status.
+    google.protobuf.DoubleValue total_duration = 2;
+    // A list of durations in milliseconds for each attempt to deploy the resource.
+    // Attempt durations are in order as per the "attempt" field in a status update message.
+    repeated double attempt_durations = 3;
+}
+
+// ResourceMetadataState holds metadata for a resource
+// that is derived from a source blueprint.
+message ResourceMetadataState {
+    string display_name = 1;
+    map<string, schema.MappingNode> annotations = 2;
+    map<string, string> labels = 3;
+    schema.MappingNode custom = 4;
+}
+
+// ResourceStatus represents the current status of a resource in a blueprint instance.
+enum ResourceStatus {
+    // The status for when we can't determine
+    // an accurate status for a resource.
+    RESOURCE_STATUS_UNKNOWN = 0;
+    // The status for when an initial resource deployment
+    // is currently in progress.
+    RESOURCE_STATUS_CREATING = 1;
+    // The status for when a resource has been deployed
+    // successfully.
+    RESOURCE_STATUS_CREATED = 2;
+    // The status for when the first creation of a resource
+    // failed.
+    RESOURCE_STATUS_CREATE_FAILED = 3;
+    // The status for when a resource is in the process
+    // of being destroyed.
+    RESOURCE_STATUS_DESTROYING = 4;
+    // The status for when a resource has been destroyed.
+    RESOURCE_STATUS_DESTROYED = 5;
+    // The status for when the destruction of a resource fails.
+    RESOURCE_STATUS_DESTROY_FAILED = 6;
+    // The status for when a resource is being updated.
+    RESOURCE_STATUS_UPDATING = 7;
+    // The status for when a resource has been successfully updated.
+    RESOURCE_STATUS_UPDATED = 8;
+    // The status for when a resource has failed to update.
+    RESOURCE_STATUS_UPDATE_FAILED = 9;
+    // The status for when another change
+    // in the same blueprint has failed and the latest change involving
+    // the current resource is being rolled back.
+    RESOURCE_STATUS_ROLLING_BACK = 10;
+    // The status for when another change in the same blueprint
+    // has failed and the latest change involving the current resource
+    // could not be rolled back.
+    RESOURCE_STATUS_ROLLBACK_FAILED = 11;
+    // The status for when another change in the same blueprint
+    // has failed and the latest change involving the current resource
+    // has been rolled back.
+    RESOURCE_STATUS_ROLLBACK_COMPLETE = 12;
+}
+
+// PreciseResourceStatus represents a more precise current state of a resource
+// in a blueprint instance.
+// This is used to allow the deploy engine to be more efficient in deploying a blueprint,
+// by avoiding blocking on resource finalisation that isn't always needed to be able to
+// successfully deploy the resources that are dependent on the resource in question.
+enum PreciseResourceStatus {
+    // The status for when we can't determine
+    // an accurate status for a resource.
+    PRECISE_RESOURCE_STATUS_UNKNOWN = 0;
+    // The status for when an initial resource deployment
+    // is currently in progress.
+    PRECISE_RESOURCE_STATUS_CREATING = 1;
+    // The status for when a resource has been configured
+    // successfully.
+    // What this means is that the resource has been created
+    // but is not yet in a stable state.
+    // For example, an application in a container orchestration service
+    // has been created but is not yet up and running.
+    PRECISE_RESOURCE_STATUS_CONFIG_COMPLETE = 2;
+    // The status for when a resource has been deployed
+    // successfully.
+    // This is used when a resource is in a stable state.
+    PRECISE_RESOURCE_STATUS_CREATED = 3;
+    // The status for when the first creation of a resource
+    // failed.
+    PRECISE_RESOURCE_STATUS_CREATE_FAILED = 4;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully created is being rolled back.
+    PRECISE_RESOURCE_STATUS_CREATE_ROLLING_BACK = 5;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully created could not be rolled back.
+    PRECISE_RESOURCE_STATUS_CREATE_ROLLBACK_FAILED = 6;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully created has been rolled back.
+    PRECISE_RESOURCE_STATUS_CREATE_ROLLBACK_COMPLETE = 7;
+    // The status for when a resource is in the process of being destroyed.
+    PRECISE_RESOURCE_STATUS_DESTROYING = 8;
+    // The status for when a resource has been destroyed.
+    PRECISE_RESOURCE_STATUS_DESTROYED = 9;
+    // The status for when the destruction of a resource fails.
+    PRECISE_RESOURCE_STATUS_DESTROY_FAILED = 10;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully removed is being rolled back.
+    // This involves recreating the resource from the previous state.
+    PRECISE_RESOURCE_STATUS_DESTROY_ROLLING_BACK = 11;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully removed could not be
+    // rolled back (recreated).
+    PRECISE_RESOURCE_STATUS_DESTROY_ROLLBACK_FAILED = 12;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully removed
+    // has been rolled back (recreated) but is not yet in a stable state.
+    PRECISE_RESOURCE_STATUS_DESTROY_ROLLBACK_CONFIG_COMPLETE = 13;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully
+    // removed has been rolled back (recreated).
+    PRECISE_RESOURCE_STATUS_DESTROY_ROLLBACK_COMPLETE = 14;
+    // The status for when a resource is being updated.
+    PRECISE_RESOURCE_STATUS_UPDATING = 15;
+    // The status for when a resource being updated has been configured
+    // successfully.
+    // What this means is that the resource has been updated
+    // but is not yet in a stable state.
+    // For example, an application in a container orchestration service
+    // has been updated but the new version is not yet up and running.
+    PRECISE_RESOURCE_STATUS_UPDATE_CONFIG_COMPLETE = 16;
+    // The status for when a resource has been successfully updated.
+    PRECISE_RESOURCE_STATUS_UPDATED = 17;
+    // The status for when a resource has failed to update.
+    PRECISE_RESOURCE_STATUS_UPDATE_FAILED = 18;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully updated is being
+    // rolled back to the previous state.
+    PRECISE_RESOURCE_STATUS_UPDATE_ROLLING_BACK = 19;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully updated could not be
+    // rolled back to the previous state.
+    PRECISE_RESOURCE_STATUS_UPDATE_ROLLBACK_FAILED = 20;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully updated has been
+    // rolled back to the previous state but is not yet in a stable state.
+    PRECISE_RESOURCE_STATUS_UPDATE_ROLLBACK_CONFIG_COMPLETE = 21;
+    // The status for when another change in the same blueprint has failed
+    // and the current resource that was successfully updated has been
+    // rolled back to the previous state.
+    PRECISE_RESOURCE_STATUS_UPDATE_ROLLBACK_COMPLETE = 22;
+}
+
+
+// ResourceSpecDefinition provides a definition for a resource spec
+// that is used for state management, validation, docs and tooling.
+message ResourceSpecDefinition {
+    // The schema for the resource specification.
+    ResourceDefinitionsSchema schema = 1;
+    // The name of the field in the resource spec that
+    // holds the third-party ID for the resource.
+    // This is used to resolve references to a resource in
+    // a blueprint where only the name of the resource is specified.
+    // For example, references such as `resources.processOrderFunction`
+    // or `processOrderFunction` should resolve to the ID of the resource in
+    // the blueprint.
+    // The ID field must be a top-level property of the resource spec schema.
+    string id_field = 2;
+}
+
+// ResourceDefinitionsSchema provides a schema that can be used to validate
+// a resource spec or output state.
+message ResourceDefinitionsSchema {
+    // The type of the resource element definition.
+    string type = 1;
+    // A human-readable label for the resource element definition.
+    string label = 2;
+    // A description for the resource definition without any formatting.
+    string description = 3;
+    // A description for the resource definition with markdown formatting.
+    string formatted_description = 4;
+    // A mapping of the attribute types for a resource definition
+    // object element.
+    map<string, ResourceDefinitionsSchema> attributes = 5;
+    // The schema for the items in a a resource definition array element.
+    ResourceDefinitionsSchema items = 6;
+    // The schema for the values in a resource definition map element.
+    // Keys are always strings.
+    ResourceDefinitionsSchema map_values = 7;
+    // A list of possible schemas for a resource definition item.
+    // This is to be used with the "union" type.
+    repeated ResourceDefinitionsSchema one_of = 8;
+    // A list of required attributes for a resource definition object element.
+    repeated string required = 9;
+    // Specifies whether the resource definition schema can be null.
+    bool nullable = 10;
+    // Holds the default value for a resource spec schema,
+    // this will be populated in the `Resource.Spec.*` mapping node
+    // if the resource spec is missing a value for a specific attribute
+    // or item in the spec.
+	// The default value will not be used if the attribute value in a given resource spec is null
+	// and the schema is nullable, a null pointer should not be used
+	// for an empty value, pointers should be set when you want to explicitly
+	// set a value to null.
+	// The default value will not be used for computed value in a resource spec.
+    schema.MappingNode default_value = 11;
+    // Golds a list of examples for the resource definition element.
+    // Examples are useful for documentation and tooling.
+    repeated schema.MappingNode examples = 12;
+    // Specifies whether the value is computed by the provider and should not
+    // be set by the user.
+    // Computed values are expected to be populated by provider plugin resource
+    // implementations in the deployment process.
+    bool computed = 13;
+    // Specifies whether the resource must be recreated if a change to the field
+    // is detected in the resource state.
+    // This is only used for user-provided values, it will be ignored
+    // for computed values.
+    bool must_recreate = 14;
+}
+
+// CanLinkTo holds a list of resource types that a given resource type
+// can link to.
+message CanLinkTo {
+    repeated ResourceType resource_types = 1;
+}
+
+// ResourceCommonTerminalInfo holds information about whether
+// a given resource type is expected to have a common use-case
+// as a terminal resource.
+message ResourceCommonTerminalInfo {
+    bool is_common_terminal = 1;
+}
+
+// Diagnostic provides error, warning or informational
+// diagnostic for a blueprint.
+message Diagnostic {
+    // The level of this diagnostic.
+    DiagnosticLevel level = 1;
+    // The message of this diagnostic.
+    string message = 2;
+    // An optional text range in the source blueprint
+    // that the diagnostic applies to.
+    // This will only be present when the source blueprint
+    // is YAML and the plugin can extract this information
+    // from the resource schema.
+    DiagnosticRange range = 3;
+}
+
+// DiagnosticLevel is an enum for the level of a diagnostic.
+enum DiagnosticLevel {
+    // protobuf enums must have a zero value, so we need a NONE value
+    // here.
+    // DiagnosticLevel starts at 1 as per the Blueprint framework.
+    DIAGNOSTIC_LEVEL_NONE = 0;
+    // Indicates an error diagnostic.
+    DIAGNOSTIC_LEVEL_ERROR = 1;
+    // Indicates a warning diagnostic.
+    DIAGNOSTIC_LEVEL_WARNING = 2;
+    // Indicates an informational diagnostic.
+    DIAGNOSTIC_LEVEL_INFO = 3;
+}
+
+// A range in the source blueprint that a diagnostic applies to.
+// This will only be used for source formats that allow position tracking
+// (i.e. YAML source documents).
+message DiagnosticRange {
+    SourceMeta start = 1;
+    SourceMeta end = 2;
+    ColumnAccuracy column_accuracy = 3;
+}
+
+// ColumnAccuracy is an enum for the accuracy of a column
+// location in a source blueprint.
+enum ColumnAccuracy {
+    // protobuf enums must have a zero value, so we need a NONE value
+    // here.
+    // ColumnAccuracy starts at 1 as per the Blueprint framework.
+    COLUMN_ACCURACY_NONE = 0;
+    // Indicates that the column is accurate.
+    COLUMN_ACCURACY_EXACT = 1;
+    // Indicates that the column is approximate.
+    COLUMN_ACCURACY_APPROXIMATE = 2;
+}
+
+// The type of resource to carry out an action on or retrieve
+// some information about.
+message ResourceType {
+    string type = 1;
+}
+
+// ProviderContext holds the environment configuration
+// for the current provider.
+message ProviderContext {
+    // Configuration parameters specifically for the provider.
+    map<string, schema.ScalarValue> provider_config_variables = 1;
+	// Context-wide variables for the current deploy engine run.
+    map<string, schema.ScalarValue> context_variables = 2;
+}
+
+// BlueprintParams holds environment and blueprint configuration
+// to be used for function implementations.
+message BlueprintParams {
+    // Configuration parameters for multiple providers.
+    // Keys are expected to be in the format `{providerNamespace}::{variableName}`.
+    map<string, schema.ScalarValue> provider_config_variables = 1;
+    // Configuration parameters for multiple transformers.
+    // Keys are expected to be in the format `{transformerNamespace}::{variableName}`.
+    map<string, schema.ScalarValue> transformer_config_variables = 2;
+    // Context-wide variable for the current deploy engine run.
+    map<string, schema.ScalarValue> context_variables = 3;
+    // Variables for the current blueprint.
+    map<string, schema.ScalarValue> blueprint_variables = 4;
+}
+
+// Error response returned by the provider plugin
+// when an error occurs during any of the supported
+// provider plugin actions.
+message ErrorResponse {
+    // An error code specific to the plugin system.
+    // For example, an action that should be retried
+    // would have a specific error code to let the deploy engine
+    // host know that the action should be retried.
+    ErrorCode code = 1;
+    // A human-readable error message.
+    string message = 2;
+    // Extra details about the error.
+    google.protobuf.Any details = 3;
+}
+
+// ErrorCode is an enum for a range of error codes
+// for provider plugins.
+enum ErrorCode {
+    // Indicates that the error is unexpected and the
+    // action cannot be retried by the deploy engine
+    // host.
+    // This will not crash the deploy engine host but
+    // will stop the current action (e.g. deploying a blueprint).
+    ERROR_CODE_UNEXPECTED = 0;
+    // Indicates that the failure is transient and the
+    // action can be retried by the deploy engine
+    // host based on the deploy engine host's retry policy.
+    ERROR_CODE_TRANSIENT = 1;
+    // Indicates that the input to the provider plugin
+    // is invalid. Bad input errors should not be retried
+    // but are distinguished from unexpected errors to allow
+    // the deploy engine host to provide a more specific
+    // error message to the user.
+    ERROR_CODE_BAD_INPUT = 2;
+}

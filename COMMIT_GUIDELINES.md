@@ -36,13 +36,12 @@ This list will evolve as more applications and libraries are added to Celerity.
 - `blueprint-resolvers` - This commit scope should be used for a commit that represents work that pertains to the blueprint resolvers library that provides a collection of child blueprint resolvers to load child blueprints from various locations.
 - `blueprint-state` - This commit scope should be used for a commit that represents work that pertains to the blueprint state library that provides core state container implementations to be used in the deploy engine or other applications built on top of the blueprint framework.
 - `blueprint-ls` - This commit scope should be used for a commit that represents work that pertains to the Blueprint Language Server.
-- `deploy-engine` - This commit scope should be used for a commit that represents work that pertains to the deploy engine that sits at the core of the deployment tooling.
+- `deploy-engine` - This commit scope should be used for a commit that represents work that pertains to the deploy engine application.
 - `common` - This commit scope should be used for a commit that represents work that pertains to the common Go library.
 - `runtime-core` - This commit scope should be used for a commit that represents work that pertains to the core Rust runtime library.
 - `runtime-java` - This commit scope should be used for a commit that represents work that pertains to the Java wrapper application for the core runtime and the supporting Java SDK.
 - `runtime-nodejs` - This commit scope should be used for a commit that represents work that pertains to the NodeJS wrapper application for the core runtime and the supporting NodeJS SDK.
 - `runtime-python` - This commit scope should be used for a commit that represents work that pertains to the Python wrapper application for the core runtime and the supporting Python SDK.
-- `api` - This commit scope should be used for a commit that represents work that pertains to the API that allows for remote build/package/deploy resource orchestration.
 - `cli` - This commit scope should be used for a commit that represents work that pertains to the CLI for the test/build/package/deploy tooling.
 - `tool-releaser` - This commit scope should be used for a commit that represents work that pertains to the internal releaser tool used for publishing Celerity libraries and applications.
 - `tool-test-runner` - This commit scope should be used for a commit that represents work that pertains to the internal test runner tool used for integration/integrated tests for Celerity libraries and applications.
