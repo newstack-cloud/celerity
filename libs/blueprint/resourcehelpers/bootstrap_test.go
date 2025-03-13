@@ -262,6 +262,10 @@ type testSpecTransformer struct {
 	abstractResources map[string]transform.AbstractResource
 }
 
+func (t *testSpecTransformer) GetTransformName(ctx context.Context) (string, error) {
+	return "celerity-test", nil
+}
+
 func (t *testSpecTransformer) ConfigDefinition(
 	ctx context.Context,
 ) (*core.ConfigDefinition, error) {
@@ -318,6 +322,13 @@ func (r *testExampleAbstractResource) GetTypeDescription(
 	input *transform.AbstractResourceGetTypeDescriptionInput,
 ) (*transform.AbstractResourceGetTypeDescriptionOutput, error) {
 	return &transform.AbstractResourceGetTypeDescriptionOutput{}, nil
+}
+
+func (r *testExampleAbstractResource) GetExamples(
+	ctx context.Context,
+	input *transform.AbstractResourceGetExamplesInput,
+) (*transform.AbstractResourceGetExamplesOutput, error) {
+	return &transform.AbstractResourceGetExamplesOutput{}, nil
 }
 
 func (r *testExampleAbstractResource) CanLinkTo(
