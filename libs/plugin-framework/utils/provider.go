@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"strings"
+
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
@@ -39,4 +41,13 @@ func (p *providerContextFromVarMaps) ContextVariable(name string) (*core.ScalarV
 
 func (p *providerContextFromVarMaps) ContextVariables() map[string]*core.ScalarValue {
 	return p.contextVars
+}
+
+// ExtractProviderNamespace extracts the provider namespace to be used with
+// the blueprint framework from the given plugin ID.
+// For example, the provider namespace for the plugin ID "registry.customhost.com/celerity/azure"
+// would be "azure".
+func ExtractProviderNamespace(pluginID string) string {
+	parts := strings.Split(pluginID, "/")
+	return parts[len(parts)-1]
 }

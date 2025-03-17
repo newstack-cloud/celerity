@@ -4,9 +4,8 @@
 package pluginservicev1
 
 import (
-	"strings"
-
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
 )
 
 // GetProviderPluginAdaptors returns a map of provider adaptors
@@ -17,7 +16,7 @@ func GetProviderPluginAdaptors(manager Manager) map[string]provider.Provider {
 	adaptors := make(map[string]provider.Provider)
 
 	for _, plugin := range providerPlugins {
-		namespace := extractProviderNamespaceFromID(plugin.Info.ID)
+		namespace := utils.ExtractProviderNamespace(plugin.Info.ID)
 		// The factory used by the manager is expected to wrap the plugin clients
 		// with adaptors that produce an implementation of the provider.Provider interface.
 		providerPlugin, isProvider := plugin.Client.(provider.Provider)
@@ -27,19 +26,4 @@ func GetProviderPluginAdaptors(manager Manager) map[string]provider.Provider {
 	}
 
 	return adaptors
-}
-
-func extractProviderNamespaceFromID(id string) string {
-	// The ID is in the format {hostname/}?{namespace}/{provider}.
-	// We need to extract the provider name used as the namespace
-	// for entities managed by the provider plugin.
-	// For example, the namespace for AWS resources is "aws"
-	// in a plugin with the ID "celerity/aws"
-	// used in the resource type "aws/lambda/function".
-	lastSepIndex := strings.LastIndex(id, "/")
-	if lastSepIndex == -1 {
-		return ""
-	}
-
-	return id[lastSepIndex+1:]
 }

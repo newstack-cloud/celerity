@@ -32,6 +32,6 @@ func (s *ProviderPluginV1Suite) TearDownSuite() {
 	s.closePluginService()
 }
 
-func TestProviderPLuginV1Suite(t *testing.T) {
+func TestProviderPluginV1Suite(t *testing.T) {
 	suite.Run(t, new(ProviderPluginV1Suite))
 }

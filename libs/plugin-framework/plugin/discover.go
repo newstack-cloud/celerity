@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/afero"
+	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 const (
@@ -77,7 +78,7 @@ func discoverPluginsInDir(
 	for _, dirContent := range dirContents {
 		if dirContent.IsDir() {
 			fullDirPath := filepath.Join(currentDirPath, dirContent.Name())
-			err := discoverPluginsInDir(fullDirPath, currentDirPath, fs, depth+1, collected)
+			err := discoverPluginsInDir(fullDirPath, pluginRootDirPath, fs, depth+1, collected)
 			if err != nil {
 				return err
 			}
@@ -97,14 +98,19 @@ func discoverPluginsInDir(
 
 func extractPluginPathInfo(fullPluginPath string, relativePluginPath string) (*PluginPathInfo, bool) {
 	pluginDir := filepath.Dir(relativePluginPath)
-	pluginDirParts := strings.Split(pluginDir, string(filepath.Separator))
+	pluginDirParts := core.Filter(
+		strings.Split(pluginDir, string(filepath.Separator)),
+		func(part string, _ int) bool {
+			return strings.TrimSpace(part) != ""
+		},
+	)
 	if len(pluginDirParts) < maxPluginDirDepth-1 || len(pluginDirParts) > maxPluginDirDepth {
 		return nil, false
 	}
 
 	pluginTypeDir := pluginDirParts[0]
 	pluginType := pluginTypeFromDir(pluginTypeDir)
-	pluginID := pluginDirParts[len(pluginDirParts)-2]
+	pluginID := extractPluginID(pluginDirParts)
 	pluginVersion := pluginDirParts[len(pluginDirParts)-1]
 
 	return &PluginPathInfo{
@@ -113,6 +119,12 @@ func extractPluginPathInfo(fullPluginPath string, relativePluginPath string) (*P
 		ID:           pluginID,
 		Version:      pluginVersion,
 	}, true
+}
+
+func extractPluginID(relativePathDirParts []string) string {
+	// The plugin ID will be of the form {hostname}/{namespace}/{pluginName}
+	// or {namespace}/{pluginName}.
+	return strings.Join(relativePathDirParts[1:len(relativePathDirParts)-1], "/")
 }
 
 func pluginTypeFromDir(pluginTypeDir string) string {
