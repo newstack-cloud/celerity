@@ -234,6 +234,34 @@ func FloatValueFromScalar(scalar *ScalarValue) float64 {
 	return 0.0
 }
 
+// ScalarFromString creates a scalar value from a string.
+func ScalarFromString(value string) *ScalarValue {
+	return &ScalarValue{
+		StringValue: &value,
+	}
+}
+
+// ScalarFromBool creates a scalar value from a boolean.
+func ScalarFromBool(value bool) *ScalarValue {
+	return &ScalarValue{
+		BoolValue: &value,
+	}
+}
+
+// ScalarFromInt creates a scalar value from an integer.
+func ScalarFromInt(value int) *ScalarValue {
+	return &ScalarValue{
+		IntValue: &value,
+	}
+}
+
+// ScalarFromFloat creates a scalar value from a float.
+func ScalarFromFloat(value float64) *ScalarValue {
+	return &ScalarValue{
+		FloatValue: &value,
+	}
+}
+
 // ScalarType represents the type of a scalar value that can be
 // used in annotation and configuration definitions.
 type ScalarType string
