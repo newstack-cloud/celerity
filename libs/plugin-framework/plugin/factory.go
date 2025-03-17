@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

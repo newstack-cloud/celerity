@@ -5,9 +5,9 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/convertv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/errorsv1"
-	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/plugin/sharedtypesv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
+	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 type resourceProviderClientWrapper struct {

@@ -6,9 +6,9 @@ import (
 	"net"
 
 	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/providerserverv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/sdk/providerv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"

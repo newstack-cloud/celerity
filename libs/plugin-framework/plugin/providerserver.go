@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net"
 
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
 )
 
 var (

@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/pluginservicev1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
 )
 

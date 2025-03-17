@@ -5,7 +5,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/errorsv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 

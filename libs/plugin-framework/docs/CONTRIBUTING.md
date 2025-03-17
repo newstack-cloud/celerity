@@ -39,7 +39,7 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```bash
 protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
   --go-grpc_out=.. --go-grpc_opt=paths=source_relative \
-  plugin-framework/plugin/sharedtypesv1/types.proto
+  plugin-framework/sharedtypesv1/types.proto
 ```
 
 4. Run the following command from the `libs/plugin-framework` directory to generate the gRPC protobuf code for the plugin service that plugins register with that also allows them to call functions:
@@ -47,7 +47,7 @@ protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
 ```bash
 protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
   --go-grpc_out=.. --go-grpc_opt=paths=source_relative \
-  plugin-framework/plugin/pluginservicev1/service.proto
+  plugin-framework/pluginservicev1/service.proto
 ```
 
 5. Run the following command from the `libs/plugin-framework` directory to generate the gRPC protobuf code for provider plugins:
@@ -55,7 +55,7 @@ protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
 ```bash
 protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
   --go-grpc_out=.. --go-grpc_opt=paths=source_relative \
-  plugin-framework/plugin/providerserverv1/provider.proto
+  plugin-framework/providerserverv1/provider.proto
 ```
 
 6. Run the following command from the `libs/plugin-framework` directory to generate the gRPC protobuf code for transform plugins:
@@ -63,7 +63,7 @@ protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
 ```bash
 protoc --proto_path=.. --go_out=.. --go_opt=paths=source_relative \
   --go-grpc_out=.. --go-grpc_opt=paths=source_relative \
-  plugin-framework/plugin/transformerserverv1/transformer.proto
+  plugin-framework/transformerserverv1/transformer.proto
 ```
 
 ## Releasing

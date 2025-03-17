@@ -13,8 +13,8 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/pbutils"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/sharedtypesv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/pbutils"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
 )
 

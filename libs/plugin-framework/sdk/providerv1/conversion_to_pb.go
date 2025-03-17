@@ -4,9 +4,9 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	commoncore "github.com/two-hundred/celerity/libs/common/core"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/errorsv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/providerserverv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/sharedtypesv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 func toProviderNamespaceResponse(namespace string) *providerserverv1.NamespaceResponse {

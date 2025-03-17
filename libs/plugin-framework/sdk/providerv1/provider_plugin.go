@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/convertv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/providerserverv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/sharedtypesv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

@@ -6,7 +6,7 @@ import (
 	"net"
 
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/pluginservicev1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"

@@ -2,13 +2,13 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.27.0
-// source: plugin-framework/plugin/providerserverv1/provider.proto
+// source: plugin-framework/providerserverv1/provider.proto
 
 package providerserverv1
 
 import (
 	context "context"
-	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/plugin/sharedtypesv1"
+	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -1945,5 +1945,5 @@ var Provider_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "plugin-framework/plugin/providerserverv1/provider.proto",
+	Metadata: "plugin-framework/providerserverv1/provider.proto",
 }

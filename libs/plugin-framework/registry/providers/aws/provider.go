@@ -2,7 +2,7 @@ package aws
 
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/sdk/providerv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
 )
 
 // NewProvider creates a new instance of the AWS provider

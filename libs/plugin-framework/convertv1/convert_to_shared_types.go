@@ -12,9 +12,9 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/errorsv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/pbutils"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/sharedtypesv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/pbutils"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 // ToPBFunctionCallResponse converts the output from a function call to a

@@ -5,10 +5,10 @@ import (
 	"log"
 
 	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/sdk/pluginutils"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/sdk/providerv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/registry/providers/aws"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
 )
 
 func main() {

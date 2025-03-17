@@ -3,10 +3,10 @@ edition = "2023";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "blueprint/schema.proto";
-import "plugin-framework/plugin/sharedtypesv1/types.proto";
+import "plugin-framework/sharedtypesv1/types.proto";
 
 option features.field_presence = IMPLICIT;
-option go_package = "github.com/two-hundred/celerity/libs/plugin-framework/plugin/providerserverv1";
+option go_package = "github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1";
 
 package providerserverv1;
 

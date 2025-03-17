@@ -3,8 +3,8 @@ package providerv1
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/convertv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
 )
 
 func fromPBCustomValidateResourceRequest(
