@@ -193,6 +193,11 @@ func (p *blueprintProviderPluginImpl) GetResourceSpecDefinition(
 	ctx context.Context,
 	req *providerserverv1.ResourceRequest,
 ) (*providerserverv1.ResourceSpecDefinitionResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toResourceSpecDefinitionErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),

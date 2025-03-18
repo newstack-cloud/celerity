@@ -12,9 +12,10 @@ import (
 
 func resourceLambdaFunction() provider.Resource {
 	return &providerv1.ResourceDefinition{
-		Type:   "aws/lambda/function",
-		Label:  "AWS Lambda Function",
-		Schema: &provider.ResourceDefinitionsSchema{},
+		Type:    "aws/lambda/function",
+		Label:   "AWS Lambda Function",
+		Schema:  ResourceLambdaFunctionSchema(),
+		IDField: "arn",
 		DeployFunc: providerv1.RetryableReturnValue(
 			deployLambdaFunction,
 			func(err error) bool {
@@ -39,6 +40,8 @@ func customValidateLambdaFunction(
 	return ResourceLambdaFunctionValidateOutput(), nil
 }
 
+// ResourceLambdaFunctionValidateOutput returns a stub validation output
+// for the LambdaFunction resource.
 func ResourceLambdaFunctionValidateOutput() *provider.ResourceValidateOutput {
 	colAccuracy := substitutions.ColumnAccuracyExact
 	return &provider.ResourceValidateOutput{
@@ -61,6 +64,28 @@ func ResourceLambdaFunctionValidateOutput() *provider.ResourceValidateOutput {
 					},
 					ColumnAccuracy: &colAccuracy,
 				},
+			},
+		},
+	}
+}
+
+// ResourceLambdaFunctionSchema returns a stub spec definition
+// for the LambdaFunction resource.
+func ResourceLambdaFunctionSchema() *provider.ResourceDefinitionsSchema {
+	return &provider.ResourceDefinitionsSchema{
+		Type: provider.ResourceDefinitionsSchemaTypeObject,
+		Attributes: map[string]*provider.ResourceDefinitionsSchema{
+			"functionName": {
+				Type:        provider.ResourceDefinitionsSchemaTypeString,
+				Label:       "Function Name",
+				Description: "The name of the Lambda function",
+				Examples: []*core.MappingNode{
+					core.MappingNodeFromString("example-function"),
+				},
+			},
+			"arn": {
+				Type:     provider.ResourceDefinitionsSchemaTypeString,
+				Computed: true,
 			},
 		},
 	}

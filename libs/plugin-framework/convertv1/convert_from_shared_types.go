@@ -279,6 +279,118 @@ func FromPBDeployResourceRequest(
 	}, nil
 }
 
+// FromPBResourceSpecDefinition converts a ResourceSpecDefinition
+// from a protobuf message to a core type compatible with the blueprint framework.
+func FromPBResourceSpecDefinition(
+	pbSpecDef *sharedtypesv1.ResourceSpecDefinition,
+) (*provider.ResourceSpecDefinition, error) {
+	resourceDefinitionSchema, err := fromPBResourceDefinitionsSchema(pbSpecDef.Schema)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.ResourceSpecDefinition{
+		Schema:  resourceDefinitionSchema,
+		IDField: pbSpecDef.IdField,
+	}, nil
+}
+
+func fromPBResourceDefinitionsSchema(
+	pbSchema *sharedtypesv1.ResourceDefinitionsSchema,
+) (*provider.ResourceDefinitionsSchema, error) {
+	if pbSchema == nil {
+		return nil, nil
+	}
+
+	attributes, err := fromPBResourceDefinitionsSchemaMap(pbSchema.Attributes)
+	if err != nil {
+		return nil, err
+	}
+
+	items, err := fromPBResourceDefinitionsSchema(pbSchema.Items)
+	if err != nil {
+		return nil, err
+	}
+
+	mapValues, err := fromPBResourceDefinitionsSchema(pbSchema.MapValues)
+	if err != nil {
+		return nil, err
+	}
+
+	oneOf, err := fromPBResourceDefinitionsSchemaSlice(pbSchema.OneOf)
+	if err != nil {
+		return nil, err
+	}
+
+	defaultValue, err := serialisation.FromMappingNodePB(
+		pbSchema.DefaultValue,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	examples, err := FromPBMappingNodeSlice(pbSchema.Examples)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.ResourceDefinitionsSchema{
+		Type:                 provider.ResourceDefinitionsSchemaType(pbSchema.Type),
+		Label:                pbSchema.Label,
+		Description:          pbSchema.Description,
+		FormattedDescription: pbSchema.FormattedDescription,
+		Attributes:           attributes,
+		Items:                items,
+		MapValues:            mapValues,
+		OneOf:                oneOf,
+		Required:             pbSchema.Required,
+		Nullable:             pbSchema.Nullable,
+		Default:              defaultValue,
+		Examples:             examples,
+		Computed:             pbSchema.Computed,
+		MustRecreate:         pbSchema.MustRecreate,
+	}, nil
+}
+
+func fromPBResourceDefinitionsSchemaMap(
+	pbSchemaMap map[string]*sharedtypesv1.ResourceDefinitionsSchema,
+) (map[string]*provider.ResourceDefinitionsSchema, error) {
+	if pbSchemaMap == nil {
+		return nil, nil
+	}
+
+	schemaMap := make(map[string]*provider.ResourceDefinitionsSchema, len(pbSchemaMap))
+	for key, pbSchema := range pbSchemaMap {
+		schema, err := fromPBResourceDefinitionsSchema(pbSchema)
+		if err != nil {
+			return nil, err
+		}
+		schemaMap[key] = schema
+	}
+
+	return schemaMap, nil
+}
+
+func fromPBResourceDefinitionsSchemaSlice(
+	pbSchemaSlice []*sharedtypesv1.ResourceDefinitionsSchema,
+) ([]*provider.ResourceDefinitionsSchema, error) {
+	if pbSchemaSlice == nil {
+		return nil, nil
+	}
+
+	schemaSlice := make([]*provider.ResourceDefinitionsSchema, len(pbSchemaSlice))
+	for i, pbSchema := range pbSchemaSlice {
+		schema, err := fromPBResourceDefinitionsSchema(pbSchema)
+		if err != nil {
+			return nil, err
+		}
+		schemaSlice[i] = schema
+	}
+
+	return schemaSlice, nil
+}
+
 func fromPBResourceChanges(changes *sharedtypesv1.Changes) (*provider.Changes, error) {
 	if changes == nil {
 		return nil, nil
@@ -882,4 +994,26 @@ func FromPBMappingNodeMap(
 	}
 
 	return coreMap, nil
+}
+
+// FromPBMappingNodeSlice converts a slice of protobuf MappingNodes to a slice of core MappingNodes
+// compatible with the blueprint framework.
+func FromPBMappingNodeSlice(
+	pbSlice []*schemapb.MappingNode,
+) ([]*core.MappingNode, error) {
+	if pbSlice == nil {
+		return nil, nil
+	}
+
+	coreSlice := make([]*core.MappingNode, len(pbSlice))
+	for index, pbNode := range pbSlice {
+		coreNode, err := serialisation.FromMappingNodePB(pbNode, true /* optional */)
+		if err != nil {
+			return nil, err
+		}
+
+		coreSlice[index] = coreNode
+	}
+
+	return coreSlice, nil
 }

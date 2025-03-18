@@ -888,6 +888,27 @@ func ToPBMappingNodeMap(
 	return pbMappingNodeMap, nil
 }
 
+// ToPBMappingNodeSlice converts a slice of core MappingNodes to a slice of protobuf MappingNodes.
+func ToPBMappingNodeSlice(
+	mappingNodeSlice []*core.MappingNode,
+) ([]*schemapb.MappingNode, error) {
+	if mappingNodeSlice == nil {
+		return nil, nil
+	}
+
+	pbMappingNodeSlice := make([]*schemapb.MappingNode, len(mappingNodeSlice))
+	for i, mappingNode := range mappingNodeSlice {
+		pbMappingNode, err := serialisation.ToMappingNodePB(mappingNode, true /* optional */)
+		if err != nil {
+			return nil, err
+		}
+
+		pbMappingNodeSlice[i] = pbMappingNode
+	}
+
+	return pbMappingNodeSlice, nil
+}
+
 // ToPBProviderContext converts a provider.Context to a ProviderContext protobuf message
 // that can be sent over gRPC.
 func ToPBProviderContext(providerCtx provider.Context) (*sharedtypesv1.ProviderContext, error) {
