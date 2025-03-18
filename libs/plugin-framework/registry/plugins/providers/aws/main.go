@@ -12,7 +12,11 @@ import (
 )
 
 func main() {
-	providerServer := providerv1.NewProviderPlugin(aws.NewProvider())
+	hostInfoContainer := pluginutils.NewHostInfoContainer()
+	providerServer := providerv1.NewProviderPlugin(
+		aws.NewProvider(),
+		hostInfoContainer,
+	)
 	config := plugin.ServeProviderConfiguration{
 		ID: "celerity/aws",
 		PluginMetadata: &pluginservicev1.PluginMetadata{
@@ -35,6 +39,7 @@ func main() {
 		context.Background(),
 		providerServer,
 		serviceClient,
+		hostInfoContainer,
 		config,
 	)
 	if err != nil {

@@ -17,6 +17,43 @@ import (
 	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
+// ToPBConfigDefinitionResponse converts a core.ConfigDefinition to a
+// ConfigDefinitionResponse protobuf message that can be sent over gRPC.
+func ToPBConfigDefinitionResponse(
+	configDefinition *core.ConfigDefinition,
+) (*sharedtypesv1.ConfigDefinitionResponse, error) {
+	if configDefinition == nil {
+		return &sharedtypesv1.ConfigDefinitionResponse{
+			Response: &sharedtypesv1.ConfigDefinitionResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}, nil
+	}
+
+	pbConfigDefinition, err := toPBConfigDefinition(configDefinition)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sharedtypesv1.ConfigDefinitionResponse{
+		Response: &sharedtypesv1.ConfigDefinitionResponse_ConfigDefinition{
+			ConfigDefinition: pbConfigDefinition,
+		},
+	}, nil
+}
+
+// ToPBConfigDefinitionErrorResponse converts an error from a config definition to a
+// ConfigDefinitionResponse protobuf message that can be sent over gRPC.
+func ToPBConfigDefinitionErrorResponse(
+	err error,
+) *sharedtypesv1.ConfigDefinitionResponse {
+	return &sharedtypesv1.ConfigDefinitionResponse{
+		Response: &sharedtypesv1.ConfigDefinitionResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
 // ToPBFunctionCallResponse converts the output from a function call to a
 // FunctionCallResponse protobuf message that can be sent over gRPC.
 func ToPBFunctionCallResponse(output *provider.FunctionCallOutput) (*sharedtypesv1.FunctionCallResponse, error) {
@@ -882,6 +919,18 @@ func toPBScalarMap(m map[string]*core.ScalarValue) (map[string]*schemapb.ScalarV
 	return pbMap, nil
 }
 
+func toPBScalarSlice(slice []*core.ScalarValue) ([]*schemapb.ScalarValue, error) {
+	pbSlice := make([]*schemapb.ScalarValue, len(slice))
+	for i, scalar := range slice {
+		pbScalar, err := serialisation.ToScalarValuePB(scalar, true /* optional */)
+		if err != nil {
+			return nil, err
+		}
+		pbSlice[i] = pbScalar
+	}
+	return pbSlice, nil
+}
+
 func toPBFunctionDefinition(
 	definition *function.Definition,
 ) (*sharedtypesv1.FunctionDefinition, error) {
@@ -1452,6 +1501,71 @@ func toPBFunctionRuntimeInfo(
 		PartialArgs:  partialArgs,
 		ArgsOffset:   int32(info.ArgsOffset),
 	}, nil
+}
+
+func toPBConfigDefinition(
+	definition *core.ConfigDefinition,
+) (*sharedtypesv1.ConfigDefinition, error) {
+	pbConfigDef := &sharedtypesv1.ConfigDefinition{
+		Fields: map[string]*sharedtypesv1.ConfigFieldDefinition{},
+	}
+
+	for fieldName, fieldDef := range definition.Fields {
+		pbFieldDef, err := toPBConfigFieldDefinition(fieldDef)
+		if err != nil {
+			return nil, err
+		}
+		pbConfigDef.Fields[fieldName] = pbFieldDef
+	}
+
+	return pbConfigDef, nil
+}
+
+func toPBConfigFieldDefinition(
+	fieldDefinition *core.ConfigFieldDefinition,
+) (*sharedtypesv1.ConfigFieldDefinition, error) {
+	defaultValue, err := serialisation.ToScalarValuePB(
+		fieldDefinition.DefaultValue,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	allowedValues, err := toPBScalarSlice(fieldDefinition.AllowedValues)
+	if err != nil {
+		return nil, err
+	}
+
+	examples, err := toPBScalarSlice(fieldDefinition.Examples)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sharedtypesv1.ConfigFieldDefinition{
+		Type:          toPBScalarType(fieldDefinition.Type),
+		Label:         fieldDefinition.Label,
+		Description:   fieldDefinition.Description,
+		DefaultValue:  defaultValue,
+		AllowedValues: allowedValues,
+		Examples:      examples,
+		Required:      fieldDefinition.Required,
+	}, nil
+}
+
+func toPBScalarType(
+	scalarType core.ScalarType,
+) sharedtypesv1.ScalarType {
+	switch scalarType {
+	case core.ScalarTypeInteger:
+		return sharedtypesv1.ScalarType_SCALAR_TYPE_INTEGER
+	case core.ScalarTypeFloat:
+		return sharedtypesv1.ScalarType_SCALAR_TYPE_FLOAT
+	case core.ScalarTypeBool:
+		return sharedtypesv1.ScalarType_SCALAR_TYPE_BOOLEAN
+	}
+
+	return sharedtypesv1.ScalarType_SCALAR_TYPE_STRING
 }
 
 // StringToResourceType converts a string to a ResourceType

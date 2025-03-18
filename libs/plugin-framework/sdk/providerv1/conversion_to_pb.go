@@ -125,7 +125,11 @@ func toRetryPolicyResponse(policy *provider.RetryPolicy) *providerserverv1.Retry
 	return &providerserverv1.RetryPolicyResponse{
 		Response: &providerserverv1.RetryPolicyResponse_RetryPolicy{
 			RetryPolicy: &providerserverv1.RetryPolicy{
-				MaxRetries: int32(policy.MaxRetries),
+				MaxRetries:      int32(policy.MaxRetries),
+				FirstRetryDelay: policy.FirstRetryDelay,
+				MaxDelay:        policy.MaxDelay,
+				BackoffFactor:   policy.BackoffFactor,
+				Jitter:          policy.Jitter,
 			},
 		},
 	}

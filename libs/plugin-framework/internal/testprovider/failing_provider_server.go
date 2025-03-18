@@ -1,0 +1,185 @@
+package testprovider
+
+import (
+	"context"
+
+	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+type failingProviderServer struct {
+	providerserverv1.UnimplementedProviderServer
+}
+
+func (p *failingProviderServer) GetNamespace(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*providerserverv1.NamespaceResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving namespace",
+	)
+}
+
+func (p *failingProviderServer) GetConfigDefinition(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*sharedtypesv1.ConfigDefinitionResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving config definition",
+	)
+}
+
+func (p *failingProviderServer) ListResourceTypes(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*providerserverv1.ResourceTypesResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred listing resource types",
+	)
+}
+
+func (p *failingProviderServer) ListDataSourceTypes(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*providerserverv1.DataSourceTypesResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred listing data source types",
+	)
+}
+
+func (p *failingProviderServer) ListCustomVariableTypes(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*providerserverv1.CustomVariableTypesResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred listing custom variable types",
+	)
+}
+
+func (p *failingProviderServer) ListFunctions(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*providerserverv1.FunctionListResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred listing functions",
+	)
+}
+
+func (p *failingProviderServer) GetRetryPolicy(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*providerserverv1.RetryPolicyResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving retry policy",
+	)
+}
+
+func (p *failingProviderServer) CustomValidateResource(
+	ctx context.Context,
+	req *providerserverv1.CustomValidateResourceRequest,
+) (*providerserverv1.CustomValidateResourceResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred applying custom validation for resource",
+	)
+}
+
+func (p *failingProviderServer) GetResourceSpecDefinition(
+	ctx context.Context,
+	req *providerserverv1.ResourceRequest,
+) (*providerserverv1.ResourceSpecDefinitionResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving resource spec definition",
+	)
+}
+
+func (p *failingProviderServer) CanResourceLinkTo(
+	ctx context.Context,
+	req *providerserverv1.ResourceRequest,
+) (*providerserverv1.CanResourceLinkToResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving the resources that can be linked to",
+	)
+}
+
+func (p *failingProviderServer) GetResourceStabilisedDeps(
+	ctx context.Context,
+	req *providerserverv1.ResourceRequest,
+) (*providerserverv1.ResourceStabilisedDepsResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving the stabilised dependencies for a resource",
+	)
+}
+
+func (p *failingProviderServer) IsResourceCommonTerminal(
+	ctx context.Context,
+	req *providerserverv1.ResourceRequest,
+) (*providerserverv1.IsResourceCommonTerminalResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving whether or "+
+			"not the resource is a common terminal",
+	)
+}
+
+func (p *failingProviderServer) GetResourceTypeDescription(
+	ctx context.Context,
+	req *providerserverv1.ResourceRequest,
+) (*sharedtypesv1.TypeDescriptionResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving resource type description",
+	)
+}
+
+func (p *failingProviderServer) DeployResource(
+	ctx context.Context,
+	req *sharedtypesv1.DeployResourceRequest,
+) (*sharedtypesv1.DeployResourceResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when deploying resource",
+	)
+}
+
+func (p *failingProviderServer) ResourceHasStabilised(
+	ctx context.Context,
+	req *sharedtypesv1.ResourceHasStabilisedRequest,
+) (*sharedtypesv1.ResourceHasStabilisedResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when resource has stabilised",
+	)
+}
+
+func (p *failingProviderServer) GetResourceExternalState(
+	ctx context.Context,
+	req *providerserverv1.GetResourceExternalStateRequest,
+) (*providerserverv1.GetResourceExternalStateResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when getting external state for resource",
+	)
+}
+
+func (p *failingProviderServer) DestroyResource(
+	ctx context.Context,
+	req *sharedtypesv1.DestroyResourceRequest,
+) (*sharedtypesv1.DestroyResourceResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when destroying resource",
+	)
+}

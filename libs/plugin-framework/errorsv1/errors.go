@@ -277,3 +277,10 @@ func ErrResourceNotDestroyed(resourceType string, action PluginAction) error {
 		action,
 	)
 }
+
+// ErrInvalidHostID is returned when an invalid host ID is provided in a request.
+// An invalid host ID indicates that a host making calls to a plugin is not the one
+// that the plugin was registered with.
+func ErrInvalidHostID(hostID string) error {
+	return fmt.Errorf("invalid host ID %q", hostID)
+}

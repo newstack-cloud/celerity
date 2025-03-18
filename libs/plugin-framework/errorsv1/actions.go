@@ -11,6 +11,7 @@ const (
 	///////////////////////////////////////////////////////////////////////////////////////
 
 	PluginActionProviderGetNamespace            = PluginAction("Provider::GetNamespace")
+	PluginActionProviderGetConfigDefinition     = PluginAction("Provider::GetConfigDefinition")
 	PluginActionProviderListResourceTypes       = PluginAction("Provider::ListResourceTypes")
 	PluginActionProviderListDataSourceTypes     = PluginAction("Provider::ListDataSourceTypes")
 	PluginActionProviderListCustomVariableTypes = PluginAction("Provider::ListCustomVariableTypes")

@@ -7,6 +7,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
 )
 
 var (
@@ -69,6 +70,7 @@ func ServeProviderV1(
 	ctx context.Context,
 	providerServer any,
 	pluginServiceClient pluginservicev1.ServiceClient,
+	hostInfoContainer pluginutils.HostInfoContainer,
 	config ServeProviderConfiguration,
 ) (func(), error) {
 	if config.ID == "" {
@@ -105,11 +107,16 @@ func ServeProviderV1(
 		opts = append(opts, providerserverv1.WithTCPPort(config.TCPPort))
 	}
 
+	if config.Listener != nil {
+		opts = append(opts, providerserverv1.WithListener(config.Listener))
+	}
+
 	server := providerserverv1.NewServer(
 		config.ID,
 		config.PluginMetadata,
 		provider,
 		pluginServiceClient,
+		hostInfoContainer,
 		opts...,
 	)
 	return server.Serve()

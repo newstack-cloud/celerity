@@ -1,6 +1,5 @@
 edition = "2023";
 
-import "google/protobuf/empty.proto";
 import "blueprint/schema.proto";
 import "plugin-framework/sharedtypesv1/types.proto";
 
@@ -16,19 +15,19 @@ service Transformer {
     // Transformer methods
     //////////////////////////////////////////////////////////////////////
 
-    // GetTransformName returns the transform name of the provider
+    // GetTransformName returns the transform name of the transformer
     // that should be used in the `transform` section of a blueprint
     // to use this transformer plugin.
-    rpc GetTransformName(google.protobuf.Empty) returns (TransformNameResponse) {}
+    rpc GetTransformName(TransformerRequest) returns (TransformNameResponse) {}
     // ConfigDefinition retrieves a detailed definition of the configuration
     // that is required for the transformer.
-    rpc GetConfigDefinition(google.protobuf.Empty) returns (sharedtypesv1.ConfigDefinitionResponse) {}
+    rpc GetConfigDefinition(TransformerRequest) returns (sharedtypesv1.ConfigDefinitionResponse) {}
     // Transform a blueprint by expanding abstract resources into their
     // final form along with any other transformations that are required.
     rpc Transform(BlueprintTransformRequest) returns (BlueprintTransformResponse) {}
     // ListAbstractResourceTypes returns a list of abstract resource types
     // that are supported by the transformer.
-    rpc ListAbstractResourceTypes(google.protobuf.Empty) returns (AbstractResourceTypesResponse) {}
+    rpc ListAbstractResourceTypes(TransformerRequest) returns (AbstractResourceTypesResponse) {}
 
     //////////////////////////////////////////////////////////////////////
     // Abstract resource methods
@@ -121,6 +120,15 @@ message AbstractResourceTypes {
     repeated sharedtypesv1.ResourceType resource_types = 1;
 }
 
+// TransformerRequest is the request input
+// for general transformer requests that only require
+// a host ID.
+message TransformerRequest {
+    // The ID of the host making the request
+    // to the transformer.
+    string host_id = 1;
+}
+
 // AbstractResourceRequest is the request input
 // for general abstract resource type requests that only require
 // a resource type and the current context.
@@ -128,9 +136,12 @@ message AbstractResourceRequest {
     // The type of resource to carry out an action on or retrieve
     // some information about.
     sharedtypesv1.ResourceType abstract_resource_type = 1;
+    // The ID of the host making the request
+    // to the transformer.
+    string host_id = 2;
     // Runtime configuration for the current environment
     // specific to the current transformer.
-    TransformerContext context = 2;
+    TransformerContext context = 3;
 }
 
 // CustomValidateAbstractResourceRequest is the request
@@ -138,11 +149,14 @@ message AbstractResourceRequest {
 message CustomValidateAbstractResourceRequest {
     // The type of resource being validate.
     sharedtypesv1.ResourceType abstract_resource_type = 1;
+    // The ID of the host making the request
+    // to the transformer.
+    string host_id = 2;
     // The resource schema as parsed within a blueprint.
-    schema.Resource schema_resource = 2;
+    schema.Resource schema_resource = 3;
     // Runtime configuration for the current environment
     // specific to the current transformer.
-    TransformerContext context = 3;
+    TransformerContext context = 4;
 }
 
 // CustomValidateAbstractResourceResponse is the response

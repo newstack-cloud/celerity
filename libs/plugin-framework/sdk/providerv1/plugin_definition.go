@@ -15,13 +15,14 @@ import (
 // This implements the `provider.Provider` interface and can be used in the same way
 // as any other provider implementation to create a provider plugin.
 type ProviderPluginDefinition struct {
-	ProviderNamespace   string
-	Resources           map[string]provider.Resource
-	DataSources         map[string]provider.DataSource
-	Links               map[string]provider.Link
-	CustomVariableTypes map[string]provider.CustomVariableType
-	Functions           map[string]provider.Function
-	ProviderRetryPolicy *provider.RetryPolicy
+	ProviderNamespace        string
+	ProviderConfigDefinition *core.ConfigDefinition
+	Resources                map[string]provider.Resource
+	DataSources              map[string]provider.DataSource
+	Links                    map[string]provider.Link
+	CustomVariableTypes      map[string]provider.CustomVariableType
+	Functions                map[string]provider.Function
+	ProviderRetryPolicy      *provider.RetryPolicy
 }
 
 func (p *ProviderPluginDefinition) Namespace(ctx context.Context) (string, error) {
@@ -29,7 +30,7 @@ func (p *ProviderPluginDefinition) Namespace(ctx context.Context) (string, error
 }
 
 func (p *ProviderPluginDefinition) ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error) {
-	return nil, nil
+	return p.ProviderConfigDefinition, nil
 }
 
 func (p *ProviderPluginDefinition) Resource(

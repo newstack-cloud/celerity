@@ -13,6 +13,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
+	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/pbutils"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
@@ -30,6 +31,111 @@ func FromPBScalarMap(m map[string]*schemapb.ScalarValue) (map[string]*core.Scala
 		coreMap[k] = coreScalar
 	}
 	return coreMap, nil
+}
+
+// FromPBScalarSlice converts a slice of protobuf ScalarValues to a slice of core ScalarValues
+// compatible with the blueprint framework.
+func FromPBScalarSlice(s []*schemapb.ScalarValue) ([]*core.ScalarValue, error) {
+	coreSlice := make([]*core.ScalarValue, len(s))
+	for i, scalar := range s {
+		coreScalar, err := serialisation.FromScalarValuePB(scalar, true /* optional */)
+		if err != nil {
+			return nil, err
+		}
+		coreSlice[i] = coreScalar
+	}
+	return coreSlice, nil
+}
+
+// FromPBConfigDefinitionResponse converts a ConfigDefinitionResponse from a protobuf message
+// to a core type compatible with the blueprint framework.
+func FromPBConfigDefinitionResponse(
+	resp *sharedtypesv1.ConfigDefinitionResponse,
+) (*core.ConfigDefinition, error) {
+	switch result := resp.Response.(type) {
+	case *sharedtypesv1.ConfigDefinitionResponse_ConfigDefinition:
+		return fromPBConfigDefinition(result.ConfigDefinition)
+	case *sharedtypesv1.ConfigDefinitionResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetConfigDefinition,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetConfigDefinition,
+		),
+		errorsv1.PluginActionProviderGetConfigDefinition,
+	)
+}
+
+func fromPBConfigDefinition(
+	pbConfigDef *sharedtypesv1.ConfigDefinition,
+) (*core.ConfigDefinition, error) {
+	if pbConfigDef == nil {
+		return nil, nil
+	}
+
+	coreFields := map[string]*core.ConfigFieldDefinition{}
+	for fieldName, pbFieldDef := range pbConfigDef.Fields {
+		coreFieldDef, err := fromPBConfigFieldDefinition(pbFieldDef)
+		if err != nil {
+			return nil, err
+		}
+		coreFields[fieldName] = coreFieldDef
+	}
+
+	return &core.ConfigDefinition{
+		Fields: coreFields,
+	}, nil
+}
+
+func fromPBConfigFieldDefinition(
+	pbFieldDefinition *sharedtypesv1.ConfigFieldDefinition,
+) (*core.ConfigFieldDefinition, error) {
+	defaultValue, err := serialisation.FromScalarValuePB(
+		pbFieldDefinition.DefaultValue,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	allowedValues, err := FromPBScalarSlice(pbFieldDefinition.AllowedValues)
+	if err != nil {
+		return nil, err
+	}
+
+	examples, err := FromPBScalarSlice(pbFieldDefinition.Examples)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.ConfigFieldDefinition{
+		Type:          fromPBScalarType(pbFieldDefinition.Type),
+		Label:         pbFieldDefinition.Label,
+		Description:   pbFieldDefinition.Description,
+		DefaultValue:  defaultValue,
+		AllowedValues: allowedValues,
+		Examples:      examples,
+		Required:      pbFieldDefinition.Required,
+	}, nil
+}
+
+func fromPBScalarType(
+	scalarType sharedtypesv1.ScalarType,
+) core.ScalarType {
+	switch scalarType {
+	case sharedtypesv1.ScalarType_SCALAR_TYPE_INTEGER:
+		return core.ScalarTypeInteger
+	case sharedtypesv1.ScalarType_SCALAR_TYPE_FLOAT:
+		return core.ScalarTypeFloat
+	case sharedtypesv1.ScalarType_SCALAR_TYPE_BOOLEAN:
+		return core.ScalarTypeBool
+	}
+
+	return core.ScalarTypeString
 }
 
 // FromPBFunctionDefinitionRequest converts a FunctionDefinitionRequest from a protobuf message to a core type

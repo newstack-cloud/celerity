@@ -1,6 +1,7 @@
 package testprovider
 
 import (
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
 )
@@ -13,13 +14,84 @@ import (
 // implementation.
 func NewProvider() provider.Provider {
 	return &providerv1.ProviderPluginDefinition{
-		ProviderNamespace: "aws",
-		Resources:         map[string]provider.Resource{
-			// "aws/lambda/function": &LambdaFunction{
-			// 	resourceTypeSchema: map[string]*schema.Schema{},
-			// },
+		ProviderNamespace:        "aws",
+		ProviderConfigDefinition: TestProviderConfigDefinition(),
+		Resources: map[string]provider.Resource{
+			"aws/lambda/function": resourceLambdaFunction(),
 		},
-		Links:               make(map[string]provider.Link),
-		CustomVariableTypes: make(map[string]provider.CustomVariableType),
+		DataSources: map[string]provider.DataSource{
+			"aws/vpc": dataSourceVPC(),
+		},
+		Links: make(map[string]provider.Link),
+		CustomVariableTypes: map[string]provider.CustomVariableType{
+			"aws/ec2/instanceType": customVarTypeEC2InstanceType(),
+		},
+		Functions: map[string]provider.Function{
+			"trim_suffix": functionTrimSuffix(),
+		},
+		ProviderRetryPolicy: TestProviderRetryPolicy(),
+	}
+}
+
+// TestProviderConfigDefinition creates the config definition for the test AWS provider.
+func TestProviderConfigDefinition() *core.ConfigDefinition {
+	return &core.ConfigDefinition{
+		Fields: map[string]*core.ConfigFieldDefinition{
+			"accessKeyId": {
+				Type:        core.ScalarTypeString,
+				Label:       "Access Key ID",
+				Description: "The access key ID for the AWS account to connect to.",
+				Examples: []*core.ScalarValue{
+					core.ScalarFromString("AKIAEXAMPLEACCESSKEYID"),
+				},
+				Required: true,
+			},
+			"secretAccessKey": {
+				Type:        core.ScalarTypeString,
+				Label:       "Secret Access Key",
+				Description: "The secret access key for the AWS account to connect to.",
+				Required:    true,
+			},
+			"region": {
+				Type:        core.ScalarTypeString,
+				Label:       "Region",
+				Description: "The AWS region to connect to.",
+				Examples: []*core.ScalarValue{
+					core.ScalarFromString("us-west-2"),
+				},
+				AllowedValues: awsRegions(),
+				Required:      false,
+			},
+		},
+	}
+}
+
+// TestProviderRetryPolicy creates the retry policy for the test AWS provider.
+func TestProviderRetryPolicy() *provider.RetryPolicy {
+	return &provider.RetryPolicy{
+		MaxRetries:      3,
+		FirstRetryDelay: 4,
+		MaxDelay:        200,
+		BackoffFactor:   1.5,
+		Jitter:          true,
+	}
+}
+
+func awsRegions() []*core.ScalarValue {
+	return []*core.ScalarValue{
+		core.ScalarFromString("us-east-1"),
+		core.ScalarFromString("us-east-2"),
+		core.ScalarFromString("us-west-1"),
+		core.ScalarFromString("us-west-2"),
+		core.ScalarFromString("ap-south-1"),
+		core.ScalarFromString("ap-northeast-1"),
+		core.ScalarFromString("ap-northeast-2"),
+		core.ScalarFromString("ap-southeast-1"),
+		core.ScalarFromString("ap-southeast-2"),
+		core.ScalarFromString("ap-northeast-3"),
+		core.ScalarFromString("ca-central-1"),
+		core.ScalarFromString("eu-central-1"),
+		core.ScalarFromString("eu-west-1"),
+		core.ScalarFromString("eu-west-2"),
 	}
 }

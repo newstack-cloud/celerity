@@ -12,7 +12,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -72,30 +71,30 @@ type ProviderClient interface {
 	// GetNamespace returns the namespace of the provider
 	// used to route resource and data source types
 	// to the correct provider.
-	GetNamespace(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NamespaceResponse, error)
+	GetNamespace(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*NamespaceResponse, error)
 	// ConfigDefinition retrieves a detailed definition of the configuration
 	// that is required for the provider.
-	GetConfigDefinition(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*sharedtypesv1.ConfigDefinitionResponse, error)
+	GetConfigDefinition(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*sharedtypesv1.ConfigDefinitionResponse, error)
 	// ListResourceTypes retrieves a list of all the resource types
 	// that are implemented by the provider.
 	// This is primarily used in tools and documentation to provide
 	// a list of available resource types.
-	ListResourceTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ResourceTypesResponse, error)
+	ListResourceTypes(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*ResourceTypesResponse, error)
 	// ListDataSourceTypes retrieves a list of all the data source types
 	// that are implemented by the provider.
 	// This is primarily used in tools and documentation to provide a list of
 	// available data source types.
-	ListDataSourceTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DataSourceTypesResponse, error)
+	ListDataSourceTypes(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*DataSourceTypesResponse, error)
 	// ListCustomVariableTypes retrieves a list of all the custom variable types
 	// that are implemented by the provider.
 	// This is primarily used in tools and documentation to provide a list of
 	// available custom variable types.
-	ListCustomVariableTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CustomVariableTypesResponse, error)
+	ListCustomVariableTypes(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*CustomVariableTypesResponse, error)
 	// ListFunctions retrieves a list of all the functions that are implemented by the provider.
 	// This is primarily used to assign the correct provider to a function
 	// as functions are globally named. When multiple providers provide the same function,
 	// an error is reported during initialisation.
-	ListFunctions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FunctionListResponse, error)
+	ListFunctions(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*FunctionListResponse, error)
 	// GetRetryPolicy retrieves the retry policy that should be used for the provider
 	// for resource, link and data source operations.
 	// The retry policy will be applied for resources when deploying, updating and removing
@@ -106,7 +105,7 @@ type ProviderClient interface {
 	// in which case the retry policy will be applied.
 	// A retry policy is optional and if not provided, a default retry policy
 	// provided by the host tool will be used.
-	GetRetryPolicy(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RetryPolicyResponse, error)
+	GetRetryPolicy(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*RetryPolicyResponse, error)
 	// CustomValidateResource deals with carrying out custom validation for
 	// a resource that goes beyond the built-in resource spec validation.
 	CustomValidateResource(ctx context.Context, in *CustomValidateResourceRequest, opts ...grpc.CallOption) (*CustomValidateResourceResponse, error)
@@ -289,7 +288,7 @@ func NewProviderClient(cc grpc.ClientConnInterface) ProviderClient {
 	return &providerClient{cc}
 }
 
-func (c *providerClient) GetNamespace(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NamespaceResponse, error) {
+func (c *providerClient) GetNamespace(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*NamespaceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NamespaceResponse)
 	err := c.cc.Invoke(ctx, Provider_GetNamespace_FullMethodName, in, out, cOpts...)
@@ -299,7 +298,7 @@ func (c *providerClient) GetNamespace(ctx context.Context, in *emptypb.Empty, op
 	return out, nil
 }
 
-func (c *providerClient) GetConfigDefinition(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*sharedtypesv1.ConfigDefinitionResponse, error) {
+func (c *providerClient) GetConfigDefinition(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*sharedtypesv1.ConfigDefinitionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(sharedtypesv1.ConfigDefinitionResponse)
 	err := c.cc.Invoke(ctx, Provider_GetConfigDefinition_FullMethodName, in, out, cOpts...)
@@ -309,7 +308,7 @@ func (c *providerClient) GetConfigDefinition(ctx context.Context, in *emptypb.Em
 	return out, nil
 }
 
-func (c *providerClient) ListResourceTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ResourceTypesResponse, error) {
+func (c *providerClient) ListResourceTypes(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*ResourceTypesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResourceTypesResponse)
 	err := c.cc.Invoke(ctx, Provider_ListResourceTypes_FullMethodName, in, out, cOpts...)
@@ -319,7 +318,7 @@ func (c *providerClient) ListResourceTypes(ctx context.Context, in *emptypb.Empt
 	return out, nil
 }
 
-func (c *providerClient) ListDataSourceTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DataSourceTypesResponse, error) {
+func (c *providerClient) ListDataSourceTypes(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*DataSourceTypesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DataSourceTypesResponse)
 	err := c.cc.Invoke(ctx, Provider_ListDataSourceTypes_FullMethodName, in, out, cOpts...)
@@ -329,7 +328,7 @@ func (c *providerClient) ListDataSourceTypes(ctx context.Context, in *emptypb.Em
 	return out, nil
 }
 
-func (c *providerClient) ListCustomVariableTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CustomVariableTypesResponse, error) {
+func (c *providerClient) ListCustomVariableTypes(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*CustomVariableTypesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CustomVariableTypesResponse)
 	err := c.cc.Invoke(ctx, Provider_ListCustomVariableTypes_FullMethodName, in, out, cOpts...)
@@ -339,7 +338,7 @@ func (c *providerClient) ListCustomVariableTypes(ctx context.Context, in *emptyp
 	return out, nil
 }
 
-func (c *providerClient) ListFunctions(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FunctionListResponse, error) {
+func (c *providerClient) ListFunctions(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*FunctionListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FunctionListResponse)
 	err := c.cc.Invoke(ctx, Provider_ListFunctions_FullMethodName, in, out, cOpts...)
@@ -349,7 +348,7 @@ func (c *providerClient) ListFunctions(ctx context.Context, in *emptypb.Empty, o
 	return out, nil
 }
 
-func (c *providerClient) GetRetryPolicy(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RetryPolicyResponse, error) {
+func (c *providerClient) GetRetryPolicy(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*RetryPolicyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RetryPolicyResponse)
 	err := c.cc.Invoke(ctx, Provider_GetRetryPolicy_FullMethodName, in, out, cOpts...)
@@ -698,30 +697,30 @@ type ProviderServer interface {
 	// GetNamespace returns the namespace of the provider
 	// used to route resource and data source types
 	// to the correct provider.
-	GetNamespace(context.Context, *emptypb.Empty) (*NamespaceResponse, error)
+	GetNamespace(context.Context, *ProviderRequest) (*NamespaceResponse, error)
 	// ConfigDefinition retrieves a detailed definition of the configuration
 	// that is required for the provider.
-	GetConfigDefinition(context.Context, *emptypb.Empty) (*sharedtypesv1.ConfigDefinitionResponse, error)
+	GetConfigDefinition(context.Context, *ProviderRequest) (*sharedtypesv1.ConfigDefinitionResponse, error)
 	// ListResourceTypes retrieves a list of all the resource types
 	// that are implemented by the provider.
 	// This is primarily used in tools and documentation to provide
 	// a list of available resource types.
-	ListResourceTypes(context.Context, *emptypb.Empty) (*ResourceTypesResponse, error)
+	ListResourceTypes(context.Context, *ProviderRequest) (*ResourceTypesResponse, error)
 	// ListDataSourceTypes retrieves a list of all the data source types
 	// that are implemented by the provider.
 	// This is primarily used in tools and documentation to provide a list of
 	// available data source types.
-	ListDataSourceTypes(context.Context, *emptypb.Empty) (*DataSourceTypesResponse, error)
+	ListDataSourceTypes(context.Context, *ProviderRequest) (*DataSourceTypesResponse, error)
 	// ListCustomVariableTypes retrieves a list of all the custom variable types
 	// that are implemented by the provider.
 	// This is primarily used in tools and documentation to provide a list of
 	// available custom variable types.
-	ListCustomVariableTypes(context.Context, *emptypb.Empty) (*CustomVariableTypesResponse, error)
+	ListCustomVariableTypes(context.Context, *ProviderRequest) (*CustomVariableTypesResponse, error)
 	// ListFunctions retrieves a list of all the functions that are implemented by the provider.
 	// This is primarily used to assign the correct provider to a function
 	// as functions are globally named. When multiple providers provide the same function,
 	// an error is reported during initialisation.
-	ListFunctions(context.Context, *emptypb.Empty) (*FunctionListResponse, error)
+	ListFunctions(context.Context, *ProviderRequest) (*FunctionListResponse, error)
 	// GetRetryPolicy retrieves the retry policy that should be used for the provider
 	// for resource, link and data source operations.
 	// The retry policy will be applied for resources when deploying, updating and removing
@@ -732,7 +731,7 @@ type ProviderServer interface {
 	// in which case the retry policy will be applied.
 	// A retry policy is optional and if not provided, a default retry policy
 	// provided by the host tool will be used.
-	GetRetryPolicy(context.Context, *emptypb.Empty) (*RetryPolicyResponse, error)
+	GetRetryPolicy(context.Context, *ProviderRequest) (*RetryPolicyResponse, error)
 	// CustomValidateResource deals with carrying out custom validation for
 	// a resource that goes beyond the built-in resource spec validation.
 	CustomValidateResource(context.Context, *CustomValidateResourceRequest) (*CustomValidateResourceResponse, error)
@@ -915,25 +914,25 @@ type ProviderServer interface {
 // pointer dereference when methods are called.
 type UnimplementedProviderServer struct{}
 
-func (UnimplementedProviderServer) GetNamespace(context.Context, *emptypb.Empty) (*NamespaceResponse, error) {
+func (UnimplementedProviderServer) GetNamespace(context.Context, *ProviderRequest) (*NamespaceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNamespace not implemented")
 }
-func (UnimplementedProviderServer) GetConfigDefinition(context.Context, *emptypb.Empty) (*sharedtypesv1.ConfigDefinitionResponse, error) {
+func (UnimplementedProviderServer) GetConfigDefinition(context.Context, *ProviderRequest) (*sharedtypesv1.ConfigDefinitionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfigDefinition not implemented")
 }
-func (UnimplementedProviderServer) ListResourceTypes(context.Context, *emptypb.Empty) (*ResourceTypesResponse, error) {
+func (UnimplementedProviderServer) ListResourceTypes(context.Context, *ProviderRequest) (*ResourceTypesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListResourceTypes not implemented")
 }
-func (UnimplementedProviderServer) ListDataSourceTypes(context.Context, *emptypb.Empty) (*DataSourceTypesResponse, error) {
+func (UnimplementedProviderServer) ListDataSourceTypes(context.Context, *ProviderRequest) (*DataSourceTypesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDataSourceTypes not implemented")
 }
-func (UnimplementedProviderServer) ListCustomVariableTypes(context.Context, *emptypb.Empty) (*CustomVariableTypesResponse, error) {
+func (UnimplementedProviderServer) ListCustomVariableTypes(context.Context, *ProviderRequest) (*CustomVariableTypesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCustomVariableTypes not implemented")
 }
-func (UnimplementedProviderServer) ListFunctions(context.Context, *emptypb.Empty) (*FunctionListResponse, error) {
+func (UnimplementedProviderServer) ListFunctions(context.Context, *ProviderRequest) (*FunctionListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFunctions not implemented")
 }
-func (UnimplementedProviderServer) GetRetryPolicy(context.Context, *emptypb.Empty) (*RetryPolicyResponse, error) {
+func (UnimplementedProviderServer) GetRetryPolicy(context.Context, *ProviderRequest) (*RetryPolicyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRetryPolicy not implemented")
 }
 func (UnimplementedProviderServer) CustomValidateResource(context.Context, *CustomValidateResourceRequest) (*CustomValidateResourceResponse, error) {
@@ -1057,7 +1056,7 @@ func RegisterProviderServer(s grpc.ServiceRegistrar, srv ProviderServer) {
 }
 
 func _Provider_GetNamespace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1069,13 +1068,13 @@ func _Provider_GetNamespace_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: Provider_GetNamespace_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).GetNamespace(ctx, req.(*emptypb.Empty))
+		return srv.(ProviderServer).GetNamespace(ctx, req.(*ProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Provider_GetConfigDefinition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1087,13 +1086,13 @@ func _Provider_GetConfigDefinition_Handler(srv interface{}, ctx context.Context,
 		FullMethod: Provider_GetConfigDefinition_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).GetConfigDefinition(ctx, req.(*emptypb.Empty))
+		return srv.(ProviderServer).GetConfigDefinition(ctx, req.(*ProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Provider_ListResourceTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1105,13 +1104,13 @@ func _Provider_ListResourceTypes_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: Provider_ListResourceTypes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).ListResourceTypes(ctx, req.(*emptypb.Empty))
+		return srv.(ProviderServer).ListResourceTypes(ctx, req.(*ProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Provider_ListDataSourceTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1123,13 +1122,13 @@ func _Provider_ListDataSourceTypes_Handler(srv interface{}, ctx context.Context,
 		FullMethod: Provider_ListDataSourceTypes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).ListDataSourceTypes(ctx, req.(*emptypb.Empty))
+		return srv.(ProviderServer).ListDataSourceTypes(ctx, req.(*ProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Provider_ListCustomVariableTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1141,13 +1140,13 @@ func _Provider_ListCustomVariableTypes_Handler(srv interface{}, ctx context.Cont
 		FullMethod: Provider_ListCustomVariableTypes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).ListCustomVariableTypes(ctx, req.(*emptypb.Empty))
+		return srv.(ProviderServer).ListCustomVariableTypes(ctx, req.(*ProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Provider_ListFunctions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1159,13 +1158,13 @@ func _Provider_ListFunctions_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: Provider_ListFunctions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).ListFunctions(ctx, req.(*emptypb.Empty))
+		return srv.(ProviderServer).ListFunctions(ctx, req.(*ProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Provider_GetRetryPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1177,7 +1176,7 @@ func _Provider_GetRetryPolicy_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: Provider_GetRetryPolicy_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).GetRetryPolicy(ctx, req.(*emptypb.Empty))
+		return srv.(ProviderServer).GetRetryPolicy(ctx, req.(*ProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

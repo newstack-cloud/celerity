@@ -18,6 +18,10 @@ type DataSourceDefinition struct {
 	// Example: "aws/lambda/function" for the "aws" provider.
 	Type string
 
+	// A human-readable label for the data source type.
+	// This will be used in documentation and tooling.
+	Label string
+
 	// A description of the data source type that is not formatted that can be used
 	// to render descriptions in contexts that formatting is not supported.
 	// This will be used in documentation and tooling.
@@ -26,6 +30,16 @@ type DataSourceDefinition struct {
 	// A description of the data source type that can be formatted using markdown.
 	// This will be used in documentation and tooling.
 	FormattedDescription string
+
+	// A list of plain text examples that can be used to
+	// demonstrate how to use the data source.
+	// This will be used in documentation and tooling.
+	PlainTextExamples []string
+
+	// A list of markdown examples that can be used to
+	// demonstrate how to use the data source.
+	// This will be used in documentation and tooling.
+	MarkdownExamples []string
 
 	// Schema definitions for each of the fields that can be exported
 	// from a data source.
@@ -65,7 +79,8 @@ func (d *DataSourceDefinition) GetType(
 	input *provider.DataSourceGetTypeInput,
 ) (*provider.DataSourceGetTypeOutput, error) {
 	return &provider.DataSourceGetTypeOutput{
-		Type: d.Type,
+		Type:  d.Type,
+		Label: d.Label,
 	}, nil
 }
 
@@ -76,6 +91,16 @@ func (d *DataSourceDefinition) GetTypeDescription(
 	return &provider.DataSourceGetTypeDescriptionOutput{
 		PlainTextDescription: d.PlainTextDescription,
 		MarkdownDescription:  d.FormattedDescription,
+	}, nil
+}
+
+func (d *DataSourceDefinition) GetExamples(
+	ctx context.Context,
+	input *provider.DataSourceGetExamplesInput,
+) (*provider.DataSourceGetExamplesOutput, error) {
+	return &provider.DataSourceGetExamplesOutput{
+		PlainTextExamples: d.PlainTextExamples,
+		MarkdownExamples:  d.MarkdownExamples,
 	}, nil
 }
 

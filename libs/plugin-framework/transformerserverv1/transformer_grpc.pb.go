@@ -12,7 +12,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -40,19 +39,19 @@ const (
 //
 // Interface exported by a tranformer plugin server.
 type TransformerClient interface {
-	// GetTransformName returns the transform name of the provider
+	// GetTransformName returns the transform name of the transformer
 	// that should be used in the `transform` section of a blueprint
 	// to use this transformer plugin.
-	GetTransformName(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TransformNameResponse, error)
+	GetTransformName(ctx context.Context, in *TransformerRequest, opts ...grpc.CallOption) (*TransformNameResponse, error)
 	// ConfigDefinition retrieves a detailed definition of the configuration
 	// that is required for the transformer.
-	GetConfigDefinition(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*sharedtypesv1.ConfigDefinitionResponse, error)
+	GetConfigDefinition(ctx context.Context, in *TransformerRequest, opts ...grpc.CallOption) (*sharedtypesv1.ConfigDefinitionResponse, error)
 	// Transform a blueprint by expanding abstract resources into their
 	// final form along with any other transformations that are required.
 	Transform(ctx context.Context, in *BlueprintTransformRequest, opts ...grpc.CallOption) (*BlueprintTransformResponse, error)
 	// ListAbstractResourceTypes returns a list of abstract resource types
 	// that are supported by the transformer.
-	ListAbstractResourceTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AbstractResourceTypesResponse, error)
+	ListAbstractResourceTypes(ctx context.Context, in *TransformerRequest, opts ...grpc.CallOption) (*AbstractResourceTypesResponse, error)
 	// CustomValidateAbstractResource deals with carrying out custom validation for
 	// an abstract resource that goes beyond the built-in resource spec validation.
 	CustomValidateAbstractResource(ctx context.Context, in *CustomValidateAbstractResourceRequest, opts ...grpc.CallOption) (*CustomValidateAbstractResourceResponse, error)
@@ -97,7 +96,7 @@ func NewTransformerClient(cc grpc.ClientConnInterface) TransformerClient {
 	return &transformerClient{cc}
 }
 
-func (c *transformerClient) GetTransformName(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TransformNameResponse, error) {
+func (c *transformerClient) GetTransformName(ctx context.Context, in *TransformerRequest, opts ...grpc.CallOption) (*TransformNameResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TransformNameResponse)
 	err := c.cc.Invoke(ctx, Transformer_GetTransformName_FullMethodName, in, out, cOpts...)
@@ -107,7 +106,7 @@ func (c *transformerClient) GetTransformName(ctx context.Context, in *emptypb.Em
 	return out, nil
 }
 
-func (c *transformerClient) GetConfigDefinition(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*sharedtypesv1.ConfigDefinitionResponse, error) {
+func (c *transformerClient) GetConfigDefinition(ctx context.Context, in *TransformerRequest, opts ...grpc.CallOption) (*sharedtypesv1.ConfigDefinitionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(sharedtypesv1.ConfigDefinitionResponse)
 	err := c.cc.Invoke(ctx, Transformer_GetConfigDefinition_FullMethodName, in, out, cOpts...)
@@ -127,7 +126,7 @@ func (c *transformerClient) Transform(ctx context.Context, in *BlueprintTransfor
 	return out, nil
 }
 
-func (c *transformerClient) ListAbstractResourceTypes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AbstractResourceTypesResponse, error) {
+func (c *transformerClient) ListAbstractResourceTypes(ctx context.Context, in *TransformerRequest, opts ...grpc.CallOption) (*AbstractResourceTypesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AbstractResourceTypesResponse)
 	err := c.cc.Invoke(ctx, Transformer_ListAbstractResourceTypes_FullMethodName, in, out, cOpts...)
@@ -213,19 +212,19 @@ func (c *transformerClient) GetAbstractResourceExamples(ctx context.Context, in 
 //
 // Interface exported by a tranformer plugin server.
 type TransformerServer interface {
-	// GetTransformName returns the transform name of the provider
+	// GetTransformName returns the transform name of the transformer
 	// that should be used in the `transform` section of a blueprint
 	// to use this transformer plugin.
-	GetTransformName(context.Context, *emptypb.Empty) (*TransformNameResponse, error)
+	GetTransformName(context.Context, *TransformerRequest) (*TransformNameResponse, error)
 	// ConfigDefinition retrieves a detailed definition of the configuration
 	// that is required for the transformer.
-	GetConfigDefinition(context.Context, *emptypb.Empty) (*sharedtypesv1.ConfigDefinitionResponse, error)
+	GetConfigDefinition(context.Context, *TransformerRequest) (*sharedtypesv1.ConfigDefinitionResponse, error)
 	// Transform a blueprint by expanding abstract resources into their
 	// final form along with any other transformations that are required.
 	Transform(context.Context, *BlueprintTransformRequest) (*BlueprintTransformResponse, error)
 	// ListAbstractResourceTypes returns a list of abstract resource types
 	// that are supported by the transformer.
-	ListAbstractResourceTypes(context.Context, *emptypb.Empty) (*AbstractResourceTypesResponse, error)
+	ListAbstractResourceTypes(context.Context, *TransformerRequest) (*AbstractResourceTypesResponse, error)
 	// CustomValidateAbstractResource deals with carrying out custom validation for
 	// an abstract resource that goes beyond the built-in resource spec validation.
 	CustomValidateAbstractResource(context.Context, *CustomValidateAbstractResourceRequest) (*CustomValidateAbstractResourceResponse, error)
@@ -270,16 +269,16 @@ type TransformerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTransformerServer struct{}
 
-func (UnimplementedTransformerServer) GetTransformName(context.Context, *emptypb.Empty) (*TransformNameResponse, error) {
+func (UnimplementedTransformerServer) GetTransformName(context.Context, *TransformerRequest) (*TransformNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransformName not implemented")
 }
-func (UnimplementedTransformerServer) GetConfigDefinition(context.Context, *emptypb.Empty) (*sharedtypesv1.ConfigDefinitionResponse, error) {
+func (UnimplementedTransformerServer) GetConfigDefinition(context.Context, *TransformerRequest) (*sharedtypesv1.ConfigDefinitionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfigDefinition not implemented")
 }
 func (UnimplementedTransformerServer) Transform(context.Context, *BlueprintTransformRequest) (*BlueprintTransformResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Transform not implemented")
 }
-func (UnimplementedTransformerServer) ListAbstractResourceTypes(context.Context, *emptypb.Empty) (*AbstractResourceTypesResponse, error) {
+func (UnimplementedTransformerServer) ListAbstractResourceTypes(context.Context, *TransformerRequest) (*AbstractResourceTypesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAbstractResourceTypes not implemented")
 }
 func (UnimplementedTransformerServer) CustomValidateAbstractResource(context.Context, *CustomValidateAbstractResourceRequest) (*CustomValidateAbstractResourceResponse, error) {
@@ -325,7 +324,7 @@ func RegisterTransformerServer(s grpc.ServiceRegistrar, srv TransformerServer) {
 }
 
 func _Transformer_GetTransformName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(TransformerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -337,13 +336,13 @@ func _Transformer_GetTransformName_Handler(srv interface{}, ctx context.Context,
 		FullMethod: Transformer_GetTransformName_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransformerServer).GetTransformName(ctx, req.(*emptypb.Empty))
+		return srv.(TransformerServer).GetTransformName(ctx, req.(*TransformerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Transformer_GetConfigDefinition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(TransformerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -355,7 +354,7 @@ func _Transformer_GetConfigDefinition_Handler(srv interface{}, ctx context.Conte
 		FullMethod: Transformer_GetConfigDefinition_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransformerServer).GetConfigDefinition(ctx, req.(*emptypb.Empty))
+		return srv.(TransformerServer).GetConfigDefinition(ctx, req.(*TransformerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -379,7 +378,7 @@ func _Transformer_Transform_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _Transformer_ListAbstractResourceTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(TransformerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -391,7 +390,7 @@ func _Transformer_ListAbstractResourceTypes_Handler(srv interface{}, ctx context
 		FullMethod: Transformer_ListAbstractResourceTypes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransformerServer).ListAbstractResourceTypes(ctx, req.(*emptypb.Empty))
+		return srv.(TransformerServer).ListAbstractResourceTypes(ctx, req.(*TransformerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

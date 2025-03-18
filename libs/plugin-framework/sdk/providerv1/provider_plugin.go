@@ -5,9 +5,10 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // NewProviderPlugin creates a new instance of a provider plugin
@@ -17,21 +18,34 @@ import (
 // The `ProviderPluginDefinition` utility type can be passed in to
 // create a provider plugin server as it implements the `provider.Provider`
 // interface.
-func NewProviderPlugin(bpProvider provider.Provider) providerserverv1.ProviderServer {
+//
+// The host info container is used to retrieve the ID of the host
+// that the plugin was registered with.
+func NewProviderPlugin(
+	bpProvider provider.Provider,
+	hostInfoContainer pluginutils.HostInfoContainer,
+) providerserverv1.ProviderServer {
 	return &blueprintProviderPluginImpl{
-		bpProvider: bpProvider,
+		bpProvider:        bpProvider,
+		hostInfoContainer: hostInfoContainer,
 	}
 }
 
 type blueprintProviderPluginImpl struct {
 	providerserverv1.UnimplementedProviderServer
-	bpProvider provider.Provider
+	bpProvider        provider.Provider
+	hostInfoContainer pluginutils.HostInfoContainer
 }
 
 func (p *blueprintProviderPluginImpl) GetNamespace(
 	ctx context.Context,
-	_ *emptypb.Empty,
+	req *providerserverv1.ProviderRequest,
 ) (*providerserverv1.NamespaceResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toProviderNamespaceErrorResponse(err), nil
+	}
+
 	namespace, err := p.bpProvider.Namespace(ctx)
 	if err != nil {
 		return toProviderNamespaceErrorResponse(err), nil
@@ -40,10 +54,32 @@ func (p *blueprintProviderPluginImpl) GetNamespace(
 	return toProviderNamespaceResponse(namespace), nil
 }
 
+func (p *blueprintProviderPluginImpl) GetConfigDefinition(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*sharedtypesv1.ConfigDefinitionResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBConfigDefinitionErrorResponse(err), nil
+	}
+
+	configDefinition, err := p.bpProvider.ConfigDefinition(ctx)
+	if err != nil {
+		return convertv1.ToPBConfigDefinitionErrorResponse(err), nil
+	}
+
+	return convertv1.ToPBConfigDefinitionResponse(configDefinition)
+}
+
 func (p *blueprintProviderPluginImpl) ListResourceTypes(
 	ctx context.Context,
-	_ *emptypb.Empty,
+	req *providerserverv1.ProviderRequest,
 ) (*providerserverv1.ResourceTypesResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toResourceTypesErrorResponse(err), nil
+	}
+
 	resourceTypes, err := p.bpProvider.ListResourceTypes(ctx)
 	if err != nil {
 		return toResourceTypesErrorResponse(err), nil
@@ -54,8 +90,13 @@ func (p *blueprintProviderPluginImpl) ListResourceTypes(
 
 func (p *blueprintProviderPluginImpl) ListDataSourceTypes(
 	ctx context.Context,
-	_ *emptypb.Empty,
+	req *providerserverv1.ProviderRequest,
 ) (*providerserverv1.DataSourceTypesResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toDataSourceTypesErrorResponse(err), nil
+	}
+
 	dataSourceTypes, err := p.bpProvider.ListDataSourceTypes(ctx)
 	if err != nil {
 		return toDataSourceTypesErrorResponse(err), nil
@@ -66,8 +107,13 @@ func (p *blueprintProviderPluginImpl) ListDataSourceTypes(
 
 func (p *blueprintProviderPluginImpl) ListCustomVariableTypes(
 	ctx context.Context,
-	_ *emptypb.Empty,
+	req *providerserverv1.ProviderRequest,
 ) (*providerserverv1.CustomVariableTypesResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toCustomVariableTypesErrorResponse(err), nil
+	}
+
 	customVariableTypes, err := p.bpProvider.ListCustomVariableTypes(ctx)
 	if err != nil {
 		return toCustomVariableTypesErrorResponse(err), nil
@@ -78,8 +124,13 @@ func (p *blueprintProviderPluginImpl) ListCustomVariableTypes(
 
 func (p *blueprintProviderPluginImpl) ListFunctions(
 	ctx context.Context,
-	_ *emptypb.Empty,
+	req *providerserverv1.ProviderRequest,
 ) (*providerserverv1.FunctionListResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toFunctionsErrorResponse(err), nil
+	}
+
 	functions, err := p.bpProvider.ListFunctions(ctx)
 	if err != nil {
 		return toFunctionsErrorResponse(err), nil
@@ -90,8 +141,13 @@ func (p *blueprintProviderPluginImpl) ListFunctions(
 
 func (p *blueprintProviderPluginImpl) GetRetryPolicy(
 	ctx context.Context,
-	_ *emptypb.Empty,
+	req *providerserverv1.ProviderRequest,
 ) (*providerserverv1.RetryPolicyResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toRetryPolicyErrorResponse(err), nil
+	}
+
 	policy, err := p.bpProvider.RetryPolicy(ctx)
 	if err != nil {
 		return toRetryPolicyErrorResponse(err), nil
@@ -409,4 +465,12 @@ func (p *blueprintProviderPluginImpl) DestroyResource(
 			},
 		},
 	}, nil
+}
+
+func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
+	if hostID != p.hostInfoContainer.GetID() {
+		return errorsv1.ErrInvalidHostID(hostID)
+	}
+
+	return nil
 }

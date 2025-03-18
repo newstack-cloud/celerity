@@ -12,15 +12,15 @@ import (
 
 // CreatePluginInstance is a function that creates a new instance of a plugin.
 // This implements the pluginservicev1.PluginFactory interface.
-func CreatePluginInstance(info *pluginservicev1.PluginInstanceInfo) (any, func(), error) {
+func CreatePluginInstance(info *pluginservicev1.PluginInstanceInfo, hostID string) (any, func(), error) {
 	if info.PluginType == pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER && info.ProtocolVersion == 1 {
-		return createV1ProviderPlugin(info)
+		return createV1ProviderPlugin(info, hostID)
 	}
 
 	return nil, nil, errors.New("unsupported plugin type or protocol version")
 }
 
-func createV1ProviderPlugin(info *pluginservicev1.PluginInstanceInfo) (any, func(), error) {
+func createV1ProviderPlugin(info *pluginservicev1.PluginInstanceInfo, hostID string) (any, func(), error) {
 
 	conn, err := createGRPCConnection(info)
 	closeConn := func() {
@@ -36,7 +36,7 @@ func createV1ProviderPlugin(info *pluginservicev1.PluginInstanceInfo) (any, func
 	// this plays into a more seamless integration with the deploy engine
 	// and the blueprint framework, allowing for an instance of the deploy engine
 	// to opt out of using the gRPC server plugin system.
-	wrapped := providerserverv1.WrapProviderClient(client)
+	wrapped := providerserverv1.WrapProviderClient(client, hostID)
 	return wrapped, closeConn, nil
 }
 

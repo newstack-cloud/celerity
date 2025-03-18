@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,12 +17,17 @@ import (
 
 // StartPluginServer starts the test provider plugin server
 // to run in the same process as the test suite.
-func StartPluginServer(serviceClient pluginservicev1.ServiceClient) (providerserverv1.ProviderClient, func()) {
-	bufferSize := 101024 * 1024
+func StartPluginServer(
+	serviceClient pluginservicev1.ServiceClient,
+	failingPlugin bool,
+) (providerserverv1.ProviderClient, func()) {
+	bufferSize := 1024 * 1024
 	listener := bufconn.Listen(bufferSize)
-	providerServer := providerv1.NewProviderPlugin(NewProvider())
+	pluginHostInfoContainer := pluginutils.NewHostInfoContainer()
+	providerServer := createProviderServer(failingPlugin, pluginHostInfoContainer)
+	id := createPluginID(failingPlugin)
 	config := plugin.ServeProviderConfiguration{
-		ID: "celerity/aws",
+		ID: id,
 		PluginMetadata: &pluginservicev1.PluginMetadata{
 			PluginVersion: "1.0.0",
 			DisplayName:   "AWS",
@@ -38,6 +44,7 @@ func StartPluginServer(serviceClient pluginservicev1.ServiceClient) (providerser
 		context.Background(),
 		providerServer,
 		serviceClient,
+		pluginHostInfoContainer,
 		config,
 	)
 	if err != nil {
@@ -45,7 +52,7 @@ func StartPluginServer(serviceClient pluginservicev1.ServiceClient) (providerser
 	}
 
 	conn, err := grpc.NewClient(
-		"",
+		"passthrough://bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return listener.Dial()
 		}),
@@ -58,4 +65,21 @@ func StartPluginServer(serviceClient pluginservicev1.ServiceClient) (providerser
 	client := providerserverv1.NewProviderClient(conn)
 
 	return client, close
+}
+
+func createProviderServer(
+	failingPlugin bool,
+	pluginHostInfoContainer pluginutils.HostInfoContainer,
+) providerserverv1.ProviderServer {
+	if failingPlugin {
+		return &failingProviderServer{}
+	}
+	return providerv1.NewProviderPlugin(NewProvider(), pluginHostInfoContainer)
+}
+
+func createPluginID(failingPlugin bool) string {
+	if failingPlugin {
+		return "celerity-failing/aws2"
+	}
+	return "celerity/aws"
 }

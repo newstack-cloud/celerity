@@ -18,6 +18,10 @@ type ResourceDefinition struct {
 	// Example: "aws/lambda/function" for the "aws" provider.
 	Type string
 
+	// A human-readable label for the resource type.
+	// This will be used in documentation and tooling.
+	Label string
+
 	// A description of the resource type that is not formatted that can be used
 	// to render descriptions in contexts that formatting is not supported.
 	// This will be used in documentation and tooling.
@@ -26,6 +30,16 @@ type ResourceDefinition struct {
 	// A description of the resource type that can be formatted using markdown.
 	// This will be used in documentation and tooling.
 	FormattedDescription string
+
+	// A list of plain text examples that can be used to
+	// demonstrate how to use the resource.
+	// This will be used in documentation and tooling.
+	PlainTextExamples []string
+
+	// A list of markdown examples that can be used to
+	// demonstrate how to use the resource.
+	// This will be used in documentation and tooling.
+	MarkdownExamples []string
 
 	// The schema of the resource specification that comes under the `spec` field
 	// of a resource in a blueprint.
@@ -188,7 +202,8 @@ func (r *ResourceDefinition) GetType(
 	input *provider.ResourceGetTypeInput,
 ) (*provider.ResourceGetTypeOutput, error) {
 	return &provider.ResourceGetTypeOutput{
-		Type: r.Type,
+		Type:  r.Type,
+		Label: r.Label,
 	}, nil
 }
 
@@ -199,6 +214,16 @@ func (r *ResourceDefinition) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: r.PlainTextDescription,
 		MarkdownDescription:  r.FormattedDescription,
+	}, nil
+}
+
+func (r *ResourceDefinition) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples:  r.MarkdownExamples,
+		PlainTextExamples: r.PlainTextExamples,
 	}, nil
 }
 

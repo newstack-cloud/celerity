@@ -1,21 +1,32 @@
 package testprovider
 
-// func lambdaFunction() provider.Resource {
-// 	return providerv1.ResourceFromDefinition(
-// 		providerv1.ResourceDefinition{
-// 			Type:       "aws/lambda/function",
-// 			Schema:     map[string]*schema.Schema{},
-// 			DeployFunc: providerv1.RetryableReturnValue(deployLambdaFunction),
-// 		},
-// 	)
-// }
+import (
+	"context"
 
-// func deployLambdaFunction(
-// 	ctx context.Context,
-// 	params *provider.ResourceDeployParams,
-// ) (*state.ResourceState, error) {
-// 	return &state.ResourceState{}, nil
-// }
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
+)
+
+func resourceLambdaFunction() provider.Resource {
+	return &providerv1.ResourceDefinition{
+		Type:   "aws/lambda/function",
+		Label:  "AWS Lambda Function",
+		Schema: &provider.ResourceDefinitionsSchema{},
+		DeployFunc: providerv1.RetryableReturnValue(
+			deployLambdaFunction,
+			func(err error) bool {
+				return true
+			},
+		),
+	}
+}
+
+func deployLambdaFunction(
+	ctx context.Context,
+	input *provider.ResourceDeployInput,
+) (*provider.ResourceDeployOutput, error) {
+	return &provider.ResourceDeployOutput{}, nil
+}
 
 // // LambdaFunction is the resource type implementation for AWS Lambda
 // // functions.

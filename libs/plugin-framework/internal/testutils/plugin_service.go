@@ -18,7 +18,7 @@ func StartPluginServiceServer(
 	functionRegistry provider.FunctionRegistry,
 	resourceDeployService provider.ResourceDeployService,
 ) (pluginservicev1.ServiceClient, func()) {
-	bufferSize := 101024 * 1024
+	bufferSize := 1024 * 1024
 	listener := bufconn.Listen(bufferSize)
 	serviceServer := pluginservicev1.NewServiceServer(
 		pluginManager,
@@ -37,7 +37,7 @@ func StartPluginServiceServer(
 	}
 
 	conn, err := grpc.NewClient(
-		"",
+		"passthrough://bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return listener.Dial()
 		}),

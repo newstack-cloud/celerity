@@ -1,6 +1,5 @@
 edition = "2023";
 
-import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "blueprint/schema.proto";
 import "plugin-framework/sharedtypesv1/types.proto";
@@ -20,30 +19,30 @@ service Provider {
     // GetNamespace returns the namespace of the provider
     // used to route resource and data source types
     // to the correct provider.
-    rpc GetNamespace(google.protobuf.Empty) returns (NamespaceResponse) {}
+    rpc GetNamespace(ProviderRequest) returns (NamespaceResponse) {}
     // ConfigDefinition retrieves a detailed definition of the configuration
     // that is required for the provider.
-    rpc GetConfigDefinition(google.protobuf.Empty) returns (sharedtypesv1.ConfigDefinitionResponse) {}
+    rpc GetConfigDefinition(ProviderRequest) returns (sharedtypesv1.ConfigDefinitionResponse) {}
     // ListResourceTypes retrieves a list of all the resource types
     // that are implemented by the provider.
     // This is primarily used in tools and documentation to provide
     // a list of available resource types.
-    rpc ListResourceTypes(google.protobuf.Empty) returns (ResourceTypesResponse) {}
+    rpc ListResourceTypes(ProviderRequest) returns (ResourceTypesResponse) {}
     // ListDataSourceTypes retrieves a list of all the data source types
     // that are implemented by the provider.
     // This is primarily used in tools and documentation to provide a list of
 	// available data source types.
-    rpc ListDataSourceTypes(google.protobuf.Empty) returns (DataSourceTypesResponse) {}
+    rpc ListDataSourceTypes(ProviderRequest) returns (DataSourceTypesResponse) {}
 	// ListCustomVariableTypes retrieves a list of all the custom variable types
     // that are implemented by the provider.
     // This is primarily used in tools and documentation to provide a list of
 	// available custom variable types.
-    rpc ListCustomVariableTypes(google.protobuf.Empty) returns (CustomVariableTypesResponse) {}
+    rpc ListCustomVariableTypes(ProviderRequest) returns (CustomVariableTypesResponse) {}
     // ListFunctions retrieves a list of all the functions that are implemented by the provider.
     // This is primarily used to assign the correct provider to a function
 	// as functions are globally named. When multiple providers provide the same function,
 	// an error is reported during initialisation.
-    rpc ListFunctions(google.protobuf.Empty) returns (FunctionListResponse) {}
+    rpc ListFunctions(ProviderRequest) returns (FunctionListResponse) {}
 	// GetRetryPolicy retrieves the retry policy that should be used for the provider
 	// for resource, link and data source operations.
 	// The retry policy will be applied for resources when deploying, updating and removing
@@ -54,7 +53,7 @@ service Provider {
 	// in which case the retry policy will be applied.
 	// A retry policy is optional and if not provided, a default retry policy
 	// provided by the host tool will be used.
-    rpc GetRetryPolicy(google.protobuf.Empty) returns (RetryPolicyResponse) {}
+    rpc GetRetryPolicy(ProviderRequest) returns (RetryPolicyResponse) {}
 
     //////////////////////////////////////////////////////////////////////
     // Resource methods
@@ -371,11 +370,14 @@ message RetryPolicy {
 message CustomValidateResourceRequest {
     // The type of resource being validate.
     sharedtypesv1.ResourceType resource_type = 1;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
     // The resource schema as parsed within a blueprint.
-    schema.Resource schema_resource = 2;
+    schema.Resource schema_resource = 3;
     // Runtime configuration for the current environment
     // specific to the current provider.
-    sharedtypesv1.ProviderContext context = 3;
+    sharedtypesv1.ProviderContext context = 4;
 }
 
 // CustomValidateResourceResponse is the response
@@ -445,11 +447,14 @@ message IsResourceCommonTerminalResponse {
 // upstream provider.
 message GetResourceExternalStateRequest {
     sharedtypesv1.ResourceType resource_type = 1;
-    string instance_id = 2;
-    string resource_id = 3;
-    schema.MappingNode current_resource_spec = 4;
-    sharedtypesv1.ResourceMetadataState current_resource_metadata = 5;
-    sharedtypesv1.ProviderContext context = 6;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    string instance_id = 3;
+    string resource_id = 4;
+    schema.MappingNode current_resource_spec = 5;
+    sharedtypesv1.ResourceMetadataState current_resource_metadata = 6;
+    sharedtypesv1.ProviderContext context = 7;
 }
 
 // GetResourceExternalStateResponse is the response
@@ -462,6 +467,15 @@ message GetResourceExternalStateResponse {
     }
 }
 
+// ProviderRequest is the request input
+// for general provider requests that only require
+// a host ID.
+message ProviderRequest {
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 1;
+}
+
 // ResourceRequest is the request input
 // for general resource type requests that only require
 // a resource type and the current context.
@@ -469,9 +483,12 @@ message ResourceRequest {
     // The type of resource to carry out an action on or retrieve
     // some information about.
     sharedtypesv1.ResourceType resource_type = 1;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
     // Runtime configuration for the current environment
     // specific to the current provider.
-    sharedtypesv1.ProviderContext context = 2;
+    sharedtypesv1.ProviderContext context = 3;
 }
 
 // DataSourceRequest is the request input
@@ -481,9 +498,12 @@ message DataSourceRequest {
     // The type of data source to carry out an action on or retrieve
     // some information about.
     DataSourceType data_source_type = 1;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
     // Runtime configuration for the current environment
     // specific to the current provider.
-    sharedtypesv1.ProviderContext context = 2;
+    sharedtypesv1.ProviderContext context = 3;
 }
 
 // CustomVariableTypeRequest is the request input
@@ -493,19 +513,25 @@ message CustomVariableTypeRequest {
     // The type of custom variable type to carry out an action
     // on or retrieve some information about.
     CustomVariableType custom_variable_type = 1;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
     // Runtime configuration for the current environment
     // specific to the current provider.
-    sharedtypesv1.ProviderContext context = 2;
+    sharedtypesv1.ProviderContext context = 3;
 }
 
 // StageLinkChangesRequest provides the input data needed to stage
 // changes for a link between two resources.
 message StageLinkChangesRequest {
     LinkType link_type = 1;
-    sharedtypesv1.Changes resource_a_changes = 2;
-    sharedtypesv1.Changes resource_b_changes = 3;
-    LinkState current_link_state = 4;
-    LinkContext context = 5;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    sharedtypesv1.Changes resource_a_changes = 3;
+    sharedtypesv1.Changes resource_b_changes = 4;
+    LinkState current_link_state = 5;
+    LinkContext context = 6;
 }
 
 // StageLinkChangesResponse is the response
@@ -528,11 +554,14 @@ message StageLinkChangesCompleteResponse {
 // a link between two resources.
 message UpdateLinkResourceRequest {
     LinkType link_type = 1;
-    sharedtypesv1.LinkChanges changes = 2;
-    sharedtypesv1.ResourceInfo resource_info = 3;
-    sharedtypesv1.ResourceInfo other_resource_info = 4;
-    LinkUpdateType update_type = 5;
-    LinkContext context = 6;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    sharedtypesv1.LinkChanges changes = 3;
+    sharedtypesv1.ResourceInfo resource_info = 4;
+    sharedtypesv1.ResourceInfo other_resource_info = 5;
+    LinkUpdateType update_type = 6;
+    LinkContext context = 7;
 }
 
 // UpdateLinkResourceResponse is the response
@@ -558,11 +587,14 @@ message UpdateLinkResourceCompleteResponse {
 // to update intermediary resources for a link between two resources.
 message UpdateLinkIntermediaryResourcesRequest {
     LinkType link_type = 1;
-    sharedtypesv1.ResourceInfo resource_a_info = 2;
-    sharedtypesv1.ResourceInfo resource_b_info = 3;
-    sharedtypesv1.LinkChanges changes = 4;
-    LinkUpdateType update_type = 5;
-    LinkContext context = 6;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    sharedtypesv1.ResourceInfo resource_a_info = 3;
+    sharedtypesv1.ResourceInfo resource_b_info = 4;
+    sharedtypesv1.LinkChanges changes = 5;
+    LinkUpdateType update_type = 6;
+    LinkContext context = 7;
 }
 
 // UpdateLinkIntermediaryResourcesResponse is the response
@@ -594,8 +626,11 @@ message LinkPriorityResourceResponse {
 // for custom data source validation requests.
 message CustomValidateDataSourceRequest {
     DataSourceType data_source_type = 1;
-    schema.DataSource schema_data_source = 2;
-    sharedtypesv1.ProviderContext context = 3;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    schema.DataSource schema_data_source = 3;
+    sharedtypesv1.ProviderContext context = 4;
 }
 
 // CustomValidateDataSourceResponse is the response
@@ -637,7 +672,10 @@ message FetchDataSourceRequest {
     // A version of a data source for which all ${..}
 	// substitutions have been applied.
     ResolvedDataSource data_source_with_resolved_subs = 1;
-    sharedtypesv1.ProviderContext context = 2;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    sharedtypesv1.ProviderContext context = 3;
 }
 
 // FetchDataSourceResponse is the response
@@ -948,9 +986,12 @@ message LinkRequest {
     // some information about.
     // This should be in the form of `{resourceTypeA}::{resourceTypeB}`.
     LinkType link_type = 1;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
     // Runtime configuration for the current environment
     // specific to the current provider.
-    sharedtypesv1.ProviderContext context = 2;
+    sharedtypesv1.ProviderContext context = 3;
 }
 
 // LinkStatus represents the current state of a link

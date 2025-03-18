@@ -109,7 +109,10 @@ message ResourceTypeInfo {
 // for fetching the definition of a function.
 message FunctionDefinitionRequest {
     string function_name = 1;
-    BlueprintParams params = 2;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    BlueprintParams params = 3;
 }
 
 // FunctionDefinitionResponse is the response
@@ -125,8 +128,11 @@ message FunctionDefinitionResponse {
 // for calling a function.
 message FunctionCallRequest {
     string function_name = 1;
-    FunctionCallArgs args = 2;
-    FunctionCallContext call_context = 3;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    FunctionCallArgs args = 3;
+    FunctionCallContext call_context = 4;
 }
 
 // FunctionCallResponse is the response
@@ -730,12 +736,15 @@ message DeployResourceRequest {
     // The type of resource to carry out an action on or retrieve
     // some information about.
     ResourceType resource_type = 1;
-    string instance_id = 2;
-    string resource_id = 3;
-    Changes changes = 4;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    string instance_id = 3;
+    string resource_id = 4;
+    Changes changes = 5;
     // Runtime configuration for the current environment
     // specific to the current provider.
-    ProviderContext context = 5;
+    ProviderContext context = 6;
 }
 
 // DeployResourceResponse is the response
@@ -771,11 +780,14 @@ message DeployResourceCompleteResponse {
 // needed for a resource to determine if it has stabilised after being deployed.
 message ResourceHasStabilisedRequest {
     ResourceType resource_type = 1;
-    string instance_id = 2;
-    string resource_id = 3;
-    schema.MappingNode resource_spec = 4;
-    ResourceMetadataState resource_metadata = 5;
-    ProviderContext context = 6;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    string instance_id = 3;
+    string resource_id = 4;
+    schema.MappingNode resource_spec = 5;
+    ResourceMetadataState resource_metadata = 6;
+    ProviderContext context = 7;
 }
 
 // ResourceHasStabilisedResponse is the response
@@ -791,10 +803,13 @@ message ResourceHasStabilisedResponse {
 // needed to destroy a resource instance.
 message DestroyResourceRequest {
     ResourceType resource_type = 1;
-    string instance_id = 2;
-    string resource_id = 3;
-    ResourceState resource_state = 4;
-    ProviderContext context = 5;
+    // The ID of the host making the request
+    // to the provider.
+    string host_id = 2;
+    string instance_id = 3;
+    string resource_id = 4;
+    ResourceState resource_state = 5;
+    ProviderContext context = 6;
 }
 
 // DestroyResourceResponse is the response

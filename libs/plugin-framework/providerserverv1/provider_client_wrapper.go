@@ -5,8 +5,9 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 // WrapProviderClient wraps a provider plugin v1 ProviderClient
@@ -14,18 +15,22 @@ import (
 // to interact with the provider in a way that is compatible
 // with the blueprint framework and is agnostic to the underlying
 // communication protocol.
-func WrapProviderClient(client ProviderClient) provider.Provider {
+func WrapProviderClient(client ProviderClient, hostID string) provider.Provider {
 	return &providerClientWrapper{
 		client: client,
+		hostID: hostID,
 	}
 }
 
 type providerClientWrapper struct {
 	client ProviderClient
+	hostID string
 }
 
 func (p *providerClientWrapper) Namespace(ctx context.Context) (string, error) {
-	response, err := p.client.GetNamespace(context.Background(), &emptypb.Empty{})
+	response, err := p.client.GetNamespace(ctx, &ProviderRequest{
+		HostId: p.hostID,
+	})
 	if err != nil {
 		return "", errorsv1.CreateGeneralError(
 			err,
@@ -52,7 +57,17 @@ func (p *providerClientWrapper) Namespace(ctx context.Context) (string, error) {
 }
 
 func (p *providerClientWrapper) ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error) {
-	return nil, nil
+	response, err := p.client.GetConfigDefinition(ctx, &ProviderRequest{
+		HostId: p.hostID,
+	})
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetConfigDefinition,
+		)
+	}
+
+	return convertv1.FromPBConfigDefinitionResponse(response)
 }
 
 func (p *providerClientWrapper) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {
@@ -75,19 +90,119 @@ func (p *providerClientWrapper) CustomVariableType(ctx context.Context, customVa
 }
 
 func (p *providerClientWrapper) ListFunctions(ctx context.Context) ([]string, error) {
-	return nil, nil
+	response, err := p.client.ListFunctions(ctx, &ProviderRequest{
+		HostId: p.hostID,
+	})
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderListFunctions,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *FunctionListResponse_FunctionList:
+		return result.FunctionList.Functions, nil
+	case *FunctionListResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderListFunctions,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderListFunctions,
+		),
+		errorsv1.PluginActionProviderListFunctions,
+	)
 }
 
 func (p *providerClientWrapper) ListResourceTypes(ctx context.Context) ([]string, error) {
-	return nil, nil
+	response, err := p.client.ListResourceTypes(ctx, &ProviderRequest{
+		HostId: p.hostID,
+	})
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderListResourceTypes,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *ResourceTypesResponse_ResourceTypes:
+		return fromPBResourceTypes(result.ResourceTypes.ResourceTypes), nil
+	case *ResourceTypesResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderListResourceTypes,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderListResourceTypes,
+		),
+		errorsv1.PluginActionProviderListResourceTypes,
+	)
 }
 
 func (p *providerClientWrapper) ListDataSourceTypes(ctx context.Context) ([]string, error) {
-	return nil, nil
+	response, err := p.client.ListDataSourceTypes(ctx, &ProviderRequest{
+		HostId: p.hostID,
+	})
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderListDataSourceTypes,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *DataSourceTypesResponse_DataSourceTypes:
+		return fromPBDataSourceTypes(result.DataSourceTypes.DataSourceTypes), nil
+	case *DataSourceTypesResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderListDataSourceTypes,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderListDataSourceTypes,
+		),
+		errorsv1.PluginActionProviderListDataSourceTypes,
+	)
 }
 
 func (p *providerClientWrapper) ListCustomVariableTypes(ctx context.Context) ([]string, error) {
-	return nil, nil
+	response, err := p.client.ListCustomVariableTypes(ctx, &ProviderRequest{
+		HostId: p.hostID,
+	})
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderListCustomVariableTypes,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *CustomVariableTypesResponse_CustomVariableTypes:
+		return fromPBCustomVarTypes(result.CustomVariableTypes.CustomVariableTypes), nil
+	case *CustomVariableTypesResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderListCustomVariableTypes,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderListCustomVariableTypes,
+		),
+		errorsv1.PluginActionProviderListCustomVariableTypes,
+	)
 }
 
 func (p *providerClientWrapper) Function(ctx context.Context, functionName string) (provider.Function, error) {
@@ -95,5 +210,64 @@ func (p *providerClientWrapper) Function(ctx context.Context, functionName strin
 }
 
 func (p *providerClientWrapper) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
-	return nil, nil
+	response, err := p.client.GetRetryPolicy(ctx, &ProviderRequest{
+		HostId: p.hostID,
+	})
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetRetryPolicy,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *RetryPolicyResponse_RetryPolicy:
+		return fromPBRetryPolicy(result.RetryPolicy), nil
+	case *RetryPolicyResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetRetryPolicy,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetRetryPolicy,
+		),
+		errorsv1.PluginActionProviderGetRetryPolicy,
+	)
+}
+
+func fromPBResourceTypes(resourceTypes []*sharedtypesv1.ResourceType) []string {
+	types := make([]string, len(resourceTypes))
+	for i, resourceType := range resourceTypes {
+		types[i] = resourceType.Type
+	}
+	return types
+}
+
+func fromPBDataSourceTypes(dataSourceTypes []*DataSourceType) []string {
+	types := make([]string, len(dataSourceTypes))
+	for i, dataSourceType := range dataSourceTypes {
+		types[i] = dataSourceType.Type
+	}
+	return types
+}
+
+func fromPBCustomVarTypes(customVarTypes []*CustomVariableType) []string {
+	types := make([]string, len(customVarTypes))
+	for i, customVarType := range customVarTypes {
+		types[i] = customVarType.Type
+	}
+	return types
+}
+
+func fromPBRetryPolicy(retryPolicy *RetryPolicy) *provider.RetryPolicy {
+	return &provider.RetryPolicy{
+		MaxRetries:      int(retryPolicy.MaxRetries),
+		FirstRetryDelay: retryPolicy.FirstRetryDelay,
+		MaxDelay:        retryPolicy.MaxDelay,
+		BackoffFactor:   retryPolicy.BackoffFactor,
+		Jitter:          retryPolicy.Jitter,
+	}
 }

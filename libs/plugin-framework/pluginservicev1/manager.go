@@ -38,6 +38,7 @@ type managerImpl struct {
 func NewManager(protocolVersions map[PluginType]int32, pluginFactory PluginFactory) Manager {
 	return &managerImpl{
 		pluginTypeProtocolVersions: protocolVersions,
+		pluginInstances:            make(map[PluginType]map[string]*PluginInstance),
 		pluginFactory:              pluginFactory,
 	}
 }

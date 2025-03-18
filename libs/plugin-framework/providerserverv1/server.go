@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
 	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -54,15 +55,15 @@ func WithListener(listener net.Listener) ServerOption {
 
 // Server is a plugin server.
 type Server struct {
-	pluginID       string
-	pluginMetadata *pluginservicev1.PluginMetadata
-	hostID         string
-	debug          bool
-	unixSocket     string
-	tcpPort        int
-	provider       ProviderServer
-	pluginService  pluginservicev1.ServiceClient
-	listener       net.Listener
+	pluginID          string
+	pluginMetadata    *pluginservicev1.PluginMetadata
+	debug             bool
+	unixSocket        string
+	tcpPort           int
+	provider          ProviderServer
+	pluginService     pluginservicev1.ServiceClient
+	hostInfoContainer pluginutils.HostInfoContainer
+	listener          net.Listener
 }
 
 func NewServer(
@@ -70,13 +71,15 @@ func NewServer(
 	pluginMetadata *pluginservicev1.PluginMetadata,
 	provider ProviderServer,
 	pluginServiceClient pluginservicev1.ServiceClient,
+	hostInfoContainer pluginutils.HostInfoContainer,
 	opts ...ServerOption,
 ) *Server {
 	server := &Server{
-		pluginID:       pluginID,
-		pluginMetadata: pluginMetadata,
-		provider:       provider,
-		pluginService:  pluginServiceClient,
+		pluginID:          pluginID,
+		pluginMetadata:    pluginMetadata,
+		provider:          provider,
+		pluginService:     pluginServiceClient,
+		hostInfoContainer: hostInfoContainer,
 	}
 
 	for _, opt := range opts {
@@ -93,8 +96,9 @@ func (s *Server) Serve() (func(), error) {
 	}
 
 	// If the TCP port is not set and a unix socket is not provided,
-	// get the dynamically assigned port.
-	if s.tcpPort == 0 && s.unixSocket == "" {
+	// get the dynamically assigned port if a custom listener
+	// has not been provided.
+	if s.tcpPort == 0 && s.unixSocket == "" && s.listener == nil {
 		s.tcpPort = listener.Addr().(*net.TCPAddr).Port
 	}
 
@@ -116,7 +120,8 @@ func (s *Server) Serve() (func(), error) {
 	resp, err := s.pluginService.Register(
 		context.TODO(),
 		&pluginservicev1.PluginRegistrationRequest{
-			PluginId: s.pluginID,
+			PluginId:   s.pluginID,
+			PluginType: pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER,
 			// Process IDs are sufficient for plugin instance IDs,
 			// in the future we may want to allow for plugins that run in
 			// containers.
@@ -135,7 +140,7 @@ func (s *Server) Serve() (func(), error) {
 		return closer, fmt.Errorf("failed to register plugin with host service: %s", resp.Message)
 	}
 
-	s.hostID = resp.HostId
+	s.hostInfoContainer.SetID(resp.HostId)
 
 	return closer, nil
 }
@@ -159,7 +164,7 @@ func (s *Server) deregisterPlugin() {
 		&pluginservicev1.PluginDeregistrationRequest{
 			PluginType: pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER,
 			InstanceId: strconv.Itoa(os.Getpid()),
-			HostId:     s.hostID,
+			HostId:     s.hostInfoContainer.GetID(),
 		},
 	)
 	if err != nil {
