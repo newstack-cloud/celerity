@@ -74,6 +74,7 @@ func (p *providerClientWrapper) Resource(ctx context.Context, resourceType strin
 	return &resourceProviderClientWrapper{
 		client:       p.client,
 		resourceType: resourceType,
+		hostID:       p.hostID,
 	}, nil
 }
 

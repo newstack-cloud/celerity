@@ -160,6 +160,11 @@ func (p *blueprintProviderPluginImpl) CustomValidateResource(
 	ctx context.Context,
 	req *providerserverv1.CustomValidateResourceRequest,
 ) (*providerserverv1.CustomValidateResourceResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toCustomValidateErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),

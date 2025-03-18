@@ -3,7 +3,10 @@ package testprovider
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
 )
 
@@ -18,6 +21,7 @@ func resourceLambdaFunction() provider.Resource {
 				return true
 			},
 		),
+		CustomValidateFunc: customValidateLambdaFunction,
 	}
 }
 
@@ -26,6 +30,40 @@ func deployLambdaFunction(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return &provider.ResourceDeployOutput{}, nil
+}
+
+func customValidateLambdaFunction(
+	ctx context.Context,
+	input *provider.ResourceValidateInput,
+) (*provider.ResourceValidateOutput, error) {
+	return ResourceLambdaFunctionValidateOutput(), nil
+}
+
+func ResourceLambdaFunctionValidateOutput() *provider.ResourceValidateOutput {
+	colAccuracy := substitutions.ColumnAccuracyExact
+	return &provider.ResourceValidateOutput{
+		Diagnostics: []*core.Diagnostic{
+			{
+				Level:   core.DiagnosticLevelWarning,
+				Message: "This is a warning about an invalid lambda function spec",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   110,
+							Column: 40,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   110,
+							Column: 80,
+						},
+					},
+					ColumnAccuracy: &colAccuracy,
+				},
+			},
+		},
+	}
 }
 
 // // LambdaFunction is the resource type implementation for AWS Lambda

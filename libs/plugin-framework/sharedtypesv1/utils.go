@@ -46,11 +46,11 @@ func toPBSourceMetaLocation(location *source.Meta) *SourceMeta {
 		return nil
 	}
 
-	endPosition := toPBPosition(location.EndPosition)
+	endPosition := toPBPositionPtr(location.EndPosition)
 	startPosition := toPBPosition(&location.Position)
 	return &SourceMeta{
 		StartPosition: &startPosition,
-		EndPosition:   &endPosition,
+		EndPosition:   endPosition,
 	}
 }
 
@@ -60,6 +60,17 @@ func toPBPosition(position *source.Position) SourcePosition {
 	}
 
 	return SourcePosition{
+		Line:   int64(position.Line),
+		Column: int64(position.Column),
+	}
+}
+
+func toPBPositionPtr(position *source.Position) *SourcePosition {
+	if position == nil {
+		return nil
+	}
+
+	return &SourcePosition{
 		Line:   int64(position.Line),
 		Column: int64(position.Column),
 	}
@@ -98,10 +109,20 @@ func toCoreSourceMetaLocation(location *SourceMeta) *source.Meta {
 		return nil
 	}
 
-	endPosition := toCorePosition(location.EndPosition)
 	return &source.Meta{
 		Position:    toCorePosition(location.StartPosition),
-		EndPosition: &endPosition,
+		EndPosition: toCorePositionPtr(location.EndPosition),
+	}
+}
+
+func toCorePositionPtr(position *SourcePosition) *source.Position {
+	if position == nil {
+		return nil
+	}
+
+	return &source.Position{
+		Line:   int(position.Line),
+		Column: int(position.Column),
 	}
 }
 

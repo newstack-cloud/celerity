@@ -13,6 +13,7 @@ import (
 type resourceProviderClientWrapper struct {
 	client       ProviderClient
 	resourceType string
+	hostID       string
 }
 
 func (r *resourceProviderClientWrapper) CustomValidate(
@@ -41,6 +42,7 @@ func (r *resourceProviderClientWrapper) CustomValidate(
 			ResourceType: &sharedtypesv1.ResourceType{
 				Type: r.resourceType,
 			},
+			HostId:         r.hostID,
 			SchemaResource: schemaResourcePB,
 			Context:        providerCtx,
 		},
