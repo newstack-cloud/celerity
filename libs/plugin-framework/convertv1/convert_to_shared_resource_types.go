@@ -3,6 +3,7 @@ package convertv1
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
+	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
@@ -106,4 +107,31 @@ func toPBSchemaList(
 	}
 
 	return pbSchemas, nil
+}
+
+// ToPBResourceTypeErrorResponse converts an error to a sharedtypesv1.ResourceTypeResponse
+// with an error response.
+func ToPBResourceTypeErrorResponse(
+	err error,
+) *sharedtypesv1.ResourceTypeResponse {
+	return &sharedtypesv1.ResourceTypeResponse{
+		Response: &sharedtypesv1.ResourceTypeResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+// ToPBResourceTypeResponse converts a provider.ResourceType to a
+// sharedtypesv1.ResourceTypeResponse that can be sent in a gRPC call to a plugin.
+func ToPBResourceTypeResponse(
+	typeInfo *provider.ResourceGetTypeOutput,
+) *sharedtypesv1.ResourceTypeResponse {
+	return &sharedtypesv1.ResourceTypeResponse{
+		Response: &sharedtypesv1.ResourceTypeResponse_ResourceTypeInfo{
+			ResourceTypeInfo: &sharedtypesv1.ResourceTypeInfo{
+				Type:  StringToResourceType(typeInfo.Type),
+				Label: typeInfo.Label,
+			},
+		},
+	}
 }

@@ -291,9 +291,54 @@ func (r *resourceProviderClientWrapper) GetType(
 	ctx context.Context,
 	input *provider.ResourceGetTypeInput,
 ) (*provider.ResourceGetTypeOutput, error) {
-	return &provider.ResourceGetTypeOutput{
-		Type: r.resourceType,
-	}, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceType,
+		)
+	}
+
+	// Fetching a resource type from the plugin allows to obtain
+	// the human-readable label for the resource type so is worth while
+	// for documentation and tooling purposes despite the resource type ID
+	// already being known at this point.
+	response, err := r.client.GetResourceType(
+		ctx,
+		&ResourceRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:  r.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceType,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.ResourceTypeResponse_ResourceTypeInfo:
+		return &provider.ResourceGetTypeOutput{
+			Type:  convertv1.ResourceTypeToString(result.ResourceTypeInfo.Type),
+			Label: result.ResourceTypeInfo.Label,
+		}, nil
+	case *sharedtypesv1.ResourceTypeResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetResourceType,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetResourceType,
+		),
+		errorsv1.PluginActionProviderGetResourceType,
+	)
 }
 
 func (r *resourceProviderClientWrapper) GetTypeDescription(

@@ -307,3 +307,61 @@ func (s *ProviderPluginV1Suite) Test_check_is_resource_common_terminal_reports_e
 		"internal error occurred retrieving whether or not the resource is a common terminal",
 	)
 }
+
+func (s *ProviderPluginV1Suite) Test_get_resource_type() {
+	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	output, err := resource.GetType(
+		context.Background(),
+		&provider.ResourceGetTypeInput{
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.ResourceGetTypeOutput{
+			Type:  "aws/lambda/function",
+			Label: "AWS Lambda Function",
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_get_resource_type_fails_for_unexpected_host() {
+	resource, err := s.providerWrongHost.Resource(
+		context.Background(),
+		lambdaFunctionResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = resource.GetType(
+		context.Background(),
+		&provider.ResourceGetTypeInput{
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetResourceType,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_get_resource_type_reports_expected_error_for_failure() {
+	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	_, err = resource.GetType(
+		context.Background(),
+		&provider.ResourceGetTypeInput{
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred retrieving resource type information",
+	)
+}

@@ -334,6 +334,41 @@ func (p *blueprintProviderPluginImpl) IsResourceCommonTerminal(
 	return toIsResourceCommonTerminalResponse(output), nil
 }
 
+func (p *blueprintProviderPluginImpl) GetResourceType(
+	ctx context.Context,
+	req *providerserverv1.ResourceRequest,
+) (*sharedtypesv1.ResourceTypeResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBResourceTypeErrorResponse(err), nil
+	}
+
+	resource, err := p.bpProvider.Resource(
+		ctx,
+		convertv1.ResourceTypeToString(req.ResourceType),
+	)
+	if err != nil {
+		return convertv1.ToPBResourceTypeErrorResponse(err), nil
+	}
+
+	providerCtx, err := convertv1.FromPBProviderContext(req.Context)
+	if err != nil {
+		return convertv1.ToPBResourceTypeErrorResponse(err), nil
+	}
+
+	output, err := resource.GetType(
+		ctx,
+		&provider.ResourceGetTypeInput{
+			ProviderContext: providerCtx,
+		},
+	)
+	if err != nil {
+		return convertv1.ToPBResourceTypeErrorResponse(err), nil
+	}
+
+	return convertv1.ToPBResourceTypeResponse(output), nil
+}
+
 func (p *blueprintProviderPluginImpl) GetResourceTypeDescription(
 	ctx context.Context,
 	req *providerserverv1.ResourceRequest,

@@ -23,6 +23,8 @@ const (
 	PluginActionProviderCheckCanResourceLinkTo        = PluginAction("Provider::CheckCanResourceLinkTo")
 	PluginActionProviderGetResourceStabilisedDeps     = PluginAction("Provider::GetResourceStabilisedDeps")
 	PluginActionProviderCheckIsResourceCommonTerminal = PluginAction("Provider::CheckIsResourceCommonTerminal")
+	PluginActionProviderGetResourceType               = PluginAction("Provider::GetResourceType")
+	PluginActionProviderGetResourceExamples           = PluginAction("Provider::GetResourceExamples")
 	PluginActionProviderGetResourceTypeDescription    = PluginAction("Provider::GetResourceTypeDescription")
 	PluginActionProviderDeployResource                = PluginAction("Provider::DeployResource")
 	PluginActionProviderCheckResourceHasStabilised    = PluginAction("Provider::CheckResourceHasStabilised")

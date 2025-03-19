@@ -134,6 +134,16 @@ func (p *failingProviderServer) IsResourceCommonTerminal(
 	)
 }
 
+func (p *failingProviderServer) GetResourceType(
+	ctx context.Context,
+	req *providerserverv1.ResourceRequest,
+) (*sharedtypesv1.ResourceTypeResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving resource type information",
+	)
+}
+
 func (p *failingProviderServer) GetResourceTypeDescription(
 	ctx context.Context,
 	req *providerserverv1.ResourceRequest,
