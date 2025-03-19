@@ -32,6 +32,7 @@ func resourceLambdaFunction() provider.Resource {
 				return true
 			},
 		),
+		DestroyFunc:          destroyLambdaFunction,
 		CustomValidateFunc:   customValidateLambdaFunction,
 		GetExternalStateFunc: getLambdaFunctionExternalState,
 	}
@@ -72,6 +73,13 @@ func deployLambdaFunction(
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
 	return ResourceLambdaDeployOutput(), nil
+}
+
+func destroyLambdaFunction(
+	ctx context.Context,
+	input *provider.ResourceDestroyInput,
+) error {
+	return nil
 }
 
 func customValidateLambdaFunction(

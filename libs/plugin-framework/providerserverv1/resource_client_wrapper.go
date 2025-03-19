@@ -658,5 +658,58 @@ func (r *resourceProviderClientWrapper) Destroy(
 	ctx context.Context,
 	input *provider.ResourceDestroyInput,
 ) error {
-	return nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderDestroyResource,
+		)
+	}
+
+	pbResourceState, err := convertv1.ToPBResourceState(
+		input.ResourceState,
+	)
+	if err != nil {
+		return errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderDestroyResource,
+		)
+	}
+
+	response, err := r.client.DestroyResource(
+		ctx,
+		&sharedtypesv1.DestroyResourceRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:        r.hostID,
+			InstanceId:    input.InstanceID,
+			ResourceId:    input.ResourceID,
+			ResourceState: pbResourceState,
+			Context:       providerCtx,
+		},
+	)
+	if err != nil {
+		return errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderDestroyResource,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.DestroyResourceResponse_Result:
+		return nil
+	case *sharedtypesv1.DestroyResourceResponse_ErrorResponse:
+		return errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderDestroyResource,
+		)
+	}
+
+	return errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderDestroyResource,
+		),
+		errorsv1.PluginActionProviderDestroyResource,
+	)
 }

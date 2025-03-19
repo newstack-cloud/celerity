@@ -64,6 +64,8 @@ func assertExtractPluginError(
 	switch action {
 	case errorsv1.PluginActionProviderDeployResource:
 		return assertExtractDeployResourceError(err, testSuite)
+	case errorsv1.PluginActionProviderDestroyResource:
+		return assertExtractDestroyResourceError(err, testSuite)
 	default:
 		return assertExtractPluginResponseError(err, testSuite)
 	}
@@ -79,6 +81,20 @@ func assertExtractDeployResourceError(
 
 	return assertExtractPluginResponseError(
 		deployErr.ChildError,
+		testSuite,
+	)
+}
+
+func assertExtractDestroyResourceError(
+	err error,
+	testSuite *suite.Suite,
+) *errorsv1.PluginResponseError {
+	destroyErr, isDestroyErr := err.(*provider.ResourceDestroyError)
+	testSuite.Require().True(isDestroyErr)
+	testSuite.Require().NotNil(destroyErr)
+
+	return assertExtractPluginResponseError(
+		destroyErr.ChildError,
 		testSuite,
 	)
 }

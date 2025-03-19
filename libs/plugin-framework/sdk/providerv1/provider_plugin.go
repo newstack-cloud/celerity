@@ -552,6 +552,11 @@ func (p *blueprintProviderPluginImpl) DestroyResource(
 	ctx context.Context,
 	req *sharedtypesv1.DestroyResourceRequest,
 ) (*sharedtypesv1.DestroyResourceResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBDestroyResourceErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),

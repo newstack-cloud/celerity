@@ -689,3 +689,66 @@ func (s *ProviderPluginV1Suite) Test_get_resource_external_state_reports_expecte
 		"internal error occurred when getting external state for resource",
 	)
 }
+
+func (s *ProviderPluginV1Suite) Test_destroy_resource() {
+	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	changes := createDeployResourceChanges()
+	err = resource.Destroy(
+		context.Background(),
+		&provider.ResourceDestroyInput{
+			ResourceID:      testResource1ID,
+			InstanceID:      testInstance1ID,
+			ResourceState:   changes.AppliedResourceInfo.CurrentResourceState,
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Require().NoError(err)
+}
+
+func (s *ProviderPluginV1Suite) Test_destroy_resource_fails_for_unexpected_host() {
+	resource, err := s.providerWrongHost.Resource(
+		context.Background(),
+		lambdaFunctionResourceType,
+	)
+	s.Require().NoError(err)
+
+	changes := createDeployResourceChanges()
+	err = resource.Destroy(
+		context.Background(),
+		&provider.ResourceDestroyInput{
+			ResourceID:      testResource1ID,
+			InstanceID:      testInstance1ID,
+			ResourceState:   changes.AppliedResourceInfo.CurrentResourceState,
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderDestroyResource,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_destroy_resource_reports_expected_error_for_failure() {
+	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	changes := createDeployResourceChanges()
+	err = resource.Destroy(
+		context.Background(),
+		&provider.ResourceDestroyInput{
+			ResourceID:      testResource1ID,
+			InstanceID:      testInstance1ID,
+			ResourceState:   changes.AppliedResourceInfo.CurrentResourceState,
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred when destroying resource",
+	)
+}

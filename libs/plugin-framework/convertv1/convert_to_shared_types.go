@@ -193,7 +193,7 @@ func ToPBDestroyResourceRequest(
 		return nil, err
 	}
 
-	resourceState, err := toPBResourceState(input.ResourceState)
+	resourceState, err := ToPBResourceState(input.ResourceState)
 	if err != nil {
 		return nil, err
 	}
@@ -525,7 +525,7 @@ func toPBResourceInfo(
 		return nil, nil
 	}
 
-	currentResourceState, err := toPBResourceState(resourceInfo.CurrentResourceState)
+	currentResourceState, err := ToPBResourceState(resourceInfo.CurrentResourceState)
 	if err != nil {
 		return nil, err
 	}
@@ -544,7 +544,9 @@ func toPBResourceInfo(
 	}, nil
 }
 
-func toPBResourceState(
+// ToPBResourceState converts a blueprint framework ResourceState
+// to a ResourceState protobuf message that can be sent over gRPC.
+func ToPBResourceState(
 	resourceState *state.ResourceState,
 ) (*sharedtypesv1.ResourceState, error) {
 	if resourceState == nil {
