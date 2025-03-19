@@ -242,7 +242,49 @@ func (r *resourceProviderClientWrapper) IsCommonTerminal(
 	ctx context.Context,
 	input *provider.ResourceIsCommonTerminalInput,
 ) (*provider.ResourceIsCommonTerminalOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderCheckIsResourceCommonTerminal,
+		)
+	}
+
+	response, err := r.client.IsResourceCommonTerminal(
+		ctx,
+		&ResourceRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:  r.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderCheckIsResourceCommonTerminal,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *IsResourceCommonTerminalResponse_Data:
+		return &provider.ResourceIsCommonTerminalOutput{
+			IsCommonTerminal: result.Data.IsCommonTerminal,
+		}, nil
+	case *IsResourceCommonTerminalResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderCheckIsResourceCommonTerminal,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderCheckIsResourceCommonTerminal,
+		),
+		errorsv1.PluginActionProviderCheckIsResourceCommonTerminal,
+	)
 }
 
 func (r *resourceProviderClientWrapper) GetType(

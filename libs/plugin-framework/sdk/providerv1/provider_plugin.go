@@ -303,6 +303,11 @@ func (p *blueprintProviderPluginImpl) IsResourceCommonTerminal(
 	ctx context.Context,
 	req *providerserverv1.ResourceRequest,
 ) (*providerserverv1.IsResourceCommonTerminalResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toIsResourceCommonTerminalErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),
