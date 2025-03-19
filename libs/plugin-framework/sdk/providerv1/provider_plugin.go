@@ -481,6 +481,11 @@ func (p *blueprintProviderPluginImpl) ResourceHasStabilised(
 	ctx context.Context,
 	req *sharedtypesv1.ResourceHasStabilisedRequest,
 ) (*sharedtypesv1.ResourceHasStabilisedResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBResourceHasStabilisedErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),

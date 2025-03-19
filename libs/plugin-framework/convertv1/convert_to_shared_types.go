@@ -559,7 +559,7 @@ func toPBResourceState(
 		return nil, err
 	}
 
-	metadata, err := toPBResourceMetadataState(resourceState.Metadata)
+	metadata, err := ToPBResourceMetadataState(resourceState.Metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -596,7 +596,9 @@ func toPBResourceState(
 	}, nil
 }
 
-func toPBResourceMetadataState(
+// ToPBResourceMetadataState converts a blueprint framework ResourceMetadataState
+// to a ResourceMetadataState protobuf message that can be sent over gRPC.
+func ToPBResourceMetadataState(
 	metadataState *state.ResourceMetadataState,
 ) (*sharedtypesv1.ResourceMetadataState, error) {
 	if metadataState == nil {

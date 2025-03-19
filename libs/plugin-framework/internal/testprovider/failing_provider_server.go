@@ -180,7 +180,7 @@ func (p *failingProviderServer) ResourceHasStabilised(
 ) (*sharedtypesv1.ResourceHasStabilisedResponse, error) {
 	return nil, status.Error(
 		codes.Unknown,
-		"internal error occurred when resource has stabilised",
+		"internal error occurred when checking if resource has stabilised",
 	)
 }
 

@@ -499,7 +499,74 @@ func (r *resourceProviderClientWrapper) HasStabilised(
 	ctx context.Context,
 	input *provider.ResourceHasStabilisedInput,
 ) (*provider.ResourceHasStabilisedOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderCheckResourceHasStabilised,
+		)
+	}
+
+	pbResourceSpec, err := serialisation.ToMappingNodePB(
+		input.ResourceSpec,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderCheckResourceHasStabilised,
+		)
+	}
+
+	pbResourceMetadata, err := convertv1.ToPBResourceMetadataState(
+		input.ResourceMetadata,
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderCheckResourceHasStabilised,
+		)
+	}
+
+	response, err := r.client.ResourceHasStabilised(
+		ctx,
+		&sharedtypesv1.ResourceHasStabilisedRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:           r.hostID,
+			InstanceId:       input.InstanceID,
+			ResourceId:       input.ResourceID,
+			ResourceSpec:     pbResourceSpec,
+			ResourceMetadata: pbResourceMetadata,
+			Context:          providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderCheckResourceHasStabilised,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.ResourceHasStabilisedResponse_ResourceStabilisationInfo:
+		return &provider.ResourceHasStabilisedOutput{
+			Stabilised: result.ResourceStabilisationInfo.Stabilised,
+		}, nil
+	case *sharedtypesv1.ResourceHasStabilisedResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderCheckResourceHasStabilised,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderCheckResourceHasStabilised,
+		),
+		errorsv1.PluginActionProviderCheckResourceHasStabilised,
+	)
 }
 
 func (r *resourceProviderClientWrapper) GetExternalState(

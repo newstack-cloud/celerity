@@ -545,3 +545,75 @@ func (s *ProviderPluginV1Suite) Test_deploy_resource_reports_expected_error_for_
 		"internal error occurred when deploying resource",
 	)
 }
+
+func (s *ProviderPluginV1Suite) Test_check_resource_has_stabilised() {
+	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	changes := createDeployResourceChanges()
+	output, err := resource.HasStabilised(
+		context.Background(),
+		&provider.ResourceHasStabilisedInput{
+			ResourceID:       testResource1ID,
+			InstanceID:       testInstance1ID,
+			ResourceSpec:     changes.AppliedResourceInfo.CurrentResourceState.SpecData,
+			ResourceMetadata: changes.AppliedResourceInfo.CurrentResourceState.Metadata,
+			ProviderContext:  testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.ResourceHasStabilisedOutput{
+			Stabilised: true,
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_check_resource_has_stabilised_fails_for_unexpected_host() {
+	resource, err := s.providerWrongHost.Resource(
+		context.Background(),
+		lambdaFunctionResourceType,
+	)
+	s.Require().NoError(err)
+
+	changes := createDeployResourceChanges()
+	_, err = resource.HasStabilised(
+		context.Background(),
+		&provider.ResourceHasStabilisedInput{
+			ResourceID:       testResource1ID,
+			InstanceID:       testInstance1ID,
+			ResourceSpec:     changes.AppliedResourceInfo.CurrentResourceState.SpecData,
+			ResourceMetadata: changes.AppliedResourceInfo.CurrentResourceState.Metadata,
+			ProviderContext:  testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderCheckResourceHasStabilised,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_check_resource_has_stabilised_reports_expected_error_for_failure() {
+	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	changes := createDeployResourceChanges()
+	_, err = resource.HasStabilised(
+		context.Background(),
+		&provider.ResourceHasStabilisedInput{
+			ResourceID:       testResource1ID,
+			InstanceID:       testInstance1ID,
+			ResourceSpec:     changes.AppliedResourceInfo.CurrentResourceState.SpecData,
+			ResourceMetadata: changes.AppliedResourceInfo.CurrentResourceState.Metadata,
+			ProviderContext:  testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred when checking if resource has stabilised",
+	)
+}
