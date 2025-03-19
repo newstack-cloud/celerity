@@ -212,3 +212,41 @@ func (s *ProviderPluginV1Suite) Test_get_resource_stabilised_dependencies() {
 		output,
 	)
 }
+
+func (s *ProviderPluginV1Suite) Test_get_resource_stabilised_deps_fails_for_unexpected_host() {
+	resource, err := s.providerWrongHost.Resource(
+		context.Background(),
+		lambdaFunctionResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = resource.GetStabilisedDependencies(
+		context.Background(),
+		&provider.ResourceStabilisedDependenciesInput{
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetResourceStabilisedDeps,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_get_resource_stabilised_deps_reports_expected_error_for_failure() {
+	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	_, err = resource.GetStabilisedDependencies(
+		context.Background(),
+		&provider.ResourceStabilisedDependenciesInput{
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred retrieving the stabilised dependencies for a resource",
+	)
+}
