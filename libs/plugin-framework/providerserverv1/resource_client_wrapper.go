@@ -132,7 +132,58 @@ func (r *resourceProviderClientWrapper) CanLinkTo(
 	ctx context.Context,
 	input *provider.ResourceCanLinkToInput,
 ) (*provider.ResourceCanLinkToOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderCheckCanResourceLinkTo,
+		)
+	}
+
+	response, err := r.client.CanResourceLinkTo(
+		ctx,
+		&ResourceRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:  r.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderCheckCanResourceLinkTo,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *CanResourceLinkToResponse_ResourceTypes:
+		canLinkTo := fromPBResourceTypes(
+			result.ResourceTypes.ResourceTypes,
+		)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				errorsv1.PluginActionProviderGetResourceSpecDefinition,
+			)
+		}
+		return &provider.ResourceCanLinkToOutput{
+			CanLinkTo: canLinkTo,
+		}, nil
+	case *CanResourceLinkToResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderCheckCanResourceLinkTo,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderCheckCanResourceLinkTo,
+		),
+		errorsv1.PluginActionProviderCheckCanResourceLinkTo,
+	)
 }
 
 func (r *resourceProviderClientWrapper) GetStabilisedDependencies(

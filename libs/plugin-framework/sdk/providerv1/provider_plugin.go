@@ -233,6 +233,11 @@ func (p *blueprintProviderPluginImpl) CanResourceLinkTo(
 	ctx context.Context,
 	req *providerserverv1.ResourceRequest,
 ) (*providerserverv1.CanResourceLinkToResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toCanResourceLinkToErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),
