@@ -404,6 +404,41 @@ func (p *blueprintProviderPluginImpl) GetResourceTypeDescription(
 	return toResourceTypeDescriptionResponse(output), nil
 }
 
+func (p *blueprintProviderPluginImpl) GetResourceExamples(
+	ctx context.Context,
+	req *providerserverv1.ResourceRequest,
+) (*sharedtypesv1.ExamplesResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBExamplesErrorResponse(err), nil
+	}
+
+	resource, err := p.bpProvider.Resource(
+		ctx,
+		convertv1.ResourceTypeToString(req.ResourceType),
+	)
+	if err != nil {
+		return convertv1.ToPBExamplesErrorResponse(err), nil
+	}
+
+	providerCtx, err := convertv1.FromPBProviderContext(req.Context)
+	if err != nil {
+		return convertv1.ToPBExamplesErrorResponse(err), nil
+	}
+
+	output, err := resource.GetExamples(
+		ctx,
+		&provider.ResourceGetExamplesInput{
+			ProviderContext: providerCtx,
+		},
+	)
+	if err != nil {
+		return convertv1.ToPBExamplesErrorResponse(err), nil
+	}
+
+	return toResourceExamplesResponse(output), nil
+}
+
 func (p *blueprintProviderPluginImpl) DeployResource(
 	ctx context.Context,
 	req *sharedtypesv1.DeployResourceRequest,

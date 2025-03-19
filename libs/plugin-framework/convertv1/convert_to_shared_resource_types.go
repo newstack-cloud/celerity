@@ -135,3 +135,35 @@ func ToPBResourceTypeResponse(
 		},
 	}
 }
+
+// FromPBTypeDescriptionForResource converts a TypeDescription from a protobuf message to a core type
+// compatible with the blueprint framework specifically for resources.
+func FromPBTypeDescriptionForResource(
+	req *sharedtypesv1.TypeDescription,
+) *provider.ResourceGetTypeDescriptionOutput {
+	if req == nil {
+		return nil
+	}
+
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: req.PlainTextDescription,
+		MarkdownDescription:  req.MarkdownDescription,
+		PlainTextSummary:     req.PlainTextSummary,
+		MarkdownSummary:      req.MarkdownSummary,
+	}
+}
+
+// FromPBExamplesForResource converts examples from a protobuf message to a core type
+// compatible with the blueprint framework specifically for resources.
+func FromPBExamplesForResource(
+	req *sharedtypesv1.Examples,
+) *provider.ResourceGetExamplesOutput {
+	if req == nil {
+		return nil
+	}
+
+	return &provider.ResourceGetExamplesOutput{
+		PlainTextExamples: req.Examples,
+		MarkdownExamples:  req.FormattedExamples,
+	}
+}

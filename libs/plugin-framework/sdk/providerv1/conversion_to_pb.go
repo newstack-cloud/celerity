@@ -323,6 +323,27 @@ func toResourceTypeDescriptionResponse(
 	}
 }
 
+func toResourceExamplesResponse(
+	output *provider.ResourceGetExamplesOutput,
+) *sharedtypesv1.ExamplesResponse {
+	if output == nil {
+		return &sharedtypesv1.ExamplesResponse{
+			Response: &sharedtypesv1.ExamplesResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &sharedtypesv1.ExamplesResponse{
+		Response: &sharedtypesv1.ExamplesResponse_Examples{
+			Examples: &sharedtypesv1.Examples{
+				Examples:          output.PlainTextExamples,
+				FormattedExamples: output.MarkdownExamples,
+			},
+		},
+	}
+}
+
 func toResourceExternalStateResponse(
 	output *provider.ResourceGetExternalStateOutput,
 ) (*providerserverv1.GetResourceExternalStateResponse, error) {

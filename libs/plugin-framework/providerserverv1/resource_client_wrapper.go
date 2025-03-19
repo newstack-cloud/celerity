@@ -372,7 +372,7 @@ func (r *resourceProviderClientWrapper) GetTypeDescription(
 
 	switch result := response.Response.(type) {
 	case *sharedtypesv1.TypeDescriptionResponse_Description:
-		return convertv1.FromPBTypeDescription(result.Description), nil
+		return convertv1.FromPBTypeDescriptionForResource(result.Description), nil
 	case *sharedtypesv1.TypeDescriptionResponse_ErrorResponse:
 		return nil, errorsv1.CreateErrorFromResponse(
 			result.ErrorResponse,
@@ -392,7 +392,47 @@ func (r *resourceProviderClientWrapper) GetExamples(
 	ctx context.Context,
 	input *provider.ResourceGetExamplesInput,
 ) (*provider.ResourceGetExamplesOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceExamples,
+		)
+	}
+
+	response, err := r.client.GetResourceExamples(
+		ctx,
+		&ResourceRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:  r.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceExamples,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.ExamplesResponse_Examples:
+		return convertv1.FromPBExamplesForResource(result.Examples), nil
+	case *sharedtypesv1.ExamplesResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetResourceExamples,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetResourceExamples,
+		),
+		errorsv1.PluginActionProviderGetResourceExamples,
+	)
 }
 
 func (r *resourceProviderClientWrapper) Deploy(

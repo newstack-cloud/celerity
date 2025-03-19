@@ -267,6 +267,19 @@ func ToPBTypeDescriptionErrorResponse(
 	}
 }
 
+// ToPBExamplesErrorResponse converts an error from trying to
+// retrieve examples to an ExamplesResponse protobuf message
+// that can be sent over gRPC.
+func ToPBExamplesErrorResponse(
+	err error,
+) *sharedtypesv1.ExamplesResponse {
+	return &sharedtypesv1.ExamplesResponse{
+		Response: &sharedtypesv1.ExamplesResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
 // ToPBFunctionCallRequest converts a blueprint framework FunctionCallInput to a
 // FunctionCallRequest protobuf message that can be sent over gRPC.
 func ToPBFunctionCallRequest(

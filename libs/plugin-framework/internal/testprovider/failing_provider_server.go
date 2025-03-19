@@ -154,6 +154,16 @@ func (p *failingProviderServer) GetResourceTypeDescription(
 	)
 }
 
+func (p *failingProviderServer) GetResourceExamples(
+	ctx context.Context,
+	req *providerserverv1.ResourceRequest,
+) (*sharedtypesv1.ExamplesResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving resource examples",
+	)
+}
+
 func (p *failingProviderServer) DeployResource(
 	ctx context.Context,
 	req *sharedtypesv1.DeployResourceRequest,

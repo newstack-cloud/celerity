@@ -12,6 +12,7 @@ import (
 
 func resourceLambdaFunction() provider.Resource {
 	descriptionInfo := ResourceLambdaFunctionTypeDescription()
+	examples := ResourceLambdaFunctionExamples()
 	return &providerv1.ResourceDefinition{
 		Type:                   "aws/lambda/function",
 		Label:                  "AWS Lambda Function",
@@ -20,6 +21,8 @@ func resourceLambdaFunction() provider.Resource {
 		FormattedDescription:   descriptionInfo.MarkdownDescription,
 		PlainTextSummary:       descriptionInfo.PlainTextSummary,
 		FormattedSummary:       descriptionInfo.MarkdownSummary,
+		PlainTextExamples:      examples.PlainTextExamples,
+		FormattedExamples:      examples.MarkdownExamples,
 		IDField:                "arn",
 		ResourceCanLinkTo:      []string{"aws/dynamodb/table"},
 		StabilisedDependencies: []string{"aws/sqs/queue"},
@@ -39,6 +42,17 @@ func ResourceLambdaFunctionTypeDescription() *provider.ResourceGetTypeDescriptio
 		MarkdownDescription:  "An **AWS** Lambda Function for running code in the cloud",
 		PlainTextSummary:     "An AWS Lambda Function",
 		MarkdownSummary:      "An **AWS** Lambda Function",
+	}
+}
+
+func ResourceLambdaFunctionExamples() *provider.ResourceGetExamplesOutput {
+	return &provider.ResourceGetExamplesOutput{
+		MarkdownExamples: []string{
+			"```yaml\nresources:\n  - type: aws/lambda/function\n    name: example-function\n```",
+		},
+		PlainTextExamples: []string{
+			"resources:\n  - type: aws/lambda/function\n    name: example-function\n",
+		},
 	}
 }
 
