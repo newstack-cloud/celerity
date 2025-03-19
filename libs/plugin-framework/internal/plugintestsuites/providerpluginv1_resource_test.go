@@ -14,6 +14,9 @@ import (
 
 const (
 	lambdaFunctionResourceType = "aws/lambda/function"
+	testResource1ID            = "test-resource-1"
+	testInstance1ID            = "test-instance-1"
+	testResource1Name          = "processOrderFunction_0"
 )
 
 func (s *ProviderPluginV1Suite) Test_custom_validate_resource() {
@@ -63,7 +66,7 @@ func resourceValidateInput() *provider.ResourceValidateInput {
 	return &provider.ResourceValidateInput{
 		SchemaResource: &schema.Resource{
 			Type: &schema.ResourceTypeWrapper{
-				Value: "aws/lambda/function",
+				Value: lambdaFunctionResourceType,
 			},
 			Metadata: &schema.Metadata{
 				Annotations: &schema.StringOrSubstitutionsMap{
@@ -321,7 +324,7 @@ func (s *ProviderPluginV1Suite) Test_get_resource_type() {
 	s.Require().NoError(err)
 	s.Assert().Equal(
 		&provider.ResourceGetTypeOutput{
-			Type:  "aws/lambda/function",
+			Type:  lambdaFunctionResourceType,
 			Label: "AWS Lambda Function",
 		},
 		output,
@@ -475,5 +478,70 @@ func (s *ProviderPluginV1Suite) Test_get_resource_examples_reports_expected_erro
 	s.Assert().Contains(
 		err.Error(),
 		"internal error occurred retrieving resource examples",
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_deploy_resource() {
+	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	output, err := resource.Deploy(
+		context.Background(),
+		&provider.ResourceDeployInput{
+			ResourceID:      testResource1ID,
+			InstanceID:      testInstance1ID,
+			Changes:         createDeployResourceChanges(),
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Require().NoError(err)
+	expected := testprovider.ResourceLambdaDeployOutput()
+	s.Assert().Equal(
+		expected,
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_deploy_resource_fails_for_unexpected_host() {
+	resource, err := s.providerWrongHost.Resource(
+		context.Background(),
+		lambdaFunctionResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = resource.Deploy(
+		context.Background(),
+		&provider.ResourceDeployInput{
+			ResourceID:      testResource1ID,
+			InstanceID:      testInstance1ID,
+			Changes:         createDeployResourceChanges(),
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderDeployResource,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_deploy_resource_reports_expected_error_for_failure() {
+	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	_, err = resource.Deploy(
+		context.Background(),
+		&provider.ResourceDeployInput{
+			ResourceID:      testResource1ID,
+			InstanceID:      testInstance1ID,
+			Changes:         createDeployResourceChanges(),
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred when deploying resource",
 	)
 }

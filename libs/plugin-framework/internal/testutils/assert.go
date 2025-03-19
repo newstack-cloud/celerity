@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
@@ -40,8 +41,7 @@ func AssertInvalidHost(
 	testSuite *suite.Suite,
 ) {
 	testSuite.Require().Error(respErr)
-	pluginRespErr, isPluginRespErr := respErr.(*errorsv1.PluginResponseError)
-	testSuite.Assert().True(isPluginRespErr)
+	pluginRespErr := assertExtractPluginError(respErr, action, testSuite)
 	testSuite.Assert().Equal(
 		action,
 		pluginRespErr.Action,
@@ -54,6 +54,43 @@ func AssertInvalidHost(
 		fmt.Sprintf("invalid host ID %q", invalidHostID),
 		pluginRespErr.Message,
 	)
+}
+
+func assertExtractPluginError(
+	err error,
+	action errorsv1.PluginAction,
+	testSuite *suite.Suite,
+) *errorsv1.PluginResponseError {
+	switch action {
+	case errorsv1.PluginActionProviderDeployResource:
+		return assertExtractDeployResourceError(err, testSuite)
+	default:
+		return assertExtractPluginResponseError(err, testSuite)
+	}
+}
+
+func assertExtractDeployResourceError(
+	err error,
+	testSuite *suite.Suite,
+) *errorsv1.PluginResponseError {
+	deployErr, isDeployErr := err.(*provider.ResourceDeployError)
+	testSuite.Require().True(isDeployErr)
+	testSuite.Require().NotNil(deployErr)
+
+	return assertExtractPluginResponseError(
+		deployErr.ChildError,
+		testSuite,
+	)
+}
+
+func assertExtractPluginResponseError(
+	err error,
+	testSuite *suite.Suite,
+) *errorsv1.PluginResponseError {
+	pluginRespErr, ok := err.(*errorsv1.PluginResponseError)
+	testSuite.Require().True(ok)
+	testSuite.Require().NotNil(pluginRespErr)
+	return pluginRespErr
 }
 
 // AssertSlicesEqual asserts that two slices are equal.

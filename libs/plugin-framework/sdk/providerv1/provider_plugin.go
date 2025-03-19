@@ -443,6 +443,11 @@ func (p *blueprintProviderPluginImpl) DeployResource(
 	ctx context.Context,
 	req *sharedtypesv1.DeployResourceRequest,
 ) (*sharedtypesv1.DeployResourceResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBDeployResourceErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),

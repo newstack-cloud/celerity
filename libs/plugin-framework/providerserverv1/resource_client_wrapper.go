@@ -439,7 +439,60 @@ func (r *resourceProviderClientWrapper) Deploy(
 	ctx context.Context,
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderDeployResource,
+		)
+	}
+
+	resourceChangesPB, err := convertv1.ToPBChanges(input.Changes)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderDeployResource,
+		)
+	}
+
+	response, err := r.client.DeployResource(
+		ctx,
+		&sharedtypesv1.DeployResourceRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:     r.hostID,
+			InstanceId: input.InstanceID,
+			ResourceId: input.ResourceID,
+			Changes:    resourceChangesPB,
+			Context:    providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceExamples,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.DeployResourceResponse_CompleteResponse:
+		return convertv1.FromPBDeployResourceCompleteResponse(
+			result.CompleteResponse,
+		)
+	case *sharedtypesv1.DeployResourceResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderDeployResource,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderDeployResource,
+		),
+		errorsv1.PluginActionProviderDeployResource,
+	)
 }
 
 func (r *resourceProviderClientWrapper) HasStabilised(

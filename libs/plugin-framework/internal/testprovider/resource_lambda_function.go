@@ -56,11 +56,21 @@ func ResourceLambdaFunctionExamples() *provider.ResourceGetExamplesOutput {
 	}
 }
 
+func ResourceLambdaDeployOutput() *provider.ResourceDeployOutput {
+	return &provider.ResourceDeployOutput{
+		ComputedFieldValues: map[string]*core.MappingNode{
+			"spec.arn": core.MappingNodeFromString(
+				"arn:aws:lambda:us-west-2:123456789012:function:processOrderFunction_0",
+			),
+		},
+	}
+}
+
 func deployLambdaFunction(
 	ctx context.Context,
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
-	return &provider.ResourceDeployOutput{}, nil
+	return ResourceLambdaDeployOutput(), nil
 }
 
 func customValidateLambdaFunction(

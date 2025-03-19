@@ -129,7 +129,7 @@ func ToPBDeployResourceRequest(
 		return nil, err
 	}
 
-	changes, err := toPBChanges(input.Changes)
+	changes, err := ToPBChanges(input.Changes)
 	if err != nil {
 		return nil, err
 	}
@@ -468,7 +468,9 @@ func toPBSourcePosition(
 	}
 }
 
-func toPBChanges(
+// ToPBChanges converts a blueprint framework resource change set
+// to a Changes protobuf message that can be sent over gRPC.
+func ToPBChanges(
 	changes *provider.Changes,
 ) (*sharedtypesv1.Changes, error) {
 	if changes == nil {
