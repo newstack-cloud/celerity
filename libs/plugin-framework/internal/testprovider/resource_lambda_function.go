@@ -12,11 +12,12 @@ import (
 
 func resourceLambdaFunction() provider.Resource {
 	return &providerv1.ResourceDefinition{
-		Type:              "aws/lambda/function",
-		Label:             "AWS Lambda Function",
-		Schema:            ResourceLambdaFunctionSchema(),
-		IDField:           "arn",
-		ResourceCanLinkTo: []string{"aws/dynamodb/table"},
+		Type:                   "aws/lambda/function",
+		Label:                  "AWS Lambda Function",
+		Schema:                 ResourceLambdaFunctionSchema(),
+		IDField:                "arn",
+		ResourceCanLinkTo:      []string{"aws/dynamodb/table"},
+		StabilisedDependencies: []string{"aws/sqs/queue"},
 		DeployFunc: providerv1.RetryableReturnValue(
 			deployLambdaFunction,
 			func(err error) bool {

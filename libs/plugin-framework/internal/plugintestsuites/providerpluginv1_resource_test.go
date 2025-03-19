@@ -193,3 +193,22 @@ func (s *ProviderPluginV1Suite) Test_resource_can_link_to_reports_expected_error
 		"internal error occurred retrieving the resources that can be linked to",
 	)
 }
+
+func (s *ProviderPluginV1Suite) Test_get_resource_stabilised_dependencies() {
+	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	output, err := resource.GetStabilisedDependencies(
+		context.Background(),
+		&provider.ResourceStabilisedDependenciesInput{
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.ResourceStabilisedDependenciesOutput{
+			StabilisedDependencies: []string{"aws/sqs/queue"},
+		},
+		output,
+	)
+}

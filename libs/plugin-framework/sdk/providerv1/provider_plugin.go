@@ -268,6 +268,11 @@ func (p *blueprintProviderPluginImpl) GetResourceStabilisedDeps(
 	ctx context.Context,
 	req *providerserverv1.ResourceRequest,
 ) (*providerserverv1.ResourceStabilisedDepsResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toResourceStabilisedDepsErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),

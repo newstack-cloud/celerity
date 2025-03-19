@@ -190,7 +190,52 @@ func (r *resourceProviderClientWrapper) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceStabilisedDeps,
+		)
+	}
+
+	response, err := r.client.GetResourceStabilisedDeps(
+		ctx,
+		&ResourceRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:  r.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceStabilisedDeps,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *ResourceStabilisedDepsResponse_StabilisedDependencies:
+		stabilisedDeps := fromPBResourceTypes(
+			result.StabilisedDependencies.ResourceTypes,
+		)
+		return &provider.ResourceStabilisedDependenciesOutput{
+			StabilisedDependencies: stabilisedDeps,
+		}, nil
+	case *ResourceStabilisedDepsResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetResourceStabilisedDeps,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetResourceStabilisedDeps,
+		),
+		errorsv1.PluginActionProviderGetResourceStabilisedDeps,
+	)
 }
 
 func (r *resourceProviderClientWrapper) IsCommonTerminal(
