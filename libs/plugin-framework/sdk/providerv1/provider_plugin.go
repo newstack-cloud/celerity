@@ -514,6 +514,11 @@ func (p *blueprintProviderPluginImpl) GetResourceExternalState(
 	ctx context.Context,
 	req *providerserverv1.GetResourceExternalStateRequest,
 ) (*providerserverv1.GetResourceExternalStateResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toResourceExternalStateErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),

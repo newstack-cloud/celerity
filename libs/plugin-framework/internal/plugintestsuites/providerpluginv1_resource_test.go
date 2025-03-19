@@ -617,3 +617,75 @@ func (s *ProviderPluginV1Suite) Test_check_resource_has_stabilised_reports_expec
 		"internal error occurred when checking if resource has stabilised",
 	)
 }
+
+func (s *ProviderPluginV1Suite) Test_get_resource_external_state() {
+	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	changes := createDeployResourceChanges()
+	output, err := resource.GetExternalState(
+		context.Background(),
+		&provider.ResourceGetExternalStateInput{
+			ResourceID:              testResource1ID,
+			InstanceID:              testInstance1ID,
+			CurrentResourceSpec:     changes.AppliedResourceInfo.CurrentResourceState.SpecData,
+			CurrentResourceMetadata: changes.AppliedResourceInfo.CurrentResourceState.Metadata,
+			ProviderContext:         testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.ResourceGetExternalStateOutput{
+			ResourceSpecState: testprovider.ResourceLambdaFunctionExternalState(),
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_get_resource_external_state_fails_for_unexpected_host() {
+	resource, err := s.providerWrongHost.Resource(
+		context.Background(),
+		lambdaFunctionResourceType,
+	)
+	s.Require().NoError(err)
+
+	changes := createDeployResourceChanges()
+	_, err = resource.GetExternalState(
+		context.Background(),
+		&provider.ResourceGetExternalStateInput{
+			ResourceID:              testResource1ID,
+			InstanceID:              testInstance1ID,
+			CurrentResourceSpec:     changes.AppliedResourceInfo.CurrentResourceState.SpecData,
+			CurrentResourceMetadata: changes.AppliedResourceInfo.CurrentResourceState.Metadata,
+			ProviderContext:         testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetResourceExternalState,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_get_resource_external_state_reports_expected_error_for_failure() {
+	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	changes := createDeployResourceChanges()
+	_, err = resource.GetExternalState(
+		context.Background(),
+		&provider.ResourceGetExternalStateInput{
+			ResourceID:              testResource1ID,
+			InstanceID:              testInstance1ID,
+			CurrentResourceSpec:     changes.AppliedResourceInfo.CurrentResourceState.SpecData,
+			CurrentResourceMetadata: changes.AppliedResourceInfo.CurrentResourceState.Metadata,
+			ProviderContext:         testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred when getting external state for resource",
+	)
+}

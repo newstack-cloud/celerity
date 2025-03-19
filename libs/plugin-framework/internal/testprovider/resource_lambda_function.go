@@ -32,7 +32,8 @@ func resourceLambdaFunction() provider.Resource {
 				return true
 			},
 		),
-		CustomValidateFunc: customValidateLambdaFunction,
+		CustomValidateFunc:   customValidateLambdaFunction,
+		GetExternalStateFunc: getLambdaFunctionExternalState,
 	}
 }
 
@@ -127,6 +128,26 @@ func ResourceLambdaFunctionSchema() *provider.ResourceDefinitionsSchema {
 				Type:     provider.ResourceDefinitionsSchemaTypeString,
 				Computed: true,
 			},
+		},
+	}
+}
+
+func getLambdaFunctionExternalState(
+	ctx context.Context,
+	input *provider.ResourceGetExternalStateInput,
+) (*provider.ResourceGetExternalStateOutput, error) {
+	return &provider.ResourceGetExternalStateOutput{
+		ResourceSpecState: ResourceLambdaFunctionExternalState(),
+	}, nil
+}
+
+func ResourceLambdaFunctionExternalState() *core.MappingNode {
+	return &core.MappingNode{
+		Fields: map[string]*core.MappingNode{
+			"arn": core.MappingNodeFromString(
+				"arn:aws:lambda:us-west-2:123456789012:function:processOrderFunction_0",
+			),
+			"functionName": core.MappingNodeFromString("Process-Order-Function-0"),
 		},
 	}
 }

@@ -573,7 +573,85 @@ func (r *resourceProviderClientWrapper) GetExternalState(
 	ctx context.Context,
 	input *provider.ResourceGetExternalStateInput,
 ) (*provider.ResourceGetExternalStateOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceExternalState,
+		)
+	}
+
+	pbCurrentResourceSpec, err := serialisation.ToMappingNodePB(
+		input.CurrentResourceSpec,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceExternalState,
+		)
+	}
+
+	pbCurrentResourceMetadata, err := convertv1.ToPBResourceMetadataState(
+		input.CurrentResourceMetadata,
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceExternalState,
+		)
+	}
+
+	response, err := r.client.GetResourceExternalState(
+		ctx,
+		&GetResourceExternalStateRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:                  r.hostID,
+			InstanceId:              input.InstanceID,
+			ResourceId:              input.ResourceID,
+			CurrentResourceSpec:     pbCurrentResourceSpec,
+			CurrentResourceMetadata: pbCurrentResourceMetadata,
+			Context:                 providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceExternalState,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *GetResourceExternalStateResponse_ResourceSpecState:
+		specState, err := serialisation.FromMappingNodePB(
+			result.ResourceSpecState,
+			/* optional */ false,
+		)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				errorsv1.PluginActionProviderGetResourceExternalState,
+			)
+		}
+
+		return &provider.ResourceGetExternalStateOutput{
+			ResourceSpecState: specState,
+		}, nil
+	case *GetResourceExternalStateResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetResourceExternalState,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetResourceExternalState,
+		),
+		errorsv1.PluginActionProviderGetResourceExternalState,
+	)
 }
 
 func (r *resourceProviderClientWrapper) Destroy(
