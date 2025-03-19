@@ -365,3 +365,59 @@ func (s *ProviderPluginV1Suite) Test_get_resource_type_reports_expected_error_fo
 		"internal error occurred retrieving resource type information",
 	)
 }
+
+func (s *ProviderPluginV1Suite) Test_get_resource_type_description() {
+	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	output, err := resource.GetTypeDescription(
+		context.Background(),
+		&provider.ResourceGetTypeDescriptionInput{
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Require().NoError(err)
+	expected := testprovider.ResourceLambdaFunctionTypeDescription()
+	s.Assert().Equal(
+		expected,
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_get_resource_type_description_fails_for_unexpected_host() {
+	resource, err := s.providerWrongHost.Resource(
+		context.Background(),
+		lambdaFunctionResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = resource.GetTypeDescription(
+		context.Background(),
+		&provider.ResourceGetTypeDescriptionInput{
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetResourceTypeDescription,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_get_resource_type_description_reports_expected_error_for_failure() {
+	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	_, err = resource.GetTypeDescription(
+		context.Background(),
+		&provider.ResourceGetTypeDescriptionInput{
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred retrieving resource type description",
+	)
+}

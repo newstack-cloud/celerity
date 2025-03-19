@@ -373,17 +373,22 @@ func (p *blueprintProviderPluginImpl) GetResourceTypeDescription(
 	ctx context.Context,
 	req *providerserverv1.ResourceRequest,
 ) (*sharedtypesv1.TypeDescriptionResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
 	resource, err := p.bpProvider.Resource(
 		ctx,
 		convertv1.ResourceTypeToString(req.ResourceType),
 	)
 	if err != nil {
-		return toResourceTypeDescriptionErrorResponse(err), nil
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
 	}
 
 	providerCtx, err := convertv1.FromPBProviderContext(req.Context)
 	if err != nil {
-		return toResourceTypeDescriptionErrorResponse(err), nil
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
 	}
 
 	output, err := resource.GetTypeDescription(
@@ -393,7 +398,7 @@ func (p *blueprintProviderPluginImpl) GetResourceTypeDescription(
 		},
 	)
 	if err != nil {
-		return toResourceTypeDescriptionErrorResponse(err), nil
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
 	}
 
 	return toResourceTypeDescriptionResponse(output), nil

@@ -22,6 +22,15 @@ type ResourceDefinition struct {
 	// This will be used in documentation and tooling.
 	Label string
 
+	// A summary of the resource type that is not formatted that can be used
+	// to render descriptions in contexts that formatting is not supported.
+	// This will be used in documentation and tooling.
+	PlainTextSummary string
+
+	// A summary of the resource type that can be formatted using markdown.
+	// This will be used in documentation and tooling.
+	FormattedSummary string
+
 	// A description of the resource type that is not formatted that can be used
 	// to render descriptions in contexts that formatting is not supported.
 	// This will be used in documentation and tooling.
@@ -39,7 +48,7 @@ type ResourceDefinition struct {
 	// A list of markdown examples that can be used to
 	// demonstrate how to use the resource.
 	// This will be used in documentation and tooling.
-	MarkdownExamples []string
+	FormattedExamples []string
 
 	// The schema of the resource specification that comes under the `spec` field
 	// of a resource in a blueprint.
@@ -214,6 +223,8 @@ func (r *ResourceDefinition) GetTypeDescription(
 	return &provider.ResourceGetTypeDescriptionOutput{
 		PlainTextDescription: r.PlainTextDescription,
 		MarkdownDescription:  r.FormattedDescription,
+		PlainTextSummary:     r.PlainTextSummary,
+		MarkdownSummary:      r.FormattedSummary,
 	}, nil
 }
 
@@ -222,7 +233,7 @@ func (r *ResourceDefinition) GetExamples(
 	input *provider.ResourceGetExamplesInput,
 ) (*provider.ResourceGetExamplesOutput, error) {
 	return &provider.ResourceGetExamplesOutput{
-		MarkdownExamples:  r.MarkdownExamples,
+		MarkdownExamples:  r.FormattedExamples,
 		PlainTextExamples: r.PlainTextExamples,
 	}, nil
 }

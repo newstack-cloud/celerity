@@ -316,17 +316,9 @@ func toResourceTypeDescriptionResponse(
 			Description: &sharedtypesv1.TypeDescription{
 				PlainTextDescription: output.PlainTextDescription,
 				MarkdownDescription:  output.MarkdownDescription,
+				PlainTextSummary:     output.PlainTextSummary,
+				MarkdownSummary:      output.MarkdownSummary,
 			},
-		},
-	}
-}
-
-func toResourceTypeDescriptionErrorResponse(
-	err error,
-) *sharedtypesv1.TypeDescriptionResponse {
-	return &sharedtypesv1.TypeDescriptionResponse{
-		Response: &sharedtypesv1.TypeDescriptionResponse_ErrorResponse{
-			ErrorResponse: errorsv1.CreateResponseFromError(err),
 		},
 	}
 }

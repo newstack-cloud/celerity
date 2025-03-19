@@ -345,7 +345,47 @@ func (r *resourceProviderClientWrapper) GetTypeDescription(
 	ctx context.Context,
 	input *provider.ResourceGetTypeDescriptionInput,
 ) (*provider.ResourceGetTypeDescriptionOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceType,
+		)
+	}
+
+	response, err := r.client.GetResourceTypeDescription(
+		ctx,
+		&ResourceRequest{
+			ResourceType: &sharedtypesv1.ResourceType{
+				Type: r.resourceType,
+			},
+			HostId:  r.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetResourceTypeDescription,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.TypeDescriptionResponse_Description:
+		return convertv1.FromPBTypeDescription(result.Description), nil
+	case *sharedtypesv1.TypeDescriptionResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetResourceTypeDescription,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetResourceTypeDescription,
+		),
+		errorsv1.PluginActionProviderGetResourceTypeDescription,
+	)
 }
 
 func (r *resourceProviderClientWrapper) GetExamples(

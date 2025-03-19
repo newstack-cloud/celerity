@@ -254,6 +254,19 @@ func ToPBDestroyResourceErrorResponse(
 	}
 }
 
+// ToPBTypeDescriptionErrorResponse converts an error from trying to
+// retrieve an entity type description to a TypeDescriptionResponse protobuf message
+// that can be sent over gRPC.
+func ToPBTypeDescriptionErrorResponse(
+	err error,
+) *sharedtypesv1.TypeDescriptionResponse {
+	return &sharedtypesv1.TypeDescriptionResponse{
+		Response: &sharedtypesv1.TypeDescriptionResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
 // ToPBFunctionCallRequest converts a blueprint framework FunctionCallInput to a
 // FunctionCallRequest protobuf message that can be sent over gRPC.
 func ToPBFunctionCallRequest(

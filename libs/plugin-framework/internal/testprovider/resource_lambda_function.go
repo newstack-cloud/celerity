@@ -11,10 +11,15 @@ import (
 )
 
 func resourceLambdaFunction() provider.Resource {
+	descriptionInfo := ResourceLambdaFunctionTypeDescription()
 	return &providerv1.ResourceDefinition{
 		Type:                   "aws/lambda/function",
 		Label:                  "AWS Lambda Function",
 		Schema:                 ResourceLambdaFunctionSchema(),
+		PlainTextDescription:   descriptionInfo.PlainTextDescription,
+		FormattedDescription:   descriptionInfo.MarkdownDescription,
+		PlainTextSummary:       descriptionInfo.PlainTextSummary,
+		FormattedSummary:       descriptionInfo.MarkdownSummary,
 		IDField:                "arn",
 		ResourceCanLinkTo:      []string{"aws/dynamodb/table"},
 		StabilisedDependencies: []string{"aws/sqs/queue"},
@@ -25,6 +30,15 @@ func resourceLambdaFunction() provider.Resource {
 			},
 		),
 		CustomValidateFunc: customValidateLambdaFunction,
+	}
+}
+
+func ResourceLambdaFunctionTypeDescription() *provider.ResourceGetTypeDescriptionOutput {
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: "An AWS Lambda Function for running code in the cloud",
+		MarkdownDescription:  "An **AWS** Lambda Function for running code in the cloud",
+		PlainTextSummary:     "An AWS Lambda Function",
+		MarkdownSummary:      "An **AWS** Lambda Function",
 	}
 }
 

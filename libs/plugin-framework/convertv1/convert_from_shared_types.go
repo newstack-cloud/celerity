@@ -1017,3 +1017,20 @@ func FromPBMappingNodeSlice(
 
 	return coreSlice, nil
 }
+
+// FromPBTypeDescription converts a TypeDescription from a protobuf message to a core type
+// compatible with the blueprint framework.
+func FromPBTypeDescription(
+	req *sharedtypesv1.TypeDescription,
+) *provider.ResourceGetTypeDescriptionOutput {
+	if req == nil {
+		return nil
+	}
+
+	return &provider.ResourceGetTypeDescriptionOutput{
+		PlainTextDescription: req.PlainTextDescription,
+		MarkdownDescription:  req.MarkdownDescription,
+		PlainTextSummary:     req.PlainTextSummary,
+		MarkdownSummary:      req.MarkdownSummary,
+	}
+}
