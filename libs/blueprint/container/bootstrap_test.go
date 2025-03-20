@@ -184,7 +184,10 @@ func (l *testApiGatewayLambdaLink) GetTypeDescription(
 	return &provider.LinkGetTypeDescriptionOutput{}, nil
 }
 
-func (l *testApiGatewayLambdaLink) GetKind(ctx context.Context, input *provider.LinkGetKindInput) (*provider.LinkGetKindOutput, error) {
+func (l *testApiGatewayLambdaLink) GetKind(
+	ctx context.Context,
+	input *provider.LinkGetKindInput,
+) (*provider.LinkGetKindOutput, error) {
 	return &provider.LinkGetKindOutput{
 		Kind: provider.LinkKindSoft,
 	}, nil

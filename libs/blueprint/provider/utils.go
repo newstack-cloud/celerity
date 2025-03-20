@@ -166,6 +166,10 @@ func (p *linkCtxFromParams) ProviderConfigVariables(providerNamespace string) ma
 	return p.blueprintParams.ProviderConfig(providerNamespace)
 }
 
+func (p *linkCtxFromParams) AllProviderConfigVariables() map[string]map[string]*core.ScalarValue {
+	return p.blueprintParams.AllProvidersConfig()
+}
+
 func (p *linkCtxFromParams) ContextVariable(name string) (*core.ScalarValue, bool) {
 	contextVar := p.blueprintParams.ContextVariable(name)
 	if contextVar == nil {

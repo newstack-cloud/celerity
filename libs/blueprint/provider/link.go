@@ -211,6 +211,11 @@ type LinkGetAnnotationDefinitionsInput struct {
 // LinkGetAnnotationDefinitionsOutput provides the output for retrieving
 // the annotation definitions for the link type.
 type LinkGetAnnotationDefinitionsOutput struct {
+	// A mapping of annotation names prefixed by resource type that
+	// can be used to fine tune the behaviour of a link in a blueprint spec.
+	// The format should be as follows:
+	// {resourceType}::{annotationName} -> LinkAnnotationDefinition
+	// e.g. "aws/lambda/function::aws.lambda.dynamodb.accessType" -> LinkAnnotationDefinition
 	AnnotationDefinitions map[string]*LinkAnnotationDefinition
 }
 
@@ -271,6 +276,9 @@ type LinkContext interface {
 	// ProviderConfigVariables retrieves all configuration values that were loaded
 	// for the specified provider.
 	ProviderConfigVariables(providerNamespace string) map[string]*core.ScalarValue
+	// AllProviderConfigVariables retrieves all configuration values that were loaded
+	// for all providers.
+	AllProviderConfigVariables() map[string]map[string]*core.ScalarValue
 	// ContextVariable retrieves a context-wide variable
 	// for the current environment, this differs from values extracted
 	// from context.Context, as these context variables are specific
