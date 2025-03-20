@@ -203,3 +203,13 @@ func (p *failingProviderServer) DestroyResource(
 		"internal error occurred when destroying resource",
 	)
 }
+
+func (p *failingProviderServer) StageLinkChanges(
+	ctx context.Context,
+	req *providerserverv1.StageLinkChangesRequest,
+) (*providerserverv1.StageLinkChangesResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when staging changes for link",
+	)
+}

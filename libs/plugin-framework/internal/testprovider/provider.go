@@ -13,6 +13,10 @@ import (
 // or provide functionality that would reflect that of a real AWS provider
 // implementation.
 func NewProvider() provider.Provider {
+	lambdaFuncDDBTableLinkType := core.LinkType(
+		"aws/lambda/function",
+		"aws/dynamodb/table",
+	)
 	return &providerv1.ProviderPluginDefinition{
 		ProviderNamespace:        "aws",
 		ProviderConfigDefinition: TestProviderConfigDefinition(),
@@ -22,7 +26,9 @@ func NewProvider() provider.Provider {
 		DataSources: map[string]provider.DataSource{
 			"aws/vpc": dataSourceVPC(),
 		},
-		Links: make(map[string]provider.Link),
+		Links: map[string]provider.Link{
+			lambdaFuncDDBTableLinkType: linkLambdaFunctionDynamoDBTable(),
+		},
 		CustomVariableTypes: map[string]provider.CustomVariableType{
 			"aws/ec2/instanceType": customVarTypeEC2InstanceType(),
 		},

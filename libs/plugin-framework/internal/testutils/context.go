@@ -16,3 +16,14 @@ func CreateTestProviderContext(namespace string) provider.Context {
 	)
 	return provider.NewProviderContextFromParams(namespace, params)
 }
+
+// CreateTestLinkContext creates a link context for testing.
+func CreateTestLinkContext() provider.LinkContext {
+	params := core.NewDefaultParams(
+		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+	)
+	return provider.NewLinkContextFromParams(params)
+}

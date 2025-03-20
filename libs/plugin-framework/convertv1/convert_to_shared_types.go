@@ -375,26 +375,26 @@ func toPBBlueprintParams(
 
 	providerConfigVariables := params.AllProvidersConfig()
 	namespacedProviderConfigVars := toNamespacedConfig(providerConfigVariables)
-	pbProviderConfigVars, err := toPBScalarMap(namespacedProviderConfigVars)
+	pbProviderConfigVars, err := ToPBScalarMap(namespacedProviderConfigVars)
 	if err != nil {
 		return nil, err
 	}
 
 	transformerConfigVariables := params.AllTransformersConfig()
 	namespacedTransformerConfigVars := toNamespacedConfig(transformerConfigVariables)
-	pbTransformerConfigVars, err := toPBScalarMap(namespacedTransformerConfigVars)
+	pbTransformerConfigVars, err := ToPBScalarMap(namespacedTransformerConfigVars)
 	if err != nil {
 		return nil, err
 	}
 
 	contextVariables := params.AllContextVariables()
-	pbContextVars, err := toPBScalarMap(contextVariables)
+	pbContextVars, err := ToPBScalarMap(contextVariables)
 	if err != nil {
 		return nil, err
 	}
 
 	blueprintVariables := params.AllBlueprintVariables()
-	pbBlueprintVars, err := toPBScalarMap(blueprintVariables)
+	pbBlueprintVars, err := ToPBScalarMap(blueprintVariables)
 	if err != nil {
 		return nil, err
 	}
@@ -867,7 +867,7 @@ func tpPBLinkChangesMap(
 
 	pbLinkChangesMap := make(map[string]*sharedtypesv1.LinkChanges, len(linkChangesMap))
 	for key, linkChanges := range linkChangesMap {
-		pbLinkChanges, err := toPBLinkChanges(linkChanges)
+		pbLinkChanges, err := ToPBLinkChanges(linkChanges)
 		if err != nil {
 			return nil, err
 		}
@@ -877,7 +877,9 @@ func tpPBLinkChangesMap(
 	return pbLinkChangesMap, nil
 }
 
-func toPBLinkChanges(
+// ToPBLinkChanges converts a blueprint framework LinkChanges to a
+// LinkChanges protobuf message that can be sent over gRPC.
+func ToPBLinkChanges(
 	linkChanges provider.LinkChanges,
 ) (*sharedtypesv1.LinkChanges, error) {
 	modifiedFields, err := toPBFieldChangesFromPtrs(linkChanges.ModifiedFields)
@@ -944,12 +946,12 @@ func ToPBMappingNodeSlice(
 // ToPBProviderContext converts a provider.Context to a ProviderContext protobuf message
 // that can be sent over gRPC.
 func ToPBProviderContext(providerCtx provider.Context) (*sharedtypesv1.ProviderContext, error) {
-	providerConfigVars, err := toPBScalarMap(providerCtx.ProviderConfigVariables())
+	providerConfigVars, err := ToPBScalarMap(providerCtx.ProviderConfigVariables())
 	if err != nil {
 		return nil, err
 	}
 
-	contextVars, err := toPBScalarMap(providerCtx.ContextVariables())
+	contextVars, err := ToPBScalarMap(providerCtx.ContextVariables())
 	if err != nil {
 		return nil, err
 	}
@@ -960,7 +962,9 @@ func ToPBProviderContext(providerCtx provider.Context) (*sharedtypesv1.ProviderC
 	}, nil
 }
 
-func toPBScalarMap(m map[string]*core.ScalarValue) (map[string]*schemapb.ScalarValue, error) {
+// ToPBScalarMap converts a map of core ScalarValues to a map of protobuf ScalarValues
+// that can be sent over gRPC.
+func ToPBScalarMap(m map[string]*core.ScalarValue) (map[string]*schemapb.ScalarValue, error) {
 	pbMap := make(map[string]*schemapb.ScalarValue)
 	for k, scalar := range m {
 		pbScalar, err := serialisation.ToScalarValuePB(scalar, true /* optional */)

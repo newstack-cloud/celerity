@@ -261,7 +261,7 @@ func FromPBFunctionDefinition(
 func FromPBDeployResourceRequest(
 	req *sharedtypesv1.DeployResourceRequest,
 ) (*provider.ResourceDeployInput, error) {
-	changes, err := fromPBResourceChanges(req.Changes)
+	changes, err := FromPBResourceChanges(req.Changes)
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +391,9 @@ func fromPBResourceDefinitionsSchemaSlice(
 	return schemaSlice, nil
 }
 
-func fromPBResourceChanges(changes *sharedtypesv1.Changes) (*provider.Changes, error) {
+// FromPBResourceChanges converts a Changes from a protobuf message to a core type
+// compatible with the blueprint framework.
+func FromPBResourceChanges(changes *sharedtypesv1.Changes) (*provider.Changes, error) {
 	if changes == nil {
 		return nil, nil
 	}
@@ -689,7 +691,7 @@ func fromPBLinkChangesMap(
 	linkChangesMap := make(map[string]provider.LinkChanges, len(pbLinkChangesMap))
 
 	for key, pbLinkChanges := range pbLinkChangesMap {
-		linkChanges, err := fromPBLinkChanges(pbLinkChanges)
+		linkChanges, err := FromPBLinkChanges(pbLinkChanges)
 		if err != nil {
 			return nil, err
 		}
@@ -700,7 +702,9 @@ func fromPBLinkChangesMap(
 	return linkChangesMap, nil
 }
 
-func fromPBLinkChanges(
+// FromPBLinkChanges converts a LinkChanges from a protobuf message to a core type
+// compatible with the blueprint framework.
+func FromPBLinkChanges(
 	pbLinkChanges *sharedtypesv1.LinkChanges,
 ) (provider.LinkChanges, error) {
 	if pbLinkChanges == nil {

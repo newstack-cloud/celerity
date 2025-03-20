@@ -587,6 +587,50 @@ func (p *blueprintProviderPluginImpl) DestroyResource(
 	}, nil
 }
 
+func (p *blueprintProviderPluginImpl) StageLinkChanges(
+	ctx context.Context,
+	req *providerserverv1.StageLinkChangesRequest,
+) (*providerserverv1.StageLinkChangesResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toStageLinkChangesErrorResponse(err), nil
+	}
+
+	linkTypeInfo, err := extractLinkTypeInfo(req.LinkType)
+	if err != nil {
+		return toStageLinkChangesErrorResponse(err), nil
+	}
+
+	link, err := p.bpProvider.Link(
+		ctx,
+		linkTypeInfo.resourceTypeA,
+		linkTypeInfo.resourceTypeB,
+	)
+	if err != nil {
+		return toStageLinkChangesErrorResponse(err), nil
+	}
+
+	stageChangesInput, err := fromPBStageLinkChangesRequest(req)
+	if err != nil {
+		return toStageLinkChangesErrorResponse(err), nil
+	}
+
+	output, err := link.StageChanges(
+		ctx,
+		stageChangesInput,
+	)
+	if err != nil {
+		return toStageLinkChangesErrorResponse(err), nil
+	}
+
+	response, err := toPBStageLinkChangesResponse(output)
+	if err != nil {
+		return toStageLinkChangesErrorResponse(err), nil
+	}
+
+	return response, nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

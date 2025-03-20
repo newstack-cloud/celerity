@@ -949,6 +949,9 @@ message LinkIntermediaryResourceState {
     // of the resource along with computed fields derived from the deployed resource
     // in the provider.
     schema.MappingNode resource_spec_data = 7;
+    // A list of the latest reasons for failures in deploying the resource,
+    // this only ever holds the results of the latest deployment attempt.
+    repeated string failure_reasons = 8;
 }
 
 // LinkCompletionDurations holds duration information

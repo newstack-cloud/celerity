@@ -83,7 +83,12 @@ func (p *providerClientWrapper) DataSource(ctx context.Context, dataSourceType s
 }
 
 func (p *providerClientWrapper) Link(ctx context.Context, resourceTypeA string, resourceTypeB string) (provider.Link, error) {
-	return nil, nil
+	return &linkProviderClientWrapper{
+		client:        p.client,
+		resourceTypeA: resourceTypeA,
+		resourceTypeB: resourceTypeB,
+		hostID:        p.hostID,
+	}, nil
 }
 
 func (p *providerClientWrapper) CustomVariableType(ctx context.Context, customVariableType string) (provider.CustomVariableType, error) {

@@ -3,6 +3,7 @@ package providerv1
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
@@ -13,11 +14,14 @@ import (
 // This implements the `provider.Link` interface and can be used in the same way
 // as any other link implementation used in a provider plugin.
 type LinkDefinition struct {
-	// The type of the link that should consist of the types of the resources
-	// in the relationship, prefixed by the namespace of the provider.
-	// Example: "aws/lambda/function::aws/dynamodb/table" for a link between
 	// an AWS Lambda function and an AWS DynamoDB table.
-	Type string
+	// The type of the first resource in the link relationship.
+	// (e.g. "aws/lambda/function").
+	ResourceTypeA string
+
+	// The type of resource B in the link relationship.
+	// (e.g. "aws/dynamodb/table").
+	ResourceTypeB string
 
 	// The kind of link that contributes to the ordering of resources during deployment.
 	// This can either be "hard" or "soft".
@@ -25,6 +29,31 @@ type LinkDefinition struct {
 	// can be created.
 	// Soft links do not require either of the resources to exist before the other.
 	Kind provider.LinkKind
+
+	// A summary of the link type that is not formatted that can be used
+	// to render descriptions in contexts that formatting is not supported.
+	// This will be used in documentation and tooling.
+	PlainTextSummary string
+
+	// A summary of the link type that can be formatted using markdown.
+	// This will be used in documentation and tooling.
+	FormattedSummary string
+
+	// A description of the link type that is not formatted that can be used
+	// to render descriptions in contexts that formatting is not supported.
+	// This will be used in documentation and tooling.
+	PlainTextDescription string
+
+	// A description of the link type that can be formatted using markdown.
+	// This will be used in documentation and tooling.
+	FormattedDescription string
+
+	// A mapping of annotation names prefixed by resource type that
+	// can be used to fine tune the behaviour of a link in a blueprint spec.
+	// The format should be as follows:
+	// {resourceType}::{annotationName} -> LinkAnnotationDefinition
+	// e.g. "aws/lambda/function::aws.lambda.dynamodb.accessType" -> LinkAnnotationDefinition
+	AnnotationDefinitions map[string]*provider.LinkAnnotationDefinition
 
 	// The priority resource in the relationship based on the ordering of the resource
 	// types.
@@ -35,11 +64,6 @@ type LinkDefinition struct {
 	// `provider.LinkPriorityResourceNone`.
 	// This will not be used if PriorityResourceFunc is provided.
 	PriorityResource provider.LinkPriorityResource
-
-	// A function that can be used to dynamically determine the priority resource
-	// in the relationship based on the ordering of the resource types.
-	// This will not be used if PriorityResourceFunc is provided.
-	PriorityResourceType string
 
 	// A function that can be used to dynamically determine the priority resource
 	// in the link relationship.
@@ -92,18 +116,19 @@ type LinkDefinition struct {
 	// Parameters are passed into UpdateIntermediaryResources for extra context, blueprint variables will have already
 	// been substituted at this stage and must be used instead of the passed in params argument
 	// to ensure consistency between the staged changes that are reviewed and the deployment itself.
-	UpdateIntermediaryResourceFunc func(
+	UpdateIntermediaryResourcesFunc func(
 		ctx context.Context,
-		input *provider.LinkUpdateResourceInput,
-	) (*provider.LinkUpdateResourceOutput, error)
+		input *provider.LinkUpdateIntermediaryResourcesInput,
+	) (*provider.LinkUpdateIntermediaryResourcesOutput, error)
 }
 
 func (l *LinkDefinition) GetType(
 	ctx context.Context,
 	input *provider.LinkGetTypeInput,
 ) (*provider.LinkGetTypeOutput, error) {
+	linkType := core.LinkType(l.ResourceTypeA, l.ResourceTypeB)
 	return &provider.LinkGetTypeOutput{
-		Type: l.Type,
+		Type: linkType,
 	}, nil
 }
 
@@ -116,6 +141,27 @@ func (l *LinkDefinition) GetKind(
 	}, nil
 }
 
+func (l *LinkDefinition) GetTypeDescription(
+	ctx context.Context,
+	input *provider.LinkGetTypeDescriptionInput,
+) (*provider.LinkGetTypeDescriptionOutput, error) {
+	return &provider.LinkGetTypeDescriptionOutput{
+		PlainTextSummary:     l.PlainTextSummary,
+		MarkdownSummary:      l.FormattedSummary,
+		PlainTextDescription: l.PlainTextDescription,
+		MarkdownDescription:  l.FormattedDescription,
+	}, nil
+}
+
+func (l *LinkDefinition) GetAnnotationDefinitions(
+	ctx context.Context,
+	input *provider.LinkGetAnnotationDefinitionsInput,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: l.AnnotationDefinitions,
+	}, nil
+}
+
 func (l *LinkDefinition) GetPriorityResource(
 	ctx context.Context,
 	input *provider.LinkGetPriorityResourceInput,
@@ -124,9 +170,10 @@ func (l *LinkDefinition) GetPriorityResource(
 		return l.PriorityResourceFunc(ctx, input)
 	}
 
+	priorityResourceType := l.getPriorityResourceType()
 	return &provider.LinkGetPriorityResourceOutput{
 		PriorityResource:     l.PriorityResource,
-		PriorityResourceType: l.PriorityResourceType,
+		PriorityResourceType: priorityResourceType,
 	}, nil
 }
 
@@ -151,9 +198,20 @@ func (l *LinkDefinition) UpdateResourceB(
 	return l.UpdateResourceBFunc(ctx, input)
 }
 
-func (l *LinkDefinition) UpdateIntermediaryResource(
+func (l *LinkDefinition) UpdateIntermediaryResources(
 	ctx context.Context,
-	input *provider.LinkUpdateResourceInput,
-) (*provider.LinkUpdateResourceOutput, error) {
-	return l.UpdateIntermediaryResourceFunc(ctx, input)
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	return l.UpdateIntermediaryResourcesFunc(ctx, input)
+}
+
+func (l *LinkDefinition) getPriorityResourceType() string {
+	switch l.PriorityResource {
+	case provider.LinkPriorityResourceA:
+		return l.ResourceTypeA
+	case provider.LinkPriorityResourceB:
+		return l.ResourceTypeB
+	default:
+		return ""
+	}
 }

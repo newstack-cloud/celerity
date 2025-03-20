@@ -32,6 +32,21 @@ func AssertConfigDefinitionEquals(
 	}
 }
 
+// AssertLinkChangesEquals asserts that two provider link changes
+// are equal.
+// This treats nil and empty slices in the changes as equal.
+func AssertLinkChangesEquals(
+	expected *provider.LinkChanges,
+	actual *provider.LinkChanges,
+	testSuite *suite.Suite,
+) {
+	AssertSlicesEqual(expected.ModifiedFields, actual.ModifiedFields, testSuite)
+	AssertSlicesEqual(expected.NewFields, actual.NewFields, testSuite)
+	AssertSlicesEqual(expected.RemovedFields, actual.RemovedFields, testSuite)
+	AssertSlicesEqual(expected.UnchangedFields, actual.UnchangedFields, testSuite)
+	AssertSlicesEqual(expected.FieldChangesKnownOnDeploy, actual.FieldChangesKnownOnDeploy, testSuite)
+}
+
 // AssertInvalidHost asserts that the given error is an invalid host error
 // from a plugin method call response.
 func AssertInvalidHost(

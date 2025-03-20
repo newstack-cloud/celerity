@@ -380,6 +380,51 @@ func toResourceExternalStateErrorResponse(
 	}
 }
 
+func toStageLinkChangesErrorResponse(
+	err error,
+) *providerserverv1.StageLinkChangesResponse {
+	return &providerserverv1.StageLinkChangesResponse{
+		Response: &providerserverv1.StageLinkChangesResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBStageLinkChangesResponse(
+	output *provider.LinkStageChangesOutput,
+) (*providerserverv1.StageLinkChangesResponse, error) {
+	if output == nil {
+		return &providerserverv1.StageLinkChangesResponse{
+			Response: &providerserverv1.StageLinkChangesResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}, nil
+	}
+
+	changes, err := toPBLinkChanges(output.Changes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &providerserverv1.StageLinkChangesResponse{
+		Response: &providerserverv1.StageLinkChangesResponse_CompleteResponse{
+			CompleteResponse: &providerserverv1.StageLinkChangesCompleteResponse{
+				Changes: changes,
+			},
+		},
+	}, nil
+}
+
+func toPBLinkChanges(
+	changes *provider.LinkChanges,
+) (*sharedtypesv1.LinkChanges, error) {
+	if changes == nil {
+		return nil, nil
+	}
+
+	return convertv1.ToPBLinkChanges(*changes)
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

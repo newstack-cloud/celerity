@@ -14,9 +14,11 @@ import (
 
 const (
 	lambdaFunctionResourceType = "aws/lambda/function"
+	dynamoDBTableResourceType  = "aws/dynamodb/table"
 	testResource1ID            = "test-resource-1"
 	testInstance1ID            = "test-instance-1"
 	testResource1Name          = "processOrderFunction_0"
+	testResource2Name          = "ordersTable"
 )
 
 func (s *ProviderPluginV1Suite) Test_custom_validate_resource() {
