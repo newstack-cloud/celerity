@@ -398,7 +398,7 @@ func FromPBResourceChanges(changes *sharedtypesv1.Changes) (*provider.Changes, e
 		return nil, nil
 	}
 
-	appliedResourceInfo, err := fromPBResourceInfo(changes.AppliedResourceInfo)
+	appliedResourceInfo, err := FromPBResourceInfo(changes.AppliedResourceInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +439,9 @@ func FromPBResourceChanges(changes *sharedtypesv1.Changes) (*provider.Changes, e
 	}, nil
 }
 
-func fromPBResourceInfo(
+// FromPBResourceInfo converts a ResourceInfo from a protobuf message to a core type
+// compatible with the blueprint framework.
+func FromPBResourceInfo(
 	resourceInfo *sharedtypesv1.ResourceInfo,
 ) (provider.ResourceInfo, error) {
 	if resourceInfo == nil {

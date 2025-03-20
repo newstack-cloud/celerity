@@ -203,6 +203,38 @@ func fromPBLinkComponentCompletionDurations(
 	}
 }
 
+func fromPBUpdateLinkResourceRequest(
+	req *providerserverv1.UpdateLinkResourceRequest,
+) (*provider.LinkUpdateResourceInput, error) {
+	changes, err := convertv1.FromPBLinkChanges(req.Changes)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceInfo, err := convertv1.FromPBResourceInfo(req.ResourceInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	otherResourceInfo, err := convertv1.FromPBResourceInfo(req.OtherResourceInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	linkContext, err := fromPBLinkContext(req.Context)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.LinkUpdateResourceInput{
+		Changes:           &changes,
+		ResourceInfo:      &resourceInfo,
+		OtherResourceInfo: &otherResourceInfo,
+		LinkUpdateType:    provider.LinkUpdateType(req.UpdateType),
+		LinkContext:       linkContext,
+	}, nil
+}
+
 func fromPBLinkContext(
 	pbLinkContext *providerserverv1.LinkContext,
 ) (provider.LinkContext, error) {

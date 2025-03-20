@@ -631,6 +631,74 @@ func (p *blueprintProviderPluginImpl) StageLinkChanges(
 	return response, nil
 }
 
+func (p *blueprintProviderPluginImpl) UpdateLinkResourceA(
+	ctx context.Context,
+	req *providerserverv1.UpdateLinkResourceRequest,
+) (*providerserverv1.UpdateLinkResourceResponse, error) {
+	return p.updateLinkResource(
+		ctx,
+		req,
+		provider.LinkPriorityResourceA,
+	)
+}
+
+func (p *blueprintProviderPluginImpl) UpdateLinkResourceB(
+	ctx context.Context,
+	req *providerserverv1.UpdateLinkResourceRequest,
+) (*providerserverv1.UpdateLinkResourceResponse, error) {
+	return p.updateLinkResource(
+		ctx,
+		req,
+		provider.LinkPriorityResourceB,
+	)
+}
+
+func (p *blueprintProviderPluginImpl) updateLinkResource(
+	ctx context.Context,
+	req *providerserverv1.UpdateLinkResourceRequest,
+	linkResource provider.LinkPriorityResource,
+) (*providerserverv1.UpdateLinkResourceResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toUpdateLinkResourceErrorResponse(err), nil
+	}
+
+	linkTypeInfo, err := extractLinkTypeInfo(req.LinkType)
+	if err != nil {
+		return toUpdateLinkResourceErrorResponse(err), nil
+	}
+
+	link, err := p.bpProvider.Link(
+		ctx,
+		linkTypeInfo.resourceTypeA,
+		linkTypeInfo.resourceTypeB,
+	)
+	if err != nil {
+		return toUpdateLinkResourceErrorResponse(err), nil
+	}
+
+	updateLinkResourceInput, err := fromPBUpdateLinkResourceRequest(req)
+	if err != nil {
+		return toUpdateLinkResourceErrorResponse(err), nil
+	}
+
+	updateFunc := selectLinkUpdateResourceFunc(link, linkResource)
+	output, err := updateFunc(
+		ctx,
+		updateLinkResourceInput,
+	)
+	if err != nil {
+		return toUpdateLinkResourceErrorResponse(err), nil
+	}
+
+	response, err := toPBUpdateLinkResourceResponse(output)
+	if err != nil {
+		return toUpdateLinkResourceErrorResponse(err), nil
+	}
+
+	return response, nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

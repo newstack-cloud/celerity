@@ -3,7 +3,9 @@ package plugintestsuites
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testprovider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testutils"
 )
 
@@ -13,6 +15,122 @@ func linkStageChangesInput() *provider.LinkStageChangesInput {
 		ResourceBChanges: createDeployResourceChanges(),
 		CurrentLinkState: createCurrentLinkState(),
 		LinkContext:      testutils.CreateTestLinkContext(),
+	}
+}
+
+func linkUpdateResourceAInput() *provider.LinkUpdateResourceInput {
+	return &provider.LinkUpdateResourceInput{
+		Changes:           testprovider.LinkLambdaDynamoDBChangesOutput().Changes,
+		ResourceInfo:      createLinkResourceAInfo(),
+		OtherResourceInfo: createLinkResourceBInfo(),
+		LinkUpdateType:    provider.LinkUpdateTypeCreate,
+		LinkContext:       testutils.CreateTestLinkContext(),
+	}
+}
+
+func linkUpdateResourceBInput() *provider.LinkUpdateResourceInput {
+	return &provider.LinkUpdateResourceInput{
+		Changes:           testprovider.LinkLambdaDynamoDBChangesOutput().Changes,
+		ResourceInfo:      createLinkResourceBInfo(),
+		OtherResourceInfo: createLinkResourceAInfo(),
+		LinkUpdateType:    provider.LinkUpdateTypeCreate,
+		LinkContext:       testutils.CreateTestLinkContext(),
+	}
+}
+
+func createLinkResourceAInfo() *provider.ResourceInfo {
+	resourceInfo := createDeployResourceInfo()
+	return &resourceInfo
+}
+
+func createLinkResourceBInfo() *provider.ResourceInfo {
+	lastDriftDetected := 1742389743
+	configCompleteDuration := 8.5
+	totalDuration := 69.5
+	return &provider.ResourceInfo{
+		ResourceID:   testResource2ID,
+		ResourceName: testResource2Name,
+		InstanceID:   testInstance1ID,
+		CurrentResourceState: &state.ResourceState{
+			ResourceID:                 testResource2ID,
+			Name:                       testResource2Name,
+			Type:                       dynamoDBTableResourceType,
+			InstanceID:                 testInstance1ID,
+			Status:                     core.ResourceStatusCreated,
+			PreciseStatus:              core.PreciseResourceStatusCreated,
+			LastStatusUpdateTimestamp:  1742389743,
+			LastDeployedTimestamp:      1742389743,
+			LastDeployAttemptTimestamp: 1742389743,
+			Description:                "Table for storing orders",
+			SpecData: &core.MappingNode{
+				Fields: map[string]*core.MappingNode{
+					"arn":       core.MappingNodeFromString("arn:aws:dynamodb:us-west-2:123456789012:table:ordersTable"),
+					"tableName": core.MappingNodeFromString("orders"),
+				},
+			},
+			Metadata: &state.ResourceMetadataState{
+				DisplayName: "Orders Table",
+				Annotations: map[string]*core.MappingNode{
+					"example.annotation.v1": core.MappingNodeFromString("example-value"),
+				},
+				Labels: map[string]string{
+					"app": "orders",
+				},
+				Custom: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"customField": core.MappingNodeFromString("customValue"),
+					},
+				},
+			},
+			DependsOnResources:         []string{"orderQueue"},
+			DependsOnChildren:          []string{"coreInfra"},
+			Drifted:                    true,
+			LastDriftDetectedTimestamp: &lastDriftDetected,
+			Durations: &state.ResourceCompletionDurations{
+				ConfigCompleteDuration: &configCompleteDuration,
+				TotalDuration:          &totalDuration,
+				AttemptDurations:       []float64{10.5, 20.5, 30.5},
+			},
+		},
+		ResourceWithResolvedSubs: &provider.ResolvedResource{
+			Type: &schema.ResourceTypeWrapper{
+				Value: lambdaFunctionResourceType,
+			},
+			Description: core.MappingNodeFromString("Table for storing orders"),
+			Spec: &core.MappingNode{
+				Fields: map[string]*core.MappingNode{
+					"tableName": core.MappingNodeFromString("orders--updated"),
+				},
+			},
+			Metadata: &provider.ResolvedResourceMetadata{
+				DisplayName: core.MappingNodeFromString("Orders Table"),
+				Annotations: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"example.annotation.v1": core.MappingNodeFromString("example-value-updated"),
+					},
+				},
+				Labels: &schema.StringMap{
+					Values: map[string]string{
+						"app": "orders",
+					},
+				},
+				Custom: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"customField": core.MappingNodeFromString("customValueUpdated"),
+					},
+				},
+			},
+			Condition: &provider.ResolvedResourceCondition{
+				StringValue: core.MappingNodeFromBool(true),
+			},
+			LinkSelector: &schema.LinkSelector{
+				ByLabel: &schema.StringMap{
+					Values: map[string]string{
+						"app": "orders",
+					},
+				},
+			},
+		},
 	}
 }
 

@@ -5,9 +5,17 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
+	"google.golang.org/grpc"
 )
+
+type linkResourceUpdateFunc func(
+	ctx context.Context,
+	input *UpdateLinkResourceRequest,
+	opts ...grpc.CallOption,
+) (*UpdateLinkResourceResponse, error)
 
 type linkProviderClientWrapper struct {
 	client        ProviderClient
@@ -104,14 +112,114 @@ func (l *linkProviderClientWrapper) UpdateResourceA(
 	ctx context.Context,
 	input *provider.LinkUpdateResourceInput,
 ) (*provider.LinkUpdateResourceOutput, error) {
-	return nil, nil
+	return l.updateResource(
+		ctx,
+		input,
+		l.client.UpdateLinkResourceA,
+		errorsv1.PluginActionProviderUpdateLinkResourceA,
+	)
 }
 
 func (l *linkProviderClientWrapper) UpdateResourceB(
 	ctx context.Context,
 	input *provider.LinkUpdateResourceInput,
 ) (*provider.LinkUpdateResourceOutput, error) {
-	return nil, nil
+	return l.updateResource(
+		ctx,
+		input,
+		l.client.UpdateLinkResourceB,
+		errorsv1.PluginActionProviderUpdateLinkResourceB,
+	)
+}
+
+func (l *linkProviderClientWrapper) updateResource(
+	ctx context.Context,
+	input *provider.LinkUpdateResourceInput,
+	updateFunc linkResourceUpdateFunc,
+	action errorsv1.PluginAction,
+) (*provider.LinkUpdateResourceOutput, error) {
+	updateLinkResourceReq, err := l.buildUpdateResourceRequest(input)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			action,
+		)
+	}
+
+	response, err := updateFunc(ctx, updateLinkResourceReq)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			action,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *UpdateLinkResourceResponse_CompleteResponse:
+		linkData, err := serialisation.FromMappingNodePB(
+			result.CompleteResponse.LinkData,
+			/* optional */ true,
+		)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				action,
+			)
+		}
+
+		return &provider.LinkUpdateResourceOutput{
+			LinkData: linkData,
+		}, nil
+	case *UpdateLinkResourceResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			action,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(action),
+		action,
+	)
+}
+
+func (l *linkProviderClientWrapper) buildUpdateResourceRequest(
+	input *provider.LinkUpdateResourceInput,
+) (*UpdateLinkResourceRequest, error) {
+	linkChangesPB, err := toPBLinkChanges(input.Changes)
+	if err != nil {
+		return nil, err
+	}
+
+	linkCtx, err := toPBLinkContext(input.LinkContext)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceInfoPB, err := convertv1.ToPBResourceInfo(input.ResourceInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	otherResourceInfoPB, err := convertv1.ToPBResourceInfo(input.OtherResourceInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return &UpdateLinkResourceRequest{
+		LinkType: &LinkType{
+			Type: core.LinkType(
+				l.resourceTypeA,
+				l.resourceTypeB,
+			),
+		},
+		HostId:            l.hostID,
+		Changes:           linkChangesPB,
+		ResourceInfo:      resourceInfoPB,
+		OtherResourceInfo: otherResourceInfoPB,
+		UpdateType:        LinkUpdateType(input.LinkUpdateType),
+		Context:           linkCtx,
+	}, nil
 }
 
 func (l *linkProviderClientWrapper) UpdateIntermediaryResources(

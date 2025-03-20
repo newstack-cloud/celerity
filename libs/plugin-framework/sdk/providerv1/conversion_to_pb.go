@@ -415,6 +415,16 @@ func toPBStageLinkChangesResponse(
 	}, nil
 }
 
+func toUpdateLinkResourceErrorResponse(
+	err error,
+) *providerserverv1.UpdateLinkResourceResponse {
+	return &providerserverv1.UpdateLinkResourceResponse{
+		Response: &providerserverv1.UpdateLinkResourceResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
 func toPBLinkChanges(
 	changes *provider.LinkChanges,
 ) (*sharedtypesv1.LinkChanges, error) {
@@ -423,6 +433,34 @@ func toPBLinkChanges(
 	}
 
 	return convertv1.ToPBLinkChanges(*changes)
+}
+
+func toPBUpdateLinkResourceResponse(
+	output *provider.LinkUpdateResourceOutput,
+) (*providerserverv1.UpdateLinkResourceResponse, error) {
+	if output == nil {
+		return &providerserverv1.UpdateLinkResourceResponse{
+			Response: &providerserverv1.UpdateLinkResourceResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}, nil
+	}
+
+	linkData, err := serialisation.ToMappingNodePB(
+		output.LinkData,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &providerserverv1.UpdateLinkResourceResponse{
+		Response: &providerserverv1.UpdateLinkResourceResponse_CompleteResponse{
+			CompleteResponse: &providerserverv1.UpdateLinkResourceCompleteResponse{
+				LinkData: linkData,
+			},
+		},
+	}, nil
 }
 
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {

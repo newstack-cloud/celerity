@@ -129,6 +129,21 @@ func toPBLinkIntermediaryResourceState(
 	}, nil
 }
 
+func toPBLinkChanges(
+	changes *provider.LinkChanges,
+) (*sharedtypesv1.LinkChanges, error) {
+	if changes == nil {
+		return nil, nil
+	}
+
+	changesPB, err := convertv1.ToPBLinkChanges(*changes)
+	if err != nil {
+		return nil, err
+	}
+
+	return changesPB, nil
+}
+
 func toPBLinkContext(linkCtx provider.LinkContext) (*LinkContext, error) {
 	providerConfigVars, err := toPBLinkContextProviderConfigVars(
 		linkCtx.AllProviderConfigVariables(),

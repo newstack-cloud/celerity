@@ -213,3 +213,23 @@ func (p *failingProviderServer) StageLinkChanges(
 		"internal error occurred when staging changes for link",
 	)
 }
+
+func (p *failingProviderServer) UpdateLinkResourceA(
+	ctx context.Context,
+	req *providerserverv1.UpdateLinkResourceRequest,
+) (*providerserverv1.UpdateLinkResourceResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when updating resource A for link",
+	)
+}
+
+func (p *failingProviderServer) UpdateLinkResourceB(
+	ctx context.Context,
+	req *providerserverv1.UpdateLinkResourceRequest,
+) (*providerserverv1.UpdateLinkResourceResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when updating resource B for link",
+	)
+}

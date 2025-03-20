@@ -477,7 +477,7 @@ func ToPBChanges(
 		return nil, nil
 	}
 
-	resourceInfo, err := toPBResourceInfo(&changes.AppliedResourceInfo)
+	resourceInfo, err := ToPBResourceInfo(&changes.AppliedResourceInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -518,7 +518,9 @@ func ToPBChanges(
 	}, nil
 }
 
-func toPBResourceInfo(
+// ToPBResourceInfo converts a blueprint framework ResourceInfo
+// to a ResourceInfo protobuf message that can be sent over gRPC.
+func ToPBResourceInfo(
 	resourceInfo *provider.ResourceInfo,
 ) (*sharedtypesv1.ResourceInfo, error) {
 	if resourceInfo == nil {
