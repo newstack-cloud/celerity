@@ -575,7 +575,7 @@ func fromExportPB(exportPB *schemapb.Export) (*schema.Export, error) {
 // FromMappingNodePB converts a MappingNode protobuf message to a core.MappingNode struct
 // to be used with the blueprint framework.
 func FromMappingNodePB(mappingNodePB *schemapb.MappingNode, optional bool) (*core.MappingNode, error) {
-	if optional && mappingNodePB == nil {
+	if optional && mappingNodePBIsNil(mappingNodePB) {
 		return nil, nil
 	}
 
@@ -978,4 +978,14 @@ func fromScalarValuesPB(scalarValuesPB []*schemapb.ScalarValue) ([]*core.ScalarV
 		scalarValues[i] = scalarValue
 	}
 	return scalarValues, nil
+}
+
+func mappingNodePBIsNil(
+	mappingNodePB *schemapb.MappingNode,
+) bool {
+	return mappingNodePB == nil ||
+		(mappingNodePB.Scalar == nil &&
+			mappingNodePB.Fields == nil &&
+			mappingNodePB.Items == nil &&
+			mappingNodePB.StringWithSubstitutions == nil)
 }
