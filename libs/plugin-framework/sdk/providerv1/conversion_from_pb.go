@@ -295,6 +295,19 @@ func fromPBLinkRequestForTypeDescription(
 	}, nil
 }
 
+func fromPBLinkRequestForAnnotationDefinitions(
+	req *providerserverv1.LinkRequest,
+) (*provider.LinkGetAnnotationDefinitionsInput, error) {
+	linkContext, err := fromPBLinkContext(req.Context)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.LinkGetAnnotationDefinitionsInput{
+		LinkContext: linkContext,
+	}, nil
+}
+
 func fromPBLinkContext(
 	pbLinkContext *providerserverv1.LinkContext,
 ) (provider.LinkContext, error) {

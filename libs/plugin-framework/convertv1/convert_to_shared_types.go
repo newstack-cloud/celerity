@@ -978,7 +978,9 @@ func ToPBScalarMap(m map[string]*core.ScalarValue) (map[string]*schemapb.ScalarV
 	return pbMap, nil
 }
 
-func toPBScalarSlice(slice []*core.ScalarValue) ([]*schemapb.ScalarValue, error) {
+// ToPBScalarSlice converts a slice of core ScalarValues to a slice of protobuf ScalarValues
+// that can be sent over gRPC.
+func ToPBScalarSlice(slice []*core.ScalarValue) ([]*schemapb.ScalarValue, error) {
 	pbSlice := make([]*schemapb.ScalarValue, len(slice))
 	for i, scalar := range slice {
 		pbScalar, err := serialisation.ToScalarValuePB(scalar, true /* optional */)
@@ -1591,18 +1593,18 @@ func toPBConfigFieldDefinition(
 		return nil, err
 	}
 
-	allowedValues, err := toPBScalarSlice(fieldDefinition.AllowedValues)
+	allowedValues, err := ToPBScalarSlice(fieldDefinition.AllowedValues)
 	if err != nil {
 		return nil, err
 	}
 
-	examples, err := toPBScalarSlice(fieldDefinition.Examples)
+	examples, err := ToPBScalarSlice(fieldDefinition.Examples)
 	if err != nil {
 		return nil, err
 	}
 
 	return &sharedtypesv1.ConfigFieldDefinition{
-		Type:          toPBScalarType(fieldDefinition.Type),
+		Type:          ToPBScalarType(fieldDefinition.Type),
 		Label:         fieldDefinition.Label,
 		Description:   fieldDefinition.Description,
 		DefaultValue:  defaultValue,
@@ -1612,7 +1614,9 @@ func toPBConfigFieldDefinition(
 	}, nil
 }
 
-func toPBScalarType(
+// ToPBScalarType converts a blueprint framework ScalarType
+// to a ScalarType protobuf message that can be sent over gRPC.
+func ToPBScalarType(
 	scalarType core.ScalarType,
 ) sharedtypesv1.ScalarType {
 	switch scalarType {

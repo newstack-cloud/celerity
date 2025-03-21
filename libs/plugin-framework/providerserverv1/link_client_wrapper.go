@@ -406,7 +406,48 @@ func (l *linkProviderClientWrapper) GetAnnotationDefinitions(
 	ctx context.Context,
 	input *provider.LinkGetAnnotationDefinitionsInput,
 ) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
-	return nil, nil
+	request, err := l.buildLinkRequest(input.LinkContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetLinkAnnotationDefinitions,
+		)
+	}
+
+	response, err := l.client.GetLinkAnnotationDefinitions(ctx, request)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetLinkAnnotationDefinitions,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *LinkAnnotationDefinitionsResponse_AnnotationDefinitions:
+		output, err := fromPBLinkAnnotationDefinitions(
+			result.AnnotationDefinitions,
+		)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				errorsv1.PluginActionProviderGetLinkAnnotationDefinitions,
+			)
+		}
+
+		return output, nil
+	case *LinkAnnotationDefinitionsResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetLinkAnnotationDefinitions,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetLinkAnnotationDefinitions,
+		),
+		errorsv1.PluginActionProviderGetLinkAnnotationDefinitions,
+	)
 }
 
 func (l *linkProviderClientWrapper) GetKind(

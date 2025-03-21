@@ -46,6 +46,7 @@ func LinkLambdaFunctionDDBTableAnnotations() map[string]*provider.LinkAnnotation
 		"aws/lambda/function::aws.lambda.dynamodb.accessType": {
 			Name:  "aws.lambda.dynamodb.accessType",
 			Label: "Access Type",
+			Type:  core.ScalarTypeString,
 			Description: "The type of access the Lambda function has to the DynamoDB table. " +
 				"Valid values are `read` and `write`.",
 			DefaultValue:  core.ScalarFromString("read"),

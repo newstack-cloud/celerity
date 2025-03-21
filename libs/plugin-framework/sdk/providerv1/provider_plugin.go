@@ -818,20 +818,64 @@ func (p *blueprintProviderPluginImpl) GetLinkTypeDescription(
 		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
 	}
 
-	geTTypeDescriptionInput, err := fromPBLinkRequestForTypeDescription(req)
+	getTypeDescriptionInput, err := fromPBLinkRequestForTypeDescription(req)
 	if err != nil {
 		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
 	}
 
 	output, err := link.GetTypeDescription(
 		ctx,
-		geTTypeDescriptionInput,
+		getTypeDescriptionInput,
 	)
 	if err != nil {
 		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
 	}
 
 	return toPBGetLinkTypeDescriptionResponse(output), nil
+}
+
+func (p *blueprintProviderPluginImpl) GetLinkAnnotationDefinitions(
+	ctx context.Context,
+	req *providerserverv1.LinkRequest,
+) (*providerserverv1.LinkAnnotationDefinitionsResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toGetLinkAnnotationsDefinitionsErrorResponse(err), nil
+	}
+
+	linkTypeInfo, err := extractLinkTypeInfo(req.LinkType)
+	if err != nil {
+		return toGetLinkAnnotationsDefinitionsErrorResponse(err), nil
+	}
+
+	link, err := p.bpProvider.Link(
+		ctx,
+		linkTypeInfo.resourceTypeA,
+		linkTypeInfo.resourceTypeB,
+	)
+	if err != nil {
+		return toGetLinkAnnotationsDefinitionsErrorResponse(err), nil
+	}
+
+	getAnnotationsInput, err := fromPBLinkRequestForAnnotationDefinitions(req)
+	if err != nil {
+		return toGetLinkAnnotationsDefinitionsErrorResponse(err), nil
+	}
+
+	output, err := link.GetAnnotationDefinitions(
+		ctx,
+		getAnnotationsInput,
+	)
+	if err != nil {
+		return toGetLinkAnnotationsDefinitionsErrorResponse(err), nil
+	}
+
+	response, err := toPBGetLinkAnnotationDefinitionsResponse(output)
+	if err != nil {
+		return toGetLinkAnnotationsDefinitionsErrorResponse(err), nil
+	}
+
+	return response, nil
 }
 
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {

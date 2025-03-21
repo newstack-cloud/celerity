@@ -366,3 +366,61 @@ func (s *ProviderPluginV1Suite) Test_link_get_type_description_reports_expected_
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred when retrieving type description for link")
 }
+
+func (s *ProviderPluginV1Suite) Test_link_get_annotation_definitions() {
+	link, err := s.provider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	output, err := link.GetAnnotationDefinitions(
+		context.Background(),
+		linkGetAnnotationDefnitionsInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		testprovider.LinkLambdaFunctionDDBTableAnnotations(),
+		output.AnnotationDefinitions,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_get_annotation_definitions_fails_for_unexpected_host() {
+	link, err := s.providerWrongHost.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.GetAnnotationDefinitions(
+		context.Background(),
+		linkGetAnnotationDefnitionsInput(),
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetLinkAnnotationDefinitions,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_annotation_definitions_reports_expected_error_for_failure() {
+	link, err := s.failingProvider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.GetAnnotationDefinitions(
+		context.Background(),
+		linkGetAnnotationDefnitionsInput(),
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred when retrieving annotation definitions for link",
+	)
+}

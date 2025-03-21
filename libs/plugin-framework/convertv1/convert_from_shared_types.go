@@ -113,7 +113,7 @@ func fromPBConfigFieldDefinition(
 	}
 
 	return &core.ConfigFieldDefinition{
-		Type:          fromPBScalarType(pbFieldDefinition.Type),
+		Type:          FromPBScalarType(pbFieldDefinition.Type),
 		Label:         pbFieldDefinition.Label,
 		Description:   pbFieldDefinition.Description,
 		DefaultValue:  defaultValue,
@@ -123,7 +123,9 @@ func fromPBConfigFieldDefinition(
 	}, nil
 }
 
-func fromPBScalarType(
+// FromPBScalarType converts a ScalarType from a protobuf message to a core type
+// compatible with the blueprint framework.
+func FromPBScalarType(
 	scalarType sharedtypesv1.ScalarType,
 ) core.ScalarType {
 	switch scalarType {

@@ -622,6 +622,82 @@ func toPBGetLinkTypeDescriptionResponse(
 	}
 }
 
+func toGetLinkAnnotationsDefinitionsErrorResponse(
+	err error,
+) *providerserverv1.LinkAnnotationDefinitionsResponse {
+	return &providerserverv1.LinkAnnotationDefinitionsResponse{
+		Response: &providerserverv1.LinkAnnotationDefinitionsResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBGetLinkAnnotationDefinitionsResponse(
+	output *provider.LinkGetAnnotationDefinitionsOutput,
+) (*providerserverv1.LinkAnnotationDefinitionsResponse, error) {
+	if output == nil {
+		return &providerserverv1.LinkAnnotationDefinitionsResponse{
+			Response: &providerserverv1.LinkAnnotationDefinitionsResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}, nil
+	}
+
+	annotations := make(
+		map[string]*providerserverv1.LinkAnnotationDefinition,
+		len(output.AnnotationDefinitions),
+	)
+	for key, annotation := range output.AnnotationDefinitions {
+		pbAnnotation, err := toPBLinkAnnotationDefinition(annotation)
+		if err != nil {
+			return nil, err
+		}
+
+		annotations[key] = pbAnnotation
+	}
+
+	return &providerserverv1.LinkAnnotationDefinitionsResponse{
+		Response: &providerserverv1.LinkAnnotationDefinitionsResponse_AnnotationDefinitions{
+			AnnotationDefinitions: &providerserverv1.LinkAnnotationDefinitions{
+				Definitions: annotations,
+			},
+		},
+	}, nil
+}
+
+func toPBLinkAnnotationDefinition(
+	definition *provider.LinkAnnotationDefinition,
+) (*providerserverv1.LinkAnnotationDefinition, error) {
+	defaultValue, err := serialisation.ToScalarValuePB(
+		definition.DefaultValue,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	allowedValues, err := convertv1.ToPBScalarSlice(definition.AllowedValues)
+	if err != nil {
+		return nil, err
+	}
+
+	examples, err := convertv1.ToPBScalarSlice(definition.Examples)
+	if err != nil {
+		return nil, err
+	}
+
+	return &providerserverv1.LinkAnnotationDefinition{
+		Name:          definition.Name,
+		Label:         definition.Label,
+		Type:          convertv1.ToPBScalarType(definition.Type),
+		Description:   definition.Description,
+		DefaultValue:  defaultValue,
+		AllowedValues: allowedValues,
+		Examples:      examples,
+		Required:      definition.Required,
+	}, nil
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

@@ -99,3 +99,61 @@ func fromPBTypeDescriptionForLink(
 		MarkdownSummary:      req.MarkdownSummary,
 	}
 }
+
+func fromPBLinkAnnotationDefinitions(
+	pbDefinitions *LinkAnnotationDefinitions,
+) (*provider.LinkGetAnnotationDefinitionsOutput, error) {
+	if pbDefinitions == nil {
+		return nil, nil
+	}
+
+	annotations := make(map[string]*provider.LinkAnnotationDefinition)
+	for key, pbAnnotation := range pbDefinitions.Definitions {
+		annotation, err := fromPBLinkAnnotationDefinition(pbAnnotation)
+		if err != nil {
+			return nil, err
+		}
+		annotations[key] = annotation
+	}
+
+	return &provider.LinkGetAnnotationDefinitionsOutput{
+		AnnotationDefinitions: annotations,
+	}, nil
+}
+
+func fromPBLinkAnnotationDefinition(
+	pbDefinition *LinkAnnotationDefinition,
+) (*provider.LinkAnnotationDefinition, error) {
+	if pbDefinition == nil {
+		return nil, nil
+	}
+
+	defaultValue, err := serialisation.FromScalarValuePB(
+		pbDefinition.DefaultValue,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	allowedValues, err := convertv1.FromPBScalarSlice(pbDefinition.AllowedValues)
+	if err != nil {
+		return nil, err
+	}
+
+	examples, err := convertv1.FromPBScalarSlice(pbDefinition.Examples)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.LinkAnnotationDefinition{
+		Name:          pbDefinition.Name,
+		Label:         pbDefinition.Label,
+		Type:          convertv1.FromPBScalarType(pbDefinition.Type),
+		Description:   pbDefinition.Description,
+		DefaultValue:  defaultValue,
+		AllowedValues: allowedValues,
+		Examples:      examples,
+		Required:      pbDefinition.Required,
+	}, nil
+}

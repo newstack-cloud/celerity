@@ -203,3 +203,9 @@ func linkGetTypeDescriptionInput() *provider.LinkGetTypeDescriptionInput {
 		LinkContext: testutils.CreateTestLinkContext(),
 	}
 }
+
+func linkGetAnnotationDefnitionsInput() *provider.LinkGetAnnotationDefinitionsInput {
+	return &provider.LinkGetAnnotationDefinitionsInput{
+		LinkContext: testutils.CreateTestLinkContext(),
+	}
+}
