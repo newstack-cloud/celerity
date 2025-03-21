@@ -223,7 +223,7 @@ func fromDataSourcesPB(dataSourcesPB map[string]*schemapb.DataSource) (*schema.D
 
 	dataSources := make(map[string]*schema.DataSource)
 	for k, v := range dataSourcesPB {
-		dataSource, err := fromDataSourcePB(v)
+		dataSource, err := FromDataSourcePB(v)
 		if err != nil {
 			return nil, err
 		}
@@ -236,7 +236,9 @@ func fromDataSourcesPB(dataSourcesPB map[string]*schemapb.DataSource) (*schema.D
 	}, nil
 }
 
-func fromDataSourcePB(dataSourcePB *schemapb.DataSource) (*schema.DataSource, error) {
+// FromDataSourcePB converts a DataSource protobuf message to a schema.DataSource struct
+// to be used with the blueprint framework.
+func FromDataSourcePB(dataSourcePB *schemapb.DataSource) (*schema.DataSource, error) {
 	description, err := fromStringOrSubstitutionsPB(dataSourcePB.Description, true)
 	if err != nil {
 		return nil, err

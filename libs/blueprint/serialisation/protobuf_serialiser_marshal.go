@@ -209,7 +209,7 @@ func toDataSourcesPB(dataSources *schema.DataSourceMap) (map[string]*schemapb.Da
 
 	dataSourcesPB := make(map[string]*schemapb.DataSource)
 	for k, v := range dataSources.Values {
-		dataSourcePB, err := toDataSourcePB(v)
+		dataSourcePB, err := ToDataSourcePB(v)
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +219,9 @@ func toDataSourcesPB(dataSources *schema.DataSourceMap) (map[string]*schemapb.Da
 	return dataSourcesPB, nil
 }
 
-func toDataSourcePB(dataSource *schema.DataSource) (*schemapb.DataSource, error) {
+// ToDataSourcePB converts a core data source type to a schemapb.DataSource
+// that can be stored and transmitted as a protobuf message.
+func ToDataSourcePB(dataSource *schema.DataSource) (*schemapb.DataSource, error) {
 	descriptionPB, err := toStringOrSubstitutionsPB(dataSource.Description, true)
 	if err != nil {
 		return nil, err
