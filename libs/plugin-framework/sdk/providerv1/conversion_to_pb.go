@@ -728,6 +728,36 @@ func toPBGetLinkKindResponse(
 	}
 }
 
+func toCustomValidateDataSourceErrorResponse(
+	err error,
+) *providerserverv1.CustomValidateDataSourceResponse {
+	return &providerserverv1.CustomValidateDataSourceResponse{
+		Response: &providerserverv1.CustomValidateDataSourceResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBCustomValidateDataSourceResponse(
+	output *provider.DataSourceValidateOutput,
+) *providerserverv1.CustomValidateDataSourceResponse {
+	if output == nil {
+		return &providerserverv1.CustomValidateDataSourceResponse{
+			Response: &providerserverv1.CustomValidateDataSourceResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &providerserverv1.CustomValidateDataSourceResponse{
+		Response: &providerserverv1.CustomValidateDataSourceResponse_CompleteResponse{
+			CompleteResponse: &providerserverv1.CustomValidateDataSourceCompleteResponse{
+				Diagnostics: sharedtypesv1.ToPBDiagnostics(output.Diagnostics),
+			},
+		},
+	}
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

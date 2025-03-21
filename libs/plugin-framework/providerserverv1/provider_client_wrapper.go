@@ -79,7 +79,11 @@ func (p *providerClientWrapper) Resource(ctx context.Context, resourceType strin
 }
 
 func (p *providerClientWrapper) DataSource(ctx context.Context, dataSourceType string) (provider.DataSource, error) {
-	return nil, nil
+	return &dataSourceProviderClientWrapper{
+		client:         p.client,
+		dataSourceType: dataSourceType,
+		hostID:         p.hostID,
+	}, nil
 }
 
 func (p *providerClientWrapper) Link(ctx context.Context, resourceTypeA string, resourceTypeB string) (provider.Link, error) {

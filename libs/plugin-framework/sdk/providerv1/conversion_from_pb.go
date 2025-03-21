@@ -321,6 +321,25 @@ func fromPBLinkRequestForKind(
 	}, nil
 }
 
+func fromPBCustomValidateDataSourceRequest(
+	req *providerserverv1.CustomValidateDataSourceRequest,
+) (*provider.DataSourceValidateInput, error) {
+	dataSource, err := serialisation.FromDataSourcePB(req.SchemaDataSource)
+	if err != nil {
+		return nil, err
+	}
+
+	providerCtx, err := convertv1.FromPBProviderContext(req.Context)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.DataSourceValidateInput{
+		SchemaDataSource: dataSource,
+		ProviderContext:  providerCtx,
+	}, nil
+}
+
 func fromPBLinkContext(
 	pbLinkContext *providerserverv1.LinkContext,
 ) (provider.LinkContext, error) {
@@ -335,4 +354,8 @@ func fromPBLinkContext(
 	}
 
 	return createLinkContextFromVarMaps(providerConfigVars, contextVars)
+}
+
+func dataSourceTypeToString(dataSourceType *providerserverv1.DataSourceType) string {
+	return dataSourceType.Type
 }

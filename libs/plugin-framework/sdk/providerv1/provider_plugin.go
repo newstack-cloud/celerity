@@ -917,6 +917,39 @@ func (p *blueprintProviderPluginImpl) GetLinkKind(
 	return toPBGetLinkKindResponse(output), nil
 }
 
+func (p *blueprintProviderPluginImpl) CustomValidateDataSource(
+	ctx context.Context,
+	req *providerserverv1.CustomValidateDataSourceRequest,
+) (*providerserverv1.CustomValidateDataSourceResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toCustomValidateDataSourceErrorResponse(err), nil
+	}
+
+	dataSource, err := p.bpProvider.DataSource(
+		ctx,
+		dataSourceTypeToString(req.DataSourceType),
+	)
+	if err != nil {
+		return toCustomValidateDataSourceErrorResponse(err), nil
+	}
+
+	validationInput, err := fromPBCustomValidateDataSourceRequest(req)
+	if err != nil {
+		return toCustomValidateDataSourceErrorResponse(err), nil
+	}
+
+	output, err := dataSource.CustomValidate(
+		ctx,
+		validationInput,
+	)
+	if err != nil {
+		return toCustomValidateDataSourceErrorResponse(err), nil
+	}
+
+	return toPBCustomValidateDataSourceResponse(output), nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

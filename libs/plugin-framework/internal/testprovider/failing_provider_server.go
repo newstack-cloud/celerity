@@ -283,3 +283,13 @@ func (p *failingProviderServer) GetLinkKind(
 		"internal error occurred when retrieving link kind",
 	)
 }
+
+func (p *failingProviderServer) CustomValidateDataSource(
+	ctx context.Context,
+	req *providerserverv1.CustomValidateDataSourceRequest,
+) (*providerserverv1.CustomValidateDataSourceResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred applying custom validation for data source",
+	)
+}
