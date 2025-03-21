@@ -24,7 +24,11 @@ func StartPluginServer(
 	bufferSize := 1024 * 1024
 	listener := bufconn.Listen(bufferSize)
 	pluginHostInfoContainer := pluginutils.NewHostInfoContainer()
-	providerServer := createProviderServer(failingPlugin, pluginHostInfoContainer)
+	providerServer := createProviderServer(
+		failingPlugin,
+		pluginHostInfoContainer,
+		serviceClient,
+	)
 	id := createPluginID(failingPlugin)
 	config := plugin.ServeProviderConfiguration{
 		ID: id,
@@ -70,11 +74,16 @@ func StartPluginServer(
 func createProviderServer(
 	failingPlugin bool,
 	pluginHostInfoContainer pluginutils.HostInfoContainer,
+	serviceClient pluginservicev1.ServiceClient,
 ) providerserverv1.ProviderServer {
 	if failingPlugin {
 		return &failingProviderServer{}
 	}
-	return providerv1.NewProviderPlugin(NewProvider(), pluginHostInfoContainer)
+	return providerv1.NewProviderPlugin(
+		NewProvider(),
+		pluginHostInfoContainer,
+		serviceClient,
+	)
 }
 
 func createPluginID(failingPlugin bool) string {

@@ -3,6 +3,7 @@ package providerv1
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 	commoncore "github.com/two-hundred/celerity/libs/common/core"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
@@ -460,6 +461,108 @@ func toPBUpdateLinkResourceResponse(
 				LinkData: linkData,
 			},
 		},
+	}, nil
+}
+
+func toUpdateLinkIntermediaryResourcesErrorResponse(
+	err error,
+) *providerserverv1.UpdateLinkIntermediaryResourcesResponse {
+	return &providerserverv1.UpdateLinkIntermediaryResourcesResponse{
+		Response: &providerserverv1.UpdateLinkIntermediaryResourcesResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBUpdateLinkIntermediaryResourcesResponse(
+	output *provider.LinkUpdateIntermediaryResourcesOutput,
+) (*providerserverv1.UpdateLinkIntermediaryResourcesResponse, error) {
+	if output == nil {
+		return &providerserverv1.UpdateLinkIntermediaryResourcesResponse{
+			Response: &providerserverv1.UpdateLinkIntermediaryResourcesResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}, nil
+	}
+
+	intermediaryResourceStates, err := toPBLinkIntermediaryResourceStates(
+		output.IntermediaryResourceStates,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	linkData, err := serialisation.ToMappingNodePB(
+		output.LinkData,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &providerserverv1.UpdateLinkIntermediaryResourcesResponse{
+		Response: &providerserverv1.UpdateLinkIntermediaryResourcesResponse_CompleteResponse{
+			CompleteResponse: &providerserverv1.UpdateLinkIntermediaryResourcesCompleteResponse{
+				IntermediaryResourceStates: intermediaryResourceStates,
+				LinkData:                   linkData,
+			},
+		},
+	}, nil
+}
+
+func toPBLinkIntermediaryResourceStates(
+	intermediaryResourceStates []*state.LinkIntermediaryResourceState,
+) ([]*providerserverv1.LinkIntermediaryResourceState, error) {
+	pbIntermediaryResourceStates := make(
+		[]*providerserverv1.LinkIntermediaryResourceState,
+		0,
+		len(intermediaryResourceStates),
+	)
+	for _, intermediaryResourceState := range intermediaryResourceStates {
+		pbIntermediaryResourceState, err := toPBLinkIntermediaryResourceState(
+			intermediaryResourceState,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		pbIntermediaryResourceStates = append(
+			pbIntermediaryResourceStates,
+			pbIntermediaryResourceState,
+		)
+	}
+
+	return pbIntermediaryResourceStates, nil
+}
+
+func toPBLinkIntermediaryResourceState(
+	intermediaryResourceState *state.LinkIntermediaryResourceState,
+) (*providerserverv1.LinkIntermediaryResourceState, error) {
+	resourceSpecData, err := serialisation.ToMappingNodePB(
+		intermediaryResourceState.ResourceSpecData,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &providerserverv1.LinkIntermediaryResourceState{
+		ResourceId: intermediaryResourceState.ResourceID,
+		InstanceId: intermediaryResourceState.InstanceID,
+		Status: sharedtypesv1.ResourceStatus(
+			intermediaryResourceState.Status,
+		),
+		PreciseStatus: sharedtypesv1.PreciseResourceStatus(
+			intermediaryResourceState.PreciseStatus,
+		),
+		LastDeployedTimestamp: int64(
+			intermediaryResourceState.LastDeployedTimestamp,
+		),
+		LastDeployAttemptTimestamp: int64(
+			intermediaryResourceState.LastDeployAttemptTimestamp,
+		),
+		ResourceSpecData: resourceSpecData,
+		FailureReasons:   intermediaryResourceState.FailureReasons,
 	}, nil
 }
 

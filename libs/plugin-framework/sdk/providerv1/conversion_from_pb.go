@@ -235,6 +235,40 @@ func fromPBUpdateLinkResourceRequest(
 	}, nil
 }
 
+func fromPBLinkIntermediaryResourceRequest(
+	req *providerserverv1.UpdateLinkIntermediaryResourcesRequest,
+	resourceDeployService provider.ResourceDeployService,
+) (*provider.LinkUpdateIntermediaryResourcesInput, error) {
+	resourceAInfo, err := convertv1.FromPBResourceInfo(req.ResourceAInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceBInfo, err := convertv1.FromPBResourceInfo(req.ResourceBInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	changes, err := convertv1.FromPBLinkChanges(req.Changes)
+	if err != nil {
+		return nil, err
+	}
+
+	linkContext, err := fromPBLinkContext(req.Context)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.LinkUpdateIntermediaryResourcesInput{
+		ResourceAInfo:  &resourceAInfo,
+		ResourceBInfo:  &resourceBInfo,
+		Changes:        &changes,
+		LinkUpdateType: provider.LinkUpdateType(req.UpdateType),
+		LinkContext:    linkContext,
+		// TODO: Add resource deploy service using plugin service client!
+	}, nil
+}
+
 func fromPBLinkContext(
 	pbLinkContext *providerserverv1.LinkContext,
 ) (provider.LinkContext, error) {

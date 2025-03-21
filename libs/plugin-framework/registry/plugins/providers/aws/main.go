@@ -12,10 +12,17 @@ import (
 )
 
 func main() {
+	serviceClient, closeService, err := pluginservicev1.NewEnvServiceClient()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer closeService()
+
 	hostInfoContainer := pluginutils.NewHostInfoContainer()
 	providerServer := providerv1.NewProviderPlugin(
 		aws.NewProvider(),
 		hostInfoContainer,
+		serviceClient,
 	)
 	config := plugin.ServeProviderConfiguration{
 		ID: "celerity/aws",
@@ -29,11 +36,6 @@ func main() {
 		},
 		ProtocolVersion: 1,
 	}
-	serviceClient, closeService, err := pluginservicev1.NewEnvServiceClient()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	defer closeService()
 
 	close, err := plugin.ServeProviderV1(
 		context.Background(),

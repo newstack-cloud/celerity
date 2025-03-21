@@ -233,3 +233,13 @@ func (p *failingProviderServer) UpdateLinkResourceB(
 		"internal error occurred when updating resource B for link",
 	)
 }
+
+func (p *failingProviderServer) UpdateLinkIntermediaryResources(
+	ctx context.Context,
+	req *providerserverv1.UpdateLinkIntermediaryResourcesRequest,
+) (*providerserverv1.UpdateLinkIntermediaryResourcesResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when updating intermediary resources for link",
+	)
+}

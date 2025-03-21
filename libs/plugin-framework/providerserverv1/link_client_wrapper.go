@@ -226,7 +226,87 @@ func (l *linkProviderClientWrapper) UpdateIntermediaryResources(
 	ctx context.Context,
 	input *provider.LinkUpdateIntermediaryResourcesInput,
 ) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
-	return nil, nil
+	request, err := l.buildUpdateIntermediaryResourcesRequest(input)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderUpdateLinkIntermediaryResources,
+		)
+	}
+
+	response, err := l.client.UpdateLinkIntermediaryResources(ctx, request)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderUpdateLinkIntermediaryResources,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *UpdateLinkIntermediaryResourcesResponse_CompleteResponse:
+		output, err := fromPBLinkIntermediaryResourcesCompleteResponse(
+			result.CompleteResponse,
+		)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				errorsv1.PluginActionProviderUpdateLinkIntermediaryResources,
+			)
+		}
+
+		return output, nil
+	case *UpdateLinkIntermediaryResourcesResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderUpdateLinkIntermediaryResources,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderUpdateLinkIntermediaryResources,
+		),
+		errorsv1.PluginActionProviderUpdateLinkIntermediaryResources,
+	)
+}
+
+func (l *linkProviderClientWrapper) buildUpdateIntermediaryResourcesRequest(
+	input *provider.LinkUpdateIntermediaryResourcesInput,
+) (*UpdateLinkIntermediaryResourcesRequest, error) {
+	linkCtx, err := toPBLinkContext(input.LinkContext)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceAInfoPB, err := convertv1.ToPBResourceInfo(input.ResourceAInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceBInfoPB, err := convertv1.ToPBResourceInfo(input.ResourceBInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	linkChangesPB, err := toPBLinkChanges(input.Changes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &UpdateLinkIntermediaryResourcesRequest{
+		LinkType: &LinkType{
+			Type: core.LinkType(
+				l.resourceTypeA,
+				l.resourceTypeB,
+			),
+		},
+		HostId:        l.hostID,
+		ResourceAInfo: resourceAInfoPB,
+		ResourceBInfo: resourceBInfoPB,
+		Changes:       linkChangesPB,
+		UpdateType:    LinkUpdateType(input.LinkUpdateType),
+		Context:       linkCtx,
+	}, nil
 }
 
 func (l *linkProviderClientWrapper) GetPriorityResource(

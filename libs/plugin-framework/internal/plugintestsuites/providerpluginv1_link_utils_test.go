@@ -134,6 +134,16 @@ func createLinkResourceBInfo() *provider.ResourceInfo {
 	}
 }
 
+func linkUpdateIntermediaryResourcesInput() *provider.LinkUpdateIntermediaryResourcesInput {
+	return &provider.LinkUpdateIntermediaryResourcesInput{
+		ResourceAInfo:  createLinkResourceAInfo(),
+		ResourceBInfo:  createLinkResourceBInfo(),
+		LinkUpdateType: provider.LinkUpdateTypeCreate,
+		Changes:        testprovider.LinkLambdaDynamoDBChangesOutput().Changes,
+		LinkContext:    testutils.CreateTestLinkContext(),
+	}
+}
+
 func createCurrentLinkState() *state.LinkState {
 	resourceAUpdateDuration := 8.5
 	resourceBUpdateDuration := 12.5

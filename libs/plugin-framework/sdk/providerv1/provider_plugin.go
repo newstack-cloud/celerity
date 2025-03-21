@@ -6,6 +6,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
@@ -21,13 +22,18 @@ import (
 //
 // The host info container is used to retrieve the ID of the host
 // that the plugin was registered with.
+//
+// The service client is used to communicate with other plugins
+// that are registered with the deploy engine host.
 func NewProviderPlugin(
 	bpProvider provider.Provider,
 	hostInfoContainer pluginutils.HostInfoContainer,
+	serviceClient pluginservicev1.ServiceClient,
 ) providerserverv1.ProviderServer {
 	return &blueprintProviderPluginImpl{
 		bpProvider:        bpProvider,
 		hostInfoContainer: hostInfoContainer,
+		serviceClient:     serviceClient,
 	}
 }
 
@@ -35,6 +41,7 @@ type blueprintProviderPluginImpl struct {
 	providerserverv1.UnimplementedProviderServer
 	bpProvider        provider.Provider
 	hostInfoContainer pluginutils.HostInfoContainer
+	serviceClient     pluginservicev1.ServiceClient
 }
 
 func (p *blueprintProviderPluginImpl) GetNamespace(
@@ -694,6 +701,56 @@ func (p *blueprintProviderPluginImpl) updateLinkResource(
 	response, err := toPBUpdateLinkResourceResponse(output)
 	if err != nil {
 		return toUpdateLinkResourceErrorResponse(err), nil
+	}
+
+	return response, nil
+}
+
+func (p *blueprintProviderPluginImpl) UpdateLinkIntermediaryResources(
+	ctx context.Context,
+	req *providerserverv1.UpdateLinkIntermediaryResourcesRequest,
+) (*providerserverv1.UpdateLinkIntermediaryResourcesResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toUpdateLinkIntermediaryResourcesErrorResponse(err), nil
+	}
+
+	linkTypeInfo, err := extractLinkTypeInfo(req.LinkType)
+	if err != nil {
+		return toUpdateLinkIntermediaryResourcesErrorResponse(err), nil
+	}
+
+	link, err := p.bpProvider.Link(
+		ctx,
+		linkTypeInfo.resourceTypeA,
+		linkTypeInfo.resourceTypeB,
+	)
+	if err != nil {
+		return toUpdateLinkIntermediaryResourcesErrorResponse(err), nil
+	}
+
+	resourceDeployService := pluginservicev1.ResourceDeployServiceFromClient(
+		p.serviceClient,
+	)
+	updateIntermediaryResourcesInput, err := fromPBLinkIntermediaryResourceRequest(
+		req,
+		resourceDeployService,
+	)
+	if err != nil {
+		return toUpdateLinkIntermediaryResourcesErrorResponse(err), nil
+	}
+
+	output, err := link.UpdateIntermediaryResources(
+		ctx,
+		updateIntermediaryResourcesInput,
+	)
+	if err != nil {
+		return toUpdateLinkIntermediaryResourcesErrorResponse(err), nil
+	}
+
+	response, err := toPBUpdateLinkIntermediaryResourcesResponse(output)
+	if err != nil {
+		return toUpdateLinkIntermediaryResourcesErrorResponse(err), nil
 	}
 
 	return response, nil

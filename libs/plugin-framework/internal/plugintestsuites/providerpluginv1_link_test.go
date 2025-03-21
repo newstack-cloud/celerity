@@ -176,3 +176,55 @@ func (s *ProviderPluginV1Suite) Test_link_update_resource_b_reports_expected_err
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred when updating resource B for link")
 }
+
+func (s *ProviderPluginV1Suite) Test_link_update_intermediary_resources() {
+	link, err := s.provider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	output, err := link.UpdateIntermediaryResources(
+		context.Background(),
+		linkUpdateIntermediaryResourcesInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(&provider.LinkUpdateIntermediaryResourcesOutput{}, output)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_update_intermediary_resources_fails_for_unexpected_host() {
+	link, err := s.providerWrongHost.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.UpdateIntermediaryResources(
+		context.Background(),
+		linkUpdateIntermediaryResourcesInput(),
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderUpdateLinkIntermediaryResources,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_update_intermediary_resources_reports_expected_error_for_failure() {
+	link, err := s.failingProvider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.UpdateIntermediaryResources(
+		context.Background(),
+		linkUpdateIntermediaryResourcesInput(),
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred when updating intermediary resources for link")
+}
