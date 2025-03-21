@@ -308,6 +308,19 @@ func fromPBLinkRequestForAnnotationDefinitions(
 	}, nil
 }
 
+func fromPBLinkRequestForKind(
+	req *providerserverv1.LinkRequest,
+) (*provider.LinkGetKindInput, error) {
+	linkContext, err := fromPBLinkContext(req.Context)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.LinkGetKindInput{
+		LinkContext: linkContext,
+	}, nil
+}
+
 func fromPBLinkContext(
 	pbLinkContext *providerserverv1.LinkContext,
 ) (provider.LinkContext, error) {

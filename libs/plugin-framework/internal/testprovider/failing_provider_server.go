@@ -273,3 +273,13 @@ func (p *failingProviderServer) GetLinkAnnotationDefinitions(
 		"internal error occurred when retrieving annotation definitions for link",
 	)
 }
+
+func (p *failingProviderServer) GetLinkKind(
+	ctx context.Context,
+	req *providerserverv1.LinkRequest,
+) (*providerserverv1.LinkKindResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when retrieving link kind",
+	)
+}

@@ -454,7 +454,40 @@ func (l *linkProviderClientWrapper) GetKind(
 	ctx context.Context,
 	input *provider.LinkGetKindInput,
 ) (*provider.LinkGetKindOutput, error) {
-	return nil, nil
+	request, err := l.buildLinkRequest(input.LinkContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetLinkKind,
+		)
+	}
+
+	response, err := l.client.GetLinkKind(ctx, request)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetLinkKind,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *LinkKindResponse_LinkKindInfo:
+		return &provider.LinkGetKindOutput{
+			Kind: fromPBLinkKind(result.LinkKindInfo.Kind),
+		}, nil
+	case *LinkKindResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetLinkKind,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetLinkKind,
+		),
+		errorsv1.PluginActionProviderGetLinkKind,
+	)
 }
 
 func (l *linkProviderClientWrapper) buildLinkRequest(

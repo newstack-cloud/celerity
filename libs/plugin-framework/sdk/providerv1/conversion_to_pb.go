@@ -698,6 +698,36 @@ func toPBLinkAnnotationDefinition(
 	}, nil
 }
 
+func toGetLinkKindErrorResponse(
+	err error,
+) *providerserverv1.LinkKindResponse {
+	return &providerserverv1.LinkKindResponse{
+		Response: &providerserverv1.LinkKindResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBGetLinkKindResponse(
+	output *provider.LinkGetKindOutput,
+) *providerserverv1.LinkKindResponse {
+	if output == nil {
+		return &providerserverv1.LinkKindResponse{
+			Response: &providerserverv1.LinkKindResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &providerserverv1.LinkKindResponse{
+		Response: &providerserverv1.LinkKindResponse_LinkKindInfo{
+			LinkKindInfo: &providerserverv1.LinkKindInfo{
+				Kind: toPBLinkKind(output.Kind),
+			},
+		},
+	}
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,
@@ -707,4 +737,12 @@ func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 			}
 		},
 	)
+}
+
+func toPBLinkKind(kind provider.LinkKind) providerserverv1.LinkKind {
+	if kind == provider.LinkKindSoft {
+		return providerserverv1.LinkKind_LINK_KIND_SOFT
+	}
+
+	return providerserverv1.LinkKind_LINK_KIND_HARD
 }

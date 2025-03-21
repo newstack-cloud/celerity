@@ -157,3 +157,11 @@ func fromPBLinkAnnotationDefinition(
 		Required:      pbDefinition.Required,
 	}, nil
 }
+
+func fromPBLinkKind(pbKind LinkKind) provider.LinkKind {
+	if pbKind == LinkKind_LINK_KIND_SOFT {
+		return provider.LinkKindSoft
+	}
+
+	return provider.LinkKindHard
+}

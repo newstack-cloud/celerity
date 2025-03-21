@@ -878,6 +878,45 @@ func (p *blueprintProviderPluginImpl) GetLinkAnnotationDefinitions(
 	return response, nil
 }
 
+func (p *blueprintProviderPluginImpl) GetLinkKind(
+	ctx context.Context,
+	req *providerserverv1.LinkRequest,
+) (*providerserverv1.LinkKindResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toGetLinkKindErrorResponse(err), nil
+	}
+
+	linkTypeInfo, err := extractLinkTypeInfo(req.LinkType)
+	if err != nil {
+		return toGetLinkKindErrorResponse(err), nil
+	}
+
+	link, err := p.bpProvider.Link(
+		ctx,
+		linkTypeInfo.resourceTypeA,
+		linkTypeInfo.resourceTypeB,
+	)
+	if err != nil {
+		return toGetLinkKindErrorResponse(err), nil
+	}
+
+	linkKindInput, err := fromPBLinkRequestForKind(req)
+	if err != nil {
+		return toGetLinkKindErrorResponse(err), nil
+	}
+
+	output, err := link.GetKind(
+		ctx,
+		linkKindInput,
+	)
+	if err != nil {
+		return toGetLinkKindErrorResponse(err), nil
+	}
+
+	return toPBGetLinkKindResponse(output), nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

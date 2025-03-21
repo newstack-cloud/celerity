@@ -424,3 +424,63 @@ func (s *ProviderPluginV1Suite) Test_link_annotation_definitions_reports_expecte
 		"internal error occurred when retrieving annotation definitions for link",
 	)
 }
+
+func (s *ProviderPluginV1Suite) Test_link_get_kind() {
+	link, err := s.provider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	output, err := link.GetKind(
+		context.Background(),
+		linkGetKindInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.LinkGetKindOutput{
+			Kind: provider.LinkKindHard,
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_get_kind_fails_for_unexpected_host() {
+	link, err := s.providerWrongHost.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.GetKind(
+		context.Background(),
+		linkGetKindInput(),
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetLinkKind,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_get_kind_reports_expected_error_for_failure() {
+	link, err := s.failingProvider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.GetKind(
+		context.Background(),
+		linkGetKindInput(),
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred when retrieving link kind",
+	)
+}
