@@ -36,6 +36,7 @@ const (
 	PluginActionProviderUpdateLinkResourceB             = PluginAction("Provider::UpdateLinkResourceB")
 	PluginActionProviderUpdateLinkIntermediaryResources = PluginAction("Provider::UpdateLinkIntermediaryResources")
 	PluginActionProviderGetLinkPriorityResource         = PluginAction("Provider::GetLinkPriorityResource")
+	PluginActionProviderGetLinkTypeDescription          = PluginAction("Provider::GetLinkTypeDescription")
 	PluginActionProviderGetLinkKind                     = PluginAction("Provider::GetLinkKind")
 
 	PluginActionProviderGetDataSourceTypeDescription = PluginAction("Provider::GetDataSourceTypeDescription")

@@ -191,3 +191,15 @@ func linkGetPriorityResourceInput() *provider.LinkGetPriorityResourceInput {
 		LinkContext: testutils.CreateTestLinkContext(),
 	}
 }
+
+func linkGetTypeInput() *provider.LinkGetTypeInput {
+	return &provider.LinkGetTypeInput{
+		LinkContext: testutils.CreateTestLinkContext(),
+	}
+}
+
+func linkGetTypeDescriptionInput() *provider.LinkGetTypeDescriptionInput {
+	return &provider.LinkGetTypeDescriptionInput{
+		LinkContext: testutils.CreateTestLinkContext(),
+	}
+}

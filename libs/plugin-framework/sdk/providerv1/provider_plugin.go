@@ -795,6 +795,45 @@ func (p *blueprintProviderPluginImpl) GetLinkPriorityResource(
 	return toPBGetLinkPriorityResourceResponse(output), nil
 }
 
+func (p *blueprintProviderPluginImpl) GetLinkTypeDescription(
+	ctx context.Context,
+	req *providerserverv1.LinkRequest,
+) (*sharedtypesv1.TypeDescriptionResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
+	linkTypeInfo, err := extractLinkTypeInfo(req.LinkType)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
+	link, err := p.bpProvider.Link(
+		ctx,
+		linkTypeInfo.resourceTypeA,
+		linkTypeInfo.resourceTypeB,
+	)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
+	geTTypeDescriptionInput, err := fromPBLinkRequestForTypeDescription(req)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
+	output, err := link.GetTypeDescription(
+		ctx,
+		geTTypeDescriptionInput,
+	)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
+	return toPBGetLinkTypeDescriptionResponse(output), nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

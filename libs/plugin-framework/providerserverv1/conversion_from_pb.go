@@ -6,6 +6,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
+	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 func fromPBLinkIntermediaryResourcesCompleteResponse(
@@ -81,5 +82,20 @@ func fromPBLinkPriorityResourceInfo(
 		PriorityResourceType: convertv1.ResourceTypeToString(
 			pbPriorityInfo.PriorityResourceType,
 		),
+	}
+}
+
+func fromPBTypeDescriptionForLink(
+	req *sharedtypesv1.TypeDescription,
+) *provider.LinkGetTypeDescriptionOutput {
+	if req == nil {
+		return nil
+	}
+
+	return &provider.LinkGetTypeDescriptionOutput{
+		PlainTextDescription: req.PlainTextDescription,
+		MarkdownDescription:  req.MarkdownDescription,
+		PlainTextSummary:     req.PlainTextSummary,
+		MarkdownSummary:      req.MarkdownSummary,
 	}
 }

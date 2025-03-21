@@ -9,7 +9,7 @@ import (
 )
 
 func linkLambdaFunctionDynamoDBTable() provider.Link {
-	descriptionInfo := LinkLambdaFunctionDDBTableTypeDescription()
+	descriptionInfo := LinkLambdaFunctionDDBTableTypeDescriptionOutput()
 	return &providerv1.LinkDefinition{
 		ResourceTypeA:                   "aws/lambda/function",
 		ResourceTypeB:                   "aws/dynamodb/table",
@@ -27,7 +27,7 @@ func linkLambdaFunctionDynamoDBTable() provider.Link {
 	}
 }
 
-func LinkLambdaFunctionDDBTableTypeDescription() *provider.LinkGetTypeDescriptionOutput {
+func LinkLambdaFunctionDDBTableTypeDescriptionOutput() *provider.LinkGetTypeDescriptionOutput {
 	return &provider.LinkGetTypeDescriptionOutput{
 		PlainTextDescription: "A link between an AWS Lambda function and an AWS DynamoDB table",
 		MarkdownDescription:  "A link between an **AWS** Lambda function and an **AWS** DynamoDB table",

@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 	"google.golang.org/grpc"
 )
 
@@ -313,7 +314,7 @@ func (l *linkProviderClientWrapper) GetPriorityResource(
 	ctx context.Context,
 	input *provider.LinkGetPriorityResourceInput,
 ) (*provider.LinkGetPriorityResourceOutput, error) {
-	request, err := l.buildLinkRequest(input)
+	request, err := l.buildLinkRequest(input.LinkContext)
 	if err != nil {
 		return nil, errorsv1.CreateGeneralError(
 			err,
@@ -347,38 +348,58 @@ func (l *linkProviderClientWrapper) GetPriorityResource(
 	)
 }
 
-func (l *linkProviderClientWrapper) buildLinkRequest(
-	input *provider.LinkGetPriorityResourceInput,
-) (*LinkRequest, error) {
-	linkCtx, err := toPBLinkContext(input.LinkContext)
-	if err != nil {
-		return nil, err
-	}
-
-	return &LinkRequest{
-		LinkType: &LinkType{
-			Type: core.LinkType(
-				l.resourceTypeA,
-				l.resourceTypeB,
-			),
-		},
-		HostId:  l.hostID,
-		Context: linkCtx,
-	}, nil
-}
-
 func (l *linkProviderClientWrapper) GetType(
 	ctx context.Context,
 	input *provider.LinkGetTypeInput,
 ) (*provider.LinkGetTypeOutput, error) {
-	return nil, nil
+	// We have all the information we need without having to make a request
+	// to the provider server for the plugin to get the type.
+	// Unlike other entity types (e.g. resources), link types do not have additional
+	// information in the type response such as a human-readable label.
+	return &provider.LinkGetTypeOutput{
+		Type: core.LinkType(
+			l.resourceTypeA,
+			l.resourceTypeB,
+		),
+	}, nil
 }
 
 func (l *linkProviderClientWrapper) GetTypeDescription(
 	ctx context.Context,
 	input *provider.LinkGetTypeDescriptionInput,
 ) (*provider.LinkGetTypeDescriptionOutput, error) {
-	return nil, nil
+	request, err := l.buildLinkRequest(input.LinkContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetLinkTypeDescription,
+		)
+	}
+
+	response, err := l.client.GetLinkTypeDescription(ctx, request)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetLinkTypeDescription,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.TypeDescriptionResponse_Description:
+		return fromPBTypeDescriptionForLink(result.Description), nil
+	case *sharedtypesv1.TypeDescriptionResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetLinkTypeDescription,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetLinkTypeDescription,
+		),
+		errorsv1.PluginActionProviderGetLinkTypeDescription,
+	)
 }
 
 func (l *linkProviderClientWrapper) GetAnnotationDefinitions(
@@ -393,4 +414,24 @@ func (l *linkProviderClientWrapper) GetKind(
 	input *provider.LinkGetKindInput,
 ) (*provider.LinkGetKindOutput, error) {
 	return nil, nil
+}
+
+func (l *linkProviderClientWrapper) buildLinkRequest(
+	linkContext provider.LinkContext,
+) (*LinkRequest, error) {
+	pbLinkContext, err := toPBLinkContext(linkContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LinkRequest{
+		LinkType: &LinkType{
+			Type: core.LinkType(
+				l.resourceTypeA,
+				l.resourceTypeB,
+			),
+		},
+		HostId:  l.hostID,
+		Context: pbLinkContext,
+	}, nil
 }

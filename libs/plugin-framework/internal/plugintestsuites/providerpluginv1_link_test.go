@@ -3,6 +3,7 @@ package plugintestsuites
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testprovider"
@@ -285,4 +286,83 @@ func (s *ProviderPluginV1Suite) Test_link_get_priority_resource_reports_expected
 	)
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred when retrieving the priority resource for link")
+}
+
+func (s *ProviderPluginV1Suite) Test_link_get_type() {
+	link, err := s.provider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	output, err := link.GetType(
+		context.Background(),
+		linkGetTypeInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.LinkGetTypeOutput{
+			Type: core.LinkType(
+				lambdaFunctionResourceType,
+				dynamoDBTableResourceType,
+			),
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_get_type_description() {
+	link, err := s.provider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	output, err := link.GetTypeDescription(
+		context.Background(),
+		linkGetTypeDescriptionInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		testprovider.LinkLambdaFunctionDDBTableTypeDescriptionOutput(),
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_get_type_description_fails_for_unexpected_host() {
+	link, err := s.providerWrongHost.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.GetTypeDescription(
+		context.Background(),
+		linkGetTypeDescriptionInput(),
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetLinkTypeDescription,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_get_type_description_reports_expected_error_for_failure() {
+	link, err := s.failingProvider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.GetTypeDescription(
+		context.Background(),
+		linkGetTypeDescriptionInput(),
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred when retrieving type description for link")
 }

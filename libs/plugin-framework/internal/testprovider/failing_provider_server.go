@@ -253,3 +253,13 @@ func (p *failingProviderServer) GetLinkPriorityResource(
 		"internal error occurred when retrieving the priority resource for link",
 	)
 }
+
+func (p *failingProviderServer) GetLinkTypeDescription(
+	ctx context.Context,
+	req *providerserverv1.LinkRequest,
+) (*sharedtypesv1.TypeDescriptionResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when retrieving type description for link",
+	)
+}
