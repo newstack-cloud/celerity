@@ -758,6 +758,39 @@ func toPBCustomValidateDataSourceResponse(
 	}
 }
 
+func toGetDataSourceTypeErrorResponse(
+	err error,
+) *providerserverv1.DataSourceTypeResponse {
+	return &providerserverv1.DataSourceTypeResponse{
+		Response: &providerserverv1.DataSourceTypeResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBGetDataSourceTypeResponse(
+	output *provider.DataSourceGetTypeOutput,
+) *providerserverv1.DataSourceTypeResponse {
+	if output == nil {
+		return &providerserverv1.DataSourceTypeResponse{
+			Response: &providerserverv1.DataSourceTypeResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &providerserverv1.DataSourceTypeResponse{
+		Response: &providerserverv1.DataSourceTypeResponse_DataSourceTypeInfo{
+			DataSourceTypeInfo: &providerserverv1.DataSourceTypeInfo{
+				Type: &providerserverv1.DataSourceType{
+					Type: output.Type,
+				},
+				Label: output.Label,
+			},
+		},
+	}
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

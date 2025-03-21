@@ -40,6 +40,7 @@ const (
 	PluginActionProviderGetLinkAnnotationDefinitions    = PluginAction("Provider::GetLinkAnnotationDefinitions")
 	PluginActionProviderGetLinkKind                     = PluginAction("Provider::GetLinkKind")
 
+	PluginActionProviderGetDataSourceType            = PluginAction("Provider::GetDataSourceType")
 	PluginActionProviderGetDataSourceTypeDescription = PluginAction("Provider::GetDataSourceTypeDescription")
 	PluginActionProviderCustomValidateDataSource     = PluginAction("Provider::CustomValidateDataSource")
 	PluginActionProviderGetDataSourceSpecDefinition  = PluginAction("Provider::GetDataSourceSpecDefinition")

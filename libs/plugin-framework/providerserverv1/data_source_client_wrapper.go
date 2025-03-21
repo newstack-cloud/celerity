@@ -20,7 +20,50 @@ func (d *dataSourceProviderClientWrapper) GetType(
 	ctx context.Context,
 	input *provider.DataSourceGetTypeInput,
 ) (*provider.DataSourceGetTypeOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetDataSourceType,
+		)
+	}
+
+	response, err := d.client.GetDataSourceType(
+		ctx,
+		&DataSourceRequest{
+			DataSourceType: &DataSourceType{
+				Type: d.dataSourceType,
+			},
+			HostId:  d.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetDataSourceType,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *DataSourceTypeResponse_DataSourceTypeInfo:
+		return &provider.DataSourceGetTypeOutput{
+			Type:  result.DataSourceTypeInfo.Type.Type,
+			Label: result.DataSourceTypeInfo.Label,
+		}, nil
+	case *DataSourceTypeResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetDataSourceType,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetDataSourceType,
+		),
+		errorsv1.PluginActionProviderGetDataSourceType,
+	)
 }
 
 func (d *dataSourceProviderClientWrapper) GetTypeDescription(

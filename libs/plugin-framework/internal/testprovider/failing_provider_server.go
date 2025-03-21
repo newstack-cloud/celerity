@@ -293,3 +293,13 @@ func (p *failingProviderServer) CustomValidateDataSource(
 		"internal error occurred applying custom validation for data source",
 	)
 }
+
+func (p *failingProviderServer) GetDataSourceType(
+	ctx context.Context,
+	req *providerserverv1.DataSourceRequest,
+) (*providerserverv1.DataSourceTypeResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving data source type information",
+	)
+}

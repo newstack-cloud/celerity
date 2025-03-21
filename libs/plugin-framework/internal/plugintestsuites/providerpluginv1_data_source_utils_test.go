@@ -68,3 +68,9 @@ func dataSourceValidateInput() *provider.DataSourceValidateInput {
 		ProviderContext: testutils.CreateTestProviderContext("aws"),
 	}
 }
+
+func dataSourceGetTypeInput() *provider.DataSourceGetTypeInput {
+	return &provider.DataSourceGetTypeInput{
+		ProviderContext: testutils.CreateTestProviderContext("aws"),
+	}
+}
