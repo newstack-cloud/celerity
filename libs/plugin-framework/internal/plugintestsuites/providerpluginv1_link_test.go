@@ -228,3 +228,61 @@ func (s *ProviderPluginV1Suite) Test_link_update_intermediary_resources_reports_
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred when updating intermediary resources for link")
 }
+
+func (s *ProviderPluginV1Suite) Test_link_get_priority_resource() {
+	link, err := s.provider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	output, err := link.GetPriorityResource(
+		context.Background(),
+		linkGetPriorityResourceInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.LinkGetPriorityResourceOutput{
+			PriorityResource:     provider.LinkPriorityResourceB,
+			PriorityResourceType: dynamoDBTableResourceType,
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_get_priority_resource_fails_for_unexpected_host() {
+	link, err := s.providerWrongHost.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.GetPriorityResource(
+		context.Background(),
+		linkGetPriorityResourceInput(),
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetLinkPriorityResource,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_link_get_priority_resource_reports_expected_error_for_failure() {
+	link, err := s.failingProvider.Link(
+		context.Background(),
+		lambdaFunctionResourceType,
+		dynamoDBTableResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = link.GetPriorityResource(
+		context.Background(),
+		linkGetPriorityResourceInput(),
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred when retrieving the priority resource for link")
+}

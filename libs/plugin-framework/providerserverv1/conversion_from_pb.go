@@ -5,6 +5,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 )
 
 func fromPBLinkIntermediaryResourcesCompleteResponse(
@@ -68,4 +69,17 @@ func fromPBLinkIntermediaryResourceState(
 		ResourceSpecData:           resourceSpecData,
 		FailureReasons:             pbState.FailureReasons,
 	}, nil
+}
+
+func fromPBLinkPriorityResourceInfo(
+	pbPriorityInfo *LinkPriorityResourceInfo,
+) *provider.LinkGetPriorityResourceOutput {
+	return &provider.LinkGetPriorityResourceOutput{
+		PriorityResource: provider.LinkPriorityResource(
+			pbPriorityInfo.PriorityResource,
+		),
+		PriorityResourceType: convertv1.ResourceTypeToString(
+			pbPriorityInfo.PriorityResourceType,
+		),
+	}
 }

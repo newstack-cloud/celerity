@@ -992,9 +992,8 @@ message LinkRequest {
     // The ID of the host making the request
     // to the provider.
     string host_id = 2;
-    // Runtime configuration for the current environment
-    // specific to the current provider.
-    sharedtypesv1.ProviderContext context = 3;
+    // Runtime configuration for the current environment.
+    LinkContext context = 3;
 }
 
 // LinkStatus represents the current state of a link

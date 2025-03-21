@@ -313,7 +313,58 @@ func (l *linkProviderClientWrapper) GetPriorityResource(
 	ctx context.Context,
 	input *provider.LinkGetPriorityResourceInput,
 ) (*provider.LinkGetPriorityResourceOutput, error) {
-	return nil, nil
+	request, err := l.buildLinkRequest(input)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetLinkPriorityResource,
+		)
+	}
+
+	response, err := l.client.GetLinkPriorityResource(ctx, request)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetLinkPriorityResource,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *LinkPriorityResourceResponse_PriorityInfo:
+		return fromPBLinkPriorityResourceInfo(result.PriorityInfo), nil
+	case *LinkPriorityResourceResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetLinkPriorityResource,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetLinkPriorityResource,
+		),
+		errorsv1.PluginActionProviderGetLinkPriorityResource,
+	)
+}
+
+func (l *linkProviderClientWrapper) buildLinkRequest(
+	input *provider.LinkGetPriorityResourceInput,
+) (*LinkRequest, error) {
+	linkCtx, err := toPBLinkContext(input.LinkContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LinkRequest{
+		LinkType: &LinkType{
+			Type: core.LinkType(
+				l.resourceTypeA,
+				l.resourceTypeB,
+			),
+		},
+		HostId:  l.hostID,
+		Context: linkCtx,
+	}, nil
 }
 
 func (l *linkProviderClientWrapper) GetType(

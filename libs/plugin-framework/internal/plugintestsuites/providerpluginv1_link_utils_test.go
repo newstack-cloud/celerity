@@ -185,3 +185,9 @@ func createCurrentLinkState() *state.LinkState {
 		},
 	}
 }
+
+func linkGetPriorityResourceInput() *provider.LinkGetPriorityResourceInput {
+	return &provider.LinkGetPriorityResourceInput{
+		LinkContext: testutils.CreateTestLinkContext(),
+	}
+}

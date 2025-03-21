@@ -756,6 +756,45 @@ func (p *blueprintProviderPluginImpl) UpdateLinkIntermediaryResources(
 	return response, nil
 }
 
+func (p *blueprintProviderPluginImpl) GetLinkPriorityResource(
+	ctx context.Context,
+	req *providerserverv1.LinkRequest,
+) (*providerserverv1.LinkPriorityResourceResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toGetLinkPriorityResourceErrorResponse(err), nil
+	}
+
+	linkTypeInfo, err := extractLinkTypeInfo(req.LinkType)
+	if err != nil {
+		return toGetLinkPriorityResourceErrorResponse(err), nil
+	}
+
+	link, err := p.bpProvider.Link(
+		ctx,
+		linkTypeInfo.resourceTypeA,
+		linkTypeInfo.resourceTypeB,
+	)
+	if err != nil {
+		return toGetLinkPriorityResourceErrorResponse(err), nil
+	}
+
+	getPriorityResourceInput, err := fromPBLinkRequestForPriorityResource(req)
+	if err != nil {
+		return toGetLinkPriorityResourceErrorResponse(err), nil
+	}
+
+	output, err := link.GetPriorityResource(
+		ctx,
+		getPriorityResourceInput,
+	)
+	if err != nil {
+		return toGetLinkPriorityResourceErrorResponse(err), nil
+	}
+
+	return toPBGetLinkPriorityResourceResponse(output), nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

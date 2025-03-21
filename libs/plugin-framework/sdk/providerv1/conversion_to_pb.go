@@ -566,6 +566,39 @@ func toPBLinkIntermediaryResourceState(
 	}, nil
 }
 
+func toGetLinkPriorityResourceErrorResponse(
+	err error,
+) *providerserverv1.LinkPriorityResourceResponse {
+	return &providerserverv1.LinkPriorityResourceResponse{
+		Response: &providerserverv1.LinkPriorityResourceResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBGetLinkPriorityResourceResponse(
+	output *provider.LinkGetPriorityResourceOutput,
+) *providerserverv1.LinkPriorityResourceResponse {
+	if output == nil {
+		return &providerserverv1.LinkPriorityResourceResponse{
+			Response: &providerserverv1.LinkPriorityResourceResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &providerserverv1.LinkPriorityResourceResponse{
+		Response: &providerserverv1.LinkPriorityResourceResponse_PriorityInfo{
+			PriorityInfo: &providerserverv1.LinkPriorityResourceInfo{
+				PriorityResource: providerserverv1.LinkPriorityResource(output.PriorityResource),
+				PriorityResourceType: convertv1.StringToResourceType(
+					output.PriorityResourceType,
+				),
+			},
+		},
+	}
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

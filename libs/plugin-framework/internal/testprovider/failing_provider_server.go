@@ -243,3 +243,13 @@ func (p *failingProviderServer) UpdateLinkIntermediaryResources(
 		"internal error occurred when updating intermediary resources for link",
 	)
 }
+
+func (p *failingProviderServer) GetLinkPriorityResource(
+	ctx context.Context,
+	req *providerserverv1.LinkRequest,
+) (*providerserverv1.LinkPriorityResourceResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when retrieving the priority resource for link",
+	)
+}

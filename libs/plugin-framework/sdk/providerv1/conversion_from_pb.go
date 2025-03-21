@@ -260,12 +260,25 @@ func fromPBLinkIntermediaryResourceRequest(
 	}
 
 	return &provider.LinkUpdateIntermediaryResourcesInput{
-		ResourceAInfo:  &resourceAInfo,
-		ResourceBInfo:  &resourceBInfo,
-		Changes:        &changes,
-		LinkUpdateType: provider.LinkUpdateType(req.UpdateType),
-		LinkContext:    linkContext,
-		// TODO: Add resource deploy service using plugin service client!
+		ResourceAInfo:         &resourceAInfo,
+		ResourceBInfo:         &resourceBInfo,
+		Changes:               &changes,
+		LinkUpdateType:        provider.LinkUpdateType(req.UpdateType),
+		LinkContext:           linkContext,
+		ResourceDeployService: resourceDeployService,
+	}, nil
+}
+
+func fromPBLinkRequestForPriorityResource(
+	req *providerserverv1.LinkRequest,
+) (*provider.LinkGetPriorityResourceInput, error) {
+	linkContext, err := fromPBLinkContext(req.Context)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.LinkGetPriorityResourceInput{
+		LinkContext: linkContext,
 	}, nil
 }
 
