@@ -92,7 +92,7 @@ type PluginRegistrationRequest struct {
 	// {hostname/}?{namespace}/{provider}
 	//
 	// For example:
-	// registry.celerityframework.com/celerity/aws
+	// registry.celerityframework.io/celerity/aws
 	// celerity/aws
 	PluginId string `protobuf:"bytes,2,opt,name=plugin_id,json=pluginId" json:"plugin_id,omitempty"`
 	// The id of the plugin instance that should correspond to the

@@ -791,6 +791,29 @@ func toPBGetDataSourceTypeResponse(
 	}
 }
 
+func toDataSourceTypeDescriptionResponse(
+	output *provider.DataSourceGetTypeDescriptionOutput,
+) *sharedtypesv1.TypeDescriptionResponse {
+	if output == nil {
+		return &sharedtypesv1.TypeDescriptionResponse{
+			Response: &sharedtypesv1.TypeDescriptionResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &sharedtypesv1.TypeDescriptionResponse{
+		Response: &sharedtypesv1.TypeDescriptionResponse_Description{
+			Description: &sharedtypesv1.TypeDescription{
+				PlainTextDescription: output.PlainTextDescription,
+				MarkdownDescription:  output.MarkdownDescription,
+				PlainTextSummary:     output.PlainTextSummary,
+				MarkdownSummary:      output.MarkdownSummary,
+			},
+		},
+	}
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

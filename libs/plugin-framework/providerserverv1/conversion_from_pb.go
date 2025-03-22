@@ -86,17 +86,17 @@ func fromPBLinkPriorityResourceInfo(
 }
 
 func fromPBTypeDescriptionForLink(
-	req *sharedtypesv1.TypeDescription,
+	typeDescription *sharedtypesv1.TypeDescription,
 ) *provider.LinkGetTypeDescriptionOutput {
-	if req == nil {
+	if typeDescription == nil {
 		return nil
 	}
 
 	return &provider.LinkGetTypeDescriptionOutput{
-		PlainTextDescription: req.PlainTextDescription,
-		MarkdownDescription:  req.MarkdownDescription,
-		PlainTextSummary:     req.PlainTextSummary,
-		MarkdownSummary:      req.MarkdownSummary,
+		PlainTextDescription: typeDescription.PlainTextDescription,
+		MarkdownDescription:  typeDescription.MarkdownDescription,
+		PlainTextSummary:     typeDescription.PlainTextSummary,
+		MarkdownSummary:      typeDescription.MarkdownSummary,
 	}
 }
 
@@ -156,6 +156,21 @@ func fromPBLinkAnnotationDefinition(
 		Examples:      examples,
 		Required:      pbDefinition.Required,
 	}, nil
+}
+
+func fromPBTypeDescriptionForDataSource(
+	typeDescription *sharedtypesv1.TypeDescription,
+) *provider.DataSourceGetTypeDescriptionOutput {
+	if typeDescription == nil {
+		return nil
+	}
+
+	return &provider.DataSourceGetTypeDescriptionOutput{
+		PlainTextDescription: typeDescription.PlainTextDescription,
+		MarkdownDescription:  typeDescription.MarkdownDescription,
+		PlainTextSummary:     typeDescription.PlainTextSummary,
+		MarkdownSummary:      typeDescription.MarkdownSummary,
+	}
 }
 
 func fromPBLinkKind(pbKind LinkKind) provider.LinkKind {

@@ -70,7 +70,47 @@ func (d *dataSourceProviderClientWrapper) GetTypeDescription(
 	ctx context.Context,
 	input *provider.DataSourceGetTypeDescriptionInput,
 ) (*provider.DataSourceGetTypeDescriptionOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetDataSourceTypeDescription,
+		)
+	}
+
+	response, err := d.client.GetDataSourceTypeDescription(
+		ctx,
+		&DataSourceRequest{
+			DataSourceType: &DataSourceType{
+				Type: d.dataSourceType,
+			},
+			HostId:  d.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetDataSourceTypeDescription,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.TypeDescriptionResponse_Description:
+		return fromPBTypeDescriptionForDataSource(result.Description), nil
+	case *sharedtypesv1.TypeDescriptionResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetDataSourceTypeDescription,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetDataSourceTypeDescription,
+		),
+		errorsv1.PluginActionProviderGetDataSourceTypeDescription,
+	)
 }
 
 func (d *dataSourceProviderClientWrapper) CustomValidate(

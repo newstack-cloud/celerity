@@ -74,3 +74,9 @@ func dataSourceGetTypeInput() *provider.DataSourceGetTypeInput {
 		ProviderContext: testutils.CreateTestProviderContext("aws"),
 	}
 }
+
+func dataSourceGetTypeDescriptionInput() *provider.DataSourceGetTypeDescriptionInput {
+	return &provider.DataSourceGetTypeDescriptionInput{
+		ProviderContext: testutils.CreateTestProviderContext("aws"),
+	}
+}

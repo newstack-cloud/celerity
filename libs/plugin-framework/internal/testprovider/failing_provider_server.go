@@ -303,3 +303,13 @@ func (p *failingProviderServer) GetDataSourceType(
 		"internal error occurred retrieving data source type information",
 	)
 }
+
+func (p *failingProviderServer) GetDataSourceTypeDescription(
+	ctx context.Context,
+	req *providerserverv1.DataSourceRequest,
+) (*sharedtypesv1.TypeDescriptionResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving data source type description",
+	)
+}

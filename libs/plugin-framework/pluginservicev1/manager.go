@@ -150,7 +150,7 @@ type PluginInstanceInfo struct {
 	// {hostname/}?{namespace}/{provider}
 	//
 	// For example:
-	// registry.celerityframework.com/celerity/aws
+	// registry.celerityframework.io/celerity/aws
 	// celerity/aws
 	//
 	// The last portion of the ID is the unique name of the provider

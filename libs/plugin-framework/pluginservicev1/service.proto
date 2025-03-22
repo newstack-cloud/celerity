@@ -78,7 +78,7 @@ message PluginRegistrationRequest {
 	// {hostname/}?{namespace}/{provider}
 	//
 	// For example:
-	// registry.celerityframework.com/celerity/aws
+	// registry.celerityframework.io/celerity/aws
 	// celerity/aws
     string plugin_id = 2;
     // The id of the plugin instance that should correspond to the

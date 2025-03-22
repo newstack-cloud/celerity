@@ -22,6 +22,15 @@ type DataSourceDefinition struct {
 	// This will be used in documentation and tooling.
 	Label string
 
+	// A summary of the data source type that is not formatted that can be used
+	// to render descriptions in contexts that formatting is not supported.
+	// This will be used in documentation and tooling.
+	PlainTextSummary string
+
+	// A summary of the data source type that can be formatted using markdown.
+	// This will be used in documentation and tooling.
+	FormattedSummary string
+
 	// A description of the data source type that is not formatted that can be used
 	// to render descriptions in contexts that formatting is not supported.
 	// This will be used in documentation and tooling.
@@ -91,6 +100,8 @@ func (d *DataSourceDefinition) GetTypeDescription(
 	return &provider.DataSourceGetTypeDescriptionOutput{
 		PlainTextDescription: d.PlainTextDescription,
 		MarkdownDescription:  d.FormattedDescription,
+		PlainTextSummary:     d.PlainTextSummary,
+		MarkdownSummary:      d.FormattedSummary,
 	}, nil
 }
 
