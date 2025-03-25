@@ -25,7 +25,7 @@ func dataSourceVPC() provider.DataSource {
 		FormattedDescription: descriptionInfo.MarkdownDescription,
 		PlainTextExamples:    examples.PlainTextExamples,
 		MarkdownExamples:     examples.MarkdownExamples,
-		FieldSchemas:         specDefOutput.Fields,
+		FieldSchemas:         specDefOutput.SpecDefinition.Fields,
 		FilterFields:         filterFieldsOutput.Fields,
 		FetchFunc:            fetchDataSourceVPC,
 	}
@@ -51,24 +51,26 @@ func DataSourceVPCExamplesOutput() *provider.DataSourceGetExamplesOutput {
 	}
 }
 
-func DataSourceVPCSpecDefinitionOutput() *provider.DataSourceSpecDefinition {
-	return &provider.DataSourceSpecDefinition{
-		Fields: map[string]*provider.DataSourceSpecSchema{
-			"example": {
-				Type:                 provider.DataSourceSpecTypeString,
-				Label:                "Example Field",
-				Description:          "This is an example field",
-				FormattedDescription: "This is a **formatted** description of the example field",
-				Nullable:             true,
-			},
-			"exampleArray": {
-				Type:                 provider.DataSourceSpecTypeArray,
-				Label:                "Example Array Field",
-				Description:          "This is an example array field",
-				FormattedDescription: "This is a **formatted** description of the example array field",
-				Nullable:             true,
-				Items: &provider.DataSourceSpecSchema{
-					Type: provider.DataSourceSpecTypeString,
+func DataSourceVPCSpecDefinitionOutput() *provider.DataSourceGetSpecDefinitionOutput {
+	return &provider.DataSourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.DataSourceSpecDefinition{
+			Fields: map[string]*provider.DataSourceSpecSchema{
+				"example": {
+					Type:                 provider.DataSourceSpecTypeString,
+					Label:                "Example Field",
+					Description:          "This is an example field",
+					FormattedDescription: "This is a **formatted** description of the example field",
+					Nullable:             true,
+				},
+				"exampleArray": {
+					Type:                 provider.DataSourceSpecTypeArray,
+					Label:                "Example Array Field",
+					Description:          "This is an example array field",
+					FormattedDescription: "This is a **formatted** description of the example array field",
+					Nullable:             true,
+					Items: &provider.DataSourceSpecSchema{
+						Type: provider.DataSourceSpecTypeString,
+					},
 				},
 			},
 		},

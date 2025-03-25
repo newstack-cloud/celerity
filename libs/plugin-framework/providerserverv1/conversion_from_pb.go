@@ -173,6 +173,67 @@ func fromPBTypeDescriptionForDataSource(
 	}
 }
 
+func fromPBDataSourceSpecDefinition(
+	specDefinition *DataSourceSpecDefinition,
+) (*provider.DataSourceGetSpecDefinitionOutput, error) {
+	if specDefinition == nil {
+		return nil, nil
+	}
+
+	fields := make(map[string]*provider.DataSourceSpecSchema)
+	for fieldName, pbFieldSchema := range specDefinition.Fields {
+		field, err := fromPBDataSourceSpecSchema(pbFieldSchema)
+		if err != nil {
+			return nil, err
+		}
+
+		fields[fieldName] = field
+	}
+
+	return &provider.DataSourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.DataSourceSpecDefinition{
+			Fields: fields,
+		},
+	}, nil
+}
+
+func fromPBDataSourceSpecSchema(
+	pbFieldSchema *DataSourceSpecSchema,
+) (*provider.DataSourceSpecSchema, error) {
+	if pbFieldSchema == nil {
+		return nil, nil
+	}
+
+	items, err := fromPBDataSourceSpecSchema(pbFieldSchema.Items)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.DataSourceSpecSchema{
+		Type:                 fromPBDataSourceSpecSchemaType(pbFieldSchema.Type),
+		Label:                pbFieldSchema.Label,
+		Description:          pbFieldSchema.Description,
+		FormattedDescription: pbFieldSchema.FormattedDescription,
+		Items:                items,
+		Nullable:             pbFieldSchema.Nullable,
+	}, nil
+}
+
+func fromPBDataSourceSpecSchemaType(pbFieldSchemaType DataSourceSpecSchemaType) provider.DataSourceSpecSchemaType {
+	switch pbFieldSchemaType {
+	case DataSourceSpecSchemaType_DATA_SOURCE_SPEC_INTEGER:
+		return provider.DataSourceSpecTypeInteger
+	case DataSourceSpecSchemaType_DATA_SOURCE_SPEC_FLOAT:
+		return provider.DataSourceSpecTypeFloat
+	case DataSourceSpecSchemaType_DATA_SOURCE_SPEC_BOOLEAN:
+		return provider.DataSourceSpecTypeBoolean
+	case DataSourceSpecSchemaType_DATA_SOURCE_SPEC_ARRAY:
+		return provider.DataSourceSpecTypeArray
+	default:
+		return provider.DataSourceSpecTypeString
+	}
+}
+
 func fromPBLinkKind(pbKind LinkKind) provider.LinkKind {
 	if pbKind == LinkKind_LINK_KIND_SOFT {
 		return provider.LinkKindSoft

@@ -144,3 +144,47 @@ func (s *ProviderPluginV1Suite) Test_data_source_get_type_description_reports_ex
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred retrieving data source type description")
 }
+
+func (s *ProviderPluginV1Suite) Test_data_source_get_spec_definition() {
+	dataSource, err := s.provider.DataSource(context.Background(), vpcDataSourceType)
+	s.Require().NoError(err)
+
+	output, err := dataSource.GetSpecDefinition(
+		context.Background(),
+		dataSourceGetSpecDefinitionInput(),
+	)
+	s.Require().NoError(err)
+	expected := testprovider.DataSourceVPCSpecDefinitionOutput()
+	s.Assert().Equal(
+		expected,
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_data_source_get_spec_definition_fails_for_unexpected_host() {
+	dataSource, err := s.providerWrongHost.DataSource(context.Background(), vpcDataSourceType)
+	s.Require().NoError(err)
+
+	_, err = dataSource.GetSpecDefinition(
+		context.Background(),
+		dataSourceGetSpecDefinitionInput(),
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetDataSourceSpecDefinition,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_data_source_get_spec_definition_reports_expected_error_for_failure() {
+	dataSource, err := s.failingProvider.DataSource(context.Background(), vpcDataSourceType)
+	s.Require().NoError(err)
+
+	_, err = dataSource.GetSpecDefinition(
+		context.Background(),
+		dataSourceGetSpecDefinitionInput(),
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred retrieving data source spec definition")
+}

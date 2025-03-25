@@ -80,3 +80,9 @@ func dataSourceGetTypeDescriptionInput() *provider.DataSourceGetTypeDescriptionI
 		ProviderContext: testutils.CreateTestProviderContext("aws"),
 	}
 }
+
+func dataSourceGetSpecDefinitionInput() *provider.DataSourceGetSpecDefinitionInput {
+	return &provider.DataSourceGetSpecDefinitionInput{
+		ProviderContext: testutils.CreateTestProviderContext("aws"),
+	}
+}

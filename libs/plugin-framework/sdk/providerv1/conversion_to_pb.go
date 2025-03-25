@@ -814,6 +814,68 @@ func toDataSourceTypeDescriptionResponse(
 	}
 }
 
+func toGetDataSourceSpecDefinitionErrorResponse(
+	err error,
+) *providerserverv1.DataSourceSpecDefinitionResponse {
+	return &providerserverv1.DataSourceSpecDefinitionResponse{
+		Response: &providerserverv1.DataSourceSpecDefinitionResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBGetDataSourceSpecDefinitionResponse(
+	output *provider.DataSourceGetSpecDefinitionOutput,
+) (*providerserverv1.DataSourceSpecDefinitionResponse, error) {
+	if output == nil || output.SpecDefinition == nil {
+		return &providerserverv1.DataSourceSpecDefinitionResponse{
+			Response: &providerserverv1.DataSourceSpecDefinitionResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}, nil
+	}
+
+	fields := make(map[string]*providerserverv1.DataSourceSpecSchema)
+	for fieldName, fieldSchema := range output.SpecDefinition.Fields {
+		pbFieldSchema, err := toPBDataSourceSpecSchema(fieldSchema)
+		if err != nil {
+			return nil, err
+		}
+
+		fields[fieldName] = pbFieldSchema
+	}
+
+	return &providerserverv1.DataSourceSpecDefinitionResponse{
+		Response: &providerserverv1.DataSourceSpecDefinitionResponse_SpecDefinition{
+			SpecDefinition: &providerserverv1.DataSourceSpecDefinition{
+				Fields: fields,
+			},
+		},
+	}, nil
+}
+
+func toPBDataSourceSpecSchema(
+	providerSchema *provider.DataSourceSpecSchema,
+) (*providerserverv1.DataSourceSpecSchema, error) {
+	if providerSchema == nil {
+		return nil, nil
+	}
+
+	items, err := toPBDataSourceSpecSchema(providerSchema.Items)
+	if err != nil {
+		return nil, err
+	}
+
+	return &providerserverv1.DataSourceSpecSchema{
+		Type:                 toPBDataSourceSpecSchemaType(providerSchema.Type),
+		Label:                providerSchema.Label,
+		Description:          providerSchema.Description,
+		FormattedDescription: providerSchema.FormattedDescription,
+		Items:                items,
+		Nullable:             providerSchema.Nullable,
+	}, nil
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,
@@ -823,6 +885,23 @@ func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 			}
 		},
 	)
+}
+
+func toPBDataSourceSpecSchemaType(
+	fieldSchemaType provider.DataSourceSpecSchemaType,
+) providerserverv1.DataSourceSpecSchemaType {
+	switch fieldSchemaType {
+	case provider.DataSourceSpecTypeInteger:
+		return providerserverv1.DataSourceSpecSchemaType_DATA_SOURCE_SPEC_INTEGER
+	case provider.DataSourceSpecTypeFloat:
+		return providerserverv1.DataSourceSpecSchemaType_DATA_SOURCE_SPEC_FLOAT
+	case provider.DataSourceSpecTypeBoolean:
+		return providerserverv1.DataSourceSpecSchemaType_DATA_SOURCE_SPEC_BOOLEAN
+	case provider.DataSourceSpecTypeArray:
+		return providerserverv1.DataSourceSpecSchemaType_DATA_SOURCE_SPEC_ARRAY
+	default:
+		return providerserverv1.DataSourceSpecSchemaType_DATA_SOURCE_SPEC_STRING
+	}
 }
 
 func toPBLinkKind(kind provider.LinkKind) providerserverv1.LinkKind {

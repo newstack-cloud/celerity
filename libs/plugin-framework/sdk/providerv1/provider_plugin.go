@@ -1020,6 +1020,46 @@ func (p *blueprintProviderPluginImpl) GetDataSourceTypeDescription(
 	return toDataSourceTypeDescriptionResponse(output), nil
 }
 
+func (p *blueprintProviderPluginImpl) GetDataSourceSpecDefinition(
+	ctx context.Context,
+	req *providerserverv1.DataSourceRequest,
+) (*providerserverv1.DataSourceSpecDefinitionResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toGetDataSourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	dataSource, err := p.bpProvider.DataSource(
+		ctx,
+		dataSourceTypeToString(req.DataSourceType),
+	)
+	if err != nil {
+		return toGetDataSourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	providerCtx, err := convertv1.FromPBProviderContext(req.Context)
+	if err != nil {
+		return toGetDataSourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	output, err := dataSource.GetSpecDefinition(
+		ctx,
+		&provider.DataSourceGetSpecDefinitionInput{
+			ProviderContext: providerCtx,
+		},
+	)
+	if err != nil {
+		return toGetDataSourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	response, err := toPBGetDataSourceSpecDefinitionResponse(output)
+	if err != nil {
+		return toGetDataSourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	return response, nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)
