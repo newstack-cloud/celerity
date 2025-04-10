@@ -876,6 +876,36 @@ func toPBDataSourceSpecSchema(
 	}, nil
 }
 
+func toGetDataSourceFilterFieldsErrorResponse(
+	err error,
+) *providerserverv1.DataSourceFilterFieldsResponse {
+	return &providerserverv1.DataSourceFilterFieldsResponse{
+		Response: &providerserverv1.DataSourceFilterFieldsResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBGetDataSourceFilterFieldsResponse(
+	output *provider.DataSourceGetFilterFieldsOutput,
+) *providerserverv1.DataSourceFilterFieldsResponse {
+	if output == nil {
+		return &providerserverv1.DataSourceFilterFieldsResponse{
+			Response: &providerserverv1.DataSourceFilterFieldsResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &providerserverv1.DataSourceFilterFieldsResponse{
+		Response: &providerserverv1.DataSourceFilterFieldsResponse_FilterFields{
+			FilterFields: &providerserverv1.DataSourceFilterFields{
+				Fields: output.Fields,
+			},
+		},
+	}
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

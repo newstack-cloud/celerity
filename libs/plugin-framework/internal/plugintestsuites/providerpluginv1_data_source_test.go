@@ -188,3 +188,47 @@ func (s *ProviderPluginV1Suite) Test_data_source_get_spec_definition_reports_exp
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred retrieving data source spec definition")
 }
+
+func (s *ProviderPluginV1Suite) Test_data_source_get_filter_fields() {
+	dataSource, err := s.provider.DataSource(context.Background(), vpcDataSourceType)
+	s.Require().NoError(err)
+
+	output, err := dataSource.GetFilterFields(
+		context.Background(),
+		dataSourceGetFilterFieldsInput(),
+	)
+	s.Require().NoError(err)
+	expected := testprovider.DataSourceVPCFilterFieldsOutput()
+	s.Assert().Equal(
+		expected,
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_data_source_get_filter_fields_fails_for_unexpected_host() {
+	dataSource, err := s.providerWrongHost.DataSource(context.Background(), vpcDataSourceType)
+	s.Require().NoError(err)
+
+	_, err = dataSource.GetFilterFields(
+		context.Background(),
+		dataSourceGetFilterFieldsInput(),
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetDataSourceFilterFields,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_data_source_get_filter_fields_reports_expected_error_for_failure() {
+	dataSource, err := s.failingProvider.DataSource(context.Background(), vpcDataSourceType)
+	s.Require().NoError(err)
+
+	_, err = dataSource.GetFilterFields(
+		context.Background(),
+		dataSourceGetFilterFieldsInput(),
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred retrieving data source filter fields")
+}

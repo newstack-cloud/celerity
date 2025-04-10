@@ -323,3 +323,13 @@ func (p *failingProviderServer) GetDataSourceSpecDefinition(
 		"internal error occurred retrieving data source spec definition",
 	)
 }
+
+func (p *failingProviderServer) GetDataSourceFilterFields(
+	ctx context.Context,
+	req *providerserverv1.DataSourceRequest,
+) (*providerserverv1.DataSourceFilterFieldsResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving data source filter fields",
+	)
+}

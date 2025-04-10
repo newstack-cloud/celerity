@@ -1060,6 +1060,41 @@ func (p *blueprintProviderPluginImpl) GetDataSourceSpecDefinition(
 	return response, nil
 }
 
+func (p *blueprintProviderPluginImpl) GetDataSourceFilterFields(
+	ctx context.Context,
+	req *providerserverv1.DataSourceRequest,
+) (*providerserverv1.DataSourceFilterFieldsResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toGetDataSourceFilterFieldsErrorResponse(err), nil
+	}
+
+	dataSource, err := p.bpProvider.DataSource(
+		ctx,
+		dataSourceTypeToString(req.DataSourceType),
+	)
+	if err != nil {
+		return toGetDataSourceFilterFieldsErrorResponse(err), nil
+	}
+
+	providerCtx, err := convertv1.FromPBProviderContext(req.Context)
+	if err != nil {
+		return toGetDataSourceFilterFieldsErrorResponse(err), nil
+	}
+
+	output, err := dataSource.GetFilterFields(
+		ctx,
+		&provider.DataSourceGetFilterFieldsInput{
+			ProviderContext: providerCtx,
+		},
+	)
+	if err != nil {
+		return toGetDataSourceFilterFieldsErrorResponse(err), nil
+	}
+
+	return toPBGetDataSourceFilterFieldsResponse(output), nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

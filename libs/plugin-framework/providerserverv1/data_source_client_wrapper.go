@@ -232,7 +232,55 @@ func (d *dataSourceProviderClientWrapper) GetFilterFields(
 	ctx context.Context,
 	input *provider.DataSourceGetFilterFieldsInput,
 ) (*provider.DataSourceGetFilterFieldsOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetDataSourceFilterFields,
+		)
+	}
+
+	response, err := d.client.GetDataSourceFilterFields(
+		ctx,
+		&DataSourceRequest{
+			DataSourceType: &DataSourceType{
+				Type: d.dataSourceType,
+			},
+			HostId:  d.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetDataSourceFilterFields,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *DataSourceFilterFieldsResponse_FilterFields:
+		filterFieldsOutput, err := fromPBDataSourceFilterFields(result.FilterFields)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				errorsv1.PluginActionProviderGetDataSourceFilterFields,
+			)
+		}
+
+		return filterFieldsOutput, nil
+	case *DataSourceFilterFieldsResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetDataSourceFilterFields,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetDataSourceFilterFields,
+		),
+		errorsv1.PluginActionProviderGetDataSourceFilterFields,
+	)
 }
 
 func (d *dataSourceProviderClientWrapper) Fetch(

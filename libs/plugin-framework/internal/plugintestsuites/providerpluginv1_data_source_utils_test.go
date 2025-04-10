@@ -86,3 +86,9 @@ func dataSourceGetSpecDefinitionInput() *provider.DataSourceGetSpecDefinitionInp
 		ProviderContext: testutils.CreateTestProviderContext("aws"),
 	}
 }
+
+func dataSourceGetFilterFieldsInput() *provider.DataSourceGetFilterFieldsInput {
+	return &provider.DataSourceGetFilterFieldsInput{
+		ProviderContext: testutils.CreateTestProviderContext("aws"),
+	}
+}

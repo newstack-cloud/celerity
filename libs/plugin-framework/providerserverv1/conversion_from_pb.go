@@ -241,3 +241,15 @@ func fromPBLinkKind(pbKind LinkKind) provider.LinkKind {
 
 	return provider.LinkKindHard
 }
+
+func fromPBDataSourceFilterFields(
+	pbFilterFields *DataSourceFilterFields,
+) (*provider.DataSourceGetFilterFieldsOutput, error) {
+	if pbFilterFields == nil {
+		return nil, nil
+	}
+
+	return &provider.DataSourceGetFilterFieldsOutput{
+		Fields: pbFilterFields.Fields,
+	}, nil
+}
