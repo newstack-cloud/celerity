@@ -42,9 +42,9 @@ type ProviderPluginV1Suite struct {
 
 func (s *ProviderPluginV1Suite) SetupSuite() {
 	pluginManager := pluginservicev1.NewManager(
-		map[pluginservicev1.PluginType]int32{
-			pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER:    1,
-			pluginservicev1.PluginType_PLUGIN_TYPE_TRANSFORMER: 1,
+		map[pluginservicev1.PluginType]string{
+			pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER:    "1.0",
+			pluginservicev1.PluginType_PLUGIN_TYPE_TRANSFORMER: "1.0",
 		},
 		s.createPluginInstance,
 	)

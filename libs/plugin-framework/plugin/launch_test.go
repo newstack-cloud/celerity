@@ -64,8 +64,8 @@ func (s *LaunchSuite) instancesFromPluginPaths() map[string]*pluginservicev1.Plu
 			PluginType: pluginservicev1.PluginTypeFromString(
 				pluginPath.PluginType,
 			),
-			ProtocolVersion: 1,
-			ID:              pluginPath.ID,
+			ProtocolVersions: []string{"1.0"},
+			ID:               pluginPath.ID,
 		}
 	}
 	return instances

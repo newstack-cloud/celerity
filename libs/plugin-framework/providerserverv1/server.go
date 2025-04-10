@@ -18,7 +18,7 @@ import (
 const (
 	// The protocol version that is used during the handshake to ensure the plugin
 	// is compatible with the host service.
-	protocolVersion = 1
+	protocolVersion = "1.0"
 )
 
 // ServerOption is a function that configures a server.
@@ -125,11 +125,11 @@ func (s *Server) Serve() (func(), error) {
 			// Process IDs are sufficient for plugin instance IDs,
 			// in the future we may want to allow for plugins that run in
 			// containers.
-			InstanceId:      strconv.Itoa(os.Getpid()),
-			ProtocolVersion: protocolVersion,
-			Port:            int32(s.tcpPort),
-			Metadata:        s.pluginMetadata,
-			UnixSocket:      s.unixSocket,
+			InstanceId:       strconv.Itoa(os.Getpid()),
+			ProtocolVersions: []string{protocolVersion},
+			Port:             int32(s.tcpPort),
+			Metadata:         s.pluginMetadata,
+			UnixSocket:       s.unixSocket,
 		},
 	)
 	if err != nil {

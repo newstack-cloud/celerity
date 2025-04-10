@@ -2,6 +2,8 @@ package pluginservicev1
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 	sync "sync"
 )
 
@@ -25,7 +27,7 @@ type Manager interface {
 }
 
 type managerImpl struct {
-	pluginTypeProtocolVersions map[PluginType]int32
+	pluginTypeProtocolVersions map[PluginType]string
 	pluginInstances            map[PluginType]map[string]*PluginInstance
 	pluginFactory              PluginFactory
 	mu                         sync.RWMutex
@@ -35,7 +37,7 @@ type managerImpl struct {
 // that enables the deploy engine to interact with plugins
 // and backs the "pluginservice" gRPC service that plugins
 // can register with.
-func NewManager(protocolVersions map[PluginType]int32, pluginFactory PluginFactory) Manager {
+func NewManager(protocolVersions map[PluginType]string, pluginFactory PluginFactory) Manager {
 	return &managerImpl{
 		pluginTypeProtocolVersions: protocolVersions,
 		pluginInstances:            make(map[PluginType]map[string]*PluginInstance),
@@ -56,10 +58,11 @@ func (m *managerImpl) RegisterPlugin(info *PluginInstanceInfo) error {
 		return fmt.Errorf("plugin type %d is not supported", info.PluginType)
 	}
 
-	if info.ProtocolVersion != hostProtocolVersion {
+	if !slices.Contains(info.ProtocolVersions, hostProtocolVersion) {
+		protocolVersionsString := strings.Join(info.ProtocolVersions, ", ")
 		return fmt.Errorf(
-			"plugin protocol version %d is not supported, expected %d",
-			info.ProtocolVersion,
+			"plugin protocol versions %q are not supported, expected %s",
+			protocolVersionsString,
 			hostProtocolVersion,
 		)
 	}
@@ -140,10 +143,10 @@ type PluginInstance struct {
 // that is registered with the host system.
 type PluginInstanceInfo struct {
 	PluginType PluginType
-	// ProtocolVersion is the protocol version that should be
-	// used for the plugin.
-	// Currently, the only supported protocol version is 1.
-	ProtocolVersion int32
+	// ProtocolVersions contains the protocol versions that
+	// the plugin supports.
+	// Currently, the only supported protocol version is "1.0".
+	ProtocolVersions []string
 	// The unique identifier for the provider plugin.
 	// In addition to being unique, the ID should point to the location
 	// where the provider plugin can be downloaded.

@@ -84,8 +84,10 @@ message PluginRegistrationRequest {
     // The id of the plugin instance that should correspond to the
     // id that was captured when the plugin was launched.
     string instance_id = 3;
-    // The protocol version that the plugin is using.
-    int32 protocol_version = 4;
+    // The protocol versions that the plugin supports.
+    // Each protocol version must be in the form MAJOR.MINOR,
+    // for example: 1.0, 1.1, 2.0.
+    repeated string protocol_versions = 4;
     // Metadata for the plugin that can be used for documentation.
     PluginMetadata metadata = 5;
     // The tcp port that the plugin is listening on.

@@ -74,12 +74,12 @@ func (s *pluginServiceServer) Register(
 ) (*PluginRegistrationResponse, error) {
 	err := s.manager.RegisterPlugin(
 		&PluginInstanceInfo{
-			PluginType:      req.PluginType,
-			ProtocolVersion: req.ProtocolVersion,
-			ID:              req.PluginId,
-			InstanceID:      req.InstanceId,
-			TCPPort:         int(req.Port),
-			UnixSocketPath:  req.UnixSocket,
+			PluginType:       req.PluginType,
+			ProtocolVersions: req.ProtocolVersions,
+			ID:               req.PluginId,
+			InstanceID:       req.InstanceId,
+			TCPPort:          int(req.Port),
+			UnixSocketPath:   req.UnixSocket,
 		},
 	)
 	if err != nil {

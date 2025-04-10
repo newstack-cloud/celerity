@@ -3,6 +3,7 @@ package plugin
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
@@ -13,7 +14,8 @@ import (
 // CreatePluginInstance is a function that creates a new instance of a plugin.
 // This implements the pluginservicev1.PluginFactory interface.
 func CreatePluginInstance(info *pluginservicev1.PluginInstanceInfo, hostID string) (any, func(), error) {
-	if info.PluginType == pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER && info.ProtocolVersion == 1 {
+	if info.PluginType == pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER &&
+		slices.Contains(info.ProtocolVersions, "1.0") {
 		return createV1ProviderPlugin(info, hostID)
 	}
 
