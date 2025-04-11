@@ -3,6 +3,7 @@ package providerv1
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
@@ -337,6 +338,195 @@ func fromPBCustomValidateDataSourceRequest(
 	return &provider.DataSourceValidateInput{
 		SchemaDataSource: dataSource,
 		ProviderContext:  providerCtx,
+	}, nil
+}
+
+func fromPBResolvedDataSource(
+	pbResolvedDataSource *providerserverv1.ResolvedDataSource,
+) (*provider.ResolvedDataSource, error) {
+	if pbResolvedDataSource == nil {
+		return nil, nil
+	}
+
+	dataSourceMetadata, err := fromPBResolvedDataSourceMetadata(
+		pbResolvedDataSource.DataSourceMetadata,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	filter, err := fromPBResolvedDataSourceFilter(
+		pbResolvedDataSource.Filter,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	exports, err := fromPBResolvedDataSourceFieldExports(
+		pbResolvedDataSource.Exports,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	description, err := serialisation.FromMappingNodePB(
+		pbResolvedDataSource.Description,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.ResolvedDataSource{
+		Type: &schema.DataSourceTypeWrapper{
+			Value: pbResolvedDataSource.Type.Type,
+		},
+		DataSourceMetadata: dataSourceMetadata,
+		Filter:             filter,
+		Exports:            exports,
+		Description:        description,
+	}, nil
+}
+
+func fromPBResolvedDataSourceMetadata(
+	pbResolvedDataSourceMetadata *providerserverv1.ResolvedDataSourceMetadata,
+) (*provider.ResolvedDataSourceMetadata, error) {
+	if pbResolvedDataSourceMetadata == nil {
+		return nil, nil
+	}
+
+	displayName, err := serialisation.FromMappingNodePB(
+		pbResolvedDataSourceMetadata.DisplayName,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	annotations, err := serialisation.FromMappingNodePB(
+		pbResolvedDataSourceMetadata.Annotations,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	custom, err := serialisation.FromMappingNodePB(
+		pbResolvedDataSourceMetadata.Custom,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.ResolvedDataSourceMetadata{
+		DisplayName: displayName,
+		Annotations: annotations,
+		Custom:      custom,
+	}, nil
+}
+
+func fromPBResolvedDataSourceFilter(
+	pbResolvedDataSourceFilter *providerserverv1.ResolvedDataSourceFilter,
+) (*provider.ResolvedDataSourceFilter, error) {
+	if pbResolvedDataSourceFilter == nil {
+		return nil, nil
+	}
+
+	field, err := serialisation.FromScalarValuePB(
+		pbResolvedDataSourceFilter.Field,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	search, err := fromPBResolvedDataSourceFilterSearch(
+		pbResolvedDataSourceFilter.Search,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.ResolvedDataSourceFilter{
+		Field: field,
+		Operator: &schema.DataSourceFilterOperatorWrapper{
+			Value: schema.DataSourceFilterOperator(pbResolvedDataSourceFilter.Operator),
+		},
+		Search: search,
+	}, nil
+}
+
+func fromPBResolvedDataSourceFilterSearch(
+	pbResolvedDataSourceFilterSearch *providerserverv1.ResolvedDataSourceFilterSearch,
+) (*provider.ResolvedDataSourceFilterSearch, error) {
+	if pbResolvedDataSourceFilterSearch == nil {
+		return nil, nil
+	}
+
+	values, err := convertv1.FromPBMappingNodeSlice(
+		pbResolvedDataSourceFilterSearch.Values,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.ResolvedDataSourceFilterSearch{
+		Values: values,
+	}, nil
+}
+
+func fromPBResolvedDataSourceFieldExports(
+	pbResolvedDataSourceFieldExports map[string]*providerserverv1.ResolvedDataSourceFieldExport,
+) (map[string]*provider.ResolvedDataSourceFieldExport, error) {
+	if pbResolvedDataSourceFieldExports == nil {
+		return nil, nil
+	}
+
+	exports := make(
+		map[string]*provider.ResolvedDataSourceFieldExport,
+		len(pbResolvedDataSourceFieldExports),
+	)
+	for key, pbExport := range pbResolvedDataSourceFieldExports {
+		export, err := fromPBResolvedDataSourceFieldExport(pbExport)
+		if err != nil {
+			return nil, err
+		}
+		exports[key] = export
+	}
+
+	return exports, nil
+}
+
+func fromPBResolvedDataSourceFieldExport(
+	pbResolvedDataSourceFieldExport *providerserverv1.ResolvedDataSourceFieldExport,
+) (*provider.ResolvedDataSourceFieldExport, error) {
+	if pbResolvedDataSourceFieldExport == nil {
+		return nil, nil
+	}
+
+	aliasFor, err := serialisation.FromScalarValuePB(
+		pbResolvedDataSourceFieldExport.AliasFor,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	description, err := serialisation.FromMappingNodePB(
+		pbResolvedDataSourceFieldExport.Description,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.ResolvedDataSourceFieldExport{
+		Type: &schema.DataSourceFieldTypeWrapper{
+			Value: schema.DataSourceFieldType(pbResolvedDataSourceFieldExport.Type),
+		},
+		AliasFor:    aliasFor,
+		Description: description,
 	}, nil
 }
 

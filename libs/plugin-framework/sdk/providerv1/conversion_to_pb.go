@@ -927,6 +927,43 @@ func toPBGetDataSourceExamplesResponse(
 	}
 }
 
+func toFetchDataSourceErrorResponse(
+	err error,
+) *providerserverv1.FetchDataSourceResponse {
+	return &providerserverv1.FetchDataSourceResponse{
+		Response: &providerserverv1.FetchDataSourceResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBFetchDataSourceResponse(
+	output *provider.DataSourceFetchOutput,
+) (*providerserverv1.FetchDataSourceResponse, error) {
+	if output == nil {
+		return &providerserverv1.FetchDataSourceResponse{
+			Response: &providerserverv1.FetchDataSourceResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}, nil
+	}
+
+	data, err := convertv1.ToPBMappingNodeMap(
+		output.Data,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &providerserverv1.FetchDataSourceResponse{
+		Response: &providerserverv1.FetchDataSourceResponse_CompleteResponse{
+			CompleteResponse: &providerserverv1.FetchDataSourceCompleteResponse{
+				Data: data,
+			},
+		},
+	}, nil
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

@@ -98,3 +98,41 @@ func dataSourceGetExamplesInput() *provider.DataSourceGetExamplesInput {
 		ProviderContext: testutils.CreateTestProviderContext("aws"),
 	}
 }
+
+func dataSourceFetchInput() *provider.DataSourceFetchInput {
+	return &provider.DataSourceFetchInput{
+		DataSourceWithResolvedSubs: &provider.ResolvedDataSource{
+			Type: &schema.DataSourceTypeWrapper{
+				Value: vpcDataSourceType,
+			},
+			DataSourceMetadata: &provider.ResolvedDataSourceMetadata{
+				Annotations: &core.MappingNode{
+					Fields: map[string]*core.MappingNode{
+						"example.annotation": core.MappingNodeFromString("example-annotation-value"),
+					},
+				},
+			},
+			Filter: &provider.ResolvedDataSourceFilter{
+				Field: core.ScalarFromString("examplefield"),
+				Operator: &schema.DataSourceFilterOperatorWrapper{
+					Value: schema.DataSourceFilterOperatorEquals,
+				},
+				Search: &provider.ResolvedDataSourceFilterSearch{
+					Values: []*core.MappingNode{
+						core.MappingNodeFromString("search-for"),
+					},
+				},
+			},
+			Exports: map[string]*provider.ResolvedDataSourceFieldExport{
+				"example": {
+					Type: &schema.DataSourceFieldTypeWrapper{
+						Value: schema.DataSourceFieldTypeString,
+					},
+					AliasFor:    core.ScalarFromString("examplefield"),
+					Description: core.MappingNodeFromString("example field description"),
+				},
+			},
+		},
+		ProviderContext: testutils.CreateTestProviderContext("aws"),
+	}
+}

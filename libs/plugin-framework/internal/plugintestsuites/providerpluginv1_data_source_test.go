@@ -276,3 +276,47 @@ func (s *ProviderPluginV1Suite) Test_data_source_get_examples_reports_expected_e
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred retrieving data source examples")
 }
+
+func (s *ProviderPluginV1Suite) Test_data_source_fetch() {
+	dataSource, err := s.provider.DataSource(context.Background(), vpcDataSourceType)
+	s.Require().NoError(err)
+
+	output, err := dataSource.Fetch(
+		context.Background(),
+		dataSourceFetchInput(),
+	)
+	s.Require().NoError(err)
+	expected := testprovider.DataSourceVPCFetchOutput()
+	s.Assert().Equal(
+		expected,
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_fetch_data_source_fails_for_unexpected_host() {
+	dataSource, err := s.providerWrongHost.DataSource(context.Background(), vpcDataSourceType)
+	s.Require().NoError(err)
+
+	_, err = dataSource.Fetch(
+		context.Background(),
+		dataSourceFetchInput(),
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderFetchDataSource,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_fetch_data_source_reports_expected_error_for_failure() {
+	dataSource, err := s.failingProvider.DataSource(context.Background(), vpcDataSourceType)
+	s.Require().NoError(err)
+
+	_, err = dataSource.Fetch(
+		context.Background(),
+		dataSourceFetchInput(),
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred when fetching data source")
+}

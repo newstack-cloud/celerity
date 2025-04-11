@@ -334,5 +334,66 @@ func (d *dataSourceProviderClientWrapper) Fetch(
 	ctx context.Context,
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderFetchDataSource,
+		)
+	}
+
+	dataSourceWithResolvedSubsPB, err := toPBResolvedDataSource(
+		input.DataSourceWithResolvedSubs,
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderFetchDataSource,
+		)
+	}
+
+	response, err := d.client.FetchDataSource(
+		ctx,
+		&FetchDataSourceRequest{
+			DataSourceType: &DataSourceType{
+				Type: d.dataSourceType,
+			},
+			DataSourceWithResolvedSubs: dataSourceWithResolvedSubsPB,
+			HostId:                     d.hostID,
+			Context:                    providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderFetchDataSource,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *FetchDataSourceResponse_CompleteResponse:
+		data, err := convertv1.FromPBMappingNodeMap(result.CompleteResponse.Data)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				errorsv1.PluginActionProviderFetchDataSource,
+			)
+		}
+
+		return &provider.DataSourceFetchOutput{
+			Data: data,
+		}, nil
+	case *FetchDataSourceResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderFetchDataSource,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderFetchDataSource,
+		),
+		errorsv1.PluginActionProviderFetchDataSource,
+	)
 }

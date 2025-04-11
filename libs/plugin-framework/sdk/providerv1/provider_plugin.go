@@ -1130,6 +1130,54 @@ func (p *blueprintProviderPluginImpl) GetDataSourceFilterFields(
 	return toPBGetDataSourceFilterFieldsResponse(output), nil
 }
 
+func (p *blueprintProviderPluginImpl) FetchDataSource(
+	ctx context.Context,
+	req *providerserverv1.FetchDataSourceRequest,
+) (*providerserverv1.FetchDataSourceResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toFetchDataSourceErrorResponse(err), nil
+	}
+
+	dataSource, err := p.bpProvider.DataSource(
+		ctx,
+		dataSourceTypeToString(req.DataSourceType),
+	)
+	if err != nil {
+		return toFetchDataSourceErrorResponse(err), nil
+	}
+
+	providerCtx, err := convertv1.FromPBProviderContext(req.Context)
+	if err != nil {
+		return toFetchDataSourceErrorResponse(err), nil
+	}
+
+	resolvedDataSourceInput, err := fromPBResolvedDataSource(
+		req.DataSourceWithResolvedSubs,
+	)
+	if err != nil {
+		return toFetchDataSourceErrorResponse(err), nil
+	}
+
+	output, err := dataSource.Fetch(
+		ctx,
+		&provider.DataSourceFetchInput{
+			DataSourceWithResolvedSubs: resolvedDataSourceInput,
+			ProviderContext:            providerCtx,
+		},
+	)
+	if err != nil {
+		return toFetchDataSourceErrorResponse(err), nil
+	}
+
+	response, err := toPBFetchDataSourceResponse(output)
+	if err != nil {
+		return toFetchDataSourceErrorResponse(err), nil
+	}
+
+	return response, nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	schemapb "github.com/two-hundred/celerity/libs/blueprint/schemapb"
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
@@ -184,4 +185,214 @@ func toPBLinkContextProviderConfigVars(
 	}
 
 	return providerConfigVars, nil
+}
+
+func toPBResolvedDataSource(
+	resolvedDataSource *provider.ResolvedDataSource,
+) (*ResolvedDataSource, error) {
+	if resolvedDataSource == nil {
+		return nil, nil
+	}
+
+	resolvedDataSourceMetadataPB, err := toPBResolvedDataSourceMetadata(
+		resolvedDataSource.DataSourceMetadata,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvedDataSourceFilterPB, err := toPBResolvedDataSourceFilter(
+		resolvedDataSource.Filter,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvedDataSourceExportsPB, err := toPBResolvedDataSourceExports(
+		resolvedDataSource.Exports,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	descriptionPB, err := serialisation.ToMappingNodePB(
+		resolvedDataSource.Description,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ResolvedDataSource{
+		Type:               toPBDataSourceType(resolvedDataSource.Type),
+		DataSourceMetadata: resolvedDataSourceMetadataPB,
+		Filter:             resolvedDataSourceFilterPB,
+		Exports:            resolvedDataSourceExportsPB,
+		Description:        descriptionPB,
+	}, nil
+}
+
+func toPBResolvedDataSourceMetadata(
+	dataSourceMetadata *provider.ResolvedDataSourceMetadata,
+) (*ResolvedDataSourceMetadata, error) {
+
+	displayNamePB, err := serialisation.ToMappingNodePB(
+		dataSourceMetadata.DisplayName,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	annotationsPB, err := serialisation.ToMappingNodePB(
+		dataSourceMetadata.Annotations,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	customPB, err := serialisation.ToMappingNodePB(
+		dataSourceMetadata.Custom,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ResolvedDataSourceMetadata{
+		DisplayName: displayNamePB,
+		Annotations: annotationsPB,
+		Custom:      customPB,
+	}, nil
+}
+
+func toPBResolvedDataSourceFilter(
+	dataSourceFilter *provider.ResolvedDataSourceFilter,
+) (*ResolvedDataSourceFilter, error) {
+	if dataSourceFilter == nil {
+		return nil, nil
+	}
+
+	fieldPB, err := serialisation.ToScalarValuePB(
+		dataSourceFilter.Field,
+		/* optional */ false,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	searchPB, err := toPBResolvedDataSourceFilterSearch(
+		dataSourceFilter.Search,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ResolvedDataSourceFilter{
+		Field:    fieldPB,
+		Operator: toPBDataSourceFilterOperator(dataSourceFilter.Operator),
+		Search:   searchPB,
+	}, nil
+}
+
+func toPBResolvedDataSourceFilterSearch(
+	search *provider.ResolvedDataSourceFilterSearch,
+) (*ResolvedDataSourceFilterSearch, error) {
+	if search == nil {
+		return nil, nil
+	}
+
+	valuesPB, err := convertv1.ToPBMappingNodeSlice(
+		search.Values,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ResolvedDataSourceFilterSearch{
+		Values: valuesPB,
+	}, nil
+}
+
+func toPBResolvedDataSourceExports(
+	exports map[string]*provider.ResolvedDataSourceFieldExport,
+) (map[string]*ResolvedDataSourceFieldExport, error) {
+	if exports == nil {
+		return nil, nil
+	}
+
+	pbExports := make(map[string]*ResolvedDataSourceFieldExport)
+	for key, export := range exports {
+		pbExport, err := toPBResolvedDataSourceFieldExport(export)
+		if err != nil {
+			return nil, err
+		}
+
+		pbExports[key] = pbExport
+	}
+
+	return pbExports, nil
+}
+
+func toPBResolvedDataSourceFieldExport(
+	export *provider.ResolvedDataSourceFieldExport,
+) (*ResolvedDataSourceFieldExport, error) {
+	if export == nil {
+		return nil, nil
+	}
+
+	aliasForPB, err := serialisation.ToScalarValuePB(
+		export.AliasFor,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	descriptionPB, err := serialisation.ToMappingNodePB(
+		export.Description,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ResolvedDataSourceFieldExport{
+		Type:        toPBDataSourceExportFieldType(export.Type),
+		AliasFor:    aliasForPB,
+		Description: descriptionPB,
+	}, nil
+}
+
+func toPBDataSourceFilterOperator(
+	operator *schema.DataSourceFilterOperatorWrapper,
+) string {
+	if operator == nil {
+		return ""
+	}
+
+	return string(operator.Value)
+}
+
+func toPBDataSourceExportFieldType(
+	fieldType *schema.DataSourceFieldTypeWrapper,
+) string {
+	if fieldType == nil {
+		return ""
+	}
+
+	return string(fieldType.Value)
+}
+
+func toPBDataSourceType(
+	schemaDataSourceType *schema.DataSourceTypeWrapper,
+) *DataSourceType {
+	if schemaDataSourceType == nil {
+		return nil
+	}
+
+	return &DataSourceType{
+		Type: schemaDataSourceType.Value,
+	}
 }

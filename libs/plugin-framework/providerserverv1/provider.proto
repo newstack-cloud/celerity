@@ -669,13 +669,14 @@ message DataSourceFilterFieldsResponse {
 // FetchDataSourceRequest is the request input for fetching
 // data from an upstream data source.
 message FetchDataSourceRequest {
+    DataSourceType data_source_type = 1;
     // A version of a data source for which all ${..}
 	// substitutions have been applied.
-    ResolvedDataSource data_source_with_resolved_subs = 1;
+    ResolvedDataSource data_source_with_resolved_subs = 2;
     // The ID of the host making the request
     // to the provider.
-    string host_id = 2;
-    sharedtypesv1.ProviderContext context = 3;
+    string host_id = 3;
+    sharedtypesv1.ProviderContext context = 4;
 }
 
 // FetchDataSourceResponse is the response
@@ -761,6 +762,14 @@ message ResolvedDataSourceMetadata {
 // ResolvedDataSourceFilter provides a filter for which all ${..}
 // substitutions have been applied.
 message ResolvedDataSourceFilter {
+    schema.ScalarValue field = 1;
+    string operator = 2;
+    ResolvedDataSourceFilterSearch search = 3;
+}
+
+// ResolvedDataSourceFilterSearch provides data source
+// filter search terms for which all ${..} substitutions have been applied.
+message ResolvedDataSourceFilterSearch {
     repeated schema.MappingNode values = 1;
 }
 
@@ -773,7 +782,7 @@ message DataSourceFilterFields {
 // ResolvedDataSourceFieldExport provides a field export for which all ${..}
 // substitutions have been applied.
 message ResolvedDataSourceFieldExport {
-    DataSourceType type = 1;
+    string type = 1;
     schema.ScalarValue alias_for = 2;
     schema.MappingNode description = 3;
 }

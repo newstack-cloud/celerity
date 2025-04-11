@@ -343,3 +343,13 @@ func (p *failingProviderServer) GetDataSourceFilterFields(
 		"internal error occurred retrieving data source filter fields",
 	)
 }
+
+func (p *failingProviderServer) FetchDataSource(
+	ctx context.Context,
+	req *providerserverv1.FetchDataSourceRequest,
+) (*providerserverv1.FetchDataSourceResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred when fetching data source",
+	)
+}
