@@ -1248,6 +1248,46 @@ func (p *blueprintProviderPluginImpl) GetCustomVariableTypeDescription(
 	return toPBCustomVarTypeDescriptionResponse(output), nil
 }
 
+func (p *blueprintProviderPluginImpl) GetCustomVariableTypeOptions(
+	ctx context.Context,
+	req *providerserverv1.CustomVariableTypeRequest,
+) (*providerserverv1.CustomVariableTypeOptionsResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toGetCustomVarTypeOptionsErrorResponse(err), nil
+	}
+
+	customVarType, err := p.bpProvider.CustomVariableType(
+		ctx,
+		customVariableTypeToString(req.CustomVariableType),
+	)
+	if err != nil {
+		return toGetCustomVarTypeOptionsErrorResponse(err), nil
+	}
+
+	providerCtx, err := convertv1.FromPBProviderContext(req.Context)
+	if err != nil {
+		return toGetCustomVarTypeOptionsErrorResponse(err), nil
+	}
+
+	output, err := customVarType.Options(
+		ctx,
+		&provider.CustomVariableTypeOptionsInput{
+			ProviderContext: providerCtx,
+		},
+	)
+	if err != nil {
+		return toGetCustomVarTypeOptionsErrorResponse(err), nil
+	}
+
+	response, err := toPBCustomVarTypeOptionsResponse(output)
+	if err != nil {
+		return toGetCustomVarTypeOptionsErrorResponse(err), nil
+	}
+
+	return response, nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

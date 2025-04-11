@@ -116,7 +116,55 @@ func (v *customVarTypeProviderClientWrapper) Options(
 	ctx context.Context,
 	input *provider.CustomVariableTypeOptionsInput,
 ) (*provider.CustomVariableTypeOptionsOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetCustomVariableTypeOptions,
+		)
+	}
+
+	response, err := v.client.GetCustomVariableTypeOptions(
+		ctx,
+		&CustomVariableTypeRequest{
+			CustomVariableType: &CustomVariableType{
+				Type: v.customVariableType,
+			},
+			HostId:  v.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetCustomVariableTypeOptions,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *CustomVariableTypeOptionsResponse_Options:
+		optionsOutput, err := fromPBCustomVarTypeOptions(result.Options)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				errorsv1.PluginActionProviderGetCustomVariableTypeOptions,
+			)
+		}
+
+		return optionsOutput, nil
+	case *CustomVariableTypeOptionsResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetCustomVariableTypeOptions,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetCustomVariableTypeOptions,
+		),
+		errorsv1.PluginActionProviderGetCustomVariableTypeOptions,
+	)
 }
 
 func (v *customVarTypeProviderClientWrapper) GetExamples(

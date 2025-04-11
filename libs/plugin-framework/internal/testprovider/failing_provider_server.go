@@ -373,3 +373,13 @@ func (p *failingProviderServer) GetCustomVariableTypeDescription(
 		"internal error occurred retrieving custom variable type description",
 	)
 }
+
+func (p *failingProviderServer) GetCustomVariableTypeOptions(
+	ctx context.Context,
+	req *providerserverv1.CustomVariableTypeRequest,
+) (*providerserverv1.CustomVariableTypeOptionsResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving custom variable type options",
+	)
+}

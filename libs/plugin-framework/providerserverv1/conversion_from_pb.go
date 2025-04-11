@@ -281,3 +281,47 @@ func fromPBTypeDescriptionForCustomVariableType(
 		MarkdownSummary:      typeDescription.MarkdownSummary,
 	}
 }
+
+func fromPBCustomVarTypeOptions(
+	optionsPB *CustomVariableTypeOptions,
+) (*provider.CustomVariableTypeOptionsOutput, error) {
+	if optionsPB == nil {
+		return nil, nil
+	}
+
+	options := make(map[string]*provider.CustomVariableTypeOption)
+	for key, optionPB := range optionsPB.Options {
+		option, err := fromPBCustomVarTypeOption(optionPB)
+		if err != nil {
+			return nil, err
+		}
+		options[key] = option
+	}
+
+	return &provider.CustomVariableTypeOptionsOutput{
+		Options: options,
+	}, nil
+}
+
+func fromPBCustomVarTypeOption(
+	optionPB *CustomVariableTypeOption,
+) (*provider.CustomVariableTypeOption, error) {
+	if optionPB == nil {
+		return nil, nil
+	}
+
+	value, err := serialisation.FromScalarValuePB(
+		optionPB.Value,
+		/* optional */ false,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.CustomVariableTypeOption{
+		Value:               value,
+		Label:               optionPB.Label,
+		Description:         optionPB.Description,
+		MarkdownDescription: optionPB.FormattedDescription,
+	}, nil
+}

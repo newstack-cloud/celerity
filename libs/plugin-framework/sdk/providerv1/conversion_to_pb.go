@@ -1020,6 +1020,87 @@ func toPBCustomVarTypeDescriptionResponse(
 	}
 }
 
+func toGetCustomVarTypeOptionsErrorResponse(
+	err error,
+) *providerserverv1.CustomVariableTypeOptionsResponse {
+	return &providerserverv1.CustomVariableTypeOptionsResponse{
+		Response: &providerserverv1.CustomVariableTypeOptionsResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBCustomVarTypeOptionsResponse(
+	output *provider.CustomVariableTypeOptionsOutput,
+) (*providerserverv1.CustomVariableTypeOptionsResponse, error) {
+	if output == nil {
+		return &providerserverv1.CustomVariableTypeOptionsResponse{
+			Response: &providerserverv1.CustomVariableTypeOptionsResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}, nil
+	}
+
+	options, err := toPBCustomVarTypeOptions(output.Options)
+	if err != nil {
+		return nil, err
+	}
+
+	return &providerserverv1.CustomVariableTypeOptionsResponse{
+		Response: &providerserverv1.CustomVariableTypeOptionsResponse_Options{
+			Options: options,
+		},
+	}, nil
+}
+
+func toPBCustomVarTypeOptions(
+	options map[string]*provider.CustomVariableTypeOption,
+) (*providerserverv1.CustomVariableTypeOptions, error) {
+	if options == nil {
+		return nil, nil
+	}
+
+	optionsPB := make(
+		map[string]*providerserverv1.CustomVariableTypeOption,
+		len(options),
+	)
+	for key, option := range options {
+		pbOption, err := toPBCustomVarTypeOption(option)
+		if err != nil {
+			return nil, err
+		}
+
+		optionsPB[key] = pbOption
+	}
+
+	return &providerserverv1.CustomVariableTypeOptions{
+		Options: optionsPB,
+	}, nil
+}
+
+func toPBCustomVarTypeOption(
+	option *provider.CustomVariableTypeOption,
+) (*providerserverv1.CustomVariableTypeOption, error) {
+	if option == nil {
+		return nil, nil
+	}
+
+	valuePB, err := serialisation.ToScalarValuePB(
+		option.Value,
+		/* optional */ false,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &providerserverv1.CustomVariableTypeOption{
+		Label:                option.Label,
+		Value:                valuePB,
+		Description:          option.Description,
+		FormattedDescription: option.MarkdownDescription,
+	}, nil
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

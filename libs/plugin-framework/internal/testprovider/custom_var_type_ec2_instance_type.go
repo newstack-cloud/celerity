@@ -18,6 +18,7 @@ const (
 
 func customVarTypeEC2InstanceType() provider.CustomVariableType {
 	descriptionOutput := CustomVarTypeInstanceTypeDescriptionOutput()
+	optionsOutput := CustomVarTypeInstanceTypeOptionsOutput()
 
 	return &providerv1.CustomVariableTypeDefinition{
 		Type:                 "aws/ec2/instanceType",
@@ -26,7 +27,13 @@ func customVarTypeEC2InstanceType() provider.CustomVariableType {
 		PlainTextDescription: descriptionOutput.PlainTextDescription,
 		FormattedSummary:     descriptionOutput.MarkdownSummary,
 		PlainTextSummary:     descriptionOutput.PlainTextSummary,
-		CustomVarTypeOptions: map[string]*provider.CustomVariableTypeOption{
+		CustomVarTypeOptions: optionsOutput.Options,
+	}
+}
+
+func CustomVarTypeInstanceTypeOptionsOutput() *provider.CustomVariableTypeOptionsOutput {
+	return &provider.CustomVariableTypeOptionsOutput{
+		Options: map[string]*provider.CustomVariableTypeOption{
 			optionT2Nano: {
 				Label: optionT2Nano,
 				Value: core.ScalarFromString(optionT2Nano),
