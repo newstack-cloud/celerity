@@ -325,3 +325,16 @@ func fromPBCustomVarTypeOption(
 		MarkdownDescription: optionPB.FormattedDescription,
 	}, nil
 }
+
+func fromPBExamplesForCustomVarType(
+	req *sharedtypesv1.Examples,
+) *provider.CustomVariableTypeGetExamplesOutput {
+	if req == nil {
+		return nil
+	}
+
+	return &provider.CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: req.Examples,
+		MarkdownExamples:  req.FormattedExamples,
+	}
+}

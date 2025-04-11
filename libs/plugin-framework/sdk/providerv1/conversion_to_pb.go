@@ -1101,6 +1101,27 @@ func toPBCustomVarTypeOption(
 	}, nil
 }
 
+func toPBGetCustomVarTypeExamplesResponse(
+	output *provider.CustomVariableTypeGetExamplesOutput,
+) *sharedtypesv1.ExamplesResponse {
+	if output == nil {
+		return &sharedtypesv1.ExamplesResponse{
+			Response: &sharedtypesv1.ExamplesResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &sharedtypesv1.ExamplesResponse{
+		Response: &sharedtypesv1.ExamplesResponse_Examples{
+			Examples: &sharedtypesv1.Examples{
+				Examples:          output.PlainTextExamples,
+				FormattedExamples: output.MarkdownExamples,
+			},
+		},
+	}
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

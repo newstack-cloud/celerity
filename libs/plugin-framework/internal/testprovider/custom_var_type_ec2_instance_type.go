@@ -19,6 +19,7 @@ const (
 func customVarTypeEC2InstanceType() provider.CustomVariableType {
 	descriptionOutput := CustomVarTypeInstanceTypeDescriptionOutput()
 	optionsOutput := CustomVarTypeInstanceTypeOptionsOutput()
+	examplesOutput := CustomVarTypeInstanceTypeExamplesOutput()
 
 	return &providerv1.CustomVariableTypeDefinition{
 		Type:                 "aws/ec2/instanceType",
@@ -28,6 +29,8 @@ func customVarTypeEC2InstanceType() provider.CustomVariableType {
 		FormattedSummary:     descriptionOutput.MarkdownSummary,
 		PlainTextSummary:     descriptionOutput.PlainTextSummary,
 		CustomVarTypeOptions: optionsOutput.Options,
+		PlainTextExamples:    examplesOutput.PlainTextExamples,
+		FormattedExamples:    examplesOutput.MarkdownExamples,
 	}
 }
 
@@ -72,5 +75,16 @@ func CustomVarTypeInstanceTypeDescriptionOutput() *provider.CustomVariableTypeGe
 		MarkdownSummary:      "This is a **formatted** summary of the instance type custom variable type",
 		PlainTextDescription: "This is a plain text description of the instance type custom variable type",
 		MarkdownDescription:  "This is a **formatted** description of the instance type custom variable type",
+	}
+}
+
+func CustomVarTypeInstanceTypeExamplesOutput() *provider.CustomVariableTypeGetExamplesOutput {
+	return &provider.CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: []string{
+			"This is a plain text example of the instance type custom variable type",
+		},
+		MarkdownExamples: []string{
+			"This is a **formatted** example of the instance type custom variable type",
+		},
 	}
 }

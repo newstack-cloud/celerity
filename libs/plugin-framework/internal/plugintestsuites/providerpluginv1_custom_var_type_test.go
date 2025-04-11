@@ -171,3 +171,55 @@ func (s *ProviderPluginV1Suite) Test_custom_variable_type_get_type_options_repor
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred retrieving custom variable type options")
 }
+
+func (s *ProviderPluginV1Suite) Test_custom_variable_type_get_examples() {
+	customVarType, err := s.provider.CustomVariableType(
+		context.Background(),
+		instanceTypeCustomVarType,
+	)
+	s.Require().NoError(err)
+
+	output, err := customVarType.GetExamples(
+		context.Background(),
+		customVarTypeExamplesInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		testprovider.CustomVarTypeInstanceTypeExamplesOutput(),
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_custom_variable_type_get_examples_fails_for_unexpected_host() {
+	customVarType, err := s.providerWrongHost.CustomVariableType(
+		context.Background(),
+		instanceTypeCustomVarType,
+	)
+	s.Require().NoError(err)
+
+	_, err = customVarType.GetExamples(
+		context.Background(),
+		customVarTypeExamplesInput(),
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderGetCustomVariableTypeExamples,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_custom_variable_type_get_examples_reports_expected_error_for_failure() {
+	customVarType, err := s.failingProvider.CustomVariableType(
+		context.Background(),
+		instanceTypeCustomVarType,
+	)
+	s.Require().NoError(err)
+
+	_, err = customVarType.GetExamples(
+		context.Background(),
+		customVarTypeExamplesInput(),
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred retrieving custom variable type examples")
+}

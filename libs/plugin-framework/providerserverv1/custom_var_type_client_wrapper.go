@@ -171,5 +171,45 @@ func (v *customVarTypeProviderClientWrapper) GetExamples(
 	ctx context.Context,
 	input *provider.CustomVariableTypeGetExamplesInput,
 ) (*provider.CustomVariableTypeGetExamplesOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetCustomVariableTypeExamples,
+		)
+	}
+
+	response, err := v.client.GetCustomVariableTypeExamples(
+		ctx,
+		&CustomVariableTypeRequest{
+			CustomVariableType: &CustomVariableType{
+				Type: v.customVariableType,
+			},
+			HostId:  v.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetCustomVariableTypeExamples,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.ExamplesResponse_Examples:
+		return fromPBExamplesForCustomVarType(result.Examples), nil
+	case *sharedtypesv1.ExamplesResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetCustomVariableTypeExamples,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetCustomVariableTypeExamples,
+		),
+		errorsv1.PluginActionProviderGetCustomVariableTypeExamples,
+	)
 }

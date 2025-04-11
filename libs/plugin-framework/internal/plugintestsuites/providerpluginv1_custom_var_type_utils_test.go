@@ -22,3 +22,9 @@ func customVarTypeOptionsInput() *provider.CustomVariableTypeOptionsInput {
 		ProviderContext: testutils.CreateTestProviderContext("aws"),
 	}
 }
+
+func customVarTypeExamplesInput() *provider.CustomVariableTypeGetExamplesInput {
+	return &provider.CustomVariableTypeGetExamplesInput{
+		ProviderContext: testutils.CreateTestProviderContext("aws"),
+	}
+}
