@@ -17,10 +17,15 @@ const (
 )
 
 func customVarTypeEC2InstanceType() provider.CustomVariableType {
+	descriptionOutput := CustomVarTypeInstanceTypeDescriptionOutput()
+
 	return &providerv1.CustomVariableTypeDefinition{
 		Type:                 "aws/ec2/instanceType",
 		Label:                "AWS EC2 Instance Type",
-		FormattedDescription: "An EC2 instance type.",
+		FormattedDescription: descriptionOutput.MarkdownDescription,
+		PlainTextDescription: descriptionOutput.PlainTextDescription,
+		FormattedSummary:     descriptionOutput.MarkdownSummary,
+		PlainTextSummary:     descriptionOutput.PlainTextSummary,
 		CustomVarTypeOptions: map[string]*provider.CustomVariableTypeOption{
 			optionT2Nano: {
 				Label: optionT2Nano,
@@ -51,5 +56,14 @@ func customVarTypeEC2InstanceType() provider.CustomVariableType {
 				Value: core.ScalarFromString(optionT2X2Large),
 			},
 		},
+	}
+}
+
+func CustomVarTypeInstanceTypeDescriptionOutput() *provider.CustomVariableTypeGetDescriptionOutput {
+	return &provider.CustomVariableTypeGetDescriptionOutput{
+		PlainTextSummary:     "This is a plain text summary of the instance type custom variable type",
+		MarkdownSummary:      "This is a **formatted** summary of the instance type custom variable type",
+		PlainTextDescription: "This is a plain text description of the instance type custom variable type",
+		MarkdownDescription:  "This is a **formatted** description of the instance type custom variable type",
 	}
 }

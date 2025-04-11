@@ -6,6 +6,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
+	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 type customVarTypeProviderClientWrapper struct {
@@ -68,7 +69,47 @@ func (v *customVarTypeProviderClientWrapper) GetDescription(
 	ctx context.Context,
 	input *provider.CustomVariableTypeGetDescriptionInput,
 ) (*provider.CustomVariableTypeGetDescriptionOutput, error) {
-	return nil, nil
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetCustomVariableTypeDescription,
+		)
+	}
+
+	response, err := v.client.GetCustomVariableTypeDescription(
+		ctx,
+		&CustomVariableTypeRequest{
+			CustomVariableType: &CustomVariableType{
+				Type: v.customVariableType,
+			},
+			HostId:  v.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetCustomVariableTypeDescription,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.TypeDescriptionResponse_Description:
+		return fromPBTypeDescriptionForCustomVariableType(result.Description), nil
+	case *sharedtypesv1.TypeDescriptionResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetCustomVariableTypeDescription,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetCustomVariableTypeDescription,
+		),
+		errorsv1.PluginActionProviderGetCustomVariableTypeDescription,
+	)
 }
 
 func (v *customVarTypeProviderClientWrapper) Options(

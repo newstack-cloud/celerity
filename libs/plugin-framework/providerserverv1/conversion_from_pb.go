@@ -266,3 +266,18 @@ func fromPBExamplesForDataSource(
 		MarkdownExamples:  req.FormattedExamples,
 	}
 }
+
+func fromPBTypeDescriptionForCustomVariableType(
+	typeDescription *sharedtypesv1.TypeDescription,
+) *provider.CustomVariableTypeGetDescriptionOutput {
+	if typeDescription == nil {
+		return nil
+	}
+
+	return &provider.CustomVariableTypeGetDescriptionOutput{
+		PlainTextDescription: typeDescription.PlainTextDescription,
+		MarkdownDescription:  typeDescription.MarkdownDescription,
+		PlainTextSummary:     typeDescription.PlainTextSummary,
+		MarkdownSummary:      typeDescription.MarkdownSummary,
+	}
+}
