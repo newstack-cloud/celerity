@@ -92,3 +92,9 @@ func dataSourceGetFilterFieldsInput() *provider.DataSourceGetFilterFieldsInput {
 		ProviderContext: testutils.CreateTestProviderContext("aws"),
 	}
 }
+
+func dataSourceGetExamplesInput() *provider.DataSourceGetExamplesInput {
+	return &provider.DataSourceGetExamplesInput{
+		ProviderContext: testutils.CreateTestProviderContext("aws"),
+	}
+}

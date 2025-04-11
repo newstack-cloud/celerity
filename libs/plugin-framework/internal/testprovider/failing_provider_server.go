@@ -314,6 +314,16 @@ func (p *failingProviderServer) GetDataSourceTypeDescription(
 	)
 }
 
+func (p *failingProviderServer) GetDataSourceExamples(
+	ctx context.Context,
+	req *providerserverv1.DataSourceRequest,
+) (*sharedtypesv1.ExamplesResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving data source examples",
+	)
+}
+
 func (p *failingProviderServer) GetDataSourceSpecDefinition(
 	ctx context.Context,
 	req *providerserverv1.DataSourceRequest,

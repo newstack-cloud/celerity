@@ -253,3 +253,16 @@ func fromPBDataSourceFilterFields(
 		Fields: pbFilterFields.Fields,
 	}, nil
 }
+
+func fromPBExamplesForDataSource(
+	req *sharedtypesv1.Examples,
+) *provider.DataSourceGetExamplesOutput {
+	if req == nil {
+		return nil
+	}
+
+	return &provider.DataSourceGetExamplesOutput{
+		PlainTextExamples: req.Examples,
+		MarkdownExamples:  req.FormattedExamples,
+	}
+}

@@ -42,6 +42,7 @@ const (
 
 	PluginActionProviderGetDataSourceType            = PluginAction("Provider::GetDataSourceType")
 	PluginActionProviderGetDataSourceTypeDescription = PluginAction("Provider::GetDataSourceTypeDescription")
+	PluginActionProviderGetDataSourceExamples        = PluginAction("Provider::GetDataSourceExamples")
 	PluginActionProviderCustomValidateDataSource     = PluginAction("Provider::CustomValidateDataSource")
 	PluginActionProviderGetDataSourceSpecDefinition  = PluginAction("Provider::GetDataSourceSpecDefinition")
 	PluginActionProviderGetDataSourceFilterFields    = PluginAction("Provider::GetDataSourceFilterFields")

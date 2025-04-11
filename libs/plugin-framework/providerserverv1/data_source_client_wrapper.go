@@ -113,6 +113,53 @@ func (d *dataSourceProviderClientWrapper) GetTypeDescription(
 	)
 }
 
+func (d *dataSourceProviderClientWrapper) GetExamples(
+	ctx context.Context,
+	input *provider.DataSourceGetExamplesInput,
+) (*provider.DataSourceGetExamplesOutput, error) {
+	providerCtx, err := convertv1.ToPBProviderContext(input.ProviderContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetDataSourceExamples,
+		)
+	}
+
+	response, err := d.client.GetDataSourceExamples(
+		ctx,
+		&DataSourceRequest{
+			DataSourceType: &DataSourceType{
+				Type: d.dataSourceType,
+			},
+			HostId:  d.hostID,
+			Context: providerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetDataSourceExamples,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.ExamplesResponse_Examples:
+		return fromPBExamplesForDataSource(result.Examples), nil
+	case *sharedtypesv1.ExamplesResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderGetDataSourceExamples,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderGetDataSourceExamples,
+		),
+		errorsv1.PluginActionProviderGetDataSourceExamples,
+	)
+}
+
 func (d *dataSourceProviderClientWrapper) CustomValidate(
 	ctx context.Context,
 	input *provider.DataSourceValidateInput,
@@ -287,12 +334,5 @@ func (d *dataSourceProviderClientWrapper) Fetch(
 	ctx context.Context,
 	input *provider.DataSourceFetchInput,
 ) (*provider.DataSourceFetchOutput, error) {
-	return nil, nil
-}
-
-func (d *dataSourceProviderClientWrapper) GetExamples(
-	ctx context.Context,
-	input *provider.DataSourceGetExamplesInput,
-) (*provider.DataSourceGetExamplesOutput, error) {
 	return nil, nil
 }
