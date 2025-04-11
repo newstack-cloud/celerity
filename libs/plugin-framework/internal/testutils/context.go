@@ -27,3 +27,14 @@ func CreateTestLinkContext() provider.LinkContext {
 	)
 	return provider.NewLinkContextFromParams(params)
 }
+
+// CreateEmptyTestParams creates an empty set of parameters for testing,
+// primarily used for testing plugin functions.
+func CreateEmptyTestParams() core.BlueprintParams {
+	return core.NewDefaultParams(
+		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+	)
+}

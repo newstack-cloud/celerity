@@ -223,7 +223,11 @@ func (p *providerClientWrapper) ListCustomVariableTypes(ctx context.Context) ([]
 }
 
 func (p *providerClientWrapper) Function(ctx context.Context, functionName string) (provider.Function, error) {
-	return nil, nil
+	return &functionProviderClientWrapper{
+		client:       p.client,
+		functionName: functionName,
+		hostID:       p.hostID,
+	}, nil
 }
 
 func (p *providerClientWrapper) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {

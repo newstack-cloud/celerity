@@ -309,6 +309,7 @@ func ToPBFunctionCallRequest(
 func ToPBFunctionDefinitionRequest(
 	functionName string,
 	input *provider.FunctionGetDefinitionInput,
+	hostID string,
 ) (*sharedtypesv1.FunctionDefinitionRequest, error) {
 	params, err := toPBBlueprintParams(input.Params)
 	if err != nil {
@@ -318,6 +319,7 @@ func ToPBFunctionDefinitionRequest(
 	return &sharedtypesv1.FunctionDefinitionRequest{
 		FunctionName: functionName,
 		Params:       params,
+		HostId:       hostID,
 	}, nil
 }
 
@@ -1006,6 +1008,9 @@ func toPBFunctionDefinition(
 	}
 
 	return &sharedtypesv1.FunctionDefinition{
+		Name:                 definition.Name,
+		Summary:              definition.Summary,
+		FormattedSummary:     definition.FormattedSummary,
 		Description:          definition.Description,
 		FormattedDescription: definition.FormattedDescription,
 		Parameters:           pbParams,
@@ -1141,6 +1146,7 @@ func toPBFunctionAnyReturn(
 	return &sharedtypesv1.FunctionReturn{
 		Return: &sharedtypesv1.FunctionReturn_AnyReturn{
 			AnyReturn: &sharedtypesv1.FunctionAnyReturn{
+				Type:                 toPBFunctionValueType(returnType.Type),
 				UnionTypes:           unionTypes,
 				Description:          returnType.Description,
 				FormattedDescription: returnType.FormattedDescription,
@@ -1353,6 +1359,7 @@ func toPBFunctionAnyParam(
 	return &sharedtypesv1.FunctionParameter{
 		Parameter: &sharedtypesv1.FunctionParameter_AnyParameter{
 			AnyParameter: &sharedtypesv1.FunctionAnyParameter{
+				Name:                 param.Name,
 				Label:                param.Label,
 				UnionTypes:           unionTypes,
 				Description:          param.Description,

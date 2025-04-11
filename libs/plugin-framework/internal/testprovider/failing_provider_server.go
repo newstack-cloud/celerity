@@ -393,3 +393,13 @@ func (p *failingProviderServer) GetCustomVariableTypeExamples(
 		"internal error occurred retrieving custom variable type examples",
 	)
 }
+
+func (p *failingProviderServer) GetFunctionDefinition(
+	ctx context.Context,
+	req *sharedtypesv1.FunctionDefinitionRequest,
+) (*sharedtypesv1.FunctionDefinitionResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving function definition",
+	)
+}

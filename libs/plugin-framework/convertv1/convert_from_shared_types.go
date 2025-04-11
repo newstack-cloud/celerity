@@ -249,13 +249,599 @@ func FromPBFunctionDefinition(
 		return nil, nil
 	}
 
+	params, err := fromPBFunctionParams(pbFuncDef.Parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	returnDef, err := fromPBFunctionReturn(pbFuncDef.Return)
+	if err != nil {
+		return nil, err
+	}
+
 	return &function.Definition{
+		Name:                 pbFuncDef.Name,
+		Summary:              pbFuncDef.Summary,
+		FormattedSummary:     pbFuncDef.FormattedSummary,
 		Description:          pbFuncDef.Description,
 		FormattedDescription: pbFuncDef.FormattedDescription,
-		// TODO: Parameters
-		// TODO: Return
-		Internal: pbFuncDef.Internal,
+		Parameters:           params,
+		Return:               returnDef,
+		Internal:             pbFuncDef.Internal,
 	}, nil
+}
+
+func fromPBFunctionParams(
+	pbParams []*sharedtypesv1.FunctionParameter,
+) ([]function.Parameter, error) {
+	params := make([]function.Parameter, len(pbParams))
+	for i, pbParam := range pbParams {
+		param, err := fromPBFunctionParameter(pbParam)
+		if err != nil {
+			return nil, err
+		}
+		params[i] = param
+	}
+	return params, nil
+}
+
+func fromPBFunctionParameter(
+	paramPB *sharedtypesv1.FunctionParameter,
+) (function.Parameter, error) {
+	switch concreteParamType := paramPB.Parameter.(type) {
+	case *sharedtypesv1.FunctionParameter_ScalarParameter:
+		return fromPBScalarParameter(concreteParamType.ScalarParameter)
+	case *sharedtypesv1.FunctionParameter_ListParameter:
+		return fromPBListParameter(concreteParamType.ListParameter)
+	case *sharedtypesv1.FunctionParameter_MapParameter:
+		return fromPBMapParameter(concreteParamType.MapParameter)
+	case *sharedtypesv1.FunctionParameter_ObjectParameter:
+		return fromPBObjectParameter(concreteParamType.ObjectParameter)
+	case *sharedtypesv1.FunctionParameter_FunctionTypeParameter:
+		return fromPBFunctionTypeParameter(
+			concreteParamType.FunctionTypeParameter,
+		)
+	case *sharedtypesv1.FunctionParameter_VariadicParameter:
+		return fromPBVariadicParameter(
+			concreteParamType.VariadicParameter,
+		)
+	case *sharedtypesv1.FunctionParameter_AnyParameter:
+		return fromPBAnyParameter(
+			concreteParamType.AnyParameter,
+		)
+	}
+
+	return nil, fmt.Errorf(
+		"unknown parameter type: %T",
+		paramPB.Parameter,
+	)
+}
+
+func fromPBScalarParameter(
+	paramPB *sharedtypesv1.FunctionScalarParameter,
+) (*function.ScalarParameter, error) {
+	valueTypeDef, err := fromPBFunctionValueTypeDefinition(paramPB.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ScalarParameter{
+		Name:                 paramPB.Name,
+		Label:                paramPB.Label,
+		Type:                 valueTypeDef,
+		Description:          paramPB.Description,
+		FormattedDescription: paramPB.FormattedDescription,
+		AllowNullValue:       paramPB.AllowNullValue,
+		Optional:             paramPB.Optional,
+	}, nil
+}
+
+func fromPBListParameter(
+	paramPB *sharedtypesv1.FunctionListParameter,
+) (*function.ListParameter, error) {
+	elementTypeDef, err := fromPBFunctionValueTypeDefinition(paramPB.ElementType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ListParameter{
+		Name:                 paramPB.Name,
+		Label:                paramPB.Label,
+		ElementType:          elementTypeDef,
+		Description:          paramPB.Description,
+		FormattedDescription: paramPB.FormattedDescription,
+		AllowNullValue:       paramPB.AllowNullValue,
+		Optional:             paramPB.Optional,
+	}, nil
+}
+
+func fromPBMapParameter(
+	paramPB *sharedtypesv1.FunctionMapParameter,
+) (*function.MapParameter, error) {
+	valueTypeDef, err := fromPBFunctionValueTypeDefinition(paramPB.ElementType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.MapParameter{
+		Name:                 paramPB.Name,
+		Label:                paramPB.Label,
+		ElementType:          valueTypeDef,
+		Description:          paramPB.Description,
+		FormattedDescription: paramPB.FormattedDescription,
+		AllowNullValue:       paramPB.AllowNullValue,
+		Optional:             paramPB.Optional,
+	}, nil
+}
+
+func fromPBObjectParameter(
+	paramPB *sharedtypesv1.FunctionObjectParameter,
+) (*function.ObjectParameter, error) {
+	objectValueType, err := fromPBFunctionValueTypeDefinition(paramPB.ObjectValueType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ObjectParameter{
+		Name:                 paramPB.Name,
+		Label:                paramPB.Label,
+		ObjectValueType:      objectValueType,
+		Description:          paramPB.Description,
+		FormattedDescription: paramPB.FormattedDescription,
+		AllowNullValue:       paramPB.AllowNullValue,
+		Optional:             paramPB.Optional,
+	}, nil
+}
+
+func fromPBFunctionTypeParameter(
+	paramPB *sharedtypesv1.FunctionTypeParameter,
+) (*function.FunctionParameter, error) {
+	functionTypeDef, err := fromPBFunctionValueTypeDefinition(paramPB.FunctionType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.FunctionParameter{
+		Name:                 paramPB.Name,
+		Label:                paramPB.Label,
+		FunctionType:         functionTypeDef,
+		Description:          paramPB.Description,
+		FormattedDescription: paramPB.FormattedDescription,
+		AllowNullValue:       paramPB.AllowNullValue,
+		Optional:             paramPB.Optional,
+	}, nil
+}
+
+func fromPBVariadicParameter(
+	paramPB *sharedtypesv1.FunctionVariadicParameter,
+) (*function.VariadicParameter, error) {
+	valueTypeDef, err := fromPBFunctionValueTypeDefinition(paramPB.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.VariadicParameter{
+		Label:                paramPB.Label,
+		Type:                 valueTypeDef,
+		SingleType:           paramPB.SingleType,
+		Description:          paramPB.Description,
+		FormattedDescription: paramPB.FormattedDescription,
+		AllowNullValue:       paramPB.AllowNullValue,
+		Named:                paramPB.Named,
+	}, nil
+}
+
+func fromPBAnyParameter(
+	paramPB *sharedtypesv1.FunctionAnyParameter,
+) (*function.AnyParameter, error) {
+	unionTypes, err := fromPBUnionValueTypeDefinitions(paramPB.UnionTypes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.AnyParameter{
+		Name:                 paramPB.Name,
+		Label:                paramPB.Label,
+		UnionTypes:           unionTypes,
+		Description:          paramPB.Description,
+		FormattedDescription: paramPB.FormattedDescription,
+		AllowNullValue:       paramPB.AllowNullValue,
+		Optional:             paramPB.Optional,
+	}, nil
+}
+
+func fromPBFunctionReturn(
+	returnTypePB *sharedtypesv1.FunctionReturn,
+) (function.Return, error) {
+	switch concreteReturnType := returnTypePB.Return.(type) {
+	case *sharedtypesv1.FunctionReturn_ScalarReturn:
+		return fromPBFunctionScalarReturn(
+			concreteReturnType.ScalarReturn,
+		)
+	case *sharedtypesv1.FunctionReturn_ListReturn:
+		return fromPBFunctionListReturn(
+			concreteReturnType.ListReturn,
+		)
+	case *sharedtypesv1.FunctionReturn_MapReturn:
+		return fromPBFunctionMapReturn(
+			concreteReturnType.MapReturn,
+		)
+	case *sharedtypesv1.FunctionReturn_ObjectReturn:
+		return fromPBFunctionObjectReturn(
+			concreteReturnType.ObjectReturn,
+		)
+	case *sharedtypesv1.FunctionReturn_FunctionTypeReturn:
+		return fromPBFunctionTypeReturn(
+			concreteReturnType.FunctionTypeReturn,
+		)
+	case *sharedtypesv1.FunctionReturn_AnyReturn:
+		return fromPBAnyReturn(
+			concreteReturnType.AnyReturn,
+		)
+	}
+
+	return nil, fmt.Errorf(
+		"unknown return type: %T",
+		returnTypePB,
+	)
+}
+
+func fromPBFunctionScalarReturn(
+	returnPB *sharedtypesv1.FunctionScalarReturn,
+) (*function.ScalarReturn, error) {
+	if returnPB == nil {
+		return nil, nil
+	}
+
+	valueTypeDef, err := fromPBFunctionValueTypeDefinition(returnPB.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ScalarReturn{
+		Type:                 valueTypeDef,
+		Description:          returnPB.Description,
+		FormattedDescription: returnPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBFunctionListReturn(
+	returnPB *sharedtypesv1.FunctionListReturn,
+) (*function.ListReturn, error) {
+	if returnPB == nil {
+		return nil, nil
+	}
+
+	elementTypeDef, err := fromPBFunctionValueTypeDefinition(returnPB.ElementType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ListReturn{
+		ElementType:          elementTypeDef,
+		Description:          returnPB.Description,
+		FormattedDescription: returnPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBFunctionMapReturn(
+	returnPB *sharedtypesv1.FunctionMapReturn,
+) (*function.MapReturn, error) {
+	if returnPB == nil {
+		return nil, nil
+	}
+
+	valueTypeDef, err := fromPBFunctionValueTypeDefinition(returnPB.ElementType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.MapReturn{
+		ElementType:          valueTypeDef,
+		Description:          returnPB.Description,
+		FormattedDescription: returnPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBFunctionObjectReturn(
+	returnPB *sharedtypesv1.FunctionObjectReturn,
+) (*function.ObjectReturn, error) {
+	if returnPB == nil {
+		return nil, nil
+	}
+
+	objectValueType, err := fromPBFunctionValueTypeDefinition(
+		returnPB.ObjectValueType,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ObjectReturn{
+		ObjectValueType:      objectValueType,
+		Description:          returnPB.Description,
+		FormattedDescription: returnPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBFunctionTypeReturn(
+	returnPB *sharedtypesv1.FunctionTypeReturn,
+) (*function.FunctionReturn, error) {
+	if returnPB == nil {
+		return nil, nil
+	}
+
+	functionTypeDef, err := fromPBFunctionValueTypeDefinition(
+		returnPB.FunctionType,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.FunctionReturn{
+		FunctionType:         functionTypeDef,
+		Description:          returnPB.Description,
+		FormattedDescription: returnPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBAnyReturn(
+	returnPB *sharedtypesv1.FunctionAnyReturn,
+) (*function.AnyReturn, error) {
+	if returnPB == nil {
+		return nil, nil
+	}
+
+	unionTypes, err := fromPBUnionValueTypeDefinitions(returnPB.UnionTypes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.AnyReturn{
+		Type:                 fromPBFunctionValueType(returnPB.Type),
+		UnionTypes:           unionTypes,
+		Description:          returnPB.Description,
+		FormattedDescription: returnPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBFunctionValueTypeDefinition(
+	valueTypePB *sharedtypesv1.FunctionValueTypeDefinition,
+) (function.ValueTypeDefinition, error) {
+	switch concreteValueType := valueTypePB.ValueTypeDefinition.(type) {
+	case *sharedtypesv1.FunctionValueTypeDefinition_ScalarValueType:
+		return fromPBFunctionScalarValueTypeDefinition(
+			concreteValueType.ScalarValueType,
+		)
+	case *sharedtypesv1.FunctionValueTypeDefinition_ListValueType:
+		return fromPBFunctionListValueTypeDefinition(
+			concreteValueType.ListValueType,
+		)
+	case *sharedtypesv1.FunctionValueTypeDefinition_MapValueType:
+		return fromPBFunctionMapValueTypeDefinition(
+			concreteValueType.MapValueType,
+		)
+	case *sharedtypesv1.FunctionValueTypeDefinition_ObjectValueType:
+		return fromPBFunctionObjectValueTypeDefinition(
+			concreteValueType.ObjectValueType,
+		)
+	case *sharedtypesv1.FunctionValueTypeDefinition_FunctionValueType:
+		return fromPBFunctionTypeValueTypeDefinition(
+			concreteValueType.FunctionValueType,
+		)
+	case *sharedtypesv1.FunctionValueTypeDefinition_AnyValueType:
+		return fromPBAnyValueTypeDefinition(
+			concreteValueType.AnyValueType,
+		)
+	}
+
+	return nil, fmt.Errorf(
+		"unknown value type: %T",
+		valueTypePB,
+	)
+}
+
+func fromPBFunctionScalarValueTypeDefinition(
+	valueTypeDefPB *sharedtypesv1.FunctionScalarValueTypeDefinition,
+) (*function.ValueTypeDefinitionScalar, error) {
+	if valueTypeDefPB == nil {
+		return nil, nil
+	}
+
+	return &function.ValueTypeDefinitionScalar{
+		Label:                valueTypeDefPB.Label,
+		Type:                 fromPBFunctionValueType(valueTypeDefPB.Type),
+		Description:          valueTypeDefPB.Description,
+		FormattedDescription: valueTypeDefPB.FormattedDescription,
+		StringChoices:        valueTypeDefPB.StringChoices,
+	}, nil
+}
+
+func fromPBFunctionListValueTypeDefinition(
+	valueTypeDefPB *sharedtypesv1.FunctionListValueTypeDefinition,
+) (*function.ValueTypeDefinitionList, error) {
+	if valueTypeDefPB == nil {
+		return nil, nil
+	}
+
+	elementTypeDef, err := fromPBFunctionValueTypeDefinition(valueTypeDefPB.ElementType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ValueTypeDefinitionList{
+		ElementType:          elementTypeDef,
+		Label:                valueTypeDefPB.Label,
+		Description:          valueTypeDefPB.Description,
+		FormattedDescription: valueTypeDefPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBFunctionMapValueTypeDefinition(
+	valueTypeDefPB *sharedtypesv1.FunctionMapValueTypeDefinition,
+) (*function.ValueTypeDefinitionMap, error) {
+	if valueTypeDefPB == nil {
+		return nil, nil
+	}
+
+	valueTypeDef, err := fromPBFunctionValueTypeDefinition(valueTypeDefPB.ElementType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ValueTypeDefinitionMap{
+		ElementType:          valueTypeDef,
+		Label:                valueTypeDefPB.Label,
+		Description:          valueTypeDefPB.Description,
+		FormattedDescription: valueTypeDefPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBFunctionObjectValueTypeDefinition(
+	valueTypeDefPB *sharedtypesv1.FunctionObjectValueTypeDefinition,
+) (*function.ValueTypeDefinitionObject, error) {
+	if valueTypeDefPB == nil {
+		return nil, nil
+	}
+
+	attributeTypes, err := fromPBFunctionObjectAttributeTypes(
+		valueTypeDefPB.AttributeTypes,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ValueTypeDefinitionObject{
+		AttributeTypes:       attributeTypes,
+		Label:                valueTypeDefPB.Label,
+		Description:          valueTypeDefPB.Description,
+		FormattedDescription: valueTypeDefPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBFunctionObjectAttributeTypes(
+	attrTypes map[string]*sharedtypesv1.FunctionObjectAttributeType,
+) (map[string]function.AttributeType, error) {
+	if attrTypes == nil {
+		return nil, nil
+	}
+
+	attributeTypes := make(map[string]function.AttributeType, len(attrTypes))
+	for key, attrTypePB := range attrTypes {
+		attrType, err := fromPBFunctionValueTypeDefinition(attrTypePB.Type)
+		if err != nil {
+			return nil, err
+		}
+		attributeTypes[key] = function.AttributeType{
+			Type:           attrType,
+			AllowNullValue: attrTypePB.AllowNullValue,
+		}
+	}
+
+	return attributeTypes, nil
+}
+
+func fromPBFunctionTypeValueTypeDefinition(
+	valueTypeDefPB *sharedtypesv1.FunctionTypeValueTypeDefinition,
+) (*function.ValueTypeDefinitionFunction, error) {
+	if valueTypeDefPB == nil {
+		return nil, nil
+	}
+
+	functionDef, err := FromPBFunctionDefinition(valueTypeDefPB.FunctionType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ValueTypeDefinitionFunction{
+		Definition:           derefFunctionDefinition(functionDef),
+		Label:                valueTypeDefPB.Label,
+		Description:          valueTypeDefPB.Description,
+		FormattedDescription: valueTypeDefPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBAnyValueTypeDefinition(
+	valueTypeDefPB *sharedtypesv1.FunctionAnyValueTypeDefinition,
+) (*function.ValueTypeDefinitionAny, error) {
+	if valueTypeDefPB == nil {
+		return nil, nil
+	}
+
+	unionTypes, err := fromPBUnionValueTypeDefinitions(valueTypeDefPB.UnionTypes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &function.ValueTypeDefinitionAny{
+		Type:                 fromPBFunctionValueType(valueTypeDefPB.Type),
+		UnionTypes:           unionTypes,
+		Label:                valueTypeDefPB.Label,
+		Description:          valueTypeDefPB.Description,
+		FormattedDescription: valueTypeDefPB.FormattedDescription,
+	}, nil
+}
+
+func fromPBUnionValueTypeDefinitions(
+	unionTypes []*sharedtypesv1.FunctionValueTypeDefinition,
+) ([]function.ValueTypeDefinition, error) {
+	if unionTypes == nil {
+		return nil, nil
+	}
+
+	valueTypeDefs := make([]function.ValueTypeDefinition, len(unionTypes))
+	for i, unionTypePB := range unionTypes {
+		unionTypeDef, err := fromPBFunctionValueTypeDefinition(unionTypePB)
+		if err != nil {
+			return nil, err
+		}
+		valueTypeDefs[i] = unionTypeDef
+	}
+
+	return valueTypeDefs, nil
+}
+
+func derefFunctionDefinition(
+	funcDefPtr *function.Definition,
+) function.Definition {
+	if funcDefPtr == nil {
+		return function.Definition{}
+	}
+
+	return *funcDefPtr
+}
+
+func fromPBFunctionValueType(
+	valueTypePB sharedtypesv1.FunctionValueType,
+) function.ValueType {
+	switch valueTypePB {
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_STRING:
+		return function.ValueTypeString
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_INT32:
+		return function.ValueTypeInt32
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_INT64:
+		return function.ValueTypeInt64
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_UINT32:
+		return function.ValueTypeUint32
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_UINT64:
+		return function.ValueTypeUint64
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_FLOAT32:
+		return function.ValueTypeFloat32
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_FLOAT64:
+		return function.ValueTypeFloat64
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_BOOL:
+		return function.ValueTypeBool
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_LIST:
+		return function.ValueTypeList
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_MAP:
+		return function.ValueTypeMap
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_OBJECT:
+		return function.ValueTypeObject
+	case sharedtypesv1.FunctionValueType_FUNCTION_VALUE_TYPE_FUNCTION:
+		return function.ValueTypeFunction
+	}
+
+	return function.ValueTypeAny
 }
 
 // FromPBDeployResourceRequest converts a DeployResourceRequest from a protobuf message to a core type
@@ -1024,4 +1610,23 @@ func FromPBMappingNodeSlice(
 	}
 
 	return coreSlice, nil
+}
+
+// FromPBFunctionDefinitionResponse converts a FunctionDefinitionResponse from a protobuf message
+// to a core type compatible with the blueprint framework.
+func FromPBFunctionDefinitionResponse(
+	response *sharedtypesv1.FunctionDefinition,
+	action errorsv1.PluginAction,
+) (*provider.FunctionGetDefinitionOutput, error) {
+	definition, err := FromPBFunctionDefinition(response)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			action,
+		)
+	}
+
+	return &provider.FunctionGetDefinitionOutput{
+		Definition: definition,
+	}, nil
 }

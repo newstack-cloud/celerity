@@ -1323,6 +1323,44 @@ func (p *blueprintProviderPluginImpl) GetCustomVariableTypeExamples(
 	return toPBGetCustomVarTypeExamplesResponse(output), nil
 }
 
+func (p *blueprintProviderPluginImpl) GetFunctionDefinition(
+	ctx context.Context,
+	req *sharedtypesv1.FunctionDefinitionRequest,
+) (*sharedtypesv1.FunctionDefinitionResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBFunctionDefinitionErrorResponse(err), nil
+	}
+
+	input, err := convertv1.FromPBFunctionDefinitionRequest(req)
+	if err != nil {
+		return convertv1.ToPBFunctionDefinitionErrorResponse(err), nil
+	}
+
+	function, err := p.bpProvider.Function(
+		ctx,
+		req.FunctionName,
+	)
+	if err != nil {
+		return convertv1.ToPBFunctionDefinitionErrorResponse(err), nil
+	}
+
+	output, err := function.GetDefinition(
+		ctx,
+		input,
+	)
+	if err != nil {
+		return convertv1.ToPBFunctionDefinitionErrorResponse(err), nil
+	}
+
+	response, err := convertv1.ToPBFunctionDefinitionResponse(output.Definition)
+	if err != nil {
+		return convertv1.ToPBFunctionDefinitionErrorResponse(err), nil
+	}
+
+	return response, nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)

@@ -148,16 +148,19 @@ func (r *resourceDeployServiceClientWrapper) Destroy(
 // protocol from plugin developers.
 func FunctionRegistryFromClient(
 	client ServiceClient,
+	hostID string,
 ) provider.FunctionRegistry {
 	return &functionRegistryClientWrapper{
 		client:    client,
 		callStack: function.NewStack(),
+		hostID:    hostID,
 	}
 }
 
 type functionRegistryClientWrapper struct {
 	client    ServiceClient
 	callStack function.Stack
+	hostID    string
 }
 
 func (f *functionRegistryClientWrapper) ForCallContext(
@@ -166,6 +169,7 @@ func (f *functionRegistryClientWrapper) ForCallContext(
 	return &functionRegistryClientWrapper{
 		client:    f.client,
 		callStack: stack,
+		hostID:    f.hostID,
 	}
 }
 
@@ -230,7 +234,11 @@ func (f *functionRegistryClientWrapper) GetDefinition(
 	functionName string,
 	input *provider.FunctionGetDefinitionInput,
 ) (*provider.FunctionGetDefinitionOutput, error) {
-	definitionReq, err := convertv1.ToPBFunctionDefinitionRequest(functionName, input)
+	definitionReq, err := convertv1.ToPBFunctionDefinitionRequest(
+		functionName,
+		input,
+		f.hostID,
+	)
 	if err != nil {
 		return nil, errorsv1.CreateGeneralError(
 			err,
@@ -251,7 +259,10 @@ func (f *functionRegistryClientWrapper) GetDefinition(
 
 	switch result := response.Response.(type) {
 	case *sharedtypesv1.FunctionDefinitionResponse_FunctionDefinition:
-		return f.toFunctionDefinitionOutput(result.FunctionDefinition)
+		return convertv1.FromPBFunctionDefinitionResponse(
+			result.FunctionDefinition,
+			errorsv1.PluginActionServiceGetFunctionDefinition,
+		)
 	case *sharedtypesv1.FunctionDefinitionResponse_ErrorResponse:
 		return nil, errorsv1.CreateErrorFromResponse(
 			result.ErrorResponse,
@@ -265,22 +276,6 @@ func (f *functionRegistryClientWrapper) GetDefinition(
 		),
 		errorsv1.PluginActionServiceGetFunctionDefinition,
 	)
-}
-
-func (f *functionRegistryClientWrapper) toFunctionDefinitionOutput(
-	response *sharedtypesv1.FunctionDefinition,
-) (*provider.FunctionGetDefinitionOutput, error) {
-	definition, err := convertv1.FromPBFunctionDefinition(response)
-	if err != nil {
-		return nil, errorsv1.CreateGeneralError(
-			err,
-			errorsv1.PluginActionServiceGetFunctionDefinition,
-		)
-	}
-
-	return &provider.FunctionGetDefinitionOutput{
-		Definition: definition,
-	}, nil
 }
 
 func (f *functionRegistryClientWrapper) HasFunction(
