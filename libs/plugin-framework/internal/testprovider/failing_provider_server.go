@@ -353,3 +353,13 @@ func (p *failingProviderServer) FetchDataSource(
 		"internal error occurred when fetching data source",
 	)
 }
+
+func (p *failingProviderServer) GetCustomVariableType(
+	ctx context.Context,
+	req *providerserverv1.CustomVariableTypeRequest,
+) (*providerserverv1.CustomVariableTypeResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred retrieving custom variable type information",
+	)
+}

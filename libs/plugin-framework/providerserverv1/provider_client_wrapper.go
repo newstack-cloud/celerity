@@ -95,8 +95,15 @@ func (p *providerClientWrapper) Link(ctx context.Context, resourceTypeA string, 
 	}, nil
 }
 
-func (p *providerClientWrapper) CustomVariableType(ctx context.Context, customVariableType string) (provider.CustomVariableType, error) {
-	return nil, nil
+func (p *providerClientWrapper) CustomVariableType(
+	ctx context.Context,
+	customVariableType string,
+) (provider.CustomVariableType, error) {
+	return &customVarTypeProviderClientWrapper{
+		client:             p.client,
+		customVariableType: customVariableType,
+		hostID:             p.hostID,
+	}, nil
 }
 
 func (p *providerClientWrapper) ListFunctions(ctx context.Context) ([]string, error) {

@@ -48,8 +48,10 @@ const (
 	PluginActionProviderGetDataSourceFilterFields    = PluginAction("Provider::GetDataSourceFilterFields")
 	PluginActionProviderFetchDataSource              = PluginAction("Provider::FetchDataSource")
 
+	PluginActionProviderGetCustomVariableType            = PluginAction("Provider::GetCustomVariableType")
 	PluginActionProviderGetCustomVariableTypeDescription = PluginAction("Provider::GetCustomVariableTypeDescription")
 	PluginActionProviderGetCustomVariableTypeOptions     = PluginAction("Provider::GetCustomVariableTypeOptions")
+	PluginActionProviderGetCustomVariableTypeExamples    = PluginAction("Provider::GetCustomVariableTypeExamples")
 
 	PluginActionProviderGetFunctionDefinition = PluginAction("Provider::GetFunctionDefinition")
 	PluginActionProviderCallFunction          = PluginAction("Provider::CallFunction")

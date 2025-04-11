@@ -549,3 +549,9 @@ func fromPBLinkContext(
 func dataSourceTypeToString(dataSourceType *providerserverv1.DataSourceType) string {
 	return dataSourceType.Type
 }
+
+func customVariableTypeToString(
+	customVariableType *providerserverv1.CustomVariableType,
+) string {
+	return customVariableType.Type
+}

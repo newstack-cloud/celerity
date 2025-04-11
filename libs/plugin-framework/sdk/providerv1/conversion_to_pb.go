@@ -964,6 +964,39 @@ func toPBFetchDataSourceResponse(
 	}, nil
 }
 
+func toGetCustomVarTypeErrorResponse(
+	err error,
+) *providerserverv1.CustomVariableTypeResponse {
+	return &providerserverv1.CustomVariableTypeResponse{
+		Response: &providerserverv1.CustomVariableTypeResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBGetCustomVarTypeResponse(
+	output *provider.CustomVariableTypeGetTypeOutput,
+) *providerserverv1.CustomVariableTypeResponse {
+	if output == nil {
+		return &providerserverv1.CustomVariableTypeResponse{
+			Response: &providerserverv1.CustomVariableTypeResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &providerserverv1.CustomVariableTypeResponse{
+		Response: &providerserverv1.CustomVariableTypeResponse_CustomVarTypeInfo{
+			CustomVarTypeInfo: &providerserverv1.CustomVariableTypeInfo{
+				Type: &providerserverv1.CustomVariableType{
+					Type: output.Type,
+				},
+				Label: output.Label,
+			},
+		},
+	}
+}
+
 func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
 	return commoncore.Map(
 		resourceTypes,

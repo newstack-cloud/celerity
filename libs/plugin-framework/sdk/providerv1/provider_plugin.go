@@ -1178,6 +1178,41 @@ func (p *blueprintProviderPluginImpl) FetchDataSource(
 	return response, nil
 }
 
+func (p *blueprintProviderPluginImpl) GetCustomVariableType(
+	ctx context.Context,
+	req *providerserverv1.CustomVariableTypeRequest,
+) (*providerserverv1.CustomVariableTypeResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toGetCustomVarTypeErrorResponse(err), nil
+	}
+
+	customVarType, err := p.bpProvider.CustomVariableType(
+		ctx,
+		customVariableTypeToString(req.CustomVariableType),
+	)
+	if err != nil {
+		return toGetCustomVarTypeErrorResponse(err), nil
+	}
+
+	providerCtx, err := convertv1.FromPBProviderContext(req.Context)
+	if err != nil {
+		return toGetCustomVarTypeErrorResponse(err), nil
+	}
+
+	output, err := customVarType.GetType(
+		ctx,
+		&provider.CustomVariableTypeGetTypeInput{
+			ProviderContext: providerCtx,
+		},
+	)
+	if err != nil {
+		return toGetCustomVarTypeErrorResponse(err), nil
+	}
+
+	return toPBGetCustomVarTypeResponse(output), nil
+}
+
 func (p *blueprintProviderPluginImpl) checkHostID(hostID string) error {
 	if hostID != p.hostInfoContainer.GetID() {
 		return errorsv1.ErrInvalidHostID(hostID)
