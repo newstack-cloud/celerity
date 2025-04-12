@@ -192,6 +192,19 @@ func (c *functionCallContext) CurrentLocation() *source.Meta {
 	return c.location
 }
 
+func (c *functionCallContext) WithCall(functionName string) provider.FunctionCallContext {
+	newCallStack := c.stack.Clone()
+	newCallStack.Push(&function.Call{
+		FunctionName: functionName,
+	})
+	return &functionCallContext{
+		stack:    newCallStack,
+		registry: c.registry,
+		params:   c.params,
+		location: c.location,
+	}
+}
+
 type resolvedFunctionCallValue struct {
 	value    *bpcore.MappingNode
 	function provider.FunctionRuntimeInfo

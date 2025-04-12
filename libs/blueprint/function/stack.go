@@ -27,6 +27,8 @@ type Stack interface {
 	Pop() *Call
 	// Snapshot returns a snapshot of the current stack.
 	Snapshot() []*Call
+	// Clone returns a copy of the stack.
+	Clone() Stack
 }
 
 type stackImpl struct {
@@ -60,4 +62,18 @@ func (s *stackImpl) Snapshot() []*Call {
 		snapshot[len(s.calls)-1-i] = s.calls[i]
 	}
 	return snapshot
+}
+
+func (s *stackImpl) Clone() Stack {
+	clone := &stackImpl{
+		calls: make([]*Call, len(s.calls)),
+	}
+	for i, call := range s.calls {
+		clone.calls[i] = &Call{
+			FilePath:     call.FilePath,
+			FunctionName: call.FunctionName,
+			Location:     call.Location,
+		}
+	}
+	return clone
 }
