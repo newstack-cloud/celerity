@@ -1,6 +1,10 @@
 package function
 
-import "github.com/two-hundred/celerity/libs/blueprint/source"
+import (
+	"sync"
+
+	"github.com/two-hundred/celerity/libs/blueprint/source"
+)
 
 // Call holds information for a function call
 // in a call stack.
@@ -33,6 +37,9 @@ type Stack interface {
 
 type stackImpl struct {
 	calls []*Call
+	// A mutex is required as plugin functions across
+	// multiple coroutines can share the same call stack.
+	mu sync.Mutex
 }
 
 // NewStack creates a new instance of a function call stack.
@@ -41,10 +48,16 @@ func NewStack() Stack {
 }
 
 func (s *stackImpl) Push(call *Call) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.calls = append(s.calls, call)
 }
 
 func (s *stackImpl) Pop() *Call {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if len(s.calls) == 0 {
 		return nil
 	}
@@ -54,6 +67,9 @@ func (s *stackImpl) Pop() *Call {
 }
 
 func (s *stackImpl) Snapshot() []*Call {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	snapshot := make([]*Call, len(s.calls))
 	// Reverse the backing slice so the first call is at the top of the stack,
 	// stack traces in errors will be printed in the order of the snapshot,
@@ -65,6 +81,9 @@ func (s *stackImpl) Snapshot() []*Call {
 }
 
 func (s *stackImpl) Clone() Stack {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	clone := &stackImpl{
 		calls: make([]*Call, len(s.calls)),
 	}

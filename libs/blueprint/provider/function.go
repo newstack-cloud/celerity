@@ -87,11 +87,6 @@ type FunctionCallContext interface {
 	// location in the source blueprint, this can and often will yield
 	// nil in situations where the location is not available.
 	CurrentLocation() *source.Meta
-	// WithCall creates a new function call context with the given function name
-	// at the top of the call stack.
-	// This is useful for facilitating programmatic function calls made from
-	// one plugin function to another.
-	WithCall(functionName string) FunctionCallContext
 }
 
 // FunctionCallOutput provides the output data from a substitution function

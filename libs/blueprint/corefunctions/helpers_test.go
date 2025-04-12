@@ -148,19 +148,6 @@ func (f *functionCallContextMock) CurrentLocation() *source.Meta {
 	return f.currentLocation
 }
 
-func (f *functionCallContextMock) WithCall(functionName string) provider.FunctionCallContext {
-	newCallStack := f.callStack.Clone()
-	newCallStack.Push(&function.Call{
-		FunctionName: functionName,
-	})
-	return &functionCallContextMock{
-		params:          f.params,
-		registry:        f.registry,
-		callStack:       newCallStack,
-		currentLocation: f.currentLocation,
-	}
-}
-
 type comparableInt int
 
 func (c comparableInt) Equal(other any) bool {
