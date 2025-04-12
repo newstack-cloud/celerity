@@ -9,6 +9,7 @@ import (
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
 	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // ResourceDeployServiceFromClient creates a new instance of a ResourceDeployService
@@ -179,6 +180,13 @@ func (f *functionRegistryClientWrapper) Call(
 	functionName string,
 	input *provider.FunctionCallInput,
 ) (*provider.FunctionCallOutput, error) {
+	// On the server-side (plugin host), the internal
+	// function registry implementation is expected
+	// to handle the call stack and push/pop the
+	// function call to/from the stack.
+	// On the client-side (plugin), all we need to do is pass
+	// the current call context before the function call is made
+	// from the host.
 	callReq, err := convertv1.ToPBFunctionCallRequest(
 		ctx,
 		functionName,
@@ -288,11 +296,67 @@ func (f *functionRegistryClientWrapper) HasFunction(
 	ctx context.Context,
 	functionName string,
 ) (bool, error) {
-	return false, nil
+	hasFunctionReq := &HasFunctionRequest{
+		FunctionName: functionName,
+	}
+
+	response, err := f.client.HasFunction(
+		ctx,
+		hasFunctionReq,
+	)
+	if err != nil {
+		return false, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionServiceCheckHasFunction,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *HasFunctionResponse_FunctionCheckResult:
+		return result.FunctionCheckResult.HasFunction, nil
+	case *HasFunctionResponse_ErrorResponse:
+		return false, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionServiceCheckHasFunction,
+		)
+	}
+
+	return false, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionServiceCheckHasFunction,
+		),
+		errorsv1.PluginActionServiceCheckHasFunction,
+	)
 }
 
 func (f *functionRegistryClientWrapper) ListFunctions(
 	ctx context.Context,
 ) ([]string, error) {
-	return nil, nil
+
+	response, err := f.client.ListFunctions(
+		ctx,
+		&emptypb.Empty{},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionServiceListFunctions,
+		)
+	}
+	switch result := response.Response.(type) {
+	case *ListFunctionsResponse_FunctionList:
+		return result.FunctionList.Functions, nil
+	case *ListFunctionsResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionServiceListFunctions,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionServiceListFunctions,
+		),
+		errorsv1.PluginActionServiceListFunctions,
+	)
 }

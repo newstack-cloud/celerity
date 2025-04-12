@@ -33,7 +33,9 @@ func NewProvider() provider.Provider {
 			"aws/ec2/instanceType": customVarTypeEC2InstanceType(),
 		},
 		Functions: map[string]provider.Function{
-			"trim_suffix": functionTrimSuffix(),
+			"trim_suffix":           functionTrimSuffix(),
+			"call_self":             functionCallSelf(),
+			"trim_space_and_suffix": functionTrimSpaceAndSuffix(),
 		},
 		ProviderRetryPolicy: TestProviderRetryPolicy(),
 	}

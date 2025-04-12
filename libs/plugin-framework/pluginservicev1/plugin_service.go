@@ -14,9 +14,9 @@ import (
 
 const (
 	// DefaultPluginToPluginCallTimeout is the default timeout
-	// in seconds for plugin to plugin calls.
+	// in milliseconds for plugin to plugin calls.
 	// This includes invoking functions, deploying resources and more.
-	DefaultPluginToPluginCallTimeout = 120
+	DefaultPluginToPluginCallTimeout = 120000 // 120 seconds
 )
 
 type pluginServiceServer struct {
@@ -32,7 +32,7 @@ type pluginServiceServer struct {
 type ServiceServerOption func(*pluginServiceServer)
 
 // WithPluginToPluginCallTimeout is a service server option that sets the timeout
-// in seconds for plugin to plugin calls.
+// in milliseconds for plugin to plugin calls.
 // This covers the case where a provider or transformer plugin uses the plugin service
 // to invoke functions or deploy resources as these actions will call plugins.
 //
@@ -146,7 +146,7 @@ func (s *pluginServiceServer) CallFunction(
 
 	ctxWithTimeout, cancel := context.WithTimeout(
 		ctx,
-		time.Duration(s.pluginToPluginCallTimeout)*time.Second,
+		time.Duration(s.pluginToPluginCallTimeout)*time.Millisecond,
 	)
 	defer cancel()
 
@@ -178,7 +178,7 @@ func (s *pluginServiceServer) GetFunctionDefinition(
 
 	ctxWithTimeout, cancel := context.WithTimeout(
 		ctx,
-		time.Duration(s.pluginToPluginCallTimeout)*time.Second,
+		time.Duration(s.pluginToPluginCallTimeout)*time.Millisecond,
 	)
 	defer cancel()
 
@@ -205,7 +205,7 @@ func (s *pluginServiceServer) HasFunction(
 ) (*HasFunctionResponse, error) {
 	ctxWithTimeout, cancel := context.WithTimeout(
 		ctx,
-		time.Duration(s.pluginToPluginCallTimeout)*time.Second,
+		time.Duration(s.pluginToPluginCallTimeout)*time.Millisecond,
 	)
 	defer cancel()
 
@@ -229,7 +229,7 @@ func (s *pluginServiceServer) ListFunctions(
 ) (*ListFunctionsResponse, error) {
 	ctxWithTimeout, cancel := context.WithTimeout(
 		ctx,
-		time.Duration(s.pluginToPluginCallTimeout)*time.Second,
+		time.Duration(s.pluginToPluginCallTimeout)*time.Millisecond,
 	)
 	defer cancel()
 
@@ -258,7 +258,7 @@ func (s *pluginServiceServer) DeployResource(
 
 	ctxWithTimeout, cancel := context.WithTimeout(
 		ctx,
-		time.Duration(s.pluginToPluginCallTimeout)*time.Second,
+		time.Duration(s.pluginToPluginCallTimeout)*time.Millisecond,
 	)
 	defer cancel()
 
@@ -293,7 +293,7 @@ func (s *pluginServiceServer) DestroyResource(
 
 	ctxWithTimeout, cancel := context.WithTimeout(
 		ctx,
-		time.Duration(s.pluginToPluginCallTimeout)*time.Second,
+		time.Duration(s.pluginToPluginCallTimeout)*time.Millisecond,
 	)
 	defer cancel()
 

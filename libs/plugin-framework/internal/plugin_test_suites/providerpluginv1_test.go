@@ -9,6 +9,7 @@ package plugintestsuites
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -43,6 +44,7 @@ type ProviderPluginV1Suite struct {
 }
 
 func (s *ProviderPluginV1Suite) SetupSuite() {
+	providers := map[string]provider.Provider{}
 	pluginManager := pluginservicev1.NewManager(
 		map[pluginservicev1.PluginType]string{
 			pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER:    "1.0",
@@ -51,14 +53,14 @@ func (s *ProviderPluginV1Suite) SetupSuite() {
 		s.createPluginInstance,
 	)
 	s.funcRegistry = provider.NewFunctionRegistry(
-		map[string]provider.Provider{},
+		providers,
 	)
 	pluginService, closePluginService := testutils.StartPluginServiceServer(
 		testHostID,
 		pluginManager,
 		s.funcRegistry,
 		resourcehelpers.NewRegistry(
-			map[string]provider.Provider{},
+			providers,
 			map[string]transform.SpecTransformer{},
 			/* stabilisationPollingInterval */ 1*time.Millisecond,
 			core.NewDefaultParams(
@@ -78,6 +80,9 @@ func (s *ProviderPluginV1Suite) SetupSuite() {
 	)
 	s.closeProvider = closeProvider
 	s.provider = providerserverv1.WrapProviderClient(providerClient, testHostID)
+	namespace, err := s.provider.Namespace(context.Background())
+	s.Require().NoError(err)
+	providers[namespace] = s.provider
 
 	failingProviderClient, closeFailingProvider := testprovider.StartPluginServer(
 		pluginService,
@@ -206,7 +211,10 @@ func (s *ProviderPluginV1Suite) Test_list_custom_variable_types_reports_expected
 func (s *ProviderPluginV1Suite) Test_list_functions() {
 	functions, err := s.provider.ListFunctions(context.Background())
 	s.Require().NoError(err)
-	s.Assert().Equal([]string{"trim_suffix"}, functions)
+	expected := []string{"trim_suffix", "call_self", "trim_space_and_suffix"}
+	slices.Sort(functions)
+	slices.Sort(expected)
+	s.Assert().Equal(expected, functions)
 }
 
 func (s *ProviderPluginV1Suite) Test_list_functions_fails_for_unexpected_host() {

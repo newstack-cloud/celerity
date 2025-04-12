@@ -25,6 +25,8 @@ func StartPluginServiceServer(
 		functionRegistry,
 		resourceDeployService,
 		hostID,
+		// Plugin to plugin call timeout is set to 10 milliseconds.
+		pluginservicev1.WithPluginToPluginCallTimeout(10),
 	)
 
 	server := pluginservicev1.NewServer(

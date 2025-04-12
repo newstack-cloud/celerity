@@ -3,7 +3,6 @@ package plugintestsuites
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
@@ -78,10 +77,10 @@ func (s *ProviderPluginV1Suite) Test_function_call() {
 
 	callStack := function.NewStack()
 	registryForCall := s.funcRegistry.ForCallContext(callStack)
-	callContext := &functionCallContextMock{
-		registry:  registryForCall,
-		callStack: callStack,
-		params:    emptyConcreteParams(),
+	callContext := &testutils.FunctionCallContextMock{
+		CallCtxRegistry: registryForCall,
+		CallStack:       callStack,
+		CallCtxParams:   testutils.CreateEmptyConcreteParams(),
 	}
 	output, err := fn.Call(
 		context.Background(),
@@ -111,10 +110,10 @@ func (s *ProviderPluginV1Suite) Test_function_call_fails_for_unexpected_host() {
 
 	callStack := function.NewStack()
 	registryForCall := s.funcRegistry.ForCallContext(callStack)
-	callContext := &functionCallContextMock{
-		registry:  registryForCall,
-		callStack: callStack,
-		params:    emptyConcreteParams(),
+	callContext := &testutils.FunctionCallContextMock{
+		CallCtxRegistry: registryForCall,
+		CallStack:       callStack,
+		CallCtxParams:   testutils.CreateEmptyConcreteParams(),
 	}
 	_, err = fn.Call(
 		context.Background(),
@@ -143,10 +142,10 @@ func (s *ProviderPluginV1Suite) Test_function_call_reports_expected_error_for_fa
 
 	callStack := function.NewStack()
 	registryForCall := s.funcRegistry.ForCallContext(callStack)
-	callContext := &functionCallContextMock{
-		registry:  registryForCall,
-		callStack: callStack,
-		params:    emptyConcreteParams(),
+	callContext := &testutils.FunctionCallContextMock{
+		CallCtxRegistry: registryForCall,
+		CallStack:       callStack,
+		CallCtxParams:   testutils.CreateEmptyConcreteParams(),
 	}
 	_, err = fn.Call(
 		context.Background(),
@@ -160,13 +159,4 @@ func (s *ProviderPluginV1Suite) Test_function_call_reports_expected_error_for_fa
 	)
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred calling function")
-}
-
-func emptyConcreteParams() *core.ParamsImpl {
-	return &core.ParamsImpl{
-		ProviderConf:       map[string]map[string]*core.ScalarValue{},
-		TransformerConf:    map[string]map[string]*core.ScalarValue{},
-		ContextVariables:   map[string]*core.ScalarValue{},
-		BlueprintVariables: map[string]*core.ScalarValue{},
-	}
 }

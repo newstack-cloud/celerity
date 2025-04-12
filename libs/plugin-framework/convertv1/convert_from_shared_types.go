@@ -1625,6 +1625,11 @@ func fromPBFunctionCallArgs(
 		return nil, err
 	}
 
+	// Treat nil as an empty arguments slice.
+	if utils.IsAnyNil(deserialised) {
+		return []any{}, nil
+	}
+
 	args, ok := deserialised.([]any)
 	if !ok {
 		return nil, fmt.Errorf(

@@ -118,6 +118,52 @@ func linkLambdaFunctionDDBTableUpdateIntermediaryResources(
 	ctx context.Context,
 	input *provider.LinkUpdateIntermediaryResourcesInput,
 ) (*provider.LinkUpdateIntermediaryResourcesOutput, error) {
+	// Deploy a mock resource to test the link interacting
+	// with the plugin service to deploy resources.
+	changes := createDeployIntermediaryResourceChanges()
+
+	if input.LinkUpdateType == provider.LinkUpdateTypeUpdate ||
+		input.LinkUpdateType == provider.LinkUpdateTypeCreate {
+		_, err := input.ResourceDeployService.Deploy(
+			ctx,
+			"aws/lambda/function",
+			&provider.ResourceDeployServiceInput{
+				DeployInput: &provider.ResourceDeployInput{
+					InstanceID: changes.AppliedResourceInfo.InstanceID,
+					ResourceID: changes.AppliedResourceInfo.ResourceID,
+					Changes:    changes,
+					ProviderContext: provider.NewProviderContextFromLinkContext(
+						input.LinkContext,
+						"aws",
+					),
+				},
+				WaitUntilStable: true,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Destroy the mock resource to test the link interacting
+		// with the plugin service to destroy resources.
+		err := input.ResourceDeployService.Destroy(
+			ctx,
+			"aws/lambda/function",
+			&provider.ResourceDestroyInput{
+				InstanceID:    changes.AppliedResourceInfo.InstanceID,
+				ResourceID:    changes.AppliedResourceInfo.ResourceID,
+				ResourceState: changes.AppliedResourceInfo.CurrentResourceState,
+				ProviderContext: provider.NewProviderContextFromLinkContext(
+					input.LinkContext,
+					"aws",
+				),
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return LinkLambdaDynamoDBUpdateIntermediaryResourcesOutput(), nil
 }
 
