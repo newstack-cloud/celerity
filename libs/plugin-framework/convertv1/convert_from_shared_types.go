@@ -1085,15 +1085,26 @@ func fromPBResolvedResource(
 		return nil, err
 	}
 
+	resolvedCondition, err := fromPBResolvedResourceCondition(
+		resolvedResource.Condition,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	linkSelector := serialisation.FromLinkSelectorPB(
+		resolvedResource.LinkSelector,
+	)
+
 	return &provider.ResolvedResource{
 		Type: &schema.ResourceTypeWrapper{
 			Value: ResourceTypeToString(resolvedResource.Type),
 		},
-		Description: description,
-		Metadata:    resolvedResourceMetadata,
-		// TODO: Condition
-		// TODO: LinkSelector
-		Spec: spec,
+		Description:  description,
+		Metadata:     resolvedResourceMetadata,
+		Condition:    resolvedCondition,
+		LinkSelector: linkSelector,
+		Spec:         spec,
 	}, nil
 }
 
@@ -1136,6 +1147,63 @@ func fromPBResolvedResourceMetadata(
 		},
 		Custom: custom,
 	}, nil
+}
+
+func fromPBResolvedResourceCondition(
+	condition *sharedtypesv1.ResolvedResourceCondition,
+) (*provider.ResolvedResourceCondition, error) {
+	if condition == nil {
+		return nil, nil
+	}
+
+	and, err := fromPBResolvedResourceConditions(condition.And)
+	if err != nil {
+		return nil, err
+	}
+
+	or, err := fromPBResolvedResourceConditions(condition.Or)
+	if err != nil {
+		return nil, err
+	}
+
+	not, err := fromPBResolvedResourceCondition(condition.Not)
+	if err != nil {
+		return nil, err
+	}
+
+	stringValue, err := serialisation.FromMappingNodePB(
+		condition.StringValue,
+		/* optional */ true,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provider.ResolvedResourceCondition{
+		And:         and,
+		Or:          or,
+		Not:         not,
+		StringValue: stringValue,
+	}, nil
+}
+
+func fromPBResolvedResourceConditions(
+	conditionsPB []*sharedtypesv1.ResolvedResourceCondition,
+) ([]*provider.ResolvedResourceCondition, error) {
+	if conditionsPB == nil {
+		return nil, nil
+	}
+
+	conditions := make([]*provider.ResolvedResourceCondition, len(conditionsPB))
+	for i, conditionPB := range conditionsPB {
+		condition, err := fromPBResolvedResourceCondition(conditionPB)
+		if err != nil {
+			return nil, err
+		}
+		conditions[i] = condition
+	}
+
+	return conditions, nil
 }
 
 func fromPBResourceState(

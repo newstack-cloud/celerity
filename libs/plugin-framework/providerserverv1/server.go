@@ -168,7 +168,6 @@ func (s *Server) deregisterPlugin() {
 		},
 	)
 	if err != nil {
-		// todo: use logger instead of fmt.Fprintf
 		fmt.Fprintf(os.Stderr, "failed to deregister plugin with host service: %s\n", err)
 	} else if !resp.Success {
 		fmt.Fprintf(os.Stderr, "failed to deregister plugin with host service: %s\n", resp.Message)
