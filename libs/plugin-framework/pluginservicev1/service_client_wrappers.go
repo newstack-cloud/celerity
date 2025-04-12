@@ -7,6 +7,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
 	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
@@ -148,19 +149,19 @@ func (r *resourceDeployServiceClientWrapper) Destroy(
 // protocol from plugin developers.
 func FunctionRegistryFromClient(
 	client ServiceClient,
-	hostID string,
+	hostInfo pluginutils.HostInfoContainer,
 ) provider.FunctionRegistry {
 	return &functionRegistryClientWrapper{
 		client:    client,
 		callStack: function.NewStack(),
-		hostID:    hostID,
+		hostInfo:  hostInfo,
 	}
 }
 
 type functionRegistryClientWrapper struct {
 	client    ServiceClient
 	callStack function.Stack
-	hostID    string
+	hostInfo  pluginutils.HostInfoContainer
 }
 
 func (f *functionRegistryClientWrapper) ForCallContext(
@@ -169,7 +170,7 @@ func (f *functionRegistryClientWrapper) ForCallContext(
 	return &functionRegistryClientWrapper{
 		client:    f.client,
 		callStack: stack,
-		hostID:    f.hostID,
+		hostInfo:  f.hostInfo,
 	}
 }
 
@@ -178,7 +179,12 @@ func (f *functionRegistryClientWrapper) Call(
 	functionName string,
 	input *provider.FunctionCallInput,
 ) (*provider.FunctionCallOutput, error) {
-	callReq, err := convertv1.ToPBFunctionCallRequest(ctx, functionName, input)
+	callReq, err := convertv1.ToPBFunctionCallRequest(
+		ctx,
+		functionName,
+		input,
+		f.hostInfo.GetID(),
+	)
 	if err != nil {
 		return nil, errorsv1.CreateGeneralError(
 			err,
@@ -237,7 +243,7 @@ func (f *functionRegistryClientWrapper) GetDefinition(
 	definitionReq, err := convertv1.ToPBFunctionDefinitionRequest(
 		functionName,
 		input,
-		f.hostID,
+		f.hostInfo.GetID(),
 	)
 	if err != nil {
 		return nil, errorsv1.CreateGeneralError(

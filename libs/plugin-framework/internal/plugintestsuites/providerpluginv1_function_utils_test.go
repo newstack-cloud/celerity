@@ -1,7 +1,14 @@
 package plugintestsuites
 
 import (
+	"context"
+	"fmt"
+	"reflect"
+
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testutils"
 )
 
@@ -9,4 +16,138 @@ func functionGetDefinitionInput() *provider.FunctionGetDefinitionInput {
 	return &provider.FunctionGetDefinitionInput{
 		Params: testutils.CreateEmptyTestParams(),
 	}
+}
+
+type functionCallArgsMock struct {
+	args    []any
+	callCtx provider.FunctionCallContext
+}
+
+func (f *functionCallArgsMock) Get(ctx context.Context, position int) (any, error) {
+	return f.args[position], nil
+}
+
+func (f *functionCallArgsMock) GetVar(ctx context.Context, position int, target any) error {
+	val := reflect.ValueOf(target)
+	if position >= len(f.args) {
+		return function.NewFuncCallError(
+			fmt.Sprintf("argument at index %d not found", position),
+			function.FuncCallErrorCodeFunctionCall,
+			f.callCtx.CallStackSnapshot(),
+		)
+	}
+
+	targetVal := reflect.ValueOf(target)
+	if targetVal.Kind() != reflect.Ptr {
+		return function.NewFuncCallError(
+			"target to read argument into is not a pointer",
+			function.FuncCallErrorCodeInvalidArgumentType,
+			f.callCtx.CallStackSnapshot(),
+		)
+	}
+
+	argVal := reflect.ValueOf(f.args[position])
+	// Allow interface{} as a target type so that the caller can carry out type assertions
+	// when an argument can be of multiple types.
+	if targetVal.Elem().Kind() != reflect.Interface && targetVal.Elem().Kind() != argVal.Kind() {
+		return function.NewFuncCallError(
+			fmt.Sprintf(
+				"argument at index %d is of type %s, but target is of type %s",
+				position,
+				argVal.Kind(),
+				targetVal.Elem().Kind(),
+			),
+			function.FuncCallErrorCodeInvalidArgumentType,
+			f.callCtx.CallStackSnapshot(),
+		)
+	}
+
+	val.Elem().Set(reflect.ValueOf(f.args[position]))
+	return nil
+}
+
+func (f *functionCallArgsMock) GetMultipleVars(ctx context.Context, targets ...any) error {
+	for i := 0; i < len(f.args); i += 1 {
+		if i < len(targets) {
+			targetVal := reflect.ValueOf(targets[i])
+			if targetVal.Kind() != reflect.Ptr {
+				return function.NewFuncCallError(
+					fmt.Sprintf("target at index %d to read argument into is not a pointer", i),
+					function.FuncCallErrorCodeInvalidArgumentType,
+					f.callCtx.CallStackSnapshot(),
+				)
+			}
+
+			argVal := reflect.ValueOf(f.args[i])
+			// Allow interface{} as a target type so that the caller can carry out type assertions
+			// when an argument can be of multiple types.
+			if targetVal.Elem().Kind() != reflect.Interface && targetVal.Elem().Kind() != argVal.Kind() {
+				return function.NewFuncCallError(
+					fmt.Sprintf(
+						"argument at index %d is of type %s, but target is of type %s",
+						i,
+						argVal.Kind(),
+						targetVal.Elem().Kind(),
+					),
+					function.FuncCallErrorCodeInvalidArgumentType,
+					f.callCtx.CallStackSnapshot(),
+				)
+			}
+			targetVal.Elem().Set(argVal)
+		}
+	}
+
+	if len(targets) > len(f.args) {
+		expectedText := fmt.Sprintf("%d arguments expected", len(targets))
+		if len(targets) == 1 {
+			expectedText = "1 argument expected"
+		}
+		argsText := fmt.Sprintf(", but %d arguments were passed into function", len(f.args))
+		if len(f.args) == 1 {
+			argsText = ", but 1 argument was passed into function"
+		}
+
+		return function.NewFuncCallError(
+			fmt.Sprintf(
+				"%s%s",
+				expectedText,
+				argsText,
+			),
+			function.FuncCallErrorCodeFunctionCall,
+			f.callCtx.CallStackSnapshot(),
+		)
+	}
+	return nil
+}
+
+func (f *functionCallArgsMock) Export(ctx context.Context) ([]any, error) {
+	return f.args, nil
+}
+
+type functionCallContextMock struct {
+	params          *core.ParamsImpl
+	registry        provider.FunctionRegistry
+	callStack       function.Stack
+	currentLocation *source.Meta
+}
+
+func (f *functionCallContextMock) Registry() provider.FunctionRegistry {
+	return f.registry
+}
+
+func (f *functionCallContextMock) Params() core.BlueprintParams {
+	return f.params
+}
+
+func (f *functionCallContextMock) NewCallArgs(args ...any) provider.FunctionCallArguments {
+	return &functionCallArgsMock{args: args, callCtx: f}
+}
+
+func (f *functionCallContextMock) CallStackSnapshot() []*function.Call {
+	// Take a copy of the current call stack.
+	return f.callStack.Snapshot()
+}
+
+func (f *functionCallContextMock) CurrentLocation() *source.Meta {
+	return f.currentLocation
 }

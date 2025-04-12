@@ -34,6 +34,10 @@ func NewProviderPlugin(
 		bpProvider:        bpProvider,
 		hostInfoContainer: hostInfoContainer,
 		serviceClient:     serviceClient,
+		funcRegistry: pluginservicev1.FunctionRegistryFromClient(
+			serviceClient,
+			hostInfoContainer,
+		),
 	}
 }
 
@@ -42,6 +46,7 @@ type blueprintProviderPluginImpl struct {
 	bpProvider        provider.Provider
 	hostInfoContainer pluginutils.HostInfoContainer
 	serviceClient     pluginservicev1.ServiceClient
+	funcRegistry      provider.FunctionRegistry
 }
 
 func (p *blueprintProviderPluginImpl) GetNamespace(
@@ -1356,6 +1361,44 @@ func (p *blueprintProviderPluginImpl) GetFunctionDefinition(
 	response, err := convertv1.ToPBFunctionDefinitionResponse(output.Definition)
 	if err != nil {
 		return convertv1.ToPBFunctionDefinitionErrorResponse(err), nil
+	}
+
+	return response, nil
+}
+
+func (p *blueprintProviderPluginImpl) CallFunction(
+	ctx context.Context,
+	req *sharedtypesv1.FunctionCallRequest,
+) (*sharedtypesv1.FunctionCallResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBFunctionCallErrorResponse(err), nil
+	}
+
+	input, err := convertv1.FromPBFunctionCallRequest(req, p.funcRegistry)
+	if err != nil {
+		return convertv1.ToPBFunctionCallErrorResponse(err), nil
+	}
+
+	function, err := p.bpProvider.Function(
+		ctx,
+		req.FunctionName,
+	)
+	if err != nil {
+		return convertv1.ToPBFunctionCallErrorResponse(err), nil
+	}
+
+	output, err := function.Call(
+		ctx,
+		input,
+	)
+	if err != nil {
+		return convertv1.ToPBFunctionCallErrorResponse(err), nil
+	}
+
+	response, err := convertv1.ToPBFunctionCallResponse(output)
+	if err != nil {
+		return convertv1.ToPBFunctionCallErrorResponse(err), nil
 	}
 
 	return response, nil

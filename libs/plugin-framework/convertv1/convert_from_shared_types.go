@@ -216,7 +216,7 @@ func FromPBFunctionCallResult(
 func fromPBFunctionRuntimeInfo(
 	pbFuncInfo *sharedtypesv1.FunctionRuntimeInfo,
 ) (provider.FunctionRuntimeInfo, error) {
-	if pbFuncInfo == nil {
+	if pbFuncInfo == nil || pbFuncInfo.FunctionName == "" {
 		return provider.FunctionRuntimeInfo{}, nil
 	}
 

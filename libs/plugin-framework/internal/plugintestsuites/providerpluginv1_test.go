@@ -30,10 +30,12 @@ const (
 )
 
 type ProviderPluginV1Suite struct {
-	pluginService        pluginservicev1.ServiceClient
-	provider             provider.Provider
-	providerWrongHost    provider.Provider
-	failingProvider      provider.Provider
+	pluginService     pluginservicev1.ServiceClient
+	provider          provider.Provider
+	providerWrongHost provider.Provider
+	failingProvider   provider.Provider
+	funcRegistry      provider.FunctionRegistry
+
 	closePluginService   func()
 	closeProvider        func()
 	closeFailingProvider func()
@@ -48,12 +50,13 @@ func (s *ProviderPluginV1Suite) SetupSuite() {
 		},
 		s.createPluginInstance,
 	)
+	s.funcRegistry = provider.NewFunctionRegistry(
+		map[string]provider.Provider{},
+	)
 	pluginService, closePluginService := testutils.StartPluginServiceServer(
 		testHostID,
 		pluginManager,
-		provider.NewFunctionRegistry(
-			map[string]provider.Provider{},
-		),
+		s.funcRegistry,
 		resourcehelpers.NewRegistry(
 			map[string]provider.Provider{},
 			map[string]transform.SpecTransformer{},

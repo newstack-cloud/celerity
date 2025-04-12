@@ -286,6 +286,7 @@ func ToPBFunctionCallRequest(
 	ctx context.Context,
 	functionName string,
 	input *provider.FunctionCallInput,
+	hostID string,
 ) (*sharedtypesv1.FunctionCallRequest, error) {
 	args, err := toPBFunctionCallArguments(ctx, input.Arguments)
 	if err != nil {
@@ -301,6 +302,7 @@ func ToPBFunctionCallRequest(
 		FunctionName: functionName,
 		Args:         args,
 		CallContext:  callCtx,
+		HostId:       hostID,
 	}, nil
 }
 
@@ -345,10 +347,6 @@ func toPBFunctionCallArguments(
 func toPBFunctionCallContext(
 	callContext provider.FunctionCallContext,
 ) (*sharedtypesv1.FunctionCallContext, error) {
-	if callContext == nil {
-		return nil, nil
-	}
-
 	params, err := toPBBlueprintParams(callContext.Params())
 	if err != nil {
 		return nil, err
@@ -371,10 +369,6 @@ func toPBFunctionCallContext(
 func toPBBlueprintParams(
 	params core.BlueprintParams,
 ) (*sharedtypesv1.BlueprintParams, error) {
-	if params == nil {
-		return nil, nil
-	}
-
 	providerConfigVariables := params.AllProvidersConfig()
 	namespacedProviderConfigVars := toNamespacedConfig(providerConfigVariables)
 	pbProviderConfigVars, err := ToPBScalarMap(namespacedProviderConfigVars)

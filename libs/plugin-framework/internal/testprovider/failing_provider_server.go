@@ -403,3 +403,13 @@ func (p *failingProviderServer) GetFunctionDefinition(
 		"internal error occurred retrieving function definition",
 	)
 }
+
+func (p *failingProviderServer) CallFunction(
+	ctx context.Context,
+	req *sharedtypesv1.FunctionCallRequest,
+) (*sharedtypesv1.FunctionCallResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred calling function",
+	)
+}
