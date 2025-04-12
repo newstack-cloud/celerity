@@ -417,7 +417,7 @@ func FromResourcePB(resourcePB *schemapb.Resource) (*schema.Resource, error) {
 		Condition:    condition,
 		DependsOn:    dependsOn,
 		Metadata:     resourceMetadata,
-		LinkSelector: fromLinkSelectorPB(resourcePB.LinkSelector),
+		LinkSelector: FromLinkSelectorPB(resourcePB.LinkSelector),
 		Spec:         spec,
 	}, nil
 }
@@ -544,7 +544,9 @@ func fromExportsPB(exportsPB map[string]*schemapb.Export) (*schema.ExportMap, er
 	}, nil
 }
 
-func fromLinkSelectorPB(linkSelectorPB *schemapb.LinkSelector) *schema.LinkSelector {
+// FromLinkSelectorPB converts a LinkSelector protobuf message to a schema.LinkSelector struct
+// to be used with the blueprint framework.
+func FromLinkSelectorPB(linkSelectorPB *schemapb.LinkSelector) *schema.LinkSelector {
 	if linkSelectorPB == nil {
 		return nil
 	}
