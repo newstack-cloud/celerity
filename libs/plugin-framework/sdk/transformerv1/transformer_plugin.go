@@ -325,7 +325,35 @@ func (p *blueprintTransformerPluginImpl) GetAbstractResourceTypeDescription(
 	ctx context.Context,
 	req *transformerserverv1.AbstractResourceRequest,
 ) (*sharedtypesv1.TypeDescriptionResponse, error) {
-	return nil, nil
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
+	abstractResource, err := p.bpTransformer.AbstractResource(
+		ctx,
+		convertv1.ResourceTypeToString(req.AbstractResourceType),
+	)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
+	transformerCtx, err := fromPBTransformerContext(req.Context)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
+	output, err := abstractResource.GetTypeDescription(
+		ctx,
+		&transform.AbstractResourceGetTypeDescriptionInput{
+			TransformerContext: transformerCtx,
+		},
+	)
+	if err != nil {
+		return convertv1.ToPBTypeDescriptionErrorResponse(err), nil
+	}
+
+	return toPBAbstractResourceTypeDescriptionResponse(output), nil
 }
 
 func (p *blueprintTransformerPluginImpl) GetAbstractResourceExamples(

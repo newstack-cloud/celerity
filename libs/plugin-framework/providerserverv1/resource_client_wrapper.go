@@ -344,7 +344,7 @@ func (r *resourceProviderClientWrapper) GetTypeDescription(
 	if err != nil {
 		return nil, errorsv1.CreateGeneralError(
 			err,
-			errorsv1.PluginActionProviderGetResourceType,
+			errorsv1.PluginActionProviderGetResourceTypeDescription,
 		)
 	}
 

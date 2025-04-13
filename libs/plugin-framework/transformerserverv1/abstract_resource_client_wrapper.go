@@ -290,7 +290,47 @@ func (t *abstractResourceTransformerClientWrapper) GetTypeDescription(
 	ctx context.Context,
 	input *transform.AbstractResourceGetTypeDescriptionInput,
 ) (*transform.AbstractResourceGetTypeDescriptionOutput, error) {
-	return nil, nil
+	transformerCtx, err := toPBTransformerContext(input.TransformerContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerGetAbstractResourceTypeDescription,
+		)
+	}
+
+	response, err := t.client.GetAbstractResourceTypeDescription(
+		ctx,
+		&AbstractResourceRequest{
+			AbstractResourceType: &sharedtypesv1.ResourceType{
+				Type: t.abstractResourceType,
+			},
+			HostId:  t.hostID,
+			Context: transformerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerGetAbstractResourceTypeDescription,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.TypeDescriptionResponse_Description:
+		return fromPBTypeDescription(result.Description), nil
+	case *sharedtypesv1.TypeDescriptionResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionTransformerGetAbstractResourceTypeDescription,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionTransformerGetAbstractResourceTypeDescription,
+		),
+		errorsv1.PluginActionTransformerGetAbstractResourceTypeDescription,
+	)
 }
 
 func (t *abstractResourceTransformerClientWrapper) GetExamples(

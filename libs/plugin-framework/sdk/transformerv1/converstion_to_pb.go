@@ -200,3 +200,18 @@ func toPBAbstractResourceTypeResponse(
 		},
 	}
 }
+
+func toPBAbstractResourceTypeDescriptionResponse(
+	typeInfo *transform.AbstractResourceGetTypeDescriptionOutput,
+) *sharedtypesv1.TypeDescriptionResponse {
+	return &sharedtypesv1.TypeDescriptionResponse{
+		Response: &sharedtypesv1.TypeDescriptionResponse_Description{
+			Description: &sharedtypesv1.TypeDescription{
+				MarkdownDescription:  typeInfo.MarkdownDescription,
+				PlainTextDescription: typeInfo.PlainTextDescription,
+				MarkdownSummary:      typeInfo.MarkdownSummary,
+				PlainTextSummary:     typeInfo.PlainTextSummary,
+			},
+		},
+	}
+}
