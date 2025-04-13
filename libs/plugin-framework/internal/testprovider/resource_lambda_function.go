@@ -132,6 +132,21 @@ func ResourceLambdaFunctionSchema() *provider.ResourceDefinitionsSchema {
 					core.MappingNodeFromString("example-function"),
 				},
 			},
+			"otherConfigurationValue": {
+				Type:        provider.ResourceDefinitionsSchemaTypeUnion,
+				Label:       "Other Configuration Value",
+				Description: "An example of a union type",
+				OneOf: []*provider.ResourceDefinitionsSchema{
+					{
+						Type:  provider.ResourceDefinitionsSchemaTypeString,
+						Label: "String Value",
+					},
+					{
+						Type:  provider.ResourceDefinitionsSchemaTypeInteger,
+						Label: "Integer Value",
+					},
+				},
+			},
 			"arn": {
 				Type:     provider.ResourceDefinitionsSchemaTypeString,
 				Computed: true,
