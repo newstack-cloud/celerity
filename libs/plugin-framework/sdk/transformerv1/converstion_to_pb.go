@@ -1,6 +1,7 @@
 package transformerv1
 
 import (
+	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/transformerserverv1"
 )
@@ -27,6 +28,26 @@ func toBlueprintTransformErrorResponse(err error) *transformerserverv1.Blueprint
 	return &transformerserverv1.BlueprintTransformResponse{
 		Response: &transformerserverv1.BlueprintTransformResponse_ErrorResponse{
 			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toListAbstractResourceTypesErrorResponse(err error) *transformerserverv1.AbstractResourceTypesResponse {
+	return &transformerserverv1.AbstractResourceTypesResponse{
+		Response: &transformerserverv1.AbstractResourceTypesResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBAbstractResourceTypesResponse(
+	abstractResourceTypes []string,
+) *transformerserverv1.AbstractResourceTypesResponse {
+	return &transformerserverv1.AbstractResourceTypesResponse{
+		Response: &transformerserverv1.AbstractResourceTypesResponse_AbstractResourceTypes{
+			AbstractResourceTypes: &transformerserverv1.AbstractResourceTypes{
+				ResourceTypes: convertv1.ToPBResourceTypes(abstractResourceTypes),
+			},
 		},
 	}
 }

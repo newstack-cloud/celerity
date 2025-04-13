@@ -180,6 +180,31 @@ func (s *TransformerPluginV1Suite) Test_transform_reports_expected_error_for_fai
 	s.Assert().Contains(err.Error(), "internal error occurred transforming blueprint")
 }
 
+func (s *TransformerPluginV1Suite) Test_list_abstract_resource_types() {
+	abstractResourceTypes, err := s.transformer.ListAbstractResourceTypes(context.Background())
+	s.Require().NoError(err)
+	s.Require().Equal(
+		[]string{"celerity/handler"},
+		abstractResourceTypes,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_list_abstract_resource_types_fails_for_unexpected_host() {
+	_, err := s.transformerWrongHost.ListAbstractResourceTypes(context.Background())
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionTransformerListAbstractResourceTypes,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_list_abstract_resource_types_reports_expected_error_for_failure() {
+	_, err := s.failingTransformer.ListAbstractResourceTypes(context.Background())
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred listing abstract resource types")
+}
+
 func (s *TransformerPluginV1Suite) createPluginInstance(
 	info *pluginservicev1.PluginInstanceInfo,
 ) (any, func(), error) {

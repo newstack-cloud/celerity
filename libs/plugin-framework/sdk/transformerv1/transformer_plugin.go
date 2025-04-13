@@ -130,7 +130,17 @@ func (p *blueprintTransformerPluginImpl) ListAbstractResourceTypes(
 	ctx context.Context,
 	req *transformerserverv1.TransformerRequest,
 ) (*transformerserverv1.AbstractResourceTypesResponse, error) {
-	return nil, nil
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toListAbstractResourceTypesErrorResponse(err), nil
+	}
+
+	abstractResourceTypes, err := p.bpTransformer.ListAbstractResourceTypes(ctx)
+	if err != nil {
+		return toListAbstractResourceTypesErrorResponse(err), nil
+	}
+
+	return toPBAbstractResourceTypesResponse(abstractResourceTypes), nil
 }
 
 func (p *blueprintTransformerPluginImpl) CustomValidateAbstractResource(

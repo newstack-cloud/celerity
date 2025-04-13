@@ -33,7 +33,7 @@ func toResourceTypesResponse(resourceTypes []string) *providerserverv1.ResourceT
 	return &providerserverv1.ResourceTypesResponse{
 		Response: &providerserverv1.ResourceTypesResponse_ResourceTypes{
 			ResourceTypes: &providerserverv1.ResourceTypes{
-				ResourceTypes: toPBResourceTypes(resourceTypes),
+				ResourceTypes: convertv1.ToPBResourceTypes(resourceTypes),
 			},
 		},
 	}
@@ -235,7 +235,7 @@ func toCanResourceLinkToResponse(
 	return &providerserverv1.CanResourceLinkToResponse{
 		Response: &providerserverv1.CanResourceLinkToResponse_ResourceTypes{
 			ResourceTypes: &sharedtypesv1.CanLinkTo{
-				ResourceTypes: toPBResourceTypes(output.CanLinkTo),
+				ResourceTypes: convertv1.ToPBResourceTypes(output.CanLinkTo),
 			},
 		},
 	}
@@ -255,7 +255,7 @@ func toResourceStabilisedDepsResponse(
 	return &providerserverv1.ResourceStabilisedDepsResponse{
 		Response: &providerserverv1.ResourceStabilisedDepsResponse_StabilisedDependencies{
 			StabilisedDependencies: &providerserverv1.StabilisedDependencies{
-				ResourceTypes: toPBResourceTypes(output.StabilisedDependencies),
+				ResourceTypes: convertv1.ToPBResourceTypes(output.StabilisedDependencies),
 			},
 		},
 	}
@@ -1120,17 +1120,6 @@ func toPBGetCustomVarTypeExamplesResponse(
 			},
 		},
 	}
-}
-
-func toPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
-	return commoncore.Map(
-		resourceTypes,
-		func(resourceType string, _ int) *sharedtypesv1.ResourceType {
-			return &sharedtypesv1.ResourceType{
-				Type: resourceType,
-			}
-		},
-	)
 }
 
 func toPBDataSourceSpecSchemaType(

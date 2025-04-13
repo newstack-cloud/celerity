@@ -3,6 +3,7 @@ package convertv1
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
+	commoncore "github.com/two-hundred/celerity/libs/common/core"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
@@ -134,4 +135,18 @@ func ToPBResourceTypeResponse(
 			},
 		},
 	}
+}
+
+// ToPBResourceTypes converts a list of resource type strings
+// to a list of sharedtypesv1.ResourceType that can be sent in a gRPC call
+// to a plugin.
+func ToPBResourceTypes(resourceTypes []string) []*sharedtypesv1.ResourceType {
+	return commoncore.Map(
+		resourceTypes,
+		func(resourceType string, _ int) *sharedtypesv1.ResourceType {
+			return &sharedtypesv1.ResourceType{
+				Type: resourceType,
+			}
+		},
+	)
 }
