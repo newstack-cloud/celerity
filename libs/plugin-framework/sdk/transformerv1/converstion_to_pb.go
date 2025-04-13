@@ -87,3 +87,43 @@ func toPBCustomValidateAbstractResourceResponse(
 		},
 	}
 }
+
+func toAbstractResourceSpecDefinitionErrorResponse(
+	err error,
+) *transformerserverv1.AbstractResourceSpecDefinitionResponse {
+	return &transformerserverv1.AbstractResourceSpecDefinitionResponse{
+		Response: &transformerserverv1.AbstractResourceSpecDefinitionResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBAbstractResourceSpecDefinitionResponse(
+	output *transform.AbstractResourceGetSpecDefinitionOutput,
+) (*transformerserverv1.AbstractResourceSpecDefinitionResponse, error) {
+	if output == nil {
+		return &transformerserverv1.AbstractResourceSpecDefinitionResponse{
+			Response: &transformerserverv1.AbstractResourceSpecDefinitionResponse_ErrorResponse{
+				ErrorResponse: errorsv1.CreateResponseFromError(
+					errorsv1.ErrUnexpectedResponseType(
+						errorsv1.PluginActionTransformerGetAbstractResourceSpecDefinition,
+					),
+				),
+			},
+		}, nil
+	}
+
+	schema, err := convertv1.ToPBResourceDefinitionsSchema(output.SpecDefinition.Schema)
+	if err != nil {
+		return nil, err
+	}
+
+	return &transformerserverv1.AbstractResourceSpecDefinitionResponse{
+		Response: &transformerserverv1.AbstractResourceSpecDefinitionResponse_SpecDefinition{
+			SpecDefinition: &sharedtypesv1.ResourceSpecDefinition{
+				Schema:  schema,
+				IdField: output.SpecDefinition.IDField,
+			},
+		},
+	}, nil
+}

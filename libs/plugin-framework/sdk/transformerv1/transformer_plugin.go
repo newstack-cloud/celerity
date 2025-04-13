@@ -180,7 +180,40 @@ func (p *blueprintTransformerPluginImpl) GetAbstractResourceSpecDefinition(
 	ctx context.Context,
 	req *transformerserverv1.AbstractResourceRequest,
 ) (*transformerserverv1.AbstractResourceSpecDefinitionResponse, error) {
-	return nil, nil
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toAbstractResourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	abstractResource, err := p.bpTransformer.AbstractResource(
+		ctx,
+		convertv1.ResourceTypeToString(req.AbstractResourceType),
+	)
+	if err != nil {
+		return toAbstractResourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	transformerCtx, err := fromPBTransformerContext(req.Context)
+	if err != nil {
+		return toAbstractResourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	output, err := abstractResource.GetSpecDefinition(
+		ctx,
+		&transform.AbstractResourceGetSpecDefinitionInput{
+			TransformerContext: transformerCtx,
+		},
+	)
+	if err != nil {
+		return toAbstractResourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	response, err := toPBAbstractResourceSpecDefinitionResponse(output)
+	if err != nil {
+		return toAbstractResourceSpecDefinitionErrorResponse(err), nil
+	}
+
+	return response, nil
 }
 
 func (p *blueprintTransformerPluginImpl) CanAbstractResourceLinkTo(

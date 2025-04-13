@@ -5,6 +5,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
+	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
@@ -77,7 +78,56 @@ func (t *abstractResourceTransformerClientWrapper) GetSpecDefinition(
 	ctx context.Context,
 	input *transform.AbstractResourceGetSpecDefinitionInput,
 ) (*transform.AbstractResourceGetSpecDefinitionOutput, error) {
-	return nil, nil
+	transformerCtx, err := toPBTransformerContext(input.TransformerContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerGetAbstractResourceSpecDefinition,
+		)
+	}
+
+	response, err := t.client.GetAbstractResourceSpecDefinition(
+		ctx,
+		&AbstractResourceRequest{
+			AbstractResourceType: &sharedtypesv1.ResourceType{
+				Type: t.abstractResourceType,
+			},
+			HostId:  t.hostID,
+			Context: transformerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerGetAbstractResourceSpecDefinition,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *AbstractResourceSpecDefinitionResponse_SpecDefinition:
+		specDefinition, err := convertv1.FromPBResourceSpecDefinition(result.SpecDefinition)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				errorsv1.PluginActionTransformerGetAbstractResourceSpecDefinition,
+			)
+		}
+		return &transform.AbstractResourceGetSpecDefinitionOutput{
+			SpecDefinition: specDefinition,
+		}, nil
+	case *AbstractResourceSpecDefinitionResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionTransformerGetAbstractResourceSpecDefinition,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionTransformerGetAbstractResourceSpecDefinition,
+		),
+		errorsv1.PluginActionTransformerGetAbstractResourceSpecDefinition,
+	)
 }
 
 func (t *abstractResourceTransformerClientWrapper) CanLinkTo(

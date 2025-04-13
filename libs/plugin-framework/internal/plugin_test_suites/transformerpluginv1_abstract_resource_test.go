@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
@@ -53,7 +54,7 @@ func (s *TransformerPluginV1Suite) Test_custom_validate_abstract_resource_fails_
 	)
 }
 
-func (s *TransformerPluginV1Suite) Test_custom_validate_resource_reports_expected_error_for_failure() {
+func (s *TransformerPluginV1Suite) Test_custom_validate_abstract_resource_reports_expected_error_for_failure() {
 	abstractResource, err := s.failingTransformer.AbstractResource(
 		context.Background(),
 		celerityHandlerAbstractResourceType,
@@ -90,4 +91,67 @@ func abstractResourceValidateInput() *transform.AbstractResourceValidateInput {
 		},
 		TransformerContext: testutils.CreateTestTransformerContext("celerity"),
 	}
+}
+
+func (s *TransformerPluginV1Suite) Test_abstract_resource_get_spec_definition() {
+	resource, err := s.transformer.AbstractResource(
+		context.Background(),
+		celerityHandlerAbstractResourceType,
+	)
+	s.Require().NoError(err)
+
+	output, err := resource.GetSpecDefinition(
+		context.Background(),
+		&transform.AbstractResourceGetSpecDefinitionInput{
+			TransformerContext: testutils.CreateTestTransformerContext("celerity"),
+		},
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&transform.AbstractResourceGetSpecDefinitionOutput{
+			SpecDefinition: &provider.ResourceSpecDefinition{
+				Schema:  testtransformer.AbstractResourceHandlerSchema(),
+				IDField: "id",
+			},
+		},
+		output,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_abstract_resource_get_spec_definition_fails_for_unexpected_host() {
+	abstractResource, err := s.transformerWrongHost.AbstractResource(
+		context.Background(),
+		celerityHandlerAbstractResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = abstractResource.GetSpecDefinition(
+		context.Background(),
+		&transform.AbstractResourceGetSpecDefinitionInput{
+			TransformerContext: testutils.CreateTestTransformerContext("celerity"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionTransformerGetAbstractResourceSpecDefinition,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_abstract_resource_reports_expected_error_for_failure() {
+	abstractResource, err := s.failingTransformer.AbstractResource(
+		context.Background(),
+		celerityHandlerAbstractResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = abstractResource.GetSpecDefinition(
+		context.Background(),
+		&transform.AbstractResourceGetSpecDefinitionInput{
+			TransformerContext: testutils.CreateTestTransformerContext("celerity"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred retrieving abstract resource spec definition")
 }
