@@ -64,7 +64,7 @@ const (
 	PluginActionTransformerTransform                 = PluginAction("Transformer::Transform")
 	PluginActionTransformerListAbstractResourceTypes = PluginAction("Transformer::ListAbstractResourceTypes")
 
-	PluginActionTransformerCustomValidateResource                = PluginAction("Transformer::CustomValidateAbstractResource")
+	PluginActionTransformerCustomValidateAbstractResource        = PluginAction("Transformer::CustomValidateAbstractResource")
 	PluginActionTransformerGetAbstractResourceSpecDefinition     = PluginAction("Transformer::GetAbstractResourceSpecDefinition")
 	PluginActionTransformerCheckCanAbstractResourceLinkTo        = PluginAction("Transformer::CheckCanAbstractResourceLinkTo")
 	PluginActionTransformerCheckIsAbstractResourceCommonTerminal = PluginAction("Transformer::CheckIsAbstractResourceCommonTerminal")

@@ -1,8 +1,10 @@
 package transformerv1
 
 import (
+	"github.com/two-hundred/celerity/libs/blueprint/transform"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/transformerserverv1"
 )
 
@@ -47,6 +49,40 @@ func toPBAbstractResourceTypesResponse(
 		Response: &transformerserverv1.AbstractResourceTypesResponse_AbstractResourceTypes{
 			AbstractResourceTypes: &transformerserverv1.AbstractResourceTypes{
 				ResourceTypes: convertv1.ToPBResourceTypes(abstractResourceTypes),
+			},
+		},
+	}
+}
+
+func toCustomValidateAbstractResourceErrorResponse(
+	err error,
+) *transformerserverv1.CustomValidateAbstractResourceResponse {
+	return &transformerserverv1.CustomValidateAbstractResourceResponse{
+		Response: &transformerserverv1.CustomValidateAbstractResourceResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBCustomValidateAbstractResourceResponse(
+	output *transform.AbstractResourceValidateOutput,
+) *transformerserverv1.CustomValidateAbstractResourceResponse {
+	if output == nil {
+		return &transformerserverv1.CustomValidateAbstractResourceResponse{
+			Response: &transformerserverv1.CustomValidateAbstractResourceResponse_ErrorResponse{
+				ErrorResponse: errorsv1.CreateResponseFromError(
+					errorsv1.ErrUnexpectedResponseType(
+						errorsv1.PluginActionTransformerCustomValidateAbstractResource,
+					),
+				),
+			},
+		}
+	}
+
+	return &transformerserverv1.CustomValidateAbstractResourceResponse{
+		Response: &transformerserverv1.CustomValidateAbstractResourceResponse_CompleteResponse{
+			CompleteResponse: &transformerserverv1.CustomValidateAbstractResourceCompleteResponse{
+				Diagnostics: sharedtypesv1.ToPBDiagnostics(output.Diagnostics),
 			},
 		},
 	}

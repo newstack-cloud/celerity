@@ -147,7 +147,33 @@ func (p *blueprintTransformerPluginImpl) CustomValidateAbstractResource(
 	ctx context.Context,
 	req *transformerserverv1.CustomValidateAbstractResourceRequest,
 ) (*transformerserverv1.CustomValidateAbstractResourceResponse, error) {
-	return nil, nil
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toCustomValidateAbstractResourceErrorResponse(err), nil
+	}
+
+	abstractResource, err := p.bpTransformer.AbstractResource(
+		ctx,
+		convertv1.ResourceTypeToString(req.AbstractResourceType),
+	)
+	if err != nil {
+		return toCustomValidateAbstractResourceErrorResponse(err), nil
+	}
+
+	validationInput, err := fromPBCustomValidateAbstractResourceRequest(req)
+	if err != nil {
+		return toCustomValidateAbstractResourceErrorResponse(err), nil
+	}
+
+	output, err := abstractResource.CustomValidate(
+		ctx,
+		validationInput,
+	)
+	if err != nil {
+		return toCustomValidateAbstractResourceErrorResponse(err), nil
+	}
+
+	return toPBCustomValidateAbstractResourceResponse(output), nil
 }
 
 func (p *blueprintTransformerPluginImpl) GetAbstractResourceSpecDefinition(
