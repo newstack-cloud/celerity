@@ -15,10 +15,12 @@ func (s *ProtobufExpandedBlueprintSerialiser) Unmarshal(data []byte) (*schema.Bl
 		return nil, err
 	}
 
-	return fromSchemaPB(blueprintPB)
+	return FromSchemaPB(blueprintPB)
 }
 
-func fromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
+// FromSchemaPB converts a Blueprint protobuf message to a schema.Blueprint struct
+// to be used with the blueprint framework.
+func FromSchemaPB(blueprintPB *schemapb.Blueprint) (*schema.Blueprint, error) {
 	variables, err := fromVariablesPB(blueprintPB.Variables)
 	if err != nil {
 		return nil, err

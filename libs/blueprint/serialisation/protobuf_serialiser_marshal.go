@@ -9,14 +9,16 @@ import (
 )
 
 func (s *ProtobufExpandedBlueprintSerialiser) Marshal(blueprint *schema.Blueprint) ([]byte, error) {
-	schemaPB, err := toSchemaPB(blueprint)
+	schemaPB, err := ToSchemaPB(blueprint)
 	if err != nil {
 		return nil, err
 	}
 	return proto.Marshal(schemaPB)
 }
 
-func toSchemaPB(blueprint *schema.Blueprint) (*schemapb.Blueprint, error) {
+// ToSchemaPB converts a core blueprint to a schemapb.Blueprint
+// that can be stored and transmitted as a protobuf message.
+func ToSchemaPB(blueprint *schema.Blueprint) (*schemapb.Blueprint, error) {
 	variables, err := toVariablesPB(blueprint.Variables)
 	if err != nil {
 		return nil, err
