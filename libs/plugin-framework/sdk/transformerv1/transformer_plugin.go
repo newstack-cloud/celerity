@@ -220,7 +220,35 @@ func (p *blueprintTransformerPluginImpl) CanAbstractResourceLinkTo(
 	ctx context.Context,
 	req *transformerserverv1.AbstractResourceRequest,
 ) (*transformerserverv1.CanAbstractResourceLinkToResponse, error) {
-	return nil, nil
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toCanAbstractResourceLinkToErrorResponse(err), nil
+	}
+
+	abstractResource, err := p.bpTransformer.AbstractResource(
+		ctx,
+		convertv1.ResourceTypeToString(req.AbstractResourceType),
+	)
+	if err != nil {
+		return toCanAbstractResourceLinkToErrorResponse(err), nil
+	}
+
+	transformerCtx, err := fromPBTransformerContext(req.Context)
+	if err != nil {
+		return toCanAbstractResourceLinkToErrorResponse(err), nil
+	}
+
+	output, err := abstractResource.CanLinkTo(
+		ctx,
+		&transform.AbstractResourceCanLinkToInput{
+			TransformerContext: transformerCtx,
+		},
+	)
+	if err != nil {
+		return toCanAbstractResourceLinkToErrorResponse(err), nil
+	}
+
+	return toPBCanAbstractResourceLinkToResponse(output), nil
 }
 
 func (p *blueprintTransformerPluginImpl) IsAbstractResourceCommonTerminal(

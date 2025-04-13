@@ -139,7 +139,7 @@ func (s *TransformerPluginV1Suite) Test_abstract_resource_get_spec_definition_fa
 	)
 }
 
-func (s *TransformerPluginV1Suite) Test_abstract_resource_reports_expected_error_for_failure() {
+func (s *TransformerPluginV1Suite) Test_abstract_resource_get_spec_definition_reports_expected_error_for_failure() {
 	abstractResource, err := s.failingTransformer.AbstractResource(
 		context.Background(),
 		celerityHandlerAbstractResourceType,
@@ -154,4 +154,67 @@ func (s *TransformerPluginV1Suite) Test_abstract_resource_reports_expected_error
 	)
 	s.Assert().Error(err)
 	s.Assert().Contains(err.Error(), "internal error occurred retrieving abstract resource spec definition")
+}
+
+func (s *TransformerPluginV1Suite) Test_abstract_resource_can_link_to() {
+	resource, err := s.transformer.AbstractResource(
+		context.Background(),
+		celerityHandlerAbstractResourceType,
+	)
+	s.Require().NoError(err)
+
+	output, err := resource.CanLinkTo(
+		context.Background(),
+		&transform.AbstractResourceCanLinkToInput{
+			TransformerContext: testutils.CreateTestTransformerContext("celerity"),
+		},
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&transform.AbstractResourceCanLinkToOutput{
+			CanLinkTo: []string{"celerity/datastore"},
+		},
+		output,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_abstract_resource_can_link_to_fails_for_unexpected_host() {
+	abstractResource, err := s.transformerWrongHost.AbstractResource(
+		context.Background(),
+		celerityHandlerAbstractResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = abstractResource.CanLinkTo(
+		context.Background(),
+		&transform.AbstractResourceCanLinkToInput{
+			TransformerContext: testutils.CreateTestTransformerContext("celerity"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionTransformerCheckCanAbstractResourceLinkTo,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_abstract_resource_can_link_to_reports_expected_error_for_failure() {
+	abstractResource, err := s.failingTransformer.AbstractResource(
+		context.Background(),
+		celerityHandlerAbstractResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = abstractResource.CanLinkTo(
+		context.Background(),
+		&transform.AbstractResourceCanLinkToInput{
+			TransformerContext: testutils.CreateTestTransformerContext("celerity"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred checking the resource types that the abstract resource can link to",
+	)
 }

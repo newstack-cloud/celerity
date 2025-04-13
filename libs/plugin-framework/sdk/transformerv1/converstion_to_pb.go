@@ -127,3 +127,33 @@ func toPBAbstractResourceSpecDefinitionResponse(
 		},
 	}, nil
 }
+
+func toCanAbstractResourceLinkToErrorResponse(
+	err error,
+) *transformerserverv1.CanAbstractResourceLinkToResponse {
+	return &transformerserverv1.CanAbstractResourceLinkToResponse{
+		Response: &transformerserverv1.CanAbstractResourceLinkToResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBCanAbstractResourceLinkToResponse(
+	output *transform.AbstractResourceCanLinkToOutput,
+) *transformerserverv1.CanAbstractResourceLinkToResponse {
+	if output == nil {
+		return &transformerserverv1.CanAbstractResourceLinkToResponse{
+			Response: &transformerserverv1.CanAbstractResourceLinkToResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &transformerserverv1.CanAbstractResourceLinkToResponse{
+		Response: &transformerserverv1.CanAbstractResourceLinkToResponse_ResourceTypes{
+			ResourceTypes: &sharedtypesv1.CanLinkTo{
+				ResourceTypes: convertv1.ToPBResourceTypes(output.CanLinkTo),
+			},
+		},
+	}
+}

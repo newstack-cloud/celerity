@@ -134,7 +134,58 @@ func (t *abstractResourceTransformerClientWrapper) CanLinkTo(
 	ctx context.Context,
 	input *transform.AbstractResourceCanLinkToInput,
 ) (*transform.AbstractResourceCanLinkToOutput, error) {
-	return nil, nil
+	transformerCtx, err := toPBTransformerContext(input.TransformerContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerCheckCanAbstractResourceLinkTo,
+		)
+	}
+
+	response, err := t.client.CanAbstractResourceLinkTo(
+		ctx,
+		&AbstractResourceRequest{
+			AbstractResourceType: &sharedtypesv1.ResourceType{
+				Type: t.abstractResourceType,
+			},
+			HostId:  t.hostID,
+			Context: transformerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerCheckCanAbstractResourceLinkTo,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *CanAbstractResourceLinkToResponse_ResourceTypes:
+		canLinkTo := sharedtypesv1.FromPBResourceTypes(
+			result.ResourceTypes.ResourceTypes,
+		)
+		if err != nil {
+			return nil, errorsv1.CreateGeneralError(
+				err,
+				errorsv1.PluginActionTransformerCheckCanAbstractResourceLinkTo,
+			)
+		}
+		return &transform.AbstractResourceCanLinkToOutput{
+			CanLinkTo: canLinkTo,
+		}, nil
+	case *CanAbstractResourceLinkToResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionTransformerCheckCanAbstractResourceLinkTo,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionTransformerCheckCanAbstractResourceLinkTo,
+		),
+		errorsv1.PluginActionTransformerCheckCanAbstractResourceLinkTo,
+	)
 }
 
 func (t *abstractResourceTransformerClientWrapper) IsCommonTerminal(

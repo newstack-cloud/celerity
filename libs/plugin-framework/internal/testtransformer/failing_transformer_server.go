@@ -79,7 +79,7 @@ func (p *failingTransformerServer) CanAbstractResourceLinkTo(
 ) (*transformerserverv1.CanAbstractResourceLinkToResponse, error) {
 	return nil, status.Error(
 		codes.Unknown,
-		"internal error occurred checking if abstract resource can link to",
+		"internal error occurred checking the resource types that the abstract resource can link to",
 	)
 }
 
