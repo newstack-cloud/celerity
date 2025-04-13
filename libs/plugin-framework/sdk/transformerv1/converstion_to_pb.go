@@ -157,3 +157,33 @@ func toPBCanAbstractResourceLinkToResponse(
 		},
 	}
 }
+
+func toIsAbstractResourceCommonTerminalErrorResponse(
+	err error,
+) *transformerserverv1.IsAbstractResourceCommonTerminalResponse {
+	return &transformerserverv1.IsAbstractResourceCommonTerminalResponse{
+		Response: &transformerserverv1.IsAbstractResourceCommonTerminalResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
+func toPBAbstractResourceCommonTerminalResponse(
+	output *transform.AbstractResourceIsCommonTerminalOutput,
+) *transformerserverv1.IsAbstractResourceCommonTerminalResponse {
+	if output == nil {
+		return &transformerserverv1.IsAbstractResourceCommonTerminalResponse{
+			Response: &transformerserverv1.IsAbstractResourceCommonTerminalResponse_ErrorResponse{
+				ErrorResponse: sharedtypesv1.NoResponsePBError(),
+			},
+		}
+	}
+
+	return &transformerserverv1.IsAbstractResourceCommonTerminalResponse{
+		Response: &transformerserverv1.IsAbstractResourceCommonTerminalResponse_Data{
+			Data: &sharedtypesv1.ResourceCommonTerminalInfo{
+				IsCommonTerminal: output.IsCommonTerminal,
+			},
+		},
+	}
+}

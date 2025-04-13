@@ -162,12 +162,7 @@ func (r *resourceProviderClientWrapper) CanLinkTo(
 		canLinkTo := sharedtypesv1.FromPBResourceTypes(
 			result.ResourceTypes.ResourceTypes,
 		)
-		if err != nil {
-			return nil, errorsv1.CreateGeneralError(
-				err,
-				errorsv1.PluginActionProviderGetResourceSpecDefinition,
-			)
-		}
+
 		return &provider.ResourceCanLinkToOutput{
 			CanLinkTo: canLinkTo,
 		}, nil

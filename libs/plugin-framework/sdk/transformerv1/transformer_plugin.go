@@ -255,7 +255,35 @@ func (p *blueprintTransformerPluginImpl) IsAbstractResourceCommonTerminal(
 	ctx context.Context,
 	req *transformerserverv1.AbstractResourceRequest,
 ) (*transformerserverv1.IsAbstractResourceCommonTerminalResponse, error) {
-	return nil, nil
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toIsAbstractResourceCommonTerminalErrorResponse(err), nil
+	}
+
+	abstractResource, err := p.bpTransformer.AbstractResource(
+		ctx,
+		convertv1.ResourceTypeToString(req.AbstractResourceType),
+	)
+	if err != nil {
+		return toIsAbstractResourceCommonTerminalErrorResponse(err), nil
+	}
+
+	transformerCtx, err := fromPBTransformerContext(req.Context)
+	if err != nil {
+		return toIsAbstractResourceCommonTerminalErrorResponse(err), nil
+	}
+
+	output, err := abstractResource.IsCommonTerminal(
+		ctx,
+		&transform.AbstractResourceIsCommonTerminalInput{
+			TransformerContext: transformerCtx,
+		},
+	)
+	if err != nil {
+		return toIsAbstractResourceCommonTerminalErrorResponse(err), nil
+	}
+
+	return toPBAbstractResourceCommonTerminalResponse(output), nil
 }
 
 func (p *blueprintTransformerPluginImpl) GetAbstractResourceType(

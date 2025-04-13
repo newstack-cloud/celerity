@@ -164,12 +164,7 @@ func (t *abstractResourceTransformerClientWrapper) CanLinkTo(
 		canLinkTo := sharedtypesv1.FromPBResourceTypes(
 			result.ResourceTypes.ResourceTypes,
 		)
-		if err != nil {
-			return nil, errorsv1.CreateGeneralError(
-				err,
-				errorsv1.PluginActionTransformerCheckCanAbstractResourceLinkTo,
-			)
-		}
+
 		return &transform.AbstractResourceCanLinkToOutput{
 			CanLinkTo: canLinkTo,
 		}, nil
@@ -192,7 +187,49 @@ func (t *abstractResourceTransformerClientWrapper) IsCommonTerminal(
 	ctx context.Context,
 	input *transform.AbstractResourceIsCommonTerminalInput,
 ) (*transform.AbstractResourceIsCommonTerminalOutput, error) {
-	return nil, nil
+	transformerCtx, err := toPBTransformerContext(input.TransformerContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerCheckIsAbstractResourceCommonTerminal,
+		)
+	}
+
+	response, err := t.client.IsAbstractResourceCommonTerminal(
+		ctx,
+		&AbstractResourceRequest{
+			AbstractResourceType: &sharedtypesv1.ResourceType{
+				Type: t.abstractResourceType,
+			},
+			HostId:  t.hostID,
+			Context: transformerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerCheckIsAbstractResourceCommonTerminal,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *IsAbstractResourceCommonTerminalResponse_Data:
+		return &transform.AbstractResourceIsCommonTerminalOutput{
+			IsCommonTerminal: result.Data.IsCommonTerminal,
+		}, nil
+	case *IsAbstractResourceCommonTerminalResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionTransformerCheckIsAbstractResourceCommonTerminal,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionTransformerCheckIsAbstractResourceCommonTerminal,
+		),
+		errorsv1.PluginActionTransformerCheckIsAbstractResourceCommonTerminal,
+	)
 }
 
 func (t *abstractResourceTransformerClientWrapper) GetType(

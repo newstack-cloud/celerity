@@ -89,7 +89,7 @@ func (p *failingTransformerServer) IsAbstractResourceCommonTerminal(
 ) (*transformerserverv1.IsAbstractResourceCommonTerminalResponse, error) {
 	return nil, status.Error(
 		codes.Unknown,
-		"internal error occurred checking if abstract resource is common terminal",
+		"internal error occurred checking if abstract resource is a common terminal",
 	)
 }
 

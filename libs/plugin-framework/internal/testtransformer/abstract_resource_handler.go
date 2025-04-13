@@ -27,6 +27,7 @@ func abstractResourceHandler() transform.AbstractResource {
 		IDField:              "id",
 		ResourceCanLinkTo:    []string{"celerity/datastore"},
 		CustomValidateFunc:   customValidateHandler,
+		CommonTerminal:       true,
 	}
 }
 
