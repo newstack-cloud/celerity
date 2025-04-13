@@ -187,3 +187,16 @@ func toPBAbstractResourceCommonTerminalResponse(
 		},
 	}
 }
+
+func toPBAbstractResourceTypeResponse(
+	typeInfo *transform.AbstractResourceGetTypeOutput,
+) *sharedtypesv1.ResourceTypeResponse {
+	return &sharedtypesv1.ResourceTypeResponse{
+		Response: &sharedtypesv1.ResourceTypeResponse_ResourceTypeInfo{
+			ResourceTypeInfo: &sharedtypesv1.ResourceTypeInfo{
+				Type:  convertv1.StringToResourceType(typeInfo.Type),
+				Label: typeInfo.Label,
+			},
+		},
+	}
+}

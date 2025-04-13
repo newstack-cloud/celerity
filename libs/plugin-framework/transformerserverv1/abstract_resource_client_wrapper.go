@@ -236,7 +236,54 @@ func (t *abstractResourceTransformerClientWrapper) GetType(
 	ctx context.Context,
 	input *transform.AbstractResourceGetTypeInput,
 ) (*transform.AbstractResourceGetTypeOutput, error) {
-	return nil, nil
+	transformerCtx, err := toPBTransformerContext(input.TransformerContext)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerGetAbstractResourceType,
+		)
+	}
+
+	// Fetching an abstract resource type from the plugin allows to obtain
+	// the human-readable label for the abstract resource type so is worth while
+	// for documentation and tooling purposes despite the type ID
+	// already being known at this point.
+	response, err := t.client.GetAbstractResourceType(
+		ctx,
+		&AbstractResourceRequest{
+			AbstractResourceType: &sharedtypesv1.ResourceType{
+				Type: t.abstractResourceType,
+			},
+			HostId:  t.hostID,
+			Context: transformerCtx,
+		},
+	)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionTransformerGetAbstractResourceType,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *sharedtypesv1.ResourceTypeResponse_ResourceTypeInfo:
+		return &transform.AbstractResourceGetTypeOutput{
+			Type:  convertv1.ResourceTypeToString(result.ResourceTypeInfo.Type),
+			Label: result.ResourceTypeInfo.Label,
+		}, nil
+	case *sharedtypesv1.ResourceTypeResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionTransformerGetAbstractResourceType,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionTransformerGetAbstractResourceType,
+		),
+		errorsv1.PluginActionTransformerGetAbstractResourceType,
+	)
 }
 
 func (t *abstractResourceTransformerClientWrapper) GetTypeDescription(
