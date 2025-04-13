@@ -185,7 +185,7 @@ type AbstractResourceGetTypeDescriptionOutput struct {
 // AbstractResourceGetExamplesInput provides the input data needed for a resource to
 // retrieve examples for an abstract resource type in a blueprint spec.
 type AbstractResourceGetExamplesInput struct {
-	ProviderContext Context
+	TransformerContext Context
 }
 
 // AbstractResourceGetExamplesOutput provides the output data from retrieving examples
