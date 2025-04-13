@@ -51,6 +51,7 @@ func FromPBScalarSlice(s []*schemapb.ScalarValue) ([]*core.ScalarValue, error) {
 // to a core type compatible with the blueprint framework.
 func FromPBConfigDefinitionResponse(
 	resp *sharedtypesv1.ConfigDefinitionResponse,
+	pluginAction errorsv1.PluginAction,
 ) (*core.ConfigDefinition, error) {
 	switch result := resp.Response.(type) {
 	case *sharedtypesv1.ConfigDefinitionResponse_ConfigDefinition:
@@ -58,15 +59,15 @@ func FromPBConfigDefinitionResponse(
 	case *sharedtypesv1.ConfigDefinitionResponse_ErrorResponse:
 		return nil, errorsv1.CreateErrorFromResponse(
 			result.ErrorResponse,
-			errorsv1.PluginActionProviderGetConfigDefinition,
+			pluginAction,
 		)
 	}
 
 	return nil, errorsv1.CreateGeneralError(
 		errorsv1.ErrUnexpectedResponseType(
-			errorsv1.PluginActionProviderGetConfigDefinition,
+			pluginAction,
 		),
-		errorsv1.PluginActionProviderGetConfigDefinition,
+		pluginAction,
 	)
 }
 
@@ -119,6 +120,7 @@ func fromPBConfigFieldDefinition(
 		DefaultValue:  defaultValue,
 		AllowedValues: allowedValues,
 		Examples:      examples,
+		Secret:        pbFieldDefinition.Secret,
 		Required:      pbFieldDefinition.Required,
 	}, nil
 }

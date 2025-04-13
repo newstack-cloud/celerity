@@ -67,15 +67,10 @@ func (p *providerClientWrapper) ConfigDefinition(ctx context.Context) (*core.Con
 		)
 	}
 
-	configDefinition, err := convertv1.FromPBConfigDefinitionResponse(response)
-	if err != nil {
-		return nil, errorsv1.CreateGeneralError(
-			err,
-			errorsv1.PluginActionProviderGetConfigDefinition,
-		)
-	}
-
-	return configDefinition, nil
+	return convertv1.FromPBConfigDefinitionResponse(
+		response,
+		errorsv1.PluginActionProviderGetConfigDefinition,
+	)
 }
 
 func (p *providerClientWrapper) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {

@@ -34,8 +34,9 @@ message ConfigFieldDefinition {
     string description = 3;
     schema.ScalarValue default_value = 4;
     repeated schema.ScalarValue allowed_values = 5;
-    repeated schema.ScalarValue examples = 6;
-    bool required = 7;
+    bool secret = 6;
+    repeated schema.ScalarValue examples = 7;
+    bool required = 8;
 }
 
 // ScalarType represents the type of a scalar value that can be

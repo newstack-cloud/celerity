@@ -80,7 +80,14 @@ func (p *blueprintProviderPluginImpl) GetConfigDefinition(
 		return convertv1.ToPBConfigDefinitionErrorResponse(err), nil
 	}
 
-	return convertv1.ToPBConfigDefinitionResponse(configDefinition)
+	configDefinitionPB, err := convertv1.ToPBConfigDefinitionResponse(
+		configDefinition,
+	)
+	if err != nil {
+		return convertv1.ToPBConfigDefinitionErrorResponse(err), nil
+	}
+
+	return configDefinitionPB, nil
 }
 
 func (p *blueprintProviderPluginImpl) ListResourceTypes(

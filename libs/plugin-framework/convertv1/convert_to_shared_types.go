@@ -1610,6 +1610,7 @@ func toPBConfigFieldDefinition(
 		Description:   fieldDefinition.Description,
 		DefaultValue:  defaultValue,
 		AllowedValues: allowedValues,
+		Secret:        fieldDefinition.Secret,
 		Examples:      examples,
 		Required:      fieldDefinition.Required,
 	}, nil

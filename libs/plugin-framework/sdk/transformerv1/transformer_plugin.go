@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
+	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
@@ -64,7 +65,24 @@ func (p *blueprintTransformerPluginImpl) GetConfigDefinition(
 	ctx context.Context,
 	req *transformerserverv1.TransformerRequest,
 ) (*sharedtypesv1.ConfigDefinitionResponse, error) {
-	return nil, nil
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBConfigDefinitionErrorResponse(err), nil
+	}
+
+	configDefinition, err := p.bpTransformer.ConfigDefinition(ctx)
+	if err != nil {
+		return convertv1.ToPBConfigDefinitionErrorResponse(err), nil
+	}
+
+	configDefinitionPB, err := convertv1.ToPBConfigDefinitionResponse(
+		configDefinition,
+	)
+	if err != nil {
+		return convertv1.ToPBConfigDefinitionErrorResponse(err), nil
+	}
+
+	return configDefinitionPB, nil
 }
 
 func (p *blueprintTransformerPluginImpl) ListAbstractResourceTypes(

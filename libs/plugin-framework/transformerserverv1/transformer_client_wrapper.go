@@ -64,19 +64,14 @@ func (p *transformerClientWrapper) ConfigDefinition(ctx context.Context) (*core.
 	if err != nil {
 		return nil, errorsv1.CreateGeneralError(
 			err,
-			errorsv1.PluginActionTransformerGetTransformName,
-		)
-	}
-
-	configDefinition, err := convertv1.FromPBConfigDefinitionResponse(response)
-	if err != nil {
-		return nil, errorsv1.CreateGeneralError(
-			err,
 			errorsv1.PluginActionTransformerGetConfigDefinition,
 		)
 	}
 
-	return configDefinition, nil
+	return convertv1.FromPBConfigDefinitionResponse(
+		response,
+		errorsv1.PluginActionTransformerGetConfigDefinition,
+	)
 }
 
 func (p *transformerClientWrapper) Transform(

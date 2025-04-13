@@ -107,6 +107,32 @@ func (s *TransformerPluginV1Suite) Test_get_transform_name_reports_expected_erro
 	s.Assert().Contains(err.Error(), "internal error occurred retrieving transform name")
 }
 
+func (s *TransformerPluginV1Suite) Test_get_config_definition() {
+	configDefinition, err := s.transformer.ConfigDefinition(context.Background())
+	s.Require().NoError(err)
+	testutils.AssertConfigDefinitionEquals(
+		testtransformer.TestTransformerConfigDefinition(),
+		configDefinition,
+		&s.Suite,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_get_config_definition_fails_for_unexpected_host() {
+	_, err := s.transformerWrongHost.ConfigDefinition(context.Background())
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionTransformerGetConfigDefinition,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_get_config_definition_reports_expected_error_for_failure() {
+	_, err := s.failingTransformer.ConfigDefinition(context.Background())
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred retrieving config definition")
+}
+
 func (s *TransformerPluginV1Suite) createPluginInstance(
 	info *pluginservicev1.PluginInstanceInfo,
 ) (any, func(), error) {
