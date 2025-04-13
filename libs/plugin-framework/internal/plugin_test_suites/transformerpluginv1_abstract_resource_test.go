@@ -406,3 +406,64 @@ func (s *TransformerPluginV1Suite) Test_abstract_resource_get_type_description_r
 		"internal error occurred retrieving abstract resource type description",
 	)
 }
+
+func (s *TransformerPluginV1Suite) Test_abstract_resource_get_examples() {
+	resource, err := s.transformer.AbstractResource(
+		context.Background(),
+		celerityHandlerAbstractResourceType,
+	)
+	s.Require().NoError(err)
+
+	output, err := resource.GetExamples(
+		context.Background(),
+		&transform.AbstractResourceGetExamplesInput{
+			TransformerContext: testutils.CreateTestTransformerContext("celerity"),
+		},
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		testtransformer.AbstractResourceHandlerExamples(),
+		output,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_abstract_resource_get_examples_fails_for_unexpected_host() {
+	abstractResource, err := s.transformerWrongHost.AbstractResource(
+		context.Background(),
+		celerityHandlerAbstractResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = abstractResource.GetExamples(
+		context.Background(),
+		&transform.AbstractResourceGetExamplesInput{
+			TransformerContext: testutils.CreateTestTransformerContext("celerity"),
+		},
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionTransformerGetAbstractResourceExamples,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_abstract_resource_get_examples_reports_expected_error_for_failure() {
+	abstractResource, err := s.failingTransformer.AbstractResource(
+		context.Background(),
+		celerityHandlerAbstractResourceType,
+	)
+	s.Require().NoError(err)
+
+	_, err = abstractResource.GetExamples(
+		context.Background(),
+		&transform.AbstractResourceGetExamplesInput{
+			TransformerContext: testutils.CreateTestTransformerContext("celerity"),
+		},
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(
+		err.Error(),
+		"internal error occurred retrieving abstract resource examples",
+	)
+}

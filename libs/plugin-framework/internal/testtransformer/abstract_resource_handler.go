@@ -40,8 +40,8 @@ func AbstractResourceHandlerTypeDescription() *transform.AbstractResourceGetType
 	}
 }
 
-func AbstractResourceHandlerExamples() *provider.ResourceGetExamplesOutput {
-	return &provider.ResourceGetExamplesOutput{
+func AbstractResourceHandlerExamples() *transform.AbstractResourceGetExamplesOutput {
+	return &transform.AbstractResourceGetExamplesOutput{
 		MarkdownExamples: []string{
 			"```yaml\nresources:\n  - type: celerity/handler\n    name: example-handler\n```",
 		},

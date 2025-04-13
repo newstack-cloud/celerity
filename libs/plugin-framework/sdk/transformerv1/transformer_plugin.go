@@ -360,7 +360,35 @@ func (p *blueprintTransformerPluginImpl) GetAbstractResourceExamples(
 	ctx context.Context,
 	req *transformerserverv1.AbstractResourceRequest,
 ) (*sharedtypesv1.ExamplesResponse, error) {
-	return nil, nil
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return convertv1.ToPBExamplesErrorResponse(err), nil
+	}
+
+	abstractResource, err := p.bpTransformer.AbstractResource(
+		ctx,
+		convertv1.ResourceTypeToString(req.AbstractResourceType),
+	)
+	if err != nil {
+		return convertv1.ToPBExamplesErrorResponse(err), nil
+	}
+
+	transformerCtx, err := fromPBTransformerContext(req.Context)
+	if err != nil {
+		return convertv1.ToPBExamplesErrorResponse(err), nil
+	}
+
+	output, err := abstractResource.GetExamples(
+		ctx,
+		&transform.AbstractResourceGetExamplesInput{
+			TransformerContext: transformerCtx,
+		},
+	)
+	if err != nil {
+		return convertv1.ToPBExamplesErrorResponse(err), nil
+	}
+
+	return toPBAbstractResourceExamplesResponse(output), nil
 }
 
 func (p *blueprintTransformerPluginImpl) checkHostID(hostID string) error {

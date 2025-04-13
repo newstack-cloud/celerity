@@ -215,3 +215,16 @@ func toPBAbstractResourceTypeDescriptionResponse(
 		},
 	}
 }
+
+func toPBAbstractResourceExamplesResponse(
+	examples *transform.AbstractResourceGetExamplesOutput,
+) *sharedtypesv1.ExamplesResponse {
+	return &sharedtypesv1.ExamplesResponse{
+		Response: &sharedtypesv1.ExamplesResponse_Examples{
+			Examples: &sharedtypesv1.Examples{
+				FormattedExamples: examples.MarkdownExamples,
+				Examples:          examples.PlainTextExamples,
+			},
+		},
+	}
+}
