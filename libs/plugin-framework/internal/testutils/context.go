@@ -3,6 +3,7 @@ package testutils
 import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/transform"
 )
 
 // CreateTestProviderContext creates a provider context for testing
@@ -15,6 +16,18 @@ func CreateTestProviderContext(namespace string) provider.Context {
 		map[string]*core.ScalarValue{},
 	)
 	return provider.NewProviderContextFromParams(namespace, params)
+}
+
+// CreateTestTransformerContext creates a transformer context for testing
+// with the given namespace.
+func CreateTestTransformerContext(namespace string) transform.Context {
+	params := core.NewDefaultParams(
+		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+	)
+	return transform.NewTransformerContextFromParams(namespace, params)
 }
 
 // CreateTestLinkContext creates a link context for testing.

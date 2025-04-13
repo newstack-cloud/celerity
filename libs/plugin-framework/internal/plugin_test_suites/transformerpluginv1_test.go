@@ -133,6 +133,53 @@ func (s *TransformerPluginV1Suite) Test_get_config_definition_reports_expected_e
 	s.Assert().Contains(err.Error(), "internal error occurred retrieving config definition")
 }
 
+func (s *TransformerPluginV1Suite) Test_transform_blueprint() {
+	transformInput, err := createTransformInput()
+	s.Require().NoError(err)
+	transformOutput, err := s.transformer.Transform(
+		context.Background(),
+		transformInput,
+	)
+	s.Require().NoError(err)
+	// See testtransformer/transformer.go for the changes
+	// that are made to the blueprint during the transform.
+	value, hasMetadataField := transformOutput.TransformedBlueprint.Metadata.Fields["test"]
+	s.Assert().True(hasMetadataField)
+	s.Assert().Equal(
+		"testTransformedMetadataValue",
+		core.StringValue(value),
+	)
+	s.Assert().Empty(
+		transformOutput.TransformedBlueprint.Transform,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_transform_fails_for_unexpected_host() {
+	transformInput, err := createTransformInput()
+	s.Require().NoError(err)
+	_, err = s.transformerWrongHost.Transform(
+		context.Background(),
+		transformInput,
+	)
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionTransformerTransform,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *TransformerPluginV1Suite) Test_transform_reports_expected_error_for_failure() {
+	transformInput, err := createTransformInput()
+	s.Require().NoError(err)
+	_, err = s.failingTransformer.Transform(
+		context.Background(),
+		transformInput,
+	)
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred transforming blueprint")
+}
+
 func (s *TransformerPluginV1Suite) createPluginInstance(
 	info *pluginservicev1.PluginInstanceInfo,
 ) (any, func(), error) {

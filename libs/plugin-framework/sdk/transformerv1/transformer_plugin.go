@@ -3,6 +3,7 @@ package transformerv1
 import (
 	"context"
 
+	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
 	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
@@ -83,6 +84,46 @@ func (p *blueprintTransformerPluginImpl) GetConfigDefinition(
 	}
 
 	return configDefinitionPB, nil
+}
+
+func (p *blueprintTransformerPluginImpl) Transform(
+	ctx context.Context,
+	req *transformerserverv1.BlueprintTransformRequest,
+) (*transformerserverv1.BlueprintTransformResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toBlueprintTransformErrorResponse(err), nil
+	}
+
+	inputBlueprint, err := serialisation.FromSchemaPB(
+		req.InputBlueprint,
+	)
+	if err != nil {
+		return toBlueprintTransformErrorResponse(err), nil
+	}
+
+	transformOutput, err := p.bpTransformer.Transform(
+		ctx,
+		&transform.SpecTransformerTransformInput{
+			InputBlueprint: inputBlueprint,
+		},
+	)
+	if err != nil {
+		return toBlueprintTransformErrorResponse(err), nil
+	}
+
+	transformedBlueprint, err := serialisation.ToSchemaPB(
+		transformOutput.TransformedBlueprint,
+	)
+	if err != nil {
+		return toBlueprintTransformErrorResponse(err), nil
+	}
+
+	return &transformerserverv1.BlueprintTransformResponse{
+		Response: &transformerserverv1.BlueprintTransformResponse_TransformedBlueprint{
+			TransformedBlueprint: transformedBlueprint,
+		},
+	}, nil
 }
 
 func (p *blueprintTransformerPluginImpl) ListAbstractResourceTypes(

@@ -61,17 +61,20 @@ func transformBlueprint(
 			Resources:   input.InputBlueprint.Resources,
 			DataSources: input.InputBlueprint.DataSources,
 			Exports:     input.InputBlueprint.Exports,
-			Metadata:    addMetadataField(input.InputBlueprint.Metadata),
+			Metadata:    withNewMetadataField(input.InputBlueprint.Metadata),
 		},
 	}, nil
 }
 
-func addMetadataField(
+func withNewMetadataField(
 	metadata *core.MappingNode,
 ) *core.MappingNode {
 	if metadata == nil || metadata.Fields == nil {
-		return metadata
+		metadata = &core.MappingNode{
+			Fields: map[string]*core.MappingNode{},
+		}
 	}
+
 	metadata.Fields["test"] = core.MappingNodeFromString(
 		"testTransformedMetadataValue",
 	)

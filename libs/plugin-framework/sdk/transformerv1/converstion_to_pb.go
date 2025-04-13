@@ -22,3 +22,11 @@ func toPBTransformNameResponse(transformName string) *transformerserverv1.Transf
 		},
 	}
 }
+
+func toBlueprintTransformErrorResponse(err error) *transformerserverv1.BlueprintTransformResponse {
+	return &transformerserverv1.BlueprintTransformResponse{
+		Response: &transformerserverv1.BlueprintTransformResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
