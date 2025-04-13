@@ -204,10 +204,20 @@ type Context interface {
 	// TransformerConfigVariable retrieves a configuration value that was loaded
 	// for the current provider.
 	TransformerConfigVariable(name string) (*core.ScalarValue, bool)
+	// TransformerConfigVariables retrieves all the configuration values that were loaded
+	// for the current transformer.
+	// This is useful to export all the configuration values to be sent to plugins
+	// that are running in a different process.
+	TransformerConfigVariables() map[string]*core.ScalarValue
 	// ContextVariable retrieves a context-wide variable
 	// for the current environment, this differs from values extracted
 	// from context.Context, as these context variables are specific
 	// to the components that implement the interfaces of the blueprint library
 	// and can be shared between processes over a network or similar.
 	ContextVariable(name string) (*core.ScalarValue, bool)
+	// ContextVariables retrieves all the context-wide variables
+	// for the current environment.
+	// This is useful to export all the context-wide variables to be sent to plugins
+	// that are running in a different process.
+	ContextVariables() map[string]*core.ScalarValue
 }

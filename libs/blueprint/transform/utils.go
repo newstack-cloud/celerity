@@ -53,3 +53,11 @@ func (p *transformerCtxFromParams) ContextVariable(name string) (*core.ScalarVal
 	}
 	return contextVar, true
 }
+
+func (p *transformerCtxFromParams) TransformerConfigVariables() map[string]*core.ScalarValue {
+	return p.blueprintParams.TransformerConfig(p.transformerNamespace)
+}
+
+func (p *transformerCtxFromParams) ContextVariables() map[string]*core.ScalarValue {
+	return p.blueprintParams.AllContextVariables()
+}
