@@ -5,6 +5,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testprovider"
 	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testutils"
@@ -12,9 +13,14 @@ import (
 
 const (
 	trimSuffixFunctionName = "trim_suffix"
+	alterListFunction      = "alter_list"
+	alterMapFunction       = "alter_map"
+	alterObjectFunction    = "alter_object"
+	composeFunction        = "compose"
+	mapFunction            = "map"
 )
 
-func (s *ProviderPluginV1Suite) Test_function_get_definition() {
+func (s *ProviderPluginV1Suite) Test_function_get_definition_1() {
 	function, err := s.provider.Function(
 		context.Background(),
 		trimSuffixFunctionName,
@@ -29,6 +35,106 @@ func (s *ProviderPluginV1Suite) Test_function_get_definition() {
 	s.Assert().Equal(
 		&provider.FunctionGetDefinitionOutput{
 			Definition: testprovider.TrimSuffixFunctionDefinition(),
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_function_get_definition_2() {
+	function, err := s.provider.Function(
+		context.Background(),
+		alterListFunction,
+	)
+	s.Require().NoError(err)
+
+	output, err := function.GetDefinition(
+		context.Background(),
+		functionGetDefinitionInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.FunctionGetDefinitionOutput{
+			Definition: testprovider.AlterListFunctionDefinition(),
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_function_get_definition_3() {
+	function, err := s.provider.Function(
+		context.Background(),
+		alterMapFunction,
+	)
+	s.Require().NoError(err)
+
+	output, err := function.GetDefinition(
+		context.Background(),
+		functionGetDefinitionInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.FunctionGetDefinitionOutput{
+			Definition: testprovider.AlterMapFunctionDefinition(),
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_function_get_definition_4() {
+	function, err := s.provider.Function(
+		context.Background(),
+		alterObjectFunction,
+	)
+	s.Require().NoError(err)
+
+	output, err := function.GetDefinition(
+		context.Background(),
+		functionGetDefinitionInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.FunctionGetDefinitionOutput{
+			Definition: testprovider.AlterObjectFunctionDefinition(),
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_function_get_definition_5() {
+	function, err := s.provider.Function(
+		context.Background(),
+		composeFunction,
+	)
+	s.Require().NoError(err)
+
+	output, err := function.GetDefinition(
+		context.Background(),
+		functionGetDefinitionInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.FunctionGetDefinitionOutput{
+			Definition: testprovider.ComposeFunctionDefinition(),
+		},
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_function_get_definition_6() {
+	function, err := s.provider.Function(
+		context.Background(),
+		mapFunction,
+	)
+	s.Require().NoError(err)
+
+	output, err := function.GetDefinition(
+		context.Background(),
+		functionGetDefinitionInput(),
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(
+		&provider.FunctionGetDefinitionOutput{
+			Definition: testprovider.MapFunctionDefinition(),
 		},
 		output,
 	)
@@ -76,6 +182,23 @@ func (s *ProviderPluginV1Suite) Test_function_call() {
 	s.Require().NoError(err)
 
 	callStack := function.NewStack()
+	// Add an initial call to ensure parent calls are sent
+	// to the provider.
+	callStack.Push(
+		&function.Call{
+			FunctionName: "parent_function",
+			Location: &source.Meta{
+				Position: source.Position{
+					Line:   1,
+					Column: 10,
+				},
+				EndPosition: &source.Position{
+					Line:   2,
+					Column: 20,
+				},
+			},
+		},
+	)
 	registryForCall := s.funcRegistry.ForCallContext(callStack)
 	callContext := &testutils.FunctionCallContextMock{
 		CallCtxRegistry: registryForCall,

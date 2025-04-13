@@ -1406,7 +1406,7 @@ func toPBFunctionScalarValueTypeDefinition(
 	return &sharedtypesv1.FunctionValueTypeDefinition{
 		ValueTypeDefinition: &sharedtypesv1.FunctionValueTypeDefinition_ScalarValueType{
 			ScalarValueType: &sharedtypesv1.FunctionScalarValueTypeDefinition{
-				Type:                 toPBFunctionValueType(valueTypeDef.Type),
+				Type:                 toPBFunctionValueTypeFromDef(valueTypeDef),
 				Label:                valueTypeDef.Label,
 				Description:          valueTypeDef.Description,
 				FormattedDescription: valueTypeDef.Description,
@@ -1507,14 +1507,21 @@ func toPBFunctionAnyValueTypeDefinition(
 	return &sharedtypesv1.FunctionValueTypeDefinition{
 		ValueTypeDefinition: &sharedtypesv1.FunctionValueTypeDefinition_AnyValueType{
 			AnyValueType: &sharedtypesv1.FunctionAnyValueTypeDefinition{
-				Type:                 toPBFunctionValueType(valueTypeDef.Type),
+				Type:                 toPBFunctionValueTypeFromDef(valueTypeDef),
 				UnionTypes:           unionTypes,
 				Label:                valueTypeDef.Label,
 				Description:          valueTypeDef.Description,
-				FormattedDescription: valueTypeDef.Description,
+				FormattedDescription: valueTypeDef.FormattedDescription,
 			},
 		},
 	}, nil
+}
+
+func toPBFunctionValueTypeFromDef(
+	valueTypeDef function.ValueTypeDefinition,
+) sharedtypesv1.FunctionValueType {
+	valueType := valueTypeDef.GetType()
+	return toPBFunctionValueType(valueType)
 }
 
 func toPBFunctionValueType(

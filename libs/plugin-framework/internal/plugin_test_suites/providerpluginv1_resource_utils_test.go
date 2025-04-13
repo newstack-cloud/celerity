@@ -109,7 +109,23 @@ func createDeployResourceInfo() provider.ResourceInfo {
 				},
 			},
 			Condition: &provider.ResolvedResourceCondition{
-				StringValue: core.MappingNodeFromBool(true),
+				And: []*provider.ResolvedResourceCondition{
+					{
+						Or: []*provider.ResolvedResourceCondition{
+							{
+								StringValue: core.MappingNodeFromBool(true),
+							},
+							{
+								StringValue: core.MappingNodeFromBool(true),
+							},
+						},
+					},
+					{
+						Not: &provider.ResolvedResourceCondition{
+							StringValue: core.MappingNodeFromBool(false),
+						},
+					},
+				},
 			},
 			LinkSelector: &schema.LinkSelector{
 				ByLabel: &schema.StringMap{

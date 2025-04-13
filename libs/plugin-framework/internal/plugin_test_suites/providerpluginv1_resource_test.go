@@ -65,10 +65,50 @@ func (s *ProviderPluginV1Suite) Test_custom_validate_resource_reports_expected_e
 }
 
 func resourceValidateInput() *provider.ResourceValidateInput {
+	testCondition1 := "true"
+	testCondition2 := "false"
+	testCondition3 := "true"
 	return &provider.ResourceValidateInput{
 		SchemaResource: &schema.Resource{
 			Type: &schema.ResourceTypeWrapper{
 				Value: lambdaFunctionResourceType,
+			},
+			Condition: &schema.Condition{
+				And: []*schema.Condition{
+					{
+						Or: []*schema.Condition{
+							{
+								StringValue: &substitutions.StringOrSubstitutions{
+									Values: []*substitutions.StringOrSubstitution{
+										{
+											StringValue: &testCondition1,
+										},
+									},
+								},
+							},
+							{
+								Not: &schema.Condition{
+									StringValue: &substitutions.StringOrSubstitutions{
+										Values: []*substitutions.StringOrSubstitution{
+											{
+												StringValue: &testCondition2,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						StringValue: &substitutions.StringOrSubstitutions{
+							Values: []*substitutions.StringOrSubstitution{
+								{
+									StringValue: &testCondition3,
+								},
+							},
+						},
+					},
+				},
 			},
 			Metadata: &schema.Metadata{
 				Annotations: &schema.StringOrSubstitutionsMap{

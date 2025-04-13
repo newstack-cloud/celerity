@@ -21,6 +21,7 @@ import (
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
+	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
 )
 
 const (
@@ -204,16 +205,12 @@ func (s *PluginServiceV1Suite) Test_list_functions_in_registry() {
 		context.Background(),
 	)
 	s.Require().NoError(err)
-	expectedFunctions := []string{
-		"trim_space_and_suffix",
-		"call_self",
-		"trim_suffix",
-	}
+	expectedFunctions := utils.GetKeys(testprovider.Functions())
 	slices.Sort(functions)
 	slices.Sort(expectedFunctions)
 	s.Assert().Equal(
-		functions,
 		expectedFunctions,
+		functions,
 	)
 }
 

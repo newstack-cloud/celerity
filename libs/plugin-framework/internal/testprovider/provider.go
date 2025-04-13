@@ -32,12 +32,23 @@ func NewProvider() provider.Provider {
 		CustomVariableTypes: map[string]provider.CustomVariableType{
 			"aws/ec2/instanceType": customVarTypeEC2InstanceType(),
 		},
-		Functions: map[string]provider.Function{
-			"trim_suffix":           functionTrimSuffix(),
-			"call_self":             functionCallSelf(),
-			"trim_space_and_suffix": functionTrimSpaceAndSuffix(),
-		},
+		Functions:           Functions(),
 		ProviderRetryPolicy: TestProviderRetryPolicy(),
+	}
+}
+
+// Functions returns a map of function names to their implementations
+// for the test provider.
+func Functions() map[string]provider.Function {
+	return map[string]provider.Function{
+		"trim_suffix":           functionTrimSuffix(),
+		"call_self":             functionCallSelf(),
+		"trim_space_and_suffix": functionTrimSpaceAndSuffix(),
+		"alter_list":            functionAlterList(),
+		"alter_map":             functionAlterMap(),
+		"alter_object":          functionAlterObject(),
+		"compose":               functionCompose(),
+		"map":                   functionMap(),
 	}
 }
 

@@ -23,6 +23,7 @@ import (
 	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testutils"
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
 )
 
 const (
@@ -211,7 +212,7 @@ func (s *ProviderPluginV1Suite) Test_list_custom_variable_types_reports_expected
 func (s *ProviderPluginV1Suite) Test_list_functions() {
 	functions, err := s.provider.ListFunctions(context.Background())
 	s.Require().NoError(err)
-	expected := []string{"trim_suffix", "call_self", "trim_space_and_suffix"}
+	expected := utils.GetKeys(testprovider.Functions())
 	slices.Sort(functions)
 	slices.Sort(expected)
 	s.Assert().Equal(expected, functions)
