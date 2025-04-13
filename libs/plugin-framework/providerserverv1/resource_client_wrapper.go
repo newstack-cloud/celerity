@@ -159,7 +159,7 @@ func (r *resourceProviderClientWrapper) CanLinkTo(
 
 	switch result := response.Response.(type) {
 	case *CanResourceLinkToResponse_ResourceTypes:
-		canLinkTo := fromPBResourceTypes(
+		canLinkTo := sharedtypesv1.FromPBResourceTypes(
 			result.ResourceTypes.ResourceTypes,
 		)
 		if err != nil {
@@ -217,7 +217,7 @@ func (r *resourceProviderClientWrapper) GetStabilisedDependencies(
 
 	switch result := response.Response.(type) {
 	case *ResourceStabilisedDepsResponse_StabilisedDependencies:
-		stabilisedDeps := fromPBResourceTypes(
+		stabilisedDeps := sharedtypesv1.FromPBResourceTypes(
 			result.StabilisedDependencies.ResourceTypes,
 		)
 		return &provider.ResourceStabilisedDependenciesOutput{

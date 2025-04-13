@@ -136,3 +136,13 @@ func toCorePosition(position *SourcePosition) source.Position {
 		Column: int(position.Column),
 	}
 }
+
+// FromPBResourceTypes converts a slice of protobuf ResourceType to a slice of string
+// for a gRPC plugin response.
+func FromPBResourceTypes(resourceTypes []*ResourceType) []string {
+	types := make([]string, len(resourceTypes))
+	for i, resourceType := range resourceTypes {
+		types[i] = resourceType.Type
+	}
+	return types
+}

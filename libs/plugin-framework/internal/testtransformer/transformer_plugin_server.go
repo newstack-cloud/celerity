@@ -1,4 +1,4 @@
-package testprovider
+package testtransformer
 
 import (
 	"context"
@@ -9,22 +9,23 @@ import (
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/transformerv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/transformerserverv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
-// StartPluginServer starts the test provider plugin server
+// StartPluginServer starts the test transformer plugin server
 // to run in the same process as the test suite.
 func StartPluginServer(
 	serviceClient pluginservicev1.ServiceClient,
 	failingPlugin bool,
-) (providerserverv1.ProviderClient, func()) {
+) (transformerserverv1.TransformerClient, func()) {
 	bufferSize := 1024 * 1024
 	listener := bufconn.Listen(bufferSize)
 	pluginHostInfoContainer := pluginutils.NewHostInfoContainer()
-	providerServer := createProviderServer(
+	transformerServer := createTransformerServer(
 		failingPlugin,
 		pluginHostInfoContainer,
 		serviceClient,
@@ -33,20 +34,19 @@ func StartPluginServer(
 	config := plugin.ServePluginConfiguration{
 		ID: id,
 		PluginMetadata: &pluginservicev1.PluginMetadata{
-			PluginVersion: "1.0.0",
-			DisplayName:   "AWS",
-			FormattedDescription: "AWS provider for the Deploy Engine including `resources`, `data sources`," +
-				" `links` and `custom variable types` for interacting with AWs services.",
-			RepositoryUrl: "https://github.com/two-hundred/celerity-provider-aws",
-			Author:        "Two Hundred",
+			PluginVersion:        "1.0.0",
+			DisplayName:          "Celerity Application",
+			FormattedDescription: "Celerity transformer plugin that powers **Celerity** applications.",
+			RepositoryUrl:        "https://github.com/two-hundred/celerity-transformer-celerity-app",
+			Author:               "Two Hundred",
 		},
 		ProtocolVersion: providerserverv1.ProtocolVersion,
 		Listener:        listener,
 	}
 
-	close, err := plugin.ServeProviderV1(
+	close, err := plugin.ServeTransformerV1(
 		context.Background(),
-		providerServer,
+		transformerServer,
 		serviceClient,
 		pluginHostInfoContainer,
 		config,
@@ -66,21 +66,21 @@ func StartPluginServer(
 		log.Printf("error connecting to server: %v", err)
 	}
 
-	client := providerserverv1.NewProviderClient(conn)
+	client := transformerserverv1.NewTransformerClient(conn)
 
 	return client, close
 }
 
-func createProviderServer(
+func createTransformerServer(
 	failingPlugin bool,
 	pluginHostInfoContainer pluginutils.HostInfoContainer,
 	serviceClient pluginservicev1.ServiceClient,
-) providerserverv1.ProviderServer {
+) transformerserverv1.TransformerServer {
 	if failingPlugin {
-		return &failingProviderServer{}
+		return &failingTransformerServer{}
 	}
-	return providerv1.NewProviderPlugin(
-		NewProvider(),
+	return transformerv1.NewTransformerPlugin(
+		NewTransformer(),
 		pluginHostInfoContainer,
 		serviceClient,
 	)
@@ -88,7 +88,7 @@ func createProviderServer(
 
 func createPluginID(failingPlugin bool) string {
 	if failingPlugin {
-		return "celerity-failing/aws2"
+		return "celerity-failing/transform2"
 	}
-	return "celerity/aws"
+	return "celerity/transform"
 }

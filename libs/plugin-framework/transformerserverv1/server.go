@@ -1,4 +1,4 @@
-package providerserverv1
+package transformerserverv1
 
 import (
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginbase"
@@ -12,24 +12,24 @@ const (
 	ProtocolVersion = "1.0"
 )
 
-// NewServer creates a new plugin server for a provider plugin, taking
+// NewServer creates a new plugin server for a transformer plugin, taking
 // care of registration and running the server.
 func NewServer(
 	pluginID string,
 	pluginMetadata *pluginservicev1.PluginMetadata,
-	provider ProviderServer,
+	transformer TransformerServer,
 	pluginServiceClient pluginservicev1.ServiceClient,
 	hostInfoContainer pluginutils.HostInfoContainer,
-	opts ...pluginbase.ServerOption[ProviderServer],
-) *pluginbase.Server[ProviderServer] {
+	opts ...pluginbase.ServerOption[TransformerServer],
+) *pluginbase.Server[TransformerServer] {
 	return pluginbase.NewServer(
-		&pluginbase.CorePluginConfig[ProviderServer]{
+		&pluginbase.CorePluginConfig[TransformerServer]{
 			PluginID:        pluginID,
-			PluginType:      pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER,
+			PluginType:      pluginservicev1.PluginType_PLUGIN_TYPE_TRANSFORMER,
 			ProtocolVersion: ProtocolVersion,
-			PluginServer:    provider,
+			PluginServer:    transformer,
 		},
-		RegisterProviderServer,
+		RegisterTransformerServer,
 		pluginMetadata,
 		pluginServiceClient,
 		hostInfoContainer,

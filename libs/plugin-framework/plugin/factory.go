@@ -7,6 +7,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/transformerserverv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -17,6 +18,11 @@ func CreatePluginInstance(info *pluginservicev1.PluginInstanceInfo, hostID strin
 	if info.PluginType == pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER &&
 		slices.Contains(info.ProtocolVersions, "1.0") {
 		return createV1ProviderPlugin(info, hostID)
+	}
+
+	if info.PluginType == pluginservicev1.PluginType_PLUGIN_TYPE_TRANSFORMER &&
+		slices.Contains(info.ProtocolVersions, "1.0") {
+		return createV1TransformerPlugin(info, hostID)
 	}
 
 	return nil, nil, errors.New("unsupported plugin type or protocol version")
@@ -39,6 +45,26 @@ func createV1ProviderPlugin(info *pluginservicev1.PluginInstanceInfo, hostID str
 	// and the blueprint framework, allowing for an instance of the deploy engine
 	// to opt out of using the gRPC server plugin system.
 	wrapped := providerserverv1.WrapProviderClient(client, hostID)
+	return wrapped, closeConn, nil
+}
+
+func createV1TransformerPlugin(info *pluginservicev1.PluginInstanceInfo, hostID string) (any, func(), error) {
+
+	conn, err := createGRPCConnection(info)
+	closeConn := func() {
+		conn.Close()
+	}
+	if err != nil {
+		return nil, closeConn, err
+	}
+
+	client := transformerserverv1.NewTransformerClient(conn)
+	// Give the deploy engine an instance of the transform.SpecTransformer
+	// interface for the blueprint framework to interact with,
+	// this plays into a more seamless integration with the deploy engine
+	// and the blueprint framework, allowing for an instance of the deploy engine
+	// to opt out of using the gRPC server plugin system.
+	wrapped := transformerserverv1.WrapTransformerClient(client, hostID)
 	return wrapped, closeConn, nil
 }
 

@@ -67,7 +67,15 @@ func (p *providerClientWrapper) ConfigDefinition(ctx context.Context) (*core.Con
 		)
 	}
 
-	return convertv1.FromPBConfigDefinitionResponse(response)
+	configDefinition, err := convertv1.FromPBConfigDefinitionResponse(response)
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderGetConfigDefinition,
+		)
+	}
+
+	return configDefinition, nil
 }
 
 func (p *providerClientWrapper) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {
@@ -148,7 +156,7 @@ func (p *providerClientWrapper) ListResourceTypes(ctx context.Context) ([]string
 
 	switch result := response.Response.(type) {
 	case *ResourceTypesResponse_ResourceTypes:
-		return fromPBResourceTypes(result.ResourceTypes.ResourceTypes), nil
+		return sharedtypesv1.FromPBResourceTypes(result.ResourceTypes.ResourceTypes), nil
 	case *ResourceTypesResponse_ErrorResponse:
 		return nil, errorsv1.CreateErrorFromResponse(
 			result.ErrorResponse,
@@ -257,14 +265,6 @@ func (p *providerClientWrapper) RetryPolicy(ctx context.Context) (*provider.Retr
 		),
 		errorsv1.PluginActionProviderGetRetryPolicy,
 	)
-}
-
-func fromPBResourceTypes(resourceTypes []*sharedtypesv1.ResourceType) []string {
-	types := make([]string, len(resourceTypes))
-	for i, resourceType := range resourceTypes {
-		types[i] = resourceType.Type
-	}
-	return types
 }
 
 func fromPBDataSourceTypes(dataSourceTypes []*DataSourceType) []string {

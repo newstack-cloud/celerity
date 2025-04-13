@@ -5,6 +5,7 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
 )
 
 // ProviderPluginDefinition is a template to be used when creating provider plugins.
@@ -91,29 +92,21 @@ func (p *ProviderPluginDefinition) Function(
 }
 
 func (p *ProviderPluginDefinition) ListResourceTypes(ctx context.Context) ([]string, error) {
-	return getKeys(p.Resources), nil
+	return utils.GetKeys(p.Resources), nil
 }
 
 func (p *ProviderPluginDefinition) ListDataSourceTypes(ctx context.Context) ([]string, error) {
-	return getKeys(p.DataSources), nil
+	return utils.GetKeys(p.DataSources), nil
 }
 
 func (p *ProviderPluginDefinition) ListCustomVariableTypes(ctx context.Context) ([]string, error) {
-	return getKeys(p.CustomVariableTypes), nil
+	return utils.GetKeys(p.CustomVariableTypes), nil
 }
 
 func (p *ProviderPluginDefinition) ListFunctions(ctx context.Context) ([]string, error) {
-	return getKeys(p.Functions), nil
+	return utils.GetKeys(p.Functions), nil
 }
 
 func (p *ProviderPluginDefinition) RetryPolicy(ctx context.Context) (*provider.RetryPolicy, error) {
 	return p.ProviderRetryPolicy, nil
-}
-
-func getKeys[Item any](m map[string]Item) []string {
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-	return keys
 }

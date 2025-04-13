@@ -57,6 +57,22 @@ const (
 	PluginActionProviderCallFunction          = PluginAction("Provider::CallFunction")
 
 	///////////////////////////////////////////////////////////////////////////////////////
+	// Transformer actions
+	///////////////////////////////////////////////////////////////////////////////////////
+	PluginActionTransformerGetTransformName          = PluginAction("Transformer::GetTransformName")
+	PluginActionTransformerGetConfigDefinition       = PluginAction("Transformer::GetConfigDefinition")
+	PluginActionTransformerTransform                 = PluginAction("Transformer::Transform")
+	PluginActionTransformerListAbstractResourceTypes = PluginAction("Transformer::ListAbstractResourceTypes")
+
+	PluginActionTransformerCustomValidateResource                = PluginAction("Transformer::CustomValidateAbstractResource")
+	PluginActionTransformerGetAbstractResourceSpecDefinition     = PluginAction("Transformer::GetAbstractResourceSpecDefinition")
+	PluginActionTransformerCheckCanAbstractResourceLinkTo        = PluginAction("Transformer::CheckCanAbstractResourceLinkTo")
+	PluginActionTransformerCheckIsAbstractResourceCommonTerminal = PluginAction("Transformer::CheckIsAbstractResourceCommonTerminal")
+	PluginActionTransformerGetAbstractResourceType               = PluginAction("Transformer::GetAbstractResourceType")
+	PluginActionTransformerGetAbstractResourceExamples           = PluginAction("Transformer::GetAbstractResourceExamples")
+	PluginActionTransformerGetAbstractResourceTypeDescription    = PluginAction("Transformer::GetAbstractResourceTypeDescription")
+
+	///////////////////////////////////////////////////////////////////////////////////////
 	// Service actions
 	///////////////////////////////////////////////////////////////////////////////////////
 
