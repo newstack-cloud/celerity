@@ -43,11 +43,11 @@ func (p *providerContextFromVarMaps) ContextVariables() map[string]*core.ScalarV
 	return p.contextVars
 }
 
-// ExtractProviderNamespace extracts the provider namespace to be used with
+// ExtractPluginNamespace extracts the plugin namespace to be used with
 // the blueprint framework from the given plugin ID.
-// For example, the provider namespace for the plugin ID "registry.customhost.com/celerity/azure"
+// For example, the plugin namespace for the plugin ID "registry.customhost.com/celerity/azure"
 // would be "azure".
-func ExtractProviderNamespace(pluginID string) string {
+func ExtractPluginNamespace(pluginID string) string {
 	parts := strings.Split(pluginID, "/")
 	return parts[len(parts)-1]
 }

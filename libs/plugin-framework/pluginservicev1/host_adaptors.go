@@ -16,7 +16,7 @@ func GetProviderPluginAdaptors(manager Manager) map[string]provider.Provider {
 	adaptors := make(map[string]provider.Provider)
 
 	for _, plugin := range providerPlugins {
-		namespace := utils.ExtractProviderNamespace(plugin.Info.ID)
+		namespace := utils.ExtractPluginNamespace(plugin.Info.ID)
 		// The factory used by the manager is expected to wrap the plugin clients
 		// with adaptors that produce an implementation of the provider.Provider interface.
 		providerPlugin, isProvider := plugin.Client.(provider.Provider)

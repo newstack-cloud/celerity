@@ -247,7 +247,7 @@ func createProviderPluginAdaptors(
 				providerPluginInstance.Info.ID,
 			)
 		}
-		providerNamespace := utils.ExtractProviderNamespace(providerPluginInstance.Info.ID)
+		providerNamespace := utils.ExtractPluginNamespace(providerPluginInstance.Info.ID)
 		providerPluginMap[providerNamespace] = providerPlugin
 	}
 	return providerPluginMap, nil

@@ -142,7 +142,7 @@ func createMockPluginClient(
 ) any {
 	if pluginInfo.PluginType == pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER {
 		return &testutils.MockProvider{
-			ProviderNamespace: utils.ExtractProviderNamespace(pluginInfo.ID),
+			ProviderNamespace: utils.ExtractPluginNamespace(pluginInfo.ID),
 		}
 	}
 
