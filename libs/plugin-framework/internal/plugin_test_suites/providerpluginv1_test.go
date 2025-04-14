@@ -166,6 +166,28 @@ func (s *ProviderPluginV1Suite) Test_list_resource_types_reports_expected_error_
 	s.Assert().Contains(err.Error(), "internal error occurred listing resource types")
 }
 
+func (s *ProviderPluginV1Suite) Test_list_link_types() {
+	linkTypes, err := s.provider.ListLinkTypes(context.Background())
+	s.Require().NoError(err)
+	s.Assert().Equal([]string{"aws/lambda/function::aws/dynamodb/table"}, linkTypes)
+}
+
+func (s *ProviderPluginV1Suite) Test_list_link_types_fails_for_unexpected_host() {
+	_, err := s.providerWrongHost.ListLinkTypes(context.Background())
+	testutils.AssertInvalidHost(
+		err,
+		errorsv1.PluginActionProviderListLinkTypes,
+		testWrongHostID,
+		&s.Suite,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_list_link_types_reports_expected_error_for_failure() {
+	_, err := s.failingProvider.ListLinkTypes(context.Background())
+	s.Assert().Error(err)
+	s.Assert().Contains(err.Error(), "internal error occurred listing link types")
+}
+
 func (s *ProviderPluginV1Suite) Test_list_data_source_types() {
 	dataSourceTypes, err := s.provider.ListDataSourceTypes(context.Background())
 	s.Require().NoError(err)

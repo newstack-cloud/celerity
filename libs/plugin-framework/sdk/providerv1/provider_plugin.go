@@ -107,6 +107,23 @@ func (p *blueprintProviderPluginImpl) ListResourceTypes(
 	return toResourceTypesResponse(resourceTypes), nil
 }
 
+func (p *blueprintProviderPluginImpl) ListLinkTypes(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*providerserverv1.LinkTypesResponse, error) {
+	err := p.checkHostID(req.HostId)
+	if err != nil {
+		return toLinkTypesErrorResponse(err), nil
+	}
+
+	linkTypes, err := p.bpProvider.ListLinkTypes(ctx)
+	if err != nil {
+		return toLinkTypesErrorResponse(err), nil
+	}
+
+	return toLinkTypesResponse(linkTypes), nil
+}
+
 func (p *blueprintProviderPluginImpl) ListDataSourceTypes(
 	ctx context.Context,
 	req *providerserverv1.ProviderRequest,

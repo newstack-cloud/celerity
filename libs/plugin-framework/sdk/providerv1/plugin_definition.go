@@ -95,6 +95,10 @@ func (p *ProviderPluginDefinition) ListResourceTypes(ctx context.Context) ([]str
 	return utils.GetKeys(p.Resources), nil
 }
 
+func (p *ProviderPluginDefinition) ListLinkTypes(ctx context.Context) ([]string, error) {
+	return utils.GetKeys(p.Links), nil
+}
+
 func (p *ProviderPluginDefinition) ListDataSourceTypes(ctx context.Context) ([]string, error) {
 	return utils.GetKeys(p.DataSources), nil
 }

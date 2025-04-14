@@ -23,6 +23,7 @@ const (
 	Provider_GetNamespace_FullMethodName                     = "/providerserverv1.Provider/GetNamespace"
 	Provider_GetConfigDefinition_FullMethodName              = "/providerserverv1.Provider/GetConfigDefinition"
 	Provider_ListResourceTypes_FullMethodName                = "/providerserverv1.Provider/ListResourceTypes"
+	Provider_ListLinkTypes_FullMethodName                    = "/providerserverv1.Provider/ListLinkTypes"
 	Provider_ListDataSourceTypes_FullMethodName              = "/providerserverv1.Provider/ListDataSourceTypes"
 	Provider_ListCustomVariableTypes_FullMethodName          = "/providerserverv1.Provider/ListCustomVariableTypes"
 	Provider_ListFunctions_FullMethodName                    = "/providerserverv1.Provider/ListFunctions"
@@ -80,6 +81,11 @@ type ProviderClient interface {
 	// This is primarily used in tools and documentation to provide
 	// a list of available resource types.
 	ListResourceTypes(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*ResourceTypesResponse, error)
+	// ListLinkTypes retrieves a list of all the link types
+	// that are implemented by the provider.
+	// This is primarily used in tools and documentation to provide
+	// a list of available link types.
+	ListLinkTypes(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*LinkTypesResponse, error)
 	// ListDataSourceTypes retrieves a list of all the data source types
 	// that are implemented by the provider.
 	// This is primarily used in tools and documentation to provide a list of
@@ -312,6 +318,16 @@ func (c *providerClient) ListResourceTypes(ctx context.Context, in *ProviderRequ
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResourceTypesResponse)
 	err := c.cc.Invoke(ctx, Provider_ListResourceTypes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *providerClient) ListLinkTypes(ctx context.Context, in *ProviderRequest, opts ...grpc.CallOption) (*LinkTypesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LinkTypesResponse)
+	err := c.cc.Invoke(ctx, Provider_ListLinkTypes_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -706,6 +722,11 @@ type ProviderServer interface {
 	// This is primarily used in tools and documentation to provide
 	// a list of available resource types.
 	ListResourceTypes(context.Context, *ProviderRequest) (*ResourceTypesResponse, error)
+	// ListLinkTypes retrieves a list of all the link types
+	// that are implemented by the provider.
+	// This is primarily used in tools and documentation to provide
+	// a list of available link types.
+	ListLinkTypes(context.Context, *ProviderRequest) (*LinkTypesResponse, error)
 	// ListDataSourceTypes retrieves a list of all the data source types
 	// that are implemented by the provider.
 	// This is primarily used in tools and documentation to provide a list of
@@ -923,6 +944,9 @@ func (UnimplementedProviderServer) GetConfigDefinition(context.Context, *Provide
 func (UnimplementedProviderServer) ListResourceTypes(context.Context, *ProviderRequest) (*ResourceTypesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListResourceTypes not implemented")
 }
+func (UnimplementedProviderServer) ListLinkTypes(context.Context, *ProviderRequest) (*LinkTypesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListLinkTypes not implemented")
+}
 func (UnimplementedProviderServer) ListDataSourceTypes(context.Context, *ProviderRequest) (*DataSourceTypesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDataSourceTypes not implemented")
 }
@@ -1105,6 +1129,24 @@ func _Provider_ListResourceTypes_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProviderServer).ListResourceTypes(ctx, req.(*ProviderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Provider_ListLinkTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProviderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).ListLinkTypes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Provider_ListLinkTypes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).ListLinkTypes(ctx, req.(*ProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1793,6 +1835,10 @@ var Provider_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListResourceTypes",
 			Handler:    _Provider_ListResourceTypes_Handler,
+		},
+		{
+			MethodName: "ListLinkTypes",
+			Handler:    _Provider_ListLinkTypes_Handler,
 		},
 		{
 			MethodName: "ListDataSourceTypes",

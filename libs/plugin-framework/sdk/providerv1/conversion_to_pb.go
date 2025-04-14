@@ -47,6 +47,31 @@ func toResourceTypesErrorResponse(err error) *providerserverv1.ResourceTypesResp
 	}
 }
 
+func toLinkTypesResponse(linkTypes []string) *providerserverv1.LinkTypesResponse {
+	return &providerserverv1.LinkTypesResponse{
+		Response: &providerserverv1.LinkTypesResponse_LinkTypes{
+			LinkTypes: &providerserverv1.LinkTypes{
+				LinkTypes: commoncore.Map(
+					linkTypes,
+					func(linkType string, _ int) *providerserverv1.LinkType {
+						return &providerserverv1.LinkType{
+							Type: linkType,
+						}
+					},
+				),
+			},
+		},
+	}
+}
+
+func toLinkTypesErrorResponse(err error) *providerserverv1.LinkTypesResponse {
+	return &providerserverv1.LinkTypesResponse{
+		Response: &providerserverv1.LinkTypesResponse_ErrorResponse{
+			ErrorResponse: errorsv1.CreateResponseFromError(err),
+		},
+	}
+}
+
 func toDataSourceTypesResponse(dataSourceTypes []string) *providerserverv1.DataSourceTypesResponse {
 	return &providerserverv1.DataSourceTypesResponse{
 		Response: &providerserverv1.DataSourceTypesResponse_DataSourceTypes{

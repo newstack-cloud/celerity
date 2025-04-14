@@ -167,6 +167,35 @@ func (p *providerClientWrapper) ListResourceTypes(ctx context.Context) ([]string
 	)
 }
 
+func (p *providerClientWrapper) ListLinkTypes(ctx context.Context) ([]string, error) {
+	response, err := p.client.ListLinkTypes(ctx, &ProviderRequest{
+		HostId: p.hostID,
+	})
+	if err != nil {
+		return nil, errorsv1.CreateGeneralError(
+			err,
+			errorsv1.PluginActionProviderListLinkTypes,
+		)
+	}
+
+	switch result := response.Response.(type) {
+	case *LinkTypesResponse_LinkTypes:
+		return fromPBLinkTypes(result.LinkTypes.LinkTypes), nil
+	case *LinkTypesResponse_ErrorResponse:
+		return nil, errorsv1.CreateErrorFromResponse(
+			result.ErrorResponse,
+			errorsv1.PluginActionProviderListLinkTypes,
+		)
+	}
+
+	return nil, errorsv1.CreateGeneralError(
+		errorsv1.ErrUnexpectedResponseType(
+			errorsv1.PluginActionProviderListLinkTypes,
+		),
+		errorsv1.PluginActionProviderListLinkTypes,
+	)
+}
+
 func (p *providerClientWrapper) ListDataSourceTypes(ctx context.Context) ([]string, error) {
 	response, err := p.client.ListDataSourceTypes(ctx, &ProviderRequest{
 		HostId: p.hostID,
@@ -266,6 +295,14 @@ func fromPBDataSourceTypes(dataSourceTypes []*DataSourceType) []string {
 	types := make([]string, len(dataSourceTypes))
 	for i, dataSourceType := range dataSourceTypes {
 		types[i] = dataSourceType.Type
+	}
+	return types
+}
+
+func fromPBLinkTypes(linkTypes []*LinkType) []string {
+	types := make([]string, len(linkTypes))
+	for i, linkType := range linkTypes {
+		types[i] = linkType.Type
 	}
 	return types
 }

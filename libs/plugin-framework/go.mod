@@ -7,7 +7,7 @@ replace github.com/two-hundred/celerity/libs/blueprint => ../blueprint
 require (
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.9.0
-	github.com/two-hundred/celerity/libs/blueprint v0.4.0
+	github.com/two-hundred/celerity/libs/blueprint v0.5.0
 	github.com/two-hundred/celerity/libs/common v0.1.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1

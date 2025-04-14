@@ -61,6 +61,10 @@ func (m *MockProvider) ListResourceTypes(ctx context.Context) ([]string, error) 
 	return []string{}, nil
 }
 
+func (m *MockProvider) ListLinkTypes(ctx context.Context) ([]string, error) {
+	return []string{}, nil
+}
+
 func (m *MockProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {
 	return []string{}, nil
 }

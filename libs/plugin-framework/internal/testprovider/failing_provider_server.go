@@ -43,6 +43,16 @@ func (p *failingProviderServer) ListResourceTypes(
 	)
 }
 
+func (p *failingProviderServer) ListLinkTypes(
+	ctx context.Context,
+	req *providerserverv1.ProviderRequest,
+) (*providerserverv1.LinkTypesResponse, error) {
+	return nil, status.Error(
+		codes.Unknown,
+		"internal error occurred listing link types",
+	)
+}
+
 func (p *failingProviderServer) ListDataSourceTypes(
 	ctx context.Context,
 	req *providerserverv1.ProviderRequest,
