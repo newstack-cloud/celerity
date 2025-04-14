@@ -808,6 +808,9 @@ type ValueTypeDefinitionObject struct {
 	// This will appear in usage documentation, logs and in
 	// tooling such as the language server.
 	FormattedDescription string
+	// Required is a list of attribute names that are required
+	// for the object.
+	Required []string
 }
 
 func (v *ValueTypeDefinitionObject) GetType() ValueType {
