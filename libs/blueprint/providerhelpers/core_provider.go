@@ -133,6 +133,10 @@ func (p *coreProvider) ListResourceTypes(ctx context.Context) ([]string, error) 
 	return []string{}, nil
 }
 
+func (p *coreProvider) ListLinkTypes(ctx context.Context) ([]string, error) {
+	return []string{}, nil
+}
+
 func (p *coreProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {
 	return []string{}, nil
 }

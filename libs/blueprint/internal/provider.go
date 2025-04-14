@@ -54,6 +54,14 @@ func (p *ProviderMock) ListResourceTypes(ctx context.Context) ([]string, error) 
 	return resourceTypes, nil
 }
 
+func (p *ProviderMock) ListLinkTypes(ctx context.Context) ([]string, error) {
+	linkTypes := make([]string, 0, len(p.Links))
+	for linkType := range p.Links {
+		linkTypes = append(linkTypes, linkType)
+	}
+	return linkTypes, nil
+}
+
 func (p *ProviderMock) ListDataSourceTypes(ctx context.Context) ([]string, error) {
 	dataSourceTypes := make([]string, 0, len(p.DataSources))
 	for dataSourceType := range p.DataSources {

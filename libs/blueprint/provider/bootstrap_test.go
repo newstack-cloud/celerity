@@ -21,6 +21,7 @@ func Test(t *testing.T) {
 type testProvider struct {
 	functions      map[string]Function
 	resources      map[string]Resource
+	links          map[string]Link
 	dataSources    map[string]DataSource
 	customVarTypes map[string]CustomVariableType
 	namespace      string
@@ -51,7 +52,11 @@ func (p *testProvider) DataSource(ctx context.Context, dataSourceType string) (D
 }
 
 func (p *testProvider) Link(ctx context.Context, resourceTypeA string, resourceTypeB string) (Link, error) {
-	return nil, nil
+	link, ok := p.links[core.LinkType(resourceTypeA, resourceTypeB)]
+	if !ok {
+		return nil, errors.New("link not found")
+	}
+	return link, nil
 }
 
 func (p *testProvider) CustomVariableType(ctx context.Context, customVariableType string) (CustomVariableType, error) {
@@ -76,6 +81,14 @@ func (p *testProvider) ListResourceTypes(ctx context.Context) ([]string, error) 
 		resourceTypes = append(resourceTypes, resourceType)
 	}
 	return resourceTypes, nil
+}
+
+func (p *testProvider) ListLinkTypes(ctx context.Context) ([]string, error) {
+	linkTypes := []string{}
+	for linkType := range p.links {
+		linkTypes = append(linkTypes, linkType)
+	}
+	return linkTypes, nil
 }
 
 func (p *testProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {

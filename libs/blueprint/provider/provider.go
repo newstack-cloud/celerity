@@ -47,6 +47,10 @@ type Provider interface {
 	// provider. This is primarily used in tools and documentation to provide a list of
 	// available resource types.
 	ListResourceTypes(ctx context.Context) ([]string, error)
+	// ListLinkTypes retrieves a list of all the link types that are provided by the
+	// provider. This is primarily used in tools and documentation to provide a list of
+	// available link types.
+	ListLinkTypes(ctx context.Context) ([]string, error)
 	// ListDataSourceTypes retrieves a list of all the data source types that are provided by the
 	// provider. This is primarily used in tools and documentation to provide a list of
 	// available data source types.
