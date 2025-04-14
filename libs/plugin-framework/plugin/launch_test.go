@@ -19,7 +19,7 @@ const (
 type LaunchSuite struct {
 	fs       afero.Fs
 	expected []*PluginPathInfo
-	launcher *PluginLauncher
+	launcher *Launcher
 	suite.Suite
 }
 
@@ -47,15 +47,15 @@ func (s *LaunchSuite) SetupTest() {
 		registerAttempts: map[string]int{},
 		pluginInstances:  s.instancesFromPluginPaths(),
 	}
-	s.launcher = NewPluginLauncher(
+	s.launcher = NewLauncher(
 		pluginPath,
 		manager,
 		executor,
 		core.NewNopLogger(),
-		WithPluginLauncherFS(s.fs),
-		WithPluginLauncherAttemptLimit(5),
-		WithPluginLauncherWaitTimeout(5*time.Millisecond),
-		WithPluginLauncherCheckRegisteredInterval(1*time.Millisecond),
+		WithLauncherFS(s.fs),
+		WithLauncherAttemptLimit(5),
+		WithLauncherWaitTimeout(5*time.Millisecond),
+		WithLauncherCheckRegisteredInterval(1*time.Millisecond),
 	)
 }
 

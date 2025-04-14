@@ -39,9 +39,9 @@ type PluginMaps struct {
 	Transformers map[string]transform.SpecTransformer
 }
 
-// PluginLauncher is a service that launches plugins and waits for them to register
+// Launcher is a service that launches plugins and waits for them to register
 // with the host service.
-type PluginLauncher struct {
+type Launcher struct {
 	pluginPath              string
 	manager                 pluginservicev1.Manager
 	executor                PluginExecutor
@@ -52,50 +52,50 @@ type PluginLauncher struct {
 	checkRegisteredInterval time.Duration
 }
 
-// PluginLauncherOption is a function that configures a PluginLauncher.
-type PluginLauncherOption func(*PluginLauncher)
+// LauncherOption is a function that configures a Launcher.
+type LauncherOption func(*Launcher)
 
-// WithPluginLauncherFS is a PluginLauncher option that sets the file system to use
+// WithLauncherFS is a Launcher option that sets the file system to use
 // when discovering plugins.
-func WithPluginLauncherFS(fs afero.Fs) PluginLauncherOption {
-	return func(l *PluginLauncher) {
+func WithLauncherFS(fs afero.Fs) LauncherOption {
+	return func(l *Launcher) {
 		l.fs = fs
 	}
 }
 
-// WithPluginLauncherAttemptLimit is a PluginLauncher option that sets the number of times
+// WithLauncherAttemptLimit is a Launcher option that sets the number of times
 // to attempt launching a plugin before giving up.
-func WithPluginLauncherAttemptLimit(attemptLimit int) PluginLauncherOption {
-	return func(l *PluginLauncher) {
+func WithLauncherAttemptLimit(attemptLimit int) LauncherOption {
+	return func(l *Launcher) {
 		l.launchAttemptLimit = attemptLimit
 	}
 }
 
-// WithPluginLauncherWaitTimeout is a PluginLauncher option that sets the timeout to wait
+// WithLauncherWaitTimeout is a Launcher option that sets the timeout to wait
 // for a plugin to register with the host service.
-func WithPluginLauncherWaitTimeout(timeout time.Duration) PluginLauncherOption {
-	return func(l *PluginLauncher) {
+func WithLauncherWaitTimeout(timeout time.Duration) LauncherOption {
+	return func(l *Launcher) {
 		l.launchWaitTimeout = timeout
 	}
 }
 
-// WithPluginLauncherCheckRegisteredInterval is a PluginLauncher option that sets the interval
+// WithLauncherCheckRegisteredInterval is a Launcher option that sets the interval
 // to check if a plugin has registered with the host service.
-func WithPluginLauncherCheckRegisteredInterval(interval time.Duration) PluginLauncherOption {
-	return func(l *PluginLauncher) {
+func WithLauncherCheckRegisteredInterval(interval time.Duration) LauncherOption {
+	return func(l *Launcher) {
 		l.checkRegisteredInterval = interval
 	}
 }
 
-// NewPluginLauncher creates a new PluginLauncher.
-func NewPluginLauncher(
+// NewLauncher creates a new Launcher.
+func NewLauncher(
 	pluginPath string,
 	manager pluginservicev1.Manager,
 	executor PluginExecutor,
 	logger core.Logger,
-	opts ...PluginLauncherOption,
-) *PluginLauncher {
-	launcher := &PluginLauncher{
+	opts ...LauncherOption,
+) *Launcher {
+	launcher := &Launcher{
 		pluginPath:              pluginPath,
 		manager:                 manager,
 		executor:                executor,
@@ -123,7 +123,7 @@ func NewPluginLauncher(
 //
 // The provided context should set a deadline to avoid waiting
 // indefinitely for plugins to register with the host service.
-func (l *PluginLauncher) Launch(ctx context.Context) (*PluginMaps, error) {
+func (l *Launcher) Launch(ctx context.Context) (*PluginMaps, error) {
 	l.logger.Info(
 		"discovering plugins",
 		core.StringLogField("pluginPath", l.pluginPath),
@@ -161,7 +161,7 @@ func (l *PluginLauncher) Launch(ctx context.Context) (*PluginMaps, error) {
 	}, nil
 }
 
-func (l *PluginLauncher) launchPlugin(
+func (l *Launcher) launchPlugin(
 	ctx context.Context,
 	plugin *PluginPathInfo,
 	attemptNumber int,
@@ -201,7 +201,7 @@ func (l *PluginLauncher) launchPlugin(
 	return nil
 }
 
-func (l *PluginLauncher) waitForPluginRegistration(
+func (l *Launcher) waitForPluginRegistration(
 	ctx context.Context,
 	plugin *PluginPathInfo,
 	pluginLogger core.Logger,
