@@ -77,6 +77,7 @@ func (s *pluginServiceServer) Register(
 			PluginType:       req.PluginType,
 			ProtocolVersions: req.ProtocolVersions,
 			ID:               req.PluginId,
+			Metadata:         req.Metadata,
 			InstanceID:       req.InstanceId,
 			TCPPort:          int(req.Port),
 			UnixSocketPath:   req.UnixSocket,

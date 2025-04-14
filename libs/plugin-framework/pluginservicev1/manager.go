@@ -22,6 +22,11 @@ type Manager interface {
 	// GetPlugin retrieves a plugin instance based on the plugin type
 	// and the plugin ID.
 	GetPlugin(pluginType PluginType, id string) *PluginInstance
+	// GetPluginMetadata retrieves the metadata of a plugin instance
+	// based on the plugin type and the plugin ID.
+	// This is useful for retrieving core metadata for plugin
+	// documentation.
+	GetPluginMetadata(pluginType PluginType, id string) *PluginExtendedMetadata
 	// GetPlugins retrieves all plugin instances for a given plugin type.
 	GetPlugins(pluginType PluginType) []*PluginInstance
 }
@@ -29,9 +34,34 @@ type Manager interface {
 type managerImpl struct {
 	pluginTypeProtocolVersions map[PluginType]string
 	pluginInstances            map[PluginType]map[string]*PluginInstance
+	pluginMetadata             map[PluginType]map[string]*PluginExtendedMetadata
 	pluginFactory              PluginFactory
 	hostID                     string
 	mu                         sync.RWMutex
+}
+
+// PluginExtendedMetadata holds the metadata of a plugin instance
+// that a plugin will provide during registration along with
+// the protocol versions that the plugin supports.
+type PluginExtendedMetadata struct {
+	// A semver version for the plugin that can be used
+	// for documentation and debugging purposes.
+	PluginVersion string
+	// A friendly name for the plugin to be displayed
+	// in documentation and user interfaces.
+	DisplayName string
+	// A plain text description of the plugin.
+	PlainTextDescription string
+	// A formatted description of the plugin
+	// that can be formatted with markdown.
+	FormattedDescription string
+	// The URL of the git repository that the plugin
+	// is hosted in.
+	RepositoryUrl string
+	// The company or individual that authored the plugin.
+	Author string
+	// The protocol versions that the plugin supports.
+	ProtocolVersions []string
 }
 
 // NewManager creates a new instance of a plugin manager
@@ -46,6 +76,7 @@ func NewManager(
 	return &managerImpl{
 		pluginTypeProtocolVersions: protocolVersions,
 		pluginInstances:            make(map[PluginType]map[string]*PluginInstance),
+		pluginMetadata:             make(map[PluginType]map[string]*PluginExtendedMetadata),
 		pluginFactory:              pluginFactory,
 	}
 }
@@ -88,6 +119,25 @@ func (m *managerImpl) RegisterPlugin(info *PluginInstanceInfo) error {
 		CloseConn: closeConn,
 	}
 
+	if m.pluginMetadata[info.PluginType] == nil {
+		m.pluginMetadata[info.PluginType] = make(map[string]*PluginExtendedMetadata)
+	}
+	if info.Metadata != nil {
+		m.pluginMetadata[info.PluginType][info.ID] = &PluginExtendedMetadata{
+			PluginVersion:        info.Metadata.PluginVersion,
+			DisplayName:          info.Metadata.DisplayName,
+			PlainTextDescription: info.Metadata.PlainTextDescription,
+			FormattedDescription: info.Metadata.FormattedDescription,
+			RepositoryUrl:        info.Metadata.RepositoryUrl,
+			Author:               info.Metadata.Author,
+			ProtocolVersions:     info.ProtocolVersions,
+		}
+	} else {
+		m.pluginMetadata[info.PluginType][info.ID] = &PluginExtendedMetadata{
+			ProtocolVersions: info.ProtocolVersions,
+		}
+	}
+
 	return nil
 }
 
@@ -100,6 +150,11 @@ func (m *managerImpl) DeregisterPlugin(pluginType PluginType, id string) error {
 		return fmt.Errorf("plugin type %d is not supported", pluginType)
 	}
 
+	metadataForType, hasMetadataType := m.pluginMetadata[pluginType]
+	if hasMetadataType {
+		delete(metadataForType, id)
+	}
+
 	delete(instancesForType, id)
 	return nil
 }
@@ -108,11 +163,29 @@ func (m *managerImpl) GetPlugin(pluginType PluginType, id string) *PluginInstanc
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	if m.pluginInstances[pluginType] == nil {
+	instancesForType, hasPluginType := m.pluginInstances[pluginType]
+	if !hasPluginType {
 		return nil
 	}
 
-	return m.pluginInstances[pluginType][id]
+	return instancesForType[id]
+}
+
+func (m *managerImpl) GetPluginMetadata(pluginType PluginType, id string) *PluginExtendedMetadata {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	metadataForType, hasMetadataType := m.pluginMetadata[pluginType]
+	if !hasMetadataType {
+		return nil
+	}
+
+	metadata, hasMetadata := metadataForType[id]
+	if !hasMetadata {
+		return nil
+	}
+
+	return metadata
 }
 
 func (m *managerImpl) GetPlugins(pluginType PluginType) []*PluginInstance {
@@ -167,6 +240,8 @@ type PluginInstanceInfo struct {
 	// For example, the namespace for AWS resources is "aws"
 	// used in the resource type "aws/lambda/function".
 	ID string
+	// Metadata that can be used for plugin documentation.
+	Metadata *PluginMetadata
 	// The ID of an instance of a plugin that has been loaded
 	// by the host system.
 	InstanceID     string

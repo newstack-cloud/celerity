@@ -54,6 +54,7 @@ func loadExpectedPluginPaths() []*PluginPathInfo {
 
 type mockPluginManager struct {
 	pluginMap         map[pluginservicev1.PluginType]map[string]*pluginservicev1.PluginInstance
+	pluginMetadata    map[pluginservicev1.PluginType]map[string]*pluginservicev1.PluginExtendedMetadata
 	testTransformName string
 }
 
@@ -71,7 +72,34 @@ func (m *mockPluginManager) GetPlugin(
 	pluginType pluginservicev1.PluginType,
 	id string,
 ) *pluginservicev1.PluginInstance {
-	return m.pluginMap[pluginType][id]
+	instancesForType, hasPluginType := m.pluginMap[pluginType]
+	if !hasPluginType {
+		return nil
+	}
+
+	pluginInstance, hasPlugin := instancesForType[id]
+	if !hasPlugin {
+		return nil
+	}
+
+	return pluginInstance
+}
+
+func (m *mockPluginManager) GetPluginMetadata(
+	pluginType pluginservicev1.PluginType,
+	id string,
+) *pluginservicev1.PluginExtendedMetadata {
+	metadataForType, hasMetadataType := m.pluginMetadata[pluginType]
+	if !hasMetadataType {
+		return nil
+	}
+
+	metadata, hasMetadata := metadataForType[id]
+	if !hasMetadata {
+		return nil
+	}
+
+	return metadata
 }
 
 func (m *mockPluginManager) RegisterPlugin(
@@ -86,6 +114,17 @@ func (m *mockPluginManager) RegisterPlugin(
 		},
 	}
 	m.pluginMap[pluginInstanceInfo.PluginType][pluginInstanceInfo.ID] = instance
+	if pluginInstanceInfo.Metadata != nil {
+		m.pluginMetadata[pluginInstanceInfo.PluginType][pluginInstanceInfo.ID] = &pluginservicev1.PluginExtendedMetadata{
+			PluginVersion:        pluginInstanceInfo.Metadata.PluginVersion,
+			DisplayName:          pluginInstanceInfo.Metadata.DisplayName,
+			PlainTextDescription: pluginInstanceInfo.Metadata.PlainTextDescription,
+			FormattedDescription: pluginInstanceInfo.Metadata.FormattedDescription,
+			RepositoryUrl:        pluginInstanceInfo.Metadata.RepositoryUrl,
+			Author:               pluginInstanceInfo.Metadata.Author,
+			ProtocolVersions:     pluginInstanceInfo.ProtocolVersions,
+		}
+	}
 	return nil
 }
 
@@ -94,6 +133,7 @@ func (m *mockPluginManager) DeregisterPlugin(
 	id string,
 ) error {
 	delete(m.pluginMap[pluginType], id)
+	delete(m.pluginMetadata[pluginType], id)
 	return nil
 }
 
