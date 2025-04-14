@@ -78,6 +78,7 @@ func NewManager(
 		pluginInstances:            make(map[PluginType]map[string]*PluginInstance),
 		pluginMetadata:             make(map[PluginType]map[string]*PluginExtendedMetadata),
 		pluginFactory:              pluginFactory,
+		hostID:                     hostID,
 	}
 }
 
