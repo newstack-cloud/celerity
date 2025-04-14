@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 )
 
 type DiscoverSuite struct {
@@ -23,7 +24,7 @@ func (s *DiscoverSuite) SetupTest() {
 
 func (s *DiscoverSuite) Test_discovers_plugins() {
 	pluginPath := strings.Join(testPluginRootPaths, ":")
-	discoveredPlugins, err := DiscoverPlugins(pluginPath, s.fs)
+	discoveredPlugins, err := DiscoverPlugins(pluginPath, s.fs, core.NewNopLogger())
 	s.Require().NoError(err)
 	s.Require().Len(discoveredPlugins, len(s.expected))
 	for i, plugin := range discoveredPlugins {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/spf13/afero"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
@@ -45,6 +46,7 @@ type PluginLauncher struct {
 	manager                 pluginservicev1.Manager
 	executor                PluginExecutor
 	fs                      afero.Fs
+	logger                  core.Logger
 	launchAttemptLimit      int
 	launchWaitTimeout       time.Duration
 	checkRegisteredInterval time.Duration
@@ -90,6 +92,7 @@ func NewPluginLauncher(
 	pluginPath string,
 	manager pluginservicev1.Manager,
 	executor PluginExecutor,
+	logger core.Logger,
 	opts ...PluginLauncherOption,
 ) *PluginLauncher {
 	launcher := &PluginLauncher{
@@ -97,6 +100,7 @@ func NewPluginLauncher(
 		manager:                 manager,
 		executor:                executor,
 		fs:                      afero.NewOsFs(),
+		logger:                  logger,
 		launchAttemptLimit:      DefaultPluginLaunchAttemptLimit,
 		launchWaitTimeout:       DefaultLaunchWaitTimeout,
 		checkRegisteredInterval: DefaultCheckRegisteredInterval,
@@ -120,11 +124,18 @@ func NewPluginLauncher(
 // The provided context should set a deadline to avoid waiting
 // indefinitely for plugins to register with the host service.
 func (l *PluginLauncher) Launch(ctx context.Context) (*PluginMaps, error) {
-	plugins, err := DiscoverPlugins(l.pluginPath, l.fs)
+	l.logger.Info(
+		"discovering plugins",
+		core.StringLogField("pluginPath", l.pluginPath),
+	)
+	plugins, err := DiscoverPlugins(l.pluginPath, l.fs, l.logger)
 	if err != nil {
 		return nil, err
 	}
 
+	l.logger.Info(
+		fmt.Sprintf("found %d plugins, launching ...", len(plugins)),
+	)
 	for _, plugin := range plugins {
 		err := l.launchPlugin(ctx, plugin, 1 /* attemptNumber */)
 		if err != nil {
@@ -155,7 +166,16 @@ func (l *PluginLauncher) launchPlugin(
 	plugin *PluginPathInfo,
 	attemptNumber int,
 ) error {
-	pluginProcess, err := l.executor.Execute(plugin.AbsolutePath)
+	pluginLogger := l.logger.WithFields(
+		core.StringLogField("plugin", plugin.ID),
+		core.StringLogField("pluginPath", plugin.AbsolutePath),
+		core.StringLogField("pluginType", plugin.PluginType),
+		core.IntegerLogField("attemptNumber", int64(attemptNumber)),
+	)
+	pluginLogger.Debug(
+		"launching plugin",
+	)
+	pluginProcess, err := l.executor.Execute(plugin.ID, plugin.AbsolutePath)
 	if err != nil {
 		return err
 	}
@@ -163,11 +183,15 @@ func (l *PluginLauncher) launchPlugin(
 	err = l.waitForPluginRegistration(
 		ctx,
 		plugin,
+		pluginLogger,
 		pluginProcess.Kill,
 	)
 	if err != nil {
 		if errors.Is(err, ErrPluginRegistrationTimeout) {
 			if attemptNumber <= l.launchAttemptLimit {
+				pluginLogger.Debug(
+					"timed out waiting for plugin registration",
+				)
 				return l.launchPlugin(ctx, plugin, attemptNumber+1)
 			}
 		}
@@ -180,6 +204,7 @@ func (l *PluginLauncher) launchPlugin(
 func (l *PluginLauncher) waitForPluginRegistration(
 	ctx context.Context,
 	plugin *PluginPathInfo,
+	pluginLogger core.Logger,
 	stop func() error,
 ) error {
 	startTime := time.Now()
@@ -193,6 +218,9 @@ func (l *PluginLauncher) waitForPluginRegistration(
 				plugin.ID,
 			)
 			if pluginInstance != nil {
+				pluginLogger.Debug(
+					"plugin has been succsefully registered",
+				)
 				return nil
 			}
 			time.Sleep(l.checkRegisteredInterval)

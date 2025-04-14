@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 )
 
@@ -50,6 +51,7 @@ func (s *LaunchSuite) SetupTest() {
 		pluginPath,
 		manager,
 		executor,
+		core.NewNopLogger(),
 		WithPluginLauncherFS(s.fs),
 		WithPluginLauncherAttemptLimit(5),
 		WithPluginLauncherWaitTimeout(5*time.Millisecond),

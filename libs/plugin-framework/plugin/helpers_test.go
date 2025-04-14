@@ -110,7 +110,7 @@ type mockPluginExecutor struct {
 	pluginInstances map[string]*pluginservicev1.PluginInstanceInfo
 }
 
-func (e *mockPluginExecutor) Execute(pluginPath string) (PluginProcess, error) {
+func (e *mockPluginExecutor) Execute(pluginID string, pluginPath string) (PluginProcess, error) {
 	attempts, hasAttempts := e.registerAttempts[pluginPath]
 	if !hasAttempts {
 		e.registerAttempts[pluginPath] = 0

@@ -1,11 +1,13 @@
 package plugin
 
 import (
+	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
 
 	"github.com/spf13/afero"
+	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/common/core"
 )
 
@@ -45,12 +47,19 @@ type PluginPathInfo struct {
 // list of root directories to search for plugins in.
 // This returns a list of discovered plugin paths with important
 // plugin metadata extracted from the file paths.
-func DiscoverPlugins(pluginPath string, fs afero.Fs) ([]*PluginPathInfo, error) {
+func DiscoverPlugins(pluginPath string, fs afero.Fs, logger bpcore.Logger) ([]*PluginPathInfo, error) {
 	pluginRootDirs := strings.Split(pluginPath, ":")
 	discoveredPlugins := []*PluginPathInfo{}
 
 	for _, pluginRootDir := range pluginRootDirs {
-		err := discoverPluginsInDir(pluginRootDir, pluginRootDir, fs, 0, &discoveredPlugins)
+		err := discoverPluginsInDir(
+			pluginRootDir,
+			pluginRootDir,
+			fs,
+			logger,
+			0,
+			&discoveredPlugins,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -63,6 +72,7 @@ func discoverPluginsInDir(
 	currentDirPath string,
 	pluginRootDirPath string,
 	fs afero.Fs,
+	logger bpcore.Logger,
 	depth int,
 	collected *[]*PluginPathInfo,
 ) error {
@@ -78,7 +88,20 @@ func discoverPluginsInDir(
 	for _, dirContent := range dirContents {
 		if dirContent.IsDir() {
 			fullDirPath := filepath.Join(currentDirPath, dirContent.Name())
-			err := discoverPluginsInDir(fullDirPath, pluginRootDirPath, fs, depth+1, collected)
+			logger.Debug(
+				fmt.Sprintf(
+					"searching for plugins in directory: %s",
+					fullDirPath,
+				),
+			)
+			err := discoverPluginsInDir(
+				fullDirPath,
+				pluginRootDirPath,
+				fs,
+				logger,
+				depth+1,
+				collected,
+			)
 			if err != nil {
 				return err
 			}
@@ -88,6 +111,9 @@ func discoverPluginsInDir(
 			relativePluginPath := strings.TrimPrefix(fullPluginPath, pluginRootDirPath)
 			pluginPathInfo, isValidPath := extractPluginPathInfo(fullPluginPath, relativePluginPath)
 			if isValidPath {
+				logger.Debug(
+					fmt.Sprintf("found valid plugin at path %s", fullPluginPath),
+				)
 				*collected = append(*collected, pluginPathInfo)
 			}
 		}

@@ -73,15 +73,15 @@ func NewServer(
 }
 
 func (s *Server) Serve() (func(), error) {
-	listener, err := s.createListener()
-	if err != nil {
-		return nil, err
-	}
-
 	// If the TCP port is not set and a unix socket is not provided,
 	// use the default port for the plugin service.
 	if s.tcpPort == 0 && s.unixSocket == "" {
 		s.tcpPort = DefaultPort
+	}
+
+	listener, err := s.createListener()
+	if err != nil {
+		return nil, err
 	}
 
 	opts := []grpc.ServerOption{
