@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-04-14
+
+### Added
+
+- **Breaking change** - Add method to export all provider config variables from link contexts.
+- Adds helper functions to create `core.ScalarValue` structs from Go primitive types.
+- Adds zap logger adaptor for the `core.Logger` interface. This allows for the use of zap logger implementations with the blueprint framework core logger interface.
+- **Breaking change** - Adds example method for resources, data sources and custom variable types.
+- Adds functionality to allows link implementations to call back into the blueprint framework host to deploy resources registered with the host.
+- Adds stabilisation check method to resource registry to allow the resource registry to fulfil a new `ResourceDeployService` interface introduced to allow link plugins to call back into the host to deploy known resources for intermediary resources managed by a link implementation.
+- Adds a convenience error interface that allows the extraction of a list of failure reasons without having to check each possible provider error type.
+- Adds a new provider.BadInput error type that can be used to help distinguish between input and unexpected errors when providing feedback to the user. _Bad input errors are not handled in any special way in the blueprint container that manages deployments, it must be wrapped in specialised errors to be handled correctly for deployment actions._
+- Adds new public util functions that provide a consistent entry point for generating logical link names and link type identifiers.
+
+### Updated
+
+- Adds a new `Secret` field to the plugin config definitions struct. This allows plugin developers to indicate that a config variable is a secret and should be treated as such by the blueprint framework. This is useful for sensitive information such as passwords or API keys.
+- Make plugin function call stack thread-safe to be able to handle calls from multiple goroutines.
+- Enhances plugin interfaces with methods to provide rich documentation.
+- Simplifies resource registry interface when it comes to waiting for resource stability. This is possible through the introduction of a convenience layer to the resource registry interface and core implementation to allow callers to wait for a resource to stabilise using a single boolean option instead of having to set up a polling loop and call `HasStabilised` on an interval to do so.
+- **Breaking change** - Adds update to make creating a new plugin function call context a part of the public interface.
+- **Breaking change** - Alters the public interface of existing provider errors to make the error check functions more idiomatic where you write to a target error and check the error type in the same action.
+- Updates some previously private protobuf conversion methods to be public so that gRPC services (such as the deploy engine plugin system) can reuse existing conversion behaviour.
+- Enhances provider-specific error types with child errors so they can hold more structured information.
+
+### Removed
+
+- Removes the `SetCurrentLocation` from the function call context as it is never used, each context gets its own call context with a current location that does not need to change for the lifetime of the function being called.
+
+### Fixed
+
+- Corrects the name of the transformer context field in the `transform.AbstractResourceGetExamplesInput` struct.
+- Corrects behaviour to convert from protobuf to blueprint framework types so that a mapping node type with all fields set to nil is treated correctly when the mapping node being converted is optional.
+
+_Breaking changes will occur in early 0.x releases of this framework._
+
 ## [0.3.3] - 2025-02-27
 
 ### Fixed
