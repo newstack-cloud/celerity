@@ -38,6 +38,7 @@ func (s *TransformerPluginV1Suite) SetupSuite() {
 			pluginservicev1.PluginType_PLUGIN_TYPE_TRANSFORMER: "1.0",
 		},
 		s.createPluginInstance,
+		testHostID,
 	)
 	s.funcRegistry = provider.NewFunctionRegistry(
 		map[string]provider.Provider{},
@@ -207,6 +208,7 @@ func (s *TransformerPluginV1Suite) Test_list_abstract_resource_types_reports_exp
 
 func (s *TransformerPluginV1Suite) createPluginInstance(
 	info *pluginservicev1.PluginInstanceInfo,
+	hostID string,
 ) (any, func(), error) {
 	// This is required for the manager that backs the plugin service that allows
 	// the plugin to register itself with the host service.

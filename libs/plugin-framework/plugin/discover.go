@@ -14,8 +14,8 @@ const (
 	pluginFileName = "plugin"
 	// The maximum depth to search for plugins in.
 	// Plugin paths can of the following forms:
-	// - {pluginRootDir}/{pluginType}/{namespace}/{pluginName}/{version}/plugin
-	// - {pluginRootDir}/{pluginType}/{hostname}/{namespace}/{pluginName}/{version}/plugin
+	// - {pluginRootDir}/{plural(pluginType)}/{namespace}/{pluginName}/{version}/plugin
+	// - {pluginRootDir}/{plural(pluginType)}/{hostname}/{namespace}/{pluginName}/{version}/plugin
 	// "/" is a placeholder for the path separator in the host OS.
 	maxPluginDirDepth = 5
 )

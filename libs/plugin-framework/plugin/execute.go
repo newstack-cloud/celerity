@@ -1,6 +1,9 @@
 package plugin
 
-import "os/exec"
+import (
+	"os"
+	"os/exec"
+)
 
 // PluginExecutor is an interface that represents the executor of a plugin.
 // This interface is used to abstract the execution of a plugin from the
@@ -26,6 +29,8 @@ func NewOSCmdExecutor() PluginExecutor {
 
 func (e *osCmdExecutor) Execute(pluginBinary string) (PluginProcess, error) {
 	cmd := exec.Command(pluginBinary)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	err := cmd.Start()
 	if err != nil {
 		return nil, err

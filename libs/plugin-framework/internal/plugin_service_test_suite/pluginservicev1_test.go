@@ -46,6 +46,7 @@ func (s *PluginServiceV1Suite) SetupTest() {
 			pluginservicev1.PluginType_PLUGIN_TYPE_TRANSFORMER: "1.0",
 		},
 		s.createPluginInstance,
+		testHostID,
 	)
 	providers := map[string]provider.Provider{}
 	s.funcRegistry = provider.NewFunctionRegistry(
@@ -269,6 +270,7 @@ func (s *PluginServiceV1Suite) Test_link_destroy_intermediary_resource_call() {
 
 func (s *PluginServiceV1Suite) createPluginInstance(
 	info *pluginservicev1.PluginInstanceInfo,
+	hostID string,
 ) (any, func(), error) {
 	return nil, nil, nil
 }

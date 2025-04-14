@@ -52,6 +52,7 @@ func (s *ProviderPluginV1Suite) SetupSuite() {
 			pluginservicev1.PluginType_PLUGIN_TYPE_TRANSFORMER: "1.0",
 		},
 		s.createPluginInstance,
+		testHostID,
 	)
 	s.funcRegistry = provider.NewFunctionRegistry(
 		providers,
@@ -258,6 +259,7 @@ func (s *ProviderPluginV1Suite) Test_get_retry_policy_reports_expected_error_for
 
 func (s *ProviderPluginV1Suite) createPluginInstance(
 	info *pluginservicev1.PluginInstanceInfo,
+	hostID string,
 ) (any, func(), error) {
 	// This is required for the manager that backs the plugin service that allows
 	// the plugin to register itself with the host service.

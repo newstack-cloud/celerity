@@ -30,6 +30,7 @@ type managerImpl struct {
 	pluginTypeProtocolVersions map[PluginType]string
 	pluginInstances            map[PluginType]map[string]*PluginInstance
 	pluginFactory              PluginFactory
+	hostID                     string
 	mu                         sync.RWMutex
 }
 
@@ -37,7 +38,11 @@ type managerImpl struct {
 // that enables the deploy engine to interact with plugins
 // and backs the "pluginservice" gRPC service that plugins
 // can register with.
-func NewManager(protocolVersions map[PluginType]string, pluginFactory PluginFactory) Manager {
+func NewManager(
+	protocolVersions map[PluginType]string,
+	pluginFactory PluginFactory,
+	hostID string,
+) Manager {
 	return &managerImpl{
 		pluginTypeProtocolVersions: protocolVersions,
 		pluginInstances:            make(map[PluginType]map[string]*PluginInstance),
@@ -72,7 +77,7 @@ func (m *managerImpl) RegisterPlugin(info *PluginInstanceInfo) error {
 		return fmt.Errorf("plugin %s is already registered", info.ID)
 	}
 
-	client, closeConn, err := m.pluginFactory(info)
+	client, closeConn, err := m.pluginFactory(info, m.hostID)
 	if err != nil {
 		return err
 	}
@@ -127,7 +132,7 @@ func (m *managerImpl) GetPlugins(pluginType PluginType) []*PluginInstance {
 	return instances
 }
 
-type PluginFactory func(*PluginInstanceInfo) (any, func(), error)
+type PluginFactory func(*PluginInstanceInfo, string) (any, func(), error)
 
 // PluginInstance represents an instance of a plugin
 // that has been registered with the host system.
