@@ -50,6 +50,7 @@ type Launcher struct {
 	launchAttemptLimit      int
 	launchWaitTimeout       time.Duration
 	checkRegisteredInterval time.Duration
+	transformerKeyType      TransformerKeyType
 }
 
 // LauncherOption is a function that configures a Launcher.
@@ -87,6 +88,14 @@ func WithLauncherCheckRegisteredInterval(interval time.Duration) LauncherOption 
 	}
 }
 
+// WithLauncherTransformerKeyType is a Launcher option that sets the key type
+// to use for transformer plugins.
+func WithLauncherTransformerKeyType(keyType TransformerKeyType) LauncherOption {
+	return func(l *Launcher) {
+		l.transformerKeyType = keyType
+	}
+}
+
 // NewLauncher creates a new Launcher.
 func NewLauncher(
 	pluginPath string,
@@ -104,6 +113,7 @@ func NewLauncher(
 		launchAttemptLimit:      DefaultPluginLaunchAttemptLimit,
 		launchWaitTimeout:       DefaultLaunchWaitTimeout,
 		checkRegisteredInterval: DefaultCheckRegisteredInterval,
+		transformerKeyType:      TransformerKeyTypeTransformName,
 	}
 
 	for _, opt := range opts {
@@ -150,7 +160,11 @@ func (l *Launcher) Launch(ctx context.Context) (*PluginMaps, error) {
 	}
 
 	transformerPlugins := l.manager.GetPlugins(pluginservicev1.PluginType_PLUGIN_TYPE_TRANSFORMER)
-	transformerPluginMap, err := createTransformerPluginAdaptors(ctx, transformerPlugins)
+	transformerPluginMap, err := createTransformerPluginAdaptors(
+		ctx,
+		transformerPlugins,
+		l.transformerKeyType,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -256,6 +270,7 @@ func createProviderPluginAdaptors(
 func createTransformerPluginAdaptors(
 	ctx context.Context,
 	transformerPlugins []*pluginservicev1.PluginInstance,
+	transformerKeyType TransformerKeyType,
 ) (map[string]transform.SpecTransformer, error) {
 	transformerPluginMap := make(map[string]transform.SpecTransformer)
 	for _, transformerPluginInstance := range transformerPlugins {
@@ -267,13 +282,37 @@ func createTransformerPluginAdaptors(
 			)
 		}
 
-		// For transformers, the string used in a blueprint in the `transform` section
-		// is used to resolve the correct transformer plugin to use when loading a blueprint.
-		transformName, err := transformerPlugin.GetTransformName(ctx)
+		transformerKey, err := getTransformerKey(
+			ctx,
+			transformerPluginInstance.Info.ID,
+			transformerPlugin,
+			transformerKeyType,
+		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf(
+				"failed to get transformer key for plugin %s: %w",
+				transformerPluginInstance.Info.ID,
+				err,
+			)
 		}
-		transformerPluginMap[transformName] = transformerPlugin
+		transformerPluginMap[transformerKey] = transformerPlugin
 	}
 	return transformerPluginMap, nil
+}
+
+func getTransformerKey(
+	ctx context.Context,
+	pluginID string,
+	transformerPlugin transform.SpecTransformer,
+	transformerKeyType TransformerKeyType,
+) (string, error) {
+	if transformerKeyType == TransformerKeyTypePluginName {
+		return utils.ExtractPluginNamespace(pluginID), nil
+	}
+
+	// The string used in a blueprint in the `transform` section
+	// will be used to resolve the correct transformer plugin when loading a blueprint.
+	// This is useful for blueprint loading as the only reference to a transformer
+	// in a blueprint is the transform name string.
+	return transformerPlugin.GetTransformName(ctx)
 }

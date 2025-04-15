@@ -56,3 +56,19 @@ type ServePluginConfiguration struct {
 	// If this is provided, TCPPort and UnixSocketPath will be ignored.
 	Listener net.Listener
 }
+
+// TransformerKeyType defines the type of key to be used to identify
+// a transformer in the plugin map produced by the plugin launcher.
+// Transformer plugins can either be keyed by the plugin name (namespace)
+// or the transform string name used in the transform section of a blueprint.
+type TransformerKeyType int32
+
+const (
+	// TransformerKeyTypePluginName indicates that the plugin should be keyed
+	// by the plugin name (namespace).
+	TransformerKeyTypePluginName TransformerKeyType = iota
+	// TransformerKeyTypeTransformName indicates that the plugin should be keyed
+	// by the transform string name used in the transform section of a blueprint.
+	// This is the default value when one isn't provided to the plugin launcher.
+	TransformerKeyTypeTransformName
+)

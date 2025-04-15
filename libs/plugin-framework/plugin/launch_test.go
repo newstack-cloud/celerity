@@ -17,9 +17,10 @@ const (
 )
 
 type LaunchSuite struct {
-	fs       afero.Fs
-	expected []*PluginPathInfo
-	launcher *Launcher
+	fs                afero.Fs
+	expected          []*PluginPathInfo
+	launcher          *Launcher
+	alternateLauncher *Launcher
 	suite.Suite
 }
 
@@ -57,6 +58,17 @@ func (s *LaunchSuite) SetupTest() {
 		WithLauncherWaitTimeout(5*time.Millisecond),
 		WithLauncherCheckRegisteredInterval(1*time.Millisecond),
 	)
+	s.alternateLauncher = NewLauncher(
+		pluginPath,
+		manager,
+		executor,
+		core.NewNopLogger(),
+		WithLauncherFS(s.fs),
+		WithLauncherAttemptLimit(5),
+		WithLauncherWaitTimeout(5*time.Millisecond),
+		WithLauncherCheckRegisteredInterval(1*time.Millisecond),
+		WithLauncherTransformerKeyType(TransformerKeyTypePluginName),
+	)
 }
 
 func (s *LaunchSuite) instancesFromPluginPaths() map[string]*pluginservicev1.PluginInstanceInfo {
@@ -84,7 +96,21 @@ func (s *LaunchSuite) Test_launches_plugins() {
 
 	s.Assert().Len(pluginMaps.Transformers, 1)
 
-	s.assertHasTransformer(pluginMaps, testTransformName)
+	s.assertHasTransformer(pluginMaps, testTransformName, TransformerKeyTypeTransformName)
+}
+
+func (s *LaunchSuite) Test_launches_plugins_with_transform_plugin_name_key() {
+	pluginMaps, err := s.alternateLauncher.Launch(context.Background())
+	s.Require().NoError(err)
+
+	s.Assert().Len(pluginMaps.Providers, 2)
+
+	s.assertHasProvider(pluginMaps, "aws")
+	s.assertHasProvider(pluginMaps, "azure")
+
+	s.Assert().Len(pluginMaps.Transformers, 1)
+
+	s.assertHasTransformer(pluginMaps, "celerity", TransformerKeyTypePluginName)
 }
 
 func (s *LaunchSuite) assertHasProvider(
@@ -100,13 +126,16 @@ func (s *LaunchSuite) assertHasProvider(
 
 func (s *LaunchSuite) assertHasTransformer(
 	pluginMaps *PluginMaps,
-	transformName string,
+	transformNameOrNamespace string,
+	keyType TransformerKeyType,
 ) {
-	transformer, hasTransformer := pluginMaps.Transformers[transformName]
+	transformer, hasTransformer := pluginMaps.Transformers[transformNameOrNamespace]
 	s.Assert().True(hasTransformer)
-	result, err := transformer.GetTransformName(context.Background())
-	s.Require().NoError(err)
-	s.Assert().Equal(transformName, result)
+	if keyType == TransformerKeyTypeTransformName {
+		result, err := transformer.GetTransformName(context.Background())
+		s.Require().NoError(err)
+		s.Assert().Equal(transformNameOrNamespace, result)
+	}
 }
 
 func TestLaunchSuite(t *testing.T) {
