@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"log"
+	"os"
 
 	"github.com/spf13/afero"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -79,5 +80,12 @@ func main() {
 		log.Fatalf("Failed to serialise plugin documentation: %v", err)
 	}
 
-	log.Printf("Plugin documentation:\n%s", string(serialised))
+	err = os.WriteFile(
+		"docs.json",
+		serialised,
+		0644,
+	)
+	if err != nil {
+		log.Fatalf("Failed to write plugin documentation to file: %v", err)
+	}
 }

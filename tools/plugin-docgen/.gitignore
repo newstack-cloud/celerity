@@ -26,3 +26,6 @@ report.json
 # Any log files.
 *.log
 logs
+
+# Output JSON file from the plugin-docgen tool
+docs.json
