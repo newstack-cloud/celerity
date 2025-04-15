@@ -58,6 +58,14 @@ func (s *ChildBlueprintDeployerTestSuite) runDeployTest(
 	ctx := context.Background()
 	channels := CreateDeployChannels()
 	stateContainer := internal.NewMemoryStateContainer()
+	// Persist parent state so it can be accessed to get the instance name
+	// during child deployment.
+	err := stateContainer.Instances().Save(
+		ctx,
+		*fixture.parentInstanceStateSnapshot,
+	)
+	s.Require().NoError(err)
+
 	deployState := NewDefaultDeploymentState()
 	deployer := NewDefaultChildBlueprintDeployer(
 		&dynamicIncludeSubstitutionResolver{
@@ -94,7 +102,6 @@ func (s *ChildBlueprintDeployerTestSuite) runDeployTest(
 	resourceDeployUpdateMessages := []ResourceDeployUpdateMessage{}
 	linkDeployUpdateMessages := []LinkDeployUpdateMessage{}
 	finishedMessage := (*ChildDeployUpdateMessage)(nil)
-	var err error
 	for err == nil &&
 		finishedMessage == nil {
 		select {

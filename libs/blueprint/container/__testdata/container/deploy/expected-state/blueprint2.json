@@ -1,5 +1,6 @@
 {
   "id": "{dynamicValue}",
+  "name": "BlueprintInstance2",
   "status": 2,
   "lastDeployedTimestamp": 0,
   "lastDeployAttemptTimestamp": 0,
@@ -442,6 +443,7 @@
   "childBlueprints": {
     "coreInfra": {
       "id": "{dynamicValue}",
+      "name": "BlueprintInstance2-coreInfra",
       "status": 2,
       "lastDeployedTimestamp": 0,
       "lastDeployAttemptTimestamp": 0,

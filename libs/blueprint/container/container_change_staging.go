@@ -22,11 +22,17 @@ func (c *defaultBlueprintContainer) StageChanges(
 	channels *ChangeStagingChannels,
 	paramOverrides core.BlueprintParams,
 ) error {
-	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, input.InstanceID)
+	resolvedInstanceID, err := c.getInstanceID(ctx, input.InstanceID, input.InstanceName)
+	if err != nil {
+		return err
+	}
+
+	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, resolvedInstanceID)
 	changeStagingLogger := c.logger.Named("stageChanges").WithFields(
-		core.StringLogField("instanceID", input.InstanceID),
+		core.StringLogField("instanceID", resolvedInstanceID),
+		core.StringLogField("instanceName", input.InstanceName),
 	)
-	instanceTreePath := getInstanceTreePath(paramOverrides, input.InstanceID)
+	instanceTreePath := getInstanceTreePath(paramOverrides, resolvedInstanceID)
 	if exceedsMaxDepth(instanceTreePath, MaxBlueprintDepth) {
 		changeStagingLogger.Debug("max nested blueprint depth exceeded")
 		return errMaxBlueprintDepthExceeded(
@@ -35,14 +41,14 @@ func (c *defaultBlueprintContainer) StageChanges(
 		)
 	}
 
-	err := c.checkDrift(ctxWithInstanceID, input.InstanceID, paramOverrides)
+	err = c.checkDrift(ctxWithInstanceID, resolvedInstanceID, paramOverrides)
 	if err != nil {
 		return err
 	}
 
 	if input.Destroy {
 		changeStagingLogger.Info("staging changes for destroying blueprint instance")
-		go c.stageInstanceRemoval(ctxWithInstanceID, input.InstanceID, channels)
+		go c.stageInstanceRemoval(ctxWithInstanceID, resolvedInstanceID, channels)
 		return nil
 	}
 
@@ -63,7 +69,7 @@ func (c *defaultBlueprintContainer) StageChanges(
 
 	go c.stageChanges(
 		ctxWithInstanceID,
-		input.InstanceID,
+		resolvedInstanceID,
 		prepareResult.ParallelGroups,
 		paramOverrides,
 		prepareResult.ResourceProviderMap,

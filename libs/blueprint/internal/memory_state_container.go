@@ -25,6 +25,7 @@ type MemoryStateContainer struct {
 
 func NewMemoryStateContainer() state.Container {
 	instances := map[string]*state.InstanceState{}
+	instanceNameIDLookup := map[string]string{}
 	resources := map[string]*state.ResourceState{}
 	resourceDrift := map[string]*state.ResourceDriftState{}
 	links := map[string]*state.LinkState{}
@@ -32,10 +33,11 @@ func NewMemoryStateContainer() state.Container {
 	mu := &sync.RWMutex{}
 	return &MemoryStateContainer{
 		instancesContainer: &memoryInstancesContainer{
-			instances: instances,
-			resources: resources,
-			links:     links,
-			mu:        mu,
+			instances:            instances,
+			instanceNameIDLookup: instanceNameIDLookup,
+			resources:            resources,
+			links:                links,
+			mu:                   mu,
 		},
 		resourcesContainer: &memoryResourcesContainer{
 			instances:     instances,
@@ -88,10 +90,11 @@ func (c *MemoryStateContainer) Children() state.ChildrenContainer {
 }
 
 type memoryInstancesContainer struct {
-	instances map[string]*state.InstanceState
-	resources map[string]*state.ResourceState
-	links     map[string]*state.LinkState
-	mu        *sync.RWMutex
+	instances            map[string]*state.InstanceState
+	instanceNameIDLookup map[string]string
+	resources            map[string]*state.ResourceState
+	links                map[string]*state.LinkState
+	mu                   *sync.RWMutex
 }
 
 func (c *memoryInstancesContainer) Get(ctx context.Context, instanceID string) (state.InstanceState, error) {
@@ -103,6 +106,20 @@ func (c *memoryInstancesContainer) Get(ctx context.Context, instanceID string) (
 	}
 
 	return state.InstanceState{}, state.InstanceNotFoundError(instanceID)
+}
+
+func (c *memoryInstancesContainer) LookupIDByName(
+	ctx context.Context,
+	instanceName string,
+) (string, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if instanceID, ok := c.instanceNameIDLookup[instanceName]; ok {
+		return instanceID, nil
+	}
+
+	return "", state.InstanceNotFoundError(instanceName)
 }
 
 func (c *memoryInstancesContainer) Save(
@@ -122,6 +139,9 @@ func (c *memoryInstancesContainer) save(
 ) error {
 
 	c.instances[instanceState.InstanceID] = &instanceState
+	if instanceState.InstanceName != "" {
+		c.instanceNameIDLookup[instanceState.InstanceName] = instanceState.InstanceID
+	}
 
 	for _, resource := range instanceState.Resources {
 		if resource.ResourceID != "" {

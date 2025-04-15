@@ -488,6 +488,7 @@ func assertInstanceStateEquals(
 	testSuite *suite.Suite,
 ) {
 	assertAllowForDynamicValue(expected.InstanceID, actual.InstanceID, actual, testSuite)
+	assertAllowForDynamicValue(expected.InstanceName, actual.InstanceName, actual, testSuite)
 	testSuite.Assert().Equal(expected.Status, actual.Status)
 	assertResourceIDsMapKeysEqual(expected.ResourceIDs, actual.ResourceIDs, testSuite)
 	assertChildDependenciesEqual(expected.ChildDependencies, actual.ChildDependencies, testSuite)

@@ -1,5 +1,6 @@
 {
-  "id": "child-deploy-test--blueprint-instance-1-parent",
+  "id": "child-deploy-test--blueprint-instance-1--parent",
+  "name": "ChildDeployTest-BlueprintInstance1Parent",
   "status": 1,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,
@@ -19,6 +20,7 @@
   "childBlueprints": {
     "networking": {
       "id": "child-deploy-test--blueprint-instance-1-networking",
+      "name": "ChildDeployTest-BlueprintInstance1Parent-BlueprintInstance1Networking",
       "status": 1,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,

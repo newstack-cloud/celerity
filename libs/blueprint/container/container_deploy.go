@@ -25,7 +25,7 @@ func (c *defaultBlueprintContainer) Deploy(
 	channels *DeployChannels,
 	paramOverrides core.BlueprintParams,
 ) error {
-	instanceID, err := c.getInstanceID(input)
+	instanceID, newID, err := c.getDeployInstanceID(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -33,17 +33,27 @@ func (c *defaultBlueprintContainer) Deploy(
 	ctxWithInstanceID := context.WithValue(ctx, core.BlueprintInstanceIDKey, instanceID)
 	deployLogger := c.logger.Named("deploy").WithFields(
 		core.StringLogField("instanceId", input.InstanceID),
+		core.StringLogField("instanceName", input.InstanceName),
 	)
 	state := c.createDeploymentState()
 
-	isNewInstance, err := checkDeploymentForNewInstance(input)
+	isNewInstance, err := checkDeploymentForNewInstance(input, newID)
 	if err != nil {
 		return err
+	}
+
+	if isNewInstance && input.InstanceName == "" {
+		deployLogger.Error(
+			"no instance name provided for new instance, " +
+				"a name must be provided for new blueprint instances",
+		)
+		return errMissingNameForNewInstance()
 	}
 
 	err = c.saveNewInstance(
 		ctx,
 		instanceID,
+		input.InstanceName,
 		isNewInstance,
 		core.InstanceStatusNotDeployed,
 		deployLogger,
@@ -66,9 +76,10 @@ func (c *defaultBlueprintContainer) Deploy(
 	go c.deploy(
 		ctxWithInstanceID,
 		&DeployInput{
-			InstanceID: instanceID,
-			Changes:    input.Changes,
-			Rollback:   input.Rollback,
+			InstanceID:   instanceID,
+			InstanceName: input.InstanceName,
+			Changes:      input.Changes,
+			Rollback:     input.Rollback,
 		},
 		rewiredChannels,
 		state,
@@ -449,17 +460,45 @@ func (c *defaultBlueprintContainer) saveInstanceDeploymentState(
 	}
 }
 
-func (c *defaultBlueprintContainer) getInstanceID(input *DeployInput) (string, error) {
-	if input.InstanceID == "" {
-		return c.idGenerator.GenerateID()
+func (c *defaultBlueprintContainer) getDeployInstanceID(
+	ctx context.Context,
+	input *DeployInput,
+) (string, bool, error) {
+	if input.InstanceID == "" && input.InstanceName == "" {
+		return c.generateInstanceID()
 	}
 
-	return input.InstanceID, nil
+	if input.InstanceID == "" && input.InstanceName != "" {
+		instanceID, err := c.stateContainer.
+			Instances().
+			LookupIDByName(ctx, input.InstanceName)
+		if err != nil {
+			if state.IsInstanceNotFound(err) {
+				return c.generateInstanceID()
+			}
+			return "", false, err
+		}
+
+		// false to indicate that the instance ID was not generated.
+		return instanceID, false, nil
+	}
+
+	// false to indicate that the instance ID was not generated.
+	return input.InstanceID, false, nil
+}
+
+func (c *defaultBlueprintContainer) generateInstanceID() (string, bool, error) {
+	generatedID, err := c.idGenerator.GenerateID()
+	if err != nil {
+		return "", false, err
+	}
+	return generatedID, true, nil
 }
 
 func (c *defaultBlueprintContainer) saveNewInstance(
 	ctx context.Context,
 	instanceID string,
+	instanceName string,
 	isNewInstance bool,
 	currentStatus core.InstanceStatus,
 	deployLogger core.Logger,
@@ -473,8 +512,9 @@ func (c *defaultBlueprintContainer) saveNewInstance(
 	return c.stateContainer.Instances().Save(
 		ctx,
 		state.InstanceState{
-			InstanceID: instanceID,
-			Status:     currentStatus,
+			InstanceID:   instanceID,
+			InstanceName: instanceName,
+			Status:       currentStatus,
 		},
 	)
 }

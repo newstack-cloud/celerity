@@ -154,6 +154,61 @@ func (s *ContainerDestroyTestSuite) Test_destroys_blueprint_instance_with_child_
 	s.Assert().Equal(state.ErrInstanceNotFound, stateErr.Code)
 }
 
+func (s *ContainerDestroyTestSuite) Test_destroys_blueprint_instance_with_child_blueprint_by_name() {
+	channels := CreateDeployChannels()
+	s.blueprint1Fixture.blueprintContainer.Destroy(
+		context.Background(),
+		&DestroyInput{
+			InstanceName: "BlueprintInstance1",
+			Changes:      blueprint1RemovalChanges(),
+			Rollback:     false,
+		},
+		channels,
+		blueprintDestroyParams(),
+	)
+
+	resourceUpdateMessages := []ResourceDeployUpdateMessage{}
+	childDeployUpdateMessages := []ChildDeployUpdateMessage{}
+	linkDeployUpdateMessages := []LinkDeployUpdateMessage{}
+	deploymentUpdateMessages := []DeploymentUpdateMessage{}
+	finishedMessage := (*DeploymentFinishedMessage)(nil)
+	var err error
+	for err == nil &&
+		finishedMessage == nil {
+		select {
+		case msg := <-channels.ResourceUpdateChan:
+			resourceUpdateMessages = append(resourceUpdateMessages, msg)
+		case msg := <-channels.ChildUpdateChan:
+			childDeployUpdateMessages = append(childDeployUpdateMessages, msg)
+		case msg := <-channels.LinkUpdateChan:
+			linkDeployUpdateMessages = append(linkDeployUpdateMessages, msg)
+		case msg := <-channels.FinishChan:
+			finishedMessage = &msg
+		case msg := <-channels.DeploymentUpdateChan:
+			deploymentUpdateMessages = append(deploymentUpdateMessages, msg)
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Require().NoError(err)
+
+	actualMessages := &actualMessages{
+		resourceDeployUpdateMessages: resourceUpdateMessages,
+		childDeployUpdateMessages:    childDeployUpdateMessages,
+		linkDeployUpdateMessages:     linkDeployUpdateMessages,
+		deploymentUpdateMessages:     deploymentUpdateMessages,
+		finishedMessage:              finishedMessage,
+	}
+	assertDeployMessageOrder(actualMessages, s.blueprint1Fixture.expected, &s.Suite)
+
+	_, err = s.stateContainer.Instances().Get(context.Background(), "blueprint-instance-1")
+	s.Assert().Error(err)
+	stateErr, isStateErr := err.(*state.Error)
+	s.Assert().True(isStateErr)
+	s.Assert().Equal(state.ErrInstanceNotFound, stateErr.Code)
+}
+
 func (s *ContainerDestroyTestSuite) Test_destroys_blueprint_instance_as_deployment_rollback() {
 	channels := CreateDeployChannels()
 	s.blueprint2Fixture.blueprintContainer.Destroy(

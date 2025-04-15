@@ -134,7 +134,7 @@ func (s *ContainerDeployTestSuite) Test_deploys_updates_to_existing_blueprint_in
 	)
 	s.Require().NoError(changeStagingErr)
 
-	s.blueprint1Fixture.blueprintContainer.Deploy(
+	err := s.blueprint1Fixture.blueprintContainer.Deploy(
 		context.Background(),
 		&DeployInput{
 			InstanceID: "blueprint-instance-1",
@@ -144,13 +144,83 @@ func (s *ContainerDeployTestSuite) Test_deploys_updates_to_existing_blueprint_in
 		channels,
 		s.fixture1Params,
 	)
+	s.Require().NoError(err)
 
 	resourceUpdateMessages := []ResourceDeployUpdateMessage{}
 	childDeployUpdateMessages := []ChildDeployUpdateMessage{}
 	linkDeployUpdateMessages := []LinkDeployUpdateMessage{}
 	deploymentUpdateMessages := []DeploymentUpdateMessage{}
 	finishedMessage := (*DeploymentFinishedMessage)(nil)
-	var err error
+	for err == nil &&
+		finishedMessage == nil {
+		select {
+		case msg := <-channels.ResourceUpdateChan:
+			resourceUpdateMessages = append(resourceUpdateMessages, msg)
+		case msg := <-channels.ChildUpdateChan:
+			childDeployUpdateMessages = append(childDeployUpdateMessages, msg)
+		case msg := <-channels.LinkUpdateChan:
+			linkDeployUpdateMessages = append(linkDeployUpdateMessages, msg)
+		case msg := <-channels.FinishChan:
+			finishedMessage = &msg
+		case msg := <-channels.DeploymentUpdateChan:
+			deploymentUpdateMessages = append(deploymentUpdateMessages, msg)
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Require().NoError(err)
+
+	actualMessages := &actualMessages{
+		resourceDeployUpdateMessages: resourceUpdateMessages,
+		childDeployUpdateMessages:    childDeployUpdateMessages,
+		linkDeployUpdateMessages:     linkDeployUpdateMessages,
+		deploymentUpdateMessages:     deploymentUpdateMessages,
+		finishedMessage:              finishedMessage,
+	}
+	assertDeployMessageOrder(actualMessages, s.blueprint1Fixture.expected, &s.Suite)
+
+	instanceState, err := s.stateContainer.Instances().Get(context.Background(), "blueprint-instance-1")
+	s.Require().NoError(err)
+	assertInstanceStateEquals(
+		s.blueprint1Fixture.expectedInstanceState,
+		&instanceState,
+		&s.Suite,
+	)
+}
+
+func (s *ContainerDeployTestSuite) Test_deploys_updates_to_existing_blueprint_instance_by_name() {
+	channels := CreateDeployChannels()
+	// Stage changes before deploying to get a change set derived from the test fixture
+	// state without having to manually create a change set fixture.
+	changes, changeStagingErr := s.stageChanges(
+		context.Background(),
+		"blueprint-instance-1",
+		s.blueprint1Fixture.blueprintContainer,
+		s.fixture1Params,
+	)
+	s.Require().NoError(changeStagingErr)
+
+	err := s.blueprint1Fixture.blueprintContainer.Deploy(
+		context.Background(),
+		&DeployInput{
+			// user-defined name provided instead of ID,
+			// deploy should resolve the ID to select the correct
+			// instance to update.
+			InstanceName: "BlueprintInstance1",
+			Changes:      changes,
+			Rollback:     false,
+		},
+		channels,
+		s.fixture1Params,
+	)
+	s.Require().NoError(err)
+
+	resourceUpdateMessages := []ResourceDeployUpdateMessage{}
+	childDeployUpdateMessages := []ChildDeployUpdateMessage{}
+	linkDeployUpdateMessages := []LinkDeployUpdateMessage{}
+	deploymentUpdateMessages := []DeploymentUpdateMessage{}
+	finishedMessage := (*DeploymentFinishedMessage)(nil)
 	for err == nil &&
 		finishedMessage == nil {
 		select {
@@ -201,24 +271,28 @@ func (s *ContainerDeployTestSuite) Test_deploys_new_blueprint_instance() {
 	)
 	s.Require().NoError(changeStagingErr)
 
-	s.blueprint2Fixture.blueprintContainer.Deploy(
+	err := s.blueprint2Fixture.blueprintContainer.Deploy(
 		context.Background(),
 		&DeployInput{
 			// An ID must not be provided for a new blueprint instance,
 			// the container will generate it.
-			Changes:  changes,
-			Rollback: false,
+			//
+			// An instance name, however, must be provided for a new
+			// deployment.
+			InstanceName: "BlueprintInstance2",
+			Changes:      changes,
+			Rollback:     false,
 		},
 		channels,
 		s.fixture2Params,
 	)
+	s.Require().NoError(err)
 
 	resourceUpdateMessages := []ResourceDeployUpdateMessage{}
 	childDeployUpdateMessages := []ChildDeployUpdateMessage{}
 	linkDeployUpdateMessages := []LinkDeployUpdateMessage{}
 	deploymentUpdateMessages := []DeploymentUpdateMessage{}
 	finishedMessage := (*DeploymentFinishedMessage)(nil)
-	var err error
 	for err == nil &&
 		finishedMessage == nil {
 		select {
@@ -260,6 +334,41 @@ func (s *ContainerDeployTestSuite) Test_deploys_new_blueprint_instance() {
 	)
 }
 
+func (s *ContainerDeployTestSuite) Test_fails_to_deploy_new_blueprint_instance_when_name_is_missing() {
+	channels := CreateDeployChannels()
+	// Stage changes before deploying to get a change set derived from the test fixture
+	// state without having to manually create a change set fixture.
+	changes, changeStagingErr := s.stageChanges(
+		context.Background(),
+		/* instanceID */ "",
+		s.blueprint2Fixture.blueprintContainer,
+		s.fixture2Params,
+	)
+	s.Require().NoError(changeStagingErr)
+
+	err := s.blueprint2Fixture.blueprintContainer.Deploy(
+		context.Background(),
+		&DeployInput{
+			// An ID must not be provided for a new blueprint instance,
+			// the container will generate it.
+			//
+			// An instance name, however, must be provided for a new
+			// deployment but is missing here.
+			Changes:  changes,
+			Rollback: false,
+		},
+		channels,
+		s.fixture2Params,
+	)
+	s.Require().Error(err)
+	runErr, isRunErr := err.(*bperrors.RunError)
+	s.Assert().True(isRunErr)
+	s.Assert().Equal(
+		ErrorReasonCodeMissingNameForNewInstance,
+		runErr.ReasonCode,
+	)
+}
+
 func (s *ContainerDeployTestSuite) Test_fails_to_deploy_blueprint_with_cycle() {
 	channels := CreateDeployChannels()
 	changes := fixture3Changes()
@@ -274,7 +383,7 @@ func (s *ContainerDeployTestSuite) Test_fails_to_deploy_blueprint_with_cycle() {
 	)
 	s.Require().NoError(attachErr)
 
-	s.blueprint3Fixture.blueprintContainer.Deploy(
+	err := s.blueprint3Fixture.blueprintContainer.Deploy(
 		context.Background(),
 		&DeployInput{
 			InstanceID: "blueprint-instance-3",
@@ -284,8 +393,8 @@ func (s *ContainerDeployTestSuite) Test_fails_to_deploy_blueprint_with_cycle() {
 		channels,
 		s.fixture3Params,
 	)
+	s.Require().NoError(err)
 
-	var err error
 	var finishMsg *DeploymentFinishedMessage
 	for err == nil && finishMsg == nil {
 		select {
@@ -321,7 +430,7 @@ func (s *ContainerDeployTestSuite) Test_fails_to_deploy_blueprint_instance_alrea
 	)
 	s.Require().NoError(changeStagingErr)
 
-	s.blueprint3Fixture.blueprintContainer.Deploy(
+	err := s.blueprint3Fixture.blueprintContainer.Deploy(
 		context.Background(),
 		&DeployInput{
 			InstanceID: "blueprint-instance-4",
@@ -331,8 +440,8 @@ func (s *ContainerDeployTestSuite) Test_fails_to_deploy_blueprint_instance_alrea
 		channels,
 		s.fixture4Params,
 	)
+	s.Require().NoError(err)
 
-	var err error
 	var finishMsg *DeploymentFinishedMessage
 	for err == nil && finishMsg == nil {
 		select {

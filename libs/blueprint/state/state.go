@@ -43,6 +43,15 @@ type InstancesContainer interface {
 	// Get deals with retrieving the state for a given blueprint
 	// instance ID.
 	Get(ctx context.Context, instanceID string) (InstanceState, error)
+	// LookupIDByName deals with retrieving the ID of a blueprint instance
+	// given a unique name.
+	// This is useful for situations where the user makes requests to carry
+	// out an action, only providing a name that they have defined.
+	// This exists to allow the majority of the deployment/change staging
+	// system to work based off of an instance ID
+	// while allowing the user to provide their own name to carry out an
+	// action on an instance.
+	LookupIDByName(ctx context.Context, instanceName string) (string, error)
 	// Save deals with persisting a blueprint instance.
 	Save(ctx context.Context, instanceState InstanceState) error
 	// UpdateStatus deals with updating the status of the latest blueprint
@@ -326,8 +335,12 @@ type ResourceStatusInfo struct {
 // InstanceState stores the state of a blueprint instance
 // including resources, metadata, exported fields and child blueprints.
 type InstanceState struct {
-	InstanceID string              `json:"id"`
-	Status     core.InstanceStatus `json:"status"`
+	InstanceID string `json:"id"`
+	// InstanceName holds a user-defined globally unique name for the blueprint instance.
+	// In multi-tiered systems this expected to be prefixed by an account or organisation
+	// name or ID.
+	InstanceName string              `json:"name"`
+	Status       core.InstanceStatus `json:"status"`
 	// LastStatusUpdateTimestamp holds the unix timestamp when the blueprint instance deployment
 	// status was last updated.
 	LastStatusUpdateTimestamp int `json:"lastStatusUpdateTimestamp,omitempty"`

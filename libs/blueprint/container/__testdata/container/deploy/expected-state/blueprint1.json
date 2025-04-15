@@ -1,5 +1,6 @@
 {
   "id": "blueprint-instance-1",
+  "name": "BlueprintInstance1",
   "status": 14,
   "lastDeployedTimestamp": -1,
   "lastDeployAttemptTimestamp": -1,

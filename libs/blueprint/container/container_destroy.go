@@ -39,7 +39,22 @@ func (c *defaultBlueprintContainer) destroy(
 	state DeploymentState,
 	paramOverrides core.BlueprintParams,
 ) {
-	instanceTreePath := getInstanceTreePath(paramOverrides, input.InstanceID)
+
+	startTime := c.clock.Now()
+
+	resolvedInstanceID, err := c.getInstanceID(ctx, input.InstanceID, input.InstanceName)
+	if err != nil {
+		channels.FinishChan <- c.createDeploymentFinishedMessage(
+			input.InstanceID,
+			determineInstanceDestroyFailedStatus(input.Rollback),
+			[]string{err.Error()},
+			c.clock.Since(startTime),
+			/* prepareElapsedTime */ nil,
+		)
+		return
+	}
+
+	instanceTreePath := getInstanceTreePath(paramOverrides, resolvedInstanceID)
 	if exceedsMaxDepth(instanceTreePath, MaxBlueprintDepth) {
 		channels.ErrChan <- errMaxBlueprintDepthExceeded(
 			instanceTreePath,
@@ -50,7 +65,7 @@ func (c *defaultBlueprintContainer) destroy(
 
 	if input.Changes == nil {
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
-			input.InstanceID,
+			resolvedInstanceID,
 			determineInstanceDestroyFailedStatus(input.Rollback),
 			[]string{
 				emptyChangesDestroyFailedMessage(input.Rollback),
@@ -61,13 +76,11 @@ func (c *defaultBlueprintContainer) destroy(
 		return
 	}
 
-	startTime := c.clock.Now()
-
 	instances := c.stateContainer.Instances()
-	currentInstanceState, err := instances.Get(ctx, input.InstanceID)
+	currentInstanceState, err := instances.Get(ctx, resolvedInstanceID)
 	if err != nil {
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
-			input.InstanceID,
+			resolvedInstanceID,
 			determineInstanceDestroyFailedStatus(input.Rollback),
 			[]string{prepareDestroyFailureMessage},
 			c.clock.Since(startTime),
@@ -78,9 +91,9 @@ func (c *defaultBlueprintContainer) destroy(
 
 	if isInstanceInProgress(&currentInstanceState, input.Rollback) {
 		channels.FinishChan <- c.createDeploymentFinishedMessage(
-			input.InstanceID,
+			resolvedInstanceID,
 			determineInstanceDeployFailedStatus(input.Rollback, false /* newInstance */),
-			[]string{instanceInProgressDeployFailedMessage(input.InstanceID, input.Rollback)},
+			[]string{instanceInProgressDeployFailedMessage(resolvedInstanceID, input.Rollback)},
 			c.clock.Since(startTime),
 			/* prepareElapsedTime */ nil,
 		)
@@ -91,7 +104,7 @@ func (c *defaultBlueprintContainer) destroy(
 	// and checking if there is a deployment/removal in progress for the provided
 	// instance ID.
 	channels.DeploymentUpdateChan <- DeploymentUpdateMessage{
-		InstanceID:      input.InstanceID,
+		InstanceID:      resolvedInstanceID,
 		Status:          determineInstanceDestroyingStatus(input.Rollback),
 		UpdateTimestamp: startTime.Unix(),
 	}
@@ -111,13 +124,14 @@ func (c *defaultBlueprintContainer) destroy(
 		ResourceTemplates:     map[string]string{},
 		ResourceRegistry:      c.resourceRegistry.WithParams(paramOverrides),
 		Logger: c.logger.Named("destroy").WithFields(
-			core.StringLogField("instanceId", input.InstanceID),
+			core.StringLogField("instanceId", resolvedInstanceID),
+			core.StringLogField("instanceName", input.InstanceName),
 		),
 	}
 	sentFinishedMessage, err := c.removeElements(
 		ctx,
 		&DeployInput{
-			InstanceID: input.InstanceID,
+			InstanceID: resolvedInstanceID,
 			Changes:    input.Changes,
 			Rollback:   input.Rollback,
 		},
@@ -136,7 +150,12 @@ func (c *defaultBlueprintContainer) destroy(
 
 	sentFinishedMessage = c.removeBlueprintInstanceFromState(
 		ctx,
-		input,
+		&DestroyInput{
+			InstanceID:   resolvedInstanceID,
+			InstanceName: input.InstanceName,
+			Changes:      input.Changes,
+			Rollback:     input.Rollback,
+		},
 		channels,
 		startTime,
 		instances,
@@ -147,7 +166,7 @@ func (c *defaultBlueprintContainer) destroy(
 	}
 
 	channels.FinishChan <- c.createDeploymentFinishedMessage(
-		input.InstanceID,
+		resolvedInstanceID,
 		determineInstanceDestroyedStatus(input.Rollback),
 		[]string{},
 		c.clock.Since(startTime),

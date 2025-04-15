@@ -632,9 +632,9 @@ func determineOperation(deployCtx *DeployContext) string {
 	return "deploy"
 }
 
-func checkDeploymentForNewInstance(input *DeployInput) (bool, error) {
+func checkDeploymentForNewInstance(input *DeployInput, newIDGenerated bool) (bool, error) {
 	if input.Changes == nil {
-		return input.InstanceID == "", nil
+		return newIDGenerated, nil
 	}
 
 	hasExistingResourceChanges := len(input.Changes.ResourceChanges) > 0 ||
@@ -644,11 +644,11 @@ func checkDeploymentForNewInstance(input *DeployInput) (bool, error) {
 		len(input.Changes.RemovedChildren) > 0 ||
 		len(input.Changes.RecreateChildren) > 0
 
-	if input.InstanceID == "" && (hasExistingResourceChanges || hasExistingChildChanges) {
+	if newIDGenerated && (hasExistingResourceChanges || hasExistingChildChanges) {
 		return false, errInstanceIDRequiredForChanges()
 	}
 
-	isForNewInstance := input.InstanceID == "" &&
+	isForNewInstance := newIDGenerated &&
 		!hasExistingResourceChanges &&
 		!hasExistingChildChanges
 

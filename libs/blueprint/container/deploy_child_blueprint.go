@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/includes"
@@ -92,6 +93,16 @@ func (d *defaultChildBlueprintDeployer) Deploy(
 		return
 	}
 
+	childInstanceName, err := d.resolveChildInstanceName(
+		ctx,
+		loadResult,
+		parentInstanceID,
+	)
+	if err != nil {
+		deployCtx.Channels.ErrChan <- err
+		return
+	}
+
 	childChannels := &DeployChannels{
 		ResourceUpdateChan:   make(chan ResourceDeployUpdateMessage),
 		LinkUpdateChan:       make(chan LinkDeployUpdateMessage),
@@ -103,9 +114,10 @@ func (d *defaultChildBlueprintDeployer) Deploy(
 	err = loadResult.childContainer.Deploy(
 		ctx,
 		&DeployInput{
-			InstanceID: loadResult.childState.InstanceID,
-			Changes:    changes,
-			Rollback:   deployCtx.Rollback,
+			InstanceID:   loadResult.childState.InstanceID,
+			InstanceName: childInstanceName,
+			Changes:      changes,
+			Rollback:     deployCtx.Rollback,
 		},
 		childChannels,
 		loadResult.childParams,
@@ -123,6 +135,32 @@ func (d *defaultChildBlueprintDeployer) Deploy(
 		childChannels,
 		deployCtx,
 	)
+}
+
+func (d *defaultChildBlueprintDeployer) resolveChildInstanceName(
+	ctx context.Context,
+	loadResult *childBlueprintLoadResult,
+	parentInstanceID string,
+) (string, error) {
+	if loadResult.childState.InstanceName != "" {
+		return loadResult.childState.InstanceName, nil
+	}
+
+	// Load the parent instance to get its name to generate
+	// a name for the child based on the parent name and the name
+	// of the child include in the parent blueprint.
+	parentInstanceState, err := d.stateContainer.
+		Instances().
+		Get(ctx, parentInstanceID)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf(
+		"%s-%s",
+		parentInstanceState.InstanceName,
+		loadResult.includeName,
+	), nil
 }
 
 func (d *defaultChildBlueprintDeployer) waitForChildDeployment(

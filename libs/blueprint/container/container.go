@@ -108,7 +108,12 @@ type BlueprintContainer interface {
 // for a blueprint instance.
 type StageChangesInput struct {
 	// InstanceID is the ID of the blueprint instance that the changes will be applied to.
+	// If this is set, `InstanceName` must be empty.
 	InstanceID string
+	// InstanceName is the user-defined name of the blueprint instance
+	// that the changes will be applied to.
+	// If this is set, `InstanceID` must be empty.
+	InstanceName string
 	// Destroy is used to indicate that the changes being staged should be for a destroy operation.
 	// If this is set to true, the change set will be generated for removal all components
 	// in the current state of the blueprint instance.
@@ -118,7 +123,12 @@ type StageChangesInput struct {
 // DeployInput contains the primary input needed to deploy a blueprint instance.
 type DeployInput struct {
 	// InstanceID is the ID of the blueprint instance that the changes will be deployed for.
+	// If this is set, `InstanceName` must be empty.
 	InstanceID string
+	// InstanceName is the user-defined name of the blueprint instance that
+	// the changes will be deployed for.
+	// If this is set, `InstanceID` must be empty.
+	InstanceName string
 	// Changes contains the changes that will be made to the blueprint instance.
 	Changes *changes.BlueprintChanges
 	// Rollback is used to indicate that the changes being deployed represent a rollback.
@@ -132,7 +142,12 @@ type DeployInput struct {
 // DestroyInput contains the primary input needed to destroy a blueprint instance.
 type DestroyInput struct {
 	// InstanceID is the ID of the blueprint instance that will be destroyed.
+	// If this is set, `InstanceName` must be empty.
 	InstanceID string
+	// InstanceName is the user-defined name of the blueprint instance
+	// that will be destroyed.
+	// If this is set, `InstanceID` must be empty.
+	InstanceName string
 	// Changes contains a description of all the elements that need to be
 	// removed when destroying the blueprint instance.
 	Changes *changes.BlueprintChanges
@@ -316,4 +331,38 @@ func (c *defaultBlueprintContainer) resolveExport(
 	}
 
 	return nil, nil
+}
+
+// A method to get an instance ID, allowing for it to be derived from
+// a name for the purpose of staging changes for or destroying
+// a blueprint instance.
+func (c *defaultBlueprintContainer) getInstanceID(
+	ctx context.Context,
+	instanceID string,
+	instanceName string,
+) (string, error) {
+	if instanceID != "" && instanceName != "" {
+		// For staging changes and destroying an instance,
+		// the user can only provide one of instance ID or name.
+		return "", errInstanceIDAndNameProvided()
+	}
+
+	if instanceID == "" && instanceName != "" {
+		resolvedInstanceID, err := c.stateContainer.
+			Instances().
+			LookupIDByName(ctx, instanceName)
+		if err != nil {
+			if state.IsInstanceNotFound(err) {
+				// If no instance exists for the given name,
+				// then assume it's a new instance for the purpose of change staging.
+				// Destroy will handle an empty instance ID at a later stage.
+				return "", nil
+			}
+			return "", err
+		}
+
+		return resolvedInstanceID, nil
+	}
+
+	return instanceID, nil
 }

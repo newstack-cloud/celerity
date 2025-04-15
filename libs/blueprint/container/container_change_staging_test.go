@@ -23,6 +23,7 @@ import (
 
 const (
 	blueprint1InstanceID      = "blueprint-instance-1"
+	blueprint1InstanceName    = "BlueprintInstance1"
 	blueprint2InstanceID      = "blueprint-instance-2"
 	blueprint3InstanceID      = "blueprint-instance-3"
 	blueprint3ChildInstanceID = "blueprint-instance-3-child-core-infra"
@@ -142,6 +143,49 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_bluepri
 		context.Background(),
 		&StageChangesInput{
 			InstanceID: blueprint1InstanceID,
+		},
+		channels,
+		params,
+	)
+	s.Require().NoError(err)
+
+	resourceChangeMessages := []ResourceChangesMessage{}
+	childChangeMessages := []ChildChangesMessage{}
+	linkChangeMessages := []LinkChangesMessage{}
+	fullChangeSet := (*changes.BlueprintChanges)(nil)
+	for err == nil &&
+		(fullChangeSet == nil ||
+			len(resourceChangeMessages) < 6 ||
+			len(childChangeMessages) < 1 ||
+			len(linkChangeMessages) < 3) {
+		select {
+		case msg := <-channels.ResourceChangesChan:
+			resourceChangeMessages = append(resourceChangeMessages, msg)
+		case msg := <-channels.ChildChangesChan:
+			childChangeMessages = append(childChangeMessages, msg)
+		case msg := <-channels.LinkChangesChan:
+			linkChangeMessages = append(linkChangeMessages, msg)
+		case changeSet := <-channels.CompleteChan:
+			fullChangeSet = &changeSet
+		case err = <-channels.ErrChan:
+		case <-time.After(60 * time.Second):
+			err = errors.New(timeoutMessage)
+		}
+	}
+	s.Require().NoError(err)
+
+	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	s.Require().NoError(err)
+}
+
+func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_blueprint_instance_by_name() {
+	channels := createChangeStagingChannels()
+	params := baseBlueprintParams()
+
+	err := s.blueprint1Container.StageChanges(
+		context.Background(),
+		&StageChangesInput{
+			InstanceName: blueprint1InstanceName,
 		},
 		channels,
 		params,
