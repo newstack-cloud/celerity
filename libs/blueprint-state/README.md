@@ -9,8 +9,6 @@ A library that provides a collection of state container implementations to be us
 ## Implementations
 
 - Postgres - A state container backed by a Postgres database that is modelled in a normalised, relational way.
-- Redis OSS - A state container backed by Redis OSS (<=v7.2) or a Redis OSS compatible database such as [Valkey](https://valkey.io/).
-- Cassandra - A state container backed by a Cassandra database, this is modelled in a way that is tailored towards the queries in the `state.Container` interface.
 - In-memory with file persistence - A state container backed by an in-process, in-memory store that uses files on disk for persistence. This implementation is mostly useful for single node deployments of the deploy engine or for managing deployments from a developer's machine.
 
 ## Usage
@@ -60,10 +58,6 @@ func setupStateContainer() (state.Container, error) {
     return postgres.LoadStateContainer(".deploy_state", connPool, logger.Named("state"))
 }
 ```
-
-### Redis OSS
-
-### Cassandra
 
 ### In-memory with file persistence
 

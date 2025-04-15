@@ -86,7 +86,7 @@ See [here](https://go.dev/wiki/Modules#publishing-a-release).
 
 ### Added
 
-- Improves performance for querying resources in cassandra-backed state container.
+- Improves performance for querying resources in postgres-backed state container.
 ```
 
 2. Create and push the new tag prefixed by sub-directory path:
@@ -107,7 +107,7 @@ Title: `Blueprint State - v0.2.0`
 
 ## Added
 
-- Improves performance for querying resources in cassandra-backed state container.
+- Improves performance for querying resources in postgres-backed state container.
 ```
 
 3. Prompt Go to update its index of modules with the new release:
