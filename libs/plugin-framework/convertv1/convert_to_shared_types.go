@@ -1140,7 +1140,7 @@ func toPBFunctionAnyReturn(
 	return &sharedtypesv1.FunctionReturn{
 		Return: &sharedtypesv1.FunctionReturn_AnyReturn{
 			AnyReturn: &sharedtypesv1.FunctionAnyReturn{
-				Type:                 toPBFunctionValueType(returnType.Type),
+				Type:                 toPBFunctionValueType(returnType.GetType()),
 				UnionTypes:           unionTypes,
 				Description:          returnType.Description,
 				FormattedDescription: returnType.FormattedDescription,
