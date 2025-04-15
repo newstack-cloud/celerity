@@ -534,6 +534,7 @@ github.com/tliron/exturl v0.4.3/go.mod h1:odoBxRKyJ/nEGjqK+AcZy6R7wKhRcVFhnqvmjg
 github.com/tliron/go-ard v0.2.16/go.mod h1:LjHmKVlDvh8mSksijtEihMULBb3/Xh8fILBknHUaXyQ=
 github.com/tliron/go-transcribe v0.3.4/go.mod h1:KGNTIkslQcMmQAq36Ofef6xQjMMNOv+owvrOMtW55NI=
 github.com/tliron/yamlkeys v1.3.6/go.mod h1:K/uKQwMke5a9h6YW/Sj9pcp66vU3lRP97OrOjo/ELoU=
+github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250414203741-d507233550fb/go.mod h1:/ouN94LHajNUFBCqpUflPGR4FYpdj/MwJP4jtdrqlV4=
 github.com/vbatts/tar-split v0.11.3/go.mod h1:9QlHN18E+fEH7RdG+QAJJcuya3rqT7eXSTY7wGrAokY=
 github.com/vmihailenco/msgpack/v5 v5.4.1/go.mod h1:GaZTsDaehaPpQVyxrf5mtQlH+pc21PIudVV/E3rRQok=
 github.com/vmihailenco/tagparser/v2 v2.0.0/go.mod h1:Wri+At7QHww0WTrCBeu4J6bNtoV6mEfg5OIWRZA9qds=

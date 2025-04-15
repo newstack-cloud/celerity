@@ -31,6 +31,7 @@ lint_project libs/plugin-framework
 lint_project libs/runtime
 
 lint_project tools/blueprint-ls
+lint_project tools/plugin-docgen
 
 lint_project apps/deploy-engine
 lint_project apps/cli
