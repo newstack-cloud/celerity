@@ -33,11 +33,11 @@ func main() {
     osfs := afero.NewOsFs()
     fsResolver := fs.NewResolver(osfs)
 
-    // nil endpoint resolver will use the default endpoint,
+    // An empty endpoint will lead the resolver to use the default endpoint,
     // credentials will be configured using the default AWS SDK
     // credential chain that will pick up environment variables,
     // shared credentials file, or IAM role.
-    s3Resolver := s3.NewResolver(nil)
+    s3Resolver := s3.NewResolver( /* endpoint */ "", /* usePathStyle */ false)
 
     // Create a new router that allows for multiple resolvers
     // to be used to resolve child blueprints based on a `sourceType`
