@@ -61,7 +61,8 @@ done
 echo "Populating S3 with test data ..."
 
 aws --endpoint-url=http://localhost:4579 s3 mb s3://test-bucket --region eu-west-2
-aws --endpoint-url=http://localhost:4579 s3 cp __testdata/s3/data/test-bucket/s3.test.blueprint.yml s3://test-bucket/s3.test.blueprint.yml --region eu-west-2
+aws --endpoint-url=http://localhost:4579 s3api put-object --bucket test-bucket \
+  --body __testdata/s3/data/test-bucket/s3.test.blueprint.yml --key s3.test.blueprint.yml --region eu-west-2
 
 # Make sure the Google Cloud SDK uses the fake GCS server emulator.
 export STORAGE_EMULATOR_HOST="http://localhost:8184"
