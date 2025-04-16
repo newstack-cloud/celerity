@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS blueprint_instances (
     id uuid PRIMARY KEY,
+    "name" varchar(255) NOT NULL UNIQUE,
     "status" smallint NOT NULL,
     last_status_update_timestamp timestamp,
     last_deployed_timestamp timestamp,

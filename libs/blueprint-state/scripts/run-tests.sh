@@ -70,7 +70,14 @@ set +a
 set -e
 echo "" > coverage.txt
 
-go test -timeout 60000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic `go list ./... | egrep -v '(/(testutils))$'`
+if [ -n "$UPDATE_SNAPSHOTS" ]; then
+
+  UPDATE_SNAPSHOTS=true go test -timeout 60000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic `go list ./... | egrep -v '(/(testutils))$'`
+else
+
+  go test -timeout 60000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic `go list ./... | egrep -v '(/(testutils))$'`
+
+fi
 
 if [ -z "$GITHUB_ACTION" ]; then
   # We are on a dev machine so produce html output of coverage

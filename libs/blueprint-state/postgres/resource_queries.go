@@ -12,6 +12,64 @@ func resourceByNameQuery() string {
 	WHERE instance_id = @instanceId AND "name" = @resourceName`
 }
 
+func upsertResourcesQuery() string {
+	return `
+	INSERT INTO resources (
+		id,
+		type,
+		template_name,
+		status,
+		precise_status,
+		last_status_update_timestamp,
+		last_deployed_timestamp,
+		last_deploy_attempt_timestamp,
+		spec_data,
+		description,
+		metadata,
+		depends_on_resources,
+		depends_on_children,
+		failure_reasons,
+		drifted,
+		last_drift_detected_timestamp,
+		durations
+	) VALUES (
+	 	@id,
+		@type,
+		@templateName,
+		@status,
+		@preciseStatus,
+		@lastStatusUpdateTimestamp,
+		@lastDeployedTimestamp,
+		@lastDeployAttemptTimestamp,
+		@specData,
+		@description,
+		@metadata,
+		@dependsOnResources,
+		@dependsOnChildren,
+		@failureReasons,
+		@drifted,
+		@lastDriftDetectedTimestamp,
+		@durations
+	) ON CONFLICT (id) DO UPDATE SET
+		type = excluded.type,
+		template_name = excluded.template_name,
+		status = excluded.status,
+		precise_status = excluded.precise_status,
+		last_status_update_timestamp = excluded.last_status_update_timestamp,
+		last_deployed_timestamp = excluded.last_deployed_timestamp,
+		last_deploy_attempt_timestamp = excluded.last_deploy_attempt_timestamp,
+		spec_data = excluded.spec_data,
+		description = excluded.description,
+		metadata = excluded.metadata,
+		depends_on_resources = excluded.depends_on_resources,
+		depends_on_children = excluded.depends_on_children,
+		failure_reasons = excluded.failure_reasons,
+		drifted = excluded.drifted,
+		last_drift_detected_timestamp = excluded.last_drift_detected_timestamp,
+		durations = excluded.durations
+	`
+}
+
 func resourceDriftQuery() string {
 	return `
 	SELECT 

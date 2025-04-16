@@ -29,6 +29,7 @@ type indexLocation struct {
 // between parent and child blueprints instead of embedding the entire child blueprint instance state.
 type persistedInstanceState struct {
 	InstanceID                 string                          `json:"id"`
+	InstanceName               string                          `json:"name"`
 	Status                     core.InstanceStatus             `json:"status"`
 	LastStatusUpdateTimestamp  int                             `json:"lastStatusUpdateTimestamp,omitempty"`
 	LastDeployedTimestamp      int                             `json:"lastDeployedTimestamp"`
@@ -165,6 +166,7 @@ func persistedToInstanceStateWithoutChildren(
 ) *state.InstanceState {
 	return &state.InstanceState{
 		InstanceID:                 persistedInstance.InstanceID,
+		InstanceName:               persistedInstance.InstanceName,
 		Status:                     persistedInstance.Status,
 		LastStatusUpdateTimestamp:  persistedInstance.LastStatusUpdateTimestamp,
 		LastDeployedTimestamp:      persistedInstance.LastDeployedTimestamp,

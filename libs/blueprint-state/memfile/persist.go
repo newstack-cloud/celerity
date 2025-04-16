@@ -387,6 +387,7 @@ func toPersistedInstanceState(instance *state.InstanceState) *persistedInstanceS
 
 	return &persistedInstanceState{
 		InstanceID:                 instance.InstanceID,
+		InstanceName:               instance.InstanceName,
 		Status:                     instance.Status,
 		LastStatusUpdateTimestamp:  instance.LastStatusUpdateTimestamp,
 		LastDeployedTimestamp:      instance.LastDeployedTimestamp,

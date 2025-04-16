@@ -1,5 +1,6 @@
 (state.InstanceState) {
   InstanceID: (string) (len=37) "blueprint-instance-1-child-core-infra",
+  InstanceName: (string) (len=28) "BlueprintInstance1-CoreInfra",
   Status: (core.InstanceStatus) 2,
   LastStatusUpdateTimestamp: (int) 0,
   LastDeployedTimestamp: (int) 1733145428,

@@ -12,6 +12,43 @@ func linkByNameQuery() string {
 	WHERE instance_id = @instanceId AND "name" = @linkName`
 }
 
+func upsertLinksQuery() string {
+	return `
+	INSERT INTO links (
+		id,
+		status,
+		precise_status,
+		last_status_update_timestamp,
+		last_deployed_timestamp,
+		last_deploy_attempt_timestamp,
+		intermediary_resources_state,
+		data,
+		failure_reasons,
+		durations
+	) VALUES (
+	 	@id,
+		@status,
+		@preciseStatus,
+		@lastStatusUpdateTimestamp,
+		@lastDeployedTimestamp,
+		@lastDeployAttemptTimestamp,
+		@intermediaryResourcesState,
+		@data,
+		@failureReasons,
+		@durations
+	) ON CONFLICT (id) DO UPDATE SET
+		status = excluded.status,
+		precise_status = excluded.precise_status,
+		last_status_update_timestamp = excluded.last_status_update_timestamp,
+		last_deployed_timestamp = excluded.last_deployed_timestamp,
+		last_deploy_attempt_timestamp = excluded.last_deploy_attempt_timestamp,
+		intermediary_resources_state = excluded.intermediary_resources_state,
+		data = excluded.data,
+		failure_reasons = excluded.failure_reasons,
+		durations = excluded.durations
+	`
+}
+
 func updateLinkStatusQuery(statusInfo *state.LinkStatusInfo) string {
 	query := `
 	UPDATE links

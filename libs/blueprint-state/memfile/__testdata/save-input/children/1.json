@@ -1,5 +1,6 @@
 {
   "id": "blueprint-instance-1-child-networking",
+  "name": "BlueprintInstance1-Networking",
   "status": 2,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,

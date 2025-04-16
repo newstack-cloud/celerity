@@ -15,9 +15,11 @@ import (
 
 const (
 	// See __testdata/seed/blueprint-instances.json
-	getTestRootInstanceID  = "46324ee7-b515-4988-98b0-d5445746a997"
-	updateStatusInstanceID = "eb5b3b43-5c85-4aa3-bfb8-70e9fb67fddb"
-	nonExistentInstanceID  = "9528bcf0-a42f-4da6-86c8-cb85263f71a9"
+	getTestRootInstanceID   = "46324ee7-b515-4988-98b0-d5445746a997"
+	getTestRootInstanceName = "SeedBlueprintInstance1"
+	updateStatusInstanceID  = "eb5b3b43-5c85-4aa3-bfb8-70e9fb67fddb"
+	nonExistentInstanceID   = "9528bcf0-a42f-4da6-86c8-cb85263f71a9"
+	nonExistentInstanceName = "NonExistentInstanceName"
 	// See __testdata/seed/save-input/blueprints/3.json
 	// The blueprint instance to remove is created as a part of the test case
 	// to make it easier to differentiate from all the other seed data.
@@ -80,6 +82,30 @@ func (s *PostgresStateContainerInstancesTestSuite) Test_reports_instance_not_fou
 	_, err := instances.Get(
 		context.Background(),
 		nonExistentInstanceID,
+	)
+	s.Require().Error(err)
+	stateErr, isStateErr := err.(*state.Error)
+	s.Assert().True(isStateErr)
+	s.Assert().Equal(state.ErrInstanceNotFound, stateErr.Code)
+}
+
+func (s *PostgresStateContainerInstancesTestSuite) Test_look_up_blueprint_instance_id_by_name() {
+	instances := s.container.Instances()
+
+	instanceID, err := instances.LookupIDByName(
+		context.Background(),
+		getTestRootInstanceName,
+	)
+	s.Require().NoError(err)
+	s.Assert().Equal(getTestRootInstanceID, instanceID)
+}
+
+func (s *PostgresStateContainerInstancesTestSuite) Test_reports_instance_not_found_for_id_lookup_by_name() {
+	instances := s.container.Instances()
+
+	_, err := instances.LookupIDByName(
+		context.Background(),
+		nonExistentInstanceName,
 	)
 	s.Require().Error(err)
 	stateErr, isStateErr := err.(*state.Error)

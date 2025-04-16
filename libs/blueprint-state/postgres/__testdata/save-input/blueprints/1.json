@@ -1,5 +1,6 @@
 {
   "id": "8f8a7db1-d01f-4250-8ae0-1af4a950cc6a",
+  "name": "BlueprintInstance1",
   "status": 2,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,
@@ -184,6 +185,7 @@
   "childBlueprints": {
     "coreInfra": {
       "id": "23b61154-d3aa-4a42-a6dd-f591ad1b2687",
+      "name": "BlueprintInstance1-CoreInfra",
       "status": 2,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,
@@ -240,6 +242,7 @@
       "childBlueprints": {
         "networking": {
           "id": "ed4ed88c-bf7e-4e9d-90dd-075518954ef8",
+          "name": "BlueprintInstance1-CoreInfra-Networking",
           "status": 2,
           "lastDeployedTimestamp": 1733145428,
           "lastDeployAttemptTimestamp": 1733145428,

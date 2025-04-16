@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS temp_blueprint_instances (data jsonb);
 
 INSERT INTO blueprint_instances (
     id,
+    "name",
     "status",
     last_status_update_timestamp,
     last_deployed_timestamp,
@@ -15,6 +16,7 @@ INSERT INTO blueprint_instances (
 )
 SELECT
     (data->>'id')::uuid,
+    data->>'name',
     (data->>'status')::smallint,
     TO_TIMESTAMP((data->>'lastStatusUpdateTimestamp')::bigint),
     TO_TIMESTAMP((data->>'lastDeployedTimestamp')::bigint),

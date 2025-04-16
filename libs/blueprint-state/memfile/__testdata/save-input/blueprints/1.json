@@ -1,5 +1,6 @@
 {
   "id": "blueprint-instance-2",
+  "name": "BlueprintInstance2",
   "status": 2,
   "lastDeployedTimestamp": 1733145428,
   "lastDeployAttemptTimestamp": 1733145428,
@@ -184,6 +185,7 @@
   "childBlueprints": {
     "coreInfra": {
       "id": "blueprint-instance-2-child-core-infra",
+      "name": "BlueprintInstance2-CoreInfra",
       "status": 2,
       "lastDeployedTimestamp": 1733145428,
       "lastDeployAttemptTimestamp": 1733145428,

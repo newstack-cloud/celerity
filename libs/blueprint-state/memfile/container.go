@@ -70,12 +70,16 @@ func LoadStateContainer(
 		persister: persister,
 		instancesContainer: &instancesContainerImpl{
 			instances: state.instances,
-			resources: state.resources,
-			links:     state.links,
-			fs:        fs,
-			persister: persister,
-			logger:    logger,
-			mu:        mu,
+			// The instance ID lookup is not something that is persisted,
+			// it is generated at load time as for the vast majority of use-cases
+			// there will not be a significant cost to generating it on load.
+			instanceIDLookup: createInstanceIDLookup(state.instances),
+			resources:        state.resources,
+			links:            state.links,
+			fs:               fs,
+			persister:        persister,
+			logger:           logger,
+			mu:               mu,
 		},
 		resourcesContainer: &resourcesContainerImpl{
 			resources:            state.resources,
@@ -156,4 +160,16 @@ func getLastChunkFromIndex(index map[string]*indexLocation) int {
 		}
 	}
 	return lastChunk
+}
+
+func createInstanceIDLookup(
+	instances map[string]*state.InstanceState,
+) map[string]string {
+	instanceIDLookup := make(map[string]string)
+	for instanceID, instance := range instances {
+		if instance.InstanceName != "" {
+			instanceIDLookup[instance.InstanceName] = instanceID
+		}
+	}
+	return instanceIDLookup
 }

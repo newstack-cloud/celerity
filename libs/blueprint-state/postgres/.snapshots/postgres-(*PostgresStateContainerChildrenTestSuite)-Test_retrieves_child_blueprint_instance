@@ -1,5 +1,6 @@
 (state.InstanceState) {
   InstanceID: (string) (len=36) "94203c13-a63a-4b22-83e5-2d2aa85657e8",
+  InstanceName: (string) (len=22) "SeedBlueprintInstance2",
   Status: (core.InstanceStatus) 2,
   LastStatusUpdateTimestamp: (int) 0,
   LastDeployedTimestamp: (int) 1740333926,

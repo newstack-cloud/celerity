@@ -12,7 +12,8 @@ import (
 )
 
 type instancesContainerImpl struct {
-	instances map[string]*state.InstanceState
+	instances        map[string]*state.InstanceState
+	instanceIDLookup map[string]string
 	// A reference to resources is needed to clean up resources
 	// when an instance is removed.
 	resources map[string]*state.ResourceState
@@ -43,6 +44,20 @@ func (c *instancesContainerImpl) Get(
 	return copyInstance(instance, instanceID), nil
 }
 
+func (c *instancesContainerImpl) LookupIDByName(
+	ctx context.Context,
+	instanceName string,
+) (string, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	instanceID, hasInstanceID := c.instanceIDLookup[instanceName]
+	if hasInstanceID {
+		return instanceID, nil
+	}
+
+	return "", state.InstanceNotFoundError(instanceName)
+}
+
 func (c *instancesContainerImpl) Save(
 	ctx context.Context,
 	instanceState state.InstanceState,
@@ -64,6 +79,7 @@ func (c *instancesContainerImpl) save(
 	)
 	_, alreadyExists := c.instances[instanceState.InstanceID]
 	c.instances[instanceState.InstanceID] = &instanceState
+	c.instanceIDLookup[instanceState.InstanceName] = instanceState.InstanceID
 
 	if alreadyExists {
 		instanceLogger.Debug("persisting instance update")

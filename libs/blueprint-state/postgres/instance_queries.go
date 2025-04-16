@@ -2,68 +2,11 @@ package postgres
 
 import "github.com/two-hundred/celerity/libs/blueprint/state"
 
-func upsertResourcesQuery() string {
-	return `
-	INSERT INTO resources (
-		id,
-		type,
-		template_name,
-		status,
-		precise_status,
-		last_status_update_timestamp,
-		last_deployed_timestamp,
-		last_deploy_attempt_timestamp,
-		spec_data,
-		description,
-		metadata,
-		depends_on_resources,
-		depends_on_children,
-		failure_reasons,
-		drifted,
-		last_drift_detected_timestamp,
-		durations
-	) VALUES (
-	 	@id,
-		@type,
-		@templateName,
-		@status,
-		@preciseStatus,
-		@lastStatusUpdateTimestamp,
-		@lastDeployedTimestamp,
-		@lastDeployAttemptTimestamp,
-		@specData,
-		@description,
-		@metadata,
-		@dependsOnResources,
-		@dependsOnChildren,
-		@failureReasons,
-		@drifted,
-		@lastDriftDetectedTimestamp,
-		@durations
-	) ON CONFLICT (id) DO UPDATE SET
-		type = excluded.type,
-		template_name = excluded.template_name,
-		status = excluded.status,
-		precise_status = excluded.precise_status,
-		last_status_update_timestamp = excluded.last_status_update_timestamp,
-		last_deployed_timestamp = excluded.last_deployed_timestamp,
-		last_deploy_attempt_timestamp = excluded.last_deploy_attempt_timestamp,
-		spec_data = excluded.spec_data,
-		description = excluded.description,
-		metadata = excluded.metadata,
-		depends_on_resources = excluded.depends_on_resources,
-		depends_on_children = excluded.depends_on_children,
-		failure_reasons = excluded.failure_reasons,
-		drifted = excluded.drifted,
-		last_drift_detected_timestamp = excluded.last_drift_detected_timestamp,
-		durations = excluded.durations
-	`
-}
-
 func upsertInstanceQuery() string {
 	return `
 	INSERT INTO blueprint_instances (
 		id,
+		"name",
 		status,
 		last_status_update_timestamp,
 		last_deployed_timestamp,
@@ -74,6 +17,7 @@ func upsertInstanceQuery() string {
 		durations
 	) VALUES (
 		@id,
+		@name,
 		@status,
 		@lastStatusUpdateTimestamp,
 		@lastDeployedTimestamp,
@@ -124,43 +68,6 @@ func upsertBlueprintResourceRelationsQuery() string {
 	`
 }
 
-func upsertLinksQuery() string {
-	return `
-	INSERT INTO links (
-		id,
-		status,
-		precise_status,
-		last_status_update_timestamp,
-		last_deployed_timestamp,
-		last_deploy_attempt_timestamp,
-		intermediary_resources_state,
-		data,
-		failure_reasons,
-		durations
-	) VALUES (
-	 	@id,
-		@status,
-		@preciseStatus,
-		@lastStatusUpdateTimestamp,
-		@lastDeployedTimestamp,
-		@lastDeployAttemptTimestamp,
-		@intermediaryResourcesState,
-		@data,
-		@failureReasons,
-		@durations
-	) ON CONFLICT (id) DO UPDATE SET
-		status = excluded.status,
-		precise_status = excluded.precise_status,
-		last_status_update_timestamp = excluded.last_status_update_timestamp,
-		last_deployed_timestamp = excluded.last_deployed_timestamp,
-		last_deploy_attempt_timestamp = excluded.last_deploy_attempt_timestamp,
-		intermediary_resources_state = excluded.intermediary_resources_state,
-		data = excluded.data,
-		failure_reasons = excluded.failure_reasons,
-		durations = excluded.durations
-	`
-}
-
 func upsertBlueprintLinkRelationsQuery() string {
 	return `
 	INSERT INTO blueprint_instance_links (
@@ -181,6 +88,7 @@ func blueprintInstanceQuery() string {
 	SELECT
 		json_build_object(
 			'id', bi.id,
+			'name', bi.name,
 			'status', bi.status,
 			'lastStatusUpdateTimestamp', EXTRACT(EPOCH FROM bi.last_status_update_timestamp)::bigint,
 			'lastDeployedTimestamp', EXTRACT(EPOCH FROM bi.last_deployed_timestamp)::bigint,
@@ -199,6 +107,12 @@ func blueprintInstanceQuery() string {
 	LEFT JOIN links_json l ON bi.id = l.instance_id
 	WHERE bi.id = @blueprintInstanceId
 	GROUP BY bi.id
+	`
+}
+
+func blueprintInstanceIDLookupQuery() string {
+	return `
+	SELECT id FROM blueprint_instances WHERE "name" = @blueprintInstanceName
 	`
 }
 
@@ -229,6 +143,7 @@ func blueprintInstanceDescendantsQuery() string {
 		d.child_instance_id,
 		json_build_object(
 			'id', bi.id,
+			'name', bi.name,
 			'status', bi.status,
 			'lastStatusUpdateTimestamp', EXTRACT(EPOCH FROM bi.last_status_update_timestamp)::bigint,
 			'lastDeployedTimestamp', EXTRACT(EPOCH FROM bi.last_deployed_timestamp)::bigint,
@@ -254,6 +169,7 @@ func blueprintInstanceChildQuery() string {
 	SELECT
 		json_build_object(
 			'id', bi.id,
+			'name', bi.name,
 			'status', bi.status,
 			'lastStatusUpdateTimestamp', EXTRACT(EPOCH FROM bi.last_status_update_timestamp)::bigint,
 			'lastDeployedTimestamp', EXTRACT(EPOCH FROM bi.last_deployed_timestamp)::bigint,

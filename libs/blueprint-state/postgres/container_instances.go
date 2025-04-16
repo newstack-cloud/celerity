@@ -39,6 +39,31 @@ func (c *instancesContainerImpl) Get(
 	return instance, nil
 }
 
+func (c *instancesContainerImpl) LookupIDByName(
+	ctx context.Context,
+	instanceName string,
+) (string, error) {
+	var instanceID string
+	err := c.connPool.QueryRow(
+		ctx,
+		blueprintInstanceIDLookupQuery(),
+		&pgx.NamedArgs{
+			"blueprintInstanceName": instanceName,
+		},
+	).Scan(&instanceID)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.Is(err, pgx.ErrNoRows) ||
+			(errors.As(err, &pgErr) && isAltNotFoundPostgresErrorCode(pgErr.Code)) {
+			return "", state.InstanceNotFoundError(instanceName)
+		}
+
+		return "", err
+	}
+
+	return instanceID, nil
+}
+
 func (c *instancesContainerImpl) wireDescendantInstances(
 	parentInstance *state.InstanceState,
 	descendants []*descendantBlueprintInfo,
@@ -420,6 +445,7 @@ func prepareUpsertInstanceQuery(instanceState *state.InstanceState) *queryInfo {
 func buildInstanceArgs(instanceState *state.InstanceState) *pgx.NamedArgs {
 	return &pgx.NamedArgs{
 		"id":                         instanceState.InstanceID,
+		"name":                       instanceState.InstanceName,
 		"status":                     instanceState.Status,
 		"lastStatusUpdateTimestamp":  toNullableTimestamp(instanceState.LastStatusUpdateTimestamp),
 		"lastDeployedTimestamp":      toUnixTimestamp(instanceState.LastDeployedTimestamp),
