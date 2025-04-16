@@ -25,16 +25,18 @@ func (s *AzureBlobStorageChildResolverSuite) SetupSuite() {
 	fileBytes, err := os.ReadFile("../__testdata/azure/data/test-container/azure.test.blueprint.yml")
 	s.Require().NoError(err)
 	s.expectedBlueprintSource = string(fileBytes)
-	client, err := azblob.NewClientFromConnectionString(
-		// This is the default connection string for Blob storage in Azurite,
-		// a local Azure Blob Storage emulator.
-		// See: https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage#http-connection-strings
-		"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;",
-		&azblob.ClientOptions{},
+	// Create a client to handle tear down.
+	client, err := createAzuriteBlobStorageClient(
+		"test",
+		nil,
+		createEmptyBlueprintParams(),
 	)
 	s.Require().NoError(err)
 	s.client = client
-	s.resolver = NewResolver(client)
+	// The resolver takes in a factory that creates clients
+	// on the fly based on the current environment and user-provided
+	// configuration.
+	s.resolver = NewResolver(createAzuriteBlobStorageClient)
 	err = createTestContainer(client, "test-container")
 	s.Require().NoError(err)
 	err = uploadTestFile(client, "test-container", "azure.test.blueprint.yml", fileBytes)
@@ -196,6 +198,29 @@ func uploadTestFile(client *azblob.Client, container string, path string, fileBy
 	ctx := context.Background()
 	_, err := client.UploadBuffer(ctx, container, path, fileBytes, &azblob.UploadBufferOptions{})
 	return err
+}
+
+func createAzuriteBlobStorageClient(
+	includeName string,
+	include *subengine.ResolvedInclude,
+	params core.BlueprintParams,
+) (*azblob.Client, error) {
+	return azblob.NewClientFromConnectionString(
+		// This is the default connection string for Blob storage in Azurite,
+		// a local Azure Blob Storage emulator.
+		// See: https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage#http-connection-strings
+		"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;",
+		&azblob.ClientOptions{},
+	)
+}
+
+func createEmptyBlueprintParams() core.BlueprintParams {
+	return core.NewDefaultParams(
+		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+	)
 }
 
 func TestAzureBlobStorageChildResolverSuite(t *testing.T) {
