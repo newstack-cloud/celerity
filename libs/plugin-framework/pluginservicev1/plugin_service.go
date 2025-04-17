@@ -17,15 +17,20 @@ const (
 	// in milliseconds for plugin to plugin calls.
 	// This includes invoking functions, deploying resources and more.
 	DefaultPluginToPluginCallTimeout = 120000 // 120 seconds
+	// DefaultResourceStabilisationTimeout is the default timeout
+	// in milliseconds for resource stabilisation when the calling plugin
+	// requests to wait until the resource is stable.
+	DefaultResourceStabilisationTimeout = 3600000 // 1 hour
 )
 
 type pluginServiceServer struct {
 	UnimplementedServiceServer
-	manager                   Manager
-	functionRegistry          provider.FunctionRegistry
-	resourceDeployService     provider.ResourceDeployService
-	hostID                    string
-	pluginToPluginCallTimeout int
+	manager                      Manager
+	functionRegistry             provider.FunctionRegistry
+	resourceDeployService        provider.ResourceDeployService
+	hostID                       string
+	pluginToPluginCallTimeout    int
+	resourceStabilisationTimeout int
 }
 
 // ServiceServerOption is a function that configures a service server.
@@ -43,6 +48,20 @@ func WithPluginToPluginCallTimeout(timeout int) ServiceServerOption {
 	}
 }
 
+// WithResourceStabilisationTimeout is a service server option that sets the timeout
+// in milliseconds for resource stabilisation when the calling plugin request
+// to wait until the resource is stable.
+// This is used instead of the plugin to plugin call timeout as the plugin to plugin call
+// timeout is generally a short period of time (e.g. 10 seconds) and certain kinds of
+// resources may take a long time to stabilise.
+//
+// When not provided, the default resource stabilisation timeout is 3,600,000ms (1 hour).
+func WithResourceStabilisationTimeout(timeout int) ServiceServerOption {
+	return func(s *pluginServiceServer) {
+		s.resourceStabilisationTimeout = timeout
+	}
+}
+
 // NewServiceServer creates a new gRPC server for the plugin service
 // that manages registration and deregistration of plugins along with
 // allowing a subset of plugin functionality to make calls to other plugins.
@@ -54,11 +73,12 @@ func NewServiceServer(
 	opts ...ServiceServerOption,
 ) ServiceServer {
 	server := &pluginServiceServer{
-		manager:                   pluginManager,
-		functionRegistry:          functionRegistry,
-		resourceDeployService:     resourceDeployService,
-		hostID:                    hostID,
-		pluginToPluginCallTimeout: DefaultPluginToPluginCallTimeout,
+		manager:                      pluginManager,
+		functionRegistry:             functionRegistry,
+		resourceDeployService:        resourceDeployService,
+		hostID:                       hostID,
+		pluginToPluginCallTimeout:    DefaultPluginToPluginCallTimeout,
+		resourceStabilisationTimeout: DefaultResourceStabilisationTimeout,
 	}
 
 	for _, opt := range opts {
@@ -257,9 +277,19 @@ func (s *pluginServiceServer) DeployResource(
 		return convertv1.ToPBDeployResourceErrorResponse(err), nil
 	}
 
+	timeoutMS := s.pluginToPluginCallTimeout
+	if req.WaitUntilStable {
+		// The plugin to plugin call timeout will generally be a short period of time
+		// (e.g. 10 seconds) so we need to set a longer timeout for the wait until stable
+		// case. Certain kinds of resources may take a long time to stabilise.
+		// For example, a container orchestration deployment may take a long time
+		// to stabilise.
+		timeoutMS = s.resourceStabilisationTimeout
+	}
+
 	ctxWithTimeout, cancel := context.WithTimeout(
 		ctx,
-		time.Duration(s.pluginToPluginCallTimeout)*time.Millisecond,
+		time.Duration(timeoutMS)*time.Millisecond,
 	)
 	defer cancel()
 
