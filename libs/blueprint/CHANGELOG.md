@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Breaking change** - Adds a new `LookupIDByName` method to the `state.Container` interface to allow for looking up the ID of a resource or link by its name.
+- **Breaking change** - Adds a new `LookupIDByName` method to the `state.Container` interface to allow for looking up the ID of a blueprint instance by its name.
 - **Breaking change** - Updates the `Deploy`, `Destroy` and `StageChanges` methods of the blueprint container implementation to accept an `InstanceName` field that allows users to provide a name instead of (or in addition to) an ID. This makes for a better user experience when working with blueprints where they can use a name instead of an ID to identify the blueprint instances they are working with.
 
 ## [0.5.0] - 2025-04-14
