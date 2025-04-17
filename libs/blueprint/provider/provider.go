@@ -110,24 +110,24 @@ type RetryPolicy struct {
 	// MaxRetries is the maximum number of retries that should be attempted
 	// for a resource, link or data source operation.
 	// If MaxRetries is 0, no retries should be attempted.
-	MaxRetries int
+	MaxRetries int `json:"maxRetries"`
 	// FirstRetryDelay is the delay in seconds that should be used before the first retry
 	// attempt.
 	// Fractional seconds are supported.
-	FirstRetryDelay float64
+	FirstRetryDelay float64 `json:"firstRetryDelay"`
 	// MaxDelay represents the maximum interval in seconds to wait between retries.
 	// If -1 is provided, no maximum delay is enforced.
 	// Fractional seconds are supported.
-	MaxDelay float64
+	MaxDelay float64 `json:"maxDelay"`
 	// BackoffFactor is the factor that should be used to calculate the backoff
 	// time between retries.
 	// This AWS blog post from 2015 provides a good insight into how exponential backoff works:
 	// https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-	BackoffFactor float64
+	BackoffFactor float64 `json:"backoffFactor"`
 	// Jitter is a boolean value that determines whether to apply jitter to the retry interval.
 	// This AWS blog post from 2015 provides a good insight into how jitter works:
 	// https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-	Jitter bool
+	Jitter bool `json:"jitter"`
 }
 
 // DefaultRetryPolicy is the default retry policy that can be used when a provider
