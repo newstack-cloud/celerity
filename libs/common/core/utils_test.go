@@ -1,5 +1,3 @@
-//go:build unit
-
 package core
 
 import (
@@ -8,18 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	. "gopkg.in/check.v1"
+	"github.com/stretchr/testify/suite"
 )
 
-func Test(t *testing.T) {
-	TestingT(t)
+type UtilsTestSuite struct {
+	suite.Suite
 }
 
-type UtilsTestSuite struct{}
-
-var _ = Suite(&UtilsTestSuite{})
-
-func (s *UtilsTestSuite) Test_map_to_slice(c *C) {
+func (s *UtilsTestSuite) Test_map_to_slice() {
 	input := map[string]int{
 		"value1": 54,
 		"value2": 78,
@@ -31,19 +25,25 @@ func (s *UtilsTestSuite) Test_map_to_slice(c *C) {
 	// so we'll sort to make it simpler to assert the expected
 	// values.
 	sort.Ints(intSlice)
-	c.Assert(intSlice, DeepEquals, []int{54, 78, 821})
+	s.Assert().Equal(
+		[]int{54, 78, 821},
+		intSlice,
+	)
 }
 
-func (s *UtilsTestSuite) Test_slice_to_map_keys(c *C) {
+func (s *UtilsTestSuite) Test_slice_to_map_keys() {
 	input := []string{"key1", "key2", "key3", "key4", "key5"}
 	mapping := SliceToMapKeys[int](input)
-	c.Assert(mapping, DeepEquals, map[string][]int{
-		"key1": {},
-		"key2": {},
-		"key3": {},
-		"key4": {},
-		"key5": {},
-	})
+	s.Assert().Equal(
+		map[string][]int{
+			"key1": {},
+			"key2": {},
+			"key3": {},
+			"key4": {},
+			"key5": {},
+		},
+		mapping,
+	)
 }
 
 type equalStr string
@@ -52,27 +52,31 @@ func (s equalStr) Equal(compare equalStr) bool {
 	return s == compare
 }
 
-func (s *UtilsTestSuite) Test_slice_contains_value(c *C) {
+func (s *UtilsTestSuite) Test_slice_contains_value() {
 	values := []equalStr{"value1", "value2", "value3"}
-	c.Assert(SliceContains(values, "value3"), Equals, true)
+	s.Assert().True(SliceContains(values, "value3"))
 }
 
-func (s *UtilsTestSuite) Test_slice_does_not_contain_value(c *C) {
+func (s *UtilsTestSuite) Test_slice_does_not_contain_value() {
 	values := []equalStr{"val130292", "val3029383", "val09281292"}
-	c.Assert(SliceContains(values, "value4"), Equals, false)
+	s.Assert().False(SliceContains(values, "value4"))
 }
 
-func (s *UtilsTestSuite) Test_slice_contains_comparable_value(c *C) {
+func (s *UtilsTestSuite) Test_slice_contains_comparable_value() {
 	values := []int{4, 5, 8, 12}
-	c.Assert(SliceContainsComparable(values, 8), Equals, true)
+	s.Assert().True(
+		SliceContainsComparable(values, 8),
+	)
 }
 
-func (s *UtilsTestSuite) Test_slice_contains_comparable_does_not_contain_value(c *C) {
+func (s *UtilsTestSuite) Test_slice_contains_comparable_does_not_contain_value() {
 	values := []float64{0.6503, 2.39, 7.5402}
-	c.Assert(SliceContainsComparable(values, 8.921), Equals, false)
+	s.Assert().False(
+		SliceContainsComparable(values, 8.921),
+	)
 }
 
-func (s *UtilsTestSuite) Test_map_same_output_type(c *C) {
+func (s *UtilsTestSuite) Test_map_same_output_type() {
 	inputs := []string{
 		"element1",
 		"element2",
@@ -87,19 +91,18 @@ func (s *UtilsTestSuite) Test_map_same_output_type(c *C) {
 		"element4_mapped",
 		"element5_mapped",
 	}
-	c.Assert(
+	s.Assert().Equal(
+		expected,
 		Map(
 			inputs,
 			func(input string, index int) string {
 				return fmt.Sprintf("%s_mapped", input)
 			},
 		),
-		DeepEquals,
-		expected,
 	)
 }
 
-func (s *UtilsTestSuite) Test_map_different_output_type(c *C) {
+func (s *UtilsTestSuite) Test_map_different_output_type() {
 	inputs := []string{
 		"element1",
 		"element2",
@@ -114,19 +117,18 @@ func (s *UtilsTestSuite) Test_map_different_output_type(c *C) {
 		4,
 		5,
 	}
-	c.Assert(
+	s.Assert().Equal(
+		expected,
 		Map(
 			inputs,
 			func(input string, index int) int {
 				return index + 1
 			},
 		),
-		DeepEquals,
-		expected,
 	)
 }
 
-func (s *UtilsTestSuite) Test_filter(c *C) {
+func (s *UtilsTestSuite) Test_filter() {
 	inputs := []string{
 		"Breakthrough",
 		"Exponential",
@@ -139,19 +141,18 @@ func (s *UtilsTestSuite) Test_filter(c *C) {
 		"Circuit Breaker",
 		"Something Breaks",
 	}
-	c.Assert(
+	s.Assert().Equal(
+		expected,
 		Filter(
 			inputs,
 			func(item string, index int) bool {
 				return strings.Contains(item, "Break")
 			},
 		),
-		DeepEquals,
-		expected,
 	)
 }
 
-func (s *UtilsTestSuite) Test_find_when_item_exists(c *C) {
+func (s *UtilsTestSuite) Test_find_when_item_exists() {
 	inputs := []string{
 		"Breakthrough",
 		"Exponential",
@@ -160,19 +161,18 @@ func (s *UtilsTestSuite) Test_find_when_item_exists(c *C) {
 		"Something Breaks",
 	}
 	expected := "Circuit Breaker"
-	c.Assert(
+	s.Assert().Equal(
+		expected,
 		Find(
 			inputs,
 			func(item string, index int) bool {
 				return strings.Contains(item, "Breaker")
 			},
 		),
-		Equals,
-		expected,
 	)
 }
 
-func (s *UtilsTestSuite) Test_find_when_item_does_not_exist(c *C) {
+func (s *UtilsTestSuite) Test_find_when_item_does_not_exist() {
 	inputs := []string{
 		"Item 1",
 		"Item 2",
@@ -182,19 +182,18 @@ func (s *UtilsTestSuite) Test_find_when_item_does_not_exist(c *C) {
 		"Item 60938",
 	}
 	expected := ""
-	c.Assert(
+	s.Assert().Equal(
+		expected,
 		Find(
 			inputs,
 			func(item string, index int) bool {
 				return strings.Contains(item, "Item 968404359")
 			},
 		),
-		Equals,
-		expected,
 	)
 }
 
-func (s *UtilsTestSuite) Test_find_index_when_item_exists(c *C) {
+func (s *UtilsTestSuite) Test_find_index_when_item_exists() {
 	inputs := []string{
 		"Excellence",
 		"Achieving",
@@ -203,19 +202,18 @@ func (s *UtilsTestSuite) Test_find_index_when_item_exists(c *C) {
 		"Fear",
 	}
 	expected := 3
-	c.Assert(
+	s.Assert().Equal(
+		expected,
 		FindIndex(
 			inputs,
 			func(item string, index int) bool {
 				return item == "Learning"
 			},
 		),
-		Equals,
-		expected,
 	)
 }
 
-func (s *UtilsTestSuite) Test_find_index_when_item_does_not_exist(c *C) {
+func (s *UtilsTestSuite) Test_find_index_when_item_does_not_exist() {
 	inputs := []string{
 		"Element 1",
 		"Element 2",
@@ -225,19 +223,18 @@ func (s *UtilsTestSuite) Test_find_index_when_item_does_not_exist(c *C) {
 		"Element 142938",
 	}
 	expected := -1
-	c.Assert(
+	s.Assert().Equal(
+		expected,
 		FindIndex(
 			inputs,
 			func(item string, index int) bool {
 				return strings.Contains(item, "Element 968404359")
 			},
 		),
-		Equals,
-		expected,
 	)
 }
 
-func (s *UtilsTestSuite) Test_remove_duplicates(c *C) {
+func (s *UtilsTestSuite) Test_remove_duplicates() {
 	inputs := []string{
 		"Breakthrough",
 		"Exponential",
@@ -257,16 +254,15 @@ func (s *UtilsTestSuite) Test_remove_duplicates(c *C) {
 		"Backoff",
 		"Something Breaks",
 	}
-	c.Assert(
+	s.Assert().Equal(
+		expected,
 		RemoveDuplicates(
 			inputs,
 		),
-		DeepEquals,
-		expected,
 	)
 }
 
-func (s *UtilsTestSuite) Test_shallow_copy_map(c *C) {
+func (s *UtilsTestSuite) Test_shallow_copy_map() {
 	inputMap := map[string]string{
 		"item1":  "Breakthrough",
 		"item2":  "Exponential",
@@ -280,14 +276,13 @@ func (s *UtilsTestSuite) Test_shallow_copy_map(c *C) {
 		"item10": "Breakthrough",
 	}
 	mapCopy := ShallowCopyMap(inputMap)
-	c.Assert(
-		mapCopy,
-		DeepEquals,
+	s.Assert().Equal(
 		inputMap,
+		mapCopy,
 	)
 }
 
-func (s *UtilsTestSuite) Test_reverse(c *C) {
+func (s *UtilsTestSuite) Test_reverse() {
 	inputSlice := []string{
 		"Item1",
 		"Item2",
@@ -296,9 +291,7 @@ func (s *UtilsTestSuite) Test_reverse(c *C) {
 		"Item5",
 	}
 	reversed := Reverse(inputSlice)
-	c.Assert(
-		reversed,
-		DeepEquals,
+	s.Assert().Equal(
 		[]string{
 			"Item5",
 			"Item4",
@@ -306,13 +299,12 @@ func (s *UtilsTestSuite) Test_reverse(c *C) {
 			"Item2",
 			"Item1",
 		},
+		reversed,
 	)
 	// It's important that we test the behaviour in the Reverse function
 	// does not modify the original as mentioned in the function's comment
 	// as a part of its API.
-	c.Assert(
-		inputSlice,
-		DeepEquals,
+	s.Assert().Equal(
 		[]string{
 			"Item1",
 			"Item2",
@@ -320,10 +312,11 @@ func (s *UtilsTestSuite) Test_reverse(c *C) {
 			"Item4",
 			"Item5",
 		},
+		inputSlice,
 	)
 }
 
-func (s *UtilsTestSuite) Test_slice_equals_true(c *C) {
+func (s *UtilsTestSuite) Test_slice_equals_true() {
 	inputSlice1 := []string{
 		"Item1",
 		"Item2",
@@ -339,14 +332,10 @@ func (s *UtilsTestSuite) Test_slice_equals_true(c *C) {
 		"Item5",
 	}
 	slicesEqual := SlicesEqual(inputSlice1, inputSlice2)
-	c.Assert(
-		slicesEqual,
-		Equals,
-		true,
-	)
+	s.Assert().True(slicesEqual)
 }
 
-func (s *UtilsTestSuite) Test_slice_equals_false_mismatch_length(c *C) {
+func (s *UtilsTestSuite) Test_slice_equals_false_mismatch_length() {
 	inputSlice1 := []string{
 		"Item1",
 		"Item2",
@@ -361,14 +350,10 @@ func (s *UtilsTestSuite) Test_slice_equals_false_mismatch_length(c *C) {
 		"Item5",
 	}
 	slicesEqual := SlicesEqual(inputSlice1, inputSlice2)
-	c.Assert(
-		slicesEqual,
-		Equals,
-		false,
-	)
+	s.Assert().False(slicesEqual)
 }
 
-func (s *UtilsTestSuite) Test_slice_equals_false_mismatch_items(c *C) {
+func (s *UtilsTestSuite) Test_slice_equals_false_mismatch_items() {
 	inputSlice1 := []string{
 		"Item1",
 		"Item2",
@@ -384,9 +369,9 @@ func (s *UtilsTestSuite) Test_slice_equals_false_mismatch_items(c *C) {
 		"Item5",
 	}
 	slicesEqual := SlicesEqual(inputSlice1, inputSlice2)
-	c.Assert(
-		slicesEqual,
-		Equals,
-		false,
-	)
+	s.Assert().False(slicesEqual)
+}
+
+func TestUtilsTestSuite(t *testing.T) {
+	suite.Run(t, new(UtilsTestSuite))
 }

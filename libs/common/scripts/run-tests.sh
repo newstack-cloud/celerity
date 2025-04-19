@@ -7,11 +7,6 @@ do
 key="$1"
 
 case $key in
-    -t|--tags)
-    TEST_TYPES="$2"
-    shift # past argument
-    shift # past value
-    ;;
     -h|--help)
     HELP=yes
     shift # past argument
@@ -28,8 +23,8 @@ function help {
   cat << EOF
 Test runner
 Runs tests for the library.
-To run unit tests:
-bash ./scripts/run-tests.sh --tags unit
+To run tests:
+bash ./scripts/run-tests.sh
 EOF
 }
 
@@ -41,7 +36,7 @@ fi
 set -e
 echo "" > coverage.txt
 
-go test -timeout 30000ms -tags "$TEST_TYPES" -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic ./...
+go test -timeout 30000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic ./...
 
 if [ -z "$GITHUB_ACTION" ]; then
   # We are on a dev machine so produce html output of coverage
@@ -51,5 +46,5 @@ fi
 
 if [ -n "$GITHUB_ACTION" ]; then
   # We are in a CI environment so run tests again to generate JSON report.
-  go test -timeout 30000ms -json -tags "$TEST_TYPES" ./... > report.json
+  go test -timeout 30000ms -json ./... > report.json
 fi

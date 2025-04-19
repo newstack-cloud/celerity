@@ -47,7 +47,7 @@ jobs:
       working-directory: ${{env.working-directory}}
 
     - name: Run Tests
-      run: bash scripts/run-tests.sh --tags unit
+      run: bash scripts/run-tests.sh
       working-directory: ${{env.working-directory}}
 
     - name: SonarCloud Scan
