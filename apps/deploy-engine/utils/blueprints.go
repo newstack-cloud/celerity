@@ -11,7 +11,6 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"go.uber.org/zap"
 )
 
 var (
@@ -36,7 +35,7 @@ func BlueprintFormatFromExtension(filePath string) (schema.SpecFormat, error) {
 
 // DiagnosticsFromBlueprintValidationError extracts diagnostics from a blueprint
 // validation error.
-func DiagnosticsFromBlueprintValidationError(err error, logger *zap.Logger) []*core.Diagnostic {
+func DiagnosticsFromBlueprintValidationError(err error, logger core.Logger) []*core.Diagnostic {
 	diagnostics := []*core.Diagnostic{}
 
 	if err == nil {
@@ -44,7 +43,7 @@ func DiagnosticsFromBlueprintValidationError(err error, logger *zap.Logger) []*c
 		return diagnostics
 	}
 
-	logger.Debug("converting blueprint validation error to diagnostics", zap.Error(err))
+	logger.Debug("converting blueprint validation error to diagnostics", core.ErrorLogField("error", err))
 	loadErr, isLoadErr := err.(*bperrors.LoadError)
 	if isLoadErr {
 		collectLoadErrors(loadErr, &diagnostics, nil, logger)
@@ -92,9 +91,13 @@ func collectLoadErrors(
 	err *bperrors.LoadError,
 	diagnostics *[]*core.Diagnostic,
 	parentLoadErr *bperrors.LoadError,
-	logger *zap.Logger,
+	logger core.Logger,
 ) {
-	logger.Debug("load error", zap.String("error", err.Error()), zap.Int("child error count", len(err.ChildErrors)))
+	logger.Debug(
+		"load error",
+		core.StringLogField("error", err.Error()),
+		core.IntegerLogField("child error count", int64(len(err.ChildErrors))),
+	)
 
 	if len(err.ChildErrors) == 0 {
 		level := core.DiagnosticLevelError
@@ -116,16 +119,16 @@ func collectLoadErrors(
 	}
 
 	for _, childErr := range err.ChildErrors {
-		logger.Debug("child error type", zap.String("type", reflect.TypeOf(err.Err).String()))
+		logger.Debug("child error type", core.StringLogField("type", reflect.TypeOf(err.Err).String()))
 		childLoadErr, isLoadErr := childErr.(*bperrors.LoadError)
 		if isLoadErr {
-			logger.Debug("child load error", zap.String("error", childLoadErr.Error()))
+			logger.Debug("child load error", core.StringLogField("error", childLoadErr.Error()))
 			collectLoadErrors(childLoadErr, diagnostics, err, logger)
 		}
 
 		childSchemaErr, isSchemaErr := childErr.(*schema.Error)
 		if isSchemaErr {
-			logger.Debug("child schema error", zap.String("error", childSchemaErr.Error()))
+			logger.Debug("child schema error", core.StringLogField("error", childSchemaErr.Error()))
 			collectSchemaError(childSchemaErr, diagnostics)
 		}
 

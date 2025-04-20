@@ -9,7 +9,6 @@ import (
 	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"go.uber.org/zap"
 )
 
 const (
@@ -18,14 +17,18 @@ const (
 )
 
 const (
+	// TODO: work only with absolute paths for validation,
+	// the deploy engine doesn't work relative to the current working directory
+	// as can be called remotely.
 	// DefaultBlueprintFile is the default blueprint file name.
 	DefaultBlueprintFile = "app.blueprint.yaml"
 )
 
 type deployEngineImpl struct {
-	blueprintLoader container.Loader
-	fileSystems     map[string]afero.Fs
-	logger          *zap.Logger
+	validateLoader container.Loader
+	deployLoader   container.Loader
+	fileSystems    map[string]afero.Fs
+	logger         core.Logger
 }
 
 // DefaultDeployEngineOption is an option for the default DeployEngine implementation.
@@ -41,11 +44,17 @@ func WithFileSystems(scheme string, fileSystem afero.Fs) DefaultDeployEngineOpti
 }
 
 // NewDefaultDeployEngine creates a new instance of the default DeployEngine implementation.
-func NewDefaultDeployEngine(loader container.Loader, logger *zap.Logger, opts ...DefaultDeployEngineOption) DeployEngine {
+func NewDefaultDeployEngine(
+	validateLoader container.Loader,
+	deployLoader container.Loader,
+	logger core.Logger,
+	opts ...DefaultDeployEngineOption,
+) DeployEngine {
 	engine := &deployEngineImpl{
-		blueprintLoader: loader,
-		logger:          logger,
-		fileSystems:     make(map[string]afero.Fs),
+		validateLoader: validateLoader,
+		deployLoader:   deployLoader,
+		logger:         logger,
+		fileSystems:    make(map[string]afero.Fs),
 	}
 
 	for _, opt := range opts {
@@ -121,7 +130,7 @@ func (b *deployEngineImpl) validateBlueprint(params *ValidateParams, fs afero.Fs
 		map[string]*core.ScalarValue{},
 		map[string]*core.ScalarValue{},
 	)
-	validationResult, err := b.blueprintLoader.ValidateString(
+	validationResult, err := b.validateLoader.ValidateString(
 		context.TODO(),
 		string(blueprintBytes),
 		blueprintFormat,
@@ -150,10 +159,9 @@ func (b *deployEngineImpl) validateBlueprintAsync(
 		return
 	}
 
-	b.logger.Info("Blueprint validation complete", zap.String("file", filePath))
+	b.logger.Info("Blueprint validation complete", core.StringLogField("file", filePath))
 
 	for _, diagnostic := range diagnostics {
-		b.logger.Debug("Sending diagnostic", zap.Any("diagnostic", diagnostic))
 		out <- &ValidateResult{
 			Category:   ValidationCategoryBlueprint,
 			FilePath:   &filePath,
