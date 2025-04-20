@@ -1,6 +1,6 @@
 module github.com/two-hundred/celerity/tools/plugin-docgen
 
-go 1.22.2
+go 1.23.4
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
