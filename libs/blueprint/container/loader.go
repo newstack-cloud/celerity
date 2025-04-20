@@ -559,7 +559,7 @@ func NewDefaultLoader(
 
 	if _, hasCore := internalProviders["core"]; !hasCore {
 		internalProviders["core"] = providerhelpers.NewCoreProvider(
-			stateContainer.Links(),
+			getStateContainerLinks(stateContainer),
 			bpcore.BlueprintInstanceIDFromContext,
 			loader.resolveWorkingDir,
 			loader.clock,
@@ -1626,4 +1626,17 @@ func getResourcesFromBlueprint(
 		return map[string]*schema.Resource{}
 	}
 	return blueprintSchema.Resources.Values
+}
+
+func getStateContainerLinks(
+	stateContainer state.Container,
+) state.LinksContainer {
+	if stateContainer == nil {
+		// When a state container is not provided,
+		// use a no-op links container so the core functions
+		// provider is usable in contexts (such as validation)
+		// where a state container is not available.
+		return &noopLinksContainer{}
+	}
+	return stateContainer.Links()
 }

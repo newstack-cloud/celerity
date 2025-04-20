@@ -25,6 +25,9 @@ type LoaderTestSuite struct {
 	loader                       Loader
 	loaderDefaultCore            Loader
 	loaderValidateAfterTransform Loader
+	providersWithoutCore         map[string]provider.Provider
+	specTransformers             map[string]transform.SpecTransformer
+	logger                       core.Logger
 	suite.Suite
 }
 
@@ -85,7 +88,9 @@ func (s *LoaderTestSuite) SetupSuite() {
 	specTransformers := map[string]transform.SpecTransformer{
 		"serverless-2024": &internal.ServerlessTransformer{},
 	}
+	s.specTransformers = specTransformers
 	logger := core.NewNopLogger()
+	s.logger = logger
 	s.loader = NewDefaultLoader(
 		providers,
 		specTransformers,
@@ -112,6 +117,8 @@ func (s *LoaderTestSuite) SetupSuite() {
 			stateContainer,
 		),
 	}
+	s.providersWithoutCore = providersWithoutCore
+
 	s.loaderDefaultCore = NewDefaultLoader(
 		providersWithoutCore,
 		specTransformers,
@@ -172,6 +179,32 @@ func (s *LoaderTestSuite) Test_loads_and_transforms_input_blueprint_validating_a
 
 func (s *LoaderTestSuite) Test_validates_spec_from_input_schema_without_any_issues() {
 	validationRes, err := s.loader.ValidateFromSchema(context.TODO(), s.specFixtureSchemas["valid"], createParams())
+	s.Require().NoError(err)
+	s.Assert().NotNil(validationRes)
+}
+
+func (s *LoaderTestSuite) Test_creates_loader_and_validates_blueprint_with_nil_state_container() {
+	// State containers are not used for validation-only use cases for loaders,
+	// the (e.g. blueprint language server) so a <nil> value for a state container
+	// should be acceptable.
+	// A change made when implementing the initial version of the core functions introduced
+	// a bug where if the state container was <nil> then the loader would panic when
+	// trying to create a new loader and the "core" provider was not provided.
+	loaderNoStateContainer := NewDefaultLoader(
+		s.providersWithoutCore,
+		s.specTransformers,
+		/* stateContainer */ nil,
+		newFSChildResolver(),
+		WithLoaderTransformSpec(true),
+		WithLoaderRefChainCollectorFactory(refgraph.NewRefChainCollector),
+		WithLoaderLogger(s.logger),
+	)
+
+	validationRes, err := loaderNoStateContainer.Validate(
+		context.TODO(),
+		s.specFixtureFiles["valid"],
+		createParams(),
+	)
 	s.Require().NoError(err)
 	s.Assert().NotNil(validationRes)
 }
