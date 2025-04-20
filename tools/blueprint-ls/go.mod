@@ -1,6 +1,6 @@
 module github.com/two-hundred/celerity/tools/blueprint-ls
 
-go 1.22.2
+go 1.23.4
 
 replace github.com/two-hundred/celerity/libs/blueprint => ../../libs/blueprint
 
