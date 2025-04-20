@@ -1,0 +1,50 @@
+package auth
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"slices"
+
+	"github.com/two-hundred/celerity/apps/deploy-engine/core"
+)
+
+const (
+	// CelerityAPIKeyHeaderName is the name of the header
+	// used to pass the API key for authentication.
+	CelerityAPIKeyHeaderName = "Celerity-Api-Key"
+)
+
+type apiKeyService struct {
+	apiKeys []string
+}
+
+// NewAPIKeyService creates a new service that checks
+// if the provided API key is valid against a list of
+// known API keys.
+func NewAPIKeyService(config *core.AuthConfig) Checker {
+	return &apiKeyService{
+		apiKeys: config.APIKeys,
+	}
+}
+
+// Check verifies if the provided API key is valid.
+// It returns an error if the key is invalid,
+// or nil if it is valid.
+func (s *apiKeyService) Check(ctx context.Context, headers http.Header) error {
+	apiKey := headers.Get(CelerityAPIKeyHeaderName)
+	if apiKey == "" {
+		return &Error{
+			ChildErr: errors.New("missing API key"),
+		}
+	}
+
+	matches := slices.Contains(s.apiKeys, apiKey)
+	if !matches {
+		return &Error{
+			ChildErr: errors.New("invalid API key"),
+		}
+	}
+
+	return nil
+}
