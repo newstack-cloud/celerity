@@ -203,11 +203,29 @@ func (s *PostgresStateContainerInstancesTestSuite) Test_removes_blueprint_instan
 	s.Assert().True(isStateErr)
 	s.Assert().Equal(state.ErrInstanceNotFound, stateErr.Code)
 
-	// TODO: Ensure all resources associated with the blueprint instance have been removed.
+	resources := s.container.Resources()
+	for _, resource := range fixture.InstanceState.Resources {
+		_, err := resources.Get(
+			context.Background(),
+			resource.ID(),
+		)
+		s.Require().Error(err)
+		stateErr, isStateErr := err.(*state.Error)
+		s.Assert().True(isStateErr)
+		s.Assert().Equal(state.ErrResourceNotFound, stateErr.Code)
+	}
 
-	// TODO: Ensure all links associated with the blueprint instance have been removed.
-
-	// TODO: Ensure all children have been detached from the blueprint instance.
+	links := s.container.Links()
+	for _, link := range fixture.InstanceState.Links {
+		_, err := links.Get(
+			context.Background(),
+			link.ID(),
+		)
+		s.Require().Error(err)
+		stateErr, isStateErr := err.(*state.Error)
+		s.Assert().True(isStateErr)
+		s.Assert().Equal(state.ErrLinkNotFound, stateErr.Code)
+	}
 }
 
 func (s *PostgresStateContainerInstancesTestSuite) Test_reports_instance_not_found_for_removal() {
