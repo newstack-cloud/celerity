@@ -228,3 +228,21 @@ SELECT
 FROM temp_changesets;
 
 DROP TABLE IF EXISTS temp_changesets;
+
+-- Blueprint validation records
+CREATE TABLE IF NOT EXISTS temp_blueprint_validations (data jsonb);
+\COPY temp_blueprint_validations (data) FROM 'postgres/__testdata/seed/tmp/blueprint-validations.nd.json';
+INSERT INTO blueprint_validations (
+    id,
+    "status",
+    blueprint_location,
+    created
+)
+SELECT
+    (data->>'id')::uuid,
+    data->>'status',
+    data->>'blueprintLocation',
+    TO_TIMESTAMP((data->>'created')::bigint)
+FROM temp_blueprint_validations;
+
+DROP TABLE IF EXISTS temp_blueprint_validations;

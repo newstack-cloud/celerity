@@ -68,6 +68,10 @@ func LoadStateContainer(
 			connPool: connPool,
 			logger:   logger,
 		},
+		validationContainer: &validationContainerImpl{
+			connPool: connPool,
+			logger:   logger,
+		},
 	}
 
 	return container, nil

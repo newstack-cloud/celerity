@@ -269,6 +269,49 @@ func loadSaveChangesetFixture(fixtureNumber int) (SaveChangesetFixture, error) {
 	}, nil
 }
 
+type SaveBlueprintValidationFixture struct {
+	Validation *manage.BlueprintValidation
+}
+
+func SetupSaveBlueprintValidationFixtures(
+	dirPath string,
+) (map[int]SaveBlueprintValidationFixture, error) {
+	dirEntries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	saveBlueprintValidationFixtures := make(map[int]SaveBlueprintValidationFixture)
+	for i := 1; i <= len(dirEntries); i++ {
+		fixture, err := loadSaveBlueprintValidationFixture(i)
+		if err != nil {
+			return nil, err
+		}
+		saveBlueprintValidationFixtures[i] = fixture
+	}
+
+	return saveBlueprintValidationFixtures, nil
+}
+
+func loadSaveBlueprintValidationFixture(fixtureNumber int) (SaveBlueprintValidationFixture, error) {
+	fileName := fmt.Sprintf("%d.json", fixtureNumber)
+	filePath := path.Join(saveInputDir(), "blueprint-validations", fileName)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return SaveBlueprintValidationFixture{}, err
+	}
+
+	validation := &manage.BlueprintValidation{}
+	err = json.Unmarshal(data, validation)
+	if err != nil {
+		return SaveBlueprintValidationFixture{}, err
+	}
+
+	return SaveBlueprintValidationFixture{
+		Validation: validation,
+	}, nil
+}
+
 func saveInputDir() string {
 	return path.Join("__testdata", "save-input")
 }
