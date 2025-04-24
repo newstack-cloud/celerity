@@ -31,7 +31,7 @@ type StateContainer struct {
 //
 // The postgres connection pool must be configured appropriately
 // in the calling application where the application will take care of making
-// sure the connection pool is closed when a command is finished or the application
+// sure the connection pool is cleaned up when a command is finished or the application
 // is shutting down.
 func LoadStateContainer(
 	ctx context.Context,
@@ -61,6 +61,10 @@ func LoadStateContainer(
 			connPool: connPool,
 		},
 		eventsContainer: &eventsContainerImpl{
+			connPool: connPool,
+			logger:   logger,
+		},
+		changesetsContainer: &changesetsContainerImpl{
 			connPool: connPool,
 			logger:   logger,
 		},

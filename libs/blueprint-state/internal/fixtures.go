@@ -228,6 +228,47 @@ func loadSaveEventFixture(fixtureNumber int) (SaveEventFixture, error) {
 	}, nil
 }
 
+type SaveChangesetFixture struct {
+	Changeset *manage.Changeset
+}
+
+func SetupSaveChangesetFixtures(dirPath string) (map[int]SaveChangesetFixture, error) {
+	dirEntries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	saveChangesetFixtures := make(map[int]SaveChangesetFixture)
+	for i := 1; i <= len(dirEntries); i++ {
+		fixture, err := loadSaveChangesetFixture(i)
+		if err != nil {
+			return nil, err
+		}
+		saveChangesetFixtures[i] = fixture
+	}
+
+	return saveChangesetFixtures, nil
+}
+
+func loadSaveChangesetFixture(fixtureNumber int) (SaveChangesetFixture, error) {
+	fileName := fmt.Sprintf("%d.json", fixtureNumber)
+	filePath := path.Join(saveInputDir(), "changesets", fileName)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return SaveChangesetFixture{}, err
+	}
+
+	changeset := &manage.Changeset{}
+	err = json.Unmarshal(data, changeset)
+	if err != nil {
+		return SaveChangesetFixture{}, err
+	}
+
+	return SaveChangesetFixture{
+		Changeset: changeset,
+	}, nil
+}
+
 func saveInputDir() string {
 	return path.Join("__testdata", "save-input")
 }

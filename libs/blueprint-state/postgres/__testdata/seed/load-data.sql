@@ -204,3 +204,27 @@ SELECT
 FROM temp_events;
 
 DROP TABLE IF EXISTS temp_events;
+
+-- Change set records
+CREATE TABLE IF NOT EXISTS temp_changesets (data jsonb);
+\COPY temp_changesets (data) FROM 'postgres/__testdata/seed/tmp/changesets.nd.json';
+INSERT INTO changesets (
+    id,
+    instance_id,
+    destroy,
+    "status",
+    blueprint_location,
+    "changes",
+    created
+)
+SELECT
+    (data->>'id')::uuid,
+    (data->>'instanceId')::uuid,
+    (data->>'destroy')::boolean,
+    data->>'status',
+    data->>'blueprintLocation',
+    (data->>'changes')::jsonb,
+    TO_TIMESTAMP((data->>'created')::bigint)
+FROM temp_changesets;
+
+DROP TABLE IF EXISTS temp_changesets;

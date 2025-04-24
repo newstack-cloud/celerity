@@ -27,28 +27,28 @@ type eventsContainerImpl struct {
 
 func (e *eventsContainerImpl) Get(
 	ctx context.Context,
-	ID string,
+	id string,
 ) (manage.Event, error) {
 	var event manage.Event
 	err := e.connPool.QueryRow(
 		ctx,
 		eventQuery(),
 		&pgx.NamedArgs{
-			"id": ID,
+			"id": id,
 		},
 	).Scan(&event)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.Is(err, pgx.ErrNoRows) ||
 			(errors.As(err, &pgErr) && isAltNotFoundPostgresErrorCode(pgErr.Code)) {
-			return manage.Event{}, manage.EventNotFoundError(ID)
+			return manage.Event{}, manage.EventNotFoundError(id)
 		}
 
 		return manage.Event{}, err
 	}
 
 	if event.ID == "" {
-		return manage.Event{}, manage.EventNotFoundError(ID)
+		return manage.Event{}, manage.EventNotFoundError(id)
 	}
 
 	return event, nil

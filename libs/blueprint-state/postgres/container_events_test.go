@@ -176,7 +176,7 @@ func (s *PostgresEventsTestSuite) Test_returns_event_not_found_error_for_missing
 	notFoundErr, isNotFoundErr := err.(*manage.EventNotFound)
 	s.Require().True(isNotFoundErr)
 	s.Assert().Equal(
-		"Event with ID 0196677d-d816-740c-8d99-457fee08eab1 not found",
+		"event with ID 0196677d-d816-740c-8d99-457fee08eab1 not found",
 		notFoundErr.Error(),
 	)
 }
@@ -188,7 +188,7 @@ func (s *PostgresEventsTestSuite) Test_cleans_up_old_events() {
 	)
 	s.Require().NoError(err)
 
-	for _, id := range shouldBeCleanedUp {
+	for _, id := range eventsShouldBeCleanedUp {
 		_, err := s.container.Events().Get(
 			context.Background(),
 			id,
@@ -198,12 +198,12 @@ func (s *PostgresEventsTestSuite) Test_cleans_up_old_events() {
 		notFoundErr, isNotFoundErr := err.(*manage.EventNotFound)
 		s.Require().True(isNotFoundErr)
 		s.Assert().Equal(
-			fmt.Sprintf("Event with ID %s not found", id),
+			fmt.Sprintf("event with ID %s not found", id),
 			notFoundErr.Error(),
 		)
 	}
 
-	for _, id := range shouldNotBeCleanedUp {
+	for _, id := range eventsShouldNotBeCleanedUp {
 		event, err := s.container.Events().Get(
 			context.Background(),
 			id,
@@ -312,7 +312,7 @@ func createStreamSaveFixtures() ([]internal.SaveEventFixture, error) {
 }
 
 // Seed events that should be cleaned up.
-var shouldBeCleanedUp = []string{
+var eventsShouldBeCleanedUp = []string{
 	"0196678c-ae43-7b53-9796-30e84ba07b99",
 	"01966793-844a-7a2b-b278-48838bab3835",
 	"01966794-8352-767e-a9d7-0ac6275af2e2",
@@ -323,7 +323,7 @@ var shouldBeCleanedUp = []string{
 // Seed events that should not be cleaned up.
 // This must not include the IDs of any dynamically generated events
 // in the test runs.
-var shouldNotBeCleanedUp = []string{
+var eventsShouldNotBeCleanedUp = []string{
 	"01966439-6832-74ba-94e3-9d8d47d98b60",
 	"01966439-ff85-760e-9f02-f3572e08a7c2",
 	"0196643a-69f6-7d6d-a4c1-c6ee239851a9",

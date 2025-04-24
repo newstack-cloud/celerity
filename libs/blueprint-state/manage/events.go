@@ -10,7 +10,7 @@ import (
 // change staging and deployments.
 type Events interface {
 	// Get an event by ID.
-	Get(ctx context.Context, ID string) (Event, error)
+	Get(ctx context.Context, id string) (Event, error)
 
 	// Save a new event for blueprint validation, change staging or deployment.
 	Save(ctx context.Context, event *Event) error

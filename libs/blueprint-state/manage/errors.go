@@ -9,7 +9,7 @@ type EventNotFound struct {
 }
 
 func (e EventNotFound) Error() string {
-	return fmt.Sprintf("Event with ID %s not found", e.ID)
+	return fmt.Sprintf("event with ID %s not found", e.ID)
 }
 
 // EventNotFoundError creates a new EventNotFound error with the specified ID.
@@ -21,4 +21,48 @@ func (e EventNotFound) Error() string {
 //	}
 func EventNotFoundError(id string) error {
 	return &EventNotFound{ID: id}
+}
+
+// ChangesetNotFound is an error type
+// that indicates a changeset with the specified ID was not found.
+type ChangesetNotFound struct {
+	ID string
+}
+
+func (c ChangesetNotFound) Error() string {
+	return fmt.Sprintf("change set with ID %s not found", c.ID)
+}
+
+// ChangesetNotFoundError creates a new ChangesetNotFound error with the specified ID.
+// An error can be checked against this type using:
+//
+//	var changesetNotFoundErr *manage.ChangesetNotFound
+//	if errors.As(err, &changesetNotFoundErr) {
+//		// Handle the error
+//	}
+func ChangesetNotFoundError(id string) error {
+	return &ChangesetNotFound{ID: id}
+}
+
+// BlueprintValidationNotFound is an error type
+// that indicates a blueprint validation request with
+// the specified ID was not found.
+type BlueprintValidationNotFound struct {
+	ID string
+}
+
+func (b BlueprintValidationNotFound) Error() string {
+	return fmt.Sprintf("blueprint validation request with ID %s not found", b.ID)
+}
+
+// BlueprintValidationNotFoundError creates a new BlueprintValidationNotFound
+// error with the specified ID.
+// An error can be checked against this type using:
+//
+//	var blueprintValidationNotFoundErr *manage.BlueprintValidationNotFound
+//	if errors.As(err, &blueprintValidationNotFoundErr) {
+//		// Handle the error
+//	}
+func BlueprintValidationNotFoundError(id string) error {
+	return &BlueprintValidationNotFound{ID: id}
 }
