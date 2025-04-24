@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"sync"
 
 	"github.com/spf13/afero"
@@ -101,69 +102,34 @@ func (s *statePersister) updateInstance(instance *state.InstanceState) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	entry, hasEntry := s.instanceIndex[instance.InstanceID]
-	if !hasEntry {
-		return state.InstanceNotFoundError(instance.InstanceID)
-	}
-
-	chunkFilePath := instanceChunkFilePath(s.stateDir, entry.ChunkNumber)
-	existingData, err := afero.ReadFile(s.fs, chunkFilePath)
+	info, err := s.loadAndValidateInstanceEntry(instance)
 	if err != nil {
 		return err
 	}
 
-	chunkInstances := []*persistedInstanceState{}
-	err = json.Unmarshal(existingData, &chunkInstances)
+	info.chunkInstances[info.entry.IndexInChunk] = toPersistedInstanceState(instance)
+
+	updatedData, err := json.Marshal(info.chunkInstances)
 	if err != nil {
 		return err
 	}
 
-	if entry.IndexInChunk == -1 ||
-		entry.IndexInChunk >= len(chunkInstances) {
-		return errMalformedStateFile(
-			malformedInstanceStateFileMessage,
-		)
-	}
-
-	chunkInstances[entry.IndexInChunk] = toPersistedInstanceState(instance)
-
-	updatedData, err := json.Marshal(chunkInstances)
-	if err != nil {
-		return err
-	}
-
-	return afero.WriteFile(s.fs, chunkFilePath, updatedData, 0644)
+	return afero.WriteFile(s.fs, info.chunkFilePath, updatedData, 0644)
 }
 
 func (s *statePersister) removeInstance(instance *state.InstanceState) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	entry, hasEntry := s.instanceIndex[instance.InstanceID]
-	if !hasEntry {
-		return state.InstanceNotFoundError(instance.InstanceID)
-	}
-
-	chunkFilePath := instanceChunkFilePath(s.stateDir, entry.ChunkNumber)
-	existingData, err := afero.ReadFile(s.fs, chunkFilePath)
+	info, err := s.loadAndValidateInstanceEntry(instance)
 	if err != nil {
 		return err
 	}
 
-	chunkInstances := []*persistedInstanceState{}
-	err = json.Unmarshal(existingData, &chunkInstances)
-	if err != nil {
-		return err
-	}
-
-	if entry.IndexInChunk == -1 ||
-		entry.IndexInChunk >= len(chunkInstances) {
-		return errMalformedStateFile(malformedInstanceStateFileMessage)
-	}
-
-	chunkInstances = append(
-		chunkInstances[:entry.IndexInChunk],
-		chunkInstances[entry.IndexInChunk+1:]...,
+	chunkInstances := slices.Delete(
+		info.chunkInstances,
+		info.entry.IndexInChunk,
+		info.entry.IndexInChunk+1,
 	)
 
 	updatedData, err := json.Marshal(chunkInstances)
@@ -171,12 +137,51 @@ func (s *statePersister) removeInstance(instance *state.InstanceState) error {
 		return err
 	}
 
-	err = afero.WriteFile(s.fs, chunkFilePath, updatedData, 0644)
+	err = afero.WriteFile(s.fs, info.chunkFilePath, updatedData, 0644)
 	if err != nil {
 		return err
 	}
 
 	return s.removeFromInstanceIndex(instance)
+}
+
+type persistedInstanceInfo struct {
+	chunkInstances []*persistedInstanceState
+	entry          *indexLocation
+	chunkFilePath  string
+}
+
+// A lock must be held when calling this method.
+func (s *statePersister) loadAndValidateInstanceEntry(
+	instance *state.InstanceState,
+) (*persistedInstanceInfo, error) {
+	entry, hasEntry := s.instanceIndex[instance.InstanceID]
+	if !hasEntry {
+		return nil, state.InstanceNotFoundError(instance.InstanceID)
+	}
+
+	chunkFilePath := instanceChunkFilePath(s.stateDir, entry.ChunkNumber)
+	existingData, err := afero.ReadFile(s.fs, chunkFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	chunkInstances := []*persistedInstanceState{}
+	err = json.Unmarshal(existingData, &chunkInstances)
+	if err != nil {
+		return nil, err
+	}
+
+	if entry.IndexInChunk == -1 ||
+		entry.IndexInChunk >= len(chunkInstances) {
+		return nil, errMalformedStateFile(malformedInstanceStateFileMessage)
+	}
+
+	return &persistedInstanceInfo{
+		chunkInstances: chunkInstances,
+		entry:          entry,
+		chunkFilePath:  chunkFilePath,
+	}, nil
 }
 
 func (s *statePersister) removeFromInstanceIndex(instance *state.InstanceState) error {
@@ -276,80 +281,86 @@ func (s *statePersister) updateResourceDrift(resourceDrift *state.ResourceDriftS
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	entry, hasEntry := s.resourceDriftIndex[resourceDrift.ResourceID]
-	if !hasEntry {
-		return state.ResourceNotFoundError(resourceDrift.ResourceID)
-	}
-
-	chunkFilePath := resourceDriftChunkFilePath(s.stateDir, entry.ChunkNumber)
-	existingData, err := afero.ReadFile(s.fs, chunkFilePath)
+	info, err := s.loadAndValidateResourceDriftEntry(resourceDrift)
 	if err != nil {
 		return err
 	}
 
-	chunkResourceDriftEntries := []*state.ResourceDriftState{}
-	err = json.Unmarshal(existingData, &chunkResourceDriftEntries)
+	info.chunkResourceDriftEntries[info.entry.IndexInChunk] = resourceDrift
+
+	updatedData, err := json.Marshal(info.chunkResourceDriftEntries)
 	if err != nil {
 		return err
 	}
 
-	if entry.IndexInChunk == -1 ||
-		entry.IndexInChunk >= len(chunkResourceDriftEntries) {
-		return errMalformedStateFile(malformedResourceDriftStateFileMessage)
-	}
-
-	chunkResourceDriftEntries[entry.IndexInChunk] = resourceDrift
-
-	updatedData, err := json.Marshal(chunkResourceDriftEntries)
-	if err != nil {
-		return err
-	}
-
-	return afero.WriteFile(s.fs, chunkFilePath, updatedData, 0644)
+	return afero.WriteFile(s.fs, info.chunkFilePath, updatedData, 0644)
 }
 
 func (s *statePersister) removeResourceDrift(resourceDrift *state.ResourceDriftState) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	entry, hasEntry := s.resourceDriftIndex[resourceDrift.ResourceID]
-	if !hasEntry {
-		return state.ResourceNotFoundError(resourceDrift.ResourceID)
-	}
-
-	chunkFilePath := resourceDriftChunkFilePath(s.stateDir, entry.ChunkNumber)
-	existingData, err := afero.ReadFile(s.fs, chunkFilePath)
+	info, err := s.loadAndValidateResourceDriftEntry(resourceDrift)
 	if err != nil {
 		return err
 	}
 
-	chunkResourceDriftEntries := []*state.ResourceDriftState{}
-	err = json.Unmarshal(existingData, &chunkResourceDriftEntries)
-	if err != nil {
-		return err
-	}
-
-	if entry.IndexInChunk == -1 ||
-		entry.IndexInChunk >= len(chunkResourceDriftEntries) {
-		return errMalformedStateFile(malformedResourceDriftStateFileMessage)
-	}
-
-	chunkResourceDriftEntries = append(
-		chunkResourceDriftEntries[:entry.IndexInChunk],
-		chunkResourceDriftEntries[entry.IndexInChunk+1:]...,
+	info.chunkResourceDriftEntries = slices.Delete(
+		info.chunkResourceDriftEntries,
+		info.entry.IndexInChunk,
+		info.entry.IndexInChunk+1,
 	)
 
-	updatedData, err := json.Marshal(chunkResourceDriftEntries)
+	updatedData, err := json.Marshal(info.chunkResourceDriftEntries)
 	if err != nil {
 		return err
 	}
 
-	err = afero.WriteFile(s.fs, chunkFilePath, updatedData, 0644)
+	err = afero.WriteFile(s.fs, info.chunkFilePath, updatedData, 0644)
 	if err != nil {
 		return err
 	}
 
 	return s.removeFromResourceDriftIndex(resourceDrift)
+}
+
+type persistedResourceDriftInfo struct {
+	chunkResourceDriftEntries []*state.ResourceDriftState
+	entry                     *indexLocation
+	chunkFilePath             string
+}
+
+// A lock must be held when calling this method.
+func (s *statePersister) loadAndValidateResourceDriftEntry(
+	resourceDrift *state.ResourceDriftState,
+) (*persistedResourceDriftInfo, error) {
+	entry, hasEntry := s.resourceDriftIndex[resourceDrift.ResourceID]
+	if !hasEntry {
+		return nil, state.ResourceNotFoundError(resourceDrift.ResourceID)
+	}
+
+	chunkFilePath := resourceDriftChunkFilePath(s.stateDir, entry.ChunkNumber)
+	existingData, err := afero.ReadFile(s.fs, chunkFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	chunkResourceDriftEntries := []*state.ResourceDriftState{}
+	err = json.Unmarshal(existingData, &chunkResourceDriftEntries)
+	if err != nil {
+		return nil, err
+	}
+
+	if entry.IndexInChunk == -1 ||
+		entry.IndexInChunk >= len(chunkResourceDriftEntries) {
+		return nil, errMalformedStateFile(malformedResourceDriftStateFileMessage)
+	}
+
+	return &persistedResourceDriftInfo{
+		chunkResourceDriftEntries: chunkResourceDriftEntries,
+		entry:                     entry,
+		chunkFilePath:             chunkFilePath,
+	}, nil
 }
 
 func (s *statePersister) removeFromResourceDriftIndex(resourceDrift *state.ResourceDriftState) error {
