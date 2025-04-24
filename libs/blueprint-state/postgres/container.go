@@ -5,17 +5,25 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-type pgStateContainerImpl struct {
-	instancesContainer *instancesContainerImpl
-	resourcesContainer *resourcesContainerImpl
-	linksContainer     *linksContainerImpl
-	childrenContainer  *childrenContainerImpl
-	metadataContainer  *metadataContainerImpl
-	exportContainer    *exportContainerImpl
+// StateContainer provides the postgres implementation of
+// the blueprint `state.Container` interface
+// along with methods to manage persistence for
+// blueprint validation requests, events and change sets.
+type StateContainer struct {
+	instancesContainer  *instancesContainerImpl
+	resourcesContainer  *resourcesContainerImpl
+	linksContainer      *linksContainerImpl
+	childrenContainer   *childrenContainerImpl
+	metadataContainer   *metadataContainerImpl
+	exportContainer     *exportContainerImpl
+	validationContainer *validationContainerImpl
+	changesetsContainer *changesetsContainerImpl
+	eventsContainer     *eventsContainerImpl
 }
 
 // LoadStateContainer loads a new state container
@@ -29,13 +37,12 @@ func LoadStateContainer(
 	ctx context.Context,
 	connPool *pgxpool.Pool,
 	logger core.Logger,
-) (state.Container, error) {
-
+) (*StateContainer, error) {
 	instancesContainer := &instancesContainerImpl{
 		connPool: connPool,
 	}
 
-	container := &pgStateContainerImpl{
+	container := &StateContainer{
 		instancesContainer: instancesContainer,
 		resourcesContainer: &resourcesContainerImpl{
 			connPool: connPool,
@@ -53,31 +60,47 @@ func LoadStateContainer(
 		exportContainer: &exportContainerImpl{
 			connPool: connPool,
 		},
+		eventsContainer: &eventsContainerImpl{
+			connPool: connPool,
+			logger:   logger,
+		},
 	}
 
 	return container, nil
 }
 
-func (c *pgStateContainerImpl) Instances() state.InstancesContainer {
+func (c *StateContainer) Instances() state.InstancesContainer {
 	return c.instancesContainer
 }
 
-func (c *pgStateContainerImpl) Resources() state.ResourcesContainer {
+func (c *StateContainer) Resources() state.ResourcesContainer {
 	return c.resourcesContainer
 }
 
-func (c *pgStateContainerImpl) Links() state.LinksContainer {
+func (c *StateContainer) Links() state.LinksContainer {
 	return c.linksContainer
 }
 
-func (c *pgStateContainerImpl) Children() state.ChildrenContainer {
+func (c *StateContainer) Children() state.ChildrenContainer {
 	return c.childrenContainer
 }
 
-func (c *pgStateContainerImpl) Metadata() state.MetadataContainer {
+func (c *StateContainer) Metadata() state.MetadataContainer {
 	return c.metadataContainer
 }
 
-func (c *pgStateContainerImpl) Exports() state.ExportsContainer {
+func (c *StateContainer) Exports() state.ExportsContainer {
 	return c.exportContainer
+}
+
+func (c *StateContainer) Validation() manage.Validation {
+	return c.validationContainer
+}
+
+func (c *StateContainer) Changesets() manage.Changesets {
+	return c.changesetsContainer
+}
+
+func (c *StateContainer) Events() manage.Events {
+	return c.eventsContainer
 }

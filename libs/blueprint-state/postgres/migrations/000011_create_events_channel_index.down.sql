@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS events_channel_type_id;

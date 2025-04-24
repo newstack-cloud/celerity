@@ -7,6 +7,7 @@ import (
 	"path"
 	"slices"
 
+	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
@@ -183,6 +184,47 @@ func loadSaveLinkFixture(fixtureNumber int, isUpdate bool) (SaveLinkFixture, err
 	return SaveLinkFixture{
 		LinkState: linkState,
 		Update:    isUpdate,
+	}, nil
+}
+
+type SaveEventFixture struct {
+	Event *manage.Event
+}
+
+func SetupSaveEventFixtures(dirPath string) (map[int]SaveEventFixture, error) {
+	dirEntries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	saveEventFixtures := make(map[int]SaveEventFixture)
+	for i := 1; i <= len(dirEntries); i++ {
+		fixture, err := loadSaveEventFixture(i)
+		if err != nil {
+			return nil, err
+		}
+		saveEventFixtures[i] = fixture
+	}
+
+	return saveEventFixtures, nil
+}
+
+func loadSaveEventFixture(fixtureNumber int) (SaveEventFixture, error) {
+	fileName := fmt.Sprintf("%d.json", fixtureNumber)
+	filePath := path.Join(saveInputDir(), "events", fileName)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return SaveEventFixture{}, err
+	}
+
+	event := &manage.Event{}
+	err = json.Unmarshal(data, event)
+	if err != nil {
+		return SaveEventFixture{}, err
+	}
+
+	return SaveEventFixture{
+		Event: event,
 	}, nil
 }
 

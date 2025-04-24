@@ -4,9 +4,9 @@ CREATE TABLE IF NOT EXISTS resources (
     template_name varchar(255),
     "status" smallint NOT NULL,
     precise_status smallint NOT NULL,
-    last_status_update_timestamp timestamp,
-    last_deployed_timestamp timestamp,
-    last_deploy_attempt_timestamp timestamp,
+    last_status_update_timestamp timestamptz,
+    last_deployed_timestamp timestamptz,
+    last_deploy_attempt_timestamp timestamptz,
     spec_data jsonb NOT NULL,
     "description" text,
     metadata jsonb,
@@ -14,6 +14,6 @@ CREATE TABLE IF NOT EXISTS resources (
     depends_on_children jsonb,
     failure_reasons jsonb NOT NULL,
     drifted boolean,
-    last_drift_detected_timestamp timestamp,
+    last_drift_detected_timestamp timestamptz,
     durations jsonb
 );

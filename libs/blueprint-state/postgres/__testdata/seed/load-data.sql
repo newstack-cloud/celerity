@@ -182,3 +182,25 @@ SELECT
 FROM temp_blueprint_instance_links;
 
 DROP TABLE IF EXISTS temp_blueprint_instance_links;
+
+-- Event records
+CREATE TABLE IF NOT EXISTS temp_events (data jsonb);
+\COPY temp_events (data) FROM 'postgres/__testdata/seed/tmp/events.nd.json';
+INSERT INTO events (
+    id,
+    "type",
+    "channel_type",
+    "channel_id",
+    "data",
+    "timestamp"
+)
+SELECT
+    (data->>'id')::uuid,
+    data->>'type',
+    data->>'channelType',
+    (data->>'channelId')::uuid,
+    (data->>'data')::jsonb,
+    TO_TIMESTAMP((data->>'timestamp')::bigint)
+FROM temp_events;
+
+DROP TABLE IF EXISTS temp_events;
