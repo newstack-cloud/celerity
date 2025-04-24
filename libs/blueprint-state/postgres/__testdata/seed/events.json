@@ -30,5 +30,45 @@
     "channelId": "db58eda8-36c6-4180-a9cb-557f3392361c",
     "data": { "instanceId": "2e9719aa-05c9-4674-b6d7-e77ed19083e7" },
     "timestamp": 1745414756
+  },
+  {
+    "id": "0196678c-ae43-7b53-9796-30e84ba07b99",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
+    "timestamp": 1743411600
+  },
+  {
+    "id": "01966793-844a-7a2b-b278-48838bab3835",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
+    "timestamp": 1743411630
+  },
+  {
+    "id": "01966794-8352-767e-a9d7-0ac6275af2e2",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
+    "timestamp": 1743411730
+  },
+  {
+    "id": "01966794-f1e8-7a14-9893-335ca16be0d5",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
+    "timestamp": 1743411820
+  },
+  {
+    "id": "01966795-8929-7f6d-989c-0403037d8131",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
+    "timestamp": 1743411880
   }
 ]

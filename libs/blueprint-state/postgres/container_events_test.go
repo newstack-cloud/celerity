@@ -16,6 +16,11 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 )
 
+const (
+	nonExistentEventID        = "0196677d-d816-740c-8d99-457fee08eab1"
+	cleanupThresholdTimestamp = 1743415200 // 31st Match 2025 10:00 UTC
+)
+
 type PostgresEventsTestSuite struct {
 	container           *StateContainer
 	connPool            *pgxpool.Pool
@@ -161,6 +166,53 @@ func (s *PostgresEventsTestSuite) Test_stream_events() {
 	}
 }
 
+func (s *PostgresEventsTestSuite) Test_returns_event_not_found_error_for_missing_event() {
+	_, err := s.container.Events().Get(
+		context.Background(),
+		nonExistentEventID,
+	)
+	s.Require().Error(err)
+
+	notFoundErr, isNotFoundErr := err.(*manage.EventNotFound)
+	s.Require().True(isNotFoundErr)
+	s.Assert().Equal(
+		"Event with ID 0196677d-d816-740c-8d99-457fee08eab1 not found",
+		notFoundErr.Error(),
+	)
+}
+
+func (s *PostgresEventsTestSuite) Test_cleans_up_old_events() {
+	err := s.container.Events().Cleanup(
+		context.Background(),
+		time.Unix(cleanupThresholdTimestamp, 0),
+	)
+	s.Require().NoError(err)
+
+	for _, id := range shouldBeCleanedUp {
+		_, err := s.container.Events().Get(
+			context.Background(),
+			id,
+		)
+		s.Require().Error(err)
+
+		notFoundErr, isNotFoundErr := err.(*manage.EventNotFound)
+		s.Require().True(isNotFoundErr)
+		s.Assert().Equal(
+			fmt.Sprintf("Event with ID %s not found", id),
+			notFoundErr.Error(),
+		)
+	}
+
+	for _, id := range shouldNotBeCleanedUp {
+		event, err := s.container.Events().Get(
+			context.Background(),
+			id,
+		)
+		s.Require().NoError(err)
+		s.Assert().Equal(id, event.ID)
+	}
+}
+
 func (s *PostgresEventsTestSuite) listenForEventNotification(
 	eventIDListener chan string,
 	event *manage.Event,
@@ -257,6 +309,25 @@ func createStreamSaveFixtures() ([]internal.SaveEventFixture, error) {
 	}
 
 	return fixtures, nil
+}
+
+// Seed events that should be cleaned up.
+var shouldBeCleanedUp = []string{
+	"0196678c-ae43-7b53-9796-30e84ba07b99",
+	"01966793-844a-7a2b-b278-48838bab3835",
+	"01966794-8352-767e-a9d7-0ac6275af2e2",
+	"01966794-f1e8-7a14-9893-335ca16be0d5",
+	"01966795-8929-7f6d-989c-0403037d8131",
+}
+
+// Seed events that should not be cleaned up.
+// This must not include the IDs of any dynamically generated events
+// in the test runs.
+var shouldNotBeCleanedUp = []string{
+	"01966439-6832-74ba-94e3-9d8d47d98b60",
+	"01966439-ff85-760e-9f02-f3572e08a7c2",
+	"0196643a-69f6-7d6d-a4c1-c6ee239851a9",
+	"0196643c-69b2-7900-bcf7-2ff34d80565e",
 }
 
 // UUIDv7 values for event IDs in timestamp order.

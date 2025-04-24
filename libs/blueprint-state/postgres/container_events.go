@@ -188,25 +188,16 @@ func (e *eventsContainerImpl) streamEvents(
 		// Batching is used to reduce the number of queries made to the database
 		// when dealing with a large number of events in a short time.
 		if len(collectedIDs) > 0 && time.Since(lastFlush) > flushQueueWaitTime {
-			events, err := e.getEventsByIDs(
+			var returnEarly bool
+			collectedIDs, returnEarly = e.sendEvents(
 				ctx,
 				collectedIDs,
+				channels,
 			)
-			if err != nil {
-				channels.errChan <- err
+			if returnEarly {
 				return
 			}
 
-			for _, event := range events {
-				select {
-				case channels.streamTo <- event:
-					collectedIDs = removeElement(collectedIDs, event.ID)
-				case <-channels.endChan:
-					return
-				case <-ctx.Done():
-					return
-				}
-			}
 			lastFlush = time.Now()
 		}
 
@@ -234,6 +225,37 @@ func (e *eventsContainerImpl) streamEvents(
 			sortEventIDs(collectedIDs)
 		}
 	}
+}
+
+func (e *eventsContainerImpl) sendEvents(
+	ctx context.Context,
+	collectedIDs []string,
+	channels *streamEventChannels,
+) ([]string, bool) {
+	collectedIDsCopy := make([]string, len(collectedIDs))
+	copy(collectedIDsCopy, collectedIDs)
+
+	events, err := e.getEventsByIDs(
+		ctx,
+		collectedIDs,
+	)
+	if err != nil {
+		channels.errChan <- err
+		return nil, true
+	}
+
+	for _, event := range events {
+		select {
+		case channels.streamTo <- event:
+			collectedIDsCopy = removeElement(collectedIDsCopy, event.ID)
+		case <-channels.endChan:
+			return nil, true
+		case <-ctx.Done():
+			return nil, true
+		}
+	}
+
+	return collectedIDsCopy, false
 }
 
 func waitForNotification(
@@ -299,7 +321,15 @@ func (e *eventsContainerImpl) Cleanup(
 	ctx context.Context,
 	thresholdDate time.Time,
 ) error {
-	return nil
+	query := cleanupEventsQuery()
+	_, err := e.connPool.Exec(
+		ctx,
+		query,
+		pgx.NamedArgs{
+			"cleanupBefore": thresholdDate,
+		},
+	)
+	return err
 }
 
 func prepareChannelEventsQuery(

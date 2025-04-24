@@ -69,6 +69,13 @@ func channelEventsQuery(
 	return query
 }
 
+func cleanupEventsQuery() string {
+	return `
+		DELETE FROM events
+		WHERE "timestamp" < @cleanupBefore
+	`
+}
+
 func eventsByIDsQuery() string {
 	return `
 		SELECT
