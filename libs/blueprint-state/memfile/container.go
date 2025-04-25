@@ -4,23 +4,29 @@ import (
 	"sync"
 
 	"github.com/spf13/afero"
+	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-type mfStateContainerImpl struct {
+// StateContainer provides the in-memory with file persistence (memfile)
+// implementation of the blueprint `state.Container` interface
+// along with methods to manage persistence for
+// blueprint validation requests, events and change sets.
+type StateContainer struct {
 	instancesContainer *instancesContainerImpl
 	resourcesContainer *resourcesContainerImpl
 	linksContainer     *linksContainerImpl
 	childrenContainer  *childrenContainerImpl
 	metadataContainer  *metadataContainerImpl
 	exportContainer    *exportContainerImpl
+	eventsContainer    *eventsContainerImpl
 	persister          *statePersister
 }
 
 // Option is a type for options that can be passed to LoadStateContainer
 // when creating an in-memory state container with file persistence.
-type Option func(*mfStateContainerImpl)
+type Option func(*StateContainer)
 
 // WithMaxGuideFileSize sets a guide for the maximum size of a state chunk file in bytes.
 // If a single record (instance or resource drift entry) exceeds this size,
@@ -28,9 +34,23 @@ type Option func(*mfStateContainerImpl)
 // This is only a guide, the actual size of the files are often likely to be larger.
 //
 // When not set, the default value is 1MB (1,048,576 bytes).
-func WithMaxGuideFileSize(maxGuideFileSize int64) func(*mfStateContainerImpl) {
-	return func(p *mfStateContainerImpl) {
+func WithMaxGuideFileSize(maxGuideFileSize int64) func(*StateContainer) {
+	return func(p *StateContainer) {
 		p.persister.maxGuideFileSize = maxGuideFileSize
+	}
+}
+
+// WithMaxEventPartitionSize sets a maximum size of an event partition file in bytes.
+// If the addition of a new event causes the partition to exceeds this size,
+// an error will be returned for the save event operation.
+// This determines the maximum size of the data in the partition file,
+// depending on the operating system and file system, the actual size of the file
+// will in most cases be larger.
+//
+// When not set, the default value is 10MB (10,485,760 bytes).
+func WithMaxEventPartitionSize(maxEventPartitionSize int64) func(*StateContainer) {
+	return func(p *StateContainer) {
+		p.persister.maxEventPartitionSize = maxEventPartitionSize
 	}
 }
 
@@ -48,7 +68,7 @@ func LoadStateContainer(
 	fs afero.Fs,
 	logger core.Logger,
 	opts ...Option,
-) (state.Container, error) {
+) (*StateContainer, error) {
 	mu := &sync.RWMutex{}
 
 	state, err := loadStateFromDir(stateDir, fs)
@@ -61,12 +81,14 @@ func LoadStateContainer(
 		fs:                     fs,
 		instanceIndex:          state.instanceIndex,
 		resourceDriftIndex:     state.resourceDriftIndex,
+		eventIndex:             state.eventIndex,
 		maxGuideFileSize:       DefaultMaxGuideFileSize,
+		maxEventPartitionSize:  DefaultMaxEventParititionSize,
 		lastInstanceChunk:      getLastChunkFromIndex(state.instanceIndex),
 		lastResourceDriftChunk: getLastChunkFromIndex(state.resourceDriftIndex),
 	}
 
-	container := &mfStateContainerImpl{
+	container := &StateContainer{
 		persister: persister,
 		instancesContainer: &instancesContainerImpl{
 			instances: state.instances,
@@ -119,6 +141,15 @@ func LoadStateContainer(
 			logger:    logger,
 			mu:        mu,
 		},
+		eventsContainer: &eventsContainerImpl{
+			events:          state.events,
+			partitionEvents: state.partitionEvents,
+			fs:              fs,
+			listeners:       make(map[string][]chan manage.Event),
+			persister:       persister,
+			logger:          logger,
+			mu:              mu,
+		},
 	}
 
 	for _, opt := range opts {
@@ -128,28 +159,32 @@ func LoadStateContainer(
 	return container, nil
 }
 
-func (c *mfStateContainerImpl) Instances() state.InstancesContainer {
+func (c *StateContainer) Instances() state.InstancesContainer {
 	return c.instancesContainer
 }
 
-func (c *mfStateContainerImpl) Resources() state.ResourcesContainer {
+func (c *StateContainer) Resources() state.ResourcesContainer {
 	return c.resourcesContainer
 }
 
-func (c *mfStateContainerImpl) Links() state.LinksContainer {
+func (c *StateContainer) Links() state.LinksContainer {
 	return c.linksContainer
 }
 
-func (c *mfStateContainerImpl) Children() state.ChildrenContainer {
+func (c *StateContainer) Children() state.ChildrenContainer {
 	return c.childrenContainer
 }
 
-func (c *mfStateContainerImpl) Metadata() state.MetadataContainer {
+func (c *StateContainer) Metadata() state.MetadataContainer {
 	return c.metadataContainer
 }
 
-func (c *mfStateContainerImpl) Exports() state.ExportsContainer {
+func (c *StateContainer) Exports() state.ExportsContainer {
 	return c.exportContainer
+}
+
+func (c *StateContainer) Events() manage.Events {
+	return c.eventsContainer
 }
 
 func getLastChunkFromIndex(index map[string]*indexLocation) int {

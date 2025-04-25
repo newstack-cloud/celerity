@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/spf13/afero"
+	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
@@ -16,13 +17,21 @@ type internalState struct {
 	resources          map[string]*state.ResourceState
 	resourceDrift      map[string]*state.ResourceDriftState
 	links              map[string]*state.LinkState
+	events             map[string]*manage.Event
+	partitionEvents    map[string][]*manage.Event
 	instanceIndex      map[string]*indexLocation
 	resourceDriftIndex map[string]*indexLocation
+	eventIndex         map[string]*eventIndexLocation
 }
 
 type indexLocation struct {
 	ChunkNumber  int `json:"chunkNumber"`
 	IndexInChunk int `json:"indexInChunk"`
+}
+
+type eventIndexLocation struct {
+	Partition        string `json:"partition"`
+	IndexInPartition int    `json:"indexInPartition"`
 }
 
 // Provides a slightly different structure than state.InstanceState to persist only the relationships
@@ -56,8 +65,11 @@ func loadStateFromDir(stateDir string, fs afero.Fs) (*internalState, error) {
 		resources:          map[string]*state.ResourceState{},
 		resourceDrift:      map[string]*state.ResourceDriftState{},
 		links:              map[string]*state.LinkState{},
+		events:             map[string]*manage.Event{},
+		partitionEvents:    map[string][]*manage.Event{},
 		resourceDriftIndex: map[string]*indexLocation{},
 		instanceIndex:      map[string]*indexLocation{},
+		eventIndex:         map[string]*eventIndexLocation{},
 	}
 
 	parentChildMapping := map[string][]*childInstanceInfo{}
@@ -111,12 +123,20 @@ func loadStateFromFileEntry(
 		return loadResourceDriftFromFile(fs, stateDir, entryName, targetState)
 	}
 
+	if isEventPartitionFile(entryName) {
+		return loadEventPartitionFromFile(fs, stateDir, entryName, targetState)
+	}
+
 	if isInstanceIndexFile(entryName) {
 		return loadInstanceIndexFromFile(fs, stateDir, entryName, targetState)
 	}
 
 	if isResourceDriftIndexFile(entryName) {
 		return loadResourceDriftIndexFromFile(fs, stateDir, entryName, targetState)
+	}
+
+	if isEventIndexFile(entryName) {
+		return loadEventIndexFromFile(fs, stateDir, entryName, targetState)
 	}
 
 	return nil
@@ -206,6 +226,33 @@ func loadResourceDriftFromFile(
 	return nil
 }
 
+func loadEventPartitionFromFile(
+	fs afero.Fs,
+	stateDir, name string,
+	targetState *internalState,
+) error {
+	filePath := path.Join(stateDir, name)
+	data, err := afero.ReadFile(fs, filePath)
+	if err != nil {
+		return err
+	}
+
+	partitionEvents := []*manage.Event{}
+	err = json.Unmarshal(data, &partitionEvents)
+	if err != nil {
+		return err
+	}
+
+	for _, event := range partitionEvents {
+		targetState.events[event.ID] = event
+	}
+
+	partitionName := extractPartitionName(name)
+	targetState.partitionEvents[partitionName] = partitionEvents
+
+	return nil
+}
+
 func loadInstanceIndexFromFile(
 	fs afero.Fs,
 	stateDir, name string,
@@ -250,13 +297,40 @@ func loadResourceDriftIndexFromFile(
 	return nil
 }
 
+func loadEventIndexFromFile(
+	fs afero.Fs,
+	stateDir, name string,
+	targetState *internalState,
+) error {
+	filePath := path.Join(stateDir, name)
+	data, err := afero.ReadFile(fs, filePath)
+	if err != nil {
+		return err
+	}
+
+	eventIndex := map[string]*eventIndexLocation{}
+	err = json.Unmarshal(data, &eventIndex)
+	if err != nil {
+		return err
+	}
+
+	targetState.eventIndex = eventIndex
+
+	return nil
+}
+
 var (
-	instancesFilePattern     = regexp.MustCompile(`^instances_c(\d+)\.json$`)
-	resourceDriftFilePattern = regexp.MustCompile(`^resource_drift_c(\d+)\.json$`)
+	instancesFilePattern      = regexp.MustCompile(`^instances_c(\d+)\.json$`)
+	resourceDriftFilePattern  = regexp.MustCompile(`^resource_drift_c(\d+)\.json$`)
+	eventPartitionFilePattern = regexp.MustCompile(`^events__(.*?)\.json$`)
 )
 
 func isInstanceFile(name string) bool {
 	return instancesFilePattern.Match([]byte(name))
+}
+
+func isEventPartitionFile(name string) bool {
+	return eventPartitionFilePattern.Match([]byte(name))
 }
 
 func isInstanceIndexFile(name string) bool {
@@ -271,6 +345,10 @@ func isResourceDriftIndexFile(name string) bool {
 	return name == "resource_drift_index.json"
 }
 
+func isEventIndexFile(name string) bool {
+	return name == "event_index.json"
+}
+
 func getChildBlueprintValues(childBlueprintRefs map[string]string) []*childInstanceInfo {
 	childInstanceInfos := []*childInstanceInfo{}
 	for childBlueprintName, childInstanceID := range childBlueprintRefs {
@@ -283,4 +361,12 @@ func getChildBlueprintValues(childBlueprintRefs map[string]string) []*childInsta
 		)
 	}
 	return childInstanceInfos
+}
+
+func extractPartitionName(fileName string) string {
+	matches := eventPartitionFilePattern.FindStringSubmatch(fileName)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	return ""
 }

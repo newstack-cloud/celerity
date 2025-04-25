@@ -1,0 +1,388 @@
+package memfile
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"slices"
+	"sync"
+	"time"
+
+	"github.com/spf13/afero"
+	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+)
+
+const (
+	eventBroadcastDelay = 5 * time.Millisecond
+)
+
+type eventsContainerImpl struct {
+	events          map[string]*manage.Event
+	partitionEvents map[string][]*manage.Event
+	listeners       map[string][]chan manage.Event
+	fs              afero.Fs
+	persister       *statePersister
+	logger          core.Logger
+	mu              *sync.RWMutex
+}
+
+func (c *eventsContainerImpl) Get(ctx context.Context, id string) (manage.Event, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	event, hasEvent := c.events[id]
+	if !hasEvent {
+		return manage.Event{}, manage.EventNotFoundError(id)
+	}
+
+	return copyEvent(event), nil
+}
+
+func (c *eventsContainerImpl) Save(ctx context.Context, event *manage.Event) error {
+	eventLogger := c.logger.WithFields(
+		core.StringLogField("eventId", event.ID),
+	)
+
+	// Don't defer releasing the lock to the end of the function
+	// as we need to allow new stream calls to register listeners
+	// that happen to coincide with the save event.
+	c.mu.Lock()
+
+	err := c.save(event, eventLogger)
+	if err != nil {
+		c.mu.Unlock()
+		return err
+	}
+
+	c.mu.Unlock()
+
+	// Allow some time for any pending listeners to register before broadcasting.
+	time.Sleep(eventBroadcastDelay)
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	partitionName := partitionNameForChannel(event.ChannelType, event.ChannelID)
+	listeners, hasListeners := c.listeners[partitionName]
+	if !hasListeners {
+		eventLogger.Debug("no listeners for event channel, skipping broadcast")
+		return nil
+	}
+
+	eventLogger.Debug("broadcasting saved event to listeners")
+	for _, listener := range listeners {
+		select {
+		case <-ctx.Done():
+			eventLogger.Debug("context done, stopping event broadcast")
+			return nil
+		case listener <- *event:
+			eventLogger.Debug(
+				"event broadcasted to stream listener",
+				core.StringLogField("listenerChannel", partitionName),
+			)
+		}
+	}
+
+	return nil
+}
+
+func (c *eventsContainerImpl) save(
+	event *manage.Event,
+	eventLogger core.Logger,
+) error {
+
+	eventCopy := copyEvent(event)
+	c.events[event.ID] = &eventCopy
+
+	partitionName := partitionNameForChannel(event.ChannelType, event.ChannelID)
+	partition, hasPartition := c.partitionEvents[partitionName]
+	if !hasPartition {
+		partition = []*manage.Event{}
+		c.partitionEvents[partitionName] = partition
+	}
+	insertedIndex := insertEventIntoPartition(
+		&partition,
+		event,
+	)
+
+	eventLogger.Debug("persisting event partition update/creation")
+	return c.persister.saveEventPartition(
+		partitionName,
+		partition,
+		&eventCopy,
+		insertedIndex,
+	)
+}
+
+func (c *eventsContainerImpl) Stream(
+	ctx context.Context,
+	params *manage.EventStreamParams,
+	streamTo chan manage.Event,
+	errChan chan error,
+) (chan struct{}, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	endChan := make(chan struct{})
+
+	partitionName := partitionNameForChannel(params.ChannelType, params.ChannelID)
+	partition, hasPartition := c.partitionEvents[partitionName]
+	if !hasPartition {
+		partition = []*manage.Event{}
+	}
+
+	eventsToStream, err := c.collectInitialEventsToStream(
+		partition,
+		params,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	go c.streamEvents(
+		ctx,
+		eventsToStream,
+		partitionName,
+		streamTo,
+		endChan,
+	)
+
+	return endChan, nil
+}
+
+func (c *eventsContainerImpl) streamEvents(
+	ctx context.Context,
+	initialEvents []*manage.Event,
+	partitionName string,
+	streamTo chan manage.Event,
+	endChan chan struct{},
+) {
+	internalEventChan := make(chan manage.Event)
+	c.addEventListener(partitionName, internalEventChan)
+	defer c.removeEventListener(partitionName, internalEventChan)
+
+	for _, event := range initialEvents {
+		select {
+		case <-ctx.Done():
+			return
+		case <-endChan:
+			return
+		case streamTo <- *event:
+		}
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-endChan:
+			return
+		case event := <-internalEventChan:
+			select {
+			case <-ctx.Done():
+				return
+			case <-endChan:
+				return
+			case streamTo <- event:
+			}
+		}
+	}
+}
+
+func (c *eventsContainerImpl) addEventListener(
+	partitionName string,
+	eventChan chan manage.Event,
+) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	listeners, hasListeners := c.listeners[partitionName]
+	if !hasListeners {
+		listeners = []chan manage.Event{}
+	}
+	c.listeners[partitionName] = append(listeners, eventChan)
+}
+
+func (c *eventsContainerImpl) removeEventListener(
+	partitionName string,
+	eventChan chan manage.Event,
+) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	listeners, hasListeners := c.listeners[partitionName]
+	if !hasListeners {
+		return
+	}
+
+	listenerIndex := slices.Index(listeners, eventChan)
+	if listenerIndex >= 0 {
+		c.listeners[partitionName] = slices.Delete(
+			listeners,
+			listenerIndex,
+			listenerIndex+1,
+		)
+	}
+}
+
+func (c *eventsContainerImpl) collectInitialEventsToStream(
+	partition []*manage.Event,
+	params *manage.EventStreamParams,
+) ([]*manage.Event, error) {
+	if params.StartingEventID == "" {
+		return partition, nil
+	}
+
+	indexLocation := c.persister.getEventIndexEntry(params.StartingEventID)
+	if indexLocation == nil {
+		return partition, nil
+	}
+
+	startingEventIndex := indexLocation.IndexInPartition
+	if startingEventIndex < 0 || startingEventIndex >= len(partition) {
+		return nil, errMalformedState(
+			"malformed event index entry, location in partition is out of bounds",
+		)
+	}
+
+	// Events are sorted in ascending order by the raw bytes of their IDs.
+	// Any events after the starting event ID that have been saved need
+	// to be streamed.
+	return partition[startingEventIndex:], nil
+}
+
+func (c *eventsContainerImpl) Cleanup(
+	ctx context.Context,
+	thresholdDate time.Time,
+) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	removedEvents := []string{}
+	removedPartitions := []string{}
+	for partitionName, partition := range c.partitionEvents {
+		deleteUpToIndex := findIndexBeforeThreshold(
+			partition,
+			thresholdDate,
+		)
+
+		if deleteUpToIndex == len(partition)-1 {
+			// All events in the partition are older than the threshold date,
+			// so we can delete the entire partition.
+			delete(c.partitionEvents, partitionName)
+			removedPartitions = append(removedPartitions, partitionName)
+			removedEvents = append(
+				removedEvents,
+				extractEventIDs(partition)...,
+			)
+		} else if deleteUpToIndex >= 0 {
+			beforeDeletion := make([]*manage.Event, len(partition))
+			copy(beforeDeletion, partition)
+
+			c.partitionEvents[partitionName] = slices.Delete(
+				partition,
+				0,
+				deleteUpToIndex+1,
+			)
+			removedEvents = append(
+				removedEvents,
+				extractEventIDs(beforeDeletion[:deleteUpToIndex+1])...,
+			)
+		}
+	}
+
+	c.removeEventsFromMemoryLookup(removedEvents)
+
+	return c.persister.updateEventPartitionsForRemovals(
+		c.partitionEvents,
+		removedPartitions,
+		removedEvents,
+	)
+}
+
+func (c *eventsContainerImpl) removeEventsFromMemoryLookup(
+	removedEvents []string,
+) {
+	for _, eventID := range removedEvents {
+		delete(c.events, eventID)
+	}
+}
+
+func findIndexBeforeThreshold(
+	partition []*manage.Event,
+	thresholdDate time.Time,
+) int {
+	beforeThresholdIndex := -1
+	i := len(partition) - 1
+
+	for beforeThresholdIndex == -1 && i >= 0 {
+		currentEntryTime := time.Unix(
+			partition[i].Timestamp,
+			0,
+		)
+		if currentEntryTime.Before(thresholdDate) {
+			beforeThresholdIndex = i
+		}
+
+		i -= 1
+	}
+
+	return beforeThresholdIndex
+}
+
+func extractEventIDs(partition []*manage.Event) []string {
+	ids := make([]string, len(partition))
+	for i, event := range partition {
+		ids[i] = event.ID
+	}
+	return ids
+}
+
+func insertEventIntoPartition(
+	partition *[]*manage.Event,
+	event *manage.Event,
+) int {
+	if len(*partition) == 0 {
+		*partition = append(*partition, event)
+		return 0
+	}
+
+	// Events in each partition are sorted by the ID,
+	// where the raw bytes of each ID are compared.
+	// This assumes that the IDs are in a sequential time-based format
+	// (e.g. UUIDv7).
+	*partition = append(*partition, event)
+	slices.SortFunc(*partition, func(a, b *manage.Event) int {
+		return bytes.Compare(
+			[]byte(a.ID),
+			[]byte(b.ID),
+		)
+	})
+
+	return slices.IndexFunc(*partition, func(current *manage.Event) bool {
+		return current.ID == event.ID
+	})
+}
+
+func copyEvent(event *manage.Event) manage.Event {
+	return manage.Event{
+		ID:          event.ID,
+		Type:        event.Type,
+		ChannelType: event.ChannelType,
+		ChannelID:   event.ChannelID,
+		Data:        event.Data,
+		Timestamp:   event.Timestamp,
+	}
+}
+
+func partitionNameForChannel(
+	channelType string,
+	channelID string,
+) string {
+	return fmt.Sprintf(
+		"%s_%s",
+		channelType,
+		channelID,
+	)
+}

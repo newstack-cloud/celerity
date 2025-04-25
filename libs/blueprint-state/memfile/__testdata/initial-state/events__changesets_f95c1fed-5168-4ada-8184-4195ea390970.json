@@ -1,0 +1,58 @@
+[
+  {
+    "id": "0196678c-ae43-7b53-9796-30e84ba07b99",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": "{ \"info\": \"should be cleaned up, before 31/03/2025 10:00 UTC\" }",
+    "timestamp": 1743411600
+  },
+  {
+    "id": "01966793-844a-7a2b-b278-48838bab3835",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": "{ \"info\": \"should be cleaned up, before 31/03/2025 10:00 UTC\" }",
+    "timestamp": 1743411630
+  },
+  {
+    "id": "01966794-8352-767e-a9d7-0ac6275af2e2",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": "{ \"info\": \"should be cleaned up, before 31/03/2025 10:00 UTC\" }",
+    "timestamp": 1743411730
+  },
+  {
+    "id": "01966794-f1e8-7a14-9893-335ca16be0d5",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": "{ \"info\": \"should be cleaned up, before 31/03/2025 10:00 UTC\" }",
+    "timestamp": 1743411820
+  },
+  {
+    "id": "01966795-8929-7f6d-989c-0403037d8131",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": "{ \"info\": \"should be cleaned up, before 31/03/2025 10:00 UTC\" }",
+    "timestamp": 1743411880
+  },
+  {
+    "id": "019668d9-0415-7fbb-9159-a4e177f8b2e7",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": "{ \"info\": \"should not be cleaned up, after 31/03/2025 10:00 UTC\" }",
+    "timestamp": 1745515757
+  },
+  {
+    "id": "019668d9-2353-7568-8f18-2c029b2d8ff5",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
+    "data": "{ \"info\": \"should not be cleaned up, after 31/03/2025 10:00 UTC\" }",
+    "timestamp": 1745515799
+  }
+]

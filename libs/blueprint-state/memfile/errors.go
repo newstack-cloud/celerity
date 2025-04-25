@@ -30,6 +30,10 @@ const (
 	// with a resource or link no longer exists but the resource or link
 	// still exists.
 	ErrorReasonCodeMalformedState ErrorReasonCode = "malformed_state"
+
+	// ErrorReasonCodeMaxEventPartitionSizeExceeded is the error code that is used when
+	// the maximum event partition size is exceeded when trying to save an event.
+	ErrorReasonCodeMaxEventPartitionSizeExceeded ErrorReasonCode = "max_event_partition_size_exceeded"
 )
 
 func errMalformedState(message string) error {
@@ -43,5 +47,19 @@ func errMalformedStateFile(message string) error {
 	return &Error{
 		ReasonCode: ErrorReasonCodeMalformedStateFile,
 		Err:        fmt.Errorf("malformed state file: %s", message),
+	}
+}
+
+func errMaxEventPartitionSizeExceeded(
+	partition string,
+	maxEventPartitionSize int64,
+) error {
+	return &Error{
+		ReasonCode: ErrorReasonCodeMaxEventPartitionSizeExceeded,
+		Err: fmt.Errorf(
+			"maximum event partition size (%d bytes) exceeded for %q",
+			maxEventPartitionSize,
+			partition,
+		),
 	}
 }

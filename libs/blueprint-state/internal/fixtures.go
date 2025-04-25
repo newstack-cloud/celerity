@@ -6,7 +6,9 @@ import (
 	"os"
 	"path"
 	"slices"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
@@ -226,6 +228,54 @@ func loadSaveEventFixture(fixtureNumber int) (SaveEventFixture, error) {
 	return SaveEventFixture{
 		Event: event,
 	}, nil
+}
+
+func CreateEventStreamSaveFixtures() ([]SaveEventFixture, error) {
+	// Sleep between preparing each fixture to ensure the UUIDs contain different
+	// timestamps to millisecond precision to assert that the events are
+	// streamed in the correct order.
+	fixtures := make([]SaveEventFixture, len(StreamFixtureEventIDs))
+	for i := 0; i < len(StreamFixtureEventIDs); i += 1 {
+		id := StreamFixtureEventIDs[i]
+
+		fixtures[i] = SaveEventFixture{
+			Event: &manage.Event{
+				ID:          id.String(),
+				Type:        "resource",
+				ChannelType: "changesets",
+				ChannelID:   "db58eda8-36c6-4180-a9cb-557f3392361c",
+				Data:        fmt.Sprintf("{\"value\":\"%d\"}", i),
+				Timestamp:   time.Now().Unix(),
+			},
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	return fixtures, nil
+}
+
+// UUIDv7 values for event IDs in timestamp order.
+var StreamFixtureEventIDs = []uuid.UUID{
+	uuid.MustParse("01966574-33ba-73c4-a5c0-a0b55249d39a"),
+	uuid.MustParse("01966574-69ef-7b02-81cd-7fdbbbead77d"),
+	uuid.MustParse("01966574-a5fe-7b22-9229-12a19afc8c32"),
+	uuid.MustParse("01966575-47f8-7770-8a3c-56ea2e2b8dee"),
+	uuid.MustParse("01966575-7ce6-7923-be83-011cebc8c8d3"),
+	uuid.MustParse("01966575-a91e-7829-9f74-5069446071bf"),
+	uuid.MustParse("01966576-0654-7f14-be3b-6af31cd6a1f5"),
+	uuid.MustParse("01966576-368a-7a53-9f4e-38f9a5ef8ece"),
+	uuid.MustParse("01966576-78b4-7711-9d4a-929e8dc29eb6"),
+	uuid.MustParse("01966576-a6b5-7e37-8bf2-60e0eb10602e"),
+	uuid.MustParse("01966576-e3e3-717d-bc25-324c29056a2f"),
+	uuid.MustParse("01966577-3210-7562-8f1e-5a85200907b8"),
+	uuid.MustParse("01966577-65f9-7cbb-ae74-93c7766c7d80"),
+	uuid.MustParse("01966577-bff2-7829-b14b-7041be6c56b5"),
+	uuid.MustParse("01966577-f76b-73b0-ae60-64d241ce4e8a"),
+	uuid.MustParse("01966578-4544-729f-b968-b5893ea9fbdc"),
+	uuid.MustParse("01966578-7675-7004-820f-d85b3e7616a7"),
+	uuid.MustParse("01966578-acbf-735c-a318-6393dc267599"),
+	uuid.MustParse("01966578-fe83-7cbd-8790-1a93dbf62e18"),
+	uuid.MustParse("01966579-28d4-7c43-b4b2-f29238540587"),
 }
 
 type SaveChangesetFixture struct {
