@@ -76,8 +76,29 @@ func (s *MemFileStateContainerChangesetsSuite) Test_fails_to_retrieve_non_existe
 	)
 }
 
-func (s *MemFileStateContainerChangesetsSuite) Test_saves_changeset() {
+func (s *MemFileStateContainerChangesetsSuite) Test_saves_new_changeset() {
 	fixture := s.saveChangesetFixtures[1]
+
+	changesets := s.container.Changesets()
+	err := changesets.Save(
+		context.Background(),
+		fixture.Changeset,
+	)
+	s.Require().NoError(err)
+
+	savedChangeset, err := changesets.Get(
+		context.Background(),
+		fixture.Changeset.ID,
+	)
+	s.Require().NoError(err)
+	s.Assert().NotNil(savedChangeset)
+	s.Assert().Equal(fixture.Changeset, savedChangeset)
+
+	s.assertPersistedChangeset(fixture.Changeset)
+}
+
+func (s *MemFileStateContainerChangesetsSuite) Test_updates_existing_changeset() {
+	fixture := s.saveChangesetFixtures[2]
 
 	changesets := s.container.Changesets()
 	err := changesets.Save(

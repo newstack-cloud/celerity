@@ -92,6 +92,7 @@ func (s *statePersister) updateChangeset(changeset *manage.Changeset) error {
 		info.entry.IndexInChunk,
 		info.entry.IndexInChunk+1,
 	)
+	info.chunkInstances = append(info.chunkInstances, changeset)
 
 	// Every time we update a change set,
 	// we need to re-sort the chunk by timestamp.
