@@ -192,12 +192,17 @@ func (s *statePersister) resetChangesetState() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	err := s.removeChangesetIndexFile()
+	err := s.removeIndexFile(
+		changesetIndexFilePath,
+	)
 	if err != nil {
 		return err
 	}
 
-	err = s.removeChangesetChunkFiles()
+	err = s.removeChunkFiles(
+		s.lastChangesetChunk,
+		changesetChunkFilePath,
+	)
 	if err != nil {
 		return err
 	}
@@ -259,45 +264,6 @@ func (s *statePersister) loadAllChangesetChunks() (
 	}
 
 	return changesetChunks, nil
-}
-
-func (s *statePersister) removeChangesetIndexFile() error {
-	indexFilePath := changesetIndexFilePath(s.stateDir)
-	exists, err := afero.Exists(s.fs, indexFilePath)
-	if err != nil {
-		return err
-	}
-
-	if !exists {
-		return nil
-	}
-
-	return s.fs.Remove(indexFilePath)
-}
-
-func (s *statePersister) removeChangesetChunkFiles() error {
-	for i := 0; i <= s.lastChangesetChunk; i++ {
-		err := s.removeChangesetChunkFile(i)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *statePersister) removeChangesetChunkFile(chunkIndex int) error {
-	chunkFilePath := changesetChunkFilePath(s.stateDir, chunkIndex)
-	exists, err := afero.Exists(s.fs, chunkFilePath)
-	if err != nil {
-		return err
-	}
-
-	if !exists {
-		return nil
-	}
-
-	return s.fs.Remove(chunkFilePath)
 }
 
 func (s *statePersister) updateChangesetChunkIndexEntries(

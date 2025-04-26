@@ -8,17 +8,19 @@ import (
 )
 
 type statePersister struct {
-	stateDir               string
-	fs                     afero.Fs
-	instanceIndex          map[string]*indexLocation
-	lastInstanceChunk      int
-	maxGuideFileSize       int64
-	resourceDriftIndex     map[string]*indexLocation
-	lastResourceDriftChunk int
-	eventIndex             map[string]*eventIndexLocation
-	maxEventPartitionSize  int64
-	changesetIndex         map[string]*indexLocation
-	lastChangesetChunk     int
+	stateDir                     string
+	fs                           afero.Fs
+	instanceIndex                map[string]*indexLocation
+	lastInstanceChunk            int
+	maxGuideFileSize             int64
+	resourceDriftIndex           map[string]*indexLocation
+	lastResourceDriftChunk       int
+	eventIndex                   map[string]*eventIndexLocation
+	maxEventPartitionSize        int64
+	changesetIndex               map[string]*indexLocation
+	lastChangesetChunk           int
+	blueprintValidationIndex     map[string]*indexLocation
+	lastBlueprintValidationChunk int
 	// The persister has its own mutex, separate from
 	// the state container's read/write lock.
 	mu sync.Mutex
@@ -69,4 +71,51 @@ type emptyFileInfo struct{}
 
 func (emptyFileInfo) Size() int64 {
 	return 0
+}
+
+func (s *statePersister) removeIndexFile(
+	createFilePath func(string) string,
+) error {
+	indexFilePath := createFilePath(s.stateDir)
+	exists, err := afero.Exists(s.fs, indexFilePath)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return nil
+	}
+
+	return s.fs.Remove(indexFilePath)
+}
+
+func (s *statePersister) removeChunkFiles(
+	lastChunk int,
+	createChunkFilePath func(string, int) string,
+) error {
+	for i := 0; i <= lastChunk; i++ {
+		err := s.removeChunkFile(i, createChunkFilePath)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *statePersister) removeChunkFile(
+	chunkIndex int,
+	createChunkFilePath func(string, int) string,
+) error {
+	chunkFilePath := createChunkFilePath(s.stateDir, chunkIndex)
+	exists, err := afero.Exists(s.fs, chunkFilePath)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return nil
+	}
+
+	return s.fs.Remove(chunkFilePath)
 }

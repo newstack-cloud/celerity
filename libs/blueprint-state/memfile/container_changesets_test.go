@@ -35,7 +35,7 @@ func (s *MemFileStateContainerChangesetsSuite) SetupTest() {
 	s.fs = memoryFS
 	s.stateDir = stateDir
 	// Use a low max guide file size of 100 bytes to trigger the logic that splits
-	// instance state across multiple chunk files.
+	// change set state across multiple chunk files.
 	container, err := LoadStateContainer(stateDir, memoryFS, core.NewNopLogger(), WithMaxGuideFileSize(100))
 	s.Require().NoError(err)
 	s.container = container

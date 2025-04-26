@@ -13,17 +13,19 @@ import (
 )
 
 type internalState struct {
-	instances          map[string]*state.InstanceState
-	resources          map[string]*state.ResourceState
-	resourceDrift      map[string]*state.ResourceDriftState
-	links              map[string]*state.LinkState
-	events             map[string]*manage.Event
-	partitionEvents    map[string][]*manage.Event
-	changesets         map[string]*manage.Changeset
-	instanceIndex      map[string]*indexLocation
-	resourceDriftIndex map[string]*indexLocation
-	eventIndex         map[string]*eventIndexLocation
-	changesetIndex     map[string]*indexLocation
+	instances                map[string]*state.InstanceState
+	resources                map[string]*state.ResourceState
+	resourceDrift            map[string]*state.ResourceDriftState
+	links                    map[string]*state.LinkState
+	events                   map[string]*manage.Event
+	partitionEvents          map[string][]*manage.Event
+	changesets               map[string]*manage.Changeset
+	blueprintValidations     map[string]*manage.BlueprintValidation
+	instanceIndex            map[string]*indexLocation
+	resourceDriftIndex       map[string]*indexLocation
+	eventIndex               map[string]*eventIndexLocation
+	changesetIndex           map[string]*indexLocation
+	blueprintValidationIndex map[string]*indexLocation
 }
 
 type indexLocation struct {
@@ -63,17 +65,19 @@ type childInstanceInfo struct {
 
 func loadStateFromDir(stateDir string, fs afero.Fs) (*internalState, error) {
 	currentState := &internalState{
-		instances:          map[string]*state.InstanceState{},
-		resources:          map[string]*state.ResourceState{},
-		resourceDrift:      map[string]*state.ResourceDriftState{},
-		links:              map[string]*state.LinkState{},
-		events:             map[string]*manage.Event{},
-		partitionEvents:    map[string][]*manage.Event{},
-		changesets:         map[string]*manage.Changeset{},
-		resourceDriftIndex: map[string]*indexLocation{},
-		instanceIndex:      map[string]*indexLocation{},
-		eventIndex:         map[string]*eventIndexLocation{},
-		changesetIndex:     map[string]*indexLocation{},
+		instances:                map[string]*state.InstanceState{},
+		resources:                map[string]*state.ResourceState{},
+		resourceDrift:            map[string]*state.ResourceDriftState{},
+		links:                    map[string]*state.LinkState{},
+		events:                   map[string]*manage.Event{},
+		partitionEvents:          map[string][]*manage.Event{},
+		changesets:               map[string]*manage.Changeset{},
+		blueprintValidations:     map[string]*manage.BlueprintValidation{},
+		resourceDriftIndex:       map[string]*indexLocation{},
+		instanceIndex:            map[string]*indexLocation{},
+		eventIndex:               map[string]*eventIndexLocation{},
+		changesetIndex:           map[string]*indexLocation{},
+		blueprintValidationIndex: map[string]*indexLocation{},
 	}
 
 	parentChildMapping := map[string][]*childInstanceInfo{}
@@ -135,6 +139,10 @@ func loadStateFromFileEntry(
 		return loadChangesetsFromFile(fs, stateDir, entryName, targetState)
 	}
 
+	if isBlueprintValidationFile(entryName) {
+		return loadBlueprintValidationFromFile(fs, stateDir, entryName, targetState)
+	}
+
 	if isInstanceIndexFile(entryName) {
 		return loadInstanceIndexFromFile(fs, stateDir, entryName, targetState)
 	}
@@ -149,6 +157,10 @@ func loadStateFromFileEntry(
 
 	if isChangesetIndexFile(entryName) {
 		return loadChangesetIndexFromFile(fs, stateDir, entryName, targetState)
+	}
+
+	if isBlueprintValidationIndexFile(entryName) {
+		return loadBlueprintValidationIndexFromFile(fs, stateDir, entryName, targetState)
 	}
 
 	return nil
@@ -289,6 +301,30 @@ func loadChangesetsFromFile(
 	return nil
 }
 
+func loadBlueprintValidationFromFile(
+	fs afero.Fs,
+	stateDir, name string,
+	targetState *internalState,
+) error {
+	filePath := path.Join(stateDir, name)
+	data, err := afero.ReadFile(fs, filePath)
+	if err != nil {
+		return err
+	}
+
+	blueprintValidations := []*manage.BlueprintValidation{}
+	err = json.Unmarshal(data, &blueprintValidations)
+	if err != nil {
+		return err
+	}
+
+	for _, validation := range blueprintValidations {
+		targetState.blueprintValidations[validation.ID] = validation
+	}
+
+	return nil
+}
+
 func loadInstanceIndexFromFile(
 	fs afero.Fs,
 	stateDir, name string,
@@ -330,6 +366,21 @@ func loadChangesetIndexFromFile(
 	}
 
 	targetState.changesetIndex = changesetIndex
+
+	return nil
+}
+
+func loadBlueprintValidationIndexFromFile(
+	fs afero.Fs,
+	stateDir, name string,
+	targetState *internalState,
+) error {
+	blueprintValidationIndex, err := loadChunkIndexFromFile(fs, stateDir, name)
+	if err != nil {
+		return err
+	}
+
+	targetState.blueprintValidationIndex = blueprintValidationIndex
 
 	return nil
 }
@@ -376,10 +427,11 @@ func loadEventIndexFromFile(
 }
 
 var (
-	instancesFilePattern      = regexp.MustCompile(`^instances_c(\d+)\.json$`)
-	resourceDriftFilePattern  = regexp.MustCompile(`^resource_drift_c(\d+)\.json$`)
-	eventPartitionFilePattern = regexp.MustCompile(`^events__(.*?)\.json$`)
-	changesetsFilePattern     = regexp.MustCompile(`^changesets_c(\d+)\.json$`)
+	instancesFilePattern            = regexp.MustCompile(`^instances_c(\d+)\.json$`)
+	resourceDriftFilePattern        = regexp.MustCompile(`^resource_drift_c(\d+)\.json$`)
+	eventPartitionFilePattern       = regexp.MustCompile(`^events__(.*?)\.json$`)
+	changesetsFilePattern           = regexp.MustCompile(`^changesets_c(\d+)\.json$`)
+	blueprintValidationsFilePattern = regexp.MustCompile(`^blueprint_validations_c(\d+)\.json$`)
 )
 
 func isInstanceFile(name string) bool {
@@ -392,6 +444,10 @@ func isEventPartitionFile(name string) bool {
 
 func isChangesetFile(name string) bool {
 	return changesetsFilePattern.Match([]byte(name))
+}
+
+func isBlueprintValidationFile(name string) bool {
+	return blueprintValidationsFilePattern.Match([]byte(name))
 }
 
 func isInstanceIndexFile(name string) bool {
@@ -412,6 +468,10 @@ func isEventIndexFile(name string) bool {
 
 func isChangesetIndexFile(name string) bool {
 	return name == "changeset_index.json"
+}
+
+func isBlueprintValidationIndexFile(name string) bool {
+	return name == "blueprint_validation_index.json"
 }
 
 func getChildBlueprintValues(childBlueprintRefs map[string]string) []*childInstanceInfo {

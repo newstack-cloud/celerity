@@ -22,6 +22,7 @@ type StateContainer struct {
 	exportContainer     *exportContainerImpl
 	eventsContainer     *eventsContainerImpl
 	changesetsContainer *changesetsContainerImpl
+	validationContainer *validationContainerImpl
 	persister           *statePersister
 }
 
@@ -78,17 +79,19 @@ func LoadStateContainer(
 	}
 
 	persister := &statePersister{
-		stateDir:               stateDir,
-		fs:                     fs,
-		instanceIndex:          state.instanceIndex,
-		resourceDriftIndex:     state.resourceDriftIndex,
-		eventIndex:             state.eventIndex,
-		changesetIndex:         state.changesetIndex,
-		maxGuideFileSize:       DefaultMaxGuideFileSize,
-		maxEventPartitionSize:  DefaultMaxEventParititionSize,
-		lastInstanceChunk:      getLastChunkFromIndex(state.instanceIndex),
-		lastResourceDriftChunk: getLastChunkFromIndex(state.resourceDriftIndex),
-		lastChangesetChunk:     getLastChunkFromIndex(state.changesetIndex),
+		stateDir:                     stateDir,
+		fs:                           fs,
+		instanceIndex:                state.instanceIndex,
+		resourceDriftIndex:           state.resourceDriftIndex,
+		eventIndex:                   state.eventIndex,
+		changesetIndex:               state.changesetIndex,
+		blueprintValidationIndex:     state.blueprintValidationIndex,
+		maxGuideFileSize:             DefaultMaxGuideFileSize,
+		maxEventPartitionSize:        DefaultMaxEventParititionSize,
+		lastInstanceChunk:            getLastChunkFromIndex(state.instanceIndex),
+		lastResourceDriftChunk:       getLastChunkFromIndex(state.resourceDriftIndex),
+		lastChangesetChunk:           getLastChunkFromIndex(state.changesetIndex),
+		lastBlueprintValidationChunk: getLastChunkFromIndex(state.blueprintValidationIndex),
 	}
 
 	container := &StateContainer{
@@ -160,6 +163,13 @@ func LoadStateContainer(
 			logger:     logger,
 			mu:         mu,
 		},
+		validationContainer: &validationContainerImpl{
+			validations: state.blueprintValidations,
+			fs:          fs,
+			persister:   persister,
+			logger:      logger,
+			mu:          mu,
+		},
 	}
 
 	for _, opt := range opts {
@@ -199,6 +209,10 @@ func (c *StateContainer) Events() manage.Events {
 
 func (c *StateContainer) Changesets() manage.Changesets {
 	return c.changesetsContainer
+}
+
+func (c *StateContainer) Validation() manage.Validation {
+	return c.validationContainer
 }
 
 func getLastChunkFromIndex(index map[string]*indexLocation) int {
