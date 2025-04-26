@@ -22,11 +22,12 @@ const (
 )
 
 type MemFileStateContainerEventsTestSuite struct {
-	container           *StateContainer
-	stateDir            string
-	fs                  afero.Fs
-	saveEventFixtures   map[int]internal.SaveEventFixture
-	streamEventFixtures []internal.SaveEventFixture
+	container            *StateContainer
+	stateDir             string
+	fs                   afero.Fs
+	saveEventFixtures    map[int]internal.SaveEventFixture
+	streamEventFixtures  []internal.SaveEventFixture
+	streamEventFixtures2 []internal.SaveEventFixture
 	suite.Suite
 }
 
@@ -36,8 +37,6 @@ func (s *MemFileStateContainerEventsTestSuite) SetupTest() {
 	loadMemoryFS(stateDir, memoryFS, &s.Suite)
 	s.fs = memoryFS
 	s.stateDir = stateDir
-	// zapLogger, err := zap.NewDevelopment()
-	// s.Require().NoError(err)
 	// Use a low max partition file size to test reaching the partition
 	// size limit.
 	container, err := LoadStateContainer(
@@ -45,6 +44,15 @@ func (s *MemFileStateContainerEventsTestSuite) SetupTest() {
 		memoryFS,
 		core.NewNopLogger(),
 		WithMaxEventPartitionSize(1024), // 1KB
+		WithClock(
+			&internal.MockClock{
+				// Wednesday, 23 April 2025 13:27:36 UTC
+				// Within 5 minutes of the 3 queued events in the seed
+				// data for the event partition used in the stream test case.
+				// See the __testdata/initial-state/events__changesets_*.json seed files.
+				Timestamp: 1745414856,
+			},
+		),
 	)
 	s.Require().NoError(err)
 	s.container = container
@@ -56,9 +64,21 @@ func (s *MemFileStateContainerEventsTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.saveEventFixtures = fixtures
 
-	streamFixtures, err := internal.CreateEventStreamSaveFixtures()
+	streamFixtures, err := internal.CreateEventStreamSaveFixtures(
+		"changesets",
+		"db58eda8-36c6-4180-a9cb-557f3392361c",
+		internal.StreamFixtureEventIDs1,
+	)
 	s.Require().NoError(err)
 	s.streamEventFixtures = streamFixtures
+
+	streamFixtures2, err := internal.CreateEventStreamSaveFixtures(
+		"changesets",
+		"eabba2f8-5c74-4c51-a068-b340f718314a",
+		internal.StreamFixtureEventIDs2,
+	)
+	s.Require().NoError(err)
+	s.streamEventFixtures2 = streamFixtures2
 }
 
 func (s *MemFileStateContainerEventsTestSuite) Test_retrieves_event() {
@@ -129,10 +149,44 @@ func (s *MemFileStateContainerEventsTestSuite) Test_fails_to_save_event_that_pus
 }
 
 func (s *MemFileStateContainerEventsTestSuite) Test_stream_events() {
+	expectedInitialEventIDs := []string{
+		// Initial seed event 1 for the channel.
+		"01966439-6832-74ba-94e3-9d8d47d98b60",
+		// Initial seed event 2 for the channel.
+		"0196643a-69f6-7d6d-a4c1-c6ee239851a9",
+		// Initial seed event 3 for the channel.
+		"0196643c-69b2-7900-bcf7-2ff34d80565e",
+	}
+
 	events := s.container.Events()
 	internal.TestStreamEvents(
 		s.streamEventFixtures,
 		events,
+		/* channelType */ "changesets",
+		/* channelID */ "db58eda8-36c6-4180-a9cb-557f3392361c",
+		expectedInitialEventIDs,
+		&s.Suite,
+	)
+}
+
+func (s *MemFileStateContainerEventsTestSuite) Test_excludes_queued_events_outside_recently_queued_time_window() {
+	events := s.container.Events()
+	internal.TestStreamEvents(
+		s.streamEventFixtures2,
+		events,
+		/* channelType */ "changesets",
+		/* channelID */ "eabba2f8-5c74-4c51-a068-b340f718314a",
+		/* expectedInitialEventIDs */ []string{},
+		&s.Suite,
+	)
+}
+
+func (s *MemFileStateContainerEventsTestSuite) Test_ends_stream_when_last_saved_event_is_marked_as_end_of_stream() {
+	events := s.container.Events()
+	internal.TestEndOfEventStream(
+		events,
+		/* channelType */ "changesets",
+		/* channelID */ "57ea9d45-9f27-4af5-af29-a9e7099b7333",
 		&s.Suite,
 	)
 }

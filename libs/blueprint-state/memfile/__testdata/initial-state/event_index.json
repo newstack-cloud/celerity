@@ -42,5 +42,29 @@
   "019668d9-2353-7568-8f18-2c029b2d8ff5": {
     "partition": "events__changesets_f95c1fed-5168-4ada-8184-4195ea390970",
     "indexInPartition": 6
+  },
+  "01967330-1782-7ddb-a3b1-7438e173a1a3": {
+    "partition": "events__changesets_eabba2f8-5c74-4c51-a068-b340f718314a",
+    "indexInPartition": 0
+  },
+  "01967330-4b21-72b4-b96f-c79bfba80514": {
+    "partition": "events__changesets_eabba2f8-5c74-4c51-a068-b340f718314a",
+    "indexInPartition": 1
+  },
+  "01967330-6a55-7188-bd44-0eff93c6270d": {
+    "partition": "events__changesets_eabba2f8-5c74-4c51-a068-b340f718314a",
+    "indexInPartition": 2
+  },
+  "01967377-9157-7b2b-ab00-03fd1cb6dc58": {
+    "partition": "events__changesets_57ea9d45-9f27-4af5-af29-a9e7099b7333",
+    "indexInPartition": 0
+  },
+  "01967378-0257-7eed-9420-956d21abb0ce": {
+    "partition": "events__changesets_57ea9d45-9f27-4af5-af29-a9e7099b7333",
+    "indexInPartition": 1
+  },
+  "01967378-1af3-77fc-9d23-1d791eb96b85": {
+    "partition": "events__changesets_57ea9d45-9f27-4af5-af29-a9e7099b7333",
+    "indexInPartition": 2
   }
 }

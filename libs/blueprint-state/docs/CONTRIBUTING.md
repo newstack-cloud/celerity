@@ -28,6 +28,12 @@ To run all tests in an isolated environment that is torn down after the tests ar
 bash ./scripts/run-tests.sh
 ```
 
+Updating test snapshots:
+
+```bash
+bash ./scripts/run-tests.sh --update-snapshots
+```
+
 ### Running tests for debugging
 
 To bring up dependencies and run tests in a local environment, run:

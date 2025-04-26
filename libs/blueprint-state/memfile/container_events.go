@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	commoncore "github.com/two-hundred/celerity/libs/common/core"
 )
 
 const (
@@ -18,13 +19,15 @@ const (
 )
 
 type eventsContainerImpl struct {
-	events          map[string]*manage.Event
-	partitionEvents map[string][]*manage.Event
-	listeners       map[string][]chan manage.Event
-	fs              afero.Fs
-	persister       *statePersister
-	logger          core.Logger
-	mu              *sync.RWMutex
+	events                        map[string]*manage.Event
+	partitionEvents               map[string][]*manage.Event
+	listeners                     map[string][]chan manage.Event
+	recentlyQueuedEventsThreshold time.Duration
+	fs                            afero.Fs
+	persister                     *statePersister
+	clock                         commoncore.Clock
+	logger                        core.Logger
+	mu                            *sync.RWMutex
 }
 
 func (c *eventsContainerImpl) Get(ctx context.Context, id string) (manage.Event, error) {
@@ -140,8 +143,15 @@ func (c *eventsContainerImpl) Stream(
 		return nil, err
 	}
 
+	lastEvent := (*manage.Event)(nil)
+	if len(partition) > 0 {
+		lastEvent = partition[len(partition)-1]
+	}
+
 	go c.streamEvents(
 		ctx,
+		params,
+		lastEvent,
 		eventsToStream,
 		partitionName,
 		streamTo,
@@ -153,6 +163,13 @@ func (c *eventsContainerImpl) Stream(
 
 func (c *eventsContainerImpl) streamEvents(
 	ctx context.Context,
+	params *manage.EventStreamParams,
+	// The last event queued for the stream,
+	// this may or may not be included in the initialEvents
+	// but must be provided to be able to check if the last event
+	// in the stream's partition is an end event, regardless if it is
+	// not in the recently queued events time window.
+	lastEvent *manage.Event,
 	initialEvents []*manage.Event,
 	partitionName string,
 	streamTo chan manage.Event,
@@ -161,6 +178,23 @@ func (c *eventsContainerImpl) streamEvents(
 	internalEventChan := make(chan manage.Event)
 	c.addEventListener(partitionName, internalEventChan)
 	defer c.removeEventListener(partitionName, internalEventChan)
+
+	// If the last event in the stream is an end event
+	// and a starting event ID was not requested,
+	// send just the end event to indicate to the caller
+	// that there will be no more events in the stream.
+	// The caller is than expected to send an empty struct to the endChan
+	// to stop the stream.
+	// Callers can bypass this by providing a specific starting event ID
+	// if they want to stream historical events that have not yet been
+	// cleaned up for the given channel.
+	if lastEvent != nil && lastEvent.End && params.StartingEventID == "" {
+		select {
+		case <-ctx.Done():
+			return
+		case streamTo <- *lastEvent:
+		}
+	}
 
 	for _, event := range initialEvents {
 		select {
@@ -231,12 +265,12 @@ func (c *eventsContainerImpl) collectInitialEventsToStream(
 	params *manage.EventStreamParams,
 ) ([]*manage.Event, error) {
 	if params.StartingEventID == "" {
-		return partition, nil
+		return c.extractRecentlyQueuedEvents(partition), nil
 	}
 
 	indexLocation := c.persister.getEventIndexEntry(params.StartingEventID)
 	if indexLocation == nil {
-		return partition, nil
+		return c.extractRecentlyQueuedEvents(partition), nil
 	}
 
 	startingEventIndex := indexLocation.IndexInPartition
@@ -250,6 +284,22 @@ func (c *eventsContainerImpl) collectInitialEventsToStream(
 	// Any events after the starting event ID that have been saved need
 	// to be streamed.
 	return partition[startingEventIndex:], nil
+}
+
+func (c *eventsContainerImpl) extractRecentlyQueuedEvents(
+	partition []*manage.Event,
+) []*manage.Event {
+	entities := eventsToEntities(partition)
+	thresholdDate := c.clock.Now().Add(-c.recentlyQueuedEventsThreshold)
+	excludeUpToIndex := findIndexBeforeThreshold(
+		entities,
+		thresholdDate,
+	)
+	if excludeUpToIndex < 0 {
+		return partition
+	}
+
+	return partition[excludeUpToIndex+1:]
 }
 
 func (c *eventsContainerImpl) Cleanup(

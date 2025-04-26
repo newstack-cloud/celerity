@@ -2,11 +2,13 @@ package memfile
 
 import (
 	"sync"
+	"time"
 
 	"github.com/spf13/afero"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	commoncore "github.com/two-hundred/celerity/libs/common/core"
 )
 
 // StateContainer provides the in-memory with file persistence (memfile)
@@ -37,8 +39,8 @@ type Option func(*StateContainer)
 //
 // When not set, the default value is 1MB (1,048,576 bytes).
 func WithMaxGuideFileSize(maxGuideFileSize int64) func(*StateContainer) {
-	return func(p *StateContainer) {
-		p.persister.maxGuideFileSize = maxGuideFileSize
+	return func(c *StateContainer) {
+		c.persister.maxGuideFileSize = maxGuideFileSize
 	}
 }
 
@@ -51,8 +53,30 @@ func WithMaxGuideFileSize(maxGuideFileSize int64) func(*StateContainer) {
 //
 // When not set, the default value is 10MB (10,485,760 bytes).
 func WithMaxEventPartitionSize(maxEventPartitionSize int64) func(*StateContainer) {
-	return func(p *StateContainer) {
-		p.persister.maxEventPartitionSize = maxEventPartitionSize
+	return func(c *StateContainer) {
+		c.persister.maxEventPartitionSize = maxEventPartitionSize
+	}
+}
+
+// WithRecentlyQueuedEventsThreshold sets the threshold in seconds
+// for retrieving recently queued events for a stream when a starting event ID
+// is not provided.
+//
+// When not set, the default value is 5 minutes (300 seconds).
+func WithRecentlyQueuedEventsThreshold(thresholdSeconds int64) func(*StateContainer) {
+	return func(c *StateContainer) {
+		c.eventsContainer.recentlyQueuedEventsThreshold = time.Duration(thresholdSeconds) * time.Second
+	}
+}
+
+// WithClock sets the clock to use for the state container.
+// This is used in tasks like determining the current time when checking for
+// recently queued events.
+//
+// When not set, the default value is the system clock.
+func WithClock(clock commoncore.Clock) func(*StateContainer) {
+	return func(c *StateContainer) {
+		c.eventsContainer.clock = clock
 	}
 }
 
@@ -148,13 +172,15 @@ func LoadStateContainer(
 			mu:        mu,
 		},
 		eventsContainer: &eventsContainerImpl{
-			events:          state.events,
-			partitionEvents: state.partitionEvents,
-			fs:              fs,
-			listeners:       make(map[string][]chan manage.Event),
-			persister:       persister,
-			logger:          logger,
-			mu:              mu,
+			events:                        state.events,
+			partitionEvents:               state.partitionEvents,
+			fs:                            fs,
+			recentlyQueuedEventsThreshold: DefaultRecentlyQueuedEventsThreshold,
+			clock:                         &commoncore.SystemClock{},
+			listeners:                     make(map[string][]chan manage.Event),
+			persister:                     persister,
+			logger:                        logger,
+			mu:                            mu,
 		},
 		changesetsContainer: &changesetsContainerImpl{
 			changesets: state.changesets,

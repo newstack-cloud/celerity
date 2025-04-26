@@ -48,6 +48,8 @@ type Event struct {
 	Data string `json:"data"`
 	// The unix timestamp in seconds when the event was created.
 	Timestamp int64 `json:"timestamp"`
+	// Whether or not the current event represents the end of a stream.
+	End bool `json:"end"`
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

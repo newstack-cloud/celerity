@@ -4,5 +4,6 @@
   ChannelType: (string) (len=10) "changesets",
   ChannelID: (string) (len=36) "db58eda8-36c6-4180-a9cb-557f3392361c",
   Data: (string) (len=56) "{ \"instanceId\": \"2e9719aa-05c9-4674-b6d7-e77ed19083e7\" }",
-  Timestamp: (int64) 1745414744
+  Timestamp: (int64) 1745414744,
+  End: (bool) false
 }

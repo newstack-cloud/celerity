@@ -230,20 +230,24 @@ func loadSaveEventFixture(fixtureNumber int) (SaveEventFixture, error) {
 	}, nil
 }
 
-func CreateEventStreamSaveFixtures() ([]SaveEventFixture, error) {
+func CreateEventStreamSaveFixtures(
+	channelType string,
+	channelID string,
+	streamFixtureEventIDs []uuid.UUID,
+) ([]SaveEventFixture, error) {
 	// Sleep between preparing each fixture to ensure the UUIDs contain different
 	// timestamps to millisecond precision to assert that the events are
 	// streamed in the correct order.
-	fixtures := make([]SaveEventFixture, len(StreamFixtureEventIDs))
-	for i := 0; i < len(StreamFixtureEventIDs); i += 1 {
-		id := StreamFixtureEventIDs[i]
+	fixtures := make([]SaveEventFixture, len(streamFixtureEventIDs))
+	for i := 0; i < len(streamFixtureEventIDs); i += 1 {
+		id := streamFixtureEventIDs[i]
 
 		fixtures[i] = SaveEventFixture{
 			Event: &manage.Event{
 				ID:          id.String(),
 				Type:        "resource",
-				ChannelType: "changesets",
-				ChannelID:   "db58eda8-36c6-4180-a9cb-557f3392361c",
+				ChannelType: channelType,
+				ChannelID:   channelID,
 				Data:        fmt.Sprintf("{\"value\":\"%d\"}", i),
 				Timestamp:   time.Now().Unix(),
 			},
@@ -255,7 +259,9 @@ func CreateEventStreamSaveFixtures() ([]SaveEventFixture, error) {
 }
 
 // UUIDv7 values for event IDs in timestamp order.
-var StreamFixtureEventIDs = []uuid.UUID{
+// These should be used in conjunction with the stream for the channel:
+// "changesets_db58eda8-36c6-4180-a9cb-557f3392361c".
+var StreamFixtureEventIDs1 = []uuid.UUID{
 	uuid.MustParse("01966574-33ba-73c4-a5c0-a0b55249d39a"),
 	uuid.MustParse("01966574-69ef-7b02-81cd-7fdbbbead77d"),
 	uuid.MustParse("01966574-a5fe-7b22-9229-12a19afc8c32"),
@@ -276,6 +282,32 @@ var StreamFixtureEventIDs = []uuid.UUID{
 	uuid.MustParse("01966578-acbf-735c-a318-6393dc267599"),
 	uuid.MustParse("01966578-fe83-7cbd-8790-1a93dbf62e18"),
 	uuid.MustParse("01966579-28d4-7c43-b4b2-f29238540587"),
+}
+
+// UUIDv7 values for event IDs in timestamp order.
+// These should be used in conjunction with the stream for the channel:
+// "changesets_eabba2f8-5c74-4c51-a068-b340f718314a".
+var StreamFixtureEventIDs2 = []uuid.UUID{
+	uuid.MustParse("0124e053-3580-7000-af52-4ac381dd6b44"),
+	uuid.MustParse("0124e053-3582-7000-8206-d47b8e228491"),
+	uuid.MustParse("0124e053-3584-7000-890a-36c56957891e"),
+	uuid.MustParse("0124e053-3586-7000-9655-2786c4fe6265"),
+	uuid.MustParse("0124e053-3588-7000-879b-ecdfab5040fb"),
+	uuid.MustParse("0124e053-358a-7000-a35b-4e89ad94ea3b"),
+	uuid.MustParse("0124e053-358c-7000-811b-f6ea3ae88425"),
+	uuid.MustParse("0124e053-358e-7000-b5f0-4312eb6182f0"),
+	uuid.MustParse("0124e053-3590-7000-9909-509308ef9a23"),
+	uuid.MustParse("0124e053-3592-7000-846d-4aef540b6464"),
+	uuid.MustParse("0124e053-3594-7000-8ed0-be0e4f5da934"),
+	uuid.MustParse("0124e053-3596-7000-9336-8c37401e324c"),
+	uuid.MustParse("0124e053-3598-7000-afa5-d0eecccba403"),
+	uuid.MustParse("0124e053-359a-7000-a136-99afc1b30c9c"),
+	uuid.MustParse("0124e053-359c-7000-9e42-48c82b6fe8eb"),
+	uuid.MustParse("0124e053-359e-7000-8915-e35a14b642ba"),
+	uuid.MustParse("0124e053-35a0-7000-90d6-e95020933403"),
+	uuid.MustParse("0124e053-35a2-7000-8497-c67c6f11d926"),
+	uuid.MustParse("0124e053-35a4-7000-8d69-12e2ac28ffb0"),
+	uuid.MustParse("0124e053-35a6-7000-b03c-bb1fa7943039"),
 }
 
 type SaveChangesetFixture struct {
