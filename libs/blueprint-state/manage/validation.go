@@ -8,14 +8,14 @@ import (
 // Validation is an interface that represents a service that manages
 // state for blueprint validation.
 type Validation interface {
+	// Get a blueprint validation for the given ID.
+	Get(ctx context.Context, id string) (*BlueprintValidation, error)
+
 	// Save a new blueprint validation for a request to validate a blueprint.
 	Save(
 		ctx context.Context,
 		validation *BlueprintValidation,
 	) error
-
-	// Get a blueprint validation for the given ID.
-	Get(ctx context.Context, id string) (*BlueprintValidation, error)
 
 	// Cleanup removes all blueprint validations that are older
 	// than the given threshold date.
@@ -32,6 +32,19 @@ type BlueprintValidation struct {
 	BlueprintLocation string `json:"blueprintLocation"`
 	// The unix timestamp in seconds when the validation request was created.
 	Created int64 `json:"created"`
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Helper method that implements the `manage.Entity` interface
+// used to get common members of multiple entity types.
+////////////////////////////////////////////////////////////////////////////////////
+
+func (c *BlueprintValidation) GetID() string {
+	return c.ID
+}
+
+func (c *BlueprintValidation) GetCreated() int64 {
+	return c.Created
 }
 
 // BlueprintValidationStatus represents the status of a blueprint validation.

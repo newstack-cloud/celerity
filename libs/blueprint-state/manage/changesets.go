@@ -11,14 +11,14 @@ import (
 // state for change sets for blueprints produced as a part of the change
 // staging process.
 type Changesets interface {
+	// Get a change set for the given ID.
+	Get(ctx context.Context, id string) (*Changeset, error)
+
 	// Save a new change set for a change staging request.
 	Save(
 		ctx context.Context,
 		changeset *Changeset,
 	) error
-
-	// Get a change set for the given ID.
-	Get(ctx context.Context, id string) (*Changeset, error)
 
 	// Cleanup removes all change sets that are older
 	// than the given threshold date.
@@ -47,6 +47,19 @@ type Changeset struct {
 	Changes *changes.BlueprintChanges `json:"changes,omitempty"`
 	// The unix timestamp in seconds when the change set was created.
 	Created int64 `json:"created"`
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Helper method that implements the `manage.Entity` interface
+// used to get common members of multiple entity types.
+////////////////////////////////////////////////////////////////////////////////////
+
+func (c *Changeset) GetID() string {
+	return c.ID
+}
+
+func (c *Changeset) GetCreated() int64 {
+	return c.Created
 }
 
 // ChangesetStatus represents the status of a change set.

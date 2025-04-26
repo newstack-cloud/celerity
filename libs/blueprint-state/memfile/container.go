@@ -14,14 +14,15 @@ import (
 // along with methods to manage persistence for
 // blueprint validation requests, events and change sets.
 type StateContainer struct {
-	instancesContainer *instancesContainerImpl
-	resourcesContainer *resourcesContainerImpl
-	linksContainer     *linksContainerImpl
-	childrenContainer  *childrenContainerImpl
-	metadataContainer  *metadataContainerImpl
-	exportContainer    *exportContainerImpl
-	eventsContainer    *eventsContainerImpl
-	persister          *statePersister
+	instancesContainer  *instancesContainerImpl
+	resourcesContainer  *resourcesContainerImpl
+	linksContainer      *linksContainerImpl
+	childrenContainer   *childrenContainerImpl
+	metadataContainer   *metadataContainerImpl
+	exportContainer     *exportContainerImpl
+	eventsContainer     *eventsContainerImpl
+	changesetsContainer *changesetsContainerImpl
+	persister           *statePersister
 }
 
 // Option is a type for options that can be passed to LoadStateContainer
@@ -82,10 +83,12 @@ func LoadStateContainer(
 		instanceIndex:          state.instanceIndex,
 		resourceDriftIndex:     state.resourceDriftIndex,
 		eventIndex:             state.eventIndex,
+		changesetIndex:         state.changesetIndex,
 		maxGuideFileSize:       DefaultMaxGuideFileSize,
 		maxEventPartitionSize:  DefaultMaxEventParititionSize,
 		lastInstanceChunk:      getLastChunkFromIndex(state.instanceIndex),
 		lastResourceDriftChunk: getLastChunkFromIndex(state.resourceDriftIndex),
+		lastChangesetChunk:     getLastChunkFromIndex(state.changesetIndex),
 	}
 
 	container := &StateContainer{
@@ -150,6 +153,13 @@ func LoadStateContainer(
 			logger:          logger,
 			mu:              mu,
 		},
+		changesetsContainer: &changesetsContainerImpl{
+			changesets: state.changesets,
+			fs:         fs,
+			persister:  persister,
+			logger:     logger,
+			mu:         mu,
+		},
 	}
 
 	for _, opt := range opts {
@@ -185,6 +195,10 @@ func (c *StateContainer) Exports() state.ExportsContainer {
 
 func (c *StateContainer) Events() manage.Events {
 	return c.eventsContainer
+}
+
+func (c *StateContainer) Changesets() manage.Changesets {
+	return c.changesetsContainer
 }
 
 func getLastChunkFromIndex(index map[string]*indexLocation) int {

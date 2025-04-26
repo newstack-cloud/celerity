@@ -19,9 +19,11 @@ type internalState struct {
 	links              map[string]*state.LinkState
 	events             map[string]*manage.Event
 	partitionEvents    map[string][]*manage.Event
+	changesets         map[string]*manage.Changeset
 	instanceIndex      map[string]*indexLocation
 	resourceDriftIndex map[string]*indexLocation
 	eventIndex         map[string]*eventIndexLocation
+	changesetIndex     map[string]*indexLocation
 }
 
 type indexLocation struct {
@@ -67,9 +69,11 @@ func loadStateFromDir(stateDir string, fs afero.Fs) (*internalState, error) {
 		links:              map[string]*state.LinkState{},
 		events:             map[string]*manage.Event{},
 		partitionEvents:    map[string][]*manage.Event{},
+		changesets:         map[string]*manage.Changeset{},
 		resourceDriftIndex: map[string]*indexLocation{},
 		instanceIndex:      map[string]*indexLocation{},
 		eventIndex:         map[string]*eventIndexLocation{},
+		changesetIndex:     map[string]*indexLocation{},
 	}
 
 	parentChildMapping := map[string][]*childInstanceInfo{}
@@ -127,6 +131,10 @@ func loadStateFromFileEntry(
 		return loadEventPartitionFromFile(fs, stateDir, entryName, targetState)
 	}
 
+	if isChangesetFile(entryName) {
+		return loadChangesetsFromFile(fs, stateDir, entryName, targetState)
+	}
+
 	if isInstanceIndexFile(entryName) {
 		return loadInstanceIndexFromFile(fs, stateDir, entryName, targetState)
 	}
@@ -137,6 +145,10 @@ func loadStateFromFileEntry(
 
 	if isEventIndexFile(entryName) {
 		return loadEventIndexFromFile(fs, stateDir, entryName, targetState)
+	}
+
+	if isChangesetIndexFile(entryName) {
+		return loadChangesetIndexFromFile(fs, stateDir, entryName, targetState)
 	}
 
 	return nil
@@ -253,7 +265,7 @@ func loadEventPartitionFromFile(
 	return nil
 }
 
-func loadInstanceIndexFromFile(
+func loadChangesetsFromFile(
 	fs afero.Fs,
 	stateDir, name string,
 	targetState *internalState,
@@ -264,8 +276,25 @@ func loadInstanceIndexFromFile(
 		return err
 	}
 
-	instanceIndex := map[string]*indexLocation{}
-	err = json.Unmarshal(data, &instanceIndex)
+	changesets := []*manage.Changeset{}
+	err = json.Unmarshal(data, &changesets)
+	if err != nil {
+		return err
+	}
+
+	for _, changeset := range changesets {
+		targetState.changesets[changeset.ID] = changeset
+	}
+
+	return nil
+}
+
+func loadInstanceIndexFromFile(
+	fs afero.Fs,
+	stateDir, name string,
+	targetState *internalState,
+) error {
+	instanceIndex, err := loadChunkIndexFromFile(fs, stateDir, name)
 	if err != nil {
 		return err
 	}
@@ -280,14 +309,7 @@ func loadResourceDriftIndexFromFile(
 	stateDir, name string,
 	targetState *internalState,
 ) error {
-	filePath := path.Join(stateDir, name)
-	data, err := afero.ReadFile(fs, filePath)
-	if err != nil {
-		return err
-	}
-
-	resourceDriftIndex := map[string]*indexLocation{}
-	err = json.Unmarshal(data, &resourceDriftIndex)
+	resourceDriftIndex, err := loadChunkIndexFromFile(fs, stateDir, name)
 	if err != nil {
 		return err
 	}
@@ -295,6 +317,40 @@ func loadResourceDriftIndexFromFile(
 	targetState.resourceDriftIndex = resourceDriftIndex
 
 	return nil
+}
+
+func loadChangesetIndexFromFile(
+	fs afero.Fs,
+	stateDir, name string,
+	targetState *internalState,
+) error {
+	changesetIndex, err := loadChunkIndexFromFile(fs, stateDir, name)
+	if err != nil {
+		return err
+	}
+
+	targetState.changesetIndex = changesetIndex
+
+	return nil
+}
+
+func loadChunkIndexFromFile(
+	fs afero.Fs,
+	stateDir, name string,
+) (map[string]*indexLocation, error) {
+	filePath := path.Join(stateDir, name)
+	data, err := afero.ReadFile(fs, filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	indexEntries := map[string]*indexLocation{}
+	err = json.Unmarshal(data, &indexEntries)
+	if err != nil {
+		return nil, err
+	}
+
+	return indexEntries, nil
 }
 
 func loadEventIndexFromFile(
@@ -323,6 +379,7 @@ var (
 	instancesFilePattern      = regexp.MustCompile(`^instances_c(\d+)\.json$`)
 	resourceDriftFilePattern  = regexp.MustCompile(`^resource_drift_c(\d+)\.json$`)
 	eventPartitionFilePattern = regexp.MustCompile(`^events__(.*?)\.json$`)
+	changesetsFilePattern     = regexp.MustCompile(`^changesets_c(\d+)\.json$`)
 )
 
 func isInstanceFile(name string) bool {
@@ -331,6 +388,10 @@ func isInstanceFile(name string) bool {
 
 func isEventPartitionFile(name string) bool {
 	return eventPartitionFilePattern.Match([]byte(name))
+}
+
+func isChangesetFile(name string) bool {
+	return changesetsFilePattern.Match([]byte(name))
 }
 
 func isInstanceIndexFile(name string) bool {
@@ -347,6 +408,10 @@ func isResourceDriftIndexFile(name string) bool {
 
 func isEventIndexFile(name string) bool {
 	return name == "event_index.json"
+}
+
+func isChangesetIndexFile(name string) bool {
+	return name == "changeset_index.json"
 }
 
 func getChildBlueprintValues(childBlueprintRefs map[string]string) []*childInstanceInfo {

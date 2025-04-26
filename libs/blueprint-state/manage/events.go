@@ -50,6 +50,19 @@ type Event struct {
 	Timestamp int64 `json:"timestamp"`
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+// Helper method that implements the `manage.Entity` interface
+// used to get common members of multiple entity types.
+////////////////////////////////////////////////////////////////////////////////////
+
+func (c *Event) GetID() string {
+	return c.ID
+}
+
+func (c *Event) GetCreated() int64 {
+	return c.Timestamp
+}
+
 type EventStreamParams struct {
 	// The type of channel to listen to.
 	ChannelType string `json:"channelType"`

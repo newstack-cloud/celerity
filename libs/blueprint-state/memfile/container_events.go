@@ -262,8 +262,9 @@ func (c *eventsContainerImpl) Cleanup(
 	removedEvents := []string{}
 	removedPartitions := []string{}
 	for partitionName, partition := range c.partitionEvents {
+		entities := eventsToEntities(partition)
 		deleteUpToIndex := findIndexBeforeThreshold(
-			partition,
+			entities,
 			thresholdDate,
 		)
 
@@ -309,26 +310,12 @@ func (c *eventsContainerImpl) removeEventsFromMemoryLookup(
 	}
 }
 
-func findIndexBeforeThreshold(
-	partition []*manage.Event,
-	thresholdDate time.Time,
-) int {
-	beforeThresholdIndex := -1
-	i := len(partition) - 1
-
-	for beforeThresholdIndex == -1 && i >= 0 {
-		currentEntryTime := time.Unix(
-			partition[i].Timestamp,
-			0,
-		)
-		if currentEntryTime.Before(thresholdDate) {
-			beforeThresholdIndex = i
-		}
-
-		i -= 1
+func eventsToEntities(partition []*manage.Event) []manage.Entity {
+	entities := make([]manage.Entity, len(partition))
+	for i, event := range partition {
+		entities[i] = event
 	}
-
-	return beforeThresholdIndex
+	return entities
 }
 
 func extractEventIDs(partition []*manage.Event) []string {
