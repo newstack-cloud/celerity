@@ -15,7 +15,8 @@ func eventQuery() string {
 			'channelType', e.channel_type,
 			'channelId', e.channel_id,
 			'data', e.data::text,
-			'timestamp', EXTRACT(EPOCH FROM e.timestamp)::bigint
+			'timestamp', EXTRACT(EPOCH FROM e.timestamp)::bigint,
+			'end', e.end
 		) As event_json
 	FROM events e
 	WHERE id = @id
@@ -30,14 +31,16 @@ func saveEventQuery() string {
 			channel_type,
 			channel_id,
 			data,
-			"timestamp"
+			"timestamp",
+			"end"
 		) VALUES (
 			@id,
 			@eventType,
 			@channelType,
 			@channelId,
 			@data,
-			@timestamp
+			@timestamp,
+			@end
 		)
 		ON CONFLICT (id) DO NOTHING
 	`
@@ -54,7 +57,8 @@ func channelEventsQuery(
 			e.channel_type as channelType,
 			e.channel_id as channelId,
 			e.data::text as data,
-			EXTRACT(EPOCH FROM e.timestamp)::bigint as timestamp
+			EXTRACT(EPOCH FROM e.timestamp)::bigint as timestamp,
+			e.end
 		FROM events e
 		WHERE channel_type = @channelType
 			AND channel_id = @channelId
@@ -66,7 +70,31 @@ func channelEventsQuery(
 		`, comparisonOperator(includeStartingEventID))
 	}
 
+	if params.StartingEventID == "" {
+		query += `
+			AND e.timestamp > @afterTimestamp
+		`
+	}
+
 	return query
+}
+
+func lastChannelEventQuery() string {
+	return `
+		SELECT
+			e.id,
+			e.type,
+			e.channel_type as channelType,
+			e.channel_id as channelId,
+			e.data::text as data,
+			EXTRACT(EPOCH FROM e.timestamp)::bigint as timestamp,
+			e.end
+		FROM events e
+		WHERE channel_type = @channelType
+			AND channel_id = @channelId
+		ORDER BY e.timestamp DESC
+		LIMIT 1
+	`
 }
 
 func cleanupEventsQuery() string {
@@ -84,7 +112,8 @@ func eventsByIDsQuery() string {
 			e.channel_type as channelType,
 			e.channel_id as channelId,
 			e.data::text as data,
-			EXTRACT(EPOCH FROM e.timestamp)::bigint as timestamp
+			EXTRACT(EPOCH FROM e.timestamp)::bigint as timestamp,
+			e.end
 		FROM events e
 		WHERE id = ANY(@ids)
 	`

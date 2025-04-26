@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	commoncore "github.com/two-hundred/celerity/libs/common/core"
 )
 
 var (
@@ -21,8 +22,10 @@ var (
 )
 
 type eventsContainerImpl struct {
-	connPool *pgxpool.Pool
-	logger   core.Logger
+	connPool                      *pgxpool.Pool
+	logger                        core.Logger
+	clock                         commoncore.Clock
+	recentlyQueuedEventsThreshold time.Duration
 }
 
 func (e *eventsContainerImpl) Get(
@@ -150,6 +153,11 @@ func (e *eventsContainerImpl) streamEvents(
 		return
 	}
 
+	endEarly := e.handleLastEvent(ctx, channels, params)
+	if endEarly {
+		return
+	}
+
 	existingEvents, err := e.getChannelEvents(
 		ctx,
 		params,
@@ -162,6 +170,8 @@ func (e *eventsContainerImpl) streamEvents(
 	for _, event := range existingEvents {
 		select {
 		case channels.streamTo <- event:
+		case <-channels.endChan:
+			return
 		case <-ctx.Done():
 			return
 		}
@@ -227,6 +237,97 @@ func (e *eventsContainerImpl) streamEvents(
 	}
 }
 
+func (e *eventsContainerImpl) handleLastEvent(
+	ctx context.Context,
+	channels *streamEventChannels,
+	params *manage.EventStreamParams,
+) bool {
+	if params.StartingEventID != "" {
+		// When a caller specifies a specific starting event ID,
+		// we will stream saved events from that point regardless of
+		// whether or not the last event is marked as the end of the stream.
+		return false
+	}
+
+	lastEvent, err := e.getLastChannelEvent(
+		ctx,
+		params.ChannelType,
+		params.ChannelID,
+	)
+	if err != nil {
+		channels.errChan <- err
+		return true
+	}
+
+	if lastEvent.ID == "" || !lastEvent.End {
+		// There are either no saved events for the given channel type and ID,
+		// or the last event does not mark the end of the stream.
+		// For these cases, streaming should continue.
+		return false
+	}
+
+	// Send the last event to the listener so that they can
+	// use it as a marker to stop listening for new events.
+	select {
+	case <-ctx.Done():
+		// The context has been cancelled, so we should stop streaming.
+		return true
+	case <-channels.endChan:
+		// End channel may have been closed earlier for another reason.
+		// We should stop streaming.
+		return true
+	case channels.streamTo <- lastEvent:
+	}
+
+	// Wait for the caller to send the end signal
+	// on receiving the last event.
+	select {
+	case <-channels.endChan:
+	case <-ctx.Done():
+	}
+
+	// Either the context has been cancelled or the caller
+	// has sent the end signal, so the stream should stop.
+	return true
+}
+
+func (e *eventsContainerImpl) getLastChannelEvent(
+	ctx context.Context,
+	channelType string,
+	channelID string,
+) (manage.Event, error) {
+	query := lastChannelEventQuery()
+	row := e.connPool.QueryRow(
+		ctx,
+		query,
+		pgx.NamedArgs{
+			"channelType": channelType,
+			"channelId":   channelID,
+		},
+	)
+
+	event := manage.Event{}
+	err := row.Scan(
+		&event.ID,
+		&event.Type,
+		&event.ChannelType,
+		&event.ChannelID,
+		&event.Data,
+		&event.Timestamp,
+		&event.End,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// An empty result should indicate to the caller that
+			// there are no saved events for the given channel type and ID.
+			return manage.Event{}, nil
+		}
+		return manage.Event{}, err
+	}
+
+	return event, nil
+}
+
 func (e *eventsContainerImpl) sendEvents(
 	ctx context.Context,
 	collectedIDs []string,
@@ -279,9 +380,11 @@ func (e *eventsContainerImpl) getChannelEvents(
 	params *manage.EventStreamParams,
 	includeStartingEventID bool,
 ) ([]manage.Event, error) {
+	thresholdDate := e.clock.Now().Add(-e.recentlyQueuedEventsThreshold)
 	qInfo := prepareChannelEventsQuery(
 		params,
 		includeStartingEventID,
+		thresholdDate,
 	)
 
 	rows, err := e.connPool.Query(
@@ -335,6 +438,7 @@ func (e *eventsContainerImpl) Cleanup(
 func prepareChannelEventsQuery(
 	eventStreamParams *manage.EventStreamParams,
 	includeStartingEventID bool,
+	thresholdDate time.Time,
 ) *queryInfo {
 	sql := channelEventsQuery(
 		eventStreamParams,
@@ -347,6 +451,10 @@ func prepareChannelEventsQuery(
 	}
 	if eventStreamParams.StartingEventID != "" {
 		params["afterEventId"] = eventStreamParams.StartingEventID
+	}
+
+	if eventStreamParams.StartingEventID == "" {
+		params["afterTimestamp"] = thresholdDate
 	}
 
 	return &queryInfo{
@@ -374,6 +482,7 @@ func buildEventArgs(event *manage.Event) *pgx.NamedArgs {
 		"channelId":   event.ChannelID,
 		"data":        event.Data,
 		"timestamp":   toUnixTimestamp(int(event.Timestamp)),
+		"end":         event.End,
 	}
 }
 

@@ -175,7 +175,7 @@ func LoadStateContainer(
 			events:                        state.events,
 			partitionEvents:               state.partitionEvents,
 			fs:                            fs,
-			recentlyQueuedEventsThreshold: DefaultRecentlyQueuedEventsThreshold,
+			recentlyQueuedEventsThreshold: manage.DefaultRecentlyQueuedEventsThreshold,
 			clock:                         &commoncore.SystemClock{},
 			listeners:                     make(map[string][]chan manage.Event),
 			persister:                     persister,

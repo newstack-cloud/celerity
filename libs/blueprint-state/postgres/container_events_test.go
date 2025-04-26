@@ -21,10 +21,11 @@ const (
 )
 
 type PostgresEventsTestSuite struct {
-	container           *StateContainer
-	connPool            *pgxpool.Pool
-	saveEventFixtures   map[int]internal.SaveEventFixture
-	streamEventFixtures []internal.SaveEventFixture
+	container            *StateContainer
+	connPool             *pgxpool.Pool
+	saveEventFixtures    map[int]internal.SaveEventFixture
+	streamEventFixtures  []internal.SaveEventFixture
+	streamEventFixtures2 []internal.SaveEventFixture
 	suite.Suite
 }
 
@@ -33,7 +34,20 @@ func (s *PostgresEventsTestSuite) SetupTest() {
 	connPool, err := pgxpool.New(ctx, buildTestDatabaseURL())
 	s.connPool = connPool
 	s.Require().NoError(err)
-	container, err := LoadStateContainer(ctx, connPool, core.NewNopLogger())
+	container, err := LoadStateContainer(
+		ctx,
+		connPool,
+		core.NewNopLogger(),
+		WithClock(
+			&internal.MockClock{
+				// Wednesday, 23 April 2025 13:27:36 UTC
+				// Within 5 minutes of the 3 queued events in the seed
+				// data for the event partition used in the stream test case.
+				// See the __testdata/seed/events.json.
+				Timestamp: 1745414856,
+			},
+		),
+	)
 	s.Require().NoError(err)
 	s.container = container
 
@@ -44,9 +58,21 @@ func (s *PostgresEventsTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.saveEventFixtures = saveFixtures
 
-	streamFixtures, err := internal.CreateEventStreamSaveFixtures()
+	streamFixtures, err := internal.CreateEventStreamSaveFixtures(
+		"changesets",
+		"db58eda8-36c6-4180-a9cb-557f3392361c",
+		internal.StreamFixtureEventIDs1,
+	)
 	s.Require().NoError(err)
 	s.streamEventFixtures = streamFixtures
+
+	streamFixtures2, err := internal.CreateEventStreamSaveFixtures(
+		"changesets",
+		"eabba2f8-5c74-4c51-a068-b340f718314a",
+		internal.StreamFixtureEventIDs2,
+	)
+	s.Require().NoError(err)
+	s.streamEventFixtures2 = streamFixtures2
 }
 
 func (s *PostgresEventsTestSuite) TearDownTest() {
@@ -87,10 +113,44 @@ func (s *PostgresEventsTestSuite) Test_saves_event_and_sends_notification() {
 }
 
 func (s *PostgresEventsTestSuite) Test_stream_events() {
+	expectedInitialEventIDs := []string{
+		// Initial seed event 1 for the channel.
+		"01966439-6832-74ba-94e3-9d8d47d98b60",
+		// Initial seed event 2 for the channel.
+		"0196643a-69f6-7d6d-a4c1-c6ee239851a9",
+		// Initial seed event 3 for the channel.
+		"0196643c-69b2-7900-bcf7-2ff34d80565e",
+	}
+
 	events := s.container.Events()
 	internal.TestStreamEvents(
 		s.streamEventFixtures,
 		events,
+		/* channelType */ "changesets",
+		/* channelID */ "db58eda8-36c6-4180-a9cb-557f3392361c",
+		expectedInitialEventIDs,
+		&s.Suite,
+	)
+}
+
+func (s *PostgresEventsTestSuite) Test_excludes_queued_events_outside_recently_queued_time_window() {
+	events := s.container.Events()
+	internal.TestStreamEvents(
+		s.streamEventFixtures2,
+		events,
+		/* channelType */ "changesets",
+		/* channelID */ "eabba2f8-5c74-4c51-a068-b340f718314a",
+		/* expectedInitialEventIDs */ []string{},
+		&s.Suite,
+	)
+}
+
+func (s *PostgresEventsTestSuite) Test_ends_stream_when_last_saved_event_is_marked_as_end_of_stream() {
+	events := s.container.Events()
+	internal.TestEndOfEventStream(
+		events,
+		/* channelType */ "changesets",
+		/* channelID */ "57ea9d45-9f27-4af5-af29-a9e7099b7333",
 		&s.Suite,
 	)
 }

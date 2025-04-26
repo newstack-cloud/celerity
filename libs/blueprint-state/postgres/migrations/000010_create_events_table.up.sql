@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS events (
     channel_type varchar(255) NOT NULL,
     channel_id uuid NOT NULL,
     data jsonb NOT NULL,
-    "timestamp" timestamptz
+    "timestamp" timestamptz,
+    "end" boolean NOT NULL
 );

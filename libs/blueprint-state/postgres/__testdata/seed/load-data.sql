@@ -192,7 +192,8 @@ INSERT INTO events (
     "channel_type",
     "channel_id",
     "data",
-    "timestamp"
+    "timestamp",
+    "end"
 )
 SELECT
     (data->>'id')::uuid,
@@ -200,7 +201,8 @@ SELECT
     data->>'channelType',
     (data->>'channelId')::uuid,
     (data->>'data')::jsonb,
-    TO_TIMESTAMP((data->>'timestamp')::bigint)
+    TO_TIMESTAMP((data->>'timestamp')::bigint),
+    (data->>'end')::boolean
 FROM temp_events;
 
 DROP TABLE IF EXISTS temp_events;

@@ -2,12 +2,14 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	commoncore "github.com/two-hundred/celerity/libs/common/core"
 )
 
 // StateContainer provides the postgres implementation of
@@ -26,6 +28,32 @@ type StateContainer struct {
 	eventsContainer     *eventsContainerImpl
 }
 
+// Option is a type for options that can be passed to LoadStateContainer
+// when creating a postgres state container.
+type Option func(*StateContainer)
+
+// WithClock sets the clock to use for the state container.
+// This is used in tasks like determining the current time when checking for
+// recently queued events.
+//
+// When not set, the default value is the system clock.
+func WithClock(clock commoncore.Clock) func(*StateContainer) {
+	return func(c *StateContainer) {
+		c.eventsContainer.clock = clock
+	}
+}
+
+// WithRecentlyQueuedEventsThreshold sets the threshold in seconds
+// for retrieving recently queued events for a stream when a starting event ID
+// is not provided.
+//
+// When not set, the default value is 5 minutes (300 seconds).
+func WithRecentlyQueuedEventsThreshold(thresholdSeconds int64) func(*StateContainer) {
+	return func(c *StateContainer) {
+		c.eventsContainer.recentlyQueuedEventsThreshold = time.Duration(thresholdSeconds) * time.Second
+	}
+}
+
 // LoadStateContainer loads a new state container
 // that uses postgres for persistence.
 //
@@ -37,6 +65,7 @@ func LoadStateContainer(
 	ctx context.Context,
 	connPool *pgxpool.Pool,
 	logger core.Logger,
+	opts ...Option,
 ) (*StateContainer, error) {
 	instancesContainer := &instancesContainerImpl{
 		connPool: connPool,
@@ -61,8 +90,10 @@ func LoadStateContainer(
 			connPool: connPool,
 		},
 		eventsContainer: &eventsContainerImpl{
-			connPool: connPool,
-			logger:   logger,
+			connPool:                      connPool,
+			logger:                        logger,
+			clock:                         &commoncore.SystemClock{},
+			recentlyQueuedEventsThreshold: manage.DefaultRecentlyQueuedEventsThreshold,
 		},
 		changesetsContainer: &changesetsContainerImpl{
 			connPool: connPool,
@@ -72,6 +103,10 @@ func LoadStateContainer(
 			connPool: connPool,
 			logger:   logger,
 		},
+	}
+
+	for _, opt := range opts {
+		opt(container)
 	}
 
 	return container, nil

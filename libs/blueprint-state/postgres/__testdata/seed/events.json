@@ -5,7 +5,8 @@
     "channelType": "changesets",
     "channelId": "db58eda8-36c6-4180-a9cb-557f3392361c",
     "data": { "instanceId": "2e9719aa-05c9-4674-b6d7-e77ed19083e7" },
-    "timestamp": 1745414744
+    "timestamp": 1745414744,
+    "end": false
   },
   {
     "id": "01966439-ff85-760e-9f02-f3572e08a7c2",
@@ -13,7 +14,8 @@
     "channelType": "validations",
     "channelId": "32a1c226-eace-4176-a87c-784e25b58b77",
     "data": { "message": "Incorrect blueprint version", "level": 1 },
-    "timestamp": 1745414745
+    "timestamp": 1745414745,
+    "end": false
   },
   {
     "id": "0196643a-69f6-7d6d-a4c1-c6ee239851a9",
@@ -21,7 +23,8 @@
     "channelType": "changesets",
     "channelId": "db58eda8-36c6-4180-a9cb-557f3392361c",
     "data": { "instanceId": "2e9719aa-05c9-4674-b6d7-e77ed19083e7" },
-    "timestamp": 1745414748
+    "timestamp": 1745414748,
+    "end": false
   },
   {
     "id": "0196643c-69b2-7900-bcf7-2ff34d80565e",
@@ -29,7 +32,8 @@
     "channelType": "changesets",
     "channelId": "db58eda8-36c6-4180-a9cb-557f3392361c",
     "data": { "instanceId": "2e9719aa-05c9-4674-b6d7-e77ed19083e7" },
-    "timestamp": 1745414756
+    "timestamp": 1745414756,
+    "end": false
   },
   {
     "id": "0196678c-ae43-7b53-9796-30e84ba07b99",
@@ -37,7 +41,8 @@
     "channelType": "changesets",
     "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
     "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
-    "timestamp": 1743411600
+    "timestamp": 1743411600,
+    "end": false
   },
   {
     "id": "01966793-844a-7a2b-b278-48838bab3835",
@@ -45,7 +50,8 @@
     "channelType": "changesets",
     "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
     "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
-    "timestamp": 1743411630
+    "timestamp": 1743411630,
+    "end": false
   },
   {
     "id": "01966794-8352-767e-a9d7-0ac6275af2e2",
@@ -53,7 +59,8 @@
     "channelType": "changesets",
     "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
     "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
-    "timestamp": 1743411730
+    "timestamp": 1743411730,
+    "end": false
   },
   {
     "id": "01966794-f1e8-7a14-9893-335ca16be0d5",
@@ -61,7 +68,8 @@
     "channelType": "changesets",
     "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
     "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
-    "timestamp": 1743411820
+    "timestamp": 1743411820,
+    "end": false
   },
   {
     "id": "01966795-8929-7f6d-989c-0403037d8131",
@@ -69,6 +77,61 @@
     "channelType": "changesets",
     "channelId": "f95c1fed-5168-4ada-8184-4195ea390970",
     "data": { "info": "should be cleaned up, before 31/03/2025 10:00 UTC" },
-    "timestamp": 1743411880
+    "timestamp": 1743411880,
+    "end": false
+  },
+  {
+    "id": "01967377-9157-7b2b-ab00-03fd1cb6dc58",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "57ea9d45-9f27-4af5-af29-a9e7099b7333",
+    "data": { "instanceId": "6372d72f-7c9e-4b51-a2d3-71eb39c1c580" },
+    "timestamp": 1745414744,
+    "end": false
+  },
+  {
+    "id": "01967378-0257-7eed-9420-956d21abb0ce",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "57ea9d45-9f27-4af5-af29-a9e7099b7333",
+    "data": { "instanceId": "6372d72f-7c9e-4b51-a2d3-71eb39c1c580" },
+    "timestamp": 1745414748,
+    "end": false
+  },
+  {
+    "id": "01967378-1af3-77fc-9d23-1d791eb96b85",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "57ea9d45-9f27-4af5-af29-a9e7099b7333",
+    "data": { "instanceId": "6372d72f-7c9e-4b51-a2d3-71eb39c1c580" },
+    "timestamp": 1745414756,
+    "end": true
+  },
+  {
+    "id": "01967330-1782-7ddb-a3b1-7438e173a1a3",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "eabba2f8-5c74-4c51-a068-b340f718314a",
+    "data": { "instanceId": "dc2ed4a6-20a3-40b4-a032-f62304805921" },
+    "timestamp": 1745084404,
+    "end": false
+  },
+  {
+    "id": "01967330-4b21-72b4-b96f-c79bfba80514",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "eabba2f8-5c74-4c51-a068-b340f718314a",
+    "data": { "instanceId": "dc2ed4a6-20a3-40b4-a032-f62304805921" },
+    "timestamp": 1745084704,
+    "end": false
+  },
+  {
+    "id": "01967330-6a55-7188-bd44-0eff93c6270d",
+    "type": "resource",
+    "channelType": "changesets",
+    "channelId": "eabba2f8-5c74-4c51-a068-b340f718314a",
+    "data": { "instanceId": "dc2ed4a6-20a3-40b4-a032-f62304805921" },
+    "timestamp": 1745084904,
+    "end": false
   }
 ]
