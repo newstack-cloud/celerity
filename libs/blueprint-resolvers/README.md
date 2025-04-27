@@ -12,6 +12,7 @@ A library that provides a collection of blueprint framework `ChildResolver` impl
 - S3 - Resolves child blueprints from an S3 bucket.
 - Google Cloud Storage - Resolves child blueprints from a Google Cloud Storage bucket.
 - Azure Blob Storage - Resolves child blueprints from Azure Blob Storage.
+- HTTPS - Resolves child blueprints from a public URL over HTTPS.
 
 ## Usage
 
@@ -23,8 +24,6 @@ import (
     "github.com/two-hundred/celerity/libs/blueprint-resolvers/router"
     "github.com/two-hundred/celerity/libs/blueprint-resolvers/fs"
     "github.com/two-hundred/celerity/libs/blueprint-resolvers/s3"
-    "github.com/two-hundred/celerity/libs/blueprint-resolvers/gcs"
-    "github.com/two-hundred/celerity/libs/blueprint-resolvers/azure"
     "github.com/two-hundred/celerity/libs/blueprint/subengine"
     "github.com/two-hundred/celerity/libs/blueprint/core"
 )
