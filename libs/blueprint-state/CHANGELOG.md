@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2025-04-27
+
+### Fixed
+
+- Adds fix to the `postgres` state container implementation so that the status and changes fields are updated on a save request for an existing change set.
+- Adds fix to the `postgres` state container implementation so that the status field is updated on a save request for an existing blueprint validation.
+
 ## [0.2.1] - 2025-04-27
 
 ### Fixed
