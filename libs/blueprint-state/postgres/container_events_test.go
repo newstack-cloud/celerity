@@ -145,12 +145,40 @@ func (s *PostgresEventsTestSuite) Test_excludes_queued_events_outside_recently_q
 	)
 }
 
+func (s *PostgresEventsTestSuite) Test_streams_event_when_stream_has_ended_with_recently_queued_events() {
+	// If the stream has ended and there are recently queued events,
+	// these should be streamed to the client, otherwise, in cases where the caller
+	// listens to the stream shortly after the stream has ended, it will miss all the events
+	// but the last one used to mark the end of the stream.
+
+	expectedInitialEventIDs := []string{
+		// Initial seed event 1 for the channel.
+		"01967377-9157-7b2b-ab00-03fd1cb6dc58",
+		// Initial seed event 2 for the channel.
+		"01967378-0257-7eed-9420-956d21abb0ce",
+		// Initial seed event 3 for the channel.
+		"01967378-1af3-77fc-9d23-1d791eb96b85",
+	}
+
+	events := s.container.Events()
+	internal.TestStreamEvents(
+		[]internal.SaveEventFixture{},
+		events,
+		/* channelType */ "changesets",
+		/* channelID */ "57ea9d45-9f27-4af5-af29-a9e7099b7333",
+		expectedInitialEventIDs,
+		&s.Suite,
+	)
+}
+
 func (s *PostgresEventsTestSuite) Test_ends_stream_when_last_saved_event_is_marked_as_end_of_stream() {
+	// This assertion is for the case where there have been no recently
+	// queued events.
 	events := s.container.Events()
 	internal.TestEndOfEventStream(
 		events,
 		/* channelType */ "changesets",
-		/* channelID */ "57ea9d45-9f27-4af5-af29-a9e7099b7333",
+		/* channelID */ "6900db60-775b-4779-8064-d3accb092b85",
 		&s.Suite,
 	)
 }

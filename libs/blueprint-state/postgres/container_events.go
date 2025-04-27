@@ -153,17 +153,17 @@ func (e *eventsContainerImpl) streamEvents(
 		return
 	}
 
-	endEarly := e.handleLastEvent(ctx, channels, params)
-	if endEarly {
-		return
-	}
-
 	existingEvents, err := e.getChannelEvents(
 		ctx,
 		params,
 		/* includeStartingEventID */ false,
 	)
 	if err != nil {
+		return
+	}
+
+	endEarly := e.handleLastEvent(ctx, existingEvents, channels, params)
+	if endEarly {
 		return
 	}
 
@@ -239,13 +239,20 @@ func (e *eventsContainerImpl) streamEvents(
 
 func (e *eventsContainerImpl) handleLastEvent(
 	ctx context.Context,
+	existingEvents []manage.Event,
 	channels *streamEventChannels,
 	params *manage.EventStreamParams,
 ) bool {
-	if params.StartingEventID != "" {
-		// When a caller specifies a specific starting event ID,
+	if params.StartingEventID != "" || len(existingEvents) > 0 {
+		// When a caller provides a specific starting event ID,
 		// we will stream saved events from that point regardless of
 		// whether or not the last event is marked as the end of the stream.
+		//
+		// In addition to this, when a starting event ID is not specified
+		// and the existingEvents slice is not empty, it indicates that there
+		// are recently queued events that should be streamed to the caller.
+		// Even if we have reached the end of the stream, we should make sure
+		// that recently queued events are still streamed.
 		return false
 	}
 
