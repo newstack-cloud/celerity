@@ -1,5 +1,11 @@
 [
   {
+    "id": "c0ae5782-28b8-4476-8fcc-02b718e39728",
+    "status": "STARTING",
+    "blueprintLocation": "s3://celerity-test/project1/project.blueprint.yml",
+    "created": 1745496983
+  },
+  {
     "id": "96e38b14-2316-4614-9684-8384b4a0db11",
     "status": "VALIDATED",
     "blueprintLocation": "s3://celerity-test/project1/project.blueprint.yml",

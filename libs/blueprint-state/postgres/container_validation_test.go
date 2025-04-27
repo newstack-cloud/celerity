@@ -93,6 +93,27 @@ func (s *PostgresBlueprintValidationTestSuite) Test_saves_blueprint_validation()
 	s.Assert().Equal(fixture.Validation, savedValidation)
 }
 
+func (s *PostgresBlueprintValidationTestSuite) Test_update_existing_blueprint_validation() {
+	// Fixture 2 represents a blueprint validation that already exists
+	// but with a change made to the "status" field.
+	fixture := s.saveBlueprintValidationFixtures[2]
+
+	validation := s.container.Validation()
+	err := validation.Save(
+		context.Background(),
+		fixture.Validation,
+	)
+	s.Require().NoError(err)
+
+	savedValidation, err := validation.Get(
+		context.Background(),
+		fixture.Validation.ID,
+	)
+	s.Require().NoError(err)
+	s.Assert().NotNil(savedValidation)
+	s.Assert().Equal(fixture.Validation, savedValidation)
+}
+
 func (s *PostgresBlueprintValidationTestSuite) Test_cleans_up_old_blueprint_validations() {
 	err := s.container.Validation().Cleanup(
 		context.Background(),

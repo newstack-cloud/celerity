@@ -35,7 +35,9 @@ func saveChangesetQuery() string {
 			@changes,
 			@created
 		)
-		ON CONFLICT (id) DO NOTHING
+		ON CONFLICT (id) DO UPDATE SET
+			status = excluded.status,
+			changes = excluded.changes
 	`
 }
 

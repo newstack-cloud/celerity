@@ -88,6 +88,27 @@ func (s *PostgresChangesetsTestSuite) Test_saves_changeset() {
 	s.Assert().Equal(fixture.Changeset, savedChangeset)
 }
 
+func (s *PostgresChangesetsTestSuite) Test_updates_existing_changeset() {
+	// Fixture 2 represents a change set that already exists
+	// but with changes to the "status" and "changes" fields.
+	fixture := s.saveChangesetFixtures[2]
+
+	changesets := s.container.Changesets()
+	err := changesets.Save(
+		context.Background(),
+		fixture.Changeset,
+	)
+	s.Require().NoError(err)
+
+	savedChangeset, err := changesets.Get(
+		context.Background(),
+		fixture.Changeset.ID,
+	)
+	s.Require().NoError(err)
+	s.Assert().NotNil(savedChangeset)
+	s.Assert().Equal(fixture.Changeset, savedChangeset)
+}
+
 func (s *PostgresChangesetsTestSuite) Test_cleans_up_old_changesets() {
 	err := s.container.Changesets().Cleanup(
 		context.Background(),
