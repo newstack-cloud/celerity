@@ -179,16 +179,20 @@ func (c *eventsContainerImpl) streamEvents(
 	c.addEventListener(partitionName, internalEventChan)
 	defer c.removeEventListener(partitionName, internalEventChan)
 
-	// If the last event in the stream is an end event
+	// If the last event in the stream is an end event,
+	// there are no recently queued events
 	// and a starting event ID was not requested,
 	// send just the end event to indicate to the caller
 	// that there will be no more events in the stream.
-	// The caller is than expected to send an empty struct to the endChan
+	// The caller is then expected to send an empty struct to the endChan
 	// to stop the stream.
 	// Callers can bypass this by providing a specific starting event ID
 	// if they want to stream historical events that have not yet been
 	// cleaned up for the given channel.
-	if lastEvent != nil && lastEvent.End && params.StartingEventID == "" {
+	if len(initialEvents) == 0 &&
+		lastEvent != nil &&
+		lastEvent.End &&
+		params.StartingEventID == "" {
 		select {
 		case <-ctx.Done():
 			return
