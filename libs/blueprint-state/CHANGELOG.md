@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-04-27
+
+### Fixed
+
+- Adds fix to the `memfile` state container implementation to make sure that recently queued events are streamed even if the last event for a channel is an end of stream marker.
+- Adds fix to the `postgres` state container implementation to make sure that recently queued events are streamed even if the last event for a channel is an end of stream marker.
+
 ## [0.2.0] - 2025-04-26
 
 ### Changed
