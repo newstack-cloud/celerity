@@ -414,6 +414,7 @@ func copyEvent(event *manage.Event) manage.Event {
 		ChannelID:   event.ChannelID,
 		Data:        event.Data,
 		Timestamp:   event.Timestamp,
+		End:         event.End,
 	}
 }
 
