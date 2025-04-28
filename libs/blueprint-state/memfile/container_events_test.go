@@ -22,12 +22,13 @@ const (
 )
 
 type MemFileStateContainerEventsTestSuite struct {
-	container            *StateContainer
-	stateDir             string
-	fs                   afero.Fs
-	saveEventFixtures    map[int]internal.SaveEventFixture
-	streamEventFixtures  []internal.SaveEventFixture
-	streamEventFixtures2 []internal.SaveEventFixture
+	container                   *StateContainer
+	partitionSizeLimitContainer *StateContainer
+	stateDir                    string
+	fs                          afero.Fs
+	saveEventFixtures           map[int]internal.SaveEventFixture
+	streamEventFixtures         []internal.SaveEventFixture
+	streamEventFixtures2        []internal.SaveEventFixture
 	suite.Suite
 }
 
@@ -37,11 +38,32 @@ func (s *MemFileStateContainerEventsTestSuite) SetupTest() {
 	loadMemoryFS(stateDir, memoryFS, &s.Suite)
 	s.fs = memoryFS
 	s.stateDir = stateDir
-	// Use a low max partition file size to test reaching the partition
-	// size limit.
+
 	container, err := LoadStateContainer(
 		stateDir,
 		memoryFS,
+		core.NewNopLogger(),
+		WithMaxEventPartitionSize(1048576), // 1MB
+		WithClock(
+			&internal.MockClock{
+				// Wednesday, 23 April 2025 13:27:36 UTC
+				// Within 5 minutes of the 3 queued events in the seed
+				// data for the event partition used in the stream test case.
+				// See the __testdata/initial-state/events__changesets_*.json seed files.
+				Timestamp: 1745414856,
+			},
+		),
+	)
+	s.Require().NoError(err)
+	s.container = container
+
+	// Use a low max partition file size to test reaching the partition
+	// size limit.
+	memoryFSForPartitionSizeLimit := afero.NewMemMapFs()
+	loadMemoryFS(stateDir, memoryFSForPartitionSizeLimit, &s.Suite)
+	partitionSizeLimitContainer, err := LoadStateContainer(
+		stateDir,
+		memoryFSForPartitionSizeLimit,
 		core.NewNopLogger(),
 		WithMaxEventPartitionSize(1024), // 1KB
 		WithClock(
@@ -55,7 +77,7 @@ func (s *MemFileStateContainerEventsTestSuite) SetupTest() {
 		),
 	)
 	s.Require().NoError(err)
-	s.container = container
+	s.partitionSizeLimitContainer = partitionSizeLimitContainer
 
 	dirPath := path.Join("__testdata", "save-input", "events")
 	fixtures, err := internal.SetupSaveEventFixtures(
@@ -132,9 +154,9 @@ func (s *MemFileStateContainerEventsTestSuite) Test_saves_event() {
 
 func (s *MemFileStateContainerEventsTestSuite) Test_fails_to_save_event_that_pushes_partition_over_size_limit() {
 	// Fixture 2 contains 8KB of serialised JSON data, which is
-	// larger than the 1KB partition size limit.
+	// larger than the 1KB partition size limit for the prepared container.
 	fixture := s.saveEventFixtures[2]
-	events := s.container.Events()
+	events := s.partitionSizeLimitContainer.Events()
 	err := events.Save(
 		context.Background(),
 		fixture.Event,

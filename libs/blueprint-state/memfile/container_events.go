@@ -102,18 +102,18 @@ func (c *eventsContainerImpl) save(
 	partition, hasPartition := c.partitionEvents[partitionName]
 	if !hasPartition {
 		partition = []*manage.Event{}
-		c.partitionEvents[partitionName] = partition
 	}
 	insertedIndex := insertEventIntoPartition(
 		&partition,
-		event,
+		&eventCopy,
 	)
+	c.partitionEvents[partitionName] = partition
 
 	eventLogger.Debug("persisting event partition update/creation")
 	return c.persister.saveEventPartition(
 		partitionName,
 		partition,
-		&eventCopy,
+		event,
 		insertedIndex,
 	)
 }
