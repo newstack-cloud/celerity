@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2025-04-28
+
+### Fixed
+
+- Adds fix to the `memfile` state container implementation to make sure that the event is written to the in-memory partition slice. This fixes a bug where no events were being sent to the stream after saving an event until the host application was reloaded to re-build the in-memory state from persisted files.
+
 ## [0.2.2] - 2025-04-27
 
 ### Fixed
