@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2025-04-28
+
+### Fixed
+
+- Ensures the `End` field of a `manage.Event` struct is copied when making a copy of an event. When copying events for persistence in the `memfile` state container implementation, the `End` value was not being copied meaning that no end of stream marker was added to the in-memory store or persisted to file. This would lead to streams not closing until the client requests to end after waiting for too long without receiving any events.
+
 ## [0.2.3] - 2025-04-28
 
 ### Fixed
