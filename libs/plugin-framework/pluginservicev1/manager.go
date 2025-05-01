@@ -2,7 +2,6 @@ package pluginservicev1
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 	sync "sync"
 )
@@ -95,10 +94,18 @@ func (m *managerImpl) RegisterPlugin(info *PluginInstanceInfo) error {
 		return fmt.Errorf("plugin type %d is not supported", info.PluginType)
 	}
 
-	if !slices.Contains(info.ProtocolVersions, hostProtocolVersion) {
+	pluginCompatibleWithHost, err := hostSupportsProtocolVersions(
+		hostProtocolVersion,
+		info.ProtocolVersions,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to check protocol versions: %w", err)
+	}
+
+	if !pluginCompatibleWithHost {
 		protocolVersionsString := strings.Join(info.ProtocolVersions, ", ")
 		return fmt.Errorf(
-			"plugin protocol versions %q are not supported, expected %s",
+			"plugin protocol versions %q are not supported, expected <=%s",
 			protocolVersionsString,
 			hostProtocolVersion,
 		)
