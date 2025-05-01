@@ -4,14 +4,15 @@ import (
 	"context"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/function"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/utils"
 )
 
 func getProviderFunctionDocs(
 	ctx context.Context,
 	providerPlugin provider.Provider,
+	params core.BlueprintParams,
 	functionName string,
 ) (*PluginDocsFunction, error) {
 	function, err := providerPlugin.Function(ctx, functionName)
@@ -22,7 +23,7 @@ func getProviderFunctionDocs(
 	definitionOutput, err := function.GetDefinition(
 		ctx,
 		&provider.FunctionGetDefinitionInput{
-			Params: utils.CreateEmptyBlueprintParams(),
+			Params: params,
 		},
 	)
 	if err != nil {

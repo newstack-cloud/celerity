@@ -86,7 +86,7 @@ func Setup(
 		// This shouldn't be used by the plugin doc generator.
 		/* stabilisationPollingTimeout */
 		30*time.Second,
-		utils.CreateEmptyBlueprintParams(),
+		utils.CreateBlueprintParams(envConfig),
 	)
 	pluginService := pluginservicev1.NewServiceServer(
 		manager,

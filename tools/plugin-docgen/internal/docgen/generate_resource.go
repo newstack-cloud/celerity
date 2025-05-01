@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
@@ -12,6 +13,7 @@ func getProviderResourceDocs(
 	namespace string,
 	providerPlugin provider.Provider,
 	resourceType string,
+	params core.BlueprintParams,
 ) (*PluginDocsResource, error) {
 	resource, err := providerPlugin.Resource(ctx, resourceType)
 	if err != nil {
@@ -21,7 +23,7 @@ func getProviderResourceDocs(
 	typeInfo, err := resource.GetType(
 		ctx,
 		&provider.ResourceGetTypeInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -31,7 +33,7 @@ func getProviderResourceDocs(
 	typeDescriptionOutput, err := resource.GetTypeDescription(
 		ctx,
 		&provider.ResourceGetTypeDescriptionInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -41,7 +43,7 @@ func getProviderResourceDocs(
 	examplesOutput, err := resource.GetExamples(
 		ctx,
 		&provider.ResourceGetExamplesInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -51,7 +53,7 @@ func getProviderResourceDocs(
 	canLinkToOutput, err := resource.CanLinkTo(
 		ctx,
 		&provider.ResourceCanLinkToInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -62,6 +64,7 @@ func getProviderResourceDocs(
 		ctx,
 		namespace,
 		resource,
+		params,
 	)
 	if err != nil {
 		return nil, err
@@ -120,11 +123,12 @@ func getProviderResourceSpecDocs(
 	ctx context.Context,
 	namespace string,
 	resource provider.Resource,
+	params core.BlueprintParams,
 ) (*PluginDocResourceSpec, error) {
 	specDefinitionOutput, err := resource.GetSpecDefinition(
 		ctx,
 		&provider.ResourceGetSpecDefinitionInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {

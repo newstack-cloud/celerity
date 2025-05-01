@@ -24,8 +24,23 @@ bash ./scripts/run-tests.sh
 ## Building the plugin docgen binary
 
 ```bash
+go generate ./...
 go build -o plugin-docgen ./cmd/main.go
 ```
+
+For releases, you will need to make sure that the generated code includes the new version number in the generated versions.go file.
+You can do this by running the following command:
+
+```bash
+export PLUGIN_DOCGEN_APPLICATION_VERSION="v0.2.0"
+go generate ./...
+go build -o plugin-docgen ./cmd/main.go
+```
+
+Replace `v0.2.0` with the version you are releasing, keeping the `v` prefix.
+
+The `versions.go` file is committed to version control so that the `go install` command can be used to install the binary directly from source.
+The trunk should contain the `versions.go` file generated for the latest release.
 
 ## Releasing
 

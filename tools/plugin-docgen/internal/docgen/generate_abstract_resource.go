@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
 )
 
@@ -12,6 +13,7 @@ func getTransformerAbstractResourceDocs(
 	namespace string,
 	transformerPlugin transform.SpecTransformer,
 	resourceType string,
+	params core.BlueprintParams,
 ) (*PluginDocsResource, error) {
 	abstractResource, err := transformerPlugin.AbstractResource(ctx, resourceType)
 	if err != nil {
@@ -21,7 +23,7 @@ func getTransformerAbstractResourceDocs(
 	typeInfo, err := abstractResource.GetType(
 		ctx,
 		&transform.AbstractResourceGetTypeInput{
-			TransformerContext: createTransformerContext(namespace),
+			TransformerContext: createTransformerContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -31,7 +33,7 @@ func getTransformerAbstractResourceDocs(
 	typeDescriptionOutput, err := abstractResource.GetTypeDescription(
 		ctx,
 		&transform.AbstractResourceGetTypeDescriptionInput{
-			TransformerContext: createTransformerContext(namespace),
+			TransformerContext: createTransformerContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -41,7 +43,7 @@ func getTransformerAbstractResourceDocs(
 	examplesOutput, err := abstractResource.GetExamples(
 		ctx,
 		&transform.AbstractResourceGetExamplesInput{
-			TransformerContext: createTransformerContext(namespace),
+			TransformerContext: createTransformerContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -51,7 +53,7 @@ func getTransformerAbstractResourceDocs(
 	canLinkToOutput, err := abstractResource.CanLinkTo(
 		ctx,
 		&transform.AbstractResourceCanLinkToInput{
-			TransformerContext: createTransformerContext(namespace),
+			TransformerContext: createTransformerContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -62,6 +64,7 @@ func getTransformerAbstractResourceDocs(
 		ctx,
 		namespace,
 		abstractResource,
+		params,
 	)
 	if err != nil {
 		return nil, err
@@ -120,11 +123,12 @@ func getTransformerAbstractResourceSpecDocs(
 	ctx context.Context,
 	namespace string,
 	abstractResource transform.AbstractResource,
+	params core.BlueprintParams,
 ) (*PluginDocResourceSpec, error) {
 	specDefinitionOutput, err := abstractResource.GetSpecDefinition(
 		ctx,
 		&transform.AbstractResourceGetSpecDefinitionInput{
-			TransformerContext: createTransformerContext(namespace),
+			TransformerContext: createTransformerContext(namespace, params),
 		},
 	)
 	if err != nil {

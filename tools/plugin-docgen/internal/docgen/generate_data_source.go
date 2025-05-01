@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
@@ -13,6 +14,7 @@ func getProviderDataSourceDocs(
 	namespace string,
 	providerPlugin provider.Provider,
 	dataSourceType string,
+	params core.BlueprintParams,
 ) (*PluginDocsDataSource, error) {
 	dataSource, err := providerPlugin.DataSource(ctx, dataSourceType)
 	if err != nil {
@@ -22,7 +24,7 @@ func getProviderDataSourceDocs(
 	typeInfo, err := dataSource.GetType(
 		ctx,
 		&provider.DataSourceGetTypeInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -32,7 +34,7 @@ func getProviderDataSourceDocs(
 	typeDescriptionOutput, err := dataSource.GetTypeDescription(
 		ctx,
 		&provider.DataSourceGetTypeDescriptionInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -42,7 +44,7 @@ func getProviderDataSourceDocs(
 	examplesOutput, err := dataSource.GetExamples(
 		ctx,
 		&provider.DataSourceGetExamplesInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -53,6 +55,7 @@ func getProviderDataSourceDocs(
 		ctx,
 		namespace,
 		dataSource,
+		params,
 	)
 	if err != nil {
 		return nil, err
@@ -76,11 +79,12 @@ func getProviderDataSourceSpecDocs(
 	ctx context.Context,
 	namespace string,
 	dataSource provider.DataSource,
+	params core.BlueprintParams,
 ) (*PluginDocsDataSourceSpec, error) {
 	dataSourceSpecOutput, err := dataSource.GetSpecDefinition(
 		ctx,
 		&provider.DataSourceGetSpecDefinitionInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {
@@ -90,7 +94,7 @@ func getProviderDataSourceSpecDocs(
 	filterableFieldsOutput, err := dataSource.GetFilterFields(
 		ctx,
 		&provider.DataSourceGetFilterFieldsInput{
-			ProviderContext: createProviderContext(namespace),
+			ProviderContext: createProviderContext(namespace, params),
 		},
 	)
 	if err != nil {

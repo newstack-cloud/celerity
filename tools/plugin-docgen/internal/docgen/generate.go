@@ -11,6 +11,7 @@ import (
 	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
 	pfutils "github.com/two-hundred/celerity/libs/plugin-framework/utils"
 	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/env"
+	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/utils"
 )
 
 // GenerateProviderDocs generates documentation for a provider
@@ -27,14 +28,16 @@ func GeneratePluginDocs(
 	)
 	defer cancel()
 
+	params := utils.CreateBlueprintParams(envConfig)
+
 	providerPlugin, isProvider := pluginInstance.(provider.Provider)
 	if isProvider {
-		return generateProviderDocs(ctx, pluginID, providerPlugin, manager)
+		return generateProviderDocs(ctx, pluginID, providerPlugin, manager, params)
 	}
 
 	transformerPlugin, isTransformer := pluginInstance.(transform.SpecTransformer)
 	if isTransformer {
-		return generateTransformerDocs(ctx, pluginID, transformerPlugin, manager)
+		return generateTransformerDocs(ctx, pluginID, transformerPlugin, manager, params)
 	}
 
 	return nil, ErrInvalidPluginType
@@ -45,6 +48,7 @@ func generateProviderDocs(
 	pluginID string,
 	providerPlugin provider.Provider,
 	manager pluginservicev1.Manager,
+	params core.BlueprintParams,
 ) (*PluginDocs, error) {
 	namespace := pfutils.ExtractPluginNamespace(pluginID)
 
@@ -68,6 +72,7 @@ func generateProviderDocs(
 		ctx,
 		namespace,
 		providerPlugin,
+		params,
 	)
 	if err != nil {
 		return nil, err
@@ -76,6 +81,7 @@ func generateProviderDocs(
 	docsForLinks, err := getProviderLinksDocs(
 		ctx,
 		providerPlugin,
+		params,
 	)
 	if err != nil {
 		return nil, err
@@ -85,6 +91,7 @@ func generateProviderDocs(
 		ctx,
 		namespace,
 		providerPlugin,
+		params,
 	)
 	if err != nil {
 		return nil, err
@@ -94,6 +101,7 @@ func generateProviderDocs(
 		ctx,
 		namespace,
 		providerPlugin,
+		params,
 	)
 	if err != nil {
 		return nil, err
@@ -102,6 +110,7 @@ func generateProviderDocs(
 	docsForFunctions, err := getProviderFunctionsDocs(
 		ctx,
 		providerPlugin,
+		params,
 	)
 	if err != nil {
 		return nil, err
@@ -129,6 +138,7 @@ func generateTransformerDocs(
 	pluginID string,
 	transformerPlugin transform.SpecTransformer,
 	manager pluginservicev1.Manager,
+	params core.BlueprintParams,
 ) (*PluginDocs, error) {
 	namespace := pfutils.ExtractPluginNamespace(pluginID)
 
@@ -157,6 +167,7 @@ func generateTransformerDocs(
 		ctx,
 		namespace,
 		transformerPlugin,
+		params,
 	)
 	if err != nil {
 		return nil, err
@@ -234,6 +245,7 @@ func getProviderResourcesDocs(
 	ctx context.Context,
 	namespace string,
 	providerPlugin provider.Provider,
+	params core.BlueprintParams,
 ) ([]*PluginDocsResource, error) {
 	resourceTypes, err := providerPlugin.ListResourceTypes(ctx)
 	if err != nil {
@@ -247,6 +259,7 @@ func getProviderResourcesDocs(
 			namespace,
 			providerPlugin,
 			resourceType,
+			params,
 		)
 		if err != nil {
 			return nil, err
@@ -261,6 +274,7 @@ func getProviderResourcesDocs(
 func getProviderLinksDocs(
 	ctx context.Context,
 	providerPlugin provider.Provider,
+	params core.BlueprintParams,
 ) ([]*PluginDocsLink, error) {
 	linkTypes, err := providerPlugin.ListLinkTypes(ctx)
 	if err != nil {
@@ -273,6 +287,7 @@ func getProviderLinksDocs(
 			ctx,
 			providerPlugin,
 			linkType,
+			params,
 		)
 		if err != nil {
 			return nil, err
@@ -288,6 +303,7 @@ func getProviderDataSourcesDocs(
 	ctx context.Context,
 	namespace string,
 	providerPlugin provider.Provider,
+	params core.BlueprintParams,
 ) ([]*PluginDocsDataSource, error) {
 	dataSourceTypes, err := providerPlugin.ListDataSourceTypes(ctx)
 	if err != nil {
@@ -301,6 +317,7 @@ func getProviderDataSourcesDocs(
 			namespace,
 			providerPlugin,
 			dataSourceType,
+			params,
 		)
 		if err != nil {
 			return nil, err
@@ -316,6 +333,7 @@ func getProviderCustomVarTypesDocs(
 	ctx context.Context,
 	namespace string,
 	providerPlugin provider.Provider,
+	params core.BlueprintParams,
 ) ([]*PluginDocsCustomVarType, error) {
 	customVarTypes, err := providerPlugin.ListCustomVariableTypes(ctx)
 	if err != nil {
@@ -329,6 +347,7 @@ func getProviderCustomVarTypesDocs(
 			namespace,
 			providerPlugin,
 			customVarType,
+			params,
 		)
 		if err != nil {
 			return nil, err
@@ -343,6 +362,7 @@ func getProviderCustomVarTypesDocs(
 func getProviderFunctionsDocs(
 	ctx context.Context,
 	providerPlugin provider.Provider,
+	params core.BlueprintParams,
 ) ([]*PluginDocsFunction, error) {
 	functions, err := providerPlugin.ListFunctions(ctx)
 	if err != nil {
@@ -354,6 +374,7 @@ func getProviderFunctionsDocs(
 		functionDocs, err := getProviderFunctionDocs(
 			ctx,
 			providerPlugin,
+			params,
 			function,
 		)
 		if err != nil {
@@ -370,6 +391,7 @@ func getTransformerAbstractResourcesDocs(
 	ctx context.Context,
 	namespace string,
 	transformerPlugin transform.SpecTransformer,
+	params core.BlueprintParams,
 ) ([]*PluginDocsResource, error) {
 	abstractResourceTypes, err := transformerPlugin.ListAbstractResourceTypes(ctx)
 	if err != nil {
@@ -383,6 +405,7 @@ func getTransformerAbstractResourcesDocs(
 			namespace,
 			transformerPlugin,
 			abstractResourceType,
+			params,
 		)
 		if err != nil {
 			return nil, err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
@@ -11,6 +12,7 @@ func getProviderLinkDocs(
 	ctx context.Context,
 	providerPlugin provider.Provider,
 	linkType string,
+	params core.BlueprintParams,
 ) (*PluginDocsLink, error) {
 	linkTypeParts, err := extractLinkTypeInfo(linkType)
 	if err != nil {
@@ -29,7 +31,7 @@ func getProviderLinkDocs(
 	typeInfo, err := link.GetType(
 		ctx,
 		&provider.LinkGetTypeInput{
-			LinkContext: createLinkContext(),
+			LinkContext: createLinkContext(params),
 		},
 	)
 	if err != nil {
@@ -39,14 +41,14 @@ func getProviderLinkDocs(
 	typeDescriptionOutput, err := link.GetTypeDescription(
 		ctx,
 		&provider.LinkGetTypeDescriptionInput{
-			LinkContext: createLinkContext(),
+			LinkContext: createLinkContext(params),
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	annotationDefinitionDocs, err := getAnnotationDefinitionDocs(ctx, link)
+	annotationDefinitionDocs, err := getAnnotationDefinitionDocs(ctx, link, params)
 	if err != nil {
 		return nil, err
 	}
@@ -62,11 +64,12 @@ func getProviderLinkDocs(
 func getAnnotationDefinitionDocs(
 	ctx context.Context,
 	link provider.Link,
+	params core.BlueprintParams,
 ) (map[string]*PluginDocsLinkAnnotationDefinition, error) {
 	annotationDefinitionsOutput, err := link.GetAnnotationDefinitions(
 		ctx,
 		&provider.LinkGetAnnotationDefinitionsInput{
-			LinkContext: createLinkContext(),
+			LinkContext: createLinkContext(params),
 		},
 	)
 	if err != nil {

@@ -4,32 +4,34 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/utils"
 )
 
 func createProviderContext(
 	namespace string,
+	params core.BlueprintParams,
 ) provider.Context {
 	return provider.NewProviderContextFromParams(
 		namespace,
-		utils.CreateEmptyBlueprintParams(),
+		params,
 	)
 }
 
 func createTransformerContext(
 	namespace string,
+	params core.BlueprintParams,
 ) transform.Context {
 	return transform.NewTransformerContextFromParams(
 		namespace,
-		utils.CreateEmptyBlueprintParams(),
+		params,
 	)
 }
 
-func createLinkContext() provider.LinkContext {
+func createLinkContext(params core.BlueprintParams) provider.LinkContext {
 	return provider.NewLinkContextFromParams(
-		utils.CreateEmptyBlueprintParams(),
+		params,
 	)
 }
 
