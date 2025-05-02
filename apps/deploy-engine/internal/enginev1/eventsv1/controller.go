@@ -56,7 +56,7 @@ func (c *Controller) CleanupEventsHandler(
 	// to avoid blocking the request,
 	// general clean up should be a task that a client can trigger
 	// but not need to wait for.
-	go c.cleanupChangesets()
+	go c.cleanupEvents()
 
 	httputils.HTTPJSONResponse(
 		w,
@@ -67,7 +67,7 @@ func (c *Controller) CleanupEventsHandler(
 	)
 }
 
-func (c *Controller) cleanupChangesets() {
+func (c *Controller) cleanupEvents() {
 	logger := c.logger.Named("eventsCleanup")
 
 	cleanupBefore := c.clock.Now().Add(
