@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-05-02
+
+### Added
+
+- Adds a stub resource in the core provider to allow loading of blueprints that have no real resources. This is used as a work around for the design of the blueprint loader and state container to be able to destroy blueprint instances without requiring the user to provide a source blueprint document. This is because the destroy functionality does not use or need any of the data from a loaded blueprint as it operates with a provided change set and the current state of a blueprint instance.
+
 ## [0.7.2] - 2025-05-02
 
 ### Fixed
