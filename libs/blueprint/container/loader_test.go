@@ -52,6 +52,7 @@ func (s *LoaderTestSuite) SetupSuite() {
 		"cyclic-ref-6":                "__testdata/loader/cyclic-ref-6-blueprint.yml",
 		"invalid-resource-each-dep-1": "__testdata/loader/invalid-resource-each-dep-1-blueprint.yml",
 		"invalid-resource-each-dep-2": "__testdata/loader/invalid-resource-each-dep-2-blueprint.yml",
+		"stub-resource":               "__testdata/loader/stub-resource-blueprint.yml",
 	}
 	s.specFixtureSchemas = make(map[string]*schema.Blueprint)
 
@@ -203,6 +204,24 @@ func (s *LoaderTestSuite) Test_creates_loader_and_validates_blueprint_with_nil_s
 	validationRes, err := loaderNoStateContainer.Validate(
 		context.TODO(),
 		s.specFixtureFiles["valid"],
+		createParams(),
+	)
+	s.Require().NoError(err)
+	s.Assert().NotNil(validationRes)
+}
+
+func (s *LoaderTestSuite) Test_creates_loader_and_validates_blueprint_with_stub_resource() {
+	// A placeholder template will often be used by host applications to instantiate
+	// a blueprint loader in order to call the `Destroy` method of a blueprint container
+	// without needing to load the actual blueprint document that was used to deploy
+	// the current version of the blueprint instance.
+	// This is a workaround for the design decision to tie the `Destroy` method to the blueprint
+	// container when it doesn't use any of the data from the loaded blueprint document,
+	// having this as a work around means that end users do not have to supply the source document
+	// when they want to destroy a blueprint instance.
+	validationRes, err := s.loader.Validate(
+		context.TODO(),
+		s.specFixtureFiles["stub-resource"],
 		createParams(),
 	)
 	s.Require().NoError(err)

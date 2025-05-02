@@ -1,0 +1,14 @@
+version: 2025-02-01
+resources:
+  stubResource:
+    type: core/stub
+    description: "A stub resource that does nothing"
+    metadata:
+      displayName: A stub resource
+      labels:
+        app: stubService
+    linkSelector:
+      byLabel:
+        app: stubService
+    spec:
+      value: "stubValue"

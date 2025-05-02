@@ -16,7 +16,12 @@ type coreProvider struct {
 
 // NewCoreProvider returns a new instance of the core provider
 // that contains all the core functions as per the blueprint
-// specification.
+// specification along with a stub resource used by host applications
+// to load a blueprint container without requiring a specific blueprint
+// document.
+// The stub resource is primarily useful for loading a blueprint container
+// to destroy a blueprint instance without requiring the user to provide a
+// blueprint document.
 func NewCoreProvider(
 	linkStateRetriever corefunctions.LinkStateRetriever,
 	blueprintInstanceIDRetriever corefunctions.BlueprintInstanceIDRetriever,
@@ -97,9 +102,13 @@ func (p *coreProvider) ConfigDefinition(ctx context.Context) (*core.ConfigDefini
 }
 
 func (p *coreProvider) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {
+	if resourceType == stubResourceType {
+		return newStubResource(), nil
+	}
+
 	return nil, fmt.Errorf(
 		"resource type %q not found in core provider, "+
-			"only functions are made available by the core provider",
+			"only functions and stub resources are made available by the core provider",
 		resourceType,
 	)
 }
@@ -107,7 +116,7 @@ func (p *coreProvider) Resource(ctx context.Context, resourceType string) (provi
 func (p *coreProvider) DataSource(ctx context.Context, dataSourceType string) (provider.DataSource, error) {
 	return nil, fmt.Errorf(
 		"data source type %q not found in core provider, "+
-			"only functions are made available by the core provider",
+			"only functions and stub resources are made available by the core provider",
 		dataSourceType,
 	)
 }
@@ -115,7 +124,7 @@ func (p *coreProvider) DataSource(ctx context.Context, dataSourceType string) (p
 func (p *coreProvider) Link(ctx context.Context, resourceTypeA string, resourceTypeB string) (provider.Link, error) {
 	return nil, fmt.Errorf(
 		"link between resource types %q and %q not found in core provider, "+
-			"only functions are made available by the core provider",
+			"only functions and stub resources are made available by the core provider",
 		resourceTypeA,
 		resourceTypeB,
 	)
@@ -124,13 +133,15 @@ func (p *coreProvider) Link(ctx context.Context, resourceTypeA string, resourceT
 func (p *coreProvider) CustomVariableType(ctx context.Context, customVariableType string) (provider.CustomVariableType, error) {
 	return nil, fmt.Errorf(
 		"custom variable type %q not found in core provider, "+
-			"only functions are made available by the core provider",
+			"only functions and stub resources are made available by the core provider",
 		customVariableType,
 	)
 }
 
 func (p *coreProvider) ListResourceTypes(ctx context.Context) ([]string, error) {
-	return []string{}, nil
+	return []string{
+		stubResourceType,
+	}, nil
 }
 
 func (p *coreProvider) ListLinkTypes(ctx context.Context) ([]string, error) {

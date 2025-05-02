@@ -309,7 +309,7 @@ func UnpackLoadError(err error) (*errors.LoadError, bool) {
 func UnpackError(err error) (error, bool) {
 	loadErr, ok := err.(*errors.LoadError)
 	if ok && len(loadErr.ChildErrors) > 0 {
-		return UnpackLoadError(loadErr.ChildErrors[0])
+		return UnpackError(loadErr.ChildErrors[0])
 	}
 	return err, ok
 }
