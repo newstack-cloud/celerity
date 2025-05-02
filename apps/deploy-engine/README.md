@@ -10,6 +10,11 @@ created with the Celerity framework in addition to more general infrastruture as
 The deploy engine bundles the plugin framework's gRPC-based plugin system that allows for the creation of custom plugins for providers and transformers that can be pulled in at runtime.
 The deploy engine also bundles a limited set of state persistence implementations for blueprint instances, the persistence implementation can be chosen with configuration.
 
+- [Installing](#installing)
+- [Configuration](#configuration)
+- [API Documentation](#api-documentation)
+- [Additional documentation](#additional-documentation)
+
 ## Installing
 
 The Deploy Engine is available for installation as a part of the standard Celerity installation.
@@ -632,6 +637,12 @@ When the clean up process runs for events,
 it will delete all events that are older than this period.
 
 **default value:** `604800` (7 days)
+
+## API Documentation
+
+The API documentation for the v1 of the Deploy Engine HTTP API is available at the following URL:
+
+https://celerityframework.io/deploy-engine/docs/http-api-reference/v1/deploy-engine-api
 
 ## Additional documentation
 
