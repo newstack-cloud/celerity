@@ -14,7 +14,7 @@ import (
 // blueprints from source in some supported formats.
 type Meta struct {
 	Position
-	EndPosition *Position
+	EndPosition *Position `json:"endPosition,omitempty"`
 }
 
 // Position represents a position in the source code of a blueprint.
