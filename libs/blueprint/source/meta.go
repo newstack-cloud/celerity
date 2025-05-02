@@ -19,8 +19,8 @@ type Meta struct {
 
 // Position represents a position in the source code of a blueprint.
 type Position struct {
-	Line   int
-	Column int
+	Line   int `json:"line"`
+	Column int `json:"column"`
 }
 
 // PositionFromSourceMeta returns the line and column from the provided source meta.
