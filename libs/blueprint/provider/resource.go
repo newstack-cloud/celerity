@@ -86,7 +86,7 @@ type ResourceInfo struct {
 	// ResourceID holds the ID of a resource when in the context
 	// of a blueprint instance when deploying or staging changes.
 	// Sometimes staging changes is independent of an instance and is used to compare
-	// two vesions of a blueprint in which
+	// two versions of a blueprint in which
 	// case the resource ID will be empty.
 	ResourceID string `json:"resourceId"`
 	// ResourceName holds the name of the resource in the blueprint spec.

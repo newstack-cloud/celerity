@@ -353,7 +353,7 @@ type InstanceState struct {
 	// to the resource IDs
 	// that are created from the resource definition.
 	ResourceIDs map[string]string `json:"resourceIds"`
-	// A mapping or resource IDs to the resource state.
+	// A mapping of resource IDs to the resource state.
 	Resources map[string]*ResourceState `json:"resources"`
 	// A mapping of logical link definition names
 	// to the state of each link in the blueprint instance.
@@ -459,7 +459,7 @@ type LinkState struct {
 	// IntermediaryResourceStates holds the state of intermediary resources
 	// that are created by the provider's implementation of a link.
 	IntermediaryResourceStates []*LinkIntermediaryResourceState `json:"intermediaryResourceStates"`
-	// ResourceData is the mapping that holds the structure of
+	// Data is the mapping that holds the structure of
 	// the "raw" link data to hold information about a link that is not
 	// stored directly in the resources that are linked and is not
 	// stored in intermediary resources.

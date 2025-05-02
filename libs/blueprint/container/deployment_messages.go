@@ -53,11 +53,13 @@ type ResourceDeployUpdateMessage struct {
 	// - PreciseResourceStatusDestroyed
 	// - PreciseResourceStatusDestroyFailed
 	// - PreciseResourceStatusDestroyRollbackFailed
+	// - PreciseResourceStatusDestroyRollbackConfigComplete
 	// - PreciseResourceStatusDestroyRollbackComplete
 	// - PreciseResourceStatusUpdateConfigComplete
 	// - PreciseResourceStatusUpdated
 	// - PreciseResourceStatusUpdateFailed
 	// - PreciseResourceStatusUpdateRollbackFailed
+	// - PreciseResourceStatusUpdateRollbackConfigComplete
 	// - PreciseResourceStatusUpdateRollbackComplete
 	Durations *state.ResourceCompletionDurations `json:"durations,omitempty"`
 }
@@ -100,10 +102,16 @@ type LinkDeployUpdateMessage struct {
 	// Duration information is attached on one of the following precise status updates:
 	// - PreciseLinkStatusResourceAUpdated
 	// - PreciseLinkStatusResourceAUpdateFailed
+	// - PreciseLinkStatusResourceAUpdateRollbackFailed
+	// - PreciseLinkStatusResourceAUpdateRollbackComplete
 	// - PreciseLinkStatusResourceBUpdated
 	// - PreciseLinkStatusResourceBUpdateFailed
+	// - PreciseLinkStatusResourceBUpdateRollbackFailed
+	// - PreciseLinkStatusResourceBUpdateRollbackComplete
 	// - PreciseLinkStatusIntermediaryResourcesUpdated
 	// - PreciseLinkStatusIntermediaryResourceUpdateFailed
+	// - PreciseLinkStatusIntermediaryResourceUpdateRollbackFailed
+	// - PreciseLinkStatusIntermediaryResourceUpdateRollbackComplete
 	Durations *state.LinkCompletionDurations `json:"durations,omitempty"`
 }
 
@@ -178,9 +186,16 @@ type DeploymentFinishedMessage struct {
 	// - InstanceStatusDeploying (preparation phase duration only)
 	// - InstanceStatusDeployed
 	// - InstanceStatusDeployFailed
+	// - InstanceStatusDeployRollbackFailed
+	// - InstanceStatusDeployRollbackComplete
 	// - InstanceStatusDestroyed
+	// - InstanceStatusDestroyFailed
+	// - InstanceStatusDestroyRollbackFailed
+	// - InstanceStatusDestroyRollbackComplete
 	// - InstanceStatusUpdated
 	// - InstanceStatusUpdateFailed
+	// - InstanceStatusUpdateRollbackFailed
+	// - InstanceStatusUpdateRollbackComplete
 	Durations *state.InstanceCompletionDuration `json:"durations,omitempty"`
 }
 
