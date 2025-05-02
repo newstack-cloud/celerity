@@ -4,14 +4,37 @@ import (
 	"os"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/two-hundred/celerity/libs/plugin-framework/transformerserverv1"
 )
 
 // Config provides configuration for the deploy engine application.
 // This parses configuratoin from the current environment.
 type Config struct {
-	// The version of the deploy engine to use.
+	// The version of the deploy engine API to use.
 	// Defaults to "v1".
-	Version string `env:"CELERITY_DEPLOY_ENGINE_VERSION" envDefault:"v1"`
+	APIVersion string `env:"CELERITY_DEPLOY_ENGINE_API_VERSION" envDefault:"v1"`
+	// The current version of the deploy engine software.
+	// This will be set based on a value of a constant determined at build time.
+	Version string
+	// The current version of the plugin framework that is being used
+	// by the deploy engine.
+	// This will be set based on a value of a constant determined at build time.
+	PluginFrameworkVersion string
+	// The current version of the blueprint framework that is being used
+	// by the deploy engine.
+	// This will be set based on a value of a constant determined at build time.
+	BlueprintFrameworkVersion string
+	// The current version of the provider plugin protocol that is being used
+	// by the deploy engine when acting as a plugin host.
+	// This will be set at runtime based on the version of the plugin protocol
+	// that the selected API version of the deploy engine uses.
+	ProviderPluginProtocolVersion string
+	// The current version of the transformer plugin protocol that is being used
+	// by the deploy engine when acting as a plugin host.
+	// This will be set at runtime based on the version of the plugin protocol
+	// that the selected API version of the deploy engine uses.
+	TransformerPluginProtocolVersion string
 	// The TCP port to listen on for incoming connections.
 	// This will be ignored if UseUnixSocket is set to true.
 	// Defaults to "8325".
@@ -49,19 +72,24 @@ type Config struct {
 	LogLevel string `env:"CELERITY_DEPLOY_ENGINE_LOG_LEVEL" envDefault:"info"`
 	// Auth provides configuration for the way authentication
 	// should be handled by the deploy engine.
-	Auth *AuthConfig `envPrefix:"CELERITY_DEPLOY_ENGINE_AUTH_"`
+	Auth AuthConfig `envPrefix:"CELERITY_DEPLOY_ENGINE_AUTH_"`
 	// PluginsV1 provides configuration for the v1 plugin system
 	// implemented by the deploy engine.
-	PluginsV1 *PluginsV1Config
+	PluginsV1 PluginsV1Config
 	// Blueprints provides configuration for the blueprint loader
 	// used by the deploy engine.
-	Blueprints *BlueprintConfig `envPrefix:"CELERITY_DEPLOY_ENGINE_BLUEPRINTS_"`
+	Blueprints BlueprintConfig `envPrefix:"CELERITY_DEPLOY_ENGINE_BLUEPRINTS_"`
 	// State provides configuration for the state management/persistence
 	// layer used by the deploy engine.
-	State *StateConfig `envPrefix:"CELERITY_DEPLOY_ENGINE_STATE_"`
+	State StateConfig `envPrefix:"CELERITY_DEPLOY_ENGINE_STATE_"`
 	// Resolvers provides configuration for the child blueprint resolvers
 	// used by the deploy engine.
-	Resolvers *ResolversConfig `envPrefix:"CELERITY_DEPLOY_ENGINE_RESOLVERS_"`
+	Resolvers ResolversConfig `envPrefix:"CELERITY_DEPLOY_ENGINE_RESOLVERS_"`
+	// Maintenance provides configuration for the maintenance
+	// of short-lived resources in the deploy engine.
+	// This is used for things like the retention periods for
+	// blueprint validations and change sets.
+	Maintenance MaintenanceConfig `envPrefix:"CELERITY_DEPLOY_ENGINE_MAINTENANCE_"`
 }
 
 func (p *Config) GetPluginPath() string {
@@ -161,6 +189,12 @@ type BlueprintConfig struct {
 	// The built-in default will be used if this is not set or the JSON is not
 	// in the correct format.
 	DefaultRetryPolicy string `env:"DEFAULT_RETRY_POLICY"`
+	// DeploymentTimeout is the time in seconds to wait for a deployment
+	// to complete before timing out.
+	// This timeout is for the background process that runs the deployment
+	// when the deployment endpoints are called.
+	// Defaults to 10,800 seconds (3 hours).
+	DeploymentTimeout int `env:"DEPLOYMENT_TIMEOUT" envDefault:"10800"`
 }
 
 // StateConfig provides configuration for the state management/persistence
@@ -178,6 +212,13 @@ type StateConfig struct {
 	// to avoid losing all state in the event of a failure or destruction of the host machine.
 	// Defaults to "memfile".
 	StorageEngine string `env:"STORAGE_ENGINE" envDefault:"memfile"`
+	// The threshold in seconds for retrieving recently queued events
+	// for a stream when a starting event ID is not provided.
+	// Any events that are older than currentTime - threshold
+	// will not be considered as recently queued events.
+	// This applies to all storage engines.
+	// Defaults to 300 seconds (5 minutes).
+	RecentlyQueuedEventsThreshold int64 `env:"RECENTLY_QUEUED_EVENTS_THRESHOLD" envDefault:"300"`
 	// The directory to use for persisting state files
 	// when using the in-memory storage with file system (memfile) persistence engine.
 	MemFileStateDir string `env:"MEMFILE_STATE_DIR" envDefault:"$HOME/.celerity/deploy-engine/state"`
@@ -188,6 +229,15 @@ type StateConfig struct {
 	// This is only a guide, the actual size of the files are often likely to be larger.
 	// Defaults to "1048576" (1MB).
 	MemFileMaxGuideFileSize int64 `env:"MEMFILE_MAX_GUIDE_FILE_SIZE" envDefault:"1048576"`
+	// Sets the maximum size of an event channel partition file in bytes
+	// when using the in-memory storage with file system (memfile) persistence engine.
+	// Each channel (e.g. deployment or change staging process) will have its own partition file
+	// for events that are captured from the blueprint container.
+	// This is a hard limit, if a new event is added to a partition file
+	// that causes the file to exceed this size, an error will occur and the event
+	// will not be persisted.
+	// Defaults to "10485760" (10MB).
+	MemFileMaxEventPartitionSize int64 `env:"MEMFILE_MAX_EVENT_PARTITION_SIZE" envDefault:"10485760"`
 	// The user name to use for connecting to the PostgreSQL database
 	// when using the PostgreSQL storage engine.
 	PostgresUser string `env:"POSTGRES_USER"`
@@ -219,7 +269,7 @@ type StateConfig struct {
 	// This should be in a format that can be parsed as a time.Duration.
 	// See: https://pkg.go.dev/time#ParseDuration
 	// Defaults to "1h30m".
-	PostgresPoolMaxConnLifetime int `env:"POSTGRES_POOL_MAX_CONN_LIFETIME" envDefault:"1h30m"`
+	PostgresPoolMaxConnLifetime string `env:"POSTGRES_POOL_MAX_CONN_LIFETIME" envDefault:"1h30m"`
 }
 
 // ResolversConfig provides configuration for the child blueprint resolvers
@@ -231,6 +281,11 @@ type ResolversConfig struct {
 	// A custom endpoint to use to make calls to Google Cloud Storage
 	// to retrieve the contents of child blueprint files.
 	GCSEndpoint string `env:"GCS_ENDPOINT"`
+	// A timeout in seconds to use for HTTP requests made for the "https"
+	// blueprint file source scheme or for child blueprint includes
+	// that use the "https"	source type.
+	// Defaults to 30 seconds.
+	HTTPSClientTimeout int `env:"HTTPS_CLIENT_TIMEOUT" envDefault:"30"`
 }
 
 // AuthConfig provides configuration for the way authentication
@@ -284,6 +339,34 @@ type AuthConfig struct {
 	APIKeys []string `env:"CELERITY_API_KEYS"`
 }
 
+// MaintenanceConfig provides configuration for the maintenance
+// of short-lived resources in the deploy engine.
+// This is used for things like the retention periods for
+// blueprint validations and change sets.
+type MaintenanceConfig struct {
+	// The retention period in seconds for blueprint validations.
+	// Whenever the clean up process runs,
+	// it will delete all blueprint validations that are older
+	// than this retention period.
+	//
+	// Defaults to 604,800 seconds (7 days).
+	BlueprintValidationRetentionPeriod int `env:"BLUEPRINT_VALIDATION_RETENTION_PERIOD" envDefault:"604800"`
+	// The retention period in seconds for change sets.
+	// Whenever the clean up process runs,
+	// it will delete all change sets that are older
+	// than this retention period.
+	//
+	// Defaults to 604,800 seconds (7 days).
+	ChangesetRetentionPeriod int `env:"CHANGESET_RETENTION_PERIOD" envDefault:"604800"`
+	// The retention period in seconds for events.
+	// Whenever the clean up process runs,
+	// it will delete all events that are older
+	// than this retention period.
+	//
+	// Defaults to 604,800 seconds (7 days).
+	EventsRetentionPeriod int `env:"EVENTS_RETENTION_PERIOD" envDefault:"604800"`
+}
+
 // LoadConfigFromEnv loads the deploy engine configuration
 // from environment variables.
 func LoadConfigFromEnv() (Config, error) {
@@ -294,14 +377,28 @@ func LoadConfigFromEnv() (Config, error) {
 
 	// Ensure the environment variables in the plugin path are expanded
 	// as the plugin launcher only works with absolute paths.
-	if config.PluginsV1 != nil {
+	if config.PluginsV1.PluginPath != "" {
 		config.PluginsV1.PluginPath = os.ExpandEnv(config.PluginsV1.PluginPath)
 	}
 
 	// Ensure the environment variables in the state directory are expanded
 	// as the state container only works with absolute paths.
-	if config.State != nil {
+	if config.State.MemFileStateDir != "" {
 		config.State.MemFileStateDir = os.ExpandEnv(config.State.MemFileStateDir)
+	}
+
+	// Set versions from generated constants.
+	config.Version = deployEngineVersion
+	config.PluginFrameworkVersion = pluginFrameworkVersion
+	config.BlueprintFrameworkVersion = blueprintFrameworkVersion
+
+	// Set plugin protocol versions based on the selected API version,
+	// See the `internal/pluginhostv{N}` packages for the protocol versions
+	// for each API version.
+	switch config.APIVersion {
+	case "v1":
+		config.ProviderPluginProtocolVersion = providerserverv1.ProtocolVersion
+		config.TransformerPluginProtocolVersion = transformerserverv1.ProtocolVersion
 	}
 
 	return config, nil

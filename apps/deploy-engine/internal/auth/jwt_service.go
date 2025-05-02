@@ -52,7 +52,6 @@ func LoadJWTService(config *core.AuthConfig) (Checker, error) {
 // It returns an error if the token is invalid,
 // or nil if it is valid.
 func (v *jwtService) Check(ctx context.Context, headers http.Header) error {
-	// Extract the token from the headers
 	token := headers.Get("Authorization")
 	if strings.TrimSpace(token) == "" {
 		return &Error{
@@ -69,7 +68,6 @@ func (v *jwtService) Check(ctx context.Context, headers http.Header) error {
 	// Strip the "Bearer " prefix
 	finalToken := token[7:]
 
-	// Validate the token using the provided configuration
 	_, err := v.validator.ValidateToken(ctx, finalToken)
 	if err != nil {
 		// Any error returned from the go-jwt-middleware

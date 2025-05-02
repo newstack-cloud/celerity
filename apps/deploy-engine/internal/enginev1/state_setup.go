@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/spf13/afero"
 	"github.com/two-hundred/celerity/apps/deploy-engine/core"
+	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint-state/memfile"
 	"github.com/two-hundred/celerity/libs/blueprint-state/postgres"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
@@ -18,35 +19,31 @@ const (
 	postgresStorageEngine = "postgres"
 )
 
-func loadStateContainer(
+type stateServices struct {
+	container  state.Container
+	events     manage.Events
+	validation manage.Validation
+	changesets manage.Changesets
+}
+
+func loadStateServices(
 	ctx context.Context,
 	fileSystem afero.Fs,
 	logger bpcore.Logger,
 	stateConfig *core.StateConfig,
-) (state.Container, error) {
+) (*stateServices, error) {
 	if stateConfig.StorageEngine == memfileStorageEngine {
-		return memfile.LoadStateContainer(
-			stateConfig.MemFileStateDir,
+		return loadMemfileStateServices(
+			stateConfig,
 			fileSystem,
 			logger,
-			memfile.WithMaxGuideFileSize(
-				stateConfig.MemFileMaxGuideFileSize,
-			),
 		)
 	}
 
 	if stateConfig.StorageEngine == postgresStorageEngine {
-		pool, err := createPostgresConnPool(ctx, stateConfig)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed to create postgres connection pool: %w",
-				err,
-			)
-		}
-
-		return postgres.LoadStateContainer(
+		return loadPostgresStateServices(
 			ctx,
-			pool,
+			stateConfig,
 			logger,
 		)
 	}
@@ -59,6 +56,105 @@ func loadStateContainer(
 	)
 }
 
+func loadMemfileStateServices(
+	stateConfig *core.StateConfig,
+	fileSystem afero.Fs,
+	logger bpcore.Logger,
+) (*stateServices, error) {
+	err := prepareMemfileStateDir(
+		stateConfig.MemFileStateDir,
+		fileSystem,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to prepare memfile state directory: %w",
+			err,
+		)
+	}
+
+	stateContainer, err := memfile.LoadStateContainer(
+		stateConfig.MemFileStateDir,
+		fileSystem,
+		logger,
+		memfile.WithMaxGuideFileSize(
+			stateConfig.MemFileMaxGuideFileSize,
+		),
+		memfile.WithMaxEventPartitionSize(
+			stateConfig.MemFileMaxEventPartitionSize,
+		),
+		memfile.WithRecentlyQueuedEventsThreshold(
+			stateConfig.RecentlyQueuedEventsThreshold,
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to create memfile state container: %w",
+			err,
+		)
+	}
+
+	events := stateContainer.Events()
+	validation := stateContainer.Validation()
+	changesets := stateContainer.Changesets()
+
+	return &stateServices{
+		container:  stateContainer,
+		validation: validation,
+		events:     events,
+		changesets: changesets,
+	}, nil
+}
+
+func prepareMemfileStateDir(
+	stateDirPath string,
+	fileSystem afero.Fs,
+) error {
+	return fileSystem.MkdirAll(
+		stateDirPath,
+		0755,
+	)
+}
+
+func loadPostgresStateServices(
+	ctx context.Context,
+	stateConfig *core.StateConfig,
+	logger bpcore.Logger,
+) (*stateServices, error) {
+	pool, err := createPostgresConnPool(ctx, stateConfig)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to create postgres connection pool: %w",
+			err,
+		)
+	}
+
+	stateContainer, err := postgres.LoadStateContainer(
+		ctx,
+		pool,
+		logger,
+		postgres.WithRecentlyQueuedEventsThreshold(
+			stateConfig.RecentlyQueuedEventsThreshold,
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to create postgres state container: %w",
+			err,
+		)
+	}
+
+	events := stateContainer.Events()
+	validation := stateContainer.Validation()
+	changesets := stateContainer.Changesets()
+
+	return &stateServices{
+		container:  stateContainer,
+		validation: validation,
+		events:     events,
+		changesets: changesets,
+	}, nil
+}
+
 func createPostgresConnPool(
 	ctx context.Context,
 	stateConfig *core.StateConfig,
@@ -68,7 +164,7 @@ func createPostgresConnPool(
 
 func buildPostgresDatabaseURL(stateConfig *core.StateConfig) string {
 	return fmt.Sprintf(
-		"postgres://%s:%s@%s:%d/%s?sslmode=%s&pool_max_conns=%d&pool_max_conn_lifetime=%d",
+		"postgres://%s:%s@%s:%d/%s?sslmode=%s&pool_max_conns=%d&pool_max_conn_lifetime=%s",
 		stateConfig.PostgresUser,
 		stateConfig.PostgresPassword,
 		stateConfig.PostgresHost,

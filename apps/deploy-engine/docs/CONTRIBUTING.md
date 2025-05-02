@@ -21,6 +21,16 @@ go mod download
 bash ./scripts/run-tests.sh
 ```
 
+## Running the deploy engine locally
+
+To run the deploy engine locally for development purposes, you can bring up the local docker compose stack including the deploy engine and various dependencies.
+It is best to use the `run-local.sh` script to prepare the environment and run the docker compose command.
+
+```bash
+bash ./scripts/run-local.sh
+docker compose -f docker-compose.local.yml up --build --force-recreate
+```
+
 ## Releasing
 
 To release a new version of the deploy engine, you need to create a new tag and push it to the repository.

@@ -39,6 +39,10 @@ fi
 set -e
 echo "" > coverage.txt
 
+# Generate dynamic code such as the version constants so there are no missing
+# files when running the tests.
+go generate ./...
+
 go test -timeout 30000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic `go list ./... | egrep -v '(/(testutils))$'`
 
 if [ -z "$GITHUB_ACTION" ]; then

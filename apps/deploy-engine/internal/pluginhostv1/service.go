@@ -2,6 +2,7 @@ package pluginhostv1
 
 import (
 	"context"
+	"maps"
 	"net"
 	"time"
 
@@ -95,10 +96,7 @@ func WithInitialProviders(providers map[string]provider.Provider) ServiceOption 
 	return func(s *serviceImpl) {
 		// Make a copy of the initial providers map to avoid
 		// modifying the original map.
-		s.providers = make(map[string]provider.Provider)
-		for namespace, provider := range providers {
-			s.providers[namespace] = provider
-		}
+		maps.Copy(s.providers, providers)
 	}
 }
 
@@ -219,14 +217,13 @@ func (s *serviceImpl) LoadPlugins(ctx context.Context) (*plugin.PluginMaps, erro
 	// with the plugin maps.
 	// This will allow the internal function registry and resource deploy service
 	// to resolve the plugins to make calls to.
-	for providerNamespace, provider := range pluginMaps.Providers {
-		s.providers[providerNamespace] = provider
-	}
-	for transformerNamespace, transformer := range pluginMaps.Transformers {
-		s.transformers[transformerNamespace] = transformer
-	}
+	maps.Copy(s.providers, pluginMaps.Providers)
+	maps.Copy(s.transformers, pluginMaps.Transformers)
 
-	return pluginMaps, nil
+	return &plugin.PluginMaps{
+		Providers:    s.providers,
+		Transformers: s.transformers,
+	}, nil
 }
 
 func (s *serviceImpl) Close() {

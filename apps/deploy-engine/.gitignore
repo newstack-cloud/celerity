@@ -24,3 +24,19 @@ report.json
 
 # Any log files.
 *.log
+
+.env
+
+# Directory for postgres migration files copied from the
+# blueprint-state library when running the deploy engine locally.
+postgres
+
+# Test blueprint files.
+*.blueprint.yml
+*.blueprint.json
+
+# The core.versions.go file is generated, usually during the
+# build process to package version information into the binary.
+core/versions.go
+
+tmp

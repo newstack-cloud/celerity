@@ -2,21 +2,21 @@ module github.com/two-hundred/celerity/apps/deploy-engine
 
 go 1.23.4
 
-replace github.com/two-hundred/celerity/libs/blueprint => ../../libs/blueprint
-
 require (
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/caarlos0/env/v11 v11.3.1
+	github.com/go-playground/validator/v10 v10.26.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/lestrrat-go/jwx v1.2.31
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.10.0
-	github.com/two-hundred/celerity/libs/blueprint v0.7.0
-	github.com/two-hundred/celerity/libs/blueprint-resolvers v0.0.0-20250419142810-c85a74e8387b
-	github.com/two-hundred/celerity/libs/blueprint-state v0.0.0-20250419142810-c85a74e8387b
+	github.com/two-hundred/celerity/libs/blueprint v0.8.0
+	github.com/two-hundred/celerity/libs/blueprint-resolvers v0.0.0-20250427141220-717e385d834a
+	github.com/two-hundred/celerity/libs/blueprint-state v0.2.4
 	github.com/two-hundred/celerity/libs/common v0.2.0
-	github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250419140003-2759164a7dce
+	github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250501171613-f2fd30cc1f40
 	go.uber.org/zap v1.27.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 )
@@ -64,19 +64,22 @@ require (
 	github.com/envoyproxy/go-control-plane v0.13.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
@@ -98,7 +101,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.35.0 // indirect
-	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect

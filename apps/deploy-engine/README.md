@@ -10,6 +10,19 @@ created with the Celerity framework in addition to more general infrastruture as
 The deploy engine bundles the plugin framework's gRPC-based plugin system that allows for the creation of custom plugins for providers and transformers that can be pulled in at runtime.
 The deploy engine also bundles a limited set of state persistence implementations for blueprint instances, the persistence implementation can be chosen with configuration.
 
+## Installing
+
+The Deploy Engine is available for installation as a part of the standard Celerity installation.
+See the [installing Celerity documentation](https://celerityframework.io/docs/intro/installing-celerity) for more information.
+
+### Docker
+
+You can also run the Deploy Engine as a Docker container using the public Docker image.
+
+```bash
+docker pull ghcr.io/two-hundred/celerity-deploy-engine:latest
+```
+
 ## Configuration
 
 The deploy engine is configured through environment variables. This section lists both required and optional configuration along with default values.
@@ -20,6 +33,7 @@ The deploy engine is configured through environment variables. This section list
 - [Blueprints](#blueprints)
 - [State](#state)
 - [Resolvers](#resolvers)
+- [Maintenance](#maintenance)
 
 ### Server
 
@@ -27,11 +41,12 @@ Core configuration for the Deploy Engine server.
 
 #### Version
 
-`CELERITY_DEPLOY_ENGINE_VERSION`
+`CELERITY_DEPLOY_ENGINE_API_VERSION`
 
 _**optional**_
 
-The version of the deploy engine. This is used to identify the version of the deploy engine to use.
+The version of the deploy engine API. This is used to identify the version of the deploy engine HTTP API to use.
+This is not the same as the version of the deploy engine itself, but rather the version of the HTTP API that the deploy engine exposes.
 For the current implementation of the deploy engine, only `v1` is supported.
 
 **default value:** `v1`
@@ -359,6 +374,17 @@ When a provider plugin has its own retry policy, that will always be used instea
 
 The actual value in the environment variable will need to be in a single line and escaped appropriately.
 
+#### Deployment Timeout in Seconds
+
+`CELERITY_DEPLOY_ENGINE_BLUEPRINTS_DEPLOYMENT_TIMEOUT`
+
+_**optional**_
+
+The timeout in seconds to wait for a deployment to complete before giving up and returning an error.
+This timeout is for the background process that runs the deployment when the deployment endpoints are called.
+
+**default value:** `10800` (3 hours)
+
 ### State
 
 Configuration for the state management/persistence layer used by the deploy engine.
@@ -382,6 +408,20 @@ it would be a good idea to backup the state files to a remote location
 to avoid losing all state in the event of a failure or destruction of the host machine.
 
 **default value:** `memfile`
+
+#### Recently Queued Events Threshold
+
+`CELERITY_DEPLOY_ENGINE_STATE_RECENTLY_QUEUED_EVENTS_THRESHOLD`
+
+_**optional**_
+
+The threshold in seconds for retrieving recently queued events for a stream when a starting event ID is not provided.
+
+Any events that are older than currentTime - threshold will not be considered as recently queued events.
+
+This applies to all storage engines.
+
+**default value:** `300` (5 minutes)
 
 #### `memfile` Storage Engine State Directory
 
@@ -407,6 +447,22 @@ it will not be split into multiple files.
 This is only a guide, the actual size of the files are often likely to be larger.
 
 **default value:** `1048576` (1MB)
+
+#### `memfile` Storage Engine Max Event Partition File Size
+
+`CELERITY_DEPLOY_ENGINE_STATE_MEMFILE_MAX_EVENT_PARTITION_SIZE`
+
+_**optional**_
+
+This sets the maximum size of an event channel partition file in bytes
+when using the in-memory storage with file system (memfile) persistence engine.
+Each channel (e.g. deployment or change staging process) will have its own partition file
+for events that are captured from the blueprint container.
+This is a hard limit, if a new event is added to a partition file
+that causes the file to exceed this size, an error will occur and the event
+will not be persisted.
+
+**default value:** `10485760` (10MB)
 
 #### `postgres` Storage Engine User
 
@@ -517,6 +573,65 @@ _**optional**_
 A custom endpoint to use to connect to a Google Cloud Storage-compatible object storage service
 when resolving the source files for child blueprints.
 When empty, the default Google Cloud Storage endpoint will be used.
+
+#### Resolver HTTPS Client Timeout
+
+`CELERITY_DEPLOY_ENGINE_RESOLVERS_HTTPS_CLIENT_TIMEOUT`
+
+_**optional**_
+
+The timeout in seconds to use for the HTTPS client used to resolve blueprints
+that use the the `https` file source scheme or child blueprint includes
+that use the `https` source type.
+
+**default value:** `30`
+
+### Maintenance
+
+Configuration for the maintenance of short-lived resources in the deploy engine. 
+This is used for things like the retention periods for blueprint validations and change sets.
+
+#### Blueprint Validation Retention Period
+
+`CELERITY_DEPLOY_ENGINE_MAINTENANCE_BLUEPRINT_VALIDATION_RETENTION_PERIOD`
+
+_**optional**_
+
+The retention period in seconds for blueprint validations.
+This is used to determine how long to keep the results of blueprint validation
+before deleting them.
+When the clean up process runs for blueprint validations,
+it will delete all validation results that are older than this period.
+
+**default value:** `604800` (7 days)
+
+#### Change Set Retention Period
+
+`CELERITY_DEPLOY_ENGINE_MAINTENANCE_CHANGESET_RETENTION_PERIOD`
+
+_**optional**_
+
+The retention period in seconds for change sets.
+This is used to determine how long to keep the results of change sets
+before deleting them.
+When the clean up process runs for change sets,
+it will delete all change sets that are older than this period.
+
+**default value:** `604800` (7 days)
+
+#### Events Retention Period
+
+`CELERITY_DEPLOY_ENGINE_MAINTENANCE_EVENTS_RETENTION_PERIOD`
+
+_**optional**_
+
+The retention period in seconds for events.
+This is used to determine how long to keep the results of events
+before deleting them.
+When the clean up process runs for events,
+it will delete all events that are older than this period.
+
+**default value:** `604800` (7 days)
 
 ## Additional documentation
 

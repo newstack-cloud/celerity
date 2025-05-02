@@ -1,0 +1,19 @@
+package helpersv1
+
+import (
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
+)
+
+func PopulateBlueprintDocInfoDefaults(payload *resolve.BlueprintDocumentInfo) {
+	if payload == nil {
+		return
+	}
+
+	if payload.FileSourceScheme == "" {
+		payload.FileSourceScheme = DefaultFileSourceScheme
+	}
+
+	if payload.BlueprintFile == "" {
+		payload.BlueprintFile = DefaultBlueprintFile
+	}
+}

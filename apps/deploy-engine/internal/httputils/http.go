@@ -19,3 +19,11 @@ func HTTPErrorWithFields(w http.ResponseWriter, statusCode int, message string, 
 	errorResponse, _ := json.Marshal(fields)
 	w.Write(errorResponse)
 }
+
+// HTTPJSONResponse writes http response with a JSON body.
+func HTTPJSONResponse(w http.ResponseWriter, statusCode int, data any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	responseBytes, _ := json.Marshal(data)
+	w.Write(responseBytes)
+}

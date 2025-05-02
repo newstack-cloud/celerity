@@ -13,6 +13,10 @@ function finish {
 
 trap finish EXIT
 
+# Generate dynamic code such as the version constants so there are no missing
+# files when linting the source code.
+go generate ./...
+
 for d in $(go list ./... | grep -v "vendor"); do
     staticcheck $d > staticcheck.out
     exit_code=$?

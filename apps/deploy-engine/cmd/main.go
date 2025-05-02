@@ -22,7 +22,7 @@ func main() {
 		log.Fatalf("error loading config: %s", err)
 	}
 
-	apiVersion := config.Version
+	apiVersion := config.APIVersion
 	port := config.Port
 	useUnixSocket := config.UseUnixSocket
 	unixSocketPath := config.UnixSocketPath
@@ -41,10 +41,10 @@ func main() {
 	srv := &http.Server{
 		IdleTimeout:       60 * time.Second,
 		ReadHeaderTimeout: 10 * time.Second,
-		Handler:           http.TimeoutHandler(r, 60*time.Second, "Timeout\n"),
+		Handler:           r,
 	}
 
-	if useUnixSocket {
+	if !useUnixSocket {
 		serverAddr := determineServerAddr(loopbackOnly, port)
 		srv.Addr = serverAddr
 		log.Fatal(srv.ListenAndServe())
@@ -59,7 +59,7 @@ func startUnixSocketServer(srv *http.Server, unixSocketPath string) {
 		log.Fatalf("error creating listener for unix socket: %s", err)
 	}
 
-	// Cleanup the sockfile.
+	// Cleanup the socket file.
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {

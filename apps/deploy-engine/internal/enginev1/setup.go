@@ -11,10 +11,20 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/afero"
 	"github.com/two-hundred/celerity/apps/deploy-engine/core"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/deploymentsv1"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/eventsv1"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/helpersv1"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/typesv1"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/validationv1"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/httputils"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/params"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/pluginhostv1"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
+	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 	"github.com/two-hundred/celerity/libs/blueprint-resolvers/azure"
 	resolverfs "github.com/two-hundred/celerity/libs/blueprint-resolvers/fs"
 	"github.com/two-hundred/celerity/libs/blueprint-resolvers/gcs"
+	resolverhttps "github.com/two-hundred/celerity/libs/blueprint-resolvers/https"
 	resolverrouter "github.com/two-hundred/celerity/libs/blueprint-resolvers/router"
 	"github.com/two-hundred/celerity/libs/blueprint-resolvers/s3"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
@@ -33,11 +43,11 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 	fileSystem := afero.NewOsFs()
 	idGenerator := bpcore.NewUUIDGenerator()
 
-	stateContainer, err := loadStateContainer(
+	stateServices, err := loadStateServices(
 		context.Background(),
 		fileSystem,
 		logger,
-		config.State,
+		&config.State,
 	)
 	if err != nil {
 		return nil, err
@@ -46,7 +56,7 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 	clock := &bpcore.SystemClock{}
 	initialProviders := map[string]provider.Provider{
 		"core": providerhelpers.NewCoreProvider(
-			stateContainer.Links(),
+			stateServices.container.Links(),
 			bpcore.BlueprintInstanceIDFromContext,
 			os.Getwd,
 			clock,
@@ -80,6 +90,10 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 	fsResolver := resolverfs.NewResolver(fileSystem)
 	s3Resolver := s3.NewResolver(config.Resolvers.S3Endpoint, false)
 	gcsResolver := gcs.NewResolver(config.Resolvers.GCSEndpoint)
+	httpClient := httputils.NewHTTPClient(config.Resolvers.HTTPSClientTimeout)
+	httpsResolver := resolverhttps.NewResolver(
+		httpClient,
+	)
 	// Azure blob storage clients will be created on the fly
 	// using default credentials and sourcing the storage account
 	// name from include metadata, blueprint params or
@@ -87,9 +101,10 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 	azureObjectResolver := azure.NewResolver( /* clientFactory */ nil)
 	childResolver := resolverrouter.NewResolver(
 		fsResolver,
-		resolverrouter.WithRoute("aws/s3", s3Resolver),
-		resolverrouter.WithRoute("azure/blob", azureObjectResolver),
-		resolverrouter.WithRoute("googlecloud/storage", gcsResolver),
+		resolverrouter.WithRoute(resolve.S3SourceType, s3Resolver),
+		resolverrouter.WithRoute(resolve.AzureBlobStorageSourceType, azureObjectResolver),
+		resolverrouter.WithRoute(resolve.GoogleCloudStorageSourceType, gcsResolver),
+		resolverrouter.WithRoute(resolve.HTTPSSourceType, httpsResolver),
 	)
 
 	validateLoader := container.NewDefaultLoader(
@@ -111,7 +126,7 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 	deployLoader := container.NewDefaultLoader(
 		pluginMaps.Providers,
 		pluginMaps.Transformers,
-		stateContainer,
+		stateServices.container,
 		childResolver,
 		container.WithLoaderTransformSpec(true),
 		// Sometimes users of the deploy engine will want to debug issues
@@ -127,20 +142,51 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 		container.WithLoaderLogger(logger),
 	)
 
-	deployEngine := core.NewDefaultDeployEngine(validateLoader, deployLoader, logger)
+	paramsProvider := params.NewDefaultProvider(
+		params.DefaultContextVars(config),
+	)
 
-	healthHandler := router.HandleFunc("/health", HealthHandler).Methods("GET")
-	validator := &validateHandler{
-		deployEngine,
+	dependencies := &typesv1.Dependencies{
+		EventStore:        stateServices.events,
+		ValidationStore:   stateServices.validation,
+		ChangesetStore:    stateServices.changesets,
+		Instances:         stateServices.container.Instances(),
+		IDGenerator:       idGenerator,
+		EventIDGenerator:  utils.NewUUIDv7Generator(),
+		ValidationLoader:  validateLoader,
+		DeploymentLoader:  deployLoader,
+		BlueprintResolver: childResolver,
+		ParamsProvider:    paramsProvider,
+		Clock:             clock,
+		Logger:            logger,
 	}
-	// TODO: make validate stream a GET request (for SSE)
-	router.HandleFunc(
-		"/validate/stream",
-		validator.StreamHandler,
-	).Methods("POST")
+
+	healthHandler := setupHealthHandler(
+		router,
+	)
+
+	helpersv1.SetupRequestBodyValidator()
+
+	setupValidationHandlers(
+		router,
+		dependencies,
+		config,
+	)
+
+	setupDeploymentHandlers(
+		router,
+		dependencies,
+		config,
+	)
+
+	setupEventManagementHandlers(
+		router,
+		dependencies,
+		config,
+	)
 
 	authMiddleware, err := setupAuth(
-		config.Auth,
+		&config.Auth,
 		clock,
 		/* excludedRoutes */ []*mux.Route{healthHandler},
 	)
@@ -151,6 +197,137 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 	router.Use(authMiddleware.Middleware)
 
 	return nil, nil
+}
+
+func setupHealthHandler(
+	router *mux.Router,
+) *mux.Route {
+	return router.HandleFunc("/health", HealthHandler).Methods("GET")
+}
+
+func setupValidationHandlers(
+	router *mux.Router,
+	dependencies *typesv1.Dependencies,
+	config *core.Config,
+) {
+	retentionPeriod := time.Duration(
+		config.Maintenance.BlueprintValidationRetentionPeriod,
+	) * time.Second
+
+	validationCtrl := validationv1.NewController(
+		retentionPeriod,
+		dependencies,
+	)
+
+	router.HandleFunc(
+		"/validations",
+		validationCtrl.CreateBlueprintValidationHandler,
+	).Methods("POST")
+
+	router.HandleFunc(
+		"/validations/{id}",
+		validationCtrl.GetBlueprintValidationHandler,
+	).Methods("GET")
+
+	router.HandleFunc(
+		"/validations/{id}/stream",
+		validationCtrl.StreamEventsHandler,
+	).Methods("GET")
+
+	router.HandleFunc(
+		"/validations/cleanup",
+		validationCtrl.CleanupBlueprintValidationsHandler,
+	).Methods("POST")
+}
+
+func setupDeploymentHandlers(
+	router *mux.Router,
+	dependencies *typesv1.Dependencies,
+	config *core.Config,
+) {
+	retentionPeriod := time.Duration(
+		config.Maintenance.ChangesetRetentionPeriod,
+	) * time.Second
+
+	deployTimeout := time.Duration(
+		config.Blueprints.DeploymentTimeout,
+	) * time.Second
+
+	deploymentCtrl := deploymentsv1.NewController(
+		retentionPeriod,
+		deployTimeout,
+		dependencies,
+	)
+
+	router.HandleFunc(
+		"/deployments/changes",
+		deploymentCtrl.CreateChangesetHandler,
+	).Methods("POST")
+
+	router.HandleFunc(
+		"/deployments/changes/{id}/stream",
+		deploymentCtrl.StreamChangesetEventsHandler,
+	).Methods("GET")
+
+	router.HandleFunc(
+		"/deployments/changes/{id}",
+		deploymentCtrl.GetChangesetHandler,
+	).Methods("GET")
+
+	router.HandleFunc(
+		"/deployments/changes/cleanup",
+		deploymentCtrl.CleanupChangesetsHandler,
+	)
+
+	router.HandleFunc(
+		"/deployments/instances",
+		deploymentCtrl.CreateBlueprintInstanceHandler,
+	).Methods("POST")
+
+	router.HandleFunc(
+		"/deployments/instances/{id}/stream",
+		deploymentCtrl.StreamDeploymentEventsHandler,
+	).Methods("GET")
+
+	router.HandleFunc(
+		"/deployments/instances/{id}",
+		deploymentCtrl.GetBlueprintInstanceHandler,
+	).Methods("GET")
+
+	router.HandleFunc(
+		"/deployments/instances/{id}",
+		deploymentCtrl.UpdateBlueprintInstanceHandler,
+	).Methods("PATCH")
+
+	router.HandleFunc(
+		"/deployments/instances/{id}/exports",
+		deploymentCtrl.GetBlueprintInstanceExportsHandler,
+	).Methods("GET")
+
+	router.HandleFunc(
+		"/deployments/instances/{id}/destroy",
+		deploymentCtrl.DestroyBlueprintInstanceHandler,
+	).Methods("POST")
+}
+
+func setupEventManagementHandlers(
+	router *mux.Router,
+	dependencies *typesv1.Dependencies,
+	config *core.Config,
+) {
+	retentionPeriod := time.Duration(
+		config.Maintenance.EventsRetentionPeriod,
+	) * time.Second
+
+	eventsCtrl := eventsv1.NewController(
+		retentionPeriod,
+		dependencies,
+	)
+
+	router.HandleFunc(
+		"/events/cleanup",
+		eventsCtrl.CleanupEventsHandler,
+	)
 }
 
 func createResourceStabilityPollingConfig(
