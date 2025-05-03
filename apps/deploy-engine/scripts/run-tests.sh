@@ -78,6 +78,11 @@ echo ""
 
 status="$(get_docker_container_status deploy_engine_test_postgres_migrate)"
 while [ "$status" != "exited 0" ]; do
+  if [ "$status" == "exited 1" ]; then
+    echo "Postgres migration failed, see logs below:"
+    docker logs deploy_engine_test_postgres_migrate
+    exit 1
+  fi
   sleep 1
   status="$(get_docker_container_status deploy_engine_test_postgres_migrate)"
 done
