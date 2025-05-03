@@ -48,8 +48,6 @@ get_docker_container_status() {
 
 trap finish EXIT
 
-cleanup_plugin_processes
-
 # This script pulls whatever db migrations are in the blueprint state library
 # for the current branch or tag that is checked out for the celerity monorepo,
 # this may not be the same as a released version of the library that is reported
