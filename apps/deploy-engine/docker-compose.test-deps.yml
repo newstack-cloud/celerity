@@ -26,8 +26,8 @@ services:
       - celerity_deploy_engine_test_network
     command:
       [
-        "-path",
-        "/migrations",
+        "-source",
+        "file:///migrations",
         "-database",
         "pgx5://${CELERITY_DEPLOY_ENGINE_STATE_POSTGRES_USER}:${CELERITY_DEPLOY_ENGINE_STATE_POSTGRES_PASSWORD}@deploy_engine_test_postgres:5432/${CELERITY_DEPLOY_ENGINE_STATE_POSTGRES_DATABASE}?sslmode=disable",
         "up",
