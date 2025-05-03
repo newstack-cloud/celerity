@@ -33,10 +33,19 @@ func main() {
 	}
 
 	r := mux.NewRouter().PathPrefix(fmt.Sprintf("/%s", apiVersion)).Subrouter()
-	_, err = setup(r, &config)
+
+	_, cleanup, err := setup(
+		r,
+		&config,
+		// Use the default TCP port for the plugin service.
+		/* pluginServiceListener */
+		nil,
+	)
 	if err != nil {
 		log.Fatalf("error setting up Deploy Engine API: %s", err)
 	}
+
+	cleanupOnShutdown(cleanup, useUnixSocket, unixSocketPath)
 
 	srv := &http.Server{
 		IdleTimeout:       60 * time.Second,
@@ -53,20 +62,30 @@ func main() {
 	}
 }
 
+func cleanupOnShutdown(
+	cleanup func(),
+	useUnixSocket bool,
+	unixSocketPath string,
+) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		if useUnixSocket {
+			os.Remove(unixSocketPath)
+		}
+		if cleanup != nil {
+			cleanup()
+		}
+		os.Exit(1)
+	}()
+}
+
 func startUnixSocketServer(srv *http.Server, unixSocketPath string) {
 	listener, err := net.Listen("unix", unixSocketPath)
 	if err != nil {
 		log.Fatalf("error creating listener for unix socket: %s", err)
 	}
-
-	// Cleanup the socket file.
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		os.Remove(unixSocketPath)
-		os.Exit(1)
-	}()
 
 	defer listener.Close()
 	log.Fatal(srv.Serve(listener))

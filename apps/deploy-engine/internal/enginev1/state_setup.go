@@ -31,7 +31,7 @@ func loadStateServices(
 	fileSystem afero.Fs,
 	logger bpcore.Logger,
 	stateConfig *core.StateConfig,
-) (*stateServices, error) {
+) (*stateServices, func(), error) {
 	if stateConfig.StorageEngine == memfileStorageEngine {
 		return loadMemfileStateServices(
 			stateConfig,
@@ -48,7 +48,7 @@ func loadStateServices(
 		)
 	}
 
-	return nil, fmt.Errorf(
+	return nil, nil, fmt.Errorf(
 		"unsupported %q storage engine provided, "+
 			"only the \"memfile\" and \"postgres\" engines are supported"+
 			" for this version of the deploy engine",
@@ -60,13 +60,13 @@ func loadMemfileStateServices(
 	stateConfig *core.StateConfig,
 	fileSystem afero.Fs,
 	logger bpcore.Logger,
-) (*stateServices, error) {
+) (*stateServices, func(), error) {
 	err := prepareMemfileStateDir(
 		stateConfig.MemFileStateDir,
 		fileSystem,
 	)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, nil, fmt.Errorf(
 			"failed to prepare memfile state directory: %w",
 			err,
 		)
@@ -87,7 +87,7 @@ func loadMemfileStateServices(
 		),
 	)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, nil, fmt.Errorf(
 			"failed to create memfile state container: %w",
 			err,
 		)
@@ -102,7 +102,12 @@ func loadMemfileStateServices(
 		validation: validation,
 		events:     events,
 		changesets: changesets,
-	}, nil
+	}, memfileStubClose, nil
+}
+
+func memfileStubClose() {
+	// No-op close function for memfile state services
+	// as it does not require any special cleanup.
 }
 
 func prepareMemfileStateDir(
@@ -119,13 +124,17 @@ func loadPostgresStateServices(
 	ctx context.Context,
 	stateConfig *core.StateConfig,
 	logger bpcore.Logger,
-) (*stateServices, error) {
+) (*stateServices, func(), error) {
 	pool, err := createPostgresConnPool(ctx, stateConfig)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, nil, fmt.Errorf(
 			"failed to create postgres connection pool: %w",
 			err,
 		)
+	}
+
+	closePool := func() {
+		pool.Close()
 	}
 
 	stateContainer, err := postgres.LoadStateContainer(
@@ -137,7 +146,7 @@ func loadPostgresStateServices(
 		),
 	)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, nil, fmt.Errorf(
 			"failed to create postgres state container: %w",
 			err,
 		)
@@ -152,7 +161,7 @@ func loadPostgresStateServices(
 		validation: validation,
 		events:     events,
 		changesets: changesets,
-	}, nil
+	}, closePool, nil
 }
 
 func createPostgresConnPool(

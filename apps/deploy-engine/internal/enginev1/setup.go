@@ -3,7 +3,9 @@ package enginev1
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -34,23 +36,27 @@ import (
 	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
 )
 
-func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
+func Setup(
+	router *mux.Router,
+	config *core.Config,
+	pluginServiceListener net.Listener,
+) (io.WriteCloser, func(), error) {
 	logger, err := core.CreateLogger(config)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	fileSystem := afero.NewOsFs()
 	idGenerator := bpcore.NewUUIDGenerator()
 
-	stateServices, err := loadStateServices(
+	stateServices, closeStateService, err := loadStateServices(
 		context.Background(),
 		fileSystem,
 		logger,
 		&config.State,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	clock := &bpcore.SystemClock{}
@@ -62,8 +68,12 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 			clock,
 		),
 	}
+	pluginExectorEnvVars := getPluginExecutorEnvVars(
+		pluginServiceListener,
+	)
 	pluginExecutor := plugin.NewOSCmdExecutor(
 		config.PluginsV1.LogFileRootDir,
+		pluginExectorEnvVars,
 	)
 	pluginHostService, err := pluginhostv1.LoadDefaultService(
 		&pluginhostv1.LoadDependencies{
@@ -75,16 +85,17 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 		pluginhostv1.WithServiceFS(fileSystem),
 		pluginhostv1.WithIDGenerator(idGenerator),
 		pluginhostv1.WithInitialProviders(initialProviders),
+		pluginhostv1.WithPluginServiceListener(pluginServiceListener),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	pluginMaps, err := pluginHostService.LoadPlugins(
 		context.Background(),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	fsResolver := resolverfs.NewResolver(fileSystem)
@@ -191,12 +202,27 @@ func Setup(router *mux.Router, config *core.Config) (io.WriteCloser, error) {
 		/* excludedRoutes */ []*mux.Route{healthHandler},
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	router.Use(authMiddleware.Middleware)
 
-	return nil, nil
+	return nil, createServerCleanupFunc(
+		closeStateService,
+		pluginHostService.Close,
+	), nil
+}
+
+func createServerCleanupFunc(
+	cleanupFuncs ...func(),
+) func() {
+	return func() {
+		for _, cleanup := range cleanupFuncs {
+			if cleanup != nil {
+				cleanup()
+			}
+		}
+	}
 }
 
 func setupHealthHandler(
@@ -363,4 +389,25 @@ func parseDefaultRetryPolicy(
 	}
 
 	return retryPolicy
+}
+
+func getPluginExecutorEnvVars(
+	pluginServiceListener net.Listener,
+) map[string]string {
+	envVars := map[string]string{}
+
+	// Ensure that when a custom listener is provided for the plugin service,
+	// that the port is set in the environment variables for each plugin
+	// that is launched.
+	// As long as plugins use the `pluginservicev1.NewEnvServiceClient` function
+	// to create a client to interact with the plugin service, they will
+	// use the custom port.
+	if pluginServiceListener != nil {
+		tcpAddr, isTCPAddr := pluginServiceListener.Addr().(*net.TCPAddr)
+		if isTCPAddr {
+			envVars["CELERITY_BUILD_ENGINE_PLUGIN_SERVICE_PORT"] = fmt.Sprintf("%d", tcpAddr.Port)
+		}
+	}
+
+	return envVars
 }

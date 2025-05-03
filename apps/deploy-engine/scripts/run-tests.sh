@@ -36,6 +36,57 @@ if [ -n "$HELP" ]; then
   exit 0
 fi
 
+finish() {
+  echo "Cleaning up plugin processes ..."
+  pkill -f "integrated_test_suites/__testdata/plugins"
+
+  echo "Taking down test dependencies docker compose stack ..."
+  docker compose --env-file .env.test -f docker-compose.test-deps.yml down
+  docker compose --env-file .env.test -f docker-compose.test-deps.yml rm -v -f
+}
+
+get_docker_container_status() {
+  docker inspect -f "{{ .State.Status }} {{ .State.ExitCode }}" $1
+}
+
+trap finish EXIT
+
+echo "Cleaning up plugin processes ..."
+echo ""
+pkill -f "integrated_test_suites/__testdata/plugins"
+
+# This script pulls whatever db migrations are in the blueprint state library
+# for the current branch or tag that is checked out for the celerity monorepo,
+# this may not be the same as a released version of the library that is reported
+# to have issues.
+# For debugging purposes, it will often require manually copying the migration
+# files from a specific version of the state library.
+echo "Copying postgres migrations from the blueprint state library ..."
+echo ""
+
+mkdir -p ./postgres/migrations
+cp -r ../../libs/blueprint-state/postgres/migrations/ ./postgres/migrations/
+
+echo "Bringing up docker compose stack for test dependencies ..."
+
+docker compose --env-file .env.test -f docker-compose.test-deps.yml up -d
+
+# Wait for postgres to be ready with the migrations in place.
+echo ""
+echo "Waiting for postgres to be ready ..."
+echo ""
+
+status="$(get_docker_container_status deploy_engine_test_postgres_migrate)"
+while [ "$status" != "exited 0" ]; do
+  sleep 1
+  status="$(get_docker_container_status deploy_engine_test_postgres_migrate)"
+done
+
+echo "Exporting environment variables for test suite ..."
+set -a
+source .env.test
+set +a
+
 set -e
 echo "" > coverage.txt
 

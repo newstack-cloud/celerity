@@ -23,6 +23,7 @@ type PluginProcess interface {
 
 type osCmdExecutor struct {
 	logFileRootDir string
+	env            map[string]string
 }
 
 // NewOSCmdExecutor creates a new PluginExecutor that uses an
@@ -31,9 +32,13 @@ type osCmdExecutor struct {
 // for the plugin under the logFileRootDir directory.
 // The log file will be located at:
 // {logFileRootDir}/({pluginHost}/?)/{namespace}/{pluginName}/plugin.log
-func NewOSCmdExecutor(logFileRootDir string) PluginExecutor {
+func NewOSCmdExecutor(
+	logFileRootDir string,
+	env map[string]string,
+) PluginExecutor {
 	return &osCmdExecutor{
 		logFileRootDir: logFileRootDir,
+		env:            env,
 	}
 }
 
@@ -42,6 +47,8 @@ func (e *osCmdExecutor) Execute(
 	pluginBinary string,
 ) (PluginProcess, error) {
 	cmd := exec.Command(pluginBinary)
+	cmd.Env = os.Environ()
+	cmd.Env = addEnvVars(cmd.Env, e.env)
 	pluginLogFile, err := e.openLogFile(pluginID)
 	if err != nil {
 		return nil, err
@@ -78,6 +85,16 @@ func (e *osCmdExecutor) openLogFile(pluginID string) (*os.File, error) {
 	)
 
 	return os.OpenFile(pluginAbsPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+}
+
+func addEnvVars(
+	env []string,
+	newEnv map[string]string,
+) []string {
+	for k, v := range newEnv {
+		env = append(env, k+"="+v)
+	}
+	return env
 }
 
 type osCmdProcess struct {

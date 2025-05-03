@@ -26,6 +26,7 @@ report.json
 *.log
 
 .env
+!.env.test
 
 # Directory for postgres migration files copied from the
 # blueprint-state library when running the deploy engine locally.
