@@ -14,6 +14,7 @@ func testPluginPaths() (string, string, error) {
 	pluginPath := path.Join(
 		workingDir,
 		"__testdata",
+		"tmp",
 		"plugins",
 		"bin",
 	)

@@ -37,9 +37,6 @@ if [ -n "$HELP" ]; then
 fi
 
 finish() {
-  echo "Cleaning up plugin processes ..."
-  pkill -f "integrated_test_suites/__testdata/plugins"
-
   echo "Taking down test dependencies docker compose stack ..."
   docker compose --env-file .env.test -f docker-compose.test-deps.yml down
   docker compose --env-file .env.test -f docker-compose.test-deps.yml rm -v -f
@@ -51,9 +48,7 @@ get_docker_container_status() {
 
 trap finish EXIT
 
-echo "Cleaning up plugin processes ..."
-echo ""
-pkill -f "integrated_test_suites/__testdata/plugins"
+cleanup_plugin_processes
 
 # This script pulls whatever db migrations are in the blueprint state library
 # for the current branch or tag that is checked out for the celerity monorepo,
@@ -66,6 +61,10 @@ echo ""
 
 mkdir -p ./postgres/migrations
 cp -a ../../libs/blueprint-state/postgres/migrations/* ./postgres/migrations/
+
+echo "Preparing empty plugin directory (required by integrated tests) ..."
+
+mkdir -p ./internal/integrated_test_suites/__testdata/tmp/plugins/bin
 
 echo "Bringing up docker compose stack for test dependencies ..."
 
