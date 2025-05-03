@@ -65,11 +65,7 @@ echo "Copying postgres migrations from the blueprint state library ..."
 echo ""
 
 mkdir -p ./postgres/migrations
-cp -r ../../libs/blueprint-state/postgres/migrations/ ./postgres/migrations/
-
-cd ./postgres/migrations
-ls
-cd ../..
+cp -a ../../libs/blueprint-state/postgres/migrations/* ./postgres/migrations/
 
 echo "Bringing up docker compose stack for test dependencies ..."
 
