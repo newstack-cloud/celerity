@@ -16,7 +16,7 @@ require (
 	github.com/two-hundred/celerity/libs/blueprint-resolvers v0.0.0-20250427141220-717e385d834a
 	github.com/two-hundred/celerity/libs/blueprint-state v0.2.4
 	github.com/two-hundred/celerity/libs/common v0.2.0
-	github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250501171613-f2fd30cc1f40
+	github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250502215436-4fae6658da66
 	go.uber.org/zap v1.27.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 )
