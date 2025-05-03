@@ -67,6 +67,10 @@ echo ""
 mkdir -p ./postgres/migrations
 cp -r ../../libs/blueprint-state/postgres/migrations/ ./postgres/migrations/
 
+cd ./postgres/migrations
+ls
+cd ../..
+
 echo "Bringing up docker compose stack for test dependencies ..."
 
 docker compose --env-file .env.test -f docker-compose.test-deps.yml up -d
