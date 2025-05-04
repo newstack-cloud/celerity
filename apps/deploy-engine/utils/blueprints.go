@@ -35,7 +35,11 @@ func BlueprintFormatFromExtension(filePath string) (schema.SpecFormat, error) {
 
 // DiagnosticsFromBlueprintValidationError extracts diagnostics from a blueprint
 // validation error.
-func DiagnosticsFromBlueprintValidationError(err error, logger core.Logger) []*core.Diagnostic {
+func DiagnosticsFromBlueprintValidationError(
+	err error,
+	logger core.Logger,
+	fallbackToGeneralDiagnostic bool,
+) []*core.Diagnostic {
 	diagnostics := []*core.Diagnostic{}
 
 	if err == nil {
@@ -61,6 +65,12 @@ func DiagnosticsFromBlueprintValidationError(err error, logger core.Logger) []*c
 		// Skip capturing run errors during validation,
 		// they are useful at runtime but may appear during validation
 		// in loading provider and transformer plugins.
+		return diagnostics
+	}
+
+	if !fallbackToGeneralDiagnostic {
+		// In contexts where the error should be treated differently
+		// from a diagnostic, we don't want to produce a diagnostic.
 		return diagnostics
 	}
 

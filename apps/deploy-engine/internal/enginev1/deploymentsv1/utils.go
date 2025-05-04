@@ -35,7 +35,11 @@ func handleDeployErrorForResponse(
 	// make sure the validation errors are exposed to the client
 	// to make it clear that the issue was with loading the source blueprint
 	// provided in the request.
-	diagnostics := utils.DiagnosticsFromBlueprintValidationError(err, logger)
+	diagnostics := utils.DiagnosticsFromBlueprintValidationError(
+		err,
+		logger,
+		/* fallbackToGeneralDiagnostic */ false,
+	)
 
 	if len(diagnostics) == 0 {
 		logger.Error(

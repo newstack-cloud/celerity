@@ -1,4 +1,4 @@
-package validationv1
+package deploymentsv1
 
 import (
 	"net/http"
@@ -13,7 +13,7 @@ import (
 	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
 var (
@@ -26,7 +26,8 @@ type ControllerTestSuite struct {
 	ctrl                    *Controller
 	ctrlFailingIDGenerators *Controller
 	eventStore              manage.Events
-	validationStore         manage.Validation
+	changesetStore          manage.Changesets
+	instances               state.InstancesContainer
 	client                  *http.Client
 }
 
@@ -36,23 +37,24 @@ func (s *ControllerTestSuite) SetupTest() {
 		StaticTime: testTime,
 	}
 	blueprintLoader := testutils.NewMockBlueprintLoader(
-		stubDiagnostics,
+		[]*core.Diagnostic{},
 		clock,
 		stateContainer.Instances(),
 	)
 	s.eventStore = testutils.NewMockEventStore(
 		map[string]*manage.Event{},
 	)
-	s.validationStore = testutils.NewMockBlueprintValidationStore(
-		map[string]*manage.BlueprintValidation{},
+	s.changesetStore = testutils.NewMockChangesetStore(
+		map[string]*manage.Changeset{},
 	)
+	s.instances = stateContainer.Instances()
 	dependencies := &typesv1.Dependencies{
-		EventStore:      s.eventStore,
-		ValidationStore: s.validationStore,
-		ChangesetStore: testutils.NewMockChangesetStore(
-			map[string]*manage.Changeset{},
+		EventStore: s.eventStore,
+		ValidationStore: testutils.NewMockBlueprintValidationStore(
+			map[string]*manage.BlueprintValidation{},
 		),
-		Instances:         stateContainer.Instances(),
+		ChangesetStore:    s.changesetStore,
+		Instances:         s.instances,
 		Exports:           stateContainer.Exports(),
 		IDGenerator:       core.NewUUIDGenerator(),
 		EventIDGenerator:  utils.NewUUIDv7Generator(),
@@ -66,7 +68,8 @@ func (s *ControllerTestSuite) SetupTest() {
 		Logger: core.NewNopLogger(),
 	}
 	s.ctrl = NewController(
-		10*time.Second,
+		/* changesetRetentionPeriod */ 10*time.Second,
+		/* deploymentTimeout */ 10*time.Second,
 		dependencies,
 	)
 	depsWithFailingIDGenerators := testutils.CopyDependencies(dependencies)
@@ -74,7 +77,8 @@ func (s *ControllerTestSuite) SetupTest() {
 	depsWithFailingIDGenerators.IDGenerator = failingIDGenerator
 	depsWithFailingIDGenerators.EventIDGenerator = failingIDGenerator
 	s.ctrlFailingIDGenerators = NewController(
-		10*time.Second,
+		/* changesetRetentionPeriod */ 10*time.Second,
+		/* deploymentTimeout */ 10*time.Second,
 		depsWithFailingIDGenerators,
 	)
 	s.client = &http.Client{
@@ -83,47 +87,6 @@ func (s *ControllerTestSuite) SetupTest() {
 
 	helpersv1.SetupRequestBodyValidator()
 }
-
-var (
-	stubDiagnostics = []*core.Diagnostic{
-		{
-			Level:   core.DiagnosticLevelError,
-			Message: "Validation failed due to invalid version",
-			Range: &core.DiagnosticRange{
-				Start: &source.Meta{
-					Position: source.Position{
-						Line:   1,
-						Column: 20,
-					},
-				},
-				End: &source.Meta{
-					Position: source.Position{
-						Line:   2,
-						Column: 5,
-					},
-				},
-			},
-		},
-		{
-			Level:   core.DiagnosticLevelWarning,
-			Message: "Validation warning",
-			Range: &core.DiagnosticRange{
-				Start: &source.Meta{
-					Position: source.Position{
-						Line:   3,
-						Column: 10,
-					},
-				},
-				End: &source.Meta{
-					Position: source.Position{
-						Line:   4,
-						Column: 15,
-					},
-				},
-			},
-		},
-	}
-)
 
 func TestControllerTestSuite(t *testing.T) {
 	suite.Run(t, new(ControllerTestSuite))

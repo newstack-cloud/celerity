@@ -191,6 +191,11 @@ func (c *Controller) DestroyBlueprintInstanceHandler(
 		params,
 	)
 
+	// The instance status will be updated by the deployment process
+	// but we need to give an indicator to the caller that something
+	// is happening in the response.
+	instance.Status = core.InstanceStatusDestroying
+
 	httputils.HTTPJSONResponse(
 		w,
 		http.StatusAccepted,
@@ -346,7 +351,6 @@ func (c *Controller) startDeployment(
 		context.Background(),
 		c.deploymentTimeout,
 	)
-	defer cancel()
 
 	blueprintContainer, err := c.blueprintLoader.LoadString(
 		ctxWithTimeout,
@@ -355,6 +359,7 @@ func (c *Controller) startDeployment(
 		params,
 	)
 	if err != nil {
+		cancel()
 		// As we don't have an ID for the blueprint instance at this stage,
 		// we don't have a channel that we can associate events with.
 		// For this reason, we'll return an error instead of writing to an event channel.
@@ -373,6 +378,7 @@ func (c *Controller) startDeployment(
 		params,
 	)
 	if err != nil {
+		cancel()
 		return "", err
 	}
 
@@ -385,12 +391,14 @@ func (c *Controller) startDeployment(
 			channels,
 		)
 		if err != nil {
+			cancel()
 			return "", err
 		}
 	}
 
 	go c.listenForDeploymentUpdates(
 		ctxWithTimeout,
+		cancel,
 		finalInstanceID,
 		"deploying blueprint instance",
 		channels,
@@ -444,7 +452,6 @@ func (c *Controller) startDestroy(
 		context.Background(),
 		c.deploymentTimeout,
 	)
-	defer cancel()
 
 	blueprintContainer, err := c.blueprintLoader.LoadString(
 		ctxWithTimeout,
@@ -456,6 +463,7 @@ func (c *Controller) startDestroy(
 		params,
 	)
 	if err != nil {
+		cancel()
 		c.handleDeploymentErrorAsEvent(
 			ctxWithTimeout,
 			destroyInstanceID,
@@ -479,6 +487,7 @@ func (c *Controller) startDestroy(
 
 	c.listenForDeploymentUpdates(
 		ctxWithTimeout,
+		cancel,
 		destroyInstanceID,
 		"destroying blueprint instance",
 		channels,
@@ -490,11 +499,14 @@ func (c *Controller) startDestroy(
 
 func (c *Controller) listenForDeploymentUpdates(
 	ctx context.Context,
+	cancelCtx func(),
 	instanceID string,
 	action string,
 	channels *container.DeployChannels,
 	logger core.Logger,
 ) {
+	defer cancelCtx()
+
 	finishMsg := (*container.DeploymentFinishedMessage)(nil)
 	var err error
 	for err == nil && finishMsg == nil {
@@ -634,6 +646,7 @@ func (c *Controller) handleDeploymentErrorAsEvent(
 	errDiagnostics := utils.DiagnosticsFromBlueprintValidationError(
 		deploymentError,
 		c.logger,
+		/* fallbackToGeneralDiagnostic */ true,
 	)
 
 	errorMsgEvent := &errorMessageEvent{

@@ -361,7 +361,11 @@ func (c *Controller) prepareAndSaveEvents(
 	// Validation errors are converted to diagnostics to provide a consistent
 	// experience for the user, the only errors that should be returned are failures
 	// outside of the validation process.
-	errDiagnostics := utils.DiagnosticsFromBlueprintValidationError(err, c.logger)
+	errDiagnostics := utils.DiagnosticsFromBlueprintValidationError(
+		err,
+		c.logger,
+		/* fallbackToGeneralDiagnostic */ true,
+	)
 
 	allDiagnostics := append(
 		validationResult.Diagnostics,

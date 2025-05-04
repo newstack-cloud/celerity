@@ -433,6 +433,7 @@ func (c *Controller) handleChangesetErrorAsEvent(
 	errDiagnostics := utils.DiagnosticsFromBlueprintValidationError(
 		changeStagingError,
 		c.logger,
+		/* fallbackToGeneralDiagnostic */ true,
 	)
 
 	errorMsgEvent := &errorMessageEvent{
