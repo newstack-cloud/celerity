@@ -8,3 +8,9 @@ func errUnsupportedBlueprintFormat(fileName string) error {
 			"\", only json or yaml files with extensions are supported",
 	}
 }
+
+const (
+	// UnexpectedErrorMessage is a generic error message for unexpected errors
+	// that occur in the deploy engine.
+	UnexpectedErrorMessage = "an unexpected error occurred"
+)

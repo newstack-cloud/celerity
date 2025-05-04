@@ -127,7 +127,7 @@ func (c *Controller) CreateBlueprintValidationHandler(
 		httputils.HTTPError(
 			w,
 			http.StatusInternalServerError,
-			"an unexpected error occurred",
+			utils.UnexpectedErrorMessage,
 		)
 		return
 	}
@@ -214,7 +214,7 @@ func (c *Controller) GetBlueprintValidationHandler(
 		httputils.HTTPError(
 			w,
 			http.StatusInternalServerError,
-			"an unexpected error occurred",
+			utils.UnexpectedErrorMessage,
 		)
 		return
 	}

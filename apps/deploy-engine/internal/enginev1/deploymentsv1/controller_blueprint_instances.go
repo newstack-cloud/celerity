@@ -272,7 +272,7 @@ func (c *Controller) handleDeployRequest(
 			httputils.HTTPError(
 				w,
 				http.StatusInternalServerError,
-				"an unexpected error occurred",
+				utils.UnexpectedErrorMessage,
 			)
 			return
 		}
@@ -309,7 +309,7 @@ func (c *Controller) handleGetChangesetErrorForResponse(
 	httputils.HTTPError(
 		w,
 		http.StatusInternalServerError,
-		"an unexpected error occurred",
+		utils.UnexpectedErrorMessage,
 	)
 }
 
@@ -335,7 +335,7 @@ func (c *Controller) handleGetInstanceError(
 	httputils.HTTPError(
 		w,
 		http.StatusInternalServerError,
-		"an unexpected error occurred",
+		utils.UnexpectedErrorMessage,
 	)
 }
 

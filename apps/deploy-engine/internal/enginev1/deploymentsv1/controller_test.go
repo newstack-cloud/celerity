@@ -1,6 +1,7 @@
 package deploymentsv1
 
 import (
+	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -28,6 +29,7 @@ type ControllerTestSuite struct {
 	suite.Suite
 	ctrl                    *Controller
 	ctrlFailingIDGenerators *Controller
+	ctrlStreamErrors        *Controller
 	eventStore              manage.Events
 	changesetStore          manage.Changesets
 	instances               state.InstancesContainer
@@ -80,6 +82,7 @@ func (s *ControllerTestSuite) SetupTest() {
 		/* deploymentTimeout */ 10*time.Second,
 		dependencies,
 	)
+
 	depsWithFailingIDGenerators := testutils.CopyDependencies(dependencies)
 	failingIDGenerator := &testutils.FailingIDGenerator{}
 	depsWithFailingIDGenerators.IDGenerator = failingIDGenerator
@@ -89,6 +92,28 @@ func (s *ControllerTestSuite) SetupTest() {
 		/* deploymentTimeout */ 10*time.Second,
 		depsWithFailingIDGenerators,
 	)
+
+	depsWithStreamErrors := testutils.CopyDependencies(dependencies)
+	streamErrorsBlueprintLoader := testutils.NewMockBlueprintLoader(
+		[]*core.Diagnostic{},
+		clock,
+		stateContainer.Instances(),
+		deployEventSequence( /* instanceID */ ""),
+		changeStagingEventSequence(),
+		testutils.WithMockBlueprintLoaderChangeStagingError(
+			errors.New("change staging error"),
+		),
+		testutils.WithMockBlueprintLoaderDeployError(
+			errors.New("deploy error"),
+		),
+	)
+	depsWithStreamErrors.DeploymentLoader = streamErrorsBlueprintLoader
+	s.ctrlStreamErrors = NewController(
+		/* changesetRetentionPeriod */ 10*time.Second,
+		/* deploymentTimeout */ 10*time.Second,
+		depsWithStreamErrors,
+	)
+
 	s.client = &http.Client{
 		Timeout: 10 * time.Second,
 	}

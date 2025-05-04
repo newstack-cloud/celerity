@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/inputvalidation"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
+	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 )
 
@@ -147,7 +148,7 @@ func (s *ControllerTestSuite) Test_create_blueprint_validation_handler_fails_due
 
 	s.Assert().Equal(http.StatusInternalServerError, result.StatusCode)
 	s.Assert().Equal(
-		"an unexpected error occurred",
+		utils.UnexpectedErrorMessage,
 		responseError["message"],
 	)
 }

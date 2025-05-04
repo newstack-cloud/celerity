@@ -46,7 +46,7 @@ func handleDeployErrorForResponse(
 			"failed to start blueprint instance deployment",
 			core.ErrorLogField("error", err),
 		)
-		httputils.HTTPError(w, http.StatusInternalServerError, "an unexpected error occurred")
+		httputils.HTTPError(w, http.StatusInternalServerError, utils.UnexpectedErrorMessage)
 		return
 	}
 

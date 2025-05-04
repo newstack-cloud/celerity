@@ -3,6 +3,7 @@ package deploymentsv1
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,7 +22,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-func (s *ControllerTestSuite) Test_create_blueprint_instance() {
+func (s *ControllerTestSuite) Test_create_blueprint_instance_handler() {
 	// Create the test change set to be used to start the deployment
 	// process for the new blueprint instance.
 	err := s.saveTestChangeset()
@@ -71,6 +72,81 @@ func (s *ControllerTestSuite) Test_create_blueprint_instance() {
 	)
 
 	expectedEvents := deployEventSequence(instance.InstanceID)
+	actualEvents, err := s.streamDeployEvents(instance.InstanceID, len(expectedEvents))
+	s.Require().NoError(err)
+
+	s.assertDeployEventsEqual(
+		expectedEvents,
+		actualEvents,
+	)
+}
+
+func (s *ControllerTestSuite) Test_create_blueprint_instance_handler_with_stream_error() {
+	// Create the test change set to be used to start the deployment
+	// process for the new blueprint instance.
+	err := s.saveTestChangeset()
+	s.Require().NoError(err)
+
+	router := mux.NewRouter()
+	router.HandleFunc(
+		"/deployments/instances",
+		s.ctrlStreamErrors.CreateBlueprintInstanceHandler,
+	).Methods("POST")
+
+	reqPayload := &BlueprintInstanceRequestPayload{
+		BlueprintDocumentInfo: resolve.BlueprintDocumentInfo{
+			FileSourceScheme: "file",
+			Directory:        "/test/dir",
+			BlueprintFile:    "test.blueprint.yaml",
+		},
+		ChangeSetID: testChangesetID,
+	}
+
+	reqBytes, err := json.Marshal(reqPayload)
+	s.Require().NoError(err)
+
+	req := httptest.NewRequest("POST", "/deployments/instances", bytes.NewReader(reqBytes))
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	result := w.Result()
+	defer result.Body.Close()
+	respData, err := io.ReadAll(result.Body)
+	s.Require().NoError(err)
+
+	instance := &state.InstanceState{}
+	err = json.Unmarshal(respData, instance)
+	s.Require().NoError(err)
+
+	s.Assert().Equal(http.StatusAccepted, result.StatusCode)
+	_, err = uuid.Parse(instance.InstanceID)
+	s.Assert().NoError(err, "ID should be a valid UUID (as per the configured generator)")
+	s.Assert().Equal(
+		core.InstanceStatusPreparing,
+		instance.Status,
+	)
+	s.Assert().Equal(
+		testTime.Unix(),
+		int64(instance.LastStatusUpdateTimestamp),
+	)
+
+	expectedEvents := []testutils.DeployEventWrapper{
+		{
+			DeployEvent: &container.DeployEvent{
+				DeploymentUpdateEvent: &container.DeploymentUpdateMessage{
+					InstanceID:      instance.InstanceID,
+					Status:          core.InstanceStatusPreparing,
+					UpdateTimestamp: testTime.Unix(),
+				},
+			},
+		},
+
+		{
+			DeployError: errors.New(
+				"error: deploy error",
+			),
+		},
+	}
 	actualEvents, err := s.streamDeployEvents(instance.InstanceID, len(expectedEvents))
 	s.Require().NoError(err)
 
@@ -175,10 +251,23 @@ func (s *ControllerTestSuite) Test_create_blueprint_instance_handler_fails_due_t
 	)
 }
 
+func (s *ControllerTestSuite) assertDeployEventsEqual(
+	expected []container.DeployEvent,
+	actual []testutils.DeployEventWrapper,
+) {
+	s.Assert().Len(actual, len(expected))
+	for i, event := range actual {
+		s.Assert().Equal(
+			expected[i],
+			*event.DeployEvent,
+		)
+	}
+}
+
 func (s *ControllerTestSuite) streamDeployEvents(
 	instanceID string,
 	expectedCount int,
-) ([]container.DeployEvent, error) {
+) ([]testutils.DeployEventWrapper, error) {
 	router := mux.NewRouter()
 	router.HandleFunc(
 		"/deployments/instances/{id}/stream",
@@ -220,8 +309,8 @@ func (s *ControllerTestSuite) streamDeployEvents(
 
 func extractDeployEvents(
 	collected []*manage.Event,
-) ([]container.DeployEvent, error) {
-	extractedEvents := []container.DeployEvent{}
+) ([]testutils.DeployEventWrapper, error) {
+	extractedEvents := []testutils.DeployEventWrapper{}
 
 	for _, event := range collected {
 		if event.Type == eventTypeResourceUpdate {
@@ -230,9 +319,11 @@ func extractDeployEvents(
 			if err != nil {
 				return nil, err
 			}
-			extractedEvents = append(extractedEvents, container.DeployEvent{
-				ResourceUpdateEvent: resourceUpdate,
-			})
+			extractedEvents = append(extractedEvents, wrapDeployEvent(
+				container.DeployEvent{
+					ResourceUpdateEvent: resourceUpdate,
+				},
+			))
 		}
 
 		if event.Type == eventTypeChildUpdate {
@@ -241,9 +332,11 @@ func extractDeployEvents(
 			if err != nil {
 				return nil, err
 			}
-			extractedEvents = append(extractedEvents, container.DeployEvent{
-				ChildUpdateEvent: childUpdate,
-			})
+			extractedEvents = append(extractedEvents, wrapDeployEvent(
+				container.DeployEvent{
+					ChildUpdateEvent: childUpdate,
+				},
+			))
 		}
 
 		if event.Type == eventTypeLinkUpdate {
@@ -252,9 +345,9 @@ func extractDeployEvents(
 			if err != nil {
 				return nil, err
 			}
-			extractedEvents = append(extractedEvents, container.DeployEvent{
-				LinkUpdateEvent: linkUpdate,
-			})
+			extractedEvents = append(extractedEvents, wrapDeployEvent(
+				container.DeployEvent{LinkUpdateEvent: linkUpdate},
+			))
 		}
 
 		if event.Type == eventTypeInstanceUpdate {
@@ -263,9 +356,11 @@ func extractDeployEvents(
 			if err != nil {
 				return nil, err
 			}
-			extractedEvents = append(extractedEvents, container.DeployEvent{
-				DeploymentUpdateEvent: deploymentUpdate,
-			})
+			extractedEvents = append(extractedEvents, wrapDeployEvent(
+				container.DeployEvent{
+					DeploymentUpdateEvent: deploymentUpdate,
+				},
+			))
 		}
 
 		if event.Type == eventTypeDeployFinished {
@@ -274,8 +369,24 @@ func extractDeployEvents(
 			if err != nil {
 				return nil, err
 			}
-			extractedEvents = append(extractedEvents, container.DeployEvent{
-				FinishEvent: finishEvent,
+			extractedEvents = append(extractedEvents, wrapDeployEvent(
+				container.DeployEvent{
+					FinishEvent: finishEvent,
+				},
+			))
+		}
+
+		if event.Type == eventTypeError {
+			errorMessage := &errorMessageEvent{}
+			err := parseEventJSON(event, errorMessage)
+			if err != nil {
+				return nil, err
+			}
+			extractedEvents = append(extractedEvents, testutils.DeployEventWrapper{
+				DeployError: fmt.Errorf(
+					"error: %s",
+					errorMessage.Message,
+				),
 			})
 		}
 	}
@@ -291,4 +402,12 @@ func parseEventJSON(
 		[]byte(event.Data),
 		target,
 	)
+}
+
+func wrapDeployEvent(
+	event container.DeployEvent,
+) testutils.DeployEventWrapper {
+	return testutils.DeployEventWrapper{
+		DeployEvent: &event,
+	}
 }

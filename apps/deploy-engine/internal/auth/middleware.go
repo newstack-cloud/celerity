@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/httputils"
+	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 )
 
 type Middleware struct {
@@ -86,7 +87,7 @@ func handleError(err error, w http.ResponseWriter) bool {
 		httputils.HTTPError(
 			w,
 			http.StatusInternalServerError,
-			"an unexpected error occurred",
+			utils.UnexpectedErrorMessage,
 		)
 		return true
 	}

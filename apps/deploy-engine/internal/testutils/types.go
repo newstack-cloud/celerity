@@ -10,4 +10,10 @@ type ChangeStagingEvent struct {
 	ChildChangesEvent     *container.ChildChangesMessage
 	LinkChangesEvent      *container.LinkChangesMessage
 	FinalBlueprintChanges *changes.BlueprintChanges
+	Error                 error
+}
+
+type DeployEventWrapper struct {
+	DeployEvent *container.DeployEvent
+	DeployError error
 }

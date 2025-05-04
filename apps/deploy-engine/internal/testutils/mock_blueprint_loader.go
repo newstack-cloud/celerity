@@ -21,6 +21,22 @@ type MockBlueprintLoader struct {
 	instances                  state.InstancesContainer
 	deployEventSequence        []container.DeployEvent
 	changeStagingEventSequence []ChangeStagingEvent
+	deployError                error
+	changeStagingError         error
+}
+
+type MockBlueprintLoaderOption func(*MockBlueprintLoader)
+
+func WithMockBlueprintLoaderDeployError(err error) MockBlueprintLoaderOption {
+	return func(loader *MockBlueprintLoader) {
+		loader.deployError = err
+	}
+}
+
+func WithMockBlueprintLoaderChangeStagingError(err error) MockBlueprintLoaderOption {
+	return func(loader *MockBlueprintLoader) {
+		loader.changeStagingError = err
+	}
 }
 
 func NewMockBlueprintLoader(
@@ -29,14 +45,21 @@ func NewMockBlueprintLoader(
 	instances state.InstancesContainer,
 	deployEventSequence []container.DeployEvent,
 	changeStagingEventSequence []ChangeStagingEvent,
+	opts ...MockBlueprintLoaderOption,
 ) container.Loader {
-	return &MockBlueprintLoader{
+	loader := &MockBlueprintLoader{
 		stubDiagnostics:            stubDiagnostics,
 		clock:                      clock,
 		instances:                  instances,
 		deployEventSequence:        deployEventSequence,
 		changeStagingEventSequence: changeStagingEventSequence,
 	}
+
+	for _, opt := range opts {
+		opt(loader)
+	}
+
+	return loader
 }
 
 func (m *MockBlueprintLoader) Load(
@@ -50,6 +73,8 @@ func (m *MockBlueprintLoader) Load(
 		instances:                  m.instances,
 		deployEventSequence:        m.deployEventSequence,
 		changeStagingEventSequence: m.changeStagingEventSequence,
+		deployError:                m.deployError,
+		changeStagingError:         m.changeStagingError,
 	}, nil
 }
 
@@ -75,6 +100,8 @@ func (m *MockBlueprintLoader) LoadString(
 		instances:                  m.instances,
 		deployEventSequence:        m.deployEventSequence,
 		changeStagingEventSequence: m.changeStagingEventSequence,
+		deployError:                m.deployError,
+		changeStagingError:         m.changeStagingError,
 	}, nil
 }
 
@@ -100,6 +127,8 @@ func (m *MockBlueprintLoader) LoadFromSchema(
 		instances:                  m.instances,
 		deployEventSequence:        m.deployEventSequence,
 		changeStagingEventSequence: m.changeStagingEventSequence,
+		deployError:                m.deployError,
+		changeStagingError:         m.changeStagingError,
 	}, nil
 }
 
@@ -119,6 +148,8 @@ type MockBlueprintContainer struct {
 	instances                  state.InstancesContainer
 	deployEventSequence        []container.DeployEvent
 	changeStagingEventSequence []ChangeStagingEvent
+	changeStagingError         error
+	deployError                error
 }
 
 func (m *MockBlueprintContainer) StageChanges(
@@ -128,6 +159,11 @@ func (m *MockBlueprintContainer) StageChanges(
 	paramOverrides core.BlueprintParams,
 ) error {
 	go func() {
+		if m.changeStagingError != nil {
+			channels.ErrChan <- m.changeStagingError
+			return
+		}
+
 		for _, event := range m.changeStagingEventSequence {
 			if event.ResourceChangesEvent != nil {
 				channels.ResourceChangesChan <- *event.ResourceChangesEvent
@@ -172,7 +208,7 @@ func (m *MockBlueprintContainer) Deploy(
 			return
 		}
 
-		for _, event := range m.deployEventSequence {
+		for i, event := range m.deployEventSequence {
 			if event.ResourceUpdateEvent != nil {
 				event.ResourceUpdateEvent.InstanceID = instanceID
 				channels.ResourceUpdateChan <- *event.ResourceUpdateEvent
@@ -188,6 +224,14 @@ func (m *MockBlueprintContainer) Deploy(
 			if event.DeploymentUpdateEvent != nil {
 				event.DeploymentUpdateEvent.InstanceID = instanceID
 				channels.DeploymentUpdateChan <- *event.DeploymentUpdateEvent
+				// The first deployment update event needs to be sent to the caller
+				// in order for the deploy engine to obtain an instance ID.
+				// If an error for the stream is configured, it should be sent
+				// after this event.
+				if i == 0 && m.deployError != nil {
+					channels.ErrChan <- m.deployError
+					return
+				}
 			}
 			if event.FinishEvent != nil {
 				event.FinishEvent.InstanceID = instanceID

@@ -62,7 +62,7 @@ func (c *Controller) CreateChangesetHandler(
 		httputils.HTTPError(
 			w,
 			http.StatusInternalServerError,
-			"an unexpected error occurred",
+			utils.UnexpectedErrorMessage,
 		)
 		return
 	}
@@ -76,7 +76,7 @@ func (c *Controller) CreateChangesetHandler(
 		httputils.HTTPError(
 			w,
 			http.StatusInternalServerError,
-			"an unexpected error occurred",
+			utils.UnexpectedErrorMessage,
 		)
 		return
 	}
@@ -166,7 +166,7 @@ func (c *Controller) GetChangesetHandler(
 		httputils.HTTPError(
 			w,
 			http.StatusInternalServerError,
-			"an unexpected error occurred",
+			utils.UnexpectedErrorMessage,
 		)
 		return
 	}
