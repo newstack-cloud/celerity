@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
@@ -15,20 +16,26 @@ import (
 )
 
 type MockBlueprintLoader struct {
-	stubDiagnostics []*core.Diagnostic
-	clock           commoncore.Clock
-	instances       state.InstancesContainer
+	stubDiagnostics            []*core.Diagnostic
+	clock                      commoncore.Clock
+	instances                  state.InstancesContainer
+	deployEventSequence        []container.DeployEvent
+	changeStagingEventSequence []ChangeStagingEvent
 }
 
 func NewMockBlueprintLoader(
 	stubDiagnostics []*core.Diagnostic,
 	clock commoncore.Clock,
 	instances state.InstancesContainer,
+	deployEventSequence []container.DeployEvent,
+	changeStagingEventSequence []ChangeStagingEvent,
 ) container.Loader {
 	return &MockBlueprintLoader{
-		stubDiagnostics: stubDiagnostics,
-		clock:           clock,
-		instances:       instances,
+		stubDiagnostics:            stubDiagnostics,
+		clock:                      clock,
+		instances:                  instances,
+		deployEventSequence:        deployEventSequence,
+		changeStagingEventSequence: changeStagingEventSequence,
 	}
 }
 
@@ -38,9 +45,11 @@ func (m *MockBlueprintLoader) Load(
 	params core.BlueprintParams,
 ) (container.BlueprintContainer, error) {
 	return &MockBlueprintContainer{
-		stubDiagnostics: m.stubDiagnostics,
-		clock:           m.clock,
-		instances:       m.instances,
+		stubDiagnostics:            m.stubDiagnostics,
+		clock:                      m.clock,
+		instances:                  m.instances,
+		deployEventSequence:        m.deployEventSequence,
+		changeStagingEventSequence: m.changeStagingEventSequence,
 	}, nil
 }
 
@@ -61,9 +70,11 @@ func (m *MockBlueprintLoader) LoadString(
 	params core.BlueprintParams,
 ) (container.BlueprintContainer, error) {
 	return &MockBlueprintContainer{
-		stubDiagnostics: m.stubDiagnostics,
-		clock:           m.clock,
-		instances:       m.instances,
+		stubDiagnostics:            m.stubDiagnostics,
+		clock:                      m.clock,
+		instances:                  m.instances,
+		deployEventSequence:        m.deployEventSequence,
+		changeStagingEventSequence: m.changeStagingEventSequence,
 	}, nil
 }
 
@@ -84,9 +95,11 @@ func (m *MockBlueprintLoader) LoadFromSchema(
 	params core.BlueprintParams,
 ) (container.BlueprintContainer, error) {
 	return &MockBlueprintContainer{
-		stubDiagnostics: m.stubDiagnostics,
-		clock:           m.clock,
-		instances:       m.instances,
+		stubDiagnostics:            m.stubDiagnostics,
+		clock:                      m.clock,
+		instances:                  m.instances,
+		deployEventSequence:        m.deployEventSequence,
+		changeStagingEventSequence: m.changeStagingEventSequence,
 	}, nil
 }
 
@@ -101,9 +114,11 @@ func (m *MockBlueprintLoader) ValidateFromSchema(
 }
 
 type MockBlueprintContainer struct {
-	stubDiagnostics []*core.Diagnostic
-	clock           commoncore.Clock
-	instances       state.InstancesContainer
+	stubDiagnostics            []*core.Diagnostic
+	clock                      commoncore.Clock
+	instances                  state.InstancesContainer
+	deployEventSequence        []container.DeployEvent
+	changeStagingEventSequence []ChangeStagingEvent
 }
 
 func (m *MockBlueprintContainer) StageChanges(
@@ -112,6 +127,23 @@ func (m *MockBlueprintContainer) StageChanges(
 	channels *container.ChangeStagingChannels,
 	paramOverrides core.BlueprintParams,
 ) error {
+	go func() {
+		for _, event := range m.changeStagingEventSequence {
+			if event.ResourceChangesEvent != nil {
+				channels.ResourceChangesChan <- *event.ResourceChangesEvent
+			}
+			if event.ChildChangesEvent != nil {
+				channels.ChildChangesChan <- *event.ChildChangesEvent
+			}
+			if event.LinkChangesEvent != nil {
+				channels.LinkChangesChan <- *event.LinkChangesEvent
+			}
+			if event.FinalBlueprintChanges != nil {
+				channels.CompleteChan <- *event.FinalBlueprintChanges
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
 	return nil
 }
 
@@ -140,10 +172,28 @@ func (m *MockBlueprintContainer) Deploy(
 			return
 		}
 
-		channels.DeploymentUpdateChan <- container.DeploymentUpdateMessage{
-			InstanceID:      instanceID,
-			Status:          core.InstanceStatusPreparing,
-			UpdateTimestamp: currentTimestamp,
+		for _, event := range m.deployEventSequence {
+			if event.ResourceUpdateEvent != nil {
+				event.ResourceUpdateEvent.InstanceID = instanceID
+				channels.ResourceUpdateChan <- *event.ResourceUpdateEvent
+			}
+			if event.ChildUpdateEvent != nil {
+				event.ChildUpdateEvent.ParentInstanceID = instanceID
+				channels.ChildUpdateChan <- *event.ChildUpdateEvent
+			}
+			if event.LinkUpdateEvent != nil {
+				event.LinkUpdateEvent.InstanceID = instanceID
+				channels.LinkUpdateChan <- *event.LinkUpdateEvent
+			}
+			if event.DeploymentUpdateEvent != nil {
+				event.DeploymentUpdateEvent.InstanceID = instanceID
+				channels.DeploymentUpdateChan <- *event.DeploymentUpdateEvent
+			}
+			if event.FinishEvent != nil {
+				event.FinishEvent.InstanceID = instanceID
+				channels.FinishChan <- *event.FinishEvent
+			}
+			time.Sleep(10 * time.Millisecond)
 		}
 	}()
 	return nil

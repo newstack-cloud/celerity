@@ -3,15 +3,20 @@ package deploymentsv1
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/r3labs/sse/v2"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/inputvalidation"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/testutils"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
+	"github.com/two-hundred/celerity/libs/blueprint/container"
 )
 
 func (s *ControllerTestSuite) Test_create_changeset_handler() {
@@ -59,6 +64,16 @@ func (s *ControllerTestSuite) Test_create_changeset_handler() {
 	s.Assert().Equal(
 		testTime.Unix(),
 		changeset.Created,
+	)
+
+	expectedEvents := changeStagingEventSequence()
+	actualEvents, err := s.streamChangeStagingEvents(changeset.ID, len(expectedEvents))
+	s.Require().NoError(err)
+
+	s.Assert().Len(actualEvents, len(expectedEvents))
+	s.Assert().Equal(
+		expectedEvents,
+		actualEvents,
 	)
 }
 
@@ -150,4 +165,101 @@ func (s *ControllerTestSuite) Test_create_changeset_handler_fails_due_to_id_gen_
 		"an unexpected error occurred",
 		responseError["message"],
 	)
+}
+
+func (s *ControllerTestSuite) streamChangeStagingEvents(
+	changesetID string,
+	expectedCount int,
+) ([]testutils.ChangeStagingEvent, error) {
+	router := mux.NewRouter()
+	router.HandleFunc(
+		"/deployments/changes/{id}/stream",
+		s.ctrl.StreamChangesetEventsHandler,
+	).Methods("GET")
+
+	// We need to create a server to be able to stream events asynchronously,
+	// the httptest recording test tools do not support response streaming
+	// as the Result() method is to be used after response writing is done.
+	streamServer := httptest.NewServer(router)
+	defer streamServer.Close()
+
+	url := fmt.Sprintf(
+		"%s/deployments/changes/%s/stream",
+		streamServer.URL,
+		changesetID,
+	)
+
+	client := sse.NewClient(url)
+
+	eventChan := make(chan *sse.Event)
+	client.SubscribeChan("messages", eventChan)
+	defer client.Unsubscribe(eventChan)
+
+	collected := []*manage.Event{}
+	for len(collected) < expectedCount {
+		select {
+		case event := <-eventChan:
+			manageEvent := testutils.SSEToManageEvent(event)
+			collected = append(collected, manageEvent)
+			s.Require().NotNil(event)
+		case <-time.After(5 * time.Second):
+			s.Fail("Timed out waiting for events")
+		}
+	}
+
+	return extractChangeStagingEvents(collected)
+}
+
+func extractChangeStagingEvents(
+	collected []*manage.Event,
+) ([]testutils.ChangeStagingEvent, error) {
+	extractedEvents := []testutils.ChangeStagingEvent{}
+
+	for _, event := range collected {
+		if event.Type == eventTypeResourceChanges {
+			resourceChangesMessage := &container.ResourceChangesMessage{}
+			err := parseEventJSON(event, resourceChangesMessage)
+			if err != nil {
+				return nil, err
+			}
+			extractedEvents = append(extractedEvents, testutils.ChangeStagingEvent{
+				ResourceChangesEvent: resourceChangesMessage,
+			})
+		}
+
+		if event.Type == eventTypeChildChanges {
+			childChangesMessage := &container.ChildChangesMessage{}
+			err := parseEventJSON(event, childChangesMessage)
+			if err != nil {
+				return nil, err
+			}
+			extractedEvents = append(extractedEvents, testutils.ChangeStagingEvent{
+				ChildChangesEvent: childChangesMessage,
+			})
+		}
+
+		if event.Type == eventTypeLinkChanges {
+			LinkChangesMessage := &container.LinkChangesMessage{}
+			err := parseEventJSON(event, LinkChangesMessage)
+			if err != nil {
+				return nil, err
+			}
+			extractedEvents = append(extractedEvents, testutils.ChangeStagingEvent{
+				LinkChangesEvent: LinkChangesMessage,
+			})
+		}
+
+		if event.Type == eventTypeChangeStagingComplete {
+			finalChangesEvent := &changeStagingCompleteEvent{}
+			err := parseEventJSON(event, finalChangesEvent)
+			if err != nil {
+				return nil, err
+			}
+			extractedEvents = append(extractedEvents, testutils.ChangeStagingEvent{
+				FinalBlueprintChanges: finalChangesEvent.Changes,
+			})
+		}
+	}
+
+	return extractedEvents, nil
 }

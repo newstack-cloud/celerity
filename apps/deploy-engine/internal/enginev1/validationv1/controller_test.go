@@ -12,6 +12,7 @@ import (
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/testutils"
 	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
+	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
@@ -39,6 +40,8 @@ func (s *ControllerTestSuite) SetupTest() {
 		stubDiagnostics,
 		clock,
 		stateContainer.Instances(),
+		/* deployEventSequence */ []container.DeployEvent{},
+		/* changeStagingEventSequence */ []testutils.ChangeStagingEvent{},
 	)
 	s.eventStore = testutils.NewMockEventStore(
 		map[string]*manage.Event{},
