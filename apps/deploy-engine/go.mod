@@ -4,12 +4,14 @@ go 1.23.4
 
 require (
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
+	github.com/bradleyjkemp/cupaloy v2.3.0+incompatible
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/lestrrat-go/jwx v1.2.31
+	github.com/r3labs/sse/v2 v2.10.0
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.10.0
 	github.com/two-hundred/celerity/libs/blueprint v0.8.0
@@ -90,7 +92,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/r3labs/sse/v2 v2.10.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.29.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0 // indirect

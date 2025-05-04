@@ -175,7 +175,8 @@ func collectLoadErrors(
 			return
 		}
 
-		if !isLoadErr && !isParseErrs && !isParseErr && !isCoreErr && !isLexErrs && !isLexErr {
+		if !isLoadErr && !isSchemaErr && !isParseErrs &&
+			!isParseErr && !isCoreErr && !isLexErrs && !isLexErr {
 			collectGeneralError(childErr, diagnostics, err)
 		}
 	}
