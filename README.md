@@ -4,6 +4,7 @@ The backend toolkit that gets you moving fast
 
 - [Contributing](./CONTRIBUTING.md)
 - [Architecture Overview](./ARCHITECTURE_OVERVIEW.md)
+- [Docs Site](https://celerityframework.io)
 
 # Components of Celerity
 
@@ -30,6 +31,37 @@ The language server only supports `yaml` files due to [intended limitations](htt
 
 [Blueprint Language Server](./tools/blueprint-ls)
 
+### Deploy Engine
+
+The deploy engine is the application that is responsible for deploying blueprints to target environments. It brings together the blueprint framework, the plugin framework and persistence layers to provide a complete and extensible solution for deploying Celerity applications and infrastructure-as-code.
+
+The deploy engine exposes a HTTP API that can be used to validate blueprints, stage changes and deploy changes to target environments. As a part of the HTTP API, events can be streamed over Server-Sent Events (SSE) to provide real-time updates on the status of deployments, change staging and validation. 
+
+[Deploy Engine](./apps/deploy-engine)
+
+## Plugins
+
+Plugins are foundational to the Celerity framework. Developers can create plugins to extend the capabilities of the deploy engine to deploy resources, source data and manage the lfecycle of resources in upstream providers (such as AWS, Azure, GCP).
+There are two types of plugins, `Providers` and `Transformers`.
+- **Providers** are plugins that are responsible for deploying resources to a target environment. Providers can be used to deploy resources to any environment, including cloud providers, on-premises environments and local development environments.
+- **Transformers** are plugins that are responsible for transforming blueprints. These are powerful plugins that enable abstract resources that can be defined by users and then transformed into concrete resources that can be deployed to a concrete target environment. For example, the Celerity application primitives are abstract resources that are transformed into concrete resources at deploy time that can be deployed to a target environment.
+
+### Plugin Framework
+
+The plugin framework provides the foundations for a plugin system that uses gRPC over a local network that includes a Go SDK that provides a smooth plugin development experience where knowledge of the ins and outs of the underlying communication protocol is not required.
+
+[Plugin Framework](./libs/plugin-framework)
+
+## CLI
+
+The Celerity CLI brings all the components of Celerity together. It is a command line tool that can be used to create, build, deploy and manage Celerity applications.
+It also provides commands for installing and managing plugins, using the [Registry protocol](https://www.celerityframework.io/plugin-framework/docs/registry-protocols-formats/registry-protocol) to source, verify and install plugins the official and custom plugin registries.
+
+Under the hood, the CLI uses the deploy engine to validate blueprints, stage changes and deploy applications (or standalone blueprints) to target environments.
+The CLI can use local or remote instances of the deploy engine, this can be configured using environment variables or command line options.
+
+[CLI](./apps/cli)
+
 ## Runtime
 
 One of the main ideas behind Celerity is to remove the need to build applications differently depending on the target environment. This means that you can develop and test your applications locally, and then deploy them to a serverless or containerised environment without having to make any changes to the application code.
@@ -42,3 +74,7 @@ The Celerity runtime supports multiple programming languages.
 _"FaaS" stands for Function as a Service._
 
 [Supported Runtimes](./apps/runtime)
+
+# Additional Documentation
+
+- [Index of Projects](./docs/INDEX.md) - A full index of all the projects in the core Celerity monorepo.
