@@ -55,7 +55,7 @@ The plugin framework provides the foundations for a plugin system that uses gRPC
 ## CLI
 
 The Celerity CLI brings all the components of Celerity together. It is a command line tool that can be used to create, build, deploy and manage Celerity applications.
-It also provides commands for installing and managing plugins, using the [Registry protocol](https://www.celerityframework.io/plugin-framework/docs/registry-protocols-formats/registry-protocol) to source, verify and install plugins the official and custom plugin registries.
+It also provides commands for installing and managing plugins, using the [Registry protocol](https://www.celerityframework.io/plugin-framework/docs/registry-protocols-formats/registry-protocol) to source, verify and install plugins from the official and custom plugin registries.
 
 Under the hood, the CLI uses the deploy engine to validate blueprints, stage changes and deploy applications (or standalone blueprints) to target environments.
 The CLI can use local or remote instances of the deploy engine, this can be configured using environment variables or command line options.
