@@ -375,9 +375,11 @@ func (c *Controller) prepareAndSaveEvents(
 	currentTimestamp := c.clock.Now().Unix()
 
 	for i, diagnostic := range allDiagnostics {
+		isEnd := i == len(allDiagnostics)-1
 		diagWithTimestamp := diagnosticWithTimestamp{
 			Diagnostic: *diagnostic,
 			Timestamp:  currentTimestamp,
+			End:        isEnd,
 		}
 		serialisedDiagnostic, err := json.Marshal(diagWithTimestamp)
 		if err != nil {
@@ -406,7 +408,7 @@ func (c *Controller) prepareAndSaveEvents(
 				ChannelID:   blueprintValidation.ID,
 				Data:        string(serialisedDiagnostic),
 				Timestamp:   currentTimestamp,
-				End:         i == len(allDiagnostics)-1,
+				End:         isEnd,
 			},
 		)
 		if err != nil {

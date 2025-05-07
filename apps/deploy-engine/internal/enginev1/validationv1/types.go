@@ -18,4 +18,5 @@ type CreateValidationRequestPayload struct {
 type diagnosticWithTimestamp struct {
 	core.Diagnostic
 	Timestamp int64 `json:"timestamp"`
+	End       bool  `json:"end"`
 }
