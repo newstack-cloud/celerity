@@ -4,7 +4,6 @@ go 1.23.4
 
 require (
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
-	github.com/bradleyjkemp/cupaloy/v2 v2.8.0
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/google/uuid v1.6.0
@@ -17,7 +16,7 @@ require (
 	github.com/two-hundred/celerity/libs/blueprint v0.8.0
 	github.com/two-hundred/celerity/libs/blueprint-resolvers v0.0.0-20250427141220-717e385d834a
 	github.com/two-hundred/celerity/libs/blueprint-state v0.2.4
-	github.com/two-hundred/celerity/libs/common v0.2.0
+	github.com/two-hundred/celerity/libs/common v0.3.0
 	github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250502215436-4fae6658da66
 	go.uber.org/zap v1.27.0
 	gopkg.in/square/go-jose.v2 v2.6.0
@@ -58,6 +57,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.32.3 // indirect
 	github.com/aws/smithy-go v1.22.0 // indirect
+	github.com/bradleyjkemp/cupaloy/v2 v2.8.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20240905190251-b4127c9b8d78 // indirect

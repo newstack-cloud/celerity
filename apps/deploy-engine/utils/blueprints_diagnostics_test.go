@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy/v2"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	bperrors "github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type DiagnosticsFromErrorTestSuite struct {
@@ -61,8 +61,7 @@ func (s *DiagnosticsFromErrorTestSuite) Test_returns_diagnostics_extracted_from_
 		/* fallbackToGeneralDiagnostic */ false,
 	)
 
-	err := cupaloy.SnapshotWithName(
-		"DiagnosticsFromErrorTestSuite--Test_returns_diagnostics_extracted_from_load_error",
+	err := testhelpers.Snapshot(
 		diagnostics,
 	)
 	s.Require().NoError(err)
@@ -75,8 +74,7 @@ func (s *DiagnosticsFromErrorTestSuite) Test_returns_diagnostics_extracted_from_
 		/* fallbackToGeneralDiagnostic */ true,
 	)
 
-	err := cupaloy.SnapshotWithName(
-		"DiagnosticsFromErrorTestSuite--Test_returns_diagnostics_extracted_from_general_error",
+	err := testhelpers.Snapshot(
 		diagnostics,
 	)
 	s.Require().NoError(err)
@@ -98,8 +96,7 @@ func (s *DiagnosticsFromErrorTestSuite) Test_returns_diagnostics_extracted_from_
 		/* fallbackToGeneralDiagnostic */ false,
 	)
 
-	err := cupaloy.SnapshotWithName(
-		"DiagnosticsFromErrorTestSuite--Test_returns_diagnostics_extracted_from_schema_error",
+	err := testhelpers.Snapshot(
 		diagnostics,
 	)
 	s.Require().NoError(err)

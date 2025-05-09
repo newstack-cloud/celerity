@@ -230,8 +230,8 @@ github.com/two-hundred/celerity/libs/blueprint-resolvers v0.0.0-20250427141220-7
 github.com/two-hundred/celerity/libs/blueprint-resolvers v0.0.0-20250427141220-717e385d834a/go.mod h1:QFPx8YVpMAsMXVuTlgaIIKhucnzxEHhZ3t0l/h6DtwQ=
 github.com/two-hundred/celerity/libs/blueprint-state v0.2.4 h1:+aAzaftg8TdRGTByIgcx9yvhWb8HwDiRVeEFzZqCooA=
 github.com/two-hundred/celerity/libs/blueprint-state v0.2.4/go.mod h1:g578FyWkiMF/A07OEcV48RrJ9X8dDcCDqnBs+Q+829M=
-github.com/two-hundred/celerity/libs/common v0.2.0 h1:H+5KRvwl44Gdex29V/qikFOuQdXV82I7PrzaSxTanNE=
-github.com/two-hundred/celerity/libs/common v0.2.0/go.mod h1:pRK1uIf5klBLFIou4IaoV16PSUqZkAr9IE9f4tw4wt0=
+github.com/two-hundred/celerity/libs/common v0.3.0 h1:GqEBvrcQCupZZoGZAGri03/WqXmvFYvK5AEpsF5nxFk=
+github.com/two-hundred/celerity/libs/common v0.3.0/go.mod h1:CuFB/Rc6d/E1IfMJ+vrVqjCs5Y1wAv7vhVysP9/TLQY=
 github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250502215436-4fae6658da66 h1:i1Uex5FDLT6lsDnPOWwFHPhw+lxXdK+54SJPZ3PlSjU=
 github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250502215436-4fae6658da66/go.mod h1:a24WdYWYz8B4+pfh4byqYtWYjR46wuIFyajaPSYqSaE=
 go.opencensus.io v0.24.0 h1:y73uSU6J157QMP2kn2r30vwW1A2W2WFwSCGnAVxeaD0=
