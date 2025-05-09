@@ -36,7 +36,10 @@ along with blueprints used for Infrastructure as Code.`,
 			}
 
 			connectProtocol, _ := confProvider.GetString("connectProtocol")
-			validateConnectProtocol(connectProtocol)
+			err := validateConnectProtocol(connectProtocol)
+			if err != nil {
+				return err
+			}
 
 			return nil
 		},
