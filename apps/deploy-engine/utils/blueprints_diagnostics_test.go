@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
+	"github.com/bradleyjkemp/cupaloy/v2"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -61,7 +61,10 @@ func (s *DiagnosticsFromErrorTestSuite) Test_returns_diagnostics_extracted_from_
 		/* fallbackToGeneralDiagnostic */ false,
 	)
 
-	err := cupaloy.Snapshot(diagnostics)
+	err := cupaloy.SnapshotWithName(
+		"DiagnosticsFromErrorTestSuite--Test_returns_diagnostics_extracted_from_load_error",
+		diagnostics,
+	)
 	s.Require().NoError(err)
 }
 
@@ -72,7 +75,10 @@ func (s *DiagnosticsFromErrorTestSuite) Test_returns_diagnostics_extracted_from_
 		/* fallbackToGeneralDiagnostic */ true,
 	)
 
-	err := cupaloy.Snapshot(diagnostics)
+	err := cupaloy.SnapshotWithName(
+		"DiagnosticsFromErrorTestSuite--Test_returns_diagnostics_extracted_from_general_error",
+		diagnostics,
+	)
 	s.Require().NoError(err)
 }
 
@@ -92,7 +98,10 @@ func (s *DiagnosticsFromErrorTestSuite) Test_returns_diagnostics_extracted_from_
 		/* fallbackToGeneralDiagnostic */ false,
 	)
 
-	err := cupaloy.Snapshot(diagnostics)
+	err := cupaloy.SnapshotWithName(
+		"DiagnosticsFromErrorTestSuite--Test_returns_diagnostics_extracted_from_schema_error",
+		diagnostics,
+	)
 	s.Require().NoError(err)
 }
 
