@@ -38,24 +38,13 @@ This list will evolve as more applications and libraries are added to Celerity.
 - `blueprint-ls` - This commit scope should be used for a commit that represents work that pertains to the Blueprint Language Server.
 - `plugin-docgen` - This commit scope should be used for a commit that represents work that pertains to the plugin docgen tool that generates a JSON document for the plugin that can be used to generate documentation in the Celerity Registry.
 - `deploy-engine` - This commit scope should be used for a commit that represents work that pertains to the deploy engine application.
+- `deploy-engine-client` - This commit scope should be used for a commit that represents work that pertains to the deploy engine client library that is used to communicate with the deploy engine.
 - `common` - This commit scope should be used for a commit that represents work that pertains to the common Go library.
 - `runtime-core` - This commit scope should be used for a commit that represents work that pertains to the core Rust runtime library.
 - `runtime-java` - This commit scope should be used for a commit that represents work that pertains to the Java wrapper application for the core runtime and the supporting Java SDK.
 - `runtime-nodejs` - This commit scope should be used for a commit that represents work that pertains to the NodeJS wrapper application for the core runtime and the supporting NodeJS SDK.
 - `runtime-python` - This commit scope should be used for a commit that represents work that pertains to the Python wrapper application for the core runtime and the supporting Python SDK.
 - `cli` - This commit scope should be used for a commit that represents work that pertains to the CLI for the test/build/package/deploy tooling.
-- `tool-releaser` - This commit scope should be used for a commit that represents work that pertains to the internal releaser tool used for publishing Celerity libraries and applications.
-- `tool-test-runner` - This commit scope should be used for a commit that represents work that pertains to the internal test runner tool used for integration/integrated tests for Celerity libraries and applications.
-- `validator-go` - This commit scope should be used for a commit that represents work that pertains to the Go Celerity source code validator.
-- `validator-java` - This commit scope should be used for a commit that represents work that pertains to the Java Celerity source code validator.
-- `validator-nodejs` - This commit scope should be used for a commit that represents work that pertains to the NodeJS/TypeScript Celerity source code validator.
-- `validator-python` - This commit scope should be used for a commit that represents work that pertains to the Python Celerity source code validator.
-- `validator-rust` - This commit scope should be used for a commit that represents work that pertains to the Rust Celerity source code validator.
-- `templates-go` - This commit scope should be used for a commit that represents work that pertains to Go template/example projects that can be used to bootstrap new Go Celerity services.
-- `templates-java` - This commit scope should be used for a commit that represents work that pertains to Java template/example projects that can be used to bootstrap new Java Celerity services.
-- `templates-nodejs` - This commit scope should be used for a commit that represents work that pertains to NodeJS template/example projects that can be used to bootstrap new NodeJS Celerity services.
-- `templates-python` - This commit scope should be used for a commit that represents work that pertains to Python template/example projects that can be used to bootstrap new Python Celerity services.
-- `templates-rust` - This commit scope should be used for a commit that represents work that pertains to Rust template/example projects that can be used to bootstrap new Rust Celerity services.
 
 The commit scope can be omitted for changes that cut across these scopes.
 However, it's best to check in commits that map to a specific scope where possible.

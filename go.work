@@ -6,6 +6,7 @@ use (
 	./libs/blueprint-state
 	./libs/common
 	./libs/plugin-framework
+	./libs/deploy-engine-client
 	./tools/blueprint-ls
 	./tools/plugin-docgen
 	./apps/cli
