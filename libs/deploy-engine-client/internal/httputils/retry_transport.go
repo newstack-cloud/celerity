@@ -2,7 +2,6 @@ package httputils
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"math"
 	"math/rand/v2"
@@ -151,14 +150,6 @@ func (t *RetryableTransport) RoundTrip(req *http.Request) (*http.Response, error
 	}
 
 	return resp, err
-}
-
-type defaultRetryConfigProvider struct {
-	retryConfig *RetryConfig
-}
-
-func (p *defaultRetryConfigProvider) Load(ctx context.Context) (*RetryConfig, error) {
-	return p.retryConfig, nil
 }
 
 func createDefaultRetryConfig() *RetryConfig {
