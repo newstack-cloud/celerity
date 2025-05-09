@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"log"
+	"runtime"
 
 	"github.com/spf13/cobra"
 	"github.com/two-hundred/celerity/apps/cli/cmd/utils"
@@ -17,7 +18,7 @@ func Execute() {
 	cobra.AddTemplateFunc("wrappedFlagUsages", utils.WrappedFlagUsages)
 	rootCmd := &cobra.Command{
 		Use:   "celerity",
-		Short: "CLI for managing celerity applications",
+		Short: "CLI for managing celerity applications and blueprint deployments",
 		Long: `
 	   ___     _           _ _         
 	  / __\___| | ___ _ __(_) |_ _   _ 
@@ -27,7 +28,8 @@ func Execute() {
 			             |___/ 
 																					   
 The CLI for the backend toolkit that gets you moving fast.
-This CLI validates, builds, and deploys celerity applications.`,
+This CLI validates, builds, and deploys celerity applications
+along with blueprints used for Infrastructure as Code.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			if err := confProvider.LoadConfigFile(configFile); err != nil {
 				return err
@@ -35,6 +37,7 @@ This CLI validates, builds, and deploys celerity applications.`,
 
 			connectProtocol, _ := confProvider.GetString("connectProtocol")
 			validateConnectProtocol(connectProtocol)
+
 			return nil
 		},
 	}
@@ -50,32 +53,26 @@ This CLI validates, builds, and deploys celerity applications.`,
 		"Specify a config file to source config from as an alternative to flags",
 	)
 
-	rootCmd.PersistentFlags().BoolP(
-		"embedded",
-		"e",
-		false,
-		"Set this flag when you want to use the embedded deploy engine, "+
-			"the http api is used by default.",
-	)
-	confProvider.BindPFlag("embeddedEngine", rootCmd.PersistentFlags().Lookup("embedded"))
-	confProvider.BindEnvVar("embeddedEngine", "CELERITY_CLI_EMBEDDED_ENGINE")
-
 	rootCmd.PersistentFlags().String(
 		"connect-protocol",
 		// Connect to a local instance of the deploy engine
 		// via a unix socket by default.
-		"unix-socket",
+		"unix",
 		"The protocol to connect to the deploy engine with, "+
-			"can be either \"unix-socket\" or \"tcp\". This is ignored if the --embedded flag is set.",
+			"can be either \"unix\" or \"tcp\". Unix socket can only be used on linux, macos, and other unix-like systems. "+
+			"To use a \"unix\" socket on windows, you will need to use WSL 2 or above.",
 	)
 	confProvider.BindPFlag("connectProtocol", rootCmd.PersistentFlags().Lookup("connect-protocol"))
 	confProvider.BindEnvVar("connectProtocol", "CELERITY_CLI_CONNECT_PROTOCOL")
 
 	rootCmd.PersistentFlags().String(
-		"api-endpoint",
+		"engine-endpoint",
 		"http://localhost:8325",
-		"The endpoint of the deploy engine api, this is used if --connect-protocol is set to tcp",
+		"The endpoint of the deploy engine api, this is used if --connect-protocol is set to \"tcp\"",
 	)
+	confProvider.BindPFlag("engineEndpoint", rootCmd.PersistentFlags().Lookup("engine-endpoint"))
+	confProvider.BindEnvVar("engineEndpoint", "CELERITY_CLI_ENGINE_ENDPOINT")
+
 	setupVersionCommand(rootCmd)
 	setupInitCommand(rootCmd, confProvider)
 	setupValidateCommand(rootCmd, confProvider)
@@ -86,12 +83,24 @@ This CLI validates, builds, and deploys celerity applications.`,
 }
 
 func validateConnectProtocol(protocol string) error {
-	if protocol == "unix-socket" || protocol == "tcp" {
+	if protocol == "tcp" {
+		return nil
+	}
+
+	if protocol == "unix" {
+		os := runtime.GOOS
+		if os == "windows" {
+			return fmt.Errorf(
+				"\"unix\" socket is not supported on windows, please use \"tcp\" " +
+					"or set up Windows Subsystem for Linux (WSL) version 2 or above to use a unix socket",
+			)
+		}
+
 		return nil
 	}
 
 	return fmt.Errorf(
-		"invalid connect protocol \"%s\" provided, must be either \"unix-socket\" or \"tcp\"",
+		"invalid connect protocol \"%s\" provided, must be either \"unix\" or \"tcp\"",
 		protocol,
 	)
 }

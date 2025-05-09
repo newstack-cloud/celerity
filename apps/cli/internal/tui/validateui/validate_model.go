@@ -9,8 +9,9 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
+	"github.com/two-hundred/celerity/apps/cli/internal/engine"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/deploy-engine-client/types"
 )
 
 var (
@@ -22,7 +23,7 @@ var (
 	locationStyle             = lipgloss.NewStyle().MarginLeft(2).Foreground(lipgloss.Color("#4f46e5"))
 )
 
-type ValidateResultMsg *core.ValidateResult
+type ValidateResultMsg *types.BlueprintValidationEvent
 
 type ValidateErrMsg struct {
 	err error
@@ -31,7 +32,7 @@ type ValidateErrMsg struct {
 type ValidateStreamMsg struct{}
 
 type item struct {
-	result     *core.ValidateResult
+	result     *types.BlueprintValidationEvent
 	filterText string
 }
 
@@ -42,10 +43,10 @@ func (i item) FilterValue() string {
 type ValidateModel struct {
 	spinner       spinner.Model
 	list          list.Model
-	engine        core.DeployEngine
+	engine        engine.DeployEngine
 	blueprintFile string
-	resultStream  chan *core.ValidateResult
-	collected     []*core.ValidateResult
+	resultStream  chan types.BlueprintValidationEvent
+	collected     []*types.BlueprintValidationEvent
 	errStream     chan error
 	streaming     bool
 	err           error
@@ -107,7 +108,7 @@ func (m ValidateModel) View() string {
 		containerStyle := lipgloss.NewStyle().Padding(1, 1).Width(m.width)
 
 		itemSB := strings.Builder{}
-		itemSB.WriteString(validateCategroyStyle.Render(string(result.Category)))
+		itemSB.WriteString(validateCategroyStyle.Render("diagnostic"))
 		if result.Diagnostic.Level == bpcore.DiagnosticLevelError {
 			itemSB.WriteString(
 				diagnosticLevelErrorStyle.Render(
@@ -145,7 +146,7 @@ func (m ValidateModel) View() string {
 	return sb.String()
 }
 
-func NewValidateModel(engine core.DeployEngine) ValidateModel {
+func NewValidateModel(engine engine.DeployEngine) ValidateModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
@@ -153,7 +154,7 @@ func NewValidateModel(engine core.DeployEngine) ValidateModel {
 		spinner:      s,
 		engine:       engine,
 		list:         list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0),
-		resultStream: make(chan *core.ValidateResult),
+		resultStream: make(chan types.BlueprintValidationEvent),
 		errStream:    make(chan error),
 	}
 }
@@ -175,7 +176,7 @@ func hasPreciseRange(r *bpcore.DiagnosticRange) bool {
 	return r != nil && r.Start.Line > 0 && r.Start.Column > 0
 }
 
-func listItemsFromResults(results []*core.ValidateResult) []list.Item {
+func listItemsFromResults(results []*types.BlueprintValidationEvent) []list.Item {
 	items := []list.Item{}
 	for _, result := range results {
 		items = append(items, item{
@@ -186,9 +187,9 @@ func listItemsFromResults(results []*core.ValidateResult) []list.Item {
 	return items
 }
 
-func resultToPlainText(result *core.ValidateResult) string {
+func resultToPlainText(result *types.BlueprintValidationEvent) string {
 	sb := strings.Builder{}
-	sb.WriteString(string(result.Category))
+	sb.WriteString("diagnostic")
 	sb.WriteString(" ")
 	sb.WriteString(diagnosticLevelName(result.Diagnostic.Level))
 	sb.WriteString(" ")

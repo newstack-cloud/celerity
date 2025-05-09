@@ -5,7 +5,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
+	"github.com/two-hundred/celerity/libs/deploy-engine-client/types"
 )
 
 var (
@@ -28,10 +28,25 @@ func clearSelectedBlueprintCmd() tea.Cmd {
 
 func startValidateStreamCmd(model ValidateModel) tea.Cmd {
 	return func() tea.Msg {
-		err := model.engine.ValidateStream(context.TODO(), &core.ValidateParams{
-			BlueprintFile: &model.blueprintFile,
-			BlueprintOnly: &True,
-		}, model.resultStream, model.errStream)
+		blueprintValidation, err := model.engine.CreateBlueprintValidation(
+			context.TODO(),
+			&types.CreateBlueprintValidationPayoad{
+				BlueprintDocumentInfo: types.BlueprintDocumentInfo{
+					FileSourceScheme: "file",
+					BlueprintFile:    model.blueprintFile,
+				},
+			},
+		)
+		if err != nil {
+			return ValidateErrMsg{err}
+		}
+
+		err = model.engine.StreamBlueprintValidationEvents(
+			context.TODO(),
+			blueprintValidation.ID,
+			model.resultStream,
+			model.errStream,
+		)
 		if err != nil {
 			return ValidateErrMsg{err}
 		}
@@ -41,7 +56,8 @@ func startValidateStreamCmd(model ValidateModel) tea.Cmd {
 
 func waitForNextResultCmd(model ValidateModel) tea.Cmd {
 	return func() tea.Msg {
-		return ValidateResultMsg(<-model.resultStream)
+		event := <-model.resultStream
+		return ValidateResultMsg(&event)
 	}
 }
 

@@ -27,7 +27,10 @@ func setupValidateCommand(rootCmd *cobra.Command, confProvider *config.Provider)
 			}
 			defer handle.Close()
 
-			deployEngine := engine.Select(confProvider, logger)
+			deployEngine, err := engine.Create(confProvider, logger)
+			if err != nil {
+				return err
+			}
 			blueprintFile, isDefault := confProvider.GetString("validateBlueprintFile")
 
 			if _, err := tea.LogToFile("debug.log", "simple"); err != nil {
