@@ -55,14 +55,14 @@ import (
 
 func main() {
     // Set up client ...
-	streamTo := make(chan types.BlueprintValidationEvent)
-	errChan := make(chan error)
-	err := client.StreamBlueprintValidationEvents(
-		context.Background(),
-		"c6f69b85-a6e8-4374-8c6f-8b4539d1142b",
-		streamTo,
-		errChan,
-	)
+    streamTo := make(chan types.BlueprintValidationEvent)
+    errChan := make(chan error)
+    err := client.StreamBlueprintValidationEvents(
+        context.Background(),
+        "c6f69b85-a6e8-4374-8c6f-8b4539d1142b",
+        streamTo,
+        errChan,
+    )
     if err != nil {
         // handle error
     }
