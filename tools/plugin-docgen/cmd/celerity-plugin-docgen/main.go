@@ -43,7 +43,10 @@ func main() {
 	hostContainer, err := host.Setup(
 		providers,
 		transformers,
-		plugin.NewOSCmdExecutor(envConfig.PluginLogFileRootDir),
+		plugin.NewOSCmdExecutor(
+			envConfig.PluginLogFileRootDir,
+			/* env */ map[string]string{},
+		),
 		plugin.CreatePluginInstance,
 		&envConfig,
 		fs,
