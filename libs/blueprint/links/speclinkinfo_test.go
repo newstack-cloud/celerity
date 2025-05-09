@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/common/core"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 	. "gopkg.in/check.v1"
 )
 
@@ -56,7 +56,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_1(c *C) {
 	// Not using snapshots would require value comparisions as you traverse through the pointers in the chain.
 	// However, it's really important that you take care when reviewing failing snapshot tests
 	// and not just re-building the snapshots without checking the changes are correct!
-	err = cupaloy.Snapshot(normaliseForSnapshot(chains, []string{}))
+	err = testhelpers.Snapshot(normaliseForSnapshot(chains, []string{}))
 	if err != nil {
 		c.Error(err)
 	}
@@ -83,7 +83,7 @@ func (s *SpecLinkInfoTestSuite) Test_get_links_from_spec_2(c *C) {
 	// Not using snapshots would require value comparisions as you traverse through the pointers in the chain.
 	// However, it's really important that you take care when reviewing failing snapshot tests
 	// and not just re-building the snapshots without checking the changes are correct!
-	err = cupaloy.Snapshot(normaliseForSnapshot(chains, []string{}))
+	err = testhelpers.Snapshot(normaliseForSnapshot(chains, []string{}))
 	if err != nil {
 		c.Error(err)
 	}

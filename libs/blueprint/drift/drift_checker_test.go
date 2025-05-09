@@ -5,13 +5,13 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type DriftCheckerTestSuite struct {
@@ -53,7 +53,7 @@ func (s *DriftCheckerTestSuite) Test_checks_drift_for_resources_in_blueprint() {
 		createParams(),
 	)
 	s.Require().NoError(err)
-	err = cupaloy.Snapshot(normaliseResourceDriftStateMap(driftStateMap))
+	err = testhelpers.Snapshot(normaliseResourceDriftStateMap(driftStateMap))
 	s.Require().NoError(err)
 
 	resources := s.stateContainer.Resources()
@@ -87,7 +87,7 @@ func (s *DriftCheckerTestSuite) Test_checks_drift_for_a_single_resource() {
 		createParams(),
 	)
 	s.Require().NoError(err)
-	err = cupaloy.Snapshot(normaliseResourceDriftState(driftState))
+	err = testhelpers.Snapshot(normaliseResourceDriftState(driftState))
 	s.Require().NoError(err)
 
 	resources := s.stateContainer.Resources()

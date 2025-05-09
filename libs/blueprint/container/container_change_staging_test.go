@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/changes"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -19,6 +18,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 const (
@@ -174,7 +174,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_bluepri
 	}
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	err = testhelpers.Snapshot(normaliseBlueprintChanges(fullChangeSet))
 	s.Require().NoError(err)
 }
 
@@ -217,7 +217,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_to_existing_bluepri
 	}
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	err = testhelpers.Snapshot(normaliseBlueprintChanges(fullChangeSet))
 	s.Require().NoError(err)
 }
 
@@ -260,7 +260,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_a_new_blueprint
 	}
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	err = testhelpers.Snapshot(normaliseBlueprintChanges(fullChangeSet))
 	s.Require().NoError(err)
 }
 
@@ -294,7 +294,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_for_destroying_a_bl
 	}
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	err = testhelpers.Snapshot(normaliseBlueprintChanges(fullChangeSet))
 	s.Require().NoError(err)
 }
 
@@ -409,7 +409,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_when_removed_resour
 	}
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	err = testhelpers.Snapshot(normaliseBlueprintChanges(fullChangeSet))
 	s.Require().NoError(err)
 }
 
@@ -456,7 +456,7 @@ func (s *ContainerChangeStagingTestSuite) Test_stage_changes_when_removed_child_
 	}
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(normaliseBlueprintChanges(fullChangeSet))
+	err = testhelpers.Snapshot(normaliseBlueprintChanges(fullChangeSet))
 	s.Require().NoError(err)
 }
 

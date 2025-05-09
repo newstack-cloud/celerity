@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type SubstitutionDataSourceResolverTestSuite struct {
@@ -61,7 +61,7 @@ func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
 
-	err = cupaloy.Snapshot(result)
+	err = testhelpers.Snapshot(result)
 	s.Require().NoError(err)
 }
 
@@ -135,7 +135,7 @@ func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
 
-	err = cupaloy.Snapshot(result)
+	err = testhelpers.Snapshot(result)
 	s.Require().NoError(err)
 }
 

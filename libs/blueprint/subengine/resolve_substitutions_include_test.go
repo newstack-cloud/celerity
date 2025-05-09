@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type SubstitutionIncludeResolverTestSuite struct {
@@ -61,7 +61,7 @@ func (s *SubstitutionIncludeResolverTestSuite) Test_resolves_substitutions_in_in
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
 
-	err = cupaloy.Snapshot(result)
+	err = testhelpers.Snapshot(result)
 	s.Require().NoError(err)
 }
 

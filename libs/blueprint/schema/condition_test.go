@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
 )
@@ -45,7 +45,7 @@ func (s *ConditionTestSuite) Test_parses_valid_condition_yaml_input(c *C) {
 		c.Error(err)
 		c.FailNow()
 	}
-	err = cupaloy.Snapshot(targetVal)
+	err = testhelpers.Snapshot(targetVal)
 	if err != nil {
 		c.Error(err)
 	}
@@ -84,7 +84,7 @@ func (s *ConditionTestSuite) Test_parses_valid_condition_json_input(c *C) {
 		c.Error(err)
 		c.FailNow()
 	}
-	err = cupaloy.Snapshot(targetVal)
+	err = testhelpers.Snapshot(targetVal)
 	if err != nil {
 		c.Error(err)
 	}

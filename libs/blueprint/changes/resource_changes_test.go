@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type ResourceChangeGeneratorTestSuite struct {
@@ -33,7 +33,7 @@ func (s *ResourceChangeGeneratorTestSuite) Test_generates_changes_for_existing_r
 	)
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(internal.NormaliseResourceChanges(changes, false /* excludeResourceInfo */))
+	err = testhelpers.Snapshot(internal.NormaliseResourceChanges(changes, false /* excludeResourceInfo */))
 	s.Require().NoError(err)
 }
 
@@ -51,7 +51,7 @@ func (s *ResourceChangeGeneratorTestSuite) Test_generates_changes_for_new_resour
 	)
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(internal.NormaliseResourceChanges(changes, false /* excludeResourceInfo */))
+	err = testhelpers.Snapshot(internal.NormaliseResourceChanges(changes, false /* excludeResourceInfo */))
 	s.Require().NoError(err)
 }
 
@@ -65,7 +65,7 @@ func (s *ResourceChangeGeneratorTestSuite) Test_does_not_generate_changes_for_fi
 	)
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(internal.NormaliseResourceChanges(changes, true /* excludeResourceInfo */))
+	err = testhelpers.Snapshot(internal.NormaliseResourceChanges(changes, true /* excludeResourceInfo */))
 	s.Require().NoError(err)
 }
 
@@ -84,7 +84,7 @@ func (s *ResourceChangeGeneratorTestSuite) Test_generates_changes_for_existing_r
 	)
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(internal.NormaliseResourceChanges(changes, false /* excludeResourceInfo */))
+	err = testhelpers.Snapshot(internal.NormaliseResourceChanges(changes, false /* excludeResourceInfo */))
 	s.Require().NoError(err)
 }
 

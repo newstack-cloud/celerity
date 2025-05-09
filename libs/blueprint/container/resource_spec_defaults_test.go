@@ -5,12 +5,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type PopulateResourceSpecDefaultsTestSuite struct {
@@ -47,7 +47,7 @@ func (s *PopulateResourceSpecDefaultsTestSuite) Test_populates_defaults_for_reso
 	)
 	s.Require().NoError(err)
 
-	err = cupaloy.Snapshot(blueprintWithDefaultsPopulated)
+	err = testhelpers.Snapshot(blueprintWithDefaultsPopulated)
 	s.Require().NoError(err)
 }
 

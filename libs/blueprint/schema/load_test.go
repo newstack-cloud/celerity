@@ -3,7 +3,7 @@ package schema
 import (
 	"os"
 
-	"github.com/bradleyjkemp/cupaloy"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 	. "gopkg.in/check.v1"
 )
 
@@ -46,7 +46,7 @@ func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file(c *C) {
 		c.Error(err)
 		c.FailNow()
 	}
-	err = cupaloy.Snapshot(blueprint)
+	err = testhelpers.Snapshot(blueprint)
 	if err != nil {
 		c.Error(err)
 	}
@@ -58,7 +58,7 @@ func (s *LoadTestSuite) Test_loads_blueprint_from_json_file(c *C) {
 		c.Error(err)
 		c.FailNow()
 	}
-	err = cupaloy.Snapshot(blueprint)
+	err = testhelpers.Snapshot(blueprint)
 	if err != nil {
 		c.Error(err)
 	}
@@ -70,7 +70,7 @@ func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file_with_includes(c *C) 
 		c.Error(err)
 		c.FailNow()
 	}
-	err = cupaloy.Snapshot(blueprint)
+	err = testhelpers.Snapshot(blueprint)
 	if err != nil {
 		c.Error(err)
 	}
@@ -82,7 +82,7 @@ func (s *LoadTestSuite) Test_loads_blueprint_from_json_file_with_include(c *C) {
 		c.Error(err)
 		c.FailNow()
 	}
-	err = cupaloy.Snapshot(blueprint)
+	err = testhelpers.Snapshot(blueprint)
 	if err != nil {
 		c.Error(err)
 	}
@@ -94,7 +94,7 @@ func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_string(c *C) {
 		c.Error(err)
 		c.FailNow()
 	}
-	err = cupaloy.Snapshot(blueprint)
+	err = testhelpers.Snapshot(blueprint)
 	if err != nil {
 		c.Error(err)
 	}
@@ -106,7 +106,7 @@ func (s *LoadTestSuite) Test_loads_blueprint_from_json_string(c *C) {
 		c.Error(err)
 		c.FailNow()
 	}
-	err = cupaloy.Snapshot(blueprint)
+	err = testhelpers.Snapshot(blueprint)
 	if err != nil {
 		c.Error(err)
 	}

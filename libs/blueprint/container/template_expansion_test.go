@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
@@ -19,6 +18,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type ExpandResourceTemplatesTestSuite struct {
@@ -142,7 +142,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_o
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
 
-	err = cupaloy.Snapshot(result)
+	err = testhelpers.Snapshot(result)
 	s.Require().NoError(err)
 }
 
@@ -177,7 +177,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_m
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
 
-	err = cupaloy.Snapshot(result)
+	err = testhelpers.Snapshot(result)
 	s.Require().NoError(err)
 }
 
@@ -212,7 +212,7 @@ func (s *ExpandResourceTemplatesTestSuite) Test_expands_resource_template_with_m
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
 
-	err = cupaloy.Snapshot(result)
+	err = testhelpers.Snapshot(result)
 	s.Require().NoError(err)
 }
 

@@ -3,7 +3,7 @@ package schema
 import (
 	"os"
 
-	"github.com/bradleyjkemp/cupaloy"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 	. "gopkg.in/check.v1"
 )
 
@@ -47,7 +47,7 @@ func (s *TreeTestSuite) Test_generates_tree_from_partial_blueprint(c *C) {
 		c.FailNow()
 	}
 
-	err = cupaloy.Snapshot(tree)
+	err = testhelpers.Snapshot(tree)
 	if err != nil {
 		c.Error(err)
 	}
@@ -66,7 +66,7 @@ func (s *TreeTestSuite) Test_generates_tree_from_full_blueprint(c *C) {
 		c.FailNow()
 	}
 
-	err = cupaloy.Snapshot(tree)
+	err = testhelpers.Snapshot(tree)
 	if err != nil {
 		c.Error(err)
 	}

@@ -337,7 +337,7 @@ type ResourceStatusInfo struct {
 type InstanceState struct {
 	InstanceID string `json:"id"`
 	// InstanceName holds a user-defined globally unique name for the blueprint instance.
-	// In multi-tiered systems this expected to be prefixed by an account or organisation
+	// In multi-tenant systems this expected to be prefixed by an account or organisation
 	// name or ID.
 	InstanceName string              `json:"name"`
 	Status       core.InstanceStatus `json:"status"`
