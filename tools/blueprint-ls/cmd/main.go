@@ -4,9 +4,11 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/transform"
@@ -45,8 +47,17 @@ func main() {
 	}
 
 	functionRegistry := provider.NewFunctionRegistry(providers)
-	resourceRegistry := resourcehelpers.NewRegistry(providers, transformers, nil)
-	dataSourceRegistry := provider.NewDataSourceRegistry(providers)
+	resourceRegistry := resourcehelpers.NewRegistry(
+		providers,
+		transformers,
+		// The polling timeout is not used for the language server but needs to be provided
+		// to create a new resource registry.
+		/* stabilisationPollingTimeout */
+		time.Second,
+		nil,
+	)
+	frameworkLogger := core.NewLoggerFromZap(logger)
+	dataSourceRegistry := provider.NewDataSourceRegistry(providers, core.SystemClock{}, frameworkLogger)
 	customVarTypeRegistry := provider.NewCustomVariableTypeRegistry(providers)
 
 	completionService := languageservices.NewCompletionService(

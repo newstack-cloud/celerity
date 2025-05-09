@@ -21,27 +21,41 @@ func (t *InstanceTypeCustomVariableType) Options(
 	t2xlarge := "t2.xlarge"
 	t22xlarge := "t2.2xlarge"
 	return &provider.CustomVariableTypeOptionsOutput{
-		Options: map[string]*core.ScalarValue{
+		Options: map[string]*provider.CustomVariableTypeOption{
 			t2nano: {
-				StringValue: &t2nano,
+				Value: &core.ScalarValue{
+					StringValue: &t2nano,
+				},
 			},
 			t2micro: {
-				StringValue: &t2micro,
+				Value: &core.ScalarValue{
+					StringValue: &t2micro,
+				},
 			},
 			t2small: {
-				StringValue: &t2small,
+				Value: &core.ScalarValue{
+					StringValue: &t2small,
+				},
 			},
 			t2medium: {
-				StringValue: &t2medium,
+				Value: &core.ScalarValue{
+					StringValue: &t2medium,
+				},
 			},
 			t2large: {
-				StringValue: &t2large,
+				Value: &core.ScalarValue{
+					StringValue: &t2large,
+				},
 			},
 			t2xlarge: {
-				StringValue: &t2xlarge,
+				Value: &core.ScalarValue{
+					StringValue: &t2xlarge,
+				},
 			},
 			t22xlarge: {
-				StringValue: &t22xlarge,
+				Value: &core.ScalarValue{
+					StringValue: &t22xlarge,
+				},
 			},
 		},
 	}, nil
@@ -63,5 +77,15 @@ func (t *InstanceTypeCustomVariableType) GetDescription(
 	return &provider.CustomVariableTypeGetDescriptionOutput{
 		MarkdownDescription:  "# EC2 Instance Type\n\nAn EC2 instance type.",
 		PlainTextDescription: "",
+	}, nil
+}
+
+func (t *InstanceTypeCustomVariableType) GetExamples(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetExamplesInput,
+) (*provider.CustomVariableTypeGetExamplesOutput, error) {
+	return &provider.CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
 	}, nil
 }

@@ -46,7 +46,7 @@ func (r *DynamoDBTableResource) GetTypeDescription(
 	}, nil
 }
 
-func (r *DynamoDBTableResource) StabilisedDependencies(
+func (r *DynamoDBTableResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -113,5 +113,15 @@ func (r *DynamoDBTableResource) HasStabilised(
 ) (*provider.ResourceHasStabilisedOutput, error) {
 	return &provider.ResourceHasStabilisedOutput{
 		Stabilised: true,
+	}, nil
+}
+
+func (r *DynamoDBTableResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
 	}, nil
 }

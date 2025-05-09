@@ -3,8 +3,8 @@ package languageservices
 import (
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 	"go.uber.org/zap"
 )
 
@@ -29,7 +29,7 @@ func (s *SymbolServiceSuite) SetupTest() {
 func (s *SymbolServiceSuite) Test_creates_document_symbol_hierarchy() {
 	symbols, err := s.service.GetDocumentSymbols(blueprintURI, s.blueprintContent)
 	s.Require().NoError(err)
-	err = cupaloy.Snapshot(symbols)
+	err = testhelpers.Snapshot(symbols)
 	s.Require().NoError(err)
 }
 

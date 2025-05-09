@@ -32,6 +32,10 @@ func (p *celerityProvider) Namespace(ctx context.Context) (string, error) {
 	return "celerity", nil
 }
 
+func (p *celerityProvider) ConfigDefinition(ctx context.Context) (*core.ConfigDefinition, error) {
+	return nil, nil
+}
+
 func (p *celerityProvider) Resource(ctx context.Context, resourceType string) (provider.Resource, error) {
 	resource, hasResource := p.resources[resourceType]
 	if !hasResource {
@@ -70,6 +74,10 @@ func (p *celerityProvider) ListResourceTypes(ctx context.Context) ([]string, err
 	}
 
 	return resourceTypes, nil
+}
+
+func (p *celerityProvider) ListLinkTypes(ctx context.Context) ([]string, error) {
+	return []string{}, nil
 }
 
 func (p *celerityProvider) ListDataSourceTypes(ctx context.Context) ([]string, error) {
@@ -190,7 +198,7 @@ func (r *celerityHandlerResource) GetSpecDefinition(
 	}, nil
 }
 
-func (r *celerityHandlerResource) StabilisedDependencies(
+func (r *celerityHandlerResource) GetStabilisedDependencies(
 	ctx context.Context,
 	input *provider.ResourceStabilisedDependenciesInput,
 ) (*provider.ResourceStabilisedDependenciesOutput, error) {
@@ -226,6 +234,16 @@ func (r *celerityHandlerResource) HasStabilised(
 ) (*provider.ResourceHasStabilisedOutput, error) {
 	return &provider.ResourceHasStabilisedOutput{
 		Stabilised: true,
+	}, nil
+}
+
+func (r *celerityHandlerResource) GetExamples(
+	ctx context.Context,
+	input *provider.ResourceGetExamplesInput,
+) (*provider.ResourceGetExamplesOutput, error) {
+	return &provider.ResourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
 	}, nil
 }
 
@@ -301,6 +319,16 @@ func (d *celerityVPCDataSource) CustomValidate(
 	}, nil
 }
 
+func (r *celerityVPCDataSource) GetExamples(
+	ctx context.Context,
+	input *provider.DataSourceGetExamplesInput,
+) (*provider.DataSourceGetExamplesOutput, error) {
+	return &provider.DataSourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}
+
 type celerityCustomVariableType struct{}
 
 func (t *celerityCustomVariableType) Options(
@@ -315,27 +343,41 @@ func (t *celerityCustomVariableType) Options(
 	t2xlarge := "t2.xlarge"
 	t22xlarge := "t2.2xlarge"
 	return &provider.CustomVariableTypeOptionsOutput{
-		Options: map[string]*core.ScalarValue{
+		Options: map[string]*provider.CustomVariableTypeOption{
 			t2nano: {
-				StringValue: &t2nano,
+				Value: &core.ScalarValue{
+					StringValue: &t2nano,
+				},
 			},
 			t2micro: {
-				StringValue: &t2micro,
+				Value: &core.ScalarValue{
+					StringValue: &t2micro,
+				},
 			},
 			t2small: {
-				StringValue: &t2small,
+				Value: &core.ScalarValue{
+					StringValue: &t2small,
+				},
 			},
 			t2medium: {
-				StringValue: &t2medium,
+				Value: &core.ScalarValue{
+					StringValue: &t2medium,
+				},
 			},
 			t2large: {
-				StringValue: &t2large,
+				Value: &core.ScalarValue{
+					StringValue: &t2large,
+				},
 			},
 			t2xlarge: {
-				StringValue: &t2xlarge,
+				Value: &core.ScalarValue{
+					StringValue: &t2xlarge,
+				},
 			},
 			t22xlarge: {
-				StringValue: &t22xlarge,
+				Value: &core.ScalarValue{
+					StringValue: &t22xlarge,
+				},
 			},
 		},
 	}, nil
@@ -357,5 +399,15 @@ func (t *celerityCustomVariableType) GetDescription(
 	return &provider.CustomVariableTypeGetDescriptionOutput{
 		MarkdownDescription:  "### Celerity Custom Variable\n\nA custom variable type for Celerity.",
 		PlainTextDescription: "Celerity Custom Variable\n\nA custom variable type for Celerity.",
+	}, nil
+}
+
+func (t *celerityCustomVariableType) GetExamples(
+	ctx context.Context,
+	input *provider.CustomVariableTypeGetExamplesInput,
+) (*provider.CustomVariableTypeGetExamplesOutput, error) {
+	return &provider.CustomVariableTypeGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
 	}, nil
 }

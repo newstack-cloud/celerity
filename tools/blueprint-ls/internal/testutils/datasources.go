@@ -67,3 +67,13 @@ func (d *VPCDataSource) CustomValidate(
 ) (*provider.DataSourceValidateOutput, error) {
 	return &provider.DataSourceValidateOutput{}, nil
 }
+
+func (d *VPCDataSource) GetExamples(
+	ctx context.Context,
+	input *provider.DataSourceGetExamplesInput,
+) (*provider.DataSourceGetExamplesOutput, error) {
+	return &provider.DataSourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}
