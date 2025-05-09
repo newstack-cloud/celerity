@@ -5,13 +5,13 @@ import (
 	"path"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 const (
@@ -47,7 +47,7 @@ func (s *MemFileStateContainerExportsTestSuite) Test_retrieves_all_exports_for_b
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(exports)
-	err = cupaloy.Snapshot(exports)
+	err = testhelpers.Snapshot(exports)
 	s.Require().NoError(err)
 }
 
@@ -75,7 +75,7 @@ func (s *MemFileStateContainerExportsTestSuite) Test_retrieves_single_export_for
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(export)
-	err = cupaloy.Snapshot(export)
+	err = testhelpers.Snapshot(export)
 	s.Require().NoError(err)
 }
 

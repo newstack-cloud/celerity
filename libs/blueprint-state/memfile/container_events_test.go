@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 const (
@@ -111,7 +111,7 @@ func (s *MemFileStateContainerEventsTestSuite) Test_retrieves_event() {
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(event)
-	err = cupaloy.Snapshot(event)
+	err = testhelpers.Snapshot(event)
 	s.Require().NoError(err)
 }
 

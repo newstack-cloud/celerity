@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 const (
@@ -56,7 +56,7 @@ func (s *MemFileStateContainerValidationSuite) Test_retrieve_blueprint_validatio
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(blueprintValidation)
-	err = cupaloy.Snapshot(blueprintValidation)
+	err = testhelpers.Snapshot(blueprintValidation)
 	s.Require().NoError(err)
 }
 

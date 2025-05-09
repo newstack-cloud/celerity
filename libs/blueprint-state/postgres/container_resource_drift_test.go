@@ -5,12 +5,12 @@ import (
 	"path"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 const (
@@ -64,7 +64,7 @@ func (s *PostgresStateContainerResourceDriftTestSuite) Test_retrieves_resource_d
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(resourceDriftState)
-	err = cupaloy.Snapshot(resourceDriftState)
+	err = testhelpers.Snapshot(resourceDriftState)
 	s.Require().NoError(err)
 }
 

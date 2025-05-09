@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 const (
@@ -56,7 +56,7 @@ func (s *MemFileStateContainerChangesetsSuite) Test_retrieves_changeset() {
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(changeset)
-	err = cupaloy.Snapshot(changeset)
+	err = testhelpers.Snapshot(changeset)
 	s.Require().NoError(err)
 }
 

@@ -5,12 +5,12 @@ import (
 	"path"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type MemFileStateContainerMetadataTestSuite struct {
@@ -42,7 +42,7 @@ func (s *MemFileStateContainerMetadataTestSuite) Test_retrieves_metadata_for_blu
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(metadata)
-	err = cupaloy.Snapshot(metadata)
+	err = testhelpers.Snapshot(metadata)
 	s.Require().NoError(err)
 }
 

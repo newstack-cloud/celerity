@@ -5,12 +5,12 @@ import (
 	"path"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 const (
@@ -72,7 +72,7 @@ func (s *PostgresStateContainerInstancesTestSuite) Test_retrieves_blueprint_inst
 	)
 	s.Require().NoError(err)
 	s.Assert().NotNil(instanceState)
-	err = cupaloy.Snapshot(instanceState)
+	err = testhelpers.Snapshot(instanceState)
 	s.Require().NoError(err)
 }
 

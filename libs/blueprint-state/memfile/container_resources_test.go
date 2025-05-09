@@ -5,12 +5,12 @@ import (
 	"path"
 	"testing"
 
-	"github.com/bradleyjkemp/cupaloy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 const (
@@ -56,7 +56,7 @@ func (s *MemFileStateContainerResourcesTestSuite) Test_retrieves_resource() {
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(resourceState)
-	err = cupaloy.Snapshot(resourceState)
+	err = testhelpers.Snapshot(resourceState)
 	s.Require().NoError(err)
 }
 
@@ -82,7 +82,7 @@ func (s *MemFileStateContainerResourcesTestSuite) Test_retrieves_resource_by_log
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(resourceState)
-	err = cupaloy.Snapshot(resourceState)
+	err = testhelpers.Snapshot(resourceState)
 	s.Require().NoError(err)
 }
 
