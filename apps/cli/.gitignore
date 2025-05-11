@@ -24,3 +24,10 @@ report.json
 
 # Any log files.
 *.log
+
+# Test shell scripts for manually testing the CLI
+# in non-interactive mode.
+test-*.sh
+
+# Test blueprint files used when testing the CLI during development.
+*.blueprint.yaml

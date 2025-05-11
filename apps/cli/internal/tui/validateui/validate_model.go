@@ -12,6 +12,7 @@ import (
 	"github.com/two-hundred/celerity/apps/cli/internal/engine"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/deploy-engine-client/types"
+	"go.uber.org/zap"
 )
 
 var (
@@ -52,6 +53,7 @@ type ValidateModel struct {
 	err           error
 	width         int
 	finished      bool
+	logger        *zap.Logger
 }
 
 func (m ValidateModel) Init() tea.Cmd {
@@ -69,7 +71,7 @@ func (m ValidateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// duplicate results from the stream by not dispatching commands that will create multiple
 		// consumers.
 		if !m.streaming {
-			cmds = append(cmds, startValidateStreamCmd(m), waitForNextResultCmd(m), checkForErrCmd(m))
+			cmds = append(cmds, startValidateStreamCmd(m, m.logger), waitForNextResultCmd(m), checkForErrCmd(m))
 		}
 		m.streaming = true
 	case ValidateResultMsg:
@@ -80,6 +82,11 @@ func (m ValidateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.collected = append(m.collected, msg)
 		setListItemsCmd := m.list.SetItems(listItemsFromResults(m.collected))
 		cmds = append(cmds, setListItemsCmd, waitForNextResultCmd(m), checkForErrCmd(m))
+	case spinner.TickMsg:
+		log.Println("ValidateModel: spinner tick")
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 	case ValidateErrMsg:
 		if msg.err != nil {
 			m.err = msg.err
@@ -87,11 +94,9 @@ func (m ValidateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	var spinnerCmd tea.Cmd
-	m.spinner, spinnerCmd = m.spinner.Update(msg)
 	var listCmd tea.Cmd
 	m.list, listCmd = m.list.Update(msg)
-	cmds = append(cmds, spinnerCmd, listCmd)
+	cmds = append(cmds, listCmd)
 
 	return m, tea.Batch(cmds...)
 }
@@ -99,7 +104,7 @@ func (m ValidateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m ValidateModel) View() string {
 	log.Printf("ValidateModel: Rendering view m.collected length: %d", len(m.collected))
 	if m.err != nil {
-		return diagnosticLevelErrorStyle.Render(m.err.Error())
+		return renderError(m.err)
 	}
 
 	sb := strings.Builder{}
@@ -146,13 +151,14 @@ func (m ValidateModel) View() string {
 	return sb.String()
 }
 
-func NewValidateModel(engine engine.DeployEngine) ValidateModel {
+func NewValidateModel(engine engine.DeployEngine, logger *zap.Logger) ValidateModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	return ValidateModel{
 		spinner:      s,
 		engine:       engine,
+		logger:       logger,
 		list:         list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0),
 		resultStream: make(chan types.BlueprintValidationEvent),
 		errStream:    make(chan error),
@@ -197,5 +203,12 @@ func resultToPlainText(result *types.BlueprintValidationEvent) string {
 	if hasPreciseRange(result.Diagnostic.Range) {
 		sb.WriteString(fmt.Sprintf(" (line %d, column %d)", result.Diagnostic.Range.Start.Line, result.Diagnostic.Range.Start.Column))
 	}
+	return sb.String()
+}
+
+func renderError(err error) string {
+	sb := strings.Builder{}
+	sb.WriteString(diagnosticLevelErrorStyle.Render(err.Error()))
+	sb.WriteString("\n")
 	return sb.String()
 }

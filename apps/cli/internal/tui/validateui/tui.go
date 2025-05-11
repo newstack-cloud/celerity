@@ -1,13 +1,14 @@
 package validateui
 
 import (
-	"errors"
-	"os"
+	"log"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/two-hundred/celerity/apps/cli/internal/engine"
-	"golang.org/x/term"
+	"github.com/two-hundred/celerity/apps/cli/internal/tui/styles"
+	"go.uber.org/zap"
 )
 
 var (
@@ -44,6 +45,7 @@ type MainModel struct {
 	quitting        bool
 	selectBlueprint tea.Model
 	validate        tea.Model
+	Error           error
 }
 
 func (m MainModel) Init() tea.Cmd {
@@ -76,6 +78,10 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 		}
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.validate, cmd = m.validate.Update(msg)
+		cmds = append(cmds, cmd)
 	}
 
 	switch m.sessionState {
@@ -95,6 +101,10 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.validate = validateModel
 		cmds = append(cmds, newCmd)
+		if validateModel.err != nil {
+			log.Println("setting validate model error:", validateModel.err)
+			m.Error = validateModel.err
+		}
 	}
 	return m, tea.Batch(cmds...)
 }
@@ -110,25 +120,25 @@ func (m MainModel) View() string {
 	return selected + m.validate.View()
 }
 
-func NewValidateApp(engine engine.DeployEngine, blueprintFile string, isDefaultBlueprintFile bool) (*MainModel, error) {
+func NewValidateApp(
+	engine engine.DeployEngine,
+	logger *zap.Logger,
+	blueprintFile string,
+	isDefaultBlueprintFile bool,
+	celerityStyles *styles.CelerityStyles,
+) (*MainModel, error) {
 	sessionState := validateBlueprintSelect
-	// Skip the blueprint selection if a blueprint file is explictly provided
-	// by the user or if the application is not running in a terminal.
-	inTerminal := term.IsTerminal(int(os.Stdout.Fd()))
-	if !inTerminal && blueprintFile == "" {
-		return nil, errors.New("blueprint file must be provided when running in non-interactive mode")
-	}
-	autoValidate := (blueprintFile != "" && !isDefaultBlueprintFile) || !inTerminal
+	autoValidate := blueprintFile != "" && !isDefaultBlueprintFile
 
 	if autoValidate {
 		sessionState = validateView
 	}
 
-	selectBlueprint, err := NewSelectBlueprint(blueprintFile, autoValidate)
+	selectBlueprint, err := NewSelectBlueprint(blueprintFile, autoValidate, celerityStyles)
 	if err != nil {
 		return nil, err
 	}
-	validate := NewValidateModel(engine)
+	validate := NewValidateModel(engine, logger)
 	return &MainModel{
 		sessionState:    sessionState,
 		blueprintFile:   blueprintFile,

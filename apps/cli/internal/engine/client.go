@@ -8,5 +8,10 @@ import (
 
 // Create a new deploy engine client based on how the CLI is configured.
 func Create(confProvider *config.Provider, logger *zap.Logger) (DeployEngine, error) {
-	return deployengine.NewClient()
+	return deployengine.NewClient(
+		deployengine.WithClientAuthMethod(deployengine.AuthMethodAPIKey),
+		deployengine.WithClientEndpoint("http://localhost:8325"),
+		deployengine.WithClientConnectProtocol(deployengine.ConnectProtocolTCP),
+		deployengine.WithClientAPIKey("test-api-key"),
+	)
 }

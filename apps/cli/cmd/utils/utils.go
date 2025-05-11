@@ -27,7 +27,8 @@ func WrappedFlagUsages(cmd *pflag.FlagSet) string {
 
 // UsageTemplate is identical to the default cobra usage template,
 // but utilises WrappedFlagUsages to ensure flag usages don't wrap around.
-var UsageTemplate = `Usage:{{if .Runnable}}
+var UsageTemplate = `
+Usage:{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 

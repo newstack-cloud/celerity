@@ -29,6 +29,7 @@ func setupInitCommand(rootCmd *cobra.Command, confProvider *config.Provider) {
 			if err != nil {
 				return err
 			}
+
 			_, err = tea.NewProgram(initui.NewInitApp(lang)).Run()
 			return err
 		},

@@ -5,7 +5,9 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/two-hundred/celerity/apps/cli/internal/engine"
 	"github.com/two-hundred/celerity/libs/deploy-engine-client/types"
+	"go.uber.org/zap"
 )
 
 var (
@@ -26,19 +28,21 @@ func clearSelectedBlueprintCmd() tea.Cmd {
 	}
 }
 
-func startValidateStreamCmd(model ValidateModel) tea.Cmd {
+func startValidateStreamCmd(model ValidateModel, logger *zap.Logger) tea.Cmd {
 	return func() tea.Msg {
 		blueprintValidation, err := model.engine.CreateBlueprintValidation(
 			context.TODO(),
 			&types.CreateBlueprintValidationPayoad{
 				BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 					FileSourceScheme: "file",
+					Directory:        "/",
 					BlueprintFile:    model.blueprintFile,
 				},
 			},
 		)
 		if err != nil {
-			return ValidateErrMsg{err}
+			time.Sleep(10 * time.Second)
+			return ValidateErrMsg{engine.SimplifyError(err, logger)}
 		}
 
 		err = model.engine.StreamBlueprintValidationEvents(

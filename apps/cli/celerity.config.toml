@@ -1,1 +1,1 @@
-connectProtocol = "unexpected"
+connectProtocol = "unix"
