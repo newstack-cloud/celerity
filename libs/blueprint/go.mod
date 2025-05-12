@@ -1,12 +1,16 @@
 module github.com/two-hundred/celerity/libs/blueprint
 
-go 1.22
+go 1.23
+
+toolchain go1.23.4
 
 require (
+	github.com/coreos/go-json v0.0.0-20231102161613-e49c8866685a
 	github.com/google/uuid v1.6.0
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.10.0
+	github.com/tailscale/hujson v0.0.0-20250226034555-ec1d1c113d33
 	github.com/two-hundred/celerity/libs/common v0.3.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/protobuf v1.34.1

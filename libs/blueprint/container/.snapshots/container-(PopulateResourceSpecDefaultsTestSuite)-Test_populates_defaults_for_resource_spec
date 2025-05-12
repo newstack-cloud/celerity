@@ -3,7 +3,7 @@
     IntValue: (*int)(<nil>),
     BoolValue: (*bool)(<nil>),
     FloatValue: (*float64)(<nil>),
-    StringValue: (*string)((len=10) "2025-02-01"),
+    StringValue: (*string)((len=10) "2025-05-12"),
     SourceMeta: (*source.Meta)({
       Position: (source.Position) {
         Line: (int) 1,

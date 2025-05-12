@@ -24,3 +24,6 @@ report.json
 
 # Any log files.
 *.log
+
+# Directory for programs for manually testing blueprint framework features.
+playground

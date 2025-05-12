@@ -42,10 +42,10 @@ func ValidateBlueprint(ctx context.Context, blueprint *schema.Blueprint) ([]*bpc
 }
 
 const (
-	// Version2025_02_01 is the version of the blueprint specification
+	// Version2025_05_12 is the version of the blueprint specification
 	// that is the sole version of the spec supported by the initial
 	// version of the blueprint framework.
-	Version2025_02_01 = "2025-02-01"
+	Version2025_05_12 = "2025-05-12"
 )
 
 var (
@@ -53,6 +53,6 @@ var (
 	// specification that are supported by this version of the blueprint
 	// framework.
 	SupportedVersions = []string{
-		Version2025_02_01,
+		Version2025_05_12,
 	}
 )
