@@ -54,6 +54,11 @@ func (s *DataSource) FromJSONNode(
 	linePositions []int,
 	parentPath string,
 ) error {
+	s.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
 	nodeMap, ok := node.Value.(map[string]json.Node)
 	if !ok {
 		position := source.PositionFromJSONNode(node, linePositions)
@@ -129,11 +134,6 @@ func (s *DataSource) FromJSONNode(
 	if err != nil {
 		return err
 	}
-
-	s.SourceMeta = source.ExtractSourcePositionFromJSONNode(
-		node,
-		linePositions,
-	)
 
 	return nil
 }

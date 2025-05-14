@@ -742,7 +742,27 @@
               Column: (int) 7
             })
           }),
-          FieldsSourceMeta: (map[string]*source.Meta) {
+          FieldsSourceMeta: (map[string]*source.Meta) (len=2) {
+            (string) (len=7) "handler": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 89,
+                Column: (int) 18
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 89,
+                Column: (int) 40
+              })
+            }),
+            (string) (len=7) "timeout": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 90,
+                Column: (int) 18
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 90,
+                Column: (int) 22
+              })
+            })
           }
         }),
         SourceMeta: (*source.Meta)({
@@ -1029,7 +1049,37 @@
                   Column: (int) 9
                 })
               }),
-              FieldsSourceMeta: (map[string]*source.Meta) {
+              FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+                (string) (len=10) "authoriser": (*source.Meta)({
+                  Position: (source.Position) {
+                    Line: (int) 107,
+                    Column: (int) 23
+                  },
+                  EndPosition: (*source.Position)({
+                    Line: (int) 107,
+                    Column: (int) 39
+                  })
+                }),
+                (string) (len=6) "method": (*source.Meta)({
+                  Position: (source.Position) {
+                    Line: (int) 105,
+                    Column: (int) 19
+                  },
+                  EndPosition: (*source.Position)({
+                    Line: (int) 105,
+                    Column: (int) 25
+                  })
+                }),
+                (string) (len=4) "path": (*source.Meta)({
+                  Position: (source.Position) {
+                    Line: (int) 106,
+                    Column: (int) 17
+                  },
+                  EndPosition: (*source.Position)({
+                    Line: (int) 106,
+                    Column: (int) 27
+                  })
+                })
               }
             }),
             (string) (len=7) "handler": (*core.MappingNode)({
@@ -1109,7 +1159,37 @@
               Column: (int) 7
             })
           }),
-          FieldsSourceMeta: (map[string]*source.Meta) {
+          FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=8) "endpoint": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 104,
+                Column: (int) 19
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 108,
+                Column: (int) 9
+              })
+            }),
+            (string) (len=7) "handler": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 102,
+                Column: (int) 18
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 102,
+                Column: (int) 39
+              })
+            }),
+            (string) (len=7) "timeout": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 103,
+                Column: (int) 18
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 103,
+                Column: (int) 22
+              })
+            })
           }
         }),
         SourceMeta: (*source.Meta)({
@@ -1357,7 +1437,17 @@
                       Column: (int) 11
                     })
                   }),
-                  FieldsSourceMeta: (map[string]*source.Meta) {
+                  FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+                    (string) (len=14) "DYNAMODB_TABLE": (*source.Meta)({
+                      Position: (source.Position) {
+                        Line: (int) 67,
+                        Column: (int) 29
+                      },
+                      EndPosition: (*source.Position)({
+                        Line: (int) 67,
+                        Column: (int) 58
+                      })
+                    })
                   }
                 })
               },
@@ -1373,7 +1463,17 @@
                   Column: (int) 9
                 })
               }),
-              FieldsSourceMeta: (map[string]*source.Meta) {
+              FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+                (string) (len=9) "variables": (*source.Meta)({
+                  Position: (source.Position) {
+                    Line: (int) 66,
+                    Column: (int) 22
+                  },
+                  EndPosition: (*source.Position)({
+                    Line: (int) 68,
+                    Column: (int) 11
+                  })
+                })
               }
             }),
             (string) (len=7) "runtime": (*core.MappingNode)({
@@ -1453,7 +1553,37 @@
               Column: (int) 7
             })
           }),
-          FieldsSourceMeta: (map[string]*source.Meta) {
+          FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=11) "environment": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 65,
+                Column: (int) 22
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 69,
+                Column: (int) 9
+              })
+            }),
+            (string) (len=7) "runtime": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 70,
+                Column: (int) 18
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 70,
+                Column: (int) 26
+              })
+            }),
+            (string) (len=14) "tracingEnabled": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 71,
+                Column: (int) 25
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 71,
+                Column: (int) 30
+              })
+            })
           }
         }),
         SourceMeta: (*source.Meta)({
@@ -1695,7 +1825,17 @@
               Column: (int) 7
             })
           }),
-          FieldsSourceMeta: (map[string]*source.Meta) {
+          FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+            (string) (len=9) "topicName": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 160,
+                Column: (int) 20
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 160,
+                Column: (int) 51
+              })
+            })
           }
         }),
         SourceMeta: (*source.Meta)({
@@ -1958,7 +2098,37 @@
               Column: (int) 7
             })
           }),
-          FieldsSourceMeta: (map[string]*source.Meta) {
+          FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=18) "compatibleRuntimes": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 141,
+                Column: (int) 29
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 141,
+                Column: (int) 39
+              })
+            }),
+            (string) (len=7) "content": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 142,
+                Column: (int) 18
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 142,
+                Column: (int) 48
+              })
+            }),
+            (string) (len=9) "layerName": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 143,
+                Column: (int) 20
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 143,
+                Column: (int) 42
+              })
+            })
           }
         }),
         SourceMeta: (*source.Meta)({
@@ -2177,7 +2347,27 @@
                       Column: (int) 11
                     })
                   }),
-                  FieldsSourceMeta: (map[string]*source.Meta) {
+                  FieldsSourceMeta: (map[string]*source.Meta) (len=2) {
+                    (string) (len=9) "batchSize": (*source.Meta)({
+                      Position: (source.Position) {
+                        Line: (int) 126,
+                        Column: (int) 24
+                      },
+                      EndPosition: (*source.Position)({
+                        Line: (int) 126,
+                        Column: (int) 27
+                      })
+                    }),
+                    (string) (len=4) "type": (*source.Meta)({
+                      Position: (source.Position) {
+                        Line: (int) 125,
+                        Column: (int) 19
+                      },
+                      EndPosition: (*source.Position)({
+                        Line: (int) 125,
+                        Column: (int) 28
+                      })
+                    })
                   }
                 })
               },
@@ -2193,7 +2383,17 @@
                   Column: (int) 9
                 })
               }),
-              FieldsSourceMeta: (map[string]*source.Meta) {
+              FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
+                (string) (len=10) "orderEvent": (*source.Meta)({
+                  Position: (source.Position) {
+                    Line: (int) 124,
+                    Column: (int) 23
+                  },
+                  EndPosition: (*source.Position)({
+                    Line: (int) 127,
+                    Column: (int) 11
+                  })
+                })
               }
             }),
             (string) (len=7) "handler": (*core.MappingNode)({
@@ -2273,7 +2473,37 @@
               Column: (int) 7
             })
           }),
-          FieldsSourceMeta: (map[string]*source.Meta) {
+          FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
+            (string) (len=6) "events": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 123,
+                Column: (int) 17
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 128,
+                Column: (int) 9
+              })
+            }),
+            (string) (len=7) "handler": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 121,
+                Column: (int) 18
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 121,
+                Column: (int) 41
+              })
+            }),
+            (string) (len=7) "timeout": (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 122,
+                Column: (int) 18
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 122,
+                Column: (int) 22
+              })
+            })
           }
         }),
         SourceMeta: (*source.Meta)({

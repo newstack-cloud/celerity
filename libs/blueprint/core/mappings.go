@@ -298,6 +298,10 @@ func (m *MappingNode) fieldsFromJSONNode(
 	for k, v := range nodeMap {
 		m.Fields[k] = &MappingNode{}
 		fieldPath := CreateJSONNodePath(k, parentPath, false)
+		m.FieldsSourceMeta[k] = source.ExtractSourcePositionFromJSONNode(
+			&v,
+			linePositions,
+		)
 		err := m.Fields[k].FromJSONNode(&v, linePositions, fieldPath)
 		if err != nil {
 			return err

@@ -1274,7 +1274,7 @@ func mappingNodeToTreeNode(
 	// as the start location.
 	startPosition *source.Meta,
 ) *TreeNode {
-	if mappingNode == nil {
+	if bpcore.IsNilMappingNode(mappingNode) {
 		return nil
 	}
 
@@ -1747,7 +1747,7 @@ func stringToTreeNode(value string, location *source.Meta, parentPath string) *T
 }
 
 func scalarToTreeNode(label string, scalar *bpcore.ScalarValue, parentPath string) *TreeNode {
-	if scalar == nil {
+	if bpcore.IsScalarNil(scalar) {
 		return nil
 	}
 
