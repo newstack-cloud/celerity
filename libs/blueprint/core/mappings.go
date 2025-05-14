@@ -298,7 +298,7 @@ func (m *MappingNode) fieldsFromJSONNode(
 	for k, v := range nodeMap {
 		m.Fields[k] = &MappingNode{}
 		fieldPath := CreateJSONNodePath(k, parentPath, false)
-		m.FieldsSourceMeta[k] = source.ExtractSourcePositionFromJSONNode(
+		m.FieldsSourceMeta[k] = source.ExtractSourcePositionForJSONNodeMapField(
 			&v,
 			linePositions,
 		)

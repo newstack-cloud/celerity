@@ -85,25 +85,46 @@ func diagnosticRangeFromTransform(transformIndex int, blueprint *schema.Blueprin
 	}
 
 	transformSourceMeta := blueprint.Transform.SourceMeta[transformIndex]
+	endSourceMeta := determineTransformEndSourceMeta(
+		transformSourceMeta,
+		blueprint.Transform,
+		transformIndex,
+	)
+
+	return &bpcore.DiagnosticRange{
+		Start: transformSourceMeta,
+		End:   endSourceMeta,
+	}
+}
+
+func determineTransformEndSourceMeta(
+	transformSourceMeta *source.Meta,
+	transform *schema.TransformValueWrapper,
+	transformIndex int,
+) *source.Meta {
+	if transformSourceMeta.EndPosition != nil {
+		return &source.Meta{
+			Position: *transformSourceMeta.EndPosition,
+		}
+	}
+
 	endSourceMeta := &source.Meta{
 		Position: source.Position{
 			Line:   transformSourceMeta.Line + 1,
 			Column: 1,
 		},
 	}
-	if transformIndex+1 < len(blueprint.Transform.SourceMeta) {
+
+	if transformIndex+1 < len(transform.SourceMeta) {
 		endSourceMeta = &source.Meta{
 			Position: source.Position{
-				Line:   blueprint.Transform.SourceMeta[transformIndex+1].Line,
+				Line:   transform.SourceMeta[transformIndex+1].Line,
 				Column: 1,
 			},
 		}
 	}
 
-	return &bpcore.DiagnosticRange{
-		Start: transformSourceMeta,
-		End:   endSourceMeta,
-	}
+	return endSourceMeta
 }
 
 const (

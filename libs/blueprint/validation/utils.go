@@ -85,6 +85,27 @@ func toDiagnosticRange(
 		}
 	}
 
+	endSourceMeta := determineEndSourceMeta(
+		start,
+		nextLocation,
+	)
+
+	return &core.DiagnosticRange{
+		Start: start,
+		End:   endSourceMeta,
+	}
+}
+
+func determineEndSourceMeta(
+	start *source.Meta,
+	nextLocation *source.Meta,
+) *source.Meta {
+	if start.EndPosition != nil {
+		return &source.Meta{
+			Position: *start.EndPosition,
+		}
+	}
+
 	endSourceMeta := &source.Meta{Position: source.Position{
 		Line:   start.Line + 1,
 		Column: 1,
@@ -96,10 +117,7 @@ func toDiagnosticRange(
 		}}
 	}
 
-	return &core.DiagnosticRange{
-		Start: start,
-		End:   endSourceMeta,
-	}
+	return endSourceMeta
 }
 
 func isSubPrimitiveType(subType string) bool {
@@ -201,6 +219,10 @@ func getSubNextLocation(i int, values []*substitutions.StringOrSubstitution) *so
 func getEndLocation(location *source.Meta) *source.Meta {
 	if location == nil {
 		return nil
+	}
+
+	if location.EndPosition != nil {
+		return &source.Meta{Position: *location.EndPosition}
 	}
 
 	return &source.Meta{Position: source.Position{

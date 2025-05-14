@@ -87,15 +87,35 @@ type Range struct {
 	End   *Position
 }
 
-// ExtractSourcePositionFromJSONNode position in source document
-// from a given JSON node and line positions.
+// ExtractSourcePositionFromJSONNode extracts the position
+// in source document from a given JSON node and line positions.
 func ExtractSourcePositionFromJSONNode(
 	node *json.Node,
 	linePositions []int,
 ) *Meta {
 	startOffset := getJSONNodeStartOffset(node)
 	position := PositionFromOffset(startOffset, linePositions)
-	endPosition := PositionFromOffset(node.End, linePositions)
+	// coreos/go-json counts the end offset as the index of the last
+	// character in the node, so we need to add 1 to get the end position.
+	endOffset := node.End + 1
+	endPosition := PositionFromOffset(endOffset, linePositions)
+	return &Meta{
+		Position:    position,
+		EndPosition: &endPosition,
+	}
+}
+
+// ExtractSourcePositionForJSONNodeMapField extracts the position
+// in source document from a given JSON node and line positions.
+func ExtractSourcePositionForJSONNodeMapField(
+	node *json.Node,
+	linePositions []int,
+) *Meta {
+	position := PositionFromOffset(node.KeyStart, linePositions)
+	// coreos/go-json counts the end offset as the index of the last
+	// character in the node, so we need to add 1 to get the end position.
+	endOffset := node.End + 1
+	endPosition := PositionFromOffset(endOffset, linePositions)
 	return &Meta{
 		Position:    position,
 		EndPosition: &endPosition,
