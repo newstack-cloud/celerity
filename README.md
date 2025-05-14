@@ -27,7 +27,7 @@ The blueprint framework is an implementation of the [Celerity Blueprint Specific
 
 The language server can be used with any language server protocol compatible editor such as Visual Studio Code, NeoVim,  Atom etc.
 
-The language server only supports `yaml` files due to [intended limitations](https://github.com/golang/go/issues/43513) of Go's built-in `json` encoding library.
+The language server supports `yaml` and `jsonc` formats. `jsonc` refers to the (JSON with Commas and Comments)[https://nigeltao.github.io/blog/2021/json-with-commas-comments.html] extension to provide a more intuitive experience for writing blueprints with a JSON-based syntax. This can also be referred to as "Human JSON" and editor-specific extensions that are clients of the language server will usually support the `.jsonc` and `.hujson` file extensions.
 
 [Blueprint Language Server](./tools/blueprint-ls)
 
@@ -58,7 +58,7 @@ The Celerity CLI brings all the components of Celerity together. It is a command
 It also provides commands for installing and managing plugins, using the [Registry protocol](https://www.celerityframework.io/plugin-framework/docs/registry-protocols-formats/registry-protocol) to source, verify and install plugins from the official and custom plugin registries.
 
 Under the hood, the CLI uses the deploy engine to validate blueprints, stage changes and deploy applications (or standalone blueprints) to target environments.
-The CLI can use local or remote instances of the deploy engine, this can be configured using environment variables or command line options.
+The CLI can use local or remote instances of the deploy engine, this can be configured using command line options, environment variables or configuration files.
 
 [CLI](./apps/cli)
 
