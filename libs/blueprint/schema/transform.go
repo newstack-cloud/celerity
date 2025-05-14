@@ -1,6 +1,7 @@
 package schema
 
 import (
+	json "github.com/coreos/go-json"
 	"gopkg.in/yaml.v3"
 )
 
@@ -26,4 +27,12 @@ func (t *TransformValueWrapper) MarshalJSON() ([]byte, error) {
 
 func (t *TransformValueWrapper) UnmarshalJSON(data []byte) error {
 	return t.unmarshalJSON(data, errInvalidTransformType, "transform")
+}
+
+func (t *TransformValueWrapper) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	return t.StringList.FromJSONNode(node, linePositions, parentPath)
 }

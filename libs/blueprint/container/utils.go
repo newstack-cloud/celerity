@@ -20,14 +20,14 @@ import (
 
 func deriveSpecFormat(specFilePath string) (schema.SpecFormat, error) {
 	// Bear in mind this is a somewhat naive check, however if the spec file data
-	// isn't valid YAML or JSON it will be caught in a failure to unmarshal
+	// isn't valid YAML or JWCC it will be caught in a failure to unmarshal
 	// the spec.
 	if strings.HasSuffix(specFilePath, ".yml") || strings.HasSuffix(specFilePath, ".yaml") {
 		return schema.YAMLSpecFormat, nil
 	}
 
-	if strings.HasSuffix(specFilePath, ".json") {
-		return schema.JSONSpecFormat, nil
+	if strings.HasSuffix(specFilePath, ".jsonc") {
+		return schema.JWCCSpecFormat, nil
 	}
 
 	return "", errUnsupportedSpecFileExtension(specFilePath)

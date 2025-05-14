@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
 
 const (
@@ -11,9 +12,32 @@ const (
 	// for a blueprint spec load error is due to one or more reference substitutions
 	// being invalid.
 	ErrorReasonCodeInvalidReferenceSub errors.ErrorReasonCode = "invalid_reference_substitution"
+	// ErrorReasonCodeStringOrSubsInvalidType is provided when the reason
+	// for a blueprint spec load error is due to a value in a source document
+	// that is expected to be a string with 0 or more ${..} substitutions
+	// is of a different type.
+	ErrorReasonCodeStringOrSubsInvalidType errors.ErrorReasonCode = "invalid_string_or_substitution_type"
 
 	childErrorsFormatStr = "\n\t- %s"
 )
+
+func errStringOrSubsInvalidType(
+	position source.PositionInfo,
+	parentPath string,
+) error {
+	line := position.GetLine()
+	column := position.GetColumn()
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeStringOrSubsInvalidType,
+		Err: fmt.Errorf(
+			"validation failed due to a value in the source document that is expected to be a string with 0 or more ${..} substitutions "+
+				"being of a different type at %q",
+			parentPath,
+		),
+		Line:   &line,
+		Column: &column,
+	}
+}
 
 func errSubstitutions(
 	substitutionContext string,

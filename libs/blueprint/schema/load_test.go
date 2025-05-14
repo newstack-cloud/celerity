@@ -2,13 +2,15 @@ package schema
 
 import (
 	"os"
+	"testing"
 
+	"github.com/stretchr/testify/suite"
 	"github.com/two-hundred/celerity/libs/common/testhelpers"
-	. "gopkg.in/check.v1"
 )
 
 type LoadTestSuite struct {
 	specFixtures map[string]fixture
+	suite.Suite
 }
 
 type fixture struct {
@@ -16,23 +18,18 @@ type fixture struct {
 	stringVal string
 }
 
-var _ = Suite(&LoadTestSuite{})
-
-func (s *LoadTestSuite) SetUpSuite(c *C) {
+func (s *LoadTestSuite) SetupSuite() {
 	s.specFixtures = make(map[string]fixture)
 	fixturesToLoad := map[string]string{
 		"yaml":            "__testdata/load/blueprint.yml",
-		"json":            "__testdata/load/blueprint.json",
+		"jwcc":            "__testdata/load/blueprint.jsonc",
 		"yamlWithInclude": "__testdata/load/blueprint-with-include.yml",
-		"jsonWithInclude": "__testdata/load/blueprint-with-include.json",
+		"jwccWithInclude": "__testdata/load/blueprint-with-include.jsonc",
 	}
 
 	for name, filePath := range fixturesToLoad {
 		specBytes, err := os.ReadFile(filePath)
-		if err != nil {
-			c.Error(err)
-			c.FailNow()
-		}
+		s.Require().NoError(err)
 		s.specFixtures[name] = fixture{
 			filePath:  filePath,
 			stringVal: string(specBytes),
@@ -40,74 +37,48 @@ func (s *LoadTestSuite) SetUpSuite(c *C) {
 	}
 }
 
-func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file(c *C) {
+func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file() {
 	blueprint, err := Load(s.specFixtures["yaml"].filePath, YAMLSpecFormat)
-	if err != nil {
-		c.Error(err)
-		c.FailNow()
-	}
+	s.Require().NoError(err)
 	err = testhelpers.Snapshot(blueprint)
-	if err != nil {
-		c.Error(err)
-	}
+	s.Require().NoError(err)
 }
 
-func (s *LoadTestSuite) Test_loads_blueprint_from_json_file(c *C) {
-	blueprint, err := Load(s.specFixtures["json"].filePath, JSONSpecFormat)
-	if err != nil {
-		c.Error(err)
-		c.FailNow()
-	}
+func (s *LoadTestSuite) Test_loads_blueprint_from_json_file() {
+	blueprint, err := Load(s.specFixtures["jwcc"].filePath, JWCCSpecFormat)
+	s.Require().NoError(err)
 	err = testhelpers.Snapshot(blueprint)
-	if err != nil {
-		c.Error(err)
-	}
+	s.Require().NoError(err)
 }
 
-func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file_with_includes(c *C) {
+func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file_with_includes() {
 	blueprint, err := Load(s.specFixtures["yamlWithInclude"].filePath, YAMLSpecFormat)
-	if err != nil {
-		c.Error(err)
-		c.FailNow()
-	}
+	s.Require().NoError(err)
 	err = testhelpers.Snapshot(blueprint)
-	if err != nil {
-		c.Error(err)
-	}
+	s.Require().NoError(err)
 }
 
-func (s *LoadTestSuite) Test_loads_blueprint_from_json_file_with_include(c *C) {
-	blueprint, err := Load(s.specFixtures["jsonWithInclude"].filePath, JSONSpecFormat)
-	if err != nil {
-		c.Error(err)
-		c.FailNow()
-	}
+func (s *LoadTestSuite) Test_loads_blueprint_from_json_file_with_include() {
+	blueprint, err := Load(s.specFixtures["jwccWithInclude"].filePath, JWCCSpecFormat)
+	s.Require().NoError(err)
 	err = testhelpers.Snapshot(blueprint)
-	if err != nil {
-		c.Error(err)
-	}
+	s.Require().NoError(err)
 }
 
-func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_string(c *C) {
+func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_string() {
 	blueprint, err := LoadString(s.specFixtures["yaml"].stringVal, YAMLSpecFormat)
-	if err != nil {
-		c.Error(err)
-		c.FailNow()
-	}
+	s.Require().NoError(err)
 	err = testhelpers.Snapshot(blueprint)
-	if err != nil {
-		c.Error(err)
-	}
+	s.Require().NoError(err)
 }
 
-func (s *LoadTestSuite) Test_loads_blueprint_from_json_string(c *C) {
-	blueprint, err := LoadString(s.specFixtures["json"].stringVal, JSONSpecFormat)
-	if err != nil {
-		c.Error(err)
-		c.FailNow()
-	}
+func (s *LoadTestSuite) Test_loads_blueprint_from_json_string() {
+	blueprint, err := LoadString(s.specFixtures["jwcc"].stringVal, JWCCSpecFormat)
+	s.Require().NoError(err)
 	err = testhelpers.Snapshot(blueprint)
-	if err != nil {
-		c.Error(err)
-	}
+	s.Require().NoError(err)
+}
+
+func TestLoadTestSuite(t *testing.T) {
+	suite.Run(t, new(LoadTestSuite))
 }

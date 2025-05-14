@@ -6,7 +6,6 @@ import (
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/internal"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
@@ -128,31 +127,6 @@ func (s *MappingNodeValidationTestSuite) Test_succeeds_with_info_diagnostic_for_
 		"Exceeded max traverse depth of %d. Skipping further validation.",
 		core.MappingNodeMaxTraverseDepth,
 	))
-}
-
-func (s *MappingNodeValidationTestSuite) Test_produces_error_for_mapping_node_with_no_value_set(c *C) {
-	mappingNode := &core.MappingNode{}
-
-	diagnostics, err := ValidateMappingNode(
-		context.TODO(),
-		"datasources.networking",
-		"metadata.custom",
-		/* usedInResourceDerivedFromTemplate */ false,
-		mappingNode,
-		nil,
-		nil,
-		s.funcRegistry,
-		s.refChainCollector,
-		s.resourceRegistry,
-	)
-
-	c.Assert(err, NotNil)
-	c.Assert(diagnostics, HasLen, 0)
-	loadErr, isLoadErr := err.(*errors.LoadError)
-	c.Assert(isLoadErr, Equals, true)
-	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidMappingNode)
-	c.Assert(loadErr.Error(), Equals, "blueprint load error: validation failed due "+
-		"to a missing value for property \"metadata.custom\" in \"datasources.networking\"")
 }
 
 func buildTestMappingNode(depth int) *core.MappingNode {

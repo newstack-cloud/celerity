@@ -3,6 +3,7 @@ package substitutions
 import (
 	"fmt"
 
+	"github.com/coreos/go-json"
 	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"gopkg.in/yaml.v3"
@@ -21,7 +22,7 @@ type StringOrSubstitutions struct {
 // MarshalYAML fulfils the yaml.Marshaler interface
 // to marshal a blueprint string or substitutions value
 // into a string representation.
-func (s *StringOrSubstitutions) MarshalYAML() (interface{}, error) {
+func (s *StringOrSubstitutions) MarshalYAML() (any, error) {
 	// During serialisation, there is no way of knowing the context
 	// (i.e. the key or field name) in which the substitutions are being used.
 	// This is why an empty string is passed as the substitution context.
@@ -103,5 +104,49 @@ func (s *StringOrSubstitutions) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	s.Values = parsedValues
+	return nil
+}
+
+// FromJSONNode fufils the interface of the core.JSONNodeExtractable
+// that allows for including location information in the source meta
+// for JSON with Commas and Comments source documents.
+func (s *StringOrSubstitutions) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	stringVal, ok := node.Value.(string)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errStringOrSubsInvalidType(
+			&position,
+			parentPath,
+		)
+	}
+
+	s.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+	sourceStartMeta := DetermineJSONSourceStartMeta(
+		node,
+		stringVal,
+		linePositions,
+	)
+	parsedValues, err := ParseSubstitutionValues(
+		parentPath, // substitutionContext
+		stringVal,
+		sourceStartMeta,
+		true, // outputLineInfo
+		// For JSON with Commas and Comments, the column number will be reliable
+		// so we can use it to get the precise starting column of the string.
+		false,                      // ignoreParentColumn
+		JSONNodePrecedingCharCount, // parentContextPrecedingCharCount
+	)
+	if err != nil {
+		return err
+	}
+	s.Values = parsedValues
+
 	return nil
 }

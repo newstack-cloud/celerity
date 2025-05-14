@@ -1,6 +1,7 @@
 package schema
 
 import (
+	json "github.com/coreos/go-json"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
@@ -44,6 +45,81 @@ func (i *Include) UnmarshalYAML(value *yaml.Node) error {
 	i.Variables = alias.Variables
 	i.Metadata = alias.Metadata
 	i.Description = alias.Description
+
+	return nil
+}
+
+func (i *Include) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	i.Path = &substitutions.StringOrSubstitutions{}
+	err := core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"path",
+		i.Path,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	i.Variables = &core.MappingNode{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"variables",
+		i.Variables,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	i.Metadata = &core.MappingNode{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"metadata",
+		i.Metadata,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	i.Description = &substitutions.StringOrSubstitutions{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"description",
+		i.Description,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	i.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
 
 	return nil
 }

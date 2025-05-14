@@ -753,7 +753,10 @@ func validateResourceEach(
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
-	if each == nil {
+	// Only validate when a user has provided an empty array as a value
+	// for the each property. A nil slice is a default empty value that
+	// indicates no value was provided by the user.
+	if each == nil || each.Values == nil {
 		return []*bpcore.Diagnostic{}, nil
 	}
 
@@ -872,7 +875,7 @@ func ValidateResourceEachDependencies(
 
 	var errs []error
 	for resourceName, resource := range blueprint.Resources.Values {
-		if resource.Each != nil {
+		if !substitutions.IsNilStringSubs(resource.Each) {
 			resourceIdentifier := bpcore.ResourceElementID(resourceName)
 			eachTag := CreateSubRefPropTag(resourceIdentifier, "each")
 			nodes := refChainCollector.FindByTag(eachTag)

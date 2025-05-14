@@ -1709,24 +1709,6 @@ func ErrReferenceCycles(rootRefChains []*refgraph.ReferenceChainNode) error {
 	return ErrMultipleValidationErrors(errs)
 }
 
-func errMissingMappingNodeValue(
-	context string,
-	propertyPath string,
-	location *source.Meta,
-) error {
-	line, col := source.PositionFromSourceMeta(location)
-	return &errors.LoadError{
-		ReasonCode: ErrorReasonCodeInvalidMappingNode,
-		Err: fmt.Errorf(
-			"validation failed due to a missing value for property %q in %q",
-			propertyPath,
-			context,
-		),
-		Line:   line,
-		Column: col,
-	}
-}
-
 func errDataSourceExportFieldNotSupported(
 	dataSourceName string,
 	dataSourceType string,

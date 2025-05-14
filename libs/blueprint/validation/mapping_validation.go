@@ -31,7 +31,7 @@ func ValidateMappingNode(
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 ) ([]*bpcore.Diagnostic, error) {
-	if mappingNode == nil {
+	if mappingNode == nil || mappingNodeNotSet(mappingNode) {
 		return nil, nil
 	}
 
@@ -81,10 +81,6 @@ func validateMappingNode(
 			Range: toDiagnosticRange(wrapperLocation, rangeEndLocation),
 		})
 		return diagnostics, nil
-	}
-
-	if mappingNodeNotSet(mappingNode) {
-		return diagnostics, errMissingMappingNodeValue(usedIn, attributePath, wrapperLocation)
 	}
 
 	if mappingNode.Scalar != nil {

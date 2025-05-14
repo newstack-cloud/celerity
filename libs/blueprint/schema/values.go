@@ -1,8 +1,9 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
+
+	json "github.com/coreos/go-json"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
@@ -43,6 +44,77 @@ func (t *Value) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+func (v *Value) FromJSONNode(node *json.Node, linePositions []int, parentPath string) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	v.Type = &ValueTypeWrapper{}
+	err := bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"type",
+		v.Type,
+		linePositions,
+		/* parentPath */ parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	v.Value = &substitutions.StringOrSubstitutions{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"value",
+		v.Value,
+		linePositions,
+		/* parentPath */ parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	v.Description = &substitutions.StringOrSubstitutions{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"description",
+		v.Description,
+		linePositions,
+		/* parentPath */ parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	v.Secret = &bpcore.ScalarValue{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"secret",
+		v.Secret,
+		linePositions,
+		/* parentPath */ parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	v.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
+	return nil
+}
+
 // ValueTypeWrapper provides a struct that holds a value type.
 // The reason that this exists is to allow more fine-grained control
 // when serialising and deserialising values in a blueprint
@@ -52,7 +124,7 @@ type ValueTypeWrapper struct {
 	SourceMeta *source.Meta
 }
 
-func (t *ValueTypeWrapper) MarshalYAML() (interface{}, error) {
+func (t *ValueTypeWrapper) MarshalYAML() (any, error) {
 	return t.Value, nil
 }
 
@@ -84,6 +156,20 @@ func (t *ValueTypeWrapper) UnmarshalJSON(data []byte) error {
 	valueType := ValueType(typeVal)
 	t.Value = valueType
 
+	return nil
+}
+
+func (t *ValueTypeWrapper) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	t.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+	stringVal := node.Value.(string)
+	t.Value = ValueType(stringVal)
 	return nil
 }
 

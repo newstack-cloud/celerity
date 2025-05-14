@@ -15,6 +15,13 @@
       "description": "The environment to deploy to"
     }
   },
+  "values": {
+    "alteredTable": {
+      "type": "string",
+      "description": "An altered table name",
+      "value": "${variables.dynamoDBTable}-altered"
+    }
+  },
   "datasources": {
     "network": {
       "type": "aws/vpc",
@@ -24,6 +31,7 @@
       "filter": {
         "field": "tags",
         "operator": "has key",
+        // We can use ${..} in search values for data source filtering.
         "search": "${variables.environment}"
       },
       "exports": {

@@ -1,9 +1,9 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
 
+	json "github.com/coreos/go-json"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -49,6 +49,95 @@ func (s *DataSource) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+func (s *DataSource) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	s.Type = &DataSourceTypeWrapper{}
+	err := bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"type",
+		s.Type,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	s.DataSourceMetadata = &DataSourceMetadata{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"metadata",
+		s.DataSourceMetadata,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	s.Filter = &DataSourceFilter{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"filter",
+		s.Filter,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	s.Exports = &DataSourceFieldExportMap{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"exports",
+		s.Exports,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	s.Description = &substitutions.StringOrSubstitutions{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"description",
+		s.Description,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	s.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
+	return nil
+}
+
 // DataSourceTypeWrapper provides a struct that holds a data source type
 // value.
 type DataSourceTypeWrapper struct {
@@ -90,12 +179,26 @@ func (t *DataSourceTypeWrapper) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (t *DataSourceTypeWrapper) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	t.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+	stringVal := node.Value.(string)
+	t.Value = stringVal
+	return nil
+}
+
 // DataSourceFieldExportMap provides a mapping of names to
 // data source field exports.
 // This includes extra information about the locations of
 // the keys in the original source being unmarshalled.
 // This information will not always be present, it is populated
-// when unmarshalling from YAML source documents.
+// when unmarshalling from YAML and JWCC source documents.
 type DataSourceFieldExportMap struct {
 	Values map[string]*DataSourceFieldExport
 	// Mapping of exported field names to their source locations.
@@ -108,7 +211,7 @@ func (m *DataSourceFieldExportMap) MarshalYAML() (interface{}, error) {
 
 func (m *DataSourceFieldExportMap) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind != yaml.MappingNode {
-		return errInvalidMap(value, "exports")
+		return errInvalidMap(bpcore.YAMLNodeToPosInfo(value), "exports")
 	}
 
 	m.Values = make(map[string]*DataSourceFieldExport)
@@ -151,6 +254,36 @@ func (m *DataSourceFieldExportMap) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (m *DataSourceFieldExportMap) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	m.Values = make(map[string]*DataSourceFieldExport)
+	m.SourceMeta = make(map[string]*source.Meta)
+	for key, node := range nodeMap {
+		export := &DataSourceFieldExport{}
+		fieldPath := bpcore.CreateJSONNodePath(key, parentPath, false)
+		err := export.FromJSONNode(&node, linePositions, fieldPath)
+		if err != nil {
+			return err
+		}
+		m.Values[key] = export
+		m.SourceMeta[key] = source.ExtractSourcePositionFromJSONNode(
+			&node,
+			linePositions,
+		)
+	}
+
+	return nil
+}
+
 // DataSourceFilter provides the definition of a filter
 // used to select a specific data source instance from a provider.
 type DataSourceFilter struct {
@@ -177,6 +310,67 @@ func (f *DataSourceFilter) UnmarshalYAML(value *yaml.Node) error {
 	f.Field = alias.Field
 	f.Operator = alias.Operator
 	f.Search = alias.Search
+
+	return nil
+}
+
+func (f *DataSourceFilter) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	f.Field = &bpcore.ScalarValue{}
+	err := bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"field",
+		f.Field,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	f.Operator = &DataSourceFilterOperatorWrapper{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"operator",
+		f.Operator,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	f.Search = &DataSourceFilterSearch{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"search",
+		f.Search,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	f.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
 
 	return nil
 }
@@ -256,6 +450,56 @@ func (s *DataSourceFilterSearch) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (s *DataSourceFilterSearch) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeList, err := s.deriveJSONNodeList(node, linePositions, parentPath)
+	if err != nil {
+		return err
+	}
+
+	s.Values = make([]*substitutions.StringOrSubstitutions, len(nodeList))
+	for i, node := range nodeList {
+		stringOrSubs := &substitutions.StringOrSubstitutions{}
+		key := fmt.Sprintf("%d", i)
+		itemPath := bpcore.CreateJSONNodePath(key, parentPath, false)
+		err := stringOrSubs.FromJSONNode(&node, linePositions, itemPath)
+		if err != nil {
+			return err
+		}
+		s.Values[i] = stringOrSubs
+	}
+
+	s.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
+	return nil
+}
+
+func (s *DataSourceFilterSearch) deriveJSONNodeList(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) ([]json.Node, error) {
+	// Search can take a single string or an array of strings.
+	_, ok := node.Value.(string)
+	if ok {
+		return []json.Node{*node}, nil
+	}
+
+	nodeList, ok := node.Value.([]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return nil, errInvalidArrayOrString(&position, parentPath)
+	}
+
+	return nodeList, nil
+}
+
 // DataSourceFilterOperatorWrapper provides a struct that holds a data source filter operator
 // value.
 // The reason that this exists is to allow more fine-grained control
@@ -299,6 +543,20 @@ func (w *DataSourceFilterOperatorWrapper) UnmarshalJSON(data []byte) error {
 	typeValDataSourceFilterOperator := DataSourceFilterOperator(typeVal)
 	w.Value = typeValDataSourceFilterOperator
 
+	return nil
+}
+
+func (w *DataSourceFilterOperatorWrapper) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	w.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+	stringVal := node.Value.(string)
+	w.Value = DataSourceFilterOperator(stringVal)
 	return nil
 }
 
@@ -389,6 +647,67 @@ func (e *DataSourceFieldExport) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+func (e *DataSourceFieldExport) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	e.Type = &DataSourceFieldTypeWrapper{}
+	err := bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"type",
+		e.Type,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	e.AliasFor = &bpcore.ScalarValue{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"aliasFor",
+		e.AliasFor,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	e.Description = &substitutions.StringOrSubstitutions{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"description",
+		e.Description,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	e.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
+	return nil
+}
+
 // DataSourceMetadata represents the metadata associated
 // with a blueprint data source that can be used to provide
 // annotations that are used to configure data sources when fetching data
@@ -417,6 +736,67 @@ func (m *DataSourceMetadata) UnmarshalYAML(value *yaml.Node) error {
 	m.DisplayName = alias.DisplayName
 	m.Annotations = alias.Annotations
 	m.Custom = alias.Custom
+
+	return nil
+}
+
+func (m *DataSourceMetadata) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	m.DisplayName = &substitutions.StringOrSubstitutions{}
+	err := bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"displayName",
+		m.DisplayName,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	m.Annotations = &StringOrSubstitutionsMap{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"annotations",
+		m.Annotations,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	m.Custom = &bpcore.MappingNode{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"custom",
+		m.Custom,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	m.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
 
 	return nil
 }
@@ -463,6 +843,20 @@ func (t *DataSourceFieldTypeWrapper) UnmarshalJSON(data []byte) error {
 
 	t.Value = DataSourceFieldType(typeVal)
 
+	return nil
+}
+
+func (t *DataSourceFieldTypeWrapper) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	t.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+	stringVal := node.Value.(string)
+	t.Value = DataSourceFieldType(stringVal)
 	return nil
 }
 

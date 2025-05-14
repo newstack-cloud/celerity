@@ -136,6 +136,7 @@
         }
       },
       "spec": {
+        // We should consider supporting go2.x soon.
         "compatibleRuntimes": ["go1.x"],
         "content": "build/shared-packages-layer",
         "layerName": "sharedPackagesLayer"

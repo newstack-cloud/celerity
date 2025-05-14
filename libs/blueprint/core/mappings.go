@@ -1,9 +1,10 @@
 package core
 
 import (
-	"encoding/json"
+	"fmt"
 	"strings"
 
+	json "github.com/coreos/go-json"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"gopkg.in/yaml.v3"
@@ -51,7 +52,7 @@ type MappingNode struct {
 
 // MarshalYAML fulfils the yaml.Marshaler interface
 // to marshal a mapping node into a YAML representation.
-func (m *MappingNode) MarshalYAML() (interface{}, error) {
+func (m *MappingNode) MarshalYAML() (any, error) {
 	if m.Scalar != nil {
 		return m.Scalar, nil
 	}
@@ -117,7 +118,28 @@ func (m *MappingNode) UnmarshalYAML(node *yaml.Node) error {
 		return nil
 	}
 
-	return errInvalidMappingNode(node)
+	return errInvalidMappingNode(YAMLNodeToPosInfo(node))
+}
+
+type yamlNodePosInfoWrapper struct {
+	node *yaml.Node
+}
+
+func (w *yamlNodePosInfoWrapper) GetLine() int {
+	return w.node.Line
+}
+
+func (w *yamlNodePosInfoWrapper) GetColumn() int {
+	return w.node.Column
+}
+
+// YAMLNodeToPosInfo returns a source.PositionInfo
+// for a YAML node. This is used to provide position information
+// for errors that are shared between YAML and JWCC parsers.
+func YAMLNodeToPosInfo(node *yaml.Node) source.PositionInfo {
+	return &yamlNodePosInfoWrapper{
+		node,
+	}
 }
 
 func (m *MappingNode) parseYAMLSubstitutionsOrScalar(node *yaml.Node) error {
@@ -205,6 +227,153 @@ func (m *MappingNode) UnmarshalJSON(data []byte) error {
 	}
 
 	return errInvalidMappingNode(nil)
+}
+
+func (m *MappingNode) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	m.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
+	nodeMap, isMap := node.Value.(map[string]json.Node)
+	if isMap {
+		err := m.fieldsFromJSONNode(nodeMap, linePositions, parentPath)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	nodeSlice, isSlice := node.Value.([]json.Node)
+	if isSlice {
+		err := m.itemsFromJSONNode(nodeSlice, linePositions, parentPath)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	nodeStringVal, isString := node.Value.(string)
+	if isString {
+		err := m.substitutionsOrScalarFromJSONNode(
+			node,
+			nodeStringVal,
+			linePositions,
+			parentPath,
+		)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	m.Scalar = &ScalarValue{}
+	err := m.Scalar.FromJSONNode(
+		node,
+		linePositions,
+		parentPath,
+	)
+	if err == nil {
+		return nil
+	}
+
+	return errInvalidMappingNode(&m.SourceMeta.Position)
+}
+
+func (m *MappingNode) fieldsFromJSONNode(
+	nodeMap map[string]json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	m.Fields = make(map[string]*MappingNode)
+	m.FieldsSourceMeta = make(map[string]*source.Meta)
+
+	for k, v := range nodeMap {
+		m.Fields[k] = &MappingNode{}
+		fieldPath := CreateJSONNodePath(k, parentPath, false)
+		err := m.Fields[k].FromJSONNode(&v, linePositions, fieldPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MappingNode) itemsFromJSONNode(
+	nodeSlice []json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	m.Items = make([]*MappingNode, len(nodeSlice))
+	for i, item := range nodeSlice {
+		m.Items[i] = &MappingNode{}
+		key := fmt.Sprintf("%d", i)
+		fieldPath := CreateJSONNodePath(key, parentPath, false)
+		err := m.Items[i].FromJSONNode(&item, linePositions, fieldPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MappingNode) substitutionsOrScalarFromJSONNode(
+	node *json.Node,
+	stringVal string,
+	linePositions []int,
+	parentPath string,
+) error {
+	m.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
+	precedingCharCount := substitutions.JSONNodePrecedingCharCount
+	sourceStartMeta := substitutions.DetermineJSONSourceStartMeta(
+		node,
+		stringVal,
+		linePositions,
+	)
+	parsedValues, err := substitutions.ParseSubstitutionValues(
+		parentPath, // substitutionContext
+		stringVal,
+		sourceStartMeta,
+		true, // outputLineInfo
+		// For JSON with Commas and Comments, the column number will be reliable
+		// so we can use it to get the precise starting column of the string.
+		false,              // ignoreParentColumn
+		precedingCharCount, // parentContextPrecedingCharCount
+	)
+	if err != nil {
+		// When substitutions are present but invalid, we must return an error to provide
+		// the best possible user experience when debugging issues with a blueprint,
+		// silently ignoring invalid substitutions and falling back to string literals
+		// would make it harder to debug.
+		return err
+	} else if len(parsedValues) == 0 || (len(parsedValues) == 1 && parsedValues[0].StringValue != nil) {
+		// Parse scalar value if there are no substitutions.
+		m.Scalar = &ScalarValue{}
+		return m.Scalar.FromJSONNode(
+			node,
+			linePositions,
+			parentPath,
+		)
+	}
+
+	m.StringWithSubstitutions = &substitutions.StringOrSubstitutions{
+		Values:     parsedValues,
+		SourceMeta: m.SourceMeta,
+	}
+	return nil
 }
 
 func (m *MappingNode) parseJSONSubstitutionsOrScalar(data []byte) error {

@@ -2,8 +2,9 @@ package core
 
 import (
 	"errors"
+	"fmt"
 
-	"gopkg.in/yaml.v3"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
 
 // Error represents an error due to an issue
@@ -43,53 +44,77 @@ const (
 	ErrorCoreReasonCodeMustBeScalar ErrorCoreReasonCode = "must_be_scalar"
 )
 
-func errInvalidMappingNode(value *yaml.Node) error {
+func errInvalidMappingNode(posInfo source.PositionInfo) error {
 	innerError := errors.New("a blueprint mapping node must be a valid scalar, mapping or sequence")
-	if value == nil {
+	if posInfo == nil {
 		return &Error{
 			ReasonCode: ErrorCoreReasonCodeInvalidMappingNode,
 			Err:        innerError,
 		}
 	}
 
+	line := posInfo.GetLine()
+	col := posInfo.GetColumn()
 	return &Error{
 		ReasonCode:   ErrorCoreReasonCodeInvalidMappingNode,
 		Err:          innerError,
-		SourceLine:   &value.Line,
-		SourceColumn: &value.Column,
+		SourceLine:   &line,
+		SourceColumn: &col,
 	}
 }
 
-func errMissingMappingNode(value *yaml.Node) error {
+func errMissingMappingNode(posInfo source.PositionInfo) error {
 	innerError := errors.New("a blueprint mapping node must have a valid value set")
-	if value == nil {
+	if posInfo == nil {
 		return &Error{
 			ReasonCode: ErrorCoreReasonCodeMissingMappingNode,
 			Err:        innerError,
 		}
 	}
 
+	line := posInfo.GetLine()
+	col := posInfo.GetColumn()
 	return &Error{
 		ReasonCode:   ErrorCoreReasonCodeMissingMappingNode,
 		Err:          innerError,
-		SourceLine:   &value.Line,
-		SourceColumn: &value.Column,
+		SourceLine:   &line,
+		SourceColumn: &col,
 	}
 }
 
-func errMustBeScalar(value *yaml.Node) error {
+func errMustBeScalar(posInfo source.PositionInfo) error {
 	innerError := errors.New("a blueprint scalar value must be a scalar (string, int, bool or float)")
-	if value == nil {
+	return createScalarError(posInfo, innerError)
+}
+
+func errMustBeScalarWithParentPath(
+	posInfo source.PositionInfo,
+	parentPath string,
+) error {
+	innerError := fmt.Errorf(
+		"blueprint scalar value in %q must be a scalar (string, int, bool or float)",
+		parentPath,
+	)
+	return createScalarError(posInfo, innerError)
+}
+
+func createScalarError(
+	posInfo source.PositionInfo,
+	innerError error,
+) error {
+	if posInfo == nil {
 		return &Error{
 			ReasonCode: ErrorCoreReasonCodeMustBeScalar,
 			Err:        innerError,
 		}
 	}
 
+	line := posInfo.GetLine()
+	col := posInfo.GetColumn()
 	return &Error{
 		ReasonCode:   ErrorCoreReasonCodeMustBeScalar,
 		Err:          innerError,
-		SourceLine:   &value.Line,
-		SourceColumn: &value.Column,
+		SourceLine:   &line,
+		SourceColumn: &col,
 	}
 }

@@ -249,7 +249,7 @@ func validateElemReferenceSubstitution(
 		return "", diagnostics, errSubElemRefResourceNotFound(elemRefType, resourceName, location)
 	}
 
-	if !derivedFromTemplate && resource.Each == nil {
+	if !derivedFromTemplate && substitutions.IsNilStringSubs(resource.Each) {
 		return "", diagnostics, errSubElemRefResourceNotEach(elemRefType, resourceName, location)
 	}
 
@@ -298,7 +298,8 @@ func validateResourcePropertySubstitution(
 		return "", diagnostics, errSubResourceSelfReference(resourceName, subResourceProp.SourceMeta)
 	}
 
-	if subResourceProp.ResourceEachTemplateIndex != nil && resourceSchema.Each == nil {
+	if subResourceProp.ResourceEachTemplateIndex != nil &&
+		substitutions.IsNilStringSubs(resourceSchema.Each) {
 		return "", diagnostics, errSubResourceNotEach(
 			resourceName,
 			subResourceProp.ResourceEachTemplateIndex,

@@ -86,7 +86,8 @@ func validateCoreStringVariable(
 
 	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
-	if varSchema.Default != nil && varSchema.Default.StringValue == nil {
+	if !bpcore.IsScalarNil(varSchema.Default) &&
+		!bpcore.IsScalarString(varSchema.Default) {
 		return diagnostics, errVariableInvalidDefaultValue(
 			schema.VariableTypeString,
 			varName,
@@ -95,7 +96,7 @@ func validateCoreStringVariable(
 		)
 	}
 
-	if varSchema.Default != nil && strings.TrimSpace(*varSchema.Default.StringValue) == "" {
+	if !bpcore.IsScalarNil(varSchema.Default) && strings.TrimSpace(*varSchema.Default.StringValue) == "" {
 		return diagnostics, errVariableEmptyDefaultValue(
 			schema.VariableTypeString,
 			varName,
@@ -106,7 +107,7 @@ func validateCoreStringVariable(
 	userProvidedValue := params.BlueprintVariable(varName)
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
-	if validateRuntimeParams && finalValue == nil {
+	if validateRuntimeParams && bpcore.IsScalarNil(finalValue) {
 		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
@@ -200,7 +201,8 @@ func validateCoreIntegerVariable(
 
 	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
-	if varSchema.Default != nil && varSchema.Default.IntValue == nil {
+	if !bpcore.IsScalarNil(varSchema.Default) &&
+		!bpcore.IsScalarInt(varSchema.Default) {
 		return diagnostics, errVariableInvalidDefaultValue(
 			schema.VariableTypeInteger,
 			varName,
@@ -215,7 +217,7 @@ func validateCoreIntegerVariable(
 	userProvidedValue := params.BlueprintVariable(varName)
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
-	if validateRuntimeParams && finalValue == nil {
+	if validateRuntimeParams && bpcore.IsScalarNil(finalValue) {
 		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
@@ -301,7 +303,8 @@ func validateCoreFloatVariable(
 
 	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
-	if varSchema.Default != nil && varSchema.Default.FloatValue == nil {
+	if !bpcore.IsScalarNil(varSchema.Default) &&
+		!bpcore.IsScalarFloat(varSchema.Default) {
 		return diagnostics, errVariableInvalidDefaultValue(
 			schema.VariableTypeFloat,
 			varName,
@@ -316,7 +319,7 @@ func validateCoreFloatVariable(
 	userProvidedValue := params.BlueprintVariable(varName)
 	finalValue := fallbackToDefault(userProvidedValue, varSchema.Default)
 
-	if validateRuntimeParams && finalValue == nil {
+	if validateRuntimeParams && bpcore.IsScalarNil(finalValue) {
 		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 
@@ -400,7 +403,8 @@ func validateCoreBooleanVariable(
 
 	// Catch default value issues initially, regardless of whether
 	// or not the default value will be used in the variable instance.
-	if varSchema.Default != nil && varSchema.Default.BoolValue == nil {
+	if !bpcore.IsScalarNil(varSchema.Default) &&
+		!bpcore.IsScalarBool(varSchema.Default) {
 		return diagnostics, errVariableInvalidDefaultValue(
 			schema.VariableTypeBoolean,
 			varName,
@@ -417,7 +421,7 @@ func validateCoreBooleanVariable(
 		value = varSchema.Default
 	}
 
-	if validateRuntimeParams && value == nil {
+	if validateRuntimeParams && bpcore.IsScalarNil(value) {
 		return diagnostics, errRequiredVariableMissing(varName, getVarSourceMeta(varMap, varName))
 	}
 

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/coreos/go-json"
 	"gopkg.in/yaml.v3"
 )
 
@@ -21,6 +22,14 @@ type Meta struct {
 type Position struct {
 	Line   int `json:"line"`
 	Column int `json:"column"`
+}
+
+func (p *Position) GetLine() int {
+	return p.Line
+}
+
+func (p *Position) GetColumn() int {
+	return p.Column
 }
 
 // PositionFromSourceMeta returns the line and column from the provided source meta.
@@ -76,4 +85,85 @@ func EndSourcePositionFromYAMLScalarNode(node *yaml.Node) *Position {
 type Range struct {
 	Start *Position
 	End   *Position
+}
+
+// ExtractSourcePositionFromJSONNode position in source document
+// from a given JSON node and line positions.
+func ExtractSourcePositionFromJSONNode(
+	node *json.Node,
+	linePositions []int,
+) *Meta {
+	startOffset := getJSONNodeStartOffset(node)
+	position := PositionFromOffset(startOffset, linePositions)
+	endPosition := PositionFromOffset(node.End, linePositions)
+	return &Meta{
+		Position:    position,
+		EndPosition: &endPosition,
+	}
+}
+
+func getJSONNodeStartOffset(node *json.Node) int {
+	startOffset := node.KeyEnd
+	if startOffset == 0 {
+		// Not a value for a map, take the start position of the value
+		// instead of the end of a key in a map.
+		startOffset = node.Start
+	}
+
+	return startOffset
+}
+
+// PositionFromJSONNode returns the position of a JSON node
+// in the source code based on the node and an ordered list of line offsets.
+func PositionFromJSONNode(node *json.Node, linePositions []int) Position {
+	startOffset := getJSONNodeStartOffset(node)
+	return PositionFromOffset(startOffset, linePositions)
+}
+
+// PositionFromOffset returns the position of a character in the source
+// code based on the offset and an ordered list of line offsets.
+// This treats the offset of a new line character as the end of the line
+// and not the first column of the next line.
+func PositionFromOffset(offset int, linePositions []int) Position {
+	line := 0
+	for i, lineOffset := range linePositions {
+		if offset < lineOffset {
+			break
+		}
+		line = i
+	}
+
+	column := offset - linePositions[line]
+	if column == 0 {
+		prevLineOffset := 0
+		if line > 0 {
+			prevLineOffset = linePositions[line-1]
+		}
+		lineLength := linePositions[line] - prevLineOffset
+		return Position{
+			Line:   line,
+			Column: lineLength,
+		}
+	}
+
+	return Position{
+		Line:   line + 1,
+		Column: column,
+	}
+}
+
+// GetLastColumnOnLine returns the last column on a given line
+// based on the provided line positions.
+// The second return value is the raw offset for the end of the line.
+func GetLastColumnOnLine(line int, linePositions []int) (int, int) {
+	lineIndex := line - 1
+	if lineIndex < 0 || lineIndex >= len(linePositions)-1 {
+		return -1, -1
+	}
+
+	lineStartOffset := linePositions[lineIndex]
+	nextLineStartOffset := linePositions[lineIndex+1]
+	column := nextLineStartOffset - lineStartOffset
+	// The refined raw offset is the last character on the same line.
+	return column, nextLineStartOffset - 1
 }

@@ -128,10 +128,6 @@ func resolvedValueToString(
 	return "", fmt.Errorf("expected a scalar string, int, float or bool value")
 }
 
-func mappingNodeIsArray(node *bpcore.MappingNode) bool {
-	return node.Items != nil
-}
-
 func transformValueForFunctionCall(value *resolvedFunctionCallValue, _ int) any {
 	if value.value != nil {
 		return MappingNodeToGoValue(value.value)

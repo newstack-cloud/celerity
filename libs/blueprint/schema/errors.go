@@ -5,6 +5,7 @@ import (
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"gopkg.in/yaml.v3"
 )
 
@@ -50,6 +51,14 @@ const (
 	// for a blueprint schema load error is due to an invalid map
 	// being provided.
 	ErrorSchemaReasonCodeInvalidMap ErrorSchemaReasonCode = "invalid_map"
+	// ErrorSchemaReasonCodeInvalidMapKey is provided when the reason
+	// for a blueprint schema load error is due to an invalid array (sequence)
+	// being provided.
+	ErrorSchemaReasonCodeInvalidArray ErrorSchemaReasonCode = "invalid_array"
+	// ErrorSchemaReasonCodeInvalidArrayOrString is provided when the reason
+	// for a blueprint schema load error is due to an invalid value being provided
+	// for a field that can be either a string or an array of strings.
+	ErrorSchemaReasonCodeInvalidArrayOrString ErrorSchemaReasonCode = "invalid_array_or_string"
 	// ErrorSchemaReasonCodeInvalidResourceCondition is provided
 	// when the reason for a blueprint schema load error is due
 	// to an invalid resource condition being provided.
@@ -84,20 +93,60 @@ func errInvalidDependencyType(underlyingError error, line *int, column *int) err
 	}
 }
 
-func errInvalidMap(value *yaml.Node, field string) error {
+func errInvalidMap(posInfo source.PositionInfo, field string) error {
 	innerError := fmt.Errorf("an invalid value has been provided for %s, expected a mapping", field)
-	if value == nil {
+	if posInfo == nil {
 		return &Error{
 			ReasonCode: ErrorSchemaReasonCodeInvalidMap,
 			Err:        innerError,
 		}
 	}
 
+	line := posInfo.GetLine()
+	col := posInfo.GetColumn()
 	return &Error{
 		ReasonCode:   ErrorSchemaReasonCodeInvalidMap,
 		Err:          innerError,
-		SourceLine:   &value.Line,
-		SourceColumn: &value.Column,
+		SourceLine:   &line,
+		SourceColumn: &col,
+	}
+}
+
+func errInvalidArray(posInfo source.PositionInfo, field string) error {
+	innerError := fmt.Errorf("an invalid value has been provided for %s, expected a sequence", field)
+	if posInfo == nil {
+		return &Error{
+			ReasonCode: ErrorSchemaReasonCodeInvalidArray,
+			Err:        innerError,
+		}
+	}
+
+	line := posInfo.GetLine()
+	col := posInfo.GetColumn()
+	return &Error{
+		ReasonCode:   ErrorSchemaReasonCodeInvalidArray,
+		Err:          innerError,
+		SourceLine:   &line,
+		SourceColumn: &col,
+	}
+}
+
+func errInvalidArrayOrString(posInfo source.PositionInfo, field string) error {
+	innerError := fmt.Errorf("an invalid value has been provided for %s, expected a sequence or string", field)
+	if posInfo == nil {
+		return &Error{
+			ReasonCode: ErrorSchemaReasonCodeInvalidArrayOrString,
+			Err:        innerError,
+		}
+	}
+
+	line := posInfo.GetLine()
+	col := posInfo.GetColumn()
+	return &Error{
+		ReasonCode:   ErrorSchemaReasonCodeInvalidArrayOrString,
+		Err:          innerError,
+		SourceLine:   &line,
+		SourceColumn: &col,
 	}
 }
 

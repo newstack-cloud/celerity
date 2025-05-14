@@ -1,9 +1,9 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
 
+	json "github.com/coreos/go-json"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -21,8 +21,8 @@ type Variable struct {
 	SourceMeta    *source.Meta          `yaml:"-" json:"-"`
 }
 
-func (t *Variable) UnmarshalYAML(value *yaml.Node) error {
-	t.SourceMeta = &source.Meta{
+func (v *Variable) UnmarshalYAML(value *yaml.Node) error {
+	v.SourceMeta = &source.Meta{
 		Position: source.Position{
 			Line:   value.Line,
 			Column: value.Column,
@@ -35,11 +35,96 @@ func (t *Variable) UnmarshalYAML(value *yaml.Node) error {
 		return wrapErrorWithLineInfo(err, value)
 	}
 
-	t.Type = alias.Type
-	t.Description = alias.Description
-	t.Secret = alias.Secret
-	t.Default = alias.Default
-	t.AllowedValues = alias.AllowedValues
+	v.Type = alias.Type
+	v.Description = alias.Description
+	v.Secret = alias.Secret
+	v.Default = alias.Default
+	v.AllowedValues = alias.AllowedValues
+
+	return nil
+}
+
+func (v *Variable) FromJSONNode(node *json.Node, linePositions []int, parentPath string) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	v.Type = &VariableTypeWrapper{}
+	err := bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"type",
+		v.Type,
+		linePositions,
+		/* parentPath */ parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	v.Description = &bpcore.ScalarValue{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"description",
+		v.Description,
+		linePositions,
+		/* parentPath */ parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	v.Secret = &bpcore.ScalarValue{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"secret",
+		v.Secret,
+		linePositions,
+		/* parentPath */ parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	v.Default = &bpcore.ScalarValue{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"default",
+		v.Default,
+		linePositions,
+		/* parentPath */ parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	v.AllowedValues = []*bpcore.ScalarValue{}
+	err = bpcore.UnpackValuesFromJSONMapNode(
+		nodeMap,
+		"allowedValues",
+		&v.AllowedValues,
+		linePositions,
+		/* parentPath */ parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	v.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
 
 	return nil
 }
@@ -82,6 +167,20 @@ func (t *VariableTypeWrapper) UnmarshalJSON(data []byte) error {
 
 	t.Value = VariableType(typeVal)
 
+	return nil
+}
+
+func (t *VariableTypeWrapper) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	t.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+	stringVal := node.Value.(string)
+	t.Value = VariableType(stringVal)
 	return nil
 }
 

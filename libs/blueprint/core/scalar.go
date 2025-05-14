@@ -1,8 +1,9 @@
 package core
 
 import (
-	"encoding/json"
 	"strings"
+
+	json "github.com/coreos/go-json"
 
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"gopkg.in/yaml.v3"
@@ -33,7 +34,7 @@ type ScalarValue struct {
 // MarshalYAML fulfils the yaml.Marshaler interface
 // to marshal a blueprint value into one of the
 // supported scalar types.
-func (v *ScalarValue) MarshalYAML() (interface{}, error) {
+func (v *ScalarValue) MarshalYAML() (any, error) {
 	if v.StringValue != nil {
 		return *v.StringValue, nil
 	}
@@ -50,8 +51,9 @@ func (v *ScalarValue) MarshalYAML() (interface{}, error) {
 // to unmarshal a parsed blueprint value into one of the
 // supported scalar types.
 func (v *ScalarValue) UnmarshalYAML(value *yaml.Node) error {
+	posInfo := YAMLNodeToPosInfo(value)
 	if value.Kind != yaml.ScalarNode {
-		return errMustBeScalar(value)
+		return errMustBeScalar(posInfo)
 	}
 
 	v.SourceMeta = &source.Meta{
@@ -93,7 +95,7 @@ func (v *ScalarValue) UnmarshalYAML(value *yaml.Node) error {
 		return nil
 	}
 
-	return errMustBeScalar(value)
+	return errMustBeScalar(posInfo)
 }
 
 // MarshalJSON fulfils the json.Marshaler interface
@@ -113,6 +115,40 @@ func (v *ScalarValue) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(*v.FloatValue)
+}
+
+func (v *ScalarValue) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	v.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
+	// JSON nodes treat all numbers as float64.
+	if floatVal, isFloat := node.Value.(float64); isFloat {
+		if isIntegral(floatVal) {
+			intVal := int(floatVal)
+			v.IntValue = &intVal
+		} else {
+			v.FloatValue = &floatVal
+		}
+		return nil
+	}
+
+	if boolVal, isBool := node.Value.(bool); isBool {
+		v.BoolValue = &boolVal
+		return nil
+	}
+
+	if stringVal, isString := node.Value.(string); isString {
+		v.StringValue = &stringVal
+		return nil
+	}
+
+	return errMustBeScalarWithParentPath(&v.SourceMeta.Position, parentPath)
 }
 
 // UnmarshalJSON fulfils the json.Unmarshaler interface
@@ -262,6 +298,34 @@ func ScalarFromFloat(value float64) *ScalarValue {
 	}
 }
 
+// IsScalarNil checks if a scalar value is nil or has no value.
+func IsScalarNil(scalar *ScalarValue) bool {
+	return scalar == nil || (scalar.StringValue == nil &&
+		scalar.IntValue == nil &&
+		scalar.BoolValue == nil &&
+		scalar.FloatValue == nil)
+}
+
+// IsScalarString checks if a scalar value is a string.
+func IsScalarString(scalar *ScalarValue) bool {
+	return scalar != nil && scalar.StringValue != nil
+}
+
+// IsScalarInt checks if a scalar value is an int.
+func IsScalarInt(scalar *ScalarValue) bool {
+	return scalar != nil && scalar.IntValue != nil
+}
+
+// IsScalarBool checks if a scalar value is a bool.
+func IsScalarBool(scalar *ScalarValue) bool {
+	return scalar != nil && scalar.BoolValue != nil
+}
+
+// IsScalarFloat checks if a scalar value is a float.
+func IsScalarFloat(scalar *ScalarValue) bool {
+	return scalar != nil && scalar.FloatValue != nil
+}
+
 // ScalarType represents the type of a scalar value that can be
 // used in annotation and configuration definitions.
 type ScalarType string
@@ -276,3 +340,7 @@ const (
 	// ScalarTypeBool is the type of an element in a spec that is a boolean.
 	ScalarTypeBool ScalarType = "boolean"
 )
+
+func isIntegral(value float64) bool {
+	return value == float64(int(value))
+}

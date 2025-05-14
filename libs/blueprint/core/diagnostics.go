@@ -16,8 +16,6 @@ type Diagnostic struct {
 	Message string `json:"message"`
 	// An optional text range in the source blueprint
 	// that the diagnostic applies to.
-	// This will only be present when the source format is YAML,
-	// but can be nil for some diagnostics from a YAML source input.
 	Range *DiagnosticRange `json:"range,omitempty"`
 }
 

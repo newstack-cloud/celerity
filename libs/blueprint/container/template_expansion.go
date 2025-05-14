@@ -11,6 +11,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/subengine"
+	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 )
 
 type ExpandedResourceTemplateResult struct {
@@ -84,7 +85,7 @@ func ExpandResourceTemplates(
 	}
 
 	for resourceName, resource := range blueprint.Resources.Values {
-		if resource.Each != nil {
+		if !substitutions.IsNilStringSubs(resource.Each) {
 			items, err := substitutionResolver.ResolveResourceEach(
 				ctx,
 				resourceName,
@@ -108,7 +109,7 @@ func ExpandResourceTemplates(
 	// We need to expand the resources after all each properties have been resolved in order to compare
 	// the lengths of the resolved items for templates where there are links between them.
 	for resourceName, resource := range blueprint.Resources.Values {
-		if resource.Each != nil {
+		if !substitutions.IsNilStringSubs(resource.Each) {
 			items, _ := cache.Get(resourceName)
 			err := expandResourcesFromTemplate(
 				&resourceTemplateInfo{
@@ -283,7 +284,7 @@ func collectLabelsToApply(
 	collectedLabels := map[string]string{}
 	labelsToBeMadeUnique := map[string]string{}
 	for _, linkedFrom := range linkNode.LinkedFrom {
-		if linkedFrom.Resource.Each != nil {
+		if !substitutions.IsNilStringSubs(linkedFrom.Resource.Each) {
 			linkedFromItems, _ := cache.Get(linkedFrom.ResourceName)
 			if len(items) != len(linkedFromItems) {
 				return nil, errResourceTemplateLinkLengthMismatch(
@@ -329,7 +330,7 @@ func collectLinkSelectorsToApply(
 	collectedLinkSelectors := map[string]string{}
 	linkSelectorsToBeMadeUnique := map[string]string{}
 	for _, linksTo := range linkNode.LinksTo {
-		if linksTo.Resource.Each != nil {
+		if !substitutions.IsNilStringSubs(linksTo.Resource.Each) {
 			linksToItems, _ := cache.Get(linksTo.ResourceName)
 			if len(items) != len(linksToItems) {
 				return nil, errResourceTemplateLinkLengthMismatch(

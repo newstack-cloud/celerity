@@ -284,7 +284,7 @@ func (r *defaultSubstitutionResolver) ResolveResourceEach(
 		return nil, err
 	}
 
-	isArray := mappingNodeIsArray(eachResolved)
+	isArray := bpcore.IsArrayMappingNode(eachResolved)
 	if isArray && len(eachResolved.Items) == 0 {
 		return nil, errEmptyResourceEach(elementName, resourceName)
 	} else if !isArray {
@@ -1394,7 +1394,7 @@ func (r *defaultSubstitutionResolver) resolveSubstitutions(
 	stringOrSubs *substitutions.StringOrSubstitutions,
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
-	if stringOrSubs == nil {
+	if stringOrSubs == nil || stringOrSubs.Values == nil {
 		return nil, nil
 	}
 

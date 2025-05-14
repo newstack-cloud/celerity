@@ -39,6 +39,8 @@
   "exports": {
     "environment": {
       "type": "string",
+      // Export fields must be plain strings containing references
+      // to fields in elements of the blueprint.
       "field": "variables.environment",
       "description": "The environment for the blueprint."
     },

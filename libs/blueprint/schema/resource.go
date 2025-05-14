@@ -1,9 +1,9 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
 
+	json "github.com/coreos/go-json"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -51,6 +51,137 @@ func (r *Resource) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+func (r *Resource) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	r.Type = &ResourceTypeWrapper{}
+	err := core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"type",
+		r.Type,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	r.Description = &substitutions.StringOrSubstitutions{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"description",
+		r.Description,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	r.Metadata = &Metadata{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"metadata",
+		r.Metadata,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	r.DependsOn = &DependsOnList{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"dependsOn",
+		r.DependsOn,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	r.Condition = &Condition{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"condition",
+		r.Condition,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	r.Each = &substitutions.StringOrSubstitutions{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"each",
+		r.Each,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	r.LinkSelector = &LinkSelector{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"linkSelector",
+		r.LinkSelector,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	r.Spec = &core.MappingNode{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"spec",
+		r.Spec,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	r.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
+	return nil
+}
+
 // DependsOnList provides a list of resource names
 // that a resource depends on.
 // This can include extra information about the locations of
@@ -60,7 +191,7 @@ type DependsOnList struct {
 	StringList
 }
 
-func (t *DependsOnList) MarshalYAML() (interface{}, error) {
+func (t *DependsOnList) MarshalYAML() (any, error) {
 	return t.StringList.MarshalYAML()
 }
 
@@ -76,6 +207,14 @@ func (t *DependsOnList) UnmarshalJSON(data []byte) error {
 	return t.unmarshalJSON(data, errInvalidDependencyType, "dependency")
 }
 
+func (t *DependsOnList) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	return t.StringList.FromJSONNode(node, linePositions, parentPath)
+}
+
 // ResourceTypeWrapper provides a struct that holds a resource type
 // value.
 type ResourceTypeWrapper struct {
@@ -83,7 +222,7 @@ type ResourceTypeWrapper struct {
 	SourceMeta *source.Meta
 }
 
-func (t *ResourceTypeWrapper) MarshalYAML() (interface{}, error) {
+func (t *ResourceTypeWrapper) MarshalYAML() (any, error) {
 	return t.Value, nil
 }
 
@@ -114,6 +253,20 @@ func (t *ResourceTypeWrapper) UnmarshalJSON(data []byte) error {
 
 	t.Value = typeVal
 
+	return nil
+}
+
+func (t *ResourceTypeWrapper) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	t.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+	stringVal := node.Value.(string)
+	t.Value = stringVal
 	return nil
 }
 
@@ -151,6 +304,81 @@ func (m *Metadata) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+func (m *Metadata) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	m.DisplayName = &substitutions.StringOrSubstitutions{}
+	err := core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"displayName",
+		m.DisplayName,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	m.Annotations = &StringOrSubstitutionsMap{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"annotations",
+		m.Annotations,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	m.Labels = &StringMap{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"labels",
+		m.Labels,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	m.Custom = &core.MappingNode{}
+	err = core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"custom",
+		m.Custom,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	m.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+
+	return nil
+}
+
 // LinkSelector allows a resource to select other resources
 // to link to by label.
 type LinkSelector struct {
@@ -173,6 +401,39 @@ func (s *LinkSelector) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	s.ByLabel = alias.ByLabel
+
+	return nil
+}
+
+func (s *LinkSelector) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	s.ByLabel = &StringMap{}
+	err := core.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"byLabel",
+		s.ByLabel,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	s.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
 
 	return nil
 }

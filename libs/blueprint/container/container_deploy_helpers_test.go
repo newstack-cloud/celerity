@@ -705,8 +705,8 @@ func createBlueprintDeployFixture(
 	blueprintFormat schema.SpecFormat,
 ) (blueprintDeployFixture, error) {
 	extension := "yml"
-	if blueprintFormat == schema.JSONSpecFormat {
-		extension = "json"
+	if blueprintFormat == schema.JWCCSpecFormat {
+		extension = "jsonc"
 	}
 
 	blueprintContainer, err := loader.Load(

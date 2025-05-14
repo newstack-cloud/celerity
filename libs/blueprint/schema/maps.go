@@ -1,8 +1,8 @@
 package schema
 
 import (
-	"encoding/json"
-
+	json "github.com/coreos/go-json"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	"gopkg.in/yaml.v3"
@@ -13,7 +13,7 @@ import (
 // This includes extra information about the locations of
 // the keys in the original source being unmarshalled.
 // This information will not always be present, it is populated
-// when unmarshalling from YAML source documents.
+// when unmarshalling from YAML and JWCC source documents.
 type StringOrSubstitutionsMap struct {
 	Values map[string]*substitutions.StringOrSubstitutions
 	// Mapping of field names to their source locations.
@@ -69,11 +69,48 @@ func (m *StringOrSubstitutionsMap) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (m *StringOrSubstitutionsMap) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	m.Values = make(map[string]*substitutions.StringOrSubstitutions)
+	m.SourceMeta = make(map[string]*source.Meta)
+
+	for key, valNode := range nodeMap {
+		m.SourceMeta[key] = source.ExtractSourcePositionFromJSONNode(
+			&valNode,
+			linePositions,
+		)
+
+		stringOrSubs := &substitutions.StringOrSubstitutions{}
+		fieldPath := core.CreateJSONNodePath(key, parentPath, false /* parentIsRoot */)
+		err := stringOrSubs.FromJSONNode(
+			&valNode,
+			linePositions,
+			/* parentPath */ fieldPath,
+		)
+		if err != nil {
+			return err
+		}
+
+		m.Values[key] = stringOrSubs
+	}
+
+	return nil
+}
+
 // StringMap provides a mapping of names to string literals.
 // This includes extra information about the locations of
 // the keys in the original source being unmarshalled.
 // This information will not always be present, it is populated
-// when unmarshalling from YAML source documents.
+// when unmarshalling from YAML and JWCC source documents.
 type StringMap struct {
 	Values map[string]string
 	// Mapping of field names to their source locations.
@@ -126,5 +163,32 @@ func (m *StringMap) UnmarshalJSON(data []byte) error {
 	}
 
 	m.Values = values
+	return nil
+}
+
+func (m *StringMap) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	m.Values = make(map[string]string)
+	m.SourceMeta = make(map[string]*source.Meta)
+
+	for key, valNode := range nodeMap {
+		m.SourceMeta[key] = source.ExtractSourcePositionFromJSONNode(
+			&valNode,
+			linePositions,
+		)
+
+		str := valNode.Value.(string)
+		m.Values[key] = str
+	}
+
 	return nil
 }

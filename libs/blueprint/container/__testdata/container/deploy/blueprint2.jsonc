@@ -171,7 +171,7 @@
   },
   "include": {
     "coreInfra": {
-      "path": "${cwd()}/__testdata/container/deploy/blueprint2-child-core-infra.json",
+      "path": "${cwd()}/__testdata/container/deploy/blueprint2-child-core-infra.jsonc",
       "description": "core infrastructure for the Orders API",
       "variables": {
         "environment": "${variables.environment}",

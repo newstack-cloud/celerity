@@ -1,9 +1,10 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
+
+	json "github.com/coreos/go-json"
 
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/common/core"
@@ -95,6 +96,29 @@ func (t *StringList) unmarshalJSON(
 		)
 	}
 	t.Values = []string{transformValue}
+
+	return nil
+}
+
+func (t *StringList) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	transformStringNodes, ok := node.Value.([]json.Node)
+	if !ok {
+		transformStringNodes = []json.Node{*node}
+	}
+
+	t.Values = make([]string, len(transformStringNodes))
+	t.SourceMeta = make([]*source.Meta, len(transformStringNodes))
+	for i, stringNode := range transformStringNodes {
+		t.SourceMeta[i] = source.ExtractSourcePositionFromJSONNode(
+			&stringNode,
+			linePositions,
+		)
+		t.Values[i] = stringNode.Value.(string)
+	}
 
 	return nil
 }

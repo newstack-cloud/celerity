@@ -97,7 +97,7 @@ func (s *ContainerDeployTestSuite) SetupTest() {
 		2,
 		loader,
 		s.fixture2Params,
-		schema.JSONSpecFormat,
+		schema.JWCCSpecFormat,
 	)
 	s.Require().NoError(err)
 

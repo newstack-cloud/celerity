@@ -1,9 +1,9 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
 
+	json "github.com/coreos/go-json"
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -41,6 +41,67 @@ func (e *Export) UnmarshalYAML(value *yaml.Node) error {
 	e.Type = alias.Type
 	e.Field = alias.Field
 	e.Description = alias.Description
+
+	return nil
+}
+
+func (e *Export) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	nodeMap, ok := node.Value.(map[string]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return errInvalidMap(&position, parentPath)
+	}
+
+	e.Type = &ExportTypeWrapper{}
+	err := bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"type",
+		e.Type,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	e.Field = &bpcore.ScalarValue{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"field",
+		e.Field,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ true,
+	)
+	if err != nil {
+		return err
+	}
+
+	e.Description = &substitutions.StringOrSubstitutions{}
+	err = bpcore.UnpackValueFromJSONMapNode(
+		nodeMap,
+		"description",
+		e.Description,
+		linePositions,
+		parentPath,
+		/* parentIsRoot */ false,
+		/* required */ false,
+	)
+	if err != nil {
+		return err
+	}
+
+	e.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
 
 	return nil
 }
@@ -83,6 +144,20 @@ func (t *ExportTypeWrapper) UnmarshalJSON(data []byte) error {
 
 	t.Value = ExportType(typeVal)
 
+	return nil
+}
+
+func (t *ExportTypeWrapper) FromJSONNode(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) error {
+	t.SourceMeta = source.ExtractSourcePositionFromJSONNode(
+		node,
+		linePositions,
+	)
+	stringVal := node.Value.(string)
+	t.Value = ExportType(stringVal)
 	return nil
 }
 

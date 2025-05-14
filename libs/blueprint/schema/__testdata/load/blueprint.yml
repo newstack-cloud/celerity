@@ -11,6 +11,11 @@ variables:
   environment:
     type: string
     descrpition: The environment to deploy to
+values:
+  alteredTable:
+    type: string
+    description: An altered table name
+    value: "${variables.dynamoDBTable}-altered"
 datasources:
   network:
     type: "aws/vpc"
