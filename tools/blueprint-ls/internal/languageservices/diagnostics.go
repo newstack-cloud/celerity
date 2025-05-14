@@ -8,6 +8,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/diagnostichelpers"
 	"github.com/two-hundred/ls-builder/common"
 	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
@@ -57,10 +58,11 @@ func (s *DiagnosticsService) ValidateTextDocument(
 		return diagnostics, nil, nil
 	}
 
+	format := blueprint.DetermineDocFormat(docURI)
 	validationResult, err := s.loader.ValidateString(
 		context.Context,
 		*content,
-		schema.YAMLSpecFormat,
+		format,
 		core.NewDefaultParams(
 			map[string]map[string]*core.ScalarValue{},
 			map[string]map[string]*core.ScalarValue{},

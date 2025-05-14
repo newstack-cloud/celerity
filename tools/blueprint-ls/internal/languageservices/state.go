@@ -3,6 +3,7 @@ package languageservices
 import (
 	"sync"
 
+	"github.com/coreos/go-json"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
@@ -22,7 +23,10 @@ type State struct {
 	documentSchemas                         map[string]*schema.Blueprint
 	// YAML document hierarchy representation to extract document symbols
 	// from.
-	documentYAMLNodes    map[string]*yaml.Node
+	documentYAMLNodes map[string]*yaml.Node
+	// JSON document hierarchy representation to extract document symbols
+	// from.
+	documentJSONNodes    map[string]*json.Node
 	documentPositionMaps map[string]map[string][]*schema.TreeNode
 	documentTrees        map[string]*schema.TreeNode
 	positionEncodingKind lsp.PositionEncodingKind
@@ -38,6 +42,7 @@ func NewState() *State {
 		documentSchemas:      make(map[string]*schema.Blueprint),
 		documentPositionMaps: make(map[string]map[string][]*schema.TreeNode),
 		documentYAMLNodes:    make(map[string]*yaml.Node),
+		documentJSONNodes:    make(map[string]*json.Node),
 		documentTrees:        make(map[string]*schema.TreeNode),
 	}
 }
@@ -189,6 +194,28 @@ func (s *State) SetDocumentYAMLNode(uri string, node *yaml.Node) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.documentYAMLNodes[uri] = node
+}
+
+// GetDocumentJSONNode retrieves the JSON node for a document by its URI.
+func (s *State) GetDocumentJSONNode(uri string) *json.Node {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	node, ok := s.documentJSONNodes[uri]
+	if !ok {
+		return nil
+	}
+	return node
+}
+
+// SetDocumentJSONNode sets the JSON node for a document by its URI.
+func (s *State) SetDocumentJSONNode(uri string, node *json.Node) {
+	if node == nil {
+		return
+	}
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.documentJSONNodes[uri] = node
 }
 
 // SetDocumentTree sets the document tree for a document by its URI.

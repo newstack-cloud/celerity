@@ -95,7 +95,10 @@ func (a *Application) handleHover(ctx *common.LSPContext, params *lsp.HoverParam
 
 	bpSchema := a.state.GetDocumentSchema(params.TextDocument.URI)
 	if bpSchema == nil {
-		return nil, errors.New("no schema found for document")
+		a.logger.Error(
+			"no schema found for document, current document is not a valid blueprint",
+		)
+		return nil, nil
 	}
 
 	content, err := a.hoverService.GetHoverContent(
@@ -230,16 +233,28 @@ func (a *Application) storeDocumentAndDerivedStructures(
 	if parsed == nil {
 		return nil
 	}
+
+	docFormat := blueprint.DetermineDocFormat(uri)
+
 	a.state.SetDocumentSchema(uri, parsed)
 	tree := schema.SchemaToTree(parsed)
 	// positionMap := blueprint.CreatePositionMap(tree)
 	a.state.SetDocumentTree(uri, tree)
 	// a.state.SetDocumentPositionMap(uri, positionMap)
-	yamlNode, err := blueprint.ParseYAMLNode(content)
-	if err != nil {
-		return err
+
+	if docFormat == schema.YAMLSpecFormat {
+		yamlNode, err := blueprint.ParseYAMLNode(content)
+		if err != nil {
+			return err
+		}
+		a.state.SetDocumentYAMLNode(uri, yamlNode)
+	} else {
+		jsonNode, err := blueprint.ParseJWCCNode(content)
+		if err != nil {
+			return err
+		}
+		a.state.SetDocumentJSONNode(uri, jsonNode)
 	}
-	a.state.SetDocumentYAMLNode(uri, yamlNode)
 	return nil
 }
 
