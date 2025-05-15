@@ -4,7 +4,7 @@ The Celerity Workflow API allows for triggering and monitoring the workflow alon
 
 ## Authentication
 
-API calls to a workflow application must be authenticated with an [API key](https://celerityframework.com/docs/auth/api-keys), [Celerity Signature v1](https://celerityframework.com/docs/auth/signature-v1) or a [JWT access token issued by an OAuth2/OpenID connect provider](https://celerityframework.com/docs/auth/jwts).
+API calls to a workflow application must be authenticated with an [API key](https://celerityframework.io/docs/auth/api-keys), [Celerity Signature v1](https://celerityframework.io/docs/auth/signature-v1) or a [JWT access token issued by an OAuth2/OpenID connect provider](https://celerityframework.io/docs/auth/jwts).
 
 An OAuth2/OpenID Connect provider must publish a JWKS (JSON Web Key Set) for the public key used to verify the JWT signature in the `{issuer}/.well-known/openid-configuration` or `{issuer}/.well-known/oauth-authorization-server` endpoint.
 

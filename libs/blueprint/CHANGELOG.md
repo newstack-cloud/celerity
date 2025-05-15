@@ -145,7 +145,7 @@ _Breaking changes will occur in early 0.x releases of this framework._
 
 ### Added
 
-- Functionality to load, parse and validate blueprints that adheres to the [Blueprint Specification](https://www.celerityframework.com/docs/blueprint/specification).
+- Functionality to load, parse and validate blueprints that adheres to the [Blueprint Specification](https://www.celerityframework.io/docs/blueprint/specification).
 - Functionality to stage changes for updates and new deployments of a blueprint.
 - Functionality to resolve substitutions in all elements of a blueprint.
 - Functionality to deploy and destroy blueprint instances based on a set of changes produced during change staging.
