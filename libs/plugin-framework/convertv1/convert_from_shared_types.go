@@ -88,7 +88,8 @@ func fromPBConfigDefinition(
 	}
 
 	return &core.ConfigDefinition{
-		Fields: coreFields,
+		Fields:                coreFields,
+		AllowAdditionalFields: pbConfigDef.AllowAdditionalFields,
 	}, nil
 }
 

@@ -24,6 +24,7 @@ message ConfigDefinitionResponse {
 // transformer plugin.
 message ConfigDefinition {
     map<string, ConfigFieldDefinition> fields = 1;
+    bool allow_additional_fields = 2;
 }
 
 // ConfigFieldDefinition represents a field in a configuration

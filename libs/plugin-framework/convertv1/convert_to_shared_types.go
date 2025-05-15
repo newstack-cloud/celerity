@@ -1576,7 +1576,8 @@ func toPBConfigDefinition(
 	definition *core.ConfigDefinition,
 ) (*sharedtypesv1.ConfigDefinition, error) {
 	pbConfigDef := &sharedtypesv1.ConfigDefinition{
-		Fields: map[string]*sharedtypesv1.ConfigFieldDefinition{},
+		Fields:                map[string]*sharedtypesv1.ConfigFieldDefinition{},
+		AllowAdditionalFields: definition.AllowAdditionalFields,
 	}
 
 	for fieldName, fieldDef := range definition.Fields {
