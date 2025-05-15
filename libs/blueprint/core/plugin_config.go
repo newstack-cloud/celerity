@@ -2,8 +2,14 @@ package core
 
 // ConfigDefinition contains a detailed definition (schema) of the configuration
 // required for a provider or transformer plugin.
+// Fields that have dynamic keys should use the `<placeholder>` syntax
+// in the key name, e.g. "aws.config.regionKMSKeys.<region>".
+// Schema validation will match based on the pattern for dynamic keys.
+// Dynamic keys are often useful to emulate nested dynamic map or array structures
+// in provider and transformer configuration.
 type ConfigDefinition struct {
-	Fields map[string]*ConfigFieldDefinition `json:"fields"`
+	Fields                map[string]*ConfigFieldDefinition `json:"fields"`
+	AllowAdditionalFields bool                              `json:"allowAdditionalFields"`
 }
 
 // ConfigFieldDefinition represents a field in a configuration definition
