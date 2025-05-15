@@ -200,7 +200,7 @@ func getPluginMetadataDescription(
 func getProviderConfigDocs(
 	ctx context.Context,
 	providerPlugin provider.Provider,
-) (map[string]*PluginDocsVersionConfigField, error) {
+) (*PluginDocsVersionConfig, error) {
 	configDefinition, err := providerPlugin.ConfigDefinition(ctx)
 	if err != nil {
 		return nil, err
@@ -212,7 +212,7 @@ func getProviderConfigDocs(
 func getTransformerConfigDocs(
 	ctx context.Context,
 	transformerPlugin transform.SpecTransformer,
-) (map[string]*PluginDocsVersionConfigField, error) {
+) (*PluginDocsVersionConfig, error) {
 	configDefinition, err := transformerPlugin.ConfigDefinition(ctx)
 	if err != nil {
 		return nil, err
@@ -223,10 +223,10 @@ func getTransformerConfigDocs(
 
 func createConfigDocs(
 	configDefinition *core.ConfigDefinition,
-) (map[string]*PluginDocsVersionConfigField, error) {
-	configDocs := make(map[string]*PluginDocsVersionConfigField)
+) (*PluginDocsVersionConfig, error) {
+	fields := make(map[string]*PluginDocsVersionConfigField)
 	for key, field := range configDefinition.Fields {
-		configDocs[key] = &PluginDocsVersionConfigField{
+		fields[key] = &PluginDocsVersionConfigField{
 			Type:          string(field.Type),
 			Label:         field.Label,
 			Description:   field.Description,
@@ -238,7 +238,10 @@ func createConfigDocs(
 		}
 	}
 
-	return configDocs, nil
+	return &PluginDocsVersionConfig{
+		Fields:                fields,
+		AllowAdditionalFields: configDefinition.AllowAdditionalFields,
+	}, nil
 }
 
 func getProviderResourcesDocs(

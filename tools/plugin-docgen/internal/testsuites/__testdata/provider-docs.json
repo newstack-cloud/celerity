@@ -7,30 +7,33 @@
   "author": "Two Hundred",
   "repository": "https://github.com/two-hundred/celerity-provider-aws",
   "config": {
-    "accessKeyId": {
-      "type": "string",
-      "label": "Access Key ID",
-      "description": "The access key Id to use to authenticate with AWS.",
-      "required": true,
-      "secret": false,
-      "examples": ["AKIAIOSFODNN7EXAMPLE"]
+    "fields": {
+      "accessKeyId": {
+        "type": "string",
+        "label": "Access Key ID",
+        "description": "The access key Id to use to authenticate with AWS.",
+        "required": true,
+        "secret": false,
+        "examples": ["AKIAIOSFODNN7EXAMPLE"]
+      },
+      "secretAccessKey": {
+        "type": "string",
+        "label": "Secret Access Key",
+        "description": "The secret access key to use to authenticate with AWS.",
+        "required": true,
+        "secret": true
+      },
+      "someConfigField": {
+        "type": "string",
+        "label": "Some Config Field",
+        "description": "Some config field description.",
+        "required": false,
+        "default": "Some value",
+        "allowedValues": ["Some value", "Another value"],
+        "secret": false
+      }
     },
-    "secretAccessKey": {
-      "type": "string",
-      "label": "Secret Access Key",
-      "description": "The secret access key to use to authenticate with AWS.",
-      "required": true,
-      "secret": true
-    },
-    "someConfigField": {
-      "type": "string",
-      "label": "Some Config Field",
-      "description": "Some config field description.",
-      "required": false,
-      "default": "Some value",
-      "allowedValues": ["Some value", "Another value"],
-      "secret": false
-    }
+    "allowAdditionalFields": true
   },
   "resources": [
     {

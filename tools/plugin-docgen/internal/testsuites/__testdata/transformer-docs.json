@@ -7,14 +7,17 @@
   "author": "Two Hundred",
   "repository": "https://github.com/two-hundred/celerity-trasformer-testTransform",
   "config": {
-    "apiKey": {
-      "type": "string",
-      "label": "API key",
-      "description": "The API key to talk to the underlying infrastructure.",
-      "required": true,
-      "secret": true,
-      "examples": ["sk_10ea49b2a109eaab43f4c3d2b0e1a5e"]
-    }
+    "fields": {
+      "apiKey": {
+        "type": "string",
+        "label": "API key",
+        "description": "The API key to talk to the underlying infrastructure.",
+        "required": true,
+        "secret": true,
+        "examples": ["sk_10ea49b2a109eaab43f4c3d2b0e1a5e"]
+      }
+    },
+    "allowAdditionalFields": false
   },
   "transformName": "celerity-2025-04-01",
   "abstractResources": [

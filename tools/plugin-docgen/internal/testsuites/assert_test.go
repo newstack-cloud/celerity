@@ -61,13 +61,14 @@ func assertPluginDocsEqual(
 }
 
 func assertPluginDocsConfigEqual(
-	expected map[string]*docgen.PluginDocsVersionConfigField,
-	actual map[string]*docgen.PluginDocsVersionConfigField,
+	expected *docgen.PluginDocsVersionConfig,
+	actual *docgen.PluginDocsVersionConfig,
 	testSuite *suite.Suite,
 ) {
-	testSuite.Equal(len(expected), len(actual))
-	for key, expectedField := range expected {
-		actualField, ok := actual[key]
+	testSuite.Equal(expected.AllowAdditionalFields, actual.AllowAdditionalFields)
+	testSuite.Equal(len(expected.Fields), len(actual.Fields))
+	for key, expectedField := range expected.Fields {
+		actualField, ok := actual.Fields[key]
 		testSuite.True(ok)
 		testSuite.Equal(expectedField, actualField)
 	}

@@ -24,8 +24,8 @@ github.com/two-hundred/celerity/libs/blueprint v0.5.0 h1:UwpcLZnU+64fHuZYe/kbAKn
 github.com/two-hundred/celerity/libs/blueprint v0.5.0/go.mod h1:KfZnymHNcL7LMPR4TJhePnY0o2F+DObemYmu9kplLzU=
 github.com/two-hundred/celerity/libs/common v0.1.0 h1:mVY9z092XE2c3k5BmF3BeCApC14LDKKwL4y85N8KjxE=
 github.com/two-hundred/celerity/libs/common v0.1.0/go.mod h1:l3SbVmqFIs2SZpmg/GgnNgrk9KpDSfOfpmpycbOpMo4=
-github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250415131055-82e428d9e207 h1:su9QwOmEGdXlM405/c20/KL0TzKKuuHuJrY+03NKNjQ=
-github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250415131055-82e428d9e207/go.mod h1:a24WdYWYz8B4+pfh4byqYtWYjR46wuIFyajaPSYqSaE=
+github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250515000109-8d2746400999 h1:bTNYDnJ3eD9PPQOtd7r4Pe0FrzFxAT6tUCOmx//M9KQ=
+github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250515000109-8d2746400999/go.mod h1:a24WdYWYz8B4+pfh4byqYtWYjR46wuIFyajaPSYqSaE=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 go.uber.org/multierr v1.10.0 h1:S0h4aNzvfcFsC3dRF1jLoaov7oRaKqRGC/pUEJ2yvPQ=

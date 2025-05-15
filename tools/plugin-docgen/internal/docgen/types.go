@@ -5,14 +5,14 @@ import "github.com/two-hundred/celerity/libs/blueprint/core"
 // PluginDocs is a struct that holds the JSON representation of the plugin
 // documentation.
 type PluginDocs struct {
-	ID               string                                   `json:"id"`
-	DisplayName      string                                   `json:"displayName"`
-	Version          string                                   `json:"version"`
-	ProtocolVersions []string                                 `json:"protocolVersions"`
-	Description      string                                   `json:"description"`
-	Author           string                                   `json:"author"`
-	Repository       string                                   `json:"repository"`
-	Config           map[string]*PluginDocsVersionConfigField `json:"config"`
+	ID               string                   `json:"id"`
+	DisplayName      string                   `json:"displayName"`
+	Version          string                   `json:"version"`
+	ProtocolVersions []string                 `json:"protocolVersions"`
+	Description      string                   `json:"description"`
+	Author           string                   `json:"author"`
+	Repository       string                   `json:"repository"`
+	Config           *PluginDocsVersionConfig `json:"config"`
 
 	// Required for providers, should be empty for transformers.
 	Resources []*PluginDocsResource `json:"resources,omitempty"`
@@ -29,6 +29,11 @@ type PluginDocs struct {
 	TransformName string `json:"transformName,omitempty"`
 	// Required for transformers, should be empty for providers.
 	AbstractResources []*PluginDocsResource `json:"abstractResources,omitempty"`
+}
+
+type PluginDocsVersionConfig struct {
+	Fields                map[string]*PluginDocsVersionConfigField `json:"fields"`
+	AllowAdditionalFields bool                                     `json:"allowAdditionalFields"`
 }
 
 type PluginDocsVersionConfigField struct {

@@ -65,5 +65,6 @@ func providerConfigDefinition() *core.ConfigDefinition {
 				DefaultValue: core.ScalarFromString("Some value"),
 			},
 		},
+		AllowAdditionalFields: true,
 	}
 }
