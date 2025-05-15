@@ -128,10 +128,10 @@ func determineTransformEndSourceMeta(
 }
 
 const (
-	// TransformCelerity2025_04_01 is the transform to be used for
+	// TransformCelerity2025_08_01 is the transform to be used for
 	// Celerity resources that provide an abstraction over a more complex
 	// combination of underlying resources.
-	TransformCelerity2025_04_01 = "celerity-2025-04-01"
+	TransformCelerity2025_08_01 = "celerity-2025-08-01"
 )
 
 var (
@@ -139,6 +139,6 @@ var (
 	// to Celerity, these will be transforms maintained by the Celerity team
 	// or by trusted maintainers.
 	CoreTransforms = []string{
-		TransformCelerity2025_04_01,
+		TransformCelerity2025_08_01,
 	}
 )
