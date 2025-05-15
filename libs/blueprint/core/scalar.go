@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"strings"
 
 	json "github.com/coreos/go-json"
@@ -29,6 +30,24 @@ type ScalarValue struct {
 	FloatValue  *float64
 	StringValue *string
 	SourceMeta  *source.Meta
+}
+
+// ToString returns the string representation of the scalar value
+// that is useful for debugging and logging.
+func (v *ScalarValue) ToString() string {
+	if v.StringValue != nil {
+		return *v.StringValue
+	}
+	if v.IntValue != nil {
+		return fmt.Sprintf("%d", *v.IntValue)
+	}
+	if v.BoolValue != nil {
+		return fmt.Sprintf("%t", *v.BoolValue)
+	}
+	if v.FloatValue != nil {
+		return fmt.Sprintf("%f", *v.FloatValue)
+	}
+	return ""
 }
 
 // MarshalYAML fulfils the yaml.Marshaler interface
@@ -190,25 +209,25 @@ func (v *ScalarValue) UnmarshalJSON(data []byte) error {
 	return errMustBeScalar(nil)
 }
 
-func (l *ScalarValue) Equal(otherScalar *ScalarValue) bool {
-	if l == nil || otherScalar == nil {
+func (v *ScalarValue) Equal(otherScalar *ScalarValue) bool {
+	if v == nil || otherScalar == nil {
 		return false
 	}
 
-	if l.StringValue != nil && otherScalar.StringValue != nil {
-		return *l.StringValue == *otherScalar.StringValue
+	if v.StringValue != nil && otherScalar.StringValue != nil {
+		return *v.StringValue == *otherScalar.StringValue
 	}
 
-	if l.IntValue != nil && otherScalar.IntValue != nil {
-		return *l.IntValue == *otherScalar.IntValue
+	if v.IntValue != nil && otherScalar.IntValue != nil {
+		return *v.IntValue == *otherScalar.IntValue
 	}
 
-	if l.BoolValue != nil && otherScalar.BoolValue != nil {
-		return *l.BoolValue == *otherScalar.BoolValue
+	if v.BoolValue != nil && otherScalar.BoolValue != nil {
+		return *v.BoolValue == *otherScalar.BoolValue
 	}
 
-	if l.FloatValue != nil && otherScalar.FloatValue != nil {
-		return *l.FloatValue == *otherScalar.FloatValue
+	if v.FloatValue != nil && otherScalar.FloatValue != nil {
+		return *v.FloatValue == *otherScalar.FloatValue
 	}
 
 	return false
