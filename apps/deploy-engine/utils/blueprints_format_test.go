@@ -13,9 +13,11 @@ type BlueprintFormatFromExtensionTestSuite struct {
 
 func (s *BlueprintFormatFromExtensionTestSuite) Test_returns_correct_format_for_known_extensions() {
 	filePathFormatMaps := map[string]schema.SpecFormat{
-		"blueprint.json": schema.JSONSpecFormat,
-		"blueprint.yaml": schema.YAMLSpecFormat,
-		"blueprint.yml":  schema.YAMLSpecFormat,
+		"blueprint.jsonc":  schema.JWCCSpecFormat,
+		"blueprint.json":   schema.JWCCSpecFormat,
+		"blueprint.hujson": schema.JWCCSpecFormat,
+		"blueprint.yaml":   schema.YAMLSpecFormat,
+		"blueprint.yml":    schema.YAMLSpecFormat,
 	}
 
 	for filePath, expectedFormat := range filePathFormatMaps {

@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -22,8 +23,10 @@ var (
 // format based on the file extension.
 // An error is returned if the extension is not supported.
 func BlueprintFormatFromExtension(filePath string) (schema.SpecFormat, error) {
-	if strings.HasSuffix(filePath, ".json") {
-		return schema.JSONSpecFormat, nil
+	if strings.HasSuffix(filePath, ".json") ||
+		strings.HasSuffix(filePath, ".jsonc") ||
+		strings.HasSuffix(filePath, ".hujson") {
+		return schema.JWCCSpecFormat, nil
 	} else if strings.HasSuffix(filePath, ".yaml") || strings.HasSuffix(filePath, ".yml") {
 		return schema.YAMLSpecFormat, nil
 	}
@@ -31,6 +34,14 @@ func BlueprintFormatFromExtension(filePath string) (schema.SpecFormat, error) {
 	parts := strings.Split(filePath, afero.FilePathSeparator)
 	fileName := parts[len(parts)-1]
 	return "", errUnsupportedBlueprintFormat(fileName)
+}
+
+// HasAtLeastOneError checks if there is at least one error
+// in the provided diagnostics slice.
+func HasAtLeastOneError(diagnostics []*core.Diagnostic) bool {
+	return slices.ContainsFunc(diagnostics, func(d *core.Diagnostic) bool {
+		return d.Level == core.DiagnosticLevelError
+	})
 }
 
 // DiagnosticsFromBlueprintValidationError extracts diagnostics from a blueprint

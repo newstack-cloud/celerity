@@ -10,6 +10,7 @@ import (
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/helpersv1"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/typesv1"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/params"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/pluginconfig"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/testutils"
 	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
@@ -73,6 +74,10 @@ func (s *ControllerTestSuite) SetupTest() {
 		BlueprintResolver: &testutils.MockBlueprintResolver{},
 		ParamsProvider: params.NewDefaultProvider(
 			map[string]*core.ScalarValue{},
+		),
+		PluginConfigPreparer: pluginconfig.NewDefaultPreparer(
+			map[string]pluginconfig.DefinitionProvider{},
+			map[string]pluginconfig.DefinitionProvider{},
 		),
 		Clock:  clock,
 		Logger: core.NewNopLogger(),

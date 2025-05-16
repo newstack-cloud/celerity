@@ -3,6 +3,7 @@ package deploymentsv1
 import (
 	"net/http"
 
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/typesv1"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/httputils"
 	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 	"github.com/two-hundred/celerity/libs/blueprint/changes"
@@ -19,11 +20,6 @@ func createChangeStagingChannels() *container.ChangeStagingChannels {
 		CompleteChan:        make(chan changes.BlueprintChanges),
 		ErrChan:             make(chan error),
 	}
-}
-
-type validationDiagnosticErrors struct {
-	Message               string             `json:"message"`
-	ValidationDiagnostics []*core.Diagnostic `json:"validationDiagnostics"`
 }
 
 func handleDeployErrorForResponse(
@@ -50,7 +46,7 @@ func handleDeployErrorForResponse(
 		return
 	}
 
-	validationErrors := &validationDiagnosticErrors{
+	validationErrors := &typesv1.ValidationDiagnosticErrors{
 		Message:               "failed to load the blueprint document specified in the request",
 		ValidationDiagnostics: diagnostics,
 	}

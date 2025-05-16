@@ -20,6 +20,7 @@ import (
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/validationv1"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/httputils"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/params"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/pluginconfig"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/pluginhostv1"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
 	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
@@ -118,6 +119,11 @@ func Setup(
 		resolverrouter.WithRoute(resolve.HTTPSSourceType, httpsResolver),
 	)
 
+	pluginConfigPreparer := pluginconfig.NewDefaultPreparer(
+		pluginconfig.ToConfigDefinitionProviders(pluginMaps.Providers),
+		pluginconfig.ToConfigDefinitionProviders(pluginMaps.Transformers),
+	)
+
 	validateLoader := container.NewDefaultLoader(
 		pluginMaps.Providers,
 		pluginMaps.Transformers,
@@ -158,18 +164,19 @@ func Setup(
 	)
 
 	dependencies := &typesv1.Dependencies{
-		EventStore:        stateServices.events,
-		ValidationStore:   stateServices.validation,
-		ChangesetStore:    stateServices.changesets,
-		Instances:         stateServices.container.Instances(),
-		IDGenerator:       idGenerator,
-		EventIDGenerator:  utils.NewUUIDv7Generator(),
-		ValidationLoader:  validateLoader,
-		DeploymentLoader:  deployLoader,
-		BlueprintResolver: childResolver,
-		ParamsProvider:    paramsProvider,
-		Clock:             clock,
-		Logger:            logger,
+		EventStore:           stateServices.events,
+		ValidationStore:      stateServices.validation,
+		ChangesetStore:       stateServices.changesets,
+		Instances:            stateServices.container.Instances(),
+		IDGenerator:          idGenerator,
+		EventIDGenerator:     utils.NewUUIDv7Generator(),
+		ValidationLoader:     validateLoader,
+		DeploymentLoader:     deployLoader,
+		BlueprintResolver:    childResolver,
+		ParamsProvider:       paramsProvider,
+		PluginConfigPreparer: pluginConfigPreparer,
+		Clock:                clock,
+		Logger:               logger,
 	}
 
 	healthHandler := setupHealthHandler(

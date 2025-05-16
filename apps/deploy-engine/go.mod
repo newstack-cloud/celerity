@@ -13,11 +13,11 @@ require (
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.10.0
-	github.com/two-hundred/celerity/libs/blueprint v0.8.0
+	github.com/two-hundred/celerity/libs/blueprint v0.9.0
 	github.com/two-hundred/celerity/libs/blueprint-resolvers v0.0.0-20250427141220-717e385d834a
 	github.com/two-hundred/celerity/libs/blueprint-state v0.2.4
 	github.com/two-hundred/celerity/libs/common v0.3.0
-	github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250502215436-4fae6658da66
+	github.com/two-hundred/celerity/libs/plugin-framework v0.0.0-20250509170332-bb8c5927f0ca
 	go.uber.org/zap v1.27.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 )
@@ -61,6 +61,7 @@ require (
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20240905190251-b4127c9b8d78 // indirect
+	github.com/coreos/go-json v0.0.0-20231102161613-e49c8866685a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/envoyproxy/go-control-plane v0.13.0 // indirect
@@ -92,6 +93,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/tailscale/hujson v0.0.0-20250226034555-ec1d1c113d33 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.29.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0 // indirect

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -16,7 +15,9 @@ import (
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/typesv1"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/httputils"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/params"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/pluginconfig"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/types"
 	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
@@ -49,12 +50,13 @@ const (
 // Controller handles validation-related HTTP requests
 // including streaming validation events over Server-Sent Events (SSE).
 type Controller struct {
-	validationRetentionPeriod time.Duration
-	eventStore                manage.Events
-	validationStore           manage.Validation
-	idGenerator               core.IDGenerator
-	eventIDGenerator          core.IDGenerator
-	blueprintLoader           container.Loader
+	validationRetentionPeriod  time.Duration
+	eventStore                 manage.Events
+	validationStore            manage.Validation
+	idGenerator                core.IDGenerator
+	eventIDGenerator           core.IDGenerator
+	blueprintLoader            container.Loader
+	blueprintLoaderRuntimeVars container.Loader
 	// Behaviour used to resolve child blueprints in the blueprint container
 	// package is reused to load the "root" blueprints from multiple sources.
 	blueprintResolver includes.ChildResolver
@@ -62,9 +64,10 @@ type Controller struct {
 	// for validating a source blueprint document.
 	// This is useful for providing plugin-specific configuration
 	// when validating a blueprint.
-	paramsProvider params.Provider
-	clock          commoncore.Clock
-	logger         core.Logger
+	paramsProvider       params.Provider
+	pluginConfigPreparer pluginconfig.Preparer
+	clock                commoncore.Clock
+	logger               core.Logger
 }
 
 // NewController creates a new validation Controller instance
@@ -74,16 +77,18 @@ func NewController(
 	deps *typesv1.Dependencies,
 ) *Controller {
 	return &Controller{
-		validationRetentionPeriod: validationRetentionPeriod,
-		eventStore:                deps.EventStore,
-		validationStore:           deps.ValidationStore,
-		idGenerator:               deps.IDGenerator,
-		eventIDGenerator:          deps.EventIDGenerator,
-		blueprintLoader:           deps.ValidationLoader,
-		blueprintResolver:         deps.BlueprintResolver,
-		paramsProvider:            deps.ParamsProvider,
-		clock:                     deps.Clock,
-		logger:                    deps.Logger,
+		validationRetentionPeriod:  validationRetentionPeriod,
+		eventStore:                 deps.EventStore,
+		validationStore:            deps.ValidationStore,
+		idGenerator:                deps.IDGenerator,
+		eventIDGenerator:           deps.EventIDGenerator,
+		blueprintLoader:            deps.ValidationLoader,
+		blueprintLoaderRuntimeVars: deps.DeploymentLoader,
+		blueprintResolver:          deps.BlueprintResolver,
+		paramsProvider:             deps.ParamsProvider,
+		pluginConfigPreparer:       deps.PluginConfigPreparer,
+		clock:                      deps.Clock,
+		logger:                     deps.Logger,
 	}
 }
 
@@ -106,6 +111,20 @@ func (c *Controller) CreateBlueprintValidationHandler(
 	}
 
 	helpersv1.PopulateBlueprintDocInfoDefaults(&payload.BlueprintDocumentInfo)
+
+	// For validation, the caller can opt in to validate the plugin config
+	// against the plugin-provided config definition schemas,
+	// this is useful for early feedback as to whether or not there are issues
+	// with the plugin configuration.
+	finalConfig, warningInfoDiagnostics, responseWritten := c.prepareAndValidatePluginConfig(
+		r,
+		w,
+		payload,
+		/* validate */ isTruthy(r.URL.Query().Get("checkPluginConfig")),
+	)
+	if responseWritten {
+		return
+	}
 
 	blueprintInfo, responseWritten := resolve.ResolveBlueprintForRequest(
 		r,
@@ -141,14 +160,17 @@ func (c *Controller) CreateBlueprintValidationHandler(
 	}
 
 	params := c.paramsProvider.CreateFromRequestConfig(
-		payload.Config,
+		finalConfig,
 	)
 
+	checkBlueprintVars := isTruthy(r.URL.Query().Get("checkBlueprintVars"))
 	go c.startValidationStream(
 		blueprintValidation,
 		blueprintInfo,
+		warningInfoDiagnostics,
 		helpersv1.GetFormat(payload.BlueprintFile),
 		params,
+		checkBlueprintVars,
 		c.logger.Named("validationProcess").WithFields(
 			core.StringLogField("blueprintValidationId", blueprintValidationID),
 			core.StringLogField("blueprintLocation", blueprintLocation),
@@ -278,8 +300,10 @@ func (c *Controller) cleanup() {
 func (c *Controller) startValidationStream(
 	blueprintValidation *manage.BlueprintValidation,
 	blueprintInfo *includes.ChildBlueprintInfo,
+	initialDiagnostics []*core.Diagnostic,
 	format schema.SpecFormat,
 	params core.BlueprintParams,
+	checkBlueprintVars bool,
 	logger core.Logger,
 ) {
 	ctxWithTimeout, cancel := context.WithTimeout(
@@ -298,16 +322,25 @@ func (c *Controller) startValidationStream(
 		return
 	}
 
+	loader := c.blueprintLoader
+	if checkBlueprintVars {
+		loader = c.blueprintLoaderRuntimeVars
+	}
+
 	// The error returned here will be converted into a diagnostic event
 	// and streamed to the client.
-	validationResult, err := c.blueprintLoader.ValidateString(
+	validationResult, err := loader.ValidateString(
 		ctxWithTimeout,
 		helpersv1.GetBlueprintSource(blueprintInfo),
 		format,
 		params,
 	)
 
-	validationStatus := determineValidationStatus(validationResult, err)
+	validationStatus := determineValidationStatus(
+		initialDiagnostics,
+		validationResult,
+		err,
+	)
 	earlyExitAfter := c.saveBlueprintValidation(
 		ctxWithTimeout,
 		blueprintValidation,
@@ -321,6 +354,7 @@ func (c *Controller) startValidationStream(
 	c.prepareAndSaveEvents(
 		ctxWithTimeout,
 		blueprintValidation,
+		initialDiagnostics,
 		validationResult,
 		err,
 		logger,
@@ -354,6 +388,7 @@ func (c *Controller) saveBlueprintValidation(
 func (c *Controller) prepareAndSaveEvents(
 	ctx context.Context,
 	blueprintValidation *manage.BlueprintValidation,
+	initialDiagnostics []*core.Diagnostic,
 	validationResult *container.ValidationResult,
 	err error,
 	logger core.Logger,
@@ -368,7 +403,11 @@ func (c *Controller) prepareAndSaveEvents(
 	)
 
 	allDiagnostics := append(
-		validationResult.Diagnostics,
+		initialDiagnostics,
+		validationResult.Diagnostics...,
+	)
+	allDiagnostics = append(
+		allDiagnostics,
 		errDiagnostics...,
 	)
 
@@ -421,7 +460,51 @@ func (c *Controller) prepareAndSaveEvents(
 	}
 }
 
+func (c *Controller) prepareAndValidatePluginConfig(
+	r *http.Request,
+	w http.ResponseWriter,
+	payload *CreateValidationRequestPayload,
+	validate bool,
+) (*types.BlueprintOperationConfig, []*core.Diagnostic, bool) {
+	preparedConfig, diagnostics, err := c.pluginConfigPreparer.Prepare(
+		r.Context(),
+		payload.Config,
+		validate,
+	)
+	if err != nil {
+		c.logger.Debug(
+			"failed to prepare plugin config",
+			core.ErrorLogField("error", err),
+		)
+		httputils.HTTPError(
+			w,
+			http.StatusInternalServerError,
+			utils.UnexpectedErrorMessage,
+		)
+		return nil, nil, true
+	}
+
+	if utils.HasAtLeastOneError(diagnostics) {
+		validationErrors := &typesv1.ValidationDiagnosticErrors{
+			Message:               "plugin configuration validation failed",
+			ValidationDiagnostics: diagnostics,
+		}
+		httputils.HTTPJSONResponse(
+			w,
+			http.StatusUnprocessableEntity,
+			validationErrors,
+		)
+		return nil, nil, true
+	}
+
+	// Surface warning and info diagnostics to the user
+	// by returning them to be passed in as the initial events
+	// in the validation stream.
+	return preparedConfig, diagnostics, false
+}
+
 func determineValidationStatus(
+	initialDiagnostics []*core.Diagnostic,
 	validationResult *container.ValidationResult,
 	err error,
 ) manage.BlueprintValidationStatus {
@@ -430,13 +513,12 @@ func determineValidationStatus(
 	}
 
 	diagnostics := getDiagnostics(validationResult)
-
-	hasErrorDiagnostic := slices.ContainsFunc(
-		diagnostics,
-		func(diagnostic *core.Diagnostic) bool {
-			return diagnostic.Level == core.DiagnosticLevelError
-		},
+	allDiagnostics := append(
+		initialDiagnostics,
+		diagnostics...,
 	)
+
+	hasErrorDiagnostic := utils.HasAtLeastOneError(allDiagnostics)
 	if hasErrorDiagnostic {
 		return manage.BlueprintValidationStatusFailed
 	}
@@ -464,4 +546,8 @@ func blueprintValidationWithStatus(
 		BlueprintLocation: blueprintValidation.BlueprintLocation,
 		Created:           blueprintValidation.Created,
 	}
+}
+
+func isTruthy(value string) bool {
+	return value == "true" || value == "1"
 }

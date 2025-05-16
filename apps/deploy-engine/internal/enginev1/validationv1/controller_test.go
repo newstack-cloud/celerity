@@ -65,6 +65,9 @@ func (s *ControllerTestSuite) SetupTest() {
 		ParamsProvider: params.NewDefaultProvider(
 			map[string]*core.ScalarValue{},
 		),
+		PluginConfigPreparer: testutils.NewMockPluginConfigPreparer(
+			pluginConfigPreparerFixtures,
+		),
 		Clock:  clock,
 		Logger: core.NewNopLogger(),
 	}
@@ -121,6 +124,87 @@ var (
 					Position: source.Position{
 						Line:   4,
 						Column: 15,
+					},
+				},
+			},
+		},
+	}
+)
+
+var (
+	pluginConfigPreparerFixtures = map[string][]*core.Diagnostic{
+		"invalid value": {
+			{
+				Level:   core.DiagnosticLevelError,
+				Message: "Invalid value provided",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 5,
+						},
+					},
+				},
+			},
+			{
+				Level:   core.DiagnosticLevelError,
+				Message: "Another error",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   2,
+							Column: 1,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   2,
+							Column: 5,
+						},
+					},
+				},
+			},
+		},
+		"warnings value": {
+			{
+				Level:   core.DiagnosticLevelWarning,
+				Message: "Warning message",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   3,
+							Column: 1,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   3,
+							Column: 5,
+						},
+					},
+				},
+			},
+			{
+				Level:   core.DiagnosticLevelWarning,
+				Message: "Another warning",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   4,
+							Column: 1,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   4,
+							Column: 5,
+						},
 					},
 				},
 			},

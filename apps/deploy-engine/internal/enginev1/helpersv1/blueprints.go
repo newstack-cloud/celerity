@@ -19,8 +19,8 @@ func GetFormat(
 		return schema.YAMLSpecFormat
 	}
 
-	// Any other file extension will be considered JSON.
-	return schema.JSONSpecFormat
+	// Any other file extension will be considered JSON with Commas and Comments.
+	return schema.JWCCSpecFormat
 }
 
 // GetBlueprintSource retrieves the source of the blueprint from the provided
