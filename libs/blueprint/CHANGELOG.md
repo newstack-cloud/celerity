@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-05-16
+
+### Changed
+
+- **Breaking change** - Updates the Celerity blueprint document version for validation to `2025-05-12`.
+- **Breaking change** - Updates the Celerity transform version to `2025-08-01` as the final initial version string for the Celerity application transform in anticipation of a release of Celerity as a whole in late summer/early autumn 2025.
+
+### Added
+
+- **Breaking change** - Adds full support for JSON with Commas and Comments. The latest update to the Blueprint specification switches out plain JSON for JSON with Commas and Comments. This allows for a more human-readable format that is easier to work with for the purpose of configuration. This release adds full support for this format along with changes to the default JSON parse mode for the schema loading functionality to track line and column numbers using the coreos fork of the `encoding/json` package.
+- Adds new `AllowAdditionalFields` property to the `core.ConfigDefinition` struct used for plugin config variables.
+- Adds functionality to populate defaults and validate plugin config.
+
+_Breaking changes will occur in early 0.x releases of this framework._
+
 ## [0.8.0] - 2025-05-02
 
 ### Added
