@@ -260,12 +260,14 @@ func NewClient(
 // This is the `POST {baseURL}/v1/validations` API endpoint.
 func (c *Client) CreateBlueprintValidation(
 	ctx context.Context,
-	payload *types.CreateBlueprintValidationPayoad,
+	payload *types.CreateBlueprintValidationPayload,
+	query *types.CreateBlueprintValidationQuery,
 ) (*manage.BlueprintValidation, error) {
 	url := fmt.Sprintf(
 		"%s/v1/validations",
 		c.endpoint,
 	)
+	queryParams := createBlueprintValidationQueryToQueryParams(query)
 
 	blueprintValidation := &manage.BlueprintValidation{}
 	err := c.startMutatingAction(
@@ -274,6 +276,7 @@ func (c *Client) CreateBlueprintValidation(
 		"POST",
 		payload,
 		blueprintValidation,
+		queryParams,
 	)
 	if err != nil {
 		return nil, err
@@ -428,6 +431,7 @@ func (c *Client) CreateChangeset(
 		"POST",
 		payload,
 		changeset,
+		/* queryParams */ map[string]string{},
 	)
 	if err != nil {
 		return nil, err
@@ -574,6 +578,7 @@ func (c *Client) CreateBlueprintInstance(
 		"POST",
 		payload,
 		instance,
+		/* queryParams */ map[string]string{},
 	)
 	if err != nil {
 		return nil, err
@@ -607,6 +612,7 @@ func (c *Client) UpdateBlueprintInstance(
 		"PATCH",
 		payload,
 		instance,
+		/* queryParams */ map[string]string{},
 	)
 	if err != nil {
 		return nil, err
@@ -692,6 +698,7 @@ func (c *Client) DestroyBlueprintInstance(
 		"POST",
 		payload,
 		instance,
+		/* queryParams */ map[string]string{},
 	)
 	if err != nil {
 		return nil, err
@@ -846,6 +853,7 @@ func (c *Client) startMutatingAction(
 	method string,
 	payload any,
 	respTarget any,
+	queryParams map[string]string,
 ) error {
 	headers, err := c.prepareAuthHeaders()
 	if err != nil {
@@ -874,6 +882,7 @@ func (c *Client) startMutatingAction(
 		)
 	}
 	attachHeaders(req, headers)
+	attachQueryParams(req, queryParams)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

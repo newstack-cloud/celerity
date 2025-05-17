@@ -20,13 +20,31 @@ type BlueprintValidationEvent struct {
 	End bool `json:"end"`
 }
 
-// CreateBlueprintValidationPayoad represents the payload
+// CreateBlueprintValidationPayload represents the payload
 // for creating a new blueprint validation.
-type CreateBlueprintValidationPayoad struct {
+type CreateBlueprintValidationPayload struct {
 	BlueprintDocumentInfo
 	// Config values for the validation process
 	// that will be used in plugins and passed into the blueprint.
 	Config *BlueprintOperationConfig `json:"config"`
+}
+
+// CreateBlueprintValidationQuery represents options
+// for creating a new blueprint validation.
+// This holds optional query fields that map to query string parameters
+// that can be used to control the behaviour of the validation process.
+type CreateBlueprintValidationQuery struct {
+	// CheckBlueprintVars indicates whether or not to check
+	// the blueprint variables provided in the request payload
+	// as part of the validation process.
+	CheckBlueprintVars bool
+	// CheckPluginConfig indicates whether or not to check
+	// the plugin configuration provided in the request payload
+	// as part of the validation process.
+	// If set to true, the plugin configuration will be validated
+	// against the plugin schemas for each provider and transformer
+	// for which configuration is provided in the request.
+	CheckPluginConfig bool
 }
 
 // CreateChangesetPayload represents the payload

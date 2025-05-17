@@ -172,12 +172,13 @@ func (s *ClientSuite) Test_fails_request_due_to_an_invalid_auth_method() {
 
 	_, err = client.CreateBlueprintValidation(
 		context.Background(),
-		&types.CreateBlueprintValidationPayoad{
+		&types.CreateBlueprintValidationPayload{
 			BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 				FileSourceScheme: "file",
 				BlueprintFile:    "test.blueprint.yml",
 			},
 		},
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().Error(err)
 	authPrepErr, isAuthPrepErr := err.(*errors.AuthPrepError)
@@ -207,12 +208,13 @@ func (s *ClientSuite) Test_fails_to_setup_client_due_to_failing_oauth_provider_t
 
 	_, err = client.CreateBlueprintValidation(
 		context.Background(),
-		&types.CreateBlueprintValidationPayoad{
+		&types.CreateBlueprintValidationPayload{
 			BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 				FileSourceScheme: "file",
 				BlueprintFile:    "test.blueprint.yml",
 			},
 		},
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().Error(err)
 	authPrepErr, isAuthPrepErr := err.(*errors.AuthPrepError)

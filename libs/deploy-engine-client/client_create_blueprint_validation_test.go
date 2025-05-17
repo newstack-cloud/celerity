@@ -42,7 +42,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_oauth2_preconfigured_toke
 	s.Require().NoError(err)
 
 	// Make a request to create a blueprint validation
-	payload := &types.CreateBlueprintValidationPayoad{
+	payload := &types.CreateBlueprintValidationPayload{
 		BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 			FileSourceScheme: "file",
 		},
@@ -51,6 +51,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_oauth2_preconfigured_toke
 	blueprintValidation, err := client.CreateBlueprintValidation(
 		context.Background(),
 		payload,
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().NoError(err)
 
@@ -79,7 +80,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_oauth2_derive_token_endpo
 	s.Require().NoError(err)
 
 	// Make a request to create a blueprint validation
-	payload := &types.CreateBlueprintValidationPayoad{
+	payload := &types.CreateBlueprintValidationPayload{
 		BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 			FileSourceScheme: "file",
 		},
@@ -88,6 +89,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_oauth2_derive_token_endpo
 	blueprintValidation, err := client.CreateBlueprintValidation(
 		context.Background(),
 		payload,
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().NoError(err)
 
@@ -112,7 +114,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_api_key() {
 	s.Require().NoError(err)
 
 	// Make a request to create a blueprint validation
-	payload := &types.CreateBlueprintValidationPayoad{
+	payload := &types.CreateBlueprintValidationPayload{
 		BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 			FileSourceScheme: "file",
 		},
@@ -121,6 +123,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_api_key() {
 	blueprintValidation, err := client.CreateBlueprintValidation(
 		context.Background(),
 		payload,
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().NoError(err)
 
@@ -146,7 +149,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_celerity_sigv1() {
 	s.Require().NoError(err)
 
 	// Make a request to create a blueprint validation
-	payload := &types.CreateBlueprintValidationPayoad{
+	payload := &types.CreateBlueprintValidationPayload{
 		BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 			FileSourceScheme: "file",
 		},
@@ -155,6 +158,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_celerity_sigv1() {
 	blueprintValidation, err := client.CreateBlueprintValidation(
 		context.Background(),
 		payload,
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().NoError(err)
 
@@ -179,7 +183,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_for_unauthorised_cl
 	s.Require().NoError(err)
 
 	// Make a request to create a blueprint validation
-	payload := &types.CreateBlueprintValidationPayoad{
+	payload := &types.CreateBlueprintValidationPayload{
 		BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 			FileSourceScheme: "file",
 		},
@@ -188,6 +192,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_for_unauthorised_cl
 	_, err = client.CreateBlueprintValidation(
 		context.Background(),
 		payload,
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().Error(err)
 
@@ -221,7 +226,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_for_incorrect_input
 	s.Require().NoError(err)
 
 	// Make a request to create a blueprint validation
-	payload := &types.CreateBlueprintValidationPayoad{
+	payload := &types.CreateBlueprintValidationPayload{
 		BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 			// "files" is not a valid file source scheme.
 			FileSourceScheme: "files",
@@ -231,6 +236,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_for_incorrect_input
 	_, err = client.CreateBlueprintValidation(
 		context.Background(),
 		payload,
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().Error(err)
 
@@ -276,7 +282,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_due_to_invalid_json
 	s.Require().NoError(err)
 
 	// Make a request to create a blueprint validation
-	payload := &types.CreateBlueprintValidationPayoad{
+	payload := &types.CreateBlueprintValidationPayload{
 		BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 			FileSourceScheme: "file",
 			// The blueprint file is set to a value that will trigger
@@ -288,6 +294,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_due_to_invalid_json
 	_, err = client.CreateBlueprintValidation(
 		context.Background(),
 		payload,
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().Error(err)
 
@@ -319,7 +326,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_due_to_internal_ser
 	s.Require().NoError(err)
 
 	// Make a request to create a blueprint validation
-	payload := &types.CreateBlueprintValidationPayoad{
+	payload := &types.CreateBlueprintValidationPayload{
 		BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 			FileSourceScheme: "file",
 			// The blueprint file is set to a value that will trigger
@@ -331,6 +338,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_due_to_internal_ser
 	_, err = client.CreateBlueprintValidation(
 		context.Background(),
 		payload,
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().Error(err)
 
@@ -366,7 +374,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_due_to_network_erro
 	s.Require().NoError(err)
 
 	// Make a request to create a blueprint validation
-	payload := &types.CreateBlueprintValidationPayoad{
+	payload := &types.CreateBlueprintValidationPayload{
 		BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 			FileSourceScheme: "file",
 			// The blueprint file is set to a value that will trigger
@@ -379,6 +387,7 @@ func (s *ClientSuite) Test_create_blueprint_validation_fails_due_to_network_erro
 	_, err = client.CreateBlueprintValidation(
 		context.Background(),
 		payload,
+		&types.CreateBlueprintValidationQuery{},
 	)
 	s.Require().Error(err)
 
