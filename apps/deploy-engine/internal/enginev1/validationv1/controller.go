@@ -17,7 +17,6 @@ import (
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/params"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/pluginconfig"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/types"
 	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
@@ -116,11 +115,13 @@ func (c *Controller) CreateBlueprintValidationHandler(
 	// against the plugin-provided config definition schemas,
 	// this is useful for early feedback as to whether or not there are issues
 	// with the plugin configuration.
-	finalConfig, warningInfoDiagnostics, responseWritten := c.prepareAndValidatePluginConfig(
+	finalConfig, warningInfoDiagnostics, responseWritten := helpersv1.PrepareAndValidatePluginConfig(
 		r,
 		w,
-		payload,
+		payload.Config,
 		/* validate */ isTruthy(r.URL.Query().Get("checkPluginConfig")),
+		c.pluginConfigPreparer,
+		c.logger,
 	)
 	if responseWritten {
 		return
@@ -458,49 +459,6 @@ func (c *Controller) prepareAndSaveEvents(
 			)
 		}
 	}
-}
-
-func (c *Controller) prepareAndValidatePluginConfig(
-	r *http.Request,
-	w http.ResponseWriter,
-	payload *CreateValidationRequestPayload,
-	validate bool,
-) (*types.BlueprintOperationConfig, []*core.Diagnostic, bool) {
-	preparedConfig, diagnostics, err := c.pluginConfigPreparer.Prepare(
-		r.Context(),
-		payload.Config,
-		validate,
-	)
-	if err != nil {
-		c.logger.Debug(
-			"failed to prepare plugin config",
-			core.ErrorLogField("error", err),
-		)
-		httputils.HTTPError(
-			w,
-			http.StatusInternalServerError,
-			utils.UnexpectedErrorMessage,
-		)
-		return nil, nil, true
-	}
-
-	if utils.HasAtLeastOneError(diagnostics) {
-		validationErrors := &typesv1.ValidationDiagnosticErrors{
-			Message:               "plugin configuration validation failed",
-			ValidationDiagnostics: diagnostics,
-		}
-		httputils.HTTPJSONResponse(
-			w,
-			http.StatusUnprocessableEntity,
-			validationErrors,
-		)
-		return nil, nil, true
-	}
-
-	// Surface warning and info diagnostics to the user
-	// by returning them to be passed in as the initial events
-	// in the validation stream.
-	return preparedConfig, diagnostics, false
 }
 
 func determineValidationStatus(

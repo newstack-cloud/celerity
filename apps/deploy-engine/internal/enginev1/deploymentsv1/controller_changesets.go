@@ -42,6 +42,18 @@ func (c *Controller) CreateChangesetHandler(
 
 	helpersv1.PopulateBlueprintDocInfoDefaults(&payload.BlueprintDocumentInfo)
 
+	finalConfig, _, responseWritten := helpersv1.PrepareAndValidatePluginConfig(
+		r,
+		w,
+		payload.Config,
+		/* validate */ true,
+		c.pluginConfigPreparer,
+		c.logger,
+	)
+	if responseWritten {
+		return
+	}
+
 	blueprintInfo, responseWritten := resolve.ResolveBlueprintForRequest(
 		r,
 		w,
@@ -92,9 +104,7 @@ func (c *Controller) CreateChangesetHandler(
 		Created:           c.clock.Now().Unix(),
 	}
 
-	params := c.paramsProvider.CreateFromRequestConfig(
-		payload.Config,
-	)
+	params := c.paramsProvider.CreateFromRequestConfig(finalConfig)
 
 	go c.startChangeStaging(
 		changeset,

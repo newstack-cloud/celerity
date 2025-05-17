@@ -14,8 +14,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/r3labs/sse/v2"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/inputvalidation"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/typesv1"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/testutils"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/types"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -207,6 +209,56 @@ func (s *ControllerTestSuite) Test_create_blueprint_instance_handler_fails_for_i
 	s.Assert().Equal(
 		"oneof",
 		validationError.Errors[0].Type,
+	)
+}
+
+func (s *ControllerTestSuite) Test_create_blueprint_instance_handler_fails_for_invalid_plugin_config() {
+	router := mux.NewRouter()
+	router.HandleFunc(
+		"/deployments/instances",
+		s.ctrl.CreateBlueprintInstanceHandler,
+	).Methods("POST")
+
+	reqPayload := &BlueprintInstanceRequestPayload{
+		BlueprintDocumentInfo: resolve.BlueprintDocumentInfo{
+			FileSourceScheme: "file",
+			Directory:        "/test/dir",
+			BlueprintFile:    "test.blueprint.yaml",
+		},
+		ChangeSetID: testChangesetID,
+		Config: &types.BlueprintOperationConfig{
+			Providers: map[string]map[string]*core.ScalarValue{
+				"aws": {
+					"field1": core.ScalarFromString("invalid value"),
+				},
+			},
+		},
+	}
+
+	reqBytes, err := json.Marshal(reqPayload)
+	s.Require().NoError(err)
+
+	req := httptest.NewRequest("POST", "/deployments/instances", bytes.NewReader(reqBytes))
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	result := w.Result()
+	defer result.Body.Close()
+	respData, err := io.ReadAll(result.Body)
+	s.Require().NoError(err)
+
+	validationError := &typesv1.ValidationDiagnosticErrors{}
+	err = json.Unmarshal(respData, validationError)
+	s.Require().NoError(err)
+
+	s.Assert().Equal(http.StatusUnprocessableEntity, result.StatusCode)
+	s.Assert().Equal(
+		"plugin configuration validation failed",
+		validationError.Message,
+	)
+	s.Assert().Equal(
+		pluginConfigPreparerFixtures["invalid value"],
+		validationError.ValidationDiagnostics,
 	)
 }
 

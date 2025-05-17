@@ -5,6 +5,7 @@ import (
 
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/typesv1"
 	"github.com/two-hundred/celerity/apps/deploy-engine/internal/params"
+	"github.com/two-hundred/celerity/apps/deploy-engine/internal/pluginconfig"
 	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 	"github.com/two-hundred/celerity/libs/blueprint/container"
 	"github.com/two-hundred/celerity/libs/blueprint/core"
@@ -60,10 +61,11 @@ type Controller struct {
 	blueprintLoader          container.Loader
 	// Behaviour used to resolve child blueprints in the blueprint container
 	// package is reused to load the "root" blueprints from multiple sources.
-	blueprintResolver includes.ChildResolver
-	paramsProvider    params.Provider
-	clock             commoncore.Clock
-	logger            core.Logger
+	blueprintResolver    includes.ChildResolver
+	paramsProvider       params.Provider
+	pluginConfigPreparer pluginconfig.Preparer
+	clock                commoncore.Clock
+	logger               core.Logger
 }
 
 // NewController creates a new deployments Controller
@@ -85,6 +87,7 @@ func NewController(
 		blueprintLoader:          deps.DeploymentLoader,
 		blueprintResolver:        deps.BlueprintResolver,
 		paramsProvider:           deps.ParamsProvider,
+		pluginConfigPreparer:     deps.PluginConfigPreparer,
 		clock:                    deps.Clock,
 		logger:                   deps.Logger,
 	}
