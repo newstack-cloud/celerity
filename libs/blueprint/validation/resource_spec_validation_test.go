@@ -773,6 +773,328 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 	)
 }
 
+func (s *ResourceSpecValidationTestSuite) Test_reports_warnings_for_substitutions_used_in_string_field_with_fixed_allowed_values(c *C) {
+	resource := createTestValidResource()
+	testStrPrefix := "testStrPrefix-"
+	resource.Spec.Fields["allowedStringValues"] = &core.MappingNode{
+		StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &testStrPrefix,
+				},
+				{
+					SubstitutionValue: &substitutions.Substitution{
+						Variable: &substitutions.SubstitutionVariable{
+							VariableName: "testVariable",
+						},
+					},
+				},
+			},
+		},
+	}
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(err, IsNil)
+	c.Assert(diagnostics, HasLen, 1)
+	c.Assert(diagnostics[0].Level, Equals, core.DiagnosticLevelWarning)
+	c.Assert(
+		diagnostics[0].Message,
+		Equals,
+		"The value of \"resources.testHandler.spec.allowedStringValues\" contains substitutions and can not be validated against the allowed values. "+
+			"When substitutions are resolved, this value must match one of the allowed values: allowedValue1, allowedValue2, allowedValue3",
+	)
+}
+
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_interpolation_used_in_integer_field_with_fixed_allowed_values(c *C) {
+	resource := createTestValidResource()
+	testStrPrefix := "testIntPrefix-"
+	resource.Spec.Fields["allowedIntValues"] = &core.MappingNode{
+		StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &testStrPrefix,
+				},
+				{
+					SubstitutionValue: &substitutions.Substitution{
+						Variable: &substitutions.SubstitutionVariable{
+							VariableName: "testVariable",
+						},
+					},
+				},
+			},
+		},
+	}
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeInteger},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to an invalid resource item at path "+
+			"\"resources.testHandler.spec.allowedIntValues\" where the integer type was expected, but string was found",
+	)
+}
+
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_interpolation_used_in_float_field_with_fixed_allowed_values(c *C) {
+	resource := createTestValidResource()
+	testStrPrefix := "testFloatPrefix-"
+	resource.Spec.Fields["allowedFloatValues"] = &core.MappingNode{
+		StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					StringValue: &testStrPrefix,
+				},
+				{
+					SubstitutionValue: &substitutions.Substitution{
+						Variable: &substitutions.SubstitutionVariable{
+							VariableName: "testVariable",
+						},
+					},
+				},
+			},
+		},
+	}
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to an invalid resource item at path "+
+			"\"resources.testHandler.spec.allowedFloatValues\" where the float type was expected, but string was found",
+	)
+}
+
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_value_not_in_allowed_value_list(c *C) {
+	resource := createTestValidResource()
+	resource.Spec.Fields["allowedStringValues"] = core.MappingNodeFromString("unsupportedValue")
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a value that is not allowed being provided at path "+
+			"\"resources.testHandler.spec.allowedStringValues\", the value must be one of: allowedValue1, allowedValue2, allowedValue3",
+	)
+}
+
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_integer_value_not_in_allowed_value_list(c *C) {
+	resource := createTestValidResource()
+	resource.Spec.Fields["allowedIntValues"] = core.MappingNodeFromInt(9999)
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a value that is not allowed being provided at path "+
+			"\"resources.testHandler.spec.allowedIntValues\", the value must be one of: 10, 202, 300",
+	)
+}
+
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_float_value_not_in_allowed_value_list(c *C) {
+	resource := createTestValidResource()
+	resource.Spec.Fields["allowedFloatValues"] = core.MappingNodeFromFloat(989998989.4029482372)
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to a value that is not allowed being provided at path "+
+			"\"resources.testHandler.spec.allowedFloatValues\", the value must be one of: 10.11, 202.25, 340.3234",
+	)
+}
+
 //////////////////////////////////////////////////
 // Test resources
 //////////////////////////////////////////////////
@@ -1220,6 +1542,33 @@ func (r *specValidationTestExampleResource) GetSpecDefinition(
 					},
 					"nullable": {
 						Type:     provider.ResourceDefinitionsSchemaTypeString,
+						Nullable: true,
+					},
+					"allowedStringValues": {
+						Type: provider.ResourceDefinitionsSchemaTypeString,
+						AllowedValues: []*core.MappingNode{
+							core.MappingNodeFromString("allowedValue1"),
+							core.MappingNodeFromString("allowedValue2"),
+							core.MappingNodeFromString("allowedValue3"),
+						},
+						Nullable: true,
+					},
+					"allowedIntValues": {
+						Type: provider.ResourceDefinitionsSchemaTypeInteger,
+						AllowedValues: []*core.MappingNode{
+							core.MappingNodeFromInt(10),
+							core.MappingNodeFromInt(202),
+							core.MappingNodeFromInt(300),
+						},
+						Nullable: true,
+					},
+					"allowedFloatValues": {
+						Type: provider.ResourceDefinitionsSchemaTypeFloat,
+						AllowedValues: []*core.MappingNode{
+							core.MappingNodeFromFloat(10.11),
+							core.MappingNodeFromFloat(202.25),
+							core.MappingNodeFromFloat(340.3234),
+						},
 						Nullable: true,
 					},
 					"computed": {

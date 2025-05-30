@@ -456,6 +456,16 @@ type ResourceDefinitionsSchema struct {
 	Required []string
 	// Nullable specifies whether the resource definition schema can be null.
 	Nullable bool
+	// AllowedValues holds a list of allowed values for a resource definition schema.
+	// This is useful for enum-like values and can be used with the "string",
+	// "integer" and "float" types.
+	// Unions and enums are mutually exclusive, when designing your schemas,
+	// you should use either unions for type constraints or allowed values for
+	// value constraints.
+	// In the validation implementation, the allowed values constraint will only be applied
+	// for values that do not contain ${..} substitutions, warnings will be produced when the value
+	// contains substitutions as there is no way to know the final value during the validation phase.
+	AllowedValues []*core.MappingNode
 	// Default holds the default value for a resource spec schema,
 	// this will be populated in the `Resource.Spec.*` mapping node
 	// if the resource spec is missing a value

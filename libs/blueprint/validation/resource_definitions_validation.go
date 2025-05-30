@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -484,6 +485,19 @@ func validateResourceDefinitionString(
 		)
 	}
 
+	if len(schema.AllowedValues) > 0 {
+		allowedValueDiagnostics, err := validateResourceDefinitionAllowedValues(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, allowedValueDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
 	if node.StringWithSubstitutions != nil {
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
@@ -557,6 +571,19 @@ func validateResourceDefinitionInteger(
 		)
 	}
 
+	if len(schema.AllowedValues) > 0 {
+		allowedValueDiagnostics, err := validateResourceDefinitionAllowedValues(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, allowedValueDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
 	if node.StringWithSubstitutions != nil {
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
@@ -628,6 +655,19 @@ func validateResourceDefinitionFloat(
 			provider.ResourceDefinitionsSchemaTypeFloat,
 			selectMappingNodeLocation(node, parentLocation),
 		)
+	}
+
+	if len(schema.AllowedValues) > 0 {
+		allowedValueDiagnostics, err := validateResourceDefinitionAllowedValues(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, allowedValueDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
 	}
 
 	if node.StringWithSubstitutions != nil {
@@ -859,6 +899,103 @@ func validateResourceDefinitionSubstitution(
 	}
 
 	return diagnostics, nil
+}
+
+// A maximum number of allowed values to show in error and warning messages.
+const maxShowAllowedValues = 5
+
+func validateResourceDefinitionAllowedValues(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	allowedValuesText := createAllowedValuesText(schema.AllowedValues, maxShowAllowedValues)
+	if !core.IsScalarMappingNode(node) && node.StringWithSubstitutions != nil {
+		if schema.Type != provider.ResourceDefinitionsSchemaTypeString &&
+			// Interpolated strings will be resolved as strings,
+			// an interpolated string is one that contains a combination of
+			// strings and substitutions or has more than one substitution.
+			isInterpolatedString(node.StringWithSubstitutions) {
+			return diagnostics, errResourceDefInvalidType(
+				path,
+				deriveMappingNodeResourceDefinitionsType(node),
+				schema.Type,
+				selectMappingNodeLocation(node, location),
+			)
+		}
+
+		// When a value is a string with substitutions and the field schema is a string,
+		// we can not validate a value that is not yet resolved.
+		// Warnings are useful to make practitioners aware of the possibility
+		// of a failure during change staging or deployment for a field
+		// that must be one of a fixed set of values.
+		diagnostics = append(
+			diagnostics,
+			&core.Diagnostic{
+				Level: core.DiagnosticLevelWarning,
+				Message: fmt.Sprintf(
+					"The value of %q contains substitutions and can not be validated against the allowed values. "+
+						"When substitutions are resolved, this value must match one of the allowed values: %s",
+					path,
+					allowedValuesText,
+				),
+				Range: toDiagnosticRange(location, nil),
+			},
+		)
+		return diagnostics, nil
+	}
+
+	inAllowedList := slices.ContainsFunc(
+		schema.AllowedValues,
+		func(allowedValue *core.MappingNode) bool {
+			return core.IsScalarMappingNode(node) &&
+				core.IsScalarMappingNode(allowedValue) &&
+				node.Scalar.Equal(allowedValue.Scalar)
+		},
+	)
+
+	if !inAllowedList {
+		return diagnostics, errResourceDefNotAllowedValue(
+			path,
+			allowedValuesText,
+			selectMappingNodeLocation(node, location),
+		)
+	}
+
+	return diagnostics, nil
+}
+
+func createAllowedValuesText(allowedValues []*core.MappingNode, maxCount int) string {
+	if len(allowedValues) <= maxCount {
+		return mappingNodesToCommaSeparatedString(allowedValues)
+	}
+
+	// Show only the first `maxCount` allowed values.
+	allowedValuesStr := mappingNodesToCommaSeparatedString(allowedValues[:maxCount])
+	return fmt.Sprintf("%s, and %d more",
+		allowedValuesStr,
+		len(allowedValues)-maxCount,
+	)
+}
+
+func mappingNodesToCommaSeparatedString(nodes []*core.MappingNode) string {
+	values := make([]string, len(nodes))
+	for i, node := range nodes {
+		if core.IsScalarMappingNode(node) {
+			values[i] = node.Scalar.ToString()
+		} else {
+			values[i] = "<unknown>"
+		}
+	}
+	return strings.Join(values, ", ")
+}
+
+func isInterpolatedString(value *substitutions.StringOrSubstitutions) bool {
+	return !substitutions.IsNilStringSubs(value) &&
+		(len(value.Values) > 1 || value.Values[0].StringValue != nil)
 }
 
 func selectMappingNodeLocation(node *core.MappingNode, parentLocation *source.Meta) *source.Meta {

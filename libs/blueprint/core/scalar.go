@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	json "github.com/coreos/go-json"
@@ -45,7 +46,7 @@ func (v *ScalarValue) ToString() string {
 		return fmt.Sprintf("%t", *v.BoolValue)
 	}
 	if v.FloatValue != nil {
-		return fmt.Sprintf("%f", *v.FloatValue)
+		return strconv.FormatFloat(*v.FloatValue, 'f', -1, 64)
 	}
 	return ""
 }

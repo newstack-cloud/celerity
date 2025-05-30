@@ -148,3 +148,22 @@ func errResourceDefUnionInvalidType(
 		Column: col,
 	}
 }
+
+func errResourceDefNotAllowedValue(
+	path string,
+	allowedValuesText string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a value that is not allowed "+
+				"being provided at path %q, the value must be one of: %s",
+			path,
+			allowedValuesText,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
