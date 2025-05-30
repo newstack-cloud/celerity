@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Adds an `AllowedValues` field to the `provider.ResourceDefinitionsSchema` struct to allow providers to define enum-like constraints for values in resource specs. This commit includes updates to validation to carry out strict checks when scalar values are provided and produce warnings for string interpoliation where the value is not known until the substitution is resolved during change staging or deployment.
+- Adds an `AllowedValues` field to the `provider.ResourceDefinitionsSchema` struct to allow providers and transformers to define enum-like constraints for values in resource specs used in both concrete and abstract resource types. This commit includes updates to validation to carry out strict checks when scalar values are provided and produce warnings for string interpolation where the value is not known until the substitution is resolved during change staging or deployment.
 
 ## [0.9.0] - 2025-05-16
 
