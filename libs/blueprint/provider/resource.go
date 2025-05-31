@@ -463,9 +463,58 @@ type ResourceDefinitionsSchema struct {
 	// you should use either unions for type constraints or allowed values for
 	// value constraints.
 	// In the validation implementation, the allowed values constraint will only be applied
-	// for values that do not contain ${..} substitutions, warnings will be produced when the value
+	// for values that contain ${..} substitutions, warnings will be produced when the value
 	// contains substitutions as there is no way to know the final value during the validation phase.
+	// Allowed values take precedence over other value constrants such as minimum, maximum and pattern.
 	AllowedValues []*core.MappingNode
+	// Minimum holds the minimum value that can be used for an element in a resource spec that uses
+	// this schema.
+	// This is only used for "integer" and "float" types.
+	// This constraint can not be forced when ${..} substitutions are used in a value,
+	// warnings will be produced when the value contains substitutions
+	// as there is no way to know the final value during the validation phase.
+	// Allowed values will take precedence over this constraint.
+	Minimum *core.ScalarValue
+	// Maximum holds the maximum value that can be used for an element in a resource spec that uses
+	// this schema.
+	// This is only used for "integer" and "float" types.
+	// This constraint can not be forced when ${..} substitutions are used in a value,
+	// warnings will be produced when the value contains substitutions
+	// as there is no way to know the final value during the validation phase.
+	// Allowed values will take precedence over this constraint.
+	Maximum *core.ScalarValue
+	// MinLength can provide a minimum length for a string value,
+	// minimum amount of items in an array or minimum number of keys in a map.
+	// This is only used for "string", "array" and "map" types.
+	//
+	// For strings, this constraint represents the minimum number of characters (runes)
+	// in the string and not the number of bytes.
+	//
+	// This constraint can not be forced when ${..} substitutions are used in a string value,
+	// warnings will be produced when a string value contains substitutions
+	// as there is no way to know the final value during the validation phase.
+	// 0 means that there is no minimum length constraint.
+	// Allowed values will take precedence over this constraint for values of type "string".
+	MinLength int
+	// MaxLength can provide a maximum length for a string value,
+	// maximum amount of items in an array or maximum number of keys in a map.
+	// This is only used for "string", "array" and "map" types.
+	//
+	// For strings, this constraint represents the maximum number of characters (runes)
+	// in the string and not the number of bytes.
+	//
+	// This constraint can not be forced when ${..} substitutions are used in a string value,
+	// warnings will be produced when the vstring alue contains substitutions
+	// as there is no way to know the final value during the validation phase.
+	// 0 means that there is no maximum length constraint.
+	// Allowed values will take precedence over this constraint for values of type "string".
+	MaxLength int
+	// Pattern holds a regular expression pattern that can be used to validate
+	// a string value in a resource spec that uses this schema.
+	// This is only used for "string" types.
+	// The pattern must be a valid Go regular expression, see: https://pkg.go.dev/regexp/syntax.
+	// Allowed values will take precedence over this constraint.
+	Pattern string
 	// Default holds the default value for a resource spec schema,
 	// this will be populated in the `Resource.Spec.*` mapping node
 	// if the resource spec is missing a value
@@ -474,7 +523,7 @@ type ResourceDefinitionsSchema struct {
 	// and the schema is nullable, a nil pointer should not be used
 	// for an empty value, pointers should be set when you want to explicitly
 	// set a value to nil.
-	// The default value will not be used for computed value in a resource spec.
+	// The default value will not be used for computed values in a resource spec.
 	Default *core.MappingNode
 	// Examples holds a list of examples for the resource definition element.
 	// Examples are useful for documentation and tooling.

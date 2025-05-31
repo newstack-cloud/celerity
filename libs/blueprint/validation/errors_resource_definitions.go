@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 
+	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/errors"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 	"github.com/two-hundred/celerity/libs/blueprint/source"
@@ -165,5 +166,180 @@ func errResourceDefNotAllowedValue(
 		),
 		Line:   line,
 		Column: col,
+	}
+}
+
+func errResourceDefPatternConstraintFailure(
+	path string,
+	pattern string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a value that does not match the pattern "+
+
+				"constraint at path %q, the value must match the pattern: %s",
+			path,
+			pattern,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceDefMinConstraintFailure(
+	path string,
+	value *core.ScalarValue,
+	minimum *core.ScalarValue,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a value that is less than the minimum "+
+				"constraint at path %q, %s provided but the value must be greater than or equal to %s",
+			path,
+			value.ToString(),
+			minimum.ToString(),
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceDefMaxConstraintFailure(
+	path string,
+	value *core.ScalarValue,
+	minimum *core.ScalarValue,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a value that is greater than the maximum "+
+				"constraint at path %q, %s provided but the value must be less than or equal to %s",
+			path,
+			value.ToString(),
+			minimum.ToString(),
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceDefComplexMinLengthConstraintFailure(
+	path string,
+	schemaType provider.ResourceDefinitionsSchemaType,
+	valueLength int,
+	minimumLength int,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to %s that has less items than the minimum "+
+				"length constraint at path %q, %s provided when there must be at least %s",
+			formatSchemaTypeForConstraintError(schemaType),
+			path,
+			formatNumberOfItems(valueLength, "item"),
+			formatNumberOfItems(minimumLength, "item"),
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceDefComplexMaxLengthConstraintFailure(
+	path string,
+	schemaType provider.ResourceDefinitionsSchemaType,
+	valueLength int,
+	maximumLength int,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to %s that has more items than the maximum "+
+				"length constraint at path %q, %s provided when there must be at most %s",
+			formatSchemaTypeForConstraintError(schemaType),
+			path,
+			formatNumberOfItems(valueLength, "item"),
+			formatNumberOfItems(maximumLength, "item"),
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceDefStringMinLengthConstraintFailure(
+	path string,
+	numberOfChars int,
+	minimumLength int,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a string value that is shorter than the minimum "+
+				"length constraint at path %q, %s provided when there must be at least %s",
+			path,
+			formatNumberOfItems(numberOfChars, "character"),
+			formatNumberOfItems(minimumLength, "character"),
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errResourceDefStringMaxLengthConstraintFailure(
+	path string,
+	numberOfChars int,
+	maximumLength int,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidResource,
+		Err: fmt.Errorf(
+			"validation failed due to a string value that is longer than the maximum "+
+				"length constraint at path %q, %s provided when there must be at most %s",
+			path,
+			formatNumberOfItems(numberOfChars, "character"),
+			formatNumberOfItems(maximumLength, "character"),
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func formatNumberOfItems(
+	numberOfItems int,
+	singularItemName string,
+) string {
+	if numberOfItems == 1 {
+		return fmt.Sprintf("%d %s", numberOfItems, singularItemName)
+	}
+	return fmt.Sprintf("%d %ss", numberOfItems, singularItemName)
+}
+
+func formatSchemaTypeForConstraintError(
+	schemaType provider.ResourceDefinitionsSchemaType,
+) string {
+	switch schemaType {
+	case provider.ResourceDefinitionsSchemaTypeArray:
+		return "an array"
+	case provider.ResourceDefinitionsSchemaTypeMap:
+		return "a map"
+	case provider.ResourceDefinitionsSchemaTypeObject:
+		return "an object"
+	default:
+		return fmt.Sprintf("a value of type %s", schemaType)
 	}
 }

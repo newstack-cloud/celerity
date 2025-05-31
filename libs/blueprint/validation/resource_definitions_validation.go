@@ -3,8 +3,10 @@ package validation
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -327,6 +329,32 @@ func validateResourceDefinitionMap(
 		)
 	}
 
+	if validateAgainstSchema.MinLength > 0 {
+		minLengthDiagnostics, err := validateResourceDefinitionMapMinLength(
+			node,
+			validateAgainstSchema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, minLengthDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
+	if validateAgainstSchema.MaxLength > 0 {
+		maxLengthDiagnostics, err := validateResourceDefinitionMapMaxLength(
+			node,
+			validateAgainstSchema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, maxLengthDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
 	var errs []error
 
 	for fieldName, fieldNode := range node.Fields {
@@ -401,6 +429,32 @@ func validateResourceDefinitionArray(
 			provider.ResourceDefinitionsSchemaTypeArray,
 			selectMappingNodeLocation(node, parentLocation),
 		)
+	}
+
+	if validateAgainstSchema.MinLength > 0 {
+		minLengthDiagnostics, err := validateResourceDefinitionArrayMinLength(
+			node,
+			validateAgainstSchema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, minLengthDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
+	if validateAgainstSchema.MaxLength > 0 {
+		maxLengthDiagnostics, err := validateResourceDefinitionArrayMaxLength(
+			node,
+			validateAgainstSchema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, maxLengthDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
 	}
 
 	var errs []error
@@ -498,6 +552,45 @@ func validateResourceDefinitionString(
 		}
 	}
 
+	if schema.MinLength > 0 {
+		minLengthDiagnostics, err := validateResourceDefinitionStringMinLength(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, minLengthDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
+	if schema.MaxLength > 0 {
+		maxLengthDiagnostics, err := validateResourceDefinitionStringMaxLength(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, maxLengthDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
+	if schema.Pattern != "" {
+		patternDiagnostics, err := validateResourceDefinitionPattern(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, patternDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
 	if node.StringWithSubstitutions != nil {
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
@@ -584,6 +677,32 @@ func validateResourceDefinitionInteger(
 		}
 	}
 
+	if core.IsScalarInt(schema.Minimum) {
+		minimumValueDiagnostics, err := validateResourceDefinitionMinIntValue(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, minimumValueDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
+	if core.IsScalarInt(schema.Maximum) {
+		maximumValueDiagnostics, err := validateResourceDefinitionMaxIntValue(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, maximumValueDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
 	if node.StringWithSubstitutions != nil {
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
@@ -665,6 +784,32 @@ func validateResourceDefinitionFloat(
 			selectMappingNodeLocation(node, parentLocation),
 		)
 		diagnostics = append(diagnostics, allowedValueDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
+	if core.IsScalarFloat(schema.Minimum) {
+		minimumValueDiagnostics, err := validateResourceDefinitionMinFloatValue(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, minimumValueDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
+	if core.IsScalarFloat(schema.Maximum) {
+		maximumValueDiagnostics, err := validateResourceDefinitionMaxFloatValue(
+			node,
+			schema,
+			path,
+			selectMappingNodeLocation(node, parentLocation),
+		)
+		diagnostics = append(diagnostics, maximumValueDiagnostics...)
 		if err != nil {
 			return diagnostics, err
 		}
@@ -901,6 +1046,202 @@ func validateResourceDefinitionSubstitution(
 	return diagnostics, nil
 }
 
+func validateResourceDefinitionPattern(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	if !core.IsScalarMappingNode(node) && node.StringWithSubstitutions != nil {
+		// When a value is a string with substitutions,
+		// we can not validate a value that is not yet resolved.
+		// Warnings are useful to make practitioners aware of the possibility
+		// of a failure during change staging or deployment for a field
+		// that must match a specific pattern.
+		diagnostics = append(
+			diagnostics,
+			&core.Diagnostic{
+				Level: core.DiagnosticLevelWarning,
+				Message: fmt.Sprintf(
+					"The value of %q contains substitutions and can not be validated against a pattern. "+
+						"When substitutions are resolved, this value must match the following pattern: %q.",
+					path,
+					schema.Pattern,
+				),
+				Range: toDiagnosticRange(location, nil),
+			},
+		)
+		return diagnostics, nil
+	}
+
+	patternRegexp, err := regexp.Compile(schema.Pattern)
+	if err != nil {
+		return diagnostics, err
+	}
+
+	if !patternRegexp.MatchString(core.StringValue(node)) {
+		return diagnostics, errResourceDefPatternConstraintFailure(
+			path,
+			schema.Pattern,
+			selectMappingNodeLocation(node, location),
+		)
+	}
+
+	return diagnostics, nil
+}
+
+func validateResourceDefinitionMinIntValue(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	return validateResourceDefinitionNumericConstraint(
+		node,
+		schema.Minimum,
+		schema,
+		path,
+		selectMappingNodeLocation(node, location),
+		func(value *core.MappingNode, constraint *core.ScalarValue) bool {
+			return core.IntValue(value) < core.IntValueFromScalar(constraint)
+		},
+		"minimum",
+		"greater than or equal to",
+		errResourceDefMinConstraintFailure,
+	)
+}
+
+func validateResourceDefinitionMaxIntValue(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	return validateResourceDefinitionNumericConstraint(
+		node,
+		schema.Maximum,
+		schema,
+		path,
+		selectMappingNodeLocation(node, location),
+		func(value *core.MappingNode, constraint *core.ScalarValue) bool {
+			return core.IntValue(value) > core.IntValueFromScalar(constraint)
+		},
+		"maximum",
+		"less than or equal to",
+		errResourceDefMaxConstraintFailure,
+	)
+}
+
+func validateResourceDefinitionMinFloatValue(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	return validateResourceDefinitionNumericConstraint(
+		node,
+		schema.Minimum,
+		schema,
+		path,
+		selectMappingNodeLocation(node, location),
+		func(value *core.MappingNode, constraint *core.ScalarValue) bool {
+			return core.FloatValue(value) < core.FloatValueFromScalar(constraint)
+		},
+		"minimum",
+		"greater than or equal to",
+		errResourceDefMinConstraintFailure,
+	)
+}
+
+func validateResourceDefinitionMaxFloatValue(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	return validateResourceDefinitionNumericConstraint(
+		node,
+		schema.Maximum,
+		schema,
+		path,
+		selectMappingNodeLocation(node, location),
+		func(value *core.MappingNode, constraint *core.ScalarValue) bool {
+			return core.FloatValue(value) > core.FloatValueFromScalar(constraint)
+		},
+		"maximum",
+		"less than or equal to",
+		errResourceDefMaxConstraintFailure,
+	)
+}
+
+func validateResourceDefinitionNumericConstraint(
+	node *core.MappingNode,
+	constraint *core.ScalarValue,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+	failsConstraint func(value *core.MappingNode, constraint *core.ScalarValue) bool,
+	constraintName string,
+	constraintText string,
+	errFunc func(
+		path string,
+		value *core.ScalarValue,
+		constraint *core.ScalarValue,
+		location *source.Meta,
+	) error,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	if !core.IsScalarMappingNode(node) && node.StringWithSubstitutions != nil {
+		// Interpolated strings will be resolved as strings,
+		// an interpolated string is one that contains a combination of
+		// strings and substitutions or has more than one substitution.
+		if isInterpolatedString(node.StringWithSubstitutions) {
+			return diagnostics, errResourceDefInvalidType(
+				path,
+				deriveMappingNodeResourceDefinitionsType(node),
+				schema.Type,
+				selectMappingNodeLocation(node, location),
+			)
+		}
+
+		// When a value is a string with substitutions,
+		// we can not validate a value that is not yet resolved.
+		// Warnings are useful to make practitioners aware of the possibility
+		// of a failure during change staging or deployment for a field
+		// that must meet a specific numeric constraint.
+		diagnostics = append(
+			diagnostics,
+			&core.Diagnostic{
+				Level: core.DiagnosticLevelWarning,
+				Message: fmt.Sprintf(
+					"The value of %q contains substitutions and can not be validated against a %s value. "+
+						"When substitutions are resolved, this value must be %s %s.",
+					path,
+					constraintName,
+					constraintText,
+					constraint.ToString(),
+				),
+				Range: toDiagnosticRange(location, nil),
+			},
+		)
+		return diagnostics, nil
+	}
+
+	if failsConstraint(node, constraint) {
+		return diagnostics, errFunc(
+			path,
+			node.Scalar,
+			constraint,
+			selectMappingNodeLocation(node, location),
+		)
+	}
+
+	return diagnostics, nil
+}
+
 // A maximum number of allowed values to show in error and warning messages.
 const maxShowAllowedValues = 5
 
@@ -975,7 +1316,7 @@ func createAllowedValuesText(allowedValues []*core.MappingNode, maxCount int) st
 
 	// Show only the first `maxCount` allowed values.
 	allowedValuesStr := mappingNodesToCommaSeparatedString(allowedValues[:maxCount])
-	return fmt.Sprintf("%s, and %d more",
+	return fmt.Sprintf("%s, and %d more, see the schema definition for the full list",
 		allowedValuesStr,
 		len(allowedValues)-maxCount,
 	)
@@ -996,6 +1337,176 @@ func mappingNodesToCommaSeparatedString(nodes []*core.MappingNode) string {
 func isInterpolatedString(value *substitutions.StringOrSubstitutions) bool {
 	return !substitutions.IsNilStringSubs(value) &&
 		(len(value.Values) > 1 || value.Values[0].StringValue != nil)
+}
+
+func validateResourceDefinitionMapMinLength(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	if len(node.Fields) < schema.MinLength {
+		return diagnostics, errResourceDefComplexMinLengthConstraintFailure(
+			path,
+			provider.ResourceDefinitionsSchemaTypeMap,
+			len(node.Fields),
+			schema.MinLength,
+			selectMappingNodeLocation(node, location),
+		)
+	}
+
+	return diagnostics, nil
+}
+
+func validateResourceDefinitionMapMaxLength(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	if len(node.Fields) > schema.MaxLength {
+		return diagnostics, errResourceDefComplexMaxLengthConstraintFailure(
+			path,
+			provider.ResourceDefinitionsSchemaTypeMap,
+			len(node.Fields),
+			schema.MaxLength,
+			selectMappingNodeLocation(node, location),
+		)
+	}
+
+	return diagnostics, nil
+}
+
+func validateResourceDefinitionArrayMinLength(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	if len(node.Items) < schema.MinLength {
+		return diagnostics, errResourceDefComplexMinLengthConstraintFailure(
+			path,
+			provider.ResourceDefinitionsSchemaTypeArray,
+			len(node.Items),
+			schema.MinLength,
+			selectMappingNodeLocation(node, location),
+		)
+	}
+
+	return diagnostics, nil
+}
+
+func validateResourceDefinitionArrayMaxLength(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	if len(node.Items) > schema.MaxLength {
+		return diagnostics, errResourceDefComplexMaxLengthConstraintFailure(
+			path,
+			provider.ResourceDefinitionsSchemaTypeArray,
+			len(node.Items),
+			schema.MaxLength,
+			selectMappingNodeLocation(node, location),
+		)
+	}
+
+	return diagnostics, nil
+}
+
+func validateResourceDefinitionStringMinLength(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	if !core.IsScalarMappingNode(node) && node.StringWithSubstitutions != nil {
+		// When a value is a string with substitutions,
+		// we can not validate a value that is not yet resolved.
+		// Warnings are useful to make practitioners aware of the possibility
+		// of a failure during change staging or deployment for a field
+		// that must be greater than or equal to a specific length.
+		diagnostics = append(
+			diagnostics,
+			&core.Diagnostic{
+				Level: core.DiagnosticLevelWarning,
+				Message: fmt.Sprintf(
+					"The value of %q contains substitutions and can not be validated against a minimum length. "+
+						"When substitutions are resolved, this value must have %d or more characters.",
+					path,
+					schema.MinLength,
+				),
+				Range: toDiagnosticRange(location, nil),
+			},
+		)
+		return diagnostics, nil
+	}
+
+	numberOfChars := utf8.RuneCountInString(core.StringValue(node))
+	if numberOfChars < schema.MinLength {
+		return diagnostics, errResourceDefStringMinLengthConstraintFailure(
+			path,
+			numberOfChars,
+			schema.MinLength,
+			selectMappingNodeLocation(node, location),
+		)
+	}
+
+	return diagnostics, nil
+}
+
+func validateResourceDefinitionStringMaxLength(
+	node *core.MappingNode,
+	schema *provider.ResourceDefinitionsSchema,
+	path string,
+	location *source.Meta,
+) ([]*core.Diagnostic, error) {
+	diagnostics := []*core.Diagnostic{}
+
+	if !core.IsScalarMappingNode(node) && node.StringWithSubstitutions != nil {
+		// When a value is a string with substitutions,
+		// we can not validate a value that is not yet resolved.
+		// Warnings are useful to make practitioners aware of the possibility
+		// of a failure during change staging or deployment for a field
+		// that must be less than or equal to a specific length.
+		diagnostics = append(
+			diagnostics,
+			&core.Diagnostic{
+				Level: core.DiagnosticLevelWarning,
+				Message: fmt.Sprintf(
+					"The value of %q contains substitutions and can not be validated against a maximum length. "+
+						"When substitutions are resolved, this value must have %d or less characters.",
+					path,
+					schema.MaxLength,
+				),
+				Range: toDiagnosticRange(location, nil),
+			},
+		)
+		return diagnostics, nil
+	}
+
+	numberOfChars := utf8.RuneCountInString(core.StringValue(node))
+	if numberOfChars > schema.MaxLength {
+		return diagnostics, errResourceDefStringMaxLengthConstraintFailure(
+			path,
+			numberOfChars,
+			schema.MaxLength,
+			selectMappingNodeLocation(node, location),
+		)
+	}
+
+	return diagnostics, nil
 }
 
 func selectMappingNodeLocation(node *core.MappingNode, parentLocation *source.Meta) *source.Meta {
