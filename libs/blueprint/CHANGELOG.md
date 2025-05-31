@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.11.0] - 2025-05-31
 
+### Added
+
 - Adds a new set of value constraints to the `provider.ResourceDefinitionsSchema` struct to allow providers and transformers to define specific constraints for values in resource specs used in both concrete and abstract resource types. This commit includes updates to validation to carry out strict checks when exact values are provided and produce warnings for string interpolation where the value is not known until the substitution is resolved during change staging or deployment.
   - Adds `Minimum` and `Maximum` fields for numeric types.
   - Adds `Pattern` field for strings to match against a Go-compatible regular expression.
