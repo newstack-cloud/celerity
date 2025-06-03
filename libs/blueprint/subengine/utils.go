@@ -23,13 +23,18 @@ type resolveContext struct {
 	currentElementProperty string
 	disallowedElementTypes []string
 	resolveFor             ResolveForStage
-	partiallyResolved      interface{}
+	// For annotations, StringOrSubstitution structs are resolved in a way that resolves to a
+	// scalar if `StringValue` can be resolved to a scalar value other than a string.
+	// This is set to true when the `currentElementProperty` ends with ".annotations".
+	isAnnotation      bool
+	partiallyResolved any
 }
 
 func resolveContextFromParent(
 	currentElementProperty string,
 	parentCtx *resolveContext,
 ) *resolveContext {
+
 	return &resolveContext{
 		rootElementName:        parentCtx.rootElementName,
 		rootElementProperty:    getRootElemProperty(parentCtx, currentElementProperty),
@@ -38,6 +43,7 @@ func resolveContextFromParent(
 		disallowedElementTypes: parentCtx.disallowedElementTypes,
 		resolveFor:             parentCtx.resolveFor,
 		partiallyResolved:      parentCtx.partiallyResolved,
+		isAnnotation:           strings.HasSuffix(currentElementProperty, ".annotations"),
 	}
 }
 
@@ -53,6 +59,7 @@ func resolveContextForCurrentElement(
 		disallowedElementTypes: parentCtx.disallowedElementTypes,
 		resolveFor:             parentCtx.resolveFor,
 		partiallyResolved:      parentCtx.partiallyResolved,
+		isAnnotation:           false,
 	}
 }
 

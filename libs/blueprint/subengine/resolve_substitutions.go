@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
@@ -1497,11 +1498,10 @@ func (r *defaultSubstitutionResolver) resolveSubstitution(
 	resolveCtx *resolveContext,
 ) (*bpcore.MappingNode, error) {
 	if value.StringValue != nil {
-		return &bpcore.MappingNode{
-			Scalar: &bpcore.ScalarValue{
-				StringValue: value.StringValue,
-			},
-		}, nil
+		return r.resolveScalarFromSubStringValue(
+			value,
+			resolveCtx,
+		), nil
 	}
 
 	if value.SubstitutionValue != nil {
@@ -1514,6 +1514,42 @@ func (r *defaultSubstitutionResolver) resolveSubstitution(
 	}
 
 	return nil, errEmptySubstitutionValue(resolveCtx.currentElementName)
+}
+
+func (r *defaultSubstitutionResolver) resolveScalarFromSubStringValue(
+	value *substitutions.StringOrSubstitution,
+	resolveCtx *resolveContext,
+) *bpcore.MappingNode {
+	if value.StringValue == nil {
+		return nil
+	}
+
+	stringVal := *value.StringValue
+
+	if !resolveCtx.isAnnotation {
+		return bpcore.MappingNodeFromString(stringVal)
+	}
+
+	// Try float first if the string contains a period.
+	if strings.Contains(stringVal, ".") {
+		floatVal, err := strconv.ParseFloat(stringVal, 64)
+		if err == nil {
+			return bpcore.MappingNodeFromFloat(floatVal)
+		}
+	}
+
+	intVal, err := strconv.ParseInt(stringVal, 10, 64)
+	if err == nil {
+		return bpcore.MappingNodeFromInt(int(intVal))
+	}
+
+	boolVal, err := strconv.ParseBool(stringVal)
+	if err == nil {
+		return bpcore.MappingNodeFromBool(boolVal)
+	}
+
+	// Default to string if another scalar type couldn't be parsed.
+	return bpcore.MappingNodeFromString(stringVal)
 }
 
 func (r *defaultSubstitutionResolver) resolveSubstitutionValue(

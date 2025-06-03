@@ -64,6 +64,9 @@ resources:
         aws.dynamodb.trigger: ${variables.enableOrderTableTrigger}
         aws.dynamodb.vpc: ${datasources.network.vpc}
         custom.coreInfraRegion: ${values.prefixedCoreInfraRegion}
+        custom.intValue: 40392
+        custom.boolValue: false
+        custom.floatValue: 40392.5093
       labels:
         app: orders
       custom:
