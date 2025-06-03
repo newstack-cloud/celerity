@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	json "github.com/coreos/go-json"
@@ -499,4 +500,29 @@ func MappingNodeEqual(nodeA, nodeB *MappingNode) bool {
 	}
 
 	return false
+}
+
+// ParseScalarMappingNode parses a scalar mapping node
+// (string, boolean, integer, or float) from a source string.
+func ParseScalarMappingNode(source string) *MappingNode {
+	// Try float first if the string contains a period.
+	if strings.Contains(source, ".") {
+		floatVal, err := strconv.ParseFloat(source, 64)
+		if err == nil {
+			return MappingNodeFromFloat(floatVal)
+		}
+	}
+
+	intVal, err := strconv.ParseInt(source, 10, 64)
+	if err == nil {
+		return MappingNodeFromInt(int(intVal))
+	}
+
+	boolVal, err := strconv.ParseBool(source)
+	if err == nil {
+		return MappingNodeFromBool(boolVal)
+	}
+
+	// Default to string if another scalar type couldn't be parsed.
+	return MappingNodeFromString(source)
 }

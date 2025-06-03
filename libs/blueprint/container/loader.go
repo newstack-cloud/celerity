@@ -695,6 +695,22 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		return container, diagnostics, validation.ErrReferenceCycles(refCycleRoots)
 	}
 
+	linkChains, err := linkInfo.Links(ctx)
+	if err != nil {
+		return container, diagnostics, err
+	}
+
+	l.logger.Info("Validating link annotations")
+	annotationDiagnostics, err := validation.ValidateLinkAnnotations(
+		ctx,
+		linkChains,
+		params,
+	)
+	diagnostics = append(diagnostics, annotationDiagnostics...)
+	if err != nil {
+		return container, diagnostics, err
+	}
+
 	eachDepsErr := validation.ValidateResourceEachDependencies(
 		blueprintSpec.Schema(),
 		refChainCollector,

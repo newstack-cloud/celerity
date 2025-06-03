@@ -14,6 +14,15 @@ func Test(t *testing.T) {
 	TestingT(t)
 }
 
+func createParams() core.BlueprintParams {
+	return core.NewDefaultParams(
+		map[string]map[string]*core.ScalarValue{},
+		map[string]map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+		map[string]*core.ScalarValue{},
+	)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Test custom variable types implementing the provider.CustomVariableType interface.
 ////////////////////////////////////////////////////////////////////////////////

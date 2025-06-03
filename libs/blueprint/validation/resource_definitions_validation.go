@@ -1253,7 +1253,11 @@ func validateResourceDefinitionAllowedValues(
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
 
-	allowedValuesText := createAllowedValuesText(schema.AllowedValues, maxShowAllowedValues)
+	allowedValuesText := createAllowedValuesText(
+		schema.AllowedValues,
+		maxShowAllowedValues,
+		"schema definition",
+	)
 	if !core.IsScalarMappingNode(node) && node.StringWithSubstitutions != nil {
 		if schema.Type != provider.ResourceDefinitionsSchemaTypeString &&
 			// Interpolated strings will be resolved as strings,
@@ -1309,16 +1313,17 @@ func validateResourceDefinitionAllowedValues(
 	return diagnostics, nil
 }
 
-func createAllowedValuesText(allowedValues []*core.MappingNode, maxCount int) string {
+func createAllowedValuesText(allowedValues []*core.MappingNode, maxCount int, definitionLabel string) string {
 	if len(allowedValues) <= maxCount {
 		return mappingNodesToCommaSeparatedString(allowedValues)
 	}
 
 	// Show only the first `maxCount` allowed values.
 	allowedValuesStr := mappingNodesToCommaSeparatedString(allowedValues[:maxCount])
-	return fmt.Sprintf("%s, and %d more, see the schema definition for the full list",
+	return fmt.Sprintf("%s, and %d more, see the %s for the full list",
 		allowedValuesStr,
 		len(allowedValues)-maxCount,
+		definitionLabel,
 	)
 }
 

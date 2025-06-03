@@ -221,6 +221,17 @@ type LinkGetAnnotationDefinitionsOutput struct {
 
 // LinkAnnotationDefinition provides a way to define annotations
 // for a link type.
+// Annotations that have dynamic keys should use the `<resourceName>` syntax
+// in the key name, e.g. "aws.lambda.dynamodb.<tableName>.accessType".
+// The value that "<resourceName>" represents must be the name of a resource
+// that is linked to the resource type where the annotation is defined.
+// Schema validation will match based on the pattern for dynamic keys.
+// Only a single "<resourceName>" placeholder is allowed for a dynamic annotation key.
+// Dynamic keys are used to target specific resources when there are multiple resources
+// of the same type linked to the resource where the annotation is defined.
+// Default values are ignored for link annotation field definitions that have
+// dynamic field names, the default value should be defined in an equivalent
+// annotation that is not targeted at a specific resource name (e.g. "aws.lambda.dynamodb.accessType").
 type LinkAnnotationDefinition struct {
 	Name          string              `json:"name"`
 	Label         string              `json:"label"`

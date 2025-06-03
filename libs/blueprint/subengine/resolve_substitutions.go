@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 
 	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
@@ -1530,26 +1529,7 @@ func (r *defaultSubstitutionResolver) resolveScalarFromSubStringValue(
 		return bpcore.MappingNodeFromString(stringVal)
 	}
 
-	// Try float first if the string contains a period.
-	if strings.Contains(stringVal, ".") {
-		floatVal, err := strconv.ParseFloat(stringVal, 64)
-		if err == nil {
-			return bpcore.MappingNodeFromFloat(floatVal)
-		}
-	}
-
-	intVal, err := strconv.ParseInt(stringVal, 10, 64)
-	if err == nil {
-		return bpcore.MappingNodeFromInt(int(intVal))
-	}
-
-	boolVal, err := strconv.ParseBool(stringVal)
-	if err == nil {
-		return bpcore.MappingNodeFromBool(boolVal)
-	}
-
-	// Default to string if another scalar type couldn't be parsed.
-	return bpcore.MappingNodeFromString(stringVal)
+	return bpcore.ParseScalarMappingNode(stringVal)
 }
 
 func (r *defaultSubstitutionResolver) resolveSubstitutionValue(

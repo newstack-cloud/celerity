@@ -346,6 +346,32 @@ func IsScalarFloat(scalar *ScalarValue) bool {
 	return scalar != nil && scalar.FloatValue != nil
 }
 
+// TypeFromScalarValue returns the type of a scalar value
+// as a ScalarType. If the scalar is nil, an empty string is returned.
+func TypeFromScalarValue(scalar *ScalarValue) ScalarType {
+	if scalar == nil {
+		return ""
+	}
+
+	if IsScalarString(scalar) {
+		return ScalarTypeString
+	}
+
+	if IsScalarInt(scalar) {
+		return ScalarTypeInteger
+	}
+
+	if IsScalarBool(scalar) {
+		return ScalarTypeBool
+	}
+
+	if IsScalarFloat(scalar) {
+		return ScalarTypeFloat
+	}
+
+	return ""
+}
+
 // ScalarType represents the type of a scalar value that can be
 // used in annotation and configuration definitions.
 type ScalarType string

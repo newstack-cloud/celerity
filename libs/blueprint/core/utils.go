@@ -112,6 +112,102 @@ func MappingNodeFromFloat(value float64) *MappingNode {
 	}
 }
 
+// MappingNodeFromStringSlice creates a MappingNode from a slice of strings.
+func MappingNodeFromStringSlice(values []string) *MappingNode {
+	items := make([]*MappingNode, len(values))
+	for i, value := range values {
+		items[i] = MappingNodeFromString(value)
+	}
+
+	return &MappingNode{
+		Items: items,
+	}
+}
+
+// MappingNodeFromIntSlice creates a MappingNode from a slice of integers.
+func MappingNodeFromIntSlice(values []int64) *MappingNode {
+	items := make([]*MappingNode, len(values))
+	for i, value := range values {
+		items[i] = MappingNodeFromInt(int(value))
+	}
+
+	return &MappingNode{
+		Items: items,
+	}
+}
+
+// MappingNodeFromFloatSlice creates a MappingNode from a slice of floats.
+func MappingNodeFromFloatSlice(values []float64) *MappingNode {
+	items := make([]*MappingNode, len(values))
+	for i, value := range values {
+		items[i] = MappingNodeFromFloat(value)
+	}
+
+	return &MappingNode{
+		Items: items,
+	}
+}
+
+// MappingNodeFromBoolSlice creates a MappingNode from a slice of booleans.
+func MappingNodeFromBoolSlice(values []bool) *MappingNode {
+	items := make([]*MappingNode, len(values))
+	for i, value := range values {
+		items[i] = MappingNodeFromBool(value)
+	}
+
+	return &MappingNode{
+		Items: items,
+	}
+}
+
+// MappingNodeFromStringMap creates a MappingNode from a map of string keys to string values.
+func MappingNodeFromStringMap(values map[string]string) *MappingNode {
+	fields := map[string]*MappingNode{}
+	for key, value := range values {
+		fields[key] = MappingNodeFromString(value)
+	}
+
+	return &MappingNode{
+		Fields: fields,
+	}
+}
+
+// MappingNodeFromIntMap creates a MappingNode from a map of string keys to integer values.
+func MappingNodeFromIntMap(values map[string]int64) *MappingNode {
+	fields := map[string]*MappingNode{}
+	for key, value := range values {
+		fields[key] = MappingNodeFromInt(int(value))
+	}
+
+	return &MappingNode{
+		Fields: fields,
+	}
+}
+
+// MappingNodeFromFloatMap creates a MappingNode from a map of string keys to float values.
+func MappingNodeFromFloatMap(values map[string]float64) *MappingNode {
+	fields := map[string]*MappingNode{}
+	for key, value := range values {
+		fields[key] = MappingNodeFromFloat(value)
+	}
+
+	return &MappingNode{
+		Fields: fields,
+	}
+}
+
+// MappingNodeFromBoolMap creates a MappingNode from a map of string keys to boolean values.
+func MappingNodeFromBoolMap(values map[string]bool) *MappingNode {
+	fields := map[string]*MappingNode{}
+	for key, value := range values {
+		fields[key] = MappingNodeFromBool(value)
+	}
+
+	return &MappingNode{
+		Fields: fields,
+	}
+}
+
 // ResourceElementID generates an element ID for a resource that is used
 // primarily for resolving substitutions.
 func ResourceElementID(resourceName string) string {

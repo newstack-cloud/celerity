@@ -5,7 +5,6 @@ import (
 	"maps"
 	"regexp"
 	"slices"
-	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
@@ -130,6 +129,8 @@ func ValidateConfigDefinition(
 			})
 		}
 
+		// TODO: check config field type
+
 		if len(fieldDef.AllowedValues) > 0 {
 			allowedValueDiagnostics := []*Diagnostic{}
 			checkAllowedConfigValues(
@@ -224,14 +225,14 @@ func getConfigValues(
 ) (map[string]*ScalarValue, bool, error) {
 	configValues := map[string]*ScalarValue{}
 
-	if !isDynamicConfigFieldName(fieldDefName) {
+	if !IsDynamicFieldName(fieldDefName) {
 		if configValue, ok := config[fieldDefName]; ok {
 			configValues[fieldDefName] = configValue
 		}
 		return configValues, false, nil
 	}
 
-	patternString := createPatternForDynamicFieldName(fieldDefName)
+	patternString := CreatePatternForDynamicFieldName(fieldDefName, -1)
 	pattern, err := regexp.Compile(patternString)
 	if err != nil {
 		return nil, false, err
@@ -243,37 +244,6 @@ func getConfigValues(
 	}
 
 	return configValues, true, nil
-}
-
-func isDynamicConfigFieldName(fieldDefName string) bool {
-	indexOpenAngleBracket := strings.Index(fieldDefName, "<")
-	indexCloseAngleBracket := strings.Index(fieldDefName, ">")
-	return indexOpenAngleBracket != -1 &&
-		indexCloseAngleBracket != -1 &&
-		indexOpenAngleBracket < indexCloseAngleBracket
-}
-
-const (
-	capturePlaceholderPatternString = "([A-Za-z0-9\\-_]+)"
-)
-
-func createPatternForDynamicFieldName(fieldDefName string) string {
-	startIndex := 0
-	for startIndex != -1 {
-		searchIn := fieldDefName[startIndex:]
-		openIndex := strings.Index(searchIn, "<")
-		closeIndex := strings.Index(searchIn, ">")
-		if openIndex == -1 || closeIndex == -1 {
-			startIndex = -1
-		} else {
-			fieldDefName = fieldDefName[:startIndex+openIndex] +
-				capturePlaceholderPatternString +
-				fieldDefName[startIndex+closeIndex+1:]
-			startIndex += closeIndex + 1
-		}
-
-	}
-	return fieldDefName
 }
 
 func addUniqueFieldNames(

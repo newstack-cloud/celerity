@@ -1,0 +1,328 @@
+package validation
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/links"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+)
+
+type LinkAnnotationValidationTestSuite struct {
+	suite.Suite
+}
+
+func (s *LinkAnnotationValidationTestSuite) Test_successfully_validates_link_chains_with_no_issues() {
+	linkChains := createTestLinkChain(&fixtureConfig{})
+	diagnostics, err := ValidateLinkAnnotations(
+		context.Background(),
+		linkChains,
+		createParams(),
+	)
+	s.Assert().NoError(err)
+	s.Assert().Empty(diagnostics)
+}
+
+func (s *LinkAnnotationValidationTestSuite) Test_reports_warnings_when_annotations_include_substitutions() {
+	linkChains := createTestLinkChain(
+		&fixtureConfig{
+			includeSubstitutions: true,
+		},
+	)
+	diagnostics, err := ValidateLinkAnnotations(
+		context.Background(),
+		linkChains,
+		createParams(),
+	)
+	s.Assert().NoError(err)
+	s.Assert().Equal(
+		[]*core.Diagnostic{
+			{
+				Level: core.DiagnosticLevelWarning,
+				Message: "The value of the \"test.int.annotation\" annotation in the \"resourceA\" " +
+					"resource contains substitutions and can not be validated against a type. " +
+					"When substitutions are resolved, this value must be a valid integer.",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+				},
+			},
+		},
+		diagnostics,
+	)
+}
+
+func (s *LinkAnnotationValidationTestSuite) Test_reports_errors_for_missing_required_annotations() {
+	linkChains := createTestLinkChain(
+		&fixtureConfig{
+			omitRequiredAnnotations: true,
+		},
+	)
+	diagnostics, err := ValidateLinkAnnotations(
+		context.Background(),
+		linkChains,
+		createParams(),
+	)
+	s.Assert().NoError(err)
+	s.Assert().Equal(
+		[]*core.Diagnostic{
+			{
+				Level: core.DiagnosticLevelError,
+				Message: "The \"test.string.annotation\" annotation is required for the \"resourceA\" " +
+					"resource in relation to the \"resourceB\" resource, but is missing or null.",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+				},
+			},
+		},
+		diagnostics,
+	)
+}
+
+func (s *LinkAnnotationValidationTestSuite) Test_reports_errors_for_annotations_with_invalid_types() {
+	linkChains := createTestLinkChain(
+		&fixtureConfig{
+			invalidTypes: true,
+		},
+	)
+	diagnostics, err := ValidateLinkAnnotations(
+		context.Background(),
+		linkChains,
+		createParams(),
+	)
+	s.Assert().NoError(err)
+	s.Assert().Equal(
+		[]*core.Diagnostic{
+			{
+				Level: core.DiagnosticLevelError,
+				Message: "The value of the \"test.int.annotation\" annotation in the \"resourceA\" " +
+					"resource is not a valid integer. Expected a value of type integer, but got string.",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+				},
+			},
+		},
+		diagnostics,
+	)
+}
+
+func (s *LinkAnnotationValidationTestSuite) Test_reports_errors_for_annotations_with_values_not_in_allowed_list() {
+	linkChains := createTestLinkChain(
+		&fixtureConfig{
+			invalidAllowedValues: true,
+		},
+	)
+	diagnostics, err := ValidateLinkAnnotations(
+		context.Background(),
+		linkChains,
+		createParams(),
+	)
+	s.Assert().NoError(err)
+	s.Assert().Equal(
+		[]*core.Diagnostic{
+			{
+				Level: core.DiagnosticLevelError,
+				Message: "The value of the \"test.string.annotation\" annotation in the \"resourceA\" " +
+					"resource is not one of the allowed values. invalid-value was provided " +
+					"but expected one of test-value, targeted-test-value",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+				},
+			},
+		},
+		diagnostics,
+	)
+}
+
+type fixtureConfig struct {
+	includeSubstitutions    bool
+	omitRequiredAnnotations bool
+	invalidTypes            bool
+	invalidAllowedValues    bool
+}
+
+func createTestLinkChain(
+	fixtureConf *fixtureConfig,
+) []*links.ChainLinkNode {
+	stringAnnotationValue := "test-value"
+	targetedStringAnnotationValue := "targeted-test-value"
+	intAnnotationValue := "509332"
+
+	resourceANode := &links.ChainLinkNode{
+		ResourceName: "resourceA",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{
+				Value: "test/resourceTypeA",
+			},
+			Metadata: &schema.Metadata{
+				Annotations: &schema.StringOrSubstitutionsMap{
+					Values: map[string]*substitutions.StringOrSubstitutions{
+						"test.string.annotation": {
+							Values: []*substitutions.StringOrSubstitution{
+								{
+									StringValue: &stringAnnotationValue,
+								},
+							},
+						},
+						"test.string.resourceB.annotation": {
+							Values: []*substitutions.StringOrSubstitution{
+								{
+									StringValue: &targetedStringAnnotationValue,
+								},
+							},
+						},
+						"test.int.annotation": {
+							Values: []*substitutions.StringOrSubstitution{
+								{
+									StringValue: &intAnnotationValue,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		LinkImplementations: map[string]provider.Link{
+			"resourceB": &testResourceTypeAResourceTypeBLink{},
+		},
+		LinksTo:    []*links.ChainLinkNode{},
+		LinkedFrom: []*links.ChainLinkNode{},
+	}
+
+	boolAnnotationValue := "true"
+	floatAnnotationValue := "504.201983"
+
+	resourceBNode := &links.ChainLinkNode{
+		ResourceName: "resourceB",
+		Resource: &schema.Resource{
+			Type: &schema.ResourceTypeWrapper{
+				Value: "test/resourceTypeB",
+			},
+			Metadata: &schema.Metadata{
+				Annotations: &schema.StringOrSubstitutionsMap{
+					Values: map[string]*substitutions.StringOrSubstitutions{
+						"test.bool.annotation": {
+							Values: []*substitutions.StringOrSubstitution{
+								{
+									StringValue: &boolAnnotationValue,
+								},
+							},
+						},
+						"test.float.annotation": {
+							Values: []*substitutions.StringOrSubstitution{
+								{
+									StringValue: &floatAnnotationValue,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		LinkImplementations: map[string]provider.Link{},
+		LinksTo:             []*links.ChainLinkNode{},
+		LinkedFrom: []*links.ChainLinkNode{
+			resourceANode,
+		},
+	}
+
+	resourceANode.LinksTo = append(resourceANode.LinksTo, resourceBNode)
+
+	if fixtureConf.includeSubstitutions {
+		resourceANode.Resource.Metadata.Annotations.Values["test.int.annotation"] =
+			&substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						SubstitutionValue: &substitutions.Substitution{
+							Variable: &substitutions.SubstitutionVariable{
+								VariableName: "testVariable",
+							},
+						},
+					},
+				},
+			}
+	}
+
+	if fixtureConf.omitRequiredAnnotations {
+		delete(resourceANode.Resource.Metadata.Annotations.Values, "test.string.annotation")
+	}
+
+	if fixtureConf.invalidTypes {
+		resourceANode.Resource.Metadata.Annotations.Values["test.int.annotation"] =
+			&substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						StringValue: &stringAnnotationValue, // Invalid type, should be an int
+					},
+				},
+			}
+	}
+
+	if fixtureConf.invalidAllowedValues {
+		invalidStringAnnotationValue := "invalid-value" // Not in the allowed list
+		resourceANode.Resource.Metadata.Annotations.Values["test.string.annotation"] =
+			&substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						StringValue: &invalidStringAnnotationValue,
+					},
+				},
+			}
+	}
+
+	return []*links.ChainLinkNode{
+		resourceANode,
+	}
+}
+
+func TestLinkAnnotationValidationTestSuite(t *testing.T) {
+	suite.Run(t, new(LinkAnnotationValidationTestSuite))
+}
