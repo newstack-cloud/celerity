@@ -308,6 +308,36 @@ func (s *PluginConfigTestSuite) Test_fails_validation_when_custom_conditional_re
 	)
 }
 
+func (s *PluginConfigTestSuite) Test_skips_custom_validation_for_empty_optional_field() {
+	inputConfig := map[string]*ScalarValue{
+		"intField":    ScalarFromInt(57),
+		"floatField":  ScalarFromFloat(3.14),
+		"boolField":   ScalarFromBool(true),
+		"stringField": ScalarFromString("a value"),
+		// Dynamic fields based on the
+		// aws.config.regionKMSKeys.<region>.other.<placeholder>
+		// "template" in the config definition.
+		"aws.config.regionKMSKeys.us-east-1.other.value1": ScalarFromString(
+			"arn:aws:kms:us-east-1:123456789012:key/abcd1234",
+		),
+		"aws.config.regionKMSKeys.eu-west-1.other.value2": ScalarFromString(
+			"arn:aws:kms:eu-west-1:123456789012:key/abcd2345",
+		),
+		// "intFieldWithDefault" is not provided, but has a custom validation
+		// function that checks if the value is less than 100.
+		// This should not be called since the field is not present
+		// in the input config.
+	}
+	diagnostics, err := ValidateConfigDefinition(
+		"aws",
+		"provider",
+		inputConfig,
+		testConfigDefinition,
+	)
+	s.Assert().NoError(err)
+	s.Assert().Empty(diagnostics)
+}
+
 func TestPluginConfigTestSuite(t *testing.T) {
 	suite.Run(t, new(PluginConfigTestSuite))
 }
@@ -370,6 +400,17 @@ var testConfigDefinition = &ConfigDefinition{
 			Label:        "Int Field with Default",
 			Description:  "An integer field with a default value",
 			DefaultValue: ScalarFromInt(100),
+			ValidateFunc: func(key string, value *ScalarValue, pluginConfig PluginConfig) []*Diagnostic {
+				diagnostics := []*Diagnostic{}
+				if IntValueFromScalar(value) < 100 {
+					diagnostics = append(diagnostics, &Diagnostic{
+						Level:   DiagnosticLevelError,
+						Message: "The value of the intFieldWithDefault cannot be negative.",
+						Range:   generalDiagnosticRange(),
+					})
+				}
+				return diagnostics
+			},
 		},
 	},
 }
