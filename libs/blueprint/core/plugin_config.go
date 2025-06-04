@@ -129,18 +129,22 @@ func ValidateConfigDefinition(
 			})
 		}
 
-		// TODO: check config field type
+		checkConfigValueTypes(
+			configValues,
+			fieldDef,
+			pluginName,
+			pluginType,
+			&diagnostics,
+		)
 
 		if len(fieldDef.AllowedValues) > 0 {
-			allowedValueDiagnostics := []*Diagnostic{}
 			checkAllowedConfigValues(
 				pluginName,
 				pluginType,
 				configValues,
 				fieldDef.AllowedValues,
-				&allowedValueDiagnostics,
+				&diagnostics,
 			)
-			diagnostics = append(diagnostics, allowedValueDiagnostics...)
 		}
 	}
 
@@ -164,6 +168,52 @@ func ValidateConfigDefinition(
 	}
 
 	return diagnostics, nil
+}
+
+func checkConfigValueTypes(
+	configValues map[string]*ScalarValue,
+	fieldDefinition *ConfigFieldDefinition,
+	pluginName string,
+	pluginType string,
+	diagnostics *[]*Diagnostic,
+) {
+
+	for configName, configValue := range configValues {
+		matchesType := matchesPluginConfigType(
+			configValue,
+			fieldDefinition.Type,
+		)
+
+		if !matchesType {
+			*diagnostics = append(
+				*diagnostics,
+				&Diagnostic{
+					Level: DiagnosticLevelError,
+					Message: fmt.Sprintf(
+						"The value of the %q config field in the %s %s is not a valid %s. "+
+							"Expected a value of type %s, but got %s.",
+						configName,
+						pluginName,
+						pluginType,
+						fieldDefinition.Type,
+						fieldDefinition.Type,
+						TypeFromScalarValue(configValue),
+					),
+					Range: generalDiagnosticRange(),
+				},
+			)
+		}
+	}
+}
+
+func matchesPluginConfigType(
+	configValue *ScalarValue,
+	fieldType ScalarType,
+) bool {
+	return (IsScalarBool(configValue) && fieldType == ScalarTypeBool) ||
+		(IsScalarInt(configValue) && fieldType == ScalarTypeInteger) ||
+		(IsScalarFloat(configValue) && fieldType == ScalarTypeFloat) ||
+		(IsScalarString(configValue) && fieldType == ScalarTypeString)
 }
 
 func checkAllowedConfigValues(

@@ -227,6 +227,49 @@ func (s *PluginConfigTestSuite) Test_fails_validation_for_values_not_in_allowed_
 	)
 }
 
+func (s *PluginConfigTestSuite) Test_fails_validation_for_value_of_wrong_type() {
+	inputConfig := map[string]*ScalarValue{
+		// intField is expected to be an integer value.
+		"intField":    ScalarFromString("not an integer"),
+		"floatField":  ScalarFromFloat(3.14),
+		"boolField":   ScalarFromBool(true),
+		"stringField": ScalarFromString("another value"),
+		// Dynamic fields based on the
+		// aws.config.regionKMSKeys.<region>.other.<placeholder>
+		// "template" in the config definition.
+		"aws.config.regionKMSKeys.us-east-1.other.value1": ScalarFromString(
+			"arn:aws:kms:us-east-1:123456789012:key/abcd1234",
+		),
+		"aws.config.regionKMSKeys.eu-west-1.other.value2": ScalarFromString(
+			"arn:aws:kms:eu-west-1:123456789012:key/abcd2345",
+		),
+	}
+	diagnostics, err := ValidateConfigDefinition(
+		"aws",
+		"provider",
+		inputConfig,
+		testConfigDefinition,
+	)
+	s.Assert().NoError(err)
+	s.Assert().Equal(
+		[]*Diagnostic{
+			{
+				Level: DiagnosticLevelError,
+				Message: "The value of the \"intField\" config field in the " +
+					"aws provider is not a valid integer. Expected a value of type integer, but got string.",
+				Range: generalDiagnosticRange(),
+			},
+			{
+				Level: DiagnosticLevelError,
+				Message: "The \"aws\" provider configuration field \"intField\" " +
+					"has an unexpected value not an integer.",
+				Range: generalDiagnosticRange(),
+			},
+		},
+		diagnostics,
+	)
+}
+
 func TestPluginConfigTestSuite(t *testing.T) {
 	suite.Run(t, new(PluginConfigTestSuite))
 }
