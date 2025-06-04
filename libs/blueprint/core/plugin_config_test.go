@@ -270,6 +270,44 @@ func (s *PluginConfigTestSuite) Test_fails_validation_for_value_of_wrong_type() 
 	)
 }
 
+func (s *PluginConfigTestSuite) Test_fails_validation_when_custom_conditional_requirement_is_not_met() {
+	inputConfig := map[string]*ScalarValue{
+		// intField can not be greater than 50 when stringField is
+		// "intFieldValidationTrigger".
+		"intField":    ScalarFromInt(57),
+		"floatField":  ScalarFromFloat(3.14),
+		"boolField":   ScalarFromBool(true),
+		"stringField": ScalarFromString("intFieldValidationTrigger"),
+		// Dynamic fields based on the
+		// aws.config.regionKMSKeys.<region>.other.<placeholder>
+		// "template" in the config definition.
+		"aws.config.regionKMSKeys.us-east-1.other.value1": ScalarFromString(
+			"arn:aws:kms:us-east-1:123456789012:key/abcd1234",
+		),
+		"aws.config.regionKMSKeys.eu-west-1.other.value2": ScalarFromString(
+			"arn:aws:kms:eu-west-1:123456789012:key/abcd2345",
+		),
+	}
+	diagnostics, err := ValidateConfigDefinition(
+		"aws",
+		"provider",
+		inputConfig,
+		testConfigDefinition,
+	)
+	s.Assert().NoError(err)
+	s.Assert().Equal(
+		[]*Diagnostic{
+			{
+				Level: DiagnosticLevelError,
+				Message: "The value of the intField cannot be greater than 50 " +
+					"when stringField is 'intFieldValidationTrigger'.",
+				Range: generalDiagnosticRange(),
+			},
+		},
+		diagnostics,
+	)
+}
+
 func TestPluginConfigTestSuite(t *testing.T) {
 	suite.Run(t, new(PluginConfigTestSuite))
 }
@@ -287,6 +325,21 @@ var testConfigDefinition = &ConfigDefinition{
 				ScalarFromInt(57),
 			},
 			Required: true,
+			ValidateFunc: func(key string, value *ScalarValue, pluginConfig PluginConfig) []*Diagnostic {
+				diagnostics := []*Diagnostic{}
+				otherFieldValue, ok := pluginConfig.Get("stringField")
+				if ok && StringValueFromScalar(otherFieldValue) == "intFieldValidationTrigger" {
+					if IntValueFromScalar(value) > 50 {
+						diagnostics = append(diagnostics, &Diagnostic{
+							Level:   DiagnosticLevelError,
+							Message: "The value of the intField cannot be greater than 50 when stringField is 'intFieldValidationTrigger'.",
+							Range:   generalDiagnosticRange(),
+						})
+					}
+				}
+
+				return diagnostics
+			},
 		},
 		"floatField": {
 			Type:        ScalarTypeFloat,

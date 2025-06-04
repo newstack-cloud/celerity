@@ -5,9 +5,41 @@ import (
 	"maps"
 	"regexp"
 	"slices"
+	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
+
+// PluginConfig is a convenience type that wraps a map of string keys
+// to scalar values holding the configuration for a provider or transformer plugin.
+// This enhances a map to allow for convenience methods such as retrieving
+// all config values under a specific prefix.
+type PluginConfig map[string]*ScalarValue
+
+// Get retrieves a configuration value by its key.
+// It returns the value and a boolean indicating whether the key exists in the config.
+func (c PluginConfig) Get(key string) (*ScalarValue, bool) {
+	value, ok := c[key]
+	return value, ok
+}
+
+// GetAllWithPrefix returns a subset of the PluginConfig
+// that contains all keys that start with the specified prefix.
+func (c PluginConfig) GetAllWithPrefix(prefix string) PluginConfig {
+	configValues := map[string]*ScalarValue{}
+
+	if prefix == "" {
+		return c
+	}
+
+	for key, value := range c {
+		if strings.HasPrefix(key, prefix) {
+			configValues[key] = value
+		}
+	}
+
+	return configValues
+}
 
 // ConfigDefinition contains a detailed definition (schema) of the configuration
 // required for a provider or transformer plugin.
@@ -24,6 +56,9 @@ type ConfigDefinition struct {
 	Fields                map[string]*ConfigFieldDefinition `json:"fields"`
 	AllowAdditionalFields bool                              `json:"allowAdditionalFields"`
 }
+
+// TODO: Add validate function for each field that takes in config values for validation
+// that is conditional based on the presence of other config values.
 
 // ConfigFieldDefinition represents a field in a configuration definition
 // for a provider or transformer plugin.
@@ -43,6 +78,13 @@ type ConfigFieldDefinition struct {
 	AllowedValues []*ScalarValue `json:"allowedValues,omitempty"`
 	Examples      []*ScalarValue `json:"examples,omitempty"`
 	Required      bool           `json:"required"`
+	// ValidateFunc is a function that can be used to validate an individual
+	// config field value. This function takes a key and a value
+	// along with the entire plugin configuration for the current provider
+	// or transformer plugin.
+	// It should return a list of diagnostics where validation will fail
+	// if there are one or more diagnostics at an error level.
+	ValidateFunc func(key string, value *ScalarValue, pluginConfig PluginConfig) []*Diagnostic
 }
 
 // PopulateDefaultConfigValues populates the default values
@@ -145,6 +187,19 @@ func ValidateConfigDefinition(
 				fieldDef.AllowedValues,
 				&diagnostics,
 			)
+		}
+
+		if fieldDef.ValidateFunc != nil {
+			for configName, configValue := range configValues {
+				customValidateDiagnostics := fieldDef.ValidateFunc(
+					configName,
+					configValue,
+					config,
+				)
+				if len(customValidateDiagnostics) > 0 {
+					diagnostics = append(diagnostics, customValidateDiagnostics...)
+				}
+			}
 		}
 	}
 
