@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2025-06-04
+
+### Added
+
+- Adds support for custom validation functions in config field definitions for provider and transformer plugins. This validation function takes a key, value and a reference all the plugin config to allow for advanced standalone validation (such as a regexp pattern) as well as validation for things like conditionally required fields that depend on other values in the plugin config. This also includes a new helper type alias for a config map that allows for retrieving all config values that have a certain prefix which will be very useful for namespaced config variables that emulate more complex structures where conditional validation will often depend on other config values under a specific namespace.
+
 ## [0.12.0] - 2025-06-04
 
 ### Fixed
