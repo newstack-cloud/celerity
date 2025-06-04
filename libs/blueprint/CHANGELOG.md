@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2025-06-04
+
+### Fixed
+
+- Ensure annotations are resolved as scalar types other than strings. As per the blueprint specification, annotation values can be strings, integers, floats or booleans. The implementation before this commit would resolve all exact values as strings, other types would only be resolbed if a `${..}` substitution is used for an annotation value. The changes included with this commit will resolve literal values defined for annotations in a blueprint to the more precise scalar type.
+- Adds missing value type checks to plugin config field validation.
+
+### Added
+
+- Adds functionality to validate annotations used for links. This validation kicks in after a chain/graph of link nodes has been formed and has already been checked for cycles to ensure check annotations used in resources against the schema for annotations provided by the provider plugin link implementations that enable the links between resources.
+
 ## [0.11.0] - 2025-05-31
 
 ### Added
