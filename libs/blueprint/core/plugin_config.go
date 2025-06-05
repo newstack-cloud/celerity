@@ -57,9 +57,6 @@ type ConfigDefinition struct {
 	AllowAdditionalFields bool                              `json:"allowAdditionalFields"`
 }
 
-// TODO: Add validate function for each field that takes in config values for validation
-// that is conditional based on the presence of other config values.
-
 // ConfigFieldDefinition represents a field in a configuration definition
 // for a provider or transformer plugin.
 type ConfigFieldDefinition struct {
@@ -84,7 +81,11 @@ type ConfigFieldDefinition struct {
 	// or transformer plugin.
 	// It should return a list of diagnostics where validation will fail
 	// if there are one or more diagnostics at an error level.
-	ValidateFunc func(key string, value *ScalarValue, pluginConfig PluginConfig) []*Diagnostic
+	ValidateFunc func(
+		key string,
+		value *ScalarValue,
+		pluginConfig PluginConfig,
+	) []*Diagnostic `json:"-"`
 }
 
 // PopulateDefaultConfigValues populates the default values
