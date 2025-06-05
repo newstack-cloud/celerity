@@ -1353,3 +1353,183 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_map_value_that_
 			"\"resources.testHandler.spec.minMaxLenMapValue\", 6 items provided when there must be at most 5 items",
 	)
 }
+
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_value_custom_validation_failure(c *C) {
+	resource := createTestValidResource()
+	resource.Spec.Fields["customValidateStringValue"] = core.MappingNodeFromString("invalidCustomValue")
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: invalid value for custom validate string field, must be 'validCustomValidateString'",
+	)
+}
+
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_int_value_custom_validation_failure(c *C) {
+	resource := createTestValidResource()
+	resource.Spec.Fields["customValidateIntValue"] = core.MappingNodeFromInt(9568439)
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: invalid value for custom validate int field, must be 39820",
+	)
+}
+
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_float_value_custom_validation_failure(c *C) {
+	resource := createTestValidResource()
+	resource.Spec.Fields["customValidateFloatValue"] = core.MappingNodeFromFloat(403928.3029)
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: invalid value for custom validate float field, must be 2430.30494",
+	)
+}
+
+func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_boolean_value_custom_validation_failure(c *C) {
+	resource := createTestValidResource()
+	resource.Spec.Fields["customValidateBoolValue"] = core.MappingNodeFromBool(false)
+	resourceMap := &schema.ResourceMap{
+		Values: map[string]*schema.Resource{
+			"testHandler": resource,
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: resourceMap,
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"testVariable": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeFloat},
+				},
+			},
+		},
+	}
+
+	diagnostics, err := ValidateResource(
+		context.Background(),
+		"testHandler",
+		resource,
+		resourceMap,
+		blueprint,
+		&core.ParamsImpl{},
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		/* resourceDerivedFromTemplate */ false,
+		core.NewNopLogger(),
+	)
+	c.Assert(diagnostics, HasLen, 0)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := internal.UnpackLoadError(err)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidResource)
+	c.Assert(
+		loadErr.Error(),
+		Equals,
+		"blueprint load error: invalid value for custom validate bool field, must be true",
+	)
+}

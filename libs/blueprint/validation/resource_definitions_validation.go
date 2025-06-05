@@ -591,6 +591,20 @@ func validateResourceDefinitionString(
 		}
 	}
 
+	if schema.ValidateFunc != nil {
+		customValidateDiagnostics, err := customValidateResourceDefinitionValue(
+			node,
+			path,
+			schema,
+			resourceName,
+			bpSchema,
+		)
+		diagnostics = append(diagnostics, customValidateDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
 	if node.StringWithSubstitutions != nil {
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
@@ -698,6 +712,20 @@ func validateResourceDefinitionInteger(
 			selectMappingNodeLocation(node, parentLocation),
 		)
 		diagnostics = append(diagnostics, maximumValueDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
+	if schema.ValidateFunc != nil {
+		customValidateDiagnostics, err := customValidateResourceDefinitionValue(
+			node,
+			path,
+			schema,
+			resourceName,
+			bpSchema,
+		)
+		diagnostics = append(diagnostics, customValidateDiagnostics...)
 		if err != nil {
 			return diagnostics, err
 		}
@@ -815,6 +843,20 @@ func validateResourceDefinitionFloat(
 		}
 	}
 
+	if schema.ValidateFunc != nil {
+		customValidateDiagnostics, err := customValidateResourceDefinitionValue(
+			node,
+			path,
+			schema,
+			resourceName,
+			bpSchema,
+		)
+		diagnostics = append(diagnostics, customValidateDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
+	}
+
 	if node.StringWithSubstitutions != nil {
 		subDiagnostics, err := validateResourceDefinitionSubstitution(
 			ctx,
@@ -886,6 +928,20 @@ func validateResourceDefinitionBoolean(
 			provider.ResourceDefinitionsSchemaTypeBoolean,
 			selectMappingNodeLocation(node, parentLocation),
 		)
+	}
+
+	if schema.ValidateFunc != nil {
+		customValidateDiagnostics, err := customValidateResourceDefinitionValue(
+			node,
+			path,
+			schema,
+			resourceName,
+			bpSchema,
+		)
+		diagnostics = append(diagnostics, customValidateDiagnostics...)
+		if err != nil {
+			return diagnostics, err
+		}
 	}
 
 	if node.StringWithSubstitutions != nil {
@@ -1512,6 +1568,36 @@ func validateResourceDefinitionStringMaxLength(
 	}
 
 	return diagnostics, nil
+}
+
+func customValidateResourceDefinitionValue(
+	node *core.MappingNode,
+	path string,
+	schema *provider.ResourceDefinitionsSchema,
+	resourceName string,
+	bpSchema *schema.Blueprint,
+) ([]*core.Diagnostic, error) {
+	if node.StringWithSubstitutions != nil {
+		// Custom validation functions can not be applied to
+		// strings with substitutions, as the values are not resolved yet.
+		return []*core.Diagnostic{}, nil
+	}
+
+	blueprintResource, _ := getResource(resourceName, bpSchema)
+	diagnostics := schema.ValidateFunc(
+		path,
+		node,
+		blueprintResource,
+	)
+	// Custom validation functions return a slice of diagnostics
+	// containing errors, warnings and info messages.
+	// For this reason, we need to extract diagnostics and errors
+	// to be consistent with the rest of the validation process
+	// where diagnostics are separated from errors.
+	return ExtractDiagnosticsAndErrors(
+		diagnostics,
+		ErrorReasonCodeInvalidResource,
+	)
 }
 
 func selectMappingNodeLocation(node *core.MappingNode, parentLocation *source.Meta) *source.Meta {

@@ -10,6 +10,7 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
 	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
 	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/two-hundred/celerity/libs/blueprint/source"
 	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
 )
@@ -1290,6 +1291,26 @@ func (r *specValidationTestExampleResource) GetSpecDefinition(
 						MaxLength: 5,
 						Nullable:  true,
 					},
+					"customValidateStringValue": {
+						Type:         provider.ResourceDefinitionsSchemaTypeString,
+						Nullable:     true,
+						ValidateFunc: validateStringValue,
+					},
+					"customValidateIntValue": {
+						Type:         provider.ResourceDefinitionsSchemaTypeInteger,
+						Nullable:     true,
+						ValidateFunc: validateIntValue,
+					},
+					"customValidateFloatValue": {
+						Type:         provider.ResourceDefinitionsSchemaTypeFloat,
+						Nullable:     true,
+						ValidateFunc: validateFloatValue,
+					},
+					"customValidateBoolValue": {
+						Type:         provider.ResourceDefinitionsSchemaTypeBoolean,
+						Nullable:     true,
+						ValidateFunc: validateBoolValue,
+					},
 					"computed": {
 						Type:     provider.ResourceDefinitionsSchemaTypeString,
 						Computed: true,
@@ -1298,6 +1319,110 @@ func (r *specValidationTestExampleResource) GetSpecDefinition(
 			},
 		},
 	}, nil
+}
+
+func validateStringValue(
+	path string,
+	value *core.MappingNode,
+	_ *schema.Resource,
+) []*core.Diagnostic {
+	stringVal := core.StringValue(value)
+	if stringVal != "validCustomValidateString" {
+		return []*core.Diagnostic{
+			{
+				Level:   core.DiagnosticLevelError,
+				Message: "invalid value for custom validate string field, must be 'validCustomValidateString'",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   15,
+							Column: 30,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	return []*core.Diagnostic{}
+}
+
+func validateIntValue(
+	path string,
+	value *core.MappingNode,
+	_ *schema.Resource,
+) []*core.Diagnostic {
+	intVal := core.IntValue(value)
+	if intVal != 39820 {
+		return []*core.Diagnostic{
+			{
+				Level:   core.DiagnosticLevelError,
+				Message: "invalid value for custom validate int field, must be 39820",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   25,
+							Column: 10,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	return []*core.Diagnostic{}
+}
+
+func validateFloatValue(
+	path string,
+	value *core.MappingNode,
+	_ *schema.Resource,
+) []*core.Diagnostic {
+	floatVal := core.FloatValue(value)
+	if floatVal != 2430.30494 {
+		return []*core.Diagnostic{
+			{
+				Level:   core.DiagnosticLevelError,
+				Message: "invalid value for custom validate float field, must be 2430.30494",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   5,
+							Column: 1,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	return []*core.Diagnostic{}
+}
+
+func validateBoolValue(
+	path string,
+	value *core.MappingNode,
+	_ *schema.Resource,
+) []*core.Diagnostic {
+	boolVal := core.BoolValue(value)
+	if !boolVal {
+		return []*core.Diagnostic{
+			{
+				Level:   core.DiagnosticLevelError,
+				Message: "invalid value for custom validate bool field, must be true",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   2,
+							Column: 1,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	return []*core.Diagnostic{}
 }
 
 // Deploy is not used for validation!

@@ -515,6 +515,29 @@ type ResourceDefinitionsSchema struct {
 	// The pattern must be a valid Go regular expression, see: https://pkg.go.dev/regexp/syntax.
 	// Allowed values will take precedence over this constraint.
 	Pattern string
+	// ValidateFunc is a custom validation function that can be used to validate
+	// a resource spec value that uses this schema.
+	// This function will be called during the validation phase of a resource
+	// and can be used to perform additional validation that is not covered
+	// by the schema definition.
+	// This can also be useful for targeted conditional validation based on other
+	// known values in the resource as defined in the source blueprint document.
+	// The function should return a list of diagnostics that will be used to
+	// report validation errors and warnings, validation will fail if at least one
+	// diagnostic is of level `core.DiagnosticLevelError`.
+	//
+	// All first-class validation properties such as `AllowedValues`, `Minimum`, `Maximum`,
+	// `MinLength`, `MaxLength` and `Pattern` will be applied before the custom validation function
+	// is called, so the custom validation function should not be used to validate
+	// and will only be called if a non-nil value is provided for the value and the value
+	// is known at the validation stage.
+	// This will not be called for computed values or fields that contain ${..} substitutions
+	// as the value is not known at the initial validation stage.
+	ValidateFunc func(
+		path string,
+		value *core.MappingNode,
+		resource *schema.Resource,
+	) []*core.Diagnostic
 	// Default holds the default value for a resource spec schema,
 	// this will be populated in the `Resource.Spec.*` mapping node
 	// if the resource spec is missing a value
