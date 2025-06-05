@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2025-06-05
+
+### Fixed
+
+- Adds fix to ensure that errors are separated from warnings and info diagnostics in the result of the `ValidateLinkAnnotations` function so that the error is not ignored by the validation process. The validation process separates error froms other kinds of diagnostics so that it is easier to evaluate if validation has failed overall when loading a blueprint.
+
+### Added
+
+- Adds support for custom validation functions that can be defined for individual resource definition schema elements. This allows custom value-based validation and conditional validation based on other values in the resource as defined in the source blueprint. This validation is limited to scalar types (integers, floats, strings and booleans) and will not be called for strings that contain `${..}` substitutions.
+
 ## [0.14.0] - 2025-06-04
 
 ### Added
