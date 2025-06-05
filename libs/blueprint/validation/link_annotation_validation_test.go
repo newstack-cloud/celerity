@@ -182,11 +182,49 @@ func (s *LinkAnnotationValidationTestSuite) Test_reports_errors_for_annotations_
 	)
 }
 
+func (s *LinkAnnotationValidationTestSuite) Test_reports_errors_for_annotation_that_fails_custom_validation() {
+	linkChains := createTestLinkChain(
+		&fixtureConfig{
+			failsCustomValidation: true,
+		},
+	)
+	diagnostics, err := ValidateLinkAnnotations(
+		context.Background(),
+		linkChains,
+		createParams(),
+	)
+	s.Assert().NoError(err)
+	s.Assert().Equal(
+		[]*core.Diagnostic{
+			{
+				Level:   core.DiagnosticLevelError,
+				Message: "test.int.annotation value exceeds maximum allowed value of 800000.",
+				Range: &core.DiagnosticRange{
+					Start: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+					End: &source.Meta{
+						Position: source.Position{
+							Line:   1,
+							Column: 1,
+						},
+					},
+				},
+			},
+		},
+		diagnostics,
+	)
+}
+
 type fixtureConfig struct {
 	includeSubstitutions    bool
 	omitRequiredAnnotations bool
 	invalidTypes            bool
 	invalidAllowedValues    bool
+	failsCustomValidation   bool
 }
 
 func createTestLinkChain(
@@ -313,6 +351,18 @@ func createTestLinkChain(
 				Values: []*substitutions.StringOrSubstitution{
 					{
 						StringValue: &invalidStringAnnotationValue,
+					},
+				},
+			}
+	}
+
+	if fixtureConf.failsCustomValidation {
+		intValueTooLarge := "1000000000"
+		resourceANode.Resource.Metadata.Annotations.Values["test.int.annotation"] =
+			&substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						StringValue: &intValueTooLarge,
 					},
 				},
 			}

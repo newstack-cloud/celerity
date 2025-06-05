@@ -241,6 +241,17 @@ type LinkAnnotationDefinition struct {
 	AllowedValues []*core.ScalarValue `json:"allowedValues,omitempty"`
 	Examples      []*core.ScalarValue `json:"examples,omitempty"`
 	Required      bool                `json:"required"`
+	// ValidateFunc is a custom validation function that allows for validation
+	// of annotation values when provided as literals.
+	// When substitutions are used as annotation values (e.g. `${variables.myVar}`),
+	// the validation function will not be called, as the value will not be resolved
+	// to a concrete value at the validation stage.
+	// The function should return a slice of diagnostics, where if at least one diagnostic
+	// has a level of Error, overall validation will fail.
+	ValidateFunc func(
+		key string,
+		annotationValue *core.ScalarValue,
+	) []*core.Diagnostic `json:"-"`
 }
 
 // LinkKind provides a way to categorise links to help determine the order

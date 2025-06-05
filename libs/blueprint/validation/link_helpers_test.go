@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/two-hundred/celerity/libs/blueprint/core"
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
@@ -67,6 +68,22 @@ func (l *testResourceTypeAResourceTypeBLink) GetAnnotationDefinitions(
 				Label:       "Test Integer Annotation",
 				Type:        core.ScalarTypeInteger,
 				Description: "This is a test integer annotation for resource type A.",
+				ValidateFunc: func(key string, annotationValue *core.ScalarValue) []*core.Diagnostic {
+					intVal := core.IntValueFromScalar(annotationValue)
+					if intVal > 800000 {
+						return []*core.Diagnostic{
+							{
+								Level: core.DiagnosticLevelError,
+								Message: fmt.Sprintf(
+									"%s value exceeds maximum allowed value of 800000.",
+									key,
+								),
+								Range: toDiagnosticRange(annotationValue.SourceMeta, nil),
+							},
+						}
+					}
+					return nil
+				},
 			},
 			"test/resourceTypeB::test.bool.annotation": {
 				Name:        "test.bool.annotation",

@@ -229,6 +229,14 @@ func validateResourceLinkAnnotations(
 				diagnostics,
 			)
 		}
+
+		if isCorrectTypeAndValueKnown && definition.ValidateFunc != nil {
+			customValidateDiagnostics := definition.ValidateFunc(
+				renderedDefAnnotationName,
+				parsedValue,
+			)
+			*diagnostics = append(*diagnostics, customValidateDiagnostics...)
+		}
 	}
 
 	return nil
@@ -280,6 +288,10 @@ func validateAnnotationType(
 
 	scalarMappingNode := core.ParseScalarMappingNode(*stringVal)
 	scalarValue := scalarMappingNode.Scalar
+	// Ensure we carry over the original source meta information, if any,
+	// so diagnostics from custom validation can point to the correct
+	// location in the source blueprint.
+	scalarValue.SourceMeta = resourceAnnotationInfo.annotation.SourceMeta
 
 	if core.IsScalarBool(scalarValue) && definition.Type == core.ScalarTypeBool {
 		return scalarValue, true
