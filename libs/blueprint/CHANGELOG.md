@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2025-06-04
+
+### Added
+
+- Adds support for custom validation functions in link annotation definitions for provider plugins. The validation function takes a key and a value to allow for advanced standalone validation (such as a regexp pattern or string length constraints).
+
 ## [0.13.0] - 2025-06-04
 
 ### Added
