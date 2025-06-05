@@ -706,9 +706,21 @@ func (l *defaultLoader) loadSpecAndLinkInfo(
 		linkChains,
 		params,
 	)
-	diagnostics = append(diagnostics, annotationDiagnostics...)
 	if err != nil {
 		return container, diagnostics, err
+	}
+
+	// ValidateLinkAnnotations returns validation warnings and errors
+	// as diagnostics, so we need to separate them out to be consistent
+	// with the rest of the validation process where validation errors
+	// are returned as native go errors and diagnostics are for warnings and information.
+	finalAnnotationDiags, annotationsErr := validation.ExtractDiagnosticsAndErrors(
+		annotationDiagnostics,
+		validation.ErrorReasonCodeInvalidResource,
+	)
+	diagnostics = append(diagnostics, finalAnnotationDiags...)
+	if annotationsErr != nil {
+		return container, diagnostics, annotationsErr
 	}
 
 	eachDepsErr := validation.ValidateResourceEachDependencies(
