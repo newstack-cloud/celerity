@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2025-06-08
+
+### Fixed
+
+- Adds missing behaviour to escape regular expression special characters when forming dynamic config field name patterns.
+
+### Added
+
+- Adds convenience methods to the `core.PluginConfig` map wrapper to extract slices and maps from config
+  value prefixes. The `SliceFromPrefix` and `MapFromPrefix` methods allow for the extraction of slices and maps from config key prefixes that represent a map or slice of scalar values. For more complex structures, the `GetAllWithSlicePrefix` and `GetAllWithMapPrefix` methods provided will filter down the config map to only include keys that start with an array or map prefix along with extra metadata such as ordering of keys for a slice representation.
+
 ## [0.15.0] - 2025-06-05
 
 ### Fixed
