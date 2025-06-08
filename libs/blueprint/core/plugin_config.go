@@ -5,41 +5,9 @@ import (
 	"maps"
 	"regexp"
 	"slices"
-	"strings"
 
 	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
-
-// PluginConfig is a convenience type that wraps a map of string keys
-// to scalar values holding the configuration for a provider or transformer plugin.
-// This enhances a map to allow for convenience methods such as retrieving
-// all config values under a specific prefix.
-type PluginConfig map[string]*ScalarValue
-
-// Get retrieves a configuration value by its key.
-// It returns the value and a boolean indicating whether the key exists in the config.
-func (c PluginConfig) Get(key string) (*ScalarValue, bool) {
-	value, ok := c[key]
-	return value, ok
-}
-
-// GetAllWithPrefix returns a subset of the PluginConfig
-// that contains all keys that start with the specified prefix.
-func (c PluginConfig) GetAllWithPrefix(prefix string) PluginConfig {
-	configValues := map[string]*ScalarValue{}
-
-	if prefix == "" {
-		return c
-	}
-
-	for key, value := range c {
-		if strings.HasPrefix(key, prefix) {
-			configValues[key] = value
-		}
-	}
-
-	return configValues
-}
 
 // ConfigDefinition contains a detailed definition (schema) of the configuration
 // required for a provider or transformer plugin.
