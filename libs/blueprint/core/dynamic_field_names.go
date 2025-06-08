@@ -26,22 +26,23 @@ const (
 // Set maxPlaceholders to a value of -1 to allow for any number of
 // placeholders to be captured.
 func CreatePatternForDynamicFieldName(fieldDefName string, maxPlaceholders int) string {
+	finalFieldDefName := escapeRegexpSpecialChars(fieldDefName)
 	startIndex := 0
 	placeholderCount := 0
 	for startIndex != -1 &&
 		(maxPlaceholders == -1 || placeholderCount < maxPlaceholders) {
-		searchIn := fieldDefName[startIndex:]
+		searchIn := finalFieldDefName[startIndex:]
 		openIndex := strings.Index(searchIn, "<")
 		closeIndex := strings.Index(searchIn, ">")
 		if openIndex == -1 || closeIndex == -1 {
 			startIndex = -1
 		} else {
-			fieldDefName = fieldDefName[:startIndex+openIndex] +
+			finalFieldDefName = finalFieldDefName[:startIndex+openIndex] +
 				capturePlaceholderPatternString +
-				fieldDefName[startIndex+closeIndex+1:]
+				finalFieldDefName[startIndex+closeIndex+1:]
 			startIndex += closeIndex + 1
 		}
 		placeholderCount += 1
 	}
-	return fieldDefName
+	return finalFieldDefName
 }
