@@ -1,0 +1,89 @@
+package changes
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/two-hundred/celerity/libs/blueprint/provider"
+)
+
+type FieldChangesSuite struct {
+	suite.Suite
+}
+
+func (s *FieldChangesSuite) Test_field_changes_to_new_value_map() {
+	modifiedFields := []provider.FieldChange{
+		{
+			FieldPath: "field1",
+			NewValue:  core.MappingNodeFromString("newValue1"),
+			PrevValue: core.MappingNodeFromString("oldValue1"),
+		},
+		{
+			FieldPath: "field2",
+			NewValue:  core.MappingNodeFromString("newValue2"),
+			PrevValue: core.MappingNodeFromString("oldValue2"),
+		},
+	}
+
+	newFields := []provider.FieldChange{
+		{
+			FieldPath: "field3",
+			NewValue:  core.MappingNodeFromString("newValue3"),
+		},
+		{
+			FieldPath: "field4",
+			NewValue:  core.MappingNodeFromString("newValue4"),
+		},
+	}
+
+	expected := map[string]*core.MappingNode{
+		"field1": modifiedFields[0].NewValue,
+		"field2": modifiedFields[1].NewValue,
+		"field3": newFields[0].NewValue,
+		"field4": newFields[1].NewValue,
+	}
+
+	result := FieldChangesToNewValueMap(modifiedFields, newFields)
+
+	s.Assert().Equal(expected, result)
+}
+
+func (s *FieldChangesSuite) Test_field_changes_to_prev_value_map() {
+	modifiedFields := []provider.FieldChange{
+		{
+			FieldPath: "field1",
+			NewValue:  core.MappingNodeFromString("newValue1"),
+			PrevValue: core.MappingNodeFromString("oldValue1"),
+		},
+		{
+			FieldPath: "field2",
+			NewValue:  core.MappingNodeFromString("newValue2"),
+			PrevValue: core.MappingNodeFromString("oldValue2"),
+		},
+	}
+
+	newFields := []provider.FieldChange{
+		{
+			FieldPath: "field3",
+			NewValue:  core.MappingNodeFromString("newValue3"),
+		},
+		{
+			FieldPath: "field4",
+			NewValue:  core.MappingNodeFromString("newValue4"),
+		},
+	}
+
+	expected := map[string]*core.MappingNode{
+		"field1": modifiedFields[0].PrevValue,
+		"field2": modifiedFields[1].PrevValue,
+	}
+
+	result := FieldChangesToPrevValueMap(modifiedFields, newFields)
+
+	s.Assert().Equal(expected, result)
+}
+
+func TestFieldChangesSuite(t *testing.T) {
+	suite.Run(t, new(FieldChangesSuite))
+}
