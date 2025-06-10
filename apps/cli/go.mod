@@ -9,12 +9,12 @@ require (
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.5
 	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/newstack-cloud/celerity/libs/blueprint v0.17.1
+	github.com/newstack-cloud/celerity/libs/blueprint-state v0.2.5
+	github.com/newstack-cloud/celerity/libs/common v0.3.1
+	github.com/newstack-cloud/celerity/libs/deploy-engine-client v0.0.0-20250610155814-a57a0f8e32c9
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
-	github.com/newstack-cloud/celerity/libs/blueprint v0.8.0
-	github.com/newstack-cloud/celerity/libs/blueprint-state v0.2.4
-	github.com/newstack-cloud/celerity/libs/common v0.3.0
-	github.com/newstack-cloud/celerity/libs/deploy-engine-client v0.0.0-20250509170332-bb8c5927f0ca
 	go.uber.org/zap v1.27.0
 	golang.org/x/term v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -27,6 +27,7 @@ require (
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13-0.20250311204145-2c3ea96c31dd // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
+	github.com/coreos/go-json v0.0.0-20231102161613-e49c8866685a // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -46,6 +47,7 @@ require (
 	github.com/r3labs/sse/v2 v2.10.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sahilm/fuzzy v0.1.1 // indirect
+	github.com/tailscale/hujson v0.0.0-20250226034555-ec1d1c113d33 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.60.0 // indirect
