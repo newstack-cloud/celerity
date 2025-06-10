@@ -22,9 +22,10 @@ func NewValidateHandler(
 		fmt.Fprintf(writer, "Validating blueprint file: %s\n", blueprintFile)
 		blueprintValidation, err := deployEngine.CreateBlueprintValidation(
 			ctx,
-			&types.CreateBlueprintValidationPayoad{
+			&types.CreateBlueprintValidationPayload{
 				BlueprintDocumentInfo: types.BlueprintDocumentInfo{},
 			},
+			&types.CreateBlueprintValidationQuery{},
 		)
 		if err != nil {
 			return engine.SimplifyError(err, logger)

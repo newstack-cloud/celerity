@@ -18,7 +18,8 @@ type DeployEngine interface {
 	// as they occur.
 	CreateBlueprintValidation(
 		ctx context.Context,
-		payload *types.CreateBlueprintValidationPayoad,
+		payload *types.CreateBlueprintValidationPayload,
+		query *types.CreateBlueprintValidationQuery,
 	) (*manage.BlueprintValidation, error)
 
 	// GetBlueprintValidation retrieves metadata and status information

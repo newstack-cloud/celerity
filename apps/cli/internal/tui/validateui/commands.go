@@ -32,13 +32,14 @@ func startValidateStreamCmd(model ValidateModel, logger *zap.Logger) tea.Cmd {
 	return func() tea.Msg {
 		blueprintValidation, err := model.engine.CreateBlueprintValidation(
 			context.TODO(),
-			&types.CreateBlueprintValidationPayoad{
+			&types.CreateBlueprintValidationPayload{
 				BlueprintDocumentInfo: types.BlueprintDocumentInfo{
 					FileSourceScheme: "file",
 					Directory:        "/",
 					BlueprintFile:    model.blueprintFile,
 				},
 			},
+			&types.CreateBlueprintValidationQuery{},
 		)
 		if err != nil {
 			time.Sleep(10 * time.Second)
