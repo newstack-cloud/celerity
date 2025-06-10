@@ -76,6 +76,122 @@ func FloatValue(value *MappingNode) float64 {
 	return *value.Scalar.FloatValue
 }
 
+// StringSliceValue extracts a slice of strings from a MappingNode.
+func StringSliceValue(value *MappingNode) []string {
+	if value == nil || value.Items == nil {
+		return []string{}
+	}
+
+	strings := make([]string, len(value.Items))
+	for i, item := range value.Items {
+		strings[i] = StringValue(item)
+	}
+
+	return strings
+}
+
+// IntSliceValue extracts a slice of integers from a MappingNode.
+func IntSliceValue(value *MappingNode) []int {
+	if value == nil || value.Items == nil {
+		return []int{}
+	}
+
+	ints := make([]int, len(value.Items))
+	for i, item := range value.Items {
+		ints[i] = IntValue(item)
+	}
+
+	return ints
+}
+
+// FloatSliceValue extracts a slice of floats from a MappingNode.
+func FloatSliceValue(value *MappingNode) []float64 {
+	if value == nil || value.Items == nil {
+		return []float64{}
+	}
+
+	floats := make([]float64, len(value.Items))
+	for i, item := range value.Items {
+		floats[i] = FloatValue(item)
+	}
+
+	return floats
+}
+
+// BoolSliceValue extracts a slice of booleans from a MappingNode.
+func BoolSliceValue(value *MappingNode) []bool {
+	if value == nil || value.Items == nil {
+		return []bool{}
+	}
+
+	bools := make([]bool, len(value.Items))
+	for i, item := range value.Items {
+		bools[i] = BoolValue(item)
+	}
+
+	return bools
+}
+
+// StringMapValue extracts a map of string to string values
+// from a MappingNode.
+func StringMapValue(value *MappingNode) map[string]string {
+	if value == nil || value.Fields == nil {
+		return map[string]string{}
+	}
+
+	strings := make(map[string]string, len(value.Fields))
+	for key, item := range value.Fields {
+		strings[key] = StringValue(item)
+	}
+
+	return strings
+}
+
+// IntMapValue extracts a map of string to int values
+// from a MappingNode.
+func IntMapValue(value *MappingNode) map[string]int {
+	if value == nil || value.Fields == nil {
+		return map[string]int{}
+	}
+
+	ints := make(map[string]int, len(value.Fields))
+	for key, item := range value.Fields {
+		ints[key] = IntValue(item)
+	}
+
+	return ints
+}
+
+// FloatMapValue extracts a map of string to float values
+// from a MappingNode.
+func FloatMapValue(value *MappingNode) map[string]float64 {
+	if value == nil || value.Fields == nil {
+		return map[string]float64{}
+	}
+
+	floats := make(map[string]float64, len(value.Fields))
+	for key, item := range value.Fields {
+		floats[key] = FloatValue(item)
+	}
+
+	return floats
+}
+
+// BoolMapValue extracts a map of string to bool values
+// from a MappingNode.
+func BoolMapValue(value *MappingNode) map[string]bool {
+	if value == nil || value.Fields == nil {
+		return map[string]bool{}
+	}
+
+	bools := make(map[string]bool, len(value.Fields))
+	for key, item := range value.Fields {
+		bools[key] = BoolValue(item)
+	}
+
+	return bools
+}
+
 // MappingNodeFromString creates a MappingNode from a string value.
 func MappingNodeFromString(value string) *MappingNode {
 	return &MappingNode{
