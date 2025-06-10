@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2025-06-10
+
+### Added
+
+- Adds helpers to the `core` package for extracting slices and maps from `MappingNode`s. This includes the `*SliceValue` and `*MapValue` functions where `*` represents a scalar type that can be one of `String`, `Int`, `Float` or `Bool`. If an empty mapping node or one that does not represent a slice or map is passed to these functions, they will return an empty slice or map of the appropriate type. When values of other types are encountered in a map or slice, empty values of the target type will be returned.
+
 ## [0.16.0] - 2025-06-08
 
 ### Fixed
