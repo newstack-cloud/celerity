@@ -44,9 +44,11 @@ const (
 	// - "gcs" (Google Cloud Storage)
 	// - "azureblob" (Azure Blob Storage)
 	selectBlueprintStageSelectSource selectBlueprintStage = iota
+
 	// Stage where the user inputs the location of the file
 	// relative to a remote source scheme.
-	selectBlueprintStageInputFileLocation
+	// selectBlueprintStageInputFileLocation
+
 	// Stage where the user selects a local file.
 	selectBlueprintStageSelectLocalFile
 )
