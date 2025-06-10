@@ -5,6 +5,12 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
+// TODO: create a more general field change look up utility that can be used
+// to get new values, previous values, and collect a subset of field changes
+// based on a shared prefix. (e.g. name of a map or list field)
+// You should be able to extract slices and maps of new values and previous values
+// based on a prefix.
+
 // FieldChangesToNewValueMap converts a slice of FieldChange structs to a map
 // where the keys are the field paths and the values are pointers to the
 // corresponding new value for the field. This is useful for creating lookups

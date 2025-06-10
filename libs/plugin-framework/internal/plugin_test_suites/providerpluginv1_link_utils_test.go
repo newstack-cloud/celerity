@@ -11,8 +11,8 @@ import (
 
 func linkStageChangesInput() *provider.LinkStageChangesInput {
 	return &provider.LinkStageChangesInput{
-		ResourceAChanges: createDeployResourceChanges(),
-		ResourceBChanges: createDeployResourceChanges(),
+		ResourceAChanges: createDeployResourceChanges( /* mustRecreate */ false),
+		ResourceBChanges: createDeployResourceChanges( /* mustRecreate */ false),
 		CurrentLinkState: createCurrentLinkState(),
 		LinkContext:      testutils.CreateTestLinkContext(),
 	}

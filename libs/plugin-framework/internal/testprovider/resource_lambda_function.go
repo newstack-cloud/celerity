@@ -26,7 +26,13 @@ func resourceLambdaFunction() provider.Resource {
 		IDField:                "arn",
 		ResourceCanLinkTo:      []string{"aws/dynamodb/table"},
 		StabilisedDependencies: []string{"aws/sqs/queue"},
-		DeployFunc: providerv1.RetryableReturnValue(
+		CreateFunc: providerv1.RetryableReturnValue(
+			deployLambdaFunction,
+			func(err error) bool {
+				return true
+			},
+		),
+		UpdateFunc: providerv1.RetryableReturnValue(
 			deployLambdaFunction,
 			func(err error) bool {
 				return true

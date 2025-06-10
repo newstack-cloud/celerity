@@ -523,7 +523,7 @@ func (s *ProviderPluginV1Suite) Test_get_resource_examples_reports_expected_erro
 	)
 }
 
-func (s *ProviderPluginV1Suite) Test_deploy_resource() {
+func (s *ProviderPluginV1Suite) Test_deploy_resource_for_new_resource() {
 	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
 	s.Require().NoError(err)
 
@@ -532,7 +532,53 @@ func (s *ProviderPluginV1Suite) Test_deploy_resource() {
 		&provider.ResourceDeployInput{
 			ResourceID:      testResource1ID,
 			InstanceID:      testInstance1ID,
-			Changes:         createDeployResourceChanges(),
+			Changes:         createDeployNewResourceChanges(),
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Require().NoError(err)
+	expected := testprovider.ResourceLambdaDeployOutput()
+	s.Assert().Equal(
+		expected,
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_deploy_resource_for_existing_resource_update() {
+	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	output, err := resource.Deploy(
+		context.Background(),
+		&provider.ResourceDeployInput{
+			ResourceID: testResource1ID,
+			InstanceID: testInstance1ID,
+			Changes: createDeployResourceChanges(
+				/* mustRecreate */ false,
+			),
+			ProviderContext: testutils.CreateTestProviderContext("aws"),
+		},
+	)
+	s.Require().NoError(err)
+	expected := testprovider.ResourceLambdaDeployOutput()
+	s.Assert().Equal(
+		expected,
+		output,
+	)
+}
+
+func (s *ProviderPluginV1Suite) Test_deploy_resource_for_existing_resource_that_must_be_recreated() {
+	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
+	s.Require().NoError(err)
+
+	output, err := resource.Deploy(
+		context.Background(),
+		&provider.ResourceDeployInput{
+			ResourceID: testResource1ID,
+			InstanceID: testInstance1ID,
+			Changes: createDeployResourceChanges(
+				/* mustRecreate */ true,
+			),
 			ProviderContext: testutils.CreateTestProviderContext("aws"),
 		},
 	)
@@ -554,9 +600,11 @@ func (s *ProviderPluginV1Suite) Test_deploy_resource_fails_for_unexpected_host()
 	_, err = resource.Deploy(
 		context.Background(),
 		&provider.ResourceDeployInput{
-			ResourceID:      testResource1ID,
-			InstanceID:      testInstance1ID,
-			Changes:         createDeployResourceChanges(),
+			ResourceID: testResource1ID,
+			InstanceID: testInstance1ID,
+			Changes: createDeployResourceChanges(
+				/* mustRecreate */ false,
+			),
 			ProviderContext: testutils.CreateTestProviderContext("aws"),
 		},
 	)
@@ -575,9 +623,11 @@ func (s *ProviderPluginV1Suite) Test_deploy_resource_reports_expected_error_for_
 	_, err = resource.Deploy(
 		context.Background(),
 		&provider.ResourceDeployInput{
-			ResourceID:      testResource1ID,
-			InstanceID:      testInstance1ID,
-			Changes:         createDeployResourceChanges(),
+			ResourceID: testResource1ID,
+			InstanceID: testInstance1ID,
+			Changes: createDeployResourceChanges(
+				/* mustRecreate */ false,
+			),
 			ProviderContext: testutils.CreateTestProviderContext("aws"),
 		},
 	)
@@ -592,7 +642,9 @@ func (s *ProviderPluginV1Suite) Test_check_resource_has_stabilised() {
 	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
 	s.Require().NoError(err)
 
-	changes := createDeployResourceChanges()
+	changes := createDeployResourceChanges(
+		/* mustRecreate */ false,
+	)
 	output, err := resource.HasStabilised(
 		context.Background(),
 		&provider.ResourceHasStabilisedInput{
@@ -619,7 +671,9 @@ func (s *ProviderPluginV1Suite) Test_check_resource_has_stabilised_fails_for_une
 	)
 	s.Require().NoError(err)
 
-	changes := createDeployResourceChanges()
+	changes := createDeployResourceChanges(
+		/* mustRecreate */ false,
+	)
 	_, err = resource.HasStabilised(
 		context.Background(),
 		&provider.ResourceHasStabilisedInput{
@@ -642,7 +696,9 @@ func (s *ProviderPluginV1Suite) Test_check_resource_has_stabilised_reports_expec
 	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
 	s.Require().NoError(err)
 
-	changes := createDeployResourceChanges()
+	changes := createDeployResourceChanges(
+		/* mustRecreate */ false,
+	)
 	_, err = resource.HasStabilised(
 		context.Background(),
 		&provider.ResourceHasStabilisedInput{
@@ -664,7 +720,9 @@ func (s *ProviderPluginV1Suite) Test_get_resource_external_state() {
 	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
 	s.Require().NoError(err)
 
-	changes := createDeployResourceChanges()
+	changes := createDeployResourceChanges(
+		/* mustRecreate */ false,
+	)
 	output, err := resource.GetExternalState(
 		context.Background(),
 		&provider.ResourceGetExternalStateInput{
@@ -691,7 +749,9 @@ func (s *ProviderPluginV1Suite) Test_get_resource_external_state_fails_for_unexp
 	)
 	s.Require().NoError(err)
 
-	changes := createDeployResourceChanges()
+	changes := createDeployResourceChanges(
+		/* mustRecreate */ false,
+	)
 	_, err = resource.GetExternalState(
 		context.Background(),
 		&provider.ResourceGetExternalStateInput{
@@ -714,7 +774,9 @@ func (s *ProviderPluginV1Suite) Test_get_resource_external_state_reports_expecte
 	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
 	s.Require().NoError(err)
 
-	changes := createDeployResourceChanges()
+	changes := createDeployResourceChanges(
+		/* mustRecreate */ false,
+	)
 	_, err = resource.GetExternalState(
 		context.Background(),
 		&provider.ResourceGetExternalStateInput{
@@ -736,7 +798,9 @@ func (s *ProviderPluginV1Suite) Test_destroy_resource() {
 	resource, err := s.provider.Resource(context.Background(), lambdaFunctionResourceType)
 	s.Require().NoError(err)
 
-	changes := createDeployResourceChanges()
+	changes := createDeployResourceChanges(
+		/* mustRecreate */ false,
+	)
 	err = resource.Destroy(
 		context.Background(),
 		&provider.ResourceDestroyInput{
@@ -756,7 +820,9 @@ func (s *ProviderPluginV1Suite) Test_destroy_resource_fails_for_unexpected_host(
 	)
 	s.Require().NoError(err)
 
-	changes := createDeployResourceChanges()
+	changes := createDeployResourceChanges(
+		/* mustRecreate */ false,
+	)
 	err = resource.Destroy(
 		context.Background(),
 		&provider.ResourceDestroyInput{
@@ -778,7 +844,9 @@ func (s *ProviderPluginV1Suite) Test_destroy_resource_reports_expected_error_for
 	resource, err := s.failingProvider.Resource(context.Background(), lambdaFunctionResourceType)
 	s.Require().NoError(err)
 
-	changes := createDeployResourceChanges()
+	changes := createDeployResourceChanges(
+		/* mustRecreate */ false,
+	)
 	err = resource.Destroy(
 		context.Background(),
 		&provider.ResourceDestroyInput{

@@ -109,8 +109,14 @@ type ResourceDefinition struct {
 		input *provider.ResourceGetExternalStateInput,
 	) (*provider.ResourceGetExternalStateOutput, error)
 
-	// A function to deploy the resource.
-	DeployFunc func(
+	// A function to create the resource in the upstream provider.
+	CreateFunc func(
+		ctx context.Context,
+		input *provider.ResourceDeployInput,
+	) (*provider.ResourceDeployOutput, error)
+
+	// A function to update the resource in the upstream provider.
+	UpdateFunc func(
 		ctx context.Context,
 		input *provider.ResourceDeployInput,
 	) (*provider.ResourceDeployOutput, error)
@@ -242,11 +248,40 @@ func (r *ResourceDefinition) Deploy(
 	ctx context.Context,
 	input *provider.ResourceDeployInput,
 ) (*provider.ResourceDeployOutput, error) {
-	if r.DeployFunc == nil {
-		return nil, errResourceDeployFunctionMissing(r.Type)
+	if r.CreateFunc == nil {
+		return nil, errResourceCreateFunctionMissing(r.Type)
 	}
 
-	return r.DeployFunc(ctx, input)
+	if r.UpdateFunc == nil {
+		return nil, errResourceUpdateFunctionMissing(r.Type)
+	}
+
+	// The blueprint framework will only populate the `CurrentResourceState` field
+	// of the input if the resource already exists in the blueprint state container,
+	// meaning the resource is being updated.
+	hasCurrentResourceState := isCurrentResourceStatePopulated(input)
+
+	// If the changes provided require the resource to be re-created,
+	// then we need to destroy the existing resource first.
+	if hasCurrentResourceState && input.Changes.MustRecreate {
+		err := r.Destroy(ctx, &provider.ResourceDestroyInput{
+			InstanceID:      input.InstanceID,
+			ResourceID:      input.ResourceID,
+			ResourceState:   input.Changes.AppliedResourceInfo.CurrentResourceState,
+			ProviderContext: input.ProviderContext,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return r.CreateFunc(ctx, input)
+	}
+
+	if hasCurrentResourceState {
+		return r.UpdateFunc(ctx, input)
+	}
+
+	return r.CreateFunc(ctx, input)
 }
 
 func (r *ResourceDefinition) HasStabilised(
@@ -282,4 +317,12 @@ func (r *ResourceDefinition) Destroy(
 	}
 
 	return r.DestroyFunc(ctx, input)
+}
+
+func isCurrentResourceStatePopulated(
+	input *provider.ResourceDeployInput,
+) bool {
+	return input != nil &&
+		input.Changes != nil &&
+		input.Changes.AppliedResourceInfo.CurrentResourceState != nil
 }

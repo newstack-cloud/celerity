@@ -24,9 +24,16 @@ func errFunctionNotFound(functionName string) error {
 	return fmt.Errorf("function not implemented in provider plugin: %s", functionName)
 }
 
-func errResourceDeployFunctionMissing(resourceType string) error {
+func errResourceCreateFunctionMissing(resourceType string) error {
 	return fmt.Errorf(
-		"deploy function missing in resource defintion for resource type %q",
+		"create resource function missing in resource definition for resource type %q",
+		resourceType,
+	)
+}
+
+func errResourceUpdateFunctionMissing(resourceType string) error {
+	return fmt.Errorf(
+		"update resource function missing in resource definition for resource type %q",
 		resourceType,
 	)
 }

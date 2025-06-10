@@ -7,10 +7,10 @@ import (
 	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
-func createDeployResourceChanges() *provider.Changes {
+func createDeployResourceChanges(mustRecreate bool) *provider.Changes {
 	return &provider.Changes{
 		AppliedResourceInfo: createDeployResourceInfo(),
-		MustRecreate:        false,
+		MustRecreate:        mustRecreate,
 		ModifiedFields: []provider.FieldChange{
 			{
 				FieldPath: "spec.functionName",
@@ -19,6 +19,33 @@ func createDeployResourceChanges() *provider.Changes {
 			},
 		},
 		NewFields:                 []provider.FieldChange{},
+		RemovedFields:             []string{},
+		UnchangedFields:           []string{},
+		ComputedFields:            []string{"spec.arn"},
+		FieldChangesKnownOnDeploy: []string{},
+		ConditionKnownOnDeploy:    false,
+		NewOutboundLinks:          map[string]provider.LinkChanges{},
+		OutboundLinkChanges:       map[string]provider.LinkChanges{},
+		RemovedOutboundLinks:      []string{},
+	}
+}
+
+func createDeployNewResourceChanges() *provider.Changes {
+	return &provider.Changes{
+		AppliedResourceInfo: provider.ResourceInfo{
+			InstanceID:   testInstance1ID,
+			ResourceName: testResource1Name,
+			// Omitting ResourceID and CurrentResourceState
+			// to simulate a new resource.
+		},
+		MustRecreate:   false,
+		ModifiedFields: []provider.FieldChange{},
+		NewFields: []provider.FieldChange{
+			{
+				FieldPath: "spec.functionName",
+				NewValue:  core.MappingNodeFromString("Process-Order-Function-0--Updated"),
+			},
+		},
 		RemovedFields:             []string{},
 		UnchangedFields:           []string{},
 		ComputedFields:            []string{"spec.arn"},
