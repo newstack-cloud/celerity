@@ -1,8 +1,8 @@
 module github.com/newstack-cloud/celerity/libs/blueprint-resolvers
 
-go 1.22
+go 1.23
 
-replace github.com/newstack-cloud/celerity/libs/blueprint => ../blueprint
+toolchain go1.24.4
 
 require (
 	cloud.google.com/go/storage v1.46.0
@@ -12,9 +12,10 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.32.3
 	github.com/aws/aws-sdk-go-v2/config v1.28.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.66.2
+	github.com/gorilla/mux v1.8.1
+	github.com/newstack-cloud/celerity/libs/blueprint v0.17.1
 	github.com/spf13/afero v1.11.0
-	github.com/stretchr/testify v1.9.0
-	github.com/newstack-cloud/celerity/libs/blueprint v0.0.0-00010101000000-000000000000
+	github.com/stretchr/testify v1.10.0
 	google.golang.org/api v0.203.0
 )
 
@@ -49,6 +50,7 @@ require (
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20240905190251-b4127c9b8d78 // indirect
+	github.com/coreos/go-json v0.0.0-20231102161613-e49c8866685a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/envoyproxy/go-control-plane v0.13.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.1.0 // indirect
@@ -63,10 +65,11 @@ require (
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/matoous/go-nanoid/v2 v2.1.0 // indirect
+	github.com/newstack-cloud/celerity/libs/common v0.3.1 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/newstack-cloud/celerity/libs/common v0.1.0 // indirect
+	github.com/tailscale/hujson v0.0.0-20250226034555-ec1d1c113d33 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.29.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0 // indirect
