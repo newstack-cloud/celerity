@@ -85,7 +85,7 @@
                             DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                             ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                             Child: (*substitutions.SubstitutionChild)(<nil>),
-                            StringValue: (*string)((len=11) "newstack-cloud"),
+                            StringValue: (*string)((len=14) "newstack-cloud"),
                             IntValue: (*int64)(<nil>),
                             FloatValue: (*float64)(<nil>),
                             BoolValue: (*bool)(<nil>),
@@ -96,7 +96,7 @@
                               },
                               EndPosition: (*source.Position)({
                                 Line: (int) 3,
-                                Column: (int) 72
+                                Column: (int) 75
                               })
                             })
                           }),
@@ -107,7 +107,7 @@
                             },
                             EndPosition: (*source.Position)({
                               Line: (int) 3,
-                              Column: (int) 72
+                              Column: (int) 75
                             })
                           })
                         })
@@ -121,7 +121,7 @@
                         },
                         EndPosition: (*source.Position)({
                           Line: (int) 3,
-                          Column: (int) 73
+                          Column: (int) 76
                         })
                       })
                     }),
@@ -143,7 +143,7 @@
                       },
                       EndPosition: (*source.Position)({
                         Line: (int) 3,
-                        Column: (int) 73
+                        Column: (int) 76
                       })
                     })
                   }),
@@ -154,7 +154,7 @@
                     },
                     EndPosition: (*source.Position)({
                       Line: (int) 3,
-                      Column: (int) 73
+                      Column: (int) 76
                     })
                   })
                 })
@@ -166,7 +166,7 @@
                 },
                 EndPosition: (*source.Position)({
                   Line: (int) 3,
-                  Column: (int) 75
+                  Column: (int) 78
                 })
               })
             }),

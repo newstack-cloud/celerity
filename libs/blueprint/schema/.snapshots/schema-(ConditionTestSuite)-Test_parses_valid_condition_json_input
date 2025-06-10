@@ -58,7 +58,7 @@
                             DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
                             ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
                             Child: (*substitutions.SubstitutionChild)(<nil>),
-                            StringValue: (*string)((len=11) "newstack-cloud"),
+                            StringValue: (*string)((len=14) "newstack-cloud"),
                             IntValue: (*int64)(<nil>),
                             FloatValue: (*float64)(<nil>),
                             BoolValue: (*bool)(<nil>),
