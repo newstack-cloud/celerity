@@ -3,8 +3,8 @@ package testtransformer
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/transformerserverv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sharedtypesv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/transformerserverv1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

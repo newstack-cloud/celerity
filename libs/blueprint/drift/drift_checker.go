@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	commoncore "github.com/two-hundred/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	commoncore "github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 // Checker is an interface for behaviour

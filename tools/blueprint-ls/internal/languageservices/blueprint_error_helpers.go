@@ -1,10 +1,10 @@
 package languageservices
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 )
 
 // Helper interface to handle extracting the location of different kinds of

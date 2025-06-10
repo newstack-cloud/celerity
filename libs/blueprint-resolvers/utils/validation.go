@@ -3,9 +3,9 @@ package utils
 import (
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/includes"
-	"github.com/two-hundred/celerity/libs/blueprint/subengine"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/includes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/subengine"
 )
 
 // ValidateInclude checks if the path is valid and metadata contains all the required fields

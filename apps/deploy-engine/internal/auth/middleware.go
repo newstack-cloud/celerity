@@ -5,8 +5,8 @@ import (
 	"regexp"
 
 	"github.com/gorilla/mux"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/httputils"
-	"github.com/two-hundred/celerity/apps/deploy-engine/utils"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/httputils"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/utils"
 )
 
 type Middleware struct {

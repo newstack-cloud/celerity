@@ -3,10 +3,10 @@ package plugin
 import (
 	"path/filepath"
 
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/internal/testutils"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/utils"
 	"github.com/spf13/afero"
-	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testutils"
-	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
 )
 
 var (

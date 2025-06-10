@@ -13,7 +13,7 @@ pub fn build_lib() -> BackTraced<Library> {
     let lib_info = LibraryInfo {
         description: "Foo is an interesting library".to_string(),
         project_url: "https://celerityframework.com/".to_string(),
-        repository: "two-hundred/celerity".to_string(),
+        repository: "newstack-cloud/celerity".to_string(),
         license_name: "MIT".to_string(),
         license_description: [
             "foo v1.2.3",

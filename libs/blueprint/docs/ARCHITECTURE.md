@@ -24,7 +24,7 @@ This is significant as it allows skipping the need to parse each occurrence of a
 
 Authentication and authorisation is out of scope for this library and should be implemented by applications or helper libraries that extend the blueprint framework.
 
-_The following sections are interfaces for the high level components of the blueprint framework, you can find deeper documentation about lower level components like "Resource" or "CustomVariableType" in the [go docs](https://pkg.go.dev/github.com/two-hundred/celerity/libs/blueprint) and in the [Celerity docs](https://www.celerityframework.io/docs/blueprint/intro)._
+_The following sections are interfaces for the high level components of the blueprint framework, you can find deeper documentation about lower level components like "Resource" or "CustomVariableType" in the [go docs](https://pkg.go.dev/github.com/newstack-cloud/celerity/libs/blueprint) and in the [Celerity docs](https://www.celerityframework.io/docs/blueprint/intro)._
 
 ## Loader (container.Loader)
 

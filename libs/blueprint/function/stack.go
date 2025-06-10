@@ -3,7 +3,7 @@ package function
 import (
 	"sync"
 
-	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
 )
 
 // Call holds information for a function call

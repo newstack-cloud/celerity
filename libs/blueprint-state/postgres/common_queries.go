@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	commoncore "github.com/two-hundred/celerity/libs/common/core"
+	commoncore "github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 func removeMultipleQuery(table string, idParamNames []string) string {

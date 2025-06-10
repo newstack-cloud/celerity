@@ -3,9 +3,9 @@ package subengine
 import (
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 )
 
 const (

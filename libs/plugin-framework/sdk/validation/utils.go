@@ -3,8 +3,8 @@ package validation
 import (
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
 )
 
 func invalidTypeDiagnostics(

@@ -3,10 +3,10 @@ package validation
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/internal"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/internal"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
 )
 

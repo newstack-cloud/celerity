@@ -7,15 +7,15 @@ import (
 	"slices"
 	"strings"
 
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/function"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
-	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/common/core"
+	bpcore "github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/function"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/refgraph"
+	"github.com/newstack-cloud/celerity/libs/blueprint/resourcehelpers"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 // ValidateSubstitution validates a substitution usage in a blueprint.

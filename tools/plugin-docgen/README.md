@@ -1,15 +1,15 @@
 # plugin json doc generator
 
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-plugin-docgen&metric=coverage)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-plugin-docgen)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-plugin-docgen&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-plugin-docgen)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-plugin-docgen&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-plugin-docgen)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-plugin-docgen&metric=coverage)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-plugin-docgen)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-plugin-docgen&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-plugin-docgen)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-plugin-docgen&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-plugin-docgen)
 
 The plugin JSON documentation generation tool that generates a JSON document from a plugin that can be used to generate documentation in the Celerity Registry.
 
 ## Installation
 
 ```bash
-go install github.com/two-hundred/celerity/tools/plugin-docgen/cmd/celerity-plugin-docgen@latest
+go install github.com/newstack-cloud/celerity/tools/plugin-docgen/cmd/celerity-plugin-docgen@latest
 ```
 
 This will install the `celerity-plugin-docgen` tool in either the `$GOBIN` directory, which by default will be `$GOPATH/bin`. You'll need to be sure to add this directory to your `PATH` if it is not already included.
@@ -30,7 +30,7 @@ You can specify a version by replacing `latest` with the desired version tag.
 For example (a plugin for the official Celerity registry):
 ```
 ├── providers
-│   ├── two-hundred
+│   ├── newstack-cloud
 │   │   ├── aws
 │   │   │    ├── 1.0.0
 │   │   │    │   ├── plugin
@@ -46,7 +46,7 @@ Or a plugin for a private registry:
 │   │   │    │   ├── plugin
 ```
 
-2) Get the absolute path of the parent directory of the top-level directory in the plugin directory structure. For example, if the plugin is located at `/path/to/my/plugin/root/providers/two-hundred/aws/1.0.0/plugin`, the absolute path would be `/path/to/my/plugin/root`.
+2) Get the absolute path of the parent directory of the top-level directory in the plugin directory structure. For example, if the plugin is located at `/path/to/my/plugin/root/providers/newstack-cloud/aws/1.0.0/plugin`, the absolute path would be `/path/to/my/plugin/root`.
 
 3) Set environment variables and run the command:
 
@@ -58,7 +58,7 @@ export CELERITY_DEPLOY_ENGINE_PLUGIN_PATH="/path/to/my/plugin/root"
 celerity-plugin-docgen -plugin={plugin}
 ```
 
-Replace `{plugin}` with the unique ID of your plugin. (e.g. `two-hundred/aws`)
+Replace `{plugin}` with the unique ID of your plugin. (e.g. `newstack-cloud/aws`)
 
 4) If the tool was successful, it will generate a `docs.json` file in the current working directory. This should then be published as a part of the release workflow so it can be used by a registry (e.g. the official Celerity Registry) to render HTML documentation.
 

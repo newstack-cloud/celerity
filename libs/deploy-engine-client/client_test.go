@@ -10,17 +10,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/container"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/common/sigv1"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/errors"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/internal/testutils"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/types"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
-	"github.com/two-hundred/celerity/libs/blueprint/container"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/common/sigv1"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/errors"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/internal/testutils"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/types"
 )
 
 const (

@@ -5,10 +5,10 @@ import (
 
 	json "github.com/coreos/go-json"
 
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/jsonutils"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	bpcore "github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/jsonutils"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 	"gopkg.in/yaml.v3"
 )
 

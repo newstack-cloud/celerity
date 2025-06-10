@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/plugin"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/docgen"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/providertest"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/transformertest"
 	"github.com/spf13/afero"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
-	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/docgen"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/providertest"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/transformertest"
 )
 
 type stubExecutor struct {
@@ -23,14 +23,14 @@ func (e *stubExecutor) Execute(pluginID string, pluginPath string) (plugin.Plugi
 
 	// Simulate the execution of a plugin process
 	// by registering the plugin with the manager.
-	if pluginID == "two-hundred/test" {
+	if pluginID == "newstack-cloud/test" {
 		err := e.manager.RegisterPlugin(testProviderPluginInstanceInfo)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if pluginID == "two-hundred/testTransform" {
+	if pluginID == "newstack-cloud/testTransform" {
 		err := e.manager.RegisterPlugin(testTransformerPluginInstanceInfo)
 		if err != nil {
 			return nil, err
@@ -75,15 +75,15 @@ func loadPluginsIntoFS(plugins []*plugin.PluginPathInfo, fs afero.Fs) error {
 func loadExpectedPluginPaths() []*plugin.PluginPathInfo {
 	return []*plugin.PluginPathInfo{
 		{
-			AbsolutePath: "/root/.celerity/deploy-engine/plugins/bin/providers/two-hundred/test/1.0.0/plugin",
+			AbsolutePath: "/root/.celerity/deploy-engine/plugins/bin/providers/newstack-cloud/test/1.0.0/plugin",
 			PluginType:   "provider",
-			ID:           "two-hundred/test",
+			ID:           "newstack-cloud/test",
 			Version:      "1.0.0",
 		},
 		{
-			AbsolutePath: "/root/.celerity/deploy-engine/plugins/bin/transformers/two-hundred/testTransform/1.0.0/plugin",
+			AbsolutePath: "/root/.celerity/deploy-engine/plugins/bin/transformers/newstack-cloud/testTransform/1.0.0/plugin",
 			PluginType:   "transformer",
-			ID:           "two-hundred/testTransform",
+			ID:           "newstack-cloud/testTransform",
 			Version:      "1.0.0",
 		},
 	}
@@ -92,7 +92,7 @@ func loadExpectedPluginPaths() []*plugin.PluginPathInfo {
 var (
 	testProviderPluginInstanceInfo = &pluginservicev1.PluginInstanceInfo{
 		PluginType: pluginservicev1.PluginType_PLUGIN_TYPE_PROVIDER,
-		ID:         "two-hundred/test",
+		ID:         "newstack-cloud/test",
 		ProtocolVersions: []string{
 			"1.0",
 		},
@@ -102,14 +102,14 @@ var (
 			DisplayName:   "AWS",
 			FormattedDescription: "AWS provider for the Deploy Engine including `resources`, `data sources`," +
 				" `links` and `custom variable types` for interacting with AWs services.",
-			RepositoryUrl: "https://github.com/two-hundred/celerity-provider-aws",
+			RepositoryUrl: "https://github.com/newstack-cloud/celerity-provider-aws",
 			Author:        "Two Hundred",
 		},
 	}
 
 	testTransformerPluginInstanceInfo = &pluginservicev1.PluginInstanceInfo{
 		PluginType: pluginservicev1.PluginType_PLUGIN_TYPE_TRANSFORMER,
-		ID:         "two-hundred/testTransform",
+		ID:         "newstack-cloud/testTransform",
 		ProtocolVersions: []string{
 			"1.0",
 		},
@@ -118,7 +118,7 @@ var (
 			PluginVersion:        "1.0.0",
 			DisplayName:          "Celerity Transform",
 			FormattedDescription: "Celerity application transformer for the Deploy Engine containing the abstract resources that power Celerity application primitives.",
-			RepositoryUrl:        "https://github.com/two-hundred/celerity-trasformer-testTransform",
+			RepositoryUrl:        "https://github.com/newstack-cloud/celerity-trasformer-testTransform",
 			Author:               "Two Hundred",
 		},
 	}

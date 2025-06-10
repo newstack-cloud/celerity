@@ -3,8 +3,8 @@ package validation
 import (
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 )
 
 // WrapForPluginConfig wraps a general validation function

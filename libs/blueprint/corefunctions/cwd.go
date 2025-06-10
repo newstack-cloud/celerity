@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/function"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/function"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
 )
 
 // WorkingDirResolver is a function that resolves the current working directory

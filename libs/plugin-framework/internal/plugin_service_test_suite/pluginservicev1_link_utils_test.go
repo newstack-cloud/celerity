@@ -1,12 +1,12 @@
 package pluginservicetestsuite
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testprovider"
-	"github.com/two-hundred/celerity/libs/plugin-framework/internal/testutils"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/internal/testprovider"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/internal/testutils"
 )
 
 const (

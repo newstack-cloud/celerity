@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/links"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/refgraph"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/validation"
+	"github.com/newstack-cloud/celerity/libs/common/core"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/links"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/validation"
-	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 type OrderingForDeploymentTestSuite struct {

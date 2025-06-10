@@ -2,9 +2,9 @@ package enginev1
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/auth"
-	commoncore "github.com/two-hundred/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/core"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/auth"
+	commoncore "github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 func setupAuth(

@@ -1,8 +1,8 @@
 package engine
 
 import (
-	"github.com/two-hundred/celerity/apps/cli/internal/config"
-	deployengine "github.com/two-hundred/celerity/libs/deploy-engine-client"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
+	deployengine "github.com/newstack-cloud/celerity/libs/deploy-engine-client"
 	"go.uber.org/zap"
 )
 

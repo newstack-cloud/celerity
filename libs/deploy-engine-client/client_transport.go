@@ -5,7 +5,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/internal/httputils"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/internal/httputils"
 )
 
 func finaliseTransport(client *Client, tcpOnly bool) http.RoundTripper {

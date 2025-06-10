@@ -3,8 +3,8 @@ package helpersv1
 import (
 	"regexp"
 
-	"github.com/two-hundred/celerity/libs/blueprint/includes"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/includes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 )
 
 var (

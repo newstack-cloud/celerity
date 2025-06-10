@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/transform"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/docgen"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/env"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/host"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/docgen"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/env"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/host"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -71,14 +71,14 @@ func (s *ProviderDocGenTestSuite) SetupTest() {
 
 func (s *ProviderDocGenTestSuite) TestGenerateProviderDocs() {
 	s.runGenerateDocsTest(
-		"two-hundred/test",
+		"newstack-cloud/test",
 		s.expectedProviderDocs,
 	)
 }
 
 func (s *ProviderDocGenTestSuite) TestGenerateTransformerDocs() {
 	s.runGenerateDocsTest(
-		"two-hundred/testTransform",
+		"newstack-cloud/testTransform",
 		s.expectedTransformerDocs,
 	)
 }

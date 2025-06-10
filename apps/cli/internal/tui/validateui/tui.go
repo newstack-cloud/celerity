@@ -6,8 +6,8 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/two-hundred/celerity/apps/cli/internal/engine"
-	"github.com/two-hundred/celerity/apps/cli/internal/tui/styles"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/engine"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/tui/styles"
 	"go.uber.org/zap"
 )
 

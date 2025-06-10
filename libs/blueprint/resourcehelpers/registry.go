@@ -5,13 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/specmerge"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/blueprint/transform"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/specmerge"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/blueprint/transform"
 )
 
 // Registry provides a way to retrieve resource plugins

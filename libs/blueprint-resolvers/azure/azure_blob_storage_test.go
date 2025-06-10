@@ -7,11 +7,11 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/includes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/subengine"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/blueprint/includes"
-	"github.com/two-hundred/celerity/libs/blueprint/subengine"
 )
 
 type AzureBlobStorageChildResolverSuite struct {

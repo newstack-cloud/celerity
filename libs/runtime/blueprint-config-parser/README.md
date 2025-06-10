@@ -1,6 +1,6 @@
 # celerity blueprint config parser
 
-[![codecov](https://codecov.io/gh/two-hundred/celerity/graph/badge.svg?token=u1SKOg58yo&flag=runtime-lib-blueprint-config-parser)](https://codecov.io/gh/two-hundred/celerity)
+[![codecov](https://codecov.io/gh/newstack-cloud/celerity/graph/badge.svg?token=u1SKOg58yo&flag=runtime-lib-blueprint-config-parser)](https://codecov.io/gh/newstack-cloud/celerity)
 
 This package provides a Rust parser for runtime-specific configuration represented by a subset of a Celerity [blueprint](https://www.celerityframework.io/docs/blueprint/specification).
 

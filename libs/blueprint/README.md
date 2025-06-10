@@ -1,8 +1,8 @@
 # blueprint framework
 
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-blueprint&metric=coverage)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-blueprint)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-blueprint&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-blueprint)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-blueprint&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-blueprint)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-blueprint&metric=coverage)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-blueprint)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-blueprint&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-blueprint)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-blueprint&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-blueprint)
 
 The blueprint framework is the foundation for Celerity application deployments managed by the [deploy engine](../deploy-engine), it can also be used as a standalone framework for cloud and other resource deployment systems.
 

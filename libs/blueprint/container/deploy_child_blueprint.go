@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
-	"github.com/two-hundred/celerity/libs/blueprint/includes"
-	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/blueprint/subengine"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/includes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/refgraph"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/blueprint/subengine"
 )
 
 // ChildBlueprintDeployer provides an interface for a service that deploys a child

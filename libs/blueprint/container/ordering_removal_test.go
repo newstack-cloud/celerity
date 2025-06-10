@@ -4,10 +4,10 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/internal"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/common/core"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/internal"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 type OrderingForRemovalTestSuite struct {

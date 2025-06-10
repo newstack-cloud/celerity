@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/errors"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/types"
 	"github.com/r3labs/sse/v2"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/errors"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/types"
 )
 
 func handleStreamEvents[EventType any](

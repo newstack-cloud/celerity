@@ -1,8 +1,8 @@
 package container
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 )
 
 func getInstanceRemovalChanges(instance *state.InstanceState) changes.BlueprintChanges {

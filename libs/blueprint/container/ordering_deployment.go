@@ -3,10 +3,10 @@ package container
 import (
 	"context"
 
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/links"
-	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
-	"github.com/two-hundred/celerity/libs/common/core"
+	bpcore "github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/links"
+	"github.com/newstack-cloud/celerity/libs/blueprint/refgraph"
+	"github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 // OrderItemsForDeployment deals with creating a flat ordered

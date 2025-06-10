@@ -5,11 +5,11 @@ import (
 	"log"
 	"net"
 
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
-	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/plugin"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/pluginutils"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/providerv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -37,7 +37,7 @@ func StartPluginServer(
 			DisplayName:   "AWS",
 			FormattedDescription: "AWS provider for the Deploy Engine including `resources`, `data sources`," +
 				" `links` and `custom variable types` for interacting with AWs services.",
-			RepositoryUrl: "https://github.com/two-hundred/celerity-provider-aws",
+			RepositoryUrl: "https://github.com/newstack-cloud/celerity-provider-aws",
 			Author:        "Two Hundred",
 		},
 		ProtocolVersion: providerserverv1.ProtocolVersion,

@@ -1,9 +1,9 @@
 package types
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
-	"github.com/two-hundred/celerity/libs/blueprint/container"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/container"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 )
 
 // BlueprintValidationEvent holds the data for a blueprint validation

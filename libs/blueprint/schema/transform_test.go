@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
 )

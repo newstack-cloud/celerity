@@ -3,12 +3,12 @@ package testtransformer
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/transformerv1"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/transform"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/transformerv1"
 )
 
 func abstractResourceHandler() transform.AbstractResource {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 const (

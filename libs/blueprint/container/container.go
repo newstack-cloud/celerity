@@ -3,19 +3,19 @@ package container
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/drift"
-	"github.com/two-hundred/celerity/libs/blueprint/links"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
-	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/blueprint/speccore"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/blueprint/subengine"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/drift"
+	"github.com/newstack-cloud/celerity/libs/blueprint/links"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/refgraph"
+	"github.com/newstack-cloud/celerity/libs/blueprint/resourcehelpers"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/speccore"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/blueprint/subengine"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 )
 
 // BlueprintContainer provides the interface for a service that manages

@@ -3,7 +3,7 @@ package subengine
 import (
 	"fmt"
 
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
+	bpcore "github.com/newstack-cloud/celerity/libs/blueprint/core"
 )
 
 type resolveOnDeployError struct {

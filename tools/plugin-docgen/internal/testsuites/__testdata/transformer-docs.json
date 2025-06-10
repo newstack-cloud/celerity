@@ -1,11 +1,11 @@
 {
-  "id": "two-hundred/testTransform",
+  "id": "newstack-cloud/testTransform",
   "displayName": "Celerity Transform",
   "version": "1.0.0",
   "protocolVersions": ["1.0"],
   "description": "Celerity application transformer for the Deploy Engine containing the abstract resources that power Celerity application primitives.",
   "author": "Two Hundred",
-  "repository": "https://github.com/two-hundred/celerity-trasformer-testTransform",
+  "repository": "https://github.com/newstack-cloud/celerity-trasformer-testTransform",
   "config": {
     "fields": {
       "apiKey": {

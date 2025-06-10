@@ -3,10 +3,10 @@ package providerserverv1
 import (
 	context "context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
-	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/convertv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/errorsv1"
+	sharedtypesv1 "github.com/newstack-cloud/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 type functionProviderClientWrapper struct {

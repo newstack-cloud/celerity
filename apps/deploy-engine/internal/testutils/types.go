@@ -1,8 +1,8 @@
 package testutils
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
-	"github.com/two-hundred/celerity/libs/blueprint/container"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/container"
 )
 
 type ChangeStagingEvent struct {

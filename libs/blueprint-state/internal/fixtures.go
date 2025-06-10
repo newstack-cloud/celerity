@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 )
 
 type SaveBlueprintFixture struct {

@@ -1,8 +1,8 @@
 package testutils
 
 import (
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
 	"github.com/r3labs/sse/v2"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 )
 
 func SSEToManageEvent(

@@ -13,14 +13,14 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/common/sigv1"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/common/sigv1"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/errors"
 )
 
 const (

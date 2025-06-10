@@ -3,7 +3,7 @@ package provider
 import (
 	"time"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 )
 
 // FieldChange represents a change in a field value

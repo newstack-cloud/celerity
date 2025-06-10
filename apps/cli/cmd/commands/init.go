@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/consts"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/tui/initui"
+	"github.com/newstack-cloud/celerity/libs/common/core"
 	"github.com/spf13/cobra"
-	"github.com/two-hundred/celerity/apps/cli/internal/config"
-	"github.com/two-hundred/celerity/apps/cli/internal/consts"
-	"github.com/two-hundred/celerity/apps/cli/internal/tui/initui"
-	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 func setupInitCommand(rootCmd *cobra.Command, confProvider *config.Provider) {

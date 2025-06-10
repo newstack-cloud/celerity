@@ -14,7 +14,7 @@ import (
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/core"
 )
 
 type jwtService struct {

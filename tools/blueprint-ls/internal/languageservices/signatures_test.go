@@ -3,13 +3,13 @@ package languageservices
 import (
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/corefunctions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/tools/blueprint-ls/internal/testutils"
+	"github.com/newstack-cloud/ls-builder/common"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/testutils"
-	"github.com/two-hundred/ls-builder/common"
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
 	"go.uber.org/zap"
 )
 

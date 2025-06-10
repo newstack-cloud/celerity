@@ -3,12 +3,12 @@ package languageservices
 import (
 	"reflect"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 	"go.uber.org/zap"
 )
 

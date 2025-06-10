@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
+	"github.com/newstack-cloud/celerity/apps/cli/cmd/commands"
 	"github.com/spf13/cobra"
-	"github.com/two-hundred/celerity/apps/cli/cmd/commands"
 )
 
 func init() {

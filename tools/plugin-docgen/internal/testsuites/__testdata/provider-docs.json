@@ -1,11 +1,11 @@
 {
-  "id": "two-hundred/test",
+  "id": "newstack-cloud/test",
   "displayName": "AWS",
   "version": "1.0.0",
   "protocolVersions": ["1.0"],
   "description": "AWS provider for the Deploy Engine including `resources`, `data sources`, `links` and `custom variable types` for interacting with AWs services.",
   "author": "Two Hundred",
-  "repository": "https://github.com/two-hundred/celerity-provider-aws",
+  "repository": "https://github.com/newstack-cloud/celerity-provider-aws",
   "config": {
     "fields": {
       "accessKeyId": {

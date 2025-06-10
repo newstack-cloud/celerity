@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 )
 
 func upsertResources(

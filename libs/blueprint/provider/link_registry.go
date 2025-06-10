@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 )
 
 // LinkRegistry provides an interface for a registry of link implementations

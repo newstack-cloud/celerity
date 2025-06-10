@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/container"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	bperrors "github.com/newstack-cloud/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/common/testhelpers"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/container"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	bperrors "github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type DiagnosticsFromErrorTestSuite struct {

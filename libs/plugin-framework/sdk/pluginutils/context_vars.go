@@ -1,6 +1,6 @@
 package pluginutils
 
-import "github.com/two-hundred/celerity/libs/blueprint/core"
+import "github.com/newstack-cloud/celerity/libs/blueprint/core"
 
 // SessionIDKey is the plain text key used to store the session ID in a Go context
 // or as a part of the blueprint framework's context variables.

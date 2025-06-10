@@ -1,6 +1,6 @@
 package deployengine
 
-import "github.com/two-hundred/celerity/libs/common/sigv1"
+import "github.com/newstack-cloud/celerity/libs/common/sigv1"
 
 // ConnectProtocol represents the protocol used to connect
 // to an instance of the Celerity Deploy Engine.

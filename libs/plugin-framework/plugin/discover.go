@@ -6,9 +6,9 @@ import (
 	"slices"
 	"strings"
 
+	bpcore "github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/common/core"
 	"github.com/spf13/afero"
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/common/core"
 )
 
 const (

@@ -3,9 +3,9 @@ package testprovider
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/function"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/providerv1"
+	"github.com/newstack-cloud/celerity/libs/blueprint/function"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/providerv1"
 )
 
 func functionMap() provider.Function {

@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/internal/testutils"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/internal/testutils"
 	"golang.org/x/oauth2/clientcredentials"
 )
 

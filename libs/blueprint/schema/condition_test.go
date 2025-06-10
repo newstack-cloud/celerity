@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/common/testhelpers"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/common/testhelpers"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v3"
 )
@@ -141,7 +141,7 @@ func (s *ConditionTestSuite) Test_fails_to_parse_invalid_condition_json_input(c 
 }
 
 func serialiseInputCondition() *Condition {
-	prefix := "two-hundred"
+	prefix := "newstack-cloud"
 	oss := "oss"
 	return &Condition{
 		Or: []*Condition{

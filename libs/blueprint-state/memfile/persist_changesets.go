@@ -8,8 +8,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
 	"github.com/spf13/afero"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 )
 
 const (

@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/corefunctions"
-	"github.com/two-hundred/celerity/libs/blueprint/internal"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/refgraph"
-	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/corefunctions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/internal"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/refgraph"
+	"github.com/newstack-cloud/celerity/libs/blueprint/resourcehelpers"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 	. "gopkg.in/check.v1"
 )
 

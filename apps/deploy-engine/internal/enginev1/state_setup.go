@@ -5,13 +5,13 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/memfile"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/postgres"
+	bpcore "github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 	"github.com/spf13/afero"
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/blueprint-state/memfile"
-	"github.com/two-hundred/celerity/libs/blueprint-state/postgres"
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
 )
 
 const (

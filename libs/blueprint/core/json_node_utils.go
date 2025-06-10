@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	json "github.com/coreos/go-json"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
 )
 
 // UnpackValueFromJSONMapNode unpacks a value from a JSON map node

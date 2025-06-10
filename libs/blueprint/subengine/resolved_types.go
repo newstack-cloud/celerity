@@ -1,8 +1,8 @@
 package subengine
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 )
 
 // ResolvedValue provides a version of a value for which all ${..}

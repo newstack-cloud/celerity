@@ -3,8 +3,8 @@ package testsuites
 import (
 	"slices"
 
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/docgen"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/docgen"
 )
 
 func assertPluginDocCustomVarTypesEqual(

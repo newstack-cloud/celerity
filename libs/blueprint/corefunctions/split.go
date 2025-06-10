@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint/function"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/function"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
 )
 
 // SplitFunction provides the implementation of

@@ -8,14 +8,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/common/sigv1"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/internal/oauth2"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/internal/sseconfig"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/types"
 	"github.com/r3labs/sse/v2"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/common/sigv1"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/internal/oauth2"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/internal/sseconfig"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/types"
 	"golang.org/x/oauth2/clientcredentials"
 )
 

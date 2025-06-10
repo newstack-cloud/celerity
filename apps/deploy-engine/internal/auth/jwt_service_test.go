@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/core"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
 )
 
 const (

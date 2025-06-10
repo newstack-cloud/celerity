@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/coreos/go-json"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
 )
 
 type UtilsTestSuite struct {

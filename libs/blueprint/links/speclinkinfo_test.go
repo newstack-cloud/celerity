@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/common/core"
-	"github.com/two-hundred/celerity/libs/common/testhelpers"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/libs/common/testhelpers"
 	. "gopkg.in/check.v1"
 )
 

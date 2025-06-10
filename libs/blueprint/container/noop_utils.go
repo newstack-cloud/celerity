@@ -3,7 +3,7 @@ package container
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 )
 
 type noopLinksContainer struct{}

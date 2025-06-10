@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/types"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/core"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/enginev1"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/types"
 )
 
 func main() {

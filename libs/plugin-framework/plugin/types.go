@@ -3,7 +3,7 @@ package plugin
 import (
 	"net"
 
-	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pluginservicev1"
 )
 
 // ServePluginConfiguration contains configuration for serving a plugin.

@@ -3,7 +3,7 @@ package serialisation
 import (
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
 )
 
 const (

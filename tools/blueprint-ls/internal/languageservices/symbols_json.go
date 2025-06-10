@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/coreos/go-json"
-	bpcore "github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	bpcore "github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/tools/blueprint-ls/internal/blueprint"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 )
 
 func (s *SymbolService) getJSONDocumentSymbols(

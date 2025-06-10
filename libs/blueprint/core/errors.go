@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
 )
 
 // Error represents an error due to an issue

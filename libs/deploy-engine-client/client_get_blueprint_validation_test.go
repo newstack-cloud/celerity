@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/errors"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/internal/testutils"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/errors"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/internal/testutils"
 )
 
 func (s *ClientSuite) Test_get_blueprint_validation() {

@@ -1,5 +1,5 @@
 and:
   - or:
-      - not: '${has_prefix(resources.s3Bucket.bucketName, "two-hundred")}'
+      - not: '${has_prefix(resources.s3Bucket.bucketName, "newstack-cloud")}'
       - '${eq(resources.s3Bucket.bucketName, "oss-tools-bucket")}'
   - '${eq(variables.environment, "production")}'

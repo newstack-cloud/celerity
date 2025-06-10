@@ -3,8 +3,8 @@ package blueprint
 import (
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
 )
 
 // CreatePositionMap creates a map of positions to tree nodes

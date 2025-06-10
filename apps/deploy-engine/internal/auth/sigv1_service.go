@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/two-hundred/celerity/libs/common/core"
-	"github.com/two-hundred/celerity/libs/common/sigv1"
+	"github.com/newstack-cloud/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/libs/common/sigv1"
 )
 
 type sigV1Service struct {

@@ -4,17 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/function"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/schemapb"
-	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/pbutils"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/function"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schemapb"
+	"github.com/newstack-cloud/celerity/libs/blueprint/serialisation"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/errorsv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pbutils"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 // ToPBConfigDefinitionResponse converts a core.ConfigDefinition to a

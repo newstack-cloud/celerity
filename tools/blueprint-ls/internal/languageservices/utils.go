@@ -3,9 +3,9 @@ package languageservices
 import (
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 	"go.uber.org/zap"
 )
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/internal"
+	"github.com/newstack-cloud/celerity/libs/common/testhelpers"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/internal"
-	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type SubstitutionValueResolverTestSuite struct {

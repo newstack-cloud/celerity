@@ -1,11 +1,11 @@
 package deploymentsv1
 
 import (
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/types"
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
-	"github.com/two-hundred/celerity/libs/blueprint/container"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/resolve"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/types"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/container"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 )
 
 // CreateChangesetRequestPayload represents the payload

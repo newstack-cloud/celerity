@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/core"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
 )
 
 type APIKeyServiceSuite struct {

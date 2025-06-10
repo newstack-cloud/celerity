@@ -1,8 +1,8 @@
 # Celerity Deploy Engine
 
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-deploy-engine&metric=coverage)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-deploy-engine)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-deploy-engine&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-deploy-engine)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-deploy-engine&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-deploy-engine)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-deploy-engine&metric=coverage)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-deploy-engine)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-deploy-engine&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-deploy-engine)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-deploy-engine&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-deploy-engine)
 
 The engine that validates and deploys blueprints for applications
 created with the Celerity framework in addition to more general infrastruture as code deployments.
@@ -25,7 +25,7 @@ See the [installing Celerity documentation](https://celerityframework.io/docs/in
 You can also run the Deploy Engine as a Docker container using the public Docker image.
 
 ```bash
-docker pull ghcr.io/two-hundred/celerity-deploy-engine:latest
+docker pull ghcr.io/newstack-cloud/celerity-deploy-engine:latest
 ```
 
 ## Configuration

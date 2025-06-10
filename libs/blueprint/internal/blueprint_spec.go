@@ -1,6 +1,6 @@
 package internal
 
-import "github.com/two-hundred/celerity/libs/blueprint/schema"
+import "github.com/newstack-cloud/celerity/libs/blueprint/schema"
 
 type BlueprintSpecMock struct {
 	Blueprint *schema.Blueprint

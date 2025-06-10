@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/errors"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/internal/testutils"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/errors"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/internal/testutils"
 )
 
 func (s *ClientSuite) Test_get_blueprint_instance_exports() {

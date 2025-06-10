@@ -5,12 +5,12 @@ import (
 	"path"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/internal"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/common/testhelpers"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint-state/internal"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	"github.com/two-hundred/celerity/libs/common/testhelpers"
 )
 
 type MemFileStateContainerMetadataTestSuite struct {

@@ -9,8 +9,8 @@ import (
 	"net/http/httptest"
 
 	"github.com/gorilla/mux"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/blueprint/changes"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
 )
 
 const (

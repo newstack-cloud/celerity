@@ -3,8 +3,8 @@ package specmerge
 import (
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
 )
 
 type ComputedFieldHelpersTestSuite struct {

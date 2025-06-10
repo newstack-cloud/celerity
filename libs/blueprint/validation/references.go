@@ -3,9 +3,9 @@ package validation
 import (
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
-	"github.com/two-hundred/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 // ValidateReference validates a reference in a blueprint,

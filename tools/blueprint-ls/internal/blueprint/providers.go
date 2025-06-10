@@ -3,8 +3,8 @@ package blueprint
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/providerhelpers"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/providerhelpers"
 )
 
 // LoadProviders deals with loading the providers to be used for validating

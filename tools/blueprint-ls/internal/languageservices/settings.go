@@ -1,8 +1,8 @@
 package languageservices
 
 import (
-	"github.com/two-hundred/ls-builder/common"
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	"github.com/newstack-cloud/ls-builder/common"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 	"go.uber.org/zap"
 )
 

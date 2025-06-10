@@ -3,11 +3,11 @@ package testutils
 import (
 	"fmt"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/errorsv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sharedtypesv1"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 // AssertConfigDefinitionEquals asserts that two core config definitions

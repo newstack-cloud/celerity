@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/two-hundred/celerity/apps/cli/internal/consts"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/consts"
 )
 
 const listHeight = 14

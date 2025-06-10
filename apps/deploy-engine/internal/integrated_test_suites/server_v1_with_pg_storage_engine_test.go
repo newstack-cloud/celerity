@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/core"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/auth"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/enginev1"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/enginev1/validationv1"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/resolve"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/auth"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/validationv1"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/resolve"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 )
 
 type ServerV1WithPGStorageEngineTestSuite struct {

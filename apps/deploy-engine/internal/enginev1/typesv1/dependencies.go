@@ -1,14 +1,14 @@
 package typesv1
 
 import (
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/params"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/pluginconfig"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/blueprint/container"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/includes"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	commoncore "github.com/two-hundred/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/params"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/pluginconfig"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/blueprint/container"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/includes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	commoncore "github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 // Dependencies holds all the dependency services

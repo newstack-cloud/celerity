@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/env"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/env"
 )
 
 const (

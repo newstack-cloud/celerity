@@ -5,13 +5,13 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/two-hundred/celerity/libs/blueprint/container"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
-	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/diagnostichelpers"
-	"github.com/two-hundred/ls-builder/common"
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	"github.com/newstack-cloud/celerity/libs/blueprint/container"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/tools/blueprint-ls/internal/blueprint"
+	"github.com/newstack-cloud/celerity/tools/blueprint-ls/internal/diagnostichelpers"
+	"github.com/newstack-cloud/ls-builder/common"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 	"go.uber.org/zap"
 )
 

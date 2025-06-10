@@ -3,8 +3,8 @@ package provider
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 )
 
 // Link provides the interface for the implementation of a link between two resources.

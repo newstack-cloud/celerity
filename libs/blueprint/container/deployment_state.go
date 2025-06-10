@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/links"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/links"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 )
 
 // DeploymentState provides functionality for tracking and setting the state of a deployment.

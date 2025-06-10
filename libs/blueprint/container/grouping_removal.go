@@ -1,6 +1,6 @@
 package container
 
-import "github.com/two-hundred/celerity/libs/blueprint/state"
+import "github.com/newstack-cloud/celerity/libs/blueprint/state"
 
 // GroupOrderedElements groups ordered elements for removal
 // so that elements that are not related can be removed concurrently.

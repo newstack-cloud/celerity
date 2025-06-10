@@ -3,11 +3,11 @@ package transformerserverv1
 import (
 	context "context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
-	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
-	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
+	"github.com/newstack-cloud/celerity/libs/blueprint/serialisation"
+	"github.com/newstack-cloud/celerity/libs/blueprint/transform"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/convertv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/errorsv1"
+	sharedtypesv1 "github.com/newstack-cloud/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 type abstractResourceTransformerClientWrapper struct {

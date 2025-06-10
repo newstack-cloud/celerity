@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
 )
 
 type DiscoverSuite struct {

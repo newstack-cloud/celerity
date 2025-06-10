@@ -7,7 +7,7 @@ package subengine
 import (
 	"reflect"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 )
 
 // GoValueToMappingNode converts a Go value to a mapping node

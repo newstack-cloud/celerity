@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/types"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/types"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
 )
 
 type PreparerSuite struct {

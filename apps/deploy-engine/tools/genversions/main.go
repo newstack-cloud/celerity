@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	blueprintFrameworkPath = "github.com/two-hundred/celerity/libs/blueprint"
-	pluginFrameworkPath    = "github.com/two-hundred/celerity/libs/plugin-framework"
+	blueprintFrameworkPath = "github.com/newstack-cloud/celerity/libs/blueprint"
+	pluginFrameworkPath    = "github.com/newstack-cloud/celerity/libs/plugin-framework"
 )
 
 func main() {

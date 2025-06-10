@@ -3,8 +3,8 @@ package languageservices
 import (
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/common/testhelpers"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/common/testhelpers"
 	"go.uber.org/zap"
 )
 

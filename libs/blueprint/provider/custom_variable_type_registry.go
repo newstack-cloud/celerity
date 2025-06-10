@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
 )
 
 // CustomVariableTypeRegistry provides a way to get information about

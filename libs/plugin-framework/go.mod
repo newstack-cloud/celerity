@@ -1,16 +1,16 @@
-module github.com/two-hundred/celerity/libs/plugin-framework
+module github.com/newstack-cloud/celerity/libs/plugin-framework
 
 go 1.23
 
 toolchain go1.23.4
 
-replace github.com/two-hundred/celerity/libs/blueprint => ../blueprint
+replace github.com/newstack-cloud/celerity/libs/blueprint => ../blueprint
 
 require (
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.10.0
-	github.com/two-hundred/celerity/libs/blueprint v0.15.0
-	github.com/two-hundred/celerity/libs/common v0.3.0
+	github.com/newstack-cloud/celerity/libs/blueprint v0.15.0
+	github.com/newstack-cloud/celerity/libs/common v0.3.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1
 	gopkg.in/yaml.v3 v3.0.1

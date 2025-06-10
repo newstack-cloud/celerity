@@ -3,8 +3,8 @@ package internal
 import (
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 )
 
 // RenderErrorTree produces a tree representation of a blueprint error.

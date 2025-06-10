@@ -6,15 +6,15 @@ import (
 	"net"
 	"time"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/resourcehelpers"
+	"github.com/newstack-cloud/celerity/libs/blueprint/transform"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/plugin"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/transformerserverv1"
 	"github.com/spf13/afero"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/resourcehelpers"
-	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
-	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/transformerserverv1"
 )
 
 // Service provides an interface for a v1 plugin host.

@@ -1,15 +1,15 @@
 # deploy engine client library
 
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-deploy-engine-client&metric=coverage)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-deploy-engine-client)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-deploy-engine-client&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-deploy-engine-client)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=two-hundred_celerity-deploy-engine-client&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=two-hundred_celerity-deploy-engine-client)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-deploy-engine-client&metric=coverage)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-deploy-engine-client)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-deploy-engine-client&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-deploy-engine-client)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=newstack-cloud_celerity-deploy-engine-client&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=newstack-cloud_celerity-deploy-engine-client)
 
 The deploy engine client library for Go that provides a client for the deploy engine API.
 
 ## Installation
 
 ```bash
-go get github.com/two-hundred/celerity/libs/deploy-engine-client
+go get github.com/newstack-cloud/celerity/libs/deploy-engine-client
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ go get github.com/two-hundred/celerity/libs/deploy-engine-client
 package main
 
 import (
-    "github.com/two-hundred/celerity/libs/deploy-engine-client"
+    "github.com/newstack-cloud/celerity/libs/deploy-engine-client"
 )
 
 func main() {
@@ -50,7 +50,7 @@ func main() {
 package main
 
 import (
-    "github.com/two-hundred/celerity/libs/deploy-engine-client"
+    "github.com/newstack-cloud/celerity/libs/deploy-engine-client"
 )
 
 func main() {

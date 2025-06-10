@@ -5,9 +5,9 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/newstack-cloud/celerity/apps/cli/cmd/utils"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
 	"github.com/spf13/cobra"
-	"github.com/two-hundred/celerity/apps/cli/cmd/utils"
-	"github.com/two-hundred/celerity/apps/cli/internal/config"
 	"golang.org/x/term"
 )
 

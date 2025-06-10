@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/enginev1/helpersv1"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/testutils"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
 	"github.com/r3labs/sse/v2"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/enginev1/helpersv1"
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/testutils"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 )
 
 func (s *ControllerTestSuite) Test_stream_change_staging_events_handler() {

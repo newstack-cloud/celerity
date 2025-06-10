@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"github.com/caarlos0/env/v11"
-	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/transformerserverv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/transformerserverv1"
 )
 
 // Config provides configuration for the deploy engine application.

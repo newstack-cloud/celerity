@@ -7,7 +7,7 @@
 package pluginservicev1
 
 import (
-	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
+	sharedtypesv1 "github.com/newstack-cloud/celerity/libs/plugin-framework/sharedtypesv1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"

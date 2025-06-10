@@ -6,13 +6,13 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/newstack-cloud/celerity/apps/cli/cmd/utils"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/engine"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/handlers"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/tui/styles"
+	"github.com/newstack-cloud/celerity/apps/cli/internal/tui/validateui"
 	"github.com/spf13/cobra"
-	"github.com/two-hundred/celerity/apps/cli/cmd/utils"
-	"github.com/two-hundred/celerity/apps/cli/internal/config"
-	"github.com/two-hundred/celerity/apps/cli/internal/engine"
-	"github.com/two-hundred/celerity/apps/cli/internal/handlers"
-	"github.com/two-hundred/celerity/apps/cli/internal/tui/styles"
-	"github.com/two-hundred/celerity/apps/cli/internal/tui/validateui"
 	"golang.org/x/term"
 )
 

@@ -1,4 +1,4 @@
-module github.com/two-hundred/celerity/apps/cli
+module github.com/newstack-cloud/celerity/apps/cli
 
 go 1.23.0
 
@@ -11,10 +11,10 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
-	github.com/two-hundred/celerity/libs/blueprint v0.8.0
-	github.com/two-hundred/celerity/libs/blueprint-state v0.2.4
-	github.com/two-hundred/celerity/libs/common v0.3.0
-	github.com/two-hundred/celerity/libs/deploy-engine-client v0.0.0-20250509170332-bb8c5927f0ca
+	github.com/newstack-cloud/celerity/libs/blueprint v0.8.0
+	github.com/newstack-cloud/celerity/libs/blueprint-state v0.2.4
+	github.com/newstack-cloud/celerity/libs/common v0.3.0
+	github.com/newstack-cloud/celerity/libs/deploy-engine-client v0.0.0-20250509170332-bb8c5927f0ca
 	go.uber.org/zap v1.27.0
 	golang.org/x/term v0.6.0
 	gopkg.in/yaml.v3 v3.0.1

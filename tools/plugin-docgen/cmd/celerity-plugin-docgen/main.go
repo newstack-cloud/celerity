@@ -6,13 +6,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/transform"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/plugin"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/docgen"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/env"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/host"
 	"github.com/spf13/afero"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/docgen"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/env"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/host"
 )
 
 func main() {

@@ -3,9 +3,9 @@ package deployengine
 import (
 	"encoding/json"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/container"
+	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/types"
 	"github.com/r3labs/sse/v2"
-	"github.com/two-hundred/celerity/libs/blueprint/container"
-	"github.com/two-hundred/celerity/libs/deploy-engine-client/types"
 )
 
 func sseToBlueprintValidationEvent(

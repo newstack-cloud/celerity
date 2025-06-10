@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
 )
 
 func TestStreamEvents(

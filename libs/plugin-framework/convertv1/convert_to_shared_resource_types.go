@@ -1,11 +1,11 @@
 package convertv1
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/serialisation"
-	commoncore "github.com/two-hundred/celerity/libs/common/core"
-	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/serialisation"
+	commoncore "github.com/newstack-cloud/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/errorsv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sharedtypesv1"
 )
 
 // ToPBResourceDefinitionsSchema converts a provider.ResourceDefinitionsSchema to a

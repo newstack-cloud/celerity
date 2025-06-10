@@ -113,7 +113,7 @@ Title: `Plugin Framework - v0.2.0`
 3. Prompt Go to update its index of modules with the new release:
 
 ```bash
-GOPROXY=proxy.golang.org go list -m github.com/two-hundred/celerity/libs/plugin-framework@v0.2.0
+GOPROXY=proxy.golang.org go list -m github.com/newstack-cloud/celerity/libs/plugin-framework@v0.2.0
 ```
 
 ## Commit scope

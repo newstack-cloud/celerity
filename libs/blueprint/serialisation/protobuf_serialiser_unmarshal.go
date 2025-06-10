@@ -1,10 +1,10 @@
 package serialisation
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/schemapb"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schemapb"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 	"google.golang.org/protobuf/proto"
 )
 

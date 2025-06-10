@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
-	common "github.com/two-hundred/ls-builder/common"
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/tools/blueprint-ls/internal/blueprint"
+	common "github.com/newstack-cloud/ls-builder/common"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 )
 
 func (a *Application) handleInitialise(ctx *common.LSPContext, params *lsp.InitializeParams) (any, error) {

@@ -4,7 +4,7 @@ import "google/protobuf/empty.proto";
 import "plugin-framework/sharedtypesv1/types.proto";
 
 option features.field_presence = IMPLICIT;
-option go_package = "github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1";
+option go_package = "github.com/newstack-cloud/celerity/libs/plugin-framework/pluginservicev1";
 
 package pluginservicev1;
 

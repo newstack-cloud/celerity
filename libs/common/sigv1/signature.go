@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 const (

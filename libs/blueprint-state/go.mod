@@ -1,4 +1,4 @@
-module github.com/two-hundred/celerity/libs/blueprint-state
+module github.com/newstack-cloud/celerity/libs/blueprint-state
 
 go 1.22.2
 
@@ -7,8 +7,8 @@ require (
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.10.0
-	github.com/two-hundred/celerity/libs/blueprint v0.8.0
-	github.com/two-hundred/celerity/libs/common v0.3.0
+	github.com/newstack-cloud/celerity/libs/blueprint v0.8.0
+	github.com/newstack-cloud/celerity/libs/common v0.3.0
 )
 
 require (

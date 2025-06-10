@@ -3,7 +3,7 @@ package helpinfo
 import (
 	"strings"
 
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 )
 
 // CustomRenderSignatures renders a list of signatures as a markdown string.

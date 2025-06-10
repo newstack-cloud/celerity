@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 )
 
 // BlueprintCache provides an interface for caching blueprints.

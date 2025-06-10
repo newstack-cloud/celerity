@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint-resolvers/utils"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/includes"
-	"github.com/two-hundred/celerity/libs/blueprint/subengine"
+	"github.com/newstack-cloud/celerity/libs/blueprint-resolvers/utils"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/includes"
+	"github.com/newstack-cloud/celerity/libs/blueprint/subengine"
 )
 
 type httpsChildResolver struct {

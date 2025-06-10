@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/newstack-cloud/celerity/libs/common/sigv1"
 	"github.com/stretchr/testify/suite"
-	"github.com/two-hundred/celerity/libs/common/sigv1"
 )
 
 type SigV1ServiceSuite struct {

@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	commoncore "github.com/newstack-cloud/celerity/libs/common/core"
 	"github.com/spf13/afero"
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	commoncore "github.com/two-hundred/celerity/libs/common/core"
 )
 
 const (

@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/blueprint/transform"
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
-	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
-	"github.com/two-hundred/celerity/tools/plugin-docgen/internal/env"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/transform"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/plugin"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/utils"
+	"github.com/newstack-cloud/celerity/tools/plugin-docgen/internal/env"
 )
 
 // LaunchAndResolvePlugin launches plugins with the provided launcher

@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"github.com/two-hundred/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/errors"
 	. "gopkg.in/check.v1"
 )
 

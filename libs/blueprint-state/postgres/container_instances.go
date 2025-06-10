@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	commoncore "github.com/two-hundred/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	commoncore "github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 type instancesContainerImpl struct {

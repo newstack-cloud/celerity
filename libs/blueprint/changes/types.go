@@ -1,6 +1,6 @@
 package changes
 
-import "github.com/two-hundred/celerity/libs/blueprint/provider"
+import "github.com/newstack-cloud/celerity/libs/blueprint/provider"
 
 // MetadataChanges holds information about changes to blueprint-wide metadata.
 type MetadataChanges struct {

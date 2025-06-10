@@ -3,8 +3,8 @@ package blueprint
 import (
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 )
 
 // DetermineDocFormat determines the document format based on the file extension.

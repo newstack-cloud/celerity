@@ -6,7 +6,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 )
 
 // IsIPAddress validates that a string is a valid IPv4 or IPv6 address.

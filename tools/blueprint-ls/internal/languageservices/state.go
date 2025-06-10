@@ -4,10 +4,10 @@ import (
 	"sync"
 
 	"github.com/coreos/go-json"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/tools/blueprint-ls/internal/blueprint"
-	lsp "github.com/two-hundred/ls-builder/lsp_3_17"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/tools/blueprint-ls/internal/blueprint"
+	lsp "github.com/newstack-cloud/ls-builder/lsp_3_17"
 	"gopkg.in/yaml.v3"
 )
 

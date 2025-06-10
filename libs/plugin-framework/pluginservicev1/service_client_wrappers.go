@@ -3,12 +3,12 @@ package pluginservicev1
 import (
 	context "context"
 
-	"github.com/two-hundred/celerity/libs/blueprint/function"
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
-	"github.com/two-hundred/celerity/libs/plugin-framework/convertv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/errorsv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
-	sharedtypesv1 "github.com/two-hundred/celerity/libs/plugin-framework/sharedtypesv1"
+	"github.com/newstack-cloud/celerity/libs/blueprint/function"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/convertv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/errorsv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/pluginutils"
+	sharedtypesv1 "github.com/newstack-cloud/celerity/libs/plugin-framework/sharedtypesv1"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

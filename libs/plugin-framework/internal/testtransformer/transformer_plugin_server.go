@@ -5,12 +5,12 @@ import (
 	"log"
 	"net"
 
-	"github.com/two-hundred/celerity/libs/plugin-framework/plugin"
-	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/providerserverv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/transformerv1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/transformerserverv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/plugin"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/providerserverv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/pluginutils"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/transformerv1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/transformerserverv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -37,7 +37,7 @@ func StartPluginServer(
 			PluginVersion:        "1.0.0",
 			DisplayName:          "Celerity Application",
 			FormattedDescription: "Celerity transformer plugin that powers **Celerity** applications.",
-			RepositoryUrl:        "https://github.com/two-hundred/celerity-transformer-celerity-app",
+			RepositoryUrl:        "https://github.com/newstack-cloud/celerity-transformer-celerity-app",
 			Author:               "Two Hundred",
 		},
 		ProtocolVersion: providerserverv1.ProtocolVersion,

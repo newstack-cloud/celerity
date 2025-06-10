@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/two-hundred/celerity/apps/deploy-engine/core"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/core"
 )
 
 const (

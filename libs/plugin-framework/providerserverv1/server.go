@@ -1,9 +1,9 @@
 package providerserverv1
 
 import (
-	"github.com/two-hundred/celerity/libs/plugin-framework/pluginbase"
-	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pluginbase"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/pluginutils"
 )
 
 const (

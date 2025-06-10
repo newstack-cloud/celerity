@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/two-hundred/celerity/libs/plugin-framework/pluginservicev1"
-	"github.com/two-hundred/celerity/libs/plugin-framework/sdk/pluginutils"
-	"github.com/two-hundred/celerity/libs/plugin-framework/utils"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/pluginservicev1"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/pluginutils"
+	"github.com/newstack-cloud/celerity/libs/plugin-framework/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

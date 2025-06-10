@@ -3,8 +3,8 @@ package testutils
 import (
 	"context"
 
-	"github.com/two-hundred/celerity/apps/deploy-engine/internal/types"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/apps/deploy-engine/internal/types"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 )
 
 type MockPluginConfigPreparer struct {

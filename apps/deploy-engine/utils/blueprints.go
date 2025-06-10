@@ -6,12 +6,12 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	bperrors "github.com/newstack-cloud/celerity/libs/blueprint/errors"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
+	"github.com/newstack-cloud/celerity/libs/blueprint/source"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 	"github.com/spf13/afero"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	bperrors "github.com/two-hundred/celerity/libs/blueprint/errors"
-	"github.com/two-hundred/celerity/libs/blueprint/schema"
-	"github.com/two-hundred/celerity/libs/blueprint/source"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
 )
 
 var (

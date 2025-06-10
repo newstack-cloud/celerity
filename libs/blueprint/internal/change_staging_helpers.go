@@ -3,7 +3,7 @@ package internal
 import (
 	"slices"
 
-	"github.com/two-hundred/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
 )
 
 // NormaliseResourceChanges normalises the order of fields in a provider.Changes struct

@@ -1,8 +1,8 @@
 package schema
 
 import (
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/substitutions"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 )
 
 // NormaliseSchema normalises a schema to make it comparable

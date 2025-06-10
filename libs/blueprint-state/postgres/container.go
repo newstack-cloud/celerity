@@ -6,10 +6,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/two-hundred/celerity/libs/blueprint-state/manage"
-	"github.com/two-hundred/celerity/libs/blueprint/core"
-	"github.com/two-hundred/celerity/libs/blueprint/state"
-	commoncore "github.com/two-hundred/celerity/libs/common/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint-state/manage"
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+	"github.com/newstack-cloud/celerity/libs/blueprint/state"
+	commoncore "github.com/newstack-cloud/celerity/libs/common/core"
 )
 
 // StateContainer provides the postgres implementation of
