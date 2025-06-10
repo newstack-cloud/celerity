@@ -10,14 +10,14 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/lestrrat-go/jwx v1.2.31
+	github.com/newstack-cloud/celerity/libs/blueprint v0.17.1
+	github.com/newstack-cloud/celerity/libs/blueprint-resolvers v0.0.0-20250610155814-a57a0f8e32c9
+	github.com/newstack-cloud/celerity/libs/blueprint-state v0.2.5
+	github.com/newstack-cloud/celerity/libs/common v0.3.1
+	github.com/newstack-cloud/celerity/libs/plugin-framework v0.0.0-20250610155814-a57a0f8e32c9
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.10.0
-	github.com/newstack-cloud/celerity/libs/blueprint v0.9.0
-	github.com/newstack-cloud/celerity/libs/blueprint-resolvers v0.0.0-20250427141220-717e385d834a
-	github.com/newstack-cloud/celerity/libs/blueprint-state v0.2.4
-	github.com/newstack-cloud/celerity/libs/common v0.3.0
-	github.com/newstack-cloud/celerity/libs/plugin-framework v0.0.0-20250509170332-bb8c5927f0ca
 	go.uber.org/zap v1.27.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 )
