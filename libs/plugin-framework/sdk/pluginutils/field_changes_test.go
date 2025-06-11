@@ -1,4 +1,4 @@
-package changes
+package pluginutils
 
 import (
 	"testing"
