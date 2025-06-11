@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] - 2025-06-11
+
+### Added
+
+- Adds the new `core.DiagnosticRangeFromSourceMeta` helper function to create a diagnostic range from metadata about the location of an element in a source blueprint document. This is useful for implementations of the `provider.Provider` or `transform.SpecTransformer` interfaces that need to create diagnostics for custom validation.
+
 ## [0.17.1] - 2025-06-10
 
 ### Fixed
