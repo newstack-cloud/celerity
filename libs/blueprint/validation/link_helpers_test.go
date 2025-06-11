@@ -78,7 +78,7 @@ func (l *testResourceTypeAResourceTypeBLink) GetAnnotationDefinitions(
 									"%s value exceeds maximum allowed value of 800000.",
 									key,
 								),
-								Range: toDiagnosticRange(annotationValue.SourceMeta, nil),
+								Range: core.DiagnosticRangeFromSourceMeta(annotationValue.SourceMeta, nil),
 							},
 						}
 					}

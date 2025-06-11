@@ -1126,7 +1126,7 @@ func validateResourceDefinitionPattern(
 					path,
 					schema.Pattern,
 				),
-				Range: toDiagnosticRange(location, nil),
+				Range: core.DiagnosticRangeFromSourceMeta(location, nil),
 			},
 		)
 		return diagnostics, nil
@@ -1280,7 +1280,7 @@ func validateResourceDefinitionNumericConstraint(
 					constraintText,
 					constraint.ToString(),
 				),
-				Range: toDiagnosticRange(location, nil),
+				Range: core.DiagnosticRangeFromSourceMeta(location, nil),
 			},
 		)
 		return diagnostics, nil
@@ -1343,7 +1343,7 @@ func validateResourceDefinitionAllowedValues(
 					path,
 					allowedValuesText,
 				),
-				Range: toDiagnosticRange(location, nil),
+				Range: core.DiagnosticRangeFromSourceMeta(location, nil),
 			},
 		)
 		return diagnostics, nil
@@ -1508,7 +1508,7 @@ func validateResourceDefinitionStringMinLength(
 					path,
 					schema.MinLength,
 				),
-				Range: toDiagnosticRange(location, nil),
+				Range: core.DiagnosticRangeFromSourceMeta(location, nil),
 			},
 		)
 		return diagnostics, nil
@@ -1551,7 +1551,7 @@ func validateResourceDefinitionStringMaxLength(
 					path,
 					schema.MaxLength,
 				),
-				Range: toDiagnosticRange(location, nil),
+				Range: core.DiagnosticRangeFromSourceMeta(location, nil),
 			},
 		)
 		return diagnostics, nil

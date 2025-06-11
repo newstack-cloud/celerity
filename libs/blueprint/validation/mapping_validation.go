@@ -78,7 +78,7 @@ func validateMappingNode(
 				"Exceeded max traverse depth of %d. Skipping further validation.",
 				bpcore.MappingNodeMaxTraverseDepth,
 			),
-			Range: toDiagnosticRange(wrapperLocation, rangeEndLocation),
+			Range: bpcore.DiagnosticRangeFromSourceMeta(wrapperLocation, rangeEndLocation),
 		})
 		return diagnostics, nil
 	}

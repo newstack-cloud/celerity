@@ -102,7 +102,10 @@ func ValidateExport(
 					exportIdentifier,
 					exportSchema.Type.Value,
 				),
-				Range: toDiagnosticRange(getExportSourceMeta(exportMap, exportName), nil),
+				Range: bpcore.DiagnosticRangeFromSourceMeta(
+					getExportSourceMeta(exportMap, exportName),
+					nil,
+				),
 			},
 		)
 	}

@@ -736,7 +736,7 @@ func handleResolvedTypeExpectingBoolean(
 					valueContext,
 					valueContext,
 				),
-				Range: toDiagnosticRange(value.SourceMeta, nextLocation),
+				Range: bpcore.DiagnosticRangeFromSourceMeta(value.SourceMeta, nextLocation),
 			},
 		)
 	}
@@ -855,7 +855,7 @@ func handleResolvedTypeExpectingArray(
 						"unexpected output in %s, an array is expected",
 					valueContext,
 				),
-				Range: toDiagnosticRange(value.SourceMeta, nextLocation),
+				Range: bpcore.DiagnosticRangeFromSourceMeta(value.SourceMeta, nextLocation),
 			},
 		)
 	}

@@ -520,7 +520,7 @@ func checkResourceType(
 						" you will need to make sure the provider for the resource type is loaded.",
 					resourceType,
 				),
-				Range: toDiagnosticRange(subResourceProp.SourceMeta, nextLocation),
+				Range: bpcore.DiagnosticRangeFromSourceMeta(subResourceProp.SourceMeta, nextLocation),
 			},
 		)
 
@@ -943,7 +943,7 @@ func validateFunction(
 						" you will need to make sure the provider is loaded.",
 					funcName,
 				),
-				Range: toDiagnosticRange(subFunc.SourceMeta, nextLocation),
+				Range: bpcore.DiagnosticRangeFromSourceMeta(subFunc.SourceMeta, nextLocation),
 			},
 		)
 	}

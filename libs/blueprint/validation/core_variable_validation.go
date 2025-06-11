@@ -504,7 +504,7 @@ func checkVarDescription(
 					"the value will not be substituted",
 				varName,
 			),
-			Range: toDiagnosticRange(varMap.SourceMeta[varName], nil),
+			Range: bpcore.DiagnosticRangeFromSourceMeta(varMap.SourceMeta[varName], nil),
 		})
 	}
 }

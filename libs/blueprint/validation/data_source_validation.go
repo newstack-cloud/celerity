@@ -719,7 +719,7 @@ func handleResolvedTypeExpectingPrimitive(
 					valueContext,
 					valueContext,
 				),
-				Range: toDiagnosticRange(value.SourceMeta, nextLocation),
+				Range: bpcore.DiagnosticRangeFromSourceMeta(value.SourceMeta, nextLocation),
 			},
 		)
 	}

@@ -203,7 +203,7 @@ func validateResourceLinkAnnotations(
 					resourceName,
 					linksTo,
 				),
-				Range: toDiagnosticRange(
+				Range: core.DiagnosticRangeFromSourceMeta(
 					metadataBlockLocation,
 					nil,
 				),
@@ -275,7 +275,7 @@ func validateAnnotationType(
 					resourceName,
 					definition.Type,
 				),
-				Range: toDiagnosticRange(resourceAnnotationInfo.annotation.SourceMeta, nil),
+				Range: core.DiagnosticRangeFromSourceMeta(resourceAnnotationInfo.annotation.SourceMeta, nil),
 			},
 		)
 		return nil, false
@@ -322,7 +322,7 @@ func validateAnnotationType(
 				definition.Type,
 				core.TypeFromScalarValue(scalarValue),
 			),
-			Range: toDiagnosticRange(
+			Range: core.DiagnosticRangeFromSourceMeta(
 				resourceAnnotationInfo.annotation.SourceMeta,
 				nil,
 			),
@@ -365,7 +365,7 @@ func validateAnnotationAllowedValues(
 					parsedValue.ToString(),
 					allowedValuesText,
 				),
-				Range: toDiagnosticRange(
+				Range: core.DiagnosticRangeFromSourceMeta(
 					resourceAnnotationInfo.annotation.SourceMeta,
 					nil,
 				),

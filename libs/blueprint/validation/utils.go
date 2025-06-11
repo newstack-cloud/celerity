@@ -68,58 +68,6 @@ func varTypeToUnit(varType schema.VariableType) string {
 	}
 }
 
-func toDiagnosticRange(
-	start *source.Meta,
-	nextLocation *source.Meta,
-) *core.DiagnosticRange {
-	if start == nil {
-		return &core.DiagnosticRange{
-			Start: &source.Meta{Position: source.Position{
-				Line:   1,
-				Column: 1,
-			}},
-			End: &source.Meta{Position: source.Position{
-				Line:   1,
-				Column: 1,
-			}},
-		}
-	}
-
-	endSourceMeta := determineEndSourceMeta(
-		start,
-		nextLocation,
-	)
-
-	return &core.DiagnosticRange{
-		Start: start,
-		End:   endSourceMeta,
-	}
-}
-
-func determineEndSourceMeta(
-	start *source.Meta,
-	nextLocation *source.Meta,
-) *source.Meta {
-	if start.EndPosition != nil {
-		return &source.Meta{
-			Position: *start.EndPosition,
-		}
-	}
-
-	endSourceMeta := &source.Meta{Position: source.Position{
-		Line:   start.Line + 1,
-		Column: 1,
-	}}
-	if nextLocation != nil {
-		endSourceMeta = &source.Meta{Position: source.Position{
-			Line:   nextLocation.Line,
-			Column: nextLocation.Column,
-		}}
-	}
-
-	return endSourceMeta
-}
-
 func isSubPrimitiveType(subType string) bool {
 	switch substitutions.ResolvedSubExprType(subType) {
 	case substitutions.ResolvedSubExprTypeString,

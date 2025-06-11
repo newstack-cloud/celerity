@@ -51,3 +51,57 @@ type DiagnosticRange struct {
 	// (e.g. language server diagnostics for a code editor)
 	ColumnAccuracy *substitutions.ColumnAccuracy `json:"columnAccuracy,omitempty"`
 }
+
+// DiagnosticRangeFromSourceMeta creates a diagnostic range to be used with validation
+// based on the position of an element in the source blueprint document.
+func DiagnosticRangeFromSourceMeta(
+	start *source.Meta,
+	nextLocation *source.Meta,
+) *DiagnosticRange {
+	if start == nil {
+		return &DiagnosticRange{
+			Start: &source.Meta{Position: source.Position{
+				Line:   1,
+				Column: 1,
+			}},
+			End: &source.Meta{Position: source.Position{
+				Line:   1,
+				Column: 1,
+			}},
+		}
+	}
+
+	endSourceMeta := determineEndSourceMeta(
+		start,
+		nextLocation,
+	)
+
+	return &DiagnosticRange{
+		Start: start,
+		End:   endSourceMeta,
+	}
+}
+
+func determineEndSourceMeta(
+	start *source.Meta,
+	nextLocation *source.Meta,
+) *source.Meta {
+	if start.EndPosition != nil {
+		return &source.Meta{
+			Position: *start.EndPosition,
+		}
+	}
+
+	endSourceMeta := &source.Meta{Position: source.Position{
+		Line:   start.Line + 1,
+		Column: 1,
+	}}
+	if nextLocation != nil {
+		endSourceMeta = &source.Meta{Position: source.Position{
+			Line:   nextLocation.Line,
+			Column: nextLocation.Column,
+		}}
+	}
+
+	return endSourceMeta
+}
