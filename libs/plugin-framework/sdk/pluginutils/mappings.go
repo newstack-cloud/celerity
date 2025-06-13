@@ -1,6 +1,10 @@
 package pluginutils
 
-import "github.com/newstack-cloud/celerity/libs/blueprint/core"
+import (
+	"slices"
+
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
+)
 
 // GetValueByPath is a helper function to extract a value from a mapping node
 // that is a thin wrapper around the blueprint framework's `core.GetPathValue` function.
@@ -21,4 +25,19 @@ func GetValueByPath(
 	}
 
 	return value, value != nil
+}
+
+// ShallowCopy creates a shallow copy of a map of MappingNodes, excluding
+// the keys in the ignoreKeys slice.
+func ShallowCopy(
+	fields map[string]*core.MappingNode,
+	ignoreKeys ...string,
+) map[string]*core.MappingNode {
+	copy := make(map[string]*core.MappingNode, len(fields))
+	for k, v := range fields {
+		if !slices.Contains(ignoreKeys, k) {
+			copy[k] = v
+		}
+	}
+	return copy
 }

@@ -72,6 +72,48 @@ func (s *MappingNodeUtilSuite) Test_get_value_by_path() {
 	}
 }
 
+func (s *MappingNodeUtilSuite) Test_shallow_copy() {
+	testCases := []struct {
+		name       string
+		input      map[string]*core.MappingNode
+		ignoreKeys []string
+		expected   map[string]*core.MappingNode
+	}{
+		{
+			name: "copy with ignored keys",
+			input: map[string]*core.MappingNode{
+				"field1": core.MappingNodeFromString("value1"),
+				"field2": core.MappingNodeFromString("value2"),
+				"field3": core.MappingNodeFromString("value3"),
+			},
+			ignoreKeys: []string{"field2"},
+			expected: map[string]*core.MappingNode{
+				"field1": core.MappingNodeFromString("value1"),
+				"field3": core.MappingNodeFromString("value3"),
+			},
+		},
+		{
+			name: "copy without ignored keys",
+			input: map[string]*core.MappingNode{
+				"field1": core.MappingNodeFromString("value1"),
+				"field2": core.MappingNodeFromString("value2"),
+			},
+			ignoreKeys: []string{},
+			expected: map[string]*core.MappingNode{
+				"field1": core.MappingNodeFromString("value1"),
+				"field2": core.MappingNodeFromString("value2"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			result := ShallowCopy(tc.input, tc.ignoreKeys...)
+			s.Assert().Equal(tc.expected, result, "Expected shallow copy to match")
+		})
+	}
+}
+
 func TestMappingNodeUtilSuite(t *testing.T) {
 	suite.Run(t, new(MappingNodeUtilSuite))
 }
