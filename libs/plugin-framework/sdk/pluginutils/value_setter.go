@@ -109,10 +109,10 @@ func NewValueSetter[Target any](
 // mapping node at the specified path. If checkIfChanged is true, it will
 // only set the value if the path is in the configured modified fields list.
 func (s *ValueSetter[Target]) Set(
-	value *core.MappingNode,
+	parent *core.MappingNode,
 	target Target,
 ) {
-	value, hasValue := GetValueByPath(s.path, value)
+	value, hasValue := GetValueByPath(s.path, parent)
 	if !hasValue {
 		return
 	}
