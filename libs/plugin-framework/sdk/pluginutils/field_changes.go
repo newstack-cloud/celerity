@@ -56,3 +56,15 @@ func FieldChangesToPrevValueMap(
 
 	return fieldChangeMap
 }
+
+// MergeFieldChanges combines multiple slices of FieldChange into a single slice.
+// This is useful for combining field changes for modified and new fields.
+func MergeFieldChanges(
+	changes ...[]provider.FieldChange,
+) []provider.FieldChange {
+	mergedChanges := []provider.FieldChange{}
+	for _, changeSlice := range changes {
+		mergedChanges = append(mergedChanges, changeSlice...)
+	}
+	return mergedChanges
+}

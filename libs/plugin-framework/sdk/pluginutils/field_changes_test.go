@@ -84,6 +84,32 @@ func (s *FieldChangesSuite) Test_field_changes_to_prev_value_map() {
 	s.Assert().Equal(expected, result)
 }
 
+func (s *FieldChangesSuite) Test_merge_field_changes() {
+	modifiedFields := []provider.FieldChange{
+		{
+			FieldPath: "field1",
+			NewValue:  core.MappingNodeFromString("newValue1"),
+			PrevValue: core.MappingNodeFromString("oldValue1"),
+		},
+	}
+
+	newFields := []provider.FieldChange{
+		{
+			FieldPath: "field2",
+			NewValue:  core.MappingNodeFromString("newValue2"),
+		},
+	}
+
+	expected := []provider.FieldChange{
+		modifiedFields[0],
+		newFields[0],
+	}
+
+	result := MergeFieldChanges(modifiedFields, newFields)
+
+	s.Assert().Equal(expected, result)
+}
+
 func TestFieldChangesSuite(t *testing.T) {
 	suite.Run(t, new(FieldChangesSuite))
 }
