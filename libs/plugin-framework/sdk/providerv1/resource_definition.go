@@ -262,9 +262,17 @@ func (r *ResourceDefinition) Deploy(
 	hasCurrentResourceState := isCurrentResourceStatePopulated(input)
 
 	// If the changes provided require the resource to be re-created,
-	// then we need to destroy the existing resource first.
+	// then we create the replacement resource and the destroy the old one.
+	// This does mean that for resources that have user-defined unique identifiers,
+	// the user will need to ensure a new unique identifier is provided
+	// in the resource spec.
 	if hasCurrentResourceState && input.Changes.MustRecreate {
-		err := r.Destroy(ctx, &provider.ResourceDestroyInput{
+		resourceDeployOutput, err := r.CreateFunc(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+
+		err = r.Destroy(ctx, &provider.ResourceDestroyInput{
 			InstanceID:      input.InstanceID,
 			ResourceID:      input.ResourceID,
 			ResourceState:   input.Changes.AppliedResourceInfo.CurrentResourceState,
@@ -274,7 +282,7 @@ func (r *ResourceDefinition) Deploy(
 			return nil, err
 		}
 
-		return r.CreateFunc(ctx, input)
+		return resourceDeployOutput, nil
 	}
 
 	if hasCurrentResourceState {
