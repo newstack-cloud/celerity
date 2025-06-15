@@ -262,7 +262,7 @@ func (r *ResourceDefinition) Deploy(
 	hasCurrentResourceState := isCurrentResourceStatePopulated(input)
 
 	// If the changes provided require the resource to be re-created,
-	// then we create the replacement resource and the destroy the old one.
+	// then we create the replacement resource and destroy the old one.
 	// This does mean that for resources that have user-defined unique identifiers,
 	// the user will need to ensure a new unique identifier is provided
 	// in the resource spec.
