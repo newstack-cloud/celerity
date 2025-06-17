@@ -719,6 +719,7 @@ func (r *defaultSubstitutionResolver) resolveInDataSource(
 
 	resolvedDataSourceExports, err := r.resolveInDataSourceExports(
 		ctx,
+		schema.GetDataSourceType(dataSource),
 		dataSource.Exports,
 		resolveCtx,
 	)
@@ -883,6 +884,7 @@ func (r *defaultSubstitutionResolver) resolveInDataSourceFilter(
 
 func (r *defaultSubstitutionResolver) resolveInDataSourceExports(
 	ctx context.Context,
+	dataSourceType string,
 	exports *schema.DataSourceFieldExportMap,
 	resolveCtx *resolveContext,
 ) (map[string]*provider.ResolvedDataSourceFieldExport, error) {
@@ -892,6 +894,17 @@ func (r *defaultSubstitutionResolver) resolveInDataSourceExports(
 
 	resolvedExports := map[string]*provider.ResolvedDataSourceFieldExport{}
 	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	if exports.ExportAll {
+		// When ExportAll is true, it indicates that all fields of the data source
+		// should be exported.
+		// This is indicated by `exports: "*"` being set in a data source
+		// instead of a map of exports in the current blueprint.
+		return r.resolveDataSourceExportsFromSpec(
+			ctx,
+			dataSourceType,
+		)
+	}
 
 	for exportName, export := range exports.Values {
 
@@ -918,6 +931,51 @@ func (r *defaultSubstitutionResolver) resolveInDataSourceExports(
 	if len(resolveOnDeployErrs) > 0 {
 		return resolvedExports, &resolveOnDeployErrors{
 			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedExports, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveDataSourceExportsFromSpec(
+	ctx context.Context,
+	dataSourceType string,
+) (map[string]*provider.ResolvedDataSourceFieldExport, error) {
+	specDefOutput, err := r.dataSourceRegistry.GetSpecDefinition(
+		ctx,
+		dataSourceType,
+		&provider.DataSourceGetSpecDefinitionInput{
+			ProviderContext: provider.NewProviderContextFromParams(
+				provider.ExtractProviderFromItemType(dataSourceType),
+				r.params,
+			),
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to get data source spec definition for %s: %w",
+			dataSourceType,
+			err,
+		)
+	}
+
+	if specDefOutput == nil ||
+		specDefOutput.SpecDefinition == nil ||
+		len(specDefOutput.SpecDefinition.Fields) == 0 {
+		return nil, fmt.Errorf(
+			"data source spec definition for %s is either not set or has no fields",
+			dataSourceType,
+		)
+	}
+
+	resolvedExports := map[string]*provider.ResolvedDataSourceFieldExport{}
+	for exportName, exportSchema := range specDefOutput.SpecDefinition.Fields {
+		resolvedExports[exportName] = &provider.ResolvedDataSourceFieldExport{
+			// There is one-to-one mapping between the data source export schema
+			// field type and the data source field export type.
+			Type: &schema.DataSourceFieldTypeWrapper{
+				Value: schema.DataSourceFieldType(exportSchema.Type),
+			},
 		}
 	}
 

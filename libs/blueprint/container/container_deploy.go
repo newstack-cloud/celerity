@@ -878,7 +878,7 @@ func (c *defaultBlueprintContainer) buildResourceState(
 ) state.ResourceState {
 	resourceTemplateName := deployCtx.ResourceTemplates[msg.ResourceName]
 	blueprintResource := deployCtx.PreparedContainer.BlueprintSpec().ResourceSchema(msg.ResourceName)
-	resourceType := getResourceType(blueprintResource)
+	resourceType := schema.GetResourceType(blueprintResource)
 	resourceData := deployCtx.State.GetResourceData(msg.ResourceName)
 	resourceState := state.ResourceState{
 		ResourceID:                 msg.ResourceID,
@@ -1144,7 +1144,7 @@ func (c *defaultBlueprintContainer) getGetStabilisedDependencies(
 ) ([]string, error) {
 	if node.Type() == DeploymentNodeTypeResource {
 		dependentResource := node.ChainLinkNode.Resource
-		dependentResourceType := getResourceType(dependentResource)
+		dependentResourceType := schema.GetResourceType(dependentResource)
 
 		providerNamespace := provider.ExtractProviderFromItemType(dependentResourceType)
 		stabilisedDepsOutput, err := resourceRegistry.GetStabilisedDependencies(

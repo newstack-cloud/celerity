@@ -120,7 +120,7 @@ func validateLinkAnnotationsForResources(
 	)
 	err := validateResourceLinkAnnotations(
 		linkChainNode.ResourceName,
-		getResourceType(linkChainNode.Resource),
+		schema.GetResourceType(linkChainNode.Resource),
 		linksTo,
 		resourceAnnotations,
 		metadataBlockLocation,
@@ -140,7 +140,7 @@ func validateLinkAnnotationsForResources(
 	)
 	return validateResourceLinkAnnotations(
 		otherLinkChainNode.ResourceName,
-		getResourceType(otherLinkChainNode.Resource),
+		schema.GetResourceType(otherLinkChainNode.Resource),
 		linkChainNode.ResourceName,
 		otherResourceAnnotations,
 		getMetadataBlockLocation(otherLinkChainNode.Resource),
@@ -506,12 +506,4 @@ func wrapWithMappingNodes(
 	}
 
 	return mappingNodes
-}
-
-func getResourceType(resource *schema.Resource) string {
-	if resource.Type == nil || resource.Type.Value == "" {
-		return ""
-	}
-
-	return resource.Type.Value
 }

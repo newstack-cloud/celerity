@@ -4,11 +4,11 @@
       Value: (string) (len=18) "aws/dynamodb/table",
       SourceMeta: (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 60,
+          Line: (int) 55,
           Column: (int) 11
         },
         EndPosition: (*source.Position)({
-          Line: (int) 60,
+          Line: (int) 55,
           Column: (int) 29
         })
       })
@@ -74,7 +74,7 @@
         SourceMeta: (map[string]*source.Meta) (len=1) {
           (string) (len=3) "app": (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 76,
+              Line: (int) 71,
               Column: (int) 9
             },
             EndPosition: (*source.Position)(<nil>)
@@ -109,11 +109,11 @@
                   StringValue: (*string)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 79,
+                      Line: (int) 74,
                       Column: (int) 14
                     },
                     EndPosition: (*source.Position)({
-                      Line: (int) 79,
+                      Line: (int) 74,
                       Column: (int) 17
                     })
                   })
@@ -123,7 +123,7 @@
                 StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 79,
+                    Line: (int) 74,
                     Column: (int) 14
                   },
                   EndPosition: (*source.Position)(<nil>)
@@ -138,11 +138,11 @@
                   StringValue: (*string)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 80,
+                      Line: (int) 75,
                       Column: (int) 14
                     },
                     EndPosition: (*source.Position)({
-                      Line: (int) 80,
+                      Line: (int) 75,
                       Column: (int) 17
                     })
                   })
@@ -152,7 +152,7 @@
                 StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 80,
+                    Line: (int) 75,
                     Column: (int) 14
                   },
                   EndPosition: (*source.Position)(<nil>)
@@ -251,7 +251,7 @@
         SourceMeta: (map[string]*source.Meta) (len=1) {
           (string) (len=3) "app": (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 84,
+              Line: (int) 79,
               Column: (int) 9
             },
             EndPosition: (*source.Position)(<nil>)
@@ -260,7 +260,7 @@
       }),
       SourceMeta: (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 83,
+          Line: (int) 78,
           Column: (int) 7
         },
         EndPosition: (*source.Position)(<nil>)

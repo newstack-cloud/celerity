@@ -14,9 +14,6 @@ variables:
   deployOrdersTableToRegions:
     type: string
     description: "A JSON-encoded list of regions to deploy the orders table to."
-  orderTables:
-    type: string
-    description: "A JSON-encoded list of order tables to create."
 
 values:
   tableName:
@@ -27,14 +24,6 @@ values:
     type: array
     value: "${jsondecode(variables.deployOrdersTableToRegions)}"
 
-  prefixedCoreInfraRegion:
-    type: string
-    value: "core-${children.coreInfra.region}"
-
-  orderTables:
-    type: array
-    value: "${jsondecode(variables.orderTables)}"
-
 datasources:
   network:
     type: aws/vpc
@@ -42,19 +31,15 @@ datasources:
     filter:
       field: tags
       operator: "not contains"
-      search: ${children.coreInfra.region}
+      search: ${ordersTable.spec.id}
     metadata:
       displayName: Networking
-    # Export all fields to make sure behaviour to resolve references
-    # to data sources properties work as expected when using 
-    # the `*` convention.
     exports: "*"
 
 resources:
   ordersTable:
     type: aws/dynamodb/table
     description: "Table that stores orders for an application."
-    each: ${values.orderTables}
     condition:
       and:
         - ${eq(variables.environment, "production-env")}
@@ -62,23 +47,21 @@ resources:
             - ${contains(values.deployOrdersTableToRegions, variables.region)}
             - not: ${eq(variables.region, "eu-central-1")}
     metadata:
-      displayName: ${variables.environment} Orders Table ${i}
+      displayName: ${variables.environment} Orders Table
       annotations:
         aws.dynamodb.trigger: ${variables.enableOrderTableTrigger}
-        aws.dynamodb.vpc: ${datasources.network.vpc}
-        custom.coreInfraRegion: ${values.prefixedCoreInfraRegion}
       labels:
         app: orders
       custom:
         visual:
           x: 100
           y: 200
-          label: ${variables.environment} Orders Table ${i}
+          label: ${variables.environment} Orders Table
     linkSelector:
       byLabel:
         app: orders
     spec:
-      tableName: ${elem.name}
+      tableName: '${trimsuffix(variables.environment, "-env")}-Orders'
       region: "${children.coreInfra.region}"
 
 include:

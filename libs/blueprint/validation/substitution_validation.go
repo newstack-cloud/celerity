@@ -742,7 +742,7 @@ func validateDataSourcePropertySubstitution(
 		return "", diagnostics, errSubDataSourceNotFound(dataSourceName, subDataSourceProp.SourceMeta)
 	}
 
-	dataSourceType := getDataSourceType(dataSourceSchema)
+	dataSourceType := schema.GetDataSourceType(dataSourceSchema)
 	providerNamespace := provider.ExtractProviderFromItemType(dataSourceType)
 	specDefOutput, err := dataSourceRegistry.GetSpecDefinition(
 		ctx,
@@ -1386,12 +1386,4 @@ func subFuncUnionTypeToString(unionTypes []function.ValueTypeDefinition) string 
 	}
 	sb.WriteString(")")
 	return sb.String()
-}
-
-func getDataSourceType(dataSource *schema.DataSource) string {
-	if dataSource.Type == nil || dataSource.Type.Value == "" {
-		return ""
-	}
-
-	return dataSource.Type.Value
 }

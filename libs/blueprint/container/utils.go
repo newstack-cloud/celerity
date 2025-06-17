@@ -858,14 +858,6 @@ func updatePendingLinksInEphemeralState(
 	return linksReadyToBeStaged
 }
 
-func getResourceType(resource *schema.Resource) string {
-	if resource.Type == nil {
-		return ""
-	}
-
-	return resource.Type.Value
-}
-
 func toFullLinkPath(
 	resourceAName string,
 	resourceBName string,

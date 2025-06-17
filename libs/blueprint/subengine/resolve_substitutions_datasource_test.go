@@ -19,12 +19,14 @@ type SubstitutionDataSourceResolverTestSuite struct {
 }
 
 const (
-	resolveInDataSourceFixtureName = "resolve-in-datasource"
+	resolveInDataSourceFixtureName  = "resolve-in-datasource"
+	resolveInDataSourceFixture2Name = "resolve-in-datasource-2"
 )
 
 func (s *SubstitutionDataSourceResolverTestSuite) SetupSuite() {
 	s.populateSpecFixtureSchemas(map[string]string{
-		resolveInDataSourceFixtureName: "__testdata/sub-resolver/resolve-in-datasource-blueprint.yml",
+		resolveInDataSourceFixtureName:  "__testdata/sub-resolver/resolve-in-datasource-blueprint.yml",
+		resolveInDataSourceFixture2Name: "__testdata/sub-resolver/resolve-in-datasource-blueprint-2.yml",
 	}, &s.Suite)
 }
 
@@ -34,6 +36,39 @@ func (s *SubstitutionDataSourceResolverTestSuite) SetupTest() {
 
 func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in_datasource_for_change_staging() {
 	blueprint := s.specFixtureSchemas[resolveInDataSourceFixtureName]
+	spec := internal.NewBlueprintSpecMock(blueprint)
+	params := resolveInDataSourceTestParams()
+	subResolver := NewDefaultSubstitutionResolver(
+		&Registries{
+			FuncRegistry:       s.funcRegistry,
+			ResourceRegistry:   s.resourceRegistry,
+			DataSourceRegistry: s.dataSourceRegistry,
+		},
+		s.stateContainer,
+		s.resourceCache,
+		s.resourceTemplateInputElemCache,
+		s.childExportFieldCache,
+		spec,
+		params,
+	)
+
+	result, err := subResolver.ResolveInDataSource(
+		context.TODO(),
+		"network",
+		blueprint.DataSources.Values["network"],
+		&ResolveDataSourceTargetInfo{
+			ResolveFor: ResolveForChangeStaging,
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().NotNil(result)
+
+	err = testhelpers.Snapshot(result)
+	s.Require().NoError(err)
+}
+
+func (s *SubstitutionDataSourceResolverTestSuite) Test_resolves_substitutions_in_datasource_that_exports_all_fields() {
+	blueprint := s.specFixtureSchemas[resolveInDataSourceFixture2Name]
 	spec := internal.NewBlueprintSpecMock(blueprint)
 	params := resolveInDataSourceTestParams()
 	subResolver := NewDefaultSubstitutionResolver(

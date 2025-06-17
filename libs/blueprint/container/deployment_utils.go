@@ -10,6 +10,7 @@ import (
 	"github.com/newstack-cloud/celerity/libs/blueprint/changes"
 	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 )
 
@@ -1921,7 +1922,7 @@ func dependencyMustStabilise(
 	if dependency.Type() == DeploymentNodeTypeResource &&
 		dependant.Type() == DeploymentNodeTypeResource {
 		dependencyResource := dependency.ChainLinkNode.Resource
-		dependencyResourceType := getResourceType(dependencyResource)
+		dependencyResourceType := schema.GetResourceType(dependencyResource)
 
 		return slices.Contains(
 			resourceTypesMustStabilise,
