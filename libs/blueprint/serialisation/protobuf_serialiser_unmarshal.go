@@ -256,7 +256,9 @@ func FromDataSourcePB(dataSourcePB *schemapb.DataSource) (*schema.DataSource, er
 		return nil, err
 	}
 
-	exports, err := fromDataSourceFieldExports(dataSourcePB.Exports)
+	exports, err := fromDataSourceFieldExports(
+		dataSourcePB,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -352,14 +354,20 @@ func fromDataSourceFilterSearchPB(
 }
 
 func fromDataSourceFieldExports(
-	exportsPB map[string]*schemapb.DataSourceFieldExport,
+	dataSourcePB *schemapb.DataSource,
 ) (*schema.DataSourceFieldExportMap, error) {
-	if exportsPB == nil {
+	if dataSourcePB.ExportAllFields {
+		return &schema.DataSourceFieldExportMap{
+			ExportAll: true,
+			Values:    map[string]*schema.DataSourceFieldExport{},
+		}, nil
+	}
+	if dataSourcePB.Exports == nil {
 		return nil, nil
 	}
 
 	exports := make(map[string]*schema.DataSourceFieldExport)
-	for k, v := range exportsPB {
+	for k, v := range dataSourcePB.Exports {
 		export, err := fromDataSourceFieldExportPB(v)
 		if err != nil {
 			return nil, err

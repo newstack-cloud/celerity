@@ -85,8 +85,9 @@ message DataSource {
     string type = 1;
     DataSourceMetadata metadata = 2;
     repeated DataSourceFilter filter = 3;
-    map<string, DataSourceFieldExport> exports = 4;
-    optional StringOrSubstitutions description = 5;
+    bool export_all_fields = 4;
+    map<string, DataSourceFieldExport> exports = 5;
+    optional StringOrSubstitutions description = 6;
 }
 
 message DataSourceMetadata {

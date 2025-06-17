@@ -245,12 +245,21 @@ func ToDataSourcePB(dataSource *schema.DataSource) (*schemapb.DataSource, error)
 	}
 
 	return &schemapb.DataSource{
-		Type:        string(dataSource.Type.Value),
-		Metadata:    metadataPB,
-		Filter:      filtersPB,
-		Exports:     exportsPB,
-		Description: descriptionPB,
+		Type:            string(dataSource.Type.Value),
+		Metadata:        metadataPB,
+		Filter:          filtersPB,
+		ExportAllFields: getDataSourceExportAll(dataSource),
+		Exports:         exportsPB,
+		Description:     descriptionPB,
 	}, nil
+}
+
+func getDataSourceExportAll(dataSource *schema.DataSource) bool {
+	if dataSource.Exports == nil {
+		return false
+	}
+
+	return dataSource.Exports.ExportAll
 }
 
 func toDataSourceMetadataPB(metadata *schema.DataSourceMetadata) (*schemapb.DataSourceMetadata, error) {
