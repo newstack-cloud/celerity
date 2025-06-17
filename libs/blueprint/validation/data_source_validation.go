@@ -101,8 +101,8 @@ func ValidateDataSource(
 		return diagnostics, ErrMultipleValidationErrors(errs)
 	}
 
-	logger.Debug("Validating data source filter")
-	validateFilterDiagnostics, validateFilterErr := validateDataSourceFilter(
+	logger.Debug("Validating data source filters")
+	validateFilterDiagnostics, validateFilterErr := validateDataSourceFilters(
 		ctx,
 		name,
 		dataSource.Type.Value,
@@ -478,6 +478,53 @@ func loadDataSourceSpecDefinition(
 	return specDefOutput.SpecDefinition, nil
 }
 
+func validateDataSourceFilters(
+	ctx context.Context,
+	name string,
+	dataSourceType string,
+	filters *schema.DataSourceFilters,
+	dataSourceMap *schema.DataSourceMap,
+	bpSchema *schema.Blueprint,
+	params bpcore.BlueprintParams,
+	funcRegistry provider.FunctionRegistry,
+	refChainCollector refgraph.RefChainCollector,
+	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+	if filters == nil || len(filters.Filters) == 0 {
+		return diagnostics, errDataSourceMissingFilter(
+			name, getDataSourceMeta(dataSourceMap, name),
+		)
+	}
+
+	errs := []error{}
+	for _, filter := range filters.Filters {
+		filterDiagnostics, err := validateDataSourceFilter(
+			ctx,
+			name,
+			dataSourceType,
+			filter,
+			dataSourceMap,
+			bpSchema,
+			params,
+			funcRegistry,
+			refChainCollector,
+			resourceRegistry,
+			dataSourceRegistry,
+		)
+		diagnostics = append(diagnostics, filterDiagnostics...)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return diagnostics, ErrMultipleValidationErrors(errs)
+	}
+
+	return diagnostics, nil
+}
+
 func validateDataSourceFilter(
 	ctx context.Context,
 	name string,
@@ -494,7 +541,7 @@ func validateDataSourceFilter(
 	diagnostics := []*bpcore.Diagnostic{}
 
 	if filter == nil {
-		return diagnostics, errDataSourceMissingFilter(
+		return diagnostics, errDataSourceEmptyFilter(
 			name, getDataSourceMeta(dataSourceMap, name),
 		)
 	}

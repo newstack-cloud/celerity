@@ -837,7 +837,7 @@ func dataSourceToTreeNode(dataSourceName string, dataSource *DataSource, parentP
 		children = append(children, dataSourceMetadataNode)
 	}
 
-	dataSourceFilterNode := dataSourceFilterToTreeNode(dataSource.Filter, dataSourceNode.Path)
+	dataSourceFilterNode := dataSourceFiltersToTreeNode(dataSource.Filter, dataSourceNode.Path)
 	if dataSourceFilterNode != nil {
 		children = append(children, dataSourceFilterNode)
 	}
@@ -913,6 +913,37 @@ func dataSourceMetadataToTreeNode(metadata *DataSourceMetadata, parentPath strin
 	metadataNode.Range.End = children[len(children)-1].Range.End
 
 	return metadataNode
+}
+
+func dataSourceFiltersToTreeNode(filters *DataSourceFilters, parentPath string) *TreeNode {
+	if filters == nil || len(filters.Filters) == 0 {
+		return nil
+	}
+
+	filtersNode := &TreeNode{
+		Label:         "filters",
+		Path:          fmt.Sprintf("%s/filters", parentPath),
+		Type:          TreeNodeTypeNonTerminal,
+		SchemaElement: filters,
+		Range: &source.Range{
+			Start: &filters.Filters[0].SourceMeta.Position,
+		},
+	}
+
+	children := []*TreeNode{}
+
+	for i, filter := range filters.Filters {
+		child := dataSourceFilterToTreeNode(filter, fmt.Sprintf("%s/%d", filtersNode.Path, i))
+		if child != nil {
+			children = append(children, child)
+		}
+	}
+
+	sortTreeNodes(children)
+	filtersNode.Children = children
+	filtersNode.Range.End = children[len(children)-1].Range.End
+
+	return filtersNode
 }
 
 func dataSourceFilterToTreeNode(filter *DataSourceFilter, parentPath string) *TreeNode {

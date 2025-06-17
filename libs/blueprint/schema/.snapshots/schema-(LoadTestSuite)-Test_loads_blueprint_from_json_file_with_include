@@ -2785,11 +2785,8 @@
             })
           })
         }),
-        Filter: (*schema.DataSourceFilter)({
-          Field: (*core.ScalarValue)(<nil>),
-          Operator: (*schema.DataSourceFilterOperatorWrapper)(<nil>),
-          Search: (*schema.DataSourceFilterSearch)(<nil>),
-          SourceMeta: (*source.Meta)(<nil>)
+        Filter: (*schema.DataSourceFilters)({
+          Filters: ([]*schema.DataSourceFilter) <nil>
         }),
         Exports: (*schema.DataSourceFieldExportMap)({
           Values: (map[string]*schema.DataSourceFieldExport) (len=3) {

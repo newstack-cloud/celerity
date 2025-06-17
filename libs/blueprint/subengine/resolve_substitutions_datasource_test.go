@@ -157,12 +157,16 @@ func partiallyResolvedDataSource() *provider.ResolvedDataSource {
 				},
 			},
 		},
-		Filter: &provider.ResolvedDataSourceFilter{
-			Field: &core.ScalarValue{
-				StringValue: &filterField,
-			},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorNotContains,
+		Filter: &provider.ResolvedDataSourceFilters{
+			Filters: []*provider.ResolvedDataSourceFilter{
+				{
+					Field: &core.ScalarValue{
+						StringValue: &filterField,
+					},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorNotContains,
+					},
+				},
 			},
 		},
 		Exports: map[string]*provider.ResolvedDataSourceFieldExport{

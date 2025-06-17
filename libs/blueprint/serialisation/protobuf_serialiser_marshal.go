@@ -234,7 +234,7 @@ func ToDataSourcePB(dataSource *schema.DataSource) (*schemapb.DataSource, error)
 		return nil, err
 	}
 
-	filterPB, err := toDataSourceFilterPB(dataSource.Filter)
+	filtersPB, err := toDataSourceFiltersPB(dataSource.Filter)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func ToDataSourcePB(dataSource *schema.DataSource) (*schemapb.DataSource, error)
 	return &schemapb.DataSource{
 		Type:        string(dataSource.Type.Value),
 		Metadata:    metadataPB,
-		Filter:      filterPB,
+		Filter:      filtersPB,
 		Exports:     exportsPB,
 		Description: descriptionPB,
 	}, nil
@@ -274,6 +274,24 @@ func toDataSourceMetadataPB(metadata *schema.DataSourceMetadata) (*schemapb.Data
 		Annotations: annotationsPB,
 		Custom:      customPB,
 	}, nil
+}
+
+func toDataSourceFiltersPB(filters *schema.DataSourceFilters) ([]*schemapb.DataSourceFilter, error) {
+	if filters == nil {
+		return nil, nil
+	}
+
+	filtersPB := make([]*schemapb.DataSourceFilter, len(filters.Filters))
+	for i, filter := range filters.Filters {
+		filterPB, err := toDataSourceFilterPB(filter)
+		if err != nil {
+			return nil, err
+		}
+
+		filtersPB[i] = filterPB
+	}
+
+	return filtersPB, nil
 }
 
 func toDataSourceFilterPB(filter *schema.DataSourceFilter) (*schemapb.DataSourceFilter, error) {

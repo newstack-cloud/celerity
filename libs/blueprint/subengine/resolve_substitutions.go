@@ -707,7 +707,7 @@ func (r *defaultSubstitutionResolver) resolveInDataSource(
 		return nil, finalErr
 	}
 
-	resolvedDataSourceFilter, err := r.resolveInDataSourceFilter(
+	resolvedDataSourceFilters, err := r.resolveInDataSourceFilters(
 		ctx,
 		dataSource.Filter,
 		resolveCtx,
@@ -731,7 +731,7 @@ func (r *defaultSubstitutionResolver) resolveInDataSource(
 		Type:               dataSource.Type,
 		Description:        resolvedDescription,
 		DataSourceMetadata: resolvedMetadata,
-		Filter:             resolvedDataSourceFilter,
+		Filter:             resolvedDataSourceFilters,
 		Exports:            resolvedDataSourceExports,
 	}
 
@@ -800,6 +800,47 @@ func (r *defaultSubstitutionResolver) resolveInDataSourceMetadata(
 	}
 
 	return resolvedDataSourceMetadata, nil
+}
+
+func (r *defaultSubstitutionResolver) resolveInDataSourceFilters(
+	ctx context.Context,
+	filters *schema.DataSourceFilters,
+	resolveCtx *resolveContext,
+) (*provider.ResolvedDataSourceFilters, error) {
+	if filters == nil {
+		return nil, nil
+	}
+
+	resolveOnDeployErrs := []*resolveOnDeployError{}
+
+	resolvedFilters := &provider.ResolvedDataSourceFilters{
+		Filters: []*provider.ResolvedDataSourceFilter{},
+	}
+
+	for i, filter := range filters.Filters {
+		filterPath := fmt.Sprintf("filters[%d]", i)
+		resolvedFilter, err := r.resolveInDataSourceFilter(
+			ctx,
+			filter,
+			resolveContextFromParent(filterPath, resolveCtx),
+		)
+		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)
+		if finalErr != nil {
+			return nil, finalErr
+		}
+
+		if resolvedFilter != nil {
+			resolvedFilters.Filters = append(resolvedFilters.Filters, resolvedFilter)
+		}
+	}
+
+	if len(resolveOnDeployErrs) > 0 {
+		return resolvedFilters, &resolveOnDeployErrors{
+			errors: resolveOnDeployErrs,
+		}
+	}
+
+	return resolvedFilters, nil
 }
 
 func (r *defaultSubstitutionResolver) resolveInDataSourceFilter(

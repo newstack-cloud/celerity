@@ -608,6 +608,20 @@ func errDataSourceMissingFilter(dataSourceName string, dataSourceMeta *source.Me
 	}
 }
 
+func errDataSourceEmptyFilter(dataSourceName string, dataSourceMeta *source.Meta) error {
+	line, col := source.PositionFromSourceMeta(dataSourceMeta)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidDataSource,
+		Err: fmt.Errorf(
+			"validation failed due to an empty filter in "+
+				"data source \"%s\", filters cannot be null or empty objects",
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errDataSourceMissingFilterField(dataSourceName string, dataSourceMeta *source.Meta) error {
 	line, col := source.PositionFromSourceMeta(dataSourceMeta)
 	return &errors.LoadError{

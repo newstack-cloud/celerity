@@ -84,7 +84,7 @@ message ResourceCondition {
 message DataSource {
     string type = 1;
     DataSourceMetadata metadata = 2;
-    DataSourceFilter filter = 3;
+    repeated DataSourceFilter filter = 3;
     map<string, DataSourceFieldExport> exports = 4;
     optional StringOrSubstitutions description = 5;
 }

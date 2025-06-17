@@ -2560,7 +2560,7 @@
             EndPosition: (*source.Position)(<nil>)
           })
         }),
-        Filter: (*schema.DataSourceFilter)(<nil>),
+        Filter: (*schema.DataSourceFilters)(<nil>),
         Exports: (*schema.DataSourceFieldExportMap)({
           Values: (map[string]*schema.DataSourceFieldExport) (len=3) {
             (string) (len=14) "securityGroups": (*schema.DataSourceFieldExport)({

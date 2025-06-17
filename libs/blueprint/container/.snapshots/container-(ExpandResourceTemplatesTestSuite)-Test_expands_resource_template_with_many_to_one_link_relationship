@@ -1146,43 +1146,57 @@
               EndPosition: (*source.Position)(<nil>)
             })
           }),
-          Filter: (*schema.DataSourceFilter)({
-            Field: (*core.ScalarValue)({
-              IntValue: (*int)(<nil>),
-              BoolValue: (*bool)(<nil>),
-              FloatValue: (*float64)(<nil>),
-              StringValue: (*string)((len=4) "tags"),
-              SourceMeta: (*source.Meta)({
-                Position: (source.Position) {
-                  Line: (int) 18,
-                  Column: (int) 14
-                },
-                EndPosition: (*source.Position)({
-                  Line: (int) 18,
-                  Column: (int) 18
-                })
-              })
-            }),
-            Operator: (*schema.DataSourceFilterOperatorWrapper)({
-              Value: (schema.DataSourceFilterOperator) (len=12) "not contains",
-              SourceMeta: (*source.Meta)({
-                Position: (source.Position) {
-                  Line: (int) 19,
-                  Column: (int) 17
-                },
-                EndPosition: (*source.Position)({
-                  Line: (int) 19,
-                  Column: (int) 31
-                })
-              })
-            }),
-            Search: (*schema.DataSourceFilterSearch)({
-              Values: ([]*substitutions.StringOrSubstitutions) (len=1) {
-                (*substitutions.StringOrSubstitutions)({
-                  Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-                    (*substitutions.StringOrSubstitution)({
-                      StringValue: (*string)((len=7) "service"),
-                      SubstitutionValue: (*substitutions.Substitution)(<nil>),
+          Filter: (*schema.DataSourceFilters)({
+            Filters: ([]*schema.DataSourceFilter) (len=1) {
+              (*schema.DataSourceFilter)({
+                Field: (*core.ScalarValue)({
+                  IntValue: (*int)(<nil>),
+                  BoolValue: (*bool)(<nil>),
+                  FloatValue: (*float64)(<nil>),
+                  StringValue: (*string)((len=4) "tags"),
+                  SourceMeta: (*source.Meta)({
+                    Position: (source.Position) {
+                      Line: (int) 18,
+                      Column: (int) 14
+                    },
+                    EndPosition: (*source.Position)({
+                      Line: (int) 18,
+                      Column: (int) 18
+                    })
+                  })
+                }),
+                Operator: (*schema.DataSourceFilterOperatorWrapper)({
+                  Value: (schema.DataSourceFilterOperator) (len=12) "not contains",
+                  SourceMeta: (*source.Meta)({
+                    Position: (source.Position) {
+                      Line: (int) 19,
+                      Column: (int) 17
+                    },
+                    EndPosition: (*source.Position)({
+                      Line: (int) 19,
+                      Column: (int) 31
+                    })
+                  })
+                }),
+                Search: (*schema.DataSourceFilterSearch)({
+                  Values: ([]*substitutions.StringOrSubstitutions) (len=1) {
+                    (*substitutions.StringOrSubstitutions)({
+                      Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                        (*substitutions.StringOrSubstitution)({
+                          StringValue: (*string)((len=7) "service"),
+                          SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                          SourceMeta: (*source.Meta)({
+                            Position: (source.Position) {
+                              Line: (int) 20,
+                              Column: (int) 15
+                            },
+                            EndPosition: (*source.Position)({
+                              Line: (int) 20,
+                              Column: (int) 22
+                            })
+                          })
+                        })
+                      },
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
                           Line: (int) 20,
@@ -1200,28 +1214,18 @@
                       Line: (int) 20,
                       Column: (int) 15
                     },
-                    EndPosition: (*source.Position)({
-                      Line: (int) 20,
-                      Column: (int) 22
-                    })
+                    EndPosition: (*source.Position)(<nil>)
                   })
+                }),
+                SourceMeta: (*source.Meta)({
+                  Position: (source.Position) {
+                    Line: (int) 18,
+                    Column: (int) 7
+                  },
+                  EndPosition: (*source.Position)(<nil>)
                 })
-              },
-              SourceMeta: (*source.Meta)({
-                Position: (source.Position) {
-                  Line: (int) 20,
-                  Column: (int) 15
-                },
-                EndPosition: (*source.Position)(<nil>)
               })
-            }),
-            SourceMeta: (*source.Meta)({
-              Position: (source.Position) {
-                Line: (int) 18,
-                Column: (int) 7
-              },
-              EndPosition: (*source.Position)(<nil>)
-            })
+            }
           }),
           Exports: (*schema.DataSourceFieldExportMap)({
             Values: (map[string]*schema.DataSourceFieldExport) (len=2) {

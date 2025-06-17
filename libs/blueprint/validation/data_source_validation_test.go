@@ -178,24 +178,28 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_field_is_empty(
 	aliasFor := "instanceConfigId"
 	dataSource := &schema.DataSource{
 		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
-		Filter: &schema.DataSourceFilter{
-			// Field omitted.
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorIn,
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
-							{
-								StringValue: &name1,
-							},
-						},
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					// Field omitted.
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorIn,
 					},
-					{
-						Values: []*substitutions.StringOrSubstitution{
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &name2,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &name1,
+									},
+								},
+							},
+							{
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &name2,
+									},
+								},
 							},
 						},
 					},
@@ -257,24 +261,28 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_data_source_typ
 
 	dataSource := &schema.DataSource{
 		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/unknown"},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &dataSourceField},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorIn,
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
-							{
-								StringValue: &name1,
-							},
-						},
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &dataSourceField},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorIn,
 					},
-					{
-						Values: []*substitutions.StringOrSubstitution{
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &name2,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &name1,
+									},
+								},
+							},
+							{
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &name2,
+									},
+								},
 							},
 						},
 					},
@@ -333,12 +341,16 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_search_i
 	aliasFor := "instanceConfigId"
 	dataSource := &schema.DataSource{
 		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &field},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorIn,
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &field},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorIn,
+					},
+					// Search omitted.
+				},
 			},
-			// Search omitted.
 		},
 		Exports: &schema.DataSourceFieldExportMap{
 			Values: map[string]*schema.DataSourceFieldExport{
@@ -393,17 +405,21 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_filter_operator
 	search := "Production"
 	dataSource := &schema.DataSource{
 		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
-		Filter: &schema.DataSourceFilter{
-			Field:    &core.ScalarValue{StringValue: &field},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				// Operator omitted.
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field:    &core.ScalarValue{StringValue: &field},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						// Operator omitted.
+					},
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &search,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &search,
+									},
+								},
 							},
 						},
 					},
@@ -464,17 +480,21 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_unsupported_fil
 	search := "Production"
 	dataSource := &schema.DataSource{
 		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &field},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperator("unknown"),
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &field},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperator("unknown"),
+					},
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &search,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &search,
+									},
+								},
 							},
 						},
 					},
@@ -535,17 +555,21 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_unsupported_exp
 	search := "Production"
 	dataSource := &schema.DataSource{
 		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &searchField},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorContains,
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &searchField},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorContains,
+					},
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &search,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &search,
+									},
+								},
 							},
 						},
 					},
@@ -605,17 +629,21 @@ func (s *DataSourceValidationTestSuite) Test_reports_errors_when_no_exported_fie
 
 	dataSource := &schema.DataSource{
 		Type: &schema.DataSourceTypeWrapper{Value: "aws/ec2/instance"},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &field},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorIn,
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &field},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorIn,
+					},
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &search,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &search,
+									},
+								},
 							},
 						},
 					},
@@ -823,7 +851,28 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_no_filter_fields
 func (s *DataSourceValidationTestSuite) Test_reports_error_when_filter_field_is_not_supported(c *C) {
 	dataSource := newTestValidDataSource()
 	field := "unknownField"
-	dataSource.Filter.Field = &core.ScalarValue{StringValue: &field}
+	searchValue := "Production"
+	dataSource.Filter = &schema.DataSourceFilters{
+		Filters: []*schema.DataSourceFilter{
+			{
+				Field: &core.ScalarValue{StringValue: &field},
+				Operator: &schema.DataSourceFilterOperatorWrapper{
+					Value: schema.DataSourceFilterOperatorIn,
+				},
+				Search: &schema.DataSourceFilterSearch{
+					Values: []*substitutions.StringOrSubstitutions{
+						{
+							Values: []*substitutions.StringOrSubstitution{
+								{
+									StringValue: &searchValue,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 
 	dataSourceMap := &schema.DataSourceMap{
 		Values: map[string]*schema.DataSource{
@@ -1106,18 +1155,22 @@ func newTestValidDataSource() *schema.DataSource {
 				},
 			},
 		},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &filterField},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorHasKey,
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &filterField},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorHasKey,
+					},
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								SubstitutionValue: &substitutions.Substitution{
-									StringValue: &search,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										SubstitutionValue: &substitutions.Substitution{
+											StringValue: &search,
+										},
+									},
 								},
 							},
 						},
@@ -1188,17 +1241,21 @@ func newTestInvalidDisplayNameDataSource() *schema.DataSource {
 	aliasFor := "instanceConfigId"
 	return &schema.DataSource{
 		Type: &schema.DataSourceTypeWrapper{Value: "aws/vpc"},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &filterField},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorHasKey,
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &filterField},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorHasKey,
+					},
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &search,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &search,
+									},
+								},
 							},
 						},
 					},
@@ -1256,17 +1313,21 @@ func newTestInvalidDescriptionDataSource() *schema.DataSource {
 				},
 			},
 		},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &filterField},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorHasKey,
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &filterField},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorHasKey,
+					},
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &search,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &search,
+									},
+								},
 							},
 						},
 					},
@@ -1294,36 +1355,40 @@ func newTestInvalidSearchValuesDataSource() *schema.DataSource {
 
 	return &schema.DataSource{
 		Type: &schema.DataSourceTypeWrapper{Value: "aws/vpc"},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &filterField},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorHasKey,
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &filterField},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorHasKey,
+					},
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &search,
-							},
-							{
-								// Object not supported for a search value.
-								SubstitutionValue: &substitutions.Substitution{
-									Function: &substitutions.SubstitutionFunctionExpr{
-										FunctionName: "object",
-										Arguments:    []*substitutions.SubstitutionFunctionArg{},
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &search,
 									},
-								},
-							},
-							{
-								// Any return type will produce warning diagnostic.
-								SubstitutionValue: &substitutions.Substitution{
-									Function: &substitutions.SubstitutionFunctionExpr{
-										FunctionName: "jsondecode",
-										Arguments: []*substitutions.SubstitutionFunctionArg{
-											{
-												Value: &substitutions.Substitution{
-													StringValue: &jsonToDecode,
+									{
+										// Object not supported for a search value.
+										SubstitutionValue: &substitutions.Substitution{
+											Function: &substitutions.SubstitutionFunctionExpr{
+												FunctionName: "object",
+												Arguments:    []*substitutions.SubstitutionFunctionArg{},
+											},
+										},
+									},
+									{
+										// Any return type will produce warning diagnostic.
+										SubstitutionValue: &substitutions.Substitution{
+											Function: &substitutions.SubstitutionFunctionExpr{
+												FunctionName: "jsondecode",
+												Arguments: []*substitutions.SubstitutionFunctionArg{
+													{
+														Value: &substitutions.Substitution{
+															StringValue: &jsonToDecode,
+														},
+													},
 												},
 											},
 										},
@@ -1369,17 +1434,21 @@ func newBaseVPCTestDataSource(dataSourceType string) *schema.DataSource {
 				},
 			},
 		},
-		Filter: &schema.DataSourceFilter{
-			Field: &core.ScalarValue{StringValue: &filterField},
-			Operator: &schema.DataSourceFilterOperatorWrapper{
-				Value: schema.DataSourceFilterOperatorHasKey,
-			},
-			Search: &schema.DataSourceFilterSearch{
-				Values: []*substitutions.StringOrSubstitutions{
-					{
-						Values: []*substitutions.StringOrSubstitution{
+		Filter: &schema.DataSourceFilters{
+			Filters: []*schema.DataSourceFilter{
+				{
+					Field: &core.ScalarValue{StringValue: &filterField},
+					Operator: &schema.DataSourceFilterOperatorWrapper{
+						Value: schema.DataSourceFilterOperatorHasKey,
+					},
+					Search: &schema.DataSourceFilterSearch{
+						Values: []*substitutions.StringOrSubstitutions{
 							{
-								StringValue: &search,
+								Values: []*substitutions.StringOrSubstitution{
+									{
+										StringValue: &search,
+									},
+								},
 							},
 						},
 					},

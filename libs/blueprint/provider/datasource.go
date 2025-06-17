@@ -57,7 +57,7 @@ type DataSourceValidateOutput struct {
 type ResolvedDataSource struct {
 	Type               *schema.DataSourceTypeWrapper             `json:"type"`
 	DataSourceMetadata *ResolvedDataSourceMetadata               `json:"metadata"`
-	Filter             *ResolvedDataSourceFilter                 `json:"filter"`
+	Filter             *ResolvedDataSourceFilters                `json:"filter"`
 	Exports            map[string]*ResolvedDataSourceFieldExport `json:"exports"`
 	Description        *core.MappingNode                         `json:"description,omitempty"`
 }
@@ -68,6 +68,38 @@ type ResolvedDataSourceMetadata struct {
 	DisplayName *core.MappingNode `json:"displayName"`
 	Annotations *core.MappingNode `json:"annotations,omitempty"`
 	Custom      *core.MappingNode `json:"custom,omitempty"`
+}
+
+// ResolvedDataSourceFilters provides a list of filters for which all ${..}
+// substitutions have been applied.
+type ResolvedDataSourceFilters struct {
+	Filters []*ResolvedDataSourceFilter `json:"filters"`
+}
+
+func (s *ResolvedDataSourceFilters) MarshalJSON() ([]byte, error) {
+	if len(s.Filters) == 1 {
+		return json.Marshal(s.Filters[0])
+	}
+
+	return json.Marshal(s.Filters)
+}
+
+func (s *ResolvedDataSourceFilters) UnmarshalJSON(data []byte) error {
+	singleFilter := ResolvedDataSourceFilter{}
+	err := json.Unmarshal(data, &singleFilter)
+	if err == nil {
+		s.Filters = []*ResolvedDataSourceFilter{&singleFilter}
+		return nil
+	}
+
+	multipleFilters := []*ResolvedDataSourceFilter{}
+	err = json.Unmarshal(data, &multipleFilters)
+	if err != nil {
+		return err
+	}
+
+	s.Filters = multipleFilters
+	return nil
 }
 
 // ResolvedDataSourceFilter provides a filter for which all ${..}

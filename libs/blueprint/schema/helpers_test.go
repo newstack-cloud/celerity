@@ -191,7 +191,7 @@ func NormaliseDataSource(dataSource *DataSource) {
 	}
 
 	NormaliseDataSourceMetadata(dataSource.DataSourceMetadata)
-	NormaliseDataSourceFilter(dataSource.Filter)
+	NormaliseDataSourceFilters(dataSource.Filter)
 
 	if dataSource.Exports != nil && dataSource.Exports.Values != nil {
 		for _, export := range dataSource.Exports.Values {
@@ -220,6 +220,18 @@ func NormaliseDataSourceMetadata(dataSourceMetadata *DataSourceMetadata) {
 
 	NormaliseMappingNode(dataSourceMetadata.Custom)
 	dataSourceMetadata.SourceMeta = nil
+}
+
+// NormaliseDataSourceFilters strips the source meta information from a data source filter
+// to make it comparable in a way that ignores line and column numbers.
+func NormaliseDataSourceFilters(filters *DataSourceFilters) {
+	if filters == nil {
+		return
+	}
+
+	for _, filter := range filters.Filters {
+		NormaliseDataSourceFilter(filter)
+	}
 }
 
 // NormaliseDataSourceFilter strips the source meta information from a data source filter

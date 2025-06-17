@@ -251,7 +251,7 @@ func FromDataSourcePB(dataSourcePB *schemapb.DataSource) (*schema.DataSource, er
 		return nil, err
 	}
 
-	filter, err := fromDataSourceFilterPB(dataSourcePB.Filter)
+	filter, err := fromDataSourceFiltersPB(dataSourcePB.Filter)
 	if err != nil {
 		return nil, err
 	}
@@ -290,6 +290,26 @@ func fromDataSourceMetadataPB(metadataPB *schemapb.DataSourceMetadata) (*schema.
 		DisplayName: displayName,
 		Annotations: annotations,
 		Custom:      custom,
+	}, nil
+}
+
+func fromDataSourceFiltersPB(
+	filtersPB []*schemapb.DataSourceFilter,
+) (*schema.DataSourceFilters, error) {
+	if filtersPB == nil {
+		return nil, nil
+	}
+	filters := make([]*schema.DataSourceFilter, len(filtersPB))
+	for i, filterPB := range filtersPB {
+		filter, err := fromDataSourceFilterPB(filterPB)
+		if err != nil {
+			return nil, err
+		}
+
+		filters[i] = filter
+	}
+	return &schema.DataSourceFilters{
+		Filters: filters,
 	}, nil
 }
 

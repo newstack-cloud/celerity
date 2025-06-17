@@ -20,7 +20,7 @@ import (
 type DataSource struct {
 	Type               *DataSourceTypeWrapper               `yaml:"type" json:"type"`
 	DataSourceMetadata *DataSourceMetadata                  `yaml:"metadata" json:"metadata"`
-	Filter             *DataSourceFilter                    `yaml:"filter" json:"filter"`
+	Filter             *DataSourceFilters                   `yaml:"filter" json:"filter"`
 	Exports            *DataSourceFieldExportMap            `yaml:"exports" json:"exports"`
 	Description        *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 	SourceMeta         *source.Meta                         `yaml:"-" json:"-"`
@@ -93,7 +93,7 @@ func (s *DataSource) FromJSONNode(
 		return err
 	}
 
-	s.Filter = &DataSourceFilter{}
+	s.Filter = &DataSourceFilters{}
 	err = bpcore.UnpackValueFromJSONMapNode(
 		nodeMap,
 		"filter",
@@ -282,6 +282,113 @@ func (m *DataSourceFieldExportMap) FromJSONNode(
 	}
 
 	return nil
+}
+
+// DataSourceFilters provides a slice of one or more filters
+// parsed from a mapping for a single filter or a sequence of filters.
+type DataSourceFilters struct {
+	Filters []*DataSourceFilter `yaml:"filters" json:"filters"`
+}
+
+func (s *DataSourceFilters) MarshalYAML() (interface{}, error) {
+	// Export as a single value if there is only one value,
+	// in a similar way to how the user would define a single filter.
+	if len(s.Filters) == 1 {
+		return s.Filters[0], nil
+	}
+
+	return s.Filters, nil
+}
+
+func (s *DataSourceFilters) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind == yaml.SequenceNode {
+		filters := []*DataSourceFilter{}
+		for _, node := range value.Content {
+			filter := &DataSourceFilter{}
+			err := filter.UnmarshalYAML(node)
+			if err != nil {
+				return wrapErrorWithLineInfo(err, node)
+			}
+			filters = append(filters, filter)
+		}
+		s.Filters = filters
+	}
+
+	singleFilter := &DataSourceFilter{}
+	err := singleFilter.UnmarshalYAML(value)
+	if err != nil {
+		return wrapErrorWithLineInfo(err, value)
+	}
+
+	s.Filters = []*DataSourceFilter{singleFilter}
+	return nil
+}
+
+func (s *DataSourceFilters) MarshalJSON() ([]byte, error) {
+	if len(s.Filters) == 1 {
+		return json.Marshal(s.Filters[0])
+	}
+
+	return json.Marshal(s.Filters)
+}
+
+func (s *DataSourceFilters) UnmarshalJSON(data []byte) error {
+	singleFilter := DataSourceFilter{}
+	err := json.Unmarshal(data, &singleFilter)
+	if err == nil {
+		s.Filters = []*DataSourceFilter{&singleFilter}
+		return nil
+	}
+
+	multipleFilters := []*DataSourceFilter{}
+	err = json.Unmarshal(data, &multipleFilters)
+	if err != nil {
+		return err
+	}
+
+	s.Filters = multipleFilters
+	return nil
+}
+
+func (f *DataSourceFilters) FromJSONNode(node *json.Node, linePositions []int, parentPath string) error {
+	nodeList, err := f.deriveJSONNodeList(node, linePositions, parentPath)
+	if err != nil {
+		return err
+	}
+
+	for i, node := range nodeList {
+		filter := &DataSourceFilter{}
+		key := fmt.Sprintf("%d", i)
+		itemPath := bpcore.CreateJSONNodePath(key, parentPath, false)
+		err := filter.FromJSONNode(&node, linePositions, itemPath)
+		if err != nil {
+			return err
+		}
+		f.Filters = append(f.Filters, filter)
+	}
+
+	return nil
+}
+
+func (f *DataSourceFilters) deriveJSONNodeList(
+	node *json.Node,
+	linePositions []int,
+	parentPath string,
+) ([]json.Node, error) {
+	// Filter can take a single filter definition or an array of filter
+	// definitions.
+	_, ok := node.Value.(map[string]json.Node)
+	if ok {
+		return []json.Node{*node}, nil
+	}
+
+	nodeList, ok := node.Value.([]json.Node)
+	if !ok {
+		position := source.PositionFromJSONNode(node, linePositions)
+		return nil, errInvalidArrayOrString(&position, parentPath)
+	}
+
+	return nodeList, nil
 }
 
 // DataSourceFilter provides the definition of a filter
