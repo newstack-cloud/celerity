@@ -66,6 +66,15 @@ type DataSourceDefinition struct {
 		input *provider.DataSourceGetFilterFieldsInput,
 	) (*provider.DataSourceGetFilterFieldsOutput, error)
 
+	// A map of filter field names to their descriptions.
+	// As filter fields don't have to be attributes in the data source schema,
+	// this map is used to make sure that there are descriptions for all filter fields.
+	// Filter fields that are in the schema will be marked as "filterable" in registry docs,
+	// however, it's still worth providing descriptions for them as a part of this map,
+	// this will usually display as a section in the documentation of filter field
+	// name followed by its description.
+	FilterFieldDescriptions map[string]*provider.DataSourceFilterFieldDescription
+
 	// The function that deals with applying filters and retrieving the requested
 	// data source from the upstream provider.
 	FetchFunc func(
@@ -148,7 +157,8 @@ func (d *DataSourceDefinition) GetFilterFields(
 	}
 
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: d.FilterFields,
+		Fields:            d.FilterFields,
+		FieldDescriptions: d.FilterFieldDescriptions,
 	}, nil
 }
 

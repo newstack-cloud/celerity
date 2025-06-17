@@ -798,6 +798,18 @@ message ResolvedDataSourceFilterSearch {
 // for a data source.
 message DataSourceFilterFields {
     repeated string fields = 1;
+    map<string, DataSourceFilterFieldDescription> descriptions = 2;
+}
+
+// DataSourceFilterFieldDescription provides a description for a data source filter field
+// that can be used for documentation and tooling.
+message DataSourceFilterFieldDescription {
+    // A human-readable description for the data source filter field
+    // without any formatting.
+    string description = 1;
+    // A human-readable description for the data source filter field
+    // that is formatted with markdown.
+    string formatted_description = 2;
 }
 
 // ResolvedDataSourceFieldExport provides a field export for which all ${..}

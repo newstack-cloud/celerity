@@ -249,8 +249,22 @@ func fromPBDataSourceFilterFields(
 		return nil, nil
 	}
 
+	descriptions := map[string]*provider.DataSourceFilterFieldDescription{}
+	for fieldName, pbDescription := range pbFilterFields.Descriptions {
+		if pbDescription != nil {
+			descriptions[fieldName] = &provider.DataSourceFilterFieldDescription{
+				PlainTextDescription: pbDescription.Description,
+				FormattedDescription: pbDescription.FormattedDescription,
+			}
+		}
+	}
+	if len(descriptions) == 0 {
+		descriptions = nil
+	}
+
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: pbFilterFields.Fields,
+		Fields:            pbFilterFields.Fields,
+		FieldDescriptions: descriptions,
 	}, nil
 }
 

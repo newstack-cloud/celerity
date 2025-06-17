@@ -922,10 +922,19 @@ func toPBGetDataSourceFilterFieldsResponse(
 		}
 	}
 
+	pbDescriptions := map[string]*providerserverv1.DataSourceFilterFieldDescription{}
+	for fieldName, description := range output.FieldDescriptions {
+		pbDescriptions[fieldName] = &providerserverv1.DataSourceFilterFieldDescription{
+			Description:          description.PlainTextDescription,
+			FormattedDescription: description.FormattedDescription,
+		}
+	}
+
 	return &providerserverv1.DataSourceFilterFieldsResponse{
 		Response: &providerserverv1.DataSourceFilterFieldsResponse_FilterFields{
 			FilterFields: &providerserverv1.DataSourceFilterFields{
-				Fields: output.Fields,
+				Fields:       output.Fields,
+				Descriptions: pbDescriptions,
 			},
 		},
 	}
