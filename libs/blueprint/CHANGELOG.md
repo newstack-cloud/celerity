@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2025-06-17
+
+### Added
+
+- Adds support for multiple data source filters as per the latest updates to the blueprint specification. The specification now allows for multiple filters that will be combined together using a logical AND operation to filter resources in a data source.
+
 ## [0.18.0] - 2025-06-11
 
 ### Added
