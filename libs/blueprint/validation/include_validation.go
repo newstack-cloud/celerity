@@ -46,6 +46,7 @@ func ValidateInclude(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
 	var errs []error
@@ -66,6 +67,7 @@ func ValidateInclude(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, includePathDiagnostics...)
 	if err != nil {
@@ -85,6 +87,7 @@ func ValidateInclude(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, variablesDiagnostics...)
 	if err != nil {
@@ -101,6 +104,7 @@ func ValidateInclude(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, includeDescriptionDiagnostics...)
 	if err != nil {
@@ -118,6 +122,7 @@ func ValidateInclude(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, metadataDiagnostics...)
 	if err != nil {
@@ -140,6 +145,7 @@ func validateIncludePath(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*core.Diagnostic, error) {
 	if includeSchema.Path == nil {
 		return []*core.Diagnostic{}, nil
@@ -162,6 +168,7 @@ func validateIncludePath(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)

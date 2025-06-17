@@ -62,6 +62,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_warnings_for_substitution
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(diagnostics, HasLen, 1)
@@ -118,6 +119,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_warnings_for_substitution
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(diagnostics, HasLen, 1)
@@ -174,6 +176,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_warnings_for_substitution
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(diagnostics, HasLen, 1)
@@ -234,6 +237,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_interpol
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -296,6 +300,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_interpol
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -342,6 +347,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_value_no
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -388,6 +394,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_integer_value_n
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -434,6 +441,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_float_value_not
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -496,6 +504,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_warnings_for_substitution
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(diagnostics, HasLen, 2)
@@ -560,6 +569,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_warnings_for_substitution
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(diagnostics, HasLen, 2)
@@ -628,6 +638,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_interpol
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -690,6 +701,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_interpol
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -736,6 +748,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_integer_value_l
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -775,6 +788,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_integer_value_g
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -814,6 +828,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_float_value_les
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -853,6 +868,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_float_value_gre
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -919,6 +935,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_warnings_for_substitution
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(diagnostics, HasLen, 1)
@@ -963,6 +980,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_value_th
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1029,6 +1047,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_warnings_for_substitution
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(diagnostics, HasLen, 2)
@@ -1081,6 +1100,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_value_th
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1129,6 +1149,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_value_th
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1179,6 +1200,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_array_value_tha
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1235,6 +1257,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_array_value_tha
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1285,6 +1308,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_map_value_that_
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1340,6 +1364,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_map_value_that_
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1386,6 +1411,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_string_value_cu
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1431,6 +1457,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_int_value_custo
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1476,6 +1503,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_float_value_cus
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -1521,6 +1549,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_boolean_value_c
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)

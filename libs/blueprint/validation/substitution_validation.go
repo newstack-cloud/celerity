@@ -48,6 +48,7 @@ func ValidateSubstitution(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) (string, []*bpcore.Diagnostic, error) {
 
 	diagnostics := []*bpcore.Diagnostic{}
@@ -68,6 +69,7 @@ func ValidateSubstitution(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 	}
 
@@ -137,11 +139,14 @@ func ValidateSubstitution(
 
 	if sub.DataSourceProperty != nil {
 		return validateDataSourcePropertySubstitution(
+			ctx,
 			sub.DataSourceProperty,
 			bpSchema,
 			usedIn,
 			usedInPropertyPath,
 			refChainCollector,
+			dataSourceRegistry,
+			params,
 		)
 	}
 
@@ -717,11 +722,14 @@ func isComplexResourceDefinitionsSchemaType(schemaType provider.ResourceDefiniti
 }
 
 func validateDataSourcePropertySubstitution(
+	ctx context.Context,
 	subDataSourceProp *substitutions.SubstitutionDataSourceProperty,
 	bpSchema *schema.Blueprint,
 	usedIn string,
 	usedInPropertyPath string,
 	refChainCollector refgraph.RefChainCollector,
+	dataSourceRegistry provider.DataSourceRegistry,
+	params bpcore.BlueprintParams,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	dataSourceName := subDataSourceProp.DataSourceName
@@ -734,11 +742,47 @@ func validateDataSourcePropertySubstitution(
 		return "", diagnostics, errSubDataSourceNotFound(dataSourceName, subDataSourceProp.SourceMeta)
 	}
 
+	dataSourceType := getDataSourceType(dataSourceSchema)
+	providerNamespace := provider.ExtractProviderFromItemType(dataSourceType)
+	specDefOutput, err := dataSourceRegistry.GetSpecDefinition(
+		ctx,
+		dataSourceType,
+		&provider.DataSourceGetSpecDefinitionInput{
+			ProviderContext: provider.NewProviderContextFromParams(
+				providerNamespace,
+				params,
+			),
+		},
+	)
+	if err != nil {
+		return "", diagnostics, errDataSourceTypeMissingSpecDefinition(
+			subDataSourceProp.DataSourceName,
+			dataSourceType,
+			/* inSubstitution */ true,
+			subDataSourceProp.SourceMeta,
+			"failed to load spec definition",
+		)
+	}
+
+	if specDefOutput.SpecDefinition == nil {
+		return "", diagnostics, errDataSourceTypeMissingSpecDefinition(
+			subDataSourceProp.DataSourceName,
+			dataSourceType,
+			/* inSubstitution */ true,
+			subDataSourceProp.SourceMeta,
+			"spec definition is nil",
+		)
+	}
+
 	if usedIn == bpcore.DataSourceElementID(dataSourceName) {
 		return "", diagnostics, errSubDataSourceSelfReference(dataSourceName, subDataSourceProp.SourceMeta)
 	}
 
-	resolveType, err := validateDataSourcePropertyField(subDataSourceProp, dataSourceSchema)
+	resolveType, err := validateDataSourcePropertyField(
+		subDataSourceProp,
+		dataSourceSchema,
+		specDefOutput.SpecDefinition,
+	)
 	if err != nil {
 		return "", diagnostics, err
 	}
@@ -758,6 +802,7 @@ func validateDataSourcePropertySubstitution(
 func validateDataSourcePropertyField(
 	subDataSourceProp *substitutions.SubstitutionDataSourceProperty,
 	dataSourceSchema *schema.DataSource,
+	specDefinition *provider.DataSourceSpecDefinition,
 ) (string, error) {
 	if dataSourceSchema.Exports == nil {
 		return "", errSubDataSourceNoExportedFields(
@@ -767,12 +812,28 @@ func validateDataSourcePropertyField(
 	}
 
 	field, hasField := dataSourceSchema.Exports.Values[subDataSourceProp.FieldName]
-	if !hasField {
+	if !hasField && !dataSourceSchema.Exports.ExportAll {
 		return "", errSubDataSourceFieldNotExported(
 			subDataSourceProp.DataSourceName,
 			subDataSourceProp.FieldName,
 			subDataSourceProp.SourceMeta,
 		)
+	}
+
+	if dataSourceSchema.Exports.ExportAll {
+		// When export all is set, we compare with the data source spec definition
+		// instead of an exports block in a data source blueprint element.
+		field, hasField = getFieldInDataSourceSpecDefinition(
+			subDataSourceProp.FieldName,
+			specDefinition,
+		)
+		if !hasField {
+			return "", errSubDataSourceFieldNotExported(
+				subDataSourceProp.DataSourceName,
+				subDataSourceProp.FieldName,
+				subDataSourceProp.SourceMeta,
+			)
+		}
 	}
 
 	if field.Type == nil {
@@ -794,6 +855,28 @@ func validateDataSourcePropertyField(
 	}
 
 	return subDataSourceFieldType(field.Type.Value), nil
+}
+
+func getFieldInDataSourceSpecDefinition(
+	fieldName string,
+	specDefinition *provider.DataSourceSpecDefinition,
+) (*schema.DataSourceFieldExport, bool) {
+	if len(specDefinition.Fields) == 0 {
+		return nil, false
+	}
+
+	fieldSchema, hasFieldSchema := specDefinition.Fields[fieldName]
+	if !hasFieldSchema || fieldSchema.Type == "" {
+		// An empty type is not valid, so we treat it as if the field
+		// was not found in the spec definition.
+		return nil, false
+	}
+
+	return &schema.DataSourceFieldExport{
+		Type: &schema.DataSourceFieldTypeWrapper{
+			Value: schema.DataSourceFieldType(fieldSchema.Type),
+		},
+	}, true
 }
 
 func validateChildSubstitution(
@@ -840,6 +923,7 @@ func validateFunctionSubstitution(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	funcName := string(subFunc.FunctionName)
@@ -886,6 +970,7 @@ func validateFunctionSubstitution(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 		diagnostics = append(diagnostics, argDiagnostics...)
 		if err != nil {
@@ -1108,6 +1193,7 @@ func validateSubFuncArgument(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) (string, []*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if arg == nil {
@@ -1134,6 +1220,7 @@ func validateSubFuncArgument(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 }
 
@@ -1299,4 +1386,12 @@ func subFuncUnionTypeToString(unionTypes []function.ValueTypeDefinition) string 
 	}
 	sb.WriteString(")")
 	return sb.String()
+}
+
+func getDataSourceType(dataSource *schema.DataSource) string {
+	if dataSource.Type == nil || dataSource.Type.Value == "" {
+		return ""
+	}
+
+	return dataSource.Type.Value
 }

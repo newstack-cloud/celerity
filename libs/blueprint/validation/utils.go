@@ -110,6 +110,7 @@ func validateDescription(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
 
@@ -133,6 +134,7 @@ func validateDescription(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)

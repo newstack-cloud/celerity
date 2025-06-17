@@ -30,6 +30,7 @@ func ValidateExport(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	err := validateExportType(exportSchema.Type, exportName, exportMap)
@@ -73,6 +74,7 @@ func ValidateExport(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, subDiagnostics...)
 	if err != nil {
@@ -120,6 +122,7 @@ func ValidateExport(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, descriptionDiagnostics...)
 	if err != nil {

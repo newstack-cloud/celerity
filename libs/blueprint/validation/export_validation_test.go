@@ -16,9 +16,10 @@ import (
 )
 
 type ExportValidationTestSuite struct {
-	funcRegistry      provider.FunctionRegistry
-	refChainCollector refgraph.RefChainCollector
-	resourceRegistry  resourcehelpers.Registry
+	funcRegistry       provider.FunctionRegistry
+	refChainCollector  refgraph.RefChainCollector
+	resourceRegistry   resourcehelpers.Registry
+	dataSourceRegistry provider.DataSourceRegistry
 }
 
 var _ = Suite(&ExportValidationTestSuite{})
@@ -38,6 +39,14 @@ func (s *ExportValidationTestSuite) SetUpTest(c *C) {
 	s.resourceRegistry = &internal.ResourceRegistryMock{
 		Resources: map[string]provider.Resource{
 			"aws/ecs/service": newTestECSServiceResource(),
+		},
+	}
+	s.dataSourceRegistry = &internal.DataSourceRegistryMock{
+		DataSources: map[string]provider.DataSource{
+			"aws/ec2/instance": newTestEC2InstanceDataSource(),
+			"aws/vpc":          newTestVPCDataSource(),
+			"aws/vpc2":         newTestVPC2DataSource(),
+			"aws/vpc3":         newTestVPC3DataSource(),
 		},
 	}
 }
@@ -87,6 +96,7 @@ func (s *ExportValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_exp
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, IsNil)
@@ -138,6 +148,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_unsupported_expor
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -197,6 +208,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_empty_export_fiel
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -243,6 +255,7 @@ func (s *ExportValidationTestSuite) Test_reports_error_when_an_incorrect_referen
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)

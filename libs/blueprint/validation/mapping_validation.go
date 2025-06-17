@@ -30,6 +30,7 @@ func ValidateMappingNode(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if mappingNode == nil || mappingNodeNotSet(mappingNode) {
 		return nil, nil
@@ -48,6 +49,7 @@ func ValidateMappingNode(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 }
 
@@ -64,6 +66,7 @@ func validateMappingNode(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -101,6 +104,7 @@ func validateMappingNode(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 	}
 
@@ -118,6 +122,7 @@ func validateMappingNode(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 	}
 
@@ -134,6 +139,7 @@ func validateMappingNode(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 	}
 
@@ -153,6 +159,7 @@ func validateMappingNodeFields(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	var errs []error
@@ -170,6 +177,7 @@ func validateMappingNodeFields(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 		if err != nil {
 			errs = append(errs, err)
@@ -196,6 +204,7 @@ func validateMappingNodeItems(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	var errs []error
@@ -213,6 +222,7 @@ func validateMappingNodeItems(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 		if err != nil {
 			errs = append(errs, err)
@@ -238,6 +248,7 @@ func validateMappingNodeStringWithSubstitutions(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	var errs []error
@@ -257,6 +268,7 @@ func validateMappingNodeStringWithSubstitutions(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)

@@ -445,11 +445,11 @@
           Value: (string) (len=16) "celerity/handler",
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 87,
+              Line: (int) 94,
               Column: (int) 11
             },
             EndPosition: (*source.Position)({
-              Line: (int) 87,
+              Line: (int) 94,
               Column: (int) 29
             })
           })
@@ -463,11 +463,11 @@
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 89,
+                    Line: (int) 96,
                     Column: (int) 20
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 89,
+                    Line: (int) 96,
                     Column: (int) 30
                   })
                 })
@@ -475,11 +475,11 @@
             },
             SourceMeta: (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 89,
+                Line: (int) 96,
                 Column: (int) 20
               },
               EndPosition: (*source.Position)({
-                Line: (int) 89,
+                Line: (int) 96,
                 Column: (int) 30
               })
             })
@@ -493,11 +493,11 @@
                     SubstitutionValue: (*substitutions.Substitution)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 94,
+                        Line: (int) 101,
                         Column: (int) 21
                       },
                       EndPosition: (*source.Position)({
-                        Line: (int) 94,
+                        Line: (int) 101,
                         Column: (int) 25
                       })
                     })
@@ -505,11 +505,11 @@
                 },
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 94,
+                    Line: (int) 101,
                     Column: (int) 21
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 94,
+                    Line: (int) 101,
                     Column: (int) 25
                   })
                 })
@@ -521,11 +521,11 @@
                     SubstitutionValue: (*substitutions.Substitution)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 98,
+                        Line: (int) 105,
                         Column: (int) 37
                       },
                       EndPosition: (*source.Position)({
-                        Line: (int) 98,
+                        Line: (int) 105,
                         Column: (int) 55
                       })
                     })
@@ -533,11 +533,11 @@
                 },
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 98,
+                    Line: (int) 105,
                     Column: (int) 37
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 98,
+                    Line: (int) 105,
                     Column: (int) 55
                   })
                 })
@@ -549,11 +549,11 @@
                     SubstitutionValue: (*substitutions.Substitution)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 100,
+                        Line: (int) 107,
                         Column: (int) 47
                       },
                       EndPosition: (*source.Position)({
-                        Line: (int) 100,
+                        Line: (int) 107,
                         Column: (int) 49
                       })
                     })
@@ -561,11 +561,11 @@
                 },
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 100,
+                    Line: (int) 107,
                     Column: (int) 47
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 100,
+                    Line: (int) 107,
                     Column: (int) 49
                   })
                 })
@@ -577,11 +577,11 @@
                     SubstitutionValue: (*substitutions.Substitution)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 99,
+                        Line: (int) 106,
                         Column: (int) 51
                       },
                       EndPosition: (*source.Position)({
-                        Line: (int) 99,
+                        Line: (int) 106,
                         Column: (int) 62
                       })
                     })
@@ -589,11 +589,11 @@
                 },
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 99,
+                    Line: (int) 106,
                     Column: (int) 51
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 99,
+                    Line: (int) 106,
                     Column: (int) 62
                   })
                 })
@@ -602,28 +602,28 @@
             SourceMeta: (map[string]*source.Meta) (len=4) {
               (string) (len=10) "authoriser": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 94,
+                  Line: (int) 101,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
               }),
               (string) (len=26) "authoriser.identity.header": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 98,
+                  Line: (int) 105,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
               }),
               (string) (len=36) "authoriser.identity.reauthoriseEvery": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 100,
+                  Line: (int) 107,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
               }),
               (string) (len=40) "authoriser.identity.validationExpression": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 99,
+                  Line: (int) 106,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -637,7 +637,7 @@
             SourceMeta: (map[string]*source.Meta) (len=1) {
               (string) (len=3) "app": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 102,
+                  Line: (int) 109,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -647,7 +647,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 89,
+              Line: (int) 96,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -668,11 +668,11 @@
                 StringValue: (*string)((len=19) "handlers.Authoriser"),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 104,
+                    Line: (int) 111,
                     Column: (int) 16
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 104,
+                    Line: (int) 111,
                     Column: (int) 35
                   })
                 })
@@ -682,7 +682,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 104,
+                  Line: (int) 111,
                   Column: (int) 16
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -697,11 +697,11 @@
                 StringValue: (*string)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 105,
+                    Line: (int) 112,
                     Column: (int) 16
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 105,
+                    Line: (int) 112,
                     Column: (int) 19
                   })
                 })
@@ -711,7 +711,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 105,
+                  Line: (int) 112,
                   Column: (int) 16
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -723,7 +723,7 @@
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 104,
+              Line: (int) 111,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -731,14 +731,14 @@
           FieldsSourceMeta: (map[string]*source.Meta) (len=2) {
             (string) (len=7) "handler": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 104,
+                Line: (int) 111,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
             }),
             (string) (len=7) "timeout": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 105,
+                Line: (int) 112,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
@@ -747,7 +747,7 @@
         }),
         SourceMeta: (*source.Meta)({
           Position: (source.Position) {
-            Line: (int) 87,
+            Line: (int) 94,
             Column: (int) 5
           },
           EndPosition: (*source.Position)(<nil>)
@@ -758,11 +758,11 @@
           Value: (string) (len=16) "celerity/handler",
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 108,
+              Line: (int) 115,
               Column: (int) 11
             },
             EndPosition: (*source.Position)({
-              Line: (int) 108,
+              Line: (int) 115,
               Column: (int) 29
             })
           })
@@ -776,11 +776,11 @@
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 110,
+                    Line: (int) 117,
                     Column: (int) 20
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 110,
+                    Line: (int) 117,
                     Column: (int) 38
                   })
                 })
@@ -788,11 +788,11 @@
             },
             SourceMeta: (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 110,
+                Line: (int) 117,
                 Column: (int) 20
               },
               EndPosition: (*source.Position)({
-                Line: (int) 110,
+                Line: (int) 117,
                 Column: (int) 38
               })
             })
@@ -805,7 +805,7 @@
             SourceMeta: (map[string]*source.Meta) (len=1) {
               (string) (len=3) "app": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 112,
+                  Line: (int) 119,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -815,7 +815,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 110,
+              Line: (int) 117,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -853,11 +853,11 @@
                             },
                             SourceMeta: (*source.Meta)({
                               Position: (source.Position) {
-                                Line: (int) 119,
+                                Line: (int) 126,
                                 Column: (int) 23
                               },
                               EndPosition: (*source.Position)({
-                                Line: (int) 119,
+                                Line: (int) 126,
                                 Column: (int) 33
                               })
                             })
@@ -869,22 +869,22 @@
                           BoolValue: (*bool)(<nil>),
                           SourceMeta: (*source.Meta)({
                             Position: (source.Position) {
-                              Line: (int) 119,
+                              Line: (int) 126,
                               Column: (int) 23
                             },
                             EndPosition: (*source.Position)({
-                              Line: (int) 119,
+                              Line: (int) 126,
                               Column: (int) 33
                             })
                           })
                         }),
                         SourceMeta: (*source.Meta)({
                           Position: (source.Position) {
-                            Line: (int) 119,
+                            Line: (int) 126,
                             Column: (int) 21
                           },
                           EndPosition: (*source.Position)({
-                            Line: (int) 119,
+                            Line: (int) 126,
                             Column: (int) 34
                           })
                         })
@@ -892,18 +892,18 @@
                     },
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 119,
+                        Line: (int) 126,
                         Column: (int) 21
                       },
                       EndPosition: (*source.Position)({
-                        Line: (int) 119,
+                        Line: (int) 126,
                         Column: (int) 34
                       })
                     })
                   }),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 119,
+                      Line: (int) 126,
                       Column: (int) 21
                     },
                     EndPosition: (*source.Position)(<nil>)
@@ -918,11 +918,11 @@
                     StringValue: (*string)((len=3) "get"),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 117,
+                        Line: (int) 124,
                         Column: (int) 17
                       },
                       EndPosition: (*source.Position)({
-                        Line: (int) 117,
+                        Line: (int) 124,
                         Column: (int) 20
                       })
                     })
@@ -932,7 +932,7 @@
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 117,
+                      Line: (int) 124,
                       Column: (int) 17
                     },
                     EndPosition: (*source.Position)(<nil>)
@@ -947,11 +947,11 @@
                     StringValue: (*string)((len=7) "/orders"),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 118,
+                        Line: (int) 125,
                         Column: (int) 15
                       },
                       EndPosition: (*source.Position)({
-                        Line: (int) 118,
+                        Line: (int) 125,
                         Column: (int) 22
                       })
                     })
@@ -961,7 +961,7 @@
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 118,
+                      Line: (int) 125,
                       Column: (int) 15
                     },
                     EndPosition: (*source.Position)(<nil>)
@@ -973,7 +973,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 117,
+                  Line: (int) 124,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -981,21 +981,21 @@
               FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
                 (string) (len=10) "authoriser": (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 119,
+                    Line: (int) 126,
                     Column: (int) 9
                   },
                   EndPosition: (*source.Position)(<nil>)
                 }),
                 (string) (len=6) "method": (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 117,
+                    Line: (int) 124,
                     Column: (int) 9
                   },
                   EndPosition: (*source.Position)(<nil>)
                 }),
                 (string) (len=4) "path": (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 118,
+                    Line: (int) 125,
                     Column: (int) 9
                   },
                   EndPosition: (*source.Position)(<nil>)
@@ -1010,11 +1010,11 @@
                 StringValue: (*string)((len=18) "handlers.GetOrders"),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 114,
+                    Line: (int) 121,
                     Column: (int) 16
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 114,
+                    Line: (int) 121,
                     Column: (int) 34
                   })
                 })
@@ -1024,7 +1024,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 114,
+                  Line: (int) 121,
                   Column: (int) 16
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1039,11 +1039,11 @@
                 StringValue: (*string)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 115,
+                    Line: (int) 122,
                     Column: (int) 16
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 115,
+                    Line: (int) 122,
                     Column: (int) 19
                   })
                 })
@@ -1053,7 +1053,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 115,
+                  Line: (int) 122,
                   Column: (int) 16
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1065,7 +1065,7 @@
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 114,
+              Line: (int) 121,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -1073,21 +1073,21 @@
           FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
             (string) (len=8) "endpoint": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 116,
+                Line: (int) 123,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
             }),
             (string) (len=7) "handler": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 114,
+                Line: (int) 121,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
             }),
             (string) (len=7) "timeout": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 115,
+                Line: (int) 122,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
@@ -1096,7 +1096,7 @@
         }),
         SourceMeta: (*source.Meta)({
           Position: (source.Position) {
-            Line: (int) 108,
+            Line: (int) 115,
             Column: (int) 5
           },
           EndPosition: (*source.Position)(<nil>)
@@ -1107,11 +1107,11 @@
           Value: (string) (len=12) "celerity/api",
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 40,
+              Line: (int) 47,
               Column: (int) 11
             },
             EndPosition: (*source.Position)({
-              Line: (int) 40,
+              Line: (int) 47,
               Column: (int) 25
             })
           })
@@ -1125,11 +1125,11 @@
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 44,
+                    Line: (int) 51,
                     Column: (int) 20
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 44,
+                    Line: (int) 51,
                     Column: (int) 29
                   })
                 })
@@ -1137,11 +1137,11 @@
             },
             SourceMeta: (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 44,
+                Line: (int) 51,
                 Column: (int) 20
               },
               EndPosition: (*source.Position)({
-                Line: (int) 44,
+                Line: (int) 51,
                 Column: (int) 29
               })
             })
@@ -1154,7 +1154,7 @@
             SourceMeta: (map[string]*source.Meta) (len=1) {
               (string) (len=3) "app": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 46,
+                  Line: (int) 53,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1175,11 +1175,11 @@
                       StringValue: (*string)(<nil>),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
-                          Line: (int) 51,
+                          Line: (int) 58,
                           Column: (int) 19
                         },
                         EndPosition: (*source.Position)({
-                          Line: (int) 51,
+                          Line: (int) 58,
                           Column: (int) 21
                         })
                       })
@@ -1189,7 +1189,7 @@
                     StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 51,
+                        Line: (int) 58,
                         Column: (int) 19
                       },
                       EndPosition: (*source.Position)(<nil>)
@@ -1211,11 +1211,11 @@
                               StringValue: (*string)((len=10) "Orders API"),
                               SourceMeta: (*source.Meta)({
                                 Position: (source.Position) {
-                                  Line: (int) 55,
+                                  Line: (int) 62,
                                   Column: (int) 27
                                 },
                                 EndPosition: (*source.Position)({
-                                  Line: (int) 55,
+                                  Line: (int) 62,
                                   Column: (int) 37
                                 })
                               })
@@ -1225,7 +1225,7 @@
                             StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                             SourceMeta: (*source.Meta)({
                               Position: (source.Position) {
-                                Line: (int) 55,
+                                Line: (int) 62,
                                 Column: (int) 27
                               },
                               EndPosition: (*source.Position)(<nil>)
@@ -1240,11 +1240,11 @@
                               StringValue: (*string)((len=6) "70 100"),
                               SourceMeta: (*source.Meta)({
                                 Position: (source.Position) {
-                                  Line: (int) 54,
+                                  Line: (int) 61,
                                   Column: (int) 26
                                 },
                                 EndPosition: (*source.Position)({
-                                  Line: (int) 54,
+                                  Line: (int) 61,
                                   Column: (int) 32
                                 })
                               })
@@ -1254,7 +1254,7 @@
                             StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                             SourceMeta: (*source.Meta)({
                               Position: (source.Position) {
-                                Line: (int) 54,
+                                Line: (int) 61,
                                 Column: (int) 26
                               },
                               EndPosition: (*source.Position)(<nil>)
@@ -1269,11 +1269,11 @@
                               StringValue: (*string)((len=16) "getOrderEndpoint"),
                               SourceMeta: (*source.Meta)({
                                 Position: (source.Position) {
-                                  Line: (int) 53,
+                                  Line: (int) 60,
                                   Column: (int) 23
                                 },
                                 EndPosition: (*source.Position)({
-                                  Line: (int) 53,
+                                  Line: (int) 60,
                                   Column: (int) 39
                                 })
                               })
@@ -1283,7 +1283,7 @@
                             StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                             SourceMeta: (*source.Meta)({
                               Position: (source.Position) {
-                                Line: (int) 53,
+                                Line: (int) 60,
                                 Column: (int) 23
                               },
                               EndPosition: (*source.Position)(<nil>)
@@ -1295,7 +1295,7 @@
                         StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                         SourceMeta: (*source.Meta)({
                           Position: (source.Position) {
-                            Line: (int) 53,
+                            Line: (int) 60,
                             Column: (int) 15
                           },
                           EndPosition: (*source.Position)(<nil>)
@@ -1303,21 +1303,21 @@
                         FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
                           (string) (len=10) "annotation": (*source.Meta)({
                             Position: (source.Position) {
-                              Line: (int) 55,
+                              Line: (int) 62,
                               Column: (int) 15
                             },
                             EndPosition: (*source.Position)(<nil>)
                           }),
                           (string) (len=9) "connectAt": (*source.Meta)({
                             Position: (source.Position) {
-                              Line: (int) 54,
+                              Line: (int) 61,
                               Column: (int) 15
                             },
                             EndPosition: (*source.Position)(<nil>)
                           }),
                           (string) (len=6) "linkTo": (*source.Meta)({
                             Position: (source.Position) {
-                              Line: (int) 53,
+                              Line: (int) 60,
                               Column: (int) 15
                             },
                             EndPosition: (*source.Position)(<nil>)
@@ -1328,7 +1328,7 @@
                     StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 53,
+                        Line: (int) 60,
                         Column: (int) 13
                       },
                       EndPosition: (*source.Position)(<nil>)
@@ -1343,11 +1343,11 @@
                       StringValue: (*string)((len=6) "20 100"),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
-                          Line: (int) 49,
+                          Line: (int) 56,
                           Column: (int) 18
                         },
                         EndPosition: (*source.Position)({
-                          Line: (int) 49,
+                          Line: (int) 56,
                           Column: (int) 24
                         })
                       })
@@ -1357,7 +1357,7 @@
                     StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 49,
+                        Line: (int) 56,
                         Column: (int) 18
                       },
                       EndPosition: (*source.Position)(<nil>)
@@ -1372,11 +1372,11 @@
                       StringValue: (*string)(<nil>),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
-                          Line: (int) 50,
+                          Line: (int) 57,
                           Column: (int) 18
                         },
                         EndPosition: (*source.Position)({
-                          Line: (int) 50,
+                          Line: (int) 57,
                           Column: (int) 20
                         })
                       })
@@ -1386,7 +1386,7 @@
                     StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 50,
+                        Line: (int) 57,
                         Column: (int) 18
                       },
                       EndPosition: (*source.Position)(<nil>)
@@ -1398,7 +1398,7 @@
                 StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 49,
+                    Line: (int) 56,
                     Column: (int) 11
                   },
                   EndPosition: (*source.Position)(<nil>)
@@ -1406,28 +1406,28 @@
                 FieldsSourceMeta: (map[string]*source.Meta) (len=4) {
                   (string) (len=6) "height": (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 51,
+                      Line: (int) 58,
                       Column: (int) 11
                     },
                     EndPosition: (*source.Position)(<nil>)
                   }),
                   (string) (len=9) "linkPorts": (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 52,
+                      Line: (int) 59,
                       Column: (int) 11
                     },
                     EndPosition: (*source.Position)(<nil>)
                   }),
                   (string) (len=5) "point": (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 49,
+                      Line: (int) 56,
                       Column: (int) 11
                     },
                     EndPosition: (*source.Position)(<nil>)
                   }),
                   (string) (len=5) "width": (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 50,
+                      Line: (int) 57,
                       Column: (int) 11
                     },
                     EndPosition: (*source.Position)(<nil>)
@@ -1439,7 +1439,7 @@
             StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
             SourceMeta: (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 48,
+                Line: (int) 55,
                 Column: (int) 9
               },
               EndPosition: (*source.Position)(<nil>)
@@ -1447,7 +1447,7 @@
             FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
               (string) (len=6) "visual": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 48,
+                  Line: (int) 55,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1456,7 +1456,7 @@
           }),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 44,
+              Line: (int) 51,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -1470,11 +1470,11 @@
             SourceMeta: ([]*source.Meta) (len=1) {
               (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 42,
+                  Line: (int) 49,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)({
-                  Line: (int) 42,
+                  Line: (int) 49,
                   Column: (int) 25
                 })
               })
@@ -1491,7 +1491,7 @@
             SourceMeta: (map[string]*source.Meta) (len=1) {
               (string) (len=3) "app": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 58,
+                  Line: (int) 65,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1500,7 +1500,7 @@
           }),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 57,
+              Line: (int) 64,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -1541,11 +1541,11 @@
                                 },
                                 SourceMeta: (*source.Meta)({
                                   Position: (source.Position) {
-                                    Line: (int) 71,
+                                    Line: (int) 78,
                                     Column: (int) 29
                                   },
                                   EndPosition: (*source.Position)({
-                                    Line: (int) 71,
+                                    Line: (int) 78,
                                     Column: (int) 61
                                   })
                                 })
@@ -1556,22 +1556,22 @@
                               BoolValue: (*bool)(<nil>),
                               SourceMeta: (*source.Meta)({
                                 Position: (source.Position) {
-                                  Line: (int) 71,
+                                  Line: (int) 78,
                                   Column: (int) 29
                                 },
                                 EndPosition: (*source.Position)({
-                                  Line: (int) 71,
+                                  Line: (int) 78,
                                   Column: (int) 61
                                 })
                               })
                             }),
                             SourceMeta: (*source.Meta)({
                               Position: (source.Position) {
-                                Line: (int) 71,
+                                Line: (int) 78,
                                 Column: (int) 27
                               },
                               EndPosition: (*source.Position)({
-                                Line: (int) 71,
+                                Line: (int) 78,
                                 Column: (int) 62
                               })
                             })
@@ -1579,18 +1579,18 @@
                         },
                         SourceMeta: (*source.Meta)({
                           Position: (source.Position) {
-                            Line: (int) 71,
+                            Line: (int) 78,
                             Column: (int) 27
                           },
                           EndPosition: (*source.Position)({
-                            Line: (int) 71,
+                            Line: (int) 78,
                             Column: (int) 62
                           })
                         })
                       }),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
-                          Line: (int) 71,
+                          Line: (int) 78,
                           Column: (int) 27
                         },
                         EndPosition: (*source.Position)(<nil>)
@@ -1602,7 +1602,7 @@
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 71,
+                      Line: (int) 78,
                       Column: (int) 11
                     },
                     EndPosition: (*source.Position)(<nil>)
@@ -1610,7 +1610,7 @@
                   FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
                     (string) (len=14) "DYNAMODB_TABLE": (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 71,
+                        Line: (int) 78,
                         Column: (int) 11
                       },
                       EndPosition: (*source.Position)(<nil>)
@@ -1622,7 +1622,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 70,
+                  Line: (int) 77,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1630,7 +1630,7 @@
               FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
                 (string) (len=9) "variables": (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 70,
+                    Line: (int) 77,
                     Column: (int) 9
                   },
                   EndPosition: (*source.Position)(<nil>)
@@ -1645,11 +1645,11 @@
                 StringValue: (*string)((len=5) "go1.x"),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 76,
+                    Line: (int) 83,
                     Column: (int) 16
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 76,
+                    Line: (int) 83,
                     Column: (int) 21
                   })
                 })
@@ -1659,7 +1659,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 76,
+                  Line: (int) 83,
                   Column: (int) 16
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1674,11 +1674,11 @@
                 StringValue: (*string)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 79,
+                    Line: (int) 86,
                     Column: (int) 23
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 79,
+                    Line: (int) 86,
                     Column: (int) 27
                   })
                 })
@@ -1688,7 +1688,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 79,
+                  Line: (int) 86,
                   Column: (int) 23
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1700,7 +1700,7 @@
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 69,
+              Line: (int) 76,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -1708,21 +1708,21 @@
           FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
             (string) (len=11) "environment": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 69,
+                Line: (int) 76,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
             }),
             (string) (len=7) "runtime": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 76,
+                Line: (int) 83,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
             }),
             (string) (len=14) "tracingEnabled": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 79,
+                Line: (int) 86,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
@@ -1731,7 +1731,7 @@
         }),
         SourceMeta: (*source.Meta)({
           Position: (source.Position) {
-            Line: (int) 40,
+            Line: (int) 47,
             Column: (int) 5
           },
           EndPosition: (*source.Position)(<nil>)
@@ -1742,11 +1742,11 @@
           Value: (string) (len=15) "celerity/pubsub",
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 166,
+              Line: (int) 173,
               Column: (int) 11
             },
             EndPosition: (*source.Position)({
-              Line: (int) 166,
+              Line: (int) 173,
               Column: (int) 28
             })
           })
@@ -1760,11 +1760,11 @@
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 168,
+                    Line: (int) 175,
                     Column: (int) 20
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 168,
+                    Line: (int) 175,
                     Column: (int) 33
                   })
                 })
@@ -1772,11 +1772,11 @@
             },
             SourceMeta: (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 168,
+                Line: (int) 175,
                 Column: (int) 20
               },
               EndPosition: (*source.Position)({
-                Line: (int) 168,
+                Line: (int) 175,
                 Column: (int) 33
               })
             })
@@ -1789,7 +1789,7 @@
             SourceMeta: (map[string]*source.Meta) (len=1) {
               (string) (len=8) "workflow": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 170,
+                  Line: (int) 177,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1799,7 +1799,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 168,
+              Line: (int) 175,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -1816,7 +1816,7 @@
             SourceMeta: (map[string]*source.Meta) (len=1) {
               (string) (len=8) "workflow": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 173,
+                  Line: (int) 180,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1825,7 +1825,7 @@
           }),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 172,
+              Line: (int) 179,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -1848,11 +1848,11 @@
                         VariableName: (string) (len=15) "ordersTopicName",
                         SourceMeta: (*source.Meta)({
                           Position: (source.Position) {
-                            Line: (int) 175,
+                            Line: (int) 182,
                             Column: (int) 20
                           },
                           EndPosition: (*source.Position)({
-                            Line: (int) 175,
+                            Line: (int) 182,
                             Column: (int) 45
                           })
                         })
@@ -1869,22 +1869,22 @@
                       BoolValue: (*bool)(<nil>),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
-                          Line: (int) 175,
+                          Line: (int) 182,
                           Column: (int) 20
                         },
                         EndPosition: (*source.Position)({
-                          Line: (int) 175,
+                          Line: (int) 182,
                           Column: (int) 45
                         })
                       })
                     }),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 175,
+                        Line: (int) 182,
                         Column: (int) 18
                       },
                       EndPosition: (*source.Position)({
-                        Line: (int) 175,
+                        Line: (int) 182,
                         Column: (int) 46
                       })
                     })
@@ -1892,18 +1892,18 @@
                 },
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 175,
+                    Line: (int) 182,
                     Column: (int) 18
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 175,
+                    Line: (int) 182,
                     Column: (int) 46
                   })
                 })
               }),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 175,
+                  Line: (int) 182,
                   Column: (int) 18
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -1915,7 +1915,7 @@
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 175,
+              Line: (int) 182,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -1923,7 +1923,7 @@
           FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
             (string) (len=9) "topicName": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 175,
+                Line: (int) 182,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
@@ -1932,7 +1932,7 @@
         }),
         SourceMeta: (*source.Meta)({
           Position: (source.Position) {
-            Line: (int) 166,
+            Line: (int) 173,
             Column: (int) 5
           },
           EndPosition: (*source.Position)(<nil>)
@@ -1943,11 +1943,11 @@
           Value: (string) (len=21) "celerity/layerVersion",
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 150,
+              Line: (int) 157,
               Column: (int) 11
             },
             EndPosition: (*source.Position)({
-              Line: (int) 150,
+              Line: (int) 157,
               Column: (int) 34
             })
           })
@@ -1961,11 +1961,11 @@
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 152,
+                    Line: (int) 159,
                     Column: (int) 20
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 152,
+                    Line: (int) 159,
                     Column: (int) 41
                   })
                 })
@@ -1973,11 +1973,11 @@
             },
             SourceMeta: (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 152,
+                Line: (int) 159,
                 Column: (int) 20
               },
               EndPosition: (*source.Position)({
-                Line: (int) 152,
+                Line: (int) 159,
                 Column: (int) 41
               })
             })
@@ -1991,14 +1991,14 @@
             SourceMeta: (map[string]*source.Meta) (len=2) {
               (string) (len=3) "app": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 155,
+                  Line: (int) 162,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
               }),
               (string) (len=8) "workflow": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 154,
+                  Line: (int) 161,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -2008,7 +2008,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 152,
+              Line: (int) 159,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -2033,11 +2033,11 @@
                     StringValue: (*string)((len=5) "go1.x"),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 157,
+                        Line: (int) 164,
                         Column: (int) 28
                       },
                       EndPosition: (*source.Position)({
-                        Line: (int) 157,
+                        Line: (int) 164,
                         Column: (int) 35
                       })
                     })
@@ -2047,7 +2047,7 @@
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 157,
+                      Line: (int) 164,
                       Column: (int) 28
                     },
                     EndPosition: (*source.Position)(<nil>)
@@ -2058,7 +2058,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 157,
+                  Line: (int) 164,
                   Column: (int) 27
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -2073,11 +2073,11 @@
                 StringValue: (*string)((len=27) "build/shared-packages-layer"),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 160,
+                    Line: (int) 167,
                     Column: (int) 16
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 160,
+                    Line: (int) 167,
                     Column: (int) 43
                   })
                 })
@@ -2087,7 +2087,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 160,
+                  Line: (int) 167,
                   Column: (int) 16
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -2102,11 +2102,11 @@
                 StringValue: (*string)((len=19) "sharedPackagesLayer"),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 161,
+                    Line: (int) 168,
                     Column: (int) 18
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 161,
+                    Line: (int) 168,
                     Column: (int) 37
                   })
                 })
@@ -2116,7 +2116,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 161,
+                  Line: (int) 168,
                   Column: (int) 18
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -2128,7 +2128,7 @@
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 157,
+              Line: (int) 164,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -2136,21 +2136,21 @@
           FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
             (string) (len=18) "compatibleRuntimes": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 157,
+                Line: (int) 164,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
             }),
             (string) (len=7) "content": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 160,
+                Line: (int) 167,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
             }),
             (string) (len=9) "layerName": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 161,
+                Line: (int) 168,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
@@ -2159,7 +2159,7 @@
         }),
         SourceMeta: (*source.Meta)({
           Position: (source.Position) {
-            Line: (int) 150,
+            Line: (int) 157,
             Column: (int) 5
           },
           EndPosition: (*source.Position)(<nil>)
@@ -2170,11 +2170,11 @@
           Value: (string) (len=16) "celerity/handler",
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 123,
+              Line: (int) 130,
               Column: (int) 11
             },
             EndPosition: (*source.Position)({
-              Line: (int) 123,
+              Line: (int) 130,
               Column: (int) 29
             })
           })
@@ -2188,11 +2188,11 @@
                 SubstitutionValue: (*substitutions.Substitution)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 125,
+                    Line: (int) 132,
                     Column: (int) 20
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 125,
+                    Line: (int) 132,
                     Column: (int) 41
                   })
                 })
@@ -2200,11 +2200,11 @@
             },
             SourceMeta: (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 125,
+                Line: (int) 132,
                 Column: (int) 20
               },
               EndPosition: (*source.Position)({
-                Line: (int) 125,
+                Line: (int) 132,
                 Column: (int) 41
               })
             })
@@ -2218,14 +2218,14 @@
             SourceMeta: (map[string]*source.Meta) (len=2) {
               (string) (len=10) "pubsubType": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 132,
+                  Line: (int) 139,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
               }),
               (string) (len=8) "workflow": (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 127,
+                  Line: (int) 134,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -2235,7 +2235,7 @@
           Custom: (*core.MappingNode)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 125,
+              Line: (int) 132,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -2262,11 +2262,11 @@
                         StringValue: (*string)(<nil>),
                         SourceMeta: (*source.Meta)({
                           Position: (source.Position) {
-                            Line: (int) 141,
+                            Line: (int) 148,
                             Column: (int) 22
                           },
                           EndPosition: (*source.Position)({
-                            Line: (int) 141,
+                            Line: (int) 148,
                             Column: (int) 24
                           })
                         })
@@ -2276,7 +2276,7 @@
                       StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
-                          Line: (int) 141,
+                          Line: (int) 148,
                           Column: (int) 22
                         },
                         EndPosition: (*source.Position)(<nil>)
@@ -2291,11 +2291,11 @@
                         StringValue: (*string)((len=6) "pubsub"),
                         SourceMeta: (*source.Meta)({
                           Position: (source.Position) {
-                            Line: (int) 138,
+                            Line: (int) 145,
                             Column: (int) 17
                           },
                           EndPosition: (*source.Position)({
-                            Line: (int) 138,
+                            Line: (int) 145,
                             Column: (int) 23
                           })
                         })
@@ -2305,7 +2305,7 @@
                       StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                       SourceMeta: (*source.Meta)({
                         Position: (source.Position) {
-                          Line: (int) 138,
+                          Line: (int) 145,
                           Column: (int) 17
                         },
                         EndPosition: (*source.Position)(<nil>)
@@ -2317,7 +2317,7 @@
                   StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
-                      Line: (int) 138,
+                      Line: (int) 145,
                       Column: (int) 11
                     },
                     EndPosition: (*source.Position)(<nil>)
@@ -2325,14 +2325,14 @@
                   FieldsSourceMeta: (map[string]*source.Meta) (len=2) {
                     (string) (len=9) "batchSize": (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 141,
+                        Line: (int) 148,
                         Column: (int) 11
                       },
                       EndPosition: (*source.Position)(<nil>)
                     }),
                     (string) (len=4) "type": (*source.Meta)({
                       Position: (source.Position) {
-                        Line: (int) 138,
+                        Line: (int) 145,
                         Column: (int) 11
                       },
                       EndPosition: (*source.Position)(<nil>)
@@ -2344,7 +2344,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 137,
+                  Line: (int) 144,
                   Column: (int) 9
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -2352,7 +2352,7 @@
               FieldsSourceMeta: (map[string]*source.Meta) (len=1) {
                 (string) (len=10) "orderEvent": (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 137,
+                    Line: (int) 144,
                     Column: (int) 9
                   },
                   EndPosition: (*source.Position)(<nil>)
@@ -2367,11 +2367,11 @@
                 StringValue: (*string)((len=20) "handlers.UpdateOrder"),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 134,
+                    Line: (int) 141,
                     Column: (int) 16
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 134,
+                    Line: (int) 141,
                     Column: (int) 36
                   })
                 })
@@ -2381,7 +2381,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 134,
+                  Line: (int) 141,
                   Column: (int) 16
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -2396,11 +2396,11 @@
                 StringValue: (*string)(<nil>),
                 SourceMeta: (*source.Meta)({
                   Position: (source.Position) {
-                    Line: (int) 135,
+                    Line: (int) 142,
                     Column: (int) 16
                   },
                   EndPosition: (*source.Position)({
-                    Line: (int) 135,
+                    Line: (int) 142,
                     Column: (int) 19
                   })
                 })
@@ -2410,7 +2410,7 @@
               StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
               SourceMeta: (*source.Meta)({
                 Position: (source.Position) {
-                  Line: (int) 135,
+                  Line: (int) 142,
                   Column: (int) 16
                 },
                 EndPosition: (*source.Position)(<nil>)
@@ -2422,7 +2422,7 @@
           StringWithSubstitutions: (*substitutions.StringOrSubstitutions)(<nil>),
           SourceMeta: (*source.Meta)({
             Position: (source.Position) {
-              Line: (int) 134,
+              Line: (int) 141,
               Column: (int) 7
             },
             EndPosition: (*source.Position)(<nil>)
@@ -2430,21 +2430,21 @@
           FieldsSourceMeta: (map[string]*source.Meta) (len=3) {
             (string) (len=6) "events": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 136,
+                Line: (int) 143,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
             }),
             (string) (len=7) "handler": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 134,
+                Line: (int) 141,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
             }),
             (string) (len=7) "timeout": (*source.Meta)({
               Position: (source.Position) {
-                Line: (int) 135,
+                Line: (int) 142,
                 Column: (int) 7
               },
               EndPosition: (*source.Position)(<nil>)
@@ -2453,7 +2453,7 @@
         }),
         SourceMeta: (*source.Meta)({
           Position: (source.Position) {
-            Line: (int) 123,
+            Line: (int) 130,
             Column: (int) 5
           },
           EndPosition: (*source.Position)(<nil>)
@@ -2463,42 +2463,42 @@
     SourceMeta: (map[string]*source.Meta) (len=6) {
       (string) (len=10) "authoriser": (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 86,
+          Line: (int) 93,
           Column: (int) 3
         },
         EndPosition: (*source.Position)(<nil>)
       }),
       (string) (len=16) "getOrdersHandler": (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 107,
+          Line: (int) 114,
           Column: (int) 3
         },
         EndPosition: (*source.Position)(<nil>)
       }),
       (string) (len=8) "orderApi": (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 37,
+          Line: (int) 44,
           Column: (int) 3
         },
         EndPosition: (*source.Position)(<nil>)
       }),
       (string) (len=11) "orderPubSub": (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 162,
+          Line: (int) 169,
           Column: (int) 3
         },
         EndPosition: (*source.Position)(<nil>)
       }),
       (string) (len=19) "sharedPackagesLayer": (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 143,
+          Line: (int) 150,
           Column: (int) 3
         },
         EndPosition: (*source.Position)(<nil>)
       }),
       (string) (len=19) "updateOrderFunction": (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 122,
+          Line: (int) 129,
           Column: (int) 3
         },
         EndPosition: (*source.Position)(<nil>)
@@ -2506,7 +2506,7 @@
     }
   }),
   DataSources: (*schema.DataSourceMap)({
-    Values: (map[string]*schema.DataSource) (len=1) {
+    Values: (map[string]*schema.DataSource) (len=2) {
       (string) (len=7) "network": (*schema.DataSource)({
         Type: (*schema.DataSourceTypeWrapper)({
           Value: (string) (len=7) "aws/vpc",
@@ -2636,6 +2636,7 @@
               })
             })
           },
+          ExportAll: (bool) false,
           SourceMeta: (map[string]*source.Meta) (len=3) {
             (string) (len=14) "securityGroups": (*source.Meta)({
               Position: (source.Position) {
@@ -2668,12 +2669,89 @@
           },
           EndPosition: (*source.Position)(<nil>)
         })
+      }),
+      (string) (len=8) "network2": (*schema.DataSource)({
+        Type: (*schema.DataSourceTypeWrapper)({
+          Value: (string) (len=7) "aws/vpc",
+          SourceMeta: (*source.Meta)({
+            Position: (source.Position) {
+              Line: (int) 36,
+              Column: (int) 11
+            },
+            EndPosition: (*source.Position)({
+              Line: (int) 36,
+              Column: (int) 20
+            })
+          })
+        }),
+        DataSourceMetadata: (*schema.DataSourceMetadata)({
+          DisplayName: (*substitutions.StringOrSubstitutions)({
+            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+              (*substitutions.StringOrSubstitution)({
+                StringValue: (*string)((len=16) "Network source 2"),
+                SubstitutionValue: (*substitutions.Substitution)(<nil>),
+                SourceMeta: (*source.Meta)({
+                  Position: (source.Position) {
+                    Line: (int) 38,
+                    Column: (int) 20
+                  },
+                  EndPosition: (*source.Position)({
+                    Line: (int) 38,
+                    Column: (int) 36
+                  })
+                })
+              })
+            },
+            SourceMeta: (*source.Meta)({
+              Position: (source.Position) {
+                Line: (int) 38,
+                Column: (int) 20
+              },
+              EndPosition: (*source.Position)({
+                Line: (int) 38,
+                Column: (int) 36
+              })
+            })
+          }),
+          Annotations: (*schema.StringOrSubstitutionsMap)(<nil>),
+          Custom: (*core.MappingNode)(<nil>),
+          SourceMeta: (*source.Meta)({
+            Position: (source.Position) {
+              Line: (int) 38,
+              Column: (int) 7
+            },
+            EndPosition: (*source.Position)(<nil>)
+          })
+        }),
+        Filter: (*schema.DataSourceFilters)(<nil>),
+        Exports: (*schema.DataSourceFieldExportMap)({
+          Values: (map[string]*schema.DataSourceFieldExport) {
+          },
+          ExportAll: (bool) true,
+          SourceMeta: (map[string]*source.Meta) {
+          }
+        }),
+        Description: (*substitutions.StringOrSubstitutions)(<nil>),
+        SourceMeta: (*source.Meta)({
+          Position: (source.Position) {
+            Line: (int) 36,
+            Column: (int) 5
+          },
+          EndPosition: (*source.Position)(<nil>)
+        })
       })
     },
-    SourceMeta: (map[string]*source.Meta) (len=1) {
+    SourceMeta: (map[string]*source.Meta) (len=2) {
       (string) (len=7) "network": (*source.Meta)({
         Position: (source.Position) {
           Line: (int) 22,
+          Column: (int) 3
+        },
+        EndPosition: (*source.Position)(<nil>)
+      }),
+      (string) (len=8) "network2": (*source.Meta)({
+        Position: (source.Position) {
+          Line: (int) 35,
           Column: (int) 3
         },
         EndPosition: (*source.Position)(<nil>)

@@ -71,6 +71,7 @@ func ValidateDataSource(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, validateMetadataDiagnostics...)
 	if validateMetadataErr != nil {
@@ -88,6 +89,7 @@ func ValidateDataSource(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, validateDescriptionDiagnostics...)
 	if validateDescErr != nil {
@@ -146,6 +148,7 @@ func ValidateDataSource(
 		refChainCollector,
 		resourceRegistry,
 		specDefinition,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, validateExportsDiagnostics...)
 	if validateExportsErr != nil {
@@ -220,6 +223,7 @@ func validateDataSourceMetadata(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -238,6 +242,7 @@ func validateDataSourceMetadata(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, displayNameDiagnostics...)
 	if err != nil {
@@ -253,6 +258,7 @@ func validateDataSourceMetadata(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, annotationsDiagnostics...)
 	if err != nil {
@@ -270,6 +276,7 @@ func validateDataSourceMetadata(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, customDiagnostics...)
 	if err != nil {
@@ -292,6 +299,7 @@ func validateDataSourceMetadataDisplayName(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.DisplayName == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -314,6 +322,7 @@ func validateDataSourceMetadataDisplayName(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)
@@ -346,6 +355,7 @@ func validateDataSourceMetadataAnnotations(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.Annotations == nil || metadataSchema.Annotations.Values == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -372,6 +382,7 @@ func validateDataSourceMetadataAnnotations(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 		diagnostics = append(diagnostics, annotationDiagnostics...)
 		if err != nil {
@@ -395,6 +406,7 @@ func validateMetadataAnnotation(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if annotation == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -418,6 +430,7 @@ func validateMetadataAnnotation(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)
@@ -471,7 +484,9 @@ func loadDataSourceSpecDefinition(
 		return nil, errDataSourceTypeMissingSpecDefinition(
 			dataSourceName,
 			dataSourceType,
+			/* inSubstitution */ false,
 			location,
+			"spec definition not found during data source validation",
 		)
 	}
 
@@ -617,6 +632,7 @@ func validateDataSourceFilter(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, searchValidationDiagnostics...)
 	if searchValidationErr != nil {
@@ -648,6 +664,7 @@ func validateDataSourceFilterSearch(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 
 	dataSourceIdentifier := bpcore.DataSourceElementID(dataSourceName)
@@ -663,6 +680,7 @@ func validateDataSourceFilterSearch(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 		diagnostics = append(diagnostics, searchValueDiagnostics...)
 		if err != nil {
@@ -686,6 +704,7 @@ func validateDataSourceFilterSearchValue(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if searchValue == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -709,6 +728,7 @@ func validateDataSourceFilterSearchValue(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)
@@ -784,6 +804,7 @@ func validateDataSourceExports(
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	specDefinition *provider.DataSourceSpecDefinition,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if exports == nil || len(exports.Values) == 0 {
@@ -808,6 +829,7 @@ func validateDataSourceExports(
 			refChainCollector,
 			resourceRegistry,
 			specDefinition,
+			dataSourceRegistry,
 		)
 		diagnostics = append(diagnostics, exportDiagnostics...)
 		if err != nil {
@@ -835,6 +857,7 @@ func validateDataSourceExport(
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
 	specDefinition *provider.DataSourceSpecDefinition,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 	if export == nil {
@@ -904,6 +927,7 @@ func validateDataSourceExport(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	if err != nil {
 		return diagnostics, err

@@ -26,9 +26,10 @@ var (
 )
 
 type ResourceValidationTestSuite struct {
-	funcRegistry      provider.FunctionRegistry
-	refChainCollector refgraph.RefChainCollector
-	resourceRegistry  resourcehelpers.Registry
+	funcRegistry       provider.FunctionRegistry
+	refChainCollector  refgraph.RefChainCollector
+	resourceRegistry   resourcehelpers.Registry
+	dataSourceRegistry provider.DataSourceRegistry
 }
 
 var _ = Suite(&ResourceValidationTestSuite{})
@@ -48,6 +49,14 @@ func (s *ResourceValidationTestSuite) SetUpTest(c *C) {
 	s.resourceRegistry = &internal.ResourceRegistryMock{
 		Resources: map[string]provider.Resource{
 			"aws/ecs/service": newTestECSServiceResource(),
+		},
+	}
+	s.dataSourceRegistry = &internal.DataSourceRegistryMock{
+		DataSources: map[string]provider.DataSource{
+			"aws/ec2/instance": newTestEC2InstanceDataSource(),
+			"aws/vpc":          newTestVPCDataSource(),
+			"aws/vpc2":         newTestVPC2DataSource(),
+			"aws/vpc3":         newTestVPC3DataSource(),
 		},
 	}
 }
@@ -178,6 +187,7 @@ func (s *ResourceValidationTestSuite) Test_reports_errors_when_resource_type_is_
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -216,6 +226,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_providing_a_displa
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -255,6 +266,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_providing_a_descri
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -295,6 +307,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_metadata_label_key
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -334,6 +347,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_metadata_label_val
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -380,6 +394,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_annotation_key_has
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -420,6 +435,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_nested_condition_i
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -472,6 +488,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_condition_resolves
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -532,6 +549,7 @@ func (s *ResourceValidationTestSuite) Test_produces_warning_when_condition_resol
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 
 	c.Assert(err, IsNil)
@@ -588,6 +606,7 @@ func (s *ResourceValidationTestSuite) Test_produces_warning_when_each_resolves_a
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 
 	c.Assert(err, IsNil)
@@ -634,6 +653,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_each_resolves_inco
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -674,6 +694,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_link_selector_labe
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -713,6 +734,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_link_selector_labe
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -762,6 +784,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_has_a_mis
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -811,6 +834,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_dependenc
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -861,6 +885,7 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_depends_o
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)

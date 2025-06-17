@@ -1240,16 +1240,25 @@ func errResourceTypeSpecDefMissingSchema(
 func errDataSourceTypeMissingSpecDefinition(
 	dataSourceName string,
 	dataSourceType string,
+	inSubstitution bool,
 	dataSourceLocation *source.Meta,
+	extraDetails string,
 ) error {
 	line, col := source.PositionFromSourceMeta(dataSourceLocation)
+	contextInfo := ""
+	if inSubstitution {
+		contextInfo = " referenced in substitution"
+	}
+
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSource,
 		Err: fmt.Errorf(
 			"validation failed due to a missing spec definition for data source \"%s\" "+
-				"of type \"%s\"",
+				"of type \"%s\"%s: %s",
 			dataSourceName,
 			dataSourceType,
+			contextInfo,
+			extraDetails,
 		),
 		Line:   line,
 		Column: col,

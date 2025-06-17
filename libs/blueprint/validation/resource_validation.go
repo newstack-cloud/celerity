@@ -68,6 +68,7 @@ func ValidateResource(
 	resourceRegistry resourcehelpers.Registry,
 	resourceDerivedFromTemplate bool,
 	logger bpcore.Logger,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -96,6 +97,7 @@ func ValidateResource(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, validateMetadataDiagnostics...)
 	if validateMetadataErr != nil {
@@ -126,6 +128,7 @@ func ValidateResource(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 		/* depth */ 0,
 	)
 	diagnostics = append(diagnostics, validateResConditionDiagnostics...)
@@ -144,6 +147,7 @@ func ValidateResource(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, validateEachDiagnostics...)
 	if validateEachErr != nil {
@@ -174,6 +178,7 @@ func ValidateResource(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 		diagnostics = append(diagnostics, validateSpecDiagnostics...)
 		if validateSpecErr != nil {
@@ -192,6 +197,7 @@ func ValidateResource(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, validateDescriptionDiagnostics...)
 	if validateDescErr != nil {
@@ -247,6 +253,7 @@ func validateResourceMetadata(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -266,6 +273,7 @@ func validateResourceMetadata(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, displayNameDiagnostics...)
 	if err != nil {
@@ -290,6 +298,7 @@ func validateResourceMetadata(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, annotationsDiagnostics...)
 	if err != nil {
@@ -307,6 +316,7 @@ func validateResourceMetadata(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, customDiagnostics...)
 	if err != nil {
@@ -330,6 +340,7 @@ func validateResourceMetadataDisplayName(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.DisplayName == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -352,6 +363,7 @@ func validateResourceMetadataDisplayName(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)
@@ -420,6 +432,7 @@ func validateResourceMetadataAnnotations(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if metadataSchema.Annotations == nil || metadataSchema.Annotations.Values == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -446,6 +459,7 @@ func validateResourceMetadataAnnotations(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 		diagnostics = append(diagnostics, annotationDiagnostics...)
 		if err != nil {
@@ -530,6 +544,7 @@ func validateResourceCondition(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	depth int,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
@@ -559,6 +574,7 @@ func validateResourceCondition(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 				depth+1,
 			)
 			diagnostics = append(diagnostics, andDiagnostics...)
@@ -580,6 +596,7 @@ func validateResourceCondition(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 				depth+1,
 			)
 			diagnostics = append(diagnostics, orDiagnostics...)
@@ -604,6 +621,7 @@ func validateResourceCondition(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			depth+1,
 		)
 		diagnostics = append(diagnostics, notDiagnostics...)
@@ -622,6 +640,7 @@ func validateResourceCondition(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, conditionValDiagnostics...)
 	if err != nil {
@@ -641,6 +660,7 @@ func validateConditionValue(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if conditionValue == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -678,6 +698,7 @@ func validateConditionValue(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)
@@ -752,6 +773,7 @@ func validateResourceEach(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	// Only validate when a user has provided an empty array as a value
 	// for the each property. A nil slice is a default empty value that
@@ -799,6 +821,7 @@ func validateResourceEach(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 		)
 		if err != nil {
 			return diagnostics, err

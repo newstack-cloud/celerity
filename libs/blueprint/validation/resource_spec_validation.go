@@ -32,6 +32,7 @@ func ValidateResourceSpec(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
 
@@ -64,6 +65,7 @@ func ValidateResourceSpec(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 		path,
 		/* depth */ 0,
 	)

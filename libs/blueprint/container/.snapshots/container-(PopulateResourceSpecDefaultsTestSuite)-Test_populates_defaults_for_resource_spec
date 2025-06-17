@@ -1038,6 +1038,7 @@
               })
             })
           },
+          ExportAll: (bool) false,
           SourceMeta: (map[string]*source.Meta) (len=2) {
             (string) (len=9) "subnetIds": (*source.Meta)({
               Position: (source.Position) {

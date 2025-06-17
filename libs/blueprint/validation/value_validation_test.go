@@ -17,9 +17,10 @@ import (
 )
 
 type ValueValidationTestSuite struct {
-	funcRegistry      provider.FunctionRegistry
-	refChainCollector refgraph.RefChainCollector
-	resourceRegistry  resourcehelpers.Registry
+	funcRegistry       provider.FunctionRegistry
+	refChainCollector  refgraph.RefChainCollector
+	resourceRegistry   resourcehelpers.Registry
+	dataSourceRegistry provider.DataSourceRegistry
 }
 
 var _ = Suite(&ValueValidationTestSuite{})
@@ -40,6 +41,14 @@ func (s *ValueValidationTestSuite) SetUpTest(c *C) {
 			"exampleResource":                      &testExampleResource{},
 			"exampleResourceMissingSpecDefinition": &testExampleResourceMissingSpecDefinition{},
 			"exampleResourceMissingSpecSchema":     &testExampleResourceMissingSpecSchema{},
+		},
+	}
+	s.dataSourceRegistry = &internal.DataSourceRegistryMock{
+		DataSources: map[string]provider.DataSource{
+			"aws/ec2/instance": newTestEC2InstanceDataSource(),
+			"aws/vpc":          newTestVPCDataSource(),
+			"aws/vpc2":         newTestVPC2DataSource(),
+			"aws/vpc3":         newTestVPC3DataSource(),
 		},
 	}
 }
@@ -141,6 +150,7 @@ func (s *ValueValidationTestSuite) Test_passes_validation_for_a_valid_value(c *C
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(diagnostics, HasLen, 0)
@@ -206,6 +216,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_for_invalid_sub_in_descrip
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -256,6 +267,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_value_type_is_missing
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -302,6 +314,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_unsupported_value_typ
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -369,6 +382,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_for_interpolated_string_fo
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -420,6 +434,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_string_literal_is_pro
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -486,6 +501,7 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_sub_that_resolves_to_
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)

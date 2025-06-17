@@ -805,7 +805,7 @@ func (s *DataSourceValidationTestSuite) Test_reports_error_when_spec_definition_
 		loadErr.Error(),
 		Equals,
 		"blueprint load error: validation failed due to a missing spec definition for data source"+
-			" \"vmInstance\" of type \"aws/vpc2\"",
+			" \"vmInstance\" of type \"aws/vpc2\": spec definition not found during data source validation",
 	)
 }
 

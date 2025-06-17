@@ -1203,6 +1203,7 @@ func (l *defaultLoader) validateValue(
 		l.funcRegistry,
 		refChainCollector,
 		l.resourceRegistry.WithParams(params),
+		l.dataSourceRegistry,
 	)
 	if err != nil {
 		currentValErrs = append(currentValErrs, err)
@@ -1237,6 +1238,7 @@ func (l *defaultLoader) validateIncludes(
 			l.funcRegistry,
 			refChainCollector,
 			l.resourceRegistry.WithParams(params),
+			l.dataSourceRegistry,
 		)
 		if err != nil {
 			includeErrors[name] = err
@@ -1277,6 +1279,7 @@ func (l *defaultLoader) validateExports(
 			l.funcRegistry,
 			refChainCollector,
 			l.resourceRegistry.WithParams(params),
+			l.dataSourceRegistry,
 		)
 		if err != nil {
 			exportErrors[name] = err
@@ -1312,6 +1315,7 @@ func (l *defaultLoader) validateMetadata(
 		l.funcRegistry,
 		refChainCollector,
 		l.resourceRegistry.WithParams(params),
+		l.dataSourceRegistry,
 	)
 }
 
@@ -1524,6 +1528,7 @@ func (l *defaultLoader) validateResource(
 		l.resourceRegistry.WithParams(params),
 		slices.Contains(l.derivedFromTemplates, name),
 		resourceLogger,
+		l.dataSourceRegistry,
 	)
 	*diagnostics = append(*diagnostics, validateResourceDiagnostics...)
 	if err != nil {

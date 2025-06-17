@@ -16,9 +16,10 @@ import (
 )
 
 type ResourceSpecValidationTestSuite struct {
-	funcRegistry      provider.FunctionRegistry
-	refChainCollector refgraph.RefChainCollector
-	resourceRegistry  resourcehelpers.Registry
+	funcRegistry       provider.FunctionRegistry
+	refChainCollector  refgraph.RefChainCollector
+	resourceRegistry   resourcehelpers.Registry
+	dataSourceRegistry provider.DataSourceRegistry
 }
 
 var _ = Suite(&ResourceSpecValidationTestSuite{})
@@ -41,6 +42,14 @@ func (s *ResourceSpecValidationTestSuite) SetUpTest(c *C) {
 			"test/missingSpecDef":  newTestResourceMissingSpecDef(),
 			"test/missingSchema":   newTestResourceMissingSchema(),
 			"test/exampleResource": newSpecValidationTestExampleResource(),
+		},
+	}
+	s.dataSourceRegistry = &internal.DataSourceRegistryMock{
+		DataSources: map[string]provider.DataSource{
+			"aws/ec2/instance": newTestEC2InstanceDataSource(),
+			"aws/vpc":          newTestVPCDataSource(),
+			"aws/vpc2":         newTestVPC2DataSource(),
+			"aws/vpc3":         newTestVPC3DataSource(),
 		},
 	}
 }
@@ -69,6 +78,7 @@ func (s *ResourceSpecValidationTestSuite) Test_successfully_valid_resource(c *C)
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, IsNil)
@@ -121,6 +131,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -182,6 +193,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_resource_type_w
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -221,6 +233,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -276,6 +289,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_computed_field_
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -329,6 +343,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_missing_require
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -382,6 +397,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -421,6 +437,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_required_
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -466,6 +483,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -513,6 +531,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_empty_string_fi
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -561,6 +580,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_type_fo
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -627,6 +647,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_union_invalid_s
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -672,6 +693,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -716,6 +738,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)
@@ -760,6 +783,7 @@ func (s *ResourceSpecValidationTestSuite) Test_reports_error_for_invalid_mapping
 		s.resourceRegistry,
 		/* resourceDerivedFromTemplate */ false,
 		core.NewNopLogger(),
+		s.dataSourceRegistry,
 	)
 	c.Assert(diagnostics, HasLen, 0)
 	c.Assert(err, NotNil)

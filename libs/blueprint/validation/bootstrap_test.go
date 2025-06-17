@@ -952,6 +952,84 @@ func (d *testVPC3DataSource) GetExamples(
 	}, nil
 }
 
+type testExampleDataSource struct{}
+
+func newTestExampleDataSource() provider.DataSource {
+	return &testExampleDataSource{}
+}
+
+func (d *testExampleDataSource) GetSpecDefinition(
+	ctx context.Context,
+	input *provider.DataSourceGetSpecDefinitionInput,
+) (*provider.DataSourceGetSpecDefinitionOutput, error) {
+	return &provider.DataSourceGetSpecDefinitionOutput{
+		SpecDefinition: &provider.DataSourceSpecDefinition{
+			Fields: map[string]*provider.DataSourceSpecSchema{
+				"vpcId": {
+					Type: provider.DataSourceSpecTypeString,
+				},
+				"name": {
+					Type: provider.DataSourceSpecTypeString,
+				},
+			},
+		},
+	}, nil
+}
+
+func (d *testExampleDataSource) Fetch(
+	ctx context.Context,
+	input *provider.DataSourceFetchInput,
+) (*provider.DataSourceFetchOutput, error) {
+	return &provider.DataSourceFetchOutput{
+		Data: map[string]*core.MappingNode{},
+	}, nil
+}
+
+func (d *testExampleDataSource) GetType(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeInput,
+) (*provider.DataSourceGetTypeOutput, error) {
+	return &provider.DataSourceGetTypeOutput{
+		Type: "celerity/exampleDataSource",
+	}, nil
+}
+
+func (d *testExampleDataSource) GetTypeDescription(
+	ctx context.Context,
+	input *provider.DataSourceGetTypeDescriptionInput,
+) (*provider.DataSourceGetTypeDescriptionOutput, error) {
+	return &provider.DataSourceGetTypeDescriptionOutput{
+		MarkdownDescription:  "",
+		PlainTextDescription: "",
+	}, nil
+}
+
+func (d *testExampleDataSource) GetFilterFields(
+	ctx context.Context,
+	input *provider.DataSourceGetFilterFieldsInput,
+) (*provider.DataSourceGetFilterFieldsOutput, error) {
+	return &provider.DataSourceGetFilterFieldsOutput{
+		Fields: []string{"vpcId", "tags"},
+	}, nil
+}
+
+func (d *testExampleDataSource) CustomValidate(
+	ctx context.Context,
+	input *provider.DataSourceValidateInput,
+) (*provider.DataSourceValidateOutput, error) {
+	return &provider.DataSourceValidateOutput{}, nil
+}
+
+func (d *testExampleDataSource) GetExamples(
+	ctx context.Context,
+	input *provider.DataSourceGetExamplesInput,
+) (*provider.DataSourceGetExamplesOutput, error) {
+	return &provider.DataSourceGetExamplesOutput{
+		PlainTextExamples: []string{},
+		MarkdownExamples:  []string{},
+	}, nil
+}
+
 type testECSServiceResource struct{}
 
 func newTestECSServiceResource() provider.Resource {

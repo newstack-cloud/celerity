@@ -15,9 +15,10 @@ import (
 )
 
 type MappingNodeValidationTestSuite struct {
-	funcRegistry      provider.FunctionRegistry
-	refChainCollector refgraph.RefChainCollector
-	resourceRegistry  resourcehelpers.Registry
+	funcRegistry       provider.FunctionRegistry
+	refChainCollector  refgraph.RefChainCollector
+	resourceRegistry   resourcehelpers.Registry
+	dataSourceRegistry provider.DataSourceRegistry
 }
 
 var _ = Suite(&MappingNodeValidationTestSuite{})
@@ -35,6 +36,14 @@ func (s *MappingNodeValidationTestSuite) SetUpTest(c *C) {
 	s.refChainCollector = refgraph.NewRefChainCollector()
 	s.resourceRegistry = &internal.ResourceRegistryMock{
 		Resources: map[string]provider.Resource{},
+	}
+	s.dataSourceRegistry = &internal.DataSourceRegistryMock{
+		DataSources: map[string]provider.DataSource{
+			"aws/ec2/instance": newTestEC2InstanceDataSource(),
+			"aws/vpc":          newTestVPCDataSource(),
+			"aws/vpc2":         newTestVPC2DataSource(),
+			"aws/vpc3":         newTestVPC3DataSource(),
+		},
 	}
 }
 
@@ -98,6 +107,7 @@ func (s *MappingNodeValidationTestSuite) Test_succeeds_without_any_issues_for_a_
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 
 	c.Assert(err, IsNil)
@@ -118,6 +128,7 @@ func (s *MappingNodeValidationTestSuite) Test_succeeds_with_info_diagnostic_for_
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 
 	c.Assert(err, IsNil)

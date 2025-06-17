@@ -42,6 +42,15 @@
           "type": "string"
         }
       }
+    },
+    // This is an example of a second data source that exports all fields
+    // to be used in other elements of the blueprint.
+    "network2": {
+      "type": "aws/vpc",
+      "metadata": {
+        "displayName": "Network source 2"
+      },
+      "exports": "*"
     }
   },
   "resources": {

@@ -30,6 +30,13 @@ datasources:
         type: array
       vpc:
         type: string
+  # This is an example of a second data source that exports all fields
+  # to be used in other elements of the blueprint.
+  network2:
+    type: "aws/vpc"
+    metadata:
+      displayName: Network source 2
+    exports: "*"
 resources:
   # An API resource must be defined even if there are no endpoint handlers
   # for an application as env vars, runtime and tracing config for all handlers

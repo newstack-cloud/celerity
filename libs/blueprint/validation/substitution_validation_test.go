@@ -17,9 +17,10 @@ import (
 )
 
 type SubstitutionValidationTestSuite struct {
-	functionRegistry  provider.FunctionRegistry
-	refChainCollector refgraph.RefChainCollector
-	resourceRegistry  resourcehelpers.Registry
+	functionRegistry   provider.FunctionRegistry
+	refChainCollector  refgraph.RefChainCollector
+	resourceRegistry   resourcehelpers.Registry
+	dataSourceRegistry provider.DataSourceRegistry
 }
 
 var _ = Suite(&SubstitutionValidationTestSuite{})
@@ -41,6 +42,15 @@ func (s *SubstitutionValidationTestSuite) SetUpTest(c *C) {
 			"exampleResource":                      &testExampleResource{},
 			"exampleResourceMissingSpecDefinition": &testExampleResourceMissingSpecDefinition{},
 			"exampleResourceMissingSpecSchema":     &testExampleResourceMissingSpecSchema{},
+		},
+	}
+	s.dataSourceRegistry = &internal.DataSourceRegistryMock{
+		DataSources: map[string]provider.DataSource{
+			"aws/ec2/instance":           newTestEC2InstanceDataSource(),
+			"aws/vpc":                    newTestVPCDataSource(),
+			"aws/vpc2":                   newTestVPC2DataSource(),
+			"aws/vpc3":                   newTestVPC3DataSource(),
+			"celerity/exampleDataSource": newTestExampleDataSource(),
 		},
 	}
 }
@@ -65,6 +75,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		/* refChainCollector */ nil,
 		/* resourceRegistry */ nil,
+		/* dataSourceRegistry */ nil,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -117,6 +128,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -153,6 +165,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -191,6 +204,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -229,6 +243,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -255,6 +270,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -312,6 +328,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -369,6 +386,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -412,6 +430,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -465,6 +484,7 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
@@ -518,10 +538,61 @@ func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_subst
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 0)
 	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeAny))
+}
+
+func (s *SubstitutionValidationTestSuite) Test_passes_validation_for_valid_substitution_12(c *C) {
+	// This test ensures that when a data source has `exports` set to `*`,
+	// validation passes for a substitution that references a valid field
+	// from the data source.
+	subInputStr := "${datasources.exampleDataSourceExportsAll.name}"
+	stringOrSubs := &substitutions.StringOrSubstitutions{}
+	err := yaml.Unmarshal([]byte(subInputStr), stringOrSubs)
+	if err != nil {
+		c.Fatalf("Failed to parse substitution: %v", err)
+	}
+
+	blueprint := &schema.Blueprint{
+		Resources: &schema.ResourceMap{
+			Values: map[string]*schema.Resource{
+				"exampleResource": {
+					Type: &schema.ResourceTypeWrapper{Value: "celerity/exampleResource"},
+				},
+			},
+		},
+		DataSources: &schema.DataSourceMap{
+			Values: map[string]*schema.DataSource{
+				"exampleDataSourceExportsAll": {
+					Type: &schema.DataSourceTypeWrapper{Value: "celerity/exampleDataSource"},
+					Exports: &schema.DataSourceFieldExportMap{
+						ExportAll: true,
+					},
+				},
+			},
+		},
+	}
+
+	resolveType, diagnostics, err := ValidateSubstitution(
+		context.TODO(),
+		stringOrSubs.Values[0].SubstitutionValue,
+		/* nextLocation */ nil,
+		blueprint,
+		/* usedInResourceDerivedFromTemplate */ false,
+		"exports.example",
+		"",
+		&core.ParamsImpl{},
+		s.functionRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		s.dataSourceRegistry,
+	)
+	c.Assert(err, IsNil)
+	c.Assert(len(diagnostics), Equals, 0)
+	c.Assert(resolveType, Equals, string(substitutions.ResolvedSubExprTypeString))
 }
 
 func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_var_ref_in_blueprint_without_variables(c *C) {
@@ -546,6 +617,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_var_ref_in
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -587,6 +659,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_var_ref_is
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -620,6 +693,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_val_ref_in
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -675,6 +749,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_val_ref_is
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -730,6 +805,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -761,6 +837,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_out
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -794,6 +871,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -861,6 +939,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -915,6 +994,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_elem_ref_in_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -951,6 +1031,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_resource_pro
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1009,6 +1090,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_resource_pro
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1060,6 +1142,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1113,6 +1196,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referencing_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1165,6 +1249,7 @@ func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 1)
@@ -1217,6 +1302,7 @@ func (s *SubstitutionValidationTestSuite) Test_produces_warning_diagnostic_when_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 	c.Assert(len(diagnostics), Equals, 1)
@@ -1269,6 +1355,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1321,6 +1408,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_referenced_r
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1373,6 +1461,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1425,6 +1514,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1476,6 +1566,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1527,6 +1618,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1579,6 +1671,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_pr
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1631,6 +1724,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1683,6 +1777,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_mi
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1735,6 +1830,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_in
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1787,6 +1883,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_accessing_mi
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1821,6 +1918,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_an_incorrect
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1855,6 +1953,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_an_incorrect
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := internal.UnpackLoadError(err)
@@ -1890,6 +1989,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1940,6 +2040,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -1990,6 +2091,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -2031,6 +2133,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -2081,6 +2184,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -2128,6 +2232,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -2179,6 +2284,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_data_source_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)
@@ -2237,6 +2343,7 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_link_func_
 		s.functionRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := internal.UnpackLoadError(err)

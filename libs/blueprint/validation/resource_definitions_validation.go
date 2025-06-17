@@ -30,6 +30,7 @@ func validateResourceDefinition(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 	depth int,
 ) ([]*core.Diagnostic, error) {
@@ -67,6 +68,7 @@ func validateResourceDefinition(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 			depth,
 		)
@@ -84,6 +86,7 @@ func validateResourceDefinition(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 			depth,
 		)
@@ -101,6 +104,7 @@ func validateResourceDefinition(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 			depth,
 		)
@@ -117,6 +121,7 @@ func validateResourceDefinition(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 		)
 	case provider.ResourceDefinitionsSchemaTypeInteger:
@@ -132,6 +137,7 @@ func validateResourceDefinition(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 		)
 	case provider.ResourceDefinitionsSchemaTypeFloat:
@@ -147,6 +153,7 @@ func validateResourceDefinition(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 		)
 	case provider.ResourceDefinitionsSchemaTypeBoolean:
@@ -162,6 +169,7 @@ func validateResourceDefinition(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 		)
 	case provider.ResourceDefinitionsSchemaTypeUnion:
@@ -178,6 +186,7 @@ func validateResourceDefinition(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 			depth,
 		)
@@ -202,6 +211,7 @@ func validateResourceDefinitionObject(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 	depth int,
 ) ([]*core.Diagnostic, error) {
@@ -259,6 +269,7 @@ func validateResourceDefinitionObject(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 				attrPath,
 				depth+1,
 			)
@@ -300,6 +311,7 @@ func validateResourceDefinitionMap(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 	depth int,
 ) ([]*core.Diagnostic, error) {
@@ -372,6 +384,7 @@ func validateResourceDefinitionMap(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			fieldPath,
 			depth+1,
 		)
@@ -402,6 +415,7 @@ func validateResourceDefinitionArray(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 	depth int,
 ) ([]*core.Diagnostic, error) {
@@ -474,6 +488,7 @@ func validateResourceDefinitionArray(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			itemPath,
 			depth+1,
 		)
@@ -502,6 +517,7 @@ func validateResourceDefinitionString(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
@@ -617,6 +633,7 @@ func validateResourceDefinitionString(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 		)
 		diagnostics = append(diagnostics, subDiagnostics...)
@@ -640,6 +657,7 @@ func validateResourceDefinitionInteger(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
@@ -743,6 +761,7 @@ func validateResourceDefinitionInteger(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 		)
 		diagnostics = append(diagnostics, subDiagnostics...)
@@ -766,6 +785,7 @@ func validateResourceDefinitionFloat(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
@@ -869,6 +889,7 @@ func validateResourceDefinitionFloat(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 		)
 		diagnostics = append(diagnostics, subDiagnostics...)
@@ -892,6 +913,7 @@ func validateResourceDefinitionBoolean(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 ) ([]*core.Diagnostic, error) {
 	diagnostics := []*core.Diagnostic{}
@@ -956,6 +978,7 @@ func validateResourceDefinitionBoolean(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 		)
 		diagnostics = append(diagnostics, subDiagnostics...)
@@ -980,6 +1003,7 @@ func validateResourceDefinitionUnion(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 	depth int,
 ) ([]*core.Diagnostic, error) {
@@ -1010,6 +1034,7 @@ func validateResourceDefinitionUnion(
 			funcRegistry,
 			refChainCollector,
 			resourceRegistry,
+			dataSourceRegistry,
 			path,
 			depth,
 		)
@@ -1042,6 +1067,7 @@ func validateResourceDefinitionSubstitution(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 	path string,
 ) ([]*core.Diagnostic, error) {
 	if value == nil {
@@ -1077,6 +1103,7 @@ func validateResourceDefinitionSubstitution(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)

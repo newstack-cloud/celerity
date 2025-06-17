@@ -201,49 +201,77 @@ func (t *DataSourceTypeWrapper) FromJSONNode(
 // when unmarshalling from YAML and JWCC source documents.
 type DataSourceFieldExportMap struct {
 	Values map[string]*DataSourceFieldExport
+	// Indicates if all fields should be exported,
+	// this is set to true if the `export` field is set to `*`
+	// in the blueprint.
+	ExportAll bool
 	// Mapping of exported field names to their source locations.
 	SourceMeta map[string]*source.Meta
 }
 
-func (m *DataSourceFieldExportMap) MarshalYAML() (interface{}, error) {
+func (m *DataSourceFieldExportMap) MarshalYAML() (any, error) {
+	if m.ExportAll {
+		// If export all is set, we return a single value
+		// that indicates that all fields should be exported.
+		return "*", nil
+	}
 	return m.Values, nil
 }
 
 func (m *DataSourceFieldExportMap) UnmarshalYAML(value *yaml.Node) error {
-	if value.Kind != yaml.MappingNode {
+	if value.Kind == yaml.ScalarNode && value.Value == "*" {
+		m.ExportAll = true
+	}
+
+	if value.Kind != yaml.MappingNode && !m.ExportAll {
 		return errInvalidMap(bpcore.YAMLNodeToPosInfo(value), "exports")
 	}
 
 	m.Values = make(map[string]*DataSourceFieldExport)
 	m.SourceMeta = make(map[string]*source.Meta)
-	for i := 0; i < len(value.Content); i += 2 {
-		key := value.Content[i]
-		val := value.Content[i+1]
+	if !m.ExportAll {
+		// Only collect values if we are not exporting all fields.
+		// location-based information will be scoped to the data source
+		// element definition for errors with a string exports value.
+		for i := 0; i < len(value.Content); i += 2 {
+			key := value.Content[i]
+			val := value.Content[i+1]
 
-		m.SourceMeta[key.Value] = &source.Meta{
-			Position: source.Position{
-				Line:   key.Line,
-				Column: key.Column,
-			},
+			m.SourceMeta[key.Value] = &source.Meta{
+				Position: source.Position{
+					Line:   key.Line,
+					Column: key.Column,
+				},
+			}
+
+			var export DataSourceFieldExport
+			err := val.Decode(&export)
+			if err != nil {
+				return err
+			}
+
+			m.Values[key.Value] = &export
 		}
-
-		var export DataSourceFieldExport
-		err := val.Decode(&export)
-		if err != nil {
-			return err
-		}
-
-		m.Values[key.Value] = &export
 	}
 
 	return nil
 }
 
 func (m *DataSourceFieldExportMap) MarshalJSON() ([]byte, error) {
+	if m.ExportAll {
+		return []byte("\"*\""), nil
+	}
+
 	return json.Marshal(m.Values)
 }
 
 func (m *DataSourceFieldExportMap) UnmarshalJSON(data []byte) error {
+	if string(data) == "\"*\"" {
+		m.ExportAll = true
+		m.Values = make(map[string]*DataSourceFieldExport)
+		return nil
+	}
+
 	values := make(map[string]*DataSourceFieldExport)
 	err := json.Unmarshal(data, &values)
 	if err != nil {
@@ -261,6 +289,13 @@ func (m *DataSourceFieldExportMap) FromJSONNode(
 ) error {
 	nodeMap, ok := node.Value.(map[string]json.Node)
 	if !ok {
+		nodeStr, ok := node.Value.(string)
+		if ok && nodeStr == "*" {
+			m.ExportAll = true
+			m.Values = make(map[string]*DataSourceFieldExport)
+			m.SourceMeta = make(map[string]*source.Meta)
+			return nil
+		}
 		position := source.PositionFromJSONNode(node, linePositions)
 		return errInvalidMap(&position, parentPath)
 	}

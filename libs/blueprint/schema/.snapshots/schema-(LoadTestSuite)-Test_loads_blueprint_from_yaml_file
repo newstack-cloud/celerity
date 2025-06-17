@@ -2600,6 +2600,7 @@
               })
             })
           },
+          ExportAll: (bool) false,
           SourceMeta: (map[string]*source.Meta) (len=3) {
             (string) (len=14) "securityGroups": (*source.Meta)({
               Position: (source.Position) {

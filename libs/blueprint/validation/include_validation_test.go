@@ -16,9 +16,10 @@ import (
 )
 
 type IncludeValidationTestSuite struct {
-	funcRegistry      provider.FunctionRegistry
-	refChainCollector refgraph.RefChainCollector
-	resourceRegistry  resourcehelpers.Registry
+	funcRegistry       provider.FunctionRegistry
+	refChainCollector  refgraph.RefChainCollector
+	resourceRegistry   resourcehelpers.Registry
+	dataSourceRegistry provider.DataSourceRegistry
 }
 
 var _ = Suite(&IncludeValidationTestSuite{})
@@ -40,6 +41,14 @@ func (s *IncludeValidationTestSuite) SetUpTest(c *C) {
 	s.refChainCollector = refgraph.NewRefChainCollector()
 	s.resourceRegistry = &internal.ResourceRegistryMock{
 		Resources: map[string]provider.Resource{},
+	}
+	s.dataSourceRegistry = &internal.DataSourceRegistryMock{
+		DataSources: map[string]provider.DataSource{
+			"aws/ec2/instance": newTestEC2InstanceDataSource(),
+			"aws/vpc":          newTestVPCDataSource(),
+			"aws/vpc2":         newTestVPC2DataSource(),
+			"aws/vpc3":         newTestVPC3DataSource(),
+		},
 	}
 }
 
@@ -84,6 +93,7 @@ func (s *IncludeValidationTestSuite) Test_succeeds_with_no_errors_for_a_valid_ch
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, IsNil)
 }
@@ -122,6 +132,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_when_an_invalid_sub_is_p
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := internal.UnpackLoadError(err)
@@ -169,6 +180,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_when_an_invalid_sub_is_p
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := internal.UnpackLoadError(err)
@@ -268,6 +280,7 @@ func (s *IncludeValidationTestSuite) Test_reports_error_for_a_child_blueprint_in
 		s.funcRegistry,
 		s.refChainCollector,
 		s.resourceRegistry,
+		s.dataSourceRegistry,
 	)
 	c.Assert(err, NotNil)
 	loadErr, isLoadErr := err.(*errors.LoadError)

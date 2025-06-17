@@ -40,6 +40,7 @@ func ValidateValue(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -64,6 +65,7 @@ func ValidateValue(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 }
 
@@ -77,6 +79,7 @@ func validateValue(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
@@ -89,6 +92,7 @@ func validateValue(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, descriptionDiagnostics...)
 	if err != nil {
@@ -105,6 +109,7 @@ func validateValue(
 		funcRegistry,
 		refChainCollector,
 		resourceRegistry,
+		dataSourceRegistry,
 	)
 	diagnostics = append(diagnostics, valueDiagnostics...)
 	if err != nil {
@@ -123,6 +128,7 @@ func validateValueDescription(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if valSchema.Description == nil {
 		return []*bpcore.Diagnostic{}, nil
@@ -145,6 +151,7 @@ func validateValueDescription(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)
@@ -178,6 +185,7 @@ func validateValueContent(
 	funcRegistry provider.FunctionRegistry,
 	refChainCollector refgraph.RefChainCollector,
 	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
 	if valSchema.Value == nil {
 		return []*bpcore.Diagnostic{}, errMissingValueContent(valName, valSchema.SourceMeta)
@@ -220,6 +228,7 @@ func validateValueContent(
 				funcRegistry,
 				refChainCollector,
 				resourceRegistry,
+				dataSourceRegistry,
 			)
 			if err != nil {
 				errs = append(errs, err)
