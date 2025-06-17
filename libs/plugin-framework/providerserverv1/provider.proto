@@ -767,7 +767,7 @@ message FetchDataSourceCompleteResponse {
 message ResolvedDataSource {
     DataSourceType type = 1;
     ResolvedDataSourceMetadata data_source_metadata = 2;
-    ResolvedDataSourceFilter filter = 3;
+    repeated ResolvedDataSourceFilter filter = 3;
     map<string, ResolvedDataSourceFieldExport> exports = 4;
     schema.MappingNode description = 5;
 }

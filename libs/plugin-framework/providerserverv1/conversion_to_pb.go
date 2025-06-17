@@ -201,7 +201,7 @@ func toPBResolvedDataSource(
 		return nil, err
 	}
 
-	resolvedDataSourceFilterPB, err := toPBResolvedDataSourceFilter(
+	resolvedDataSourceFilterPB, err := toPBResolvedDataSourceFilters(
 		resolvedDataSource.Filter,
 	)
 	if err != nil {
@@ -265,6 +265,26 @@ func toPBResolvedDataSourceMetadata(
 		Annotations: annotationsPB,
 		Custom:      customPB,
 	}, nil
+}
+
+func toPBResolvedDataSourceFilters(
+	filters *provider.ResolvedDataSourceFilters,
+) ([]*ResolvedDataSourceFilter, error) {
+	if filters == nil {
+		return nil, nil
+	}
+
+	pbFilters := make([]*ResolvedDataSourceFilter, 0, len(filters.Filters))
+	for _, filter := range filters.Filters {
+		pbFilter, err := toPBResolvedDataSourceFilter(filter)
+		if err != nil {
+			return nil, err
+		}
+
+		pbFilters = append(pbFilters, pbFilter)
+	}
+
+	return pbFilters, nil
 }
 
 func toPBResolvedDataSourceFilter(

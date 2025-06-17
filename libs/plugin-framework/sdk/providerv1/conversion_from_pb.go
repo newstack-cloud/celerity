@@ -355,7 +355,7 @@ func fromPBResolvedDataSource(
 		return nil, err
 	}
 
-	filter, err := fromPBResolvedDataSourceFilter(
+	filter, err := fromPBResolvedDataSourceFilters(
 		pbResolvedDataSource.Filter,
 	)
 	if err != nil {
@@ -423,6 +423,27 @@ func fromPBResolvedDataSourceMetadata(
 		DisplayName: displayName,
 		Annotations: annotations,
 		Custom:      custom,
+	}, nil
+}
+
+func fromPBResolvedDataSourceFilters(
+	pbResolvedDataSourceFilters []*providerserverv1.ResolvedDataSourceFilter,
+) (*provider.ResolvedDataSourceFilters, error) {
+	if pbResolvedDataSourceFilters == nil {
+		return nil, nil
+	}
+
+	filters := []*provider.ResolvedDataSourceFilter{}
+	for _, pbFilter := range pbResolvedDataSourceFilters {
+		filter, err := fromPBResolvedDataSourceFilter(pbFilter)
+		if err != nil {
+			return nil, err
+		}
+		filters = append(filters, filter)
+	}
+
+	return &provider.ResolvedDataSourceFilters{
+		Filters: filters,
 	}, nil
 }
 

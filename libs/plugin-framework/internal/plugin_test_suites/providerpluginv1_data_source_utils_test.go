@@ -30,17 +30,21 @@ func dataSourceValidateInput() *provider.DataSourceValidateInput {
 					},
 				},
 			},
-			Filter: &schema.DataSourceFilter{
-				Field: core.ScalarFromString("examplefield"),
-				Operator: &schema.DataSourceFilterOperatorWrapper{
-					Value: schema.DataSourceFilterOperatorEquals,
-				},
-				Search: &schema.DataSourceFilterSearch{
-					Values: []*substitutions.StringOrSubstitutions{
-						{
-							Values: []*substitutions.StringOrSubstitution{
+			Filter: &schema.DataSourceFilters{
+				Filters: []*schema.DataSourceFilter{
+					{
+						Field: core.ScalarFromString("examplefield"),
+						Operator: &schema.DataSourceFilterOperatorWrapper{
+							Value: schema.DataSourceFilterOperatorEquals,
+						},
+						Search: &schema.DataSourceFilterSearch{
+							Values: []*substitutions.StringOrSubstitutions{
 								{
-									StringValue: &searchFor,
+									Values: []*substitutions.StringOrSubstitution{
+										{
+											StringValue: &searchFor,
+										},
+									},
 								},
 							},
 						},
@@ -112,14 +116,18 @@ func dataSourceFetchInput() *provider.DataSourceFetchInput {
 					},
 				},
 			},
-			Filter: &provider.ResolvedDataSourceFilter{
-				Field: core.ScalarFromString("examplefield"),
-				Operator: &schema.DataSourceFilterOperatorWrapper{
-					Value: schema.DataSourceFilterOperatorEquals,
-				},
-				Search: &provider.ResolvedDataSourceFilterSearch{
-					Values: []*core.MappingNode{
-						core.MappingNodeFromString("search-for"),
+			Filter: &provider.ResolvedDataSourceFilters{
+				Filters: []*provider.ResolvedDataSourceFilter{
+					{
+						Field: core.ScalarFromString("examplefield"),
+						Operator: &schema.DataSourceFilterOperatorWrapper{
+							Value: schema.DataSourceFilterOperatorEquals,
+						},
+						Search: &provider.ResolvedDataSourceFilterSearch{
+							Values: []*core.MappingNode{
+								core.MappingNodeFromString("search-for"),
+							},
+						},
 					},
 				},
 			},
