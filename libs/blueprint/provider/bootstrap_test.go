@@ -374,6 +374,7 @@ func (f *functionCallContextMock) CurrentLocation() *source.Meta {
 type testExampleDataSource struct {
 	definition               *DataSourceSpecDefinition
 	filterFields             []string
+	filterFieldDescriptions  map[string]*DataSourceFilterFieldDescription
 	markdownDescription      string
 	plainTextDescription     string
 	emulateTransientFailures bool
@@ -394,7 +395,13 @@ func newTestExampleDataSource(emulateTransientFailures bool) DataSource {
 				},
 			},
 		},
-		filterFields:             []string{"metadata.id"},
+		filterFields: []string{"metadata.id"},
+		filterFieldDescriptions: map[string]*DataSourceFilterFieldDescription{
+			"metadata.id": {
+				PlainTextDescription: "The unique identifier of the resource.",
+				FormattedDescription: "The **unique** identifier of the resource.",
+			},
+		},
 		markdownDescription:      "## test/exampleDataSource\n\nThis is a test data source.",
 		plainTextDescription:     "test/exampleDataSource\n\nThis is a test data source.",
 		emulateTransientFailures: emulateTransientFailures,
@@ -475,7 +482,8 @@ func (d *testExampleDataSource) GetFilterFields(
 	input *DataSourceGetFilterFieldsInput,
 ) (*DataSourceGetFilterFieldsOutput, error) {
 	return &DataSourceGetFilterFieldsOutput{
-		Fields: d.filterFields,
+		Fields:            d.filterFields,
+		FieldDescriptions: d.filterFieldDescriptions,
 	}, nil
 }
 

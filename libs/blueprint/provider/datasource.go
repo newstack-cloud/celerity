@@ -208,6 +208,22 @@ type DataSourceGetFilterFieldsInput struct {
 // that can be used in a filter for a data source.
 type DataSourceGetFilterFieldsOutput struct {
 	Fields []string
+	// A map of filter field names to their descriptions.
+	// As filter fields don't have to be attributes in the data source schema,
+	// this map is used to make sure that there are descriptions for all filter fields.
+	// Filter fields that are in the schema will be marked as "filterable" in registry docs,
+	// however, it's still worth providing descriptions for them as a part of this map,
+	// this will usually display as a section in the documentation of filter field
+	// name followed by its description.
+	FieldDescriptions map[string]*DataSourceFilterFieldDescription
+}
+
+// DataSourceFilterFieldDescription provides a description for a filter field
+// that can be used in a data source filter.
+// This is useful for providing documentation and tooling support for filter fields.
+type DataSourceFilterFieldDescription struct {
+	PlainTextDescription string
+	FormattedDescription string
 }
 
 // DataSourceGetExamplesInput provides the input data needed for a data source to

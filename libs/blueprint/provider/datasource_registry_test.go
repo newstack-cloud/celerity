@@ -76,6 +76,7 @@ func (s *DataSourceRegistryTestSuite) Test_get_filter_fields(c *C) {
 	)
 	c.Assert(err, IsNil)
 	c.Assert(output.Fields, DeepEquals, s.testDataSource.filterFields)
+	c.Assert(output.FieldDescriptions, DeepEquals, s.testDataSource.filterFieldDescriptions)
 }
 
 func (s *DataSourceRegistryTestSuite) Test_custom_validate(c *C) {
