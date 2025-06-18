@@ -70,10 +70,19 @@ const (
 	// when the reason for a blueprint spec load error is due
 	// to an invalid data source filter operator being provided.
 	ErrorReasonCodeInvalidDataSourceFilterOperator errors.ErrorReasonCode = "invalid_data_source_filter_operator"
+	// ErrorReasonCodeUnsupportedDataSourceFilterOperator is provided
+	// when the reason for a blueprint spec load error is due
+	// to an unsupported data source filter operator being provided.
+	ErrorReasonCodeUnsupportedDataSourceFilterOperator errors.ErrorReasonCode = "unsupported_data_source_filter_operator"
 	// ErrorReasonCodeInvalidDataSourceFieldType is provided
 	// when the reason for a blueprint spec load error is due
 	// to an invalid data source field type.
 	ErrorReasonCodeInvalidDataSourceFieldType errors.ErrorReasonCode = "invalid_data_source_field_type"
+	// ErrorReasonCodeInvalidDataSourceFilterConflict is provided
+	// when the reason for a blueprint spec load error is due
+	// to a conflict between two filter fields in a data source,
+	// where both fields can not be used to filter the same data source.
+	ErrorReasonCodeDataSourceFilterConflict errors.ErrorReasonCode = "data_source_filter_conflict"
 	// ErrorReasonCodeInvalidMapKey is provided when the reason
 	// for a blueprint spec load error is due to an invalid map key.
 	ErrorReasonCodeInvalidMapKey errors.ErrorReasonCode = "invalid_map_key"
@@ -664,6 +673,27 @@ func errDataSourceMissingExports(dataSourceName string, dataSourceMeta *source.M
 	}
 }
 
+func errDataSourceFilterFieldConflict(
+	dataSourceName string,
+	fieldName string,
+	otherField string,
+	filterLocation *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(filterLocation)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeDataSourceFilterConflict,
+		Err: fmt.Errorf(
+			"validation failed due to a conflict between the filter fields %q and %q in data source %q, "+
+				"you must use one or the other in the filter section of the data source",
+			fieldName,
+			otherField,
+			dataSourceName,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errInvalidDataSourceFilterOperator(
 	dataSourceName string,
 	dataSourceFilterOperator *schema.DataSourceFilterOperatorWrapper,
@@ -672,12 +702,40 @@ func errInvalidDataSourceFilterOperator(
 	return &errors.LoadError{
 		ReasonCode: ErrorReasonCodeInvalidDataSourceFilterOperator,
 		Err: fmt.Errorf(
-			"unsupported filter operator %q has been provided in data source %q, you can choose from %s",
+			"invalid filter operator %q has been provided in data source %q, you can choose from %s",
 			dataSourceFilterOperator.Value,
 			dataSourceName,
 			strings.Join(
 				core.Map(schema.DataSourceFilterOperators, func(operator schema.DataSourceFilterOperator, index int) string {
 					return fmt.Sprintf("\"%s\"", operator)
+				}),
+				", ",
+			),
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
+func errDataSourceFilterOperatorNotSupported(
+	dataSourceName string,
+	operator schema.DataSourceFilterOperator,
+	filterFieldName string,
+	supportedOperators []schema.DataSourceFilterOperator,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeUnsupportedDataSourceFilterOperator,
+		Err: fmt.Errorf(
+			"data source %q does not support the filter operator %q for field %q, "+
+				"supported operators are: %s",
+			dataSourceName,
+			operator,
+			filterFieldName,
+			strings.Join(
+				core.Map(supportedOperators, func(op schema.DataSourceFilterOperator, index int) string {
+					return fmt.Sprintf("\"%s\"", op)
 				}),
 				", ",
 			),

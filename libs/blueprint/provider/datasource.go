@@ -207,23 +207,9 @@ type DataSourceGetFilterFieldsInput struct {
 // DataSourceGetFilterFieldsOutput provides the output from retrieving the fields
 // that can be used in a filter for a data source.
 type DataSourceGetFilterFieldsOutput struct {
-	Fields []string
-	// A map of filter field names to their descriptions.
-	// As filter fields don't have to be attributes in the data source schema,
-	// this map is used to make sure that there are descriptions for all filter fields.
-	// Filter fields that are in the schema will be marked as "filterable" in registry docs,
-	// however, it's still worth providing descriptions for them as a part of this map,
-	// this will usually display as a section in the documentation of filter field
-	// name followed by its description.
-	FieldDescriptions map[string]*DataSourceFilterFieldDescription
-}
-
-// DataSourceFilterFieldDescription provides a description for a filter field
-// that can be used in a data source filter.
-// This is useful for providing documentation and tooling support for filter fields.
-type DataSourceFilterFieldDescription struct {
-	PlainTextDescription string
-	FormattedDescription string
+	// A map of filter field names to a definition that includes descriptions
+	// and a schema for the filter field used for documentation and validation.
+	FilterFields map[string]*DataSourceFilterSchema
 }
 
 // DataSourceGetExamplesInput provides the input data needed for a data source to
@@ -284,7 +270,7 @@ type DataSourceSpecSchema struct {
 	Nullable bool
 }
 
-// DataSourceSpecSchemaType holds the type of a data suource schema.
+// DataSourceSpecSchemaType holds the type of a data source schema.
 type DataSourceSpecSchemaType string
 
 const (
@@ -298,4 +284,41 @@ const (
 	DataSourceSpecTypeBoolean DataSourceSpecSchemaType = "boolean"
 	// DataSourceSpecTypeArray is for a schema array.
 	DataSourceSpecTypeArray DataSourceSpecSchemaType = "array"
+)
+
+// DataSourceFilterSchema provides a schema that can be used to validate
+// a data source filter field.
+type DataSourceFilterSchema struct {
+	// Type holds the type of the data source filter field.
+	Type DataSourceFilterSearchValueType
+	// Description holds a human-readable description for the data source spec
+	// without any formatting.
+	Description string
+	// FormattedDescription holds a human-readable description for the data source spec
+	// that is formatted with markdown.
+	FormattedDescription string
+	// A list of supported operators for the filter field, this will be used
+	// for validation and documentation to ensure that only operators
+	// supported by a specific data source filter are used.
+	SupportedOperators []schema.DataSourceFilterOperator
+	// A list of other filter fields that this filter field conflicts with.
+	// For example, when an external resource can have multiple unique identifiers,
+	// you will usually want to ensure that only one of them is used in a filter
+	// at a time, so you can specify the conflicting filter fields here.
+	ConflictsWith []string
+}
+
+// DataSourceFilterSearchValueType holds the type of a data source
+// filter search value.
+type DataSourceFilterSearchValueType string
+
+const (
+	// DataSourceFilterSearchValueTypeString is for a string search value.
+	DataSourceFilterSearchValueTypeString DataSourceFilterSearchValueType = "string"
+	// DataSourceFilterSearchValueTypeInteger is for an integer search value.
+	DataSourceFilterSearchValueTypeInteger DataSourceFilterSearchValueType = "integer"
+	// DataSourceFilterSearchValueTypeFloat is for a float search value.
+	DataSourceFilterSearchValueTypeFloat DataSourceFilterSearchValueType = "float"
+	// DataSourceFilterSearchValueTypeBoolean is for a boolean search value.
+	DataSourceFilterSearchValueTypeBoolean DataSourceFilterSearchValueType = "boolean"
 )

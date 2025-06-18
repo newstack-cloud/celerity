@@ -7,6 +7,7 @@ import (
 
 	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 )
 
 type VPCDataSource struct{}
@@ -88,7 +89,24 @@ func (d *VPCDataSource) GetFilterFields(
 	input *provider.DataSourceGetFilterFieldsInput,
 ) (*provider.DataSourceGetFilterFieldsOutput, error) {
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: []string{"vpcId", "tags"},
+		FilterFields: map[string]*provider.DataSourceFilterSchema{
+			"vpcId": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+					schema.DataSourceFilterOperatorNotEquals,
+				},
+			},
+			"tags": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorContains,
+					schema.DataSourceFilterOperatorNotContains,
+					schema.DataSourceFilterOperatorHasKey,
+					schema.DataSourceFilterOperatorNotHasKey,
+				},
+			},
+		},
 	}, nil
 }
 

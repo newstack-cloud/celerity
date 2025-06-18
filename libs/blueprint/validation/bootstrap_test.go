@@ -7,6 +7,7 @@ import (
 
 	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 	. "gopkg.in/check.v1"
 )
 
@@ -712,7 +713,28 @@ func (d *testEC2InstanceDataSource) GetFilterFields(
 	input *provider.DataSourceGetFilterFieldsInput,
 ) (*provider.DataSourceGetFilterFieldsOutput, error) {
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: []string{"instanceConfigId", "tags"},
+		FilterFields: map[string]*provider.DataSourceFilterSchema{
+			"instanceConfigId": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+				},
+				ConflictsWith: []string{"instanceConfigId2"},
+			},
+			"instanceConfigId2": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+				},
+				ConflictsWith: []string{"instanceConfigId"},
+			},
+			"tags": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+				},
+			},
+		},
 	}, nil
 }
 
@@ -787,7 +809,28 @@ func (d *testVPCDataSource) GetFilterFields(
 	input *provider.DataSourceGetFilterFieldsInput,
 ) (*provider.DataSourceGetFilterFieldsOutput, error) {
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: []string{"instanceConfigId", "tags"},
+		FilterFields: map[string]*provider.DataSourceFilterSchema{
+			"instanceConfigId": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+					schema.DataSourceFilterOperatorContains,
+					schema.DataSourceFilterOperatorStartsWith,
+					schema.DataSourceFilterOperatorEndsWith,
+				},
+			},
+			"tags": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+					schema.DataSourceFilterOperatorNotEquals,
+					schema.DataSourceFilterOperatorContains,
+					schema.DataSourceFilterOperatorNotContains,
+					schema.DataSourceFilterOperatorHasKey,
+					schema.DataSourceFilterOperatorNotHasKey,
+				},
+			},
+		},
 	}, nil
 }
 
@@ -856,7 +899,28 @@ func (d *testVPC2DataSource) GetFilterFields(
 	input *provider.DataSourceGetFilterFieldsInput,
 ) (*provider.DataSourceGetFilterFieldsOutput, error) {
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: []string{"instanceConfigId", "tags"},
+		FilterFields: map[string]*provider.DataSourceFilterSchema{
+			"instanceConfigId": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+					schema.DataSourceFilterOperatorContains,
+					schema.DataSourceFilterOperatorStartsWith,
+					schema.DataSourceFilterOperatorEndsWith,
+				},
+			},
+			"tags": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+					schema.DataSourceFilterOperatorNotEquals,
+					schema.DataSourceFilterOperatorContains,
+					schema.DataSourceFilterOperatorNotContains,
+					schema.DataSourceFilterOperatorHasKey,
+					schema.DataSourceFilterOperatorNotHasKey,
+				},
+			},
+		},
 	}, nil
 }
 
@@ -931,7 +995,7 @@ func (d *testVPC3DataSource) GetFilterFields(
 	input *provider.DataSourceGetFilterFieldsInput,
 ) (*provider.DataSourceGetFilterFieldsOutput, error) {
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: []string{},
+		FilterFields: map[string]*provider.DataSourceFilterSchema{},
 	}, nil
 }
 
@@ -1009,7 +1073,28 @@ func (d *testExampleDataSource) GetFilterFields(
 	input *provider.DataSourceGetFilterFieldsInput,
 ) (*provider.DataSourceGetFilterFieldsOutput, error) {
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: []string{"vpcId", "tags"},
+		FilterFields: map[string]*provider.DataSourceFilterSchema{
+			"vpcId": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+					schema.DataSourceFilterOperatorContains,
+					schema.DataSourceFilterOperatorStartsWith,
+					schema.DataSourceFilterOperatorEndsWith,
+				},
+			},
+			"tags": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+					schema.DataSourceFilterOperatorNotEquals,
+					schema.DataSourceFilterOperatorContains,
+					schema.DataSourceFilterOperatorNotContains,
+					schema.DataSourceFilterOperatorHasKey,
+					schema.DataSourceFilterOperatorNotHasKey,
+				},
+			},
+		},
 	}, nil
 }
 

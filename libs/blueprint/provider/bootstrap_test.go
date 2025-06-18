@@ -10,6 +10,7 @@ import (
 
 	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/newstack-cloud/celerity/libs/blueprint/function"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 	"github.com/newstack-cloud/celerity/libs/blueprint/source"
 	. "gopkg.in/check.v1"
 )
@@ -373,8 +374,7 @@ func (f *functionCallContextMock) CurrentLocation() *source.Meta {
 
 type testExampleDataSource struct {
 	definition               *DataSourceSpecDefinition
-	filterFields             []string
-	filterFieldDescriptions  map[string]*DataSourceFilterFieldDescription
+	filterFields             map[string]*DataSourceFilterSchema
 	markdownDescription      string
 	plainTextDescription     string
 	emulateTransientFailures bool
@@ -395,11 +395,14 @@ func newTestExampleDataSource(emulateTransientFailures bool) DataSource {
 				},
 			},
 		},
-		filterFields: []string{"metadata.id"},
-		filterFieldDescriptions: map[string]*DataSourceFilterFieldDescription{
+		filterFields: map[string]*DataSourceFilterSchema{
 			"metadata.id": {
-				PlainTextDescription: "The unique identifier of the resource.",
+				Type:                 DataSourceFilterSearchValueTypeString,
+				Description:          "The unique identifier of the resource.",
 				FormattedDescription: "The **unique** identifier of the resource.",
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+				},
 			},
 		},
 		markdownDescription:      "## test/exampleDataSource\n\nThis is a test data source.",
@@ -482,8 +485,7 @@ func (d *testExampleDataSource) GetFilterFields(
 	input *DataSourceGetFilterFieldsInput,
 ) (*DataSourceGetFilterFieldsOutput, error) {
 	return &DataSourceGetFilterFieldsOutput{
-		Fields:            d.filterFields,
-		FieldDescriptions: d.filterFieldDescriptions,
+		FilterFields: d.filterFields,
 	}, nil
 }
 

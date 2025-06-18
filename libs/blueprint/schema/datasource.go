@@ -705,8 +705,8 @@ func (w *DataSourceFilterOperatorWrapper) FromJSONNode(
 // DataSourceFilterOperator represents a filter operator
 // for a data source defined in a blueprint.
 // Can be one of "=", "!=", "in", "not in", "has key", "not has key",
-// "contains", "not contains", "starts with", "not starts with", "ends with" or
-// "not ends with".
+// "contains", "not contains", "starts with", "not starts with", "ends with",
+// "not ends with", ">", "<", ">=" or "<=".
 type DataSourceFilterOperator string
 
 func (t DataSourceFilterOperator) Equal(compareWith DataSourceFilterOperator) bool {
@@ -738,6 +738,14 @@ const (
 	DataSourceFilterOperatorEndsWith DataSourceFilterOperator = "ends with"
 	// DataSourceFilterOperatorNotEndsWith represents the "not ends with" filter operator.
 	DataSourceFilterOperatorNotEndsWith DataSourceFilterOperator = "not ends with"
+	// DataSourceFilterOperatorGreaterThan represents the ">" filter operator.
+	DataSourceFilterOperatorGreaterThan DataSourceFilterOperator = ">"
+	// DataSourceFilterOperatorLessThan represents the "<" filter operator.
+	DataSourceFilterOperatorLessThan DataSourceFilterOperator = "<"
+	// DataSourceFilterOperatorGreaterThanOrEqual represents the ">=" filter operator.
+	DataSourceFilterOperatorGreaterThanOrEqual DataSourceFilterOperator = ">="
+	// DataSourceFilterOperatorLessThanOrEqual represents the "<=" filter operator.
+	DataSourceFilterOperatorLessThanOrEqual DataSourceFilterOperator = "<="
 )
 
 var (
@@ -756,6 +764,10 @@ var (
 		DataSourceFilterOperatorNotStartsWith,
 		DataSourceFilterOperatorEndsWith,
 		DataSourceFilterOperatorNotEndsWith,
+		DataSourceFilterOperatorGreaterThan,
+		DataSourceFilterOperatorLessThan,
+		DataSourceFilterOperatorGreaterThanOrEqual,
+		DataSourceFilterOperatorLessThanOrEqual,
 	}
 )
 

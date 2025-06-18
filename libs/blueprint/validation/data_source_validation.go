@@ -515,11 +515,16 @@ func validateDataSourceFilters(
 
 	errs := []error{}
 	for _, filter := range filters.Filters {
+		otherFilterFields := getOtherFilterFields(
+			filters.Filters,
+			filter,
+		)
 		filterDiagnostics, err := validateDataSourceFilter(
 			ctx,
 			name,
 			dataSourceType,
 			filter,
+			otherFilterFields,
 			dataSourceMap,
 			bpSchema,
 			params,
@@ -540,11 +545,29 @@ func validateDataSourceFilters(
 	return diagnostics, nil
 }
 
+func getOtherFilterFields(
+	filters []*schema.DataSourceFilter,
+	filter *schema.DataSourceFilter,
+) []string {
+	otherFilterFields := []string{}
+	for _, f := range filters {
+		if f != filter &&
+			bpcore.IsScalarString(f.Field) {
+			otherFilterFields = append(
+				otherFilterFields,
+				bpcore.StringValueFromScalar(f.Field),
+			)
+		}
+	}
+	return otherFilterFields
+}
+
 func validateDataSourceFilter(
 	ctx context.Context,
-	name string,
+	dataSourceName string,
 	dataSourceType string,
 	filter *schema.DataSourceFilter,
+	otherFilterFields []string,
 	dataSourceMap *schema.DataSourceMap,
 	bpSchema *schema.Blueprint,
 	params bpcore.BlueprintParams,
@@ -557,33 +580,29 @@ func validateDataSourceFilter(
 
 	if filter == nil {
 		return diagnostics, errDataSourceEmptyFilter(
-			name, getDataSourceMeta(dataSourceMap, name),
+			dataSourceName, getDataSourceMeta(dataSourceMap, dataSourceName),
 		)
 	}
 
 	if filter.Field == nil || filter.Field.StringValue == nil || *filter.Field.StringValue == "" {
 		return diagnostics, errDataSourceMissingFilterField(
-			name, getDataSourceMeta(dataSourceMap, name),
+			dataSourceName, getDataSourceMeta(dataSourceMap, dataSourceName),
 		)
 	}
 
 	if filter.Operator == nil || filter.Operator.Value == "" {
 		return diagnostics, errDataSourceMissingFilterOperator(
-			name, getDataSourceMeta(dataSourceMap, name),
+			dataSourceName, getDataSourceMeta(dataSourceMap, dataSourceName),
 		)
 	}
 
 	if filter.Search == nil || len(filter.Search.Values) == 0 {
 		return diagnostics, errDataSourceMissingFilterSearch(
-			name, getDataSourceMeta(dataSourceMap, name),
+			dataSourceName, getDataSourceMeta(dataSourceMap, dataSourceName),
 		)
 	}
 
 	providerNamespace := provider.ExtractProviderFromItemType(dataSourceType)
-	// Currently, only simple validation is provided for filter components.
-	// This may be expanded in the future to include more complex validation
-	// to check whether a given operator is supported for a specific field
-	// based on a schema definition for filter fields.
 	filterFieldsOutput, err := dataSourceRegistry.GetFilterFields(
 		ctx,
 		dataSourceType,
@@ -598,25 +617,39 @@ func validateDataSourceFilter(
 		return diagnostics, err
 	}
 
-	if len(filterFieldsOutput.Fields) == 0 {
+	if len(filterFieldsOutput.FilterFields) == 0 {
 		return diagnostics, errDataSourceTypeMissingFields(
-			name,
+			dataSourceName,
 			dataSourceType,
 			filter.SourceMeta,
 		)
 	}
 
-	if !slices.Contains(filterFieldsOutput.Fields, *filter.Field.StringValue) {
+	filterFieldSchema, hasFilterField := filterFieldsOutput.FilterFields[*filter.Field.StringValue]
+	if !hasFilterField {
 		return diagnostics, errDataSourceFilterFieldNotSupported(
-			name,
-			*filter.Field.StringValue,
+			dataSourceName,
+			bpcore.StringValueFromScalar(filter.Field),
 			filter.SourceMeta,
 		)
 	}
 
+	validateConflictErr := validateDataSourceFilterFieldConflict(
+		dataSourceName,
+		bpcore.StringValueFromScalar(filter.Field),
+		otherFilterFields,
+		filterFieldSchema,
+		filter,
+	)
+	if validateConflictErr != nil {
+		return diagnostics, validateConflictErr
+	}
+
 	validateFilterOpDiagnostics, validateFilterOpErr := validateDataSourceFilterOperator(
-		name,
+		dataSourceName,
 		filter.Operator,
+		*filter.Field.StringValue,
+		filterFieldSchema,
 	)
 	diagnostics = append(diagnostics, validateFilterOpDiagnostics...)
 	if validateFilterOpErr != nil {
@@ -625,7 +658,7 @@ func validateDataSourceFilter(
 
 	searchValidationDiagnostics, searchValidationErr := validateDataSourceFilterSearch(
 		ctx,
-		name,
+		dataSourceName,
 		filter.Search,
 		bpSchema,
 		params,
@@ -642,14 +675,51 @@ func validateDataSourceFilter(
 	return diagnostics, nil
 }
 
+func validateDataSourceFilterFieldConflict(
+	dataSourceName string,
+	fieldName string,
+	otherFilterFields []string,
+	filterFieldSchema *provider.DataSourceFilterSchema,
+	filter *schema.DataSourceFilter,
+) error {
+	if filterFieldSchema == nil {
+		return nil
+	}
+
+	for _, otherField := range otherFilterFields {
+		if slices.Contains(filterFieldSchema.ConflictsWith, otherField) {
+			return errDataSourceFilterFieldConflict(
+				dataSourceName,
+				fieldName,
+				otherField,
+				filter.SourceMeta,
+			)
+		}
+	}
+
+	return nil
+}
+
 func validateDataSourceFilterOperator(
 	dataSourceName string,
 	operator *schema.DataSourceFilterOperatorWrapper,
+	filterFieldName string,
+	filterFieldSchema *provider.DataSourceFilterSchema,
 ) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
 	if !core.SliceContains(schema.DataSourceFilterOperators, operator.Value) {
 		return diagnostics, errInvalidDataSourceFilterOperator(dataSourceName, operator)
+	}
+
+	if !core.SliceContains(filterFieldSchema.SupportedOperators, operator.Value) {
+		return diagnostics, errDataSourceFilterOperatorNotSupported(
+			dataSourceName,
+			operator.Value,
+			filterFieldName,
+			filterFieldSchema.SupportedOperators,
+			operator.SourceMeta,
+		)
 	}
 
 	return diagnostics, nil
