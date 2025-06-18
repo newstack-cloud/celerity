@@ -3,6 +3,7 @@ package pluginutils
 import (
 	"context"
 
+	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
 )
 
@@ -31,5 +32,8 @@ type ServiceConfigStore[ServiceConfig any] interface {
 	FromProviderContext(
 		ctx context.Context,
 		providerContext provider.Context,
+		// A map of additional metadata that can contain values specific
+		// to the current request that can be used to configure the service.
+		meta map[string]*core.MappingNode,
 	) (ServiceConfig, error)
 }

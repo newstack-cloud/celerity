@@ -18,6 +18,7 @@ type mockConfigStore struct {
 func (m *mockConfigStore) FromProviderContext(
 	ctx context.Context,
 	providerCtx provider.Context,
+	meta map[string]*core.MappingNode,
 ) (*mockConfig, error) {
 	return m.config, nil
 }
@@ -305,6 +306,7 @@ func (m *mockResourceActions) createMockResource(
 	serviceConfig, err := m.configStore.FromProviderContext(
 		ctx,
 		input.ProviderContext,
+		map[string]*core.MappingNode{},
 	)
 	if err != nil {
 		return nil, err
@@ -331,6 +333,7 @@ func (m *mockResourceActions) updateMockResource(
 	serviceConfig, err := m.configStore.FromProviderContext(
 		ctx,
 		input.ProviderContext,
+		map[string]*core.MappingNode{},
 	)
 	if err != nil {
 		return nil, err
@@ -368,6 +371,7 @@ func (m *mockResourceActions) destroyMockResource(
 	serviceConfig, err := m.configStore.FromProviderContext(
 		ctx,
 		input.ProviderContext,
+		map[string]*core.MappingNode{},
 	)
 	if err != nil {
 		return err
@@ -400,6 +404,7 @@ func (m *mockResourceActions) hasStabilisedMockResource(
 	serviceConfig, err := m.configStore.FromProviderContext(
 		ctx,
 		input.ProviderContext,
+		map[string]*core.MappingNode{},
 	)
 	if err != nil {
 		return nil, err
@@ -429,6 +434,7 @@ func (m *mockResourceActions) getMockResourceExternalState(
 	serviceConfig, err := m.configStore.FromProviderContext(
 		ctx,
 		input.ProviderContext,
+		map[string]*core.MappingNode{},
 	)
 	if err != nil {
 		return nil, err
