@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.22.0] - 2025-06-18
 
+### Added
+
 - **Breaking change** - Adds support for more advanced filter field definitions including supported operators, conflicts and descriptions.
 
 _Breaking changes will occur in early 0.x releases of this framework._
