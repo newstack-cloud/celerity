@@ -52,12 +52,13 @@ type DataSourceDefinition struct {
 
 	// Schema definitions for each of the fields that can be exported
 	// from a data source.
-	FieldSchemas map[string]*provider.DataSourceSpecSchema
+	Fields map[string]*provider.DataSourceSpecSchema
 
-	// A static list of fields that can be used to filter in a data source query
+	// A static map of field names to schemas for filters
+	// that can be used to filter in a data source query
 	// to the provider.
 	// If FilterFieldsFunc is provided, this static list will not be used.
-	FilterFields []string
+	FilterFields map[string]*provider.DataSourceFilterSchema
 
 	// A function that can be used to dynamically determine a list of fields
 	// that can be used to filter in a data source query.
@@ -65,15 +66,6 @@ type DataSourceDefinition struct {
 		ctx context.Context,
 		input *provider.DataSourceGetFilterFieldsInput,
 	) (*provider.DataSourceGetFilterFieldsOutput, error)
-
-	// A map of filter field names to their descriptions.
-	// As filter fields don't have to be attributes in the data source schema,
-	// this map is used to make sure that there are descriptions for all filter fields.
-	// Filter fields that are in the schema will be marked as "filterable" in registry docs,
-	// however, it's still worth providing descriptions for them as a part of this map,
-	// this will usually display as a section in the documentation of filter field
-	// name followed by its description.
-	FilterFieldDescriptions map[string]*provider.DataSourceFilterFieldDescription
 
 	// The function that deals with applying filters and retrieving the requested
 	// data source from the upstream provider.
@@ -143,7 +135,7 @@ func (d *DataSourceDefinition) GetSpecDefinition(
 ) (*provider.DataSourceGetSpecDefinitionOutput, error) {
 	return &provider.DataSourceGetSpecDefinitionOutput{
 		SpecDefinition: &provider.DataSourceSpecDefinition{
-			Fields: d.FieldSchemas,
+			Fields: d.Fields,
 		},
 	}, nil
 }
@@ -157,8 +149,7 @@ func (d *DataSourceDefinition) GetFilterFields(
 	}
 
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields:            d.FilterFields,
-		FieldDescriptions: d.FilterFieldDescriptions,
+		FilterFields: d.FilterFields,
 	}, nil
 }
 

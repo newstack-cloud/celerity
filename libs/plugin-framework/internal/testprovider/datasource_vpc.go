@@ -5,6 +5,7 @@ import (
 
 	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 	"github.com/newstack-cloud/celerity/libs/blueprint/source"
 	"github.com/newstack-cloud/celerity/libs/blueprint/substitutions"
 	"github.com/newstack-cloud/celerity/libs/plugin-framework/sdk/providerv1"
@@ -25,8 +26,8 @@ func dataSourceVPC() provider.DataSource {
 		FormattedDescription: descriptionInfo.MarkdownDescription,
 		PlainTextExamples:    examples.PlainTextExamples,
 		MarkdownExamples:     examples.MarkdownExamples,
-		FieldSchemas:         specDefOutput.SpecDefinition.Fields,
-		FilterFields:         filterFieldsOutput.Fields,
+		Fields:               specDefOutput.SpecDefinition.Fields,
+		FilterFields:         filterFieldsOutput.FilterFields,
 		FetchFunc:            fetchDataSourceVPC,
 	}
 }
@@ -79,9 +80,19 @@ func DataSourceVPCSpecDefinitionOutput() *provider.DataSourceGetSpecDefinitionOu
 
 func DataSourceVPCFilterFieldsOutput() *provider.DataSourceGetFilterFieldsOutput {
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields: []string{
-			"example",
-			"exampleArray",
+		FilterFields: map[string]*provider.DataSourceFilterSchema{
+			"example": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorEquals,
+				},
+			},
+			"tags": {
+				Type: provider.DataSourceFilterSearchValueTypeString,
+				SupportedOperators: []schema.DataSourceFilterOperator{
+					schema.DataSourceFilterOperatorHasKey,
+				},
+			},
 		},
 	}
 }

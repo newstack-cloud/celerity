@@ -2,6 +2,7 @@ package providerv1
 
 import (
 	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 	"github.com/newstack-cloud/celerity/libs/blueprint/serialisation"
 	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 	commoncore "github.com/newstack-cloud/celerity/libs/common/core"
@@ -922,22 +923,38 @@ func toPBGetDataSourceFilterFieldsResponse(
 		}
 	}
 
-	pbDescriptions := map[string]*providerserverv1.DataSourceFilterFieldDescription{}
-	for fieldName, description := range output.FieldDescriptions {
-		pbDescriptions[fieldName] = &providerserverv1.DataSourceFilterFieldDescription{
-			Description:          description.PlainTextDescription,
-			FormattedDescription: description.FormattedDescription,
+	pbFields := map[string]*providerserverv1.DataSourceFilterFieldSchema{}
+	for fieldName, fieldSchema := range output.FilterFields {
+		pbFields[fieldName] = &providerserverv1.DataSourceFilterFieldSchema{
+			Type:                 string(fieldSchema.Type),
+			Description:          fieldSchema.Description,
+			FormattedDescription: fieldSchema.FormattedDescription,
+			SupportedOperators:   toPBDataSourceOperators(fieldSchema.SupportedOperators),
+			ConflictsWith:        fieldSchema.ConflictsWith,
 		}
 	}
 
 	return &providerserverv1.DataSourceFilterFieldsResponse{
 		Response: &providerserverv1.DataSourceFilterFieldsResponse_FilterFields{
 			FilterFields: &providerserverv1.DataSourceFilterFields{
-				Fields:       output.Fields,
-				Descriptions: pbDescriptions,
+				FilterFields: pbFields,
 			},
 		},
 	}
+}
+
+func toPBDataSourceOperators(
+	operators []schema.DataSourceFilterOperator,
+) []string {
+	pbOperators := make(
+		[]string,
+		len(operators),
+	)
+	for i, operator := range operators {
+		pbOperators[i] = string(operator)
+	}
+
+	return pbOperators
 }
 
 func toPBGetDataSourceExamplesResponse(

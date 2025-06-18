@@ -3,6 +3,7 @@ package providerserverv1
 import (
 	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
+	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
 	"github.com/newstack-cloud/celerity/libs/blueprint/serialisation"
 	"github.com/newstack-cloud/celerity/libs/blueprint/state"
 	"github.com/newstack-cloud/celerity/libs/plugin-framework/convertv1"
@@ -249,23 +250,40 @@ func fromPBDataSourceFilterFields(
 		return nil, nil
 	}
 
-	descriptions := map[string]*provider.DataSourceFilterFieldDescription{}
-	for fieldName, pbDescription := range pbFilterFields.Descriptions {
-		if pbDescription != nil {
-			descriptions[fieldName] = &provider.DataSourceFilterFieldDescription{
-				PlainTextDescription: pbDescription.Description,
-				FormattedDescription: pbDescription.FormattedDescription,
+	fields := map[string]*provider.DataSourceFilterSchema{}
+	for fieldName, pbField := range pbFilterFields.FilterFields {
+		if pbField != nil {
+			fields[fieldName] = &provider.DataSourceFilterSchema{
+				Type:                 provider.DataSourceFilterSearchValueType(pbField.Type),
+				Description:          pbField.Description,
+				FormattedDescription: pbField.FormattedDescription,
+				SupportedOperators:   fromPBDataSourceOperators(pbField.SupportedOperators),
+				ConflictsWith:        pbField.ConflictsWith,
 			}
 		}
 	}
-	if len(descriptions) == 0 {
-		descriptions = nil
+	if len(fields) == 0 {
+		fields = nil
 	}
 
 	return &provider.DataSourceGetFilterFieldsOutput{
-		Fields:            pbFilterFields.Fields,
-		FieldDescriptions: descriptions,
+		FilterFields: fields,
 	}, nil
+}
+
+func fromPBDataSourceOperators(
+	pbOperators []string,
+) []schema.DataSourceFilterOperator {
+	if pbOperators == nil {
+		return nil
+	}
+
+	operators := make([]schema.DataSourceFilterOperator, len(pbOperators))
+	for i, pbOperator := range pbOperators {
+		operators[i] = schema.DataSourceFilterOperator(pbOperator)
+	}
+
+	return operators
 }
 
 func fromPBExamplesForDataSource(

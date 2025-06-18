@@ -797,19 +797,16 @@ message ResolvedDataSourceFilterSearch {
 // DataSourceFilterFields provides the fields that can be filtered on
 // for a data source.
 message DataSourceFilterFields {
-    repeated string fields = 1;
-    map<string, DataSourceFilterFieldDescription> descriptions = 2;
+    map<string, DataSourceFilterFieldSchema> filter_fields = 1;
 }
 
-// DataSourceFilterFieldDescription provides a description for a data source filter field
-// that can be used for documentation and tooling.
-message DataSourceFilterFieldDescription {
-    // A human-readable description for the data source filter field
-    // without any formatting.
-    string description = 1;
-    // A human-readable description for the data source filter field
-    // that is formatted with markdown.
-    string formatted_description = 2;
+// DataSourceFilterFieldSchema provides the schema for a data source filter field.
+message DataSourceFilterFieldSchema {
+    string type = 1;
+    string description  = 2;
+    string formatted_description = 3;
+    repeated string supported_operators = 4;
+    repeated string conflicts_with = 5;
 }
 
 // ResolvedDataSourceFieldExport provides a field export for which all ${..}
