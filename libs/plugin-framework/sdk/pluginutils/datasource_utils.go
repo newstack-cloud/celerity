@@ -1,6 +1,8 @@
 package pluginutils
 
 import (
+	"slices"
+
 	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/newstack-cloud/celerity/libs/blueprint/provider"
 	"github.com/newstack-cloud/celerity/libs/blueprint/schema"
@@ -51,4 +53,71 @@ func GetDataSourceFilterSearchValue(
 	}
 
 	return dataSourceFilter.Search.Values[index]
+}
+
+// CreateStringEqualsFilter creates a resolved data source filters object
+// that contains a single equality filter for the given field and string value.
+// This is useful for things like creating filters that match a specific resource ID
+// to be compatible with helpers like the `AdditionalValueExtractor` used
+// for extracting values for a data source or when getting the external state
+// of a resource.
+func CreateStringEqualsFilter(field string, value string) *provider.ResolvedDataSourceFilters {
+	return &provider.ResolvedDataSourceFilters{
+		Filters: []*provider.ResolvedDataSourceFilter{
+			{
+				Field: core.ScalarFromString(field),
+				Operator: &schema.DataSourceFilterOperatorWrapper{
+					Value: schema.DataSourceFilterOperatorEquals,
+				},
+				Search: &provider.ResolvedDataSourceFilterSearch{
+					Values: []*core.MappingNode{
+						core.MappingNodeFromString(value),
+					},
+				},
+			},
+		},
+	}
+}
+
+// ExtractFirstMatchFromFilters extracts the first field match from the filters
+// that matches one of the provided identifiers.
+// It returns the first matching filter's search value as a MappingNode,
+// or nil if no match is found.
+// An example use case for this could be when you have an "ARN" and a unique "Name" field
+// for an AWS resource, and you want to extract either value from the filters to
+// use in a service call.
+func ExtractFirstMatchFromFilters(
+	filters *provider.ResolvedDataSourceFilters,
+	fields []string,
+) *core.MappingNode {
+	for _, filter := range filters.Filters {
+		if slices.Contains(fields, core.StringValueFromScalar(filter.Field)) &&
+			GetDataSourceFilterOperator(
+				filter,
+			) == schema.DataSourceFilterOperatorEquals {
+			return GetDataSourceFilterSearchValue(filter, 0)
+		}
+	}
+
+	return nil
+}
+
+// ExtractMatchFromFilters extracts a specific field match from the filters
+// that matches the provided field name with an equality operator.
+// It returns the matching filter's search value as a MappingNode,
+// or nil if no match is found.
+func ExtractMatchFromFilters(
+	filters *provider.ResolvedDataSourceFilters,
+	field string,
+) *core.MappingNode {
+	for _, filter := range filters.Filters {
+		if core.StringValueFromScalar(filter.Field) == field &&
+			GetDataSourceFilterOperator(
+				filter,
+			) == schema.DataSourceFilterOperatorEquals {
+			return GetDataSourceFilterSearchValue(filter, 0)
+		}
+	}
+
+	return nil
 }
