@@ -75,6 +75,64 @@ func (s *ChangesTestSuite) Test_get_current_resource_state_spec_data() {
 	}
 }
 
+type getSpecDataFromResourceInfoTestCase struct {
+	name             string
+	resourceInfo     *provider.ResourceInfo
+	expectedSpecData *core.MappingNode
+	expectedEmpty    bool
+}
+
+func (s *ChangesTestSuite) Test_get_spec_data_from_resource_info() {
+	testCases := []getSpecDataFromResourceInfoTestCase{
+		{
+			name:         "nil resource info",
+			resourceInfo: nil,
+			expectedSpecData: &core.MappingNode{
+				Fields: map[string]*core.MappingNode{},
+			},
+			expectedEmpty: true,
+		},
+		{
+			name:         "no current resource state",
+			resourceInfo: &provider.ResourceInfo{},
+			expectedSpecData: &core.MappingNode{
+				Fields: map[string]*core.MappingNode{},
+			},
+			expectedEmpty: true,
+		},
+		{
+			name: "valid current resource state",
+			resourceInfo: &provider.ResourceInfo{
+				CurrentResourceState: &state.ResourceState{
+					SpecData: &core.MappingNode{
+						Fields: map[string]*core.MappingNode{
+							"field1": core.MappingNodeFromString("value1"),
+						},
+					},
+				},
+			},
+			expectedSpecData: &core.MappingNode{
+				Fields: map[string]*core.MappingNode{
+					"field1": core.MappingNodeFromString("value1"),
+				},
+			},
+			expectedEmpty: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			result := GetSpecDataFromResourceInfo(tc.resourceInfo)
+			s.Assert().Equal(tc.expectedSpecData, result)
+			if tc.expectedEmpty {
+				s.Assert().Len(result.Fields, 0)
+			} else {
+				s.Assert().NotEmpty(result.Fields)
+			}
+		})
+	}
+}
+
 type getResolvedResourceSpecDataTestCase struct {
 	name             string
 	inputChanges     *provider.Changes
