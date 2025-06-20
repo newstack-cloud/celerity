@@ -61,3 +61,22 @@ type LinkServiceDeps[
 	// config store for the second resource (resource B).
 	ResourceBService ServiceWithConfigStore[ResourceBServiceConfig, ResourceBService]
 }
+
+// NewLinkServiceDeps creates a new instance of a LinkServiceDeps struct
+// using a single service factory and config store for both resources
+// in the link.
+func NewSingleLinkServiceDeps[
+	ResourceServiceConfig any,
+	ResourceService any,
+](
+	singleServiceFactory ServiceFactory[ResourceServiceConfig, ResourceService],
+	singleServiceConfigStore ServiceConfigStore[ResourceServiceConfig],
+) LinkServiceDeps[ResourceServiceConfig, ResourceService, ResourceServiceConfig, ResourceService] {
+
+	return LinkServiceDeps[ResourceServiceConfig, ResourceService, ResourceServiceConfig, ResourceService]{
+		ResourceAService: ServiceWithConfigStore[ResourceServiceConfig, ResourceService]{
+			ServiceFactory: singleServiceFactory,
+			ConfigStore:    singleServiceConfigStore,
+		},
+	}
+}
