@@ -37,3 +37,27 @@ type ServiceConfigStore[ServiceConfig any] interface {
 		meta map[string]*core.MappingNode,
 	) (ServiceConfig, error)
 }
+
+// ServiceWithConfigStore is a struct that holds a service factory and a config store
+// for a service.
+// This is useful for passing multiple services to cross-provider link implementations.
+type ServiceWithConfigStore[ServiceConfig any, Service any] struct {
+	ServiceFactory ServiceFactory[ServiceConfig, Service]
+	ConfigStore    ServiceConfigStore[ServiceConfig]
+}
+
+// LinkServiceDeps is a struct that holds dependencies that can be used
+// to create a link between two resources that supports cross-provider links.
+type LinkServiceDeps[
+	ResourceAServiceConfig any,
+	ResourceAService any,
+	ResourceBServiceConfig any,
+	ResourceBService any,
+] struct {
+	// ResourceAService is a service factory and
+	// config store for the first resource (resource A).
+	ResourceAService ServiceWithConfigStore[ResourceAServiceConfig, ResourceAService]
+	// ResourceBService is a service factory and
+	// config store for the second resource (resource B).
+	ResourceBService ServiceWithConfigStore[ResourceBServiceConfig, ResourceBService]
+}
