@@ -122,7 +122,7 @@ func (s *ChangesTestSuite) Test_get_spec_data_from_resource_info() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			result := GetSpecDataFromResourceInfo(tc.resourceInfo)
+			result := GetCurrentStateSpecDataFromResourceInfo(tc.resourceInfo)
 			s.Assert().Equal(tc.expectedSpecData, result)
 			if tc.expectedEmpty {
 				s.Assert().Len(result.Fields, 0)

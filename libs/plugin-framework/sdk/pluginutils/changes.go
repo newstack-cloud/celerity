@@ -36,9 +36,10 @@ func GetResolvedResourceSpecData(changes *provider.Changes) *core.MappingNode {
 	return changes.AppliedResourceInfo.ResourceWithResolvedSubs.Spec
 }
 
-// GetSpecDataFromResourceInfo extracts the spec data from the resource info.
-// If the resource info is nil, it returns a MappingNode with an empty set of fields.
-func GetSpecDataFromResourceInfo(
+// GetCurrentStateSpecDataFromResourceInfo extracts the current resource state's
+// spec data from the resource info.
+// If the resource info or current resource state is nil, it returns a MappingNode with an empty set of fields.
+func GetCurrentStateSpecDataFromResourceInfo(
 	resourceInfo *provider.ResourceInfo,
 ) *core.MappingNode {
 	if resourceInfo == nil || resourceInfo.CurrentResourceState == nil {
