@@ -166,6 +166,7 @@ func (d *defaultResourceDeployer) Deploy(
 		ctx,
 		&resourceDeployInfo{
 			instanceID:   instanceID,
+			instanceName: deployCtx.InstanceStateSnapshot.InstanceName,
 			resourceID:   resourceID,
 			resourceName: chainLinkNode.ResourceName,
 			resourceImpl: resourceImplementation,
@@ -221,9 +222,10 @@ func (d *defaultResourceDeployer) deployResource(
 	output, err := resourceInfo.resourceImpl.Deploy(
 		ctx,
 		&provider.ResourceDeployInput{
-			InstanceID: resourceInfo.instanceID,
-			ResourceID: resourceInfo.resourceID,
-			Changes:    resourceInfo.changes,
+			InstanceID:   resourceInfo.instanceID,
+			InstanceName: resourceInfo.instanceName,
+			ResourceID:   resourceInfo.resourceID,
+			Changes:      resourceInfo.changes,
 			ProviderContext: provider.NewProviderContextFromParams(
 				providerNamespace,
 				deployCtx.ParamOverrides,
@@ -386,6 +388,7 @@ func (d *defaultResourceDeployer) pollForResourceStability(
 				resourceInfo.resourceImpl,
 				&provider.ResourceHasStabilisedInput{
 					InstanceID:       resourceInfo.instanceID,
+					InstanceName:     resourceInfo.instanceName,
 					ResourceID:       resourceInfo.resourceID,
 					ResourceSpec:     resourceData.Spec,
 					ResourceMetadata: resourceData.Metadata,

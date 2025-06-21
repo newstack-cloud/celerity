@@ -83,6 +83,7 @@ func (s *DriftCheckerTestSuite) Test_checks_drift_for_a_single_resource() {
 	driftState, err := s.driftChecker.CheckResourceDrift(
 		context.Background(),
 		instance1ID,
+		instance1ID,
 		saveOrderFunctionID,
 		createParams(),
 	)

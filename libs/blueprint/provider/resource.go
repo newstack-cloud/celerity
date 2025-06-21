@@ -258,7 +258,10 @@ type ResourceIsCommonTerminalOutput struct {
 // ResourceDeployInput provides the input data needed for a resource to
 // be deployed.
 type ResourceDeployInput struct {
-	InstanceID      string
+	InstanceID string
+	// Additional user-defined blueprint instance name
+	// that can be used in ID/unique name generation and for debugging.
+	InstanceName    string
 	ResourceID      string
 	Changes         *Changes
 	ProviderContext Context
@@ -333,7 +336,10 @@ type ResourceDeployOutput struct {
 // ResourceHasStabilisedInput provides the input data needed for a resource to
 // determine if it has stabilised after being deployed.
 type ResourceHasStabilisedInput struct {
-	InstanceID       string
+	InstanceID string
+	// Additional user-defined blueprint instance name
+	// that can be used in ID/unique name generation and for debugging.
+	InstanceName     string
 	ResourceID       string
 	ResourceSpec     *core.MappingNode
 	ResourceMetadata *state.ResourceMetadataState
@@ -349,7 +355,10 @@ type ResourceHasStabilisedOutput struct {
 // ResourceGetExternalStateInput provides the input data needed for a resource to
 // get the external state of a resource.
 type ResourceGetExternalStateInput struct {
-	InstanceID              string
+	InstanceID string
+	// Additional user-defined blueprint instance name
+	// that can be used in ID/unique name generation and for debugging.
+	InstanceName            string
 	ResourceID              string
 	CurrentResourceSpec     *core.MappingNode
 	CurrentResourceMetadata *state.ResourceMetadataState
@@ -365,7 +374,10 @@ type ResourceGetExternalStateOutput struct {
 // ResourceDestroyInput provides the input data needed to delete
 // a resource.
 type ResourceDestroyInput struct {
-	InstanceID      string
+	InstanceID string
+	// Additional user-defined blueprint instance name
+	// that can be used in ID/unique name generation and for debugging.
+	InstanceName    string
 	ResourceID      string
 	ResourceState   *state.ResourceState
 	ProviderContext Context

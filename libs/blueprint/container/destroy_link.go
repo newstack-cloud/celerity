@@ -14,6 +14,7 @@ type LinkDestroyer interface {
 		ctx context.Context,
 		element state.Element,
 		instanceID string,
+		instanceName string,
 		deployCtx *DeployContext,
 	)
 }
@@ -43,6 +44,7 @@ func (d *defaultLinkDestroyer) Destroy(
 	ctx context.Context,
 	element state.Element,
 	instanceID string,
+	instanceName string,
 	deployCtx *DeployContext,
 ) {
 	linkState := getLinkStateByName(
@@ -85,6 +87,7 @@ func (d *defaultLinkDestroyer) Destroy(
 		ctx,
 		element,
 		instanceID,
+		instanceName,
 		provider.LinkUpdateTypeDestroy,
 		linkImplementation,
 		deployCtx,

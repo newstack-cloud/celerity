@@ -1039,6 +1039,7 @@ func (c *defaultBlueprintContainer) deployLink(
 			LinkName: linkName,
 		},
 		latestInstanceState.InstanceID,
+		latestInstanceState.InstanceName,
 		linkUpdateType,
 		linkImpl,
 		// For the same reason as with the retry policy, we must use a fresh snapshot
@@ -1986,6 +1987,7 @@ type deploymentElementInfo struct {
 
 type resourceDeployInfo struct {
 	instanceID   string
+	instanceName string
 	resourceID   string
 	resourceName string
 	resourceImpl provider.Resource

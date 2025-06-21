@@ -156,6 +156,7 @@ func (s *LinkDeployerTestSuite) runDeployTest(
 			ctx,
 			fixture.linkElement,
 			fixture.instanceID,
+			fixture.instanceName,
 			updateType,
 			&testLambdaDynamoDBTableLink{
 				resourceAUpdateAttempts: map[string]int{},
@@ -317,6 +318,7 @@ func (s *LinkDeployerTestSuite) createFixture(
 	return &linkDeployerFixture{
 		linkElement:           linkElement,
 		instanceID:            instanceID,
+		instanceName:          instanceID,
 		instanceStateSnapshot: instanceStateSnapshot,
 		expectedMessages:      expectedMessages,
 		expectedOutput:        expectedOutput,
@@ -401,6 +403,7 @@ type linkDeployerFixtureInfo struct {
 type linkDeployerFixture struct {
 	linkElement           *LinkIDInfo
 	instanceID            string
+	instanceName          string
 	instanceStateSnapshot *state.InstanceState
 	expectedMessages      *expectedMessages
 	expectedOutput        *LinkDeployResult

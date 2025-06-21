@@ -85,6 +85,7 @@ func (d *defaultResourceDestroyer) Destroy(
 			element:    resourceElement,
 			instanceID: instanceID,
 		},
+		deployCtx.InstanceStateSnapshot.InstanceName,
 		resourceImplementation,
 		deployCtx,
 		provider.CreateRetryContext(policy),
@@ -97,6 +98,7 @@ func (d *defaultResourceDestroyer) Destroy(
 func (d *defaultResourceDestroyer) destroyResource(
 	ctx context.Context,
 	resourceInfo *deploymentElementInfo,
+	instanceName string,
 	resourceImplementation provider.Resource,
 	deployCtx *DeployContext,
 	resourceRetryInfo *provider.RetryContext,
@@ -125,6 +127,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 	providerNamespace := provider.ExtractProviderFromItemType(resourceState.Type)
 	err := resourceImplementation.Destroy(ctx, &provider.ResourceDestroyInput{
 		InstanceID:    resourceInfo.instanceID,
+		InstanceName:  instanceName,
 		ResourceID:    resourceInfo.element.ID(),
 		ResourceState: resourceState,
 		ProviderContext: provider.NewProviderContextFromParams(
@@ -143,6 +146,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 			return d.handleDestroyResourceRetry(
 				ctx,
 				resourceInfo,
+				instanceName,
 				resourceImplementation,
 				provider.RetryContextWithStartTime(resourceRetryInfo, resourceRemovalStartTime),
 				[]string{retryErr.ChildError.Error()},
@@ -200,6 +204,7 @@ func (d *defaultResourceDestroyer) destroyResource(
 func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 	ctx context.Context,
 	resourceInfo *deploymentElementInfo,
+	instanceName string,
 	resourceImplementation provider.Resource,
 	resourceRetryInfo *provider.RetryContext,
 	failureReasons []string,
@@ -234,6 +239,7 @@ func (d *defaultResourceDestroyer) handleDestroyResourceRetry(
 		return d.destroyResource(
 			ctx,
 			resourceInfo,
+			instanceName,
 			resourceImplementation,
 			deployCtx,
 			nextRetryInfo,

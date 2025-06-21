@@ -92,8 +92,11 @@ type LinkUpdateResourceInput struct {
 	Changes           *LinkChanges
 	ResourceInfo      *ResourceInfo
 	OtherResourceInfo *ResourceInfo
-	LinkUpdateType    LinkUpdateType
-	LinkContext       LinkContext
+	// Additional user-defined blueprint instance name
+	// that can be used in ID/unique name generation and for debugging.
+	InstanceName   string
+	LinkUpdateType LinkUpdateType
+	LinkContext    LinkContext
 }
 
 // LinkUpdateType represents the type of update that is being carried out
@@ -118,9 +121,12 @@ type LinkUpdateResourceOutput struct {
 // LinkUpdateIntermediaryResourcesInput provides the input required to
 // update intermediary resources in a link relationship.
 type LinkUpdateIntermediaryResourcesInput struct {
-	ResourceAInfo  *ResourceInfo
-	ResourceBInfo  *ResourceInfo
-	Changes        *LinkChanges
+	ResourceAInfo *ResourceInfo
+	ResourceBInfo *ResourceInfo
+	Changes       *LinkChanges
+	// Additional user-defined blueprint instance name
+	// that can be used in ID/unique name generation and for debugging.
+	InstanceName   string
 	LinkUpdateType LinkUpdateType
 	LinkContext    LinkContext
 	// ResourceDeployService allows a link implementation to hook into

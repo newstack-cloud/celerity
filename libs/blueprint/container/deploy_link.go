@@ -20,6 +20,7 @@ type LinkDeployer interface {
 		ctx context.Context,
 		linkElement state.Element,
 		instanceID string,
+		InstanceName string,
 		linkUpdateType provider.LinkUpdateType,
 		linkImplementation provider.Link,
 		deployCtx *DeployContext,
@@ -55,6 +56,7 @@ func (d *defaultLinkDeployer) Deploy(
 	ctx context.Context,
 	linkElement state.Element,
 	instanceID string,
+	instanceName string,
 	linkUpdateType provider.LinkUpdateType,
 	linkImplementation provider.Link,
 	deployCtx *DeployContext,
@@ -105,6 +107,7 @@ func (d *defaultLinkDeployer) Deploy(
 		&provider.LinkUpdateResourceInput{
 			ResourceInfo:      resourceAInfo,
 			OtherResourceInfo: resourceBInfo,
+			InstanceName:      instanceName,
 			LinkUpdateType:    linkUpdateType,
 			LinkContext:       linkCtx,
 		},
@@ -125,6 +128,7 @@ func (d *defaultLinkDeployer) Deploy(
 		&provider.LinkUpdateResourceInput{
 			ResourceInfo:      resourceBInfo,
 			OtherResourceInfo: resourceAInfo,
+			InstanceName:      instanceName,
 			LinkUpdateType:    linkUpdateType,
 			LinkContext:       linkCtx,
 		},
@@ -145,6 +149,7 @@ func (d *defaultLinkDeployer) Deploy(
 		&provider.LinkUpdateIntermediaryResourcesInput{
 			ResourceAInfo:         resourceAInfo,
 			ResourceBInfo:         resourceBInfo,
+			InstanceName:          instanceName,
 			LinkUpdateType:        linkUpdateType,
 			LinkContext:           linkCtx,
 			ResourceDeployService: deployCtx.ResourceRegistry,

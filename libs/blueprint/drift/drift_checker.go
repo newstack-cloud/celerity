@@ -52,6 +52,7 @@ type Checker interface {
 	CheckResourceDrift(
 		ctx context.Context,
 		instanceID string,
+		instanceName string,
 		resourceID string,
 		params core.BlueprintParams,
 	) (*state.ResourceDriftState, error)
@@ -112,7 +113,13 @@ func (c *defaultChecker) CheckDrift(
 		resourceLogger.Debug(
 			fmt.Sprintf("Checking drift for resource %s", resource.ResourceID),
 		)
-		resourceDrift, err := c.checkResourceDrift(ctx, resource, params, resourceLogger)
+		resourceDrift, err := c.checkResourceDrift(
+			ctx,
+			resource,
+			instanceState.InstanceName,
+			params,
+			resourceLogger,
+		)
 		if err != nil {
 			instanceLogger.Debug(
 				fmt.Sprintf("Failed to check drift for resource %s", resource.ResourceID),
@@ -134,6 +141,7 @@ func (c *defaultChecker) CheckDrift(
 func (c *defaultChecker) CheckResourceDrift(
 	ctx context.Context,
 	instanceID string,
+	instanceName string,
 	resourceID string,
 	params core.BlueprintParams,
 ) (*state.ResourceDriftState, error) {
@@ -154,12 +162,13 @@ func (c *defaultChecker) CheckResourceDrift(
 		return nil, err
 	}
 
-	return c.checkResourceDrift(ctx, &resourceState, params, resourceLogger)
+	return c.checkResourceDrift(ctx, &resourceState, instanceName, params, resourceLogger)
 }
 
 func (c *defaultChecker) checkResourceDrift(
 	ctx context.Context,
 	resource *state.ResourceState,
+	instanceName string,
 	params core.BlueprintParams,
 	resourceLogger core.Logger,
 ) (*state.ResourceDriftState, error) {
@@ -203,6 +212,7 @@ func (c *defaultChecker) checkResourceDrift(
 		resourceImpl,
 		&provider.ResourceGetExternalStateInput{
 			InstanceID:              resource.InstanceID,
+			InstanceName:            instanceName,
 			ResourceID:              resource.ResourceID,
 			CurrentResourceSpec:     resource.SpecData,
 			CurrentResourceMetadata: resource.Metadata,

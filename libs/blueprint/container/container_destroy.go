@@ -132,8 +132,11 @@ func (c *defaultBlueprintContainer) destroy(
 		ctx,
 		&DeployInput{
 			InstanceID: resolvedInstanceID,
-			Changes:    input.Changes,
-			Rollback:   input.Rollback,
+			// We must use the current state instance name as
+			// the instance name supplied in the input can be empty.
+			InstanceName: currentInstanceState.InstanceName,
+			Changes:      input.Changes,
+			Rollback:     input.Rollback,
 		},
 		deployCtx,
 		[]*DeploymentNode{},
@@ -260,6 +263,7 @@ func (c *defaultBlueprintContainer) removeElements(
 		ctx,
 		groupedElements,
 		input.InstanceID,
+		input.InstanceName,
 		deployCtx,
 	)
 	if err != nil {
@@ -273,6 +277,7 @@ func (c *defaultBlueprintContainer) removeGroupedElements(
 	ctx context.Context,
 	parallelGroups [][]state.Element,
 	instanceID string,
+	instanceName string,
 	deployCtx *DeployContext,
 ) (bool, error) {
 	internalChannels := CreateDeployChannels()
@@ -285,6 +290,7 @@ func (c *defaultBlueprintContainer) removeGroupedElements(
 		c.removeGroupElements(
 			ctx,
 			instanceID,
+			instanceName,
 			group,
 			DeployContextWithGroup(
 				DeployContextWithChannels(deployCtx, internalChannels),
@@ -554,6 +560,7 @@ func (c *defaultBlueprintContainer) handleLinkDestroyEvent(
 func (c *defaultBlueprintContainer) removeGroupElements(
 	ctx context.Context,
 	instanceID string,
+	instanceName string,
 	group []state.Element,
 	deployCtx *DeployContext,
 ) {
@@ -595,6 +602,7 @@ func (c *defaultBlueprintContainer) removeGroupElements(
 				ctx,
 				element,
 				instanceID,
+				instanceName,
 				DeployContextWithLogger(deployCtx, linkLogger),
 			)
 		}
