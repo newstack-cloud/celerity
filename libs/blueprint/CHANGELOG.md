@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2025-06-21
+
+### Added
+
+- Adds changes to ensure that the user-defined blueprint instance name is passed to actions used in the deployment lifecycle and for drift checking. This is especially useful for logging and debugging purposes within plugins along with providing plugins with the ability to create meaningful unique names for certain kinds of resources (e.g. AWS IAM roles) that the user is not required to provide a name for in the blueprint document.
+
 ## [0.22.0] - 2025-06-18
 
 ### Added
