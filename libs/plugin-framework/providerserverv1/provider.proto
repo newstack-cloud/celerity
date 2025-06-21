@@ -472,10 +472,11 @@ message GetResourceExternalStateRequest {
     // to the provider.
     string host_id = 2;
     string instance_id = 3;
-    string resource_id = 4;
-    schema.MappingNode current_resource_spec = 5;
-    sharedtypesv1.ResourceMetadataState current_resource_metadata = 6;
-    sharedtypesv1.ProviderContext context = 7;
+    string instance_name = 4;
+    string resource_id = 5;
+    schema.MappingNode current_resource_spec = 6;
+    sharedtypesv1.ResourceMetadataState current_resource_metadata = 7;
+    sharedtypesv1.ProviderContext context = 8;
 }
 
 // GetResourceExternalStateResponse is the response
@@ -581,8 +582,9 @@ message UpdateLinkResourceRequest {
     sharedtypesv1.LinkChanges changes = 3;
     sharedtypesv1.ResourceInfo resource_info = 4;
     sharedtypesv1.ResourceInfo other_resource_info = 5;
-    LinkUpdateType update_type = 6;
-    LinkContext context = 7;
+    string instance_name = 6;
+    LinkUpdateType update_type = 7;
+    LinkContext context = 8;
 }
 
 // UpdateLinkResourceResponse is the response
@@ -614,8 +616,9 @@ message UpdateLinkIntermediaryResourcesRequest {
     sharedtypesv1.ResourceInfo resource_a_info = 3;
     sharedtypesv1.ResourceInfo resource_b_info = 4;
     sharedtypesv1.LinkChanges changes = 5;
-    LinkUpdateType update_type = 6;
-    LinkContext context = 7;
+    string instance_name = 6;
+    LinkUpdateType update_type = 7;
+    LinkContext context = 8;
 }
 
 // UpdateLinkIntermediaryResourcesResponse is the response

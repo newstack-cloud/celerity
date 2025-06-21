@@ -218,6 +218,7 @@ func (l *linkProviderClientWrapper) buildUpdateResourceRequest(
 		Changes:           linkChangesPB,
 		ResourceInfo:      resourceInfoPB,
 		OtherResourceInfo: otherResourceInfoPB,
+		InstanceName:      input.InstanceName,
 		UpdateType:        LinkUpdateType(input.LinkUpdateType),
 		Context:           linkCtx,
 	}, nil
@@ -305,6 +306,7 @@ func (l *linkProviderClientWrapper) buildUpdateIntermediaryResourcesRequest(
 		ResourceAInfo: resourceAInfoPB,
 		ResourceBInfo: resourceBInfoPB,
 		Changes:       linkChangesPB,
+		InstanceName:  input.InstanceName,
 		UpdateType:    LinkUpdateType(input.LinkUpdateType),
 		Context:       linkCtx,
 	}, nil

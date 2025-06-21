@@ -864,6 +864,7 @@ func FromPBDeployResourceRequest(
 
 	return &provider.ResourceDeployInput{
 		InstanceID:      req.InstanceId,
+		InstanceName:    req.InstanceName,
 		ResourceID:      req.ResourceId,
 		Changes:         changes,
 		ProviderContext: providerCtx,
@@ -1413,6 +1414,7 @@ func FromPBResourceHasStabilisedRequest(
 
 	return &provider.ResourceHasStabilisedInput{
 		InstanceID:       req.InstanceId,
+		InstanceName:     req.InstanceName,
 		ResourceID:       req.ResourceId,
 		ResourceSpec:     resourceSpec,
 		ResourceMetadata: resourceMetadataState,
@@ -1462,6 +1464,7 @@ func FromPBDestroyResourceRequest(
 
 	return &provider.ResourceDestroyInput{
 		InstanceID:      req.InstanceId,
+		InstanceName:    req.InstanceName,
 		ResourceID:      req.ResourceId,
 		ResourceState:   resourceState,
 		ProviderContext: providerCtx,

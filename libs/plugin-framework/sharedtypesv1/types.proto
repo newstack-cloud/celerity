@@ -742,11 +742,12 @@ message DeployResourceRequest {
     // to the provider.
     string host_id = 2;
     string instance_id = 3;
-    string resource_id = 4;
-    Changes changes = 5;
+    string instance_name = 4;
+    string resource_id = 5;
+    Changes changes = 6;
     // Runtime configuration for the current environment
     // specific to the current provider.
-    ProviderContext context = 6;
+    ProviderContext context = 7;
 }
 
 // DeployResourceResponse is the response
@@ -786,10 +787,11 @@ message ResourceHasStabilisedRequest {
     // to the provider.
     string host_id = 2;
     string instance_id = 3;
-    string resource_id = 4;
-    schema.MappingNode resource_spec = 5;
-    ResourceMetadataState resource_metadata = 6;
-    ProviderContext context = 7;
+    string instance_name = 4;
+    string resource_id = 5;
+    schema.MappingNode resource_spec = 6;
+    ResourceMetadataState resource_metadata = 7;
+    ProviderContext context = 8;
 }
 
 // ResourceHasStabilisedResponse is the response
@@ -809,9 +811,10 @@ message DestroyResourceRequest {
     // to the provider.
     string host_id = 2;
     string instance_id = 3;
-    string resource_id = 4;
-    ResourceState resource_state = 5;
-    ProviderContext context = 6;
+    string instance_name = 4;
+    string resource_id = 5;
+    ResourceState resource_state = 6;
+    ProviderContext context = 7;
 }
 
 // DestroyResourceResponse is the response

@@ -53,6 +53,7 @@ func fromPBGetResourceExternalStateRequest(
 
 	return &provider.ResourceGetExternalStateInput{
 		InstanceID:              req.InstanceId,
+		InstanceName:            req.InstanceName,
 		ResourceID:              req.ResourceId,
 		CurrentResourceSpec:     currentResourceSpec,
 		CurrentResourceMetadata: currentResourceMetadata,
@@ -232,6 +233,7 @@ func fromPBUpdateLinkResourceRequest(
 		ResourceInfo:      &resourceInfo,
 		OtherResourceInfo: &otherResourceInfo,
 		LinkUpdateType:    provider.LinkUpdateType(req.UpdateType),
+		InstanceName:      req.InstanceName,
 		LinkContext:       linkContext,
 	}, nil
 }
@@ -264,6 +266,7 @@ func fromPBLinkIntermediaryResourceRequest(
 		ResourceAInfo:         &resourceAInfo,
 		ResourceBInfo:         &resourceBInfo,
 		Changes:               &changes,
+		InstanceName:          req.InstanceName,
 		LinkUpdateType:        provider.LinkUpdateType(req.UpdateType),
 		LinkContext:           linkContext,
 		ResourceDeployService: resourceDeployService,
