@@ -349,6 +349,19 @@ func (m *mockResourceActions) updateMockResource(
 		return nil, err
 	}
 
+	// Second call to test assertions on multiple calls to the same method
+	// with different inputs.
+	_, err = service.UpdateConfig(
+		ctx,
+		&updateMockResourceConfigInput{
+			Name:      "Second Update Name",
+			DebugMode: true,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = service.UpdateCode(
 		ctx,
 		&updateMockResourceCodeInput{},

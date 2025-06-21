@@ -178,6 +178,8 @@ type LinkUpdateResourceTestCase[
 	Resource LinkUpdateResource
 	// UpdateActionsCalled is a mapping of method name to the
 	// expected second argument for the method.
+	// When the value is a slice of any, it is expected that the method
+	// is called multiple times with different arguments in the provided order.
 	// This will usually be something like a `*Input` or `*Request` struct
 	// that service library functions take after a context argument.
 	UpdateActionsCalled map[string]any
@@ -344,6 +346,8 @@ type LinkUpdateIntermediaryResourcesTestCase[
 	ExpectedOutput *provider.LinkUpdateIntermediaryResourcesOutput
 	// UpdateActionsCalled is a mapping of method name to the
 	// expected second argument for the method.
+	// When the value is a slice of any, it is expected that the method
+	// is called multiple times with different arguments in the provided order.
 	// This will usually be something like a `*Input` or `*Request` struct
 	// that service library functions take after a context argument.
 	UpdateActionsCalled map[string]any

@@ -355,8 +355,14 @@ func (s *ResourceTestRunnerSuite) createMockResourceUpdateTestCase() ResourceDep
 			},
 		},
 		SaveActionsCalled: map[string]any{
-			"UpdateConfig": &updateMockResourceConfigInput{},
-			"UpdateCode":   &updateMockResourceCodeInput{},
+			"UpdateConfig": []any{
+				&updateMockResourceConfigInput{},
+				&updateMockResourceConfigInput{
+					Name:      "Second Update Name",
+					DebugMode: true,
+				},
+			},
+			"UpdateCode": &updateMockResourceCodeInput{},
 		},
 		SaveActionsNotCalled: []string{"SaveResource"},
 	}

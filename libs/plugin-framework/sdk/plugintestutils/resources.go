@@ -203,6 +203,8 @@ type ResourceDeployTestCase[ServiceConfig any, Service any] struct {
 	Input *provider.ResourceDeployInput
 	// SaveActionsCalled is a mapping of method name to the
 	// expected second argument for the method.
+	// When the value is a slice of any, it is expected that the method
+	// is called multiple times with different arguments in the provided order.
 	// This will usually be something like a `*Input` or `*Request` struct
 	// that service library functions take after a context argument.
 	SaveActionsCalled map[string]any
@@ -281,6 +283,8 @@ type ResourceDestroyTestCase[ServiceConfig any, Service any] struct {
 	Input *provider.ResourceDestroyInput
 	// DestroyActionsCalled is a mapping of method name to the
 	// expected second argument for the method.
+	// When the value is a slice of any, it is expected that the method
+	// is called multiple times with different arguments in the provided order.
 	// This will usually be something like a `*Input` or `*Request` struct
 	// that service library functions take after a context argument.
 	DestroyActionsCalled map[string]any
@@ -330,6 +334,15 @@ func assertActionsCalled(
 	expected map[string]any,
 ) {
 	for methodName, expectedInput := range expected {
+		if expectedSlice, ok := expectedInput.([]any); ok {
+			// []any indicates that the method is expected to be called multiple times
+			// with different inputs, in the given order.
+			for i, input := range expectedSlice {
+				serviceMockCalls.AssertCalledWith(s, methodName, i, Any, input)
+			}
+			return
+		}
+
 		serviceMockCalls.AssertCalledWith(s, methodName, 0, Any, expectedInput)
 	}
 }
