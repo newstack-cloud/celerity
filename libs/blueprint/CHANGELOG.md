@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2025-06-22
+
+### Added
+
+- Adds support for complex static values or user-defined objects and arrays that can contain dynamic elements. As per the latest iteration of the blueprint specification the way value content is defined has been expanded to support complex mappings and arrays that can either be static or can contain substitutions for dynamic elements. This allows for use cases such as defining reusable policy documents for a cloud provider without plugin developers needing to create virtual resource types to make for a better experience in reusing policies and take on the maintenance burden of the complexities involved in virtual resources. Values simplify the plugin developer experience, not having to worry about virtual resources to organise unwieldy resource specs into smaller components and allows the practitioners defining blueprints with the ability to break down larger resource specs using values.
+
 ## [0.23.0] - 2025-06-21
 
 ### Added
