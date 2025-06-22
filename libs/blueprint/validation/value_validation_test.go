@@ -103,17 +103,19 @@ func (s *ValueValidationTestSuite) Test_passes_validation_for_a_valid_value(c *C
 				},
 			},
 		},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					SubstitutionValue: &substitutions.Substitution{
-						Function: &substitutions.SubstitutionFunctionExpr{
-							FunctionName: "jsondecode",
-							Arguments: []*substitutions.SubstitutionFunctionArg{
-								{
-									Value: &substitutions.Substitution{
-										Variable: &substitutions.SubstitutionVariable{
-											VariableName: "regions",
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						SubstitutionValue: &substitutions.Substitution{
+							Function: &substitutions.SubstitutionFunctionExpr{
+								FunctionName: "jsondecode",
+								Arguments: []*substitutions.SubstitutionFunctionArg{
+									{
+										Value: &substitutions.Substitution{
+											Variable: &substitutions.SubstitutionVariable{
+												VariableName: "regions",
+											},
 										},
 									},
 								},
@@ -182,10 +184,12 @@ func (s *ValueValidationTestSuite) Test_reports_error_for_invalid_sub_in_descrip
 				},
 			},
 		},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					StringValue: &value,
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						StringValue: &value,
+					},
 				},
 			},
 		},
@@ -246,10 +250,12 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_value_type_is_missing
 				},
 			},
 		},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					StringValue: &regions,
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						StringValue: &regions,
+					},
 				},
 			},
 		},
@@ -293,10 +299,12 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_unsupported_value_typ
 				},
 			},
 		},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					StringValue: &regions,
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						StringValue: &regions,
+					},
 				},
 			},
 		},
@@ -332,26 +340,28 @@ func (s *ValueValidationTestSuite) Test_reports_error_for_interpolated_string_fo
 	strVal := "This is a string"
 	valueSchema := &schema.Value{
 		Type: &schema.ValueTypeWrapper{Value: schema.ValueTypeArray},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					SubstitutionValue: &substitutions.Substitution{
-						Function: &substitutions.SubstitutionFunctionExpr{
-							FunctionName: "jsondecode",
-							Arguments: []*substitutions.SubstitutionFunctionArg{
-								{
-									Value: &substitutions.Substitution{
-										Variable: &substitutions.SubstitutionVariable{
-											VariableName: "regions",
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						SubstitutionValue: &substitutions.Substitution{
+							Function: &substitutions.SubstitutionFunctionExpr{
+								FunctionName: "jsondecode",
+								Arguments: []*substitutions.SubstitutionFunctionArg{
+									{
+										Value: &substitutions.Substitution{
+											Variable: &substitutions.SubstitutionVariable{
+												VariableName: "regions",
+											},
 										},
 									},
 								},
 							},
 						},
 					},
-				},
-				{
-					StringValue: &strVal,
+					{
+						StringValue: &strVal,
+					},
 				},
 			},
 		},
@@ -400,10 +410,12 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_string_literal_is_pro
 	strVal := "This is a single string"
 	valueSchema := &schema.Value{
 		Type: &schema.ValueTypeWrapper{Value: schema.ValueTypeArray},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					StringValue: &strVal,
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						StringValue: &strVal,
+					},
 				},
 			},
 		},
@@ -454,17 +466,19 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_string_literal_is_pro
 func (s *ValueValidationTestSuite) Test_reports_error_when_sub_that_resolves_to_string_is_provided_for_array_value(c *C) {
 	valueSchema := &schema.Value{
 		Type: &schema.ValueTypeWrapper{Value: schema.ValueTypeArray},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					SubstitutionValue: &substitutions.Substitution{
-						Function: &substitutions.SubstitutionFunctionExpr{
-							FunctionName: "trim",
-							Arguments: []*substitutions.SubstitutionFunctionArg{
-								{
-									Value: &substitutions.Substitution{
-										Variable: &substitutions.SubstitutionVariable{
-											VariableName: "regions",
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						SubstitutionValue: &substitutions.Substitution{
+							Function: &substitutions.SubstitutionFunctionExpr{
+								FunctionName: "trim",
+								Arguments: []*substitutions.SubstitutionFunctionArg{
+									{
+										Value: &substitutions.Substitution{
+											Variable: &substitutions.SubstitutionVariable{
+												VariableName: "regions",
+											},
 										},
 									},
 								},
@@ -515,5 +529,125 @@ func (s *ValueValidationTestSuite) Test_reports_error_when_sub_that_resolves_to_
 		Equals,
 		"blueprint load error: validation failed due to an invalid substitution found in \"values.regions\", "+
 			"resolved type \"string\" is not supported by value of type \"array\"",
+	)
+}
+
+func (s *ValueValidationTestSuite) Test_reports_error_when_static_integer_is_provided_for_array_value(c *C) {
+	valueSchema := &schema.Value{
+		Type: &schema.ValueTypeWrapper{Value: schema.ValueTypeArray},
+		Value: &core.MappingNode{
+			Scalar: core.ScalarFromInt(36),
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"regions": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+				},
+			},
+		},
+		Values: &schema.ValueMap{
+			Values: map[string]*schema.Value{
+				"regions": valueSchema,
+			},
+		},
+	}
+	params := &core.ParamsImpl{}
+
+	_, err := ValidateValue(
+		context.TODO(),
+		"regions",
+		valueSchema,
+		blueprint,
+		params,
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		s.dataSourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeInvalidValue)
+	c.Assert(
+		err.Error(),
+		Equals,
+		"blueprint load error: validation failed due to incorrect value content "+
+			"in \"values.regions\", the content provided is of type \"integer\" but "+
+			"the expected value type is \"array\"",
+	)
+}
+
+func (s *ValueValidationTestSuite) Test_reports_error_when_nested_sub_reference_is_invalid(c *C) {
+	valueSchema := &schema.Value{
+		Type: &schema.ValueTypeWrapper{Value: schema.ValueTypeObject},
+		Value: &core.MappingNode{
+			Fields: map[string]*core.MappingNode{
+				"regions": {
+					StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+						Values: []*substitutions.StringOrSubstitution{
+							{
+								SubstitutionValue: &substitutions.Substitution{
+									Function: &substitutions.SubstitutionFunctionExpr{
+										FunctionName: "trim",
+										Arguments: []*substitutions.SubstitutionFunctionArg{
+											{
+												Value: &substitutions.Substitution{
+													Variable: &substitutions.SubstitutionVariable{
+														VariableName: "missingVariable",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	blueprint := &schema.Blueprint{
+		Variables: &schema.VariableMap{
+			Values: map[string]*schema.Variable{
+				"regions": {
+					Type: &schema.VariableTypeWrapper{Value: schema.VariableTypeString},
+				},
+			},
+		},
+		Values: &schema.ValueMap{
+			Values: map[string]*schema.Value{
+				"regions": valueSchema,
+			},
+		},
+	}
+	params := &core.ParamsImpl{}
+
+	_, err := ValidateValue(
+		context.TODO(),
+		"regions",
+		valueSchema,
+		blueprint,
+		params,
+		s.funcRegistry,
+		s.refChainCollector,
+		s.resourceRegistry,
+		s.dataSourceRegistry,
+	)
+	c.Assert(err, NotNil)
+	loadErr, isLoadErr := err.(*errors.LoadError)
+	c.Assert(isLoadErr, Equals, true)
+	c.Assert(loadErr.ReasonCode, Equals, ErrorReasonCodeMultipleValidationErrors)
+	childErr, isChildErr := internal.UnpackLoadError(loadErr.ChildErrors[0])
+	c.Assert(isChildErr, Equals, true)
+	c.Assert(childErr.ReasonCode, Equals, ErrorReasonCodeInvalidSubstitution)
+	c.Assert(
+		childErr.Error(),
+		Equals,
+		"blueprint load error: validation failed due to the variable \"missingVariable\" not existing in the blueprint",
 	)
 }

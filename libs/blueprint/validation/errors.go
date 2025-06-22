@@ -1735,6 +1735,27 @@ func errInvalidValueSubType(
 	}
 }
 
+func errInvalidValueContentType(
+	valIdentifier string,
+	resolvedSubType string,
+	expectedResolveType string,
+	location *source.Meta,
+) error {
+	line, col := source.PositionFromSourceMeta(location)
+	return &errors.LoadError{
+		ReasonCode: ErrorReasonCodeInvalidValue,
+		Err: fmt.Errorf(
+			"validation failed due to incorrect value content in %q, "+
+				"the content provided is of type %q but the expected value type is %q",
+			valIdentifier,
+			resolvedSubType,
+			expectedResolveType,
+		),
+		Line:   line,
+		Column: col,
+	}
+}
+
 func errMissingValueType(
 	valName string,
 	location *source.Meta,

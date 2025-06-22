@@ -123,7 +123,7 @@ func toValuesPB(values *schema.ValueMap) (map[string]*schemapb.Value, error) {
 	var valuesPB = make(map[string]*schemapb.Value)
 	for k, v := range values.Values {
 
-		valuePB, err := toStringOrSubstitutionsPB(v.Value, false)
+		valuePB, err := ToMappingNodePB(v.Value, false)
 		if err != nil {
 			return nil, err
 		}

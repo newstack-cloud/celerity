@@ -1209,10 +1209,14 @@ func (r *defaultSubstitutionResolver) resolveInValue(
 ) (*ResolvedValue, error) {
 	resolveOnDeployErrs := []*resolveOnDeployError{}
 
-	resolvedContent, err := r.resolveSubstitutions(
+	resolvedContent, err := r.resolveInMappingNode(
 		ctx,
 		value.Value,
+		// Values are ephemeral and do not have a partially resolved state.
+		/* partiallyResolved */
+		nil,
 		resolveContextFromParent("value", resolveCtx),
+		/* depth */ 0,
 	)
 	if err != nil {
 		finalErr := handleCollectResolveError(err, &resolveOnDeployErrs)

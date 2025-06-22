@@ -130,7 +130,7 @@ func fromValuesPB(valuesPB map[string]*schemapb.Value) (*schema.ValueMap, error)
 	var values = make(map[string]*schema.Value)
 	for k, v := range valuesPB {
 
-		value, err := fromStringOrSubstitutionsPB(v.Value, false)
+		value, err := FromMappingNodePB(v.Value, false)
 		if err != nil {
 			return nil, err
 		}

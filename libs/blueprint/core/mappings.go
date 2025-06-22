@@ -450,6 +450,12 @@ func IsScalarMappingNode(node *MappingNode) bool {
 	return node != nil && node.Scalar != nil
 }
 
+// IsStringWithSubsMappingNode returns true if the mapping node
+// is a string with substitutions.
+func IsStringWithSubsMappingNode(node *MappingNode) bool {
+	return node != nil && node.StringWithSubstitutions != nil
+}
+
 // ScalarMappingNodeEqual returns true if the scalar values of two mapping nodes are equal.
 func ScalarMappingNodeEqual(nodeA, nodeB *MappingNode) bool {
 	if (nodeA == nil || nodeA.Scalar == nil) &&

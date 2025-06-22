@@ -4,11 +4,11 @@
       Value: (schema.ValueType) (len=5) "array",
       SourceMeta: (*source.Meta)({
         Position: (source.Position) {
-          Line: (int) 24,
+          Line: (int) 27,
           Column: (int) 11
         },
         EndPosition: (*source.Position)({
-          Line: (int) 24,
+          Line: (int) 27,
           Column: (int) 16
         })
       })

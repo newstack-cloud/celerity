@@ -112,20 +112,45 @@
               })
             })
           }),
-          Value: (*substitutions.StringOrSubstitutions)({
-            Values: ([]*substitutions.StringOrSubstitution) (len=1) {
-              (*substitutions.StringOrSubstitution)({
-                StringValue: (*string)(<nil>),
-                SubstitutionValue: (*substitutions.Substitution)({
-                  Function: (*substitutions.SubstitutionFunctionExpr)({
-                    FunctionName: (substitutions.SubstitutionFunctionName) (len=10) "jsondecode",
-                    Arguments: ([]*substitutions.SubstitutionFunctionArg) (len=1) {
-                      (*substitutions.SubstitutionFunctionArg)({
-                        Name: (string) "",
-                        Value: (*substitutions.Substitution)({
-                          Function: (*substitutions.SubstitutionFunctionExpr)(<nil>),
-                          Variable: (*substitutions.SubstitutionVariable)({
-                            VariableName: (string) (len=15) "functionsConfig",
+          Value: (*core.MappingNode)({
+            Scalar: (*core.ScalarValue)(<nil>),
+            Fields: (map[string]*core.MappingNode) <nil>,
+            Items: ([]*core.MappingNode) <nil>,
+            StringWithSubstitutions: (*substitutions.StringOrSubstitutions)({
+              Values: ([]*substitutions.StringOrSubstitution) (len=1) {
+                (*substitutions.StringOrSubstitution)({
+                  StringValue: (*string)(<nil>),
+                  SubstitutionValue: (*substitutions.Substitution)({
+                    Function: (*substitutions.SubstitutionFunctionExpr)({
+                      FunctionName: (substitutions.SubstitutionFunctionName) (len=10) "jsondecode",
+                      Arguments: ([]*substitutions.SubstitutionFunctionArg) (len=1) {
+                        (*substitutions.SubstitutionFunctionArg)({
+                          Name: (string) "",
+                          Value: (*substitutions.Substitution)({
+                            Function: (*substitutions.SubstitutionFunctionExpr)(<nil>),
+                            Variable: (*substitutions.SubstitutionVariable)({
+                              VariableName: (string) (len=15) "functionsConfig",
+                              SourceMeta: (*source.Meta)({
+                                Position: (source.Position) {
+                                  Line: (int) 11,
+                                  Column: (int) 26
+                                },
+                                EndPosition: (*source.Position)({
+                                  Line: (int) 11,
+                                  Column: (int) 51
+                                })
+                              })
+                            }),
+                            ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
+                            ElemReference: (*substitutions.SubstitutionElemReference)(<nil>),
+                            ElemIndexReference: (*substitutions.SubstitutionElemIndexReference)(<nil>),
+                            DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                            ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
+                            Child: (*substitutions.SubstitutionChild)(<nil>),
+                            StringValue: (*string)(<nil>),
+                            IntValue: (*int64)(<nil>),
+                            FloatValue: (*float64)(<nil>),
+                            BoolValue: (*bool)(<nil>),
                             SourceMeta: (*source.Meta)({
                               Position: (source.Position) {
                                 Line: (int) 11,
@@ -137,16 +162,6 @@
                               })
                             })
                           }),
-                          ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
-                          ElemReference: (*substitutions.SubstitutionElemReference)(<nil>),
-                          ElemIndexReference: (*substitutions.SubstitutionElemIndexReference)(<nil>),
-                          DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
-                          ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
-                          Child: (*substitutions.SubstitutionChild)(<nil>),
-                          StringValue: (*string)(<nil>),
-                          IntValue: (*int64)(<nil>),
-                          FloatValue: (*float64)(<nil>),
-                          BoolValue: (*bool)(<nil>),
                           SourceMeta: (*source.Meta)({
                             Position: (source.Position) {
                               Line: (int) 11,
@@ -157,21 +172,32 @@
                               Column: (int) 51
                             })
                           })
-                        }),
-                        SourceMeta: (*source.Meta)({
-                          Position: (source.Position) {
-                            Line: (int) 11,
-                            Column: (int) 26
-                          },
-                          EndPosition: (*source.Position)({
-                            Line: (int) 11,
-                            Column: (int) 51
-                          })
+                        })
+                      },
+                      Path: ([]*substitutions.SubstitutionPathItem) {
+                      },
+                      SourceMeta: (*source.Meta)({
+                        Position: (source.Position) {
+                          Line: (int) 11,
+                          Column: (int) 15
+                        },
+                        EndPosition: (*source.Position)({
+                          Line: (int) 11,
+                          Column: (int) 52
                         })
                       })
-                    },
-                    Path: ([]*substitutions.SubstitutionPathItem) {
-                    },
+                    }),
+                    Variable: (*substitutions.SubstitutionVariable)(<nil>),
+                    ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
+                    ElemReference: (*substitutions.SubstitutionElemReference)(<nil>),
+                    ElemIndexReference: (*substitutions.SubstitutionElemIndexReference)(<nil>),
+                    DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
+                    ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
+                    Child: (*substitutions.SubstitutionChild)(<nil>),
+                    StringValue: (*string)(<nil>),
+                    IntValue: (*int64)(<nil>),
+                    FloatValue: (*float64)(<nil>),
+                    BoolValue: (*bool)(<nil>),
                     SourceMeta: (*source.Meta)({
                       Position: (source.Position) {
                         Line: (int) 11,
@@ -183,50 +209,37 @@
                       })
                     })
                   }),
-                  Variable: (*substitutions.SubstitutionVariable)(<nil>),
-                  ValueReference: (*substitutions.SubstitutionValueReference)(<nil>),
-                  ElemReference: (*substitutions.SubstitutionElemReference)(<nil>),
-                  ElemIndexReference: (*substitutions.SubstitutionElemIndexReference)(<nil>),
-                  DataSourceProperty: (*substitutions.SubstitutionDataSourceProperty)(<nil>),
-                  ResourceProperty: (*substitutions.SubstitutionResourceProperty)(<nil>),
-                  Child: (*substitutions.SubstitutionChild)(<nil>),
-                  StringValue: (*string)(<nil>),
-                  IntValue: (*int64)(<nil>),
-                  FloatValue: (*float64)(<nil>),
-                  BoolValue: (*bool)(<nil>),
                   SourceMeta: (*source.Meta)({
                     Position: (source.Position) {
                       Line: (int) 11,
-                      Column: (int) 15
+                      Column: (int) 12
                     },
                     EndPosition: (*source.Position)({
                       Line: (int) 11,
                       Column: (int) 52
                     })
                   })
-                }),
-                SourceMeta: (*source.Meta)({
-                  Position: (source.Position) {
-                    Line: (int) 11,
-                    Column: (int) 12
-                  },
-                  EndPosition: (*source.Position)({
-                    Line: (int) 11,
-                    Column: (int) 52
-                  })
+                })
+              },
+              SourceMeta: (*source.Meta)({
+                Position: (source.Position) {
+                  Line: (int) 11,
+                  Column: (int) 12
+                },
+                EndPosition: (*source.Position)({
+                  Line: (int) 11,
+                  Column: (int) 54
                 })
               })
-            },
+            }),
             SourceMeta: (*source.Meta)({
               Position: (source.Position) {
                 Line: (int) 11,
                 Column: (int) 12
               },
-              EndPosition: (*source.Position)({
-                Line: (int) 11,
-                Column: (int) 54
-              })
-            })
+              EndPosition: (*source.Position)(<nil>)
+            }),
+            FieldsSourceMeta: (map[string]*source.Meta) <nil>
           }),
           Description: (*substitutions.StringOrSubstitutions)(<nil>),
           Secret: (*core.ScalarValue)(<nil>),

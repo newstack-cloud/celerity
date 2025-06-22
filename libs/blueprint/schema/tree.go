@@ -368,10 +368,11 @@ func valueToTreeNode(valName string, value *Value, parentPath string, location *
 		children = append(children, valTypeNode)
 	}
 
-	contentNode := stringSubsToTreeNode(
+	contentNode := mappingNodeToTreeNode(
 		"value",
 		value.Value,
 		valueNode.Path,
+		nil,
 	)
 	if contentNode != nil {
 		children = append(children, contentNode)

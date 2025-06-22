@@ -16,7 +16,7 @@ import (
 // that can be used in a blueprint.
 type Value struct {
 	Type        *ValueTypeWrapper                    `yaml:"type" json:"type"`
-	Value       *substitutions.StringOrSubstitutions `yaml:"value" json:"value"`
+	Value       *bpcore.MappingNode                  `yaml:"value" json:"value"`
 	Description *substitutions.StringOrSubstitutions `yaml:"description,omitempty" json:"description,omitempty"`
 	Secret      *bpcore.ScalarValue                  `yaml:"secret" json:"secret"`
 	SourceMeta  *source.Meta                         `yaml:"-" json:"-"`
@@ -65,7 +65,7 @@ func (v *Value) FromJSONNode(node *json.Node, linePositions []int, parentPath st
 		return err
 	}
 
-	v.Value = &substitutions.StringOrSubstitutions{}
+	v.Value = &bpcore.MappingNode{}
 	err = bpcore.UnpackValueFromJSONMapNode(
 		nodeMap,
 		"value",

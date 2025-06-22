@@ -2,11 +2,12 @@ package subengine
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/bradleyjkemp/cupaloy/v2"
 	"github.com/newstack-cloud/celerity/libs/blueprint/core"
 	"github.com/newstack-cloud/celerity/libs/blueprint/internal"
-	"github.com/newstack-cloud/celerity/libs/common/testhelpers"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -50,19 +51,34 @@ func (s *SubstitutionValueResolverTestSuite) Test_resolves_substitutions_in_valu
 		params,
 	)
 
-	result, err := subResolver.ResolveInValue(
-		context.TODO(),
+	resolveInValues := []string{
 		"deployOrdersTableToRegions",
-		blueprint.Values.Values["deployOrdersTableToRegions"],
-		&ResolveValueTargetInfo{
-			ResolveFor: ResolveForChangeStaging,
-		},
-	)
-	s.Require().NoError(err)
-	s.Require().NotNil(result)
+		"samplePolicy",
+		"sampleArray",
+		"sampleInteger",
+		"sampleBoolean",
+		"sampleFloat",
+	}
 
-	err = testhelpers.Snapshot(result)
-	s.Require().NoError(err)
+	for _, resolveInValue := range resolveInValues {
+		result, err := subResolver.ResolveInValue(
+			context.TODO(),
+			resolveInValue,
+			blueprint.Values.Values[resolveInValue],
+			&ResolveValueTargetInfo{
+				ResolveFor: ResolveForChangeStaging,
+			},
+		)
+		s.Require().NoError(err)
+		s.Require().NotNil(result)
+
+		snapshotName := fmt.Sprintf(
+			"subengine-(SubstitutionValueResolverTestSuite)-Test_resolves_substitutions_in_value_for_change_staging-%s",
+			resolveInValue,
+		)
+		err = cupaloy.SnapshotWithName(snapshotName, result)
+		s.Require().NoError(err)
+	}
 }
 
 func resolveInValueTestParams() core.BlueprintParams {
@@ -71,6 +87,7 @@ func resolveInValueTestParams() core.BlueprintParams {
 	region := "us-west-2"
 	deployOrdersTableToRegions := "[\"us-west-2\",\"us-east-1\"]"
 	relatedInfo := "[{\"id\":\"test-info-1\"},{\"id\":\"test-info-2\"}]"
+	targetTableARN := "arn:aws:dynamodb:us-west-2:123456789012:table/Orders"
 	blueprintVars := map[string]*core.ScalarValue{
 		"environment": {
 			StringValue: &environment,
@@ -86,6 +103,9 @@ func resolveInValueTestParams() core.BlueprintParams {
 		},
 		"relatedInfo": {
 			StringValue: &relatedInfo,
+		},
+		"targetTableArn": {
+			StringValue: &targetTableARN,
 		},
 	}
 	return core.NewDefaultParams(

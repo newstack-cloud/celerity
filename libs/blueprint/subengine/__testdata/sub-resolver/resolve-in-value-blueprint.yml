@@ -14,6 +14,9 @@ variables:
   deployOrdersTableToRegions:
     type: string
     description: "A JSON-encoded list of regions to deploy the orders table to."
+  targetTableArn:
+    type: string
+    description: "The ARN of the target table for the sample policy."
 
 values:
   tableName:
@@ -24,6 +27,38 @@ values:
     type: array
     value: "${jsondecode(variables.deployOrdersTableToRegions)}"
     description: "The regions to deploy the orders table to."
+
+  samplePolicy:
+    type: object
+    value:
+      policyName: "SamplePolicy"
+      policyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "dynamodb:PutItem"
+            Resource: "${variables.targetTableArn}"
+    description: "A sample policy for testing purposes."
+  
+  sampleArray:
+    type: array
+    value: ["item1", "item2", "item3"]
+    description: "A sample array for testing purposes."
+  
+  sampleInteger:
+    type: integer
+    value: 42
+    description: "A sample integer for testing purposes."
+
+  sampleBoolean:
+    type: boolean
+    value: true
+    description: "A sample boolean for testing purposes."
+
+  sampleFloat:
+    type: float
+    value: 3.14
+    description: "A sample float for testing purposes."
 
 datasources:
   network:

@@ -31,7 +31,7 @@ message Variable {
 
 message Value {
     string type = 1;
-    StringOrSubstitutions value = 2;
+    MappingNode value = 2;
     optional StringOrSubstitutions description = 3;
     ScalarValue secret = 4;
 }

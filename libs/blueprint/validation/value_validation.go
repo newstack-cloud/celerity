@@ -187,16 +187,97 @@ func validateValueContent(
 	resourceRegistry resourcehelpers.Registry,
 	dataSourceRegistry provider.DataSourceRegistry,
 ) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+
 	if valSchema.Value == nil {
-		return []*bpcore.Diagnostic{}, errMissingValueContent(valName, valSchema.SourceMeta)
+		return diagnostics, errMissingValueContent(valName, valSchema.SourceMeta)
 	}
 
 	valIdentifier := bpcore.ValueElementID(valName)
-	errs := []error{}
+
+	// For string values with substitutions, we care about the resolved type
+	// of substitutions, so we need to validate the string with substitutions
+	// content type directly instead of through mapping node validation.
+	if bpcore.IsStringWithSubsMappingNode(valSchema.Value) {
+		return validateValueContentForStringWithSubs(
+			ctx,
+			valIdentifier,
+			valSchema,
+			bpSchema,
+			expectedResolveType,
+			params,
+			funcRegistry,
+			refChainCollector,
+			resourceRegistry,
+			dataSourceRegistry,
+		)
+	}
+
+	contentTypeDiags, err := validateValueContentType(
+		valIdentifier,
+		valSchema,
+		expectedResolveType,
+	)
+	diagnostics = append(diagnostics, contentTypeDiags...)
+	if err != nil {
+		return diagnostics, err
+	}
+
+	mappingNodeDiags, err := ValidateMappingNode(
+		ctx,
+		valIdentifier,
+		"value",
+		/* usedInResourceDerivedFromTemplate */ false,
+		valSchema.Value,
+		bpSchema,
+		params,
+		funcRegistry,
+		refChainCollector,
+		resourceRegistry,
+		dataSourceRegistry,
+	)
+	diagnostics = append(diagnostics, mappingNodeDiags...)
+
+	return diagnostics, err
+}
+
+func validateValueContentType(
+	valIdentifier string,
+	valSchema *schema.Value,
+	expectedResolveType string,
+) ([]*bpcore.Diagnostic, error) {
 	diagnostics := []*bpcore.Diagnostic{}
 
-	// More than one value in a stringOrSubstitutions slice represents a string interpolation.
-	if len(valSchema.Value.Values) > 1 &&
+	resolvedSubType := resolvedSubTypeFromMappingNode(valSchema.Value)
+	if resolvedSubType != expectedResolveType {
+		return diagnostics, errInvalidValueContentType(
+			valIdentifier,
+			resolvedSubType,
+			expectedResolveType,
+			valSchema.SourceMeta,
+		)
+	}
+
+	return diagnostics, nil
+}
+
+func validateValueContentForStringWithSubs(
+	ctx context.Context,
+	valIdentifier string,
+	valSchema *schema.Value,
+	bpSchema *schema.Blueprint,
+	expectedResolveType string,
+	params bpcore.BlueprintParams,
+	funcRegistry provider.FunctionRegistry,
+	refChainCollector refgraph.RefChainCollector,
+	resourceRegistry resourcehelpers.Registry,
+	dataSourceRegistry provider.DataSourceRegistry,
+) ([]*bpcore.Diagnostic, error) {
+	diagnostics := []*bpcore.Diagnostic{}
+
+	if len(valSchema.Value.StringWithSubstitutions.Values) > 1 &&
+		// More than one value in a stringOrSubstitutions slice represents a string interpolation
+		// which is only allowed for string values.
 		expectedResolveType != string(substitutions.ResolvedSubExprTypeString) {
 		return diagnostics, errValueIncorrectTypeInterpolatedString(
 			valIdentifier,
@@ -205,7 +286,9 @@ func validateValueContent(
 		)
 	}
 
-	for _, stringOrSub := range valSchema.Value.Values {
+	errs := []error{}
+
+	for _, stringOrSub := range valSchema.Value.StringWithSubstitutions.Values {
 		if stringOrSub.StringValue != nil {
 			if expectedResolveType != string(substitutions.ResolvedSubExprTypeString) {
 				errs = append(errs, errValueIncorrectTypeInterpolatedString(
@@ -283,4 +366,36 @@ func getValSourceMeta(valMap *schema.ValueMap, varName string) *source.Meta {
 	}
 
 	return valMap.SourceMeta[varName]
+}
+
+func resolvedSubTypeFromMappingNode(mappingNode *bpcore.MappingNode) string {
+	if bpcore.IsScalarMappingNode(mappingNode) &&
+		bpcore.IsScalarString(mappingNode.Scalar) {
+		return string(substitutions.ResolvedSubExprTypeString)
+	}
+
+	if bpcore.IsScalarMappingNode(mappingNode) &&
+		bpcore.IsScalarInt(mappingNode.Scalar) {
+		return string(substitutions.ResolvedSubExprTypeInteger)
+	}
+
+	if bpcore.IsScalarMappingNode(mappingNode) &&
+		bpcore.IsScalarFloat(mappingNode.Scalar) {
+		return string(substitutions.ResolvedSubExprTypeFloat)
+	}
+
+	if bpcore.IsScalarMappingNode(mappingNode) &&
+		bpcore.IsScalarBool(mappingNode.Scalar) {
+		return string(substitutions.ResolvedSubExprTypeBoolean)
+	}
+
+	if bpcore.IsArrayMappingNode(mappingNode) {
+		return string(substitutions.ResolvedSubExprTypeArray)
+	}
+
+	if bpcore.IsObjectMappingNode(mappingNode) {
+		return string(substitutions.ResolvedSubExprTypeObject)
+	}
+
+	return string(substitutions.ResolvedSubExprTypeAny)
 }

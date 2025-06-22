@@ -983,18 +983,20 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_indirectl
 	testServiceResource := newTestValidResource()
 	testServiceIDWithPrefixValue := &schema.Value{
 		Type: &schema.ValueTypeWrapper{Value: "string"},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					SubstitutionValue: &substitutions.Substitution{
-						ResourceProperty: &substitutions.SubstitutionResourceProperty{
-							ResourceName: "testService",
-							Path: []*substitutions.SubstitutionPathItem{
-								{
-									FieldName: "spec",
-								},
-								{
-									FieldName: "id",
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						SubstitutionValue: &substitutions.Substitution{
+							ResourceProperty: &substitutions.SubstitutionResourceProperty{
+								ResourceName: "testService",
+								Path: []*substitutions.SubstitutionPathItem{
+									{
+										FieldName: "spec",
+									},
+									{
+										FieldName: "id",
+									},
 								},
 							},
 						},
@@ -1156,15 +1158,17 @@ func (s *ResourceValidationTestSuite) Test_reports_error_when_resource_indirectl
 	}
 	testNetworkingStackVPCValue := &schema.Value{
 		Type: &schema.ValueTypeWrapper{Value: "string"},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					SubstitutionValue: &substitutions.Substitution{
-						Child: &substitutions.SubstitutionChild{
-							ChildName: "testNetworkingStack",
-							Path: []*substitutions.SubstitutionPathItem{
-								{
-									FieldName: "vpcId",
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						SubstitutionValue: &substitutions.Substitution{
+							Child: &substitutions.SubstitutionChild{
+								ChildName: "testNetworkingStack",
+								Path: []*substitutions.SubstitutionPathItem{
+									{
+										FieldName: "vpcId",
+									},
 								},
 							},
 						},

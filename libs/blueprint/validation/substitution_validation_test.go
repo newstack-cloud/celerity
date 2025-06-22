@@ -720,13 +720,15 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_a_val_ref_is
 					Type: &schema.ValueTypeWrapper{
 						Value: schema.ValueTypeObject,
 					},
-					Value: &substitutions.StringOrSubstitutions{
-						Values: []*substitutions.StringOrSubstitution{
-							{
-								SubstitutionValue: &substitutions.Substitution{
-									DataSourceProperty: &substitutions.SubstitutionDataSourceProperty{
-										DataSourceName: "buckets",
-										FieldName:      "config",
+					Value: &core.MappingNode{
+						StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+							Values: []*substitutions.StringOrSubstitution{
+								{
+									SubstitutionValue: &substitutions.Substitution{
+										DataSourceProperty: &substitutions.SubstitutionDataSourceProperty{
+											DataSourceName: "buckets",
+											FieldName:      "config",
+										},
 									},
 								},
 							},
@@ -776,13 +778,15 @@ func (s *SubstitutionValidationTestSuite) Test_fails_validation_for_self_referen
 					Type: &schema.ValueTypeWrapper{
 						Value: schema.ValueTypeObject,
 					},
-					Value: &substitutions.StringOrSubstitutions{
-						Values: []*substitutions.StringOrSubstitution{
-							{
-								SubstitutionValue: &substitutions.Substitution{
-									DataSourceProperty: &substitutions.SubstitutionDataSourceProperty{
-										DataSourceName: "buckets",
-										FieldName:      "config",
+					Value: &core.MappingNode{
+						StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+							Values: []*substitutions.StringOrSubstitution{
+								{
+									SubstitutionValue: &substitutions.Substitution{
+										DataSourceProperty: &substitutions.SubstitutionDataSourceProperty{
+											DataSourceName: "buckets",
+											FieldName:      "config",
+										},
 									},
 								},
 							},

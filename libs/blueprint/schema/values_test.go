@@ -83,18 +83,30 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 			EndPosition: &source.Position{Line: 1, Column: 14},
 		},
 	})
-	c.Assert(targetVal.Value, DeepEquals, &substitutions.StringOrSubstitutions{
-		Values: []*substitutions.StringOrSubstitution{
-			{
-				SubstitutionValue: &substitutions.Substitution{
-					ResourceProperty: &substitutions.SubstitutionResourceProperty{
-						ResourceName: "exampleResource",
-						Path: []*substitutions.SubstitutionPathItem{
-							{
-								FieldName: "spec",
+	c.Assert(targetVal.Value, DeepEquals, &core.MappingNode{
+		StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					SubstitutionValue: &substitutions.Substitution{
+						ResourceProperty: &substitutions.SubstitutionResourceProperty{
+							ResourceName: "exampleResource",
+							Path: []*substitutions.SubstitutionPathItem{
+								{
+									FieldName: "spec",
+								},
+								{
+									FieldName: "enabled",
+								},
 							},
-							{
-								FieldName: "enabled",
+							SourceMeta: &source.Meta{
+								Position: source.Position{
+									Line:   2,
+									Column: 10,
+								},
+								EndPosition: &source.Position{
+									Line:   2,
+									Column: 48,
+								},
 							},
 						},
 						SourceMeta: &source.Meta{
@@ -111,23 +123,23 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 					SourceMeta: &source.Meta{
 						Position: source.Position{
 							Line:   2,
-							Column: 10,
+							Column: 8,
 						},
 						EndPosition: &source.Position{
 							Line:   2,
-							Column: 48,
+							Column: 49,
 						},
 					},
 				},
-				SourceMeta: &source.Meta{
-					Position: source.Position{
-						Line:   2,
-						Column: 8,
-					},
-					EndPosition: &source.Position{
-						Line:   2,
-						Column: 49,
-					},
+			},
+			SourceMeta: &source.Meta{
+				Position: source.Position{
+					Line:   2,
+					Column: 8,
+				},
+				EndPosition: &source.Position{
+					Line:   2,
+					Column: 49,
 				},
 			},
 		},
@@ -135,10 +147,6 @@ func (s *ValueTestSuite) Test_parses_valid_value_yaml_input(c *C) {
 			Position: source.Position{
 				Line:   2,
 				Column: 8,
-			},
-			EndPosition: &source.Position{
-				Line:   2,
-				Column: 49,
 			},
 		},
 	})
@@ -169,10 +177,12 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 				},
 			},
 		},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					StringValue: &region,
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						StringValue: &region,
+					},
 				},
 			},
 		},
@@ -225,19 +235,17 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 		},
 	})
 	c.Assert(*targetVal.Secret.BoolValue, Equals, *expected.Secret.BoolValue)
-	c.Assert(targetVal.Value, DeepEquals, &substitutions.StringOrSubstitutions{
-		Values: []*substitutions.StringOrSubstitution{
-			{
-				StringValue: &region,
-				SourceMeta: &source.Meta{
-					Position: source.Position{
-						Line:   2,
-						Column: 8,
-					},
-					EndPosition: &source.Position{
-						Line:   2,
-						Column: 17,
-					},
+	c.Assert(targetVal.Value, DeepEquals, &core.MappingNode{
+		Scalar: &core.ScalarValue{
+			StringValue: &region,
+			SourceMeta: &source.Meta{
+				Position: source.Position{
+					Line:   2,
+					Column: 8,
+				},
+				EndPosition: &source.Position{
+					Line:   2,
+					Column: 17,
 				},
 			},
 		},
@@ -245,10 +253,6 @@ func (s *ValueTestSuite) Test_serialise_valid_value_yaml_input(c *C) {
 			Position: source.Position{
 				Line:   2,
 				Column: 8,
-			},
-			EndPosition: &source.Position{
-				Line:   2,
-				Column: 17,
 			},
 		},
 	})
@@ -262,18 +266,20 @@ func (s *ValueTestSuite) Test_parses_valid_value_json_input(c *C) {
 		c.FailNow()
 	}
 
-	c.Assert(targetVal.Value, DeepEquals, &substitutions.StringOrSubstitutions{
-		Values: []*substitutions.StringOrSubstitution{
-			{
-				SubstitutionValue: &substitutions.Substitution{
-					ResourceProperty: &substitutions.SubstitutionResourceProperty{
-						ResourceName: "awsAccount",
-						Path: []*substitutions.SubstitutionPathItem{
-							{
-								FieldName: "spec",
-							},
-							{
-								FieldName: "accountId",
+	c.Assert(targetVal.Value, DeepEquals, &core.MappingNode{
+		StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+			Values: []*substitutions.StringOrSubstitution{
+				{
+					SubstitutionValue: &substitutions.Substitution{
+						ResourceProperty: &substitutions.SubstitutionResourceProperty{
+							ResourceName: "awsAccount",
+							Path: []*substitutions.SubstitutionPathItem{
+								{
+									FieldName: "spec",
+								},
+								{
+									FieldName: "accountId",
+								},
 							},
 						},
 					},
@@ -317,18 +323,20 @@ func (s *ValueTestSuite) Test_serialise_valid_value_json_input(c *C) {
 			},
 		},
 		Secret: &core.ScalarValue{BoolValue: &secret},
-		Value: &substitutions.StringOrSubstitutions{
-			Values: []*substitutions.StringOrSubstitution{
-				{
-					SubstitutionValue: &substitutions.Substitution{
-						ResourceProperty: &substitutions.SubstitutionResourceProperty{
-							ResourceName: "awsAccount",
-							Path: []*substitutions.SubstitutionPathItem{
-								{
-									FieldName: "spec",
-								},
-								{
-									FieldName: "region",
+		Value: &core.MappingNode{
+			StringWithSubstitutions: &substitutions.StringOrSubstitutions{
+				Values: []*substitutions.StringOrSubstitution{
+					{
+						SubstitutionValue: &substitutions.Substitution{
+							ResourceProperty: &substitutions.SubstitutionResourceProperty{
+								ResourceName: "awsAccount",
+								Path: []*substitutions.SubstitutionPathItem{
+									{
+										FieldName: "spec",
+									},
+									{
+										FieldName: "region",
+									},
 								},
 							},
 						},

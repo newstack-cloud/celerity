@@ -21,10 +21,12 @@ type fixture struct {
 func (s *LoadTestSuite) SetupSuite() {
 	s.specFixtures = make(map[string]fixture)
 	fixturesToLoad := map[string]string{
-		"yaml":            "__testdata/load/blueprint.yml",
-		"jwcc":            "__testdata/load/blueprint.jsonc",
-		"yamlWithInclude": "__testdata/load/blueprint-with-include.yml",
-		"jwccWithInclude": "__testdata/load/blueprint-with-include.jsonc",
+		"yaml":                   "__testdata/load/blueprint.yml",
+		"jwcc":                   "__testdata/load/blueprint.jsonc",
+		"yamlWithInclude":        "__testdata/load/blueprint-with-include.yml",
+		"jwccWithInclude":        "__testdata/load/blueprint-with-include.jsonc",
+		"yamlWithMultipleValues": "__testdata/load/blueprint-with-multiple-values.yml",
+		"jwccWithMultipleValues": "__testdata/load/blueprint-with-multiple-values.jsonc",
 	}
 
 	for name, filePath := range fixturesToLoad {
@@ -60,6 +62,20 @@ func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file_with_includes() {
 
 func (s *LoadTestSuite) Test_loads_blueprint_from_json_file_with_include() {
 	blueprint, err := Load(s.specFixtures["jwccWithInclude"].filePath, JWCCSpecFormat)
+	s.Require().NoError(err)
+	err = testhelpers.Snapshot(blueprint)
+	s.Require().NoError(err)
+}
+
+func (s *LoadTestSuite) Test_loads_blueprint_from_yaml_file_with_multiple_values() {
+	blueprint, err := Load(s.specFixtures["yamlWithMultipleValues"].filePath, YAMLSpecFormat)
+	s.Require().NoError(err)
+	err = testhelpers.Snapshot(blueprint)
+	s.Require().NoError(err)
+}
+
+func (s *LoadTestSuite) Test_loads_blueprint_from_json_file_with_multiple_values() {
+	blueprint, err := Load(s.specFixtures["jwccWithMultipleValues"].filePath, JWCCSpecFormat)
 	s.Require().NoError(err)
 	err = testhelpers.Snapshot(blueprint)
 	s.Require().NoError(err)
