@@ -2,7 +2,7 @@ package engine
 
 import (
 	"github.com/newstack-cloud/celerity/apps/cli/internal/config"
-	deployengine "github.com/newstack-cloud/celerity/libs/deploy-engine-client"
+	deployengine "github.com/newstack-cloud/bluelink/libs/deploy-engine-client"
 	"go.uber.org/zap"
 )
 

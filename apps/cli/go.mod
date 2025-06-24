@@ -9,10 +9,10 @@ require (
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.5
 	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/newstack-cloud/celerity/libs/blueprint v0.17.1
-	github.com/newstack-cloud/celerity/libs/blueprint-state v0.2.5
-	github.com/newstack-cloud/celerity/libs/common v0.3.1
-	github.com/newstack-cloud/celerity/libs/deploy-engine-client v0.0.0-20250610155814-a57a0f8e32c9
+	github.com/newstack-cloud/bluelink/libs/blueprint v0.24.1
+	github.com/newstack-cloud/bluelink/libs/blueprint-state v0.2.6
+	github.com/newstack-cloud/bluelink/libs/common v0.3.2
+	github.com/newstack-cloud/bluelink/libs/deploy-engine-client v0.0.0-20250624153400-b3cd906a01a8
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/zap v1.27.0
@@ -34,7 +34,6 @@ require (
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/matoous/go-nanoid/v2 v2.1.0 // indirect

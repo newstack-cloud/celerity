@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/newstack-cloud/celerity/apps/cli/internal/engine"
-	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/types"
+	"github.com/newstack-cloud/bluelink/libs/deploy-engine-client/types"
 	"go.uber.org/zap"
 )
 

@@ -10,8 +10,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/newstack-cloud/celerity/apps/cli/internal/engine"
-	bpcore "github.com/newstack-cloud/celerity/libs/blueprint/core"
-	"github.com/newstack-cloud/celerity/libs/deploy-engine-client/types"
+	bpcore "github.com/newstack-cloud/bluelink/libs/blueprint/core"
+	"github.com/newstack-cloud/bluelink/libs/deploy-engine-client/types"
 	"go.uber.org/zap"
 )
 
