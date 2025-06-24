@@ -1,4 +1,0 @@
-type: string
-description: The AWS region to connect to AWS services with
-secret: false
-default: eu-west-2

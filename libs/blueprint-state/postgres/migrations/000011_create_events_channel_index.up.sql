@@ -1,1 +1,0 @@
-CREATE INDEX IF NOT EXISTS events_channel_type_id ON events (channel_type, channel_id);

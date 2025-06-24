@@ -1,5 +1,0 @@
-{
-  "field": "configuration.status",
-  "operator": "=",
-  "search": "ACTIVE"
-}

@@ -1,5 +1,0 @@
-{
-  "and": ["${eq(variables.environment, \"production\")}"],
-  "or": ["${eq(resources.s3Bucket.bucketName, \"oss-tools-bucket\")}"],
-  "not": "${has_prefix(resources.s3Bucket.bucketName, \"newstack-cloud\")}"
-}

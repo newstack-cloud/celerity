@@ -1,6 +1,0 @@
-{
-  "type": "string",
-  "description": "The AWS region to connect to AWS services with",
-  "secret": true,
-  "default": "eu-west-1"
-}

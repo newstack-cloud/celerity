@@ -1,8 +1,0 @@
-{
-  "path": "__testdata/container/child-blueprint-deployer/child-blueprints/blueprint1.yml",
-  "description": "core infrastructure for the Orders API",
-  "variables": {
-    "environment": "production",
-    "region": "us-west-2"
-  }
-}

@@ -1,14 +1,5 @@
 go 1.23.4
 
 use (
-	./libs/blueprint
-	./libs/blueprint-resolvers
-	./libs/blueprint-state
-	./libs/common
-	./libs/plugin-framework
-	./libs/deploy-engine-client
-	./tools/blueprint-ls
-	./tools/plugin-docgen
 	./apps/cli
-	./apps/deploy-engine
 )

@@ -1,3 +1,0 @@
-or:
-  - not: '${has_prefix(resources.s3Bucket.bucketName, "newstack-cloud")}'
-  - '${contains(resources.s3Bucket.bucketName, "oss")}'
