@@ -47,13 +47,6 @@ jobs:
           set +o allexport
           python scripts/package-test-tools.py --localdeps
         working-directory: ${{env.working-directory}}
-      - name: Upload coverage to Codecov for `runtime-lib-blueprint-config-parser`
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: codecov.json
-          fail_ci_if_error: true
-          flags: runtime-lib-blueprint-config-parser
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@master
         with:
