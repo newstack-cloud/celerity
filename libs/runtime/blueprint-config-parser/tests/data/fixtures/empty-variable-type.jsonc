@@ -1,9 +1,9 @@
 {
-  "version": "unsupported-2020-03-10",
-  "transform": "celerity-2024-07-22",
+  "version": "2025-05-12",
+  "transform": "celerity-2026-02-28",
   "variables": {
     "secretStoreId": {
-      "type": "string",
+      "type": "",
       "description": "The ID of the secret store to use for storing secrets."
     },
     "certificateId": {
@@ -51,6 +51,7 @@
               "type": "jwt",
               "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
               "tokenSource": "$.headers.Authorization",
+              // A comment to test stripping of comments.
               "audience": ["https://identity.twohundred.cloud/api/manage/v1/"]
             }
           }

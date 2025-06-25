@@ -1,6 +1,6 @@
 {
-  "version": "2023-04-20",
-  "transform": "celerity-2024-07-22",
+  "version": "2025-05-12",
+  "transform": "celerity-2026-02-28",
   "variables": {
     "secretStoreId": {
       "type": "string",
@@ -19,12 +19,13 @@
     "paymentApiSecret": {
       "type": "string",
       "description": "The secret to use for authenticating with the API.",
-      "secret": "Invalid secret value, boolean expected"
+      "secret": true
     }
   },
+  // A comment to test stripping of comments.
   "resources": {
     "ordersApi": {
-      "type": "celerity/api",
+      "type": "aws/serverless/api",
       "description": "The Orders API that provides access to order data.",
       "metadata": {
         "displayName": "Orders API"
@@ -63,6 +64,9 @@
               "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
               "tokenSource": "$.headers.Authorization",
               "audience": ["https://identity.twohundred.cloud/api/manage/v1/"]
+            },
+            "customGuard": {
+              "type": "custom"
             }
           }
         }

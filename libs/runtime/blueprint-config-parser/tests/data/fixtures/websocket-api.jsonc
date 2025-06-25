@@ -1,6 +1,6 @@
 {
-  "version": "2023-04-20",
-  "transform": "celerity-2024-07-22",
+  "version": "2025-05-12",
+  "transform": "celerity-2026-02-28",
   "resources": {
     "orderStreamApi": {
       "type": "celerity/api",
@@ -18,6 +18,7 @@
           "allowOrigins": ["https://example.com", "https://another.example.com"]
         },
         "domain": {
+          // A comment to test stripping of comments.
           "domainName": "api.example.com",
           "basePaths": ["/"],
           "normalizeBasePath": false,

@@ -3,30 +3,14 @@ source: blueprint-config-parser/tests/blueprint_config_test.rs
 expression: blueprint_config
 ---
 {
-  "version": "2023-04-20",
+  "version": "2025-05-12",
   "transform": [
-    "celerity-2024-07-22"
+    "celerity-2026-02-28"
   ],
   "variables": {
     "certificateId": {
       "type": "string",
       "description": "The ID of the certificate to use for the API domain."
-    },
-    "logLevel": {
-      "type": "string",
-      "allowedValues": [
-        "DEBUG",
-        "INFO",
-        "WARNING",
-        "ERROR"
-      ],
-      "default": "INFO",
-      "description": "The log level to use for logging."
-    },
-    "paymentApiSecret": {
-      "type": "string",
-      "secret": true,
-      "description": "The secret to use for authenticating with the API."
     },
     "secretStoreId": {
       "type": "string",
@@ -47,17 +31,31 @@ expression: blueprint_config
           "application": "orders"
         }
       },
+      "spec": null
+    },
+    "orderStreamHandler": {
+      "type": "celerity/handler",
+      "metadata": {
+        "displayName": "Order Stream Handler",
+        "annotations": {
+          "celerity.handler.guard.protectedBy": "jwtWebSocket",
+          "celerity.handler.websocket": true,
+          "celerity.handler.websocket.routeKey": "stream"
+        },
+        "labels": {
+          "application": "orders"
+        }
+      },
       "spec": {
-        "handlerName": "Orders-GetOrderHandler-v1",
+        "handlerName": "Orders-OrderStreamHandler-v1",
         "codeLocation": "./orders",
-        "handler": "handlers.get_order",
+        "handler": "handlers.order_stream",
         "runtime": "python3.12.x",
         "memory": 1024,
         "timeout": 60,
         "tracingEnabled": true,
         "environmentVariables": {
-          "LOG_LEVEL": "${variables.logLevel}",
-          "PAYMENT_API_SECRET": "${variables.paymentApiSecret}",
+          "LOG_LEVEL": "INFO",
           "SECRET_STORE_ID": "${variables.secretStoreId}"
         }
       }
@@ -69,7 +67,8 @@ expression: blueprint_config
       },
       "spec": {
         "protocols": [
-          "http"
+          "http",
+          "websocket"
         ],
         "cors": {
           "allowCredentials": true,
@@ -93,22 +92,40 @@ expression: blueprint_config
         "domain": {
           "domainName": "api.example.com",
           "basePaths": [
-            "/"
+            {
+              "protocol": "http",
+              "basePath": "/api"
+            },
+            {
+              "protocol": "websocket",
+              "basePath": "/ws"
+            }
           ],
           "normalizeBasePath": false,
           "certificateId": "${variables.certificateId}",
           "securityPolicy": "TLS_1_2"
         },
         "auth": {
-          "defaultGuard": "jwt",
+          "defaultGuard": "jwtHttp",
           "guards": {
-            "customGuard": {
-              "type": "custom"
-            },
-            "jwt": {
+            "jwtHttp": {
               "type": "jwt",
               "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
-              "tokenSource": "$.headers.Authorization",
+              "tokenSource": {
+                "protocol": "http",
+                "source": "$.headers.Authorization"
+              },
+              "audience": [
+                "https://identity.twohundred.cloud/api/manage/v1/"
+              ]
+            },
+            "jwtWebSocket": {
+              "type": "jwt",
+              "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
+              "tokenSource": {
+                "protocol": "websocket",
+                "source": "$.data.token"
+              },
               "audience": [
                 "https://identity.twohundred.cloud/api/manage/v1/"
               ]
@@ -117,7 +134,6 @@ expression: blueprint_config
         },
         "tracingEnabled": true
       },
-      "description": "The Orders API that provides access to order data.",
       "linkSelector": {
         "byLabel": {
           "application": "orders"

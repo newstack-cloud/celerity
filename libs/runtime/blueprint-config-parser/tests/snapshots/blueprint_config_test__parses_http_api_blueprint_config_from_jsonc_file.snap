@@ -3,9 +3,9 @@ source: blueprint-config-parser/tests/blueprint_config_test.rs
 expression: blueprint_config
 ---
 {
-  "version": "2023-04-20",
+  "version": "2025-05-12",
   "transform": [
-    "celerity-2024-07-22"
+    "celerity-2026-02-28"
   ],
   "variables": {
     "certificateId": {
@@ -34,24 +34,6 @@ expression: blueprint_config
     }
   },
   "resources": {
-    "createOrderHandler": {
-      "type": "celerity/handler",
-      "metadata": {
-        "displayName": "Create Order Handler",
-        "annotations": {
-          "celerity.handler.http": true,
-          "celerity.handler.http.method": "POST",
-          "celerity.handler.http.path": "/orders"
-        },
-        "labels": {
-          "application": "orders"
-        }
-      },
-      "spec": {
-        "handlerName": "Orders-CreateOrderHandler-v1",
-        "handler": "handlers.create_order"
-      }
-    },
     "getOrderHandler": {
       "type": "celerity/handler",
       "metadata": {
@@ -67,7 +49,17 @@ expression: blueprint_config
       },
       "spec": {
         "handlerName": "Orders-GetOrderHandler-v1",
-        "handler": "handlers.get_order"
+        "codeLocation": "./orders",
+        "handler": "handlers.get_order",
+        "runtime": "python3.12.x",
+        "memory": 1024,
+        "timeout": 60,
+        "tracingEnabled": true,
+        "environmentVariables": {
+          "LOG_LEVEL": "${variables.logLevel}",
+          "PAYMENT_API_SECRET": "${variables.paymentApiSecret}",
+          "SECRET_STORE_ID": "${variables.secretStoreId}"
+        }
       }
     },
     "ordersApi": {
@@ -130,20 +122,6 @@ expression: blueprint_config
         "byLabel": {
           "application": "orders"
         }
-      }
-    }
-  },
-  "metadata": {
-    "sharedHandlerConfig": {
-      "codeLocation": "./orders",
-      "runtime": "python3.12.x",
-      "memory": 1024,
-      "timeout": 60,
-      "tracingEnabled": true,
-      "environmentVariables": {
-        "LOG_LEVEL": "${variables.logLevel}",
-        "PAYMENT_API_SECRET": "${variables.paymentApiSecret}",
-        "SECRET_STORE_ID": "${variables.secretStoreId}"
       }
     }
   }

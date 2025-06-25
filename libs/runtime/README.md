@@ -10,7 +10,7 @@ This package provides the core components designed to be used in the Celerity ru
 
 ### [celerity_blueprint_config_parser](./blueprint-config-parser)
 
-This package provides a Rust parser for runtime-specific configuration represented by a subset of a Celerity [blueprint](https://www.celerityframework.io/docs/blueprint/specification).
+This package provides a Rust parser for runtime-specific configuration represented by a subset of a Bluelink [blueprint](https://www.bluelink.dev/docs/blueprint/specification).
 This implementation is not an exact implementation of the blueprint specification and is designed to be used in the Celerity runtime with strong typing for Celerity-specific resource types.
 
 ### [celerity_runtime_consumer_sqs](./consumer-sqs)
@@ -32,6 +32,10 @@ This package provides an FFI interface for the Celerity runtime SDKs.
 ### [celerity_runtime_sdk_schema](./sdk-schema)
 
 This package provides an [oo-bindgen](https://github.com/stepfunc/oo_bindgen) schema for generating Celerity runtime SDKs.
+
+### [celerity_runtime_workflow](./workflow)
+
+This package provides the workflow engine components designed to be used in the Celerity workflow runtime.
 
 ## Additional documentation
 

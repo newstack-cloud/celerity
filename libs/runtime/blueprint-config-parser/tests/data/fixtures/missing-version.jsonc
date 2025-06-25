@@ -1,9 +1,8 @@
 {
-  "version": "2023-04-20",
-  "transform": "celerity-2024-07-22",
+  "transform": "celerity-2026-02-28",
   "variables": {
     "secretStoreId": {
-      "type": 304493.231,
+      "type": "string",
       "description": "The ID of the secret store to use for storing secrets."
     },
     "certificateId": {
@@ -13,6 +12,7 @@
   },
   "resources": {
     "ordersApi": {
+      // A comment to test stripping of comments.
       "type": "celerity/api",
       "description": "The Orders API that provides access to order data.",
       "metadata": {

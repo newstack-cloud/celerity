@@ -58,7 +58,7 @@ def _run_integration_tests(args: argparse.Namespace) -> None:
     env_copy = os.environ.copy()
     in_ci_env = os.environ.get('GITHUB_ACTIONS')
     test_env_file = '.env.test-ci' if in_ci_env else '.env.test'
-    report_flags = "--codecov --output-path codecov.json" if in_ci_env else "--html"
+    report_flags = "--lcov --output-path coverage.lcov" if in_ci_env else "--html"
     completed_process = subprocess.run(
         # By default cargo will run all tests for the workspace
         # including unit and integration tests.

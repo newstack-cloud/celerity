@@ -250,7 +250,7 @@ impl Application {
 
     fn load_and_parse_blueprint(&self) -> Result<BlueprintConfig, BlueprintParseError> {
         if self.runtime_config.blueprint_config_path.ends_with(".json") {
-            BlueprintConfig::from_json_file(&self.runtime_config.blueprint_config_path)
+            BlueprintConfig::from_jsonc_file(&self.runtime_config.blueprint_config_path)
         } else {
             BlueprintConfig::from_yaml_file(&self.runtime_config.blueprint_config_path)
         }

@@ -105,13 +105,13 @@ impl From<FunctionCallError> for PayloadTemplateEngineError {
 }
 
 /// A payload template rendering engine that implements
-/// payload templates as defined in the v2024-07-22 `celerity/workflow`
+/// payload templates as defined in the v2026-02-28 `celerity/workflow`
 /// resource type spec.
 pub struct EngineV1 {}
 
 impl EngineV1 {
     /// Create a new instance of a payload template engine
-    /// that implements the v2024-07-22 `celerity/workflow` resource type spec.
+    /// that implements the v2026-02-28 `celerity/workflow` resource type spec.
     pub fn new() -> Self {
         EngineV1 {}
     }

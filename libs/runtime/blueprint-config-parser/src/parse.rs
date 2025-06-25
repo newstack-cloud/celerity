@@ -1,7 +1,6 @@
 use std::fmt;
 use std::fs::read_to_string;
 use std::num::ParseFloatError;
-use std::{fs::File, io::BufReader};
 
 use yaml_rust2::YamlLoader;
 
@@ -11,17 +10,19 @@ use crate::validate_parsed::validate_blueprint_config;
 
 impl BlueprintConfig {
     /// Parses a Runtime-specific Blueprint
-    /// configuration from a JSON string.
-    pub fn from_json_str(json: &str) -> Result<BlueprintConfig, BlueprintParseError> {
-        serde_json::from_str(json).map_err(BlueprintParseError::JsonError)
+    /// configuration from a JSONC string.
+    pub fn from_jsonc_str(jsonc: &str) -> Result<BlueprintConfig, BlueprintParseError> {
+        let mut json = String::from(jsonc);
+        json_strip_comments::strip(&mut json)?;
+        serde_json::from_str(&json).map_err(BlueprintParseError::JsonError)
     }
 
     /// Parses a Runtime-specific Blueprint
-    /// configuration from a JSON file.
-    pub fn from_json_file(file_path: &str) -> Result<BlueprintConfig, BlueprintParseError> {
-        let file = File::open(file_path)?;
-        let reader = BufReader::new(file);
-        let blueprint: BlueprintConfig = serde_json::from_reader(reader)?;
+    /// configuration from a JSONC file.
+    pub fn from_jsonc_file(file_path: &str) -> Result<BlueprintConfig, BlueprintParseError> {
+        let mut doc_str: String = read_to_string(file_path)?;
+        json_strip_comments::strip(&mut doc_str)?;
+        let blueprint: BlueprintConfig = serde_json::from_str(&doc_str)?;
         validate_blueprint_config(&blueprint)?;
         Ok(blueprint)
     }

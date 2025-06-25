@@ -1,6 +1,6 @@
 {
-  "version": "2023-04-20",
-  "transform": "celerity-2024-07-22",
+  "version": "2025-05-12",
+  "transform": "celerity-2026-02-28",
   "variables": {
     "secretStoreId": {
       "type": "string",
@@ -11,6 +11,7 @@
       "description": "The ID of the certificate to use for the API domain."
     },
     "logLevel": {
+      // A comment to test stripping of comments.
       "type": "string",
       "description": "The log level to use for logging.",
       "default": "INFO",

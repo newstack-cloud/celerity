@@ -14,9 +14,9 @@ fn parses_blueprint_config_from_yaml_string() {
 }
 
 #[test_log::test]
-fn parses_blueprint_config_from_json_string() {
-    let doc_str: String = read_to_string("tests/data/fixtures/http-api.json").unwrap();
-    let blueprint_config = BlueprintConfig::from_json_str(doc_str.as_str()).unwrap();
+fn parses_blueprint_config_from_jsonc_string() {
+    let doc_str: String = read_to_string("tests/data/fixtures/http-api.jsonc").unwrap();
+    let blueprint_config = BlueprintConfig::from_jsonc_str(doc_str.as_str()).unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);
@@ -34,9 +34,9 @@ fn parses_http_api_blueprint_config_from_yaml_file() {
 }
 
 #[test_log::test]
-fn parses_http_api_blueprint_config_from_json_file() {
+fn parses_http_api_blueprint_config_from_jsonc_file() {
     let blueprint_config =
-        BlueprintConfig::from_json_file("tests/data/fixtures/http-api.json").unwrap();
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/http-api.jsonc").unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);
@@ -54,9 +54,10 @@ fn parses_shared_handler_config_blueprint_config_from_yaml_file() {
 }
 
 #[test_log::test]
-fn parses_shared_handler_config_blueprint_config_from_json_file() {
+fn parses_shared_handler_config_blueprint_config_from_jsonc_file() {
     let blueprint_config =
-        BlueprintConfig::from_json_file("tests/data/fixtures/shared-handler-config.json").unwrap();
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/shared-handler-config.jsonc")
+            .unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);
@@ -75,9 +76,9 @@ fn parses_handler_config_resources_blueprint_config_from_yaml_file() {
 }
 
 #[test_log::test]
-fn parses_handler_config_resources_blueprint_config_from_json_file() {
+fn parses_handler_config_resources_blueprint_config_from_jsonc_file() {
     let blueprint_config =
-        BlueprintConfig::from_json_file("tests/data/fixtures/handler-config-resource-types.json")
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/handler-config-resource-types.jsonc")
             .unwrap();
 
     with_settings!({sort_maps => true}, {
@@ -96,9 +97,9 @@ fn parses_websocket_api_blueprint_config_from_yaml_file() {
 }
 
 #[test_log::test]
-fn parses_websocket_api_blueprint_config_from_json_file() {
+fn parses_websocket_api_blueprint_config_from_jsonc_file() {
     let blueprint_config =
-        BlueprintConfig::from_json_file("tests/data/fixtures/websocket-api.json").unwrap();
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/websocket-api.jsonc").unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);
@@ -117,9 +118,9 @@ fn parses_websocket_api_blueprint_config_with_ws_protocol_config_from_yaml_file(
 }
 
 #[test_log::test]
-fn parses_websocket_api_blueprint_config_with_ws_protocol_config_from_json_file() {
+fn parses_websocket_api_blueprint_config_with_ws_protocol_config_from_jsonc_file() {
     let blueprint_config =
-        BlueprintConfig::from_json_file("tests/data/fixtures/websocket-api-with-ws-config.json")
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/websocket-api-with-ws-config.jsonc")
             .unwrap();
 
     with_settings!({sort_maps => true}, {
@@ -138,9 +139,9 @@ fn parses_combined_app_blueprint_config_from_yaml_file() {
 }
 
 #[test_log::test]
-fn parses_combined_app_blueprint_config_from_json_file() {
+fn parses_combined_app_blueprint_config_from_jsonc_file() {
     let blueprint_config =
-        BlueprintConfig::from_json_file("tests/data/fixtures/combined-app.json").unwrap();
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/combined-app.jsonc").unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);
@@ -158,9 +159,9 @@ fn parses_hybrid_api_blueprint_config_from_yaml_file() {
 }
 
 #[test_log::test]
-fn parses_hybrid_api_blueprint_config_from_json_file() {
+fn parses_hybrid_api_blueprint_config_from_jsonc_file() {
     let blueprint_config =
-        BlueprintConfig::from_json_file("tests/data/fixtures/hybrid-api.json").unwrap();
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/hybrid-api.jsonc").unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);
@@ -178,9 +179,9 @@ fn parses_schedule_app_blueprint_config_from_yaml_file() {
 }
 
 #[test_log::test]
-fn parses_schedule_app_blueprint_config_from_json_file() {
+fn parses_schedule_app_blueprint_config_from_jsonc_file() {
     let blueprint_config =
-        BlueprintConfig::from_json_file("tests/data/fixtures/schedule-app.json").unwrap();
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/schedule-app.jsonc").unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);
@@ -198,9 +199,9 @@ fn parses_workflow_app_blueprint_config_from_yaml_file() {
 }
 
 #[test_log::test]
-fn parses_workflow_app_blueprint_config_from_json_file() {
+fn parses_workflow_app_blueprint_config_from_jsonc_file() {
     let blueprint_config =
-        BlueprintConfig::from_yaml_file("tests/data/fixtures/workflow-app.json").unwrap();
+        BlueprintConfig::from_yaml_file("tests/data/fixtures/workflow-app.jsonc").unwrap();
 
     with_settings!({sort_maps => true}, {
         assert_json_snapshot!(blueprint_config);
@@ -219,14 +220,14 @@ fn produces_expected_error_for_invalid_yaml_blueprint_config() {
 
 #[test_log::test]
 fn produces_expected_error_for_invalid_json_blueprint_config() {
-    let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-blueprint.json");
+    let result = BlueprintConfig::from_jsonc_file("tests/data/fixtures/invalid-blueprint.jsonc");
 
     // serde takes a bottom up approach, so will try to parse the innermost value first,
     // therefore the error message will be for a failure to match against a blueprint version.
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err)) if err.to_string().contains(
-            "invalid value: string \"Array of strings\", expected 2023-04-20"
+            "invalid value: string \"Array of strings\", expected 2025-05-12"
         )
     ));
 }
@@ -242,7 +243,7 @@ fn produces_expected_error_for_missing_version_in_yaml_blueprint_config() {
 
 #[test_log::test]
 fn produces_expected_error_for_missing_version_in_json_blueprint_config() {
-    let result = BlueprintConfig::from_json_file("tests/data/fixtures/missing-version.json");
+    let result = BlueprintConfig::from_jsonc_file("tests/data/fixtures/missing-version.jsonc");
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err)) if err.to_string().contains("missing field `version`")
@@ -260,7 +261,7 @@ fn produces_expected_error_for_no_resources_in_yaml_blueprint_config() {
 
 #[test_log::test]
 fn produces_expected_error_for_no_resources_in_json_blueprint_config() {
-    let result = BlueprintConfig::from_json_file("tests/data/fixtures/no-resources.json");
+    let result = BlueprintConfig::from_jsonc_file("tests/data/fixtures/no-resources.jsonc");
     assert!(matches!(
         result,
         Err(BlueprintParseError::ValidationError(msg)) if msg == "at least one resource must be provided for a blueprint"
@@ -273,17 +274,17 @@ fn produces_expected_error_for_invalid_version_in_yaml_blueprint_config() {
     assert!(matches!(
         result,
         Err(BlueprintParseError::YamlFormatError(msg)) if msg == "expected version \
-        2023-04-20, found unsupported-2020-03-10"
+        2025-05-12, found unsupported-2020-03-10"
     ));
 }
 
 #[test_log::test]
 fn produces_expected_error_for_invalid_version_in_json_blueprint_config() {
-    let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-version.json");
+    let result = BlueprintConfig::from_jsonc_file("tests/data/fixtures/invalid-version.jsonc");
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err)) if err.to_string().contains(
-            "invalid value: string \"unsupported-2020-03-10\", expected 2023-04-20"
+            "invalid value: string \"unsupported-2020-03-10\", expected 2025-05-12"
         )
     ));
 }
@@ -300,7 +301,8 @@ fn produces_expected_error_for_invalid_variable_type_in_yaml_blueprint_config() 
 
 #[test_log::test]
 fn produces_expected_error_for_invalid_variable_type_in_json_blueprint_config() {
-    let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-variable-type.json");
+    let result =
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/invalid-variable-type.jsonc");
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err)) if err.to_string().contains(
@@ -323,7 +325,7 @@ fn produces_expected_error_for_invalid_variable_description_in_yaml_blueprint_co
 #[test_log::test]
 fn produces_expected_error_for_invalid_variable_description_in_json_blueprint_config() {
     let result =
-        BlueprintConfig::from_json_file("tests/data/fixtures/invalid-variable-description.json");
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/invalid-variable-description.jsonc");
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err)) if err.to_string().contains(
@@ -344,7 +346,7 @@ fn produces_expected_error_for_invalid_secret_in_yaml_blueprint_config() {
 
 #[test_log::test]
 fn produces_expected_error_for_invalid_secret_in_json_blueprint_config() {
-    let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-secret.json");
+    let result = BlueprintConfig::from_jsonc_file("tests/data/fixtures/invalid-secret.jsonc");
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err)) if err.to_string().contains(
@@ -364,7 +366,7 @@ fn produces_expected_error_for_empty_variable_type_in_yaml_blueprint_config() {
 
 #[test_log::test]
 fn produces_expected_error_for_empty_variable_type_in_json_blueprint_config() {
-    let result = BlueprintConfig::from_json_file("tests/data/fixtures/empty-variable-type.json");
+    let result = BlueprintConfig::from_jsonc_file("tests/data/fixtures/empty-variable-type.jsonc");
     assert!(matches!(
         result,
         Err(BlueprintParseError::ValidationError(msg))
@@ -384,7 +386,8 @@ fn produces_expected_error_for_invalid_resource_type_in_yaml_blueprint_config() 
 
 #[test_log::test]
 fn produces_expected_error_for_invalid_resource_type_in_json_blueprint_config() {
-    let result = BlueprintConfig::from_json_file("tests/data/fixtures/invalid-resource-type.json");
+    let result =
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/invalid-resource-type.jsonc");
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err))
@@ -404,7 +407,8 @@ fn produces_expected_error_for_missing_resource_type_in_yaml_blueprint_config() 
 
 #[test_log::test]
 fn produces_expected_error_for_missing_resource_type_in_json_blueprint_config() {
-    let result = BlueprintConfig::from_json_file("tests/data/fixtures/missing-resource-type.json");
+    let result =
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/missing-resource-type.jsonc");
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err))
@@ -428,7 +432,7 @@ fn skips_parsing_resource_for_unsupported_resource_type_in_yaml_blueprint_config
 #[test_log::test]
 fn skips_parsing_resource_for_unsupported_resource_type_in_json_blueprint_config() {
     let blueprint_config =
-        BlueprintConfig::from_json_file("tests/data/fixtures/unsupported-resource-type.json")
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/unsupported-resource-type.jsonc")
             .unwrap();
 
     with_settings!({sort_maps => true}, {
@@ -451,7 +455,7 @@ fn produces_expected_error_for_invalid_resource_metadata_in_yaml_blueprint_confi
 #[test_log::test]
 fn produces_expected_error_for_invalid_resource_metadata_in_json_blueprint_config() {
     let result =
-        BlueprintConfig::from_json_file("tests/data/fixtures/invalid-resource-metadata.json");
+        BlueprintConfig::from_jsonc_file("tests/data/fixtures/invalid-resource-metadata.jsonc");
 
     assert!(matches!(
         result,

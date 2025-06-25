@@ -3,9 +3,9 @@ source: blueprint-config-parser/tests/blueprint_config_test.rs
 expression: blueprint_config
 ---
 {
-  "version": "2023-04-20",
+  "version": "2025-05-12",
   "transform": [
-    "celerity-2024-07-22"
+    "celerity-2026-02-28"
   ],
   "resources": {
     "orderStreamApi": {
@@ -15,12 +15,7 @@ expression: blueprint_config
       },
       "spec": {
         "protocols": [
-          {
-            "websocketConfig": {
-              "routeKey": "action",
-              "authStrategy": "connect"
-            }
-          }
+          "websocket"
         ],
         "cors": {
           "allowCredentials": null,

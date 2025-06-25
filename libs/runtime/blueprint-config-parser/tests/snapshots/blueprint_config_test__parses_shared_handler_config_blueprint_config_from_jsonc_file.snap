@@ -3,9 +3,9 @@ source: blueprint-config-parser/tests/blueprint_config_test.rs
 expression: blueprint_config
 ---
 {
-  "version": "2023-04-20",
+  "version": "2025-05-12",
   "transform": [
-    "celerity-2024-07-22"
+    "celerity-2026-02-28"
   ],
   "variables": {
     "certificateId": {
@@ -34,50 +34,6 @@ expression: blueprint_config
     }
   },
   "resources": {
-    "billingHandlerConfig": {
-      "type": "celerity/handlerConfig",
-      "metadata": {
-        "displayName": "Billing Handlers Configuration",
-        "labels": {
-          "handlerGroup": "billing"
-        }
-      },
-      "spec": {
-        "codeLocation": "./billing",
-        "runtime": "python3.12.x",
-        "memory": 512,
-        "timeout": 30,
-        "tracingEnabled": true,
-        "environmentVariables": {
-          "LOG_LEVEL": "${variables.logLevel}",
-          "PAYMENT_API_SECRET": "${variables.paymentApiSecret}",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
-        }
-      }
-    },
-    "createInvoiceHandler": {
-      "type": "celerity/handler",
-      "metadata": {
-        "displayName": "Create Invoice Handler",
-        "annotations": {
-          "celerity.handler.http": true,
-          "celerity.handler.http.method": "POST",
-          "celerity.handler.http.path": "/invoices"
-        },
-        "labels": {
-          "application": "payments"
-        }
-      },
-      "spec": {
-        "handlerName": "Payments-CreateInvoiceHandler-v1",
-        "handler": "handlers.create_invoice"
-      },
-      "linkSelector": {
-        "byLabel": {
-          "handlerGroup": "billing"
-        }
-      }
-    },
     "createOrderHandler": {
       "type": "celerity/handler",
       "metadata": {
@@ -88,40 +44,12 @@ expression: blueprint_config
           "celerity.handler.http.path": "/orders"
         },
         "labels": {
-          "application": "payments"
+          "application": "orders"
         }
       },
       "spec": {
         "handlerName": "Orders-CreateOrderHandler-v1",
         "handler": "handlers.create_order"
-      },
-      "linkSelector": {
-        "byLabel": {
-          "handlerGroup": "orders"
-        }
-      }
-    },
-    "getInvoiceHandler": {
-      "type": "celerity/handler",
-      "metadata": {
-        "displayName": "Get Invoice Handler",
-        "annotations": {
-          "celerity.handler.http": true,
-          "celerity.handler.http.method": "GET",
-          "celerity.handler.http.path": "/invoices/{invoiceId}"
-        },
-        "labels": {
-          "application": "payments"
-        }
-      },
-      "spec": {
-        "handlerName": "Payments-GetInvoiceHandler-v1",
-        "handler": "handlers.get_invoice"
-      },
-      "linkSelector": {
-        "byLabel": {
-          "handlerGroup": "billing"
-        }
       }
     },
     "getOrderHandler": {
@@ -134,44 +62,18 @@ expression: blueprint_config
           "celerity.handler.http.path": "/orders/{orderId}"
         },
         "labels": {
-          "application": "payments"
+          "application": "orders"
         }
       },
       "spec": {
         "handlerName": "Orders-GetOrderHandler-v1",
         "handler": "handlers.get_order"
-      },
-      "linkSelector": {
-        "byLabel": {
-          "handlerGroup": "orders"
-        }
       }
     },
-    "ordersHandlerConfig": {
-      "type": "celerity/handlerConfig",
-      "metadata": {
-        "displayName": "Order Handlers Configuration",
-        "labels": {
-          "handlerGroup": "orders"
-        }
-      },
-      "spec": {
-        "codeLocation": "./orders",
-        "runtime": "python3.12.x",
-        "memory": 1024,
-        "timeout": 60,
-        "tracingEnabled": true,
-        "environmentVariables": {
-          "LOG_LEVEL": "${variables.logLevel}",
-          "PAYMENT_API_SECRET": "${variables.paymentApiSecret}",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
-        }
-      }
-    },
-    "paymentsApi": {
+    "ordersApi": {
       "type": "celerity/api",
       "metadata": {
-        "displayName": "Payments API"
+        "displayName": "Orders API"
       },
       "spec": {
         "protocols": [
@@ -223,11 +125,25 @@ expression: blueprint_config
         },
         "tracingEnabled": true
       },
-      "description": "The Payments API that provides access to payment data.",
+      "description": "The Orders API that provides access to order data.",
       "linkSelector": {
         "byLabel": {
-          "application": "payments"
+          "application": "orders"
         }
+      }
+    }
+  },
+  "metadata": {
+    "sharedHandlerConfig": {
+      "codeLocation": "./orders",
+      "runtime": "python3.12.x",
+      "memory": 1024,
+      "timeout": 60,
+      "tracingEnabled": true,
+      "environmentVariables": {
+        "LOG_LEVEL": "${variables.logLevel}",
+        "PAYMENT_API_SECRET": "${variables.paymentApiSecret}",
+        "SECRET_STORE_ID": "${variables.secretStoreId}"
       }
     }
   }

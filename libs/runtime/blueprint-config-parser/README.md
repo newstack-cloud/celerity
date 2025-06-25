@@ -2,9 +2,9 @@
 
 [![codecov](https://codecov.io/gh/newstack-cloud/celerity/graph/badge.svg?token=u1SKOg58yo&flag=runtime-lib-blueprint-config-parser)](https://codecov.io/gh/newstack-cloud/celerity)
 
-This package provides a Rust parser for runtime-specific configuration represented by a subset of a Celerity [blueprint](https://www.celerityframework.io/docs/blueprint/specification).
+This package provides a Rust parser for runtime-specific configuration represented by a subset of a Bluelink [blueprint](https://www.bluelink.dev/docs/blueprint/specification).
 
-This implementation is not an exact implementation of the blueprint specification but a simplified version that can be used to parse YAML or JSON blueprint files.
+This implementation is not an exact implementation of the blueprint specification but a simplified version that can be used to parse YAML or JSONC blueprint files.
 
 This is not designed to be used as a general purpose blueprint parser, it expects a very specific blueprint format that contains strongly typed resource specifications for Celerity resource types.
 

@@ -1,5 +1,5 @@
 version: unsupported-2020-03-10
-transform: celerity-2024-07-22
+transform: celerity-2026-02-28
 variables:
   secretStoreId:
     type: string

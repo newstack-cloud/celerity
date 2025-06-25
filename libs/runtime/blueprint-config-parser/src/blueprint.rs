@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-/// The default version for the Celerity blueprint configuration.
-pub const CELERITY_BLUEPRINT_V2023_04_20: &str = "2023-04-20";
+/// The default version for the Bluelink blueprint spec
+/// used for a Celerity blueprint configuration.
+pub const BLUELINK_BLUEPRINT_V2025_05_12: &str = "2025-05-12";
 
 /// The resource type identifier for a Celerity API.
 pub const CELERITY_API_RESOURCE_TYPE: &str = "celerity/api";

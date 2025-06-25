@@ -1,6 +1,6 @@
 {
-  "version": "2023-04-20",
-  "transform": "celerity-2024-07-22",
+  "version": "2025-05-12",
+  "transform": "celerity-2026-02-28",
   "variables": {
     "secretStoreId": {
       "type": "string",
@@ -9,11 +9,24 @@
     "certificateId": {
       "type": "string",
       "description": "The ID of the certificate to use for the API domain."
+    },
+    "logLevel": {
+      "type": "string",
+      "description": "The log level to use for logging.",
+      "default": "INFO",
+      "allowedValues": ["DEBUG", "INFO", "WARNING", "ERROR"]
+    },
+    "paymentApiSecret": {
+      "type": "string",
+      "description": "The secret to use for authenticating with the API.",
+      "secret": true
     }
   },
+  // A comment to test stripping of comments.
   "resources": {
     "ordersApi": {
       "type": "celerity/api",
+      "description": "The Orders API that provides access to order data.",
       "metadata": {
         "displayName": "Orders API"
       },
@@ -23,7 +36,7 @@
         }
       },
       "spec": {
-        "protocols": ["http", "websocket"],
+        "protocols": ["http"],
         "cors": {
           "allowCredentials": true,
           "allowOrigins": [
@@ -37,41 +50,23 @@
         },
         "domain": {
           "domainName": "api.example.com",
-          "basePaths": [
-            {
-              "protocol": "http",
-              "basePath": "/api"
-            },
-            {
-              "protocol": "websocket",
-              "basePath": "/ws"
-            }
-          ],
+          "basePaths": ["/"],
           "normalizeBasePath": false,
           "certificateId": "${variables.certificateId}",
           "securityPolicy": "TLS_1_2"
         },
         "tracingEnabled": true,
         "auth": {
-          "defaultGuard": "jwtHttp",
+          "defaultGuard": "jwt",
           "guards": {
-            "jwtHttp": {
+            "jwt": {
               "type": "jwt",
               "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
-              "tokenSource": {
-                "protocol": "http",
-                "source": "$.headers.Authorization"
-              },
+              "tokenSource": "$.headers.Authorization",
               "audience": ["https://identity.twohundred.cloud/api/manage/v1/"]
             },
-            "jwtWebSocket": {
-              "type": "jwt",
-              "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
-              "tokenSource": {
-                "protocol": "websocket",
-                "source": "$.data.token"
-              },
-              "audience": ["https://identity.twohundred.cloud/api/manage/v1/"]
+            "customGuard": {
+              "type": "custom"
             }
           }
         }
@@ -88,46 +83,20 @@
           "celerity.handler.http": true,
           "celerity.handler.http.method": "GET",
           "celerity.handler.http.path": "/orders/{orderId}"
-        },
-        "spec": {
-          "handlerName": "Orders-GetOrderHandler-v1",
-          "codeLocation": "./orders",
-          "handler": "handlers.get_order",
-          "runtime": "python3.12.x",
-          "memory": 1024,
-          "timeout": 60,
-          "tracingEnabled": true,
-          "environmentVariables": {
-            "LOG_LEVEL": "INFO",
-            "SECRET_STORE_ID": "${variables.secretStoreId}"
-          }
-        }
-      }
-    },
-    "orderStreamHandler": {
-      "type": "celerity/handler",
-      "metadata": {
-        "displayName": "Order Stream Handler",
-        "labels": {
-          "application": "orders"
-        },
-        "annotations": {
-          "celerity.handler.websocket": true,
-          "celerity.handler.websocket.routeKey": "stream",
-          "celerity.handler.guard.protectedBy": "jwtWebSocket"
         }
       },
       "spec": {
-        "handlerName": "Orders-OrderStreamHandler-v1",
+        "handlerName": "Orders-GetOrderHandler-v1",
         "codeLocation": "./orders",
-        "handler": "handlers.order_stream",
+        "handler": "handlers.get_order",
         "runtime": "python3.12.x",
         "memory": 1024,
         "timeout": 60,
         "tracingEnabled": true,
         "environmentVariables": {
-          "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "LOG_LEVEL": "${variables.logLevel}",
+          "SECRET_STORE_ID": "${variables.secretStoreId}",
+          "PAYMENT_API_SECRET": "${variables.paymentApiSecret}"
         }
       }
     }

@@ -16,5 +16,6 @@
 
 lcov.info
 codecov.json
+coverage.lcov
 
 ffi-modules

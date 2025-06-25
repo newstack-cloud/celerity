@@ -15,7 +15,7 @@ use crate::{
         EventConfiguration, EventSourceConfiguration, EventSourceType,
         ObjectStorageEventSourceConfiguration, ObjectStorageEventType, RuntimeBlueprintResource,
         SharedHandlerConfig, ValueSourceConfiguration, WebSocketConfiguration,
-        CELERITY_API_RESOURCE_TYPE, CELERITY_BLUEPRINT_V2023_04_20,
+        BLUELINK_BLUEPRINT_V2025_05_12, CELERITY_API_RESOURCE_TYPE,
         CELERITY_CONSUMER_RESOURCE_TYPE, CELERITY_HANDLER_CONFIG_RESOURCE_TYPE,
         CELERITY_HANDLER_RESOURCE_TYPE, CELERITY_SCHEDULE_RESOURCE_TYPE,
         CELERITY_WORKFLOW_RESOURCE_TYPE,
@@ -89,10 +89,10 @@ fn validate_assign_version(
     version: &str,
     blueprint: &mut BlueprintConfig,
 ) -> Result<(), BlueprintParseError> {
-    if version != CELERITY_BLUEPRINT_V2023_04_20 {
+    if version != BLUELINK_BLUEPRINT_V2025_05_12 {
         return Err(BlueprintParseError::YamlFormatError(format!(
             "expected version {}, found {}",
-            CELERITY_BLUEPRINT_V2023_04_20, version
+            BLUELINK_BLUEPRINT_V2025_05_12, version
         )));
     }
     blueprint.version = version.to_string();

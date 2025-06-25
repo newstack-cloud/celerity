@@ -1,6 +1,6 @@
 {
-  "version": "2023-04-20",
-  "transform": "celerity-2024-07-22",
+  "version": "2025-05-12",
+  "transform": "celerity-2026-02-28",
   "resources": {
     "docProcessingWorkflow": {
       "type": "celerity/workflow",
@@ -22,6 +22,7 @@
             "resultPath": "$.downloaded",
             "retry": [
               {
+                // A comment to test stripping of comments.
                 "matchErrors": ["Timeout"],
                 "interval": 5,
                 "maxAttempts": 3,
