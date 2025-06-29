@@ -1,0 +1,9 @@
+[package]
+name = "celerity_consumer_redis"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+test-log = { version = "0.2.16", features = ["log", "trace"] }
+pretty_assertions = "1.4.0"
+coverage-helper = "0.2.2"
