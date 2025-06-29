@@ -1,0 +1,6 @@
+{
+  "VisibilityTimeout": "30",
+  "DelaySeconds": "0",
+  "FifoQueue": "true",
+  "ContentBasedDeduplication": "true"
+}
