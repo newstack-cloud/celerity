@@ -54,9 +54,9 @@
           "guards": {
             "jwt": {
               "type": "jwt",
-              "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
+              "issuer": "https://identity.newstack.cloud/oauth2/v1/",
               "tokenSource": "$.headers.Authorization",
-              "audience": ["https://identity.twohundred.cloud/api/manage/v1/"]
+              "audience": ["https://identity.newstack.cloud/api/manage/v1/"]
             }
           }
         }
@@ -132,10 +132,32 @@
         }
       }
     },
+    "invoiceFileEvents": {
+      "type": "celerity/consumer",
+      "linkSelector": {
+        "byLabel": {
+          "group": "invoices"
+        }
+      },
+      "spec": {
+        "externalEvents": {
+          "invoiceFileEvent": {
+            "sourceType": "objectStorage",
+            "sourceConfiguration": {
+              "events": ["created", "deleted", "metadataUpdated"],
+              "bucket": "${variables.invoiceBucket}"
+            }
+          }
+        }
+      }
+    },
     "invoiceFileEventHandler": {
       "type": "celerity/handler",
       "metadata": {
-        "displayName": "Invoice File Event Handler"
+        "displayName": "Invoice File Event Handler",
+        "labels": {
+          "group": "invoices"
+        }
       },
       "spec": {
         "handlerName": "Orders-InvoiceFileEventHandler-v1",
@@ -148,36 +170,21 @@
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
           "SECRET_STORE_ID": "${variables.secretStoreId}"
-        },
-        "events": {
-          "invoiceFileEvent": {
-            "sourceType": "objectStorage",
-            "sourceConfiguration": {
-              "events": ["created", "deleted", "metadataUpdated"],
-              "bucket": "${variables.invoiceBucket}"
-            }
-          }
         }
       }
     },
-    "orderDBStreamProcessor": {
-      "type": "celerity/handler",
+    "orderDBStream": {
+      "type": "celerity/consumer",
       "metadata": {
-        "displayName": "Order DB Stream Processor"
+        "displayName": "Order DB Stream Consumer"
+      },
+      "linkSelector": {
+        "byLabel": {
+          "group": "orders"
+        }
       },
       "spec": {
-        "handlerName": "Orders-OrderDBStreamProcessor-v1",
-        "codeLocation": "./orders",
-        "handler": "handlers.process_order_db_stream",
-        "runtime": "python3.12.x",
-        "memory": 1024,
-        "timeout": 60,
-        "tracingEnabled": true,
-        "environmentVariables": {
-          "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
-        },
-        "events": {
+        "externalEvents": {
           "orderStream": {
             "sourceType": "dbStream",
             "sourceConfiguration": {
@@ -190,10 +197,59 @@
         }
       }
     },
+    "orderDBStreamProcessor": {
+      "type": "celerity/handler",
+      "metadata": {
+        "displayName": "Order DB Stream Processor",
+        "labels": {
+          "group": "orders"
+        }
+      },
+      "spec": {
+        "handlerName": "Orders-OrderDBStreamProcessor-v1",
+        "codeLocation": "./orders",
+        "handler": "handlers.process_order_db_stream",
+        "runtime": "python3.12.x",
+        "memory": 1024,
+        "timeout": 60,
+        "tracingEnabled": true,
+        "environmentVariables": {
+          "LOG_LEVEL": "INFO",
+          "SECRET_STORE_ID": "${variables.secretStoreId}"
+        }
+      }
+    },
+    "invoiceEventStream": {
+      "type": "celerity/consumer",
+      "metadata": {
+        "displayName": "Invoice Event Stream Consumer"
+      },
+      "linkSelector": {
+        "byLabel": {
+          "group": "invoiceStream"
+        }
+      },
+      "spec": {
+        "externalEvents": {
+          "invoiceEventStream": {
+            "sourceType": "dataStream",
+            "sourceConfiguration": {
+              "dataStreamId": "${variables.invoiceEventStreamId}",
+              "batchSize": 10,
+              "partialFailures": true,
+              "startFromBeginning": false
+            }
+          }
+        }
+      }
+    },
     "invoiceEventStreamProcessor": {
       "type": "celerity/handler",
       "metadata": {
-        "displayName": "Invoice Event Stream Processor"
+        "displayName": "Invoice Event Stream Processor",
+        "labels": {
+          "group": "invoiceStream"
+        }
       },
       "spec": {
         "handlerName": "Orders-InvoiceEventStreamProcessor-v1",
@@ -207,17 +263,6 @@
           "LOG_LEVEL": "INFO",
           "SECRET_STORE_ID": "${variables.secretStoreId}"
           // A comment to test stripping of comments.
-        },
-        "events": {
-          "invoiceEventStream": {
-            "sourceType": "dataStream",
-            "sourceConfiguration": {
-              "dataStreamId": "${variables.invoiceEventStreamId}",
-              "batchSize": 10,
-              "partialFailures": true,
-              "startFromBeginning": false
-            }
-          }
         }
       }
     }

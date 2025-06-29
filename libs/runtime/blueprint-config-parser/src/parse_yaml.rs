@@ -10,9 +10,10 @@ use crate::{
         CelerityApiAuthGuardType, CelerityApiAuthGuardValueSource, CelerityApiBasePath,
         CelerityApiBasePathConfiguration, CelerityApiCors, CelerityApiCorsConfiguration,
         CelerityApiDomain, CelerityApiDomainSecurityPolicy, CelerityApiProtocol, CelerityApiSpec,
-        CelerityConsumerSpec, CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType,
-        CelerityScheduleSpec, DataStreamSourceConfiguration, DatabaseStreamSourceConfiguration,
-        EventConfiguration, EventSourceConfiguration, EventSourceType,
+        CelerityBucketSpec, CelerityConfigSpec, CelerityConsumerSpec, CelerityHandlerSpec,
+        CelerityQueueSpec, CelerityResourceSpec, CelerityResourceType, CelerityScheduleSpec,
+        CelerityTopicSpec, DataStreamSourceConfiguration, DatabaseStreamSourceConfiguration,
+        EventSourceConfiguration, EventSourceType, ExternalEventConfiguration,
         ObjectStorageEventSourceConfiguration, ObjectStorageEventType, RuntimeBlueprintResource,
         SharedHandlerConfig, ValueSourceConfiguration, WebSocketConfiguration,
         BLUELINK_BLUEPRINT_V2025_05_12, CELERITY_API_RESOURCE_TYPE,
@@ -337,6 +338,18 @@ fn validate_resource_spec(
         CelerityResourceType::CelerityWorkflow => Ok(CelerityResourceSpec::Workflow(
             validate_celerity_workflow_spec(spec_map)?,
         )),
+        CelerityResourceType::CelerityConfig => Ok(CelerityResourceSpec::Config(
+            validate_celerity_config_spec(spec_map)?,
+        )),
+        CelerityResourceType::CelerityBucket => Ok(CelerityResourceSpec::Bucket(
+            validate_celerity_bucket_spec(spec_map)?,
+        )),
+        CelerityResourceType::CelerityTopic => Ok(CelerityResourceSpec::Topic(
+            validate_celerity_topic_spec(spec_map)?,
+        )),
+        CelerityResourceType::CelerityQueue => Ok(CelerityResourceSpec::Queue(
+            validate_celerity_queue_spec(spec_map)?,
+        )),
     }
 }
 
@@ -428,10 +441,105 @@ fn validate_celerity_handler_spec(
                         )))?
                     }
                 }
-                "events" => {
+                _ => (),
+            }
+        }
+    }
+    Ok(celerity_handler_spec)
+}
+
+fn validate_celerity_schedule_spec(
+    spec_map: &yaml_rust2::yaml::Hash,
+) -> Result<CelerityScheduleSpec, BlueprintParseError> {
+    let mut celerity_schedule_spec = CelerityScheduleSpec::default();
+    if let Some(schedule_val) = spec_map.get(&yaml_rust2::Yaml::String("schedule".to_string())) {
+        if let yaml_rust2::Yaml::String(schedule_str) = schedule_val {
+            celerity_schedule_spec.schedule = schedule_str.clone();
+        } else {
+            Err(BlueprintParseError::YamlFormatError(format!(
+                "expected a string for schedule, found {:?}",
+                schedule_val
+            )))?;
+        }
+    } else {
+        Err(BlueprintParseError::YamlFormatError(
+            "expected a schedule field for schedule configuration".to_string(),
+        ))?;
+    }
+    Ok(celerity_schedule_spec)
+}
+
+fn validate_celerity_consumer_spec(
+    spec_map: &yaml_rust2::yaml::Hash,
+) -> Result<CelerityConsumerSpec, BlueprintParseError> {
+    let mut celerity_consumer_spec = CelerityConsumerSpec::default();
+    for (key, value) in spec_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "sourceId" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        celerity_consumer_spec.source_id = Some(value_str.clone())
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for sourceId, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "batchSize" => {
+                    if let yaml_rust2::Yaml::Integer(value_int) = value {
+                        celerity_consumer_spec.batch_size = Some(*value_int)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected an integer for batchSize, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "visibilityTimeout" => {
+                    if let yaml_rust2::Yaml::Integer(value_int) = value {
+                        celerity_consumer_spec.visibility_timeout = Some(*value_int)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected an integer for visibilityTimeout, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "waitTimeSeconds" => {
+                    if let yaml_rust2::Yaml::Integer(value_int) = value {
+                        celerity_consumer_spec.wait_time_seconds = Some(*value_int)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected an integer for waitTimeSeconds, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "partialFailures" => {
+                    if let yaml_rust2::Yaml::Boolean(value_bool) = value {
+                        celerity_consumer_spec.partial_failures = Some(*value_bool)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a boolean for partialFailures, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "routingKey" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        celerity_consumer_spec.routing_key = Some(value_str.clone())
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for routingKey, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "externalEvents" => {
                     if let yaml_rust2::Yaml::Hash(value_map) = value {
-                        celerity_handler_spec.events =
-                            Some(validate_handler_events_config_map(value_map)?);
+                        celerity_consumer_spec.external_events =
+                            Some(validate_consumer_external_events_config_map(value_map)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
                             "expected a mapping for events, found {:?}",
@@ -443,27 +551,30 @@ fn validate_celerity_handler_spec(
             }
         }
     }
-    Ok(celerity_handler_spec)
+    Ok(celerity_consumer_spec)
 }
 
-fn validate_handler_events_config_map(
+fn validate_consumer_external_events_config_map(
     value_map: &yaml_rust2::yaml::Hash,
-) -> Result<HashMap<String, EventConfiguration>, BlueprintParseError> {
+) -> Result<HashMap<String, ExternalEventConfiguration>, BlueprintParseError> {
     let mut events = HashMap::new();
     for (key, value) in value_map {
         if let yaml_rust2::Yaml::String(key_str) = key {
             if let yaml_rust2::Yaml::Hash(value_map) = value {
-                events.insert(key_str.clone(), validate_handler_event_config(value_map)?);
+                events.insert(
+                    key_str.clone(),
+                    validate_consumer_external_event_config(value_map)?,
+                );
             }
         }
     }
     Ok(events)
 }
 
-fn validate_handler_event_config(
+fn validate_consumer_external_event_config(
     value_map: &yaml_rust2::yaml::Hash,
-) -> Result<EventConfiguration, BlueprintParseError> {
-    let mut event_config = EventConfiguration::default();
+) -> Result<ExternalEventConfiguration, BlueprintParseError> {
+    let mut event_config = ExternalEventConfiguration::default();
 
     // Make sure the event source type is known before validating the
     // source configuration.
@@ -740,91 +851,6 @@ fn validate_map_of_strings(
         }
     }
     Ok(map)
-}
-
-fn validate_celerity_schedule_spec(
-    spec_map: &yaml_rust2::yaml::Hash,
-) -> Result<CelerityScheduleSpec, BlueprintParseError> {
-    let mut celerity_schedule_spec = CelerityScheduleSpec::default();
-    if let Some(schedule_val) = spec_map.get(&yaml_rust2::Yaml::String("schedule".to_string())) {
-        if let yaml_rust2::Yaml::String(schedule_str) = schedule_val {
-            celerity_schedule_spec.schedule = schedule_str.clone();
-        } else {
-            Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for schedule, found {:?}",
-                schedule_val
-            )))?;
-        }
-    } else {
-        Err(BlueprintParseError::YamlFormatError(
-            "expected a schedule field for schedule configuration".to_string(),
-        ))?;
-    }
-    Ok(celerity_schedule_spec)
-}
-
-fn validate_celerity_consumer_spec(
-    spec_map: &yaml_rust2::yaml::Hash,
-) -> Result<CelerityConsumerSpec, BlueprintParseError> {
-    let mut celerity_consumer_spec = CelerityConsumerSpec::default();
-    for (key, value) in spec_map {
-        if let yaml_rust2::Yaml::String(key_str) = key {
-            match key_str.as_str() {
-                "sourceId" => {
-                    if let yaml_rust2::Yaml::String(value_str) = value {
-                        celerity_consumer_spec.source_id = value_str.clone()
-                    } else {
-                        Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for sourceId, found {:?}",
-                            value,
-                        )))?
-                    }
-                }
-                "batchSize" => {
-                    if let yaml_rust2::Yaml::Integer(value_int) = value {
-                        celerity_consumer_spec.batch_size = Some(*value_int)
-                    } else {
-                        Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer for batchSize, found {:?}",
-                            value,
-                        )))?
-                    }
-                }
-                "visibilityTimeout" => {
-                    if let yaml_rust2::Yaml::Integer(value_int) = value {
-                        celerity_consumer_spec.visibility_timeout = Some(*value_int)
-                    } else {
-                        Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer for visibilityTimeout, found {:?}",
-                            value,
-                        )))?
-                    }
-                }
-                "waitTimeSeconds" => {
-                    if let yaml_rust2::Yaml::Integer(value_int) = value {
-                        celerity_consumer_spec.wait_time_seconds = Some(*value_int)
-                    } else {
-                        Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer for waitTimeSeconds, found {:?}",
-                            value,
-                        )))?
-                    }
-                }
-                "partialFailures" => {
-                    if let yaml_rust2::Yaml::Boolean(value_bool) = value {
-                        celerity_consumer_spec.partial_failures = Some(*value_bool)
-                    } else {
-                        Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean for partialFailures, found {:?}",
-                            value,
-                        )))?
-                    }
-                }
-                _ => (),
-            }
-        }
-    }
-    Ok(celerity_consumer_spec)
 }
 
 fn validate_celerity_api_spec(
@@ -1478,6 +1504,161 @@ fn populate_by_label_selectors(
             }
         }
     }
+}
+
+fn validate_celerity_config_spec(
+    spec_map: &yaml_rust2::yaml::Hash,
+) -> Result<CelerityConfigSpec, BlueprintParseError> {
+    let mut celerity_config_spec = CelerityConfigSpec::default();
+    for (key, value) in spec_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "name" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        celerity_config_spec.name = Some(value_str.clone())
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for name, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "plaintext" => {
+                    if let yaml_rust2::Yaml::Array(value_arr) = value {
+                        celerity_config_spec.plaintext =
+                            Some(validate_array_of_strings(value_arr, "plaintext")?)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected an array for plaintext, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+    Ok(celerity_config_spec)
+}
+
+fn validate_celerity_bucket_spec(
+    spec_map: &yaml_rust2::yaml::Hash,
+) -> Result<CelerityBucketSpec, BlueprintParseError> {
+    let mut celerity_bucket_spec = CelerityBucketSpec::default();
+    for (key, value) in spec_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "name" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        celerity_bucket_spec.name = Some(value_str.clone())
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for name, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+    Ok(celerity_bucket_spec)
+}
+
+fn validate_celerity_topic_spec(
+    spec_map: &yaml_rust2::yaml::Hash,
+) -> Result<CelerityTopicSpec, BlueprintParseError> {
+    let mut celerity_topic_spec = CelerityTopicSpec::default();
+    for (key, value) in spec_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "name" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        celerity_topic_spec.name = Some(value_str.clone())
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for name, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "fifo" => {
+                    if let yaml_rust2::Yaml::Boolean(value_bool) = value {
+                        celerity_topic_spec.fifo = Some(*value_bool)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a boolean for fifo, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+    Ok(celerity_topic_spec)
+}
+
+fn validate_celerity_queue_spec(
+    spec_map: &yaml_rust2::yaml::Hash,
+) -> Result<CelerityQueueSpec, BlueprintParseError> {
+    let mut celerity_queue_spec = CelerityQueueSpec::default();
+    for (key, value) in spec_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "name" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        celerity_queue_spec.name = Some(value_str.clone())
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for name, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "fifo" => {
+                    if let yaml_rust2::Yaml::Boolean(value_bool) = value {
+                        celerity_queue_spec.fifo = Some(*value_bool)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a boolean for fifo, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                "visibilityTimeout" => {
+                    if let yaml_rust2::Yaml::Integer(value_int) = value {
+                        celerity_queue_spec.visibility_timeout = Some(*value_int)
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected an integer for visibilityTimeout, found {:?}",
+                            value,
+                        )))?
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+    Ok(celerity_queue_spec)
+}
+
+fn validate_array_of_strings(
+    values: &Vec<yaml_rust2::Yaml>,
+    field: &str,
+) -> Result<Vec<String>, BlueprintParseError> {
+    let mut strings = Vec::new();
+    for value in values {
+        if let yaml_rust2::Yaml::String(value_str) = value {
+            strings.push(value_str.clone());
+        } else {
+            Err(BlueprintParseError::YamlFormatError(format!(
+                "expected a string for {}, found {:?}",
+                field, value
+            )))?
+        }
+    }
+    Ok(strings)
 }
 
 fn extract_scalar_value(

@@ -24,6 +24,18 @@ pub const CELERITY_HANDLER_CONFIG_RESOURCE_TYPE: &str = "celerity/handlerConfig"
 /// The resource type identifier for a Celerity Workflow.
 pub const CELERITY_WORKFLOW_RESOURCE_TYPE: &str = "celerity/workflow";
 
+/// The resource type identifier for a Celerity Config (secrets/config store).
+pub const CELERITY_CONFIG_RESOURCE_TYPE: &str = "celerity/config";
+
+/// The resource type identifier for a Celerity Bucket.
+pub const CELERITY_BUCKET_RESOURCE_TYPE: &str = "celerity/bucket";
+
+/// The resource type identifier for a Celerity Topic.
+pub const CELERITY_TOPIC_RESOURCE_TYPE: &str = "celerity/topic";
+
+/// The resource type identifier for a Celerity Queue.
+pub const CELERITY_QUEUE_RESOURCE_TYPE: &str = "celerity/queue";
+
 /// This is a struct that holds the configuration
 /// for the Celerity runtime in the form a blueprint.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -164,6 +176,14 @@ pub enum CelerityResourceType {
     CelerityHandlerConfig,
     #[serde(rename = "celerity/workflow")]
     CelerityWorkflow,
+    #[serde(rename = "celerity/config")]
+    CelerityConfig,
+    #[serde(rename = "celerity/bucket")]
+    CelerityBucket,
+    #[serde(rename = "celerity/topic")]
+    CelerityTopic,
+    #[serde(rename = "celerity/queue")]
+    CelerityQueue,
 }
 
 /// This holds the metadata
@@ -209,6 +229,10 @@ pub enum CelerityResourceSpec {
     Schedule(CelerityScheduleSpec),
     HandlerConfig(SharedHandlerConfig),
     Workflow(CelerityWorkflowSpec),
+    Config(CelerityConfigSpec),
+    Bucket(CelerityBucketSpec),
+    Topic(CelerityTopicSpec),
+    Queue(CelerityQueueSpec),
     NoSpec,
 }
 
@@ -235,8 +259,6 @@ pub struct CelerityHandlerSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "environmentVariables")]
     pub environment_variables: Option<HashMap<String, String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub events: Option<HashMap<String, EventConfiguration>>,
 }
 
 impl Default for CelerityHandlerSpec {
@@ -250,7 +272,6 @@ impl Default for CelerityHandlerSpec {
             timeout: None,
             tracing_enabled: None,
             environment_variables: None,
-            events: None,
         }
     }
 }
@@ -275,8 +296,9 @@ pub struct CelerityApiSpec {
 /// for a consumer resource in the blueprint configuration.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CelerityConsumerSpec {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "sourceId")]
-    pub source_id: String,
+    pub source_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "batchSize")]
     pub batch_size: Option<i64>,
@@ -289,16 +311,24 @@ pub struct CelerityConsumerSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "partialFailures")]
     pub partial_failures: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "routingKey")]
+    pub routing_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "externalEvents")]
+    pub external_events: Option<HashMap<String, ExternalEventConfiguration>>,
 }
 
 impl Default for CelerityConsumerSpec {
     fn default() -> Self {
         CelerityConsumerSpec {
-            source_id: "".to_string(),
+            source_id: None,
             batch_size: None,
             visibility_timeout: None,
             wait_time_seconds: None,
             partial_failures: None,
+            routing_key: None,
+            external_events: None,
         }
     }
 }
@@ -506,18 +536,18 @@ impl Default for ValueSourceConfiguration {
 }
 
 /// Configuration for a cloud service event source
-/// for a handler resource.
+/// for a consumer resource.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct EventConfiguration {
+pub struct ExternalEventConfiguration {
     #[serde(rename = "sourceType")]
     pub source_type: EventSourceType,
     #[serde(rename = "sourceConfiguration")]
     pub source_configuration: EventSourceConfiguration,
 }
 
-impl Default for EventConfiguration {
+impl Default for ExternalEventConfiguration {
     fn default() -> Self {
-        EventConfiguration {
+        ExternalEventConfiguration {
             source_type: EventSourceType::ObjectStorage,
             source_configuration: EventSourceConfiguration::ObjectStorage(
                 ObjectStorageEventSourceConfiguration {
@@ -633,6 +663,106 @@ impl Default for DataStreamSourceConfiguration {
             data_stream_id: "".to_string(),
             partial_failures: None,
             start_from_beginning: None,
+        }
+    }
+}
+
+/// This holds the specification for a config/secret store
+/// resource in the blueprint configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct CelerityConfigSpec {
+    /// A unique name to use for the secret and configuration store.
+    /// If a name is not provided, a unique name will be generated for
+    /// based on the blueprint that the secret and configuration store
+    /// is defined in.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// A list of keys that do not hold sensitive values and should be stored
+    /// as plain text configuration values.
+    /// This is important for the runtime to help with sourcing values when stored
+    /// individually in something like Amazon's System Parameter Store.
+    /// It is also important so that the runtime knows which values are sensitive
+    /// and should be omitted from logs.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plaintext: Option<Vec<String>>,
+}
+
+impl Default for CelerityConfigSpec {
+    fn default() -> Self {
+        CelerityConfigSpec {
+            name: None,
+            plaintext: None,
+        }
+    }
+}
+
+/// This holds the specification for a bucket resource
+/// in the blueprint configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityBucketSpec {
+    /// A unique name to use for the bucket, if a name is not provided, a unique name
+    /// will be generated for the bucket based on the blueprint that the bucket is defined in.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
+/// This holds the specification for a topic resource
+/// in the blueprint configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct CelerityTopicSpec {
+    /// A unique name to use for the topic, if a name is not provided, a unique name
+    /// will be generated for the topic based on the blueprint that the topic is defined in.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Whether or not the topic is a FIFO topic.
+    /// If not provided, the topic will not be treated as a FIFO topic.
+    /// This information is useful to the runtime to determine how to configure
+    /// the consumer application.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fifo: Option<bool>,
+}
+
+impl Default for CelerityTopicSpec {
+    fn default() -> Self {
+        CelerityTopicSpec {
+            name: None,
+            fifo: Some(false),
+        }
+    }
+}
+
+/// This holds the specification for a queue resource
+/// in the blueprint configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct CelerityQueueSpec {
+    /// A unique name to use for the queue, if a name is not provided, a unique name
+    /// will be generated for the queue based on the blueprint that the queue is defined in.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Whether or not the queue is a FIFO queue.
+    /// If not provided, the queue will not be treated as a FIFO queue.
+    /// This information is useful to the runtime to determine how to configure
+    /// the consumer application.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fifo: Option<bool>,
+    /// Visibility timeout in seconds which is the amount of time a message is hidden from other consumers
+    /// after it is received from the queue.
+    /// This is uesful for the runtime as it will use the visibility timeout as the amount of time
+    /// to extend the visibility timeout (or lock duration) for a batch of messages that are taking
+    /// longer than expected to be processed.
+    /// The consumer's visibility timeout will take precedence over a queue's visibility timeout
+    /// if a consumer is wired up to a `celerity/queue` resource in the same blueprint.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "visibilityTimeout")]
+    pub visibility_timeout: Option<i64>,
+}
+
+impl Default for CelerityQueueSpec {
+    fn default() -> Self {
+        CelerityQueueSpec {
+            name: None,
+            fifo: Some(false),
+            visibility_timeout: None,
         }
     }
 }

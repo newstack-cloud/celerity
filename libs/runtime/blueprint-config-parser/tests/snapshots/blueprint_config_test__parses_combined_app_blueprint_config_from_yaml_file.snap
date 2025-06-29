@@ -61,10 +61,37 @@ expression: blueprint_config
         }
       }
     },
+    "invoiceEventStream": {
+      "type": "celerity/consumer",
+      "metadata": {
+        "displayName": "Invoice Event Stream Consumer"
+      },
+      "spec": {
+        "externalEvents": {
+          "invoiceEventStream": {
+            "sourceType": "dataStream",
+            "sourceConfiguration": {
+              "batchSize": 10,
+              "dataStreamId": "${variables.invoiceEventStreamId}",
+              "partialFailures": true,
+              "startFromBeginning": false
+            }
+          }
+        }
+      },
+      "linkSelector": {
+        "byLabel": {
+          "group": "invoiceStream"
+        }
+      }
+    },
     "invoiceEventStreamProcessor": {
       "type": "celerity/handler",
       "metadata": {
-        "displayName": "Invoice Event Stream Processor"
+        "displayName": "Invoice Event Stream Processor",
+        "labels": {
+          "group": "invoiceStream"
+        }
       },
       "spec": {
         "handlerName": "Orders-InvoiceEventStreamProcessor-v1",
@@ -77,24 +104,16 @@ expression: blueprint_config
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
           "SECRET_STORE_ID": "${variables.secretStoreId}"
-        },
-        "events": {
-          "invoiceEventStream": {
-            "sourceType": "dataStream",
-            "sourceConfiguration": {
-              "batchSize": 10,
-              "dataStreamId": "${variables.invoiceEventStreamId}",
-              "partialFailures": true,
-              "startFromBeginning": false
-            }
-          }
         }
       }
     },
     "invoiceFileEventHandler": {
       "type": "celerity/handler",
       "metadata": {
-        "displayName": "Invoice File Event Handler"
+        "displayName": "Invoice File Event Handler",
+        "labels": {
+          "group": "invoices"
+        }
       },
       "spec": {
         "handlerName": "Orders-InvoiceFileEventHandler-v1",
@@ -107,8 +126,16 @@ expression: blueprint_config
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
           "SECRET_STORE_ID": "${variables.secretStoreId}"
-        },
-        "events": {
+        }
+      }
+    },
+    "invoiceFileEvents": {
+      "type": "celerity/consumer",
+      "metadata": {
+        "displayName": ""
+      },
+      "spec": {
+        "externalEvents": {
           "invoiceFileEvent": {
             "sourceType": "objectStorage",
             "sourceConfiguration": {
@@ -121,12 +148,44 @@ expression: blueprint_config
             }
           }
         }
+      },
+      "linkSelector": {
+        "byLabel": {
+          "group": "invoices"
+        }
+      }
+    },
+    "orderDBStream": {
+      "type": "celerity/consumer",
+      "metadata": {
+        "displayName": "Order DB Stream Consumer"
+      },
+      "spec": {
+        "externalEvents": {
+          "orderStream": {
+            "sourceType": "dbStream",
+            "sourceConfiguration": {
+              "batchSize": 10,
+              "dbStreamId": "${variables.orderDBStreamId}",
+              "partialFailures": true,
+              "startFromBeginning": false
+            }
+          }
+        }
+      },
+      "linkSelector": {
+        "byLabel": {
+          "group": "orders"
+        }
       }
     },
     "orderDBStreamProcessor": {
       "type": "celerity/handler",
       "metadata": {
-        "displayName": "Order DB Stream Processor"
+        "displayName": "Order DB Stream Processor",
+        "labels": {
+          "group": "orders"
+        }
       },
       "spec": {
         "handlerName": "Orders-OrderDBStreamProcessor-v1",
@@ -139,17 +198,6 @@ expression: blueprint_config
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
           "SECRET_STORE_ID": "${variables.secretStoreId}"
-        },
-        "events": {
-          "orderStream": {
-            "sourceType": "dbStream",
-            "sourceConfiguration": {
-              "batchSize": 10,
-              "dbStreamId": "${variables.orderDBStreamId}",
-              "partialFailures": true,
-              "startFromBeginning": false
-            }
-          }
         }
       }
     },
@@ -220,10 +268,10 @@ expression: blueprint_config
           "guards": {
             "jwt": {
               "type": "jwt",
-              "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
+              "issuer": "https://identity.newstack.cloud/oauth2/v1/",
               "tokenSource": "$.headers.Authorization",
               "audience": [
-                "https://identity.twohundred.cloud/api/manage/v1/"
+                "https://identity.newstack.cloud/api/manage/v1/"
               ]
             }
           }

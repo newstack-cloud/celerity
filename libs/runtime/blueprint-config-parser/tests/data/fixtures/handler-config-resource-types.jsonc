@@ -61,9 +61,9 @@
           "guards": {
             "jwt": {
               "type": "jwt",
-              "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
+              "issuer": "https://identity.newstack.cloud/oauth2/v1/",
               "tokenSource": "$.headers.Authorization",
-              "audience": ["https://identity.twohundred.cloud/api/manage/v1/"]
+              "audience": ["https://identity.newstack.cloud/api/manage/v1/"]
             },
             "customGuard": {
               "type": "custom"

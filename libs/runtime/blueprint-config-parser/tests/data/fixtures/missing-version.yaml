@@ -46,10 +46,10 @@ resources:
         guards:
           jwt:
             type: jwt
-            issuer: "https://identity.twohundred.cloud/oauth2/v1/"
+            issuer: "https://identity.newstack.cloud/oauth2/v1/"
             tokenSource: "$.headers.Authorization"
             audience:
-              - "https://identity.twohundred.cloud/api/manage/v1/"
+              - "https://identity.newstack.cloud/api/manage/v1/"
 
   getOrderHandler:
     type: "celerity/handler"

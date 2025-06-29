@@ -49,10 +49,10 @@
           "guards": {
             "jwt": {
               "type": "jwt",
-              "issuer": "https://identity.twohundred.cloud/oauth2/v1/",
+              "issuer": "https://identity.newstack.cloud/oauth2/v1/",
               "tokenSource": "$.headers.Authorization",
               // A comment to test stripping of comments.
-              "audience": ["https://identity.twohundred.cloud/api/manage/v1/"]
+              "audience": ["https://identity.newstack.cloud/api/manage/v1/"]
             }
           }
         }

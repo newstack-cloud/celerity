@@ -6,7 +6,8 @@ This package provides a Rust parser for runtime-specific configuration represent
 
 This implementation is not an exact implementation of the blueprint specification but a simplified version that can be used to parse YAML or JSONC blueprint files.
 
-This is not designed to be used as a general purpose blueprint parser, it expects a very specific blueprint format that contains strongly typed resource specifications for Celerity resource types.
+This is not designed to be used as a general purpose blueprint parser, it expects a very specific blueprint format that contains strongly typed subset of resource specifications for Celerity resource types.
+This does not parse the full Celerity resource type specifications, it only parses the subset of resource specs that are used by the runtime.
 
 Efforts to implement the full general purpose blueprint specification for Rust will not be a part of this package.
 

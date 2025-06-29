@@ -66,6 +66,22 @@ impl<'de> ResourceVisitor {
                 let workflow_spec = map.next_value()?;
                 Ok(CelerityResourceSpec::Workflow(workflow_spec))
             }
+            CelerityResourceType::CelerityConfig => {
+                let config_spec = map.next_value()?;
+                Ok(CelerityResourceSpec::Config(config_spec))
+            }
+            CelerityResourceType::CelerityBucket => {
+                let bucket_spec = map.next_value()?;
+                Ok(CelerityResourceSpec::Bucket(bucket_spec))
+            }
+            CelerityResourceType::CelerityTopic => {
+                let topic_spec = map.next_value()?;
+                Ok(CelerityResourceSpec::Topic(topic_spec))
+            }
+            CelerityResourceType::CelerityQueue => {
+                let queue_spec = map.next_value()?;
+                Ok(CelerityResourceSpec::Queue(queue_spec))
+            }
         }
     }
 }

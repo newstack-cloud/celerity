@@ -49,10 +49,10 @@ resources:
         guards:
           jwt:
             type: jwt
-            issuer: "https://identity.twohundred.cloud/oauth2/v1/"
+            issuer: "https://identity.newstack.cloud/oauth2/v1/"
             tokenSource: "$.headers.Authorization"
             audience:
-              - "https://identity.twohundred.cloud/api/manage/v1/"
+              - "https://identity.newstack.cloud/api/manage/v1/"
 
   getOrderHandler:
     type: "celerity/handler"
@@ -110,10 +110,28 @@ resources:
         LOG_LEVEL: "INFO"
         SECRET_STORE_ID: "${variables.secretStoreId}"
 
+  invoiceFileEvents:
+    type: "celerity/consumer"
+    linkSelector:
+      byLabel:
+        group: "invoices"
+    spec:
+      externalEvents:
+        invoiceFileEvent:
+          sourceType: "objectStorage"
+          sourceConfiguration:
+            events:
+              - created
+              - deleted
+              - metadataUpdated
+            bucket: "${variables.invoiceBucket}"
+
   invoiceFileEventHandler:
     type: "celerity/handler"
     metadata:
       displayName: Invoice File Event Handler
+      labels:
+        group: "invoices"
     spec:
       handlerName: Orders-InvoiceFileEventHandler-v1
       codeLocation: "./orders"
@@ -125,20 +143,30 @@ resources:
       environmentVariables:
         LOG_LEVEL: "INFO"
         SECRET_STORE_ID: "${variables.secretStoreId}"
-      events:
-        invoiceFileEvent:
-          sourceType: "objectStorage"
+
+  orderDBStream:
+    type: "celerity/consumer"
+    metadata:
+      displayName: Order DB Stream Consumer
+    linkSelector:
+      byLabel:
+        group: "orders"
+    spec:
+      externalEvents:
+        orderStream:
+          sourceType: "dbStream"
           sourceConfiguration:
-            events:
-              - created
-              - deleted
-              - metadataUpdated
-            bucket: "${variables.invoiceBucket}"
+            dbStreamId: "${variables.orderDBStreamId}"
+            batchSize: 10
+            partialFailures: true
+            startFromBeginning: false
 
   orderDBStreamProcessor:
     type: "celerity/handler"
     metadata:
       displayName: Order DB Stream Processor
+      labels:
+        group: "orders"
     spec:
       handlerName: Orders-OrderDBStreamProcessor-v1
       codeLocation: "./orders"
@@ -150,11 +178,20 @@ resources:
       environmentVariables:
         LOG_LEVEL: "INFO"
         SECRET_STORE_ID: "${variables.secretStoreId}"
-      events:
-        orderStream:
-          sourceType: "dbStream"
+
+  invoiceEventStream:
+    type: "celerity/consumer"
+    metadata:
+      displayName: Invoice Event Stream Consumer
+    linkSelector:
+      byLabel:
+        group: "invoiceStream"
+    spec:
+      externalEvents:
+        invoiceEventStream:
+          sourceType: "dataStream"
           sourceConfiguration:
-            dbStreamId: "${variables.orderDBStreamId}"
+            dataStreamId: "${variables.invoiceEventStreamId}"
             batchSize: 10
             partialFailures: true
             startFromBeginning: false
@@ -163,6 +200,8 @@ resources:
     type: "celerity/handler"
     metadata:
       displayName: Invoice Event Stream Processor
+      labels:
+        group: "invoiceStream"
     spec:
       handlerName: Orders-InvoiceEventStreamProcessor-v1
       codeLocation: "./orders"
@@ -174,11 +213,4 @@ resources:
       environmentVariables:
         LOG_LEVEL: "INFO"
         SECRET_STORE_ID: "${variables.secretStoreId}"
-      events:
-        invoiceEventStream:
-          sourceType: "dataStream"
-          sourceConfiguration:
-            dataStreamId: "${variables.invoiceEventStreamId}"
-            batchSize: 10
-            partialFailures: true
-            startFromBeginning: false
+
