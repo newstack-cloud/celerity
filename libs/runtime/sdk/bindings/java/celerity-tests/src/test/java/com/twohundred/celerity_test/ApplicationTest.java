@@ -1,17 +1,17 @@
-package com.twohundred.celerity_test;
+package com.newstack.celerity_test;
 
-import com.twohundred.celerity.Application;
-import com.twohundred.celerity.ApplicationStartupException;
-import com.twohundred.celerity.CoreRuntimeConfig;
-import com.twohundred.celerity.HttpHandler;
-import com.twohundred.celerity.HttpHandlerDefinition;
-import com.twohundred.celerity.HttpHandlersReceiver;
-import com.twohundred.celerity.Response;
+import com.newstack.celerity.Application;
+import com.newstack.celerity.ApplicationStartupException;
+import com.newstack.celerity.CoreRuntimeConfig;
+import com.newstack.celerity.HttpHandler;
+import com.newstack.celerity.HttpHandlerDefinition;
+import com.newstack.celerity.HttpHandlersReceiver;
+import com.newstack.celerity.Response;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.twohundred.celerity.AppConfig;
-import com.twohundred.celerity.Runtime;
-import com.twohundred.celerity.RuntimeConfig;
+import com.newstack.celerity.AppConfig;
+import com.newstack.celerity.Runtime;
+import com.newstack.celerity.RuntimeConfig;
 
 import org.junit.jupiter.api.Test;
 
