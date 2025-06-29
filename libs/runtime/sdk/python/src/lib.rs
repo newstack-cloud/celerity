@@ -222,6 +222,9 @@ impl CoreRuntimeApplication {
       trace_otlp_collector_endpoint: "http://localhost:4317".to_string(),
       runtime_max_diagnostics_level: tracing::Level::INFO,
       test_mode: false,
+      api_resource: None,
+      consumer_app: None,
+      schedule_app: None,
     };
     print!(
       "Creating CoreRuntimeApplication with config: {:?}\n",

@@ -8,7 +8,7 @@ fn main() {
     let out_path: PathBuf = Path::new(&std::env::var_os("OUT_DIR").unwrap()).join("jni.rs");
 
     let config = oo_bindgen::backend::java::JniBindgenConfig {
-        group_id: "com.twohundred",
+        group_id: "com.newstack",
         ffi_name: "celerity_runtime_bindgen_ffi",
     };
 

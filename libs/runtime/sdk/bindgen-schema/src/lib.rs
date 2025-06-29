@@ -29,9 +29,9 @@ pub fn build_lib() -> BackTraced<Library> {
         license_path: PathBuf::from("../../LICENSE"),
         developers: vec![DeveloperInfo {
             name: "Andre Sutherland".to_string(),
-            email: "info@twohundred.cloud".to_string(),
+            email: "info@newstack.cloud".to_string(),
             organization: "Two Hundred".to_string(),
-            organization_url: "https://twohundred.cloud/".to_string(),
+            organization_url: "https://newstack.cloud/".to_string(),
         }],
         logo_png: include_bytes!("../resources/logo.png"),
     };
