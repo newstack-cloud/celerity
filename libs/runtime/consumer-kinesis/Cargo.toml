@@ -1,5 +1,5 @@
 [package]
-name = "celerity_stream_consumer_kinesis"
+name = "celerity_consumer_kinesis"
 version = "0.1.0"
 edition = "2021"
 
