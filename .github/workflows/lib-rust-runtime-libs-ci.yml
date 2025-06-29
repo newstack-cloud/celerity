@@ -47,6 +47,11 @@ jobs:
           set +o allexport
           python scripts/package-test-tools.py --localdeps
         working-directory: ${{env.working-directory}}
+        env:
+          # provide mock AWS credentials, this is fine as long as the integration tests
+          # don't need to access any real AWS services.
+          AWS_ACCESS_KEY_ID: test-key
+          AWS_SECRET_ACCESS_KEY: test-secret
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@master
         with:
