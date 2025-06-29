@@ -28,6 +28,34 @@ path = "../blueprint-config-parser"
 [dependencies.celerity_helpers]
 path = "../helpers"
 
+[dependencies.celerity_consumer_sqs]
+path = "../consumer-sqs"
+optional = true
+
+[dependencies.celerity_stream_consumer_kinesis]
+path = "../stream-consumer-kinesis"
+optional = true
+
+[dependencies.celerity_consumer_redis]
+path = "../consumer-redis"
+optional = true
+
+[dependencies.celerity_consumer_gcloud_pubsub]
+path = "../consumer-gcloud-pubsub"
+optional = true
+
+[dependencies.celerity_consumer_gcloud_tasks]
+path = "../consumer-gcloud-tasks"
+optional = true
+
+[dependencies.celerity_stream_consumer_azure_events_hub]
+path = "../stream-consumer-azure-events-hub"
+optional = true
+
+[dependencies.celerity_consumer_azure_service_bus]
+path = "../consumer-azure-service-bus"
+optional = true
+
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
@@ -36,3 +64,18 @@ http-body-util = "0.1.2"
 coverage-helper = "0.2.2"
 futures = "0.3.30"
 tokio-tungstenite = "0.23.1"
+
+[features]
+aws_consumers = [
+    "dep:celerity_consumer_sqs",
+    "dep:celerity_stream_consumer_kinesis",
+]
+azure_consumers = [
+    "dep:celerity_stream_consumer_azure_events_hub",
+    "dep:celerity_consumer_azure_service_bus",
+]
+gcloud_consumers = [
+    "dep:celerity_consumer_gcloud_pubsub",
+    "dep:celerity_consumer_gcloud_tasks",
+]
+celerity_one_consumers = ["dep:celerity_consumer_redis"]

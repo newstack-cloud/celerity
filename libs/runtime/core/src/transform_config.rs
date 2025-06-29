@@ -2,13 +2,14 @@ use std::cmp::max;
 
 use celerity_blueprint_config_parser::blueprint::{
     BlueprintConfig, BlueprintMetadata, BlueprintScalarValue, CelerityApiProtocol,
-    CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType,
+    CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType, RuntimeBlueprintResource,
 };
 use celerity_helpers::blueprint::{select_resources, ResourceWithName};
 
 use crate::{
     config::{
-        ApiConfig, HttpConfig, HttpHandlerDefinition, WebSocketConfig, WebSocketHandlerDefinition,
+        ApiConfig, HttpConfig, HttpHandlerDefinition, RuntimeConfig, WebSocketConfig,
+        WebSocketHandlerDefinition,
     },
     consts::{
         CELERITY_HTTP_HANDLER_ANNOTATION_NAME, CELERITY_HTTP_METHOD_ANNOTATION_NAME,
@@ -21,6 +22,7 @@ use crate::{
 
 pub(crate) fn collect_api_config(
     blueprint_config: BlueprintConfig,
+    runtime_config: &RuntimeConfig,
 ) -> Result<ApiConfig, ConfigError> {
     let mut api_config = ApiConfig {
         http: None,
@@ -29,12 +31,8 @@ pub(crate) fn collect_api_config(
         cors: None,
         tracing_enabled: false,
     };
-    // Find the first API resource in the blueprint.
-    let (_, api) = blueprint_config
-        .resources
-        .iter()
-        .find(|(_, resource)| resource.resource_type == CelerityResourceType::CelerityApi)
-        .ok_or_else(|| ConfigError::ApiMissing)?;
+
+    let api = get_api_resource(&blueprint_config, runtime_config)?;
 
     let target_handlers = select_resources(
         &api.link_selector,
@@ -75,6 +73,30 @@ pub(crate) fn collect_api_config(
     api_config.tracing_enabled = resolve_api_tracing_enabled(&api.spec);
 
     Ok(api_config)
+}
+
+fn get_api_resource<'a>(
+    blueprint_config: &'a BlueprintConfig,
+    runtime_config: &RuntimeConfig,
+) -> Result<&'a RuntimeBlueprintResource, ConfigError> {
+    let (_, api_resource) = blueprint_config
+        .resources
+        .iter()
+        .find(
+            |&(current_name, current)| match runtime_config.api_resource.as_ref() {
+                // Find the API resource in the blueprint that
+                //matches the name in the runtime config.
+                Some(api_resource_name) => {
+                    current_name == api_resource_name
+                        && current.resource_type == CelerityResourceType::CelerityApi
+                }
+                // Fall back to using the first `celerity/api` resource in the blueprint.
+                None => current.resource_type == CelerityResourceType::CelerityApi,
+            },
+        )
+        .ok_or_else(|| ConfigError::ApiMissing)?;
+
+    Ok(api_resource)
 }
 
 fn collect_http_handler_definitions(

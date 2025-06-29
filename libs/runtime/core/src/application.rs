@@ -13,7 +13,7 @@ use axum::{
 };
 use axum_client_ip::SecureClientIpSource;
 use celerity_blueprint_config_parser::{blueprint::BlueprintConfig, parse::BlueprintParseError};
-use celerity_helpers::runtime_types::{HealthCheckResponse, RuntimeCallMode};
+use celerity_helpers::runtime_types::{HealthCheckResponse, RuntimeCallMode, RuntimePlatform};
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::trace::TraceLayer;
 use tracing::{debug, info_span, warn};
@@ -70,7 +70,7 @@ impl Application {
             schedules: None,
             events: None,
         };
-        match collect_api_config(blueprint_config) {
+        match collect_api_config(blueprint_config, &self.runtime_config) {
             Ok(api_config) => {
                 self.http_server_app = Some(self.setup_http_server_app(&api_config)?);
                 app_config.api = Some(api_config);
@@ -81,7 +81,68 @@ impl Application {
         if self.runtime_config.runtime_call_mode == RuntimeCallMode::Http {
             self.runtime_local_api = Some(self.setup_runtime_local_api(&app_config)?);
         }
+
+        #[cfg(feature = "aws_consumers")]
+        {
+            if self.runtime_config.platform == RuntimePlatform::AWS {
+                self.setup_consumers_for_aws(&mut app_config)?;
+            }
+        }
+
+        #[cfg(feature = "azure_consumers")]
+        {
+            if self.runtime_config.platform == RuntimePlatform::Azure {
+                self.setup_consumers_for_azure(&mut app_config)?;
+            }
+        }
+
+        #[cfg(feature = "gcloud_consumers")]
+        {
+            if self.runtime_config.platform == RuntimePlatform::GCP {
+                self.setup_consumers_for_gcloud(&mut app_config)?;
+            }
+        }
+
+        #[cfg(feature = "celerity_one_consumers")]
+        {
+            if self.runtime_config.platform == RuntimePlatform::Local {
+                self.setup_consumers_for_celerity_one(&mut app_config)?;
+            }
+        }
+
         Ok(app_config)
+    }
+
+    #[cfg(feature = "aws_consumers")]
+    fn setup_consumers_for_aws(
+        &mut self,
+        app_config: &mut AppConfig,
+    ) -> Result<(), ApplicationStartError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "azure_consumers")]
+    fn setup_consumers_for_azure(
+        &mut self,
+        app_config: &mut AppConfig,
+    ) -> Result<(), ApplicationStartError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "gcloud_consumers")]
+    fn setup_consumers_for_gcloud(
+        &mut self,
+        app_config: &mut AppConfig,
+    ) -> Result<(), ApplicationStartError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "celerity_one_consumers")]
+    fn setup_consumers_for_celerity_one(
+        &mut self,
+        app_config: &mut AppConfig,
+    ) -> Result<(), ApplicationStartError> {
+        Ok(())
     }
 
     fn setup_http_server_app(
@@ -249,10 +310,11 @@ impl Application {
     }
 
     fn load_and_parse_blueprint(&self) -> Result<BlueprintConfig, BlueprintParseError> {
-        if self.runtime_config.blueprint_config_path.ends_with(".json") {
-            BlueprintConfig::from_jsonc_file(&self.runtime_config.blueprint_config_path)
+        let blueprint_config_path = self.runtime_config.blueprint_config_path.as_str();
+        if blueprint_config_path.ends_with(".json") || blueprint_config_path.ends_with(".jsonc") {
+            BlueprintConfig::from_jsonc_file(blueprint_config_path)
         } else {
-            BlueprintConfig::from_yaml_file(&self.runtime_config.blueprint_config_path)
+            BlueprintConfig::from_yaml_file(blueprint_config_path)
         }
     }
 

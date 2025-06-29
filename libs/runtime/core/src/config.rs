@@ -68,6 +68,29 @@ pub struct RuntimeConfig {
     ///
     /// Defaults to false.
     pub test_mode: bool,
+    /// The name of the API resource in the blueprint
+    /// that should be used as the configuration source for setting
+    /// up API configuration and endpoints.
+    pub api_resource: Option<String>,
+    /// The name of the consumer app in the blueprint
+    /// that should be used as the configuration source for setting
+    /// up webhook endpoints (for push model message sources) or a polling
+    /// consumer (for pull model message sources).
+    /// This will be either a shared `celerity.app` annotation shared by
+    /// multiple consumers that are part of the same application or the name
+    /// an individual `celerity/consumer` resource in the blueprint.
+    /// If not set, the runtime will use the first `celerity/consumer` resource
+    /// defined in the blueprint.
+    pub consumer_app: Option<String>,
+    /// The name of the schedule app in the blueprint
+    /// that should be used as the configuration source for setting
+    /// up a polling consumer or webhook endpoint specifically for scheduled messages.
+    /// This will be either a shared `celerity.app` annotation shared by
+    /// multiple schedules that are part of the same application or the name
+    /// of an individual `celerity/schedule` resource in the blueprint.
+    /// If not set, the runtime will use the first `celerity/schedule` resource
+    /// defined in the blueprint.
+    pub schedule_app: Option<String>,
 }
 
 impl RuntimeConfig {
@@ -154,6 +177,21 @@ impl RuntimeConfig {
             })
             .unwrap_or(false);
 
+        let api_resource = env
+            .var("CELERITY_API_RESOURCE")
+            .map(Some)
+            .unwrap_or_else(|_| None);
+
+        let consumer_app = env
+            .var("CELERITY_CONSUMER_APP")
+            .map(Some)
+            .unwrap_or_else(|_| None);
+
+        let schedule_app = env
+            .var("CELERITY_SCHEDULE_APP")
+            .map(Some)
+            .unwrap_or_else(|_| None);
+
         RuntimeConfig {
             blueprint_config_path,
             runtime_call_mode,
@@ -166,6 +204,9 @@ impl RuntimeConfig {
             runtime_max_diagnostics_level,
             platform,
             test_mode,
+            api_resource,
+            consumer_app,
+            schedule_app,
         }
     }
 }
