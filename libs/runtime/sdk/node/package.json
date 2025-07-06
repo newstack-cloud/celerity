@@ -18,7 +18,7 @@
   },
   "license": "Apache-2.0",
   "devDependencies": {
-    "@napi-rs/cli": "^2.18.4",
+    "@napi-rs/cli": "^3.0.0-alpha.92",
     "ava": "^6.0.1",
     "supertest": "^7.0.0"
   },
@@ -26,7 +26,7 @@
     "timeout": "3m"
   },
   "engines": {
-    "node": ">= 10"
+    "node": ">= 22"
   },
   "scripts": {
     "artifacts": "napi artifacts",
