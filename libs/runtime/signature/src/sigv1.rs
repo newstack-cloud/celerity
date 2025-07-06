@@ -11,17 +11,17 @@ use crate::{
     types::{KeyPair, SignatureParts},
 };
 
-/// The name of the signature header used for Celerity Signature v1.
-pub const SIGNATURE_HEADER_NAME: &str = "Celerity-Signature-V1";
+/// The name of the signature header used for Bluelink Signature v1.
+pub const SIGNATURE_HEADER_NAME: &str = "Bluelink-Signature-V1";
 
 // The name of the header used to store the data as a UNIX timestamp in seconds.
-pub const DATE_HEADER_NAME: &str = "Celerity-Date";
+pub const DATE_HEADER_NAME: &str = "Bluelink-Date";
 
 /// The default clock skew in seconds.
 pub const DEFAULT_CLOCK_SKEW: u64 = 300;
 
 /// Verify a signature header with
-/// [Celerity Signature v1](https://www.celerityframework.com/docs/auth/signature-v1).
+/// [Bluelink Signature v1](https://www.bluelink.dev/docs/auth/signature-v1).
 ///
 /// # Errors
 ///
@@ -31,7 +31,7 @@ pub const DEFAULT_CLOCK_SKEW: u64 = 300;
 /// # Examples
 ///
 /// ```
-/// # use celerity_signature::sigv1::*;
+/// # use bluelink_signature::sigv1::*;
 /// # use celerity_helpers::time::DefaultClock;
 ///
 /// let clock = DefaultClock::new();
@@ -82,11 +82,11 @@ pub fn verify_signature(
 }
 
 /// Creates a signature header value to be attached to a request
-/// for [Celerity Signature v1](https://www.celerityframework.com/docs/auth/signature-v1).
+/// for [Bluelink Signature v1](https://www.bluelink.dev/docs/auth/signature-v1).
 /// This function will return the value of the signature header that should be
-/// set in the "Celerity-Signature-V1" header of the request.
+/// set in the "Bluelink-Signature-V1" header of the request.
 ///
-/// The `Celerity-Date` header does not need to be set in the provided headers,
+/// The `Bluelink-Date` header does not need to be set in the provided headers,
 /// as it will be automatically added to the signature message using the provided clock
 /// and inserted into the provided mutable headers map.
 ///
@@ -98,7 +98,7 @@ pub fn verify_signature(
 /// # Examples
 ///
 /// ```
-/// # use celerity_signature::sigv1::*;
+/// # use bluelink_signature::sigv1::*;
 /// # use celerity_helpers::time::DefaultClock;
 /// # use http::HeaderMap;
 ///
@@ -114,7 +114,7 @@ pub fn verify_signature(
 ///     .expect("signature header to be created without any issues");
 ///
 /// assert!(signature_header.starts_with("key-id"));
-/// assert!(headers.get("Celerity-Date").is_some());
+/// assert!(headers.get("Bluelink-Date").is_some());
 /// ```
 pub fn create_signature_header(
     key_pair: &KeyPair,
@@ -250,7 +250,7 @@ fn create_message(
         })
         .collect::<Result<String, SignatureMessageCreationError>>()?;
     let message = format!(
-        "{},celerity-date={}{}",
+        "{},bluelink-date={}{}",
         key_pair.key_id, date, custom_headers
     );
     Ok(message.as_bytes().to_vec())
@@ -340,7 +340,7 @@ mod tests {
 
         assert_eq!(
             signature_header,
-            "keyId=\"test-key-id\", headers=\"celerity-date x-custom-header\", signature=\"ppBsB6jEDm48SoYcXmfpu-IWshzWI5S8b_MmLDXFy_4\""
+            "keyId=\"test-key-id\", headers=\"bluelink-date x-custom-header\", signature=\"v0FTyFsVEXJwi6DC9NNNo8axZ7N-v1l1ngkZN2k72xQ\""
         );
     }
 
