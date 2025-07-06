@@ -1,5 +1,5 @@
 {
-  "name": "@celerity-js/runtime-sdk-linux-arm64-musl",
+  "name": "@celerity-sdk/runtime-linux-arm64-musl",
   "version": "0.0.0",
   "os": [
     "linux"
@@ -7,13 +7,13 @@
   "cpu": [
     "arm64"
   ],
-  "main": "runtime-sdk.linux-arm64-musl.node",
+  "main": "runtime.linux-arm64-musl.node",
   "files": [
-    "runtime-sdk.linux-arm64-musl.node"
+    "runtime.linux-arm64-musl.node"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "engines": {
-    "node": ">= 10"
+    "node": ">= 22"
   },
   "libc": [
     "musl"

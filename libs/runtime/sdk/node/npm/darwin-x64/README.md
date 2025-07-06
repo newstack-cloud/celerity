@@ -1,3 +1,3 @@
-# `@celerity-js/runtime-sdk-darwin-x64`
+# `@celerity-sdk/runtime-darwin-x64`
 
-This is the **x86_64-apple-darwin** binary for `@celerity-js/runtime-sdk`
+This is the **x86_64-apple-darwin** binary for `@celerity-sdk/runtime`

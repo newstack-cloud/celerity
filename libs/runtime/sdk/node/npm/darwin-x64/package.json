@@ -1,5 +1,5 @@
 {
-  "name": "@celerity-js/runtime-sdk-darwin-x64",
+  "name": "@celerity-sdk/runtime-darwin-x64",
   "version": "0.0.0",
   "os": [
     "darwin"
@@ -7,12 +7,12 @@
   "cpu": [
     "x64"
   ],
-  "main": "runtime-sdk.darwin-x64.node",
+  "main": "runtime.darwin-x64.node",
   "files": [
-    "runtime-sdk.darwin-x64.node"
+    "runtime.darwin-x64.node"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "engines": {
-    "node": ">= 10"
+    "node": ">= 22"
   }
 }
