@@ -109,12 +109,6 @@ jobs:
         if: ${{ matrix.settings.setup }}
         shell: bash
       - name: Setup node x86
-        if: matrix.settings.target == 'i686-pc-windows-msvc'
-        run: yarn config set supportedArchitectures.cpu "ia32"
-        shell: bash
-      - name: Install dependencies
-        run: yarn install
-      - name: Setup node x86
         uses: actions/setup-node@v4
         if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
@@ -128,6 +122,12 @@ jobs:
         if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
           cache: yarn
+      - name: Setup node x86
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
+        run: yarn config set supportedArchitectures.cpu "ia32"
+        shell: bash
+      - name: Install dependencies
+        run: yarn install
       - name: Build in docker
         uses: addnab/docker-run-action@v3
         if: ${{ matrix.settings.docker }}
@@ -143,7 +143,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: ${{ env.APP_NAME }}.*.node
+          # The upload artifact action does not use the working-directory,
+          # so we need to specify the full path to the native module.
+          path: ./libs/runtime/sdk/node/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   build-freebsd:
     runs-on: macos-13
@@ -193,7 +195,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bindings-freebsd
-          path: ${{ env.APP_NAME }}.*.node
+          # The upload artifact action does not use the working-directory,
+          # so we need to specify the full path to the native module.
+          path: ./libs/runtime/sdk/node/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   test-macOS-windows-binding:
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
