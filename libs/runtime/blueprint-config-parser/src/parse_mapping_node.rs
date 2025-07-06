@@ -5,7 +5,10 @@ use serde::{
     Deserialize, Deserializer,
 };
 
-use crate::blueprint::{BlueprintScalarValue, MappingNode};
+use crate::{
+    blueprint::BlueprintScalarValue,
+    blueprint_with_subs::{MappingNode, StringOrSubstitutions},
+};
 
 impl<'de> Deserialize<'de> for MappingNode {
     fn deserialize<D>(deserializer: D) -> Result<MappingNode, D::Error>
@@ -22,7 +25,9 @@ impl<'de> Visitor<'de> for MappingNodeVisitor {
     type Value = MappingNode;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a valid mapping node that can be a mapping, sequence or scalar")
+        formatter.write_str(
+            "a valid mapping node that can be a mapping, sequence, scalar or string with substitutions",
+        )
     }
 
     fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
@@ -49,13 +54,21 @@ impl<'de> Visitor<'de> for MappingNodeVisitor {
     }
 
     fn visit_string<E>(self, value: String) -> Result<Self::Value, E> {
-        Ok(MappingNode::Scalar(BlueprintScalarValue::Str(value)))
+        match serde_json::from_str::<StringOrSubstitutions>(&value) {
+            Ok(string_or_subs) => Ok(MappingNode::SubstitutionStr(string_or_subs)),
+            // On failure to parse, always treat the value as a string literal.
+            Err(_) => Ok(MappingNode::Scalar(BlueprintScalarValue::Str(value))),
+        }
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E> {
-        Ok(MappingNode::Scalar(BlueprintScalarValue::Str(
-            value.to_string(),
-        )))
+        match serde_json::from_str::<StringOrSubstitutions>(value) {
+            Ok(string_or_subs) => Ok(MappingNode::SubstitutionStr(string_or_subs)),
+            // On failure to parse, always treat the value as a string literal.
+            Err(_) => Ok(MappingNode::Scalar(BlueprintScalarValue::Str(
+                value.to_string(),
+            ))),
+        }
     }
 
     fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E> {
@@ -76,6 +89,22 @@ impl<'de> Visitor<'de> for MappingNodeVisitor {
 
     fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E> {
         Ok(MappingNode::Scalar(BlueprintScalarValue::Int(value)))
+    }
+
+    fn visit_u8<E>(self, value: u8) -> Result<Self::Value, E> {
+        Ok(MappingNode::Scalar(BlueprintScalarValue::Int(value.into())))
+    }
+
+    fn visit_u16<E>(self, value: u16) -> Result<Self::Value, E> {
+        Ok(MappingNode::Scalar(BlueprintScalarValue::Int(value.into())))
+    }
+
+    fn visit_u32<E>(self, value: u32) -> Result<Self::Value, E> {
+        Ok(MappingNode::Scalar(BlueprintScalarValue::Int(value.into())))
+    }
+
+    fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E> {
+        Ok(MappingNode::Scalar(BlueprintScalarValue::Int(value as i64)))
     }
 
     fn visit_f32<E>(self, value: f32) -> Result<Self::Value, E> {

@@ -13,10 +13,11 @@ Efforts to implement the full general purpose blueprint specification for Rust w
 
 ### About `${..}` Substitutions
 
-This configuration parser does not have any special treatment for `${..}` substitutions,
-they are treated as string literals.
-
-The runtime that uses this parser determines how to handle substitutions in a parsed blueprint configuration.
+This configuration parser resolves a subset of `${..}` substitutions in a blueprint.
+The parser only supports variable substitutions that will be replaced with values from a provided
+set of environment variables where `CELERITY_VARIABLE_{name}` will match the name of the variable referenced
+in the blueprint.
+All other `${..}` substitutions are treated as string literals.
 
 ## Additional documentation
 

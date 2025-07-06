@@ -3,7 +3,8 @@ use std::{collections::HashMap, fmt};
 
 use serde::{de, Deserialize, Deserializer};
 
-use crate::blueprint::{RuntimeBlueprintResource, BLUELINK_BLUEPRINT_V2025_05_12};
+use crate::blueprint::BLUELINK_BLUEPRINT_V2025_05_12;
+use crate::blueprint_with_subs::RuntimeBlueprintResourceWithSubs;
 
 /// Deserializes a blueprint version string and makes
 /// sure it is a valid version.
@@ -61,14 +62,14 @@ where
 /// to completely fail.
 pub fn deserialize_resource_map<'de, D>(
     d: D,
-) -> Result<HashMap<String, RuntimeBlueprintResource>, D::Error>
+) -> Result<HashMap<String, RuntimeBlueprintResourceWithSubs>, D::Error>
 where
     D: Deserializer<'de>,
 {
     struct ResourceMapVisitor;
 
     impl<'de> de::Visitor<'de> for ResourceMapVisitor {
-        type Value = HashMap<String, RuntimeBlueprintResource>;
+        type Value = HashMap<String, RuntimeBlueprintResourceWithSubs>;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
             formatter.write_str("a map of blueprint resources")

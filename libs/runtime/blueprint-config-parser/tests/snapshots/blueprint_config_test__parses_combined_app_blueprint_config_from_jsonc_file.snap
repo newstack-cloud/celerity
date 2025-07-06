@@ -57,7 +57,7 @@ expression: blueprint_config
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "SECRET_STORE_ID": "secret-store-id"
         }
       }
     },
@@ -72,7 +72,7 @@ expression: blueprint_config
             "sourceType": "dataStream",
             "sourceConfiguration": {
               "batchSize": 10,
-              "dataStreamId": "${variables.invoiceEventStreamId}",
+              "dataStreamId": "invoice-event-stream-id",
               "partialFailures": true,
               "startFromBeginning": false
             }
@@ -103,7 +103,7 @@ expression: blueprint_config
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "SECRET_STORE_ID": "secret-store-id"
         }
       }
     },
@@ -125,7 +125,7 @@ expression: blueprint_config
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "SECRET_STORE_ID": "secret-store-id"
         }
       }
     },
@@ -139,7 +139,7 @@ expression: blueprint_config
           "invoiceFileEvent": {
             "sourceType": "objectStorage",
             "sourceConfiguration": {
-              "bucket": "${variables.invoiceBucket}",
+              "bucket": "invoice-bucket",
               "events": [
                 "created",
                 "deleted",
@@ -166,7 +166,7 @@ expression: blueprint_config
             "sourceType": "dbStream",
             "sourceConfiguration": {
               "batchSize": 10,
-              "dbStreamId": "${variables.orderDBStreamId}",
+              "dbStreamId": "order-db-stream-id",
               "partialFailures": true,
               "startFromBeginning": false
             }
@@ -197,7 +197,7 @@ expression: blueprint_config
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "SECRET_STORE_ID": "secret-store-id"
         }
       }
     },
@@ -207,7 +207,7 @@ expression: blueprint_config
         "displayName": "Order Events Consumer"
       },
       "spec": {
-        "sourceId": "${variables.orderEventsSourceId}",
+        "sourceId": "order-events-source-id",
         "batchSize": 10,
         "visibilityTimeout": 30,
         "waitTimeSeconds": 2,
@@ -240,7 +240,7 @@ expression: blueprint_config
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "SECRET_STORE_ID": "secret-store-id"
         }
       }
     },
@@ -260,7 +260,7 @@ expression: blueprint_config
             "/"
           ],
           "normalizeBasePath": false,
-          "certificateId": "${variables.certificateId}",
+          "certificateId": "certificate-id",
           "securityPolicy": "TLS_1_2"
         },
         "auth": {

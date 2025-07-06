@@ -38,16 +38,13 @@ pub const CELERITY_QUEUE_RESOURCE_TYPE: &str = "celerity/queue";
 
 /// This is a struct that holds the configuration
 /// for the Celerity runtime in the form a blueprint.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct BlueprintConfig {
-    #[serde(deserialize_with = "crate::parse_helpers::deserialize_version")]
     pub version: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(deserialize_with = "crate::parse_helpers::deserialize_optional_string_or_vec")]
     pub transform: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub variables: Option<HashMap<String, BlueprintVariable>>,
-    #[serde(deserialize_with = "crate::parse_helpers::deserialize_resource_map")]
     pub resources: HashMap<String, RuntimeBlueprintResource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<BlueprintMetadata>,
@@ -162,7 +159,7 @@ impl Default for RuntimeBlueprintResource {
 /// that are recognised by the Celerity runtimes.
 /// The runtimes will only process resources that are
 /// of these types and ignore any other types.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum CelerityResourceType {
     #[serde(rename = "celerity/handler")]
     CelerityHandler,
@@ -220,7 +217,7 @@ pub struct BlueprintLinkSelector {
 /// for a resource in the blueprint configuration.
 /// This is specific to resource types recognised
 /// by the Celerity runtime.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum CelerityResourceSpec {
     Handler(CelerityHandlerSpec),
@@ -238,7 +235,7 @@ pub enum CelerityResourceSpec {
 
 /// This holds the specification
 /// for a handler resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct CelerityHandlerSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "handlerName")]
@@ -278,7 +275,7 @@ impl Default for CelerityHandlerSpec {
 
 /// This holds the specification
 /// for an API resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default)]
 pub struct CelerityApiSpec {
     pub protocols: Vec<CelerityApiProtocol>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -294,7 +291,7 @@ pub struct CelerityApiSpec {
 
 /// This holds the specification
 /// for a consumer resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct CelerityConsumerSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "sourceId")]
@@ -335,7 +332,7 @@ impl Default for CelerityConsumerSpec {
 
 /// This holds the specification
 /// for a schedule resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct CelerityScheduleSpec {
     pub schedule: String,
 }
@@ -349,7 +346,7 @@ impl Default for CelerityScheduleSpec {
 }
 
 /// A protocol that an API resource can support.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub enum CelerityApiProtocol {
     #[serde(rename = "http")]
     Http,
@@ -361,7 +358,7 @@ pub enum CelerityApiProtocol {
 
 // Configuration specific to the WebSocket protocol
 // for an API.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default)]
 pub struct WebSocketConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "routeKey")]
@@ -372,7 +369,7 @@ pub struct WebSocketConfiguration {
 }
 
 /// Authentication strategy for a WebSocket API.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub enum WebSocketAuthStrategy {
     #[serde(rename = "authMessage")]
     AuthMessage,
@@ -382,7 +379,7 @@ pub enum WebSocketAuthStrategy {
 
 /// CORS configuration for a Celerity API resource which can be
 /// a string or detailed configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum CelerityApiCors {
     Str(String),
@@ -391,7 +388,7 @@ pub enum CelerityApiCors {
 
 /// Detailed CORS configuration
 /// for a Celerity API resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default)]
 pub struct CelerityApiCorsConfiguration {
     #[serde(rename = "allowCredentials")]
     pub allow_credentials: Option<bool>,
@@ -408,7 +405,7 @@ pub struct CelerityApiCorsConfiguration {
 }
 
 /// Domain configuration for a Celerity API resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default)]
 pub struct CelerityApiDomain {
     #[serde(rename = "domainName")]
     pub domain_name: String,
@@ -426,7 +423,7 @@ pub struct CelerityApiDomain {
 
 /// Base path configuration for a Celerity API resource which can be
 /// a string or detailed configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum CelerityApiBasePath {
     Str(String),
@@ -436,7 +433,7 @@ pub enum CelerityApiBasePath {
 /// Base path configuration for a Celerity API resource.
 /// This allows you to configure a base path for a specific
 /// protocol for an API.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct CelerityApiBasePathConfiguration {
     pub protocol: CelerityApiProtocol,
     #[serde(rename = "basePath")]
@@ -453,7 +450,7 @@ impl Default for CelerityApiBasePathConfiguration {
 }
 
 /// Security policy for a Celerity API domain.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub enum CelerityApiDomainSecurityPolicy {
     #[serde(rename = "TLS_1_0")]
     Tls1_0,
@@ -462,7 +459,7 @@ pub enum CelerityApiDomainSecurityPolicy {
 }
 
 /// Authentication configuration for a Celerity API resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default)]
 pub struct CelerityApiAuth {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "defaultGuard")]
@@ -472,7 +469,7 @@ pub struct CelerityApiAuth {
 
 /// Guard configuration that provides access control
 /// for a Celerity API resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct CelerityApiAuthGuard {
     #[serde(rename = "type")]
     pub guard_type: CelerityApiAuthGuardType,
@@ -498,7 +495,7 @@ impl Default for CelerityApiAuthGuard {
 
 /// Auth guard type for authorization configuration
 /// in a Celerity API resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub enum CelerityApiAuthGuardType {
     #[serde(rename = "jwt")]
     Jwt,
@@ -511,7 +508,7 @@ pub enum CelerityApiAuthGuardType {
 /// Value source for authorization configuration
 /// in a Celerity API resource.
 /// A value could be a JWT.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum CelerityApiAuthGuardValueSource {
     Str(String),
@@ -520,7 +517,7 @@ pub enum CelerityApiAuthGuardValueSource {
 
 /// Value source configuration for extracting a value
 /// from a request or message.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct ValueSourceConfiguration {
     pub protocol: CelerityApiProtocol,
     pub source: String,
@@ -537,7 +534,7 @@ impl Default for ValueSourceConfiguration {
 
 /// Configuration for a cloud service event source
 /// for a consumer resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct ExternalEventConfiguration {
     #[serde(rename = "sourceType")]
     pub source_type: EventSourceType,
@@ -575,7 +572,7 @@ pub enum EventSourceType {
 /// Configuration for an event source for a handler resource.
 /// This can be a configuration for an object storage,
 /// database stream or a data stream.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum EventSourceConfiguration {
     ObjectStorage(ObjectStorageEventSourceConfiguration),
@@ -585,7 +582,7 @@ pub enum EventSourceConfiguration {
 
 /// Configuration for an object storage event source
 /// for a handler resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct ObjectStorageEventSourceConfiguration {
     pub bucket: String,
     pub events: Vec<ObjectStorageEventType>,
@@ -601,7 +598,7 @@ impl Default for ObjectStorageEventSourceConfiguration {
 }
 
 /// Event types for an object storage event source.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub enum ObjectStorageEventType {
     #[serde(rename = "created")]
     ObjectCreated,
@@ -613,7 +610,7 @@ pub enum ObjectStorageEventType {
 
 /// Configuration for a database stream event source
 /// for a handler resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct DatabaseStreamSourceConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "batchSize")]
@@ -641,7 +638,7 @@ impl Default for DatabaseStreamSourceConfiguration {
 
 /// Configuration for a data stream event source
 /// for a handler resource.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct DataStreamSourceConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "batchSize")]
@@ -669,7 +666,7 @@ impl Default for DataStreamSourceConfiguration {
 
 /// This holds the specification for a config/secret store
 /// resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct CelerityConfigSpec {
     /// A unique name to use for the secret and configuration store.
     /// If a name is not provided, a unique name will be generated for
@@ -698,7 +695,7 @@ impl Default for CelerityConfigSpec {
 
 /// This holds the specification for a bucket resource
 /// in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default)]
 pub struct CelerityBucketSpec {
     /// A unique name to use for the bucket, if a name is not provided, a unique name
     /// will be generated for the bucket based on the blueprint that the bucket is defined in.
@@ -708,7 +705,7 @@ pub struct CelerityBucketSpec {
 
 /// This holds the specification for a topic resource
 /// in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct CelerityTopicSpec {
     /// A unique name to use for the topic, if a name is not provided, a unique name
     /// will be generated for the topic based on the blueprint that the topic is defined in.
@@ -733,7 +730,7 @@ impl Default for CelerityTopicSpec {
 
 /// This holds the specification for a queue resource
 /// in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct CelerityQueueSpec {
     /// A unique name to use for the queue, if a name is not provided, a unique name
     /// will be generated for the queue based on the blueprint that the queue is defined in.
@@ -772,7 +769,7 @@ impl Default for CelerityQueueSpec {
 /// typed to expect an optional `sharedHandlerConfig`
 /// object that provides shared defaults for all handlers
 /// declared in a blueprint.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct BlueprintMetadata {
     #[serde(rename = "sharedHandlerConfig")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -781,7 +778,7 @@ pub struct BlueprintMetadata {
 
 /// Provides shared defaults
 /// for all handlers declared in a blueprint.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default)]
 pub struct SharedHandlerConfig {
     #[serde(rename = "codeLocation")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -802,7 +799,7 @@ pub struct SharedHandlerConfig {
 
 /// This holds the specification
 /// for a workflow resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
+#[derive(Serialize, Debug, PartialEq, Clone, Default)]
 pub struct CelerityWorkflowSpec {
     #[serde(rename = "startAt")]
     pub start_at: String,
@@ -811,7 +808,7 @@ pub struct CelerityWorkflowSpec {
 
 /// This holds the specification
 /// for a state in a workflow resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 pub struct CelerityWorkflowState {
     #[serde(rename = "type")]
     pub state_type: CelerityWorkflowStateType,
@@ -828,7 +825,7 @@ pub struct CelerityWorkflowState {
     pub output_path: Option<String>,
     #[serde(rename = "payloadTemplate")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub payload_template: Option<HashMap<String, MappingNode>>,
+    pub payload_template: Option<HashMap<String, ResolvedMappingNode>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub next: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -836,7 +833,7 @@ pub struct CelerityWorkflowState {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub decisions: Option<Vec<CelerityWorkflowDecisionRule>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub result: Option<MappingNode>,
+    pub result: Option<ResolvedMappingNode>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i64>,
     #[serde(rename = "waitConfig")]
@@ -879,7 +876,7 @@ impl Default for CelerityWorkflowState {
 
 /// A decision rule that can be used in a "decision"
 /// workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowDecisionRule {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub and: Option<Vec<CelerityWorkflowCondition>>,
@@ -894,14 +891,14 @@ pub struct CelerityWorkflowDecisionRule {
 
 /// A condition for a decision rule in a "decision"
 /// workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowCondition {
-    pub inputs: Vec<MappingNode>,
+    pub inputs: Vec<ResolvedMappingNode>,
     pub function: String,
 }
 
 /// Configuration for a "wait" workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowWaitConfig {
     /// The number of seconds to wait before transitioning to the next state.
     /// This can be a path to a value in the input object
@@ -916,7 +913,7 @@ pub struct CelerityWorkflowWaitConfig {
 }
 
 /// Configuration for the "failure" workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowFailureConfig {
     /// The error name to be used for the failure state. This can be a path
     /// or a literal value.
@@ -928,7 +925,7 @@ pub struct CelerityWorkflowFailureConfig {
 }
 
 /// A parallel branch in a "parallel" workflow state.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowParallelBranch {
     #[serde(rename = "startAt")]
     pub start_at: String,
@@ -936,7 +933,7 @@ pub struct CelerityWorkflowParallelBranch {
 }
 
 /// Configuration for retrying a state in a workflow.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowRetryConfig {
     #[serde(rename = "matchErrors")]
     pub match_errors: Vec<String>,
@@ -956,7 +953,7 @@ pub struct CelerityWorkflowRetryConfig {
 }
 
 /// Configuration for catching an error in a workflow.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityWorkflowCatchConfig {
     #[serde(rename = "matchErrors")]
     pub match_errors: Vec<String>,
@@ -1005,9 +1002,9 @@ pub enum CelerityWorkflowStateType {
 /// state.
 #[derive(Serialize, Debug, PartialEq, Clone)]
 #[serde(untagged)]
-pub enum MappingNode {
+pub enum ResolvedMappingNode {
     Scalar(BlueprintScalarValue),
-    Mapping(HashMap<String, MappingNode>),
-    Sequence(Vec<MappingNode>),
+    Mapping(HashMap<String, ResolvedMappingNode>),
+    Sequence(Vec<ResolvedMappingNode>),
     Null,
 }

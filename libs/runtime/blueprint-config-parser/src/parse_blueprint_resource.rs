@@ -5,13 +5,17 @@ use serde::{
     Deserialize, Deserializer,
 };
 
-use crate::blueprint::{
-    BlueprintResourceMetadata, CelerityResourceSpec, CelerityResourceType, RuntimeBlueprintResource,
+use crate::{
+    blueprint::CelerityResourceType,
+    blueprint_with_subs::{
+        BlueprintResourceMetadataWithSubs, CelerityResourceSpecWithSubs,
+        RuntimeBlueprintResourceWithSubs,
+    },
 };
 
 #[derive(Deserialize)]
 #[serde(field_identifier, rename_all = "camelCase")]
-enum Field {
+enum ResourceField {
     #[serde(rename = "type")]
     ResourceType,
     Metadata,
@@ -20,77 +24,83 @@ enum Field {
     LinkSelector,
 }
 
-impl<'de> Deserialize<'de> for RuntimeBlueprintResource {
-    fn deserialize<D>(deserializer: D) -> Result<RuntimeBlueprintResource, D::Error>
+impl<'de> Deserialize<'de> for RuntimeBlueprintResourceWithSubs {
+    fn deserialize<D>(deserializer: D) -> Result<RuntimeBlueprintResourceWithSubs, D::Error>
     where
         D: Deserializer<'de>,
     {
         const FIELDS: &[&str] = &["type", "metadata", "spec", "description", "linkSelector"];
-        deserializer.deserialize_struct("RuntimeBlueprintResource", FIELDS, ResourceVisitor)
+        deserializer.deserialize_struct(
+            "RuntimeBlueprintResourceWithSubs",
+            FIELDS,
+            ResourceWithSubsVisitor,
+        )
     }
 }
 
-struct ResourceVisitor;
+struct ResourceWithSubsVisitor;
 
-impl<'de> ResourceVisitor {
+impl<'de> ResourceWithSubsVisitor {
     fn spec_from_resource_type_map<V>(
         &self,
         resource_type: &CelerityResourceType,
         map: &mut V,
-    ) -> Result<CelerityResourceSpec, V::Error>
+    ) -> Result<CelerityResourceSpecWithSubs, V::Error>
     where
         V: MapAccess<'de>,
     {
         match resource_type {
             CelerityResourceType::CelerityApi => {
                 let api_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::Api(api_spec))
+                Ok(CelerityResourceSpecWithSubs::Api(api_spec))
             }
             CelerityResourceType::CelerityConsumer => {
                 let consumer_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::Consumer(consumer_spec))
+                Ok(CelerityResourceSpecWithSubs::Consumer(consumer_spec))
             }
             CelerityResourceType::CeleritySchedule => {
                 let schedule_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::Schedule(schedule_spec))
+                Ok(CelerityResourceSpecWithSubs::Schedule(schedule_spec))
             }
             CelerityResourceType::CelerityHandler => {
                 let handler_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::Handler(handler_spec))
+                Ok(CelerityResourceSpecWithSubs::Handler(handler_spec))
             }
             CelerityResourceType::CelerityHandlerConfig => {
                 let handler_config_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::HandlerConfig(handler_config_spec))
+                Ok(CelerityResourceSpecWithSubs::HandlerConfig(
+                    handler_config_spec,
+                ))
             }
             CelerityResourceType::CelerityWorkflow => {
                 let workflow_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::Workflow(workflow_spec))
+                Ok(CelerityResourceSpecWithSubs::Workflow(workflow_spec))
             }
             CelerityResourceType::CelerityConfig => {
                 let config_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::Config(config_spec))
+                Ok(CelerityResourceSpecWithSubs::Config(config_spec))
             }
             CelerityResourceType::CelerityBucket => {
                 let bucket_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::Bucket(bucket_spec))
+                Ok(CelerityResourceSpecWithSubs::Bucket(bucket_spec))
             }
             CelerityResourceType::CelerityTopic => {
                 let topic_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::Topic(topic_spec))
+                Ok(CelerityResourceSpecWithSubs::Topic(topic_spec))
             }
             CelerityResourceType::CelerityQueue => {
                 let queue_spec = map.next_value()?;
-                Ok(CelerityResourceSpec::Queue(queue_spec))
+                Ok(CelerityResourceSpecWithSubs::Queue(queue_spec))
             }
         }
     }
 }
 
-impl<'de> Visitor<'de> for ResourceVisitor {
-    type Value = RuntimeBlueprintResource;
+impl<'de> Visitor<'de> for ResourceWithSubsVisitor {
+    type Value = RuntimeBlueprintResourceWithSubs;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("struct RuntimeBlueprintResource")
+        formatter.write_str("struct RuntimeBlueprintResourceWithSubs")
     }
 
     fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
@@ -98,8 +108,8 @@ impl<'de> Visitor<'de> for ResourceVisitor {
         V: MapAccess<'de>,
     {
         let mut resource_type = None;
-        let mut metadata = BlueprintResourceMetadata::default();
-        let mut spec = CelerityResourceSpec::NoSpec;
+        let mut metadata = BlueprintResourceMetadataWithSubs::default();
+        let mut spec = CelerityResourceSpecWithSubs::NoSpec;
         let mut description = None;
         let mut link_selector = None;
         let mut unsupported_resource_type_err: Option<String> = None;
@@ -109,11 +119,11 @@ impl<'de> Visitor<'de> for ResourceVisitor {
                 map.next_value::<serde::de::IgnoredAny>()?;
             } else {
                 match key {
-                    Field::ResourceType => {
+                    ResourceField::ResourceType => {
                         if resource_type.is_some() {
                             return Err(de::Error::duplicate_field("type"));
                         }
-                        match map.next_value() {
+                        match map.next_value::<CelerityResourceType>() {
                             Ok(value) => {
                                 resource_type = Some(value);
                             }
@@ -144,29 +154,29 @@ impl<'de> Visitor<'de> for ResourceVisitor {
                             }
                         }
                     }
-                    Field::Metadata => {
+                    ResourceField::Metadata => {
                         metadata = map.next_value()?;
                     }
-                    Field::Spec => {
-                        if spec != CelerityResourceSpec::NoSpec {
+                    ResourceField::Spec => {
+                        if spec != CelerityResourceSpecWithSubs::NoSpec {
                             return Err(de::Error::duplicate_field("spec"));
                         }
-                        if let Some(ref unwrapped_resource_type) = resource_type {
+                        if let Some(unwrapped_resource_type) = resource_type.clone() {
                             spec = self
-                                .spec_from_resource_type_map(unwrapped_resource_type, &mut map)?;
+                                .spec_from_resource_type_map(&unwrapped_resource_type, &mut map)?;
                         } else {
                             return Err(de::Error::custom(
                                 "spec must come after type in resource, type is either defined after spec or is missing"
                             ));
                         }
                     }
-                    Field::Description => {
+                    ResourceField::Description => {
                         if description.is_some() {
                             return Err(de::Error::duplicate_field("description"));
                         }
                         description = Some(map.next_value()?);
                     }
-                    Field::LinkSelector => {
+                    ResourceField::LinkSelector => {
                         if link_selector.is_some() {
                             return Err(de::Error::duplicate_field("linkSelector"));
                         }
@@ -180,7 +190,7 @@ impl<'de> Visitor<'de> for ResourceVisitor {
             return Err(de::Error::custom(unsupported_resource_type_err));
         }
 
-        Ok(RuntimeBlueprintResource {
+        Ok(RuntimeBlueprintResourceWithSubs {
             resource_type: resource_type.ok_or_else(|| de::Error::missing_field("type"))?,
             metadata,
             spec,

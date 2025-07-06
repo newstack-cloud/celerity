@@ -7,6 +7,12 @@ expression: blueprint_config
   "transform": [
     "celerity-2026-02-28"
   ],
+  "variables": {
+    "certificateId": {
+      "type": "string",
+      "description": "The ID of the certificate to use for the API domain."
+    }
+  },
   "resources": {
     "orderStreamApi": {
       "type": "celerity/api",
@@ -17,7 +23,8 @@ expression: blueprint_config
         "protocols": [
           {
             "websocketConfig": {
-              "routeKey": "action"
+              "routeKey": "action",
+              "authStrategy": "connect"
             }
           }
         ],
@@ -38,7 +45,7 @@ expression: blueprint_config
             "/"
           ],
           "normalizeBasePath": false,
-          "certificateId": "${variables.certificateId}",
+          "certificateId": "certificate-id",
           "securityPolicy": "TLS_1_2"
         },
         "auth": {

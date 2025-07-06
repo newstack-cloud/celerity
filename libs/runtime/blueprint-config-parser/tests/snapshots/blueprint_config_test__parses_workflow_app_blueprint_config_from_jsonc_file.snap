@@ -342,7 +342,7 @@ expression: blueprint_config
             }
           },
           "waitForProcessing": {
-            "type": "decision",
+            "type": "wait",
             "next": "uploadToSystem",
             "waitConfig": {
               "seconds": "120"

@@ -56,9 +56,9 @@ expression: blueprint_config
         "timeout": 60,
         "tracingEnabled": true,
         "environmentVariables": {
-          "LOG_LEVEL": "${variables.logLevel}",
-          "PAYMENT_API_SECRET": "${variables.paymentApiSecret}",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "LOG_LEVEL": "DEBUG",
+          "PAYMENT_API_SECRET": "payment-api-secret",
+          "SECRET_STORE_ID": "secret-store-id"
         }
       }
     }

@@ -31,7 +31,19 @@ expression: blueprint_config
           "application": "orders"
         }
       },
-      "spec": null
+      "spec": {
+        "handlerName": "Orders-GetOrderHandler-v1",
+        "codeLocation": "./orders",
+        "handler": "handlers.get_order",
+        "runtime": "python3.12.x",
+        "memory": 1024,
+        "timeout": 60,
+        "tracingEnabled": true,
+        "environmentVariables": {
+          "LOG_LEVEL": "INFO",
+          "SECRET_STORE_ID": "secret-store-id"
+        }
+      }
     },
     "orderStreamHandler": {
       "type": "celerity/handler",
@@ -56,7 +68,7 @@ expression: blueprint_config
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "SECRET_STORE_ID": "secret-store-id"
         }
       }
     },
@@ -102,7 +114,7 @@ expression: blueprint_config
             }
           ],
           "normalizeBasePath": false,
-          "certificateId": "${variables.certificateId}",
+          "certificateId": "certificate-id",
           "securityPolicy": "TLS_1_2"
         },
         "auth": {

@@ -39,7 +39,7 @@ expression: blueprint_config
             "/"
           ],
           "normalizeBasePath": false,
-          "certificateId": "${variables.certificateId}",
+          "certificateId": "certificate-id",
           "securityPolicy": "TLS_1_2"
         },
         "auth": {

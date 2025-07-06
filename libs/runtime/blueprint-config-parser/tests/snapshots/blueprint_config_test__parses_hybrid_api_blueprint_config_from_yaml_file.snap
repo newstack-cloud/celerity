@@ -41,7 +41,7 @@ expression: blueprint_config
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "SECRET_STORE_ID": "secret-store-id"
         }
       }
     },
@@ -68,7 +68,7 @@ expression: blueprint_config
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "INFO",
-          "SECRET_STORE_ID": "${variables.secretStoreId}"
+          "SECRET_STORE_ID": "secret-store-id"
         }
       }
     },
@@ -114,7 +114,7 @@ expression: blueprint_config
             }
           ],
           "normalizeBasePath": false,
-          "certificateId": "${variables.certificateId}",
+          "certificateId": "certificate-id",
           "securityPolicy": "TLS_1_2"
         },
         "auth": {

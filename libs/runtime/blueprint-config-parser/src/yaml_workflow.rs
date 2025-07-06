@@ -1,18 +1,19 @@
 use std::collections::HashMap;
 
 use crate::{
-    blueprint::{
-        BlueprintScalarValue, CelerityWorkflowCatchConfig, CelerityWorkflowCondition,
-        CelerityWorkflowDecisionRule, CelerityWorkflowFailureConfig,
-        CelerityWorkflowParallelBranch, CelerityWorkflowRetryConfig, CelerityWorkflowSpec,
-        CelerityWorkflowState, CelerityWorkflowStateType, CelerityWorkflowWaitConfig, MappingNode,
+    blueprint::BlueprintScalarValue,
+    blueprint_with_subs::{
+        is_string_with_substitutions_empty, CelerityWorkflowCatchConfigWithSubs,
+        CelerityWorkflowConditionWithSubs, CelerityWorkflowDecisionRuleWithSubs,
+        CelerityWorkflowFailureConfigWithSubs, CelerityWorkflowParallelBranchWithSubs,
+        CelerityWorkflowRetryConfigWithSubs, CelerityWorkflowSpecWithSubs,
+        CelerityWorkflowStateWithSubs, CelerityWorkflowWaitConfigWithSubs, MappingNode,
+        StringOrSubstitutions,
     },
     parse::BlueprintParseError,
-    workflow_consts::{
-        CELERITY_WORKFLOW_STATE_TYPE_DECISION, CELERITY_WORKFLOW_STATE_TYPE_EXECUTE_STEP,
-        CELERITY_WORKFLOW_STATE_TYPE_FAILURE, CELERITY_WORKFLOW_STATE_TYPE_PARALLEL,
-        CELERITY_WORKFLOW_STATE_TYPE_PASS, CELERITY_WORKFLOW_STATE_TYPE_SUCCESS,
-        CELERITY_WORKFLOW_STATE_TYPE_WAIT,
+    parse_substitutions::{parse_substitutions, ParseError},
+    yaml_helpers::{
+        validate_array_of_strings, validate_mapping_node, validate_single_substitution,
     },
 };
 
@@ -23,14 +24,14 @@ use crate::{
 // during workflow application startup.
 pub fn validate_celerity_workflow_spec(
     value_map: &yaml_rust2::yaml::Hash,
-) -> Result<CelerityWorkflowSpec, BlueprintParseError> {
-    let mut workflow_spec = CelerityWorkflowSpec::default();
+) -> Result<CelerityWorkflowSpecWithSubs, BlueprintParseError> {
+    let mut workflow_spec = CelerityWorkflowSpecWithSubs::default();
     for (key, value) in value_map.iter() {
         if let yaml_rust2::Yaml::String(key_str) = key {
             match key_str.as_str() {
                 "startAt" => {
                     if let yaml_rust2::Yaml::String(start_at_str) = value {
-                        workflow_spec.start_at = start_at_str.to_string();
+                        workflow_spec.start_at = parse_substitutions::<ParseError>(start_at_str)?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(
                             "Start at state must be a string".to_string(),
@@ -60,8 +61,8 @@ pub fn validate_celerity_workflow_spec(
 
 fn validate_celerity_workflow_states(
     states_map: &yaml_rust2::yaml::Hash,
-) -> Result<HashMap<String, CelerityWorkflowState>, BlueprintParseError> {
-    let mut states = HashMap::<String, CelerityWorkflowState>::new();
+) -> Result<HashMap<String, CelerityWorkflowStateWithSubs>, BlueprintParseError> {
+    let mut states = HashMap::<String, CelerityWorkflowStateWithSubs>::new();
     for (state_name, state_value) in states_map.iter() {
         if let yaml_rust2::Yaml::String(state_name_str) = state_name {
             let state_name = state_name_str.to_string();
@@ -75,9 +76,9 @@ fn validate_celerity_workflow_states(
 fn validate_celerity_workflow_state(
     state_name: &str,
     state_value: &yaml_rust2::Yaml,
-) -> Result<CelerityWorkflowState, BlueprintParseError> {
+) -> Result<CelerityWorkflowStateWithSubs, BlueprintParseError> {
     if let yaml_rust2::Yaml::Hash(state_map) = state_value {
-        let mut state = CelerityWorkflowState::default();
+        let mut state = CelerityWorkflowStateWithSubs::default();
         for (key, value) in state_map.iter() {
             if let yaml_rust2::Yaml::String(key_str) = key {
                 match key_str.as_str() {
@@ -142,7 +143,7 @@ fn validate_celerity_workflow_state(
             }
         }
 
-        if state.state_type == CelerityWorkflowStateType::Unknown {
+        if is_string_with_substitutions_empty(&state.state_type) {
             return Err(BlueprintParseError::YamlFormatError(format!(
                 "State type not provided for state \"{}\"",
                 state_name
@@ -160,9 +161,9 @@ fn validate_celerity_workflow_state(
 fn validate_state_type_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<CelerityWorkflowStateType, BlueprintParseError> {
+) -> Result<StringOrSubstitutions, BlueprintParseError> {
     if let yaml_rust2::Yaml::String(type_str) = value {
-        validate_state_type(type_str.as_str())
+        parse_substitutions::<ParseError>(type_str).map_err(BlueprintParseError::from)
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
             "State type provided for state \"{}\" must be a string",
@@ -174,9 +175,9 @@ fn validate_state_type_field(
 fn validate_state_description_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<String>, BlueprintParseError> {
+) -> Result<Option<StringOrSubstitutions>, BlueprintParseError> {
     if let yaml_rust2::Yaml::String(description_str) = value {
-        Ok(Some(description_str.to_string()))
+        Ok(Some(parse_substitutions::<ParseError>(description_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
             "Description provided for state \"{}\" must be a string",
@@ -188,9 +189,9 @@ fn validate_state_description_field(
 fn validate_state_input_path_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<String>, BlueprintParseError> {
+) -> Result<Option<StringOrSubstitutions>, BlueprintParseError> {
     if let yaml_rust2::Yaml::String(input_path_str) = value {
-        Ok(Some(input_path_str.to_string()))
+        Ok(Some(parse_substitutions::<ParseError>(input_path_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
             "Input path provided for state \"{}\" must be a string",
@@ -202,9 +203,9 @@ fn validate_state_input_path_field(
 fn validate_state_result_path_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<String>, BlueprintParseError> {
+) -> Result<Option<StringOrSubstitutions>, BlueprintParseError> {
     if let yaml_rust2::Yaml::String(result_path_str) = value {
-        Ok(Some(result_path_str.to_string()))
+        Ok(Some(parse_substitutions::<ParseError>(result_path_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
             "Result path provided for state \"{}\" must be a string",
@@ -216,9 +217,9 @@ fn validate_state_result_path_field(
 fn validate_state_output_path_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<String>, BlueprintParseError> {
+) -> Result<Option<StringOrSubstitutions>, BlueprintParseError> {
     if let yaml_rust2::Yaml::String(output_path_str) = value {
-        Ok(Some(output_path_str.to_string()))
+        Ok(Some(parse_substitutions::<ParseError>(output_path_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
             "Output path provided for state \"{}\" must be a string",
@@ -247,9 +248,9 @@ fn validate_state_payload_template_field(
 fn validate_state_next_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<String>, BlueprintParseError> {
+) -> Result<Option<StringOrSubstitutions>, BlueprintParseError> {
     if let yaml_rust2::Yaml::String(next_str) = value {
-        Ok(Some(next_str.to_string()))
+        Ok(Some(parse_substitutions::<ParseError>(next_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
             "Next state provided for state \"{}\" must be a string",
@@ -261,12 +262,18 @@ fn validate_state_next_field(
 fn validate_state_end_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<bool>, BlueprintParseError> {
+) -> Result<Option<MappingNode>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Boolean(end_bool) = value {
-        Ok(Some(end_bool.clone()))
+        Ok(Some(MappingNode::Scalar(BlueprintScalarValue::Bool(
+            end_bool.clone(),
+        ))))
+    } else if let yaml_rust2::Yaml::String(end_str) = value {
+        Ok(Some(MappingNode::SubstitutionStr(
+            validate_single_substitution(end_str, "boolean")?,
+        )))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "End value provided for state \"{}\" must be a boolean",
+            "End value provided for state \"{}\" must be a boolean or ${{..}} substitution",
             state_name
         )))
     }
@@ -275,7 +282,7 @@ fn validate_state_end_field(
 fn validate_state_decisions_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<Vec<CelerityWorkflowDecisionRule>>, BlueprintParseError> {
+) -> Result<Option<Vec<CelerityWorkflowDecisionRuleWithSubs>>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Array(decision_rules_array) = value {
         Ok(Some(validate_celerity_workflow_decision_rules(
             decision_rules_array,
@@ -291,12 +298,18 @@ fn validate_state_decisions_field(
 fn validate_state_timeout_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<i64>, BlueprintParseError> {
+) -> Result<Option<MappingNode>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Integer(timeout_int) = value {
-        Ok(Some(timeout_int.clone()))
+        Ok(Some(MappingNode::Scalar(BlueprintScalarValue::Int(
+            timeout_int.clone(),
+        ))))
+    } else if let yaml_rust2::Yaml::String(timeout_str) = value {
+        Ok(Some(MappingNode::SubstitutionStr(
+            validate_single_substitution(timeout_str, "integer")?,
+        )))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Timeout value provided for state \"{}\" must be an integer",
+            "Timeout value provided for state \"{}\" must be an integer or ${{..}} substitution",
             state_name
         )))
     }
@@ -305,15 +318,15 @@ fn validate_state_timeout_field(
 fn validate_state_wait_config_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<CelerityWorkflowWaitConfig>, BlueprintParseError> {
+) -> Result<Option<CelerityWorkflowWaitConfigWithSubs>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Hash(wait_config_map) = value {
-        let mut wait_config = CelerityWorkflowWaitConfig::default();
+        let mut wait_config = CelerityWorkflowWaitConfigWithSubs::default();
         for (key, value) in wait_config_map.iter() {
             if let yaml_rust2::Yaml::String(key_str) = key {
                 match key_str.as_str() {
                     "seconds" => {
                         if let yaml_rust2::Yaml::String(seconds) = value {
-                            wait_config.seconds = Some(seconds.clone());
+                            wait_config.seconds = Some(parse_substitutions::<ParseError>(seconds)?);
                         } else {
                             return Err(BlueprintParseError::YamlFormatError(
                                 "Seconds value provided for wait config must be a string"
@@ -323,7 +336,8 @@ fn validate_state_wait_config_field(
                     }
                     "timestamp" => {
                         if let yaml_rust2::Yaml::String(timestamp) = value {
-                            wait_config.timestamp = Some(timestamp.clone());
+                            wait_config.timestamp =
+                                Some(parse_substitutions::<ParseError>(timestamp)?);
                         } else {
                             return Err(BlueprintParseError::YamlFormatError(
                                 "Timestamp value provided for wait config must be a string"
@@ -347,15 +361,15 @@ fn validate_state_wait_config_field(
 fn validate_state_failure_config_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<CelerityWorkflowFailureConfig>, BlueprintParseError> {
+) -> Result<Option<CelerityWorkflowFailureConfigWithSubs>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Hash(failure_config_map) = value {
-        let mut failure_config = CelerityWorkflowFailureConfig::default();
+        let mut failure_config = CelerityWorkflowFailureConfigWithSubs::default();
         for (key, value) in failure_config_map.iter() {
             if let yaml_rust2::Yaml::String(key_str) = key {
                 match key_str.as_str() {
                     "error" => {
                         if let yaml_rust2::Yaml::String(error) = value {
-                            failure_config.error = Some(error.clone());
+                            failure_config.error = Some(parse_substitutions::<ParseError>(error)?);
                         } else {
                             return Err(BlueprintParseError::YamlFormatError(
                                 "error value provided for failure config must be a string"
@@ -365,7 +379,7 @@ fn validate_state_failure_config_field(
                     }
                     "cause" => {
                         if let yaml_rust2::Yaml::String(cause) = value {
-                            failure_config.cause = Some(cause.clone());
+                            failure_config.cause = Some(parse_substitutions::<ParseError>(cause)?);
                         } else {
                             return Err(BlueprintParseError::YamlFormatError(
                                 "cause value provided for failure config must be a string"
@@ -389,9 +403,9 @@ fn validate_state_failure_config_field(
 fn validate_state_parallel_branches_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<Vec<CelerityWorkflowParallelBranch>>, BlueprintParseError> {
+) -> Result<Option<Vec<CelerityWorkflowParallelBranchWithSubs>>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Array(parallel_branches_array) = value {
-        let mut parallel_branches = Vec::<CelerityWorkflowParallelBranch>::new();
+        let mut parallel_branches = Vec::<CelerityWorkflowParallelBranchWithSubs>::new();
         for branch_value in parallel_branches_array.iter() {
             if let yaml_rust2::Yaml::Hash(branch_map) = branch_value {
                 let branch = validate_workflow_state_parallel_branch(branch_map, state_name)?;
@@ -410,14 +424,14 @@ fn validate_state_parallel_branches_field(
 fn validate_workflow_state_parallel_branch(
     branch_map: &yaml_rust2::yaml::Hash,
     state_name: &str,
-) -> Result<CelerityWorkflowParallelBranch, BlueprintParseError> {
-    let mut parallel_branch = CelerityWorkflowParallelBranch::default();
+) -> Result<CelerityWorkflowParallelBranchWithSubs, BlueprintParseError> {
+    let mut parallel_branch = CelerityWorkflowParallelBranchWithSubs::default();
     for (key, value) in branch_map.iter() {
         if let yaml_rust2::Yaml::String(key_str) = key {
             match key_str.as_str() {
                 "startAt" => {
                     if let yaml_rust2::Yaml::String(start_at_str) = value {
-                        parallel_branch.start_at = start_at_str.to_string();
+                        parallel_branch.start_at = parse_substitutions::<ParseError>(start_at_str)?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
                             "Start at state value provided for parallel branch must be a string in state \"{}\"",
@@ -445,9 +459,9 @@ fn validate_workflow_state_parallel_branch(
 fn validate_state_retry_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<Vec<CelerityWorkflowRetryConfig>>, BlueprintParseError> {
+) -> Result<Option<Vec<CelerityWorkflowRetryConfigWithSubs>>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Array(retry_config_array) = value {
-        let mut retry_config_list = Vec::<CelerityWorkflowRetryConfig>::new();
+        let mut retry_config_list = Vec::<CelerityWorkflowRetryConfigWithSubs>::new();
         for retry_config_value in retry_config_array.iter() {
             if let yaml_rust2::Yaml::Hash(retry_config_map) = retry_config_value {
                 let retry_config = validate_retry_config(retry_config_map, state_name)?;
@@ -466,20 +480,15 @@ fn validate_state_retry_field(
 fn validate_retry_config(
     retry_config_map: &yaml_rust2::yaml::Hash,
     state_name: &str,
-) -> Result<CelerityWorkflowRetryConfig, BlueprintParseError> {
-    let mut retry_config = CelerityWorkflowRetryConfig::default();
+) -> Result<CelerityWorkflowRetryConfigWithSubs, BlueprintParseError> {
+    let mut retry_config = CelerityWorkflowRetryConfigWithSubs::default();
     for (key, value) in retry_config_map.iter() {
         if let yaml_rust2::Yaml::String(key_str) = key {
             match key_str.as_str() {
                 "matchErrors" => {
                     if let yaml_rust2::Yaml::Array(match_errors_yaml_array) = value {
-                        let mut match_errors = Vec::<String>::new();
-                        for match_error in match_errors_yaml_array.iter() {
-                            if let yaml_rust2::Yaml::String(match_error_str) = match_error {
-                                match_errors.push(match_error_str.to_string());
-                            }
-                        }
-                        retry_config.match_errors = match_errors;
+                        retry_config.match_errors =
+                            validate_array_of_strings(match_errors_yaml_array, "matchErrors")?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
                             "Match errors field for retry config in state \"{}\" must be an array",
@@ -489,50 +498,80 @@ fn validate_retry_config(
                 }
                 "interval" => {
                     if let yaml_rust2::Yaml::Integer(interval_seconds_int) = value {
-                        retry_config.interval = Some(interval_seconds_int.clone());
+                        retry_config.interval = Some(MappingNode::Scalar(
+                            BlueprintScalarValue::Int(interval_seconds_int.clone()),
+                        ));
+                    } else if let yaml_rust2::Yaml::String(interval_str) = value {
+                        retry_config.interval = Some(MappingNode::SubstitutionStr(
+                            validate_single_substitution(interval_str, "integer")?,
+                        ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Interval field for retry config in state \"{}\" must be an integer",
+                            "Interval field for retry config in state \"{}\" must be an integer or ${{..}} substitution",
                             state_name,
                         )));
                     }
                 }
                 "maxAttempts" => {
                     if let yaml_rust2::Yaml::Integer(max_attempts_int) = value {
-                        retry_config.max_attempts = Some(max_attempts_int.clone());
+                        retry_config.max_attempts = Some(MappingNode::Scalar(
+                            BlueprintScalarValue::Int(max_attempts_int.clone()),
+                        ));
+                    } else if let yaml_rust2::Yaml::String(max_attempts_str) = value {
+                        retry_config.max_attempts = Some(MappingNode::SubstitutionStr(
+                            validate_single_substitution(max_attempts_str, "integer")?,
+                        ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Max attempts field for retry config in state \"{}\" must be an integer",
+                            "Max attempts field for retry config in state \"{}\" must be an integer or ${{..}} substitution",
                             state_name,
                         )));
                     }
                 }
                 "maxDelay" => {
                     if let yaml_rust2::Yaml::Integer(max_delay_seconds_int) = value {
-                        retry_config.max_delay = Some(max_delay_seconds_int.clone());
+                        retry_config.max_delay = Some(MappingNode::Scalar(
+                            BlueprintScalarValue::Int(max_delay_seconds_int.clone()),
+                        ));
+                    } else if let yaml_rust2::Yaml::String(max_delay_str) = value {
+                        retry_config.max_delay = Some(MappingNode::SubstitutionStr(
+                            validate_single_substitution(max_delay_str, "integer")?,
+                        ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Max delay field for retry config in state \"{}\" must be an integer",
+                            "Max delay field for retry config in state \"{}\" must be an integer or ${{..}} substitution",
                             state_name,
                         )));
                     }
                 }
                 "jitter" => {
                     if let yaml_rust2::Yaml::Boolean(jitter_bool) = value {
-                        retry_config.jitter = Some(jitter_bool.clone());
+                        retry_config.jitter = Some(MappingNode::Scalar(
+                            BlueprintScalarValue::Bool(jitter_bool.clone()),
+                        ));
+                    } else if let yaml_rust2::Yaml::String(jitter_str) = value {
+                        retry_config.jitter = Some(MappingNode::SubstitutionStr(
+                            validate_single_substitution(jitter_str, "boolean")?,
+                        ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Jitter field for retry config in state \"{}\" must be a boolean",
+                            "Jitter field for retry config in state \"{}\" must be a boolean or ${{..}} substitution",
                             state_name,
                         )));
                     }
                 }
                 "backoffRate" => {
-                    if let yaml_rust2::Yaml::Real(backoff_rate_float) = value {
-                        retry_config.backoff_rate = Some(backoff_rate_float.parse::<f64>()?);
+                    if let yaml_rust2::Yaml::Real(backoff_rate_str) = value {
+                        retry_config.backoff_rate = Some(MappingNode::Scalar(
+                            BlueprintScalarValue::Float(backoff_rate_str.parse()?),
+                        ));
+                    } else if let yaml_rust2::Yaml::String(backoff_rate_str) = value {
+                        retry_config.backoff_rate = Some(MappingNode::SubstitutionStr(
+                            validate_single_substitution(backoff_rate_str, "float")?,
+                        ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Backoff rate field for retry config in state \"{}\" must be a float",
+                            "Backoff rate field for retry config in state \"{}\" must be a float or ${{..}} substitution",
                             state_name,
                         )));
                     }
@@ -547,9 +586,9 @@ fn validate_retry_config(
 fn validate_state_catch_field(
     value: &yaml_rust2::Yaml,
     state_name: &str,
-) -> Result<Option<Vec<CelerityWorkflowCatchConfig>>, BlueprintParseError> {
+) -> Result<Option<Vec<CelerityWorkflowCatchConfigWithSubs>>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Array(catch_config_array) = value {
-        let mut catch_config_list = Vec::<CelerityWorkflowCatchConfig>::new();
+        let mut catch_config_list = Vec::<CelerityWorkflowCatchConfigWithSubs>::new();
         for catch_config_value in catch_config_array.iter() {
             if let yaml_rust2::Yaml::Hash(catch_config_map) = catch_config_value {
                 let catch_config = validate_catch_config(catch_config_map, state_name)?;
@@ -568,20 +607,15 @@ fn validate_state_catch_field(
 fn validate_catch_config(
     catch_config_map: &yaml_rust2::yaml::Hash,
     state_name: &str,
-) -> Result<CelerityWorkflowCatchConfig, BlueprintParseError> {
-    let mut catch_config = CelerityWorkflowCatchConfig::default();
+) -> Result<CelerityWorkflowCatchConfigWithSubs, BlueprintParseError> {
+    let mut catch_config = CelerityWorkflowCatchConfigWithSubs::default();
     for (key, value) in catch_config_map.iter() {
         if let yaml_rust2::Yaml::String(key_str) = key {
             match key_str.as_str() {
                 "matchErrors" => {
                     if let yaml_rust2::Yaml::Array(match_errors_yaml_array) = value {
-                        let mut match_errors = Vec::<String>::new();
-                        for match_error in match_errors_yaml_array.iter() {
-                            if let yaml_rust2::Yaml::String(match_error_str) = match_error {
-                                match_errors.push(match_error_str.to_string());
-                            }
-                        }
-                        catch_config.match_errors = match_errors;
+                        catch_config.match_errors =
+                            validate_array_of_strings(match_errors_yaml_array, "matchErrors")?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
                             "Match errors field for catch config in state \"{}\" must be an array",
@@ -591,7 +625,7 @@ fn validate_catch_config(
                 }
                 "next" => {
                     if let yaml_rust2::Yaml::String(next_str) = value {
-                        catch_config.next = next_str.clone();
+                        catch_config.next = parse_substitutions::<ParseError>(next_str)?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
                             "Next field for catch config in state \"{}\" must be a string",
@@ -601,7 +635,8 @@ fn validate_catch_config(
                 }
                 "resultPath" => {
                     if let yaml_rust2::Yaml::String(result_path_str) = value {
-                        catch_config.result_path = Some(result_path_str.clone());
+                        catch_config.result_path =
+                            Some(parse_substitutions::<ParseError>(result_path_str)?);
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
                             "Result path field for catch config in state \"{}\" must be a string",
@@ -614,21 +649,6 @@ fn validate_catch_config(
         }
     }
     Ok(catch_config)
-}
-
-fn validate_state_type(state_type: &str) -> Result<CelerityWorkflowStateType, BlueprintParseError> {
-    match state_type {
-        CELERITY_WORKFLOW_STATE_TYPE_EXECUTE_STEP => Ok(CelerityWorkflowStateType::ExecuteStep),
-        CELERITY_WORKFLOW_STATE_TYPE_PASS => Ok(CelerityWorkflowStateType::Pass),
-        CELERITY_WORKFLOW_STATE_TYPE_PARALLEL => Ok(CelerityWorkflowStateType::Parallel),
-        CELERITY_WORKFLOW_STATE_TYPE_WAIT => Ok(CelerityWorkflowStateType::Decision),
-        CELERITY_WORKFLOW_STATE_TYPE_DECISION => Ok(CelerityWorkflowStateType::Decision),
-        CELERITY_WORKFLOW_STATE_TYPE_FAILURE => Ok(CelerityWorkflowStateType::Failure),
-        CELERITY_WORKFLOW_STATE_TYPE_SUCCESS => Ok(CelerityWorkflowStateType::Success),
-        _ => Err(BlueprintParseError::UnsupportedWorkflowStateType(
-            state_type.to_string(),
-        )),
-    }
 }
 
 fn validate_payload_template(
@@ -650,8 +670,8 @@ fn validate_payload_template(
 
 fn validate_celerity_workflow_decision_rules(
     decision_rules_array: &yaml_rust2::yaml::Array,
-) -> Result<Vec<CelerityWorkflowDecisionRule>, BlueprintParseError> {
-    let mut decision_rules = Vec::<CelerityWorkflowDecisionRule>::new();
+) -> Result<Vec<CelerityWorkflowDecisionRuleWithSubs>, BlueprintParseError> {
+    let mut decision_rules = Vec::<CelerityWorkflowDecisionRuleWithSubs>::new();
     for decision_rule_value in decision_rules_array.iter() {
         if let yaml_rust2::Yaml::Hash(decision_rule_map) = decision_rule_value {
             let decision_rule = validate_decision_rule(decision_rule_map)?;
@@ -663,8 +683,8 @@ fn validate_celerity_workflow_decision_rules(
 
 fn validate_decision_rule(
     decision_rule_map: &yaml_rust2::yaml::Hash,
-) -> Result<CelerityWorkflowDecisionRule, BlueprintParseError> {
-    let mut decision_rule = CelerityWorkflowDecisionRule::default();
+) -> Result<CelerityWorkflowDecisionRuleWithSubs, BlueprintParseError> {
+    let mut decision_rule = CelerityWorkflowDecisionRuleWithSubs::default();
     for (key, value) in decision_rule_map.iter() {
         if let yaml_rust2::Yaml::String(key_str) = key {
             match key_str.as_str() {
@@ -710,7 +730,7 @@ fn validate_decision_rule(
                 }
                 "next" => {
                     if let yaml_rust2::Yaml::String(next_str) = value {
-                        decision_rule.next = next_str.to_string();
+                        decision_rule.next = parse_substitutions::<ParseError>(next_str)?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(
                             "decision rule \"next\" must be a string".to_string(),
@@ -722,7 +742,7 @@ fn validate_decision_rule(
         }
     }
 
-    if decision_rule.next.is_empty() {
+    if is_string_with_substitutions_empty(&decision_rule.next) {
         return Err(BlueprintParseError::YamlFormatError(
             "Decision rule must have a next state".to_string(),
         ));
@@ -733,8 +753,8 @@ fn validate_decision_rule(
 
 fn validate_conditions(
     conditions_array: &yaml_rust2::yaml::Array,
-) -> Result<Vec<CelerityWorkflowCondition>, BlueprintParseError> {
-    let mut conditions = Vec::<CelerityWorkflowCondition>::new();
+) -> Result<Vec<CelerityWorkflowConditionWithSubs>, BlueprintParseError> {
+    let mut conditions = Vec::<CelerityWorkflowConditionWithSubs>::new();
     for condition_value in conditions_array.iter() {
         if let yaml_rust2::Yaml::Hash(condition_map) = condition_value {
             let condition = validate_condition(condition_map)?;
@@ -746,8 +766,8 @@ fn validate_conditions(
 
 fn validate_condition(
     condition_map: &yaml_rust2::yaml::Hash,
-) -> Result<CelerityWorkflowCondition, BlueprintParseError> {
-    let mut condition = CelerityWorkflowCondition::default();
+) -> Result<CelerityWorkflowConditionWithSubs, BlueprintParseError> {
+    let mut condition = CelerityWorkflowConditionWithSubs::default();
 
     if let Some(inputs_yaml) = condition_map.get(&yaml_rust2::Yaml::String("inputs".to_string())) {
         if let yaml_rust2::Yaml::Array(inputs_array) = inputs_yaml {
@@ -772,7 +792,7 @@ fn validate_condition(
         condition_map.get(&yaml_rust2::Yaml::String("function".to_string()))
     {
         if let yaml_rust2::Yaml::String(function_str) = function_yaml {
-            condition.function = function_str.to_string();
+            condition.function = parse_substitutions::<ParseError>(function_str)?;
         } else {
             return Err(BlueprintParseError::YamlFormatError(
                 "Condition function must be a string".to_string(),
@@ -785,46 +805,4 @@ fn validate_condition(
     }
 
     Ok(condition)
-}
-
-fn validate_mapping_node(
-    value: &yaml_rust2::Yaml,
-    context: &str,
-) -> Result<MappingNode, BlueprintParseError> {
-    match value {
-        yaml_rust2::Yaml::Hash(map) => {
-            let mut map_value = HashMap::<String, MappingNode>::new();
-            for (key, value) in map.iter() {
-                if let yaml_rust2::Yaml::String(key_str) = key {
-                    let value = validate_mapping_node(value, context)?;
-                    map_value.insert(key_str.to_string(), value);
-                }
-            }
-            Ok(MappingNode::Mapping(map_value))
-        }
-        yaml_rust2::Yaml::Array(seq) => {
-            let mut seq_value = Vec::<MappingNode>::new();
-            for value in seq.iter() {
-                let value = validate_mapping_node(value, context)?;
-                seq_value.push(value);
-            }
-            Ok(MappingNode::Sequence(seq_value))
-        }
-        yaml_rust2::Yaml::String(value_str) => Ok(MappingNode::Scalar(BlueprintScalarValue::Str(
-            value_str.to_string(),
-        ))),
-        yaml_rust2::Yaml::Boolean(value_bool) => Ok(MappingNode::Scalar(
-            BlueprintScalarValue::Bool(value_bool.clone()),
-        )),
-        yaml_rust2::Yaml::Integer(value_int) => Ok(MappingNode::Scalar(BlueprintScalarValue::Int(
-            value_int.clone(),
-        ))),
-        yaml_rust2::Yaml::Real(value_float) => Ok(MappingNode::Scalar(
-            BlueprintScalarValue::Float(value_float.parse::<f64>()?),
-        )),
-        _ => Err(BlueprintParseError::YamlFormatError(format!(
-            "Unsupported value type provided for mapping node in {}",
-            context,
-        ))),
-    }
 }
