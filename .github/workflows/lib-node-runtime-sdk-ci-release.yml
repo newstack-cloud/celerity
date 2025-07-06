@@ -289,7 +289,9 @@ jobs:
         with:
           image: ${{ steps.docker.outputs.IMAGE }}
           options: -v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }} --platform ${{ steps.docker.outputs.PLATFORM }}
-          run: corepack enable && yarn test
+          run: |
+            cd ./libs/runtime/sdk/node
+            corepack enable && yarn test
   publish:
     name: Publish
     runs-on: ubuntu-latest
