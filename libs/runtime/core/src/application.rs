@@ -13,7 +13,10 @@ use axum::{
 };
 use axum_client_ip::SecureClientIpSource;
 use celerity_blueprint_config_parser::{blueprint::BlueprintConfig, parse::BlueprintParseError};
-use celerity_helpers::runtime_types::{HealthCheckResponse, RuntimeCallMode, RuntimePlatform};
+use celerity_helpers::{
+    env::EnvVars,
+    runtime_types::{HealthCheckResponse, RuntimeCallMode, RuntimePlatform},
+};
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::trace::TraceLayer;
 use tracing::{debug, info_span, warn};
@@ -37,6 +40,7 @@ use crate::{
 /// above.
 pub struct Application {
     runtime_config: RuntimeConfig,
+    env_vars: Box<dyn EnvVars>,
     app_tracing_enabled: bool,
     http_server_app: Option<Router<ApiAppState>>,
     runtime_local_api: Option<Router>,
@@ -48,9 +52,10 @@ pub struct Application {
 }
 
 impl Application {
-    pub fn new(runtime_config: RuntimeConfig) -> Self {
+    pub fn new(runtime_config: RuntimeConfig, env_vars: Box<dyn EnvVars>) -> Self {
         Application {
             runtime_config,
+            env_vars,
             app_tracing_enabled: false,
             http_server_app: None,
             server_shutdown_signal: None,
@@ -68,7 +73,6 @@ impl Application {
             api: None,
             consumers: None,
             schedules: None,
-            events: None,
         };
         match collect_api_config(blueprint_config, &self.runtime_config) {
             Ok(api_config) => {
@@ -118,6 +122,9 @@ impl Application {
         &mut self,
         app_config: &mut AppConfig,
     ) -> Result<(), ApplicationStartError> {
+        if let Some(consumers_config) = &mut app_config.consumers {
+            for consumer in consumers_config.consumers.iter() {}
+        }
         Ok(())
     }
 
@@ -312,9 +319,9 @@ impl Application {
     fn load_and_parse_blueprint(&self) -> Result<BlueprintConfig, BlueprintParseError> {
         let blueprint_config_path = self.runtime_config.blueprint_config_path.as_str();
         if blueprint_config_path.ends_with(".json") || blueprint_config_path.ends_with(".jsonc") {
-            BlueprintConfig::from_jsonc_file(blueprint_config_path)
+            BlueprintConfig::from_jsonc_file(blueprint_config_path, self.env_vars.clone())
         } else {
-            BlueprintConfig::from_yaml_file(blueprint_config_path)
+            BlueprintConfig::from_yaml_file(blueprint_config_path, self.env_vars.clone())
         }
     }
 

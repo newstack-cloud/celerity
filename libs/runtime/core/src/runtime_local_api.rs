@@ -110,7 +110,6 @@ fn create_local_runtime_api_config(app_config: &AppConfig) -> LocalRuntimeConfig
     let websocket = create_local_runtime_websocket_config(app_config);
     let consumer = create_local_runtime_consumer_config(app_config);
     let schedule = create_local_runtime_schedule_config(app_config);
-    let events = create_local_runtime_events_config(app_config);
 
     LocalRuntimeConfig {
         app_config: LocalRuntimeAppConfig {
@@ -119,7 +118,6 @@ fn create_local_runtime_api_config(app_config: &AppConfig) -> LocalRuntimeConfig
             websocket,
             consumer,
             schedule,
-            events,
         },
     }
 }
@@ -206,44 +204,6 @@ fn create_local_runtime_schedule_config(app_config: &AppConfig) -> LocalRuntimeS
     config
 }
 
-fn create_local_runtime_events_config(app_config: &AppConfig) -> LocalRuntimeEventsConfig {
-    let mut config = LocalRuntimeEventsConfig { handlers: vec![] };
-    if let Some(events) = &app_config.events {
-        for event in &events.events {
-            if let EventConfig::EventTrigger(event_trigger) = event {
-                for handler in &event_trigger.handlers {
-                    config.handlers.push(LocalRuntimeEventHandlerConfig {
-                        handler_name: handler.name.clone(),
-                        handler_tag: format!(
-                            "source::{}::{}",
-                            event_trigger.queue_id,
-                            event_trigger.event_type.clone(),
-                        ),
-                        event: Some(event_trigger.event_type.clone()),
-                        timeout: handler.timeout,
-                        tracing_enabled: handler.tracing_enabled,
-                    });
-                }
-            } else if let EventConfig::Stream(stream) = event {
-                for handler in &stream.handlers {
-                    config.handlers.push(LocalRuntimeEventHandlerConfig {
-                        handler_name: handler.name.clone(),
-                        handler_tag: format!(
-                            "source::{}::{}",
-                            stream.stream_id,
-                            handler.name.clone(),
-                        ),
-                        event: None,
-                        timeout: handler.timeout,
-                        tracing_enabled: handler.tracing_enabled,
-                    });
-                }
-            }
-        }
-    }
-    config
-}
-
 #[derive(Debug)]
 struct LocalRuntimeAppState {
     event_queue: Arc<Mutex<VecDeque<EventTuple>>>,
@@ -266,7 +226,6 @@ pub struct LocalRuntimeAppConfig {
     websocket: LocalRuntimeWebSocketConfig,
     consumer: LocalRuntimeConsumerConfig,
     schedule: LocalRuntimeScheduleConfig,
-    events: LocalRuntimeEventsConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -851,23 +810,6 @@ mod tests {
                     }],
                 }],
             }),
-            events: Some(EventsConfig {
-                events: vec![EventConfig::EventTrigger(EventTriggerConfig {
-                    event_type: "objectCreated".to_string(),
-                    queue_id: "arn:aws:sqs:us-east-2:444455556666:queue1".to_string(),
-                    batch_size: Some(10),
-                    visibility_timeout: None,
-                    wait_time_seconds: None,
-                    partial_failures: Some(true),
-                    handlers: vec![EventHandlerDefinition {
-                        name: "Orders-InvoiceCreated-v1".to_string(),
-                        timeout: 30,
-                        tracing_enabled: true,
-                        location: "./handlers/invoices".to_string(),
-                        handler: "invoice_created".to_string(),
-                    }],
-                })],
-            }),
         }
     }
 
@@ -931,15 +873,6 @@ mod tests {
                         handler_name: "Orders-SyncOrders-v1".to_string(),
                         handler_tag: "source::test-schedule-1::Orders-SyncOrders-v1".to_string(),
                         schedule: "rate(1h)".to_string(),
-                        timeout: 30,
-                        tracing_enabled: true,
-                    }],
-                },
-                events: LocalRuntimeEventsConfig {
-                    handlers: vec![LocalRuntimeEventHandlerConfig {
-                        handler_name: "Orders-InvoiceCreated-v1".to_string(),
-                        handler_tag: "source::arn:aws:sqs:us-east-2:444455556666:queue1::objectCreated".to_string(),
-                        event: Some("objectCreated".to_string()),
                         timeout: 30,
                         tracing_enabled: true,
                     }],

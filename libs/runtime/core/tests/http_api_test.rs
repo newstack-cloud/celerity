@@ -18,12 +18,25 @@ async fn sets_up_and_runs_http_server_application_in_ffi_mode() {
             ("CELERITY_SERVER_PORT", "2345".to_string()),
             ("CELERITY_SERVER_LOOPBACK_ONLY", "true".to_string()),
             ("CELERITY_TEST_MODE", "true".to_string()),
+            (
+                "CELERITY_VARIABLE_secretStoreId",
+                "secret-store-id".to_string(),
+            ),
+            (
+                "CELERITY_VARIABLE_certificateId",
+                "certificate-id".to_string(),
+            ),
+            ("CELERITY_VARIABLE_logLevel", "DEBUG".to_string()),
+            (
+                "CELERITY_VARIABLE_paymentApiSecret",
+                "payment-api-secret".to_string(),
+            ),
         ]
         .into_iter()
         .collect(),
     ));
     let runtime_config = RuntimeConfig::from_env(&env_vars);
-    let mut app = Application::new(runtime_config);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
     let _ = app.setup().unwrap();
 
     app.register_http_handler("/hello", "GET", hello_handler);

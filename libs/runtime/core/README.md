@@ -11,11 +11,12 @@ Implementations of these traits can be found in specific packages such as `celer
 ### About `${..}` Substitutions
 
 The runtime supports a limited version of `${..}` [substitutions](https://www.bluelink.dev/docs/blueprint/specification#references--substitutions).
-Only `${variables.[name]}` and `${values.[name]}` substitutions are recognised, all other substitutions are treated as string literals.
+Only `${variables.[name]}` substitutions are recognised, all other substitutions are treated as string literals or will lead to parsing errors if used in a field that is not a string.
 
 In the runtime, the parser will replace `${variables.[name]}` with an environment variable of the form `CELERITY_VARIABLE_[name]`.
-The parser will also replace `${values.[name]}` with an environment variable of the form `CELERITY_VALUE_[name]`.
 These environment variables are expected to be set at package/build time by the Celerity CLI or other tools.
+
+In the initial version of the runtime, Celerity application blueprint files should only contain `${variables.[name]}` substitutions, this may be extended in the future for full support of the [Bluelink Blueprint specification](https://www.bluelink.dev/docs/blueprint/specification).
 
 ## Additional documentation
 

@@ -4,9 +4,9 @@ use celerity_blueprint_config_parser::blueprint::{
     BlueprintConfig, BlueprintMetadata, BlueprintScalarValue, CelerityApiProtocol,
     CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType, RuntimeBlueprintResource,
 };
-use celerity_helpers::blueprint::{select_resources, ResourceWithName};
 
 use crate::{
+    blueprint_helpers::{select_resources, ResourceWithName},
     config::{
         ApiConfig, HttpConfig, HttpHandlerDefinition, RuntimeConfig, WebSocketConfig,
         WebSocketHandlerDefinition,

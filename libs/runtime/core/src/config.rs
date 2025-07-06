@@ -1,13 +1,13 @@
 use std::str::FromStr;
 
 use celerity_blueprint_config_parser::blueprint::{CelerityApiAuth, CelerityApiCors};
-use celerity_helpers::runtime_types::{RuntimeCallMode, RuntimePlatform};
+use celerity_helpers::{
+    env::EnvVars,
+    runtime_types::{RuntimeCallMode, RuntimePlatform},
+};
 use tracing::Level;
 
-use crate::{
-    consts::{DEFAULT_LOCAL_API_PORT, DEFAULT_TRACE_OTLP_COLLECTOR_ENDPOINT},
-    env::EnvVars,
-};
+use crate::consts::{DEFAULT_LOCAL_API_PORT, DEFAULT_TRACE_OTLP_COLLECTOR_ENDPOINT};
 
 /// Core runtime configuration
 /// that is used to locate blueprint files
@@ -216,7 +216,6 @@ pub struct AppConfig {
     pub api: Option<ApiConfig>,
     pub consumers: Option<ConsumersConfig>,
     pub schedules: Option<SchedulesConfig>,
-    pub events: Option<EventsConfig>,
 }
 
 #[derive(Debug)]
