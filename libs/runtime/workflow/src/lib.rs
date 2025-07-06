@@ -5,7 +5,6 @@ pub mod errors;
 pub mod handlers;
 mod helpers;
 pub mod payload_template;
-mod scanner;
 pub mod state_machine;
 mod template_func_parser;
 mod template_functions_v1;

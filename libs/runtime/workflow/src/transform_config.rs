@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
+use crate::{config::WorkflowAppConfig, errors::ConfigError};
 use celerity_blueprint_config_parser::blueprint::{
     BlueprintConfig, CelerityResourceType, CelerityWorkflowSpec,
 };
-use celerity_helpers::blueprint::select_resources;
-
-use crate::{config::WorkflowAppConfig, errors::ConfigError};
+use celerity_runtime_core::blueprint_helpers::select_resources;
 
 pub fn collect_workflow_app_config(
     blueprint_config: BlueprintConfig,

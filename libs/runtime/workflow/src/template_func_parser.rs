@@ -1,8 +1,7 @@
 use std::{fmt, str::FromStr};
 
+use celerity_helpers::scanner::{Scanner, ScannerAction, ScannerError};
 use jsonpath_rust::{parser::JsonPathParserError, JsonPath};
-
-use crate::scanner::{Scanner, ScannerAction, ScannerError};
 
 #[derive(Debug, PartialEq)]
 pub struct TemplateFunctionCall {

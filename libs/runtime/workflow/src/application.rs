@@ -14,6 +14,7 @@ use axum::{
 };
 use celerity_blueprint_config_parser::{blueprint::BlueprintConfig, parse::BlueprintParseError};
 use celerity_helpers::{
+    env::EnvVars,
     runtime_types::{HealthCheckResponse, RuntimeCallMode},
     time::{Clock, DefaultClock},
 };
@@ -47,6 +48,7 @@ use crate::{
 /// executions for the workflow.
 pub struct WorkflowApplication {
     runtime_config: WorkflowRuntimeConfig,
+    env_vars: Box<dyn EnvVars>,
     app_tracing_enabled: bool,
     workflow_api: Option<Router<WorkflowAppState>>,
     state_handlers: Arc<RwLock<HashMap<String, BoxedWorkflowStateHandler>>>,
@@ -65,9 +67,11 @@ impl WorkflowApplication {
     pub fn new(
         runtime_config: WorkflowRuntimeConfig,
         execution_service: Arc<dyn WorkflowExecutionService + Send + Sync>,
+        env_vars: Box<dyn EnvVars>,
     ) -> Self {
         WorkflowApplication {
             runtime_config,
+            env_vars,
             app_tracing_enabled: false,
             workflow_api: None,
             state_handlers: Arc::new(RwLock::new(HashMap::new())),
@@ -101,9 +105,15 @@ impl WorkflowApplication {
 
     fn load_and_parse_blueprint(&self) -> Result<BlueprintConfig, BlueprintParseError> {
         if self.runtime_config.blueprint_config_path.ends_with(".json") {
-            BlueprintConfig::from_jsonc_file(&self.runtime_config.blueprint_config_path)
+            BlueprintConfig::from_jsonc_file(
+                &self.runtime_config.blueprint_config_path,
+                self.env_vars.clone(),
+            )
         } else {
-            BlueprintConfig::from_yaml_file(&self.runtime_config.blueprint_config_path)
+            BlueprintConfig::from_yaml_file(
+                &self.runtime_config.blueprint_config_path,
+                self.env_vars.clone(),
+            )
         }
     }
 

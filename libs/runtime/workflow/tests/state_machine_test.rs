@@ -8,7 +8,7 @@ use celerity_blueprint_config_parser::blueprint::{
     BlueprintScalarValue, CelerityWorkflowCatchConfig, CelerityWorkflowCondition,
     CelerityWorkflowDecisionRule, CelerityWorkflowFailureConfig, CelerityWorkflowRetryConfig,
     CelerityWorkflowSpec, CelerityWorkflowState, CelerityWorkflowStateType,
-    CelerityWorkflowWaitConfig, MappingNode,
+    CelerityWorkflowWaitConfig, ResolvedMappingNode,
 };
 use celerity_helpers::{runtime_types::RuntimePlatform, time::Clock};
 use serde::{Deserialize, Serialize};
@@ -175,7 +175,7 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                     input_path: Some("$.document".to_string()),
                     payload_template: Some(HashMap::from([(
                         "url".to_string(),
-                        MappingNode::Scalar(BlueprintScalarValue::Str(
+                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                             "$.url".to_string(),
                         )),
                     )])),
@@ -212,10 +212,10 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                             condition: Some(CelerityWorkflowCondition {
                                 function: "eq".to_string(),
                                 inputs: vec![
-                                    MappingNode::Scalar(BlueprintScalarValue::Str(
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                         "$.scanResult".to_string(),
                                     )),
-                                    MappingNode::Scalar(BlueprintScalarValue::Str(
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                         "Clean".to_string(),
                                     )),
                                 ],
@@ -227,10 +227,10 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                             condition: Some(CelerityWorkflowCondition {
                                 function: "eq".to_string(),
                                 inputs: vec![
-                                    MappingNode::Scalar(BlueprintScalarValue::Str(
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                         "$.scanResult".to_string(),
                                     )),
-                                    MappingNode::Scalar(BlueprintScalarValue::Str(
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                         "Malicious".to_string(),
                                     )),
                                 ],
@@ -256,10 +256,10 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                             condition: Some(CelerityWorkflowCondition {
                                 function: "string_match".to_string(),
                                 inputs: vec![
-                                    MappingNode::Scalar(BlueprintScalarValue::Str(
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                         "$.path".to_string(),
                                     )),
-                                    MappingNode::Scalar(BlueprintScalarValue::Str(
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                         "*.pdf".to_string(),
                                     )),
                                 ],
@@ -271,10 +271,10 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                             condition: Some(CelerityWorkflowCondition {
                                 function: "string_match".to_string(),
                                 inputs: vec![
-                                    MappingNode::Scalar(BlueprintScalarValue::Str(
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                         "$.path".to_string(),
                                     )),
-                                    MappingNode::Scalar(BlueprintScalarValue::Str(
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                         "*.docx".to_string(),
                                     )),
                                 ]
@@ -293,7 +293,7 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                     description: Some("Process the PDF document to extract text and metadata.".to_string()),
                     input_path: Some("$.downloaded".to_string()),
                     payload_template: Some(HashMap::from([
-                        ("filePath".to_string(), MappingNode::Scalar(BlueprintScalarValue::Str("$.path".to_string())))
+                        ("filePath".to_string(), ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.path".to_string())))
                     ])),
                     result_path: Some("$.extractedDataFile".to_string()),
                     retry: Some(vec![create_test_retry_config()]),
@@ -309,7 +309,7 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                     description: Some("Process the word document to extract text and metadata.".to_string()),
                     input_path: Some("$.downloaded".to_string()),
                     payload_template: Some(HashMap::from([
-                        ("filePath".to_string(), MappingNode::Scalar(BlueprintScalarValue::Str("$.path".to_string())))
+                        ("filePath".to_string(), ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.path".to_string())))
                     ])),
                     result_path: Some("$.extractedDataFile".to_string()),
                     retry: Some(vec![create_test_retry_config()]),
@@ -364,8 +364,8 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                             condition: Some(CelerityWorkflowCondition {
                                 function: "eq".to_string(),
                                 inputs: vec![
-                                    MappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
-                                    MappingNode::Scalar(BlueprintScalarValue::Str("DocumentFetchError".to_string())),
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("DocumentFetchError".to_string())),
                                 ],
                             }),
                             next: "fetchFailure".to_string(),
@@ -375,8 +375,8 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                             condition: Some(CelerityWorkflowCondition {
                                 function: "eq".to_string(),
                                 inputs: vec![
-                                    MappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
-                                    MappingNode::Scalar(BlueprintScalarValue::Str("DocumentScanError".to_string())),
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("DocumentScanError".to_string())),
                                 ],
                             }),
                             next: "scanFailure".to_string(),
@@ -387,15 +387,15 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                                 CelerityWorkflowCondition {
                                     function: "eq".to_string(),
                                     inputs: vec![
-                                        MappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
-                                        MappingNode::Scalar(BlueprintScalarValue::Str("ExtractPDFError".to_string())),
+                                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
+                                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("ExtractPDFError".to_string())),
                                     ]
                                 },
                                 CelerityWorkflowCondition {
                                     function: "eq".to_string(),
                                     inputs: vec![
-                                        MappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
-                                        MappingNode::Scalar(BlueprintScalarValue::Str("PDFLoadError".to_string())),
+                                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
+                                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("PDFLoadError".to_string())),
                                     ],
                                 }
                             ]),
@@ -407,15 +407,15 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                                 CelerityWorkflowCondition {
                                     function: "eq".to_string(),
                                     inputs: vec![
-                                        MappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
-                                        MappingNode::Scalar(BlueprintScalarValue::Str("ExtractDOCXError".to_string())),
+                                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
+                                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("ExtractDOCXError".to_string())),
                                     ]
                                 },
                                 CelerityWorkflowCondition {
                                     function: "eq".to_string(),
                                     inputs: vec![
-                                        MappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
-                                        MappingNode::Scalar(BlueprintScalarValue::Str("DOCXLoadError".to_string())),
+                                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
+                                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("DOCXLoadError".to_string())),
                                     ],
                                 }
                             ]),
@@ -426,8 +426,8 @@ fn create_test_workflow_spec_1() -> CelerityWorkflowSpec {
                             condition: Some(CelerityWorkflowCondition {
                                 function: "eq".to_string(),
                                 inputs: vec![
-                                    MappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
-                                    MappingNode::Scalar(BlueprintScalarValue::Str("UploadToSystemError".to_string())),
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.error".to_string())),
+                                    ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("UploadToSystemError".to_string())),
                                 ],
                             }),
                             next: "uploadToSystemFailure".to_string(),

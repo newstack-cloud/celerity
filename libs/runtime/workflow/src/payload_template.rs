@@ -1,12 +1,11 @@
 use std::{collections::HashMap, fmt, str::FromStr};
 
-use celerity_blueprint_config_parser::blueprint::{BlueprintScalarValue, MappingNode};
-use celerity_helpers::jsonpath::jsonpath_inject_root;
+use celerity_blueprint_config_parser::blueprint::{BlueprintScalarValue, ResolvedMappingNode};
+use celerity_helpers::{jsonpath::jsonpath_inject_root, scanner::Scanner};
 use jsonpath_rust::JsonPath;
 use serde_json::{Map, Number, Value};
 
 use crate::{
-    scanner::Scanner,
     template_func_parser::{parse_func, ParseError, TemplateFunctionCall, TemplateFunctionExpr},
     template_functions_v1::{self, FunctionCallError},
 };
@@ -21,7 +20,7 @@ pub trait Engine {
     /// and input data.
     fn render(
         &self,
-        template: &HashMap<String, MappingNode>,
+        template: &HashMap<String, ResolvedMappingNode>,
         input: &Value,
     ) -> Result<Value, PayloadTemplateEngineError>;
 
@@ -144,18 +143,18 @@ impl EngineV1 {
     fn render_sequence(
         &self,
         key: &str,
-        items: &Vec<MappingNode>,
+        items: &Vec<ResolvedMappingNode>,
         input: &Value,
     ) -> Result<Value, PayloadTemplateEngineError> {
         let mut rendered = Vec::new();
         for item in items {
             let rendered_item = match item {
-                MappingNode::Scalar(value) => self.render_scalar(key, value, input)?,
-                MappingNode::Mapping(mapping) => self.render(mapping, input)?,
-                MappingNode::Sequence(child_items) => {
+                ResolvedMappingNode::Scalar(value) => self.render_scalar(key, value, input)?,
+                ResolvedMappingNode::Mapping(mapping) => self.render(mapping, input)?,
+                ResolvedMappingNode::Sequence(child_items) => {
                     self.render_sequence(key, child_items, input)?
                 }
-                MappingNode::Null => Value::Null,
+                ResolvedMappingNode::Null => Value::Null,
             };
             rendered.push(rendered_item);
         }
@@ -287,18 +286,18 @@ impl EngineV1 {
 impl Engine for EngineV1 {
     fn render(
         &self,
-        template: &HashMap<String, MappingNode>,
+        template: &HashMap<String, ResolvedMappingNode>,
         input: &Value,
     ) -> Result<Value, PayloadTemplateEngineError> {
         let mut rendered = Map::new();
         for (key, node) in template.iter() {
             let rendered_value = match node {
-                MappingNode::Scalar(value) => self.render_scalar(key, value, input)?,
-                MappingNode::Mapping(mapping) => self.render(mapping, input)?,
-                MappingNode::Sequence(items) => self.render_sequence(key, items, input)?,
-                MappingNode::Null => Value::Null,
+                ResolvedMappingNode::Scalar(value) => self.render_scalar(key, value, input)?,
+                ResolvedMappingNode::Mapping(mapping) => self.render(mapping, input)?,
+                ResolvedMappingNode::Sequence(items) => self.render_sequence(key, items, input)?,
+                ResolvedMappingNode::Null => Value::Null,
             };
-            rendered.insert(key.clone(), rendered_value);
+            rendered.insert(key.to_string(), rendered_value);
         }
         Ok(Value::Object(rendered))
     }
@@ -361,52 +360,52 @@ mod engine_v1_render_tests {
         let template = HashMap::from([
             (
                 "value1".to_string(),
-                MappingNode::Scalar(BlueprintScalarValue::Str("$.values[0]".to_string())),
+                ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.values[0]".to_string())),
             ),
             (
                 "restOfValues".to_string(),
-                MappingNode::Scalar(BlueprintScalarValue::Str(
+                ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                     "func:remove_duplicates($.values[-5:])".to_string(),
                 )),
             ),
             (
                 "nestedStructure".to_string(),
-                MappingNode::Mapping(HashMap::from([
+                ResolvedMappingNode::Mapping(HashMap::from([
                     (
                         "key1".to_string(),
-                        MappingNode::Scalar(BlueprintScalarValue::Str("some value".to_string())),
+                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("some value".to_string())),
                     ),
                     (
                         "key2".to_string(),
-                        MappingNode::Scalar(BlueprintScalarValue::Int(20)),
+                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Int(20)),
                     ),
                     (
                         "key3".to_string(),
-                        MappingNode::Scalar(BlueprintScalarValue::Float(4039.402)),
+                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Float(4039.402)),
                     ),
                     (
                         "sequence".to_string(),
-                        MappingNode::Sequence(vec![
-                            MappingNode::Scalar(BlueprintScalarValue::Str(
+                        ResolvedMappingNode::Sequence(vec![
+                            ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                 "$.values[0]".to_string(),
                             )),
-                            MappingNode::Scalar(BlueprintScalarValue::Str(
+                            ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                 "$.values[1]".to_string(),
                             )),
-                            MappingNode::Scalar(BlueprintScalarValue::Str(
+                            ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                                 "func:list(3054, 43.2, remove_duplicates($.values[?(@ > 300)]), true, $['inputStructure'], null, \"string value\")"
                                     .to_string(),
                             )),
-                            MappingNode::Null,
+                            ResolvedMappingNode::Null,
                         ]),
                     ),
                     (
                         "flag".to_string(),
-                        MappingNode::Scalar(BlueprintScalarValue::Str("$.flag1".to_string())),
+                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.flag1".to_string())),
                     ),
                     (
                         "flag2".to_string(),
-                        MappingNode::Scalar(BlueprintScalarValue::Bool(false)),
+                        ResolvedMappingNode::Scalar(BlueprintScalarValue::Bool(false)),
                     ),
                 ])),
             ),
@@ -454,7 +453,7 @@ mod engine_v1_render_tests {
         let engine = EngineV1::new();
         let template = HashMap::from([(
             "value1".to_string(),
-            MappingNode::Scalar(BlueprintScalarValue::Str("$.values[0".to_string())),
+            ResolvedMappingNode::Scalar(BlueprintScalarValue::Str("$.values[0".to_string())),
         )]);
         let input = json!({
             "values": [10, 405, 304, 20, 304, 20],
@@ -471,7 +470,7 @@ mod engine_v1_render_tests {
         let engine = EngineV1::new();
         let template = HashMap::from([(
             "value1".to_string(),
-            MappingNode::Scalar(BlueprintScalarValue::Str(
+            ResolvedMappingNode::Scalar(BlueprintScalarValue::Str(
                 "func:unknown_function()".to_string(),
             )),
         )]);
