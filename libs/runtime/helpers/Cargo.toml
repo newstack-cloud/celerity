@@ -10,9 +10,6 @@ jsonpath-rust = "0.7.1"
 async-trait = "0.1.88"
 tokio = { version = "1.45.1", features = ["full"] }
 
-[dependencies.celerity_blueprint_config_parser]
-path = "../blueprint-config-parser"
-
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
