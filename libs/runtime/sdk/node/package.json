@@ -33,8 +33,11 @@
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
-    "test": "ava -s",
+    "test": "dotenvx run -f .env.test -- ava -s",
     "universal": "napi universal",
     "version": "napi version"
+  },
+  "dependencies": {
+    "@dotenvx/dotenvx": "^1.45.2"
   }
 }

@@ -66,9 +66,6 @@ resources:
             tokenSource: "$.headers.Authorization"
             audience:
               - "https://identity.newstack.cloud/api/manage/v1/"
-          apiKey:
-            type: apiKey
-            apiKeySource: "$.headers.X-API-Key"
           customGuard:
             type: custom
 

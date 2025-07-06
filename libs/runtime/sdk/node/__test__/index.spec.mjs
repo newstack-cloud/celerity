@@ -56,7 +56,7 @@ test(
       );
     }
     app
-      .run()
+      .run(false)
       .then(() => {
         request
           .post("/orders/1")
