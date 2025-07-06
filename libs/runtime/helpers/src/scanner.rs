@@ -1,4 +1,5 @@
-/// A scanner that can be used to parse a template function call.
+/// A scanner that can be used to parse a template function call
+/// or blueprint substitution.
 pub struct Scanner {
     pos: usize,
     chars: Vec<char>,
