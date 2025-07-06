@@ -208,7 +208,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: .
+          path: ./libs/runtime/sdk/node
       - name: List packages
         run: ls -R .
         shell: bash
@@ -239,6 +239,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - name: Enable corepack
+        run: corepack enable
+      - name: Setup Dependency Cache
+        uses: actions/setup-node@v4
+        with:
           cache: yarn
       - name: Output docker params
         id: docker
