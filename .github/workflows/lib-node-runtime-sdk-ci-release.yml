@@ -1,7 +1,7 @@
 name: Node Runtime SDK CI + Release
 env:
   DEBUG: napi:*
-  APP_NAME: runtime-sdk
+  APP_NAME: runtime
   MACOSX_DEPLOYMENT_TARGET: '10.13'
   working-directory: ./libs/runtime/sdk/node
 permissions:
@@ -69,7 +69,7 @@ jobs:
         uses: actions/setup-node@v4
         if: ${{ !matrix.settings.docker }}
         with:
-          node-version: 20
+          node-version: 22
           cache: yarn
       - name: Install
         uses: dtolnay/rust-toolchain@stable
@@ -105,7 +105,7 @@ jobs:
         uses: actions/setup-node@v4
         if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
-          node-version: 20
+          node-version: 22
           cache: yarn
           architecture: x86
       - name: Build in docker
@@ -379,7 +379,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: yarn
       - name: Install dependencies
         run: yarn install
