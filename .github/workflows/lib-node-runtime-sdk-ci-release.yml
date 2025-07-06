@@ -76,9 +76,14 @@ jobs:
         if: ${{ !matrix.settings.docker }}
         with:
           node-version: 22
-          cache: yarn
       - name: Enable corepack
+        if: ${{ !matrix.settings.docker }}
         run: corepack enable
+      - name: Setup Dependency Cache
+        uses: actions/setup-node@v4
+        if: ${{ !matrix.settings.docker }}
+        with:
+          cache: yarn
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         if: ${{ !matrix.settings.docker }}
@@ -114,8 +119,15 @@ jobs:
         if: matrix.settings.target == 'i686-pc-windows-msvc'
         with:
           node-version: 22
-          cache: yarn
           architecture: x86
+      - name: Enable corepack
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
+        run: corepack enable
+      - name: Setup Dependency Cache
+        uses: actions/setup-node@v4
+        if: matrix.settings.target == 'i686-pc-windows-msvc'
+        with:
+          cache: yarn
       - name: Build in docker
         uses: addnab/docker-run-action@v3
         if: ${{ matrix.settings.docker }}
@@ -208,10 +220,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: yarn
           architecture: x64
       - name: Enable corepack
         run: corepack enable
+      - name: Setup Dependency Cache
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
       - name: Install dependencies
         run: yarn install
       - name: Download artifacts
@@ -244,9 +259,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: yarn
       - name: Enable corepack
         run: corepack enable
+      - name: Setup Dependency Cache
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
       - name: Install dependencies
         run: yarn install
       - name: Download artifacts
@@ -279,9 +297,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: yarn
       - name: Enable corepack
         run: corepack enable
+      - name: Setup Dependency Cache
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
       - name: Install dependencies
         run: |
           yarn config set supportedArchitectures.libc "musl"
@@ -394,9 +415,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: yarn
       - name: Enable corepack
         run: corepack enable
+      - name: Setup Dependency Cache
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
       - name: Install dependencies
         run: yarn install
       - name: Download all artifacts
