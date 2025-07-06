@@ -319,7 +319,7 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: ./libs/runtime/sdk/node/artifacts
       - name: Move artifacts
         run: yarn artifacts
       - name: List packages
