@@ -149,6 +149,7 @@ jobs:
             echo "~~~~ node -v ~~~~"
             node -v
             cd ./libs/runtime/sdk/node
+            sudo corepack enable
             echo "~~~~ yarn --version ~~~~"
             yarn --version
             pwd
