@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use axum::{body::Body, http::Request};
-use celerity_helpers::runtime_types::{RuntimeCallMode, RuntimePlatform};
+use celerity_helpers::{
+    env::ProcessEnvVars,
+    runtime_types::{RuntimeCallMode, RuntimePlatform},
+};
 use celerity_runtime_core::{
     application::Application as RuntimeApp,
     config::RuntimeConfig,
@@ -31,22 +34,25 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
         .to_string();
 
     let application = Box::new(Application {
-        runtime_app: RuntimeApp::new(RuntimeConfig {
-            blueprint_config_path: blueprint_path,
-            runtime_call_mode: RuntimeCallMode::Ffi,
-            server_port: core_runtime_config.server_port(),
-            server_loopback_only: Some(true),
-            local_api_port: 3001,
-            use_custom_health_check: Some(false),
-            service_name: "CelerityTestService".to_string(),
-            platform: RuntimePlatform::Local,
-            trace_otlp_collector_endpoint: "http://localhost:4317".to_string(),
-            runtime_max_diagnostics_level: tracing::Level::INFO,
-            test_mode: false,
-            api_resource: None,
-            consumer_app: None,
-            schedule_app: None,
-        }),
+        runtime_app: RuntimeApp::new(
+            RuntimeConfig {
+                blueprint_config_path: blueprint_path,
+                runtime_call_mode: RuntimeCallMode::Ffi,
+                server_port: core_runtime_config.server_port(),
+                server_loopback_only: Some(true),
+                local_api_port: 3001,
+                use_custom_health_check: Some(false),
+                service_name: "CelerityTestService".to_string(),
+                platform: RuntimePlatform::Local,
+                trace_otlp_collector_endpoint: "http://localhost:4317".to_string(),
+                runtime_max_diagnostics_level: tracing::Level::INFO,
+                test_mode: false,
+                api_resource: None,
+                consumer_app: None,
+                schedule_app: None,
+            },
+            Box::new(ProcessEnvVars::new()),
+        ),
         handler: None,
     });
 

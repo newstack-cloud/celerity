@@ -7,7 +7,10 @@ use axum::{
   http::{request::Parts, Request},
   response::IntoResponse,
 };
-use celerity_helpers::runtime_types::{RuntimeCallMode, RuntimePlatform};
+use celerity_helpers::{
+  env::ProcessEnvVars,
+  runtime_types::{RuntimeCallMode, RuntimePlatform},
+};
 use celerity_runtime_core::{
   application::Application,
   config::{
@@ -277,7 +280,7 @@ impl CoreRuntimeApplication {
       consumer_app: None,
       schedule_app: None,
     };
-    let inner = Application::new(native_runtime_config);
+    let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
     CoreRuntimeApplication {
       inner,
       tsfn_cache: vec![],

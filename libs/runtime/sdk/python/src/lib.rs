@@ -6,7 +6,10 @@ use std::{
 };
 
 use axum::{body::Body, http::Request, response::IntoResponse};
-use celerity_helpers::runtime_types::{RuntimeCallMode, RuntimePlatform};
+use celerity_helpers::{
+  env::ProcessEnvVars,
+  runtime_types::{RuntimeCallMode, RuntimePlatform},
+};
 use pyo3::prelude::*;
 use pyo3_asyncio_0_21;
 
@@ -230,7 +233,7 @@ impl CoreRuntimeApplication {
       "Creating CoreRuntimeApplication with config: {:?}\n",
       native_runtime_config
     );
-    let inner = Application::new(native_runtime_config);
+    let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
     CoreRuntimeApplication {
       inner: Arc::new(Mutex::new(inner)),
       task_locals: None,
