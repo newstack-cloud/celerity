@@ -5,9 +5,9 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@celerity-js/runtime-sdk@workspace:.":
+"@celerity-sdk/runtime@workspace:.":
   version: 0.0.0-use.local
-  resolution: "@celerity-js/runtime-sdk@workspace:."
+  resolution: "@celerity-sdk/runtime@workspace:."
   dependencies:
     "@napi-rs/cli": "npm:^2.18.4"
     ava: "npm:^6.0.1"
