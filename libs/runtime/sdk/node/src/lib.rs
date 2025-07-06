@@ -1,6 +1,6 @@
 #![deny(clippy::all)]
 
-use std::{collections::HashMap, env, time::Duration};
+use std::{collections::HashMap, time::Duration};
 
 use axum::{
   body::{Body, Bytes},
