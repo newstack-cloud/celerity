@@ -21,6 +21,8 @@ permissions:
       - '!.editorconfig'
       - '!docs/**'
   pull_request: null
+  workflow_dispatch:
+    inputs: {}
 jobs:
   build:
     strategy:
