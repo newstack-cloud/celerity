@@ -127,6 +127,7 @@ jobs:
         run: yarn config set supportedArchitectures.cpu "ia32"
         shell: bash
       - name: Install dependencies
+        if: ${{ !matrix.settings.docker }}
         run: yarn install
       - name: Build in docker
         uses: addnab/docker-run-action@v3
