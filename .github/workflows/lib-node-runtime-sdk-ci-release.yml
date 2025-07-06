@@ -3,6 +3,7 @@ env:
   DEBUG: napi:*
   APP_NAME: runtime
   MACOSX_DEPLOYMENT_TARGET: '10.13'
+  CARGO_INCREMENTAL: '1'
   working-directory: ./libs/runtime/sdk/node
 permissions:
   contents: write
@@ -23,6 +24,9 @@ permissions:
   pull_request: null
   workflow_dispatch:
     inputs: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     strategy:
@@ -60,7 +64,7 @@ jobs:
           - host: windows-latest
             target: aarch64-pc-windows-msvc
             build: yarn build --target aarch64-pc-windows-msvc
-    name: stable - ${{ matrix.settings.target }} - node@20
+    name: stable - ${{ matrix.settings.target }} - node@22
     runs-on: ${{ matrix.settings.host }}
     defaults:
       run:
@@ -73,6 +77,8 @@ jobs:
         with:
           node-version: 22
           cache: yarn
+      - name: Enable corepack
+        run: corepack enable
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         if: ${{ !matrix.settings.docker }}
@@ -190,8 +196,8 @@ jobs:
           - host: windows-latest
             target: x86_64-pc-windows-msvc
         node:
-          - '18'
           - '20'
+          - '22'
     runs-on: ${{ matrix.settings.host }}
     defaults:
       run:
@@ -204,6 +210,8 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: yarn
           architecture: x64
+      - name: Enable corepack
+        run: corepack enable
       - name: Install dependencies
         run: yarn install
       - name: Download artifacts
@@ -224,8 +232,8 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '18'
           - '20'
+          - '22'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -237,6 +245,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: yarn
+      - name: Enable corepack
+        run: corepack enable
       - name: Install dependencies
         run: yarn install
       - name: Download artifacts
@@ -257,8 +267,8 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '18'
           - '20'
+          - '22'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -270,6 +280,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: yarn
+      - name: Enable corepack
+        run: corepack enable
       - name: Install dependencies
         run: |
           yarn config set supportedArchitectures.libc "musl"
@@ -292,8 +304,8 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '18'
           - '20'
+          - '22'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -383,6 +395,8 @@ jobs:
         with:
           node-version: 22
           cache: yarn
+      - name: Enable corepack
+        run: corepack enable
       - name: Install dependencies
         run: yarn install
       - name: Download all artifacts
