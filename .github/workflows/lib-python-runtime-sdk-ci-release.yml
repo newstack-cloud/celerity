@@ -45,11 +45,12 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: auto
+          working-directory: ./libs/runtime/sdk/python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
-          path: dist
+          path: ./libs/runtime/sdk/python/dist
 
   musllinux:
     runs-on: ${{ matrix.platform.runner }}
@@ -76,11 +77,12 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: musllinux_1_2
+          working-directory: ./libs/runtime/sdk/python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}
-          path: dist
+          path: ./libs/runtime/sdk/python/dist
 
   windows:
     runs-on: ${{ matrix.platform.runner }}
@@ -103,11 +105,12 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
+          working-directory: ./libs/runtime/sdk/python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-windows-${{ matrix.platform.target }}
-          path: dist
+          path: ./libs/runtime/sdk/python/dist
 
   macos:
     runs-on: ${{ matrix.platform.runner }}
@@ -129,11 +132,12 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
+          working-directory: ./libs/runtime/sdk/python
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.platform.target }}
-          path: dist
+          path: ./libs/runtime/sdk/python/dist
 
   sdist:
     runs-on: ubuntu-latest
@@ -144,11 +148,12 @@ jobs:
         with:
           command: sdist
           args: --out dist
+          working-directory: ./libs/runtime/sdk/python
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
           name: wheels-sdist
-          path: dist
+          path: ./libs/runtime/sdk/python/dist
 
   release:
     name: Release
@@ -157,6 +162,8 @@ jobs:
     needs: [linux, musllinux, windows, macos, sdist]
     steps:
       - uses: actions/download-artifact@v4
+        with:
+          path: ./libs/runtime/sdk/python
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:
@@ -164,3 +171,4 @@ jobs:
         with:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*
+          working-directory: ./libs/runtime/sdk/python
