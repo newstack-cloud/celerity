@@ -9,12 +9,15 @@ name = "celerity_python_runtime_sdk"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.21.2", features = ["extension-module"] }
+pyo3 = { version = "0.25.1", features = ["extension-module"] }
 # Temporarily using fork of pyo3-asyncio that is compatible with
 # pyo3 0.21.0 and above with the new Bound API.
 # A core contributor of pyo3 created this fork so is a good choice
 # until pyo3-asyncio is updated.
-pyo3-asyncio-0-21 = { version = "0.21.0", features = ["tokio-runtime"] }
+pyo3-async-runtimes = { version = "0.25.0", features = [
+    "attributes",
+    "tokio-runtime",
+] }
 tokio = "1.40.0"
 axum = "0.7.5"
 serde = "1.0.204"

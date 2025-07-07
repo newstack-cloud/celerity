@@ -11,7 +11,7 @@ use celerity_helpers::{
   runtime_types::{RuntimeCallMode, RuntimePlatform},
 };
 use pyo3::prelude::*;
-use pyo3_asyncio_0_21;
+use pyo3_async_runtimes;
 
 use celerity_runtime_core::{
   application::Application,
@@ -20,6 +20,7 @@ use celerity_runtime_core::{
   },
 };
 use serde::{Deserialize, Serialize};
+use tokio::sync::{mpsc, oneshot, Mutex as TokioMutex};
 
 mod runtime;
 
@@ -203,10 +204,62 @@ impl PyResponse {
   }
 }
 
+// Message sent to the Python worker
+struct PythonCall {
+  handler_id: String,
+  args: Vec<PyObject>, // or whatever your handler expects
+  response: oneshot::Sender<Result<Response, HandlerError>>,
+}
+
+async fn python_worker(
+  mut rx: mpsc::UnboundedReceiver<PythonCall>,
+  handlers: Arc<TokioMutex<HashMap<String, Py<PyAny>>>>,
+) {
+  while let Some(PythonCall {
+    handler_id,
+    args,
+    response,
+  }) = rx.recv().await
+  {
+    let handlers_lock = handlers.lock().await;
+    let handler = handlers_lock.get(&handler_id);
+    let wrapped_future = Python::with_gil(|py| {
+      if let Some(handler) = handler {
+        let internal_handler = handler.bind(py);
+        let coro = internal_handler.call0()?;
+        pyo3_async_runtimes::tokio::into_future(coro)
+      } else {
+        Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
+          "Handler not found: {}",
+          handler_id
+        )))
+      }
+    });
+
+    let run_result = match wrapped_future {
+      Ok(future) => future
+        .await
+        .map_err(|err| HandlerError::new(err.to_string())),
+      Err(err) => Err(HandlerError::new(err.to_string())),
+    };
+
+    let result = match run_result {
+      Ok(output) => Python::with_gil(|py| -> PyResult<Response> { output.extract(py) })
+        .map_err(|err| HandlerError::new(err.to_string())),
+      Err(err) => Err(HandlerError::new(err.to_string())),
+    };
+
+    let _ = response.send(result);
+  }
+}
+
 #[pyclass]
 struct CoreRuntimeApplication {
   inner: Arc<Mutex<Application>>,
-  task_locals: Option<pyo3_asyncio_0_21::TaskLocals>,
+  task_locals: Option<pyo3_async_runtimes::TaskLocals>,
+  py_rx: Option<mpsc::UnboundedReceiver<PythonCall>>,
+  py_tx: Option<mpsc::UnboundedSender<PythonCall>>,
+  handler_registry: Arc<TokioMutex<HashMap<String, Py<PyAny>>>>,
 }
 
 #[pymethods]
@@ -237,17 +290,24 @@ impl CoreRuntimeApplication {
     CoreRuntimeApplication {
       inner: Arc::new(Mutex::new(inner)),
       task_locals: None,
+      py_rx: None,
+      py_tx: None,
+      handler_registry: Arc::new(TokioMutex::new(HashMap::new())),
     }
   }
 
   fn setup(&mut self, py: Python) -> PyResult<CoreRuntimeAppConfig> {
     // Set up the asyncio event loop
-    let asyncio = py.import_bound("asyncio")?;
+    let asyncio = py.import("asyncio")?;
     let event_loop = asyncio.call_method0("new_event_loop")?;
     asyncio.call_method1("set_event_loop", (event_loop.clone(),))?;
 
-    let task_locals = pyo3_asyncio_0_21::TaskLocals::new(event_loop).copy_context(py)?;
+    let task_locals = pyo3_async_runtimes::TaskLocals::new(event_loop).copy_context(py)?;
     self.task_locals = Some(task_locals);
+
+    let (py_tx, py_rx) = mpsc::unbounded_channel();
+    self.py_tx = Some(py_tx);
+    self.py_rx = Some(py_rx);
 
     let app_config = self
       .inner
@@ -274,44 +334,63 @@ impl CoreRuntimeApplication {
     method: String,
     handler: Py<PyAny>,
   ) -> PyResult<()> {
-    let task_locals_copy = self.task_locals.clone().ok_or_else(|| {
-      PyErr::new::<pyo3::exceptions::PyException, _>(
-        "async event loop not initialised, call setup() first",
-      )
-    })?;
+    let handler_id = format!("{}::{}", path, method);
+    {
+      let mut registry = self.handler_registry.blocking_lock();
+      registry.insert(handler_id.clone(), handler);
+    }
 
-    let final_handler = |_req: Request<Body>| async move {
-      let result = pyo3_asyncio_0_21::tokio::scope(task_locals_copy, async move {
-        let output = Python::with_gil(|py| {
-          let internal_handler = handler.bind(py);
-          let coro = internal_handler.call0()?;
-
-          // Convert the coroutine into a Rust future using the `tokio` runtime.
-          pyo3_asyncio_0_21::tokio::into_future(coro)
-        })
-        .map_err(|err| HandlerError::new(err.to_string()))?
-        .await
-        .map_err(|err| HandlerError::new(err.to_string()))?;
-
-        Python::with_gil(|py| -> PyResult<Response> { output.extract(py) })
-          .map_err(|err| HandlerError::new(err.to_string()))
-      })
-      .await;
-      result
+    let py_tx = self.py_tx.as_ref().unwrap().clone();
+    let final_handler = move |_req: Request<Body>| {
+      let py_tx = py_tx.clone();
+      let handler_id = handler_id.clone();
+      async move {
+        let (response_tx, response_rx) = tokio::sync::oneshot::channel();
+        py_tx
+          .send(PythonCall {
+            handler_id,
+            args: vec![],
+            response: response_tx,
+          })
+          .map_err(|_| HandlerError::new("Python worker unavailable".to_string()))?;
+        let result = response_rx
+          .await
+          .map_err(|_| HandlerError::new("Python worker dropped".to_string()))?;
+        result.map_err(|e| HandlerError::new(format!("Python error: {e}")))
+      }
     };
+
+    // 4. Register the HTTP handler with the Rust runtime (synchronously)
     self
       .inner
       .lock()
       .unwrap()
       .register_http_handler(&path, &method, final_handler);
+
     Ok(())
   }
 
   fn run(&mut self, py: Python) -> PyResult<()> {
     let inner = self.inner.clone();
+    let handler_registry = self.handler_registry.clone();
+    let py_rx = self
+      .py_rx
+      .take()
+      .expect("run should be called before setup and should only be called once");
+    let task_locals = self
+      .task_locals
+      .as_ref()
+      .expect("run should be called before setup")
+      .clone_ref(py);
+
     thread::spawn(move || {
       let rt = runtime::new_tokio_multi_thread().expect("failed to create tokio runtime");
       let _ = rt.block_on(async move {
+        tokio::spawn(pyo3_async_runtimes::tokio::scope(
+          task_locals,
+          python_worker(py_rx, handler_registry),
+        ));
+
         match inner.lock().unwrap().run(true).await {
           Ok(_) => {}
           Err(err) => {
@@ -322,7 +401,7 @@ impl CoreRuntimeApplication {
       });
     });
 
-    let event_loop = self.task_locals.clone().unwrap().event_loop(py);
+    let event_loop = self.task_locals.as_ref().unwrap().event_loop(py);
     let run_forever_res = event_loop.call_method0("run_forever");
     if run_forever_res.is_err() {
       println!("Ctrl C pressed, shutting down...");
