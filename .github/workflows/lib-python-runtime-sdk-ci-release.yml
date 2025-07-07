@@ -179,11 +179,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
+      - name: Set up Python (x64)
+        if: matrix.platform.target == 'x64'
         uses: actions/setup-python@v5
         with:
           python-version: 3.x
-          architecture: ${{ matrix.platform.target == 'x64' && 'x64' || 'x86' }}
+          architecture: x64
+      
+      - name: Set up Python (default)
+        if: matrix.platform.target != 'x64'
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -206,7 +213,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest -rA tests/ -v
+          bash ./scripts/run-tests.sh
         working-directory: ./libs/runtime/sdk/python
         env:
           GITHUB_ACTIONS: true
