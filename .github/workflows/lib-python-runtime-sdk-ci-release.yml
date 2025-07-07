@@ -163,31 +163,31 @@ jobs:
         platform:
           - name: Ubuntu x86_64
             runner: ubuntu-latest
-            target: x86_64
+            target: x86_64-unknown-linux-gnu
           - name: Ubuntu aarch64
             runner: ubuntu-latest
-            target: aarch64
+            target: aarch64-unknown-linux-gnu
           - name: Windows x64
             runner: windows-latest
-            target: x64
+            target: x86_64-pc-windows-msvc
           - name: macOS x86_64
             runner: macos-13
-            target: x86_64
+            target: x86_64-apple-darwin
           - name: macOS aarch64
             runner: macos-14
-            target: aarch64
+            target: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v4
       
       - name: Set up Python (x64)
-        if: matrix.platform.target == 'x64'
+        if: matrix.platform.target == 'x86_64-pc-windows-msvc'
         uses: actions/setup-python@v5
         with:
           python-version: 3.x
           architecture: x64
       
       - name: Set up Python (default)
-        if: matrix.platform.target != 'x64'
+        if: matrix.platform.target != 'x86_64-pc-windows-msvc'
         uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -198,20 +198,13 @@ jobs:
           toolchain: stable
           target: ${{ matrix.platform.target }}
 
-      - name: Install dependencies
+      - name: Install pip and core dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pytest requests python-dotenv
         working-directory: ./libs/runtime/sdk/python
 
-      - name: Build and install package
-        run: |
-          maturin build --release
-          pip install .
-          cp -r build/lib*/celerity_runtime_sdk/ celerity_runtime_sdk/
-        working-directory: ./libs/runtime/sdk/python
-
-      - name: Run tests
+      - name: Install project dependencies, build and run tests
         run: |
           bash ./scripts/run-tests.sh
         working-directory: ./libs/runtime/sdk/python
