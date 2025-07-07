@@ -8,3 +8,6 @@ pytest = "*"
 maturin = "*"
 requests = "*"
 types-requests = "*"
+
+[packages]
+python-dotenv = "*"

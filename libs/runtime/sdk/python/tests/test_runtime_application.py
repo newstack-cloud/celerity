@@ -5,6 +5,7 @@ import time
 
 import pytest
 import requests
+from dotenv import dotenv_values
 
 
 def test_http_endpoint(runtime_server):
@@ -20,6 +21,10 @@ def runtime_server(command_args: List[str]):
             command_args,
             stdout=log_file,
             stderr=log_file,
+            env={
+                **os.environ,
+                **{k: v for k, v in dotenv_values(dotenv_path=".env.test").items() if v is not None},
+            }
         )
     # Give the server time to start up.
     time.sleep(2)
