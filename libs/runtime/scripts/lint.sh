@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cargo clippy
+cargo clippy -- -D warnings
 cargo fmt
