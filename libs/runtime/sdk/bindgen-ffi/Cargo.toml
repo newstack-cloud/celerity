@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-oo-bindgen = "0.8.7"
+oo-bindgen = "0.8.8"
 sfio-promise = "0.2.0"
 axum = "0.7.5"
 serde = "1.0.204"

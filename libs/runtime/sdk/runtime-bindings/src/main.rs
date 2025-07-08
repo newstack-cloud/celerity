@@ -12,7 +12,7 @@ fn main() {
         jni_target_name: "celerity-runtime-bindgen-ffi-api",
         ffi_name: "celerity_runtime_bindgen_ffi",
         ffi_path: Path::new("sdk/bindgen-ffi").into(),
-        java_group_id: "com.newstack",
+        java_group_id: "cloud.newstack",
         destination_path: Path::new("sdk/bindings").into(),
         library: Rc::new(celerity_runtime_bindgen_schema::build_lib().unwrap()),
     };

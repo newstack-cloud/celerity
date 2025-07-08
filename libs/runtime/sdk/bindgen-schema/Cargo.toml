@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-oo-bindgen = "0.8.7"
+oo-bindgen = "0.8.8"
 sfio-tokio-ffi = "0.9.0"
 sfio-tracing-ffi = "0.9.0"

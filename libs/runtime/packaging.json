@@ -1,0 +1,44 @@
+{
+  "targets": {
+    "x86_64-pc-windows-msvc": {
+      "dotnet": true,
+      "java": true
+    },
+    "i686-pc-windows-msvc": {
+      "dotnet": true,
+      "java": false
+    },
+    "aarch64-apple-darwin": {
+      "dotnet": true,
+      "java": true
+    },
+    "x86_64-apple-darwin": {
+      "dotnet": true,
+      "java": true
+    },
+    "x86_64-unknown-linux-gnu": {
+      "dotnet": true,
+      "java": true
+    },
+    "aarch64-unknown-linux-gnu": {
+      "dotnet": true,
+      "java": true
+    },
+    "arm-unknown-linux-gnueabihf": {
+      "dotnet": true,
+      "java": true
+    },
+    "x86_64-unknown-linux-musl": {
+      "dotnet": true,
+      "java": false
+    },
+    "aarch64-unknown-linux-musl": {
+      "dotnet": true,
+      "java": false
+    },
+    "arm-unknown-linux-musleabihf": {
+      "dotnet": true,
+      "java": false
+    }
+  }
+}
