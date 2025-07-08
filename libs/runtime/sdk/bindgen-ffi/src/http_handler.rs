@@ -46,7 +46,7 @@ impl IntoResponse for HandlerError {
 }
 
 impl From<HandlerError> for ffi::HandleRequestError {
-    fn from(err: HandlerError) -> Self {
+    fn from(_err: HandlerError) -> Self {
         ffi::HandleRequestError::HandlerFailed
     }
 }

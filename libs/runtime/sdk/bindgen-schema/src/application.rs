@@ -1,6 +1,6 @@
 use oo_bindgen::model::*;
 
-use crate::shared::{self, SharedDefinitions};
+use crate::shared::SharedDefinitions;
 
 pub(crate) fn define(
     lib: &mut LibraryBuilder,

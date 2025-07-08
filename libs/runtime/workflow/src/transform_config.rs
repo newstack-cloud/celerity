@@ -14,9 +14,9 @@ pub fn collect_workflow_app_config(
         .resources
         .iter()
         .find(|(_, resource)| resource.resource_type == CelerityResourceType::CelerityWorkflow)
-        .ok_or_else(|| ConfigError::WorkflowMissing)?;
+        .ok_or(ConfigError::WorkflowMissing)?;
 
-    let target_handlers = select_resources(
+    let _target_handlers = select_resources(
         &workflow.link_selector,
         &blueprint_config,
         CelerityResourceType::CelerityHandler,

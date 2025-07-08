@@ -26,8 +26,7 @@ impl fmt::Display for SignatureVerificationError {
             SignatureVerificationError::InvalidSignature(msg) => {
                 write!(
                     f,
-                    "signature verification failed due to an invalid signature: {}",
-                    msg,
+                    "signature verification failed due to an invalid signature: {msg}",
                 )
             }
             SignatureVerificationError::SignatureHeadingMissing => {
@@ -48,8 +47,7 @@ impl fmt::Display for SignatureVerificationError {
                 write!(
                     f,
                     "signature verification failed due to the following custom headers\
-                     not being in the provided request headers: {:?}",
-                    headers,
+                     not being in the provided request headers: {headers:?}",
                 )
             }
         }
@@ -118,8 +116,7 @@ impl fmt::Display for SignatureMessageCreationError {
                 write!(
                     f,
                     "signature message creation failed due to the following custom headers\
-                     not being in the provided request headers: {:?}",
-                    headers,
+                     not being in the provided request headers: {headers:?}",
                 )
             }
             SignatureMessageCreationError::InvalidDateHeader => {
@@ -139,8 +136,7 @@ impl fmt::Display for SignatureMessageCreationError {
             SignatureMessageCreationError::UnknownError(msg) => {
                 write!(
                     f,
-                    "signature message creation failed due to an unknown error: {}",
-                    msg,
+                    "signature message creation failed due to an unknown error: {msg}",
                 )
             }
         }

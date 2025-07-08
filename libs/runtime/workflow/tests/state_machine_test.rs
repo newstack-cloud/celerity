@@ -25,8 +25,7 @@ use celerity_runtime_workflow::{
     state_machine::StateMachine,
     types::WorkflowAppState,
     workflow_executions::{
-        MemoryWorkflowExecutionService, WorkflowExecution, WorkflowExecutionService,
-        WorkflowExecutionStatus,
+        MemoryWorkflowExecutionService, WorkflowExecution, WorkflowExecutionStatus,
     },
 };
 
@@ -47,7 +46,7 @@ impl TestClock {
 impl Clock for TestClock {
     fn now(&self) -> u64 {
         let mut index = self.index.lock().expect("lock should not be poisoned");
-        let time = self.fixtures_ms[index.clone()] / 1000;
+        let time = self.fixtures_ms[*index] / 1000;
         if *index + 1 < self.fixtures_ms.len() {
             *index += 1;
         } else {
@@ -58,7 +57,7 @@ impl Clock for TestClock {
 
     fn now_millis(&self) -> u64 {
         let mut index = self.index.lock().expect("lock should not be poisoned");
-        let time = self.fixtures_ms[index.clone()];
+        let time = self.fixtures_ms[*index];
         if *index + 1 < self.fixtures_ms.len() {
             *index += 1;
         } else {
@@ -572,11 +571,11 @@ fn create_fetch_doc_handler() -> BoxedWorkflowStateHandler {
                 Err(e) => {
                     return Err(WorkflowStateHandlerError {
                         name: "InvalidInput".to_string(),
-                        message: format!("Failed to parse input data: {}", e),
+                        message: format!("Failed to parse input data: {e}"),
                     });
                 }
             };
-            let file_name = match fetch_doc_input.url.split('/').last() {
+            let file_name = match fetch_doc_input.url.rsplit('/').next() {
                 Some(file_name) => file_name,
                 None => {
                     return Err(WorkflowStateHandlerError {
@@ -588,7 +587,7 @@ fn create_fetch_doc_handler() -> BoxedWorkflowStateHandler {
 
             Ok(json!({
                 "downloaded": {
-                    "path": format!("/tmp/{}", file_name)
+                    "path": format!("/tmp/{file_name}")
                 }
             }))
         }
@@ -635,27 +634,24 @@ fn create_process_file_handler(file_type: String) -> BoxedWorkflowStateHandler {
                 Err(err) => {
                     return Err(WorkflowStateHandlerError {
                         name: "InvalidInput".to_string(),
-                        message: format!(
-                            "Failed to parse {} file input data: {}",
-                            file_type_ref, err
-                        ),
+                        message: format!("Failed to parse {file_type_ref} file input data: {err}",),
                     });
                 }
             };
 
             let file_name_without_ext = match input.file_path.split("/").last() {
-                Some(file_name) => file_name.split(".").next().unwrap_or_else(|| "unknown"),
+                Some(file_name) => file_name.split(".").next().unwrap_or("unknown"),
                 None => {
                     return Err(WorkflowStateHandlerError {
                         name: "InvalidInput".to_string(),
-                        message: format!("Failed to extract {} file name from path", file_type_ref),
+                        message: format!("Failed to extract {file_type_ref} file name from path"),
                     });
                 }
             };
 
             Ok(json!({
                 "extractedDataFile": {
-                    "path": format!("{}.json", file_name_without_ext),
+                    "path": format!("{file_name_without_ext}.json"),
                 }
             }))
         }
@@ -679,7 +675,7 @@ fn create_upload_to_system_handler() -> BoxedWorkflowStateHandler {
             Err(err) => {
                 return Err(WorkflowStateHandlerError {
                     name: "InvalidInput".to_string(),
-                    message: format!("Failed to parse input data: {}", err),
+                    message: format!("Failed to parse input data: {err}"),
                 });
             }
         };
@@ -689,14 +685,14 @@ fn create_upload_to_system_handler() -> BoxedWorkflowStateHandler {
             None => {
                 return Err(WorkflowStateHandlerError {
                     name: "InvalidInput".to_string(),
-                    message: format!("Failed to extract file name from path"),
+                    message: "Failed to extract file name from path".to_string(),
                 });
             }
         };
 
         Ok(json!({
             "uploaded": {
-                "path": format!("bucket://test/{}", file_name),
+                "path": format!("bucket://test/{file_name}"),
             }
         }))
     })

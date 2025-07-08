@@ -57,43 +57,35 @@ impl fmt::Display for ResolveError {
         match self {
             ResolveError::MissingVariable(variable_error, field) => write!(
                 f,
-                "blueprint substitution resolution failed: missing variable in field {}: {}",
-                field, variable_error
+                "blueprint substitution resolution failed: missing variable in field {field}: {variable_error}"
             ),
             ResolveError::InvalidSubstitution(substitution) => write!(
                 f,
-                "blueprint substitution resolution failed: invalid substitution: {:?}",
-                substitution
+                "blueprint substitution resolution failed: invalid substitution: {substitution:?}"
             ),
             ResolveError::ParseError(parse_error, field) => write!(
                 f,
-                "blueprint substitution resolution failed: parse error in field {}: {}",
-                field, parse_error
+                "blueprint substitution resolution failed: parse error in field {field}: {parse_error}"
             ),
             ResolveError::ValueMustBeScalar(field) => write!(
                 f,
-                "blueprint substitution resolution failed: value must be scalar in the {} field",
-                field
+                "blueprint substitution resolution failed: value must be scalar in the {field} field"
             ),
             ResolveError::ValueMustBeInt(field) => write!(
                 f,
-                "blueprint substitution resolution failed: value must be an integer in the {} field",
-                field
+                "blueprint substitution resolution failed: value must be an integer in the {field} field"
             ),
             ResolveError::ValueMustBeBool(field) => write!(
                 f,
-                "blueprint substitution resolution failed: value must be a boolean in the {} field",
-                field
+                "blueprint substitution resolution failed: value must be a boolean in the {field} field"
             ),
             ResolveError::ValueMustBeFloat(field) => write!(
                 f,
-                "blueprint substitution resolution failed: value must be a float in the {} field",
-                field
+                "blueprint substitution resolution failed: value must be a float in the {field} field"
             ),
             ResolveError::MaxResolveDepthExceeded(depth) => write!(
                 f,
-                "blueprint substitution resolution failed: maximum resolve depth of {} exceeded",
-                depth
+                "blueprint substitution resolution failed: maximum resolve depth of {depth} exceeded"
             ),
         }
     }
@@ -106,15 +98,13 @@ pub fn resolve_blueprint_config_substitutions(
     blueprint_with_subs: BlueprintConfigWithSubs,
     env: Box<dyn EnvVars>,
 ) -> Result<BlueprintConfig, ResolveError> {
-    let mut resolved_config = BlueprintConfig::default();
-    resolved_config.version = blueprint_with_subs.version;
-    resolved_config.transform = blueprint_with_subs.transform;
-    resolved_config.variables = blueprint_with_subs.variables;
-    resolved_config.resources =
-        resolve_blueprint_config_resources(blueprint_with_subs.resources, env.clone())?;
-    resolved_config.metadata =
-        resolve_blueprint_config_metadata(blueprint_with_subs.metadata, env.clone())?;
-    Ok(resolved_config)
+    Ok(BlueprintConfig {
+        version: blueprint_with_subs.version,
+        transform: blueprint_with_subs.transform,
+        variables: blueprint_with_subs.variables,
+        resources: resolve_blueprint_config_resources(blueprint_with_subs.resources, env.clone())?,
+        metadata: resolve_blueprint_config_metadata(blueprint_with_subs.metadata, env.clone())?,
+    })
 }
 
 fn resolve_blueprint_config_metadata(
@@ -156,38 +146,38 @@ fn resolve_shared_handler_config(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<SharedHandlerConfig, ResolveError> {
-    let mut shared_handler_config = SharedHandlerConfig::default();
-    shared_handler_config.code_location = resolve_optional_string_or_substitutions(
-        shared_handler_config_with_subs.code_location,
-        env.clone(),
-        &field_path(&[field, "codeLocation"]),
-    )?;
-    shared_handler_config.runtime = resolve_optional_string_or_substitutions(
-        shared_handler_config_with_subs.runtime,
-        env.clone(),
-        &field_path(&[field, "runtime"]),
-    )?;
-    shared_handler_config.memory = resolve_optional_mapping_node_to_int(
-        shared_handler_config_with_subs.memory,
-        env.clone(),
-        &field_path(&[field, "memory"]),
-    )?;
-    shared_handler_config.timeout = resolve_optional_mapping_node_to_int(
-        shared_handler_config_with_subs.timeout,
-        env.clone(),
-        &field_path(&[field, "timeout"]),
-    )?;
-    shared_handler_config.tracing_enabled = resolve_optional_mapping_node_to_bool(
-        shared_handler_config_with_subs.tracing_enabled,
-        env.clone(),
-        &field_path(&[field, "tracingEnabled"]),
-    )?;
-    shared_handler_config.environment_variables = resolve_optional_string_or_subs_map(
-        shared_handler_config_with_subs.environment_variables,
-        env.clone(),
-        &field_path(&[field, "environmentVariables"]),
-    )?;
-    Ok(shared_handler_config)
+    Ok(SharedHandlerConfig {
+        code_location: resolve_optional_string_or_substitutions(
+            shared_handler_config_with_subs.code_location,
+            env.clone(),
+            &field_path(&[field, "codeLocation"]),
+        )?,
+        runtime: resolve_optional_string_or_substitutions(
+            shared_handler_config_with_subs.runtime,
+            env.clone(),
+            &field_path(&[field, "runtime"]),
+        )?,
+        memory: resolve_optional_mapping_node_to_int(
+            shared_handler_config_with_subs.memory,
+            env.clone(),
+            &field_path(&[field, "memory"]),
+        )?,
+        timeout: resolve_optional_mapping_node_to_int(
+            shared_handler_config_with_subs.timeout,
+            env.clone(),
+            &field_path(&[field, "timeout"]),
+        )?,
+        tracing_enabled: resolve_optional_mapping_node_to_bool(
+            shared_handler_config_with_subs.tracing_enabled,
+            env.clone(),
+            &field_path(&[field, "tracingEnabled"]),
+        )?,
+        environment_variables: resolve_optional_string_or_subs_map(
+            shared_handler_config_with_subs.environment_variables,
+            env.clone(),
+            &field_path(&[field, "environmentVariables"]),
+        )?,
+    })
 }
 
 fn resolve_blueprint_config_resources(
@@ -216,15 +206,17 @@ fn resolve_blueprint_config_resource(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<RuntimeBlueprintResource, ResolveError> {
-    let mut resolved_resource = RuntimeBlueprintResource::default();
-    resolved_resource.resource_type = resource_with_subs.resource_type;
-    resolved_resource.description = resource_with_subs.description;
-    resolved_resource.link_selector = resource_with_subs.link_selector;
-    resolved_resource.metadata =
-        resolve_resource_metadata(resource_with_subs.metadata, env.clone(), resource_name)?;
-    resolved_resource.spec =
-        resolve_resource_spec(resource_with_subs.spec, env.clone(), resource_name)?;
-    Ok(resolved_resource)
+    Ok(RuntimeBlueprintResource {
+        resource_type: resource_with_subs.resource_type,
+        description: resource_with_subs.description,
+        link_selector: resource_with_subs.link_selector,
+        metadata: resolve_resource_metadata(
+            resource_with_subs.metadata,
+            env.clone(),
+            resource_name,
+        )?,
+        spec: resolve_resource_spec(resource_with_subs.spec, env.clone(), resource_name)?,
+    })
 }
 
 fn resolve_resource_spec(
@@ -288,48 +280,48 @@ fn resolve_handler_spec(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<CelerityHandlerSpec, ResolveError> {
-    let mut resolved_spec = CelerityHandlerSpec::default();
-    resolved_spec.handler_name = resolve_optional_string_or_substitutions(
-        spec.handler_name,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["handlerName"]),
-    )?;
-    resolved_spec.code_location = resolve_optional_string_or_substitutions(
-        spec.code_location,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["codeLocation"]),
-    )?;
-    resolved_spec.handler = resolve_string_or_substitutions_to_string(
-        spec.handler,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["handler"]),
-    )?;
-    resolved_spec.runtime = resolve_optional_string_or_substitutions(
-        spec.runtime,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["runtime"]),
-    )?;
-    resolved_spec.memory = resolve_optional_mapping_node_to_int(
-        spec.memory,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["memory"]),
-    )?;
-    resolved_spec.timeout = resolve_optional_mapping_node_to_int(
-        spec.timeout,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["timeout"]),
-    )?;
-    resolved_spec.tracing_enabled = resolve_optional_mapping_node_to_bool(
-        spec.tracing_enabled,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["tracingEnabled"]),
-    )?;
-    resolved_spec.environment_variables = resolve_optional_string_or_subs_map(
-        spec.environment_variables,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["environmentVariables"]),
-    )?;
-    Ok(resolved_spec)
+    Ok(CelerityHandlerSpec {
+        handler_name: resolve_optional_string_or_substitutions(
+            spec.handler_name,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["handlerName"]),
+        )?,
+        code_location: resolve_optional_string_or_substitutions(
+            spec.code_location,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["codeLocation"]),
+        )?,
+        handler: resolve_string_or_substitutions_to_string(
+            spec.handler,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["handler"]),
+        )?,
+        runtime: resolve_optional_string_or_substitutions(
+            spec.runtime,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["runtime"]),
+        )?,
+        memory: resolve_optional_mapping_node_to_int(
+            spec.memory,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["memory"]),
+        )?,
+        timeout: resolve_optional_mapping_node_to_int(
+            spec.timeout,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["timeout"]),
+        )?,
+        tracing_enabled: resolve_optional_mapping_node_to_bool(
+            spec.tracing_enabled,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["tracingEnabled"]),
+        )?,
+        environment_variables: resolve_optional_string_or_subs_map(
+            spec.environment_variables,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["environmentVariables"]),
+        )?,
+    })
 }
 
 fn resolve_api_spec(
@@ -337,33 +329,33 @@ fn resolve_api_spec(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<CelerityApiSpec, ResolveError> {
-    let mut resolved_spec: CelerityApiSpec = CelerityApiSpec::default();
-    resolved_spec.protocols = resolve_api_protocols(
-        spec_with_subs.protocols,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["protocols"]),
-    )?;
-    resolved_spec.cors = resolve_api_cors(
-        spec_with_subs.cors,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["cors"]),
-    )?;
-    resolved_spec.domain = resolve_api_domain_config(
-        spec_with_subs.domain,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["domain"]),
-    )?;
-    resolved_spec.auth = resolve_api_auth(
-        spec_with_subs.auth,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["auth"]),
-    )?;
-    resolved_spec.tracing_enabled = resolve_optional_mapping_node_to_bool(
-        spec_with_subs.tracing_enabled,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["tracingEnabled"]),
-    )?;
-    Ok(resolved_spec)
+    Ok(CelerityApiSpec {
+        protocols: resolve_api_protocols(
+            spec_with_subs.protocols,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["protocols"]),
+        )?,
+        cors: resolve_api_cors(
+            spec_with_subs.cors,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["cors"]),
+        )?,
+        domain: resolve_api_domain_config(
+            spec_with_subs.domain,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["domain"]),
+        )?,
+        auth: resolve_api_auth(
+            spec_with_subs.auth,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["auth"]),
+        )?,
+        tracing_enabled: resolve_optional_mapping_node_to_bool(
+            spec_with_subs.tracing_enabled,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["tracingEnabled"]),
+        )?,
+    })
 }
 
 fn resolve_consumer_spec(
@@ -371,43 +363,43 @@ fn resolve_consumer_spec(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<CelerityConsumerSpec, ResolveError> {
-    let mut resolved_spec = CelerityConsumerSpec::default();
-    resolved_spec.source_id = resolve_optional_string_or_substitutions(
-        spec_with_subs.source_id,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["sourceId"]),
-    )?;
-    resolved_spec.batch_size = resolve_optional_mapping_node_to_int(
-        spec_with_subs.batch_size,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["batchSize"]),
-    )?;
-    resolved_spec.visibility_timeout = resolve_optional_mapping_node_to_int(
-        spec_with_subs.visibility_timeout,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["visibilityTimeout"]),
-    )?;
-    resolved_spec.wait_time_seconds = resolve_optional_mapping_node_to_int(
-        spec_with_subs.wait_time_seconds,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["waitTimeSeconds"]),
-    )?;
-    resolved_spec.partial_failures = resolve_optional_mapping_node_to_bool(
-        spec_with_subs.partial_failures,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["partialFailures"]),
-    )?;
-    resolved_spec.routing_key = resolve_optional_string_or_substitutions(
-        spec_with_subs.routing_key,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["routingKey"]),
-    )?;
-    resolved_spec.external_events = resolve_optional_external_events(
-        spec_with_subs.external_events,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["externalEvents"]),
-    )?;
-    Ok(resolved_spec)
+    Ok(CelerityConsumerSpec {
+        source_id: resolve_optional_string_or_substitutions(
+            spec_with_subs.source_id,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["sourceId"]),
+        )?,
+        batch_size: resolve_optional_mapping_node_to_int(
+            spec_with_subs.batch_size,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["batchSize"]),
+        )?,
+        visibility_timeout: resolve_optional_mapping_node_to_int(
+            spec_with_subs.visibility_timeout,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["visibilityTimeout"]),
+        )?,
+        wait_time_seconds: resolve_optional_mapping_node_to_int(
+            spec_with_subs.wait_time_seconds,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["waitTimeSeconds"]),
+        )?,
+        partial_failures: resolve_optional_mapping_node_to_bool(
+            spec_with_subs.partial_failures,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["partialFailures"]),
+        )?,
+        routing_key: resolve_optional_string_or_substitutions(
+            spec_with_subs.routing_key,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["routingKey"]),
+        )?,
+        external_events: resolve_optional_external_events(
+            spec_with_subs.external_events,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["externalEvents"]),
+        )?,
+    })
 }
 
 fn resolve_schedule_spec(
@@ -415,13 +407,13 @@ fn resolve_schedule_spec(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<CelerityScheduleSpec, ResolveError> {
-    let mut resolved_spec = CelerityScheduleSpec::default();
-    resolved_spec.schedule = resolve_string_or_substitutions_to_string(
-        spec_with_subs.schedule,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["scheduleName"]),
-    )?;
-    Ok(resolved_spec)
+    Ok(CelerityScheduleSpec {
+        schedule: resolve_string_or_substitutions_to_string(
+            spec_with_subs.schedule,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["scheduleName"]),
+        )?,
+    })
 }
 
 fn resolve_config_spec(
@@ -429,18 +421,18 @@ fn resolve_config_spec(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<CelerityConfigSpec, ResolveError> {
-    let mut resolved_spec = CelerityConfigSpec::default();
-    resolved_spec.name = resolve_optional_string_or_substitutions(
-        config_spec_with_subs.name,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["name"]),
-    )?;
-    resolved_spec.plaintext = resolve_optional_string_or_subs_list(
-        config_spec_with_subs.plaintext,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["plaintext"]),
-    )?;
-    Ok(resolved_spec)
+    Ok(CelerityConfigSpec {
+        name: resolve_optional_string_or_substitutions(
+            config_spec_with_subs.name,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["name"]),
+        )?,
+        plaintext: resolve_optional_string_or_subs_list(
+            config_spec_with_subs.plaintext,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["plaintext"]),
+        )?,
+    })
 }
 
 fn resolve_bucket_spec(
@@ -448,13 +440,13 @@ fn resolve_bucket_spec(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<CelerityBucketSpec, ResolveError> {
-    let mut resolved_spec = CelerityBucketSpec::default();
-    resolved_spec.name = resolve_optional_string_or_substitutions(
-        spec_with_subs.name,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["name"]),
-    )?;
-    Ok(resolved_spec)
+    Ok(CelerityBucketSpec {
+        name: resolve_optional_string_or_substitutions(
+            spec_with_subs.name,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["name"]),
+        )?,
+    })
 }
 
 fn resolve_topic_spec(
@@ -462,18 +454,18 @@ fn resolve_topic_spec(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<CelerityTopicSpec, ResolveError> {
-    let mut resolved_spec = CelerityTopicSpec::default();
-    resolved_spec.name = resolve_optional_string_or_substitutions(
-        spec_with_subs.name,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["name"]),
-    )?;
-    resolved_spec.fifo = resolve_optional_mapping_node_to_bool(
-        spec_with_subs.fifo,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["fifo"]),
-    )?;
-    Ok(resolved_spec)
+    Ok(CelerityTopicSpec {
+        name: resolve_optional_string_or_substitutions(
+            spec_with_subs.name,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["name"]),
+        )?,
+        fifo: resolve_optional_mapping_node_to_bool(
+            spec_with_subs.fifo,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["fifo"]),
+        )?,
+    })
 }
 
 fn resolve_queue_spec(
@@ -481,23 +473,23 @@ fn resolve_queue_spec(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<CelerityQueueSpec, ResolveError> {
-    let mut resolved_spec = CelerityQueueSpec::default();
-    resolved_spec.name = resolve_optional_string_or_substitutions(
-        spec_with_subs.name,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["name"]),
-    )?;
-    resolved_spec.fifo = resolve_optional_mapping_node_to_bool(
-        spec_with_subs.fifo,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["fifo"]),
-    )?;
-    resolved_spec.visibility_timeout = resolve_optional_mapping_node_to_int(
-        spec_with_subs.visibility_timeout,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["visibilityTimeout"]),
-    )?;
-    Ok(resolved_spec)
+    Ok(CelerityQueueSpec {
+        name: resolve_optional_string_or_substitutions(
+            spec_with_subs.name,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["name"]),
+        )?,
+        fifo: resolve_optional_mapping_node_to_bool(
+            spec_with_subs.fifo,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["fifo"]),
+        )?,
+        visibility_timeout: resolve_optional_mapping_node_to_int(
+            spec_with_subs.visibility_timeout,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["visibilityTimeout"]),
+        )?,
+    })
 }
 
 fn resolve_workflow_spec(
@@ -505,18 +497,18 @@ fn resolve_workflow_spec(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<CelerityWorkflowSpec, ResolveError> {
-    let mut resolved_spec = CelerityWorkflowSpec::default();
-    resolved_spec.start_at = resolve_string_or_substitutions_to_string(
-        spec_with_subs.start_at,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["startAt"]),
-    )?;
-    resolved_spec.states = resolve_workflow_states(
-        spec_with_subs.states,
-        env.clone(),
-        &resource_spec_field_path(resource_name, &["states"]),
-    )?;
-    Ok(resolved_spec)
+    Ok(CelerityWorkflowSpec {
+        start_at: resolve_string_or_substitutions_to_string(
+            spec_with_subs.start_at,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["startAt"]),
+        )?,
+        states: resolve_workflow_states(
+            spec_with_subs.states,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["states"]),
+        )?,
+    })
 }
 
 fn resolve_workflow_states(
@@ -541,92 +533,91 @@ fn resolve_workflow_state(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<CelerityWorkflowState, ResolveError> {
-    let mut state = CelerityWorkflowState::default();
-    state.state_type = resolve_workflow_state_type(
-        state_with_subs.state_type,
-        env.clone(),
-        &field_path(&[field, "type"]),
-    )?;
-    state.input_path = resolve_optional_string_or_substitutions(
-        state_with_subs.input_path,
-        env.clone(),
-        &field_path(&[field, "inputPath"]),
-    )?;
-    state.result_path = resolve_optional_string_or_substitutions(
-        state_with_subs.result_path,
-        env.clone(),
-        &field_path(&[field, "resultPath"]),
-    )?;
-    state.output_path = resolve_optional_string_or_substitutions(
-        state_with_subs.output_path,
-        env.clone(),
-        &field_path(&[field, "outputPath"]),
-    )?;
-    let payload_template_mapping = resolve_optional_mapping_node(
-        state_with_subs.payload_template.map(MappingNode::Mapping),
-        env.clone(),
-        &field_path(&[field, "payloadTemplate"]),
-    )?;
-    state.payload_template = match payload_template_mapping {
-        Some(ResolvedMappingNode::Mapping(mapping)) => Some(mapping),
-        _ => None,
-    };
-    state.next = resolve_optional_string_or_substitutions(
-        state_with_subs.next,
-        env.clone(),
-        &field_path(&[field, "next"]),
-    )?;
-    state.end = resolve_optional_mapping_node_to_bool(
-        state_with_subs.end,
-        env.clone(),
-        &field_path(&[field, "end"]),
-    )?;
-    state.decisions = resolve_optional_workflow_decisions(
-        state_with_subs.decisions,
-        env.clone(),
-        &field_path(&[field, "decisions"]),
-    )?;
-    state.description = resolve_optional_string_or_substitutions(
-        state_with_subs.description,
-        env.clone(),
-        &field_path(&[field, "description"]),
-    )?;
-    state.result = resolve_optional_mapping_node(
-        state_with_subs.result,
-        env.clone(),
-        &field_path(&[field, "result"]),
-    )?;
-    state.timeout = resolve_optional_mapping_node_to_int(
-        state_with_subs.timeout,
-        env.clone(),
-        &field_path(&[field, "timeout"]),
-    )?;
-    state.wait_config = resolve_optional_workflow_wait_config(
-        state_with_subs.wait_config,
-        env.clone(),
-        &field_path(&[field, "waitConfig"]),
-    )?;
-    state.failure_config = resolve_optional_workflow_failure_config(
-        state_with_subs.failure_config,
-        env.clone(),
-        &field_path(&[field, "failureConfig"]),
-    )?;
-    state.parallel_branches = resolve_optional_workflow_parallel_branches(
-        state_with_subs.parallel_branches,
-        env.clone(),
-        &field_path(&[field, "parallelBranches"]),
-    )?;
-    state.retry = resolve_optional_workflow_retry_configs(
-        state_with_subs.retry,
-        env.clone(),
-        &field_path(&[field, "retry"]),
-    )?;
-    state.catch = resolve_optional_workflow_catch_configs(
-        state_with_subs.catch,
-        env.clone(),
-        &field_path(&[field, "catch"]),
-    )?;
-    Ok(state)
+    Ok(CelerityWorkflowState {
+        state_type: resolve_workflow_state_type(
+            state_with_subs.state_type,
+            env.clone(),
+            &field_path(&[field, "type"]),
+        )?,
+        input_path: resolve_optional_string_or_substitutions(
+            state_with_subs.input_path,
+            env.clone(),
+            &field_path(&[field, "inputPath"]),
+        )?,
+        result_path: resolve_optional_string_or_substitutions(
+            state_with_subs.result_path,
+            env.clone(),
+            &field_path(&[field, "resultPath"]),
+        )?,
+        output_path: resolve_optional_string_or_substitutions(
+            state_with_subs.output_path,
+            env.clone(),
+            &field_path(&[field, "outputPath"]),
+        )?,
+        payload_template: match resolve_optional_mapping_node(
+            state_with_subs.payload_template.map(MappingNode::Mapping),
+            env.clone(),
+            &field_path(&[field, "payloadTemplate"]),
+        )? {
+            Some(ResolvedMappingNode::Mapping(mapping)) => Some(mapping),
+            _ => None,
+        },
+        next: resolve_optional_string_or_substitutions(
+            state_with_subs.next,
+            env.clone(),
+            &field_path(&[field, "next"]),
+        )?,
+        end: resolve_optional_mapping_node_to_bool(
+            state_with_subs.end,
+            env.clone(),
+            &field_path(&[field, "end"]),
+        )?,
+        decisions: resolve_optional_workflow_decisions(
+            state_with_subs.decisions,
+            env.clone(),
+            &field_path(&[field, "decisions"]),
+        )?,
+        description: resolve_optional_string_or_substitutions(
+            state_with_subs.description,
+            env.clone(),
+            &field_path(&[field, "description"]),
+        )?,
+        result: resolve_optional_mapping_node(
+            state_with_subs.result,
+            env.clone(),
+            &field_path(&[field, "result"]),
+        )?,
+        timeout: resolve_optional_mapping_node_to_int(
+            state_with_subs.timeout,
+            env.clone(),
+            &field_path(&[field, "timeout"]),
+        )?,
+        wait_config: resolve_optional_workflow_wait_config(
+            state_with_subs.wait_config,
+            env.clone(),
+            &field_path(&[field, "waitConfig"]),
+        )?,
+        failure_config: resolve_optional_workflow_failure_config(
+            state_with_subs.failure_config,
+            env.clone(),
+            &field_path(&[field, "failureConfig"]),
+        )?,
+        parallel_branches: resolve_optional_workflow_parallel_branches(
+            state_with_subs.parallel_branches,
+            env.clone(),
+            &field_path(&[field, "parallelBranches"]),
+        )?,
+        retry: resolve_optional_workflow_retry_configs(
+            state_with_subs.retry,
+            env.clone(),
+            &field_path(&[field, "retry"]),
+        )?,
+        catch: resolve_optional_workflow_catch_configs(
+            state_with_subs.catch,
+            env.clone(),
+            &field_path(&[field, "catch"]),
+        )?,
+    })
 }
 
 fn resolve_optional_workflow_wait_config(
@@ -649,18 +640,18 @@ fn resolve_workflow_wait_config(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<CelerityWorkflowWaitConfig, ResolveError> {
-    let mut wait_config = CelerityWorkflowWaitConfig::default();
-    wait_config.seconds = resolve_optional_string_or_substitutions(
-        wait_config_with_subs.seconds,
-        env.clone(),
-        &field_path(&[field, "seconds"]),
-    )?;
-    wait_config.timestamp = resolve_optional_string_or_substitutions(
-        wait_config_with_subs.timestamp,
-        env.clone(),
-        &field_path(&[field, "timestamp"]),
-    )?;
-    Ok(wait_config)
+    Ok(CelerityWorkflowWaitConfig {
+        seconds: resolve_optional_string_or_substitutions(
+            wait_config_with_subs.seconds,
+            env.clone(),
+            &field_path(&[field, "seconds"]),
+        )?,
+        timestamp: resolve_optional_string_or_substitutions(
+            wait_config_with_subs.timestamp,
+            env.clone(),
+            &field_path(&[field, "timestamp"]),
+        )?,
+    })
 }
 
 fn resolve_optional_workflow_failure_config(
@@ -683,18 +674,18 @@ fn resolve_workflow_failure_config(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<CelerityWorkflowFailureConfig, ResolveError> {
-    let mut failure_config = CelerityWorkflowFailureConfig::default();
-    failure_config.error = resolve_optional_string_or_substitutions(
-        failure_config_with_subs.error,
-        env.clone(),
-        &field_path(&[field, "error"]),
-    )?;
-    failure_config.cause = resolve_optional_string_or_substitutions(
-        failure_config_with_subs.cause,
-        env.clone(),
-        &field_path(&[field, "cause"]),
-    )?;
-    Ok(failure_config)
+    Ok(CelerityWorkflowFailureConfig {
+        error: resolve_optional_string_or_substitutions(
+            failure_config_with_subs.error,
+            env.clone(),
+            &field_path(&[field, "error"]),
+        )?,
+        cause: resolve_optional_string_or_substitutions(
+            failure_config_with_subs.cause,
+            env.clone(),
+            &field_path(&[field, "cause"]),
+        )?,
+    })
 }
 
 fn resolve_optional_workflow_parallel_branches(
@@ -724,18 +715,18 @@ fn resolve_workflow_parallel_branch(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<CelerityWorkflowParallelBranch, ResolveError> {
-    let mut parallel_branch = CelerityWorkflowParallelBranch::default();
-    parallel_branch.start_at = resolve_string_or_substitutions_to_string(
-        parallel_branch_with_subs.start_at,
-        env.clone(),
-        &field_path(&[field, "startAt"]),
-    )?;
-    parallel_branch.states = resolve_workflow_states(
-        parallel_branch_with_subs.states,
-        env.clone(),
-        &field_path(&[field, "states"]),
-    )?;
-    Ok(parallel_branch)
+    Ok(CelerityWorkflowParallelBranch {
+        start_at: resolve_string_or_substitutions_to_string(
+            parallel_branch_with_subs.start_at,
+            env.clone(),
+            &field_path(&[field, "startAt"]),
+        )?,
+        states: resolve_workflow_states(
+            parallel_branch_with_subs.states,
+            env.clone(),
+            &field_path(&[field, "states"]),
+        )?,
+    })
 }
 
 fn resolve_optional_workflow_retry_configs(
@@ -762,38 +753,38 @@ fn resolve_workflow_retry_config(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<CelerityWorkflowRetryConfig, ResolveError> {
-    let mut retry_config = CelerityWorkflowRetryConfig::default();
-    retry_config.match_errors = resolve_string_or_subs_list(
-        retry_config_with_subs.match_errors,
-        env.clone(),
-        &field_path(&[field, "matchErrors"]),
-    )?;
-    retry_config.interval = resolve_optional_mapping_node_to_int(
-        retry_config_with_subs.interval,
-        env.clone(),
-        &field_path(&[field, "interval"]),
-    )?;
-    retry_config.max_attempts = resolve_optional_mapping_node_to_int(
-        retry_config_with_subs.max_attempts,
-        env.clone(),
-        &field_path(&[field, "maxAttempts"]),
-    )?;
-    retry_config.max_delay = resolve_optional_mapping_node_to_int(
-        retry_config_with_subs.max_delay,
-        env.clone(),
-        &field_path(&[field, "maxDelay"]),
-    )?;
-    retry_config.jitter = resolve_optional_mapping_node_to_bool(
-        retry_config_with_subs.jitter,
-        env.clone(),
-        &field_path(&[field, "jitter"]),
-    )?;
-    retry_config.backoff_rate = resolve_optional_mapping_node_to_float(
-        retry_config_with_subs.backoff_rate,
-        env.clone(),
-        &field_path(&[field, "backoffRate"]),
-    )?;
-    Ok(retry_config)
+    Ok(CelerityWorkflowRetryConfig {
+        match_errors: resolve_string_or_subs_list(
+            retry_config_with_subs.match_errors,
+            env.clone(),
+            &field_path(&[field, "matchErrors"]),
+        )?,
+        interval: resolve_optional_mapping_node_to_int(
+            retry_config_with_subs.interval,
+            env.clone(),
+            &field_path(&[field, "interval"]),
+        )?,
+        max_attempts: resolve_optional_mapping_node_to_int(
+            retry_config_with_subs.max_attempts,
+            env.clone(),
+            &field_path(&[field, "maxAttempts"]),
+        )?,
+        max_delay: resolve_optional_mapping_node_to_int(
+            retry_config_with_subs.max_delay,
+            env.clone(),
+            &field_path(&[field, "maxDelay"]),
+        )?,
+        jitter: resolve_optional_mapping_node_to_bool(
+            retry_config_with_subs.jitter,
+            env.clone(),
+            &field_path(&[field, "jitter"]),
+        )?,
+        backoff_rate: resolve_optional_mapping_node_to_float(
+            retry_config_with_subs.backoff_rate,
+            env.clone(),
+            &field_path(&[field, "backoffRate"]),
+        )?,
+    })
 }
 
 fn resolve_optional_workflow_catch_configs(
@@ -820,23 +811,23 @@ fn resolve_workflow_catch_config(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<CelerityWorkflowCatchConfig, ResolveError> {
-    let mut catch_config = CelerityWorkflowCatchConfig::default();
-    catch_config.match_errors = resolve_string_or_subs_list(
-        catch_config_with_subs.match_errors,
-        env.clone(),
-        &field_path(&[field, "matchErrors"]),
-    )?;
-    catch_config.next = resolve_string_or_substitutions_to_string(
-        catch_config_with_subs.next,
-        env.clone(),
-        &field_path(&[field, "next"]),
-    )?;
-    catch_config.result_path = resolve_optional_string_or_substitutions(
-        catch_config_with_subs.result_path,
-        env.clone(),
-        &field_path(&[field, "resultPath"]),
-    )?;
-    Ok(catch_config)
+    Ok(CelerityWorkflowCatchConfig {
+        match_errors: resolve_string_or_subs_list(
+            catch_config_with_subs.match_errors,
+            env.clone(),
+            &field_path(&[field, "matchErrors"]),
+        )?,
+        next: resolve_string_or_substitutions_to_string(
+            catch_config_with_subs.next,
+            env.clone(),
+            &field_path(&[field, "next"]),
+        )?,
+        result_path: resolve_optional_string_or_substitutions(
+            catch_config_with_subs.result_path,
+            env.clone(),
+            &field_path(&[field, "resultPath"]),
+        )?,
+    })
 }
 
 fn resolve_workflow_state_type(
@@ -886,38 +877,37 @@ fn resolve_workflow_decision(
     if depth > MAX_RESOLVE_DEPTH {
         return Err(ResolveError::MaxResolveDepthExceeded(depth));
     }
-
-    let mut decision = CelerityWorkflowDecisionRule::default();
-    decision.condition = resolve_optional_workflow_condition(
-        decision_with_subs.condition,
-        env.clone(),
-        field,
-        depth + 1,
-    )?;
-    decision.and = resolve_optional_workflow_conditions(
-        decision_with_subs.and,
-        env.clone(),
-        &field_path(&[field, "and"]),
-        depth + 1,
-    )?;
-    decision.or = resolve_optional_workflow_conditions(
-        decision_with_subs.or,
-        env.clone(),
-        &field_path(&[field, "or"]),
-        depth + 1,
-    )?;
-    decision.not = resolve_optional_workflow_condition(
-        decision_with_subs.not,
-        env.clone(),
-        &field_path(&[field, "not"]),
-        depth + 1,
-    )?;
-    decision.next = resolve_string_or_substitutions_to_string(
-        decision_with_subs.next,
-        env.clone(),
-        &field_path(&[field, "next"]),
-    )?;
-    Ok(decision)
+    Ok(CelerityWorkflowDecisionRule {
+        condition: resolve_optional_workflow_condition(
+            decision_with_subs.condition,
+            env.clone(),
+            field,
+            depth + 1,
+        )?,
+        and: resolve_optional_workflow_conditions(
+            decision_with_subs.and,
+            env.clone(),
+            &field_path(&[field, "and"]),
+            depth + 1,
+        )?,
+        or: resolve_optional_workflow_conditions(
+            decision_with_subs.or,
+            env.clone(),
+            &field_path(&[field, "or"]),
+            depth + 1,
+        )?,
+        not: resolve_optional_workflow_condition(
+            decision_with_subs.not,
+            env.clone(),
+            &field_path(&[field, "not"]),
+            depth + 1,
+        )?,
+        next: resolve_string_or_substitutions_to_string(
+            decision_with_subs.next,
+            env.clone(),
+            &field_path(&[field, "next"]),
+        )?,
+    })
 }
 
 fn resolve_optional_workflow_conditions(
@@ -962,19 +952,19 @@ fn resolve_workflow_condition(
     field: &str,
     depth: usize,
 ) -> Result<CelerityWorkflowCondition, ResolveError> {
-    let mut condition = CelerityWorkflowCondition::default();
-    condition.inputs = resolve_mapping_node_list(
-        condition_with_subs.inputs,
-        env.clone(),
-        &field_path(&[field, "inputs"]),
-        depth + 1,
-    )?;
-    condition.function = resolve_string_or_substitutions_to_string(
-        condition_with_subs.function,
-        env.clone(),
-        &field_path(&[field, "function"]),
-    )?;
-    Ok(condition)
+    Ok(CelerityWorkflowCondition {
+        inputs: resolve_mapping_node_list(
+            condition_with_subs.inputs,
+            env.clone(),
+            &field_path(&[field, "inputs"]),
+            depth + 1,
+        )?,
+        function: resolve_string_or_substitutions_to_string(
+            condition_with_subs.function,
+            env.clone(),
+            &field_path(&[field, "function"]),
+        )?,
+    })
 }
 
 fn resolve_optional_external_events(
@@ -1004,14 +994,14 @@ fn resolve_external_event_config(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<ExternalEventConfiguration, ResolveError> {
-    let mut event = ExternalEventConfiguration::default();
-    event.source_type = event_with_subs.source_type;
-    event.source_configuration = resolve_event_source_configuration(
-        event_with_subs.source_configuration,
-        env.clone(),
-        &field_path(&[field, "sourceConfiguration"]),
-    )?;
-    Ok(event)
+    Ok(ExternalEventConfiguration {
+        source_type: event_with_subs.source_type,
+        source_configuration: resolve_event_source_configuration(
+            event_with_subs.source_configuration,
+            env.clone(),
+            &field_path(&[field, "sourceConfiguration"]),
+        )?,
+    })
 }
 
 fn resolve_event_source_configuration(
@@ -1049,18 +1039,20 @@ fn resolve_object_storage_event_source_configuration(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<EventSourceConfiguration, ResolveError> {
-    let mut object_storage = ObjectStorageEventSourceConfiguration::default();
-    object_storage.bucket = resolve_string_or_substitutions_to_string(
-        object_storage_with_subs.bucket,
-        env.clone(),
-        &field_path(&[field, "bucket"]),
-    )?;
-    object_storage.events = resolve_object_storage_events(
-        object_storage_with_subs.events,
-        env.clone(),
-        &field_path(&[field, "events"]),
-    )?;
-    Ok(EventSourceConfiguration::ObjectStorage(object_storage))
+    Ok(EventSourceConfiguration::ObjectStorage(
+        ObjectStorageEventSourceConfiguration {
+            bucket: resolve_string_or_substitutions_to_string(
+                object_storage_with_subs.bucket,
+                env.clone(),
+                &field_path(&[field, "bucket"]),
+            )?,
+            events: resolve_object_storage_events(
+                object_storage_with_subs.events,
+                env.clone(),
+                &field_path(&[field, "events"]),
+            )?,
+        },
+    ))
 }
 
 fn resolve_data_stream_event_source_configuration(
@@ -1068,28 +1060,30 @@ fn resolve_data_stream_event_source_configuration(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<EventSourceConfiguration, ResolveError> {
-    let mut data_stream = DataStreamSourceConfiguration::default();
-    data_stream.batch_size = resolve_optional_mapping_node_to_int(
-        data_stream_with_subs.batch_size,
-        env.clone(),
-        &field_path(&[field, "batchSize"]),
-    )?;
-    data_stream.data_stream_id = resolve_string_or_substitutions_to_string(
-        data_stream_with_subs.data_stream_id,
-        env.clone(),
-        &field_path(&[field, "dataStreamId"]),
-    )?;
-    data_stream.partial_failures = resolve_optional_mapping_node_to_bool(
-        data_stream_with_subs.partial_failures,
-        env.clone(),
-        &field_path(&[field, "partialFailures"]),
-    )?;
-    data_stream.start_from_beginning = resolve_optional_mapping_node_to_bool(
-        data_stream_with_subs.start_from_beginning,
-        env.clone(),
-        &field_path(&[field, "startFromBeginning"]),
-    )?;
-    Ok(EventSourceConfiguration::DataStream(data_stream))
+    Ok(EventSourceConfiguration::DataStream(
+        DataStreamSourceConfiguration {
+            batch_size: resolve_optional_mapping_node_to_int(
+                data_stream_with_subs.batch_size,
+                env.clone(),
+                &field_path(&[field, "batchSize"]),
+            )?,
+            data_stream_id: resolve_string_or_substitutions_to_string(
+                data_stream_with_subs.data_stream_id,
+                env.clone(),
+                &field_path(&[field, "dataStreamId"]),
+            )?,
+            partial_failures: resolve_optional_mapping_node_to_bool(
+                data_stream_with_subs.partial_failures,
+                env.clone(),
+                &field_path(&[field, "partialFailures"]),
+            )?,
+            start_from_beginning: resolve_optional_mapping_node_to_bool(
+                data_stream_with_subs.start_from_beginning,
+                env.clone(),
+                &field_path(&[field, "startFromBeginning"]),
+            )?,
+        },
+    ))
 }
 
 fn resolve_database_stream_event_source_configuration(
@@ -1097,28 +1091,30 @@ fn resolve_database_stream_event_source_configuration(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<EventSourceConfiguration, ResolveError> {
-    let mut database_stream = DatabaseStreamSourceConfiguration::default();
-    database_stream.batch_size = resolve_optional_mapping_node_to_int(
-        database_stream_with_subs.batch_size,
-        env.clone(),
-        &field_path(&[field, "batchSize"]),
-    )?;
-    database_stream.db_stream_id = resolve_string_or_substitutions_to_string(
-        database_stream_with_subs.db_stream_id,
-        env.clone(),
-        &field_path(&[field, "dbStreamId"]),
-    )?;
-    database_stream.partial_failures = resolve_optional_mapping_node_to_bool(
-        database_stream_with_subs.partial_failures,
-        env.clone(),
-        &field_path(&[field, "partialFailures"]),
-    )?;
-    database_stream.start_from_beginning = resolve_optional_mapping_node_to_bool(
-        database_stream_with_subs.start_from_beginning,
-        env.clone(),
-        &field_path(&[field, "startFromBeginning"]),
-    )?;
-    Ok(EventSourceConfiguration::DatabaseStream(database_stream))
+    Ok(EventSourceConfiguration::DatabaseStream(
+        DatabaseStreamSourceConfiguration {
+            batch_size: resolve_optional_mapping_node_to_int(
+                database_stream_with_subs.batch_size,
+                env.clone(),
+                &field_path(&[field, "batchSize"]),
+            )?,
+            db_stream_id: resolve_string_or_substitutions_to_string(
+                database_stream_with_subs.db_stream_id,
+                env.clone(),
+                &field_path(&[field, "dbStreamId"]),
+            )?,
+            partial_failures: resolve_optional_mapping_node_to_bool(
+                database_stream_with_subs.partial_failures,
+                env.clone(),
+                &field_path(&[field, "partialFailures"]),
+            )?,
+            start_from_beginning: resolve_optional_mapping_node_to_bool(
+                database_stream_with_subs.start_from_beginning,
+                env.clone(),
+                &field_path(&[field, "startFromBeginning"]),
+            )?,
+        },
+    ))
 }
 
 fn resolve_object_storage_events(
@@ -1147,7 +1143,7 @@ fn resolve_object_storage_event_type(
         "deleted" => Ok(ObjectStorageEventType::ObjectDeleted),
         "metadataUpdated" => Ok(ObjectStorageEventType::ObjectMetadataUpdated),
         _ => Err(ResolveError::ParseError(
-            format!("unsupported object storage event type: {}", event_type_str),
+            format!("unsupported object storage event type: {event_type_str}"),
             field.to_string(),
         )),
     }
@@ -1159,20 +1155,18 @@ fn resolve_api_auth(
     field: &str,
 ) -> Result<Option<CelerityApiAuth>, ResolveError> {
     match auth_with_subs_opt {
-        Some(auth_with_subs) => {
-            let mut auth = CelerityApiAuth::default();
-            auth.default_guard = resolve_optional_string_or_substitutions(
+        Some(auth_with_subs) => Ok(Some(CelerityApiAuth {
+            default_guard: resolve_optional_string_or_substitutions(
                 auth_with_subs.default_guard,
                 env.clone(),
                 &field_path(&[field, "defaultGuard"]),
-            )?;
-            auth.guards = resolve_api_auth_guards(
+            )?,
+            guards: resolve_api_auth_guards(
                 auth_with_subs.guards,
                 env.clone(),
                 &field_path(&[field, "guards"]),
-            )?;
-            Ok(Some(auth))
-        }
+            )?,
+        })),
         None => Ok(None),
     }
 }
@@ -1195,24 +1189,24 @@ fn resolve_api_auth_guard(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<CelerityApiAuthGuard, ResolveError> {
-    let mut guard = CelerityApiAuthGuard::default();
-    guard.guard_type = resolve_api_auth_guard_type(guard_with_subs.guard_type, env.clone(), field)?;
-    guard.issuer = resolve_optional_string_or_substitutions(
-        guard_with_subs.issuer,
-        env.clone(),
-        &field_path(&[field, "issuer"]),
-    )?;
-    guard.token_source = resolve_optional_api_auth_guard_value_source(
-        guard_with_subs.token_source,
-        env.clone(),
-        &field_path(&[field, "tokenSource"]),
-    )?;
-    guard.audience = resolve_optional_string_or_subs_list(
-        guard_with_subs.audience,
-        env.clone(),
-        &field_path(&[field, "audience"]),
-    )?;
-    Ok(guard)
+    Ok(CelerityApiAuthGuard {
+        guard_type: resolve_api_auth_guard_type(guard_with_subs.guard_type, env.clone(), field)?,
+        issuer: resolve_optional_string_or_substitutions(
+            guard_with_subs.issuer,
+            env.clone(),
+            &field_path(&[field, "issuer"]),
+        )?,
+        token_source: resolve_optional_api_auth_guard_value_source(
+            guard_with_subs.token_source,
+            env.clone(),
+            &field_path(&[field, "tokenSource"]),
+        )?,
+        audience: resolve_optional_string_or_subs_list(
+            guard_with_subs.audience,
+            env.clone(),
+            &field_path(&[field, "audience"]),
+        )?,
+    })
 }
 
 fn resolve_api_auth_guard_type(
@@ -1226,7 +1220,7 @@ fn resolve_api_auth_guard_type(
         "jwt" => Ok(CelerityApiAuthGuardType::Jwt),
         "custom" => Ok(CelerityApiAuthGuardType::Custom),
         _ => Err(ResolveError::ParseError(
-            format!("unsupported guard type: {}", guard_type_str),
+            format!("unsupported guard type: {guard_type_str}"),
             field.to_string(),
         )),
     }
@@ -1266,18 +1260,18 @@ fn resolve_api_auth_guard_value_source_config(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<ValueSourceConfiguration, ResolveError> {
-    let mut value_source_config = ValueSourceConfiguration::default();
-    value_source_config.protocol = resolve_api_protocol(
-        value_source_config_with_subs.protocol,
-        env.clone(),
-        &field_path(&[field, "protocol"]),
-    )?;
-    value_source_config.source = resolve_string_or_substitutions_to_string(
-        value_source_config_with_subs.source,
-        env.clone(),
-        &field_path(&[field, "source"]),
-    )?;
-    Ok(value_source_config)
+    Ok(ValueSourceConfiguration {
+        protocol: resolve_api_protocol(
+            value_source_config_with_subs.protocol,
+            env.clone(),
+            &field_path(&[field, "protocol"]),
+        )?,
+        source: resolve_string_or_substitutions_to_string(
+            value_source_config_with_subs.source,
+            env.clone(),
+            &field_path(&[field, "source"]),
+        )?,
+    })
 }
 
 fn resolve_api_domain_config(
@@ -1286,35 +1280,33 @@ fn resolve_api_domain_config(
     field: &str,
 ) -> Result<Option<CelerityApiDomain>, ResolveError> {
     match domain_config_with_subs_opt {
-        Some(domain_config_with_subs) => {
-            let mut domain_config = CelerityApiDomain::default();
-            domain_config.domain_name = resolve_string_or_substitutions_to_string(
+        Some(domain_config_with_subs) => Ok(Some(CelerityApiDomain {
+            domain_name: resolve_string_or_substitutions_to_string(
                 domain_config_with_subs.domain_name,
                 env.clone(),
                 &field_path(&[field, "domain_name"]),
-            )?;
-            domain_config.base_paths = resolve_celerity_api_base_paths(
+            )?,
+            base_paths: resolve_celerity_api_base_paths(
                 domain_config_with_subs.base_paths,
                 env.clone(),
                 &field_path(&[field, "basePaths"]),
-            )?;
-            domain_config.normalize_base_path = resolve_optional_mapping_node_to_bool(
+            )?,
+            normalize_base_path: resolve_optional_mapping_node_to_bool(
                 domain_config_with_subs.normalize_base_path,
                 env.clone(),
                 &field_path(&[field, "normalizeBasePath"]),
-            )?;
-            domain_config.certificate_id = resolve_string_or_substitutions_to_string(
+            )?,
+            certificate_id: resolve_string_or_substitutions_to_string(
                 domain_config_with_subs.certificate_id,
                 env.clone(),
                 &field_path(&[field, "certificateId"]),
-            )?;
-            domain_config.security_policy = resolve_security_policy(
+            )?,
+            security_policy: resolve_security_policy(
                 domain_config_with_subs.security_policy,
                 env.clone(),
                 &field_path(&[field, "securityPolicy"]),
-            )?;
-            Ok(Some(domain_config))
-        }
+            )?,
+        })),
         None => Ok(None),
     }
 }
@@ -1332,7 +1324,7 @@ fn resolve_security_policy(
                 "TLS_1_0" => Ok(Some(CelerityApiDomainSecurityPolicy::Tls1_0)),
                 "TLS_1_2" => Ok(Some(CelerityApiDomainSecurityPolicy::Tls1_2)),
                 _ => Err(ResolveError::ParseError(
-                    format!("unsupported security policy: {}", string_value),
+                    format!("unsupported security policy: {string_value}"),
                     field.to_string(),
                 )),
             }
@@ -1370,18 +1362,18 @@ fn resolve_api_base_path_config(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<CelerityApiBasePathConfiguration, ResolveError> {
-    let mut base_path_config = CelerityApiBasePathConfiguration::default();
-    base_path_config.protocol = resolve_api_protocol(
-        base_path_config_with_subs.protocol,
-        env.clone(),
-        &field_path(&[field, "protocol"]),
-    )?;
-    base_path_config.base_path = resolve_string_or_substitutions_to_string(
-        base_path_config_with_subs.base_path,
-        env.clone(),
-        &field_path(&[field, "basePath"]),
-    )?;
-    Ok(base_path_config)
+    Ok(CelerityApiBasePathConfiguration {
+        protocol: resolve_api_protocol(
+            base_path_config_with_subs.protocol,
+            env.clone(),
+            &field_path(&[field, "protocol"]),
+        )?,
+        base_path: resolve_string_or_substitutions_to_string(
+            base_path_config_with_subs.base_path,
+            env.clone(),
+            &field_path(&[field, "basePath"]),
+        )?,
+    })
 }
 
 fn resolve_api_cors(
@@ -1409,38 +1401,38 @@ fn resolve_api_cors_config(
     env: Box<dyn EnvVars>,
     field: &str,
 ) -> Result<CelerityApiCorsConfiguration, ResolveError> {
-    let mut cors_config = CelerityApiCorsConfiguration::default();
-    cors_config.allow_credentials = resolve_optional_mapping_node_to_bool(
-        cors_config_with_subs.allow_credentials,
-        env.clone(),
-        &field_path(&[field, "allowCredentials"]),
-    )?;
-    cors_config.allow_origins = resolve_optional_string_or_subs_list(
-        cors_config_with_subs.allow_origins,
-        env.clone(),
-        &field_path(&[field, "allowOrigins"]),
-    )?;
-    cors_config.allow_methods = resolve_optional_string_or_subs_list(
-        cors_config_with_subs.allow_methods,
-        env.clone(),
-        &field_path(&[field, "allowMethods"]),
-    )?;
-    cors_config.allow_headers = resolve_optional_string_or_subs_list(
-        cors_config_with_subs.allow_headers,
-        env.clone(),
-        &field_path(&[field, "allowHeaders"]),
-    )?;
-    cors_config.expose_headers = resolve_optional_string_or_subs_list(
-        cors_config_with_subs.expose_headers,
-        env.clone(),
-        &field_path(&[field, "exposeHeaders"]),
-    )?;
-    cors_config.max_age = resolve_optional_mapping_node_to_int(
-        cors_config_with_subs.max_age,
-        env.clone(),
-        &field_path(&[field, "maxAge"]),
-    )?;
-    Ok(cors_config)
+    Ok(CelerityApiCorsConfiguration {
+        allow_credentials: resolve_optional_mapping_node_to_bool(
+            cors_config_with_subs.allow_credentials,
+            env.clone(),
+            &field_path(&[field, "allowCredentials"]),
+        )?,
+        allow_origins: resolve_optional_string_or_subs_list(
+            cors_config_with_subs.allow_origins,
+            env.clone(),
+            &field_path(&[field, "allowOrigins"]),
+        )?,
+        allow_methods: resolve_optional_string_or_subs_list(
+            cors_config_with_subs.allow_methods,
+            env.clone(),
+            &field_path(&[field, "allowMethods"]),
+        )?,
+        allow_headers: resolve_optional_string_or_subs_list(
+            cors_config_with_subs.allow_headers,
+            env.clone(),
+            &field_path(&[field, "allowHeaders"]),
+        )?,
+        expose_headers: resolve_optional_string_or_subs_list(
+            cors_config_with_subs.expose_headers,
+            env.clone(),
+            &field_path(&[field, "exposeHeaders"]),
+        )?,
+        max_age: resolve_optional_mapping_node_to_int(
+            cors_config_with_subs.max_age,
+            env.clone(),
+            &field_path(&[field, "maxAge"]),
+        )?,
+    })
 }
 
 fn resolve_api_protocols(
@@ -1466,7 +1458,7 @@ fn resolve_api_protocol(
                 "http" => Ok(CelerityApiProtocol::Http),
                 "websocket" => Ok(CelerityApiProtocol::WebSocket),
                 _ => Err(ResolveError::ParseError(
-                    format!("unsupported protocol: {}", protocol_str),
+                    format!("unsupported protocol: {protocol_str}"),
                     field.to_string(),
                 )),
             }
@@ -1478,7 +1470,7 @@ fn resolve_api_protocol(
                 "http" => Ok(CelerityApiProtocol::Http),
                 "websocket" => Ok(CelerityApiProtocol::WebSocket),
                 _ => Err(ResolveError::ParseError(
-                    format!("unsupported protocol: {}", protocol_str),
+                    format!("unsupported protocol: {protocol_str}"),
                     field.to_string(),
                 )),
             }
@@ -1491,12 +1483,10 @@ fn resolve_api_protocol(
                     &field_path(&[field, "websocketConfig"]),
                 )?,
             )),
-            None => {
-                return Err(ResolveError::ParseError(
-                    "missing websocketConfig field".to_string(),
-                    field.to_string(),
-                ));
-            }
+            None => Err(ResolveError::ParseError(
+                "missing websocketConfig field".to_string(),
+                field.to_string(),
+            )),
         },
         _ => Err(ResolveError::ParseError(
             "protocol must be a string or WebSocket configuration object".to_string(),
@@ -1550,7 +1540,7 @@ fn resolve_websocket_auth_strategy(
                 "authMessage" => Ok(WebSocketAuthStrategy::AuthMessage),
                 "connect" => Ok(WebSocketAuthStrategy::Connect),
                 _ => Err(ResolveError::ParseError(
-                    format!("unsupported auth strategy: {}", auth_strategy_str),
+                    format!("unsupported auth strategy: {auth_strategy_str}"),
                     field.to_string(),
                 )),
             }
@@ -1565,7 +1555,7 @@ fn resolve_websocket_auth_strategy(
                 "authMessage" => Ok(WebSocketAuthStrategy::AuthMessage),
                 "connect" => Ok(WebSocketAuthStrategy::Connect),
                 _ => Err(ResolveError::ParseError(
-                    format!("unsupported auth strategy: {}", auth_strategy_str),
+                    format!("unsupported auth strategy: {auth_strategy_str}"),
                     field.to_string(),
                 )),
             }
@@ -1582,16 +1572,15 @@ fn resolve_resource_metadata(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<BlueprintResourceMetadata, ResolveError> {
-    let mut resolved_metadata = BlueprintResourceMetadata::default();
-    resolved_metadata.display_name = resolve_string_or_substitutions_to_string(
-        metadata.display_name,
-        env.clone(),
-        &resource_metadata_field_path(resource_name, &["displayName"]),
-    )?;
-    resolved_metadata.annotations =
-        resolve_annotations(metadata.annotations, env.clone(), resource_name)?;
-    resolved_metadata.labels = metadata.labels;
-    Ok(resolved_metadata)
+    Ok(BlueprintResourceMetadata {
+        display_name: resolve_string_or_substitutions_to_string(
+            metadata.display_name,
+            env.clone(),
+            &resource_metadata_field_path(resource_name, &["displayName"]),
+        )?,
+        annotations: resolve_annotations(metadata.annotations, env.clone(), resource_name)?,
+        labels: metadata.labels,
+    })
 }
 
 fn resolve_annotations(
@@ -1931,16 +1920,16 @@ where
 
 fn resource_spec_field_path(resource_name: &str, keys: &[&str]) -> String {
     if keys.is_empty() {
-        format!("resources.{}.spec", resource_name)
+        format!("resources.{resource_name}.spec")
     } else {
-        format!("resources.{}.spec.{}", resource_name, keys.join("."))
+        format!("resources.{resource_name}.spec.{}", keys.join("."))
     }
 }
 
 fn resource_metadata_field_path(resource_name: &str, keys: &[&str]) -> String {
-    format!("resources.{}.metadata.{}", resource_name, keys.join("."))
+    format!("resources.{resource_name}.metadata.{}", keys.join("."))
 }
 
 fn field_path(keys: &[&str]) -> String {
-    format!("{}", keys.join("."))
+    keys.join(".").to_string()
 }

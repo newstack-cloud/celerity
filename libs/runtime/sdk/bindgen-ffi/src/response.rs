@@ -42,9 +42,11 @@ impl IntoResponse for ResponseData {
     }
 }
 
+/// # Safety
+/// The caller must ensure that the returned pointer is properly managed and eventually deallocated using response_destroy.
 pub unsafe fn response_create(
     status: u16,
-    headers: *mut HttpHeaders,
+    _headers: *mut HttpHeaders,
     body: &CStr,
 ) -> *mut Response {
     let response = Box::new(Response {
@@ -56,18 +58,24 @@ pub unsafe fn response_create(
     Box::into_raw(response)
 }
 
+/// # Safety
+/// The caller must ensure that `response` is a valid pointer to a Response.
 pub unsafe fn response_set_status(response: *mut Response, status: u16) {
     if !response.is_null() {
         (*response).status = status;
     };
 }
 
-pub unsafe fn response_set_headers(response: *mut Response, headers: *mut HttpHeaders) {
+/// # Safety
+/// The caller must ensure that `response` is a valid pointer to a Response, and `_headers` is a valid pointer to HttpHeaders or null.
+pub unsafe fn response_set_headers(response: *mut Response, _headers: *mut HttpHeaders) {
     if !response.is_null() {
         (*response).headers = HttpHeaders {};
     };
 }
 
+/// # Safety
+/// The caller must ensure that `response` is a valid pointer to a Response, and `body` is a valid CStr.
 pub unsafe fn response_send(response: *mut Response, body: &CStr) {
     if !response.is_null() {
         (*response).body = Some(body.to_string_lossy().to_string());
@@ -75,6 +83,8 @@ pub unsafe fn response_send(response: *mut Response, body: &CStr) {
     };
 }
 
+/// # Safety
+/// The caller must ensure that `response` is a valid pointer to a Response and has not already been deallocated.
 pub unsafe fn response_destroy(response: *mut Response) {
     if !response.is_null() {
         drop(Box::from_raw(response));

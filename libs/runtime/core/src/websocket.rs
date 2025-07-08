@@ -99,7 +99,7 @@ pub(crate) async fn handler(
     Extension(request_id): Extension<RequestId>,
     State(state): State<WebSocketAppState>,
 ) -> impl IntoResponse {
-    let user_agent = match user_agent_header {
+    let _ = match user_agent_header {
         Some(header) => header.to_string(),
         None => "Unknown User Agent".to_string(),
     };
@@ -111,8 +111,8 @@ pub(crate) async fn handler(
 }
 
 async fn handle_socket(
-    mut socket: WebSocket,
-    client_ip: SecureClientIp,
+    socket: WebSocket,
+    _: SecureClientIp,
     connection_id: String,
     state: WebSocketAppState,
 ) {
@@ -335,10 +335,10 @@ fn resolve_route(
     }
 }
 
-fn resolve_binary_route<'a>(
-    msg_bytes: &'a Vec<u8>,
+fn resolve_binary_route(
+    msg_bytes: &[u8],
     connection_id: String,
-) -> ControlFlow<(), Option<(String, &'a [u8])>> {
+) -> ControlFlow<(), Option<(String, &[u8])>> {
     let route_length = msg_bytes[0];
     if route_length as usize > msg_bytes.len() - 1 {
         error!(

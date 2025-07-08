@@ -98,24 +98,24 @@ pub enum BlueprintParseError {
 impl fmt::Display for BlueprintParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            BlueprintParseError::IoError(error) => write!(f, "io error: {}", error),
-            BlueprintParseError::JsonError(error) => write!(f, "parsing json failed: {}", error),
+            BlueprintParseError::IoError(error) => write!(f, "io error: {error}"),
+            BlueprintParseError::JsonError(error) => write!(f, "parsing json failed: {error}"),
             BlueprintParseError::YamlScanError(error) => {
-                write!(f, "parsing yaml failed: {}", error)
+                write!(f, "parsing yaml failed: {error}")
             }
             BlueprintParseError::YamlFormatError(error) => {
-                write!(f, "parsing yaml failed: {}", error)
+                write!(f, "parsing yaml failed: {error}")
             }
-            BlueprintParseError::ValidationError(error) => write!(f, "validation error: {}", error),
-            BlueprintParseError::ResolveError(error) => write!(f, "resolve error: {}", error),
+            BlueprintParseError::ValidationError(error) => write!(f, "validation error: {error}"),
+            BlueprintParseError::ResolveError(error) => write!(f, "resolve error: {error}"),
             BlueprintParseError::UnsupportedResourceType(resource_type) => {
-                write!(f, "resource type not supported: {}", resource_type)
+                write!(f, "resource type not supported: {resource_type}")
             }
             BlueprintParseError::UnsupportedWorkflowStateType(state_type) => {
-                write!(f, "workflow state type not supported: {}", state_type)
+                write!(f, "workflow state type not supported: {state_type}")
             }
             BlueprintParseError::SubstitutionParseError(error) => {
-                write!(f, "substitution parse error: {}", error)
+                write!(f, "substitution parse error: {error}")
             }
         }
     }

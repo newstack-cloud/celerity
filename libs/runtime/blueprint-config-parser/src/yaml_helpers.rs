@@ -35,18 +35,17 @@ pub fn validate_mapping_node(
                 ParseError,
             >(value_str)?))
         }
-        yaml_rust2::Yaml::Boolean(value_bool) => Ok(MappingNode::Scalar(
-            BlueprintScalarValue::Bool(value_bool.clone()),
-        )),
-        yaml_rust2::Yaml::Integer(value_int) => Ok(MappingNode::Scalar(BlueprintScalarValue::Int(
-            value_int.clone(),
-        ))),
+        yaml_rust2::Yaml::Boolean(value_bool) => {
+            Ok(MappingNode::Scalar(BlueprintScalarValue::Bool(*value_bool)))
+        }
+        yaml_rust2::Yaml::Integer(value_int) => {
+            Ok(MappingNode::Scalar(BlueprintScalarValue::Int(*value_int)))
+        }
         yaml_rust2::Yaml::Real(value_float) => Ok(MappingNode::Scalar(
             BlueprintScalarValue::Float(value_float.parse::<f64>()?),
         )),
         _ => Err(BlueprintParseError::YamlFormatError(format!(
-            "Unsupported value type provided for mapping node in {}",
-            context,
+            "Unsupported value type provided for mapping node in {context}",
         ))),
     }
 }
@@ -65,8 +64,7 @@ pub fn extract_scalar_value(
             Ok(Some(BlueprintScalarValue::Str(value_str.clone())))
         }
         _ => Err(BlueprintParseError::YamlFormatError(format!(
-            "expected a scalar value for {}, found {:?}",
-            field, value
+            "expected a scalar value for {field}, found {value:?}"
         ))),
     }
 }
@@ -86,8 +84,7 @@ pub fn validate_single_substitution(
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
             "expected a string consisting of a single ${{..}} substitution \
-            that can resolve to a value of type {}, found {:?}",
-            target_type, value
+            that can resolve to a value of type {target_type}, found {value:?}"
         )))
     }
 }
@@ -102,8 +99,7 @@ pub fn validate_array_of_strings(
             strings.push(parse_substitutions::<ParseError>(value_str)?);
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for {}, found {:?}",
-                field, value
+                "expected a string for {field}, found {value:?}"
             )))?
         }
     }

@@ -15,7 +15,7 @@ use axum_client_ip::SecureClientIpSource;
 use celerity_blueprint_config_parser::{blueprint::BlueprintConfig, parse::BlueprintParseError};
 use celerity_helpers::{
     env::EnvVars,
-    runtime_types::{HealthCheckResponse, RuntimeCallMode, RuntimePlatform},
+    runtime_types::{HealthCheckResponse, RuntimeCallMode},
 };
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::trace::TraceLayer;
@@ -88,6 +88,8 @@ impl Application {
 
         #[cfg(feature = "aws_consumers")]
         {
+            use celerity_helpers::runtime_types::RuntimePlatform;
+
             if self.runtime_config.platform == RuntimePlatform::AWS {
                 self.setup_consumers_for_aws(&mut app_config)?;
             }
@@ -95,6 +97,8 @@ impl Application {
 
         #[cfg(feature = "azure_consumers")]
         {
+            use celerity_helpers::runtime_types::RuntimePlatform;
+
             if self.runtime_config.platform == RuntimePlatform::Azure {
                 self.setup_consumers_for_azure(&mut app_config)?;
             }
@@ -102,6 +106,8 @@ impl Application {
 
         #[cfg(feature = "gcloud_consumers")]
         {
+            use celerity_helpers::runtime_types::RuntimePlatform;
+
             if self.runtime_config.platform == RuntimePlatform::GCP {
                 self.setup_consumers_for_gcloud(&mut app_config)?;
             }
@@ -109,6 +115,8 @@ impl Application {
 
         #[cfg(feature = "celerity_one_consumers")]
         {
+            use celerity_helpers::runtime_types::RuntimePlatform;
+
             if self.runtime_config.platform == RuntimePlatform::Local {
                 self.setup_consumers_for_celerity_one(&mut app_config)?;
             }
@@ -123,7 +131,7 @@ impl Application {
         app_config: &mut AppConfig,
     ) -> Result<(), ApplicationStartError> {
         if let Some(consumers_config) = &mut app_config.consumers {
-            for consumer in consumers_config.consumers.iter() {}
+            for _consumer in consumers_config.consumers.iter() {}
         }
         Ok(())
     }
@@ -131,7 +139,7 @@ impl Application {
     #[cfg(feature = "azure_consumers")]
     fn setup_consumers_for_azure(
         &mut self,
-        app_config: &mut AppConfig,
+        _: &mut AppConfig,
     ) -> Result<(), ApplicationStartError> {
         Ok(())
     }
@@ -139,7 +147,7 @@ impl Application {
     #[cfg(feature = "gcloud_consumers")]
     fn setup_consumers_for_gcloud(
         &mut self,
-        app_config: &mut AppConfig,
+        _: &mut AppConfig,
     ) -> Result<(), ApplicationStartError> {
         Ok(())
     }
@@ -147,7 +155,7 @@ impl Application {
     #[cfg(feature = "celerity_one_consumers")]
     fn setup_consumers_for_celerity_one(
         &mut self,
-        app_config: &mut AppConfig,
+        _: &mut AppConfig,
     ) -> Result<(), ApplicationStartError> {
         Ok(())
     }

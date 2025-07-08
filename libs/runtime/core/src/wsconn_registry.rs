@@ -53,6 +53,7 @@ impl WebSocketConnRegistry {
     /// to messages broadcast by other nodes in the cluster over a network protocol.
     /// The caller is responsible for closing the channel on shutdown as it is expected
     /// to hold the transmit end of the channel.
+    #[allow(dead_code)]
     pub fn listen(self: Arc<Self>, mut listener: Receiver<WebSocketMessage>) {
         tokio::spawn(async move {
             info!("listening for messages from other nodes in the cluster");
@@ -94,6 +95,7 @@ impl WebSocketConnRegistry {
     }
 
     /// Returns an iterable vector of connections in the registry.
+    #[allow(dead_code)]
     pub fn get_connections(&self) -> Vec<(String, Arc<Mutex<WebSocket>>)> {
         self.connections
             .read()
@@ -304,7 +306,7 @@ mod tests {
 
         let node2_msg_received = match socket2.next().await.unwrap().unwrap() {
             tungstenite::Message::Text(msg) => msg,
-            other => panic!("Unexpected message but got {:?}", other),
+            other => panic!("Unexpected message but got {other:?}"),
         };
 
         assert_eq!(node2_msg_received, "Hello, forward this to Node 2!");
@@ -318,7 +320,7 @@ mod tests {
 
         let node1_msg_received = match socket1.next().await.unwrap().unwrap() {
             tungstenite::Message::Text(msg) => msg,
-            other => panic!("Unexpected message but got {:?}", other),
+            other => panic!("Unexpected message but got {other:?}"),
         };
 
         assert_eq!(node1_msg_received, "Hello, forward this to Node 1!");
@@ -363,7 +365,7 @@ mod tests {
 
         let socket2_msg_received = match socket2.next().await.unwrap().unwrap() {
             tungstenite::Message::Text(msg) => msg,
-            other => panic!("Unexpected message but got {:?}", other),
+            other => panic!("Unexpected message but got {other:?}"),
         };
 
         assert_eq!(socket2_msg_received, "Hello, forward this to Connection 2!");

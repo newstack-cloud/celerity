@@ -1,10 +1,7 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 use axum::{body::Body, response::IntoResponse};
-use celerity_blueprint_config_parser::blueprint::{
-    CelerityWorkflowDecisionRule, CelerityWorkflowSpec, CelerityWorkflowStateType,
-    ResolvedMappingNode,
-};
+use celerity_blueprint_config_parser::blueprint::CelerityWorkflowSpec;
 use celerity_helpers::{runtime_types::RuntimePlatform, time::Clock};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -90,7 +87,7 @@ impl IntoResponse for Response {
 /// clients to stream events from a workflow execution without polling.
 #[derive(Debug, Clone, Serialize)]
 pub enum WorkflowExecutionEvent {
-    StateTransition(StateTransitionEvent),
+    StateTransition(Box<StateTransitionEvent>),
     StateFailure(StateFailureEvent),
     StateRetry(StateRetryEvent),
     ExecutionComplete(ExecutionCompleteEvent),

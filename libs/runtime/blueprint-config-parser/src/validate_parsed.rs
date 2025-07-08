@@ -29,8 +29,7 @@ fn validate_blueprint_var(
 ) -> Result<(), BlueprintParseError> {
     if var_definition.var_type.is_empty() {
         return Err(BlueprintParseError::ValidationError(format!(
-            "type must be provided in \\\"{}\\\" variable definition",
-            var_name,
+            "type must be provided in \\\"{var_name}\\\" variable definition",
         )));
     }
     Ok(())

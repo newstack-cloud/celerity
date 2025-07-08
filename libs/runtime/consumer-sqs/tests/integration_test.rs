@@ -60,7 +60,7 @@ async fn test_receive_messages_and_fire_message_handler() {
                 let _res = client
                     .send_message()
                     .queue_url(consumer_config.sqs_queue_url.clone())
-                    .message_body(format!("individual message {}", n))
+                    .message_body(format!("individual message {n}"))
                     .message_group_id("TestMessageGroup")
                     .send()
                     .await;
@@ -91,16 +91,16 @@ async fn test_receive_messages_and_fire_message_handler() {
         // the last 100 were sent individually.
         let expected_body = if i < 200 {
             format!(
-                "batch {} message {}",
-                if i == 0 {
+                "batch {batch} message {n}",
+                batch = if i == 0 {
                     1
                 } else {
                     (((i / 10) as f32).floor().trunc() as i32) + 1
                 },
-                (i % 10) + 1
+                n = (i % 10) + 1
             )
         } else {
-            format!("individual message {}", (i - 200) + 1)
+            format!("individual message {n}", n = (i - 200) + 1)
         };
         assert_eq!(message.body().unwrap(), expected_body);
     }
@@ -112,8 +112,8 @@ fn create_message_batch(batch: i32) -> Option<Vec<SendMessageBatchRequestEntry>>
         entries.push(
             SendMessageBatchRequestEntry::builder()
                 // Distinct IDs must be provided for batch entries.
-                .id(format!("batch-{}-message-{}", batch, n))
-                .message_body(format!("batch {} message {}", batch, n))
+                .id(format!("batch-{batch}-message-{n}"))
+                .message_body(format!("batch {batch} message {n}"))
                 .message_group_id("TestMessageGroup")
                 .build()
                 .expect("failed to build batch entry"),

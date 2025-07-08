@@ -49,8 +49,7 @@ pub fn validate_celerity_workflow_spec(
                 }
                 _ => {
                     return Err(BlueprintParseError::YamlFormatError(format!(
-                        "Unsupported key for workflow spec: {}",
-                        key_str
+                        "Unsupported key for workflow spec: {key_str}"
                     )))
                 }
             }
@@ -135,8 +134,7 @@ fn validate_celerity_workflow_state(
                     }
                     _ => {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Unsupported key provided in workflow state \"{}\": {}",
-                            state_name, key_str
+                            "Unsupported key provided in workflow state \"{state_name}\": {key_str}"
                         )))
                     }
                 }
@@ -145,8 +143,7 @@ fn validate_celerity_workflow_state(
 
         if is_string_with_substitutions_empty(&state.state_type) {
             return Err(BlueprintParseError::YamlFormatError(format!(
-                "State type not provided for state \"{}\"",
-                state_name
+                "State type not provided for state \"{state_name}\""
             )));
         }
 
@@ -166,8 +163,7 @@ fn validate_state_type_field(
         parse_substitutions::<ParseError>(type_str).map_err(BlueprintParseError::from)
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "State type provided for state \"{}\" must be a string",
-            state_name
+            "State type provided for state \"{state_name}\" must be a string"
         )))
     }
 }
@@ -180,8 +176,7 @@ fn validate_state_description_field(
         Ok(Some(parse_substitutions::<ParseError>(description_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Description provided for state \"{}\" must be a string",
-            state_name
+            "Description provided for state \"{state_name}\" must be a string"
         )))
     }
 }
@@ -194,8 +189,7 @@ fn validate_state_input_path_field(
         Ok(Some(parse_substitutions::<ParseError>(input_path_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Input path provided for state \"{}\" must be a string",
-            state_name
+            "Input path provided for state \"{state_name}\" must be a string"
         )))
     }
 }
@@ -208,8 +202,7 @@ fn validate_state_result_path_field(
         Ok(Some(parse_substitutions::<ParseError>(result_path_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Result path provided for state \"{}\" must be a string",
-            state_name
+            "Result path provided for state \"{state_name}\" must be a string"
         )))
     }
 }
@@ -222,8 +215,7 @@ fn validate_state_output_path_field(
         Ok(Some(parse_substitutions::<ParseError>(output_path_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Output path provided for state \"{}\" must be a string",
-            state_name
+            "Output path provided for state \"{state_name}\" must be a string"
         )))
     }
 }
@@ -239,8 +231,7 @@ fn validate_state_payload_template_field(
         )?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Payload template provided for state \"{}\" must be a map",
-            state_name
+            "Payload template provided for state \"{state_name}\" must be a map"
         )))
     }
 }
@@ -253,8 +244,7 @@ fn validate_state_next_field(
         Ok(Some(parse_substitutions::<ParseError>(next_str)?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Next state provided for state \"{}\" must be a string",
-            state_name
+            "Next state provided for state \"{state_name}\" must be a string"
         )))
     }
 }
@@ -265,7 +255,7 @@ fn validate_state_end_field(
 ) -> Result<Option<MappingNode>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Boolean(end_bool) = value {
         Ok(Some(MappingNode::Scalar(BlueprintScalarValue::Bool(
-            end_bool.clone(),
+            *end_bool,
         ))))
     } else if let yaml_rust2::Yaml::String(end_str) = value {
         Ok(Some(MappingNode::SubstitutionStr(
@@ -273,8 +263,7 @@ fn validate_state_end_field(
         )))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "End value provided for state \"{}\" must be a boolean or ${{..}} substitution",
-            state_name
+            "End value provided for state \"{state_name}\" must be a boolean or ${{..}} substitution"
         )))
     }
 }
@@ -289,8 +278,7 @@ fn validate_state_decisions_field(
         )?))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Decisions provided for state \"{}\" must be an array",
-            state_name
+            "Decisions provided for state \"{state_name}\" must be an array"
         )))
     }
 }
@@ -301,7 +289,7 @@ fn validate_state_timeout_field(
 ) -> Result<Option<MappingNode>, BlueprintParseError> {
     if let yaml_rust2::Yaml::Integer(timeout_int) = value {
         Ok(Some(MappingNode::Scalar(BlueprintScalarValue::Int(
-            timeout_int.clone(),
+            *timeout_int,
         ))))
     } else if let yaml_rust2::Yaml::String(timeout_str) = value {
         Ok(Some(MappingNode::SubstitutionStr(
@@ -309,8 +297,7 @@ fn validate_state_timeout_field(
         )))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Timeout value provided for state \"{}\" must be an integer or ${{..}} substitution",
-            state_name
+            "Timeout value provided for state \"{state_name}\" must be an integer or ${{..}} substitution"
         )))
     }
 }
@@ -352,8 +339,7 @@ fn validate_state_wait_config_field(
         Ok(Some(wait_config))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Wait config provided for state \"{}\" must be a map",
-            state_name
+            "Wait config provided for state \"{state_name}\" must be a map"
         )))
     }
 }
@@ -394,8 +380,7 @@ fn validate_state_failure_config_field(
         Ok(Some(failure_config))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Failure config provided for state \"{}\" must be a map",
-            state_name
+            "Failure config provided for state \"{state_name}\" must be a map"
         )))
     }
 }
@@ -415,8 +400,7 @@ fn validate_state_parallel_branches_field(
         Ok(Some(parallel_branches))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Parallel branches provided for state \"{}\" must be an array",
-            state_name
+            "Parallel branches provided for state \"{state_name}\" must be an array"
         )))
     }
 }
@@ -434,8 +418,7 @@ fn validate_workflow_state_parallel_branch(
                         parallel_branch.start_at = parse_substitutions::<ParseError>(start_at_str)?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Start at state value provided for parallel branch must be a string in state \"{}\"",
-                            state_name,
+                            "Start at state value provided for parallel branch must be a string in state \"{state_name}\""
                         )));
                     }
                 }
@@ -444,8 +427,7 @@ fn validate_workflow_state_parallel_branch(
                         parallel_branch.states = validate_celerity_workflow_states(states_map)?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "States provided for parallel branch in state \"{}\" must be a map",
-                            state_name,
+                            "States provided for parallel branch in state \"{state_name}\" must be a map"
                         )));
                     }
                 }
@@ -471,8 +453,7 @@ fn validate_state_retry_field(
         Ok(Some(retry_config_list))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Retry field for state \"{}\" must be an array",
-            state_name
+            "Retry field for state \"{state_name}\" must be an array"
         )))
     }
 }
@@ -491,15 +472,14 @@ fn validate_retry_config(
                             validate_array_of_strings(match_errors_yaml_array, "matchErrors")?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Match errors field for retry config in state \"{}\" must be an array",
-                            state_name,
+                            "Match errors field for retry config in state \"{state_name}\" must be an array"
                         )));
                     }
                 }
                 "interval" => {
                     if let yaml_rust2::Yaml::Integer(interval_seconds_int) = value {
                         retry_config.interval = Some(MappingNode::Scalar(
-                            BlueprintScalarValue::Int(interval_seconds_int.clone()),
+                            BlueprintScalarValue::Int(*interval_seconds_int),
                         ));
                     } else if let yaml_rust2::Yaml::String(interval_str) = value {
                         retry_config.interval = Some(MappingNode::SubstitutionStr(
@@ -507,15 +487,14 @@ fn validate_retry_config(
                         ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Interval field for retry config in state \"{}\" must be an integer or ${{..}} substitution",
-                            state_name,
+                            "Interval field for retry config in state \"{state_name}\" must be an integer or ${{..}} substitution"
                         )));
                     }
                 }
                 "maxAttempts" => {
                     if let yaml_rust2::Yaml::Integer(max_attempts_int) = value {
                         retry_config.max_attempts = Some(MappingNode::Scalar(
-                            BlueprintScalarValue::Int(max_attempts_int.clone()),
+                            BlueprintScalarValue::Int(*max_attempts_int),
                         ));
                     } else if let yaml_rust2::Yaml::String(max_attempts_str) = value {
                         retry_config.max_attempts = Some(MappingNode::SubstitutionStr(
@@ -523,15 +502,14 @@ fn validate_retry_config(
                         ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Max attempts field for retry config in state \"{}\" must be an integer or ${{..}} substitution",
-                            state_name,
+                            "Max attempts field for retry config in state \"{state_name}\" must be an integer or ${{..}} substitution"
                         )));
                     }
                 }
                 "maxDelay" => {
                     if let yaml_rust2::Yaml::Integer(max_delay_seconds_int) = value {
                         retry_config.max_delay = Some(MappingNode::Scalar(
-                            BlueprintScalarValue::Int(max_delay_seconds_int.clone()),
+                            BlueprintScalarValue::Int(*max_delay_seconds_int),
                         ));
                     } else if let yaml_rust2::Yaml::String(max_delay_str) = value {
                         retry_config.max_delay = Some(MappingNode::SubstitutionStr(
@@ -539,15 +517,14 @@ fn validate_retry_config(
                         ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Max delay field for retry config in state \"{}\" must be an integer or ${{..}} substitution",
-                            state_name,
+                            "Max delay field for retry config in state \"{state_name}\" must be an integer or ${{..}} substitution"
                         )));
                     }
                 }
                 "jitter" => {
                     if let yaml_rust2::Yaml::Boolean(jitter_bool) = value {
                         retry_config.jitter = Some(MappingNode::Scalar(
-                            BlueprintScalarValue::Bool(jitter_bool.clone()),
+                            BlueprintScalarValue::Bool(*jitter_bool),
                         ));
                     } else if let yaml_rust2::Yaml::String(jitter_str) = value {
                         retry_config.jitter = Some(MappingNode::SubstitutionStr(
@@ -555,8 +532,7 @@ fn validate_retry_config(
                         ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Jitter field for retry config in state \"{}\" must be a boolean or ${{..}} substitution",
-                            state_name,
+                            "Jitter field for retry config in state \"{state_name}\" must be a boolean or ${{..}} substitution"
                         )));
                     }
                 }
@@ -571,8 +547,7 @@ fn validate_retry_config(
                         ));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Backoff rate field for retry config in state \"{}\" must be a float or ${{..}} substitution",
-                            state_name,
+                            "Backoff rate field for retry config in state \"{state_name}\" must be a float or ${{..}} substitution"
                         )));
                     }
                 }
@@ -598,8 +573,7 @@ fn validate_state_catch_field(
         Ok(Some(catch_config_list))
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "Catch field for state \"{}\" must be an array",
-            state_name
+            "Catch field for state \"{state_name}\" must be an array"
         )))
     }
 }
@@ -618,8 +592,7 @@ fn validate_catch_config(
                             validate_array_of_strings(match_errors_yaml_array, "matchErrors")?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Match errors field for catch config in state \"{}\" must be an array",
-                            state_name,
+                            "Match errors field for catch config in state \"{state_name}\" must be an array"
                         )));
                     }
                 }
@@ -628,8 +601,7 @@ fn validate_catch_config(
                         catch_config.next = parse_substitutions::<ParseError>(next_str)?;
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Next field for catch config in state \"{}\" must be a string",
-                            state_name,
+                            "Next field for catch config in state \"{state_name}\" must be a string"
                         )));
                     }
                 }
@@ -639,8 +611,7 @@ fn validate_catch_config(
                             Some(parse_substitutions::<ParseError>(result_path_str)?);
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(format!(
-                            "Result path field for catch config in state \"{}\" must be a string",
-                            state_name,
+                            "Result path field for catch config in state \"{state_name}\" must be a string"
                         )));
                     }
                 }
@@ -656,7 +627,7 @@ fn validate_payload_template(
     state: &str,
 ) -> Result<HashMap<String, MappingNode>, BlueprintParseError> {
     let mut payload_template = HashMap::<String, MappingNode>::new();
-    let context = format!("payload template for state \"{}\"", state);
+    let context = format!("payload template for state \"{state}\"");
     let context_ref = context.as_str();
     for (key, value) in payload_template_map.iter() {
         if let yaml_rust2::Yaml::String(key_str) = key {

@@ -60,31 +60,24 @@ impl fmt::Display for PayloadTemplateEngineError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             PayloadTemplateEngineError::JsonPathError(path) => {
-                write!(
-                    f,
-                    "payload template engine error: JSON path error: {}",
-                    path
-                )
+                write!(f, "payload template engine error: JSON path error: {path}")
             }
             PayloadTemplateEngineError::FunctionNotFound(func) => {
                 write!(
                     f,
-                    "payload template engine error: function \"{}\" not found",
-                    func
+                    "payload template engine error: function \"{func}\" not found"
                 )
             }
             PayloadTemplateEngineError::FunctionCallFailed(err) => {
                 write!(
                     f,
-                    "payload template engine error: function call failed: {}",
-                    err
+                    "payload template engine error: function call failed: {err}"
                 )
             }
             PayloadTemplateEngineError::ParseFunctionCallError(err) => {
                 write!(
                     f,
-                    "payload template engine error: failed to parse function call: {}",
-                    err
+                    "payload template engine error: failed to parse function call: {err}"
                 )
             }
         }
@@ -106,6 +99,7 @@ impl From<FunctionCallError> for PayloadTemplateEngineError {
 /// A payload template rendering engine that implements
 /// payload templates as defined in the v2026-02-28 `celerity/workflow`
 /// resource type spec.
+#[derive(Default)]
 pub struct EngineV1 {}
 
 impl EngineV1 {
@@ -131,12 +125,12 @@ impl EngineV1 {
                     Ok(Value::String(string.clone()))
                 }
             }
-            BlueprintScalarValue::Int(int) => Ok(Value::Number(Number::from(int.clone()))),
+            BlueprintScalarValue::Int(int) => Ok(Value::Number(Number::from(*int))),
             BlueprintScalarValue::Float(float) => Ok(Value::Number(
-                Number::from_f64(float.clone())
+                Number::from_f64(*float)
                     .expect("floating point number in payload template must be valid"),
             )),
-            BlueprintScalarValue::Bool(boolean) => Ok(Value::Bool(boolean.clone())),
+            BlueprintScalarValue::Bool(boolean) => Ok(Value::Bool(*boolean)),
         }
     }
 
@@ -222,19 +216,19 @@ impl EngineV1 {
                     computed_args.push(Value::String(value.clone()))
                 }
                 TemplateFunctionExpr::Int(value) => {
-                    computed_args.push(Value::Number(Number::from(value.clone())))
+                    computed_args.push(Value::Number(Number::from(*value)))
                 }
                 TemplateFunctionExpr::Float(value) => computed_args
-                    .push(Value::Number(Number::from_f64(value.clone()).expect(
+                    .push(Value::Number(Number::from_f64(*value).expect(
                         "float parsed by template function parser must be valid",
                     ))),
-                TemplateFunctionExpr::Bool(value) => computed_args.push(Value::Bool(value.clone())),
+                TemplateFunctionExpr::Bool(value) => computed_args.push(Value::Bool(*value)),
                 TemplateFunctionExpr::Null => computed_args.push(Value::Null),
                 TemplateFunctionExpr::JsonPath(path) => {
                     computed_args.push(self.extract_json_path_value(path, input))
                 }
                 TemplateFunctionExpr::FuncCall(func_call) => {
-                    let computed = self.compute_func_call(context, &func_call, input)?;
+                    let computed = self.compute_func_call(context, func_call, input)?;
                     computed_args.push(computed);
                 }
             }
@@ -252,8 +246,7 @@ impl EngineV1 {
             Ok(path) => path,
             Err(err) => {
                 return Err(PayloadTemplateEngineError::JsonPathError(format!(
-                    "invalid json path found for key \"{}\": {}",
-                    key, err,
+                    "invalid json path found for key \"{key}\": {err}",
                 )))
             }
         };
@@ -312,8 +305,7 @@ impl Engine for EngineV1 {
             Ok(path) => path,
             Err(err) => {
                 return Err(PayloadTemplateEngineError::JsonPathError(format!(
-                    "invalid json path found for inject path: {}",
-                    err,
+                    "invalid json path found for inject path: {err}",
                 )))
             }
         };
@@ -322,8 +314,7 @@ impl Engine for EngineV1 {
         let injected = jsonpath_inject_root(&path, &mut cloned_input, inject_value);
         if !injected {
             return Err(PayloadTemplateEngineError::JsonPathError(format!(
-                "failed to inject value at path: {}",
-                inject_path,
+                "failed to inject value at path: {inject_path}",
             )));
         }
         Ok(cloned_input)
@@ -338,8 +329,7 @@ impl Engine for EngineV1 {
             Ok(path) => path,
             Err(err) => {
                 return Err(PayloadTemplateEngineError::JsonPathError(format!(
-                    "invalid json path found for extract path: {}",
-                    err,
+                    "invalid json path found for extract path: {err}",
                 )))
             }
         };

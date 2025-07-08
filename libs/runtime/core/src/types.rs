@@ -32,7 +32,7 @@ pub enum EventType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum EventDataPayload {
-    HttpRequestEventData(HttpRequestEventData),
+    HttpRequestEventData(Box<HttpRequestEventData>),
     WsMessageEventData(WebSocketEventData),
     ConsumerMessageEventData(ConsumerEventData),
     ScheduleMessageEventData(ScheduleEventData),

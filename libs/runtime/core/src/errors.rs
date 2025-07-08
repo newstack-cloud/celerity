@@ -28,10 +28,10 @@ impl fmt::Display for MessageHandlerError {
                 "message handler failed: a handler must be registered to process messages"
             ),
             MessageHandlerError::Timeout(elapsed_error) => {
-                write!(f, "message handler failed: timeout {}", elapsed_error)
+                write!(f, "message handler failed: timeout {elapsed_error}")
             }
             MessageHandlerError::HandlerFailure(handler_error) => {
-                write!(f, "message handler failed: {}", handler_error)
+                write!(f, "message handler failed: {handler_error}")
             }
         }
     }
@@ -48,7 +48,7 @@ pub enum ConfigError {
 impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ConfigError::Api(api_error) => write!(f, "config error: {}", api_error),
+            ConfigError::Api(api_error) => write!(f, "config error: {api_error}"),
             ConfigError::ApiMissing => write!(f, "config error: no API resource found"),
         }
     }
@@ -73,25 +73,25 @@ impl fmt::Display for ApplicationStartError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ApplicationStartError::Config(config_error) => {
-                write!(f, "application start error: {}", config_error)
+                write!(f, "application start error: {config_error}")
             }
             ApplicationStartError::BlueprintParse(parse_error) => {
-                write!(f, "application start error: {}", parse_error)
+                write!(f, "application start error: {parse_error}")
             }
             ApplicationStartError::Environment(env_error) => {
-                write!(f, "application start error: {}", env_error)
+                write!(f, "application start error: {env_error}")
             }
             ApplicationStartError::TaskWaitError(join_error) => {
-                write!(f, "application start error: {}", join_error)
+                write!(f, "application start error: {join_error}")
             }
             ApplicationStartError::OpenTelemetryTrace(trace_error) => {
-                write!(f, "application start error: {}", trace_error)
+                write!(f, "application start error: {trace_error}")
             }
             ApplicationStartError::TracerTryInit(try_init_error) => {
-                write!(f, "application start error: {}", try_init_error)
+                write!(f, "application start error: {try_init_error}")
             }
             ApplicationStartError::TracingFilterParse(parse_error) => {
-                write!(f, "application start error: {}", parse_error)
+                write!(f, "application start error: {parse_error}")
             }
         }
     }

@@ -101,7 +101,7 @@ mod tests {
             "planPrice": 99.99,
         });
         let result = jsonpath_inject_root(&path, &mut json, value);
-        assert_eq!(result, true);
+        assert!(result);
         assert_eq!(
             json,
             json!({
@@ -130,7 +130,7 @@ mod tests {
             "planPrice": 99.99,
         });
         let result = jsonpath_inject_root(&path, &mut json, value);
-        assert_eq!(result, true);
+        assert!(result);
         assert_eq!(
             json,
             json!({
@@ -159,7 +159,7 @@ mod tests {
             "planPrice": 99.99,
         });
         let result = jsonpath_inject_root(&path, &mut json, value);
-        assert_eq!(result, false);
+        assert!(!result);
         assert_eq!(
             json,
             json!({
@@ -182,7 +182,7 @@ mod tests {
             "planPrice": 99.99,
         });
         let result = jsonpath_inject_root(&path, &mut json, value);
-        assert_eq!(result, false);
+        assert!(!result);
         assert_eq!(
             json,
             json!({

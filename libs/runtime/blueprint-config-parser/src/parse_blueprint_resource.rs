@@ -142,7 +142,7 @@ impl<'de> Visitor<'de> for ResourceWithSubsVisitor {
                                     // This ultimately allows skipping over resources with
                                     // resource types that are not recognised by the runtime.
                                     unsupported_resource_type_err =
-                                        Some(format!("unsupported resource type: {}", err));
+                                        Some(format!("unsupported resource type: {err}"));
                                 } else {
                                     // serde produces a generic "expected value" error,
                                     // so we need to provide a more specific error message

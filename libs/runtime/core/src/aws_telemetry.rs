@@ -48,10 +48,7 @@ impl From<TraceId> for XrayTraceId {
         let trace_id_as_hex = trace_id.to_string();
         let (timestamp, xray_id) = trace_id_as_hex.split_at(8_usize);
 
-        XrayTraceId(format!(
-            "{}-{}-{}",
-            AWS_XRAY_VERSION_KEY, timestamp, xray_id
-        ))
+        XrayTraceId(format!("{AWS_XRAY_VERSION_KEY}-{timestamp}-{xray_id}"))
     }
 }
 

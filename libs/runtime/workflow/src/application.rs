@@ -1,7 +1,5 @@
 use std::{
     collections::{HashMap, VecDeque},
-    convert::Infallible,
-    future::Future,
     sync::{Arc, Mutex, RwLock},
     time::Duration,
 };
@@ -18,22 +16,19 @@ use celerity_helpers::{
     runtime_types::{HealthCheckResponse, RuntimeCallMode},
     time::{Clock, DefaultClock},
 };
-use futures::{stream, Stream, TryStreamExt as _};
+use futures::TryStreamExt as _;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use tokio::sync::broadcast::{self, Sender};
-use tokio_stream::{
-    wrappers::{errors::BroadcastStreamRecvError, BroadcastStream},
-    StreamExt as _,
-};
-use tracing::{error, info_span, span, Instrument};
+use tokio_stream::wrappers::{errors::BroadcastStreamRecvError, BroadcastStream};
+use tracing::{error, info_span, Instrument};
 use uuid::Uuid;
 
 use crate::{
     config::{WorkflowAppConfig, WorkflowRuntimeConfig},
     consts::{EVENT_BROADCASTER_CAPACITY, WORKFLOW_RUNTIME_HEALTH_CHECK_ENDPOINT},
     errors::WorkflowApplicationStartError,
-    handlers::{BoxedWorkflowStateHandler, WorkflowStateHandler},
+    handlers::BoxedWorkflowStateHandler,
     state_machine::StateMachine,
     transform_config::collect_workflow_app_config,
     types::{EventTuple, Response, WorkflowAppState, WorkflowExecutionEvent},
@@ -56,10 +51,14 @@ pub struct WorkflowApplication {
     runtime_local_api: Option<Router>,
     event_queue: Option<Arc<Mutex<VecDeque<EventTuple>>>>,
     processing_events_map: Option<Arc<Mutex<HashMap<String, EventTuple>>>>,
+    #[allow(dead_code)]
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
+    #[allow(dead_code)]
     local_api_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     clock: Arc<dyn Clock + Send + Sync>,
+    #[allow(dead_code)]
     execution_service: Arc<dyn WorkflowExecutionService + Send + Sync>,
+    #[allow(dead_code)]
     event_broadcaster: Sender<WorkflowExecutionEvent>,
 }
 
@@ -244,19 +243,19 @@ async fn run_handler(
 }
 
 async fn get_execution_handler(
-    Path(id): Path<String>,
-    State(state): State<WorkflowAppState>,
+    Path(_id): Path<String>,
+    State(_state): State<WorkflowAppState>,
 ) -> Json<Option<String>> {
     Json(None)
 }
 
-async fn get_executions_handler(State(state): State<WorkflowAppState>) -> Json<Option<String>> {
+async fn get_executions_handler(State(_state): State<WorkflowAppState>) -> Json<Option<String>> {
     Json(None)
 }
 
 async fn execution_stream_handler(
     State(state): State<WorkflowAppState>,
-) -> Sse<impl Stream<Item = Result<Event, BroadcastStreamRecvError>>> {
+) -> Sse<impl futures::Stream<Item = Result<Event, BroadcastStreamRecvError>>> {
     let rx = state.event_broadcaster.subscribe();
     let stream = BroadcastStream::new(rx).map_ok(|event| {
         Event::default()

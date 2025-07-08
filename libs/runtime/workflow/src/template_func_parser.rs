@@ -23,7 +23,7 @@ pub enum TemplateFunctionExpr {
 #[derive(Debug)]
 pub enum ParseError {
     Character(ParseErrorInfo),
-    JsonPathParseError(JsonPathParseErrorInfo),
+    JsonPath(JsonPathParseErrorInfo),
     EndOfInput,
 }
 
@@ -63,7 +63,7 @@ impl fmt::Display for ParseError {
                 };
                 write!(f, "parse error at position {}{}", info.pos, expected_suffix)
             }
-            ParseError::JsonPathParseError(info) => {
+            ParseError::JsonPath(info) => {
                 write!(
                     f,
                     "parse error at position {}: expected {}, error: {}",
@@ -121,7 +121,7 @@ fn func_name(scanner: &mut Scanner) -> Result<String, ParseError> {
                     expected: "a valid function name".to_string(),
                 }));
             }
-        } else if ch.is_alphabetic() || ch.is_digit(10) || *ch == '_' {
+        } else if ch.is_alphabetic() || ch.is_ascii_digit() || *ch == '_' {
             name.push(*ch);
             scanner.pop();
         } else {
@@ -192,7 +192,7 @@ fn func_arg(scanner: &mut Scanner) -> Result<TemplateFunctionExpr, ParseError> {
     let json_path_result = json_path_expr(scanner);
     if let Ok(json_path) = json_path_result {
         return Ok(json_path);
-    } else if let Err(ParseError::JsonPathParseError(_)) = json_path_result {
+    } else if let Err(ParseError::JsonPath(_)) = json_path_result {
         // In the case the next character is "$" but the JSON Path expression is invalid,
         // exit early to give a more informative error message indicating that the JSON Path
         // expression is invalid.
@@ -224,7 +224,7 @@ fn func_arg(scanner: &mut Scanner) -> Result<TemplateFunctionExpr, ParseError> {
     }
 
     let string_literal_result = string_literal(scanner);
-    if let Err(_) = string_literal_result {
+    if string_literal_result.is_err() {
         if let Some(ch) = scanner.peek() {
             if *ch != '"' {
                 // In the case where the next sequence failed to match any of the possible
@@ -274,7 +274,7 @@ fn json_path_expr(scanner: &mut Scanner) -> Result<TemplateFunctionExpr, ParseEr
         Err(err) => {
             let err_pos = scanner.pos();
             scanner.backtrack();
-            Err(ParseError::JsonPathParseError(JsonPathParseErrorInfo {
+            Err(ParseError::JsonPath(JsonPathParseErrorInfo {
                 pos: err_pos + 1,
                 expected: "a valid JSON Path expression".to_string(),
                 error: err,
@@ -354,7 +354,7 @@ fn float_literal(scanner: &mut Scanner) -> Result<TemplateFunctionExpr, ParseErr
             float_seq.push(*ch);
             passed_decimal_point = true;
             scanner.pop();
-        } else if ch.is_digit(10) {
+        } else if ch.is_ascii_digit() {
             float_seq.push(*ch);
             scanner.pop();
         } else {
@@ -393,10 +393,7 @@ fn int_literal(scanner: &mut Scanner) -> Result<TemplateFunctionExpr, ParseError
     let mut int_seq = String::new();
 
     while let Some(ch) = scanner.peek() {
-        if *ch == '-' && int_seq.is_empty() {
-            int_seq.push(*ch);
-            scanner.pop();
-        } else if ch.is_digit(10) {
+        if (*ch == '-' && int_seq.is_empty()) || ch.is_ascii_digit() {
             int_seq.push(*ch);
             scanner.pop();
         } else {
@@ -627,7 +624,7 @@ mod tests {
         let result = parse_func(&mut scanner);
         assert!(result.is_err());
         let error = result.unwrap_err();
-        assert!(matches!(error, ParseError::JsonPathParseError(_)));
+        assert!(matches!(error, ParseError::JsonPath(_)));
         assert!(error.to_string().starts_with(
             "parse error at position 46: expected a valid JSON Path expression, error: \
             Failed to parse rule: "

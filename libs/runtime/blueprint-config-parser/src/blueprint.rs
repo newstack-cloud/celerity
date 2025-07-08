@@ -108,13 +108,13 @@ pub enum BlueprintScalarValue {
     Bool(bool),
 }
 
-impl ToString for BlueprintScalarValue {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for BlueprintScalarValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BlueprintScalarValue::Str(val) => val.to_string(),
-            BlueprintScalarValue::Int(val) => val.to_string(),
-            BlueprintScalarValue::Float(val) => val.to_string(),
-            BlueprintScalarValue::Bool(val) => val.to_string(),
+            BlueprintScalarValue::Str(val) => write!(f, "{val}"),
+            BlueprintScalarValue::Int(val) => write!(f, "{val}"),
+            BlueprintScalarValue::Float(val) => write!(f, "{val}"),
+            BlueprintScalarValue::Bool(val) => write!(f, "{val}"),
         }
     }
 }
@@ -291,7 +291,7 @@ pub struct CelerityApiSpec {
 
 /// This holds the specification
 /// for a consumer resource in the blueprint configuration.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Default)]
 pub struct CelerityConsumerSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "sourceId")]
@@ -314,20 +314,6 @@ pub struct CelerityConsumerSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "externalEvents")]
     pub external_events: Option<HashMap<String, ExternalEventConfiguration>>,
-}
-
-impl Default for CelerityConsumerSpec {
-    fn default() -> Self {
-        CelerityConsumerSpec {
-            source_id: None,
-            batch_size: None,
-            visibility_timeout: None,
-            wait_time_seconds: None,
-            partial_failures: None,
-            routing_key: None,
-            external_events: None,
-        }
-    }
 }
 
 /// This holds the specification
@@ -666,7 +652,7 @@ impl Default for DataStreamSourceConfiguration {
 
 /// This holds the specification for a config/secret store
 /// resource in the blueprint configuration.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Default)]
 pub struct CelerityConfigSpec {
     /// A unique name to use for the secret and configuration store.
     /// If a name is not provided, a unique name will be generated for
@@ -682,15 +668,6 @@ pub struct CelerityConfigSpec {
     /// and should be omitted from logs.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plaintext: Option<Vec<String>>,
-}
-
-impl Default for CelerityConfigSpec {
-    fn default() -> Self {
-        CelerityConfigSpec {
-            name: None,
-            plaintext: None,
-        }
-    }
 }
 
 /// This holds the specification for a bucket resource

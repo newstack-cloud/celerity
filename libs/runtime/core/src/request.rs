@@ -13,8 +13,7 @@ pub async fn request_id(mut request: Request, next: Next) -> Result<Response, St
         .headers()
         .get(REQUEST_ID_HEADER)
         .and_then(|value| value.to_str().ok())
-        .map(|value| value.to_string())
-        .unwrap_or_else(|| nanoid!());
+        .map_or_else(|| nanoid!(), |value| value.to_string());
 
     request.extensions_mut().insert(RequestId(req_id));
 

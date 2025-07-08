@@ -81,11 +81,11 @@ where
 
         state.prev_char = ch;
         match close_check_result {
-            CheckCloseSubBracketResult::SupportedSubstitution => {
+            CheckCloseSubBracketResult::Supported => {
                 // Do nothing for a matched substitution,
                 // state will have been reset by the check_close_sub_bracket call.
             }
-            CheckCloseSubBracketResult::UnsupportedSubstitution => {
+            CheckCloseSubBracketResult::Unsupported => {
                 state.potential_non_sub_str.push(ch);
                 // Replace the previous string value with the unsupported substitution string
                 // that will already contain the previous string value.
@@ -98,7 +98,7 @@ where
                     state.potential_non_sub_str = "".to_string();
                 }
             }
-            CheckCloseSubBracketResult::NotSubstitution => {
+            CheckCloseSubBracketResult::Not => {
                 state.potential_non_sub_str.push(ch);
             }
         }
@@ -109,7 +109,7 @@ where
 
     // If the input value is a string interpolated with substitutions,
     // make sure we capture the end of the string if it's not a substitution.
-    if state.potential_non_sub_str.len() > 0 {
+    if !state.potential_non_sub_str.is_empty() {
         state.parsed.push(StringOrSubstitution::StringValue(
             state.potential_non_sub_str,
         ));
@@ -132,7 +132,7 @@ fn concat_adjacent_string_values(values: Vec<StringOrSubstitution>) -> Vec<Strin
                 last_string_value += str_value.as_str();
             }
             StringOrSubstitution::SubstitutionValue(_) => {
-                if last_string_value.len() > 0 {
+                if !last_string_value.is_empty() {
                     result.push(StringOrSubstitution::StringValue(last_string_value));
                     last_string_value = "".to_string();
                 }
@@ -141,7 +141,7 @@ fn concat_adjacent_string_values(values: Vec<StringOrSubstitution>) -> Vec<Strin
         }
     }
 
-    if last_string_value.len() > 0 {
+    if !last_string_value.is_empty() {
         result.push(StringOrSubstitution::StringValue(last_string_value));
     }
 
@@ -154,7 +154,7 @@ fn check_open_sub_bracket(state: &mut InterpolationParseState, ch: char) -> bool
         // Start of a substitution.
         state.in_possible_sub = true;
         let non_sub_str = &state.potential_non_sub_str[0..state.potential_non_sub_str.len() - 1];
-        if non_sub_str.len() > 0 {
+        if !non_sub_str.is_empty() {
             state
                 .parsed
                 .push(StringOrSubstitution::StringValue(non_sub_str.to_string()))
@@ -170,9 +170,9 @@ fn check_string_literal(state: &mut InterpolationParseState, ch: char) {
 }
 
 enum CheckCloseSubBracketResult {
-    SupportedSubstitution,
-    UnsupportedSubstitution,
-    NotSubstitution,
+    Supported,
+    Unsupported,
+    Not,
 }
 
 fn check_close_sub_bracket<E>(
@@ -198,13 +198,13 @@ where
         state.in_possible_sub = false;
     } else if is_close_sub_bracket {
         // End of a substitution, but it's not a supported substitution.
-        return Ok(CheckCloseSubBracketResult::UnsupportedSubstitution);
+        return Ok(CheckCloseSubBracketResult::Unsupported);
     }
 
     Ok(if is_close_sub_bracket {
-        CheckCloseSubBracketResult::SupportedSubstitution
+        CheckCloseSubBracketResult::Supported
     } else {
-        CheckCloseSubBracketResult::NotSubstitution
+        CheckCloseSubBracketResult::Not
     })
 }
 
@@ -353,17 +353,14 @@ fn identifier(scanner: &mut Scanner) -> Result<String, ParseError> {
     let mut var_name = String::new();
     if let Some(next_char) = scanner.peek() {
         if is_identifier_start_char(next_char) {
-            var_name.push(next_char.clone());
+            var_name.push(*next_char);
             scanner.pop();
             while let Some(ch) = scanner.peek() {
                 if is_identifier_char(ch) {
-                    var_name.push(ch.clone());
+                    var_name.push(*ch);
                     scanner.pop();
                 } else {
-                    return Err(ParseError::Character(ParseErrorInfo {
-                        pos: scanner.pos(),
-                        expected: "identifier character".to_string(),
-                    }));
+                    break;
                 }
             }
 
@@ -408,7 +405,7 @@ fn string_literal_identifier(scanner: &mut Scanner) -> Result<String, ParseError
     let mut var_name = String::new();
     while let Some(ch) = scanner.peek() {
         if is_string_literal_ident_char(ch) {
-            var_name.push(ch.clone());
+            var_name.push(*ch);
             scanner.pop();
         } else {
             break;

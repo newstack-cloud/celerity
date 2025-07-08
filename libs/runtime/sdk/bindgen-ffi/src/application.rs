@@ -25,6 +25,8 @@ pub struct Application {
     handler: Option<Arc<dyn Listener<Response>>>,
 }
 
+/// # Safety
+/// The caller must ensure the returned pointer is properly managed and eventually deallocated using application_destroy.
 pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut Application {
     CONSTRUCTION_COUNTER += 1;
 
@@ -59,10 +61,14 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
     Box::into_raw(application)
 }
 
-pub unsafe fn application_get_value(application: *const Application) -> u32 {
+/// # Safety
+/// The caller must ensure that `_application` is a valid pointer to Application.
+pub unsafe fn application_get_value(_application: *const Application) -> u32 {
     200
 }
 
+/// # Safety
+/// The caller must ensure that `instance` is a valid pointer to Application.
 pub unsafe fn application_setup(
     instance: *mut Application,
 ) -> Result<*mut AppConfig, ApplicationStartupError> {
@@ -83,7 +89,7 @@ pub unsafe fn application_setup(
                 Ok(Box::into_raw(Box::new(app_config)))
             }
             Err(err) => {
-                println!("Application Start Error: {:?}", err);
+                println!("Application Start Error: {err:?}");
                 Err(ApplicationStartupError::SetupFailed)
             }
         }
@@ -92,6 +98,8 @@ pub unsafe fn application_setup(
     }
 }
 
+/// # Safety
+/// The caller must ensure that `instance` is a valid pointer to Application and `handler` is a valid HttpHandler.
 pub unsafe fn application_register_http_handler(
     instance: *mut Application,
     handler: ffi::HttpHandler,
@@ -123,7 +131,7 @@ pub unsafe fn application_register_http_handler(
                                 Ok(resp_data)
                             }
                             Err(err) => {
-                                Err(HandlerError::new(format!("Handler failed: {}", err)))
+                                Err(HandlerError::new(format!("Handler failed: {err}")))
                             }
                         },
                         Err(_) => {
@@ -138,6 +146,8 @@ pub unsafe fn application_register_http_handler(
     }
 }
 
+/// # Safety
+/// The caller must ensure that `instance` is a valid pointer to Application, `runtime` is a valid pointer to Runtime, and the pointers remain valid for the duration of the call.
 pub unsafe fn application_run(
     instance: *mut crate::Application,
     runtime: *mut crate::Runtime,
@@ -242,6 +252,8 @@ impl From<RuntimeError> for GeneralError {
 //     }
 // }
 
+/// # Safety
+/// The caller must ensure that `instance` is a valid pointer to Application and has not already been deallocated.
 pub unsafe fn application_destroy(instance: *mut Application) {
     CONSTRUCTION_COUNTER -= 1;
     if !instance.is_null() {
@@ -251,6 +263,8 @@ pub unsafe fn application_destroy(instance: *mut Application) {
     };
 }
 
+/// # Safety
+/// The caller must ensure that the function is called in a context where the construction counter is valid.
 pub unsafe fn construction_counter() -> u32 {
     CONSTRUCTION_COUNTER
 }

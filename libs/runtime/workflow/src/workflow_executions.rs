@@ -92,10 +92,10 @@ impl fmt::Display for WorkflowExecutionServiceError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             WorkflowExecutionServiceError::NotFound(execution_id) => {
-                write!(f, "workflow execution \"{}\" not found", execution_id)
+                write!(f, "workflow execution \"{execution_id}\" not found")
             }
             WorkflowExecutionServiceError::InternalError(error) => {
-                write!(f, "internal error: {}", error)
+                write!(f, "internal error: {error}")
             }
         }
     }
@@ -173,6 +173,7 @@ pub enum WorkflowExecutionStatus {
 /// An in-memory implementation of the `WorkflowExecutionService` trait.
 /// This is intended to be used in test and sandbox environments;
 /// this should not be used in production.
+#[derive(Default)]
 pub struct MemoryWorkflowExecutionService {
     executions: Arc<RwLock<HashMap<String, WorkflowExecution>>>,
     execution_ids_in_order: Arc<Mutex<Vec<String>>>,
@@ -258,7 +259,7 @@ impl WorkflowExecutionService for MemoryWorkflowExecutionService {
             .iter()
             .rev()
             .take(results_size)
-            .map(|id| id.clone())
+            .cloned()
             // Reverse back to original order.
             .rev()
             .collect::<Vec<String>>();

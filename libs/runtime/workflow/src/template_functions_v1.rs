@@ -18,17 +18,16 @@ impl fmt::Display for FunctionCallError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             FunctionCallError::InvalidArgument(arg) => {
-                write!(f, "function call error: invalid argument: {}", arg)
+                write!(f, "function call error: invalid argument: {arg}")
             }
             FunctionCallError::IncorrectNumberOfArguments(func) => {
                 write!(
                     f,
-                    "function call error: incorrect number of arguments: {}",
-                    func
+                    "function call error: incorrect number of arguments: {func}"
                 )
             }
             FunctionCallError::InvalidInput(err) => {
-                write!(f, "function call error: invalid input: {}", err)
+                write!(f, "function call error: invalid input: {err}")
             }
         }
     }
@@ -42,7 +41,7 @@ impl fmt::Display for FunctionCallError {
 ///
 /// See [format function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#format).
 pub fn format(args: Vec<Value>) -> Result<Value, FunctionCallError> {
-    if args.len() < 1 {
+    if args.is_empty() {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
             "format function requires at least one argument".to_string(),
         ));
@@ -58,11 +57,10 @@ pub fn format(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     };
 
     let placeholder_count = format_string.matches("{}").count();
-    if args.len() - 1 != placeholder_count as usize {
+    if args.len() - 1 != placeholder_count {
         return Err(FunctionCallError::IncorrectNumberOfArguments(format!(
-            "format function requires {} arguments after the format string, \
-            one for each \"{{}}\" placeholder",
-            placeholder_count
+            "format function requires {placeholder_count} arguments after the format string, \
+            one for each \"{{}}\" placeholder"
         )));
     }
 
@@ -115,8 +113,7 @@ pub fn jsondecode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     match serde_json::from_str(encoded_string) {
         Ok(decoded) => Ok(decoded),
         Err(err) => Err(FunctionCallError::InvalidInput(format!(
-            "jsondecode function failed to decode JSON string: {}",
-            err
+            "jsondecode function failed to decode JSON string: {err}",
         ))),
     }
 }
@@ -136,8 +133,7 @@ pub fn jsonencode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     match serde_json::to_string(&args[0]) {
         Ok(encoded) => Ok(Value::String(encoded)),
         Err(err) => Err(FunctionCallError::InvalidInput(format!(
-            "jsonencode function failed to encode JSON value: {}",
-            err
+            "jsonencode function failed to encode JSON value: {err}",
         ))),
     }
 }
@@ -215,8 +211,7 @@ pub fn b64decode(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     match BASE64_STANDARD.decode(input.as_bytes()) {
         Ok(decoded) => Ok(Value::String(String::from_utf8_lossy(&decoded).to_string())),
         Err(err) => Err(FunctionCallError::InvalidInput(format!(
-            "b64decode function failed to decode base64 string: {}",
-            err
+            "b64decode function failed to decode base64 string: {err}",
         ))),
     }
 }
@@ -542,22 +537,18 @@ pub fn math_add(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     let (first, second) = (&args[0], &args[1]);
     let first = match first {
         Value::Number(first) => first.as_f64().expect("first value must be a valid number"),
-        _ => {
-            return Err(FunctionCallError::InvalidArgument(
-                "math_add function requires the first argument to be a number".to_string(),
-            ))
-        }
+        _ => Err(FunctionCallError::InvalidArgument(
+            "math_add function requires the first argument to be a number".to_string(),
+        ))?,
     };
 
     let second = match second {
         Value::Number(second) => second
             .as_f64()
             .expect("second value must be a valid number"),
-        _ => {
-            return Err(FunctionCallError::InvalidArgument(
-                "math_add function requires the second argument to be a number".to_string(),
-            ))
-        }
+        _ => Err(FunctionCallError::InvalidArgument(
+            "math_add function requires the second argument to be a number".to_string(),
+        ))?,
     };
 
     Ok(Value::Number(
@@ -581,22 +572,18 @@ pub fn math_sub(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     let (first, second) = (&args[0], &args[1]);
     let first = match first {
         Value::Number(first) => first.as_f64().expect("first value must be a valid number"),
-        _ => {
-            return Err(FunctionCallError::InvalidArgument(
-                "math_sub function requires the first argument to be a number".to_string(),
-            ))
-        }
+        _ => Err(FunctionCallError::InvalidArgument(
+            "math_sub function requires the first argument to be a number".to_string(),
+        ))?,
     };
 
     let second = match second {
         Value::Number(second) => second
             .as_f64()
             .expect("second value must be a valid number"),
-        _ => {
-            return Err(FunctionCallError::InvalidArgument(
-                "math_sub function requires the second argument to be a number".to_string(),
-            ))
-        }
+        _ => Err(FunctionCallError::InvalidArgument(
+            "math_sub function requires the second argument to be a number".to_string(),
+        ))?,
     };
 
     Ok(Value::Number(
@@ -620,22 +607,18 @@ pub fn math_mult(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     let (first, second) = (&args[0], &args[1]);
     let first = match first {
         Value::Number(first) => first.as_f64().expect("first value must be a valid number"),
-        _ => {
-            return Err(FunctionCallError::InvalidArgument(
-                "math_mult function requires the first argument to be a number".to_string(),
-            ))
-        }
+        _ => Err(FunctionCallError::InvalidArgument(
+            "math_mult function requires the first argument to be a number".to_string(),
+        ))?,
     };
 
     let second = match second {
         Value::Number(second) => second
             .as_f64()
             .expect("second value must be a valid number"),
-        _ => {
-            return Err(FunctionCallError::InvalidArgument(
-                "math_mult function requires the second argument to be a number".to_string(),
-            ))
-        }
+        _ => Err(FunctionCallError::InvalidArgument(
+            "math_mult function requires the second argument to be a number".to_string(),
+        ))?,
     };
 
     Ok(Value::Number(
@@ -659,22 +642,18 @@ pub fn math_div(args: Vec<Value>) -> Result<Value, FunctionCallError> {
     let (first, second) = (&args[0], &args[1]);
     let first = match first {
         Value::Number(first) => first.as_f64().expect("first value must be a valid number"),
-        _ => {
-            return Err(FunctionCallError::InvalidArgument(
-                "math_div function requires the first argument to be a number".to_string(),
-            ))
-        }
+        _ => Err(FunctionCallError::InvalidArgument(
+            "math_div function requires the first argument to be a number".to_string(),
+        ))?,
     };
 
     let second = match second {
         Value::Number(second) => second
             .as_f64()
             .expect("second value must be a valid number"),
-        _ => {
-            return Err(FunctionCallError::InvalidArgument(
-                "math_div function requires the second argument to be a number".to_string(),
-            ))
-        }
+        _ => Err(FunctionCallError::InvalidArgument(
+            "math_div function requires the second argument to be a number".to_string(),
+        ))?,
     };
 
     if second == 0.0 {
@@ -717,7 +696,7 @@ pub fn len(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// See [uuid function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#uuid).
 pub fn uuid(args: Vec<Value>) -> Result<Value, FunctionCallError> {
-    if args.len() != 0 {
+    if !args.is_empty() {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
             "uuid function does not accept any arguments".to_string(),
         ));
@@ -733,7 +712,7 @@ pub fn uuid(args: Vec<Value>) -> Result<Value, FunctionCallError> {
 ///
 /// See [nanoid function definition](https://celerityframework.com/docs/applications/resources/celerity-workflow#nanoid).
 pub fn nanoid(args: Vec<Value>) -> Result<Value, FunctionCallError> {
-    if args.len() != 0 {
+    if !args.is_empty() {
         return Err(FunctionCallError::IncorrectNumberOfArguments(
             "nanoid function does not accept any arguments".to_string(),
         ));
@@ -1497,7 +1476,7 @@ mod math_rand_tests {
         let result = math_rand(args).unwrap();
         assert!(result.is_number());
         let random = result.as_i64().unwrap();
-        assert!(random >= 0 && random < 100);
+        assert!((0..100).contains(&random));
     }
 
     #[test]

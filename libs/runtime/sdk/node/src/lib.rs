@@ -1,4 +1,5 @@
 #![deny(clippy::all)]
+#![allow(unexpected_cfgs)]
 
 use std::{collections::HashMap, time::Duration};
 
@@ -222,7 +223,7 @@ impl JsRequestWrapper {
         String::from_utf8(bytes.to_vec()).map(Some).map_err(|err| {
           Error::new(
             Status::GenericFailure,
-            format!("failed to parse request body, {}", err),
+            format!("failed to parse request body, {err}"),
           )
         })
       }
@@ -238,14 +239,14 @@ impl JsRequestWrapper {
         .map_err(|err| {
           Error::new(
             Status::GenericFailure,
-            format!("failed to read request body, {}", err),
+            format!("failed to read request body, {err}"),
           )
         })?;
         self.inner_body = JsRequestWrapperBody::Bytes(bytes.clone());
         Ok(String::from_utf8(bytes.to_vec()).map(Some).map_err(|err| {
           Error::new(
             Status::GenericFailure,
-            format!("failed to parse request body, {}", err),
+            format!("failed to parse request body, {err}"),
           )
         })?)
       }
@@ -292,7 +293,7 @@ impl CoreRuntimeApplication {
     let app_config = self.inner.setup().map_err(|err| {
       Error::new(
         Status::GenericFailure,
-        format!("failed to setup core runtime, {}", err),
+        format!("failed to setup core runtime, {err}"),
       )
     })?;
     Ok(app_config.into())
@@ -339,7 +340,7 @@ impl CoreRuntimeApplication {
     self.inner.run(block).await.map_err(|err| {
       Error::new(
         Status::GenericFailure,
-        format!("failed to start core runtime, {}", err),
+        format!("failed to start core runtime, {err}"),
       )
     })?;
     Ok(())

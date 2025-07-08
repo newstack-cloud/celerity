@@ -11,7 +11,6 @@ use celerity_helpers::{
   runtime_types::{RuntimeCallMode, RuntimePlatform},
 };
 use pyo3::prelude::*;
-use pyo3_async_runtimes;
 
 use celerity_runtime_core::{
   application::Application,
@@ -65,7 +64,7 @@ struct CoreRuntimeAppConfig {
 
 impl From<AppConfig> for CoreRuntimeAppConfig {
   fn from(app_config: AppConfig) -> Self {
-    let api = app_config.api.map(|api_config| core_api_config(api_config));
+    let api = app_config.api.map(core_api_config);
 
     Self { api }
   }
@@ -85,12 +84,8 @@ fn core_api_config(api_config: ApiConfig) -> Py<CoreApiConfig> {
 
 impl From<ApiConfig> for CoreApiConfig {
   fn from(api_config: ApiConfig) -> Self {
-    let http = api_config
-      .http
-      .map(|http_config| core_http_config(http_config));
-    let websocket = api_config
-      .websocket
-      .map(|websocket_config| core_websocket_config(websocket_config));
+    let http = api_config.http.map(core_http_config);
+    let websocket = api_config.websocket.map(core_websocket_config);
     Self { http, websocket }
   }
 }
@@ -110,7 +105,7 @@ impl From<HttpConfig> for CoreHttpConfig {
     let handlers = http_config
       .handlers
       .into_iter()
-      .map(|handler| core_http_handler_definition(handler))
+      .map(core_http_handler_definition)
       .collect::<Vec<_>>();
     Self { handlers }
   }
@@ -207,6 +202,7 @@ impl PyResponse {
 // Message sent to the Python worker
 struct PythonCall {
   handler_id: String,
+  #[allow(dead_code)]
   args: Vec<PyObject>, // or whatever your handler expects
   response: oneshot::Sender<Result<Response, HandlerError>>,
 }
@@ -217,7 +213,7 @@ async fn python_worker(
 ) {
   while let Some(PythonCall {
     handler_id,
-    args,
+    args: _,
     response,
   }) = rx.recv().await
   {
@@ -230,8 +226,7 @@ async fn python_worker(
         pyo3_async_runtimes::tokio::into_future(coro)
       } else {
         Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
-          "Handler not found: {}",
-          handler_id
+          "Handler not found: {handler_id}",
         )))
       }
     });
@@ -282,10 +277,7 @@ impl CoreRuntimeApplication {
       consumer_app: None,
       schedule_app: None,
     };
-    print!(
-      "Creating CoreRuntimeApplication with config: {:?}\n",
-      native_runtime_config
-    );
+    println!("Creating CoreRuntimeApplication with config: {native_runtime_config:?}");
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
     CoreRuntimeApplication {
       inner: Arc::new(Mutex::new(inner)),
@@ -314,15 +306,13 @@ impl CoreRuntimeApplication {
       .lock()
       .map_err(|err| {
         PyErr::new::<pyo3::exceptions::PyException, _>(format!(
-          "failed to obtain lock to application, {}",
-          err
+          "failed to obtain lock to application, {err}",
         ))
       })?
       .setup()
       .map_err(|err| {
         PyErr::new::<pyo3::exceptions::PyException, _>(format!(
-          "failed to setup core runtime, {}",
-          err
+          "failed to setup core runtime, {err}",
         ))
       })?;
     Ok(app_config.into())
@@ -334,7 +324,7 @@ impl CoreRuntimeApplication {
     method: String,
     handler: Py<PyAny>,
   ) -> PyResult<()> {
-    let handler_id = format!("{}::{}", path, method);
+    let handler_id = format!("{path}::{method}");
     {
       let mut registry = self.handler_registry.blocking_lock();
       registry.insert(handler_id.clone(), handler);
@@ -370,6 +360,12 @@ impl CoreRuntimeApplication {
     Ok(())
   }
 
+  // SAFETY: run can hold a std mutex lock across an await boundary as there will be no other
+  // threads/tasks trying to obtain a lock on the application for the duration of the await
+  // that runs the application.
+  // Locks are only held on the inner core runtime application
+  // for setup and handler registration which must always be called before run.
+  #[allow(clippy::await_holding_lock)]
   fn run(&mut self, py: Python) -> PyResult<()> {
     let inner = self.inner.clone();
     let handler_registry = self.handler_registry.clone();
@@ -385,7 +381,7 @@ impl CoreRuntimeApplication {
 
     thread::spawn(move || {
       let rt = runtime::new_tokio_multi_thread().expect("failed to create tokio runtime");
-      let _ = rt.block_on(async move {
+      rt.block_on(async move {
         tokio::spawn(pyo3_async_runtimes::tokio::scope(
           task_locals,
           python_worker(py_rx, handler_registry),
@@ -394,7 +390,7 @@ impl CoreRuntimeApplication {
         match inner.lock().unwrap().run(true).await {
           Ok(_) => {}
           Err(err) => {
-            println!("Error running core runtime: {}", err);
+            println!("Error running core runtime: {err}");
             abort();
           }
         }

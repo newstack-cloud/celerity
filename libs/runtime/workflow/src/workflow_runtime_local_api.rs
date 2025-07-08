@@ -189,7 +189,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("POST")
-                    .uri(format!("http://{addr}/events/next", addr = addr))
+                    .uri(format!("http://{addr}/events/next"))
                     .header("Host", "localhost")
                     .body(Body::empty())
                     .unwrap(),
@@ -241,7 +241,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("POST")
-                    .uri(format!("http://{addr}/events/next", addr = addr))
+                    .uri(format!("http://{addr}/events/next"))
                     .header("Host", "localhost")
                     .body(Body::empty())
                     .unwrap(),
@@ -305,7 +305,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("POST")
-                    .uri(format!("http://{addr}/events/result", addr = addr))
+                    .uri(format!("http://{addr}/events/result"))
                     .header("Host", "localhost")
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&result).unwrap()))
@@ -369,7 +369,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("POST")
-                    .uri(format!("http://{addr}/events/result", addr = addr))
+                    .uri(format!("http://{addr}/events/result"))
                     .header("Host", "localhost")
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&result).unwrap()))
@@ -416,7 +416,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("GET")
-                    .uri(format!("http://{addr}/runtime/config", addr = addr))
+                    .uri(format!("http://{addr}/runtime/config"))
                     .header("Host", "localhost")
                     .header("Content-Type", "application/json")
                     .body(Body::empty())

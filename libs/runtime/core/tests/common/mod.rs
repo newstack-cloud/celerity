@@ -14,12 +14,12 @@ impl<'a> MockEnvVars<'a> {
     }
 }
 
-impl<'a> EnvVars for MockEnvVars<'static> {
+impl EnvVars for MockEnvVars<'static> {
     fn var(&self, key: &str) -> Result<String, VarError> {
-        return match self.var_map.get(key) {
+        match self.var_map.get(key) {
             Some(value) => Ok(value.clone()),
             None => Err(VarError::NotPresent),
-        };
+        }
     }
 
     fn clone_env_vars(&self) -> Box<dyn EnvVars> {

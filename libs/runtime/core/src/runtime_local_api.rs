@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use tracing::debug;
 
 use crate::{
-    config::{AppConfig, EventConfig},
+    config::AppConfig,
     errors::{ApplicationStartError, EventResultError, WebSocketsMessageError},
     types::{EventData, EventResult, EventTuple, WebSocketMessages},
     wsconn_registry::WebSocketRegistrySend,
@@ -337,9 +337,9 @@ mod tests {
 
     use crate::{
         config::{
-            ApiConfig, ConsumerConfig, ConsumersConfig, EventHandlerDefinition, EventTriggerConfig,
-            EventsConfig, HttpConfig, HttpHandlerDefinition, ScheduleConfig, SchedulesConfig,
-            WebSocketConfig, WebSocketHandlerDefinition,
+            ApiConfig, ConsumerConfig, ConsumersConfig, EventHandlerDefinition, HttpConfig,
+            HttpHandlerDefinition, ScheduleConfig, SchedulesConfig, WebSocketConfig,
+            WebSocketHandlerDefinition,
         },
         errors::WebSocketConnError,
         types::{
@@ -384,7 +384,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("POST")
-                    .uri(format!("http://{addr}/events/next", addr = addr))
+                    .uri(format!("http://{addr}/events/next"))
                     .header("Host", "localhost")
                     .body(Body::empty())
                     .unwrap(),
@@ -437,7 +437,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("POST")
-                    .uri(format!("http://{addr}/events/next", addr = addr))
+                    .uri(format!("http://{addr}/events/next"))
                     .header("Host", "localhost")
                     .body(Body::empty())
                     .unwrap(),
@@ -504,7 +504,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("POST")
-                    .uri(format!("http://{addr}/events/result", addr = addr))
+                    .uri(format!("http://{addr}/events/result"))
                     .header("Host", "localhost")
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&result).unwrap()))
@@ -571,7 +571,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("POST")
-                    .uri(format!("http://{addr}/events/result", addr = addr))
+                    .uri(format!("http://{addr}/events/result"))
                     .header("Host", "localhost")
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&result).unwrap()))
@@ -619,7 +619,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("GET")
-                    .uri(format!("http://{addr}/runtime/config", addr = addr))
+                    .uri(format!("http://{addr}/runtime/config"))
                     .header("Host", "localhost")
                     .header("Content-Type", "application/json")
                     .body(Body::empty())
@@ -681,7 +681,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("POST")
-                    .uri(format!("http://{addr}/websockets/messages", addr = addr))
+                    .uri(format!("http://{addr}/websockets/messages"))
                     .header("Host", "localhost")
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&messages).unwrap()))
@@ -819,7 +819,7 @@ mod tests {
             event_type: EventType::HttpRequest,
             handler_tag: "get::/orders/{id}".to_string(),
             timestamp: 1723458289,
-            data: EventDataPayload::HttpRequestEventData(HttpRequestEventData {
+            data: EventDataPayload::HttpRequestEventData(Box::new(HttpRequestEventData {
                 method: "get".to_string(),
                 path: "/orders/123".to_string(),
                 route: "/orders/{id}".to_string(),
@@ -831,7 +831,7 @@ mod tests {
                 body: None,
                 source_ip: "192.168.0.1".to_string(),
                 request_id: "test_request_1".to_string(),
-            }),
+            })),
         }
     }
 

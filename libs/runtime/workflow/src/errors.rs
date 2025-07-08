@@ -22,7 +22,7 @@ pub enum ConfigError {
 impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ConfigError::Workflow(workflow_error) => write!(f, "config error: {}", workflow_error),
+            ConfigError::Workflow(workflow_error) => write!(f, "config error: {workflow_error}"),
             ConfigError::WorkflowMissing => write!(f, "config error: no workflow resource found"),
         }
     }
@@ -47,25 +47,25 @@ impl fmt::Display for WorkflowApplicationStartError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             WorkflowApplicationStartError::Config(config_error) => {
-                write!(f, "application start error: {}", config_error)
+                write!(f, "application start error: {config_error}")
             }
             WorkflowApplicationStartError::BlueprintParse(parse_error) => {
-                write!(f, "application start error: {}", parse_error)
+                write!(f, "application start error: {parse_error}")
             }
             WorkflowApplicationStartError::Environment(env_error) => {
-                write!(f, "application start error: {}", env_error)
+                write!(f, "application start error: {env_error}")
             }
             WorkflowApplicationStartError::TaskWaitError(join_error) => {
-                write!(f, "application start error: {}", join_error)
+                write!(f, "application start error: {join_error}")
             }
             WorkflowApplicationStartError::OpenTelemetryTrace(trace_error) => {
-                write!(f, "application start error: {}", trace_error)
+                write!(f, "application start error: {trace_error}")
             }
             WorkflowApplicationStartError::TracerTryInit(try_init_error) => {
-                write!(f, "application start error: {}", try_init_error)
+                write!(f, "application start error: {try_init_error}")
             }
             WorkflowApplicationStartError::TracingFilterParse(parse_error) => {
-                write!(f, "application start error: {}", parse_error)
+                write!(f, "application start error: {parse_error}")
             }
         }
     }

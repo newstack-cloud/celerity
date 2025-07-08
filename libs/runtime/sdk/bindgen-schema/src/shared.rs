@@ -65,5 +65,5 @@ pub(crate) fn define(lib: &mut LibraryBuilder) -> BackTraced<SharedDefinitions> 
         .doc("General error type used throughout the library")?
         .build()?;
 
-    return Ok(SharedDefinitions { general_error_type });
+    Ok(SharedDefinitions { general_error_type })
 }

@@ -31,23 +31,16 @@ pub struct RuntimeBlueprintResourceWithSubs {
     #[serde(rename = "type")]
     pub resource_type: CelerityResourceType,
     pub metadata: BlueprintResourceMetadataWithSubs,
-    pub spec: CelerityResourceSpecWithSubs,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "linkSelector")]
     pub link_selector: Option<BlueprintLinkSelector>,
+    pub description: Option<String>,
+    pub spec: CelerityResourceSpecWithSubs,
 }
 
 impl Default for RuntimeBlueprintResourceWithSubs {
     fn default() -> Self {
-        RuntimeBlueprintResourceWithSubs {
+        Self {
             resource_type: CelerityResourceType::CelerityHandler,
-            metadata: BlueprintResourceMetadataWithSubs {
-                display_name: StringOrSubstitutions::default(),
-                annotations: None,
-                labels: None,
-            },
+            metadata: BlueprintResourceMetadataWithSubs::default(),
             link_selector: None,
             description: None,
             spec: CelerityResourceSpecWithSubs::NoSpec,
@@ -55,7 +48,7 @@ impl Default for RuntimeBlueprintResourceWithSubs {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct BlueprintResourceMetadataWithSubs {
     #[serde(rename = "displayName")]
     pub display_name: StringOrSubstitutions,
@@ -63,16 +56,6 @@ pub struct BlueprintResourceMetadataWithSubs {
     pub annotations: Option<HashMap<String, MappingNode>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub labels: Option<HashMap<String, String>>,
-}
-
-impl Default for BlueprintResourceMetadataWithSubs {
-    fn default() -> Self {
-        BlueprintResourceMetadataWithSubs {
-            display_name: StringOrSubstitutions::default(),
-            annotations: None,
-            labels: None,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -117,7 +100,7 @@ pub enum CelerityResourceSpecWithSubs {
     NoSpec,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityHandlerSpecWithSubs {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "handlerName")]
@@ -138,21 +121,6 @@ pub struct CelerityHandlerSpecWithSubs {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "environmentVariables")]
     pub environment_variables: Option<HashMap<String, StringOrSubstitutions>>,
-}
-
-impl Default for CelerityHandlerSpecWithSubs {
-    fn default() -> Self {
-        CelerityHandlerSpecWithSubs {
-            handler_name: None,
-            code_location: None,
-            handler: StringOrSubstitutions::default(),
-            runtime: None,
-            memory: None,
-            timeout: None,
-            tracing_enabled: None,
-            environment_variables: None,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
@@ -230,7 +198,7 @@ pub struct CelerityApiAuthWithSubs {
     pub guards: HashMap<String, CelerityApiAuthGuardWithSubs>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityApiAuthGuardWithSubs {
     #[serde(rename = "type")]
     pub guard_type: StringOrSubstitutions,
@@ -243,17 +211,6 @@ pub struct CelerityApiAuthGuardWithSubs {
     pub audience: Option<Vec<StringOrSubstitutions>>,
 }
 
-impl Default for CelerityApiAuthGuardWithSubs {
-    fn default() -> Self {
-        CelerityApiAuthGuardWithSubs {
-            guard_type: StringOrSubstitutions::default(),
-            issuer: None,
-            token_source: None,
-            audience: None,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum CelerityApiAuthGuardValueSourceWithSubs {
@@ -261,22 +218,13 @@ pub enum CelerityApiAuthGuardValueSourceWithSubs {
     ValueSourceConfiguration(ValueSourceConfigurationWithSubs),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct ValueSourceConfigurationWithSubs {
     pub protocol: MappingNode,
     pub source: StringOrSubstitutions,
 }
 
-impl Default for ValueSourceConfigurationWithSubs {
-    fn default() -> Self {
-        ValueSourceConfigurationWithSubs {
-            protocol: MappingNode::Scalar(BlueprintScalarValue::Str("http".to_string())),
-            source: StringOrSubstitutions::default(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityConsumerSpecWithSubs {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "sourceId")]
@@ -301,26 +249,8 @@ pub struct CelerityConsumerSpecWithSubs {
     pub external_events: Option<HashMap<String, ExternalEventConfigurationWithSubs>>,
 }
 
-impl Default for CelerityConsumerSpecWithSubs {
-    fn default() -> Self {
-        CelerityConsumerSpecWithSubs {
-            source_id: None,
-            batch_size: None,
-            visibility_timeout: None,
-            wait_time_seconds: None,
-            partial_failures: None,
-            routing_key: None,
-            external_events: None,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct ExternalEventConfigurationWithSubs {
-    // Substitutions are not supported for event source types
-    // as they are used to determine the source configuration to parse
-    // and validate during the initial parsing/validation before
-    // substitutions are resolved.
     #[serde(rename = "sourceType")]
     pub source_type: EventSourceType,
     #[serde(rename = "sourceConfiguration")]
@@ -329,13 +259,10 @@ pub struct ExternalEventConfigurationWithSubs {
 
 impl Default for ExternalEventConfigurationWithSubs {
     fn default() -> Self {
-        ExternalEventConfigurationWithSubs {
-            source_type: EventSourceType::ObjectStorage,
+        Self {
+            source_type: EventSourceType::ObjectStorage, // or another sensible default
             source_configuration: EventSourceConfigurationWithSubs::ObjectStorage(
-                ObjectStorageEventSourceConfigurationWithSubs {
-                    bucket: StringOrSubstitutions::default(),
-                    events: vec![],
-                },
+                ObjectStorageEventSourceConfigurationWithSubs::default(),
             ),
         }
     }
@@ -349,22 +276,13 @@ pub enum EventSourceConfigurationWithSubs {
     DataStream(DataStreamSourceConfigurationWithSubs),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct ObjectStorageEventSourceConfigurationWithSubs {
     pub bucket: StringOrSubstitutions,
     pub events: Vec<StringOrSubstitutions>,
 }
 
-impl Default for ObjectStorageEventSourceConfigurationWithSubs {
-    fn default() -> Self {
-        ObjectStorageEventSourceConfigurationWithSubs {
-            bucket: StringOrSubstitutions::default(),
-            events: vec![],
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct DatabaseStreamSourceConfigurationWithSubs {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "batchSize")]
@@ -379,18 +297,7 @@ pub struct DatabaseStreamSourceConfigurationWithSubs {
     pub start_from_beginning: Option<MappingNode>,
 }
 
-impl Default for DatabaseStreamSourceConfigurationWithSubs {
-    fn default() -> Self {
-        DatabaseStreamSourceConfigurationWithSubs {
-            batch_size: None,
-            db_stream_id: StringOrSubstitutions::default(),
-            partial_failures: None,
-            start_from_beginning: None,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct DataStreamSourceConfigurationWithSubs {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "batchSize")]
@@ -405,28 +312,9 @@ pub struct DataStreamSourceConfigurationWithSubs {
     pub start_from_beginning: Option<MappingNode>,
 }
 
-impl Default for DataStreamSourceConfigurationWithSubs {
-    fn default() -> Self {
-        DataStreamSourceConfigurationWithSubs {
-            batch_size: None,
-            data_stream_id: StringOrSubstitutions::default(),
-            partial_failures: None,
-            start_from_beginning: None,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityScheduleSpecWithSubs {
     pub schedule: StringOrSubstitutions,
-}
-
-impl Default for CelerityScheduleSpecWithSubs {
-    fn default() -> Self {
-        CelerityScheduleSpecWithSubs {
-            schedule: StringOrSubstitutions::default(),
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
@@ -436,7 +324,7 @@ pub struct CelerityWorkflowSpecWithSubs {
     pub states: HashMap<String, CelerityWorkflowStateWithSubs>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
 pub struct CelerityWorkflowStateWithSubs {
     #[serde(rename = "type")]
     pub state_type: StringOrSubstitutions,
@@ -477,29 +365,6 @@ pub struct CelerityWorkflowStateWithSubs {
     pub retry: Option<Vec<CelerityWorkflowRetryConfigWithSubs>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub catch: Option<Vec<CelerityWorkflowCatchConfigWithSubs>>,
-}
-
-impl Default for CelerityWorkflowStateWithSubs {
-    fn default() -> Self {
-        CelerityWorkflowStateWithSubs {
-            state_type: StringOrSubstitutions::default(),
-            description: None,
-            input_path: None,
-            result_path: None,
-            output_path: None,
-            payload_template: None,
-            next: None,
-            end: None,
-            decisions: None,
-            result: None,
-            timeout: None,
-            wait_config: None,
-            failure_config: None,
-            parallel_branches: None,
-            retry: None,
-            catch: None,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
@@ -573,21 +438,12 @@ pub struct CelerityWorkflowCatchConfigWithSubs {
     pub result_path: Option<StringOrSubstitutions>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityConfigSpecWithSubs {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<StringOrSubstitutions>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plaintext: Option<Vec<StringOrSubstitutions>>,
-}
-
-impl Default for CelerityConfigSpecWithSubs {
-    fn default() -> Self {
-        CelerityConfigSpecWithSubs {
-            name: None,
-            plaintext: None,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
@@ -638,20 +494,15 @@ impl Default for CelerityQueueSpecWithSubs {
 /// structures that can not be known at compile time.
 /// An example use case is a payload template in a workflow
 /// state.
-#[derive(Serialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Debug, PartialEq, Clone, Default)]
 #[serde(untagged)]
 pub enum MappingNode {
     Scalar(BlueprintScalarValue),
     Mapping(HashMap<String, MappingNode>),
     Sequence(Vec<MappingNode>),
     SubstitutionStr(StringOrSubstitutions),
+    #[default]
     Null,
-}
-
-impl Default for MappingNode {
-    fn default() -> Self {
-        MappingNode::Null
-    }
 }
 
 #[derive(Serialize, Debug, PartialEq, Clone, Default)]

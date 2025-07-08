@@ -39,7 +39,7 @@ where
 
     fn call(&self, value: Value) -> Self::Future {
         let fut = (self)(value);
-        Box::pin(async move { fut.await })
+        Box::pin(fut)
     }
 }
 

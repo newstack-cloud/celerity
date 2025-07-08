@@ -7,7 +7,7 @@ use celerity_helpers::{
 };
 use tracing::Level;
 
-use crate::consts::{DEFAULT_LOCAL_API_PORT, DEFAULT_TRACE_OTLP_COLLECTOR_ENDPOINT};
+use crate::consts::DEFAULT_LOCAL_API_PORT;
 
 /// Core runtime configuration
 /// that is used to locate blueprint files
@@ -122,14 +122,10 @@ impl RuntimeConfig {
             .parse()
             .expect("Invalid server port, must be a valid integer");
 
-        let server_loopback_only_env_var = env
-            .var("CELERITY_SERVER_LOOPBACK_ONLY")
-            .map(Some)
-            .unwrap_or_else(|_| None);
-        let server_loopback_only = server_loopback_only_env_var.map(|val| {
-            val.parse().expect(
-                "Invalid server loopback only value, must be either \\\"true\\\" or \\\"false\\\"",
-            )
+        let server_loopback_only = env.var("CELERITY_SERVER_LOOPBACK_ONLY").ok();
+        let server_loopback_only = server_loopback_only.map(|val| {
+            val.parse()
+                .expect("Invalid server loopback only value, must be either \"true\" or \"false\"")
         });
 
         let local_api_port = env
@@ -138,23 +134,19 @@ impl RuntimeConfig {
             .parse()
             .expect("Invalid local API port, must be a valid integer");
 
-        let use_custom_health_check_env_var = env
-            .var("CELERITY_USE_CUSTOM_HEALTH_CHECK")
-            .map(Some)
-            .unwrap_or_else(|_| None);
-        let use_custom_health_check = use_custom_health_check_env_var.map(|val| {
+        let use_custom_health_check = env.var("CELERITY_USE_CUSTOM_HEALTH_CHECK").ok();
+        let use_custom_health_check = use_custom_health_check.map(|val| {
             val.parse().expect(
-                "Invalid use custom health check value, must be either \\\"true\\\" or \\\"false\\\"",
+                "Invalid use custom health check value, must be either \"true\" or \"false\"",
             )
         });
 
         let trace_otlp_collector_endpoint = env
             .var("CELERITY_TRACE_OTLP_COLLECTOR_ENDPOINT")
-            .unwrap_or_else(|_| DEFAULT_TRACE_OTLP_COLLECTOR_ENDPOINT.to_string());
+            .unwrap_or_default();
 
         let runtime_max_diagnostics_level_env_var = env
             .var("CELERITY_MAX_DIAGNOSTICS_LEVEL")
-            .map(|level| level)
             .unwrap_or_else(|_| "info".to_string());
         let runtime_max_diagnostics_level =
             Level::from_str(runtime_max_diagnostics_level_env_var.as_str())
@@ -173,24 +165,15 @@ impl RuntimeConfig {
             .var("CELERITY_TEST_MODE")
             .map(|val| {
                 val.parse()
-                    .expect("Invalid test mode value, must be either \\\"true\\\" or \\\"false\\\"")
+                    .expect("Invalid test mode value, must be either \"true\" or \"false\"")
             })
             .unwrap_or(false);
 
-        let api_resource = env
-            .var("CELERITY_API_RESOURCE")
-            .map(Some)
-            .unwrap_or_else(|_| None);
+        let api_resource = env.var("CELERITY_API_RESOURCE").ok();
 
-        let consumer_app = env
-            .var("CELERITY_CONSUMER_APP")
-            .map(Some)
-            .unwrap_or_else(|_| None);
+        let consumer_app = env.var("CELERITY_CONSUMER_APP").ok();
 
-        let schedule_app = env
-            .var("CELERITY_SCHEDULE_APP")
-            .map(Some)
-            .unwrap_or_else(|_| None);
+        let schedule_app = env.var("CELERITY_SCHEDULE_APP").ok();
 
         RuntimeConfig {
             blueprint_config_path,

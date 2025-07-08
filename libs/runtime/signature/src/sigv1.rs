@@ -57,7 +57,7 @@ pub fn verify_signature(
     let key_pair = key_pairs.get(&signature_parts.key_id).ok_or(
         SignatureVerificationError::InvalidSignature("Invalid key ID".to_string()),
     )?;
-    let message = create_message(key_pair, &headers, &signature_parts.headers)?;
+    let message = create_message(key_pair, headers, &signature_parts.headers)?;
 
     match verify_message(
         key_pair,
@@ -67,7 +67,7 @@ pub fn verify_signature(
         Ok(_) => {
             let final_clock_skew = clock_skew.unwrap_or(DEFAULT_CLOCK_SKEW);
             let current_time = clock.now();
-            let provided_date = extract_date_from_header(&headers)?;
+            let provided_date = extract_date_from_header(headers)?;
             if current_time > provided_date + final_clock_skew
                 || current_time < provided_date - final_clock_skew
             {
@@ -131,8 +131,8 @@ pub fn create_signature_header(
                 .expect("timestamp string should be a valid header value"),
         );
     }
-    let message = create_message(&key_pair, &headers, &custom_header_names)?;
-    let signature = sign_message(&key_pair, message.as_slice());
+    let message = create_message(key_pair, headers, &custom_header_names)?;
+    let signature = sign_message(key_pair, message.as_slice());
     let mut final_header_names = vec![DATE_HEADER_NAME.to_string().to_lowercase()];
     final_header_names.extend(
         custom_header_names
@@ -229,7 +229,7 @@ fn unpack_signature_value(signature_part: &str) -> Result<String, SignatureVerif
 fn create_message(
     key_pair: &KeyPair,
     headers: &HeaderMap,
-    custom_header_names: &Vec<String>,
+    custom_header_names: &[String],
 ) -> Result<Vec<u8>, SignatureMessageCreationError> {
     let date = extract_date_from_header(headers)?;
     let custom_headers = custom_header_names

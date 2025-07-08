@@ -14,6 +14,8 @@ impl AppConfig {
     }
 }
 
+/// # Safety
+/// The caller must ensure the returned pointer is properly managed and eventually deallocated using app_config_destroy.
 pub unsafe fn app_config_create() -> *mut AppConfig {
     let http_config = HttpConfig::new(vec![].into_iter());
     let api_config = ApiConfig::new(http_config);
@@ -21,6 +23,8 @@ pub unsafe fn app_config_create() -> *mut AppConfig {
     Box::into_raw(app_config)
 }
 
+/// # Safety
+/// The caller must ensure that `instance` is a valid pointer to AppConfig.
 pub unsafe fn app_config_get_api_config(instance: *mut crate::AppConfig) -> *mut crate::ApiConfig {
     let handlers = (*instance).api_config.http_config.handlers.clone();
     let http_config = HttpConfig::new(handlers.into_iter());
@@ -28,6 +32,8 @@ pub unsafe fn app_config_get_api_config(instance: *mut crate::AppConfig) -> *mut
     Box::into_raw(api_config)
 }
 
+/// # Safety
+/// The caller must ensure that `app_config` is a valid pointer to AppConfig and has not already been deallocated.
 pub unsafe fn app_config_destroy(app_config: *mut AppConfig) {
     if !app_config.is_null() {
         drop(Box::from_raw(app_config));
@@ -44,18 +50,24 @@ impl ApiConfig {
     }
 }
 
+/// # Safety
+/// The caller must ensure the returned pointer is properly managed and eventually deallocated using api_config_destroy.
 pub unsafe fn api_config_create() -> *mut ApiConfig {
     let http_config = HttpConfig::new(vec![].into_iter());
     let api_config = Box::new(ApiConfig::new(http_config));
     Box::into_raw(api_config)
 }
 
+/// # Safety
+/// The caller must ensure that `api_config` is a valid pointer to ApiConfig and has not already been deallocated.
 pub unsafe fn api_config_destroy(api_config: *mut ApiConfig) {
     if !api_config.is_null() {
         drop(Box::from_raw(api_config));
     };
 }
 
+/// # Safety
+/// The caller must ensure that `instance` is a valid pointer to ApiConfig.
 pub unsafe fn api_config_get_http_config(
     instance: *mut crate::ApiConfig,
 ) -> *mut crate::HttpConfig {
@@ -74,11 +86,15 @@ impl HttpConfig {
     }
 }
 
+/// # Safety
+/// The caller must ensure the returned pointer is properly managed and eventually deallocated using http_config_destroy.
 pub unsafe fn http_config_create() -> *mut HttpConfig {
     let http_config = Box::new(HttpConfig::new(vec![].into_iter()));
     Box::into_raw(http_config)
 }
 
+/// # Safety
+/// The caller must ensure that `instance` is a valid pointer to HttpConfig and `callback` is a valid callback function.
 pub unsafe fn http_config_receive_handlers(
     instance: *mut crate::HttpConfig,
     callback: ffi::HttpHandlersReceiver,
@@ -87,6 +103,8 @@ pub unsafe fn http_config_receive_handlers(
     callback.on_http_handler_definitions(&mut iter);
 }
 
+/// # Safety
+/// The caller must ensure that `http_config` is a valid pointer to HttpConfig and has not already been deallocated.
 pub unsafe fn http_config_destroy(http_config: *mut HttpConfig) {
     if !http_config.is_null() {
         drop(Box::from_raw(http_config));
@@ -131,6 +149,8 @@ impl HttpHandlerIterator {
     }
 }
 
+/// # Safety
+/// The caller must ensure that `iter` is a valid pointer to HttpHandlerIterator.
 pub unsafe fn http_handler_iterator_next<'a>(
     iter: *mut HttpHandlerIterator,
 ) -> Option<&'a ffi::HttpHandlerDefinition> {

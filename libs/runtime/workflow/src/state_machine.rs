@@ -265,7 +265,7 @@ impl StateMachine {
                     state_name,
                     state,
                     &state_config,
-                    &input,
+                    input,
                     parent_state,
                     instant_for_duration,
                 )
@@ -276,7 +276,7 @@ impl StateMachine {
                     state_name,
                     state,
                     &state_config,
-                    &input,
+                    input,
                     parent_state,
                     instant_for_duration,
                 )
@@ -287,7 +287,7 @@ impl StateMachine {
                     state_name,
                     state,
                     &state_config,
-                    &input,
+                    input,
                     parent_state,
                     instant_for_duration,
                 )
@@ -354,7 +354,7 @@ impl StateMachine {
             let render_result = self
                 .workflow_app
                 .payload_template_engine
-                .render(&template, &input);
+                .render(template, input);
             match render_result {
                 Ok(rendered) => rendered,
                 Err(err) => {
@@ -387,19 +387,20 @@ impl StateMachine {
             }
             Err(err) => {
                 let duration = as_fractional_seconds(instant_for_duration.elapsed());
-                return Err(StateMachineError::ExecuteStepHandlerFailed(
+                Err(StateMachineError::ExecuteStepHandlerFailed(
                     WorkflowStateErrorInfo {
                         state_name,
                         parent_state_name: parent_state,
                         error_name: Some(err.name.clone()),
-                        error_message: format!("Execute step failed: {}", err),
+                        error_message: format!("Execute step failed: {err}"),
                         duration: Some(duration),
                     },
-                ));
+                ))
             }
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn handle_state_success(
         self: Arc<Self>,
         state_name: String,
@@ -414,8 +415,8 @@ impl StateMachine {
         let final_output = self.clone().prepare_state_output(
             state_name.clone(),
             parent_state.clone(),
-            &state_config,
-            &input,
+            state_config,
+            input,
             &output,
             duration,
         )?;
@@ -487,7 +488,7 @@ impl StateMachine {
         for parallel_state in parallel_states {
             let start_at = parallel_state.start_at.clone();
             let start_state_config_opt = parallel_state.states.get(&start_at);
-            if let Some(_) = start_state_config_opt {
+            if start_state_config_opt.is_some() {
                 let task = tokio::spawn({
                     let me = Arc::clone(&self);
                     let task_input = input.clone();
@@ -573,13 +574,13 @@ impl StateMachine {
             .await
         } else {
             let duration = as_fractional_seconds(instant_for_duration.elapsed());
-            return Err(StateMachineError::InvalidState(WorkflowStateErrorInfo {
+            Err(StateMachineError::InvalidState(WorkflowStateErrorInfo {
                 state_name: state_name.clone(),
                 parent_state_name: parent_state.clone(),
                 error_name: None,
                 error_message: "Wait state is missing wait_config field".to_string(),
                 duration: Some(duration),
-            }));
+            }))
         }
     }
 
@@ -599,7 +600,6 @@ impl StateMachine {
             match result {
                 Ok(Ok(value)) => {
                     result_values.push(value);
-                    succeeded = succeeded && true;
                 }
                 Ok(Err(err)) => {
                     error_messages.push(err.to_string());
@@ -671,15 +671,13 @@ impl StateMachine {
 
         match self.workflow_app.workflow_spec.states.get(&state_name) {
             Some(state) => Ok(state.clone()),
-            None => {
-                return Err(StateMachineError::StateNotFound(WorkflowStateErrorInfo {
-                    state_name: state_name.clone(),
-                    parent_state_name: parent_state,
-                    error_name: None,
-                    error_message: "State not found in workflow spec".to_string(),
-                    duration: None,
-                }));
-            }
+            None => Err(StateMachineError::StateNotFound(WorkflowStateErrorInfo {
+                state_name: state_name.clone(),
+                parent_state_name: parent_state,
+                error_name: None,
+                error_message: "State not found in workflow spec".to_string(),
+                duration: None,
+            })),
         }
     }
 
@@ -694,7 +692,7 @@ impl StateMachine {
         workflow_execution.states.push(state.clone());
         workflow_execution.current_state = Some(state_name.clone());
         workflow_execution.status = WorkflowExecutionStatus::InProgress;
-        workflow_execution.status_detail = format!("Executing state: {}", state_name);
+        workflow_execution.status_detail = format!("Executing state: {state_name}");
 
         // Persist the workflow execution changes before broadcasting events
         // to ensure consistency between clients streaming events and the persisted
@@ -722,7 +720,7 @@ impl StateMachine {
                     state_name: state_name.clone(),
                     parent_state_name,
                     error_name: None,
-                    error_message: format!("Failed to persist state transition: {}", err),
+                    error_message: format!("Failed to persist state transition: {err}"),
                     duration: None,
                 })
             })?;
@@ -734,13 +732,13 @@ impl StateMachine {
         let _ = self
             .workflow_app
             .event_broadcaster
-            .send(WorkflowExecutionEvent::StateTransition(
+            .send(WorkflowExecutionEvent::StateTransition(Box::new(
                 StateTransitionEvent {
                     event: "stateTransition".to_string(),
                     prev_state: prev_state.cloned(),
                     new_state: state.clone(),
                 },
-            ));
+            )));
 
         Ok(())
     }
@@ -791,7 +789,7 @@ impl StateMachine {
                     state_name: state_name.clone(),
                     parent_state_name: parent_state,
                     error_name: None,
-                    error_message: format!("Failed to persist state transition: {}", err),
+                    error_message: format!("Failed to persist state transition: {err}"),
                     duration: None,
                 })
             })
@@ -831,8 +829,7 @@ impl StateMachine {
                     parent_state_name: None,
                     error_name: None,
                     error_message: format!(
-                        "Failed to persist workflow execution completion: {}",
-                        err
+                        "Failed to persist workflow execution completion: {err}",
                     ),
                     duration: None,
                 })
@@ -1025,10 +1022,7 @@ impl StateMachine {
         if let Some(catch_config) = catch_config {
             let matching_catcher_opt = catch_config.iter().find(|config| {
                 error_matches(
-                    &err_info
-                        .error_name
-                        .clone()
-                        .unwrap_or_else(|| "".to_string()),
+                    &err_info.error_name.clone().unwrap_or_default(),
                     &config.match_errors,
                 )
             });
@@ -1091,7 +1085,7 @@ impl StateMachine {
                 "unknown".to_string(),
                 None,
                 "UnknownError".to_string(),
-                format!("An unexpected error occurred: {}", retry_or_catch_err),
+                format!("An unexpected error occurred: {retry_or_catch_err}"),
                 true,
                 false,
                 None,
@@ -1118,10 +1112,10 @@ impl StateMachine {
         parent_state_name: Option<String>,
         retry_config_opt: Option<&CelerityWorkflowRetryConfig>,
     ) -> (i64, bool) {
-        let mut workflow_execution = self.workflow_execution.lock().await;
+        let workflow_execution = self.workflow_execution.lock().await;
         let state = extract_state_from_workflow_execution(
             state_name.clone(),
-            &mut workflow_execution,
+            &workflow_execution,
             parent_state_name.clone(),
         );
 
@@ -1171,6 +1165,7 @@ impl StateMachine {
         .await;
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn record_error(
         self: Arc<Self>,
         state_name: String,
@@ -1187,10 +1182,8 @@ impl StateMachine {
         // prevent significant blocking when executing parallel branches.
         let (captured_workflow_execution, captured_state) = {
             let mut workflow_execution = self.workflow_execution.lock().await;
-            let status_detail = format!(
-                "Error executing state \"{}\" [{}]: {}",
-                state_name, error_name, error_message
-            );
+            let status_detail =
+                format!("Error executing state \"{state_name}\" [{error_name}]: {error_message}",);
 
             if !can_continue {
                 workflow_execution.status = WorkflowExecutionStatus::Failed;
@@ -1301,8 +1294,7 @@ impl StateMachine {
                         parent_state_name: err_info.parent_state_name.clone(),
                         error_name: Some("InvalidResultPath".to_string()),
                         error_message: format!(
-                            "Failed to inject error information from result path into input: {}",
-                            err
+                            "Failed to inject error information from result path into input: {err}"
                         ),
                         // Capture the duration of the caught error.
                         duration: err_info.duration,
@@ -1330,8 +1322,7 @@ impl StateMachine {
                         parent_state_name,
                         error_name: Some("InvalidInputPath".to_string()),
                         error_message: format!(
-                            "Failed to extract value from input JSON path: {}",
-                            err.to_string()
+                            "Failed to extract value from input JSON path: {err}"
                         ),
                         duration: None,
                     })
@@ -1360,8 +1351,7 @@ impl StateMachine {
                         parent_state_name,
                         error_name: Some("InvalidResultPath".to_string()),
                         error_message: format!(
-                            "Failed to inject output from result path into input: {}",
-                            err
+                            "Failed to inject output from result path into input: {err}"
                         ),
                         duration: Some(duration),
                     })
@@ -1376,8 +1366,7 @@ impl StateMachine {
                         parent_state_name,
                         error_name: Some("InvalidOutputPath".to_string()),
                         error_message: format!(
-                            "Failed to extract value from output JSON path: {}",
-                            err.to_string()
+                            "Failed to extract value from output JSON path: {err}"
                         ),
                         duration: Some(duration),
                     })
@@ -1398,13 +1387,7 @@ fn find_parallel_child_state_config(
             if let Some(parallel_branches) = &parent_state.parallel_branches {
                 let child_state = parallel_branches
                     .iter()
-                    .filter_map(|branch| {
-                        if let Some(state) = branch.states.get(&state_name) {
-                            Some(state)
-                        } else {
-                            None
-                        }
-                    })
+                    .filter_map(|branch| branch.states.get(&state_name).cloned())
                     .next();
 
                 if let Some(state) = child_state {
@@ -1422,23 +1405,21 @@ fn find_parallel_child_state_config(
                 }
             }
 
-            return Err(StateMachineError::StateNotFound(WorkflowStateErrorInfo {
+            Err(StateMachineError::StateNotFound(WorkflowStateErrorInfo {
                 state_name,
                 parent_state_name: Some(parent_state_name),
                 error_name: None,
                 error_message: "Parallel state not found in parent state".to_string(),
                 duration: None,
-            }));
+            }))
         }
-        _ => {
-            return Err(StateMachineError::InvalidState(WorkflowStateErrorInfo {
-                state_name,
-                parent_state_name: Some(parent_state_name),
-                error_name: None,
-                error_message: "Parent state is not a parallel state".to_string(),
-                duration: None,
-            }));
-        }
+        _ => Err(StateMachineError::InvalidState(WorkflowStateErrorInfo {
+            state_name,
+            parent_state_name: Some(parent_state_name),
+            error_name: None,
+            error_message: "Parent state is not a parallel state".to_string(),
+            duration: None,
+        })),
     }
 }
 
@@ -1457,7 +1438,7 @@ fn extract_state_from_workflow_execution_mut(
         }
     }
 
-    return None;
+    None
 }
 
 fn extract_state_from_workflow_execution(
@@ -1475,7 +1456,7 @@ fn extract_state_from_workflow_execution(
         }
     }
 
-    return None;
+    None
 }
 
 fn find_parallel_child_state_mut(
@@ -1487,20 +1468,12 @@ fn find_parallel_child_state_mut(
             let child_state = parent_state
                 .parallel
                 .iter_mut()
-                .filter_map(|branch| {
-                    if let Some(state) = branch.iter_mut().find(|state| state.name == state_name) {
-                        Some(state)
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|branch| branch.iter_mut().find(|state| state.name == state_name))
                 .next();
 
-            return child_state;
+            child_state
         }
-        _ => {
-            return None;
-        }
+        _ => None,
     }
 }
 
@@ -1513,20 +1486,12 @@ fn find_parallel_child_state(
             let child_state = parent_state
                 .parallel
                 .iter()
-                .filter_map(|branch| {
-                    if let Some(state) = branch.iter().find(|state| state.name == state_name) {
-                        Some(state)
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|branch| branch.iter().find(|state| state.name == state_name))
                 .next();
 
-            return child_state;
+            child_state
         }
-        _ => {
-            return None;
-        }
+        _ => None,
     }
 }
 
@@ -1577,8 +1542,7 @@ fn derive_wait_time_from_seconds_field(
                 parent_state_name: None,
                 error_name: None,
                 error_message: format!(
-                    "Failed to parse JSON path for wait time seconds in state configuration: {}",
-                    err
+                    "Failed to parse JSON path for wait time seconds in state configuration: {err}",
                 ),
                 duration: Some(as_fractional_seconds(instant_for_duration.elapsed())),
             })
@@ -1586,18 +1550,15 @@ fn derive_wait_time_from_seconds_field(
 
         let seconds_value = path.find(input);
         match seconds_value {
-            Value::Number(num) => num
-                .as_u64()
-                .ok_or_else(|| {
-                    StateMachineError::InvalidState(WorkflowStateErrorInfo {
-                        state_name: state_name.clone(),
-                        parent_state_name: None,
-                        error_name: None,
-                        error_message: "Wait state seconds must be a positive integer".to_string(),
-                        duration: Some(as_fractional_seconds(instant_for_duration.elapsed())),
-                    })
+            Value::Number(num) => num.as_u64().ok_or_else(|| {
+                StateMachineError::InvalidState(WorkflowStateErrorInfo {
+                    state_name: state_name.clone(),
+                    parent_state_name: None,
+                    error_name: None,
+                    error_message: "Wait state seconds must be a positive integer".to_string(),
+                    duration: Some(as_fractional_seconds(instant_for_duration.elapsed())),
                 })
-                .map(|num| num),
+            }),
             _ => Err(StateMachineError::InvalidState(WorkflowStateErrorInfo {
                 state_name,
                 parent_state_name: None,
@@ -1633,8 +1594,7 @@ fn derive_wait_time_from_timestamp_field(
                 parent_state_name: None,
                 error_name: None,
                 error_message: format!(
-                    "Failed to parse JSON path for wait time timestamp in state configuration: {}",
-                    err
+                    "Failed to parse JSON path for wait time timestamp in state configuration: {err}",
                 ),
                 duration: Some(as_fractional_seconds(instant_for_duration.elapsed())),
             })
@@ -1664,10 +1624,7 @@ fn wait_time_from_timestamp(timestamp: &str, now_millis: i64) -> Result<u64, Sta
             state_name: "unknown".to_string(),
             parent_state_name: None,
             error_name: None,
-            error_message: format!(
-                "Failed to parse timestamp for wait state: {}",
-                err.to_string()
-            ),
+            error_message: format!("Failed to parse timestamp for wait state: {err}",),
             duration: None,
         })
     })?;
@@ -1690,7 +1647,7 @@ fn wait_time_from_timestamp(timestamp: &str, now_millis: i64) -> Result<u64, Sta
     Ok(wait_time as u64)
 }
 
-fn error_matches(error: &str, match_errors: &Vec<String>) -> bool {
+fn error_matches(error: &str, match_errors: &[String]) -> bool {
     if match_errors.contains(&"*".to_string()) {
         return true;
     }
@@ -1728,8 +1685,7 @@ fn from_payload_template_engine_error(
                 parent_state_name,
                 error_name: None,
                 error_message: format!(
-                    "Function call failed in payload template engine: {}",
-                    func_call_err,
+                    "Function call failed in payload template engine: {func_call_err}",
                 ),
                 duration: Some(duration),
             })
@@ -1740,8 +1696,7 @@ fn from_payload_template_engine_error(
                 parent_state_name,
                 error_name: None,
                 error_message: format!(
-                    "Function \"{}\" not found in payload template engine",
-                    function_name,
+                    "Function \"{function_name}\" not found in payload template engine",
                 ),
                 duration: Some(duration),
             })
@@ -1752,8 +1707,7 @@ fn from_payload_template_engine_error(
                 parent_state_name,
                 error_name: None,
                 error_message: format!(
-                    "Failed to parse function call in payload template engine: {}",
-                    err_message,
+                    "Failed to parse function call in payload template engine: {err_message}",
                 ),
                 duration: Some(duration),
             })
@@ -1764,8 +1718,7 @@ fn from_payload_template_engine_error(
                 parent_state_name,
                 error_name: None,
                 error_message: format!(
-                    "Failed to parse JSON path in payload template engine: {}",
-                    err_message,
+                    "Failed to parse JSON path in payload template engine: {err_message}",
                 ),
                 duration: Some(duration),
             })

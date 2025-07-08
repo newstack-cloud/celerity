@@ -76,8 +76,7 @@ pub fn build_intermediate_blueprint_config_from_yaml(
             }
         }
         _ => Err(BlueprintParseError::YamlFormatError(format!(
-            "expected a mapping for blueprint, found {:?}",
-            yaml
+            "expected a mapping for blueprint, found {yaml:?}",
         )))?,
     };
 
@@ -102,10 +101,10 @@ fn validate_assign_version(
 ) -> Result<(), BlueprintParseError> {
     if version != BLUELINK_BLUEPRINT_V2025_05_12 {
         return Err(BlueprintParseError::YamlFormatError(format!(
-            "expected version {}, found {}",
-            BLUELINK_BLUEPRINT_V2025_05_12, version
+            "expected version {BLUELINK_BLUEPRINT_V2025_05_12}, found {version}",
         )));
     }
+
     blueprint.version = version.to_string();
     Ok(())
 }
@@ -142,8 +141,7 @@ fn validate_variable_definition(
                         blueprint_var.var_type = value_str.to_string();
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for variable type, found {:?}",
-                            value
+                            "expected a string for variable type, found {value:?}",
                         )))?;
                     }
                 }
@@ -165,8 +163,7 @@ fn validate_variable_definition(
                         blueprint_var.description = Some(value_str.clone())
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for variable description, found {:?}",
-                            value,
+                            "expected a string for variable description, found {value:?}",
                         )))?
                     }
                 }
@@ -175,8 +172,7 @@ fn validate_variable_definition(
                         blueprint_var.secret = Some(*value_bool)
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean for variable secret field, found {:?}",
-                            value,
+                            "expected a boolean for variable secret field, found {value:?}",
                         )))?
                     }
                 }
@@ -187,8 +183,7 @@ fn validate_variable_definition(
 
     if blueprint_var.var_type.is_empty() {
         return Err(BlueprintParseError::YamlFormatError(format!(
-            "type must be provided in \\\"{}\\\" variable definition",
-            var_name,
+            "type must be provided in \\\"{var_name}\\\" variable definition",
         )));
     }
 
@@ -239,14 +234,12 @@ fn validate_resource_definition(
             blueprint_resource.resource_type = validate_resource_type(value_str)?;
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for resource type, found {:?}",
-                resource_type_val
+                "expected a string for resource type, found {resource_type_val:?}",
             )))?;
         }
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "resource type must be defined for the \\\"{}\\\" resource definition",
-            resource_name,
+            "resource type must be defined for the \\\"{resource_name}\\\" resource definition",
         )))?;
     }
 
@@ -258,8 +251,7 @@ fn validate_resource_definition(
                         blueprint_resource.metadata = validate_resource_metadata(value_map)?;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a mapping for resource metadata, found {:?}",
-                            value,
+                            "expected a mapping for resource metadata, found {value:?}",
                         )))?
                     }
                 }
@@ -268,8 +260,7 @@ fn validate_resource_definition(
                         blueprint_resource.link_selector = Some(validate_link_selector(value_map)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a mapping for resource link selector, found {:?}",
-                            value
+                            "expected a mapping for resource link selector, found {value:?}",
                         )))?
                     }
                 }
@@ -278,8 +269,7 @@ fn validate_resource_definition(
                         blueprint_resource.description = Some(value_str.clone())
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for resource description, found {:?}",
-                            value,
+                            "expected a string for resource description, found {value:?}",
                         )))?
                     }
                 }
@@ -289,8 +279,7 @@ fn validate_resource_definition(
                             validate_resource_spec(&blueprint_resource.resource_type, value_map)?;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a mapping for resource spec, found {:?}",
-                            value,
+                            "expected a mapping for resource spec, found {value:?}",
                         )))?
                     }
                 }
@@ -301,8 +290,7 @@ fn validate_resource_definition(
 
     if let CelerityResourceSpecWithSubs::NoSpec = blueprint_resource.spec {
         return Err(BlueprintParseError::YamlFormatError(format!(
-            "resource spec must be defined for the \\\"{}\\\" resource definition",
-            resource_name,
+            "resource spec must be defined for the \\\"{resource_name}\\\" resource definition",
         )));
     }
 
@@ -376,8 +364,7 @@ fn validate_celerity_handler_spec(
                             Some(parse_substitutions::<ParseError>(value_str)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for handlerName, found {:?}",
-                            value,
+                            "expected a string for handlerName, found {value:?}",
                         )))?
                     }
                 }
@@ -387,8 +374,7 @@ fn validate_celerity_handler_spec(
                             Some(parse_substitutions::<ParseError>(value_str)?)
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for codeLocation, found {:?}",
-                            value,
+                            "expected a string for codeLocation, found {value:?}",
                         )))?
                     }
                 }
@@ -398,8 +384,7 @@ fn validate_celerity_handler_spec(
                             parse_substitutions::<ParseError>(value_str)?
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for handler, found {:?}",
-                            value,
+                            "expected a string for handler, found {value:?}",
                         )))?
                     }
                 }
@@ -409,8 +394,7 @@ fn validate_celerity_handler_spec(
                             Some(parse_substitutions::<ParseError>(value_str)?)
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for runtime, found {:?}",
-                            value,
+                            "expected a string for runtime, found {value:?}",
                         )))?
                     }
                 }
@@ -424,8 +408,7 @@ fn validate_celerity_handler_spec(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for memory, found {:?}",
-                            value,
+                            "expected an integer or ${{..}} substitution for memory, found {value:?}",
                         )))?
                     }
                 }
@@ -439,8 +422,7 @@ fn validate_celerity_handler_spec(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer for timeout, found {:?}",
-                            value,
+                            "expected an integer for timeout, found {value:?}",
                         )))?
                     }
                 }
@@ -454,8 +436,7 @@ fn validate_celerity_handler_spec(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for tracingEnabled, found {:?}",
-                            value,
+                            "expected a boolean or ${{..}} substitution for tracingEnabled, found {value:?}",
                         )))?
                     }
                 }
@@ -465,8 +446,7 @@ fn validate_celerity_handler_spec(
                             Some(validate_map_of_strings(value_map)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a mapping for environmentVariables, found {:?}",
-                            value,
+                            "expected a mapping for environmentVariables, found {value:?}",
                         )))?
                     }
                 }
@@ -486,8 +466,7 @@ fn validate_celerity_schedule_spec(
             celerity_schedule_spec.schedule = parse_substitutions::<ParseError>(schedule_str)?;
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for schedule, found {:?}",
-                schedule_val
+                "expected a string for schedule, found {schedule_val:?}",
             )))?;
         }
     } else {
@@ -511,8 +490,7 @@ fn validate_celerity_consumer_spec(
                             Some(parse_substitutions::<ParseError>(value_str)?)
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for sourceId, found {:?}",
-                            value,
+                            "expected a string for sourceId, found {value:?}",
                         )))?
                     }
                 }
@@ -526,8 +504,7 @@ fn validate_celerity_consumer_spec(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for batchSize, found {:?}",
-                            value,
+                            "expected an integer or ${{..}} substitution for batchSize, found {value:?}",
                         )))?
                     }
                 }
@@ -542,8 +519,7 @@ fn validate_celerity_consumer_spec(
                             )?))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for visibilityTimeout, found {:?}",
-                            value,
+                            "expected an integer or ${{..}} substitution for visibilityTimeout, found {value:?}",
                         )))?
                     }
                 }
@@ -558,8 +534,7 @@ fn validate_celerity_consumer_spec(
                             )?))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for waitTimeSeconds, found {:?}",
-                            value,
+                            "expected an integer or ${{..}} substitution for waitTimeSeconds, found {value:?}",
                         )))?
                     }
                 }
@@ -574,8 +549,7 @@ fn validate_celerity_consumer_spec(
                             )?))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for partialFailures, found {:?}",
-                            value,
+                            "expected a boolean or ${{..}} substitution for partialFailures, found {value:?}",
                         )))?
                     }
                 }
@@ -585,8 +559,7 @@ fn validate_celerity_consumer_spec(
                             Some(parse_substitutions::<ParseError>(value_str)?)
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for routingKey, found {:?}",
-                            value,
+                            "expected a string for routingKey, found {value:?}",
                         )))?
                     }
                 }
@@ -596,9 +569,8 @@ fn validate_celerity_consumer_spec(
                             Some(validate_consumer_external_events_config_map(value_map)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a mapping for events, found {:?}",
-                            value,
-                        )))?
+                            "expected a mapping for events, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -639,8 +611,7 @@ fn validate_consumer_external_event_config(
             event_config.source_type = validate_event_source_type(value_str)?;
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for event source type, found {:?}",
-                source_type_val
+                "expected a string for event source type, found {source_type_val:?}",
             )))?;
         }
     } else {
@@ -674,8 +645,7 @@ fn validate_consumer_external_event_config(
             }
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a mapping for sourceConfiguration, found {:?}",
-                source_config
+                "expected a mapping for sourceConfiguration, found {source_config:?}",
             )))?;
         }
     } else {
@@ -697,8 +667,7 @@ fn validate_event_source_object_storage_config(
             object_storage_config.bucket = parse_substitutions::<ParseError>(bucket_str)?;
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for bucket, found {:?}",
-                bucket_val
+                "expected a string for bucket, found {bucket_val:?}",
             )))?;
         }
     } else {
@@ -713,8 +682,7 @@ fn validate_event_source_object_storage_config(
             object_storage_config.events = parse_substitutions_array(events_arr)?;
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected an array for object source events, found {:?}",
-                events_val
+                "expected an array for object source events, found {events_val:?}",
             )))?;
         }
     }
@@ -730,8 +698,7 @@ fn parse_substitutions_array(
             object_storage_events.push(parse_substitutions::<ParseError>(event_str)?);
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for object storage source event, found {:?}",
-                event_type
+                "expected a string for object storage source event, found {event_type:?}",
             )))?;
         }
     }
@@ -750,8 +717,7 @@ fn validate_event_source_database_stream_config(
             database_stream_config.db_stream_id = parse_substitutions::<ParseError>(db_stream_id)?;
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for dbStreamId, found {:?}",
-                db_stream_id_val
+                "expected a string for dbStreamId, found {db_stream_id_val:?}",
             )))?;
         }
     } else {
@@ -774,8 +740,7 @@ fn validate_event_source_database_stream_config(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for batchSize, found {:?}",
-                            value,
+                            "expected an integer or ${{..}} substitution for batchSize, found {value:?}",
                         )))?
                     }
                 }
@@ -790,8 +755,7 @@ fn validate_event_source_database_stream_config(
                             )?))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for partialFailures, found {:?}",
-                            value,
+                            "expected a boolean or ${{..}} substitution for partialFailures, found {value:?}",                            
                         )))?
                     }
                 }
@@ -806,8 +770,7 @@ fn validate_event_source_database_stream_config(
                             )?))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for startFromBeginning, found {:?}",
-                            value,
+                            "expected a boolean or ${{..}} substitution for startFromBeginning, found {value:?}",
                         )))?
                     }
                 }
@@ -831,8 +794,7 @@ fn validate_event_source_data_stream_config(
             data_stream_config.data_stream_id = parse_substitutions::<ParseError>(data_stream_id)?;
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for dataStreamId, found {:?}",
-                data_stream_id_val
+                "expected a string for dataStreamId, found {data_stream_id_val:?}",
             )))?;
         }
     } else {
@@ -855,8 +817,7 @@ fn validate_event_source_data_stream_config(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for batchSize, found {:?}",
-                            value,
+                            "expected an integer or ${{..}} substitution for batchSize, found {value:?}",
                         )))?
                     }
                 }
@@ -870,8 +831,7 @@ fn validate_event_source_data_stream_config(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for partialFailures, found {:?}",
-                            value,
+                            "expected a boolean or ${{..}} substitution for partialFailures, found {value:?}",
                         )))?
                     }
                 }
@@ -886,8 +846,7 @@ fn validate_event_source_data_stream_config(
                             )?))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for startFromBeginning, found {:?}",
-                            value,
+                            "expected a boolean or ${{..}} substitution for startFromBeginning, found {value:?}",
                         )))?
                     }
                 }
@@ -908,8 +867,7 @@ fn validate_event_source_type(
         "dbStream" => Ok(EventSourceType::DatabaseStream),
         "dataStream" => Ok(EventSourceType::DataStream),
         _ => Err(BlueprintParseError::YamlFormatError(format!(
-            "expected a supported event source type, found {}",
-            source_type
+            "expected a supported event source type, found {source_type}",
         ))),
     }
 }
@@ -927,9 +885,8 @@ fn validate_map_of_strings(
                 );
             } else {
                 Err(BlueprintParseError::YamlFormatError(format!(
-                    "expected a string for environment variable value, found {:?}",
-                    value,
-                )))?
+                    "expected a string for environment variable value, found {value:?}",
+                )))?;
             }
         }
     }
@@ -955,9 +912,8 @@ fn validate_celerity_api_spec(
                         celerity_api_spec.protocols = protocols;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an array for api protocols, found {:?}",
-                            value,
-                        )))?
+                            "expected an array for api protocols, found {value:?}",
+                        )))?;
                     }
                 }
                 "cors" => {
@@ -979,9 +935,8 @@ fn validate_celerity_api_spec(
                         celerity_api_spec.domain = Some(validate_celerity_api_domain(value_map)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a mapping for domain configuration, found {:?}",
-                            value
-                        )))?
+                            "expected a mapping for domain configuration, found {value:?}",
+                        )))?;
                     }
                 }
                 "auth" => {
@@ -989,9 +944,8 @@ fn validate_celerity_api_spec(
                         celerity_api_spec.auth = Some(validate_celerity_api_auth(value_map)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a mapping for auth, found {:?}",
-                            value,
-                        )))?
+                            "expected a mapping for auth, found {value:?}",
+                        )))?;
                     }
                 }
                 "tracingEnabled" => {
@@ -1004,9 +958,8 @@ fn validate_celerity_api_spec(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for tracingEnabled, found {:?}",
-                            value,
-                        )))?
+                            "expected a boolean or ${{..}} substitution for tracingEnabled, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1040,9 +993,8 @@ fn validate_celerity_api_cors_config(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for allowCredentials, found {:?}",
-                            value,
-                        )))?
+                            "expected a boolean or ${{..}} substitution for allowCredentials, found {value:?}",
+                        )))?;
                     }
                 }
                 "allowOrigins" => {
@@ -1067,9 +1019,8 @@ fn validate_celerity_api_cors_config(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for maxAge, found {:?}",
-                            value,
-                        )))?
+                            "expected an integer or ${{..}} substitution for maxAge, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1090,16 +1041,14 @@ fn validate_cors_item_array(
                 values.push(parse_substitutions::<ParseError>(value_str)?);
             } else {
                 Err(BlueprintParseError::YamlFormatError(format!(
-                    "expected a string for {}, found {:?}",
-                    field, item,
-                )))?
+                    "expected a string for {field}, found {item:?}",
+                )))?;
             }
         }
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "expected an array for {}, found {:?}",
-            field, value,
-        )))?
+            "expected an array for {field}, found {value:?}",
+        )))?;
     }
     Ok(Some(values))
 }
@@ -1116,9 +1065,8 @@ fn validate_celerity_api_domain(
                         domain.domain_name = parse_substitutions::<ParseError>(value_str)?;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for domain name, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for domain name, found {value:?}",
+                        )))?;
                     }
                 }
                 "basePaths" => {
@@ -1137,17 +1085,15 @@ fn validate_celerity_api_domain(
                                 );
                             } else {
                                 Err(BlueprintParseError::YamlFormatError(format!(
-                                    "expected a string or mapping for base path, found {:?}",
-                                    item,
-                                )))?
+                                    "expected a string or mapping for base path, found {item:?}",
+                                )))?;
                             }
                         }
                         domain.base_paths = base_paths;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an array for base paths, found {:?}",
-                            value,
-                        )))?
+                            "expected an array for base paths, found {value:?}",
+                        )))?;
                     }
                 }
                 "normalizeBasePath" => {
@@ -1160,9 +1106,8 @@ fn validate_celerity_api_domain(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for normalizeBasePath, found {:?}",
-                            value,
-                        )))?
+                            "expected a boolean or ${{..}} substitution for normalizeBasePath, found {value:?}",
+                        )))?;
                     }
                 }
                 "certificateId" => {
@@ -1170,9 +1115,8 @@ fn validate_celerity_api_domain(
                         domain.certificate_id = parse_substitutions::<ParseError>(value_str)?;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for certificateId, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for certificateId, found {value:?}",
+                        )))?;
                     }
                 }
                 "securityPolicy" => {
@@ -1181,9 +1125,8 @@ fn validate_celerity_api_domain(
                             Some(parse_substitutions::<ParseError>(value_str)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for securityPolicy, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for securityPolicy, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1220,8 +1163,7 @@ fn validate_api_protocol(
             "http" => Ok(Some(MappingNode::Scalar(BlueprintScalarValue::Str("http".to_string())))),
             "websocket" => Ok(Some(MappingNode::Scalar(BlueprintScalarValue::Str("websocket".to_string())))),
             _ => Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a supported api protocol (\\\"http\\\" or \\\"websocket\\\" or websocket configuration object), found {}",
-                protocol_str
+                "expected a supported api protocol (\\\"http\\\" or \\\"websocket\\\" or websocket configuration object), found {protocol_str}",
             ))),
         }
     } else if let yaml_rust2::Yaml::Hash(protocol_map) = protocol_item {
@@ -1236,8 +1178,7 @@ fn validate_api_protocol(
                 )]))))
             } else {
                 Err(BlueprintParseError::YamlFormatError(format!(
-                    "expected a mapping for websocket configuration, found {:?}",
-                    config_item,
+                    "expected a mapping for websocket configuration, found {config_item:?}",
                 )))
             }
         } else {
@@ -1247,8 +1188,7 @@ fn validate_api_protocol(
         }
     } else {
         Err(BlueprintParseError::YamlFormatError(format!(
-            "expected a string or websocket configuration object for api protocol, found {:?}",
-            protocol_item,
+            "expected a string or websocket configuration object for api protocol, found {protocol_item:?}",
         )))
     }
 }
@@ -1270,9 +1210,8 @@ fn validate_websocket_config(
                         );
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for routeKey, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for routeKey, found {value:?}",
+                        )))?;
                     }
                 }
                 "authStrategy" => {
@@ -1285,9 +1224,8 @@ fn validate_websocket_config(
                         );
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for authStrategy, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for authStrategy, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1307,14 +1245,13 @@ fn validate_celerity_api_auth(
             auth.guards = validate_celerity_api_auth_guards(value_map)?;
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a mapping for guards, found {:?}",
-                guards,
-            )))?
+                "expected a mapping for guards, found {guards:?}",
+            )))?;
         }
     } else {
         Err(BlueprintParseError::YamlFormatError(
             "expected a guards field for auth configuration".to_string(),
-        ))?
+        ))?;
     }
 
     if let Some(default_guard) =
@@ -1324,9 +1261,8 @@ fn validate_celerity_api_auth(
             auth.default_guard = Some(parse_substitutions::<ParseError>(value_str)?);
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for defaultGuard, found {:?}",
-                default_guard,
-            )))?
+                "expected a string for defaultGuard, found {default_guard:?}",
+            )))?;
         }
     }
 
@@ -1363,9 +1299,8 @@ fn validate_celerity_api_auth_guard(
                             validate_celerity_api_auth_guard_type(value_str.clone())?;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for type, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for type, found {value:?}",
+                        )))?;
                     }
                 }
                 "issuer" => {
@@ -1373,9 +1308,8 @@ fn validate_celerity_api_auth_guard(
                         guard.issuer = Some(parse_substitutions::<ParseError>(value_str)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for issuer, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for issuer, found {value:?}",
+                        )))?;
                     }
                 }
                 "tokenSource" => {
@@ -1391,9 +1325,8 @@ fn validate_celerity_api_auth_guard(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string or mapping for token source, found {:?}",
-                            value,
-                        )))?
+                            "expected a string or mapping for token source, found {value:?}",
+                        )))?;
                     }
                 }
                 "audience" => {
@@ -1404,17 +1337,15 @@ fn validate_celerity_api_auth_guard(
                                 audiences.push(parse_substitutions::<ParseError>(value_str)?);
                             } else {
                                 Err(BlueprintParseError::YamlFormatError(format!(
-                                    "expected a string for audience, found {:?}",
-                                    item,
-                                )))?
+                                    "expected a string for audience, found {item:?}",
+                                )))?;
                             }
                         }
                         guard.audience = Some(audiences);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an array for audience, found {:?}",
-                            value,
-                        )))?
+                            "expected an array for audience, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1447,17 +1378,13 @@ fn validate_celerity_api_auth_value_source_config(
                                 value_source_config.protocol = MappingNode::Scalar(BlueprintScalarValue::Str("websocket".to_string()))
                             }
                             _ => Err(BlueprintParseError::YamlFormatError(format!(
-                                "expected \\\"http\\\" or \\\"websocket\\\" for \\\"{}\\\" value source protocol, found {:?}",
-                                context,
-                                value,
+                                "expected \\\"http\\\" or \\\"websocket\\\" for \\\"{context}\\\" value source protocol, found {value:?}",
                             )))?,
                         }
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected \\\"http\\\" or \\\"websocket\\\" for \\\"{}\\\" value source protocol, found {:?}",
-                            context,
-                            value,
-                        )))?
+                            "expected \\\"http\\\" or \\\"websocket\\\" for \\\"{context}\\\" value source protocol, found {value:?}",
+                        )))?;
                     }
                 }
                 "source" => {
@@ -1465,9 +1392,8 @@ fn validate_celerity_api_auth_value_source_config(
                         value_source_config.source = parse_substitutions::<ParseError>(val_str)?;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for \\\"{}\\\" value source, found {:?}",
-                            context, value,
-                        )))?
+                            "expected a string for \\\"{context}\\\" value source, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1492,15 +1418,13 @@ fn validate_celerity_api_base_path_config(
                                 base_path_config.protocol = MappingNode::Scalar(BlueprintScalarValue::Str("websocket".to_string()))
                             }
                             _ => Err(BlueprintParseError::YamlFormatError(format!(
-                                "expected \\\"http\\\" or \\\"websocket\\\" for base path protocol, found {:?}",
-                                value,
+                                "expected \\\"http\\\" or \\\"websocket\\\" for base path protocol, found {value:?}",
                             )))?,
                         }
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected \\\"http\\\" or \\\"websocket\\\" for base path protocol, found {:?}",
-                            value,
-                        )))?
+                            "expected \\\"http\\\" or \\\"websocket\\\" for base path protocol, found {value:?}",
+                        )))?;
                     }
                 }
                 "basePath" => {
@@ -1508,9 +1432,8 @@ fn validate_celerity_api_base_path_config(
                         base_path_config.base_path = parse_substitutions::<ParseError>(val_str)?;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for base path, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for base path, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1531,9 +1454,8 @@ fn validate_celerity_api_auth_guard_type(
             values: vec![StringOrSubstitution::StringValue("custom".to_string())],
         }),
         _ => Err(BlueprintParseError::YamlFormatError(format!(
-            "expected a supported guard type (\\\"jwt\\\", \\\"custom\\\"), found {}",
-            guard_type
-        )))?,
+            "expected a supported guard type (\\\"jwt\\\", \\\"custom\\\"), found {guard_type}",
+        ))),
     }
 }
 
@@ -1550,9 +1472,8 @@ fn validate_resource_metadata(
                             parse_substitutions::<ParseError>(value_str)?;
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for resource display name, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for resource display name, found {value:?}",
+                        )))?;
                     }
                 }
                 "annotations" => {
@@ -1579,8 +1500,7 @@ fn validate_resource_metadata(
                                         labels.insert(key_str, value_str.clone());
                                     }
                                     _ => Err(BlueprintParseError::YamlFormatError(format!(
-                                        "expected a string for label value, found {:?}",
-                                        value,
+                                        "expected a string for label value, found {value:?}",
                                     )))?,
                                 }
                             }
@@ -1596,7 +1516,7 @@ fn validate_resource_metadata(
     if is_string_with_substitutions_empty(&resource_metadata.display_name) {
         Err(BlueprintParseError::YamlFormatError(
             "expected a display name for resource metadata".to_string(),
-        ))?
+        ))?;
     }
     Ok(resource_metadata)
 }
@@ -1611,14 +1531,13 @@ fn validate_link_selector(
             populate_by_label_selectors(&mut link_selector, by_label_map);
         } else {
             Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a mapping for byLabel link selector, found {:?}",
-                by_label_value
-            )))?
+                "expected a mapping for byLabel link selector, found {by_label_value:?}",
+            )))?;
         }
     } else {
         Err(BlueprintParseError::YamlFormatError(
             "expected a byLabel field for link selector".to_string(),
-        ))?
+        ))?;
     }
     Ok(link_selector)
 }
@@ -1650,9 +1569,8 @@ fn validate_celerity_config_spec(
                             Some(parse_substitutions::<ParseError>(value_str)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for name, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for name, found {value:?}",
+                        )))?;
                     }
                 }
                 "plaintext" => {
@@ -1661,9 +1579,8 @@ fn validate_celerity_config_spec(
                             Some(validate_array_of_strings(value_arr, "plaintext")?)
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an array for plaintext, found {:?}",
-                            value,
-                        )))?
+                            "expected an array for plaintext, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1679,19 +1596,14 @@ fn validate_celerity_bucket_spec(
     let mut celerity_bucket_spec = CelerityBucketSpecWithSubs::default();
     for (key, value) in spec_map {
         if let yaml_rust2::Yaml::String(key_str) = key {
-            match key_str.as_str() {
-                "name" => {
-                    if let yaml_rust2::Yaml::String(value_str) = value {
-                        celerity_bucket_spec.name =
-                            Some(parse_substitutions::<ParseError>(value_str)?);
-                    } else {
-                        Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for name, found {:?}",
-                            value,
-                        )))?
-                    }
+            if key_str.as_str() == "name" {
+                if let yaml_rust2::Yaml::String(value_str) = value {
+                    celerity_bucket_spec.name = Some(parse_substitutions::<ParseError>(value_str)?);
+                } else {
+                    Err(BlueprintParseError::YamlFormatError(format!(
+                        "expected a string for name, found {value:?}",
+                    )))?;
                 }
-                _ => (),
             }
         }
     }
@@ -1711,9 +1623,8 @@ fn validate_celerity_topic_spec(
                             Some(parse_substitutions::<ParseError>(value_str)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for name, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for name, found {value:?}",
+                        )))?;
                     }
                 }
                 "fifo" => {
@@ -1726,9 +1637,8 @@ fn validate_celerity_topic_spec(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for fifo, found {:?}",
-                            value,
-                        )))?
+                            "expected a boolean or ${{..}} substitution for fifo, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1751,9 +1661,8 @@ fn validate_celerity_queue_spec(
                             Some(parse_substitutions::<ParseError>(value_str)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for name, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for name, found {value:?}",
+                        )))?;
                     }
                 }
                 "fifo" => {
@@ -1766,9 +1675,8 @@ fn validate_celerity_queue_spec(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for fifo, found {:?}",
-                            value,
-                        )))?
+                            "expected a boolean or ${{..}} substitution for fifo, found {value:?}",
+                        )))?;
                     }
                 }
                 "visibilityTimeout" => {
@@ -1781,9 +1689,8 @@ fn validate_celerity_queue_spec(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for visibilityTimeout, found {:?}",
-                            value,
-                        )))?
+                            "expected an integer or ${{..}} substitution for visibilityTimeout, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),
@@ -1799,15 +1706,12 @@ fn validate_populate_blueprint_metadata(
 ) -> Result<(), BlueprintParseError> {
     for (key, value) in value_map {
         if let yaml_rust2::Yaml::String(key_str) = key {
-            match key_str.as_str() {
-                "sharedHandlerConfig" => {
-                    if let yaml_rust2::Yaml::Hash(value_map) = value {
-                        blueprint.metadata = Some(BlueprintMetadataWithSubs {
-                            shared_handler_config: Some(validate_shared_handler_config(value_map)?),
-                        });
-                    }
+            if key_str.as_str() == "sharedHandlerConfig" {
+                if let yaml_rust2::Yaml::Hash(value_map) = value {
+                    blueprint.metadata = Some(BlueprintMetadataWithSubs {
+                        shared_handler_config: Some(validate_shared_handler_config(value_map)?),
+                    });
                 }
-                _ => (),
             }
         }
     }
@@ -1827,9 +1731,8 @@ fn validate_shared_handler_config(
                             Some(parse_substitutions::<ParseError>(value_str)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for codeLocation, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for codeLocation, found {value:?}",
+                        )))?;
                     }
                 }
                 "runtime" => {
@@ -1838,9 +1741,8 @@ fn validate_shared_handler_config(
                             Some(parse_substitutions::<ParseError>(value_str)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string for runtime, found {:?}",
-                            value,
-                        )))?
+                            "expected a string for runtime, found {value:?}",
+                        )))?;
                     }
                 }
                 "memory" => {
@@ -1853,9 +1755,8 @@ fn validate_shared_handler_config(
                         ));
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for memory, found {:?}",
-                            value,
-                        )))?
+                            "expected an integer or ${{..}} substitution for memory, found {value:?}",
+                        )))?;
                     }
                 }
                 "timeout" => {
@@ -1868,24 +1769,22 @@ fn validate_shared_handler_config(
                         ));
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected an integer or ${{..}} substitution for timeout, found {:?}",
-                            value,
-                        )))?
+                            "expected an integer or ${{..}} substitution for timeout, found {value:?}",
+                        )))?;
                     }
                 }
                 "tracingEnabled" => {
                     if let yaml_rust2::Yaml::Boolean(value_bool) = value {
                         shared_handler_config.tracing_enabled =
-                            Some(MappingNode::Scalar(BlueprintScalarValue::Bool(*value_bool)))
+                            Some(MappingNode::Scalar(BlueprintScalarValue::Bool(*value_bool)));
                     } else if let yaml_rust2::Yaml::String(value_str) = value {
                         shared_handler_config.tracing_enabled = Some(MappingNode::SubstitutionStr(
                             validate_single_substitution(value_str, "boolean")?,
                         ));
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a boolean or ${{..}} substitution for tracingEnabled, found {:?}",
-                            value
-                        )))?
+                            "expected a boolean or ${{..}} substitution for tracingEnabled, found {value:?}",
+                        )))?;
                     }
                 }
                 "environmentVariables" => {
@@ -1894,9 +1793,8 @@ fn validate_shared_handler_config(
                             Some(validate_map_of_strings(value_map)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a mapping for environmentVariables, found {:?}",
-                            value,
-                        )))?
+                            "expected a mapping for environmentVariables, found {value:?}",
+                        )))?;
                     }
                 }
                 _ => (),

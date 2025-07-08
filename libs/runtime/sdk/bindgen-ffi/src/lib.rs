@@ -1,4 +1,3 @@
-#[allow(clippy::extra_unused_lifetimes)]
 pub(crate) use crate::tracing::*;
 pub use app_config::*;
 pub use application::*;
