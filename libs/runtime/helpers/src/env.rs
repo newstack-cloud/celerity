@@ -25,6 +25,12 @@ impl ProcessEnvVars {
     }
 }
 
+impl Default for ProcessEnvVars {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EnvVars for ProcessEnvVars {
     fn var(&self, key: &str) -> Result<String, VarError> {
         env::var(key)

@@ -37,6 +37,12 @@ impl DefaultClock {
     }
 }
 
+impl Default for DefaultClock {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Clock for DefaultClock {
     fn now(&self) -> u64 {
         SystemTime::now()

@@ -34,10 +34,10 @@ impl fmt::Display for MessageHandlerError {
                 "message handler failed: a handler must be registered to process messages"
             ),
             MessageHandlerError::Timeout(elapsed_error) => {
-                write!(f, "message handler failed: timeout {}", elapsed_error)
+                write!(f, "message handler failed: timeout {elapsed_error}")
             }
             MessageHandlerError::HandlerFailure(handler_error) => {
-                write!(f, "message handler failed: {}", handler_error)
+                write!(f, "message handler failed: {handler_error}")
             }
         }
     }
