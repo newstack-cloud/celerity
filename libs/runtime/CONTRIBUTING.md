@@ -78,10 +78,16 @@ pipenv requirements > requirements.txt
 
 [oo_bindgen](https://github.com/stepfunc/oo_bindgen) is used for generating the Java and C# runtime SDKs from the Rust runtime packages.
 
-To build the SDKs and run the accompanying tests, you can run the following script:
+To build the SDKs and run the accompanying tests, you can run the following script in unix-based systems:
 
 ```bash
 ./scripts/build-test-sdk-bindgen.sh
+```
+
+For Windows you can run:
+
+```powershell
+.\scripts\build-test-sdk-bindgen.ps1
 ```
 
 ## Releasing
