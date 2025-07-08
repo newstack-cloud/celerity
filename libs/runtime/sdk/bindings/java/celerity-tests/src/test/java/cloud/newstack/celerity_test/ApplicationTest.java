@@ -37,7 +37,7 @@ class ApplicationTest {
         @Override
         public void onRequest(Response response) {
             response.setStatus(ushort(200));
-            response.send("{\"message\",\"Order received\"}");
+            response.send("{\"message\":\"Order received\"}");
         }
     }
 
@@ -92,7 +92,7 @@ class ApplicationTest {
                 HttpResponse<String> response = client.send(request,
                         HttpResponse.BodyHandlers.ofString());
 
-                assertThat(response.body()).isEqualTo("{\"message\",\"Order received\"}");
+                assertThat(response.body()).isEqualTo("{\"message\":\"Order received\"}");
 
             } catch (IOException | URISyntaxException | InterruptedException e) {
                 fail(e.toString());
