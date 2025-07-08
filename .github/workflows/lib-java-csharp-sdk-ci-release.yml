@@ -62,7 +62,7 @@ jobs:
       - name: .NET bindings
         run: cargo run --bin celerity-runtime-bindings -- --dotnet --doxygen --no-tests
       - name: Java bindings
-        run: cargo run --bin celerity-runtime-bindings -- --java
+        run: cargo run --bin celerity-runtime-bindings -- --java --no-tests
       - name: Extract documentation
         run: |
           mkdir -p ~/doc
@@ -120,9 +120,21 @@ jobs:
       - name: Test .NET Bindings
         if: ${{ matrix.test }}
         run: cargo run --bin celerity-runtime-bindings -- --dotnet -r ${{ matrix.target }} -a ./target/${{ matrix.target }}/release
+        env:
+          # Test environment variables used to resolve vars in the test blueprint.
+          CELERITY_VARIABLE_secretStoreId: test-secret-store
+          CELERITY_VARIABLE_certificateId: test-certificate
+          CELERITY_VARIABLE_logLevel: debug
+          CELERITY_VARIABLE_paymentApiSecret: test-payment-api-secret
       - name: Test Java
         if: ${{ matrix.test }}
         run: cargo run --bin celerity-runtime-bindings -- --java -r ${{ matrix.target }} -a ./target/${{ matrix.target }}/release
+        env:
+          # Test environment variables used to resolve vars in the test blueprint.
+          CELERITY_VARIABLE_secretStoreId: test-secret-store
+          CELERITY_VARIABLE_certificateId: test-certificate
+          CELERITY_VARIABLE_logLevel: debug
+          CELERITY_VARIABLE_paymentApiSecret: test-payment-api-secret
   # Build bindings on MacOS [64-bit macOS (10.7+, Lion+) (x86_64-apple-darwin)]
   bindings-macos:
     strategy:
@@ -159,8 +171,20 @@ jobs:
           path: ./libs/runtime/ffi-modules
       - name: Test .NET bindings
         run: cargo run --bin celerity-runtime-bindings -- --dotnet
+        env:
+          # Test environment variables used to resolve vars in the test blueprint.
+          CELERITY_VARIABLE_secretStoreId: test-secret-store
+          CELERITY_VARIABLE_certificateId: test-certificate
+          CELERITY_VARIABLE_logLevel: debug
+          CELERITY_VARIABLE_paymentApiSecret: test-payment-api-secret
       - name: Test Java bindings
         run: cargo run --bin celerity-runtime-bindings -- --java
+        env:
+          # Test environment variables used to resolve vars in the test blueprint.
+          CELERITY_VARIABLE_secretStoreId: test-secret-store
+          CELERITY_VARIABLE_certificateId: test-certificate
+          CELERITY_VARIABLE_logLevel: debug
+          CELERITY_VARIABLE_paymentApiSecret: test-payment-api-secret
   # Cross-compilation for Linux to produce portable C and JNI libraries
   bindings-linux:
     env:
