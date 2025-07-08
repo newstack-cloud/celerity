@@ -66,8 +66,8 @@ jobs:
       - name: Extract documentation
         run: |
           mkdir -p ~/doc
-          cp -a ffi/bindings/dotnet/celerity/doc ~/doc/dotnet
-          cp -a ffi/bindings/java/celerity/target/apidocs ~/doc/java
+          cp -a sdk/bindings/dotnet/celerity/doc ~/doc/dotnet
+          cp -a sdk/bindings/java/celerity/target/apidocs ~/doc/java
       - name: Upload documentation
         uses: actions/upload-artifact@v4
         with:
