@@ -1,42 +1,52 @@
 {
   "targets": {
     "x86_64-pc-windows-msvc": {
+      "cpp": false,
       "dotnet": true,
       "java": true
     },
     "i686-pc-windows-msvc": {
+      "cpp": false,
       "dotnet": true,
       "java": false
     },
     "aarch64-apple-darwin": {
+      "cpp": false,
       "dotnet": true,
       "java": true
     },
     "x86_64-apple-darwin": {
+      "cpp": false,
       "dotnet": true,
       "java": true
     },
     "x86_64-unknown-linux-gnu": {
+      "cpp": false,
       "dotnet": true,
       "java": true
     },
     "aarch64-unknown-linux-gnu": {
+      "cpp": false,
       "dotnet": true,
       "java": true
     },
     "arm-unknown-linux-gnueabihf": {
+      "cpp": false,
       "dotnet": true,
       "java": true
     },
     "x86_64-unknown-linux-musl": {
+      "cpp": false,
       "dotnet": true,
       "java": false
     },
     "aarch64-unknown-linux-musl": {
+      "cpp": false,
       "dotnet": true,
       "java": false
     },
     "arm-unknown-linux-musleabihf": {
+      "cpp": false,
       "dotnet": true,
       "java": false
     }
