@@ -379,12 +379,10 @@ impl Application {
 
     pub fn shutdown(&mut self) {
         if let Some(tx) = self.server_shutdown_signal.take() {
-            debug!("application http server shutting down");
             tx.send(())
                 .expect("failed to send shutdown signal to http server");
         }
         if let Some(tx) = self.local_api_shutdown_signal.take() {
-            debug!("runtime local api http server shutting down");
             tx.send(())
                 .expect("failed to send shutdown signal to local api server");
         }
