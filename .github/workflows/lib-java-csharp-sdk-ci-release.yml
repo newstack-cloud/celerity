@@ -1,0 +1,301 @@
+# This workflow is inspired by the stepfunc.io DNP3 workflow from the creators of the oobindgen project.
+name: Java & C# Runtime SDK CI + Release
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'libs/runtime/sdk/shared-*'
+    paths:
+      - 'libs/runtime/sdk/bindgen-ffi/**'
+      - 'libs/runtime/sdk/bindgen-ffi-java/**'
+      - 'libs/runtime/sdk/bindings/**'
+      - 'libs/runtime/sdk/runtime-bindings/**'
+      - 'libs/runtime/sdk/java/**'
+      - 'libs/runtime/sdk/csharp/**'
+      - '!**/*.md'
+      - '!LICENSE'
+      - '!**/*.gitignore'
+      - '!.editorconfig'
+      - '!docs/**'
+  pull_request:
+  workflow_dispatch:
+jobs:
+  # Check formatting and run clippy lints
+  linting:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust:
+          - stable
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libs/runtime
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust ${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy -- -D warnings
+  # Build API documentation packages
+  documentation:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libs/runtime
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust ${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install doxygen 1.14.0
+        run: wget -q https://github.com/newstack-cloud/ci-files/raw/main/doxygen/doxygen-1.14.0.linux.bin.tar.gz -O- | sudo tar --strip-components=1 -C /usr -xz doxygen-1.14.0
+      - name: Build FFI and JNI
+        run: cargo build --release -p celerity_runtime_bindgen_ffi -p celerity_runtime_bindgen_ffi_java
+      - name: .NET bindings
+        run: cargo run --bin celerity-runtime-bindings -- --dotnet --doxygen --no-tests
+      - name: Java bindings
+        run: cargo run --bin celerity-runtime-bindings -- --java
+      - name: Extract documentation
+        run: |
+          mkdir -p ~/doc
+          cp -a ffi/bindings/dotnet/celerity/doc ~/doc/dotnet
+          cp -a ffi/bindings/java/celerity/target/apidocs ~/doc/java
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: doc-api
+          path: ~/doc
+  # Build bindings on Windows x64 [64-bit MSVC (Windows 7+) (x86_64-pc-windows-msvc)]
+  # and x86 [32-bit MSVC (Windows 7+) (i686-pc-windows-msvc)]
+  bindings-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: libs/runtime
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc # 64-bit MSVC (Windows 7+)
+            test: true
+          - target: i686-pc-windows-msvc # 32-bit MSVC (Windows 7+)
+            test: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install NASM
+        run: |
+          choco install nasm
+          echo "C:\Program Files\NASM" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+      - name: Create FFI modules DIR
+        run: mkdir ffi-modules\${{ matrix.target }}
+      - name: Build FFI
+        run: cargo build -p celerity_runtime_bindgen_ffi --release --target ${{ matrix.target }} 
+      - name: Build JNI
+        run: cargo build -p celerity_runtime_bindgen_ffi_java --release --target ${{ matrix.target }}
+      - name: Copy the FFI and JNI libs
+        shell: pwsh
+        run: |
+          Copy-Item -Path ./target/${{ matrix.target }}/release/celerity_runtime_bindgen_ffi.dll -Destination ffi-modules/${{ matrix.target }}
+          Copy-Item -Path ./target/${{ matrix.target }}/release/celerity_runtime_bindgen_ffi.dll.lib -Destination ffi-modules/${{ matrix.target }}
+          Copy-Item -Path ./target/${{ matrix.target }}/release/celerity_runtime_bindgen_ffi_java.dll -Destination ffi-modules/${{ matrix.target }}
+      - name: Upload compiled FFI modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffi-modules-${{ matrix.target }}
+          path: ./libs/runtime/ffi-modules
+      - name: Test .NET Bindings
+        if: ${{ matrix.test }}
+        run: cargo run --bin celerity-runtime-bindings -- --dotnet -r ${{ matrix.target }} -a ./target/${{ matrix.target }}/release
+      - name: Test Java
+        if: ${{ matrix.test }}
+        run: cargo run --bin celerity-runtime-bindings -- --java -r ${{ matrix.target }} -a ./target/${{ matrix.target }}/release
+  # Build bindings on MacOS [64-bit macOS (10.7+, Lion+) (x86_64-apple-darwin)]
+  bindings-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14
+            target: aarch64-apple-darwin
+          - runner: macos-13
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: libs/runtime
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Create FFI modules dir
+        run: mkdir -p ffi-modules/${{ matrix.target }}
+      - name: Build FFI
+        run: cargo build -p celerity_runtime_bindgen_ffi --release
+      - name: Build JNI
+        run: cargo build -p celerity_runtime_bindgen_ffi_java --release
+      - name: Copy the FFI and JNI libs
+        run: |
+          cp ./target/release/libcelerity_runtime_bindgen_ffi.dylib ./ffi-modules/${{ matrix.target }}
+          cp ./target/release/libcelerity_runtime_bindgen_ffi_java.dylib ./ffi-modules/${{ matrix.target }}
+      - name: Upload compiled FFI modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffi-modules-${{ matrix.target }}
+          path: ./libs/runtime/ffi-modules
+      - name: Test .NET bindings
+        run: cargo run --bin celerity-runtime-bindings -- --dotnet
+      - name: Test Java bindings
+        run: cargo run --bin celerity-runtime-bindings -- --java
+  # Cross-compilation for Linux to produce portable C and JNI libraries
+  bindings-linux:
+    env:
+      # By default, MUSL will not produce a cdylib with dynamic linkage to MUSL LIB C
+      CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=-crt-static"
+      CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: "-C target-feature=-crt-static"
+      CARGO_TARGET_ARM_UNKNOWN_LINUX_MUSLEABIHF_RUSTFLAGS: "-C target-feature=-crt-static"
+    strategy:
+      fail-fast: false
+      matrix:
+        cases:
+          - target: x86_64-unknown-linux-gnu # 64-bit Linux (kernel 2.6.32+, glibc 2.11+)
+          - target: x86_64-unknown-linux-musl # 64-bit Linux with MUSL
+          - target: arm-unknown-linux-gnueabihf # ARMv6 Linux, hardfloat (kernel 3.2, glibc 2.17)
+          - target: arm-unknown-linux-musleabihf # ARMv6 Linux with MUSL, hardfloat
+          - target: aarch64-unknown-linux-gnu # ARM64 Linux (kernel 4.2, glibc 2.17+)
+          - target: aarch64-unknown-linux-musl # ARM64 Linux with MUSL
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libs/runtime
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.cases.target }}
+      - name: Install Rust Cross
+        run: cargo install cross
+      - name: Create FFI modules dir
+        run: mkdir -p ffi-modules/${{ matrix.target }}
+      - name: Build FFI
+        run: cross build -p celerity_runtime_bindgen_ffi --release --target ${{ matrix.cases.target }}
+      - name: Build JNI
+        run: cross build -p celerity_runtime_bindgen_ffi_java --release --target ${{ matrix.cases.target }}
+      - name: Copy the FFI and JNI libs
+        run: |
+          cp ./target/${{ matrix.cases.target }}/release/libcelerity_runtime_bindgen_ffi.so ./ffi-modules/${{ matrix.cases.target }}
+          cp ./target/${{ matrix.cases.target }}/release/libcelerity_runtime_bindgen_ffi_java.so ./ffi-modules/${{ matrix.cases.target }}
+      - name: Upload compiled FFI modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffi-modules-${{ matrix.cases.target }}
+          path: ./libs/runtime/ffi-modules
+  # Package all the generated bindings
+  packaging:
+    needs: [documentation, bindings-windows, bindings-macos, bindings-linux]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libs/runtime
+    steps:
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download compiled FFI
+        uses: actions/download-artifact@v4
+        with:
+          path: ./libs/runtime/ffi-modules
+          pattern: ffi-modules-*
+          merge-multiple: true
+      - name: Package .NET bindings
+        run: cargo run --bin celerity-runtime-bindings -- --dotnet --package ./ffi-modules --options ./packaging.json
+      - name: Package Java bindings
+        run: cargo run --bin celerity-runtime-bindings -- --java --package ./ffi-modules --options ./packaging.json
+      - name: Upload .NET bindings
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-bindings
+          path: ./libs/runtime/sdk/bindings/dotnet/nupkg/celerity*
+      - name: Upload Java bindings
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-bindings-jar
+          path: ./libs/runtime/sdk/bindings/java/celerity/target/*.jar
+      - name: Upload Java pom.xml
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-bindings-pom
+          path: ./libs/runtime/sdk/bindings/java/celerity/pom.xml
+  release:
+    needs: [packaging]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') && contains(github.ref, 'libs/runtime/sdk/shared-')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Checkout newstack-cloud/celerity-runtime-binding-docs
+        uses: actions/checkout@v4
+        with:
+          repository: newstack-cloud/celerity-runtime-binding-docs
+          ssh-key: ${{ secrets.CELERITY_DOCS_SSH_KEY }}
+          path: docs
+      - name: Upload docs
+        working-directory: docs
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          rm -rf ./celerity/${{github.ref_name}}
+          mkdir -p ./celerity/${{github.ref_name}}
+          cp -a ../artifacts/doc/* ./celerity/${{github.ref_name}}
+          git add -A
+          git commit -m "[celerity] release ${{github.ref_name}}"
+          git push
+      - name: Import PGP key
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.CELERITY_PGP_PRIVATE_KEY }}
+          passphrase: ${{ secrets.CELERITY_PGP_PRIVATE_KEY_PASSPHRASE }}
+      - name: Login to Maven Central
+        uses: whelk-io/maven-settings-xml-action@v14
+        with:
+          servers: '[{ "id": "central", "username": "${{ secrets.CELERITY_MAVEN_CENTRAL_USERNAME }}", "password": "${{ secrets.CELERITY_MAVEN_CENTRAL_PASSWORD }}" }]'
+      - name: Deploy Java
+        shell: bash
+        working-directory: artifacts/java-bindings
+        run: >
+          shopt -s extglob &&
+          mvn gpg:sign-and-deploy-file -DrepositoryId=central -DpomFile=pom.xml -Dfile=celerity-${{github.ref_name}}.jar &&
+          mvn gpg:sign-and-deploy-file -DrepositoryId=central -DpomFile=pom.xml -Dfile=celerity-${{github.ref_name}}-sources.jar -Dclassifier=sources &&
+          mvn gpg:sign-and-deploy-file -DrepositoryId=central -DpomFile=pom.xml -Dfile=celerity-${{github.ref_name}}-javadoc.jar -Dclassifier=javadoc
+      - name: Publish NuGet package
+        shell: bash
+        run: dotnet nuget push $(find artifacts/dotnet-bindings/celerity*.nupkg) -s https://api.nuget.org/v3/index.json -k ${{ secrets.CELERITY_NUGET_KEY }}
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: |
+            release/*.zip
+            artifacts/dotnet-bindings/celerity*
+            artifacts/java-bindings/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
