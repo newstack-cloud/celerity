@@ -62,7 +62,14 @@ jobs:
       - name: .NET bindings
         run: cargo run --bin celerity-runtime-bindings -- --dotnet --doxygen --no-tests
       - name: Java bindings
-        run: cargo run --bin celerity-runtime-bindings -- --java --no-tests
+        # The underlying oo_bindgen CLI tool only generates docs for Java when tests are enabled.
+        run: cargo run --bin celerity-runtime-bindings -- --java
+        env:
+          # Test environment variables used to resolve vars in the test blueprint.
+          CELERITY_VARIABLE_secretStoreId: test-secret-store
+          CELERITY_VARIABLE_certificateId: test-certificate
+          CELERITY_VARIABLE_logLevel: debug
+          CELERITY_VARIABLE_paymentApiSecret: test-payment-api-secret
       - name: Extract documentation
         run: |
           mkdir -p ~/doc
@@ -100,6 +107,11 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
+      - name: Install Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
       - name: Create FFI modules DIR
         run: mkdir ffi-modules\${{ matrix.target }}
       - name: Build FFI
