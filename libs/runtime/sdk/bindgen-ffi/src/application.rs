@@ -47,7 +47,7 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 service_name: "CelerityTestService".to_string(),
                 platform: RuntimePlatform::Local,
                 trace_otlp_collector_endpoint: "http://localhost:4317".to_string(),
-                runtime_max_diagnostics_level: tracing::Level::INFO,
+                runtime_max_diagnostics_level: tracing::Level::DEBUG,
                 test_mode: false,
                 api_resource: None,
                 consumer_app: None,

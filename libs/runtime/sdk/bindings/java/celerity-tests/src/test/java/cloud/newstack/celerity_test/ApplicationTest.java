@@ -1,5 +1,25 @@
 package cloud.newstack.celerity_test;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.HashMap;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.joou.Unsigned.ushort;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import cloud.newstack.celerity.AppConfig;
 import cloud.newstack.celerity.Application;
 import cloud.newstack.celerity.ApplicationStartupException;
 import cloud.newstack.celerity.CoreRuntimeConfig;
@@ -7,28 +27,8 @@ import cloud.newstack.celerity.HttpHandler;
 import cloud.newstack.celerity.HttpHandlerDefinition;
 import cloud.newstack.celerity.HttpHandlersReceiver;
 import cloud.newstack.celerity.Response;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import cloud.newstack.celerity.AppConfig;
 import cloud.newstack.celerity.Runtime;
 import cloud.newstack.celerity.RuntimeConfig;
-
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpClient.Redirect;
-import java.net.http.HttpClient.Version;
-import java.util.HashMap;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.joou.Unsigned.ushort;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class ApplicationTest {
 
@@ -59,7 +59,7 @@ class ApplicationTest {
     }
 
     @Test
-    void RunHttpApiTest() {
+    void RunHttpApiTest() throws InterruptedException {
         final Runtime runtime = new Runtime(new RuntimeConfig());
 
         CoreRuntimeConfig config = new CoreRuntimeConfig(
@@ -77,7 +77,7 @@ class ApplicationTest {
 
             try {
                 HttpClient client = HttpClient.newBuilder()
-                        .version(Version.HTTP_2)
+                        .version(Version.HTTP_1_1)
                         .followRedirects(Redirect.NORMAL)
                         .build();
 
@@ -95,6 +95,7 @@ class ApplicationTest {
                 assertThat(response.body()).isEqualTo("{\"message\":\"Order received\"}");
 
             } catch (IOException | URISyntaxException | InterruptedException e) {
+                // Thread.sleep(120000);
                 fail(e.toString());
             }
         } catch (ApplicationStartupException e) {
