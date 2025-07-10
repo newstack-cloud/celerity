@@ -30,7 +30,9 @@ pub struct ConnectionConfig {
 /// for a WebSocket API.
 ///
 /// This should be used for both publishing messages and subscribing to
-/// messages.
+/// messages. This allows for both messages and acknowledgements to be sent
+/// to the same channel, the caller is responsible for handling acknowledgements
+/// and providing a layer of resiliency for message sharing between nodes.
 ///
 /// When cluster mode is disabled, only the first node in the provided
 /// nodes list will be used.
@@ -69,7 +71,7 @@ pub struct ConnectionConfig {
 /// ```
 pub async fn connect(
     conn_config: ConnectionConfig,
-) -> Result<(Sender<WebSocketMessage>, Receiver<WebSocketMessage>), Box<dyn Error>> {
+) -> Result<(Sender<Message>, Receiver<Message>), Box<dyn Error>> {
     let (redis_tx, mut redis_rx) = unbounded_channel();
 
     let mut conn = get_redis_connection(&conn_config, redis_tx).await?;
@@ -89,19 +91,28 @@ pub async fn connect(
                     if message.kind == PushKind::Message {
                         match String::from_redis_value(&message.data[1]) {
                             Ok(value) => {
-                                let ws_message: WrappedWebSocketMessage = match serde_json::from_str(&value) {
-                                    Ok(ws_message) => ws_message,
+                                let wrapped_message: MessageWithSourceNode = match serde_json::from_str(&value) {
+                                    Ok(wrapped_message) => wrapped_message,
                                     Err(e) => {
                                         error!("error parsing message from redis channel {}: {}", conn_config.channel_name, e);
                                         continue;
                                     }
                                 };
-                                if ws_message.source_node != conn_config.server_node_name {
+                                if wrapped_message.source_node != conn_config.server_node_name {
                                     // Messages will only be forwarded if they are not from the current node.
-                                    if (internal_tx.send(ws_message.message).await).is_err() {
-                                        error!("receiver dropped, stopping redis listener");
-                                        break;
-                                    }
+                                    // Acknowledgements for messages that were not sent by the current node
+                                    // are ignored.
+                                    let should_send = match wrapped_message.message.clone() {
+                                        Message::Ack(ack_message) => {
+                                            ack_message.message_node == conn_config.server_node_name
+                                        }
+                                        Message::WebSocket(_) => true,
+                                    };
+                                    if should_send
+                                        && (internal_tx.send(wrapped_message.message).await).is_err() {
+                                            error!("receiver dropped, stopping redis listener");
+                                            break;
+                                        }
                                 }
                             }
                             Err(e) => {
@@ -112,7 +123,7 @@ pub async fn connect(
                 }
                 Some(message) = internal_rx.recv() => {
                     debug!("received message to forward to channel {}", conn_config.channel_name);
-                    let wrapped_message = WrappedWebSocketMessage {
+                    let wrapped_message = MessageWithSourceNode {
                         source_node: conn_config.server_node_name.clone(),
                         message,
                     };
@@ -140,9 +151,23 @@ pub async fn connect(
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct WrappedWebSocketMessage {
+struct MessageWithSourceNode {
     source_node: String,
-    message: WebSocketMessage,
+    message: Message,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum Message {
+    WebSocket(WebSocketMessage),
+    Ack(AckMessage),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AckMessage {
+    // The ID of the node that originally sent the message.
+    pub message_node: String,
+    pub message_id: String,
 }
 
 enum ConnectionWrapper {
