@@ -1,0 +1,25 @@
+[package]
+name = "celerity_ws_registry"
+description = "Websocket connection registry for the Celerity runtime"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = "1.0.122"
+jsonpath-rust = "0.7.1"
+async-trait = "0.1.88"
+tokio = { version = "1.45.1", features = ["full"] }
+axum = { version = "0.7.5", features = ["ws", "http2"] }
+tracing = "0.1.40"
+
+[dependencies.celerity_helpers]
+path = "../helpers"
+
+[dev-dependencies]
+test-log = { version = "0.2.16", features = ["log", "trace"] }
+pretty_assertions = "1.4.0"
+coverage-helper = "0.2.2"
+futures = "0.3.30"
+tokio-tungstenite = "0.23.1"
+nanoid = "0.4.0"
