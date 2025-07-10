@@ -20,4 +20,6 @@ members = [
     "consumer-gcloud-pubsub",
     "consumer-azure-service-bus",
     "consumer-gcloud-tasks",
+    "ws-registry",
+    "ws-redis",
 ]
