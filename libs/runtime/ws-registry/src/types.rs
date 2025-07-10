@@ -9,5 +9,7 @@ pub struct WebSocketMessages {
 pub struct WebSocketMessage {
     #[serde(rename = "connectionId")]
     pub connection_id: String,
+    #[serde(rename = "messageId")]
+    pub message_id: String,
     pub message: String,
 }

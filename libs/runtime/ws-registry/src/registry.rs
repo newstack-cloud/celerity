@@ -20,6 +20,7 @@ pub trait WebSocketRegistrySend: Send + Sync + Display + Debug {
     async fn send_message(
         &self,
         connection_id: String,
+        message_id: String,
         message: String,
     ) -> Result<(), WebSocketConnError>;
 }
@@ -115,6 +116,7 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
     async fn send_message(
         &self,
         connection_id: String,
+        message_id: String,
         message: String,
     ) -> Result<(), WebSocketConnError> {
         if let Some(connection) = self.get_connection(connection_id.clone()) {
@@ -131,6 +133,7 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
             broadcaster
                 .send(WebSocketMessage {
                     connection_id: connection_id.to_string(),
+                    message_id,
                     message,
                 })
                 .await?;
@@ -214,7 +217,7 @@ mod tests {
                                     // Broadcast received message to other connection.
                                     if let Some(other_connection_id) = &other_connection_id {
                                         let _ = registry
-                                            .send_message(other_connection_id.clone(), msg)
+                                            .send_message(other_connection_id.clone(), nanoid!(), msg)
                                             .await;
                                     } else {
                                         // When "other connection" is not statically set,
