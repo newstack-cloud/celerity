@@ -56,6 +56,9 @@ optional = true
 path = "../consumer-azure-service-bus"
 optional = true
 
+[dependencies.celerity_ws_registry]
+path = "../ws-registry"
+
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"

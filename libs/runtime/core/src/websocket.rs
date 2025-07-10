@@ -17,15 +17,14 @@ use axum::{
 };
 use axum_client_ip::SecureClientIp;
 use axum_extra::{headers, TypedHeader};
+use celerity_ws_registry::registry::WebSocketConnRegistry;
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::{sync::Mutex, time::sleep};
 use tracing::{error, info, info_span, Instrument};
 
-use crate::{
-    errors::WebSocketsMessageError, request::RequestId, wsconn_registry::WebSocketConnRegistry,
-};
+use crate::{errors::WebSocketsMessageError, request::RequestId};
 
 #[derive(Clone, Debug)]
 pub(crate) struct WebSocketAppState {
@@ -117,40 +116,43 @@ async fn handle_socket(
     state: WebSocketAppState,
 ) {
     let socket_ref = Arc::new(Mutex::new(socket));
-    // todo: create span for connection.
-    info!("websocket connection received: {}", connection_id);
-    state
-        .connections
-        .add_connection(connection_id.clone(), socket_ref.clone());
+    async {
+        info!("websocket connection received: {}", connection_id);
+        state
+            .connections
+            .add_connection(connection_id.clone(), socket_ref.clone());
 
-    // todo: implement optional heartbeat, research into how browsers actually behave
-    // when it comes to the protocol heartbeat.
+        // todo: implement optional heartbeat, research into how browsers actually behave
+        // when it comes to the protocol heartbeat.
 
-    // todo: call connect handler.
-    // todo: implement auth for connect (Custom WebSocket error auth code)
-    // todo: add CORS checks.
+        // todo: call connect handler.
+        // todo: implement auth for connect (Custom WebSocket error auth code)
+        // todo: add CORS checks.
 
-    let mut connection_alive = true;
-    while connection_alive {
-        // Wait some time before acquiring the lock again to allow other tasks to write
-        // to the socket. (i.e. a message received from another node in the cluster)
-        sleep(Duration::from_millis(10)).await;
-        let mut acquired_socket = socket_ref.lock().await;
+        let mut connection_alive = true;
+        while connection_alive {
+            // Wait some time before acquiring the lock again to allow other tasks to write
+            // to the socket. (i.e. a message received from another node in the cluster)
+            sleep(Duration::from_millis(10)).await;
+            let mut acquired_socket = socket_ref.lock().await;
 
-        if let Some(Ok(msg)) = acquired_socket.recv().await {
-            if process_message(msg, connection_id.clone(), &state)
-                .await
-                .is_break()
-            {
+            if let Some(Ok(msg)) = acquired_socket.recv().await {
+                if process_message(msg, connection_id.clone(), &state)
+                    .await
+                    .is_break()
+                {
+                    state.connections.remove_connection(connection_id.clone());
+                    connection_alive = false;
+                }
+            } else {
+                // client disconnected
                 state.connections.remove_connection(connection_id.clone());
                 connection_alive = false;
             }
-        } else {
-            // client disconnected
-            state.connections.remove_connection(connection_id.clone());
-            connection_alive = false;
         }
     }
+    .instrument(info_span!("websocket_connection", connection_id = %connection_id))
+    .await
 }
 
 async fn process_message(

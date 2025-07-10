@@ -183,18 +183,6 @@ pub struct ScheduledEventResponseData {
     error_message: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WebSocketMessages {
-    pub messages: Vec<WebSocketMessage>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WebSocketMessage {
-    #[serde(rename = "connectionId")]
-    pub connection_id: String,
-    pub message: String,
-}
-
 // ApiAppState holds shared API application state to be used in axum
 // middleware and handlers.
 #[derive(Debug, Clone)]

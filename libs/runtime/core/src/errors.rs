@@ -8,7 +8,7 @@ use axum::{
 use celerity_blueprint_config_parser::parse::BlueprintParseError;
 use celerity_helpers::runtime_types::ResponseMessage;
 use opentelemetry::trace::TraceError as OTelTraceError;
-use tokio::{sync::mpsc::error::SendError, task::JoinError, time::error::Elapsed};
+use tokio::{task::JoinError, time::error::Elapsed};
 use tracing_subscriber::{filter::ParseError, util::TryInitError};
 
 /// Provides a custom error type to be used for failures
@@ -195,23 +195,5 @@ impl fmt::Display for WebSocketsMessageError {
                 write!(f, "An unexpected error occurred")
             }
         }
-    }
-}
-
-#[derive(Debug)]
-pub enum WebSocketConnError {
-    SendMessageError(String),
-    BroadcastMessageError(String),
-}
-
-impl From<axum::Error> for WebSocketConnError {
-    fn from(error: axum::Error) -> Self {
-        WebSocketConnError::SendMessageError(error.to_string())
-    }
-}
-
-impl<T> From<SendError<T>> for WebSocketConnError {
-    fn from(error: SendError<T>) -> Self {
-        WebSocketConnError::BroadcastMessageError(error.to_string())
     }
 }

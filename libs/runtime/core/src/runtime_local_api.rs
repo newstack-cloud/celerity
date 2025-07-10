@@ -10,14 +10,14 @@ use axum::{
     Router,
 };
 use celerity_helpers::runtime_types::ResponseMessage;
+use celerity_ws_registry::{registry::WebSocketRegistrySend, types::WebSocketMessages};
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
 use crate::{
     config::AppConfig,
     errors::{ApplicationStartError, EventResultError, WebSocketsMessageError},
-    types::{EventData, EventResult, EventTuple, WebSocketMessages},
-    wsconn_registry::WebSocketRegistrySend,
+    types::{EventData, EventResult, EventTuple},
 };
 
 // Creates a router for the local runtime API
@@ -330,6 +330,7 @@ mod tests {
         CelerityApiAuth, CelerityApiAuthGuard, CelerityApiAuthGuardType,
         CelerityApiAuthGuardValueSource, CelerityApiCors, CelerityApiCorsConfiguration,
     };
+    use celerity_ws_registry::{errors::WebSocketConnError, types::WebSocketMessage};
     use http_body_util::BodyExt;
     use pretty_assertions::assert_eq;
     use serde_json::json;
@@ -341,10 +342,8 @@ mod tests {
             HttpHandlerDefinition, ScheduleConfig, SchedulesConfig, WebSocketConfig,
             WebSocketHandlerDefinition,
         },
-        errors::WebSocketConnError,
         types::{
             EventDataPayload, EventResultData, EventType, HttpRequestEventData, HttpResponseData,
-            WebSocketMessage,
         },
     };
 

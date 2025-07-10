@@ -13,4 +13,3 @@ mod transform_config;
 pub mod types;
 pub(crate) mod utils;
 pub mod websocket;
-mod wsconn_registry;

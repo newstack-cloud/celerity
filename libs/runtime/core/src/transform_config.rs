@@ -472,7 +472,6 @@ fn to_axum_path(celerity_path: String) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use coverage_helper::test;
 
     #[test]
     fn test_to_axum_path() {

@@ -17,6 +17,7 @@ use celerity_helpers::{
     env::EnvVars,
     runtime_types::{HealthCheckResponse, RuntimeCallMode},
 };
+use celerity_ws_registry::registry::{WebSocketConnRegistry, WebSocketRegistrySend};
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::trace::TraceLayer;
 use tracing::{debug, info_span, warn};
@@ -32,7 +33,6 @@ use crate::{
     types::{ApiAppState, EventTuple},
     utils::get_epoch_seconds,
     websocket,
-    wsconn_registry::{WebSocketConnRegistry, WebSocketRegistrySend},
 };
 
 /// Provides an application that can run a HTTP server, WebSocket server,
