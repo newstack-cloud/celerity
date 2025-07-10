@@ -31,6 +31,8 @@ module.exports = {
         "lib-rt-blueprint-parser",
         "lib-rt-signature",
         "lib-rt-helpers",
+        "lib-rt-ws-registry",
+        "lib-rt-ws-redis",
         "lib-rt-aws-helpers",
         "lib-rt-consumer-redis",
         "lib-rt-consumer-asb",
