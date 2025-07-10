@@ -82,7 +82,7 @@ async fn websockets_messages_handler(
     if let Some(ref ws_conn_registry) = state.ws_conn_registry_send {
         for message in messages.messages {
             ws_conn_registry
-                .send_message(message.connection_id, message.message)
+                .send_message(message.connection_id, message.message_id, message.message)
                 .await
                 .map_err(|_| WebSocketsMessageError::UnexpectedError)?;
         }
@@ -664,14 +664,17 @@ mod tests {
             messages: vec![
                 WebSocketMessage {
                     connection_id: "test-conn-1".to_string(),
+                    message_id: "test-msg-1".to_string(),
                     message: "Hello, World!".to_string(),
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-2".to_string(),
+                    message_id: "test-msg-2".to_string(),
                     message: "Hello, Solar System!".to_string(),
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-3".to_string(),
+                    message_id: "test-msg-3".to_string(),
                     message: "Hello, Galaxy!".to_string(),
                 },
             ],
@@ -700,20 +703,27 @@ mod tests {
             let message = rx.recv().await.unwrap();
             received_messages.push(message);
         }
-        assert_eq!(received_messages.len(), 3);
+        // Message ID is non-deterministic, so we need to normalise the messages
+        // to compare them.
+        let received_message_norm = received_messages
+            .iter()
+            .cloned()
+            .map(|(connection_id, _, message)| (connection_id, message))
+            .collect::<Vec<_>>();
+        assert_eq!(received_message_norm.len(), 3);
         assert_eq!(
-            received_messages[0],
+            received_message_norm[0],
             ("test-conn-1".to_string(), "Hello, World!".to_string())
         );
         assert_eq!(
-            received_messages[1],
+            received_message_norm[1],
             (
                 "test-conn-2".to_string(),
                 "Hello, Solar System!".to_string()
             )
         );
         assert_eq!(
-            received_messages[2],
+            received_message_norm[2],
             ("test-conn-3".to_string(), "Hello, Galaxy!".to_string())
         );
     }
@@ -881,11 +891,11 @@ mod tests {
     }
 
     struct TestWebSocketConnRegistry {
-        tx: mpsc::Sender<(String, String)>,
+        tx: mpsc::Sender<(String, String, String)>,
     }
 
     impl TestWebSocketConnRegistry {
-        fn new(tx: mpsc::Sender<(String, String)>) -> Self {
+        fn new(tx: mpsc::Sender<(String, String, String)>) -> Self {
             Self { tx }
         }
     }
@@ -895,9 +905,10 @@ mod tests {
         async fn send_message(
             &self,
             connection_id: String,
+            message_id: String,
             message: String,
         ) -> Result<(), WebSocketConnError> {
-            self.tx.send((connection_id, message)).await?;
+            self.tx.send((connection_id, message_id, message)).await?;
             Ok(())
         }
     }
