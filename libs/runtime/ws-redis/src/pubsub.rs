@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use celerity_ws_registry::types::WebSocketMessage;
+use celerity_ws_registry::types::Message;
 use redis::{
     aio::MultiplexedConnection, cluster::ClusterClientBuilder, cluster_async::ClusterConnection,
     AsyncCommands, Client, FromRedisValue, PushInfo, PushKind, RedisError, RedisResult,
@@ -51,8 +51,16 @@ pub struct ConnectionConfig {
 ///     password: None,
 ///     cluster_mode: true,
 /// })?;
-/// let registry = WebSocketConnRegistry::new(Some(tx));
+/// let registry = Arc::new(WebSocketConnRegistry::new(
+///     WebSocketConnRegistryConfig {
+///         ack_worker_config: None,
+///     },
+///     Some(tx),
+/// ));
+/// registry.start_ack_worker();
 /// registry.listen(rx);
+///
+/// /// Do something with the registry ...
 /// ```
 ///
 /// **Single node mode**
@@ -66,7 +74,13 @@ pub struct ConnectionConfig {
 ///     password: None,
 ///     cluster_mode: false,
 /// })?;
-/// let registry = WebSocketConnRegistry::new(Some(tx));
+/// let registry = Arc::new(WebSocketConnRegistry::new(
+///     WebSocketConnRegistryConfig {
+///         ack_worker_config: None,
+///     },
+///     Some(tx),
+/// ));
+/// registry.start_ack_worker();
 /// registry.listen(rx);
 /// ```
 pub async fn connect(
@@ -154,20 +168,6 @@ pub async fn connect(
 struct MessageWithSourceNode {
     source_node: String,
     message: Message,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum Message {
-    WebSocket(WebSocketMessage),
-    Ack(AckMessage),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct AckMessage {
-    // The ID of the node that originally sent the message.
-    pub message_node: String,
-    pub message_id: String,
 }
 
 enum ConnectionWrapper {
