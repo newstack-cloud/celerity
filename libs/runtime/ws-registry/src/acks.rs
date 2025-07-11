@@ -54,9 +54,9 @@ pub enum MessageAction {
 }
 
 pub enum AckWorkerMessage {
-    AckStatus(String, AckStatus),
-    AckCheck(String, Sender<AckStatus>),
-    AckWait(String, Sender<AckStatus>),
+    Status(String, AckStatus),
+    Check(String, Sender<AckStatus>),
+    Wait(String, Sender<AckStatus>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -141,10 +141,10 @@ impl Worker {
                 // Main loop only handles incoming messages
                 loop {
                     match ack_rx.recv().await {
-                        Some(AckWorkerMessage::AckStatus(message_id, ack_status)) => {
+                        Some(AckWorkerMessage::Status(message_id, ack_status)) => {
                             self.record_ack(message_id, ack_status).await;
                         }
-                        Some(AckWorkerMessage::AckCheck(message_id, tx)) => {
+                        Some(AckWorkerMessage::Check(message_id, tx)) => {
                             let acks_guard = self.acks.lock().await;
                             let detailed_ack_status = acks_guard.get(&message_id).cloned();
                             let final_ack_status = match detailed_ack_status {
@@ -159,7 +159,7 @@ impl Worker {
                                 );
                             }
                         }
-                        Some(AckWorkerMessage::AckWait(message_id, tx)) => {
+                        Some(AckWorkerMessage::Wait(message_id, tx)) => {
                             // Spawn a separate task to handle the ack wait without blocking
                             // the main worker loop.
                             let acks = Arc::clone(&self.acks);

@@ -257,7 +257,7 @@ impl WebSocketConnRegistry {
         if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
             let (ack_tx, ack_rx) = tokio::sync::oneshot::channel();
             ack_sender
-                .send(AckWorkerMessage::AckCheck(message_id.clone(), ack_tx))
+                .send(AckWorkerMessage::Check(message_id.clone(), ack_tx))
                 .await
                 .expect("ack worker channel unexpectedly closed");
             let ack_status = ack_rx
@@ -272,7 +272,7 @@ impl WebSocketConnRegistry {
     async fn record_received_ack(&self, message_id: String) {
         if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
             ack_sender
-                .send(AckWorkerMessage::AckStatus(message_id, AckStatus::Received))
+                .send(AckWorkerMessage::Status(message_id, AckStatus::Received))
                 .await
                 .expect("ack worker channel unexpectedly closed");
         }
@@ -286,7 +286,7 @@ impl WebSocketConnRegistry {
     ) {
         if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
             ack_sender
-                .send(AckWorkerMessage::AckStatus(
+                .send(AckWorkerMessage::Status(
                     message_id,
                     AckStatus::Pending(message, inform_clients),
                 ))
@@ -303,7 +303,7 @@ impl WebSocketConnRegistry {
         let has_ack_sender = {
             if let Some(ack_sender) = self.ack_sender.lock().await.as_ref() {
                 ack_sender
-                    .send(AckWorkerMessage::AckWait(message_id.clone(), ack_tx))
+                    .send(AckWorkerMessage::Wait(message_id.clone(), ack_tx))
                     .await
                     .expect("ack worker channel unexpectedly closed");
                 true
