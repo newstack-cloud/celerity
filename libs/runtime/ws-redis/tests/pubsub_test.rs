@@ -127,6 +127,7 @@ async fn send_messages_and_listen(
                     message_id: format!("conn-{connection_id}-msg-{i}"),
                     source_node: "node1".to_string(),
                     message: format!("This is message {i} for {connection_id}"),
+                    inform_clients_on_loss: None,
                 }))
                 .await
                 .unwrap();
