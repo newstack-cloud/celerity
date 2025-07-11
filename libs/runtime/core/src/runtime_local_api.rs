@@ -10,7 +10,10 @@ use axum::{
     Router,
 };
 use celerity_helpers::runtime_types::ResponseMessage;
-use celerity_ws_registry::{registry::WebSocketRegistrySend, types::WebSocketMessages};
+use celerity_ws_registry::{
+    registry::{SendContext, WebSocketRegistrySend},
+    types::WebSocketMessages,
+};
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
@@ -81,13 +84,12 @@ async fn websockets_messages_handler(
 ) -> Result<Json<ResponseMessage>, WebSocketsMessageError> {
     if let Some(ref ws_conn_registry) = state.ws_conn_registry_send {
         for message in messages.messages {
-            // TODO: add send context to inform clients on message loss.
             ws_conn_registry
                 .send_message(
                     message.connection_id,
                     message.message_id,
                     message.message,
-                    None,
+                    create_send_context(message.inform_clients_on_loss),
                 )
                 .await
                 .map_err(|_| WebSocketsMessageError::UnexpectedError)?;
@@ -97,6 +99,17 @@ async fn websockets_messages_handler(
         }));
     }
     Err(WebSocketsMessageError::NotEnabled)
+}
+
+fn create_send_context(inform_clients_on_loss: Option<Vec<String>>) -> Option<SendContext> {
+    inform_clients_on_loss.map(|inform_clients| SendContext {
+        inform_clients,
+        // As this is an async context where the application code (via the SDK)
+        // will make a non-blocking API call to send a batch of websocket messages to
+        // be forwarded to client connections, it's best not to wait for an ack for each message
+        // and let the registry send messages asynchronously if a message is considered lost.
+        wait_for_ack: false,
+    })
 }
 
 async fn runtime_config_handler(
@@ -675,18 +688,21 @@ mod tests {
                     message_id: "test-msg-1".to_string(),
                     source_node: "node1".to_string(),
                     message: "Hello, World!".to_string(),
+                    inform_clients_on_loss: None,
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-2".to_string(),
                     message_id: "test-msg-2".to_string(),
                     source_node: "node1".to_string(),
                     message: "Hello, Solar System!".to_string(),
+                    inform_clients_on_loss: None,
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-3".to_string(),
                     message_id: "test-msg-3".to_string(),
                     source_node: "node1".to_string(),
                     message: "Hello, Galaxy!".to_string(),
+                    inform_clients_on_loss: None,
                 },
             ],
         };
