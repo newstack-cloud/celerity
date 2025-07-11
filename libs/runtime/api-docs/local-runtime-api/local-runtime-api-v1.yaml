@@ -441,11 +441,20 @@ components:
 
     WebSocketMessage:
       type: object
-      required: ["connectionId", "message"]
+      required: ["connectionId", "messageId", "message"]
       properties:
         connectionId:
           type: string
           examples: ["60dc70c6-9816-450d-957f-1fdae3a25403"]
+        messageId:
+          type: string
+          description: A unique identifier for the message.
+        informClientsOnLoss:
+          type: array
+          description: |
+            A list of clients (connection IDs) that should be informed if message delivery couldn't be guaranteed.
+            These clients will only receive messages about potentially
+            lost messages if they are connected to the same node.
         message:
           type: string
 
