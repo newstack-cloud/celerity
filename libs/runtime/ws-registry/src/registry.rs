@@ -26,11 +26,11 @@ pub struct SendContext {
     // that the message was sent for, a WebSocketConnError::MessageLost error will be returned
     // for the caller to handle the case where the message was lost
     // when the wait_for_ack flag is set to true.
-    wait_for_ack: bool,
+    pub wait_for_ack: bool,
     // The connection IDs of clients that should be informed if a message is lost
     // (an acknowledgement was not received after the maximum number of retries).
     // These clients will be informed regardless of the wait_for_ack flag.
-    inform_clients: Vec<String>,
+    pub inform_clients: Vec<String>,
 }
 
 #[async_trait]
@@ -362,13 +362,18 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
         } else if let Some(broadcaster) = &self.broadcaster {
             let send_ctx = ctx.unwrap_or_default();
             debug!(connection_id = %connection_id, "connection not found locally, preparing to send message to broadcaster");
-            self.record_pending_ack(message_id.clone(), message.clone(), send_ctx.inform_clients)
-                .await;
+            self.record_pending_ack(
+                message_id.clone(),
+                message.clone(),
+                send_ctx.inform_clients.clone(),
+            )
+            .await;
 
             broadcaster
                 .send(RegistryMessage::WebSocket(WebSocketMessage {
                     connection_id: connection_id.to_string(),
                     source_node: self.server_node_name.clone(),
+                    inform_clients_on_loss: Some(send_ctx.inform_clients),
                     message_id: message_id.clone(),
                     message,
                 }))
