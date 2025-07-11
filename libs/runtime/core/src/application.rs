@@ -17,7 +17,10 @@ use celerity_helpers::{
     env::EnvVars,
     runtime_types::{HealthCheckResponse, RuntimeCallMode},
 };
-use celerity_ws_registry::registry::{WebSocketConnRegistry, WebSocketRegistrySend};
+use celerity_ws_registry::{
+    registry::{WebSocketConnRegistry, WebSocketConnRegistryConfig, WebSocketRegistrySend},
+    types::AckWorkerConfig,
+};
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::trace::TraceLayer;
 use tracing::{debug, info_span, warn};
@@ -181,7 +184,17 @@ impl Application {
 
         if let Some(websocket_config) = &api_config.websocket {
             let websocket_base_path = resolve_websocket_base_path(api_config, websocket_config)?;
-            let conn_registry = Arc::new(WebSocketConnRegistry::new(None));
+            let conn_registry = Arc::new(WebSocketConnRegistry::new(
+                WebSocketConnRegistryConfig {
+                    ack_worker_config: Some(AckWorkerConfig {
+                        message_action_check_interval_ms: None,
+                        message_timeout_ms: None,
+                        max_attempts: None,
+                    }),
+                    server_node_name: "node1".to_string(),
+                },
+                None,
+            ));
             self.ws_connections = Some(conn_registry.clone());
             http_server_app = http_server_app.route(
                 websocket_base_path,

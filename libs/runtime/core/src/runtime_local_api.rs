@@ -81,8 +81,14 @@ async fn websockets_messages_handler(
 ) -> Result<Json<ResponseMessage>, WebSocketsMessageError> {
     if let Some(ref ws_conn_registry) = state.ws_conn_registry_send {
         for message in messages.messages {
+            // TODO: add send context to inform clients on message loss.
             ws_conn_registry
-                .send_message(message.connection_id, message.message_id, message.message)
+                .send_message(
+                    message.connection_id,
+                    message.message_id,
+                    message.message,
+                    None,
+                )
                 .await
                 .map_err(|_| WebSocketsMessageError::UnexpectedError)?;
         }
@@ -330,7 +336,9 @@ mod tests {
         CelerityApiAuth, CelerityApiAuthGuard, CelerityApiAuthGuardType,
         CelerityApiAuthGuardValueSource, CelerityApiCors, CelerityApiCorsConfiguration,
     };
-    use celerity_ws_registry::{errors::WebSocketConnError, types::WebSocketMessage};
+    use celerity_ws_registry::{
+        errors::WebSocketConnError, registry::SendContext, types::WebSocketMessage,
+    };
     use http_body_util::BodyExt;
     use pretty_assertions::assert_eq;
     use serde_json::json;
@@ -665,16 +673,19 @@ mod tests {
                 WebSocketMessage {
                     connection_id: "test-conn-1".to_string(),
                     message_id: "test-msg-1".to_string(),
+                    source_node: "node1".to_string(),
                     message: "Hello, World!".to_string(),
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-2".to_string(),
                     message_id: "test-msg-2".to_string(),
+                    source_node: "node1".to_string(),
                     message: "Hello, Solar System!".to_string(),
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-3".to_string(),
                     message_id: "test-msg-3".to_string(),
+                    source_node: "node1".to_string(),
                     message: "Hello, Galaxy!".to_string(),
                 },
             ],
@@ -907,6 +918,7 @@ mod tests {
             connection_id: String,
             message_id: String,
             message: String,
+            _: Option<SendContext>,
         ) -> Result<(), WebSocketConnError> {
             self.tx.send((connection_id, message_id, message)).await?;
             Ok(())
