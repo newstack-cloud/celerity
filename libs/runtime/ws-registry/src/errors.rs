@@ -4,6 +4,8 @@ use tokio::sync::mpsc::error::SendError;
 pub enum WebSocketConnError {
     SendMessageError(String),
     BroadcastMessageError(String),
+    MessageLost(String),
+    AckCheckFailed(String),
 }
 
 impl From<axum::Error> for WebSocketConnError {

@@ -9,7 +9,36 @@ pub struct WebSocketMessages {
 pub struct WebSocketMessage {
     #[serde(rename = "connectionId")]
     pub connection_id: String,
+    #[serde(rename = "sourceNode")]
+    pub source_node: String,
     #[serde(rename = "messageId")]
     pub message_id: String,
     pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum Message {
+    WebSocket(WebSocketMessage),
+    Ack(AckMessage),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AckMessage {
+    // The ID of the node that originally sent the message.
+    pub message_node: String,
+    pub message_id: String,
+}
+
+#[derive(Default, Clone)]
+pub struct AckWorkerConfig {
+    // The interval in milliseconds at which to check to determine whether a message
+    // should be considered lost or should be re-sent by the caller.
+    pub message_action_check_interval_ms: Option<u64>,
+    // The timeout in milliseconds for which the caller should consider re-sending
+    // the message if it has not been acknowledged.
+    pub message_timeout_ms: Option<u64>,
+    // The number of times that a message should be attempted to be sent before it is considered
+    // lost.
+    pub max_attempts: Option<u32>,
 }
