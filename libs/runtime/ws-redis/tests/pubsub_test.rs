@@ -128,6 +128,7 @@ async fn send_messages_and_listen(
                     source_node: "node1".to_string(),
                     message: format!("This is message {i} for {connection_id}"),
                     inform_clients_on_loss: None,
+                    caller: None,
                 }))
                 .await
                 .unwrap();

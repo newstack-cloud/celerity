@@ -163,12 +163,13 @@ async fn process_message(
     match msg {
         Message::Text(text) => {
             let resolved = resolve_route(text, connection_id.clone(), state.route_key.clone())?;
-            if let Some((route, data)) = resolved {
+            if let Some((route, message_id, data)) = resolved {
                 if let Some(handler) = state.routes.get(&route) {
                     handle_json_message(
                         handler.clone(),
                         connection_id.clone(),
                         route.clone(),
+                        message_id,
                         data,
                     )
                     .await;
@@ -182,12 +183,13 @@ async fn process_message(
         }
         Message::Binary(bytes) => {
             let resolved = resolve_binary_route(&bytes, connection_id.clone())?;
-            if let Some((route, bytes_stripped)) = resolved {
+            if let Some((route, message_id, bytes_stripped)) = resolved {
                 if let Some(handler) = state.routes.get(&route) {
                     handle_binary_message(
                         handler.clone(),
                         connection_id.clone(),
                         route.clone(),
+                        message_id,
                         bytes_stripped,
                     )
                     .await;
@@ -224,9 +226,10 @@ async fn handle_json_message(
     handler: Arc<dyn WebSocketMessageHandler + Send + Sync>,
     connection_id: String,
     route: String,
+    message_id: Option<String>,
     data: Value,
 ) {
-    let message_id = nanoid!();
+    let final_message_id = message_id.unwrap_or_else(|| nanoid!());
     async {
         info!("JSON websocket message received");
         let start = Instant::now();
@@ -234,7 +237,7 @@ async fn handle_json_message(
             .handle_json_message(JsonMessageInfo {
                 connection_id: connection_id.clone(),
                 event_type: WebSocketEventType::Message,
-                message_id: message_id.clone(),
+                message_id: final_message_id.clone(),
                 body: data,
             })
             .await;
@@ -250,7 +253,7 @@ async fn handle_json_message(
     }
     .instrument(info_span!(
         "websocket_json_message",
-        message_id = %message_id,
+        message_id = %final_message_id,
         route = %route,
     ))
     .await;
@@ -260,9 +263,10 @@ async fn handle_binary_message(
     handler: Arc<dyn WebSocketMessageHandler + Send + Sync>,
     connection_id: String,
     route: String,
+    message_id: Option<String>,
     data: &[u8],
 ) {
-    let message_id = nanoid!();
+    let final_message_id = message_id.unwrap_or_else(|| nanoid!());
     async {
         info!("binary websocket message received");
         let start = Instant::now();
@@ -270,7 +274,7 @@ async fn handle_binary_message(
             .handle_binary_message(BinaryMessageInfo {
                 connection_id: connection_id.clone(),
                 event_type: WebSocketEventType::Message,
-                message_id: message_id.clone(),
+                message_id: final_message_id.clone(),
                 body: data,
             })
             .await;
@@ -286,17 +290,19 @@ async fn handle_binary_message(
     }
     .instrument(info_span!(
         "websocket_binary_message",
-        message_id = %message_id,
+        message_id = %final_message_id,
         route = %route,
     ))
     .await;
 }
 
+type JsonRouteData = (String, Option<String>, Value);
+
 fn resolve_route(
     msg_text: String,
     connection_id: String,
     route_key: String,
-) -> ControlFlow<(), Option<(String, Value)>> {
+) -> ControlFlow<(), Option<JsonRouteData>> {
     let data: Value = match serde_json::from_str(&msg_text) {
         Ok(data) => data,
         Err(e) => {
@@ -320,7 +326,7 @@ fn resolve_route(
     let route_opt = data_obj.get(&route_key);
     if let Some(route_val) = route_opt {
         if let Value::String(route) = route_val {
-            ControlFlow::Continue(Some((route.clone(), data)))
+            ControlFlow::Continue(Some((route.clone(), None, data)))
         } else {
             error!(
                 "invalid JSON message from client {}, expected route value to be a string",
@@ -337,10 +343,12 @@ fn resolve_route(
     }
 }
 
+type BinaryRouteData<'a> = (String, Option<String>, &'a [u8]);
+
 fn resolve_binary_route(
     msg_bytes: &[u8],
     connection_id: String,
-) -> ControlFlow<(), Option<(String, &[u8])>> {
+) -> ControlFlow<(), Option<BinaryRouteData>> {
     let route_length = msg_bytes[0];
     if route_length as usize > msg_bytes.len() - 1 {
         error!(
@@ -361,9 +369,32 @@ fn resolve_binary_route(
             return ControlFlow::Continue(None);
         }
     };
+
+    let message_id_length = msg_bytes[route_length as usize + 1];
+    if message_id_length as usize > msg_bytes.len() - 1 {
+        error!(
+            "invalid binary message from client {}, message id length exceeds message length",
+            connection_id
+        );
+        return ControlFlow::Continue(None);
+    }
+
+    let message_id = if message_id_length > 0 {
+        let start_idx = route_length as usize + 2;
+        let end_idx = start_idx + message_id_length as usize;
+        let message_id_bytes = &msg_bytes[start_idx..end_idx];
+        let message_id_str = std::str::from_utf8(message_id_bytes).unwrap();
+        Some(message_id_str.to_string())
+    } else {
+        None
+    };
+
+    let data_start_idx = route_length as usize + 2 + message_id_length as usize;
+
     ControlFlow::Continue(Some((
         route.to_string(),
-        &msg_bytes[route_length as usize + 1..],
+        message_id,
+        &msg_bytes[data_start_idx..],
     )))
 }
 

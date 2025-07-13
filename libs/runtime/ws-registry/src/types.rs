@@ -14,6 +14,9 @@ pub struct WebSocketMessage {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "informClientsOnLoss")]
     pub inform_clients_on_loss: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "caller")]
+    pub caller: Option<String>,
     #[serde(rename = "messageId")]
     pub message_id: String,
     pub message: String,

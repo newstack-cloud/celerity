@@ -22,10 +22,16 @@ use crate::{
 // Additional context for sending messages to a connection in a WebSocket registry.
 #[derive(Default)]
 pub struct SendContext {
+    // The caller that is sending the message.
+    // This is useful for providing context about the purpose or origin of the message.
+    // If a message is considered lost, the caller will be included in the message sent
+    // to the clients in the inform_clients list.
+    pub caller: Option<String>,
     // Whether to wait for an acknowledgement from the node that has the connection
     // that the message was sent for, a WebSocketConnError::MessageLost error will be returned
     // for the caller to handle the case where the message was lost
     // when the wait_for_ack flag is set to true.
+    // This is only used when broadcasting messages to other nodes in a cluster.
     pub wait_for_ack: bool,
     // The connection IDs of clients that should be informed if a message is lost
     // (an acknowledgement was not received after the maximum number of retries).
@@ -125,6 +131,7 @@ impl WebSocketConnRegistry {
                                     resend_message_info.message.clone(),
                                     Some(SendContext {
                                         wait_for_ack: false,
+                                        caller: None,
                                         inform_clients: resend_message_info.inform_clients_on_loss,
                                     }),
                                 )
@@ -374,6 +381,7 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
                     connection_id: connection_id.to_string(),
                     source_node: self.server_node_name.clone(),
                     inform_clients_on_loss: Some(send_ctx.inform_clients),
+                    caller: send_ctx.caller,
                     message_id: message_id.clone(),
                     message,
                 }))
@@ -382,6 +390,23 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
             if send_ctx.wait_for_ack {
                 self.wait_for_ack(message_id).await?;
             }
+        } else {
+            // If the connection is not found locally and the current deployment is not a cluster
+            // (no broadcaster), then the message is lost and the provided clients connected to
+            // the current node should be informed.
+            let send_ctx = ctx.unwrap_or_default();
+            for client_id in send_ctx.inform_clients {
+                if let Some(connection) = self.get_connection(client_id.clone()) {
+                    connection
+                        .lock()
+                        .await
+                        .send(Message::Binary(create_message_lost_event(
+                            message_id.clone(),
+                        )))
+                        .await?;
+                }
+            }
+            return Err(WebSocketConnError::MessageLost(message_id));
         }
         Ok(())
     }
@@ -489,6 +514,7 @@ mod tests {
                                                 msg,
                                                 Some(SendContext {
                                                     wait_for_ack: true,
+                                                    caller: None,
                                                     inform_clients: vec![connection_id.clone()],
                                                 }),
                                             )

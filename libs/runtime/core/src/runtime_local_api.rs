@@ -89,7 +89,7 @@ async fn websockets_messages_handler(
                     message.connection_id,
                     message.message_id,
                     message.message,
-                    create_send_context(message.inform_clients_on_loss),
+                    create_send_context(message.caller, message.inform_clients_on_loss),
                 )
                 .await
                 .map_err(|_| WebSocketsMessageError::UnexpectedError)?;
@@ -101,8 +101,12 @@ async fn websockets_messages_handler(
     Err(WebSocketsMessageError::NotEnabled)
 }
 
-fn create_send_context(inform_clients_on_loss: Option<Vec<String>>) -> Option<SendContext> {
+fn create_send_context(
+    caller: Option<String>,
+    inform_clients_on_loss: Option<Vec<String>>,
+) -> Option<SendContext> {
     inform_clients_on_loss.map(|inform_clients| SendContext {
+        caller,
         inform_clients,
         // As this is an async context where the application code (via the SDK)
         // will make a non-blocking API call to send a batch of websocket messages to
@@ -689,6 +693,7 @@ mod tests {
                     source_node: "node1".to_string(),
                     message: "Hello, World!".to_string(),
                     inform_clients_on_loss: None,
+                    caller: None,
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-2".to_string(),
@@ -696,12 +701,14 @@ mod tests {
                     source_node: "node1".to_string(),
                     message: "Hello, Solar System!".to_string(),
                     inform_clients_on_loss: None,
+                    caller: None,
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-3".to_string(),
                     message_id: "test-msg-3".to_string(),
                     source_node: "node1".to_string(),
                     message: "Hello, Galaxy!".to_string(),
+                    caller: None,
                     inform_clients_on_loss: None,
                 },
             ],
