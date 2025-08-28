@@ -86,7 +86,7 @@ impl VisibilityTimeoutExtender {
 
     pub async fn change_visibility_timeout(
         &self,
-        messages: &Vec<MessageHandle>,
+        messages: &[MessageHandle],
         visibility_timeout: Option<i32>,
     ) -> Result<ChangeMessageVisibilityBatchOutput, SdkError<ChangeMessageVisibilityBatchError>>
     {
@@ -97,7 +97,7 @@ impl VisibilityTimeoutExtender {
             .queue_url(self.config.queue_url.clone())
             .set_entries(Some(
                 messages
-                    .into_iter()
+                    .iter()
                     .map(|message| {
                         ChangeMessageVisibilityBatchRequestEntry::builder()
                             .visibility_timeout(final_visibility_timeout)

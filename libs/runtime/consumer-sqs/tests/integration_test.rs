@@ -2,7 +2,7 @@ use std::{env, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use aws_config::BehaviorVersion;
-use aws_sdk_sqs::{types::SendMessageBatchRequestEntry, Client, Error};
+use aws_sdk_sqs::{types::SendMessageBatchRequestEntry, Client};
 use celerity_aws_helpers::aws_regions::RegionProvider;
 use celerity_helpers::consumers::{Message, MessageConsumer, MessageHandler, MessageHandlerError};
 use pretty_assertions::assert_eq;

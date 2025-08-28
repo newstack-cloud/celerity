@@ -341,10 +341,7 @@ impl SQSMessageConsumer {
         }
     }
 
-    async fn terminate_visibility_timeout(
-        &self,
-        messages: &Vec<MessageHandle>,
-    ) -> Result<(), Error> {
+    async fn terminate_visibility_timeout(&self, messages: &[MessageHandle]) -> Result<(), Error> {
         if !self.config.terminate_visibility_timeout {
             debug!("sqs consumer not configured to terminate visibility timeout, moving on");
             return Ok(());
