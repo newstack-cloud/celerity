@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use celerity_ws_redis::pubsub::{connect, ConnectionConfig};
-use celerity_ws_registry::types::{AckMessage, Message, WebSocketMessage};
+use celerity_ws_registry::types::{AckMessage, Message, MessageType, WebSocketMessage};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 #[test_log::test(tokio::test)]
@@ -125,8 +125,11 @@ async fn send_messages_and_listen(
                 .send(Message::WebSocket(WebSocketMessage {
                     connection_id: connection_id.clone(),
                     message_id: format!("conn-{connection_id}-msg-{i}"),
+                    message_type: MessageType::Json,
                     source_node: "node1".to_string(),
-                    message: format!("This is message {i} for {connection_id}"),
+                    message: format!(
+                        "{{\"message\": \"This is message {i} for {connection_id}\"}}"
+                    ),
                     inform_clients_on_loss: None,
                     caller: None,
                 }))
@@ -152,6 +155,6 @@ async fn send_messages_and_listen(
 
 fn build_message_list(connection_id: &str, count: usize) -> Vec<String> {
     (0..count)
-        .map(|i| format!("This is message {i} for {connection_id}"))
+        .map(|i| format!("{{\"message\": \"This is message {i} for {connection_id}\"}}"))
         .collect()
 }
