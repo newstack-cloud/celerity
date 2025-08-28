@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 /// The parsed data from a binary message in the
 /// [Celerity Binary Message Format](https://celerityframework.io/docs/applications/resources/celerity-api#celerity-binary-message-format)
 /// used for WebSocket APIs.
@@ -101,6 +103,27 @@ pub fn parse_binary_message(
             message: message.to_vec(),
         })
     }
+}
+
+/// The data for a lost message.
+/// This is a notification that a message has been lost.
+/// It is sent by the server to the client when a message is considered lost.
+/// The client should then resend the message.
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct LostMessageData {
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+    pub caller: String,
+}
+
+/// The data for an ack message.
+/// This is a notification that a message has been acknowledged.
+/// It is sent by the server to the client when a message has been acknowledged.
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct AckMessageData {
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+    pub timestamp: u64,
 }
 
 #[cfg(test)]

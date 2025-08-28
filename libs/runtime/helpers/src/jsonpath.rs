@@ -18,7 +18,7 @@ use serde_json::Value;
 ///    "name": "John Doe",
 /// });
 ///
-/// let path = JsonPath::new("$.planInfo").unwrap();
+/// let path = JsonPath::from_str("$.planInfo").unwrap();
 /// let value = json!({
 ///    "planId": "1",
 ///    "planName": "premium",

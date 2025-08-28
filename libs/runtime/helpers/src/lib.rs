@@ -1,7 +1,11 @@
+pub mod aws_telemetry;
 pub mod consumers;
 pub mod env;
+pub mod http;
 pub mod jsonpath;
+pub mod request;
 pub mod runtime_types;
 pub mod scanner;
+pub mod telemetry;
 pub mod time;
 pub mod websockets;
