@@ -88,11 +88,12 @@ async fn websockets_messages_handler(
                 .send_message(
                     message.connection_id,
                     message.message_id,
+                    message.message_type,
                     message.message,
                     create_send_context(message.caller, message.inform_clients_on_loss),
                 )
                 .await
-                .map_err(|_| WebSocketsMessageError::UnexpectedError)?;
+                .map_err(|err| WebSocketsMessageError::UnexpectedError(err.to_string()))?;
         }
         return Ok(Json(ResponseMessage {
             message: "The messages have been sent".to_string(),
@@ -350,11 +351,14 @@ mod tests {
     use async_trait::async_trait;
     use axum::{body::Body, http::Request};
     use celerity_blueprint_config_parser::blueprint::{
-        CelerityApiAuth, CelerityApiAuthGuard, CelerityApiAuthGuardType,
-        CelerityApiAuthGuardValueSource, CelerityApiCors, CelerityApiCorsConfiguration,
+        CelerityApiAuth, CelerityApiAuthGuard, CelerityApiAuthGuardDiscoveryMode,
+        CelerityApiAuthGuardScheme, CelerityApiAuthGuardType, CelerityApiAuthGuardValueSource,
+        CelerityApiBasePath, CelerityApiCors, CelerityApiCorsConfiguration, WebSocketAuthStrategy,
     };
     use celerity_ws_registry::{
-        errors::WebSocketConnError, registry::SendContext, types::WebSocketMessage,
+        errors::WebSocketConnError,
+        registry::SendContext,
+        types::{MessageType, WebSocketMessage},
     };
     use http_body_util::BodyExt;
     use pretty_assertions::assert_eq;
@@ -690,24 +694,27 @@ mod tests {
                 WebSocketMessage {
                     connection_id: "test-conn-1".to_string(),
                     message_id: "test-msg-1".to_string(),
+                    message_type: MessageType::Json,
                     source_node: "node1".to_string(),
-                    message: "Hello, World!".to_string(),
+                    message: "{{\"message\": \"Hello, World!\"}}".to_string(),
                     inform_clients_on_loss: None,
                     caller: None,
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-2".to_string(),
                     message_id: "test-msg-2".to_string(),
+                    message_type: MessageType::Json,
                     source_node: "node1".to_string(),
-                    message: "Hello, Solar System!".to_string(),
+                    message: "{{\"message\": \"Hello, Solar System!\"}}".to_string(),
                     inform_clients_on_loss: None,
                     caller: None,
                 },
                 WebSocketMessage {
                     connection_id: "test-conn-3".to_string(),
                     message_id: "test-msg-3".to_string(),
+                    message_type: MessageType::Json,
                     source_node: "node1".to_string(),
-                    message: "Hello, Galaxy!".to_string(),
+                    message: "{{\"message\": \"Hello, Galaxy!\"}}".to_string(),
                     caller: None,
                     inform_clients_on_loss: None,
                 },
@@ -742,23 +749,29 @@ mod tests {
         let received_message_norm = received_messages
             .iter()
             .cloned()
-            .map(|(connection_id, _, message)| (connection_id, message))
+            .map(|(connection_id, _, _, message)| (connection_id, message))
             .collect::<Vec<_>>();
         assert_eq!(received_message_norm.len(), 3);
         assert_eq!(
             received_message_norm[0],
-            ("test-conn-1".to_string(), "Hello, World!".to_string())
+            (
+                "test-conn-1".to_string(),
+                "{{\"message\": \"Hello, World!\"}}".to_string()
+            )
         );
         assert_eq!(
             received_message_norm[1],
             (
                 "test-conn-2".to_string(),
-                "Hello, Solar System!".to_string()
+                "{{\"message\": \"Hello, Solar System!\"}}".to_string()
             )
         );
         assert_eq!(
             received_message_norm[2],
-            ("test-conn-3".to_string(), "Hello, Galaxy!".to_string())
+            (
+                "test-conn-3".to_string(),
+                "{{\"message\": \"Hello, Galaxy!\"}}".to_string()
+            )
         );
     }
 
@@ -790,8 +803,10 @@ mod tests {
                         timeout: 30,
                         tracing_enabled: true,
                     }],
-                    base_paths: vec!["/ws".to_string()],
+                    base_paths: vec![CelerityApiBasePath::Str("/ws".to_string())],
                     route_key: "event".to_string(),
+                    auth_strategy: WebSocketAuthStrategy::AuthMessage,
+                    connection_auth_guard: None,
                 }),
                 auth: Some(CelerityApiAuth {
                     default_guard: Some("jwt".to_string()),
@@ -801,9 +816,11 @@ mod tests {
                             guard_type: CelerityApiAuthGuardType::Jwt,
                             issuer: Some("https://example.com".to_string()),
                             audience: Some(vec!["https://example.com".to_string()]),
+                            discovery_mode: Some(CelerityApiAuthGuardDiscoveryMode::Oidc),
                             token_source: Some(CelerityApiAuthGuardValueSource::Str(
                                 "$.headers.Authorization".to_string(),
                             )),
+                            auth_scheme: Some(CelerityApiAuthGuardScheme::Bearer),
                         },
                     )]),
                 }),
@@ -826,6 +843,7 @@ mod tests {
                     visibility_timeout: None,
                     wait_time_seconds: None,
                     partial_failures: Some(true),
+                    routing_key: None,
                     handlers: vec![EventHandlerDefinition {
                         name: "Orders-ProcessOrder-v1".to_string(),
                         timeout: 30,
@@ -925,11 +943,11 @@ mod tests {
     }
 
     struct TestWebSocketConnRegistry {
-        tx: mpsc::Sender<(String, String, String)>,
+        tx: mpsc::Sender<(String, String, MessageType, String)>,
     }
 
     impl TestWebSocketConnRegistry {
-        fn new(tx: mpsc::Sender<(String, String, String)>) -> Self {
+        fn new(tx: mpsc::Sender<(String, String, MessageType, String)>) -> Self {
             Self { tx }
         }
     }
@@ -940,10 +958,13 @@ mod tests {
             &self,
             connection_id: String,
             message_id: String,
+            message_type: MessageType,
             message: String,
             _: Option<SendContext>,
         ) -> Result<(), WebSocketConnError> {
-            self.tx.send((connection_id, message_id, message)).await?;
+            self.tx
+                .send((connection_id, message_id, message_type, message))
+                .await?;
             Ok(())
         }
     }

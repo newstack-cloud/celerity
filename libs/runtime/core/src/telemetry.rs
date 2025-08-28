@@ -1,8 +1,7 @@
 use std::time::Instant;
 
 use crate::{
-    aws_telemetry::XrayTraceId, config::RuntimeConfig, errors::ApplicationStartError,
-    request::RequestId, types::ApiAppState,
+    config::RuntimeConfig, errors::ApplicationStartError, request::RequestId, types::ApiAppState,
 };
 use axum::{
     extract::{Request, State},
@@ -11,13 +10,13 @@ use axum::{
     response::Response,
     Extension,
 };
-use axum_client_ip::SecureClientIp;
+use axum_client_ip::ClientIp;
 use axum_extra::{headers, TypedHeader};
-use celerity_helpers::runtime_types::RuntimePlatform;
-use opentelemetry::{global, trace::TraceContextExt};
+use celerity_helpers::{aws_telemetry::XrayTraceId, runtime_types::RuntimePlatform};
+use opentelemetry::{global, propagation::TextMapCompositePropagator, trace::TraceContextExt};
 use opentelemetry_aws::trace::XrayPropagator as AwsXrayPropagator;
 use opentelemetry_otlp::WithExportConfig;
-use opentelemetry_sdk::trace::Config as TraceConfig;
+use opentelemetry_sdk::{propagation::TraceContextPropagator, trace::Config as TraceConfig};
 use tracing::{info, level_filters::LevelFilter};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use tracing_subscriber::{
@@ -33,9 +32,12 @@ use tracing_subscriber::{
 /// The various handler SDKs provide helpers for developers to more easily set up instrumentation
 /// for their handlers.
 pub fn setup_tracing(runtime_config: &RuntimeConfig) -> Result<(), ApplicationStartError> {
-    if runtime_config.platform == RuntimePlatform::AWS {
-        global::set_text_map_propagator(AwsXrayPropagator::new());
-    }
+    let propagator = TextMapCompositePropagator::new(vec![
+        Box::new(TraceContextPropagator::new()),
+        Box::new(AwsXrayPropagator::new()),
+    ]);
+
+    global::set_text_map_propagator(propagator);
 
     let trace_config = opentelemetry_sdk::trace::config()
         .with_sampler(opentelemetry_sdk::trace::Sampler::AlwaysOn);
@@ -120,12 +122,10 @@ pub async fn enrich_span(
     State(state): State<ApiAppState>,
     Extension(request_id): Extension<RequestId>,
     user_agent_header: Option<TypedHeader<headers::UserAgent>>,
-    secure_ip: SecureClientIp,
+    ClientIp(client_ip): ClientIp,
     request: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    let client_ip = secure_ip;
-
     let span = tracing::Span::current();
     let span_context = span.context();
     let otel_span = span_context.span();
@@ -136,7 +136,7 @@ pub async fn enrich_span(
         None => "Unknown User Agent".to_string(),
     };
 
-    span.record("client_ip", format!("{:?}", client_ip.0));
+    span.record("client_ip", format!("{client_ip:?}"));
     span.record("trace_id", trace_id.to_string());
     span.record("request_id", request_id.0.clone());
     // Connection ID is the same as the request ID but is associated with long-lived

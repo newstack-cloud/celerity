@@ -67,6 +67,7 @@ pub enum ApplicationStartError {
     OpenTelemetryTrace(OTelTraceError),
     TracerTryInit(TryInitError),
     TracingFilterParse(ParseError),
+    HttpClient(reqwest::Error),
 }
 
 impl fmt::Display for ApplicationStartError {
@@ -92,6 +93,9 @@ impl fmt::Display for ApplicationStartError {
             }
             ApplicationStartError::TracingFilterParse(parse_error) => {
                 write!(f, "application start error: {parse_error}")
+            }
+            ApplicationStartError::HttpClient(http_client_error) => {
+                write!(f, "application start error: {http_client_error}")
             }
         }
     }
@@ -133,6 +137,12 @@ impl From<ParseError> for ApplicationStartError {
     }
 }
 
+impl From<reqwest::Error> for ApplicationStartError {
+    fn from(error: reqwest::Error) -> Self {
+        ApplicationStartError::HttpClient(error)
+    }
+}
+
 #[derive(Debug)]
 pub enum EventResultError {
     EventNotFound,
@@ -162,7 +172,7 @@ impl IntoResponse for EventResultError {
 #[derive(Debug)]
 pub enum WebSocketsMessageError {
     NotEnabled,
-    UnexpectedError,
+    UnexpectedError(String),
 }
 
 impl IntoResponse for WebSocketsMessageError {
@@ -174,10 +184,10 @@ impl IntoResponse for WebSocketsMessageError {
                     message: "WebSockets are not enabled for the current application".to_string(),
                 }),
             ),
-            WebSocketsMessageError::UnexpectedError => (
+            WebSocketsMessageError::UnexpectedError(error_message) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ResponseMessage {
-                    message: "An unexpected error occurred".to_string(),
+                    message: format!("An unexpected error occurred: {error_message}"),
                 }),
             ),
         };
@@ -191,8 +201,8 @@ impl fmt::Display for WebSocketsMessageError {
             WebSocketsMessageError::NotEnabled => {
                 write!(f, "WebSockets are not enabled for the current application")
             }
-            WebSocketsMessageError::UnexpectedError => {
-                write!(f, "An unexpected error occurred")
+            WebSocketsMessageError::UnexpectedError(error_message) => {
+                write!(f, "An unexpected error occurred: {error_message}")
             }
         }
     }

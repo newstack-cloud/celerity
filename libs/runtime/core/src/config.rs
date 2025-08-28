@@ -1,6 +1,8 @@
 use std::str::FromStr;
 
-use celerity_blueprint_config_parser::blueprint::{CelerityApiAuth, CelerityApiCors};
+use celerity_blueprint_config_parser::blueprint::{
+    CelerityApiAuth, CelerityApiBasePath, CelerityApiCors, WebSocketAuthStrategy,
+};
 use celerity_helpers::{
     env::EnvVars,
     runtime_types::{RuntimeCallMode, RuntimePlatform},
@@ -91,6 +93,21 @@ pub struct RuntimeConfig {
     /// If not set, the runtime will use the first `celerity/schedule` resource
     /// defined in the blueprint.
     pub schedule_app: Option<String>,
+    /// Whether to verify TLS certificates when making requests to the resource store for requesting
+    /// resources such as OpenID discovery documents and JSON Web Key Sets for JWT authentication.
+    /// This must be true for any production environment, and can be set to false for development
+    /// environments with self-signed certificates.
+    ///
+    /// Defaults to true.
+    pub resource_store_verify_tls: bool,
+    /// The TTL in seconds for cache entries in the resource store.
+    ///
+    /// Defaults to 600 seconds (10 minutes).
+    pub resource_store_cache_entry_ttl: i64,
+    /// The interval in seconds at which the resource store cleanup task should run.
+    ///
+    /// Defaults to 3600 seconds (1 hour).
+    pub resource_store_cleanup_interval: i64,
 }
 
 impl RuntimeConfig {
@@ -175,6 +192,26 @@ impl RuntimeConfig {
 
         let schedule_app = env.var("CELERITY_SCHEDULE_APP").ok();
 
+        let resource_store_verify_tls = env
+            .var("CELERITY_RESOURCE_STORE_VERIFY_TLS")
+            .unwrap_or_else(|_| "true".to_string())
+            .parse()
+            .expect(
+                "Invalid resource store verify TLS value, must be either \"true\" or \"false\"",
+            );
+
+        let resource_store_cache_entry_ttl = env
+            .var("CELERITY_RESOURCE_STORE_CACHE_ENTRY_TTL")
+            .unwrap_or_else(|_| "600".to_string())
+            .parse()
+            .expect("Invalid resource store cache entry TTL value, must be a valid integer");
+
+        let resource_store_cleanup_interval = env
+            .var("CELERITY_RESOURCE_STORE_CLEANUP_INTERVAL")
+            .unwrap_or_else(|_| "3600".to_string())
+            .parse()
+            .expect("Invalid resource store cache cleanup interval value, must be a valid integer");
+
         RuntimeConfig {
             blueprint_config_path,
             runtime_call_mode,
@@ -190,6 +227,9 @@ impl RuntimeConfig {
             api_resource,
             consumer_app,
             schedule_app,
+            resource_store_verify_tls,
+            resource_store_cache_entry_ttl,
+            resource_store_cleanup_interval,
         }
     }
 }
@@ -237,8 +277,10 @@ pub struct WebSocketConfig {
     // Base paths are used by the runtime to only route requests
     // with a certain base path prefix to the WebSocket API in a hybrid API
     // context.
-    pub base_paths: Vec<String>,
+    pub base_paths: Vec<CelerityApiBasePath>,
     pub route_key: String,
+    pub auth_strategy: WebSocketAuthStrategy,
+    pub connection_auth_guard: Option<String>,
 }
 
 #[derive(Debug, Default)]
@@ -272,6 +314,12 @@ pub struct ConsumerConfig {
     // Depending on the deployment environment,
     // this may not be used.
     pub partial_failures: Option<bool>,
+    // The routing key used to filter messages based on the payload of the message.
+    // This is only applicable when the consumer message payload is a valid JSON object
+    // that contain the specified routing key field.
+    // This defaults to `event` and is only used when routing is activated through the use of
+    // a `celerity.handler.consumer.route` annotation set on a handler.
+    pub routing_key: Option<String>,
     pub handlers: Vec<EventHandlerDefinition>,
 }
 

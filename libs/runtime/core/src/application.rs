@@ -1,9 +1,12 @@
 use std::{
     collections::{HashMap, VecDeque},
+    fmt::Display,
     net::SocketAddr,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
+use async_trait::async_trait;
 use axum::{
     extract::{MatchedPath, Request},
     handler::Handler,
@@ -11,21 +14,30 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use axum_client_ip::SecureClientIpSource;
-use celerity_blueprint_config_parser::{blueprint::BlueprintConfig, parse::BlueprintParseError};
+use axum_client_ip::ClientIpSource;
+use celerity_blueprint_config_parser::{
+    blueprint::{BlueprintConfig, CelerityApiBasePath, CelerityApiProtocol},
+    parse::BlueprintParseError,
+};
 use celerity_helpers::{
     env::EnvVars,
+    http::ResourceStore,
     runtime_types::{HealthCheckResponse, RuntimeCallMode},
 };
 use celerity_ws_registry::{
-    registry::{WebSocketConnRegistry, WebSocketConnRegistryConfig, WebSocketRegistrySend},
-    types::AckWorkerConfig,
+    errors::WebSocketConnError,
+    registry::{
+        SendContext, WebSocketConnRegistry, WebSocketConnRegistryConfig, WebSocketRegistrySend,
+    },
+    types::{AckWorkerConfig, MessageType},
 };
-use tokio::{net::TcpListener, task::JoinHandle};
+use reqwest::Client;
+use tokio::{net::TcpListener, sync::Mutex as AsyncMutex, task::JoinHandle};
 use tower_http::trace::TraceLayer;
-use tracing::{debug, info_span, warn};
+use tracing::{debug, info, info_span, warn};
 
 use crate::{
+    auth_custom::AuthGuardHandler,
     config::{ApiConfig, AppConfig, RuntimeConfig, WebSocketConfig},
     consts::DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
     errors::{ApplicationStartError, ConfigError},
@@ -35,7 +47,7 @@ use crate::{
     transform_config::collect_api_config,
     types::{ApiAppState, EventTuple},
     utils::get_epoch_seconds,
-    websocket,
+    websocket::{self, WebSocketMessageHandler},
 };
 
 /// Provides an application that can run a HTTP server, WebSocket server,
@@ -50,8 +62,12 @@ pub struct Application {
     event_queue: Option<Arc<Mutex<VecDeque<EventTuple>>>>,
     processing_events_map: Option<Arc<Mutex<HashMap<String, EventTuple>>>>,
     ws_connections: Option<Arc<dyn WebSocketRegistrySend + 'static>>,
+    ws_app_routes: Arc<AsyncMutex<HashMap<String, Arc<dyn WebSocketMessageHandler + Send + Sync>>>>,
+    custom_auth_guards: Arc<AsyncMutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     local_api_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
+    resource_store: Option<Arc<ResourceStore>>,
+    resource_store_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
 }
 
 impl Application {
@@ -67,6 +83,10 @@ impl Application {
             event_queue: None,
             processing_events_map: None,
             ws_connections: None,
+            ws_app_routes: Arc::new(AsyncMutex::new(HashMap::new())),
+            custom_auth_guards: Arc::new(AsyncMutex::new(HashMap::new())),
+            resource_store: None,
+            resource_store_cleanup_task_shutdown_signal: None,
         }
     }
 
@@ -128,6 +148,14 @@ impl Application {
         Ok(app_config)
     }
 
+    pub fn websocket_registry(&self) -> Arc<dyn WebSocketRegistrySend> {
+        if let Some(ws_connections) = &self.ws_connections {
+            ws_connections.clone()
+        } else {
+            Arc::new(NoopWebSocketRegistrySend {})
+        }
+    }
+
     #[cfg(feature = "aws_consumers")]
     fn setup_consumers_for_aws(
         &mut self,
@@ -182,6 +210,12 @@ impl Application {
             );
         }
 
+        let resource_store = Arc::new(ResourceStore::new(
+            create_http_client(self.runtime_config.resource_store_verify_tls)?,
+            self.runtime_config.resource_store_cache_entry_ttl,
+        ));
+        self.resource_store = Some(resource_store.clone());
+
         if let Some(websocket_config) = &api_config.websocket {
             let websocket_base_path = resolve_websocket_base_path(api_config, websocket_config)?;
             let conn_registry = Arc::new(WebSocketConnRegistry::new(
@@ -200,13 +234,37 @@ impl Application {
                 websocket_base_path,
                 get(websocket::handler).with_state(websocket::WebSocketAppState {
                     connections: conn_registry,
-                    routes: Arc::new(HashMap::new()),
+                    routes: self.ws_app_routes.clone(),
                     route_key: websocket_config.route_key.clone(),
+                    api_auth: api_config.auth.clone(),
+                    auth_strategy: Some(websocket_config.auth_strategy.clone()),
+                    connection_auth_guard_name: websocket_config.connection_auth_guard.clone(),
+                    connection_auth_guard: self
+                        .get_custom_auth_guard_blocking(&websocket_config.connection_auth_guard),
+                    cors: api_config.cors.clone(),
+                    resource_store,
                 }),
             );
         }
 
         Ok(http_server_app)
+    }
+
+    fn get_custom_auth_guard_blocking(
+        &self,
+        guard_name: &Option<String>,
+    ) -> Option<Arc<dyn AuthGuardHandler + Send + Sync>> {
+        if let Some(guard_name) = guard_name {
+            // This is only called in the setup phase, so using a thread-blocking lock is safe
+            // as the setup http server method will be the only caller accessing
+            //the custom auth guards map at this point.
+            self.custom_auth_guards
+                .blocking_lock()
+                .get(guard_name)
+                .cloned()
+        } else {
+            None
+        }
     }
 
     fn setup_runtime_local_api(
@@ -226,7 +284,7 @@ impl Application {
     }
 
     pub async fn run(&mut self, block: bool) -> Result<AppInfo, ApplicationStartError> {
-        // Tracing setup is the in `run` instead of `setup` because
+        // Tracing setup is in `run` instead of `setup` because
         // we need to be in an async context (tokio runtime) in order to set up tracing.
         if self.app_tracing_enabled {
             telemetry::setup_tracing(&self.runtime_config)?;
@@ -246,6 +304,10 @@ impl Application {
                 .start_runtime_local_api(runtime_local_api_unwrapped)
                 .await;
             local_api_task = Some(task);
+        }
+
+        if self.resource_store.is_some() {
+            self.run_resource_store_cleanup_task();
         }
 
         if block {
@@ -303,7 +365,8 @@ impl Application {
         let http_app = http_app.layer(middleware::from_fn(log_request));
         let final_http_app =
             attach_tracing_layers(http_app, api_app_state.clone(), self.app_tracing_enabled)
-                .layer(SecureClientIpSource::ConnectInfo.into_extension())
+                // TODO: make client IP extractor configurable from env vars.
+                .layer(ClientIpSource::ConnectInfo.into_extension())
                 .layer(middleware::from_fn(request_id))
                 .with_state(api_app_state);
 
@@ -390,6 +453,43 @@ impl Application {
         }
     }
 
+    pub fn register_websocket_message_handler(
+        &mut self,
+        route: &str,
+        handler: impl WebSocketMessageHandler + Send + Sync + 'static,
+    ) {
+        let mut ws_app_routes = self.ws_app_routes.blocking_lock();
+        ws_app_routes.insert(route.to_string(), Arc::new(handler));
+    }
+
+    pub async fn register_custom_auth_guard(
+        &mut self,
+        guard_name: &str,
+        handler: impl AuthGuardHandler + Send + Sync + 'static,
+    ) {
+        let mut custom_auth_guards = self.custom_auth_guards.lock().await;
+        custom_auth_guards.insert(guard_name.to_string(), Arc::new(handler));
+    }
+
+    fn run_resource_store_cleanup_task(&mut self) {
+        if let Some(resource_store) = self.resource_store.clone() {
+            let (tx, mut rx) = tokio::sync::oneshot::channel::<()>();
+            tokio::spawn(async move {
+                loop {
+                    if rx.try_recv().is_ok() {
+                        info!("received shutdown signal, stopping resource store cleanup task");
+                        break;
+                    }
+
+                    debug!("cleaning expired cache entries in resource store");
+                    resource_store.clean_expired_cache_entries().await;
+                    tokio::time::sleep(Duration::from_secs(60)).await;
+                }
+            });
+            self.resource_store_cleanup_task_shutdown_signal = Some(tx);
+        }
+    }
+
     pub fn shutdown(&mut self) {
         if let Some(tx) = self.server_shutdown_signal.take() {
             tx.send(())
@@ -398,6 +498,10 @@ impl Application {
         if let Some(tx) = self.local_api_shutdown_signal.take() {
             tx.send(())
                 .expect("failed to send shutdown signal to local api server");
+        }
+        if let Some(tx) = self.resource_store_cleanup_task_shutdown_signal.take() {
+            tx.send(())
+                .expect("failed to send shutdown signal to resource store cleanup task");
         }
     }
 }
@@ -443,7 +547,8 @@ fn resolve_websocket_base_path<'a>(
     api_config: &'a ApiConfig,
     websocket_config: &'a WebSocketConfig,
 ) -> Result<&'a str, ApplicationStartError> {
-    if websocket_config.base_paths.is_empty() && api_config.http.is_some() {
+    let is_hybrid_api = api_config.http.is_some();
+    if websocket_config.base_paths.is_empty() && is_hybrid_api {
         return Err(ApplicationStartError::Config(ConfigError::Api(
             "A WebSocket-specific base path must be defined for a hybrid API \
             that provides a WebSocket and HTTP interface"
@@ -451,21 +556,76 @@ fn resolve_websocket_base_path<'a>(
         )));
     }
 
-    if websocket_config.base_paths.len() > 1 {
+    let ws_base_paths = websocket_config
+        .base_paths
+        .iter()
+        .filter(|path| match path {
+            // Only consider a base path string that is not protocol specific
+            // if the API is only for WebSockets.
+            CelerityApiBasePath::Str(_) => !is_hybrid_api,
+            CelerityApiBasePath::BasePathConfiguration(base_path_config) => {
+                base_path_config.protocol == CelerityApiProtocol::WebSocket
+            }
+        })
+        .collect::<Vec<_>>();
+
+    if ws_base_paths.len() > 1 {
         warn!(
             "Multiple WebSocket base paths are not supported by the runtime, \
          only the first one will be used"
         );
     }
 
-    if websocket_config.base_paths.is_empty() {
+    if ws_base_paths.is_empty() {
         Ok("/")
     } else {
-        Ok(websocket_config.base_paths[0].as_str())
+        match &ws_base_paths[0] {
+            CelerityApiBasePath::Str(base_path) => Ok(base_path.as_str()),
+            CelerityApiBasePath::BasePathConfiguration(base_path_config) => {
+                match base_path_config.protocol {
+                    CelerityApiProtocol::WebSocket => Ok(base_path_config.base_path.as_str()),
+                    _ => Err(ApplicationStartError::Config(ConfigError::Api(
+                        "WebSocket base path configuration must be used for WebSocket APIs"
+                            .to_string(),
+                    ))),
+                }
+            }
+        }
     }
 }
 
 #[derive(Debug)]
 pub struct AppInfo {
     pub http_server_address: Option<SocketAddr>,
+}
+
+fn create_http_client(verify_tls: bool) -> Result<Client, ApplicationStartError> {
+    Client::builder()
+        .danger_accept_invalid_certs(!verify_tls)
+        .build()
+        .map_err(ApplicationStartError::HttpClient)
+}
+
+#[derive(Debug, Clone)]
+struct NoopWebSocketRegistrySend {}
+
+#[async_trait]
+impl WebSocketRegistrySend for NoopWebSocketRegistrySend {
+    async fn send_message(
+        &self,
+        _: String,
+        _: String,
+        _: MessageType,
+        _: String,
+        _: Option<SendContext>,
+    ) -> Result<(), WebSocketConnError> {
+        debug!("no-op websocket registry send called, a websocket API has not been configured");
+        Ok(())
+    }
+}
+
+impl Display for NoopWebSocketRegistrySend {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "NoopWebSocketRegistrySend")
+    }
 }

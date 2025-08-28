@@ -1,8 +1,9 @@
 use std::cmp::max;
 
 use celerity_blueprint_config_parser::blueprint::{
-    BlueprintConfig, BlueprintMetadata, BlueprintScalarValue, CelerityApiProtocol,
-    CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType, RuntimeBlueprintResource,
+    BlueprintConfig, BlueprintMetadata, BlueprintScalarValue, CelerityApiBasePath,
+    CelerityApiProtocol, CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType,
+    RuntimeBlueprintResource, WebSocketAuthStrategy,
 };
 
 use crate::{
@@ -15,7 +16,7 @@ use crate::{
         CELERITY_HTTP_HANDLER_ANNOTATION_NAME, CELERITY_HTTP_METHOD_ANNOTATION_NAME,
         CELERITY_HTTP_PATH_ANNOTATION_NAME, CELERITY_WS_HANDLER_ANNOTATION_NAME,
         CELERITY_WS_ROUTE_ANNOTATION_NAME, DEFAULT_HANDLER_TIMEOUT, DEFAULT_TRACING_ENABLED,
-        DEFAULT_WEBSOCKET_API_ROUTE_KEY, MAX_HANDLER_TIMEOUT,
+        DEFAULT_WEBSOCKET_API_AUTH_STRATEGY, DEFAULT_WEBSOCKET_API_ROUTE_KEY, MAX_HANDLER_TIMEOUT,
     },
     errors::ConfigError,
 };
@@ -63,16 +64,30 @@ pub(crate) fn collect_api_config(
     )?;
 
     if !ws_handlers.is_empty() {
-        api_config.websocket = Some(WebSocketConfig {
-            handlers: ws_handlers,
-            base_paths: vec![],
-            route_key: DEFAULT_WEBSOCKET_API_ROUTE_KEY.to_string(),
-        });
+        api_config.websocket = create_websocket_config(&api.spec, ws_handlers)?;
     }
 
     api_config.tracing_enabled = resolve_api_tracing_enabled(&api.spec);
 
     Ok(api_config)
+}
+
+fn create_websocket_config(
+    api_spec: &CelerityResourceSpec,
+    handlers: Vec<WebSocketHandlerDefinition>,
+) -> Result<Option<WebSocketConfig>, ConfigError> {
+    let route_key = resolve_websocket_api_route_key(api_spec)?;
+    let auth_strategy = resolve_websocket_auth_strategy(api_spec)?;
+    let base_paths = resolve_base_paths(api_spec)?;
+    let connection_auth_guard = resolve_websocket_connection_auth_guard(api_spec)?;
+
+    Ok(Some(WebSocketConfig {
+        handlers,
+        route_key,
+        base_paths,
+        auth_strategy,
+        connection_auth_guard,
+    }))
 }
 
 fn get_api_resource<'a>(
@@ -85,7 +100,7 @@ fn get_api_resource<'a>(
         .find(
             |&(current_name, current)| match runtime_config.api_resource.as_ref() {
                 // Find the API resource in the blueprint that
-                //matches the name in the runtime config.
+                // matches the name in the runtime config.
                 Some(api_resource_name) => {
                     current_name == api_resource_name
                         && current.resource_type == CelerityResourceType::CelerityApi
@@ -240,6 +255,73 @@ fn resolve_websocket_api_route_key(api_spec: &CelerityResourceSpec) -> Result<St
     }
 }
 
+fn resolve_websocket_auth_strategy(
+    api_resource_spec: &CelerityResourceSpec,
+) -> Result<WebSocketAuthStrategy, ConfigError> {
+    if let CelerityResourceSpec::Api(api_spec) = api_resource_spec {
+        let auth_strategy_opt = api_spec
+            .protocols
+            .iter()
+            .find(|protocol| matches!(protocol, CelerityApiProtocol::WebSocketConfig(_)))
+            .and_then(|protocol| match protocol {
+                CelerityApiProtocol::WebSocketConfig(config) => config.auth_strategy.clone(),
+                _ => None,
+            });
+
+        if let Some(auth_strategy) = auth_strategy_opt {
+            Ok(auth_strategy)
+        } else {
+            Ok(DEFAULT_WEBSOCKET_API_AUTH_STRATEGY)
+        }
+    } else {
+        Err(ConfigError::Api(
+            "Invalid API spec was provided when resolving WebSocket API auth strategy".to_string(),
+        ))
+    }
+}
+
+fn resolve_base_paths(
+    api_resource_spec: &CelerityResourceSpec,
+) -> Result<Vec<CelerityApiBasePath>, ConfigError> {
+    if let CelerityResourceSpec::Api(api_spec) = api_resource_spec {
+        if let Some(domain_config) = api_spec.domain.as_ref() {
+            Ok(domain_config.base_paths.clone())
+        } else {
+            Ok(vec![])
+        }
+    } else {
+        Err(ConfigError::Api(
+            "Invalid API spec was provided when resolving API base paths".to_string(),
+        ))
+    }
+}
+
+fn resolve_websocket_connection_auth_guard(
+    api_resource_spec: &CelerityResourceSpec,
+) -> Result<Option<String>, ConfigError> {
+    if let CelerityResourceSpec::Api(api_spec) = api_resource_spec {
+        let connected_auth_guard_opt = api_spec
+            .protocols
+            .iter()
+            .find(|protocol| matches!(protocol, CelerityApiProtocol::WebSocketConfig(_)))
+            .and_then(|protocol| match protocol {
+                CelerityApiProtocol::WebSocketConfig(config) => config.auth_guard.clone(),
+                _ => None,
+            });
+
+        if let Some(connected_auth_guard) = connected_auth_guard_opt {
+            Ok(Some(connected_auth_guard))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Err(ConfigError::Api(
+            "Invalid API spec was provided when resolving WebSocket API connection auth guard"
+                .to_string(),
+        ))
+    }
+}
+
 fn collect_websocket_handler_definition(
     handler: &ResourceWithName,
     route: String,
@@ -296,8 +378,8 @@ fn apply_http_handler_configurations(
     path: String,
 ) -> Result<HttpHandlerDefinition, ConfigError> {
     let handler_definition = HttpHandlerDefinition {
-        name: String::default(),
-        handler: handler_name.clone(),
+        name: handler_name.clone(),
+        handler: handler_spec.handler.clone(),
         path: to_axum_path(path),
         method,
         location: resolve_handler_location(
@@ -326,8 +408,8 @@ fn apply_websocket_handler_configurations(
     route_key: String,
 ) -> Result<WebSocketHandlerDefinition, ConfigError> {
     let handler_definition = WebSocketHandlerDefinition {
-        name: String::default(),
-        handler: handler_name.clone(),
+        name: handler_name.clone(),
+        handler: handler_spec.handler.clone(),
         route,
         route_key,
         location: resolve_handler_location(
@@ -446,10 +528,10 @@ fn resolve_api_tracing_enabled(api_spec: &CelerityResourceSpec) -> bool {
 }
 
 // Converts a Celerity path to an Axum path.
-// Celerity paths are in the form of `/path/{param1}/{param2}`.
-// Axum paths are in the form of `/path/:param1/:param2`.
+// As of Axum v0.7, path segments now follow the same syntax
+// as the Celerity paths with {capture} syntax.
 // Celerity wildcards are of the form `/{param+}`.
-// Axum wildcards are of the form `/*param`.
+// Axum wildcards are of the form `/{*param}`.
 fn to_axum_path(celerity_path: String) -> String {
     celerity_path
         .split('/')
@@ -457,9 +539,9 @@ fn to_axum_path(celerity_path: String) -> String {
             if part.starts_with('{') && part.ends_with('}') {
                 let inner = &part[1..part.len() - 1];
                 if let Some(stripped) = inner.strip_suffix('+') {
-                    format!("*{stripped}")
+                    format!("{{*{stripped}}}")
                 } else {
-                    format!(":{inner}")
+                    part.to_string()
                 }
             } else {
                 part.to_string()
@@ -476,11 +558,11 @@ mod tests {
     #[test]
     fn test_to_axum_path() {
         assert_eq!(to_axum_path("/path".to_string()), "/path");
-        assert_eq!(to_axum_path("/path/{param}".to_string()), "/path/:param");
-        assert_eq!(to_axum_path("/path/{proxy+}".to_string()), "/path/*proxy");
+        assert_eq!(to_axum_path("/path/{param}".to_string()), "/path/{param}");
+        assert_eq!(to_axum_path("/path/{proxy+}".to_string()), "/path/{*proxy}");
         assert_eq!(
             to_axum_path("/path/{param}/{param2}".to_string()),
-            "/path/:param/:param2"
+            "/path/{param}/{param2}"
         );
     }
 }

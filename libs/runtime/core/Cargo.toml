@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-async-trait = "0.1.81"
-axum = { version = "0.7.5", features = ["ws", "http2"] }
-axum-extra = { version = "0.9.4", features = ["typed-header"] }
-axum-client-ip = "0.6.0"
+async-trait = "0.1.88"
+axum = { version = "0.8.4", features = ["ws", "http2", "macros"] }
+axum-extra = { version = "0.10.1", features = ["typed-header", "cookie"] }
+axum-client-ip = "1.1.3"
 serde = "1.0.204"
 serde_json = "1.0.122"
 tokio = { version = "1.38.1", features = ["full"] }
@@ -21,6 +21,9 @@ opentelemetry-otlp = { version = "0.15.0" }
 tracing-opentelemetry = "0.23.0"
 opentelemetry-aws = "0.10.0"
 nanoid = "0.4.0"
+jsonpath-rust = "0.7.1"
+jsonwebtoken = "9.3.1"
+reqwest = "0.12.23"
 
 [dependencies.celerity_blueprint_config_parser]
 path = "../blueprint-config-parser"
@@ -67,6 +70,10 @@ http-body-util = "0.1.2"
 coverage-helper = "0.2.2"
 futures = "0.3.30"
 tokio-tungstenite = "0.23.1"
+httptest = "0.16.3"
+biscuit = "0.7.0"
+chrono = "0.4.41"
+ring = "0.17.14"
 
 [features]
 aws_consumers = ["dep:celerity_consumer_sqs", "dep:celerity_consumer_kinesis"]
