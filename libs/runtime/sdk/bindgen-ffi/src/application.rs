@@ -52,6 +52,9 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 api_resource: None,
                 consumer_app: None,
                 schedule_app: None,
+                resource_store_verify_tls: true,
+                resource_store_cache_entry_ttl: 600,
+                resource_store_cleanup_interval: 3600,
             },
             Box::new(ProcessEnvVars::new()),
         ),
@@ -204,6 +207,7 @@ impl From<ApplicationStartError> for GeneralError {
             ApplicationStartError::TracingFilterParse(_) => {
                 GeneralError::ApplicationStartTracingFilterParseError
             }
+            ApplicationStartError::HttpClient(_) => GeneralError::ApplicationStartHttpClientError,
         }
     }
 }
