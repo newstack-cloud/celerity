@@ -59,19 +59,23 @@
             "jwtHttp": {
               "type": "jwt",
               "issuer": "https://identity.newstack.cloud/oauth2/v1/",
-              "tokenSource": {
-                "protocol": "http",
-                "source": "$.headers.Authorization"
-              },
+              "tokenSource": [
+                {
+                  "protocol": "http",
+                  "source": "$.headers.Authorization"
+                }
+              ],
               "audience": ["https://identity.newstack.cloud/api/manage/v1/"]
             },
             "jwtWebSocket": {
               "type": "jwt",
               "issuer": "https://identity.newstack.cloud/oauth2/v1/",
-              "tokenSource": {
-                "protocol": "websocket",
-                "source": "$.data.token"
-              },
+              "tokenSource": [
+                {
+                  "protocol": "websocket",
+                  "source": "$.data.token"
+                }
+              ],
               "audience": ["https://identity.newstack.cloud/api/manage/v1/"]
             }
           }

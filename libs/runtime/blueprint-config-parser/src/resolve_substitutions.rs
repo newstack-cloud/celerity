@@ -5,12 +5,13 @@ use celerity_helpers::env::EnvVars;
 use crate::{
     blueprint::{
         BlueprintConfig, BlueprintMetadata, BlueprintResourceMetadata, BlueprintScalarValue,
-        CelerityApiAuth, CelerityApiAuthGuard, CelerityApiAuthGuardType,
-        CelerityApiAuthGuardValueSource, CelerityApiBasePath, CelerityApiBasePathConfiguration,
-        CelerityApiCors, CelerityApiCorsConfiguration, CelerityApiDomain,
-        CelerityApiDomainSecurityPolicy, CelerityApiProtocol, CelerityApiSpec, CelerityBucketSpec,
-        CelerityConfigSpec, CelerityConsumerSpec, CelerityHandlerSpec, CelerityQueueSpec,
-        CelerityResourceSpec, CelerityScheduleSpec, CelerityTopicSpec, CelerityWorkflowCatchConfig,
+        CelerityApiAuth, CelerityApiAuthGuard, CelerityApiAuthGuardDiscoveryMode,
+        CelerityApiAuthGuardScheme, CelerityApiAuthGuardType, CelerityApiAuthGuardValueSource,
+        CelerityApiBasePath, CelerityApiBasePathConfiguration, CelerityApiCors,
+        CelerityApiCorsConfiguration, CelerityApiDomain, CelerityApiDomainSecurityPolicy,
+        CelerityApiProtocol, CelerityApiSpec, CelerityBucketSpec, CelerityConfigSpec,
+        CelerityConsumerSpec, CelerityHandlerSpec, CelerityQueueSpec, CelerityResourceSpec,
+        CelerityScheduleSpec, CelerityTopicSpec, CelerityWorkflowCatchConfig,
         CelerityWorkflowCondition, CelerityWorkflowDecisionRule, CelerityWorkflowFailureConfig,
         CelerityWorkflowParallelBranch, CelerityWorkflowRetryConfig, CelerityWorkflowSpec,
         CelerityWorkflowState, CelerityWorkflowStateType, CelerityWorkflowWaitConfig,
@@ -1201,10 +1202,20 @@ fn resolve_api_auth_guard(
             env.clone(),
             &field_path(&[field, "tokenSource"]),
         )?,
+        discovery_mode: resolve_optional_api_auth_guard_discovery_mode(
+            guard_with_subs.discovery_mode,
+            env.clone(),
+            &field_path(&[field, "discoveryMode"]),
+        )?,
         audience: resolve_optional_string_or_subs_list(
             guard_with_subs.audience,
             env.clone(),
             &field_path(&[field, "audience"]),
+        )?,
+        auth_scheme: resolve_optional_api_auth_guard_scheme(
+            guard_with_subs.auth_scheme,
+            env.clone(),
+            &field_path(&[field, "authScheme"]),
         )?,
     })
 }
@@ -1226,6 +1237,29 @@ fn resolve_api_auth_guard_type(
     }
 }
 
+fn resolve_optional_api_auth_guard_scheme(
+    auth_scheme_with_subs_opt: Option<StringOrSubstitutions>,
+    env: Box<dyn EnvVars>,
+    field: &str,
+) -> Result<Option<CelerityApiAuthGuardScheme>, ResolveError> {
+    match auth_scheme_with_subs_opt {
+        Some(auth_scheme_with_subs) => {
+            let auth_scheme_str =
+                resolve_string_or_substitutions_to_string(auth_scheme_with_subs, env, field)?;
+            match auth_scheme_str.as_str() {
+                "bearer" => Ok(Some(CelerityApiAuthGuardScheme::Bearer)),
+                "basic" => Ok(Some(CelerityApiAuthGuardScheme::Basic)),
+                "digest" => Ok(Some(CelerityApiAuthGuardScheme::Digest)),
+                _ => Err(ResolveError::ParseError(
+                    format!("unsupported auth scheme for auth guard: {auth_scheme_str}"),
+                    field.to_string(),
+                )),
+            }
+        }
+        None => Ok(None),
+    }
+}
+
 fn resolve_optional_api_auth_guard_value_source(
     value_source_with_subs_opt: Option<CelerityApiAuthGuardValueSourceWithSubs>,
     env: Box<dyn EnvVars>,
@@ -1241,18 +1275,57 @@ fn resolve_optional_api_auth_guard_value_source(
             CelerityApiAuthGuardValueSourceWithSubs::ValueSourceConfiguration(
                 value_source_config_with_subs,
             ) => {
-                let value_source_config = resolve_api_auth_guard_value_source_config(
+                let value_source_configs = resolve_api_auth_guard_value_source_configs(
                     value_source_config_with_subs,
                     env,
                     field,
                 )?;
                 Ok(Some(
-                    CelerityApiAuthGuardValueSource::ValueSourceConfiguration(value_source_config),
+                    CelerityApiAuthGuardValueSource::ValueSourceConfiguration(value_source_configs),
                 ))
             }
         },
         None => Ok(None),
     }
+}
+
+fn resolve_optional_api_auth_guard_discovery_mode(
+    discovery_mode_with_subs_opt: Option<StringOrSubstitutions>,
+    env: Box<dyn EnvVars>,
+    field: &str,
+) -> Result<Option<CelerityApiAuthGuardDiscoveryMode>, ResolveError> {
+    match discovery_mode_with_subs_opt {
+        Some(string_or_subs) => {
+            let string_value =
+                resolve_string_or_substitutions_to_string(string_or_subs, env.clone(), field)?;
+            match string_value.as_str() {
+                "oidc" => Ok(Some(CelerityApiAuthGuardDiscoveryMode::Oidc)),
+                "oauth2" => Ok(Some(CelerityApiAuthGuardDiscoveryMode::OAuth2)),
+                _ => Err(ResolveError::ParseError(
+                    format!("unsupported discovery mode: {string_value}"),
+                    field.to_string(),
+                )),
+            }
+        }
+        None => Ok(None),
+    }
+}
+
+fn resolve_api_auth_guard_value_source_configs(
+    value_source_configs_with_subs: Vec<ValueSourceConfigurationWithSubs>,
+    env: Box<dyn EnvVars>,
+    field: &str,
+) -> Result<Vec<ValueSourceConfiguration>, ResolveError> {
+    let mut resolved_value_source_configs = Vec::new();
+    for value_source_config_with_subs in value_source_configs_with_subs {
+        let resolved_value_source_config = resolve_api_auth_guard_value_source_config(
+            value_source_config_with_subs,
+            env.clone(),
+            field,
+        )?;
+        resolved_value_source_configs.push(resolved_value_source_config);
+    }
+    Ok(resolved_value_source_configs)
 }
 
 fn resolve_api_auth_guard_value_source_config(

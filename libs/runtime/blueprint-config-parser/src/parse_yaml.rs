@@ -1313,10 +1313,12 @@ fn validate_celerity_api_auth_guard(
                     }
                 }
                 "tokenSource" => {
-                    if let yaml_rust2::Yaml::Hash(value_map) = value {
+                    if let yaml_rust2::Yaml::Array(value_arr) = value {
                         guard.token_source = Some(
                             CelerityApiAuthGuardValueSourceWithSubs::ValueSourceConfiguration(
-                                validate_celerity_api_auth_value_source_config(value_map, "token")?,
+                                validate_celerity_api_auth_value_source_configs(
+                                    value_arr, "token",
+                                )?,
                             ),
                         )
                     } else if let yaml_rust2::Yaml::String(value_str) = value {
@@ -1325,7 +1327,7 @@ fn validate_celerity_api_auth_guard(
                         ))
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string or mapping for token source, found {value:?}",
+                            "expected a string or array for token source, found {value:?}",
                         )))?;
                     }
                 }
@@ -1360,6 +1362,26 @@ fn validate_celerity_api_auth_guard(
     }
 
     Ok(guard)
+}
+
+fn validate_celerity_api_auth_value_source_configs(
+    value_arr: &yaml_rust2::yaml::Array,
+    context: &str,
+) -> Result<Vec<ValueSourceConfigurationWithSubs>, BlueprintParseError> {
+    let mut value_source_configs = Vec::new();
+    for item in value_arr {
+        if let yaml_rust2::Yaml::Hash(value_map) = item {
+            let value_source_config =
+                validate_celerity_api_auth_value_source_config(value_map, context)?;
+            value_source_configs.push(value_source_config);
+        } else {
+            Err(BlueprintParseError::YamlFormatError(format!(
+                "expected a mapping for \\\"{context}\\\" value source, found {item:?}",
+            )))?;
+        }
+    }
+
+    Ok(value_source_configs)
 }
 
 fn validate_celerity_api_auth_value_source_config(

@@ -332,7 +332,7 @@ impl Default for CelerityScheduleSpec {
 }
 
 /// A protocol that an API resource can support.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 pub enum CelerityApiProtocol {
     #[serde(rename = "http")]
     Http,
@@ -344,7 +344,7 @@ pub enum CelerityApiProtocol {
 
 // Configuration specific to the WebSocket protocol
 // for an API.
-#[derive(Serialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct WebSocketConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "routeKey")]
@@ -352,10 +352,13 @@ pub struct WebSocketConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "authStrategy")]
     pub auth_strategy: Option<WebSocketAuthStrategy>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "authGuard")]
+    pub auth_guard: Option<String>,
 }
 
 /// Authentication strategy for a WebSocket API.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 pub enum WebSocketAuthStrategy {
     #[serde(rename = "authMessage")]
     AuthMessage,
@@ -365,7 +368,7 @@ pub enum WebSocketAuthStrategy {
 
 /// CORS configuration for a Celerity API resource which can be
 /// a string or detailed configuration.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 #[serde(untagged)]
 pub enum CelerityApiCors {
     Str(String),
@@ -374,7 +377,7 @@ pub enum CelerityApiCors {
 
 /// Detailed CORS configuration
 /// for a Celerity API resource.
-#[derive(Serialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityApiCorsConfiguration {
     #[serde(rename = "allowCredentials")]
     pub allow_credentials: Option<bool>,
@@ -409,7 +412,7 @@ pub struct CelerityApiDomain {
 
 /// Base path configuration for a Celerity API resource which can be
 /// a string or detailed configuration.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 #[serde(untagged)]
 pub enum CelerityApiBasePath {
     Str(String),
@@ -419,7 +422,7 @@ pub enum CelerityApiBasePath {
 /// Base path configuration for a Celerity API resource.
 /// This allows you to configure a base path for a specific
 /// protocol for an API.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 pub struct CelerityApiBasePathConfiguration {
     pub protocol: CelerityApiProtocol,
     #[serde(rename = "basePath")]
@@ -445,7 +448,7 @@ pub enum CelerityApiDomainSecurityPolicy {
 }
 
 /// Authentication configuration for a Celerity API resource.
-#[derive(Serialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityApiAuth {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "defaultGuard")]
@@ -455,17 +458,22 @@ pub struct CelerityApiAuth {
 
 /// Guard configuration that provides access control
 /// for a Celerity API resource.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 pub struct CelerityApiAuthGuard {
     #[serde(rename = "type")]
     pub guard_type: CelerityApiAuthGuardType,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub issuer: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub discovery_mode: Option<CelerityApiAuthGuardDiscoveryMode>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "tokenSource")]
     pub token_source: Option<CelerityApiAuthGuardValueSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub audience: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "authScheme")]
+    pub auth_scheme: Option<CelerityApiAuthGuardScheme>,
 }
 
 impl Default for CelerityApiAuthGuard {
@@ -473,15 +481,28 @@ impl Default for CelerityApiAuthGuard {
         CelerityApiAuthGuard {
             guard_type: CelerityApiAuthGuardType::NoGuardType,
             issuer: None,
+            discovery_mode: Some(CelerityApiAuthGuardDiscoveryMode::default()),
             token_source: None,
             audience: None,
+            auth_scheme: None,
         }
     }
 }
 
+/// Auth scheme for a Celerity API auth guard.
+#[derive(Serialize, Debug, PartialEq, Clone)]
+pub enum CelerityApiAuthGuardScheme {
+    #[serde(rename = "bearer")]
+    Bearer,
+    #[serde(rename = "basic")]
+    Basic,
+    #[serde(rename = "digest")]
+    Digest,
+}
+
 /// Auth guard type for authorization configuration
 /// in a Celerity API resource.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 pub enum CelerityApiAuthGuardType {
     #[serde(rename = "jwt")]
     Jwt,
@@ -494,16 +515,26 @@ pub enum CelerityApiAuthGuardType {
 /// Value source for authorization configuration
 /// in a Celerity API resource.
 /// A value could be a JWT.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 #[serde(untagged)]
 pub enum CelerityApiAuthGuardValueSource {
     Str(String),
-    ValueSourceConfiguration(ValueSourceConfiguration),
+    ValueSourceConfiguration(Vec<ValueSourceConfiguration>),
+}
+
+/// Discovery mode for a Celerity API auth guard.
+#[derive(Serialize, Debug, PartialEq, Clone, Default)]
+pub enum CelerityApiAuthGuardDiscoveryMode {
+    #[serde(rename = "oidc")]
+    #[default]
+    Oidc,
+    #[serde(rename = "oauth2")]
+    OAuth2,
 }
 
 /// Value source configuration for extracting a value
 /// from a request or message.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 pub struct ValueSourceConfiguration {
     pub protocol: CelerityApiProtocol,
     pub source: String,

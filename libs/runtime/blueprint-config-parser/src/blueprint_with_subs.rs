@@ -208,14 +208,20 @@ pub struct CelerityApiAuthGuardWithSubs {
     #[serde(rename = "tokenSource")]
     pub token_source: Option<CelerityApiAuthGuardValueSourceWithSubs>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "discoveryMode")]
+    pub discovery_mode: Option<StringOrSubstitutions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub audience: Option<Vec<StringOrSubstitutions>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "authScheme")]
+    pub auth_scheme: Option<StringOrSubstitutions>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum CelerityApiAuthGuardValueSourceWithSubs {
     Str(StringOrSubstitutions),
-    ValueSourceConfiguration(ValueSourceConfigurationWithSubs),
+    ValueSourceConfiguration(Vec<ValueSourceConfigurationWithSubs>),
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
