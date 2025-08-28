@@ -34,7 +34,10 @@ resources:
       byLabel:
         application: "orders"
     spec:
-      protocols: ["http"]
+      protocols:
+        - "http"
+        - websocketConfig:
+            routeKey: "action"
       cors:
         allowCredentials: true
         allowOrigins:
@@ -52,7 +55,10 @@ resources:
       domain:
         domainName: "api.example.com"
         basePaths:
-          - "/"
+          - protocol: "http"
+            basePath: "/"
+          - protocol: "websocket"
+            basePath: "/ws"
         normalizeBasePath: false
         certificateId: "${variables.certificateId}"
         securityPolicy: "TLS_1_2"
@@ -77,13 +83,58 @@ resources:
         application: "orders"
       annotations:
         celerity.handler.http: true
-        celerity.handler.http.method: "POST"
+        celerity.handler.http.method: "GET"
         celerity.handler.http.path: "/orders/{orderId}"
     spec:
       handlerName: Orders-GetOrderHandler-v1
       codeLocation: "./orders"
-      handler: "handlers.getOrder"
-      runtime: "nodejs20.x"
+      handler: "handlers.get_order"
+      runtime: "python3.11"
+      memory: 1024
+      timeout: 60
+      tracingEnabled: true
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"
+        SECRET_STORE_ID: "${variables.secretStoreId}"
+        PAYMENT_API_SECRET: "${variables.paymentApiSecret}"
+
+  updateOrderHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Update Order Handler
+      labels:
+        application: "orders"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "PUT"
+        celerity.handler.http.path: "/orders/{orderId}"
+    spec:
+      handlerName: Orders-UpdateOrderHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.update_order"
+      runtime: "python3.11"
+      memory: 1024
+      timeout: 60
+      tracingEnabled: true
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"
+        SECRET_STORE_ID: "${variables.secretStoreId}"
+        PAYMENT_API_SECRET: "${variables.paymentApiSecret}"
+
+  processOrderUpdateHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Process Order Update Handler
+      labels:
+        application: "orders"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "processOrderUpdate"
+    spec:
+      handlerName: Orders-ProcessOrderUpdateHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.process_order_update"
+      runtime: "python3.11"
       memory: 1024
       timeout: 60
       tracingEnabled: true

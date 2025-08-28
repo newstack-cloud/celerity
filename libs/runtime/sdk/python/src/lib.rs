@@ -1,60 +1,57 @@
 use std::{
   collections::HashMap,
   process::abort,
+  str::FromStr,
   sync::{Arc, Mutex},
   thread,
 };
 
-use axum::{body::Body, http::Request, response::IntoResponse};
+use axum::{
+  body::Body,
+  http::{header::CONTENT_TYPE, Request},
+};
 use celerity_helpers::{
   env::ProcessEnvVars,
-  runtime_types::{RuntimeCallMode, RuntimePlatform},
+  request::{
+    cookies_from_headers, headers_to_hashmap, path_params_from_request_parts, query_from_uri,
+    to_request_body,
+  },
+  runtime_types::RuntimeCallMode,
 };
 use pyo3::prelude::*;
 
 use celerity_runtime_core::{
   application::Application,
-  config::{
-    ApiConfig, AppConfig, HttpConfig, HttpHandlerDefinition, RuntimeConfig, WebSocketConfig,
+  config::{ApiConfig, AppConfig, RuntimeConfig},
+  request::RequestId,
+  telemetry_utils::extract_trace_context,
+};
+use tokio::sync::{mpsc, Mutex as TokioMutex};
+use tracing::Level;
+
+use crate::{
+  core_runtime_config::{CoreRuntimeConfig, CoreRuntimeConfigBuilder, CoreRuntimePlatform},
+  errors::HandlerError,
+  http::{
+    core_http_config, CoreHttpConfig, PyRequest, PyRequestBuilder, PyRequestContext, PyResponse,
+    PyResponseBuilder,
+  },
+  interop::{python_worker, PythonCall},
+  websockets::{
+    core_websocket_config, CoreWebSocketConfig, CoreWebSocketHandlerDefinition, WSBindingEventType,
+    WSBindingMessageHandler, WSBindingMessageInfo, WSBindingMessageInfoBuilder,
+    WSBindingMessageRequestContext, WSBindingMessageRequestContextBuilder, WSBindingMessageType,
+    WSBindingRegistrySend, WSBindingSendContext,
   },
 };
-use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc, oneshot, Mutex as TokioMutex};
 
+mod core_runtime_config;
+mod errors;
+mod http;
+mod interop;
+mod json_convert;
 mod runtime;
-
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-  Ok((a + b).to_string())
-}
-
-#[pyclass]
-pub struct CoreRuntimeConfig {
-  #[pyo3(get)]
-  blueprint_config_path: String,
-  #[pyo3(get)]
-  server_port: i32,
-  #[pyo3(get)]
-  server_loopback_only: Option<bool>,
-}
-
-#[pymethods]
-impl CoreRuntimeConfig {
-  #[new]
-  #[pyo3(signature = (blueprint_config_path, server_port, server_loopback_only))]
-  fn new(
-    blueprint_config_path: String,
-    server_port: i32,
-    server_loopback_only: Option<bool>,
-  ) -> Self {
-    CoreRuntimeConfig {
-      blueprint_config_path,
-      server_port,
-      server_loopback_only,
-    }
-  }
-}
+mod websockets;
 
 #[pyclass]
 struct CoreRuntimeAppConfig {
@@ -91,164 +88,6 @@ impl From<ApiConfig> for CoreApiConfig {
 }
 
 #[pyclass]
-struct CoreHttpConfig {
-  #[pyo3(get)]
-  handlers: Vec<Py<CoreHttpHandlerDefinition>>,
-}
-
-fn core_http_config(http_config: HttpConfig) -> Py<CoreHttpConfig> {
-  Python::with_gil(|py| Py::new(py, CoreHttpConfig::from(http_config)).unwrap())
-}
-
-impl From<HttpConfig> for CoreHttpConfig {
-  fn from(http_config: HttpConfig) -> Self {
-    let handlers = http_config
-      .handlers
-      .into_iter()
-      .map(core_http_handler_definition)
-      .collect::<Vec<_>>();
-    Self { handlers }
-  }
-}
-
-#[pyclass]
-struct CoreHttpHandlerDefinition {
-  #[pyo3(get)]
-  path: String,
-  #[pyo3(get)]
-  method: String,
-  #[pyo3(get)]
-  location: String,
-  #[pyo3(get)]
-  handler: String,
-}
-
-fn core_http_handler_definition(
-  http_handler_definition: HttpHandlerDefinition,
-) -> Py<CoreHttpHandlerDefinition> {
-  Python::with_gil(|py| {
-    Py::new(py, CoreHttpHandlerDefinition::from(http_handler_definition)).unwrap()
-  })
-}
-
-impl From<HttpHandlerDefinition> for CoreHttpHandlerDefinition {
-  fn from(handler: HttpHandlerDefinition) -> Self {
-    Self {
-      path: handler.path,
-      method: handler.method,
-      location: handler.location,
-      handler: handler.handler,
-    }
-  }
-}
-
-#[pyclass]
-struct CoreWebSocketConfig {}
-
-fn core_websocket_config(websocket_config: WebSocketConfig) -> Py<CoreWebSocketConfig> {
-  Python::with_gil(|py| Py::new(py, CoreWebSocketConfig::from(websocket_config)).unwrap())
-}
-
-impl From<WebSocketConfig> for CoreWebSocketConfig {
-  fn from(_: WebSocketConfig) -> Self {
-    Self {}
-  }
-}
-
-#[derive(Debug, Clone, FromPyObject)]
-struct Response {
-  status: u16,
-  headers: Option<HashMap<String, String>>,
-  body: Option<String>,
-}
-
-impl IntoResponse for Response {
-  fn into_response(self) -> axum::response::Response<Body> {
-    let mut builder = axum::response::Response::builder();
-    for (key, value) in self.headers.unwrap_or_default() {
-      builder = builder.header(key, value);
-    }
-    builder = builder.status(self.status);
-    builder
-      .body(Body::from(self.body.unwrap_or_default()))
-      .unwrap()
-  }
-}
-
-#[pyclass(name = "Response")]
-#[derive(Debug, Clone)]
-pub struct PyResponse {
-  #[pyo3(get)]
-  status: u16,
-  #[pyo3(get)]
-  headers: Option<HashMap<String, String>>,
-  #[pyo3(get)]
-  body: Option<String>,
-}
-
-#[pymethods]
-impl PyResponse {
-  #[new]
-  #[pyo3(signature = (status, headers, body))]
-  fn new(status: u16, headers: Option<HashMap<String, String>>, body: Option<String>) -> Self {
-    PyResponse {
-      status,
-      headers,
-      body,
-    }
-  }
-}
-
-// Message sent to the Python worker
-struct PythonCall {
-  handler_id: String,
-  #[allow(dead_code)]
-  args: Vec<PyObject>, // or whatever your handler expects
-  response: oneshot::Sender<Result<Response, HandlerError>>,
-}
-
-async fn python_worker(
-  mut rx: mpsc::UnboundedReceiver<PythonCall>,
-  handlers: Arc<TokioMutex<HashMap<String, Py<PyAny>>>>,
-) {
-  while let Some(PythonCall {
-    handler_id,
-    args: _,
-    response,
-  }) = rx.recv().await
-  {
-    let handlers_lock = handlers.lock().await;
-    let handler = handlers_lock.get(&handler_id);
-    let wrapped_future = Python::with_gil(|py| {
-      if let Some(handler) = handler {
-        let internal_handler = handler.bind(py);
-        let coro = internal_handler.call0()?;
-        pyo3_async_runtimes::tokio::into_future(coro)
-      } else {
-        Err(PyErr::new::<pyo3::exceptions::PyException, _>(format!(
-          "Handler not found: {handler_id}",
-        )))
-      }
-    });
-
-    let run_result = match wrapped_future {
-      Ok(future) => future
-        .await
-        .map_err(|err| HandlerError::new(err.to_string())),
-      Err(err) => Err(HandlerError::new(err.to_string())),
-    };
-
-    let result = match run_result {
-      Ok(output) => Python::with_gil(|py| -> PyResult<Response> { output.extract(py) })
-        .map_err(|err| HandlerError::new(err.to_string())),
-      Err(err) => Err(HandlerError::new(err.to_string())),
-    };
-
-    let _ = response.send(result);
-  }
-}
-
-#[pyclass]
 struct CoreRuntimeApplication {
   inner: Arc<Mutex<Application>>,
   task_locals: Option<pyo3_async_runtimes::TaskLocals>,
@@ -266,16 +105,23 @@ impl CoreRuntimeApplication {
       runtime_call_mode: RuntimeCallMode::Ffi,
       server_loopback_only: runtime_config.server_loopback_only,
       server_port: runtime_config.server_port,
-      local_api_port: 8259,
-      use_custom_health_check: None,
-      service_name: "CelerityTestService".to_string(),
-      platform: RuntimePlatform::Local,
-      trace_otlp_collector_endpoint: "http://localhost:4317".to_string(),
-      runtime_max_diagnostics_level: tracing::Level::INFO,
-      test_mode: false,
-      api_resource: None,
-      consumer_app: None,
-      schedule_app: None,
+      // Local API port is not used for the Python runtime
+      // as the runtime mode for interaction with application handlers
+      // is FFI.
+      local_api_port: 0,
+      use_custom_health_check: runtime_config.use_custom_health_check,
+      service_name: runtime_config.service_name.clone(),
+      platform: runtime_config.platform.clone().into(),
+      trace_otlp_collector_endpoint: runtime_config.trace_otlp_collector_endpoint.clone(),
+      runtime_max_diagnostics_level: Level::from_str(&runtime_config.runtime_max_diagnostics_level)
+        .expect("runtime_max_diagnostics_level should be a valid tracing level"),
+      test_mode: runtime_config.test_mode,
+      api_resource: runtime_config.api_resource.clone(),
+      consumer_app: runtime_config.consumer_app.clone(),
+      schedule_app: runtime_config.schedule_app.clone(),
+      resource_store_verify_tls: runtime_config.resource_store_verify_tls,
+      resource_store_cache_entry_ttl: runtime_config.resource_store_cache_entry_ttl,
+      resource_store_cleanup_interval: runtime_config.resource_store_cleanup_interval,
     };
     println!("Creating CoreRuntimeApplication with config: {native_runtime_config:?}");
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
@@ -331,15 +177,69 @@ impl CoreRuntimeApplication {
     }
 
     let py_tx = self.py_tx.as_ref().unwrap().clone();
-    let final_handler = move |_req: Request<Body>| {
+    let final_handler = move |req: Request<Body>| {
       let py_tx = py_tx.clone();
       let handler_id = handler_id.clone();
+
       async move {
         let (response_tx, response_rx) = tokio::sync::oneshot::channel();
+        let request_id = req
+          .extensions()
+          .get::<RequestId>()
+          .unwrap_or(&RequestId("".to_string()))
+          .0
+          .clone();
+
+        let (mut parts, body) = req.into_parts();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX)
+          .await
+          .map_err(|err| HandlerError::new(err.to_string()))?;
+
+        let (text_body, binary_body, content_type) =
+          to_request_body(&body_bytes, parts.headers.get(CONTENT_TYPE).cloned());
+
+        let query = query_from_uri(&parts.uri).map_err(|err| HandlerError::new(err.to_string()))?;
+        let cookies = cookies_from_headers(&parts.headers);
+        let path_params = path_params_from_request_parts(&mut parts)
+          .await
+          .map_err(|err| HandlerError::new(err.to_string()))?;
+
+        let py_req = Python::with_gil(|py| {
+          Py::new(
+            py,
+            PyRequest {
+              text_body,
+              binary_body,
+              content_type,
+              headers: headers_to_hashmap(&parts.headers),
+              query,
+              cookies,
+              method: parts.method.to_string(),
+              path: parts.uri.path().to_string(),
+              path_params,
+              protocol_version: parts.version.into(),
+            },
+          )
+        })
+        .map_err(|err| HandlerError::new(err.to_string()))?;
+
+        let py_req_ctx = Python::with_gil(|py| {
+          Py::new(
+            py,
+            PyRequestContext {
+              request_id,
+              request_time: chrono::Utc::now(),
+              auth: Python::None(py),
+              trace_context: extract_trace_context(),
+            },
+          )
+        })
+        .map_err(|err| HandlerError::new(err.to_string()))?;
+
         py_tx
           .send(PythonCall {
             handler_id,
-            args: vec![],
+            args: vec![py_req.into(), py_req_ctx.into()],
             response: response_tx,
           })
           .map_err(|_| HandlerError::new("Python worker unavailable".to_string()))?;
@@ -350,14 +250,45 @@ impl CoreRuntimeApplication {
       }
     };
 
-    // 4. Register the HTTP handler with the Rust runtime (synchronously)
     self
       .inner
       .lock()
-      .unwrap()
+      .expect("should be able to obtain inner application lock")
       .register_http_handler(&path, &method, final_handler);
 
     Ok(())
+  }
+
+  fn register_websocket_handler(&mut self, route: String, handler: Py<PyAny>) -> PyResult<()> {
+    let handler_id = format!("websocket::{route}");
+    {
+      let mut registry = self.handler_registry.blocking_lock();
+      registry.insert(handler_id.clone(), handler);
+    }
+
+    let py_tx = self.py_tx.as_ref().unwrap().clone();
+    let final_handler = WSBindingMessageHandler { handler_id, py_tx };
+
+    self
+      .inner
+      .lock()
+      .expect("should be able to obtain inner application lock")
+      .register_websocket_message_handler(&route, final_handler);
+
+    Ok(())
+  }
+
+  fn websocket_registry(&self, py: Python) -> PyResult<Py<WSBindingRegistrySend>> {
+    Py::new(
+      py,
+      WSBindingRegistrySend {
+        inner: self
+          .inner
+          .lock()
+          .expect("should be able to obtain inner application lock")
+          .websocket_registry(),
+      },
+    )
   }
 
   // SAFETY: run can hold a std mutex lock across an await boundary as there will be no other
@@ -410,32 +341,24 @@ impl CoreRuntimeApplication {
 /// The Celerity Runtime SDK module implemented in Rust.
 #[pymodule]
 fn _celerity_runtime_sdk(m: &Bound<'_, PyModule>) -> PyResult<()> {
-  m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
   m.add_class::<CoreRuntimeConfig>()?;
+  m.add_class::<CoreRuntimeConfigBuilder>()?;
+  m.add_class::<CoreRuntimePlatform>()?;
   m.add_class::<CoreRuntimeApplication>()?;
   m.add_class::<PyResponse>()?;
+  m.add_class::<PyResponseBuilder>()?;
+  m.add_class::<WSBindingMessageInfo>()?;
+  m.add_class::<WSBindingMessageInfoBuilder>()?;
+  m.add_class::<WSBindingMessageRequestContext>()?;
+  m.add_class::<WSBindingMessageRequestContextBuilder>()?;
+  m.add_class::<WSBindingEventType>()?;
+  m.add_class::<WSBindingMessageType>()?;
+  m.add_class::<CoreWebSocketConfig>()?;
+  m.add_class::<CoreWebSocketHandlerDefinition>()?;
+  m.add_class::<PyRequest>()?;
+  m.add_class::<PyRequestBuilder>()?;
+  m.add_class::<PyRequestContext>()?;
+  m.add_class::<WSBindingSendContext>()?;
+  m.add_class::<WSBindingRegistrySend>()?;
   Ok(())
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HandlerError {
-  pub message: String,
-}
-
-impl HandlerError {
-  pub fn new(message: String) -> Self {
-    Self { message }
-  }
-}
-
-impl std::fmt::Display for HandlerError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.message)
-  }
-}
-
-impl IntoResponse for HandlerError {
-  fn into_response(self) -> axum::response::Response<Body> {
-    axum::response::Json(self).into_response()
-  }
 }

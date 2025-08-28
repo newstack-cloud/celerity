@@ -9,7 +9,7 @@ name = "celerity_python_runtime_sdk"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.25.1", features = ["extension-module"] }
+pyo3 = { version = "0.25.1", features = ["extension-module", "chrono"] }
 # Temporarily using fork of pyo3-asyncio that is compatible with
 # pyo3 0.21.0 and above with the new Bound API.
 # A core contributor of pyo3 created this fork so is a good choice
@@ -19,15 +19,22 @@ pyo3-async-runtimes = { version = "0.25.0", features = [
     "tokio-runtime",
 ] }
 tokio = "1.40.0"
-axum = "0.7.5"
+axum = "0.8.4"
+axum-extra = { version = "0.10.1", features = ["cookie"] }
 serde = "1.0.204"
 serde_json = "1.0.122"
 tracing = "0.1.40"
 tracing-core = "0.1.32"
 tracing-subscriber = { version = "0.3.18", features = ["chrono", "json"] }
+async-trait = "0.1.88"
+pythonize = "0.25.0"
+chrono = "0.4.41"
 
 [dependencies.celerity_runtime_core]
 path = "../../core"
+
+[dependencies.celerity_ws_registry]
+path = "../../ws-registry"
 
 [dependencies.celerity_helpers]
 path = "../../helpers"

@@ -28,6 +28,7 @@ To release a new version of the Python Runtime SDK, follow these steps:
 ### Pre-Release Checklist:
 
 1. **Update Version in Cargo.toml**
+
    ```bash
    # Edit libs/runtime/sdk/python/Cargo.toml
    # Change the version field to match your release
@@ -35,6 +36,7 @@ To release a new version of the Python Runtime SDK, follow these steps:
    ```
 
 2. **Commit the Version Change**
+
    ```bash
    git add libs/runtime/sdk/python/Cargo.toml
    git commit -m "chore(lib-rt-sdk-python): bump version to 1.2.3"
@@ -57,6 +59,7 @@ To release a new version of the Python Runtime SDK, follow these steps:
 ### What Happens After Tagging:
 
 1. **CI/CD Pipeline**: The GitHub Actions workflow will automatically:
+
    - Build wheels for all supported platforms
    - Run tests across multiple platforms
    - Extract version from tag (e.g., `v1.2.3` from `libs/runtime/sdk/python-v1.2.3`)
