@@ -7,7 +7,7 @@ use tokio::{
 };
 use tracing::{debug, error, info, info_span, Instrument};
 
-use crate::types::AckWorkerConfig;
+use crate::types::{AckWorkerConfig, MessageType};
 
 /// The default interval at which to check for actions based on ack statuses.
 pub const DEFAULT_MESSAGE_ACTION_CHECK_INTERVAL_MS: u64 = 10000;
@@ -27,7 +27,7 @@ pub const ACK_WAIT_CHECK_INTERVAL_MS: u64 = 20;
 pub enum AckStatus {
     // The message has been sent but no acknowledgement
     // has been received yet.
-    Pending(String, Vec<String>),
+    Pending(String, MessageType, Vec<String>),
     // The message has been received by the node that
     // has the connection that the message was sent for.
     Received,
@@ -39,6 +39,7 @@ pub enum AckStatus {
 pub struct ResendMessageInfo {
     pub client_id: String,
     pub message_id: String,
+    pub message_type: MessageType,
     pub message: String,
     pub inform_clients_on_loss: Vec<String>,
 }
@@ -186,7 +187,7 @@ impl Worker {
         let mut acks_guard = self.acks.lock().await;
         let existing_ack_status = acks_guard.get(&message_id).cloned();
 
-        let new_detailed_ack_status = if matches!(ack_status, AckStatus::Pending(_, _)) {
+        let new_detailed_ack_status = if matches!(ack_status, AckStatus::Pending(_, _, _)) {
             // Only increment the attempts if the message is still pending.
             DetailedAckStatus {
                 status: ack_status,
@@ -220,7 +221,7 @@ async fn check_for_actions_periodic(
     let mut acks_guard = acks.lock().await;
 
     for (message_id, detailed_ack_status) in acks_guard.iter_mut() {
-        if let AckStatus::Pending(message, client_ids) = &detailed_ack_status.status {
+        if let AckStatus::Pending(message, message_type, client_ids) = &detailed_ack_status.status {
             if let Some(last_attempt_time) = detailed_ack_status.last_attempt_time {
                 if now.duration_since(last_attempt_time) > Duration::from_millis(message_timeout_ms)
                 {
@@ -230,6 +231,7 @@ async fn check_for_actions_periodic(
                         MessageAction::Resend(ResendMessageInfo {
                             client_id: message_id.clone(),
                             message_id: message_id.clone(),
+                            message_type: message_type.clone(),
                             message: message.clone(),
                             inform_clients_on_loss: client_ids.clone(),
                         })
@@ -249,6 +251,7 @@ async fn check_for_actions_periodic(
                 message_id,
                 client_id: _,
                 message: _,
+                message_type: _,
                 inform_clients_on_loss: _,
             }) => message_id.clone(),
             MessageAction::Lost(message_id, _) => message_id.clone(),
@@ -283,7 +286,7 @@ async fn handle_ack_wait(
         // Check if we have a status for this message
         let acks_guard = acks.lock().await;
         if let Some(detailed_ack_status) = acks_guard.get(&message_id) {
-            let is_pending = matches!(detailed_ack_status.status, AckStatus::Pending(_, _));
+            let is_pending = matches!(detailed_ack_status.status, AckStatus::Pending(_, _, _));
             if !is_pending {
                 // Message is no longer pending, send the final status
                 if tx.send(detailed_ack_status.status.clone()).is_err() {

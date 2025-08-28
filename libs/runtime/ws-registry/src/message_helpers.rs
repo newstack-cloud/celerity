@@ -1,4 +1,8 @@
+use axum::extract::ws::Message;
+use base64::{prelude::BASE64_STANDARD, DecodeError, Engine};
 use serde_json::json;
+
+use crate::types::MessageType;
 
 /// Creates a message lost event to be sent to a WebSocket connection.
 /// This follows the Celerity Binary Message Format documented here:
@@ -19,4 +23,21 @@ pub fn create_message_lost_event(message_id: String) -> Vec<u8> {
     message.push(route_byte);
     message.extend_from_slice(payload_bytes);
     message
+}
+
+/// Converts a message type and message received by a WebSocket registry
+/// into a message that can be sent to a WebSocket connection.
+/// Binary messages will be base64 encoded strings that can be stored in stores
+/// that back WebSocket registries.
+pub fn create_ws_message(
+    message_type: MessageType,
+    message: String,
+) -> Result<Message, DecodeError> {
+    match message_type {
+        MessageType::Json => Ok(Message::Text(message.into())),
+        MessageType::Binary => {
+            let bytes = BASE64_STANDARD.decode(message.as_bytes())?;
+            Ok(Message::Binary(bytes.into()))
+        }
+    }
 }

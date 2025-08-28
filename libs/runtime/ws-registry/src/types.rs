@@ -19,7 +19,17 @@ pub struct WebSocketMessage {
     pub caller: Option<String>,
     #[serde(rename = "messageId")]
     pub message_id: String,
+    #[serde(rename = "messageType")]
+    pub message_type: MessageType,
     pub message: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MessageType {
+    #[serde(rename = "json")]
+    Json,
+    #[serde(rename = "binary")]
+    Binary,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

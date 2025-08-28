@@ -15,8 +15,10 @@ use tracing::{debug, error, info};
 use crate::{
     acks::{AckStatus, AckWorkerMessage, MessageAction, Worker},
     errors::WebSocketConnError,
-    message_helpers::create_message_lost_event,
-    types::{AckMessage, AckWorkerConfig, Message as RegistryMessage, WebSocketMessage},
+    message_helpers::{create_message_lost_event, create_ws_message},
+    types::{
+        AckMessage, AckWorkerConfig, Message as RegistryMessage, MessageType, WebSocketMessage,
+    },
 };
 
 // Additional context for sending messages to a connection in a WebSocket registry.
@@ -46,6 +48,7 @@ pub trait WebSocketRegistrySend: Send + Sync + Display + Debug {
         &self,
         connection_id: String,
         message_id: String,
+        message_type: MessageType,
         message: String,
         ctx: Option<SendContext>,
     ) -> Result<(), WebSocketConnError>;
@@ -128,6 +131,7 @@ impl WebSocketConnRegistry {
                                 .send_message(
                                     resend_message_info.client_id.clone(),
                                     resend_message_info.message_id.clone(),
+                                    resend_message_info.message_type.clone(),
                                     resend_message_info.message.clone(),
                                     Some(SendContext {
                                         wait_for_ack: false,
@@ -156,9 +160,9 @@ impl WebSocketConnRegistry {
                                     let mut conn_lock = connection.lock().await;
                                     debug!(connection_id = %client_id, "sending message lost event to connection: {}", client_id);
                                     conn_lock
-                                        .send(Message::Binary(create_message_lost_event(
-                                            message_id.clone(),
-                                        )))
+                                        .send(Message::Binary(
+                                            create_message_lost_event(message_id.clone()).into(),
+                                        ))
                                         .await
                                         .unwrap();
                                 }
@@ -175,7 +179,6 @@ impl WebSocketConnRegistry {
     /// to messages broadcast by other nodes in the cluster over a network protocol.
     /// The caller is responsible for closing the channel on shutdown as it is expected
     /// to hold the transmit end of the channel.
-    #[allow(dead_code)]
     pub fn listen(self: Arc<Self>, mut listener: Receiver<RegistryMessage>) {
         tokio::spawn(async move {
             info!("listening for messages from other nodes in the cluster");
@@ -197,7 +200,9 @@ impl WebSocketConnRegistry {
                             );
                             let mut connection = connection.lock().await;
                             debug!(connection_id = %message.connection_id, "sending message to connection: {}", message.connection_id);
-                            let send_result = connection.send(Message::Text(message.message)).await;
+                            // TODO: support sending binary messages
+                            let send_result =
+                                connection.send(Message::Text(message.message.into())).await;
                             if let Err(e) = send_result {
                                 error!(
                                     connection_id = %message.connection_id,
@@ -288,6 +293,7 @@ impl WebSocketConnRegistry {
     async fn record_pending_ack(
         &self,
         message_id: String,
+        message_type: MessageType,
         message: String,
         inform_clients: Vec<String>,
     ) {
@@ -295,7 +301,7 @@ impl WebSocketConnRegistry {
             ack_sender
                 .send(AckWorkerMessage::Status(
                     message_id,
-                    AckStatus::Pending(message, inform_clients),
+                    AckStatus::Pending(message, message_type, inform_clients),
                 ))
                 .await
                 .expect("ack worker channel unexpectedly closed");
@@ -354,6 +360,7 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
         &self,
         connection_id: String,
         message_id: String,
+        message_type: MessageType,
         message: String,
         ctx: Option<SendContext>,
     ) -> Result<(), WebSocketConnError> {
@@ -365,12 +372,14 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
             );
             let mut connection = connection.lock().await;
             debug!(connection_id = %connection_id, "sending message to connection: {}", connection_id);
-            connection.send(Message::Text(message)).await?;
+            let ws_message = create_ws_message(message_type, message)?;
+            connection.send(ws_message).await?;
         } else if let Some(broadcaster) = &self.broadcaster {
             let send_ctx = ctx.unwrap_or_default();
             debug!(connection_id = %connection_id, "connection not found locally, preparing to send message to broadcaster");
             self.record_pending_ack(
                 message_id.clone(),
+                message_type.clone(),
                 message.clone(),
                 send_ctx.inform_clients.clone(),
             )
@@ -383,6 +392,7 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
                     inform_clients_on_loss: Some(send_ctx.inform_clients),
                     caller: send_ctx.caller,
                     message_id: message_id.clone(),
+                    message_type: message_type.clone(),
                     message,
                 }))
                 .await?;
@@ -400,9 +410,9 @@ impl WebSocketRegistrySend for WebSocketConnRegistry {
                     connection
                         .lock()
                         .await
-                        .send(Message::Binary(create_message_lost_event(
-                            message_id.clone(),
-                        )))
+                        .send(Message::Binary(
+                            create_message_lost_event(message_id.clone()).into(),
+                        ))
                         .await?;
                 }
             }
@@ -503,7 +513,7 @@ mod tests {
                                     // Broadcast received message to other connection or missing connection.
                                     if let Some(other_connection_id) = &other_connection_id {
                                         let _ = registry
-                                            .send_message(other_connection_id.clone(), nanoid!(), msg, None)
+                                            .send_message(other_connection_id.clone(), nanoid!(), MessageType::Json, msg.to_string(), None)
                                             .await;
                                     } else if let Some(missing_connection_id) = &missing_connection_id {
                                         let msg_payload = serde_json::from_str::<TestMessage>(&msg).unwrap();
@@ -511,7 +521,8 @@ mod tests {
                                             .send_message(
                                                 missing_connection_id.clone(),
                                                 msg_payload.message_id,
-                                                msg,
+                                                MessageType::Json,
+                                                msg.to_string(),
                                                 Some(SendContext {
                                                     wait_for_ack: true,
                                                     caller: None,
@@ -524,7 +535,7 @@ mod tests {
                                         {
                                             // Message was lost, inform the client that sent the message
                                             // to get full coverage on behaviour to manually wait for the ack.
-                                            socket_lock.send(Message::Text(format!("Custom message lost event: {message_id}"))).await.unwrap();
+                                            socket_lock.send(Message::Text(format!("Custom message lost event: {message_id}").into())).await.unwrap();
                                         }
                                     } else {
                                         // When "other connection" is not statically set,
