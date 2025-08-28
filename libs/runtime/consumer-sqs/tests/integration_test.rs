@@ -2,12 +2,9 @@ use std::{env, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use aws_config::BehaviorVersion;
-use aws_sdk_sqs::{
-    types::{Message, SendMessageBatchRequestEntry},
-    Client, Error,
-};
+use aws_sdk_sqs::{types::SendMessageBatchRequestEntry, Client, Error};
 use celerity_aws_helpers::aws_regions::RegionProvider;
-use celerity_helpers::consumers::{MessageHandler, MessageHandlerError};
+use celerity_helpers::consumers::{Message, MessageConsumer, MessageHandler, MessageHandlerError};
 use pretty_assertions::assert_eq;
 use tokio::{
     sync::mpsc::{self, Sender},
@@ -15,7 +12,9 @@ use tokio::{
 };
 
 use celerity_consumer_sqs::{
+    errors::WorkerError,
     message_consumer::{SQSConsumerConfig, SQSMessageConsumer},
+    types::SQSMessageMetadata,
     visibility_timeout::{self, VisibilityTimeoutExtenderConfig},
 };
 
@@ -27,7 +26,7 @@ async fn test_receive_messages_and_fire_message_handler() {
     env_logger::init();
 
     let consumer_config = consumer_config_from_env();
-    let (tx, mut rx) = mpsc::channel::<Message>(300);
+    let (tx, mut rx) = mpsc::channel::<Message<SQSMessageMetadata>>(300);
     task::spawn({
         let tx_ref = Arc::new(tx);
         let consumer_config_for_consumer = consumer_config.clone();
@@ -69,7 +68,7 @@ async fn test_receive_messages_and_fire_message_handler() {
         }
     });
 
-    let mut collected_messages = Vec::<Message>::new();
+    let mut collected_messages = Vec::<Message<SQSMessageMetadata>>::new();
 
     let mut i = 0;
     // 200 messages in batches (20 * 10) + 100 individual messages.
@@ -102,7 +101,7 @@ async fn test_receive_messages_and_fire_message_handler() {
         } else {
             format!("individual message {n}", n = (i - 200) + 1)
         };
-        assert_eq!(message.body().unwrap(), expected_body);
+        assert_eq!(message.body.unwrap(), expected_body);
     }
 }
 
@@ -124,8 +123,8 @@ fn create_message_batch(batch: i32) -> Option<Vec<SendMessageBatchRequestEntry>>
 
 async fn start_consumer(
     consumer_config: ConsumerConfig,
-    tx: Arc<Sender<Message>>,
-) -> Result<(), Error> {
+    tx: Arc<Sender<Message<SQSMessageMetadata>>>,
+) -> Result<(), WorkerError> {
     let region_provider = RegionProvider::new(consumer_config.aws_region.clone());
     let config = aws_config::defaults(BehaviorVersion::v2025_01_17())
         .region(region_provider)
@@ -148,6 +147,7 @@ async fn start_consumer(
         terminate_visibility_timeout: consumer_config.sqs_terminate_visibility_timeout,
         attribute_names: None,
         message_attribute_names: None,
+        num_workers: Some(3),
     };
 
     let visibility_timeout_extender_config = VisibilityTimeoutExtenderConfig {
@@ -165,7 +165,7 @@ async fn start_consumer(
         sqs_consumer_config,
     );
     let uptime_message_handler = MockUptimeMessageHandler::new(tx);
-    consumer.register_handler(Box::new(uptime_message_handler));
+    consumer.register_handler(Arc::new(uptime_message_handler));
     consumer.start().await?;
     Ok(())
 }
@@ -180,32 +180,40 @@ fn sqs_client(conf: &aws_types::SdkConfig, endpoint_opt: Option<String>) -> aws_
 
 #[derive(Debug)]
 pub struct MockUptimeMessageHandler {
-    tx: Arc<Sender<Message>>,
+    tx: Arc<Sender<Message<SQSMessageMetadata>>>,
 }
 
 impl MockUptimeMessageHandler {
-    fn new(tx: Arc<Sender<Message>>) -> Self {
+    fn new(tx: Arc<Sender<Message<SQSMessageMetadata>>>) -> Self {
         MockUptimeMessageHandler { tx }
     }
 }
 
 #[async_trait]
-impl MessageHandler<Message> for MockUptimeMessageHandler {
-    async fn handle(&self, message: Message) -> Result<(), MessageHandlerError> {
+impl MessageHandler<SQSMessageMetadata> for MockUptimeMessageHandler {
+    async fn handle(
+        &self,
+        message: &Message<SQSMessageMetadata>,
+    ) -> Result<(), MessageHandlerError> {
+        let message_owned = message.clone();
         tokio::spawn({
             let tx = self.tx.clone();
             async move {
-                let _res = tx.send(message).await;
+                let _res = tx.send(message_owned).await;
             }
         });
         Ok(())
     }
 
-    async fn handle_batch(&self, messages: Vec<Message>) -> Result<(), MessageHandlerError> {
+    async fn handle_batch(
+        &self,
+        messages: &[Message<SQSMessageMetadata>],
+    ) -> Result<(), MessageHandlerError> {
+        let messages_owned = messages.to_vec();
         tokio::spawn({
             let tx = self.tx.clone();
             async move {
-                for message in messages {
+                for message in messages_owned {
                     let _res = tx.send(message).await;
                 }
             }

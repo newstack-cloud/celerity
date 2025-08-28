@@ -7,12 +7,14 @@ use aws_sdk_sqs::{
     operation::change_message_visibility_batch::{
         ChangeMessageVisibilityBatchError, ChangeMessageVisibilityBatchOutput,
     },
-    types::{ChangeMessageVisibilityBatchRequestEntry, Message},
+    types::ChangeMessageVisibilityBatchRequestEntry,
     Client,
 };
 use tokio::sync::oneshot::{channel, Sender};
 use tokio::time;
 use tracing::{debug, error, info, info_span, instrument, Instrument};
+
+use crate::types::MessageHandle;
 
 /// Provides an implementation for a visibility timeout extender
 /// which extends the window for which one or more messages
@@ -40,7 +42,7 @@ impl VisibilityTimeoutExtender {
     }
 
     #[instrument(name = "heartbeat_initialiser", skip(self, messages))]
-    pub fn start_heartbeat(self: Arc<Self>, messages: Vec<Message>) -> Option<Sender<()>> {
+    pub fn start_heartbeat(self: Arc<Self>, messages: Vec<MessageHandle>) -> Option<Sender<()>> {
         self.config.heartbeat_interval?;
 
         let heartbeat_runner_task_span = info_span!("heartbeat_runner_task");
@@ -60,7 +62,7 @@ impl VisibilityTimeoutExtender {
         Some(send)
     }
 
-    async fn run_heartbeat_task(&self, heartbeat_interval: u64, messages: Vec<Message>) {
+    async fn run_heartbeat_task(&self, heartbeat_interval: u64, messages: Vec<MessageHandle>) {
         let mut interval = time::interval(Duration::from_secs(heartbeat_interval));
         loop {
             interval.tick().await;
@@ -71,7 +73,7 @@ impl VisibilityTimeoutExtender {
             // Extend the visibility timeout on an interval as per the AWS SQS
             // Working with messages guidance:
             // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/working-with-messages.html
-            let result = self.change_visibility_timeout(messages.clone(), None).await;
+            let result = self.change_visibility_timeout(&messages, None).await;
             if result.is_err() {
                 let err = result.err().unwrap();
                 let err_message = err.to_string();
@@ -84,7 +86,7 @@ impl VisibilityTimeoutExtender {
 
     pub async fn change_visibility_timeout(
         &self,
-        messages: Vec<Message>,
+        messages: &Vec<MessageHandle>,
         visibility_timeout: Option<i32>,
     ) -> Result<ChangeMessageVisibilityBatchOutput, SdkError<ChangeMessageVisibilityBatchError>>
     {
@@ -99,8 +101,8 @@ impl VisibilityTimeoutExtender {
                     .map(|message| {
                         ChangeMessageVisibilityBatchRequestEntry::builder()
                             .visibility_timeout(final_visibility_timeout)
-                            .set_id(message.message_id)
-                            .set_receipt_handle(message.receipt_handle)
+                            .set_id(message.message_id.clone())
+                            .set_receipt_handle(message.receipt_handle.clone())
                             .build()
                             .unwrap()
                     })
