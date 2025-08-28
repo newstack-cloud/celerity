@@ -62,6 +62,10 @@ pub(crate) fn define(lib: &mut LibraryBuilder) -> BackTraced<SharedDefinitions> 
             "runtime_cannot_block_within_async",
             "Runtime cannot execute blocking call within asynchronous context",
         )?
+        .add_error(
+            "application_start_http_client_error", 
+            "Error starting the application due to failure in creating the HTTP client for the resource store"
+        )?
         .doc("General error type used throughout the library")?
         .build()?;
 
