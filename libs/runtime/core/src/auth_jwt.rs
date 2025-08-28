@@ -52,7 +52,7 @@ pub async fn validate_jwt_on_ws_connect(
                     }
 
                     if let Some(issuer) = &auth_guard_config.issuer {
-                        validation.set_issuer(&[issuer.clone()]);
+                        validation.set_issuer(std::slice::from_ref(issuer));
                     }
 
                     validation.leeway = JWT_VALIDATION_CLOCK_SKEW_LEEWAY;

@@ -780,10 +780,10 @@ fn resolve_route(
 
 type BinaryRouteData<'a> = (String, Option<String>, &'a [u8]);
 
-fn resolve_binary_route(
-    msg_bytes: &[u8],
+fn resolve_binary_route<'a>(
+    msg_bytes: &'a [u8],
     connection_id: String,
-) -> ControlFlow<(), Option<BinaryRouteData>> {
+) -> ControlFlow<(), Option<BinaryRouteData<'a>>> {
     let route_length = msg_bytes[0];
     if route_length as usize > msg_bytes.len() - 1 {
         error!(
