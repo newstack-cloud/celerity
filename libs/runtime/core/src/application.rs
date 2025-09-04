@@ -50,6 +50,8 @@ use crate::{
     websocket::{self, WebSocketMessageHandler},
 };
 
+type ConsumerShutdownSignals = HashMap<String, tokio::sync::oneshot::Sender<()>>;
+
 /// Provides an application that can run a HTTP server, WebSocket server,
 /// queue/message broker consumer or a hybrid app that combines any of the
 /// above.
@@ -66,6 +68,7 @@ pub struct Application {
     custom_auth_guards: Arc<AsyncMutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     local_api_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
+    consumer_shutdown_signals: Option<Arc<Mutex<ConsumerShutdownSignals>>>,
     resource_store: Option<Arc<ResourceStore>>,
     resource_store_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
 }
@@ -80,6 +83,7 @@ impl Application {
             server_shutdown_signal: None,
             runtime_local_api: None,
             local_api_shutdown_signal: None,
+            consumer_shutdown_signals: None,
             event_queue: None,
             processing_events_map: None,
             ws_connections: None,
@@ -502,6 +506,16 @@ impl Application {
         if let Some(tx) = self.resource_store_cleanup_task_shutdown_signal.take() {
             tx.send(())
                 .expect("failed to send shutdown signal to resource store cleanup task");
+        }
+        if let Some(consumer_shutdown_signals_lock) = self.consumer_shutdown_signals.take() {
+            let mut consumer_shutdown_signals = consumer_shutdown_signals_lock
+                .lock()
+                .expect("consumer shutdown signals lock should not be poisoned");
+
+            for (_, tx) in consumer_shutdown_signals.drain() {
+                tx.send(())
+                    .expect("failed to send shutdown signal to consumer");
+            }
         }
     }
 }
