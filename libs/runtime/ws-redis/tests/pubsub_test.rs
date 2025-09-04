@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use celerity_ws_redis::pubsub::{connect, ConnectionConfig};
+use celerity_ws_redis::pubsub::{connect, PubSubConnectionConfig};
 use celerity_ws_registry::types::{AckMessage, Message, MessageType, WebSocketMessage};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 #[test_log::test(tokio::test)]
 async fn test_publish_and_subscribe_to_redis_channel() {
     let nodes = vec!["redis://127.0.0.1:6379/?protocol=resp3".to_string()];
-    let (client1_tx, mut client1_rx) = connect(ConnectionConfig {
+    let (client1_tx, mut client1_rx) = connect(PubSubConnectionConfig {
         server_node_name: "api-node-1".to_string(),
         channel_name: "celerity_ws_messages".to_string(),
         nodes: nodes.clone(),
@@ -17,7 +17,7 @@ async fn test_publish_and_subscribe_to_redis_channel() {
     .await
     .unwrap();
 
-    let (client2_tx, mut client2_rx) = connect(ConnectionConfig {
+    let (client2_tx, mut client2_rx) = connect(PubSubConnectionConfig {
         server_node_name: "api-node-2".to_string(),
         channel_name: "celerity_ws_messages".to_string(),
         nodes: nodes.clone(),

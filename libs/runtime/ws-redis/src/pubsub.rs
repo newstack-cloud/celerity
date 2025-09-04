@@ -1,12 +1,10 @@
 use std::error::Error;
 
+use celerity_helpers::redis::{get_redis_connection, ConnectionConfig};
 use celerity_ws_registry::types::Message;
-use redis::{
-    aio::MultiplexedConnection, cluster::ClusterClientBuilder, cluster_async::ClusterConnection,
-    AsyncCommands, Client, FromRedisValue, PushInfo, PushKind, RedisError, RedisResult,
-};
+use redis::{FromRedisValue, PushKind};
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc::{channel, unbounded_channel, Receiver, Sender, UnboundedSender};
+use tokio::sync::mpsc::{channel, unbounded_channel, Receiver, Sender};
 use tracing::{debug, error};
 
 /// Configuration for a Redis connection for the pubsub channel
@@ -14,7 +12,7 @@ use tracing::{debug, error};
 /// a horizontally scalable WebSocket API that shares messages
 /// between nodes in a cluster for a shared multi-client session (e.g. real-time chat).
 #[derive(Debug, Clone)]
-pub struct ConnectionConfig {
+pub struct PubSubConnectionConfig {
     // A name for the current server node,
     // primarily used to filter out messages that are not for connections
     // on the current node.
@@ -23,6 +21,16 @@ pub struct ConnectionConfig {
     pub nodes: Vec<String>,
     pub password: Option<String>,
     pub cluster_mode: bool,
+}
+
+impl From<PubSubConnectionConfig> for ConnectionConfig {
+    fn from(config: PubSubConnectionConfig) -> Self {
+        Self {
+            nodes: config.nodes,
+            password: config.password,
+            cluster_mode: config.cluster_mode,
+        }
+    }
 }
 
 /// Connects to a Redis server or cluster pubsub channel and returns a
@@ -84,12 +92,12 @@ pub struct ConnectionConfig {
 /// registry.listen(rx);
 /// ```
 pub async fn connect(
-    conn_config: ConnectionConfig,
+    conn_config: PubSubConnectionConfig,
 ) -> Result<(Sender<Message>, Receiver<Message>), Box<dyn Error>> {
     let (redis_tx, mut redis_rx) = unbounded_channel();
 
-    let mut conn = get_redis_connection(&conn_config, redis_tx).await?;
-    subscribe(&mut conn, &conn_config.channel_name).await?;
+    let mut conn = get_redis_connection(&conn_config.clone().into(), Some(redis_tx)).await?;
+    conn.subscribe(&conn_config.channel_name).await?;
 
     // Internal channel used to forward messages to the Redis channel
     // that is used to send WebSocket messages to other nodes in the cluster.
@@ -149,7 +157,7 @@ pub async fn connect(
                         }
                     };
 
-                    let res: Result<i32, _> = publish(&mut conn, &conn_config.channel_name, wrapped_message_json).await;
+                    let res: Result<i32, _> = conn.publish(&conn_config.channel_name, wrapped_message_json).await;
                     if let Err(e) = res {
                         error!("error publishing message to channel: {e:?}");
                     }
@@ -168,52 +176,4 @@ pub async fn connect(
 struct MessageWithSourceNode {
     source_node: String,
     message: Message,
-}
-
-enum ConnectionWrapper {
-    Cluster(ClusterConnection),
-    SingleNode(MultiplexedConnection),
-}
-
-async fn get_redis_connection(
-    conn_config: &ConnectionConfig,
-    redis_tx: UnboundedSender<PushInfo>,
-) -> RedisResult<ConnectionWrapper> {
-    if !conn_config.cluster_mode {
-        let client = Client::open(conn_config.nodes[0].clone())?;
-        let config = redis::AsyncConnectionConfig::new().set_push_sender(redis_tx);
-        return Ok(ConnectionWrapper::SingleNode(
-            client
-                .get_multiplexed_async_connection_with_config(&config)
-                .await?,
-        ));
-    }
-    let mut builder = ClusterClientBuilder::new(conn_config.nodes.clone())
-        .use_protocol(redis::ProtocolVersion::RESP3);
-
-    if let Some(password) = conn_config.password.clone() {
-        builder = builder.password(password);
-    }
-    let client = builder.push_sender(redis_tx).build()?;
-    Ok(ConnectionWrapper::Cluster(
-        client.get_async_connection().await?,
-    ))
-}
-
-async fn subscribe(conn: &mut ConnectionWrapper, channel_name: &str) -> RedisResult<()> {
-    match conn {
-        ConnectionWrapper::Cluster(conn) => conn.subscribe(channel_name).await,
-        ConnectionWrapper::SingleNode(conn) => conn.subscribe(channel_name).await,
-    }
-}
-
-async fn publish(
-    conn: &mut ConnectionWrapper,
-    channel_name: &str,
-    message: String,
-) -> Result<i32, RedisError> {
-    match conn {
-        ConnectionWrapper::Cluster(conn) => conn.publish(channel_name, message).await,
-        ConnectionWrapper::SingleNode(conn) => conn.publish(channel_name, message).await,
-    }
 }

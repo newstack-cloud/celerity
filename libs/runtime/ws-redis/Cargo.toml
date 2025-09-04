@@ -21,6 +21,9 @@ tracing = "0.1.40"
 [dependencies.celerity_ws_registry]
 path = "../ws-registry"
 
+[dependencies.celerity_helpers]
+path = "../helpers"
+
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
