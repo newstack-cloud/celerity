@@ -19,6 +19,7 @@ parser = argparse.ArgumentParser(
     description='package test tools for rust-common crates')
 parser.add_argument('--localdeps', action='store_true',
                     help='bring up dependencies (LocalStack, MySQL etc.) locally')
+parser.add_argument("--package", help="run tests for a specific package")
 
 
 class LocalstackNotReady(Exception):
@@ -59,10 +60,11 @@ def _run_integration_tests(args: argparse.Namespace) -> None:
     in_ci_env = os.environ.get('GITHUB_ACTIONS')
     test_env_file = '.env.test-ci' if in_ci_env else '.env.test'
     report_flags = "--lcov --output-path coverage.lcov" if in_ci_env else "--html"
+    selection_flags = f"--package {args.package}" if args.package else "--workspace"
     completed_process = subprocess.run(
         # By default cargo will run all tests for the workspace
         # including unit and integration tests.
-        f'cargo llvm-cov {report_flags} test --workspace -- --color always --nocapture --show-output',
+        f'cargo llvm-cov {report_flags} test {selection_flags} -- --color always --nocapture --show-output',
         env={
             # Integration tests can't share the same env vars (.env) as the API running
             # in docker as the host endpoints for the AWS service mocks are different.

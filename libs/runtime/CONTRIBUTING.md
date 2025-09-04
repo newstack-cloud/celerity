@@ -56,6 +56,31 @@ Copy `.vscode/settings.json.example` to `.vscode/settings.json` and set `python.
 PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps
 ```
 
+### Running tests for a specific package
+
+```bash
+PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps --package <package_name>
+```
+
+Where <package_name> is the name of the package you want to run the tests for (e.g. `celerity_consumer_redis`).
+
+### Redirecting output to log file
+
+The output of the tests is a lot when running the full test suite with debug logging enabled, often shell environments will truncate the output.
+To redirect the output to a log file, you can run the following command:
+
+```bash
+PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps > test-output.log 2>&1
+```
+
+And then to gracefully kill the test suite if it is running infinitely due to a test hanging or an issue you are debugging, you can run the following command:
+
+```bash
+kill -INT <process_id>
+```
+
+Where <process_id> is the process id of the test suite that is output in your terminal when you run the test suite in the background.
+
 ### Reviewing snapshot tests
 
 When snapshot tests fail due to changes that you have made, you need to carefully review the changes before accepting them.
