@@ -1,7 +1,9 @@
 use std::{
     fmt::Debug,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
+
+use tokio::time::Instant;
 
 /// A trait for a clock that can provide the current time
 /// as a UNIX timestamp in seconds.
@@ -56,5 +58,18 @@ impl Clock for DefaultClock {
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
             .as_millis() as u64
+    }
+}
+
+/// Calculates the remaining wait time in milliseconds
+/// before the next polling attempt for a polling loop
+/// such as a message consumer.
+pub fn calcuate_polling_wait_time(start_time: Instant, current_polling_wait_time_ms: u64) -> u64 {
+    let elapsed = start_time.elapsed();
+    let configured_wait_time = Duration::from_millis(current_polling_wait_time_ms);
+    if elapsed < configured_wait_time {
+        (configured_wait_time - elapsed).as_millis() as u64
+    } else {
+        0
     }
 }

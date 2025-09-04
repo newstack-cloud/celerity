@@ -5,10 +5,14 @@ use std::{
     collections::HashMap,
     error::Error,
     fmt::{self, Debug, Display},
+    future::Future,
+    pin::Pin,
     sync::Arc,
 };
 use tokio::time::error::Elapsed;
 use tracing::{debug, info_span, Instrument};
+
+use crate::telemetry::CELERITY_CONTEXT_ID_KEY;
 
 /// Provides a trait for a message consumer
 /// that listens for messages on a queue
@@ -28,6 +32,10 @@ pub trait MessageConsumer<Metadata: Debug> {
     /// or message broker.
     async fn start(&self) -> Result<(), Self::Error>;
 }
+
+/// A pinned future that can be used to handle a message or batch of messages.
+pub type PinnedMessageHandlerFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<(), MessageHandlerError>> + Send + 'a>>;
 
 /// A message that has been received from a message service.
 #[derive(Debug, Clone)]
@@ -66,6 +74,23 @@ impl<Metadata: Debug> Debug for dyn MessageHandler<Message<Metadata>> + Send + S
     }
 }
 
+#[derive(Debug)]
+pub struct PartialBatchFailureInfo {
+    pub message_id: String,
+    pub error_reason: String,
+    pub retry_count: u64,
+}
+
+impl PartialBatchFailureInfo {
+    pub fn new(message_id: String, error_reason: String, retry_count: u64) -> Self {
+        Self {
+            message_id,
+            error_reason,
+            retry_count,
+        }
+    }
+}
+
 // Provides a custom error type to be used for failures
 // within message handlers.
 #[derive(Debug)]
@@ -73,6 +98,7 @@ pub enum MessageHandlerError {
     MissingHandler,
     Timeout(Elapsed),
     HandlerFailure(Box<dyn Error + Send + Sync + 'static>),
+    PartialBatchFailure(Vec<PartialBatchFailureInfo>),
 }
 
 impl fmt::Display for MessageHandlerError {
@@ -87,6 +113,9 @@ impl fmt::Display for MessageHandlerError {
             }
             MessageHandlerError::HandlerFailure(handler_error) => {
                 write!(f, "message handler failed: {handler_error}")
+            }
+            MessageHandlerError::PartialBatchFailure(partial_batch_failure_info) => {
+                write!(f, "message handler failed: {partial_batch_failure_info:?}")
             }
         }
     }
@@ -325,6 +354,18 @@ impl<Metadata: Debug + Clone + Send + Sync> MessageHandler<Metadata>
 
         Ok(())
     }
+}
+
+/// Extracts the context IDs from the trace context of the messages.
+pub fn extract_context_ids<Metadata: Debug>(messages: &[Message<Metadata>]) -> Vec<String> {
+    messages
+        .iter()
+        .filter_map(|m| {
+            m.trace_context
+                .as_ref()
+                .and_then(|tc| tc.get(CELERITY_CONTEXT_ID_KEY).cloned())
+        })
+        .collect()
 }
 
 #[derive(Debug)]
