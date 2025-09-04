@@ -43,8 +43,6 @@ impl VisibilityTimeoutExtender {
 
     #[instrument(name = "heartbeat_initialiser", skip(self, messages))]
     pub fn start_heartbeat(self: Arc<Self>, messages: Vec<MessageHandle>) -> Option<Sender<()>> {
-        self.config.heartbeat_interval?;
-
         let heartbeat_runner_task_span = info_span!("heartbeat_runner_task");
         let (send, recv) = channel::<()>();
         tokio::spawn({

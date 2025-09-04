@@ -225,18 +225,18 @@ impl MessageHandler<SQSMessageMetadata> for MockUptimeMessageHandler {
 /// Provide configuration from the environment that is required
 /// for the context of the SQS consumer only.
 #[derive(Debug, Clone)]
-pub struct ConsumerConfig {
-    pub sqs_queue_url: String,
-    pub sqs_endpoint: Option<String>,
-    pub sqs_polling_wait_time_ms: u64,
-    pub sqs_queue_message_batch_size: Option<i32>,
-    pub sqs_visibility_timeout_seconds: Option<i32>,
-    pub sqs_wait_time_seconds: Option<i32>,
-    pub sqs_auth_error_timeout_seconds: Option<u64>,
-    pub sqs_terminate_visibility_timeout: bool,
-    pub sqs_heartbeat_interval_seconds: Option<u64>,
-    pub sqs_message_handler_timeout_seconds: u64,
-    pub aws_region: String,
+struct ConsumerConfig {
+    sqs_queue_url: String,
+    sqs_endpoint: Option<String>,
+    sqs_polling_wait_time_ms: u64,
+    sqs_queue_message_batch_size: Option<i32>,
+    sqs_visibility_timeout_seconds: Option<i32>,
+    sqs_wait_time_seconds: Option<i32>,
+    sqs_auth_error_timeout_seconds: Option<u64>,
+    sqs_terminate_visibility_timeout: bool,
+    sqs_heartbeat_interval_seconds: Option<u64>,
+    sqs_message_handler_timeout_seconds: u64,
+    aws_region: String,
 }
 
 fn consumer_config_from_env() -> ConsumerConfig {

@@ -14,16 +14,20 @@ use aws_sdk_sqs::{
 };
 use celerity_helpers::{
     aws_telemetry::XrayTraceId,
-    consumers::{Message, MessageConsumer, MessageHandler, MessageHandlerError},
+    consumers::{
+        extract_context_ids, Message, MessageConsumer, MessageHandler, MessageHandlerError,
+        PinnedMessageHandlerFuture,
+    },
     telemetry::{CELERITY_CONTEXT_IDS_KEY, CELERITY_CONTEXT_ID_KEY},
+    time::calcuate_polling_wait_time,
 };
 use futures::future::join_all;
 use opentelemetry::{
     global,
     trace::{SpanKind, TraceContextExt},
 };
-use std::{fmt::Debug, future::Future, pin::Pin, sync::Arc, time::Duration};
-use tokio::time::timeout;
+use std::{fmt::Debug, sync::Arc, time::Duration};
+use tokio::time::{timeout, Instant};
 use tracing::{debug, error, field, info, info_span, instrument, Instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
@@ -90,9 +94,6 @@ struct SQSConsumerFinalisedConfig {
     num_workers: usize,
 }
 
-type PinnedMessageHandlerFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<(), MessageHandlerError>> + Send + 'a>>;
-
 /// Provides an implementation of an AWS SQS
 /// message consumer that polls SQS queues
 /// and fires registered event handlers.
@@ -146,11 +147,7 @@ impl MessageConsumer<SQSMessageMetadata> for SQSMessageConsumer {
         let mut errors = Vec::new();
         for (worker_id, result) in results.into_iter().enumerate() {
             match result {
-                Ok(Ok(())) => info!("Worker {worker_id} finished successfully"),
-                Ok(Err(err)) => {
-                    error!("Worker {worker_id} failed: {err}");
-                    errors.push(err.to_string());
-                }
+                Ok(_) => info!("Worker {worker_id} finished successfully"),
                 Err(err) => {
                     error!("Worker {worker_id} panicked: {err}");
                     errors.push(err.to_string());
@@ -197,17 +194,23 @@ impl SQSMessageConsumer {
         }
     }
 
-    pub async fn start_worker(self: Arc<Self>, worker_id: usize) -> Result<(), Error> {
+    async fn start_worker(self: Arc<Self>, worker_id: usize) {
         async move {
             loop {
-                let mut current_polling_timeout = self.config.polling_wait_time_ms;
+                let start_time = Instant::now();
+                let mut current_polling_wait_time_ms = self.config.polling_wait_time_ms;
+
                 let result = self.receive_messages().await;
+
+                current_polling_wait_time_ms =
+                    calcuate_polling_wait_time(start_time, current_polling_wait_time_ms);
+
                 if let Err(SdkError::ServiceError(service_err)) = result {
                     let source = service_err.err();
                     let raw = service_err.raw();
                     if is_connection_error(source, raw.status()) {
                         debug!("there was an authentication error. pausing before retrying.");
-                        current_polling_timeout = self.config.auth_error_timeout;
+                        current_polling_wait_time_ms = self.config.auth_error_timeout;
                     } else {
                         error!(
                             "failed to receive and handle messages from queue: {}",
@@ -215,7 +218,10 @@ impl SQSMessageConsumer {
                         )
                     }
                 }
-                task::sleep(Duration::from_millis(current_polling_timeout)).await;
+
+                if current_polling_wait_time_ms > 0 {
+                    task::sleep(Duration::from_millis(current_polling_wait_time_ms)).await;
+                }
             }
         }
         .instrument(info_span!(
@@ -246,7 +252,7 @@ impl SQSMessageConsumer {
         // monitoring systems.
         let xray_trace_id = XrayTraceId::from(parent_context.span().span_context().trace_id());
 
-        // This span should be it's own consumer node to decouple from the parent segment.
+        // This span should be its own consumer node to decouple from the parent segment.
         // see https://docs.rs/tracing-opentelemetry/latest/tracing_opentelemetry/#special-fields
         // A Segment is only created for span.kind Server, even though this is a consumer,
         // we want it to have its own top-level segment to differentiate from SQS and the message sender.
@@ -450,9 +456,12 @@ impl SQSMessageConsumer {
                 Err(_) => error!("the heartbeat task receiver dropped"),
             }
         }
-        let _res = self
+        let delete_result = self
             .delete_messages(&message_handles, result.is_err())
             .await;
+        if let Err(err) = delete_result {
+            error!("failed to delete messages from queue: {}", err);
+        }
 
         match result {
             Ok(_) => (),
@@ -473,20 +482,10 @@ impl SQSMessageConsumer {
                     MessageHandlerError::HandlerFailure(handler_error) => {
                         error!("message handler failed: {}", handler_error)
                     }
+                    _ => {}
                 }
             }
         }
         Ok(())
     }
-}
-
-fn extract_context_ids(messages: &[Message<SQSMessageMetadata>]) -> Vec<String> {
-    messages
-        .iter()
-        .filter_map(|m| {
-            m.trace_context
-                .as_ref()
-                .and_then(|tc| tc.get(CELERITY_CONTEXT_ID_KEY).cloned())
-        })
-        .collect()
 }
