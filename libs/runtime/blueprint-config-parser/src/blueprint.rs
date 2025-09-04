@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use celerity_helpers::retries::RetryConfig;
 use serde::{Deserialize, Serialize};
 
 /// The default version for the Bluelink blueprint spec
@@ -958,6 +959,28 @@ pub struct CelerityWorkflowRetryConfig {
     #[serde(rename = "backoffRate")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub backoff_rate: Option<f64>,
+}
+
+impl From<CelerityWorkflowRetryConfig> for RetryConfig {
+    fn from(workflow_retry_config: CelerityWorkflowRetryConfig) -> Self {
+        RetryConfig {
+            interval: workflow_retry_config.interval.map(|i| i as f64),
+            backoff_rate: workflow_retry_config.backoff_rate,
+            max_delay: workflow_retry_config.max_delay,
+            jitter: workflow_retry_config.jitter,
+        }
+    }
+}
+
+impl From<&CelerityWorkflowRetryConfig> for RetryConfig {
+    fn from(workflow_retry_config: &CelerityWorkflowRetryConfig) -> Self {
+        RetryConfig {
+            interval: workflow_retry_config.interval.map(|i| i as f64),
+            backoff_rate: workflow_retry_config.backoff_rate,
+            max_delay: workflow_retry_config.max_delay,
+            jitter: workflow_retry_config.jitter,
+        }
+    }
 }
 
 /// Configuration for catching an error in a workflow.
