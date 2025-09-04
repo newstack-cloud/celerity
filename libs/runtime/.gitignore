@@ -19,3 +19,5 @@ codecov.json
 coverage.lcov
 
 ffi-modules
+
+*.log
