@@ -5,6 +5,7 @@ use celerity_blueprint_config_parser::blueprint::{
     CelerityWorkflowCatchConfig, CelerityWorkflowRetryConfig, CelerityWorkflowState,
     CelerityWorkflowStateType, CelerityWorkflowWaitConfig,
 };
+use celerity_helpers::retries::{as_fractional_seconds, calculate_retry_wait_time_ms};
 use chrono::DateTime;
 use jsonpath_rust::JsonPath;
 use serde_json::{json, Value};
@@ -17,7 +18,6 @@ use tracing::error;
 
 use crate::{
     consts::{DEFAULT_STATE_RETRY_BACKOFF_RATE, DEFAULT_STATE_RETRY_INTERVAL_SECONDS},
-    helpers::{as_fractional_seconds, calculate_retry_wait_time_ms},
     payload_template::PayloadTemplateEngineError,
     types::{
         ExecutionCompleteEvent, StateFailureEvent, StateTransitionEvent, WorkflowAppState,
@@ -976,11 +976,11 @@ impl StateMachine {
         if let Some(retry_config) = matching_retry_config {
             if !exceeded_max_attempts {
                 let wait_time_ms = calculate_retry_wait_time_ms(
-                    retry_config,
+                    &retry_config.into(),
                     // Retry attempts are 0-indexed, so subtract 1 from the attempts so far.
                     // For example 1 attempt so far would be retry attempt 0.
                     attempts_so_far - 1,
-                    DEFAULT_STATE_RETRY_INTERVAL_SECONDS,
+                    DEFAULT_STATE_RETRY_INTERVAL_SECONDS as f64,
                     DEFAULT_STATE_RETRY_BACKOFF_RATE,
                 );
                 sleep(Duration::from_millis(wait_time_ms)).await;
