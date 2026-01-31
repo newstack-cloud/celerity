@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 /// The default version for the Bluelink blueprint spec
 /// used for a Celerity blueprint configuration.
-pub const BLUELINK_BLUEPRINT_V2025_05_12: &str = "2025-05-12";
+pub const BLUELINK_BLUEPRINT_V2025_11_02: &str = "2025-11-02";
 
 /// The resource type identifier for a Celerity API.
 pub const CELERITY_API_RESOURCE_TYPE: &str = "celerity/api";
@@ -36,6 +36,12 @@ pub const CELERITY_TOPIC_RESOURCE_TYPE: &str = "celerity/topic";
 
 /// The resource type identifier for a Celerity Queue.
 pub const CELERITY_QUEUE_RESOURCE_TYPE: &str = "celerity/queue";
+
+/// The resource type identifier for a Celerity VPC.
+pub const CELERITY_VPC_RESOURCE_TYPE: &str = "celerity/vpc";
+
+/// The resource type identifier for a Celerity Datastore.
+pub const CELERITY_DATASTORE_RESOURCE_TYPE: &str = "celerity/datastore";
 
 /// This is a struct that holds the configuration
 /// for the Celerity runtime in the form a blueprint.
@@ -182,6 +188,10 @@ pub enum CelerityResourceType {
     CelerityTopic,
     #[serde(rename = "celerity/queue")]
     CelerityQueue,
+    #[serde(rename = "celerity/vpc")]
+    CelerityVpc,
+    #[serde(rename = "celerity/datastore")]
+    CelerityDatastore,
 }
 
 /// This holds the metadata
@@ -231,6 +241,8 @@ pub enum CelerityResourceSpec {
     Bucket(CelerityBucketSpec),
     Topic(CelerityTopicSpec),
     Queue(CelerityQueueSpec),
+    Vpc(CelerityVpcSpec),
+    Datastore(CelerityDatastoreSpec),
     NoSpec,
 }
 
@@ -771,6 +783,92 @@ impl Default for CelerityQueueSpec {
             visibility_timeout: None,
         }
     }
+}
+
+/// This holds the specification for a VPC resource
+/// in the blueprint configuration.
+#[derive(Serialize, Debug, PartialEq, Default)]
+pub struct CelerityVpcSpec {
+    /// Required: Unique name for the VPC
+    pub name: String,
+
+    /// Optional preset configuration (default: "standard")
+    /// Allowed: standard, public, isolated, light, light-public
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preset: Option<String>,
+}
+
+/// This holds the specification for a Datastore resource
+/// in the blueprint configuration.
+#[derive(Serialize, Debug, PartialEq, Default)]
+pub struct CelerityDatastoreSpec {
+    /// Required: Partition and sort keys
+    pub keys: DatastoreKeys,
+
+    /// Optional: Unique name for the datastore
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    /// Optional: Schema definition
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub schema: Option<HashMap<String, DatastoreFieldSchema>>,
+
+    /// Optional: Index definitions
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indexes: Option<Vec<DatastoreIndex>>,
+
+    /// Optional: TTL configuration
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timeToLive")]
+    pub time_to_live: Option<DatastoreTimeToLive>,
+}
+
+/// Datastore partition and sort key configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct DatastoreKeys {
+    #[serde(rename = "partitionKey")]
+    pub partition_key: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sortKey")]
+    pub sort_key: Option<String>,
+}
+
+/// Datastore field schema definition.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct DatastoreFieldSchema {
+    /// Field type: string, number, boolean, object, array
+    #[serde(rename = "type")]
+    pub field_type: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nullable: Option<bool>,
+
+    /// For object types - nested field definitions
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<HashMap<String, DatastoreFieldSchema>>,
+
+    /// For array types - item schema
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub items: Option<Box<DatastoreFieldSchema>>,
+}
+
+/// Datastore index definition.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct DatastoreIndex {
+    pub name: String,
+    pub fields: Vec<String>,
+}
+
+/// Datastore time-to-live configuration.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct DatastoreTimeToLive {
+    #[serde(rename = "fieldName")]
+    pub field_name: String,
+    pub enabled: bool,
 }
 
 /// Metadata for a blueprint.

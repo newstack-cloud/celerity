@@ -1,0 +1,10 @@
+version: 2025-11-02
+resources:
+    simpleStore:
+        type: celerity/datastore
+        metadata:
+            displayName: "Simple Datastore"
+        spec:
+            keys:
+                partitionKey: "userId"
+                sortKey: "timestamp"

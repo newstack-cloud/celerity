@@ -1,0 +1,40 @@
+version: 2025-11-02
+resources:
+    userStore:
+        type: celerity/datastore
+        metadata:
+            displayName: "User Datastore with Schema"
+        spec:
+            name: "user-datastore"
+            keys:
+                partitionKey: "userId"
+            schema:
+                userId:
+                    type: "string"
+                    description: "Unique user identifier"
+                email:
+                    type: "string"
+                    description: "User email address"
+                age:
+                    type: "number"
+                    nullable: true
+                isActive:
+                    type: "boolean"
+                profile:
+                    type: "object"
+                    fields:
+                        firstName:
+                            type: "string"
+                        lastName:
+                            type: "string"
+                        address:
+                            type: "object"
+                            fields:
+                                street:
+                                    type: "string"
+                                city:
+                                    type: "string"
+                tags:
+                    type: "array"
+                    items:
+                        type: "string"

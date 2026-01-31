@@ -92,6 +92,14 @@ impl<'de> ResourceWithSubsVisitor {
                 let queue_spec = map.next_value()?;
                 Ok(CelerityResourceSpecWithSubs::Queue(queue_spec))
             }
+            CelerityResourceType::CelerityVpc => {
+                let vpc_spec = map.next_value()?;
+                Ok(CelerityResourceSpecWithSubs::Vpc(vpc_spec))
+            }
+            CelerityResourceType::CelerityDatastore => {
+                let datastore_spec = map.next_value()?;
+                Ok(CelerityResourceSpecWithSubs::Datastore(datastore_spec))
+            }
         }
     }
 }

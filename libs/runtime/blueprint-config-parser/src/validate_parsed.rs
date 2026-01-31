@@ -1,5 +1,5 @@
 use crate::{
-    blueprint::{BlueprintConfig, BlueprintVariable},
+    blueprint::{BlueprintConfig, BlueprintVariable, BLUELINK_BLUEPRINT_V2025_11_02},
     parse::BlueprintParseError,
 };
 
@@ -8,6 +8,14 @@ use crate::{
 /// YAML parsing is validated during parsing due to the usage
 /// of yaml_rust2 in light of serde_yaml being an archived project.
 pub fn validate_blueprint_config(blueprint: &BlueprintConfig) -> Result<(), BlueprintParseError> {
+    // Validate version
+    if blueprint.version != BLUELINK_BLUEPRINT_V2025_11_02 {
+        return Err(BlueprintParseError::ValidationError(format!(
+            "Unsupported blueprint version '{}'. Only 2025-11-02 is supported",
+            blueprint.version
+        )));
+    }
+
     if blueprint.resources.is_empty() {
         return Err(BlueprintParseError::ValidationError(
             "at least one resource must be provided for a blueprint".to_string(),

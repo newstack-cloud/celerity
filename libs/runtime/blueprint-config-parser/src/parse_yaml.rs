@@ -6,9 +6,10 @@ use tracing::debug;
 use crate::{
     blueprint::{
         BlueprintLinkSelector, BlueprintScalarValue, BlueprintVariable, CelerityResourceType,
-        EventSourceType, BLUELINK_BLUEPRINT_V2025_05_12, CELERITY_API_RESOURCE_TYPE,
-        CELERITY_CONSUMER_RESOURCE_TYPE, CELERITY_HANDLER_CONFIG_RESOURCE_TYPE,
-        CELERITY_HANDLER_RESOURCE_TYPE, CELERITY_SCHEDULE_RESOURCE_TYPE,
+        EventSourceType, BLUELINK_BLUEPRINT_V2025_11_02, CELERITY_API_RESOURCE_TYPE,
+        CELERITY_CONSUMER_RESOURCE_TYPE, CELERITY_DATASTORE_RESOURCE_TYPE,
+        CELERITY_HANDLER_CONFIG_RESOURCE_TYPE, CELERITY_HANDLER_RESOURCE_TYPE,
+        CELERITY_SCHEDULE_RESOURCE_TYPE, CELERITY_VPC_RESOURCE_TYPE,
         CELERITY_WORKFLOW_RESOURCE_TYPE,
     },
     blueprint_with_subs::{
@@ -18,10 +19,13 @@ use crate::{
         CelerityApiBasePathConfigurationWithSubs, CelerityApiBasePathWithSubs,
         CelerityApiCorsConfigurationWithSubs, CelerityApiCorsWithSubs, CelerityApiDomainWithSubs,
         CelerityApiSpecWithSubs, CelerityBucketSpecWithSubs, CelerityConfigSpecWithSubs,
-        CelerityConsumerSpecWithSubs, CelerityHandlerSpecWithSubs, CelerityQueueSpecWithSubs,
-        CelerityResourceSpecWithSubs, CelerityScheduleSpecWithSubs, CelerityTopicSpecWithSubs,
-        DataStreamSourceConfigurationWithSubs, DatabaseStreamSourceConfigurationWithSubs,
-        EventSourceConfigurationWithSubs, ExternalEventConfigurationWithSubs, MappingNode,
+        CelerityConsumerSpecWithSubs, CelerityDatastoreSpecWithSubs, CelerityHandlerSpecWithSubs,
+        CelerityQueueSpecWithSubs, CelerityResourceSpecWithSubs, CelerityScheduleSpecWithSubs,
+        CelerityTopicSpecWithSubs, CelerityVpcSpecWithSubs, DatastoreFieldSchemaWithSubs,
+        DatastoreIndexWithSubs, DatastoreKeysWithSubs, DatastoreTimeToLiveWithSubs,
+        DataStreamSourceConfigurationWithSubs,
+        DatabaseStreamSourceConfigurationWithSubs, EventSourceConfigurationWithSubs,
+        ExternalEventConfigurationWithSubs, MappingNode,
         ObjectStorageEventSourceConfigurationWithSubs, RuntimeBlueprintResourceWithSubs,
         SharedHandlerConfigWithSubs, StringOrSubstitution, StringOrSubstitutions,
         ValueSourceConfigurationWithSubs,
@@ -99,9 +103,9 @@ fn validate_assign_version(
     version: &str,
     blueprint: &mut BlueprintConfigWithSubs,
 ) -> Result<(), BlueprintParseError> {
-    if version != BLUELINK_BLUEPRINT_V2025_05_12 {
+    if version != BLUELINK_BLUEPRINT_V2025_11_02 {
         return Err(BlueprintParseError::YamlFormatError(format!(
-            "expected version {BLUELINK_BLUEPRINT_V2025_05_12}, found {version}",
+            "expected version {BLUELINK_BLUEPRINT_V2025_11_02}, found {version}",
         )));
     }
 
@@ -303,9 +307,11 @@ fn validate_resource_type(
     match resource_type {
         CELERITY_API_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityApi),
         CELERITY_CONSUMER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityConsumer),
+        CELERITY_DATASTORE_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityDatastore),
         CELERITY_SCHEDULE_RESOURCE_TYPE => Ok(CelerityResourceType::CeleritySchedule),
         CELERITY_HANDLER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandler),
         CELERITY_HANDLER_CONFIG_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandlerConfig),
+        CELERITY_VPC_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityVpc),
         CELERITY_WORKFLOW_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityWorkflow),
         _ => Err(BlueprintParseError::UnsupportedResourceType(
             resource_type.to_string(),
@@ -347,6 +353,12 @@ fn validate_resource_spec(
         )),
         CelerityResourceType::CelerityQueue => Ok(CelerityResourceSpecWithSubs::Queue(
             validate_celerity_queue_spec(spec_map)?,
+        )),
+        CelerityResourceType::CelerityVpc => Ok(CelerityResourceSpecWithSubs::Vpc(
+            validate_celerity_vpc_spec(spec_map)?,
+        )),
+        CelerityResourceType::CelerityDatastore => Ok(CelerityResourceSpecWithSubs::Datastore(
+            validate_celerity_datastore_spec(spec_map)?,
         )),
     }
 }
@@ -1720,6 +1732,416 @@ fn validate_celerity_queue_spec(
         }
     }
     Ok(celerity_queue_spec)
+}
+
+fn validate_celerity_vpc_spec(
+    spec_map: &yaml_rust2::yaml::Hash,
+) -> Result<CelerityVpcSpecWithSubs, BlueprintParseError> {
+    let mut celerity_vpc_spec = CelerityVpcSpecWithSubs::default();
+    let mut has_name = false;
+
+    for (key, value) in spec_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "name" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        celerity_vpc_spec.name = parse_substitutions::<ParseError>(value_str)?;
+                        has_name = true;
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "VPC name must be a string".to_string(),
+                        ));
+                    }
+                }
+                "preset" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        celerity_vpc_spec.preset =
+                            Some(parse_substitutions::<ParseError>(value_str)?);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "VPC preset must be a string".to_string(),
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(BlueprintParseError::YamlFormatError(format!(
+                        "Unsupported key for VPC spec: {}",
+                        key_str
+                    )));
+                }
+            }
+        }
+    }
+
+    if !has_name {
+        return Err(BlueprintParseError::YamlFormatError(
+            "VPC spec requires 'name' field".to_string(),
+        ));
+    }
+
+    Ok(celerity_vpc_spec)
+}
+
+fn validate_celerity_datastore_spec(
+    spec_map: &yaml_rust2::yaml::Hash,
+) -> Result<CelerityDatastoreSpecWithSubs, BlueprintParseError> {
+    let mut datastore_spec = CelerityDatastoreSpecWithSubs::default();
+    let mut has_keys = false;
+
+    for (key, value) in spec_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "keys" => {
+                    if let yaml_rust2::Yaml::Hash(keys_map) = value {
+                        datastore_spec.keys = parse_datastore_keys(keys_map)?;
+                        has_keys = true;
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Datastore keys must be an object".to_string(),
+                        ));
+                    }
+                }
+                "name" => {
+                    if let yaml_rust2::Yaml::String(name_str) = value {
+                        datastore_spec.name = Some(parse_substitutions::<ParseError>(name_str)?);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Datastore name must be a string".to_string(),
+                        ));
+                    }
+                }
+                "schema" => {
+                    if let yaml_rust2::Yaml::Hash(schema_map) = value {
+                        let mut schema = HashMap::new();
+                        for (field_key, field_value) in schema_map {
+                            if let yaml_rust2::Yaml::String(field_name) = field_key {
+                                if let yaml_rust2::Yaml::Hash(field_def) = field_value {
+                                    schema.insert(
+                                        field_name.clone(),
+                                        parse_datastore_field_schema(field_def)?,
+                                    );
+                                } else {
+                                    return Err(BlueprintParseError::YamlFormatError(format!(
+                                        "Schema field '{}' must be an object",
+                                        field_name
+                                    )));
+                                }
+                            }
+                        }
+                        datastore_spec.schema = Some(schema);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Datastore schema must be an object".to_string(),
+                        ));
+                    }
+                }
+                "indexes" => {
+                    if let yaml_rust2::Yaml::Array(indexes_array) = value {
+                        let mut indexes = Vec::new();
+                        for index_value in indexes_array {
+                            if let yaml_rust2::Yaml::Hash(index_map) = index_value {
+                                indexes.push(parse_datastore_index(index_map)?);
+                            } else {
+                                return Err(BlueprintParseError::YamlFormatError(
+                                    "Each index must be an object".to_string(),
+                                ));
+                            }
+                        }
+                        datastore_spec.indexes = Some(indexes);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Datastore indexes must be an array".to_string(),
+                        ));
+                    }
+                }
+                "timeToLive" => {
+                    if let yaml_rust2::Yaml::Hash(ttl_map) = value {
+                        datastore_spec.time_to_live = Some(parse_datastore_ttl(ttl_map)?);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Datastore timeToLive must be an object".to_string(),
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(BlueprintParseError::YamlFormatError(format!(
+                        "Unsupported key for Datastore spec: {}",
+                        key_str
+                    )));
+                }
+            }
+        }
+    }
+
+    if !has_keys {
+        return Err(BlueprintParseError::YamlFormatError(
+            "Datastore spec requires 'keys' field".to_string(),
+        ));
+    }
+
+    Ok(datastore_spec)
+}
+
+fn parse_datastore_keys(
+    keys_map: &yaml_rust2::yaml::Hash,
+) -> Result<DatastoreKeysWithSubs, BlueprintParseError> {
+    let mut keys = DatastoreKeysWithSubs::default();
+    let mut has_partition_key = false;
+
+    for (key, value) in keys_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "partitionKey" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        keys.partition_key = parse_substitutions::<ParseError>(value_str)?;
+                        has_partition_key = true;
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Datastore partitionKey must be a string".to_string(),
+                        ));
+                    }
+                }
+                "sortKey" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        keys.sort_key = Some(parse_substitutions::<ParseError>(value_str)?);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Datastore sortKey must be a string".to_string(),
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(BlueprintParseError::YamlFormatError(format!(
+                        "Unsupported key for Datastore keys: {}",
+                        key_str
+                    )));
+                }
+            }
+        }
+    }
+
+    if !has_partition_key {
+        return Err(BlueprintParseError::YamlFormatError(
+            "Datastore keys require 'partitionKey' field".to_string(),
+        ));
+    }
+
+    Ok(keys)
+}
+
+fn parse_datastore_field_schema(
+    field_map: &yaml_rust2::yaml::Hash,
+) -> Result<DatastoreFieldSchemaWithSubs, BlueprintParseError> {
+    let mut field_type: Option<StringOrSubstitutions> = None;
+    let mut description: Option<StringOrSubstitutions> = None;
+    let mut nullable: Option<MappingNode> = None;
+    let mut fields: Option<HashMap<String, DatastoreFieldSchemaWithSubs>> = None;
+    let mut items: Option<Box<DatastoreFieldSchemaWithSubs>> = None;
+
+    for (key, value) in field_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "type" => {
+                    if let yaml_rust2::Yaml::String(type_str) = value {
+                        field_type = Some(parse_substitutions::<ParseError>(type_str)?);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Schema field type must be a string".to_string(),
+                        ));
+                    }
+                }
+                "description" => {
+                    if let yaml_rust2::Yaml::String(desc_str) = value {
+                        description = Some(parse_substitutions::<ParseError>(desc_str)?);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Schema field description must be a string".to_string(),
+                        ));
+                    }
+                }
+                "nullable" => {
+                    if let yaml_rust2::Yaml::Boolean(bool_val) = value {
+                        nullable = Some(MappingNode::Scalar(BlueprintScalarValue::Bool(*bool_val)));
+                    } else if let yaml_rust2::Yaml::String(bool_str) = value {
+                        nullable = Some(MappingNode::SubstitutionStr(
+                            validate_single_substitution(bool_str, "boolean")?,
+                        ));
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Schema field nullable must be a boolean".to_string(),
+                        ));
+                    }
+                }
+                "fields" => {
+                    if let yaml_rust2::Yaml::Hash(nested_fields_map) = value {
+                        let mut nested_fields = HashMap::new();
+                        for (nested_key, nested_value) in nested_fields_map {
+                            if let yaml_rust2::Yaml::String(nested_name) = nested_key {
+                                if let yaml_rust2::Yaml::Hash(nested_def) = nested_value {
+                                    nested_fields.insert(
+                                        nested_name.clone(),
+                                        parse_datastore_field_schema(nested_def)?,
+                                    );
+                                } else {
+                                    return Err(BlueprintParseError::YamlFormatError(format!(
+                                        "Nested field '{}' must be an object",
+                                        nested_name
+                                    )));
+                                }
+                            }
+                        }
+                        fields = Some(nested_fields);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Schema field 'fields' must be an object".to_string(),
+                        ));
+                    }
+                }
+                "items" => {
+                    if let yaml_rust2::Yaml::Hash(items_map) = value {
+                        items = Some(Box::new(parse_datastore_field_schema(items_map)?));
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Schema field 'items' must be an object".to_string(),
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(BlueprintParseError::YamlFormatError(format!(
+                        "Unsupported key for schema field: {}",
+                        key_str
+                    )));
+                }
+            }
+        }
+    }
+
+    let field_type = field_type.ok_or_else(|| {
+        BlueprintParseError::YamlFormatError(
+            "Schema field requires 'type' field".to_string(),
+        )
+    })?;
+
+    Ok(DatastoreFieldSchemaWithSubs {
+        field_type,
+        description,
+        nullable,
+        fields,
+        items,
+    })
+}
+
+fn parse_datastore_index(
+    index_map: &yaml_rust2::yaml::Hash,
+) -> Result<DatastoreIndexWithSubs, BlueprintParseError> {
+    let mut name: Option<StringOrSubstitutions> = None;
+    let mut fields: Option<Vec<StringOrSubstitutions>> = None;
+
+    for (key, value) in index_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "name" => {
+                    if let yaml_rust2::Yaml::String(name_str) = value {
+                        name = Some(parse_substitutions::<ParseError>(name_str)?);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Index name must be a string".to_string(),
+                        ));
+                    }
+                }
+                "fields" => {
+                    if let yaml_rust2::Yaml::Array(fields_array) = value {
+                        let mut field_names = Vec::new();
+                        for field_value in fields_array {
+                            if let yaml_rust2::Yaml::String(field_str) = field_value {
+                                field_names.push(parse_substitutions::<ParseError>(field_str)?);
+                            } else {
+                                return Err(BlueprintParseError::YamlFormatError(
+                                    "Index field names must be strings".to_string(),
+                                ));
+                            }
+                        }
+                        fields = Some(field_names);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "Index fields must be an array".to_string(),
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(BlueprintParseError::YamlFormatError(format!(
+                        "Unsupported key for index: {}",
+                        key_str
+                    )));
+                }
+            }
+        }
+    }
+
+    let name = name.ok_or_else(|| {
+        BlueprintParseError::YamlFormatError("Index requires 'name' field".to_string())
+    })?;
+
+    let fields = fields.ok_or_else(|| {
+        BlueprintParseError::YamlFormatError("Index requires 'fields' field".to_string())
+    })?;
+
+    Ok(DatastoreIndexWithSubs { name, fields })
+}
+
+fn parse_datastore_ttl(
+    ttl_map: &yaml_rust2::yaml::Hash,
+) -> Result<DatastoreTimeToLiveWithSubs, BlueprintParseError> {
+    let mut field_name: Option<StringOrSubstitutions> = None;
+    let mut enabled: Option<MappingNode> = None;
+
+    for (key, value) in ttl_map {
+        if let yaml_rust2::Yaml::String(key_str) = key {
+            match key_str.as_str() {
+                "fieldName" => {
+                    if let yaml_rust2::Yaml::String(name_str) = value {
+                        field_name = Some(parse_substitutions::<ParseError>(name_str)?);
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "TTL fieldName must be a string".to_string(),
+                        ));
+                    }
+                }
+                "enabled" => {
+                    if let yaml_rust2::Yaml::Boolean(bool_val) = value {
+                        enabled = Some(MappingNode::Scalar(BlueprintScalarValue::Bool(*bool_val)));
+                    } else if let yaml_rust2::Yaml::String(bool_str) = value {
+                        enabled = Some(MappingNode::SubstitutionStr(
+                            validate_single_substitution(bool_str, "boolean")?,
+                        ));
+                    } else {
+                        return Err(BlueprintParseError::YamlFormatError(
+                            "TTL enabled must be a boolean".to_string(),
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(BlueprintParseError::YamlFormatError(format!(
+                        "Unsupported key for timeToLive: {}",
+                        key_str
+                    )));
+                }
+            }
+        }
+    }
+
+    let field_name = field_name.ok_or_else(|| {
+        BlueprintParseError::YamlFormatError("TTL requires 'fieldName' field".to_string())
+    })?;
+
+    let enabled = enabled.ok_or_else(|| {
+        BlueprintParseError::YamlFormatError("TTL requires 'enabled' field".to_string())
+    })?;
+
+    Ok(DatastoreTimeToLiveWithSubs {
+        field_name,
+        enabled,
+    })
 }
 
 fn validate_populate_blueprint_metadata(

@@ -1,0 +1,13 @@
+version: 2025-11-02
+resources:
+    sessionStore:
+        type: celerity/datastore
+        metadata:
+            displayName: "Session Store with TTL"
+        spec:
+            name: "session-datastore"
+            keys:
+                partitionKey: "sessionId"
+            timeToLive:
+                fieldName: "expiresAt"
+                enabled: true

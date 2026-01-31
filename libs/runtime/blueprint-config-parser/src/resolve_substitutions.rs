@@ -10,8 +10,10 @@ use crate::{
         CelerityApiBasePath, CelerityApiBasePathConfiguration, CelerityApiCors,
         CelerityApiCorsConfiguration, CelerityApiDomain, CelerityApiDomainSecurityPolicy,
         CelerityApiProtocol, CelerityApiSpec, CelerityBucketSpec, CelerityConfigSpec,
-        CelerityConsumerSpec, CelerityHandlerSpec, CelerityQueueSpec, CelerityResourceSpec,
-        CelerityScheduleSpec, CelerityTopicSpec, CelerityWorkflowCatchConfig,
+        CelerityConsumerSpec, CelerityDatastoreSpec, CelerityHandlerSpec, CelerityQueueSpec,
+        CelerityResourceSpec, CelerityScheduleSpec, CelerityTopicSpec, CelerityVpcSpec,
+        CelerityWorkflowCatchConfig, DatastoreFieldSchema, DatastoreIndex, DatastoreKeys,
+        DatastoreTimeToLive,
         CelerityWorkflowCondition, CelerityWorkflowDecisionRule, CelerityWorkflowFailureConfig,
         CelerityWorkflowParallelBranch, CelerityWorkflowRetryConfig, CelerityWorkflowSpec,
         CelerityWorkflowState, CelerityWorkflowStateType, CelerityWorkflowWaitConfig,
@@ -26,9 +28,11 @@ use crate::{
         CelerityApiAuthWithSubs, CelerityApiBasePathConfigurationWithSubs,
         CelerityApiBasePathWithSubs, CelerityApiCorsConfigurationWithSubs, CelerityApiCorsWithSubs,
         CelerityApiDomainWithSubs, CelerityApiSpecWithSubs, CelerityBucketSpecWithSubs,
-        CelerityConfigSpecWithSubs, CelerityConsumerSpecWithSubs, CelerityHandlerSpecWithSubs,
-        CelerityQueueSpecWithSubs, CelerityResourceSpecWithSubs, CelerityScheduleSpecWithSubs,
-        CelerityTopicSpecWithSubs, CelerityWorkflowCatchConfigWithSubs,
+        CelerityConfigSpecWithSubs, CelerityConsumerSpecWithSubs, CelerityDatastoreSpecWithSubs,
+        CelerityHandlerSpecWithSubs, CelerityQueueSpecWithSubs, CelerityResourceSpecWithSubs,
+        CelerityScheduleSpecWithSubs, CelerityTopicSpecWithSubs, CelerityVpcSpecWithSubs,
+        CelerityWorkflowCatchConfigWithSubs, DatastoreFieldSchemaWithSubs, DatastoreIndexWithSubs,
+        DatastoreKeysWithSubs, DatastoreTimeToLiveWithSubs,
         CelerityWorkflowConditionWithSubs, CelerityWorkflowDecisionRuleWithSubs,
         CelerityWorkflowFailureConfigWithSubs, CelerityWorkflowParallelBranchWithSubs,
         CelerityWorkflowRetryConfigWithSubs, CelerityWorkflowSpecWithSubs,
@@ -272,6 +276,16 @@ fn resolve_resource_spec(
         CelerityResourceSpecWithSubs::Queue(queue_spec) => Ok(CelerityResourceSpec::Queue(
             resolve_queue_spec(queue_spec, env.clone(), resource_name)?,
         )),
+        CelerityResourceSpecWithSubs::Vpc(vpc_spec) => Ok(CelerityResourceSpec::Vpc(
+            resolve_vpc_spec(vpc_spec, env.clone(), resource_name)?,
+        )),
+        CelerityResourceSpecWithSubs::Datastore(datastore_spec) => {
+            Ok(CelerityResourceSpec::Datastore(resolve_datastore_spec(
+                datastore_spec,
+                env.clone(),
+                resource_name,
+            )?))
+        }
         _ => Ok(CelerityResourceSpec::NoSpec),
     }
 }
@@ -490,6 +504,267 @@ fn resolve_queue_spec(
             env.clone(),
             &resource_spec_field_path(resource_name, &["visibilityTimeout"]),
         )?,
+    })
+}
+
+fn resolve_vpc_spec(
+    spec_with_subs: CelerityVpcSpecWithSubs,
+    env: Box<dyn EnvVars>,
+    resource_name: &str,
+) -> Result<CelerityVpcSpec, ResolveError> {
+    let name = resolve_string_or_substitutions_to_string(
+        spec_with_subs.name,
+        env.clone(),
+        &resource_spec_field_path(resource_name, &["name"]),
+    )?;
+
+    let preset = resolve_optional_string_or_substitutions(
+        spec_with_subs.preset,
+        env.clone(),
+        &resource_spec_field_path(resource_name, &["preset"]),
+    )?;
+
+    // Validate preset if provided
+    if let Some(ref preset_val) = preset {
+        validate_vpc_preset(preset_val)?;
+    }
+
+    Ok(CelerityVpcSpec { name, preset })
+}
+
+fn validate_vpc_preset(preset: &str) -> Result<(), ResolveError> {
+    match preset {
+        "standard" | "public" | "isolated" | "light" | "light-public" => Ok(()),
+        _ => Err(ResolveError::ParseError(
+            format!(
+                "Invalid VPC preset '{}'. Allowed: standard, public, isolated, light, light-public",
+                preset
+            ),
+            "preset".to_string(),
+        )),
+    }
+}
+
+fn resolve_datastore_spec(
+    spec_with_subs: CelerityDatastoreSpecWithSubs,
+    env: Box<dyn EnvVars>,
+    resource_name: &str,
+) -> Result<CelerityDatastoreSpec, ResolveError> {
+    let keys = resolve_datastore_keys(
+        spec_with_subs.keys,
+        env.clone(),
+        &resource_spec_field_path(resource_name, &["keys"]),
+    )?;
+
+    let name = resolve_optional_string_or_substitutions(
+        spec_with_subs.name,
+        env.clone(),
+        &resource_spec_field_path(resource_name, &["name"]),
+    )?;
+
+    let schema = if let Some(schema_with_subs) = spec_with_subs.schema {
+        Some(resolve_datastore_schema(
+            schema_with_subs,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["schema"]),
+        )?)
+    } else {
+        None
+    };
+
+    let indexes = if let Some(indexes_with_subs) = spec_with_subs.indexes {
+        Some(resolve_datastore_indexes(
+            indexes_with_subs,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["indexes"]),
+        )?)
+    } else {
+        None
+    };
+
+    let time_to_live = if let Some(ttl_with_subs) = spec_with_subs.time_to_live {
+        Some(resolve_datastore_ttl(
+            ttl_with_subs,
+            env.clone(),
+            &resource_spec_field_path(resource_name, &["timeToLive"]),
+        )?)
+    } else {
+        None
+    };
+
+    Ok(CelerityDatastoreSpec {
+        keys,
+        name,
+        schema,
+        indexes,
+        time_to_live,
+    })
+}
+
+fn resolve_datastore_keys(
+    keys_with_subs: DatastoreKeysWithSubs,
+    env: Box<dyn EnvVars>,
+    field: &str,
+) -> Result<DatastoreKeys, ResolveError> {
+    let partition_key = resolve_string_or_substitutions_to_string(
+        keys_with_subs.partition_key,
+        env.clone(),
+        &format!("{}.partitionKey", field),
+    )?;
+
+    let sort_key = resolve_optional_string_or_substitutions(
+        keys_with_subs.sort_key,
+        env.clone(),
+        &format!("{}.sortKey", field),
+    )?;
+
+    Ok(DatastoreKeys {
+        partition_key,
+        sort_key,
+    })
+}
+
+fn resolve_datastore_schema(
+    schema_with_subs: HashMap<String, DatastoreFieldSchemaWithSubs>,
+    env: Box<dyn EnvVars>,
+    field: &str,
+) -> Result<HashMap<String, DatastoreFieldSchema>, ResolveError> {
+    let mut resolved_schema = HashMap::new();
+    for (field_name, field_schema_with_subs) in schema_with_subs {
+        let resolved_field = resolve_datastore_field_schema(
+            field_schema_with_subs,
+            env.clone(),
+            &format!("{}.{}", field, field_name),
+        )?;
+        resolved_schema.insert(field_name, resolved_field);
+    }
+    Ok(resolved_schema)
+}
+
+fn resolve_datastore_field_schema(
+    field_with_subs: DatastoreFieldSchemaWithSubs,
+    env: Box<dyn EnvVars>,
+    field: &str,
+) -> Result<DatastoreFieldSchema, ResolveError> {
+    let field_type = resolve_string_or_substitutions_to_string(
+        field_with_subs.field_type,
+        env.clone(),
+        &format!("{}.type", field),
+    )?;
+
+    // Validate field type
+    validate_datastore_field_type(&field_type)?;
+
+    let description = resolve_optional_string_or_substitutions(
+        field_with_subs.description,
+        env.clone(),
+        &format!("{}.description", field),
+    )?;
+
+    let nullable = resolve_optional_mapping_node_to_bool(
+        field_with_subs.nullable,
+        env.clone(),
+        &format!("{}.nullable", field),
+    )?;
+
+    let fields = if let Some(nested_fields) = field_with_subs.fields {
+        Some(resolve_datastore_schema(
+            nested_fields,
+            env.clone(),
+            &format!("{}.fields", field),
+        )?)
+    } else {
+        None
+    };
+
+    let items = if let Some(items_with_subs) = field_with_subs.items {
+        Some(Box::new(resolve_datastore_field_schema(
+            *items_with_subs,
+            env.clone(),
+            &format!("{}.items", field),
+        )?))
+    } else {
+        None
+    };
+
+    Ok(DatastoreFieldSchema {
+        field_type,
+        description,
+        nullable,
+        fields,
+        items,
+    })
+}
+
+fn validate_datastore_field_type(field_type: &str) -> Result<(), ResolveError> {
+    match field_type {
+        "string" | "number" | "boolean" | "object" | "array" => Ok(()),
+        _ => Err(ResolveError::ParseError(
+            format!(
+                "Invalid datastore field type '{}'. Allowed: string, number, boolean, object, array",
+                field_type
+            ),
+            "type".to_string(),
+        )),
+    }
+}
+
+fn resolve_datastore_indexes(
+    indexes_with_subs: Vec<DatastoreIndexWithSubs>,
+    env: Box<dyn EnvVars>,
+    field: &str,
+) -> Result<Vec<DatastoreIndex>, ResolveError> {
+    let mut resolved_indexes = Vec::new();
+    for (idx, index_with_subs) in indexes_with_subs.into_iter().enumerate() {
+        let name = resolve_string_or_substitutions_to_string(
+            index_with_subs.name,
+            env.clone(),
+            &format!("{}[{}].name", field, idx),
+        )?;
+
+        let mut resolved_fields = Vec::new();
+        for (field_idx, field_subs) in index_with_subs.fields.into_iter().enumerate() {
+            let resolved_field = resolve_string_or_substitutions_to_string(
+                field_subs,
+                env.clone(),
+                &format!("{}[{}].fields[{}]", field, idx, field_idx),
+            )?;
+            resolved_fields.push(resolved_field);
+        }
+
+        resolved_indexes.push(DatastoreIndex {
+            name,
+            fields: resolved_fields,
+        });
+    }
+    Ok(resolved_indexes)
+}
+
+fn resolve_datastore_ttl(
+    ttl_with_subs: DatastoreTimeToLiveWithSubs,
+    env: Box<dyn EnvVars>,
+    field: &str,
+) -> Result<DatastoreTimeToLive, ResolveError> {
+    let field_name = resolve_string_or_substitutions_to_string(
+        ttl_with_subs.field_name,
+        env.clone(),
+        &format!("{}.fieldName", field),
+    )?;
+
+    // Resolve enabled field from MappingNode to bool
+    let scalar_value = resolve_mapping_node_to_scalar_value(
+        ttl_with_subs.enabled,
+        env.clone(),
+        &format!("{}.enabled", field),
+    )?;
+    let enabled = match scalar_value {
+        BlueprintScalarValue::Bool(bool_val) => bool_val,
+        _ => return Err(ResolveError::ValueMustBeBool(format!("{}.enabled", field))),
+    };
+
+    Ok(DatastoreTimeToLive {
+        field_name,
+        enabled,
     })
 }
 

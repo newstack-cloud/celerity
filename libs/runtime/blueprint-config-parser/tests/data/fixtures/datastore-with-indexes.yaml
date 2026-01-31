@@ -1,0 +1,17 @@
+version: 2025-11-02
+resources:
+    indexedStore:
+        type: celerity/datastore
+        metadata:
+            displayName: "Datastore with Indexes"
+        spec:
+            keys:
+                partitionKey: "userId"
+                sortKey: "timestamp"
+            indexes:
+                - name: "emailIndex"
+                  fields: ["email"]
+                - name: "statusCreatedIndex"
+                  fields: ["status", "createdAt"]
+                - name: "categoryIndex"
+                  fields: ["category"]

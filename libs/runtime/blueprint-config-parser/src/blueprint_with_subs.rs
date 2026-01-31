@@ -97,6 +97,8 @@ pub enum CelerityResourceSpecWithSubs {
     Bucket(CelerityBucketSpecWithSubs),
     Topic(CelerityTopicSpecWithSubs),
     Queue(CelerityQueueSpecWithSubs),
+    Vpc(CelerityVpcSpecWithSubs),
+    Datastore(CelerityDatastoreSpecWithSubs),
     NoSpec,
 }
 
@@ -494,6 +496,63 @@ impl Default for CelerityQueueSpecWithSubs {
             visibility_timeout: None,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityVpcSpecWithSubs {
+    pub name: StringOrSubstitutions,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preset: Option<StringOrSubstitutions>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct CelerityDatastoreSpecWithSubs {
+    pub keys: DatastoreKeysWithSubs,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<StringOrSubstitutions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub schema: Option<HashMap<String, DatastoreFieldSchemaWithSubs>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indexes: Option<Vec<DatastoreIndexWithSubs>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timeToLive")]
+    pub time_to_live: Option<DatastoreTimeToLiveWithSubs>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+pub struct DatastoreKeysWithSubs {
+    #[serde(rename = "partitionKey")]
+    pub partition_key: StringOrSubstitutions,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "sortKey")]
+    pub sort_key: Option<StringOrSubstitutions>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct DatastoreFieldSchemaWithSubs {
+    #[serde(rename = "type")]
+    pub field_type: StringOrSubstitutions,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<StringOrSubstitutions>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nullable: Option<MappingNode>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<HashMap<String, DatastoreFieldSchemaWithSubs>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub items: Option<Box<DatastoreFieldSchemaWithSubs>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct DatastoreIndexWithSubs {
+    pub name: StringOrSubstitutions,
+    pub fields: Vec<StringOrSubstitutions>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct DatastoreTimeToLiveWithSubs {
+    #[serde(rename = "fieldName")]
+    pub field_name: StringOrSubstitutions,
+    pub enabled: MappingNode,
 }
 
 /// A mapping node is used for user-defined complex

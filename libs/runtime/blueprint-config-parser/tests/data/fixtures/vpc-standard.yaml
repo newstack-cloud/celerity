@@ -1,0 +1,8 @@
+version: 2025-11-02
+resources:
+    productionVpc:
+        type: celerity/vpc
+        metadata:
+            displayName: "Production VPC"
+        spec:
+            name: "production-vpc"

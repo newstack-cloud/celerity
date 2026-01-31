@@ -1,0 +1,9 @@
+version: 2025-11-02
+resources:
+    isolatedVpc:
+        type: celerity/vpc
+        metadata:
+            displayName: "Isolated VPC"
+        spec:
+            name: "isolated-vpc"
+            preset: "isolated"

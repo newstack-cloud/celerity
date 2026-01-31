@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt};
 
 use serde::{de, Deserialize, Deserializer};
 
-use crate::blueprint::BLUELINK_BLUEPRINT_V2025_05_12;
+use crate::blueprint::BLUELINK_BLUEPRINT_V2025_11_02;
 use crate::blueprint_with_subs::RuntimeBlueprintResourceWithSubs;
 
 /// Deserializes a blueprint version string and makes
@@ -14,10 +14,10 @@ where
     D: Deserializer<'de>,
 {
     let version = String::deserialize(d)?;
-    if version != BLUELINK_BLUEPRINT_V2025_05_12 {
+    if version != BLUELINK_BLUEPRINT_V2025_11_02 {
         return Err(de::Error::invalid_value(
             de::Unexpected::Str(&version),
-            &BLUELINK_BLUEPRINT_V2025_05_12,
+            &BLUELINK_BLUEPRINT_V2025_11_02,
         ));
     }
     Ok(version.to_string())

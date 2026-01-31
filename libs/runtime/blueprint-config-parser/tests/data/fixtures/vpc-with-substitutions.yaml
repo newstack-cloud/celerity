@@ -1,0 +1,16 @@
+version: 2025-11-02
+variables:
+    vpcName:
+        type: string
+        default: "dynamic-vpc"
+    vpcPreset:
+        type: string
+        default: "standard"
+resources:
+    dynamicVpc:
+        type: celerity/vpc
+        metadata:
+            displayName: "Dynamic VPC"
+        spec:
+            name: "${variables.vpcName}"
+            preset: "${variables.vpcPreset}"

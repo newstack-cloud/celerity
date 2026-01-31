@@ -496,7 +496,7 @@ fn produces_expected_error_for_invalid_json_blueprint_config() {
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err)) if err.to_string().contains(
-            "invalid value: string \"Array of strings\", expected 2025-05-12"
+            "invalid value: string \"Array of strings\", expected 2025-11-02"
         )
     ));
 }
@@ -565,7 +565,7 @@ fn produces_expected_error_for_invalid_version_in_yaml_blueprint_config() {
     assert!(matches!(
         result,
         Err(BlueprintParseError::YamlFormatError(msg)) if msg == "expected version \
-        2025-05-12, found unsupported-2020-03-10"
+        2025-11-02, found unsupported-2020-03-10"
     ));
 }
 
@@ -581,7 +581,7 @@ fn produces_expected_error_for_invalid_version_in_json_blueprint_config() {
     assert!(matches!(
         result,
         Err(BlueprintParseError::JsonError(err)) if err.to_string().contains(
-            "invalid value: string \"unsupported-2020-03-10\", expected 2025-05-12"
+            "invalid value: string \"unsupported-2020-03-10\", expected 2025-11-02"
         )
     ));
 }

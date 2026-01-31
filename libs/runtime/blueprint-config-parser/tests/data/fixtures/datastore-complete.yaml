@@ -1,0 +1,40 @@
+version: 2025-11-02
+resources:
+    completeStore:
+        type: celerity/datastore
+        metadata:
+            displayName: "Complete Datastore with All Features"
+        spec:
+            name: "complete-datastore"
+            keys:
+                partitionKey: "userId"
+                sortKey: "timestamp"
+            schema:
+                userId:
+                    type: "string"
+                    description: "User identifier"
+                timestamp:
+                    type: "number"
+                    description: "Event timestamp"
+                data:
+                    type: "object"
+                    fields:
+                        eventType:
+                            type: "string"
+                        payload:
+                            type: "object"
+                            fields:
+                                value:
+                                    type: "string"
+                        tags:
+                            type: "array"
+                            items:
+                                type: "string"
+            indexes:
+                - name: "userIndex"
+                  fields: ["userId"]
+                - name: "timestampIndex"
+                  fields: ["timestamp"]
+            timeToLive:
+                fieldName: "expiresAt"
+                enabled: true
