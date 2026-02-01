@@ -15,7 +15,7 @@ tracing = "0.1.40"
 base64 = "0.22.1"
 
 [dependencies.celerity_helpers]
-path = "../helpers"
+path = "../../helpers"
 
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }

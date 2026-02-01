@@ -1,0 +1,81 @@
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci(deps)"
+
+  # Go modules - CLI
+  - package-ecosystem: "gomod"
+    directory: "/apps/cli"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(cli)"
+    groups:
+      go-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # Rust - Runtime libraries
+  - package-ecosystem: "cargo"
+    directory: "/libs/runtime"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(runtime-libs)"
+    groups:
+      rust-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # NPM - Node.js runtime SDK
+  - package-ecosystem: "npm"
+    directory: "/libs/runtime/sdk/node"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(runtime-sdk-node)"
+    groups:
+      node-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # NPM - Node.js runtime wrapper
+  - package-ecosystem: "npm"
+    directory: "/apps/runtime/nodejs"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(runtime-nodejs)"
+    groups:
+      node-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # pip - Python runtime SDK
+  - package-ecosystem: "pip"
+    directory: "/libs/runtime"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(runtime-libs)"
+    groups:
+      python-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # pip - Python runtime wrapper
+  - package-ecosystem: "pip"
+    directory: "/apps/runtime/python"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps(runtime-python)"
+    groups:
+      python-deps:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]

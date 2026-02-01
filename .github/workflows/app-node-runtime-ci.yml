@@ -1,0 +1,57 @@
+name: Node.js Runtime CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/runtime/nodejs/**'
+      - '!**/*.md'
+  pull_request:
+    paths:
+      - 'apps/runtime/nodejs/**'
+      - '!**/*.md'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    name: Lint & Test - Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['20', '22']
+    defaults:
+      run:
+        working-directory: apps/runtime/nodejs
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Setup dependency cache
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Lint
+        run: yarn lint
+        if: hashFiles('apps/runtime/nodejs/.eslintrc*', 'apps/runtime/nodejs/eslint.config*') != ''
+
+      - name: Build
+        run: yarn build
+        if: hashFiles('apps/runtime/nodejs/tsconfig.json') != ''
+
+      - name: Test
+        run: yarn test
+        if: hashFiles('apps/runtime/nodejs/jest.config*', 'apps/runtime/nodejs/vitest.config*') != ''

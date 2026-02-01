@@ -1,0 +1,63 @@
+{
+  "include-component-in-tag": true,
+  "tag-separator": "/",
+  "separate-pull-requests": true,
+  "bump-minor-pre-major": true,
+  "prerelease-type": "alpha",
+  "bootstrap-sha": "d100f80dd629695af864d27cd3b35fc12c6e9285",
+  "changelog-sections": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance Improvements" },
+    { "type": "deps", "section": "Dependencies" },
+    { "type": "chore", "section": "Miscellaneous", "hidden": true }
+  ],
+  "pull-request-title-pattern": "chore: release ${component} ${version}",
+  "packages": {
+    "apps/cli": {
+      "release-type": "go",
+      "component": "cli",
+      "package-name": "cli"
+    },
+    "libs/runtime": {
+      "release-type": "simple",
+      "component": "runtime-core",
+      "package-name": "runtime-core"
+    },
+    "libs/runtime/consumers": {
+      "release-type": "simple",
+      "component": "runtime-consumers",
+      "package-name": "runtime-consumers"
+    },
+    "libs/runtime/ws": {
+      "release-type": "simple",
+      "component": "runtime-ws",
+      "package-name": "runtime-ws"
+    },
+    "libs/runtime/sdk": {
+      "release-type": "simple",
+      "component": "runtime-sdk-ffi",
+      "package-name": "runtime-sdk-ffi"
+    },
+    "libs/runtime/sdk/node": {
+      "release-type": "node",
+      "component": "runtime-sdk-node",
+      "package-name": "@celerity-sdk/runtime"
+    },
+    "libs/runtime/sdk/python": {
+      "release-type": "python",
+      "component": "runtime-sdk-python",
+      "package-name": "celerity-python-runtime-sdk"
+    },
+    "apps/runtime/nodejs": {
+      "release-type": "simple",
+      "component": "runtime-nodejs",
+      "package-name": "celerity-runtime-nodejs"
+    },
+    "apps/runtime/python": {
+      "release-type": "simple",
+      "component": "runtime-python",
+      "package-name": "celerity-runtime-python"
+    }
+  }
+}

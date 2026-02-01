@@ -1,4 +1,7 @@
-name: Node Runtime SDK CI + Release
+# Full cross-platform build, test, and publish workflow for Node.js Runtime SDK.
+# Dispatched by the release-please post-process-tags job (tags created via GITHUB_TOKEN
+# do not trigger on.push.tags workflows). CI is handled by lib-node-runtime-sdk-ci.yml.
+name: Node Runtime SDK Release
 env:
   DEBUG: napi:*
   APP_NAME: runtime
@@ -9,21 +12,12 @@ permissions:
   contents: write
   id-token: write
 'on':
-  push:
-    branches:
-      - main
-    tags:
-      - 'libs/runtime/sdk/node-*'
-    paths: 
-      - 'libs/runtime/sdk/node/**'
-      - '!**/*.md'
-      - '!LICENSE'
-      - '!**/*.gitignore'
-      - '!.editorconfig'
-      - '!docs/**'
-  pull_request: null
   workflow_dispatch:
-    inputs: {}
+    inputs:
+      tag:
+        description: 'Release tag (e.g. runtime-sdk-node/v1.0.0)'
+        required: true
+        type: string
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -295,7 +289,7 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
-    if: "startsWith(github.ref, 'refs/tags/') && contains(github.ref, 'libs/runtime/sdk/node-')"
+    if: inputs.tag != ''
     defaults:
       run:
         working-directory: ${{ env.working-directory }}
@@ -308,9 +302,8 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
-          # Extract version from tag like 'libs/runtime/sdk/node-v1.2.3'
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
-          VERSION="${TAG_NAME#libs/runtime/sdk/node-}"
+          TAG_NAME="${{ inputs.tag }}"
+          VERSION="${TAG_NAME##*/}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION from tag: $TAG_NAME"

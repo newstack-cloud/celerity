@@ -1,49 +1,15 @@
-# This workflow is inspired by the stepfunc.io DNP3 workflow from the creators of the oobindgen project.
-name: Java & C# Runtime SDK CI + Release
+# Full cross-platform build, test, package, and publish workflow for Java & C# Runtime SDK.
+# Dispatched by the release-please post-process-tags job (tags created via GITHUB_TOKEN
+# do not trigger on.push.tags workflows). CI is handled by lib-java-csharp-sdk-ci.yml.
+name: Java & C# Runtime SDK Release
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - 'libs/runtime/sdk/shared-*'
-    paths:
-      - 'libs/runtime/sdk/bindgen-ffi/**'
-      - 'libs/runtime/sdk/bindgen-ffi-java/**'
-      - 'libs/runtime/sdk/bindings/**'
-      - 'libs/runtime/sdk/runtime-bindings/**'
-      - 'libs/runtime/sdk/java/**'
-      - 'libs/runtime/sdk/csharp/**'
-      - '!**/*.md'
-      - '!LICENSE'
-      - '!**/*.gitignore'
-      - '!.editorconfig'
-      - '!docs/**'
-  pull_request:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. runtime-sdk-ffi/v1.0.0)'
+        required: true
+        type: string
 jobs:
-  # Check formatting and run clippy lints
-  linting:
-    strategy:
-      fail-fast: false
-      matrix:
-        rust:
-          - stable
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: libs/runtime
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install Rust ${{ matrix.rust }}
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-          components: rustfmt, clippy
-      - name: Format
-        run: cargo fmt --all -- --check
-      - name: Clippy
-        run: cargo clippy -- -D warnings
   # Build API documentation packages
   documentation:
     runs-on: ubuntu-latest
@@ -282,7 +248,7 @@ jobs:
   release:
     needs: [packaging]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') && contains(github.ref, 'libs/runtime/sdk/shared-')
+    if: inputs.tag != ''
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4

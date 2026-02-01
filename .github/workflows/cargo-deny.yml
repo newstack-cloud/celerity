@@ -1,0 +1,33 @@
+name: Cargo Deny
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "libs/runtime/**"
+  pull_request:
+    paths:
+      - "libs/runtime/**"
+  schedule:
+    - cron: "0 5 * * 1" # Weekly Monday 5AM UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-deny:
+    name: Cargo Deny Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        checks:
+          - advisories
+          - bans licenses sources
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check ${{ matrix.checks }}
+          manifest-path: libs/runtime/Cargo.toml

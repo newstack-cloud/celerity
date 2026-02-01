@@ -1,0 +1,101 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  post-process-tags:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Process release tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Map component names to paths for Go module proxy indexing.
+          # Go modules in a monorepo need path-based tags (e.g. apps/cli/v1.0.0)
+          # for the Go module proxy, but release-please creates component-based
+          # tags (e.g. cli/v1.0.0). This step creates the path-based tag and
+          # re-associates the GitHub release.
+          declare -A GO_COMPONENTS=(
+            ["cli"]="apps/cli"
+          )
+
+          # Map component names to release workflow files.
+          # Tags created by GitHub Actions (via GITHUB_TOKEN) do not trigger
+          # on.push.tags workflows, so we dispatch release workflows explicitly.
+          declare -A RELEASE_WORKFLOWS=(
+            ["runtime-sdk-node"]="lib-node-runtime-sdk-release.yml"
+            ["runtime-sdk-python"]="lib-python-runtime-sdk-release.yml"
+            ["runtime-sdk-ffi"]="lib-java-csharp-sdk-release.yml"
+            ["runtime-nodejs"]="runtime-nodejs-release.yml"
+            ["runtime-python"]="runtime-python-release.yml"
+          )
+
+          for tag in $(git tag --points-at HEAD); do
+            if [[ "$tag" =~ ^([^/]+)/(.+)$ ]]; then
+              component="${BASH_REMATCH[1]}"
+              version="${BASH_REMATCH[2]}"
+
+              echo "Processing release: component=$component version=$version tag=$tag"
+
+              # Handle Go module tags
+              if [[ -n "${GO_COMPONENTS[$component]}" ]]; then
+                path="${GO_COMPONENTS[$component]}"
+                new_tag="${path}/${version}"
+
+                if [[ "$tag" != "$new_tag" ]]; then
+                  echo "Creating Go module tag: $new_tag (from $tag)"
+                  git tag "$new_tag" HEAD
+                  git push origin "$new_tag"
+
+                  echo "Associating $new_tag with release $tag"
+                  gh release edit "$tag" --tag "$new_tag"
+
+                  MODULE="github.com/${{ github.repository }}/${path}"
+                  echo "Indexing Go module: ${MODULE}@${version}"
+                  GOPROXY=proxy.golang.org go list -m "${MODULE}@${version}" || echo "Warning: Failed to index ${MODULE}@${version}"
+                fi
+              fi
+
+              # Trigger component-specific release workflows
+              if [[ -n "${RELEASE_WORKFLOWS[$component]}" ]]; then
+                workflow_file="${RELEASE_WORKFLOWS[$component]}"
+                if gh workflow view "$workflow_file" &>/dev/null; then
+                  echo "Triggering $workflow_file for tag: $tag"
+                  gh workflow run "$workflow_file" -f tag="$tag"
+                fi
+              fi
+            fi
+          done

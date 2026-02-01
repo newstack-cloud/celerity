@@ -1,0 +1,74 @@
+# CI workflow for Node.js Runtime SDK.
+# Runs a single-platform build + test for fast feedback on push/PR.
+# The full cross-platform matrix runs in the release workflow.
+name: Node Runtime SDK CI
+
+env:
+  DEBUG: napi:*
+  APP_NAME: runtime
+  CARGO_INCREMENTAL: '1'
+  working-directory: ./libs/runtime/sdk/node
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'libs/runtime/sdk/node/**'
+      - '!**/*.md'
+      - '!LICENSE'
+      - '!**/*.gitignore'
+      - '!.editorconfig'
+      - '!docs/**'
+  pull_request:
+    paths:
+      - 'libs/runtime/sdk/node/**'
+      - '!**/*.md'
+      - '!LICENSE'
+      - '!**/*.gitignore'
+      - '!.editorconfig'
+      - '!docs/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test - Linux x86_64 - node@22
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable corepack
+        run: corepack enable
+      - name: Setup Dependency Cache
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            .cargo-cache
+            target/
+          key: x86_64-unknown-linux-gnu-cargo-ubuntu-latest
+      - name: Install dependencies
+        run: yarn install
+      - name: Build
+        run: yarn build --target x86_64-unknown-linux-gnu --use-napi-cross
+      - name: Test bindings
+        run: yarn test

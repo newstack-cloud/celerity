@@ -34,7 +34,7 @@ chrono = "0.4.41"
 path = "../../core"
 
 [dependencies.celerity_ws_registry]
-path = "../../ws-registry"
+path = "../../ws/ws-registry"
 
 [dependencies.celerity_helpers]
 path = "../../helpers"

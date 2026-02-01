@@ -27,8 +27,5 @@ lint_project libs/runtime
 
 lint_project apps/cli
 
-# lint_project apps/runtime/core
-# lint_project apps/runtime/csharp
-# lint_project apps/runtime/java
 # lint_project apps/runtime/nodejs
 # lint_project apps/runtime/python

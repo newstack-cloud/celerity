@@ -1,0 +1,4 @@
+{
+  "name": "celerity-runtime-nodejs",
+  "packageManager": "yarn@4.3.1"
+}

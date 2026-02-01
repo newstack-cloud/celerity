@@ -32,35 +32,35 @@ path = "../blueprint-config-parser"
 path = "../helpers"
 
 [dependencies.celerity_consumer_sqs]
-path = "../consumer-sqs"
+path = "../consumers/consumer-sqs"
 optional = true
 
 [dependencies.celerity_consumer_kinesis]
-path = "../consumer-kinesis"
+path = "../consumers/consumer-kinesis"
 optional = true
 
 [dependencies.celerity_consumer_redis]
-path = "../consumer-redis"
+path = "../consumers/consumer-redis"
 optional = true
 
 [dependencies.celerity_consumer_gcloud_pubsub]
-path = "../consumer-gcloud-pubsub"
+path = "../consumers/consumer-gcloud-pubsub"
 optional = true
 
 [dependencies.celerity_consumer_gcloud_tasks]
-path = "../consumer-gcloud-tasks"
+path = "../consumers/consumer-gcloud-tasks"
 optional = true
 
 [dependencies.celerity_consumer_azure_events_hub]
-path = "../consumer-azure-events-hub"
+path = "../consumers/consumer-azure-events-hub"
 optional = true
 
 [dependencies.celerity_consumer_azure_service_bus]
-path = "../consumer-azure-service-bus"
+path = "../consumers/consumer-azure-service-bus"
 optional = true
 
 [dependencies.celerity_ws_registry]
-path = "../ws-registry"
+path = "../ws/ws-registry"
 
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }

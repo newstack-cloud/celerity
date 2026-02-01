@@ -22,7 +22,7 @@ opentelemetry = { version = "0.22.0" }
 tracing-opentelemetry = "0.23.0"
 
 [dependencies.celerity_helpers]
-path = "../helpers"
+path = "../../helpers"
 
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }

@@ -9,29 +9,63 @@
 
 ## Release strategy
 
-To allow for a high degree of flexibility, every key component has its own version. Tags used for releases need to be in the following format:
+To allow for a high degree of flexibility, every key component has its own version. Releases are automated via [release-please](https://github.com/googleapis/release-please), which creates release PRs with changelogs based on conventional commits.
+
+Release-please creates tags in the format `{component}/v{version}` for all components:
 
 ```
-{app_or_package}-MAJOR.MINOR.PATCH
+{component}/v{MAJOR}.{MINOR}.{PATCH}
 
-e.g. blueprint-0.1.0
+e.g. cli/v0.1.0
+     runtime-core/v1.0.0
+     runtime-consumers/v1.0.0
+     runtime-ws/v1.0.0
+     runtime-sdk-ffi/v1.0.0
+     runtime-sdk-node/v0.2.0
 ```
 
-Each key component will specify the release tag format in the README.
+**Go modules** are the only exception that require additional tag processing. The Go module proxy (`proxy.golang.org`) requires tags that match the module's directory path within the repository, not the release-please component name. For Go components, the post-process-tags job creates a path-based tag and re-associates the GitHub release:
+
+```
+Component tag (release-please): cli/v0.1.0
+Go module tag (for proxy):      apps/cli/v0.1.0
+```
+
+Non-Go components do not need path-based tags — the component tag created by release-please is sufficient. Their release workflows are triggered via `workflow_dispatch` from the post-process-tags job.
 
 **_A key component consists of one or more related applications and libraries. (e.g. the nodejs runtime which consists of an application and multiple NPM packages)_**
 
-You will find each key component listed in the commit scopes section of the [commit guidelines](./COMMIT_GUIDELINES.md#commit-scopes).
+### Key components
 
-The automated tooling bundled with Celerity will handle ensuring the correct release tags are produced and the corresponding artifacts are published, given you follow the release workflow outlined in the following section.
+| Component | Path | Description |
+|---|---|---|
+| `cli` | `apps/cli` | CLI for test/build/package/deploy tooling |
+| `runtime-core` | `libs/runtime` | Core runtime libraries (core, workflow, signature, helpers, blueprint parser) |
+| `runtime-consumers` | `libs/runtime/consumers` | Message consumer crates (SQS, Redis, Kinesis, Azure Service Bus, Azure Events Hub, GCloud Pub/Sub, GCloud Tasks) |
+| `runtime-ws` | `libs/runtime/ws` | WebSocket crates (ws-registry, ws-redis) |
+| `runtime-sdk-ffi` | `libs/runtime/sdk` | FFI binding crates for Java/.NET. A release triggers the downstream Java/.NET SDK build and publish. |
+| `runtime-sdk-node` | `libs/runtime/sdk/node` | Node.js runtime SDK bindings |
+| `runtime-sdk-python` | `libs/runtime/sdk/python` | Python runtime SDK bindings |
+| `runtime-nodejs` | `apps/runtime/nodejs` | Node.js runtime wrapper application (Docker image published to GHCR) |
+| `runtime-python` | `apps/runtime/python` | Python runtime wrapper application (Docker image published to GHCR) |
+
+For details on how commit scopes map to component groups, see the [commit guidelines](./COMMIT_GUIDELINES.md#how-commit-scopes-relate-to-releases).
 
 ## Release workflow
 
-This current iteration of the release workflow needs to be carried out for each key component individually.
-The reason releases should be carried out individually is to ensure the neccessary level of care is taken when making new releases. Automating the workflow to automatically publish all the changed packages and applications across Celerity would make it hard to track and review the changes made to each individually versioned key component, therefore leading to an increased likelihood of error-prone releases.
+Releases are managed automatically by release-please. Each component gets its own release PR, providing individual review and control over each release.
 
-1. Ensure all relevant changes have been merged (rebased) into the trunk (main).
-2. Create a new release branch for `release/{app_or_package}-MAJOR.MINOR.PATCH` (e.g. `release/blueprint-0.1.1`) with the approximate next version. (This branch is short-lived so it is not crucial to get the version 100% correct)
-3. Push the release branch and this will trigger a GitHub actions workflow that will determine the actual version from commits and update the change log for the target application or library.
-4. The automated workflow from step 3 will create a PR that generates a preliminary set of release notes. Review and edit the release notes accordingly and then rebase the PR into main. (These release notes will be used in a further automated release publishing step)
-5. Rebasing the PR into main will trigger the process of creating the tag and release in GitHub along with building and publishing artifacts for the libraries and applications of the target key component.
+1. Merge changes into the trunk (main) using [conventional commits](./COMMIT_GUIDELINES.md).
+2. Release-please automatically creates a release PR for each affected component. The PR includes a generated changelog based on commits since the last release.
+3. Review and edit the release PR notes as needed.
+4. Merge the release PR into main. This triggers:
+   - A git tag in the format `{component}/v{version}` is created by release-please
+   - The `post-process-tags` job runs and:
+     - For **Go components only**: creates an additional path-based tag (`{path}/v{version}`), re-associates the GitHub release with it, and indexes the module with the Go module proxy
+     - For components with release workflows: dispatches the component-specific release workflow via `workflow_dispatch` to build and publish artifacts
+
+### Release configuration
+
+- `release-please-config.json` — Defines the component groups, their paths, and release types
+- `.release-please-manifest.json` — Tracks the current version of each component
+- `.github/workflows/release-please.yml` — Orchestrates the release-please process and post-processing

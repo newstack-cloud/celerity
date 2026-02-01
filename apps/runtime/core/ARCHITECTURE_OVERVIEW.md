@@ -1,5 +1,7 @@
 # Architecture Overview
 
+**_Coming soon as a part of Celerity v1_**
+
 The core runtime is an application that acts as a HTTP server, WebSocket server and a message queue consumer. It is responsible for processing incoming requests and messages/events; it then tags and stores them to be retrieved by the handlers executable that is then responsible for routing requests or messages to the appropriate handlers defined by developers.
 
 The core runtime is a Rust application that interacts with handlers by exposing a HTTP API. This means that it doesn't matter what language the handlers are written in, as long as they can be executed and communicate with the local runtime API over HTTP.
