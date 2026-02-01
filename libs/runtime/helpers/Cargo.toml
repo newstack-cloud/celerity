@@ -22,7 +22,7 @@ redis = { version = "0.32.5", features = [
     "aio",
     "cluster-async",
 ] }
-rand = "0.8.5"
+rand = "0.9.2"
 
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
