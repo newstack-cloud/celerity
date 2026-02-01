@@ -8,4 +8,4 @@ edition = "2021"
 oo-bindgen = "0.8.8"
 celerity_runtime_bindgen_schema = { path = "../bindgen-schema" }
 tracing = "0.1"
-tracing-subscriber = "0.2"
+tracing-subscriber = "0.3"
