@@ -52,7 +52,10 @@ resources:
     let config = result.unwrap();
     assert_eq!(config.resources.len(), 1);
 
-    let vpc_resource = config.resources.get("myVpc").expect("VPC resource not found");
+    let vpc_resource = config
+        .resources
+        .get("myVpc")
+        .expect("VPC resource not found");
     assert_eq!(vpc_resource.metadata.display_name, "My VPC");
 
     if let CelerityResourceSpec::Vpc(vpc_spec) = &vpc_resource.spec {
@@ -268,9 +271,10 @@ resources:
     "#;
 
     let env = MockEnvVars {
-        vars: Arc::new(HashMap::from([
-            ("CELERITY_VARIABLE_vpcName".to_string(), "my-dynamic-vpc".to_string()),
-        ])),
+        vars: Arc::new(HashMap::from([(
+            "CELERITY_VARIABLE_vpcName".to_string(),
+            "my-dynamic-vpc".to_string(),
+        )])),
     };
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(env));
     assert!(result.is_ok(), "Failed to parse VPC: {:?}", result.err());
@@ -304,9 +308,10 @@ resources:
     "#;
 
     let env = MockEnvVars {
-        vars: Arc::new(HashMap::from([
-            ("CELERITY_VARIABLE_vpcPreset".to_string(), "isolated".to_string()),
-        ])),
+        vars: Arc::new(HashMap::from([(
+            "CELERITY_VARIABLE_vpcPreset".to_string(),
+            "isolated".to_string(),
+        )])),
     };
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(env));
     assert!(result.is_ok(), "Failed to parse VPC: {:?}", result.err());

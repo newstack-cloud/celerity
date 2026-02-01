@@ -21,11 +21,10 @@ use crate::{
         CelerityApiSpecWithSubs, CelerityBucketSpecWithSubs, CelerityConfigSpecWithSubs,
         CelerityConsumerSpecWithSubs, CelerityDatastoreSpecWithSubs, CelerityHandlerSpecWithSubs,
         CelerityQueueSpecWithSubs, CelerityResourceSpecWithSubs, CelerityScheduleSpecWithSubs,
-        CelerityTopicSpecWithSubs, CelerityVpcSpecWithSubs, DatastoreFieldSchemaWithSubs,
+        CelerityTopicSpecWithSubs, CelerityVpcSpecWithSubs, DataStreamSourceConfigurationWithSubs,
+        DatabaseStreamSourceConfigurationWithSubs, DatastoreFieldSchemaWithSubs,
         DatastoreIndexWithSubs, DatastoreKeysWithSubs, DatastoreTimeToLiveWithSubs,
-        DataStreamSourceConfigurationWithSubs,
-        DatabaseStreamSourceConfigurationWithSubs, EventSourceConfigurationWithSubs,
-        ExternalEventConfigurationWithSubs, MappingNode,
+        EventSourceConfigurationWithSubs, ExternalEventConfigurationWithSubs, MappingNode,
         ObjectStorageEventSourceConfigurationWithSubs, RuntimeBlueprintResourceWithSubs,
         SharedHandlerConfigWithSubs, StringOrSubstitution, StringOrSubstitutions,
         ValueSourceConfigurationWithSubs,
@@ -2017,9 +2016,7 @@ fn parse_datastore_field_schema(
     }
 
     let field_type = field_type.ok_or_else(|| {
-        BlueprintParseError::YamlFormatError(
-            "Schema field requires 'type' field".to_string(),
-        )
+        BlueprintParseError::YamlFormatError("Schema field requires 'type' field".to_string())
     })?;
 
     Ok(DatastoreFieldSchemaWithSubs {
@@ -2111,9 +2108,9 @@ fn parse_datastore_ttl(
                     if let yaml_rust2::Yaml::Boolean(bool_val) = value {
                         enabled = Some(MappingNode::Scalar(BlueprintScalarValue::Bool(*bool_val)));
                     } else if let yaml_rust2::Yaml::String(bool_str) = value {
-                        enabled = Some(MappingNode::SubstitutionStr(
-                            validate_single_substitution(bool_str, "boolean")?,
-                        ));
+                        enabled = Some(MappingNode::SubstitutionStr(validate_single_substitution(
+                            bool_str, "boolean",
+                        )?));
                     } else {
                         return Err(BlueprintParseError::YamlFormatError(
                             "TTL enabled must be a boolean".to_string(),

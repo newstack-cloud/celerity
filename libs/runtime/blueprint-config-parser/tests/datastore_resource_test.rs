@@ -48,7 +48,11 @@ resources:
     "#;
 
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(MockEnvVars::new()));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     assert_eq!(config.resources.len(), 1);
@@ -87,7 +91,11 @@ resources:
     "#;
 
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(MockEnvVars::new()));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     let datastore_resource = config.resources.get("eventStore").unwrap();
@@ -122,7 +130,10 @@ resources:
     let datastore_resource = config.resources.get("namedStore").unwrap();
 
     if let CelerityResourceSpec::Datastore(datastore_spec) = &datastore_resource.spec {
-        assert_eq!(datastore_spec.name, Some("production-datastore".to_string()));
+        assert_eq!(
+            datastore_spec.name,
+            Some("production-datastore".to_string())
+        );
     } else {
         panic!("Expected Datastore resource spec");
     }
@@ -155,7 +166,11 @@ resources:
     "#;
 
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(MockEnvVars::new()));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     let datastore_resource = config.resources.get("userStore").unwrap();
@@ -215,7 +230,11 @@ resources:
     "#;
 
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(MockEnvVars::new()));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     let datastore_resource = config.resources.get("profileStore").unwrap();
@@ -261,7 +280,11 @@ resources:
     "#;
 
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(MockEnvVars::new()));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     let datastore_resource = config.resources.get("tagStore").unwrap();
@@ -299,7 +322,11 @@ resources:
     "#;
 
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(MockEnvVars::new()));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     let datastore_resource = config.resources.get("userStore").unwrap();
@@ -338,16 +365,17 @@ resources:
     "#;
 
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(MockEnvVars::new()));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     let datastore_resource = config.resources.get("sessionStore").unwrap();
 
     if let CelerityResourceSpec::Datastore(datastore_spec) = &datastore_resource.spec {
-        let ttl = datastore_spec
-            .time_to_live
-            .as_ref()
-            .expect("TTL not found");
+        let ttl = datastore_spec.time_to_live.as_ref().expect("TTL not found");
         assert_eq!(ttl.field_name, "expiresAt");
         assert_eq!(ttl.enabled, true);
     } else {
@@ -388,7 +416,11 @@ resources:
     "#;
 
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(MockEnvVars::new()));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     let datastore_resource = config.resources.get("completeStore").unwrap();
@@ -509,22 +541,29 @@ resources:
 
     let env = MockEnvVars {
         vars: Arc::new(HashMap::from([
-            ("CELERITY_VARIABLE_partKey".to_string(), "userId".to_string()),
-            ("CELERITY_VARIABLE_sortKeyField".to_string(), "timestamp".to_string()),
+            (
+                "CELERITY_VARIABLE_partKey".to_string(),
+                "userId".to_string(),
+            ),
+            (
+                "CELERITY_VARIABLE_sortKeyField".to_string(),
+                "timestamp".to_string(),
+            ),
         ])),
     };
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(env));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     let datastore_resource = config.resources.get("dynamicStore").unwrap();
 
     if let CelerityResourceSpec::Datastore(datastore_spec) = &datastore_resource.spec {
         assert_eq!(datastore_spec.keys.partition_key, "userId");
-        assert_eq!(
-            datastore_spec.keys.sort_key,
-            Some("timestamp".to_string())
-        );
+        assert_eq!(datastore_spec.keys.sort_key, Some("timestamp".to_string()));
     } else {
         panic!("Expected Datastore resource spec");
     }
@@ -550,21 +589,23 @@ resources:
     "#;
 
     let env = MockEnvVars {
-        vars: Arc::new(HashMap::from([
-            ("CELERITY_VARIABLE_storeName".to_string(), "production-store".to_string()),
-        ])),
+        vars: Arc::new(HashMap::from([(
+            "CELERITY_VARIABLE_storeName".to_string(),
+            "production-store".to_string(),
+        )])),
     };
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(env));
-    assert!(result.is_ok(), "Failed to parse datastore: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "Failed to parse datastore: {:?}",
+        result.err()
+    );
 
     let config = result.unwrap();
     let datastore_resource = config.resources.get("dynamicStore").unwrap();
 
     if let CelerityResourceSpec::Datastore(datastore_spec) = &datastore_resource.spec {
-        assert_eq!(
-            datastore_spec.name,
-            Some("production-store".to_string())
-        );
+        assert_eq!(datastore_spec.name, Some("production-store".to_string()));
     } else {
         panic!("Expected Datastore resource spec");
     }
