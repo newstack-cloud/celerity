@@ -292,7 +292,7 @@ jobs:
         shell: bash
         run: dotnet nuget push $(find artifacts/dotnet-bindings/celerity*.nupkg) -s https://api.nuget.org/v3/index.json -k ${{ secrets.CELERITY_NUGET_KEY }}
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           draft: true
           files: |
