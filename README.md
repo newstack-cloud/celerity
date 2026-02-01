@@ -12,9 +12,7 @@ The backend toolkit that gets you moving fast
 
 The Celerity CLI brings all the components of Celerity together. It is a command line tool that can be used to create, build, deploy and manage Celerity applications.
 
-Under the hood, the CLI uses [Bluelink](https://bluelink.dev) to parse and validate blueprints, along with [OpenTofu](https://opentofu.org/) to plan and deploy applications to target environments.
-
-_For future versions, Bluelink will become the default deploy engine once it has all the integrations required to support Celerity applications._
+Under the hood, the CLI uses [Bluelink](https://bluelink.dev) to parse and validate blueprints along with managing the deployment life cycle of the underlying resources that power Celerity applications.
 
 [CLI](./apps/cli)
 
@@ -29,7 +27,7 @@ The Celerity runtime supports multiple programming languages.
 
 _"FaaS" stands for Function as a Service._
 
-[Supported Runtimes](./apps/runtime)
+[Supported Runtimes](./apps/runtime/)
 
 # Additional Documentation
 
