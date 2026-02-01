@@ -12,13 +12,6 @@ impl MockEnvVars {
             vars: Arc::new(HashMap::new()),
         }
     }
-
-    fn with_var(mut self, key: &str, value: &str) -> Self {
-        let mut vars = (*self.vars).clone();
-        vars.insert(key.to_string(), value.to_string());
-        self.vars = Arc::new(vars);
-        self
-    }
 }
 
 impl EnvVars for MockEnvVars {
