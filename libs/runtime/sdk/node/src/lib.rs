@@ -1,7 +1,7 @@
 #![deny(clippy::all)]
 #![allow(unexpected_cfgs)]
 
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use axum::{
   body::{Body, Bytes},
@@ -18,18 +18,15 @@ use celerity_runtime_core::{
     ApiConfig, AppConfig, HttpConfig, HttpHandlerDefinition, RuntimeConfig, WebSocketConfig,
   },
 };
-use napi::{
-  bindgen_prelude::*,
-  threadsafe_function::{
-    ErrorStrategy::{self},
-    ThreadSafeCallContext, ThreadsafeFunction,
-  },
-};
+use napi::bindgen_prelude::*;
+use napi::threadsafe_function::ThreadsafeFunction;
+use napi_derive::napi;
 use serde::{Deserialize, Serialize};
 use tokio::time;
 
-#[macro_use]
-extern crate napi_derive;
+/// A weak ThreadsafeFunction that does not prevent the Node.js event loop from exiting.
+type WeakTsfn =
+  ThreadsafeFunction<JsRequestWrapper, Promise<Response>, JsRequestWrapper, Status, true, true>;
 
 #[napi(object)]
 pub struct CoreRuntimeConfig {
@@ -258,7 +255,7 @@ impl JsRequestWrapper {
 #[napi]
 pub struct CoreRuntimeApplication {
   inner: Application,
-  tsfn_cache: Vec<ThreadsafeFunction<JsRequestWrapper, ErrorStrategy::CalleeHandled>>,
+  tsfn_cache: Vec<Arc<WeakTsfn>>,
 }
 
 #[napi]
@@ -308,28 +305,28 @@ impl CoreRuntimeApplication {
     path: String,
     method: String,
     #[napi(ts_arg_type = "(err: Error | null, request: Request) => Promise<Response>")]
-    handler: JsFunction,
+    handler: WeakTsfn,
   ) -> Result<()> {
-    let tsfn: ThreadsafeFunction<JsRequestWrapper, ErrorStrategy::CalleeHandled> = handler
-      .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<JsRequestWrapper>| {
-        Ok(vec![ctx.value])
-      })?;
+    let tsfn = Arc::new(handler);
     self.tsfn_cache.push(tsfn.clone());
 
-    let handler = |req| async move {
-      let js_req_wrapper = JsRequestWrapper::from_axum_req(req);
-      let promise = tsfn
-        .call_async::<Promise<Response>>(Ok(js_req_wrapper))
-        .await
-        .map_err(|err| HandlerError::new(err.to_string()))?;
-      // TODO: make the timeout configurable based on handler configuration.
-      let sleep = time::sleep(Duration::from_secs(30));
-      tokio::select! {
-        _ = sleep => {
-          Err(HandlerError::new("handler timed out".to_string()))
-        }
-        value = promise => {
-          Ok::<Response, HandlerError>(value.map_err(|err| HandlerError::new(err.to_string()))?)
+    let handler = move |req| {
+      let tsfn = tsfn.clone();
+      async move {
+        let js_req_wrapper = JsRequestWrapper::from_axum_req(req);
+        let promise = tsfn
+          .call_async(Ok(js_req_wrapper))
+          .await
+          .map_err(|err| HandlerError::new(err.to_string()))?;
+        // TODO: make the timeout configurable based on handler configuration.
+        let sleep = time::sleep(Duration::from_secs(30));
+        tokio::select! {
+          _ = sleep => {
+            Err(HandlerError::new("handler timed out".to_string()))
+          }
+          value = promise => {
+            Ok::<Response, HandlerError>(value.map_err(|err| HandlerError::new(err.to_string()))?)
+          }
         }
       }
     };
@@ -350,11 +347,9 @@ impl CoreRuntimeApplication {
   }
 
   #[napi]
-  pub fn shutdown(&mut self, env: Env) -> Result<()> {
+  pub fn shutdown(&mut self) -> Result<()> {
     self.inner.shutdown();
-    for mut tsfn in self.tsfn_cache.drain(..) {
-      tsfn.unref(&env)?;
-    }
+    self.tsfn_cache.clear();
     Ok(())
   }
 }

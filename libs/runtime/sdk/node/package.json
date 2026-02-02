@@ -4,24 +4,22 @@
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
-    "name": "runtime",
-    "triples": {
-      "additional": [
-        "aarch64-apple-darwin",
-        "aarch64-unknown-linux-gnu",
-        "aarch64-unknown-linux-musl",
-        "aarch64-pc-windows-msvc",
-        "x86_64-apple-darwin",
-        "x86_64-pc-windows-msvc",
-        "x86_64-unknown-linux-gnu",
-        "x86_64-unknown-linux-musl",
-        "x86_64-unknown-freebsd"
-      ]
-    }
+    "binaryName": "runtime",
+    "targets": [
+      "aarch64-apple-darwin",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-musl",
+      "aarch64-pc-windows-msvc",
+      "x86_64-apple-darwin",
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "x86_64-unknown-freebsd"
+    ]
   },
   "license": "Apache-2.0",
   "devDependencies": {
-    "@napi-rs/cli": "^3.0.0-alpha.92",
+    "@napi-rs/cli": "^3.0.0",
     "ava": "^6.0.1",
     "supertest": "^7.0.0"
   },
@@ -37,7 +35,7 @@
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "test": "dotenvx run -f .env.test -- ava -s",
-    "universal": "napi universal",
+    "universal": "napi universalize",
     "version": "napi version"
   },
   "dependencies": {
