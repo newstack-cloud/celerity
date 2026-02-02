@@ -352,20 +352,15 @@ impl PyRequestBuilder {
 }
 
 #[pyclass(eq, eq_int, name = "HttpProtocolVersion")]
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Default)]
 pub enum HttpProtocolVersion {
   #[pyo3(name = "HTTP1_1")]
+  #[default]
   Http1_1,
   #[pyo3(name = "HTTP2")]
   Http2,
   #[pyo3(name = "HTTP3")]
   Http3,
-}
-
-impl Default for HttpProtocolVersion {
-  fn default() -> Self {
-    Self::Http1_1
-  }
 }
 
 impl From<CoreHttpProtocolVersion> for HttpProtocolVersion {

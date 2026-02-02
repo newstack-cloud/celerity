@@ -145,20 +145,15 @@ impl WSBindingMessageHandler {
 }
 
 #[pyclass(eq, eq_int, name = "WebSocketEventType")]
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Default)]
 pub enum WSBindingEventType {
   #[pyo3(name = "CONNECT")]
   Connect,
   #[pyo3(name = "MESSAGE")]
+  #[default]
   Message,
   #[pyo3(name = "DISCONNECT")]
   Disconnect,
-}
-
-impl Default for WSBindingEventType {
-  fn default() -> Self {
-    Self::Message
-  }
 }
 
 impl From<WebSocketEventType> for WSBindingEventType {
@@ -487,18 +482,13 @@ impl WSBindingSendContext {
 }
 
 #[pyclass(name = "WebSocketMessageType")]
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Default)]
 pub enum WSBindingMessageType {
   #[pyo3(name = "JSON")]
+  #[default]
   Json,
   #[pyo3(name = "BINARY")]
   Binary,
-}
-
-impl Default for WSBindingMessageType {
-  fn default() -> Self {
-    Self::Json
-  }
 }
 
 impl From<WSBindingMessageType> for MessageType {
