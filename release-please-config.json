@@ -42,7 +42,18 @@
     "libs/runtime/sdk/node": {
       "release-type": "node",
       "component": "runtime-sdk-node",
-      "package-name": "@celerity-sdk/runtime"
+      "package-name": "@celerity-sdk/runtime",
+      "extra-files": [
+        "npm/darwin-arm64/package.json",
+        "npm/darwin-x64/package.json",
+        "npm/freebsd-x64/package.json",
+        "npm/linux-arm64-gnu/package.json",
+        "npm/linux-arm64-musl/package.json",
+        "npm/linux-x64-gnu/package.json",
+        "npm/linux-x64-musl/package.json",
+        "npm/win32-arm64-msvc/package.json",
+        "npm/win32-x64-msvc/package.json"
+      ]
     },
     "libs/runtime/sdk/python": {
       "release-type": "python",

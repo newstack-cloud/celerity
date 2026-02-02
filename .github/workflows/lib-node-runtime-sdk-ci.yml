@@ -65,7 +65,9 @@ jobs:
             ~/.cargo/git/db/
             .cargo-cache
             target/
-          key: x86_64-unknown-linux-gnu-cargo-ubuntu-latest
+          key: x86_64-unknown-linux-gnu-cargo-${{ hashFiles('libs/runtime/Cargo.lock', 'libs/runtime/sdk/node/Cargo.toml') }}
+          restore-keys: |
+            x86_64-unknown-linux-gnu-cargo-
       - name: Install dependencies
         run: yarn install
       - name: Build
