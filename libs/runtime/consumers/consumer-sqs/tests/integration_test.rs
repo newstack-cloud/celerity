@@ -75,8 +75,7 @@ async fn test_receive_messages_and_fire_message_handler() {
     while i < 300 {
         tokio::select! {
             msg = rx.recv() => {
-                if msg.is_some() {
-                    let unwrapped = msg.unwrap();
+                if let Some(unwrapped) = msg {
                     collected_messages.push(unwrapped);
                 }
             },
