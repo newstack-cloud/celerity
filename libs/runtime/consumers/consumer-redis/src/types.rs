@@ -23,16 +23,11 @@ pub struct RedisMessageMetadata {
 /// Useful for determining how to parse the body of the message,
 /// binary messages are base64-encoded strings in the `Message` struct
 /// `body` field.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum RedisMessageType {
+    #[default]
     Text,
     Binary,
-}
-
-impl Default for RedisMessageType {
-    fn default() -> Self {
-        Self::Text
-    }
 }
 
 impl From<u64> for RedisMessageType {

@@ -414,8 +414,7 @@ async fn assert_messages_received(
     while i < expected_message_count {
         tokio::select! {
             msg = rx.recv() => {
-                if msg.is_some() {
-                    let unwrapped = msg.unwrap();
+                if let Some(unwrapped) = msg {
                     collected_messages.push(unwrapped);
                 }
             }
