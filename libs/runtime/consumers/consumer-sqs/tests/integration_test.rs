@@ -38,7 +38,7 @@ async fn test_receive_messages_and_fire_message_handler() {
             // Set up a completely different SQS client for sending messages completely
             // decouple the sender from the consumer.
             let region_provider = RegionProvider::new(consumer_config.aws_region.clone());
-            let config = aws_config::defaults(BehaviorVersion::v2025_01_17())
+            let config = aws_config::defaults(BehaviorVersion::v2026_01_12())
                 .region(region_provider)
                 .load()
                 .await;
@@ -63,7 +63,7 @@ async fn test_receive_messages_and_fire_message_handler() {
                     .message_group_id("TestMessageGroup")
                     .send()
                     .await;
-                async_std::task::sleep(Duration::from_millis(20)).await;
+                tokio::time::sleep(Duration::from_millis(20)).await;
             }
         }
     });
@@ -125,7 +125,7 @@ async fn start_consumer(
     tx: Arc<Sender<Message<SQSMessageMetadata>>>,
 ) -> Result<(), WorkerError> {
     let region_provider = RegionProvider::new(consumer_config.aws_region.clone());
-    let config = aws_config::defaults(BehaviorVersion::v2025_01_17())
+    let config = aws_config::defaults(BehaviorVersion::v2026_01_12())
         .region(region_provider)
         .load()
         .await;

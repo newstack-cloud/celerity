@@ -3,6 +3,7 @@ name = "celerity_ws_registry"
 description = "Websocket connection registry for the Celerity runtime"
 version = "0.1.0"
 edition = "2021"
+license.workspace = true
 
 [dependencies]
 serde = { version = "1.0.204", features = ["derive"] }

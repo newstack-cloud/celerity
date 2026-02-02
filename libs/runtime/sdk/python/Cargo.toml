@@ -2,6 +2,7 @@
 name = "celerity-python-runtime-sdk"
 version = "0.1.0"
 edition = "2021"
+license.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
@@ -25,7 +26,7 @@ serde = "1.0.204"
 serde_json = "1.0.122"
 tracing = "0.1.40"
 tracing-core = "0.1.32"
-tracing-subscriber = { version = "0.3.18", features = ["chrono", "json"] }
+tracing-subscriber = { version = "0.3.20", features = ["chrono", "json"] }
 async-trait = "0.1.88"
 pythonize = "0.25.0"
 chrono = "0.4.41"

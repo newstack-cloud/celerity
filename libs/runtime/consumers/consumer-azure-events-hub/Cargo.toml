@@ -2,6 +2,7 @@
 name = "celerity_consumer_azure_events_hub"
 version = "0.1.0"
 edition = "2021"
+license.workspace = true
 
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }

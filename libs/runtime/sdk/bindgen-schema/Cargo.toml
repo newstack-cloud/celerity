@@ -2,6 +2,7 @@
 name = "celerity_runtime_bindgen_schema"
 version = "0.1.0"
 edition = "2021"
+license.workspace = true
 
 [dependencies]
 oo-bindgen = "0.8.8"

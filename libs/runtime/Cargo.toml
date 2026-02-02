@@ -1,5 +1,4 @@
 [workspace]
-
 members = [
     "core",
     "workflow",
@@ -23,3 +22,6 @@ members = [
     "ws/ws-registry",
     "ws/ws-redis",
 ]
+
+[workspace.package]
+license = "Apache-2.0"

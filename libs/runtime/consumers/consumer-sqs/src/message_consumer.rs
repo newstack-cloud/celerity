@@ -4,7 +4,7 @@ use crate::{
     types::{FromSQSMessage, MessageHandle, SQSMessageMetadata, ToSQSMessageHandle},
     visibility_timeout::VisibilityTimeoutExtender,
 };
-use async_std::task;
+use tokio::time;
 use async_trait::async_trait;
 use aws_sdk_sqs::{
     error::SdkError,
@@ -220,7 +220,7 @@ impl SQSMessageConsumer {
                 }
 
                 if current_polling_wait_time_ms > 0 {
-                    task::sleep(Duration::from_millis(current_polling_wait_time_ms)).await;
+                    time::sleep(Duration::from_millis(current_polling_wait_time_ms)).await;
                 }
             }
         }

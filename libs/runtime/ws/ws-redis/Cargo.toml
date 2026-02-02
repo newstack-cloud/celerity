@@ -3,6 +3,7 @@ name = "celerity_ws_redis"
 description = "Redis multi-node pub/sub implementation compatible with celerity_ws_registry"
 version = "0.1.0"
 edition = "2021"
+license.workspace = true
 
 [dependencies]
 serde = { version = "1.0.204", features = ["derive"] }
