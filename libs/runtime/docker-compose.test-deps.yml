@@ -13,7 +13,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
   valkey:
     container_name: "valkey_celerity_runtime_tests"
-    image: bitnami/valkey:8.1.3
+    image: bitnamilegacy/valkey:8.1.3
     ports:
       - "6379:6379"
     environment:
