@@ -21,3 +21,6 @@ coverage.lcov
 ffi-modules
 
 *.log
+
+# Python virtual environment
+.venv/

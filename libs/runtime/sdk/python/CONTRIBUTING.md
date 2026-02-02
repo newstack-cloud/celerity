@@ -5,14 +5,14 @@
 - [Rust](https://www.rust-lang.org/tools/install) >=1.76.0
 - Clippy (`rustup component add clippy`)
 - [Cargo workspaces](https://crates.io/crates/cargo-workspaces) >=0.3.2 - tool to managing multiple rust crates in a single repository
-- [Pipenv](https://pypi.org/project/pipenv/) >=2022.8.5 - Python package manager for test harness
+- [uv](https://docs.astral.sh/uv/) >=0.5 - Python package and project manager for test harness
 
 ## Installation
 
-Test harness dependencies need to be installed with pipenv:
+Test harness dependencies need to be installed with uv:
 
 ```bash
-pipenv install -d
+uv sync --group dev
 ```
 
 ## Running tests

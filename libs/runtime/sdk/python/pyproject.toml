@@ -12,6 +12,16 @@ classifiers = [
 ]
 dynamic = ["version"]
 
+[dependency-groups]
+dev = [
+    "pytest",
+    "maturin>=1.7,<2.0",
+    "requests",
+    "types-requests",
+    "websocket-client",
+    "python-dotenv",
+]
+
 [tool.maturin]
 python-source = "python"
 module-name = "celerity_runtime_sdk._celerity_runtime_sdk"

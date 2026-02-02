@@ -5,7 +5,7 @@
 - [Rust](https://www.rust-lang.org/tools/install) >=1.76.0
 - Clippy (`rustup component add clippy`)
 - [Cargo workspaces](https://crates.io/crates/cargo-workspaces) >=0.3.2 - tool to managing multiple rust crates in a single repository
-- [Pipenv](https://pypi.org/project/pipenv/) >=2022.8.5 - Python package manager for integration test harness
+- [uv](https://docs.astral.sh/uv/) >=0.5 - Python package and project manager for integration test harness
 - Docker Engine >=25.0.3 - For running integration test dependencies (Comes with Docker Desktop)
 - Docker Compose >=2.24.6 - For running integration test dependencies (Comes with Docker Desktop)
 - [cargo-llvm-cov](https://crates.io/crates/cargo-llvm-cov) >=0.6.11 - For generating code coverage reports
@@ -20,14 +20,12 @@ run tests.
 
 ### Integration Test Harness Setup
 
-This project uses a virtual environment managed by pipenv for running integration tests.
+This project uses a virtual environment managed by uv for running integration tests.
 
 Run the following to install dependencies:
 
 ```bash
-pipenv install
-# dev dependencies
-pipenv install -d
+uv sync --group dev
 ```
 
 ### Install cargo-llvm-cov on your machine
@@ -48,18 +46,18 @@ cargo install cargo-insta
 
 ### VSCode settings (Skip if not using VSCode)
 
-Copy `.vscode/settings.json.example` to `.vscode/settings.json` and set `python.defaultInterpreterPath` to the absolute path of python in the virtualenv created by pipenv for running integration tests.
+Copy `.vscode/settings.json.example` to `.vscode/settings.json` and set `python.defaultInterpreterPath` to the absolute path of python in the virtual environment created by uv (`.venv/` within the project directory).
 
 ## Running tests
 
 ```bash
-PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps
+uv run python scripts/package-test-tools.py --localdeps
 ```
 
 ### Running tests for a specific package
 
 ```bash
-PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps --package <package_name>
+uv run python scripts/package-test-tools.py --localdeps --package <package_name>
 ```
 
 Where <package_name> is the name of the package you want to run the tests for (e.g. `celerity_consumer_redis`).
@@ -70,7 +68,7 @@ The output of the tests is a lot when running the full test suite with debug log
 To redirect the output to a log file, you can run the following command:
 
 ```bash
-PIPENV_DOTENV_LOCATION=.env.test pipenv run python scripts/package-test-tools.py --localdeps > test-output.log 2>&1
+uv run python scripts/package-test-tools.py --localdeps > test-output.log 2>&1
 ```
 
 And then to gracefully kill the test suite if it is running infinitely due to a test hanging or an issue you are debugging, you can run the following command:
@@ -92,11 +90,11 @@ cargo insta review
 
 ## Test harness dependencies
 
-Every time the dependencies in the Pipfile or Pipfile.lock are updated, the test harness `requirements.txt` file must be updated to reflect these changes.
-This is because Pipenv is not used in the CI environments.
+Dependencies are declared in `pyproject.toml` and locked in `uv.lock`.
+After modifying dependencies in `pyproject.toml`, run:
 
 ```bash
-pipenv requirements > requirements.txt
+uv lock
 ```
 
 ## SDK Generation and Testing (Java and C#)

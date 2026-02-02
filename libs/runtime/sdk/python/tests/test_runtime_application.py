@@ -113,13 +113,8 @@ def runtime_server(command_args: List[str]):
 
 @pytest.fixture(name="command_args", scope="session")
 def fixture_command_args() -> List[str]:
-    if os.getenv("GITHUB_ACTIONS"):
-        return [
-            "python",
-            "tests/server.py",
-        ]
     return [
-        "pipenv",
+        "uv",
         "run",
         "python",
         "tests/server.py",

@@ -1,0 +1,20 @@
+[project]
+name = "celerity-runtime-test-harness"
+version = "0.0.0"
+description = "Integration test harness for Celerity runtime packages"
+requires-python = ">=3.10"
+dependencies = [
+    "boto3",
+    "boto3-type-annotations",
+    "aws-xray-sdk",
+    "nanoid",
+    "python-dotenv",
+    "click",
+]
+
+[dependency-groups]
+dev = [
+    "pylint",
+    "autopep8",
+    "mypy",
+]
