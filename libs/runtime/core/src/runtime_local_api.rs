@@ -325,6 +325,7 @@ pub struct LocalRuntimeScheduleHandlerConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(dead_code)]
 pub struct LocalRuntimeEventsConfig {
     handlers: Vec<LocalRuntimeEventHandlerConfig>,
 }
