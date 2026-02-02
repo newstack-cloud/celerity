@@ -20,8 +20,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@napi-rs/cli": "^3.0.0",
-    "ava": "^6.0.1",
-    "supertest": "^7.0.0"
+    "ava": "^6.4.1",
+    "supertest": "^7.2.2"
   },
   "ava": {
     "timeout": "3m"
@@ -39,6 +39,6 @@
     "version": "napi version"
   },
   "dependencies": {
-    "@dotenvx/dotenvx": "^1.45.2"
+    "@dotenvx/dotenvx": "^1.52.0"
   }
 }
