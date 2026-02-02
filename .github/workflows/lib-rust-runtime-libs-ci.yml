@@ -29,13 +29,15 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Use Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip' # caching pip dependencies
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
       # Python dependencies are required to run test service_test_tools.py script
       # that runs the integration tests.
-      - run: pip install -r requirements.txt
+      - name: Install Python dependencies
+        run: uv sync --group dev
         working-directory: ${{env.working-directory}}
       - name: Linting
         run: ./scripts/lint.sh
@@ -45,7 +47,7 @@ jobs:
           set -o allexport
           source .env.test
           set +o allexport
-          python scripts/package-test-tools.py --localdeps
+          uv run python scripts/package-test-tools.py --localdeps
         working-directory: ${{env.working-directory}}
         env:
           # provide mock AWS credentials, this is fine as long as the integration tests
