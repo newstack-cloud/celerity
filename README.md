@@ -6,6 +6,8 @@ The backend toolkit that gets you moving fast
 - [Architecture Overview](./ARCHITECTURE_OVERVIEW.md)
 - [Docs Site](https://celerityframework.io)
 
+Celerity lets you write your application code once and deploy it to any cloud provider — or on-premises — without modification. Your handlers and application logic stay the same whether you target AWS, Google Cloud, Azure, or a self-hosted environment; Celerity takes care of the mapping between your application and the underlying platform.
+
 # Components of Celerity
 
 ## CLI
@@ -18,10 +20,11 @@ Under the hood, the CLI uses [Bluelink](https://bluelink.dev) to parse and valid
 
 ## Runtime
 
-One of the main ideas behind Celerity is to remove the need to build applications differently depending on the target environment. This means that you can develop and test your applications locally, and then deploy them to a serverless or containerised environment without having to make any changes to the application code.
-You could say containers is the answer, however, when opting for this approach, you sacrifice a lot of the powerful tools that come with managed services built around FaaS. Celerity leverages the power of FaaS, managed services such as API Gateways and event buses where possible instead of bundling containerised application into cloud functions.
+One of the main ideas behind Celerity is to remove the need to build applications differently depending on the target environment. You can develop and test your applications locally and then deploy them to a serverless or containerised environment without changing your application code.
 
-The runtime allows you to run your Celerity applications in containerized/custom server environments. Celerity applications consist of a set of handlers and a declarative definition of the type of application that hosts these handlers. This approach is akin to the serverless model made popular by cloud providers with the likes of AWS Lambda and Google Cloud Functions. Celerity applications can run in FaaS-based serverless environments or in containerized/custom server environments, The runtime enables the latter.
+Containers alone could achieve this, but you would sacrifice the powerful managed services built around FaaS. Celerity leverages FaaS, API Gateways, event buses, and other managed services where possible instead of bundling containerised applications into cloud functions.
+
+Celerity applications consist of a set of handlers and a declarative blueprint that defines the type of application hosting them — an approach similar to the serverless model popularised by AWS Lambda and Google Cloud Functions. Applications can run in FaaS-based serverless environments or in containerised/custom server environments; the runtime enables the latter.
 
 The Celerity runtime supports multiple programming languages.
 
