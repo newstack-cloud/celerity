@@ -32,6 +32,7 @@ on:
       - '!**/*.gitignore'
       - '!.editorconfig'
       - '!docs/**'
+  workflow_dispatch: {}
 
 jobs:
   linting:
