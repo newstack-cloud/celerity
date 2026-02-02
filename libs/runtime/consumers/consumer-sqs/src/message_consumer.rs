@@ -4,7 +4,6 @@ use crate::{
     types::{FromSQSMessage, MessageHandle, SQSMessageMetadata, ToSQSMessageHandle},
     visibility_timeout::VisibilityTimeoutExtender,
 };
-use tokio::time;
 use async_trait::async_trait;
 use aws_sdk_sqs::{
     error::SdkError,
@@ -27,6 +26,7 @@ use opentelemetry::{
     trace::{SpanKind, TraceContextExt},
 };
 use std::{fmt::Debug, sync::Arc, time::Duration};
+use tokio::time;
 use tokio::time::{timeout, Instant};
 use tracing::{debug, error, field, info, info_span, instrument, Instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
