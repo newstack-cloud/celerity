@@ -13,23 +13,19 @@ This package provides the core components designed to be used in the Celerity ru
 This package provides a Rust parser for runtime-specific configuration represented by a subset of a Bluelink [blueprint](https://www.bluelink.dev/docs/blueprint/specification).
 This implementation is not an exact implementation of the blueprint specification and is designed to be used in the Celerity runtime with strong typing for Celerity-specific resource types.
 
-### [celerity_runtime_consumer_sqs](./consumer-sqs)
+### [celerity_consumer_sqs](./consumers/consumer-sqs)
 
 This package provides an Amazon SQS queue consumer implementation for the Celerity runtime.
 
-### [celerity_runtime_consumer_aqs](./consumer-aqs)
-
-This package provides an Azure Queue Storage consumer implementation for the Celerity runtime.
-
-### [celerity_runtime_consumer_google_pubsub](./consumer-google-pubsub)
+### [celerity_consumer_gcloud_pubsub](./consumers/consumer-gcloud-pubsub)
 
 This package provides a Google PubSub consumer implementation for the Celerity runtime.
 
-### [celerity_runtime_sdk_ffi](./sdk-ffi)
+### [celerity_runtime_bindgen_ffi](./sdk/bindgen-ffi)
 
 This package provides an FFI interface for the Celerity runtime SDKs.
 
-### [celerity_runtime_sdk_schema](./sdk-schema)
+### [celerity_runtime_bindgen_schema](./sdk/bindgen-schema)
 
 This package provides an [oo-bindgen](https://github.com/stepfunc/oo_bindgen) schema for generating Celerity runtime SDKs.
 
