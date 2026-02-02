@@ -12,9 +12,11 @@ Celerity lets you write your application code once and deploy it to any cloud pr
 
 ## CLI
 
-The Celerity CLI brings all the components of Celerity together. It is a command line tool that can be used to create, build, deploy and manage Celerity applications.
+The Celerity CLI brings all the components of Celerity together. It is a command line tool that can be used to develop, build, deploy and manage Celerity applications.
 
 Under the hood, the CLI uses [Bluelink](https://bluelink.dev) to parse and validate blueprints along with managing the deployment life cycle of the underlying resources that power Celerity applications.
+
+The CLI provides a smooth experience for local development and cloud development environments, including a built-in test harness that goes well beyond basic HTTP invocation. It can spin up databases, populate test fixtures in service emulators based on files placed in a conventions-based directory structure, and exercise the full range of application architectures — queues, event-driven workflows, WebSockets, and scheduled tasks, not just REST/HTTP APIs. This gives you high confidence that what works locally will work when deployed, without having to wire up your own testing infrastructure.
 
 [CLI](./apps/cli)
 
