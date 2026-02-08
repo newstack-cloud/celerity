@@ -36,7 +36,6 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             build: yarn build --target x86_64-unknown-linux-gnu
-            setup: sudo apt-get update && sudo apt-get install -y libssl-dev
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             build: yarn build --target x86_64-unknown-linux-musl -x
@@ -46,7 +45,6 @@ jobs:
           - host: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             build: yarn build --target aarch64-unknown-linux-gnu
-            setup: sudo apt-get update && sudo apt-get install -y libssl-dev
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             build: yarn build --target aarch64-unknown-linux-musl -x
@@ -181,8 +179,8 @@ jobs:
           - host: windows-latest
             target: x86_64-pc-windows-msvc
         node:
-          - '20'
           - '22'
+          - '24'
     runs-on: ${{ matrix.settings.host }}
     defaults:
       run:
@@ -225,8 +223,8 @@ jobs:
           - aarch64-unknown-linux-gnu
           - aarch64-unknown-linux-musl
         node:
-          - '20'
           - '22'
+          - '24'
     runs-on: ${{ contains(matrix.target, 'aarch64') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     defaults:
       run:
