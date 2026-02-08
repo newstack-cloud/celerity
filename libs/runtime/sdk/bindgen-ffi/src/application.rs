@@ -7,7 +7,7 @@ use celerity_helpers::{
 };
 use celerity_runtime_core::{
     application::Application as RuntimeApp,
-    config::RuntimeConfig,
+    config::{ClientIpSource, RuntimeConfig},
     errors::{ApplicationStartError, ConfigError},
 };
 use tokio::select;
@@ -55,6 +55,7 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 resource_store_verify_tls: true,
                 resource_store_cache_entry_ttl: 600,
                 resource_store_cleanup_interval: 3600,
+                client_ip_source: ClientIpSource::ConnectInfo,
             },
             Box::new(ProcessEnvVars::new()),
         ),
