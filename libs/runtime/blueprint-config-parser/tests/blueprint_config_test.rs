@@ -863,6 +863,102 @@ fn skips_parsing_resource_for_unsupported_resource_type_in_json_blueprint_config
 }
 
 #[test_log::test]
+fn parses_http_api_multi_guard_blueprint_config_from_yaml_file() {
+    let env = MockEnvVars {
+        vars: Arc::new(HashMap::from([
+            (
+                "CELERITY_VARIABLE_secretStoreId".to_string(),
+                "secret-store-id".to_string(),
+            ),
+            (
+                "CELERITY_VARIABLE_certificateId".to_string(),
+                "certificate-id".to_string(),
+            ),
+            (
+                "CELERITY_VARIABLE_logLevel".to_string(),
+                "DEBUG".to_string(),
+            ),
+        ])),
+    };
+    let blueprint_config = BlueprintConfig::from_yaml_file(
+        "tests/data/fixtures/http-api-multi-guard.yaml",
+        Box::new(env),
+    )
+    .unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
+
+#[test_log::test]
+fn parses_http_api_multi_guard_blueprint_config_from_jsonc_file() {
+    let env = MockEnvVars {
+        vars: Arc::new(HashMap::from([
+            (
+                "CELERITY_VARIABLE_secretStoreId".to_string(),
+                "secret-store-id".to_string(),
+            ),
+            (
+                "CELERITY_VARIABLE_certificateId".to_string(),
+                "certificate-id".to_string(),
+            ),
+            (
+                "CELERITY_VARIABLE_logLevel".to_string(),
+                "DEBUG".to_string(),
+            ),
+        ])),
+    };
+    let blueprint_config = BlueprintConfig::from_jsonc_file(
+        "tests/data/fixtures/http-api-multi-guard.jsonc",
+        Box::new(env),
+    )
+    .unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
+
+#[test_log::test]
+fn parses_websocket_api_multi_guard_blueprint_config_from_yaml_file() {
+    let env = MockEnvVars {
+        vars: Arc::new(HashMap::from([(
+            "CELERITY_VARIABLE_certificateId".to_string(),
+            "certificate-id".to_string(),
+        )])),
+    };
+    let blueprint_config = BlueprintConfig::from_yaml_file(
+        "tests/data/fixtures/websocket-api-multi-guard.yaml",
+        Box::new(env),
+    )
+    .unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
+
+#[test_log::test]
+fn parses_websocket_api_multi_guard_blueprint_config_from_jsonc_file() {
+    let env = MockEnvVars {
+        vars: Arc::new(HashMap::from([(
+            "CELERITY_VARIABLE_certificateId".to_string(),
+            "certificate-id".to_string(),
+        )])),
+    };
+    let blueprint_config = BlueprintConfig::from_jsonc_file(
+        "tests/data/fixtures/websocket-api-multi-guard.jsonc",
+        Box::new(env),
+    )
+    .unwrap();
+
+    with_settings!({sort_maps => true}, {
+        assert_json_snapshot!(blueprint_config);
+    })
+}
+
+#[test_log::test]
 fn produces_expected_error_for_invalid_resource_metadata_in_yaml_blueprint_config() {
     let env = MockEnvVars {
         vars: Arc::new(HashMap::from([])),

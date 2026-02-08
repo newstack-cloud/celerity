@@ -284,9 +284,9 @@ pub struct HttpHandlerDefinition {
     // Timeout in seconds.
     pub timeout: i64,
     pub tracing_enabled: bool,
-    // The name of the auth guard that protects this handler.
-    // If None, the default guard from the API auth configuration will be used.
-    pub auth_guard: Option<String>,
+    // The ordered list of auth guard names that protect this handler.
+    // If None, the default guard chain from the API auth configuration will be used.
+    pub auth_guard: Option<Vec<String>>,
     // Whether the handler is explicitly public (no auth required).
     pub public: bool,
 }
@@ -300,7 +300,8 @@ pub struct WebSocketConfig {
     pub base_paths: Vec<CelerityApiBasePath>,
     pub route_key: String,
     pub auth_strategy: WebSocketAuthStrategy,
-    pub connection_auth_guard: Option<String>,
+    // The ordered list of auth guard names for WebSocket connection auth.
+    pub connection_auth_guard: Option<Vec<String>>,
 }
 
 #[derive(Debug, Default)]

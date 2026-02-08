@@ -1,0 +1,55 @@
+{
+  "version": "2025-11-02",
+  "transform": "celerity-2026-02-28",
+  "resources": {
+    "orderStreamApi": {
+      "type": "celerity/api",
+      "metadata": {
+        "displayName": "Order Stream API"
+      },
+      "linkSelector": {
+        "byLabel": {
+          "application": "orders"
+        }
+      },
+      "spec": {
+        "protocols": [
+          {
+            "websocketConfig": {
+              "routeKey": "action",
+              "authStrategy": "connect",
+              // Multi-guard: authGuard as an array
+              "authGuard": ["jwt", "customGuard"]
+            }
+          }
+        ],
+        "cors": {
+          "allowOrigins": ["https://example.com", "https://another.example.com"]
+        },
+        "domain": {
+          "domainName": "api.example.com",
+          "basePaths": ["/"],
+          "normalizeBasePath": false,
+          "certificateId": "${variables.certificateId}",
+          "securityPolicy": "TLS_1_2"
+        },
+        "tracingEnabled": true,
+        "auth": {
+          "defaultGuard": "jwt",
+          "guards": {
+            "jwt": {
+              "type": "jwt",
+              "issuer": "https://identity.newstack.cloud/oauth2/v1/",
+              "tokenSource": "$.data.token",
+              "audience": ["https://identity.newstack.cloud/api/manage/v1/"]
+            },
+            "customGuard": {
+              "type": "custom",
+              "tokenSource": "$.headers.Authorization"
+            }
+          }
+        }
+      }
+    }
+  }
+}

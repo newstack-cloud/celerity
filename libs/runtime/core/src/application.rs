@@ -251,9 +251,9 @@ impl Application {
                     route_key: websocket_config.route_key.clone(),
                     api_auth: api_config.auth.clone(),
                     auth_strategy: Some(websocket_config.auth_strategy.clone()),
-                    connection_auth_guard_name: websocket_config.connection_auth_guard.clone(),
-                    connection_auth_guard: self
-                        .get_custom_auth_guard_blocking(&websocket_config.connection_auth_guard),
+                    connection_auth_guard_names: websocket_config.connection_auth_guard.clone(),
+                    connection_auth_guards: self
+                        .get_custom_auth_guards_blocking(&websocket_config.connection_auth_guard),
                     cors: api_config.cors.clone(),
                     resource_store: resource_store.clone(),
                 }),
@@ -281,21 +281,23 @@ impl Application {
         Ok(http_server_app)
     }
 
-    fn get_custom_auth_guard_blocking(
+    fn get_custom_auth_guards_blocking(
         &self,
-        guard_name: &Option<String>,
-    ) -> Option<Arc<dyn AuthGuardHandler + Send + Sync>> {
-        if let Some(guard_name) = guard_name {
+        guard_names: &Option<Vec<String>>,
+    ) -> HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>> {
+        let mut guards = HashMap::new();
+        if let Some(names) = guard_names {
             // This is only called in the setup phase, so using a thread-blocking lock is safe
             // as the setup http server method will be the only caller accessing
-            //the custom auth guards map at this point.
-            self.custom_auth_guards
-                .blocking_lock()
-                .get(guard_name)
-                .cloned()
-        } else {
-            None
+            // the custom auth guards map at this point.
+            let all_guards = self.custom_auth_guards.blocking_lock();
+            for name in names {
+                if let Some(guard) = all_guards.get(name) {
+                    guards.insert(name.clone(), guard.clone());
+                }
+            }
         }
+        guards
     }
 
     fn setup_runtime_local_api(

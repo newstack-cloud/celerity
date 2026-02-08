@@ -1,7 +1,6 @@
 ---
 source: blueprint-config-parser/tests/blueprint_config_test.rs
 expression: blueprint_config
-
 ---
 {
   "version": "2025-11-02",
@@ -39,7 +38,9 @@ expression: blueprint_config
           "securityPolicy": "TLS_1_2"
         },
         "auth": {
-          "defaultGuard": "jwt",
+          "defaultGuard": [
+            "jwt"
+          ],
           "guards": {
             "jwt": {
               "type": "jwt",

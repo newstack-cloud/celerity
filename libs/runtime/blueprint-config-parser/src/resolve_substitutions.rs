@@ -1432,7 +1432,7 @@ fn resolve_api_auth(
 ) -> Result<Option<CelerityApiAuth>, ResolveError> {
     match auth_with_subs_opt {
         Some(auth_with_subs) => Ok(Some(CelerityApiAuth {
-            default_guard: resolve_optional_string_or_substitutions(
+            default_guard: resolve_optional_string_or_subs_list(
                 auth_with_subs.default_guard,
                 env.clone(),
                 &field_path(&[field, "defaultGuard"]),
@@ -1865,6 +1865,14 @@ fn resolve_websocket_config(
                     &field_path(&[field, "authStrategy"]),
                 )?)
             }
+            if let Some(auth_guard_node) = ws_config_map.get("authGuard") {
+                websocket_config.auth_guard =
+                    Some(resolve_mapping_node_sequence_to_string_list(
+                        auth_guard_node,
+                        env.clone(),
+                        &field_path(&[field, "authGuard"]),
+                    )?);
+            }
         }
         _ => {
             return Err(ResolveError::ParseError(
@@ -2134,6 +2142,34 @@ fn resolve_mapping_node_to_string(
     match scalar_value {
         BlueprintScalarValue::Str(str) => Ok(str),
         _ => Err(ResolveError::ValueMustBeScalar(field.to_string())),
+    }
+}
+
+fn resolve_mapping_node_sequence_to_string_list(
+    mapping_node: &MappingNode,
+    env: Box<dyn EnvVars>,
+    field: &str,
+) -> Result<Vec<String>, ResolveError> {
+    match mapping_node {
+        MappingNode::Sequence(items) => {
+            let mut result = Vec::new();
+            for item in items {
+                result.push(resolve_mapping_node_to_string(item.clone(), env.clone(), field)?);
+            }
+            Ok(result)
+        }
+        MappingNode::SubstitutionStr(_) | MappingNode::Scalar(_) => {
+            // Single value: wrap in a vec
+            Ok(vec![resolve_mapping_node_to_string(
+                mapping_node.clone(),
+                env,
+                field,
+            )?])
+        }
+        _ => Err(ResolveError::ParseError(
+            "expected a string or array of strings".to_string(),
+            field.to_string(),
+        )),
     }
 }
 

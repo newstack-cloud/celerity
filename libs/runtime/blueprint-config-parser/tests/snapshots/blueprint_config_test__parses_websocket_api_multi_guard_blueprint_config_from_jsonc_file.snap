@@ -18,7 +18,11 @@ expression: blueprint_config
           {
             "websocketConfig": {
               "routeKey": "action",
-              "authStrategy": "connect"
+              "authStrategy": "connect",
+              "authGuard": [
+                "jwt",
+                "customGuard"
+              ]
             }
           }
         ],
@@ -47,6 +51,10 @@ expression: blueprint_config
             "jwt"
           ],
           "guards": {
+            "customGuard": {
+              "type": "custom",
+              "tokenSource": "$.headers.Authorization"
+            },
             "jwt": {
               "type": "jwt",
               "issuer": "https://identity.newstack.cloud/oauth2/v1/",

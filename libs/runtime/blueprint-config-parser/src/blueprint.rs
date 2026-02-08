@@ -365,9 +365,12 @@ pub struct WebSocketConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "authStrategy")]
     pub auth_strategy: Option<WebSocketAuthStrategy>,
+    /// A single guard name or ordered list of guard names for WebSocket
+    /// connection auth. When multiple guards are specified, they execute
+    /// in order and all must pass.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "authGuard")]
-    pub auth_guard: Option<String>,
+    pub auth_guard: Option<Vec<String>>,
 }
 
 /// Authentication strategy for a WebSocket API.
@@ -463,9 +466,12 @@ pub enum CelerityApiDomainSecurityPolicy {
 /// Authentication configuration for a Celerity API resource.
 #[derive(Serialize, Debug, PartialEq, Default, Clone)]
 pub struct CelerityApiAuth {
+    /// A single guard name or ordered list of guard names to use as the default
+    /// guard chain for the API. When multiple guards are specified, they execute
+    /// in order and all must pass.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "defaultGuard")]
-    pub default_guard: Option<String>,
+    pub default_guard: Option<Vec<String>>,
     pub guards: HashMap<String, CelerityApiAuthGuard>,
 }
 

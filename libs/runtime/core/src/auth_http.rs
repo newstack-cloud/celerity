@@ -27,10 +27,14 @@ use crate::{
 // Maximum body size to buffer for body-based token extraction.
 const MAX_AUTH_BODY_BUFFER_SIZE: usize = 1024 * 1024; // 1 MiB
 
-/// Claims extracted from a successful authentication.
+/// Authentication context produced by the auth middleware.
 /// Inserted into request extensions for downstream handlers to consume.
+///
+/// Maps guard names to their validation results:
+/// `{ "jwt": { "claims": { ... } }, "rbac": { "role": "admin" } }`.
+/// `None` when no auth guards were applied (public handler or no auth configured).
 #[derive(Clone, Debug)]
-pub struct AuthClaims(pub Option<serde_json::Value>);
+pub struct AuthContext(pub Option<serde_json::Value>);
 
 /// State required by the HTTP auth middleware.
 #[derive(Clone)]
@@ -39,15 +43,28 @@ pub struct HttpAuthState {
     pub resource_store: Arc<ResourceStore>,
     pub custom_auth_guards:
         Arc<tokio::sync::Mutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
-    // Maps Axum matched path patterns (e.g. "/orders/{orderId}") to an optional per-handler guard name.
-    // If the value is None, the handler uses the default guard.
+    // Maps Axum matched path patterns (e.g. "/orders/{orderId}") to an optional per-handler
+    // guard chain. If the value is None, the handler uses the default guard chain.
     // If a path is absent from this map, no auth is required for that route.
-    pub route_guards: HashMap<String, Option<String>>,
+    pub route_guards: HashMap<String, Option<Vec<String>>>,
 }
 
-/// Resolves the auth guard name for the current request.
+/// Request elements extracted once and reused across guards in the chain.
+struct HttpAuthRequestElements {
+    headers: axum::http::HeaderMap,
+    query: HashMap<String, Vec<String>>,
+    cookies: CookieJar,
+    body_json: serde_json::Value,
+    request_id: RequestId,
+    client_ip: IpAddr,
+}
+
+/// Resolves the ordered guard chain for the current request.
 /// Returns `None` if auth should be skipped (public handler, unmatched route, no guard configured).
-fn resolve_guard_name(request: &axum::extract::Request, state: &HttpAuthState) -> Option<String> {
+fn resolve_guard_chain(
+    request: &axum::extract::Request,
+    state: &HttpAuthState,
+) -> Option<Vec<String>> {
     let matched_path = request
         .extensions()
         .get::<MatchedPath>()
@@ -117,58 +134,56 @@ async fn buffer_request_body(
     Ok((json_body, request))
 }
 
+/// Inserts `AuthContext(None)` and forwards the request to the next handler.
+/// Used when auth is not required (OPTIONS preflight, public handler, no guard configured).
+async fn forward_without_auth(request: axum::extract::Request, next: Next) -> Response {
+    let mut request = request;
+    request.extensions_mut().insert(AuthContext(None));
+    next.run(request).await
+}
+
 /// Axum middleware that enforces HTTP auth based on blueprint configuration.
+/// Supports ordered guard chains: guards execute in sequence, short-circuiting
+/// on the first failure. Claims from all passing guards are accumulated into
+/// a single JSON object keyed by guard name.
 pub async fn http_auth_middleware(
     State(state): State<HttpAuthState>,
     request: axum::extract::Request,
     next: Next,
 ) -> Response {
-    // Skip auth for OPTIONS (CORS preflight).
     if request.method() == Method::OPTIONS {
-        let mut request = request;
-        request.extensions_mut().insert(AuthClaims(None));
-        return next.run(request).await;
+        return forward_without_auth(request, next).await;
     }
 
-    let guard_name = match resolve_guard_name(&request, &state) {
-        Some(name) => name,
-        None => {
-            let mut request = request;
-            request.extensions_mut().insert(AuthClaims(None));
-            return next.run(request).await;
-        }
+    let guard_chain = match resolve_guard_chain(&request, &state) {
+        Some(chain) if !chain.is_empty() => chain,
+        _ => return forward_without_auth(request, next).await,
     };
 
-    let guard_config = match state.api_auth.guards.get(&guard_name) {
-        Some(config) => config.clone(),
-        None => {
-            warn!(guard = %guard_name, "auth guard referenced but not defined in API auth configuration");
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Auth guard misconfigured",
-            )
-                .into_response();
-        }
-    };
-
-    // Extract request elements needed for token extraction.
     let request_id = request
         .extensions()
         .get::<RequestId>()
         .cloned()
         .unwrap_or(RequestId("unknown".to_string()));
-
     let client_ip = request
         .extensions()
         .get::<ResolvedClientIp>()
         .map(|rci| rci.0)
         .unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
-
     let headers = request.headers().clone();
     let query = parse_query_params(request.uri());
     let cookies = CookieJar::from_headers(&headers);
 
-    let (body_json, request) = if token_source_needs_body(&guard_config) {
+    let any_guard_needs_body = guard_chain.iter().any(|guard_name| {
+        state
+            .api_auth
+            .guards
+            .get(guard_name)
+            .map(token_source_needs_body)
+            .unwrap_or(false)
+    });
+
+    let (body_json, request) = if any_guard_needs_body {
         match buffer_request_body(request).await {
             Ok(result) => result,
             Err(response) => return response,
@@ -177,61 +192,107 @@ pub async fn http_auth_middleware(
         (serde_json::Value::Null, request)
     };
 
-    // Perform validation based on guard type.
-    let result = match guard_config.guard_type {
-        CelerityApiAuthGuardType::Jwt => crate::auth_jwt::validate_jwt_on_http_request(
-            &guard_config,
-            &headers,
-            &query,
-            &cookies,
-            body_json,
-            state.resource_store.clone(),
-        )
-        .await
-        .map_err(|e| {
-            warn!(guard = %guard_name, request_id = %request_id.0, client_ip = %client_ip, "JWT auth failed: {e}");
-            (StatusCode::UNAUTHORIZED, "Unauthorized")
-        }),
+    let elements = HttpAuthRequestElements {
+        headers,
+        query,
+        cookies,
+        body_json,
+        request_id,
+        client_ip,
+    };
+
+    match execute_guard_chain(&guard_chain, &state, &elements).await {
+        Ok(accumulated_claims) => {
+            let mut request = request;
+            let claims = if accumulated_claims.is_empty() {
+                AuthContext(None)
+            } else {
+                AuthContext(Some(serde_json::Value::Object(accumulated_claims)))
+            };
+            request.extensions_mut().insert(claims);
+            next.run(request).await
+        }
+        Err(response) => response,
+    }
+}
+
+/// Executes the ordered guard chain, accumulating claims from each passing guard.
+/// Short-circuits on the first guard failure, returning the error response.
+async fn execute_guard_chain(
+    guard_chain: &[String],
+    state: &HttpAuthState,
+    elements: &HttpAuthRequestElements,
+) -> Result<serde_json::Map<String, serde_json::Value>, Response> {
+    let mut accumulated_claims = serde_json::Map::new();
+
+    for guard_name in guard_chain {
+        let guard_config = match state.api_auth.guards.get(guard_name) {
+            Some(config) => config,
+            None => {
+                warn!(guard = %guard_name, "auth guard referenced but not defined in API auth configuration");
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Auth guard misconfigured")
+                    .into_response());
+            }
+        };
+
+        let claims = validate_single_guard(guard_name, guard_config, state, elements).await?;
+        accumulated_claims.insert(guard_name.clone(), claims);
+    }
+
+    Ok(accumulated_claims)
+}
+
+/// Validates a single auth guard, dispatching to the appropriate validator
+/// based on the guard type. Returns claims on success or an error response on failure.
+async fn validate_single_guard(
+    guard_name: &str,
+    guard_config: &CelerityApiAuthGuard,
+    state: &HttpAuthState,
+    elements: &HttpAuthRequestElements,
+) -> Result<serde_json::Value, Response> {
+    match guard_config.guard_type {
+        CelerityApiAuthGuardType::Jwt => {
+            crate::auth_jwt::validate_jwt_on_http_request(
+                guard_config,
+                &elements.headers,
+                &elements.query,
+                &elements.cookies,
+                elements.body_json.clone(),
+                state.resource_store.clone(),
+            )
+            .await
+            .map_err(|e| {
+                warn!(guard = %guard_name, request_id = %elements.request_id.0, client_ip = %elements.client_ip, "JWT auth failed: {e}");
+                (StatusCode::UNAUTHORIZED, "Unauthorized").into_response()
+            })
+        }
         CelerityApiAuthGuardType::Custom => {
             let guard_handler = {
                 let guards = state.custom_auth_guards.lock().await;
-                guards.get(&guard_name).cloned()
+                guards.get(guard_name).cloned()
             };
             crate::auth_custom::validate_custom_auth_on_http_request(
-                &guard_config,
-                &headers,
-                &query,
-                &cookies,
-                body_json,
-                &request_id,
-                &client_ip,
+                guard_config,
+                &elements.headers,
+                &elements.query,
+                &elements.cookies,
+                elements.body_json.clone(),
+                &elements.request_id,
+                &elements.client_ip,
                 guard_handler,
             )
             .await
             .map_err(|e| match e {
                 AuthGuardValidateError::Forbidden(_) => {
-                    warn!(guard = %guard_name, request_id = %request_id.0, client_ip = %client_ip, "custom auth forbidden: {e}");
-                    (StatusCode::FORBIDDEN, "Forbidden")
+                    warn!(guard = %guard_name, request_id = %elements.request_id.0, client_ip = %elements.client_ip, "custom auth forbidden: {e}");
+                    (StatusCode::FORBIDDEN, "Forbidden").into_response()
                 }
                 _ => {
-                    warn!(guard = %guard_name, request_id = %request_id.0, client_ip = %client_ip, "custom auth failed: {e}");
-                    (StatusCode::UNAUTHORIZED, "Unauthorized")
+                    warn!(guard = %guard_name, request_id = %elements.request_id.0, client_ip = %elements.client_ip, "custom auth failed: {e}");
+                    (StatusCode::UNAUTHORIZED, "Unauthorized").into_response()
                 }
             })
         }
-        CelerityApiAuthGuardType::NoGuardType => {
-            let mut request = request;
-            request.extensions_mut().insert(AuthClaims(None));
-            return next.run(request).await;
-        }
-    };
-
-    match result {
-        Ok(claims) => {
-            let mut request = request;
-            request.extensions_mut().insert(AuthClaims(Some(claims)));
-            next.run(request).await
-        }
-        Err(resp) => resp.into_response(),
+        CelerityApiAuthGuardType::NoGuardType => Ok(serde_json::Value::Null),
     }
 }

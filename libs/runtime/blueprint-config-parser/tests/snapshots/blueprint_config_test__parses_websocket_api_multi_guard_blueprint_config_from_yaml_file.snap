@@ -7,6 +7,12 @@ expression: blueprint_config
   "transform": [
     "celerity-2026-02-28"
   ],
+  "variables": {
+    "certificateId": {
+      "type": "string",
+      "description": "The ID of the certificate to use for the API domain."
+    }
+  },
   "resources": {
     "orderStreamApi": {
       "type": "celerity/api",
@@ -18,7 +24,11 @@ expression: blueprint_config
           {
             "websocketConfig": {
               "routeKey": "action",
-              "authStrategy": "connect"
+              "authStrategy": "connect",
+              "authGuard": [
+                "jwt",
+                "customGuard"
+              ]
             }
           }
         ],
@@ -47,6 +57,10 @@ expression: blueprint_config
             "jwt"
           ],
           "guards": {
+            "customGuard": {
+              "type": "custom",
+              "tokenSource": "$.headers.Authorization"
+            },
             "jwt": {
               "type": "jwt",
               "issuer": "https://identity.newstack.cloud/oauth2/v1/",

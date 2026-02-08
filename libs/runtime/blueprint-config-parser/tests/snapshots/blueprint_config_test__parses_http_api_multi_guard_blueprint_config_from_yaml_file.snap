@@ -23,11 +23,6 @@ expression: blueprint_config
       "default": "INFO",
       "description": "The log level to use for logging."
     },
-    "paymentApiSecret": {
-      "type": "string",
-      "secret": true,
-      "description": "The secret to use for authenticating with the API."
-    },
     "secretStoreId": {
       "type": "string",
       "description": "The ID of the secret store to use for storing secrets."
@@ -57,7 +52,6 @@ expression: blueprint_config
         "tracingEnabled": true,
         "environmentVariables": {
           "LOG_LEVEL": "DEBUG",
-          "PAYMENT_API_SECRET": "payment-api-secret",
           "SECRET_STORE_ID": "secret-store-id"
         }
       }
@@ -101,11 +95,13 @@ expression: blueprint_config
         },
         "auth": {
           "defaultGuard": [
-            "jwt"
+            "jwt",
+            "customGuard"
           ],
           "guards": {
             "customGuard": {
-              "type": "custom"
+              "type": "custom",
+              "tokenSource": "$.headers.Authorization"
             },
             "jwt": {
               "type": "jwt",

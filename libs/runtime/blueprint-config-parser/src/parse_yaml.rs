@@ -1239,6 +1239,39 @@ fn validate_websocket_config(
                         )))?;
                     }
                 }
+                "authGuard" => match value {
+                    yaml_rust2::Yaml::String(value_str) => {
+                        websocket_config_map.insert(
+                            "authGuard".to_string(),
+                            MappingNode::Sequence(vec![MappingNode::SubstitutionStr(
+                                parse_substitutions::<ParseError>(value_str)?,
+                            )]),
+                        );
+                    }
+                    yaml_rust2::Yaml::Array(arr) => {
+                        let mut items = Vec::new();
+                        for item in arr {
+                            if let yaml_rust2::Yaml::String(s) = item {
+                                items.push(MappingNode::SubstitutionStr(
+                                    parse_substitutions::<ParseError>(s)?,
+                                ));
+                            } else {
+                                Err(BlueprintParseError::YamlFormatError(format!(
+                                    "expected a string in authGuard array, found {item:?}",
+                                )))?;
+                            }
+                        }
+                        websocket_config_map.insert(
+                            "authGuard".to_string(),
+                            MappingNode::Sequence(items),
+                        );
+                    }
+                    _ => {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string or array for authGuard, found {value:?}",
+                        )))?;
+                    }
+                },
                 _ => (),
             }
         }
@@ -1268,12 +1301,29 @@ fn validate_celerity_api_auth(
     if let Some(default_guard) =
         value_map.get(&yaml_rust2::Yaml::String("defaultGuard".to_string()))
     {
-        if let yaml_rust2::Yaml::String(value_str) = default_guard {
-            auth.default_guard = Some(parse_substitutions::<ParseError>(value_str)?);
-        } else {
-            Err(BlueprintParseError::YamlFormatError(format!(
-                "expected a string for defaultGuard, found {default_guard:?}",
-            )))?;
+        match default_guard {
+            yaml_rust2::Yaml::String(value_str) => {
+                auth.default_guard =
+                    Some(vec![parse_substitutions::<ParseError>(value_str)?]);
+            }
+            yaml_rust2::Yaml::Array(arr) => {
+                let mut guard_names = Vec::new();
+                for item in arr {
+                    if let yaml_rust2::Yaml::String(s) = item {
+                        guard_names.push(parse_substitutions::<ParseError>(s)?);
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string in defaultGuard array, found {item:?}",
+                        )))?;
+                    }
+                }
+                auth.default_guard = Some(guard_names);
+            }
+            _ => {
+                Err(BlueprintParseError::YamlFormatError(format!(
+                    "expected a string or array for defaultGuard, found {default_guard:?}",
+                )))?;
+            }
         }
     }
 

@@ -812,7 +812,7 @@ mod tests {
                     connection_auth_guard: None,
                 }),
                 auth: Some(CelerityApiAuth {
-                    default_guard: Some("jwt".to_string()),
+                    default_guard: Some(vec!["jwt".to_string()]),
                     guards: HashMap::from([(
                         "jwt".to_string(),
                         CelerityApiAuthGuard {

@@ -55,8 +55,8 @@ pub(crate) struct WebSocketAppState {
     pub route_key: String,
     pub api_auth: Option<CelerityApiAuth>,
     pub auth_strategy: Option<WebSocketAuthStrategy>,
-    pub connection_auth_guard_name: Option<String>,
-    pub connection_auth_guard: Option<Arc<dyn AuthGuardHandler + Send + Sync>>,
+    pub connection_auth_guard_names: Option<Vec<String>>,
+    pub connection_auth_guards: HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>,
     pub cors: Option<CelerityApiCors>,
     pub resource_store: Arc<ResourceStore>,
 }
@@ -293,64 +293,86 @@ async fn authenticate_connection(
     state: &WebSocketAppState,
     request_ctx: &WebSocketRequestContext,
 ) -> ControlFlow<(), serde_json::Value> {
-    if let Some(auth_guard_name) = &state.connection_auth_guard_name {
-        if let Some(auth_guard_config) = find_auth_guard_config(auth_guard_name, &state.api_auth) {
-            match auth_guard_config.guard_type {
-                CelerityApiAuthGuardType::Jwt => {
-                    match validate_jwt_on_ws_connect(
-                        auth_guard_config,
-                        &request_ctx.headers,
-                        &request_ctx.query,
-                        &request_ctx.cookies,
-                        state.resource_store.clone(),
-                    )
-                    .await
-                    {
-                        Ok(data) => {
-                            return ControlFlow::Continue(data);
-                        }
-                        Err(e) => {
-                            return handle_validate_auth_on_connect_error(
-                                socket_ref,
-                                ValidateAuthError::Jwt(e),
-                                "JWT",
-                            )
-                            .await;
-                        }
+    let guard_names = match &state.connection_auth_guard_names {
+        Some(names) if !names.is_empty() => names,
+        _ => return ControlFlow::Continue(serde_json::Value::Null),
+    };
+
+    let mut accumulated_claims = serde_json::Map::new();
+
+    for guard_name in guard_names {
+        let auth_guard_config = match find_auth_guard_config(guard_name, &state.api_auth) {
+            Some(config) => config,
+            None => {
+                warn!("auth guard config not found for guard: {guard_name}");
+                return handle_validate_auth_on_connect_error(
+                    socket_ref,
+                    ValidateAuthError::Custom(AuthGuardValidateError::UnexpectedError(
+                        format!("guard config not found for \"{guard_name}\""),
+                    )),
+                    guard_name,
+                )
+                .await;
+            }
+        };
+
+        match auth_guard_config.guard_type {
+            CelerityApiAuthGuardType::Jwt => {
+                match validate_jwt_on_ws_connect(
+                    auth_guard_config,
+                    &request_ctx.headers,
+                    &request_ctx.query,
+                    &request_ctx.cookies,
+                    state.resource_store.clone(),
+                )
+                .await
+                {
+                    Ok(data) => {
+                        accumulated_claims.insert(guard_name.clone(), data);
+                    }
+                    Err(e) => {
+                        return handle_validate_auth_on_connect_error(
+                            socket_ref,
+                            ValidateAuthError::Jwt(e),
+                            "JWT",
+                        )
+                        .await;
                     }
                 }
-                CelerityApiAuthGuardType::Custom => {
-                    match validate_custom_auth_on_connect(
-                        auth_guard_config,
-                        &request_ctx.headers,
-                        &request_ctx.query,
-                        &request_ctx.cookies,
-                        &request_ctx.request_id,
-                        &request_ctx.client_ip,
-                        state.connection_auth_guard.clone(),
-                    )
-                    .await
-                    {
-                        Ok(data) => {
-                            return ControlFlow::Continue(data);
-                        }
-                        Err(err) => {
-                            return handle_validate_auth_on_connect_error(
-                                socket_ref,
-                                ValidateAuthError::Custom(err),
-                                "custom auth guard",
-                            )
-                            .await
-                        }
+            }
+            CelerityApiAuthGuardType::Custom => {
+                let guard_handler = state.connection_auth_guards.get(guard_name).cloned();
+                match validate_custom_auth_on_connect(
+                    auth_guard_config,
+                    &request_ctx.headers,
+                    &request_ctx.query,
+                    &request_ctx.cookies,
+                    &request_ctx.request_id,
+                    &request_ctx.client_ip,
+                    guard_handler,
+                )
+                .await
+                {
+                    Ok(data) => {
+                        accumulated_claims.insert(guard_name.clone(), data);
+                    }
+                    Err(err) => {
+                        return handle_validate_auth_on_connect_error(
+                            socket_ref,
+                            ValidateAuthError::Custom(err),
+                            "custom auth guard",
+                        )
+                        .await;
                     }
                 }
-                CelerityApiAuthGuardType::NoGuardType => {
-                    debug!("no auth guard type configured for WebSocket connection, skipping auth");
-                }
+            }
+            CelerityApiAuthGuardType::NoGuardType => {
+                debug!("no auth guard type configured for guard \"{guard_name}\", skipping");
             }
         }
     }
-    ControlFlow::Continue(serde_json::Value::Null)
+
+    ControlFlow::Continue(serde_json::Value::Object(accumulated_claims))
 }
 
 async fn on_connect(

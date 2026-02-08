@@ -196,7 +196,11 @@ pub struct CelerityApiBasePathConfigurationWithSubs {
 pub struct CelerityApiAuthWithSubs {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "defaultGuard")]
-    pub default_guard: Option<StringOrSubstitutions>,
+    #[serde(
+        default,
+        deserialize_with = "crate::parse_helpers::deserialize_optional_string_or_subs_vec"
+    )]
+    pub default_guard: Option<Vec<StringOrSubstitutions>>,
     pub guards: HashMap<String, CelerityApiAuthGuardWithSubs>,
 }
 

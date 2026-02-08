@@ -141,9 +141,15 @@ fn collect_http_handler_definitions(
                         .get(CELERITY_HTTP_PATH_ANNOTATION_NAME)
                         .map(ToString::to_string)
                         .unwrap_or_else(|| "/".to_string());
-                    let auth_guard = annotations
+                    let auth_guard: Option<Vec<String>> = annotations
                         .get(CELERITY_HANDLER_GUARD_ANNOTATION_NAME)
-                        .map(ToString::to_string);
+                        .map(|v| {
+                            v.to_string()
+                                .split(',')
+                                .map(|s| s.trim().to_string())
+                                .filter(|s| !s.is_empty())
+                                .collect()
+                        });
                     let public = annotations
                         .get(CELERITY_HANDLER_PUBLIC_ANNOTATION_NAME)
                         .map(|v| v.to_string() == "true")
@@ -172,7 +178,7 @@ fn collect_http_handler_definition(
     handler: &ResourceWithName,
     method: String,
     path: String,
-    auth_guard: Option<String>,
+    auth_guard: Option<Vec<String>>,
     public: bool,
     blueprint_config: &BlueprintConfig,
     http_handlers: &mut Vec<HttpHandlerDefinition>,
@@ -315,7 +321,7 @@ fn resolve_base_paths(
 
 fn resolve_websocket_connection_auth_guard(
     api_resource_spec: &CelerityResourceSpec,
-) -> Result<Option<String>, ConfigError> {
+) -> Result<Option<Vec<String>>, ConfigError> {
     if let CelerityResourceSpec::Api(api_spec) = api_resource_spec {
         let connected_auth_guard_opt = api_spec
             .protocols
@@ -394,7 +400,7 @@ fn apply_http_handler_configurations(
     blueprint_metadata: Option<&BlueprintMetadata>,
     method: String,
     path: String,
-    auth_guard: Option<String>,
+    auth_guard: Option<Vec<String>>,
     public: bool,
 ) -> Result<HttpHandlerDefinition, ConfigError> {
     let handler_definition = HttpHandlerDefinition {

@@ -4,7 +4,8 @@ use std::{collections::HashMap, fmt};
 use serde::{de, Deserialize, Deserializer};
 
 use crate::blueprint::BLUELINK_BLUEPRINT_V2025_11_02;
-use crate::blueprint_with_subs::RuntimeBlueprintResourceWithSubs;
+use crate::blueprint_with_subs::{RuntimeBlueprintResourceWithSubs, StringOrSubstitutions};
+use crate::parse_substitutions::parse_substitutions;
 
 /// Deserializes a blueprint version string and makes
 /// sure it is a valid version.
@@ -104,4 +105,46 @@ where
     }
 
     d.deserialize_map(ResourceMapVisitor)
+}
+
+/// Deserializes a string or an array of strings into `Option<Vec<StringOrSubstitutions>>`.
+/// Accepts `"jwt"` (wraps in vec) or `["jwt", "rbac"]` (parses each element).
+/// Each string element is parsed for `${..}` substitutions.
+pub fn deserialize_optional_string_or_subs_vec<'de, D>(
+    d: D,
+) -> Result<Option<Vec<StringOrSubstitutions>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct StringOrSubsVec;
+
+    impl<'de> de::Visitor<'de> for StringOrSubsVec {
+        type Value = Vec<StringOrSubstitutions>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a string or an array of strings (with optional substitutions)")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            let parsed = parse_substitutions::<E>(value)?;
+            Ok(vec![parsed])
+        }
+
+        fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
+        where
+            S: de::SeqAccess<'de>,
+        {
+            let mut result = Vec::new();
+            while let Some(item) = seq.next_element::<String>()? {
+                let parsed = parse_substitutions::<S::Error>(&item)?;
+                result.push(parsed);
+            }
+            Ok(result)
+        }
+    }
+
+    d.deserialize_any(StringOrSubsVec).map(Some)
 }
