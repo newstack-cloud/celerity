@@ -1866,12 +1866,11 @@ fn resolve_websocket_config(
                 )?)
             }
             if let Some(auth_guard_node) = ws_config_map.get("authGuard") {
-                websocket_config.auth_guard =
-                    Some(resolve_mapping_node_sequence_to_string_list(
-                        auth_guard_node,
-                        env.clone(),
-                        &field_path(&[field, "authGuard"]),
-                    )?);
+                websocket_config.auth_guard = Some(resolve_mapping_node_sequence_to_string_list(
+                    auth_guard_node,
+                    env.clone(),
+                    &field_path(&[field, "authGuard"]),
+                )?);
             }
         }
         _ => {
@@ -2154,7 +2153,11 @@ fn resolve_mapping_node_sequence_to_string_list(
         MappingNode::Sequence(items) => {
             let mut result = Vec::new();
             for item in items {
-                result.push(resolve_mapping_node_to_string(item.clone(), env.clone(), field)?);
+                result.push(resolve_mapping_node_to_string(
+                    item.clone(),
+                    env.clone(),
+                    field,
+                )?);
             }
             Ok(result)
         }

@@ -307,9 +307,9 @@ async fn authenticate_connection(
                 warn!("auth guard config not found for guard: {guard_name}");
                 return handle_validate_auth_on_connect_error(
                     socket_ref,
-                    ValidateAuthError::Custom(AuthGuardValidateError::UnexpectedError(
-                        format!("guard config not found for \"{guard_name}\""),
-                    )),
+                    ValidateAuthError::Custom(AuthGuardValidateError::UnexpectedError(format!(
+                        "guard config not found for \"{guard_name}\""
+                    ))),
                     guard_name,
                 )
                 .await;

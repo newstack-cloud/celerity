@@ -230,7 +230,10 @@ async fn execute_guard_chain(
             Some(config) => config,
             None => {
                 warn!(guard = %guard_name, "auth guard referenced but not defined in API auth configuration");
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Auth guard misconfigured")
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Auth guard misconfigured",
+                )
                     .into_response());
             }
         };

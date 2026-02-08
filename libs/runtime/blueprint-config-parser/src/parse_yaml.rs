@@ -1239,39 +1239,39 @@ fn validate_websocket_config(
                         )))?;
                     }
                 }
-                "authGuard" => match value {
-                    yaml_rust2::Yaml::String(value_str) => {
-                        websocket_config_map.insert(
-                            "authGuard".to_string(),
-                            MappingNode::Sequence(vec![MappingNode::SubstitutionStr(
-                                parse_substitutions::<ParseError>(value_str)?,
-                            )]),
-                        );
-                    }
-                    yaml_rust2::Yaml::Array(arr) => {
-                        let mut items = Vec::new();
-                        for item in arr {
-                            if let yaml_rust2::Yaml::String(s) = item {
-                                items.push(MappingNode::SubstitutionStr(
-                                    parse_substitutions::<ParseError>(s)?,
-                                ));
-                            } else {
-                                Err(BlueprintParseError::YamlFormatError(format!(
-                                    "expected a string in authGuard array, found {item:?}",
-                                )))?;
-                            }
+                "authGuard" => {
+                    match value {
+                        yaml_rust2::Yaml::String(value_str) => {
+                            websocket_config_map.insert(
+                                "authGuard".to_string(),
+                                MappingNode::Sequence(vec![MappingNode::SubstitutionStr(
+                                    parse_substitutions::<ParseError>(value_str)?,
+                                )]),
+                            );
                         }
-                        websocket_config_map.insert(
-                            "authGuard".to_string(),
-                            MappingNode::Sequence(items),
-                        );
+                        yaml_rust2::Yaml::Array(arr) => {
+                            let mut items = Vec::new();
+                            for item in arr {
+                                if let yaml_rust2::Yaml::String(s) = item {
+                                    items.push(MappingNode::SubstitutionStr(
+                                        parse_substitutions::<ParseError>(s)?,
+                                    ));
+                                } else {
+                                    Err(BlueprintParseError::YamlFormatError(format!(
+                                        "expected a string in authGuard array, found {item:?}",
+                                    )))?;
+                                }
+                            }
+                            websocket_config_map
+                                .insert("authGuard".to_string(), MappingNode::Sequence(items));
+                        }
+                        _ => {
+                            Err(BlueprintParseError::YamlFormatError(format!(
+                                "expected a string or array for authGuard, found {value:?}",
+                            )))?;
+                        }
                     }
-                    _ => {
-                        Err(BlueprintParseError::YamlFormatError(format!(
-                            "expected a string or array for authGuard, found {value:?}",
-                        )))?;
-                    }
-                },
+                }
                 _ => (),
             }
         }
@@ -1303,8 +1303,7 @@ fn validate_celerity_api_auth(
     {
         match default_guard {
             yaml_rust2::Yaml::String(value_str) => {
-                auth.default_guard =
-                    Some(vec![parse_substitutions::<ParseError>(value_str)?]);
+                auth.default_guard = Some(vec![parse_substitutions::<ParseError>(value_str)?]);
             }
             yaml_rust2::Yaml::Array(arr) => {
                 let mut guard_names = Vec::new();
