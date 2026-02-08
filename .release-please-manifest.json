@@ -1,6 +1,6 @@
 {
   "apps/cli": "0.0.0",
-  "libs/runtime": "0.1.0",
+  "libs/runtime": "0.2.0",
   "libs/runtime/consumers": "0.1.0",
   "libs/runtime/ws": "0.1.0",
   "libs/runtime/sdk": "0.1.0",
