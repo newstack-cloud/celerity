@@ -18,6 +18,7 @@ module.exports = {
         "perf",
         "test",
         "instr",
+        "deps"
       ],
     ],
     "scope-enum": [

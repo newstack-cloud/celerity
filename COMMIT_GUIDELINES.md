@@ -17,6 +17,7 @@ a base for more advanced tooling to allow for efficient searches for decisions a
 - `revert:` - Should be used for any commits that revert changes.
 - `wip:` - Should be used for commits that contain work in progress.
 - `feat:` - Should be used for any new features added, regardless of the size of the feature.
+- `deps:` - Should be used for any dependency updates, including patching dependencies and updating to new major versions.
 - `chore:` - Should be used for tasks such as releases or patching dependencies.
 - `ci:` - Should be used for any work on GitHub Action workflows or scripts used in CI.
 - `docs:`- Should be used for adding or modifying documentation.
