@@ -337,6 +337,12 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Move artifacts
         run: yarn artifacts
+      - name: Copy LICENSE into publishable directories
+        run: |
+          cp "${{ github.workspace }}/LICENSE" .
+          for dir in npm/*/; do
+            cp "${{ github.workspace }}/LICENSE" "$dir"
+          done
       - name: List packages
         run: ls -R ./npm
         shell: bash
