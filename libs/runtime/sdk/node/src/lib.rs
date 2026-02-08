@@ -17,7 +17,7 @@ use celerity_helpers::{
 };
 use celerity_runtime_core::{
   application::Application,
-  auth_http::AuthClaims,
+  auth_http::AuthContext,
   config::{
     ApiConfig, AppConfig, ClientIpSource, HttpConfig, HttpHandlerDefinition, RuntimeConfig,
     WebSocketConfig,
@@ -160,7 +160,7 @@ pub struct JsRequestWrapper {
   req_path: String,
   request_id: String,
   request_time: String,
-  auth_claims: Option<serde_json::Value>,
+  auth_context: Option<serde_json::Value>,
   client_ip: String,
   trace_context: Option<HashMap<String, String>>,
   user_agent: String,
@@ -190,7 +190,7 @@ impl JsRequestWrapper {
       req_path: uri,
       request_id: String::new(),
       request_time: String::new(),
-      auth_claims: None,
+      auth_context: None,
       client_ip: String::new(),
       trace_context: None,
       user_agent: String::new(),
@@ -213,9 +213,9 @@ impl JsRequestWrapper {
       .get::<RequestId>()
       .map(|id| id.0.clone())
       .unwrap_or_default();
-    let auth_claims = parts
+    let auth_context = parts
       .extensions
-      .get::<AuthClaims>()
+      .get::<AuthContext>()
       .and_then(|ac| ac.0.clone());
     let client_ip = parts
       .extensions
@@ -283,7 +283,7 @@ impl JsRequestWrapper {
       req_path,
       request_id,
       request_time,
-      auth_claims,
+      auth_context,
       client_ip,
       trace_context,
       user_agent,
@@ -364,10 +364,13 @@ impl JsRequestWrapper {
     self.request_time.clone()
   }
 
-  /// Authentication claims from the auth middleware, or null if no auth.
+  /// Authentication context from the auth middleware, or null if no auth.
+  /// Claims are namespaced by guard name: `{ "guardName": claims }`.
+  /// When multiple guards are configured in a chain, each guard's claims
+  /// appear under its own key.
   #[napi(getter)]
   pub fn auth(&self) -> Option<serde_json::Value> {
-    self.auth_claims.clone()
+    self.auth_context.clone()
   }
 
   /// The client IP address resolved by the runtime.
