@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.2.0...runtime-core/v0.2.1) (2026-02-08)
+
+
+### Dependencies
+
+* **runtime-libs:** replace webpki-roots with native-roots to solve license issues ([8f08ddf](https://github.com/newstack-cloud/celerity/commit/8f08ddf3bc737595d31b4ab5ac909f8c5e8d61ad))
+* **runtime-libs:** update reqwest to use rustls instead of native openssl ([26fd2cb](https://github.com/newstack-cloud/celerity/commit/26fd2cbfad22366122dfed386dbf8bd3d63447dc))
+
 ## [0.2.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.1.0...runtime-core/v0.2.0) (2026-02-08)
 
 
