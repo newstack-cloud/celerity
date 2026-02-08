@@ -9,6 +9,14 @@ pub const CELERITY_HTTP_METHOD_ANNOTATION_NAME: &str = "celerity.handler.http.me
 // The annotation name that holds the HTTP path for a handler.
 pub const CELERITY_HTTP_PATH_ANNOTATION_NAME: &str = "celerity.handler.http.path";
 
+// The annotation name that holds the auth guard name to protect a handler.
+// The value should reference one of the guard names defined in the API auth configuration.
+pub const CELERITY_HANDLER_GUARD_ANNOTATION_NAME: &str = "celerity.handler.guard.protectedBy";
+
+// The annotation name that marks a handler as public (no auth required),
+// even when a default guard is configured for the API.
+pub const CELERITY_HANDLER_PUBLIC_ANNOTATION_NAME: &str = "celerity.handler.public";
+
 // The annotation name that activates WebSocket capabilities for a handler.
 pub const CELERITY_WS_HANDLER_ANNOTATION_NAME: &str = "celerity.handler.websocket";
 

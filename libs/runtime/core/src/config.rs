@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+pub use axum_client_ip::ClientIpSource;
 use celerity_blueprint_config_parser::blueprint::{
     CelerityApiAuth, CelerityApiBasePath, CelerityApiCors, WebSocketAuthStrategy,
 };
@@ -108,6 +109,10 @@ pub struct RuntimeConfig {
     ///
     /// Defaults to 3600 seconds (1 hour).
     pub resource_store_cleanup_interval: i64,
+    /// The source to use for extracting the client IP address from incoming requests.
+    /// Defaults to `ConnectInfo` (TCP socket peer address).
+    /// Set to a vendor-specific source when running behind a reverse proxy or CDN.
+    pub client_ip_source: ClientIpSource,
 }
 
 impl RuntimeConfig {
@@ -212,6 +217,15 @@ impl RuntimeConfig {
             .parse()
             .expect("Invalid resource store cache cleanup interval value, must be a valid integer");
 
+        let client_ip_source = env
+            .var("CELERITY_CLIENT_IP_SOURCE")
+            .unwrap_or_else(|_| "ConnectInfo".to_string())
+            .parse::<ClientIpSource>()
+            .expect(
+                "Invalid client IP source, must be one of: ConnectInfo, CfConnectingIp, \
+                 TrueClientIp, CloudFrontViewerAddress, RightmostXForwardedFor, XRealIp, FlyClientIp",
+            );
+
         RuntimeConfig {
             blueprint_config_path,
             runtime_call_mode,
@@ -230,6 +244,7 @@ impl RuntimeConfig {
             resource_store_verify_tls,
             resource_store_cache_entry_ttl,
             resource_store_cleanup_interval,
+            client_ip_source,
         }
     }
 }
@@ -269,6 +284,11 @@ pub struct HttpHandlerDefinition {
     // Timeout in seconds.
     pub timeout: i64,
     pub tracing_enabled: bool,
+    // The name of the auth guard that protects this handler.
+    // If None, the default guard from the API auth configuration will be used.
+    pub auth_guard: Option<String>,
+    // Whether the handler is explicitly public (no auth required).
+    pub public: bool,
 }
 
 #[derive(Debug)]

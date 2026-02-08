@@ -50,3 +50,18 @@ pub fn get_websocket_token_source(auth_guard_config: &CelerityApiAuthGuard) -> O
         _ => None,
     }
 }
+
+pub fn get_http_token_source(auth_guard_config: &CelerityApiAuthGuard) -> Option<String> {
+    match &auth_guard_config.token_source {
+        Some(CelerityApiAuthGuardValueSource::Str(value_source)) => Some(value_source.clone()),
+        Some(CelerityApiAuthGuardValueSource::ValueSourceConfiguration(value_source_configs)) => {
+            for value_source_config in value_source_configs {
+                if value_source_config.protocol == CelerityApiProtocol::Http {
+                    return Some(value_source_config.source.clone());
+                }
+            }
+            None
+        }
+        _ => None,
+    }
+}

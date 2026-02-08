@@ -12,7 +12,7 @@ use serde_json::json;
 
 use crate::{
     consts::JWT_VALIDATION_CLOCK_SKEW_LEEWAY,
-    utils::{get_websocket_token_source, strip_auth_scheme},
+    utils::{get_http_token_source, get_websocket_token_source, strip_auth_scheme},
     value_sources::{extract_value_from_request_elements, ExtractValueError},
 };
 
@@ -72,6 +72,65 @@ pub async fn validate_jwt_on_ws_connect(
         }
         None => Err(ValidateJwtError::TokenSourceMissing),
     }
+}
+
+/// Validates a JWT on an HTTP request.
+pub async fn validate_jwt_on_http_request(
+    auth_guard_config: &CelerityApiAuthGuard,
+    headers: &HeaderMap,
+    query: &HashMap<String, Vec<String>>,
+    cookies: &CookieJar,
+    body: serde_json::Value,
+    resource_store: Arc<ResourceStore>,
+) -> Result<serde_json::Value, ValidateJwtError> {
+    let token_source_opt = get_http_token_source(auth_guard_config);
+
+    match token_source_opt {
+        Some(token_source) => {
+            let token =
+                extract_value_from_request_elements(token_source, body, headers, query, cookies)?;
+
+            match token {
+                serde_json::Value::String(token) => {
+                    let stripped_token = strip_auth_scheme(&token, auth_guard_config);
+                    validate_jwt_token(&stripped_token, auth_guard_config, resource_store).await
+                }
+                _ => Err(ValidateJwtError::InvalidTokenValue(token.to_string())),
+            }
+        }
+        None => Err(ValidateJwtError::TokenSourceMissing),
+    }
+}
+
+async fn validate_jwt_token(
+    token: &str,
+    auth_guard_config: &CelerityApiAuthGuard,
+    resource_store: Arc<ResourceStore>,
+) -> Result<serde_json::Value, ValidateJwtError> {
+    let jwks = get_jwks(auth_guard_config, resource_store).await?;
+    let header = decode_header(token).map_err(ValidateJwtError::FailedToDecodeHeader)?;
+    let kid = header.kid.clone().ok_or(ValidateJwtError::MissingKid)?;
+    let jwk = jwks.find(&kid).ok_or(ValidateJwtError::JwkNotFound(kid))?;
+    let mut validation = jsonwebtoken::Validation::new(select_allowed_algorithm(&header));
+
+    if let Some(audience) = &auth_guard_config.audience {
+        validation.set_audience(audience);
+    }
+
+    if let Some(issuer) = &auth_guard_config.issuer {
+        validation.set_issuer(std::slice::from_ref(issuer));
+    }
+
+    validation.leeway = JWT_VALIDATION_CLOCK_SKEW_LEEWAY;
+
+    let token_data = decode::<serde_json::Value>(
+        token,
+        &jsonwebtoken::DecodingKey::from_jwk(jwk).map_err(ValidateJwtError::FailedToExtractJwk)?,
+        &validation,
+    )?;
+    Ok(json!({
+        "claims": token_data.claims,
+    }))
 }
 
 #[derive(Debug, Deserialize)]

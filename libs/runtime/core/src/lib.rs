@@ -1,5 +1,6 @@
 pub mod application;
 pub mod auth_custom;
+pub mod auth_http;
 mod auth_jwt;
 pub mod blueprint_helpers;
 pub mod config;

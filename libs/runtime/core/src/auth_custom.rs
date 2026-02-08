@@ -7,7 +7,7 @@ use celerity_blueprint_config_parser::blueprint::CelerityApiAuthGuard;
 
 use crate::{
     request::{RequestId, RequestInfo},
-    utils::{get_websocket_token_source, strip_auth_scheme},
+    utils::{get_http_token_source, get_websocket_token_source, strip_auth_scheme},
     value_sources::{extract_value_from_request_elements, ExtractValueError},
 };
 
@@ -77,6 +77,56 @@ pub async fn validate_custom_auth_on_connect(
                 query,
                 cookies,
             )?;
+
+            match token {
+                serde_json::Value::String(token) => {
+                    let stripped_token = strip_auth_scheme(&token, auth_guard_config);
+                    if let Some(auth_guard) = &auth_guard_opt {
+                        let input = AuthGuardValidateInput {
+                            token: stripped_token,
+                            request: RequestInfo {
+                                headers: headers.clone(),
+                                query: query.clone(),
+                                cookies: cookies.clone(),
+                                body: None,
+                                request_id: request_id.clone(),
+                                client_ip: client_ip.to_string(),
+                            },
+                        };
+                        auth_guard.validate(input).await
+                    } else {
+                        Err(AuthGuardValidateError::UnexpectedError(
+                            "No auth guard handler configured".to_string(),
+                        ))
+                    }
+                }
+                _ => Err(AuthGuardValidateError::Unauthorised(
+                    "Invalid token value provided, token must be a string".to_string(),
+                )),
+            }
+        }
+        None => Err(AuthGuardValidateError::TokenSourceMissing),
+    }
+}
+
+/// Validates a token with a custom auth guard on an HTTP request.
+#[allow(clippy::too_many_arguments)]
+pub async fn validate_custom_auth_on_http_request(
+    auth_guard_config: &CelerityApiAuthGuard,
+    headers: &HeaderMap,
+    query: &HashMap<String, Vec<String>>,
+    cookies: &CookieJar,
+    body: serde_json::Value,
+    request_id: &RequestId,
+    client_ip: &IpAddr,
+    auth_guard_opt: Option<Arc<dyn AuthGuardHandler + Send + Sync>>,
+) -> Result<serde_json::Value, AuthGuardValidateError> {
+    let token_source_opt = get_http_token_source(auth_guard_config);
+
+    match token_source_opt {
+        Some(token_source) => {
+            let token =
+                extract_value_from_request_elements(token_source, body, headers, query, cookies)?;
 
             match token {
                 serde_json::Value::String(token) => {

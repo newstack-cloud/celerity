@@ -791,6 +791,8 @@ mod tests {
                         handler: "get_order".to_string(),
                         timeout: 30,
                         tracing_enabled: true,
+                        auth_guard: None,
+                        public: false,
                     }],
                     base_paths: vec!["/".to_string()],
                 }),

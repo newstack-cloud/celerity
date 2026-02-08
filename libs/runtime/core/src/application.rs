@@ -7,6 +7,7 @@ use std::{
 };
 
 use async_trait::async_trait;
+use axum::http::{HeaderName, HeaderValue, Method as HttpMethod};
 use axum::{
     extract::{MatchedPath, Request},
     handler::Handler,
@@ -14,9 +15,11 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use axum_client_ip::ClientIpSource;
 use celerity_blueprint_config_parser::{
-    blueprint::{BlueprintConfig, CelerityApiBasePath, CelerityApiProtocol},
+    blueprint::{
+        BlueprintConfig, CelerityApiBasePath, CelerityApiCors, CelerityApiCorsConfiguration,
+        CelerityApiProtocol,
+    },
     parse::BlueprintParseError,
 };
 use celerity_helpers::{
@@ -33,11 +36,12 @@ use celerity_ws_registry::{
 };
 use reqwest::Client;
 use tokio::{net::TcpListener, sync::Mutex as AsyncMutex, task::JoinHandle};
-use tower_http::trace::TraceLayer;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::{debug, info, info_span, warn};
 
 use crate::{
     auth_custom::AuthGuardHandler,
+    auth_http::{http_auth_middleware, HttpAuthState},
     config::{ApiConfig, AppConfig, RuntimeConfig, WebSocketConfig},
     consts::DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
     errors::{ApplicationStartError, ConfigError},
@@ -71,6 +75,8 @@ pub struct Application {
     consumer_shutdown_signals: Option<Arc<Mutex<ConsumerShutdownSignals>>>,
     resource_store: Option<Arc<ResourceStore>>,
     resource_store_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
+    http_auth_state: Option<HttpAuthState>,
+    api_cors: Option<CelerityApiCors>,
 }
 
 impl Application {
@@ -91,6 +97,8 @@ impl Application {
             custom_auth_guards: Arc::new(AsyncMutex::new(HashMap::new())),
             resource_store: None,
             resource_store_cleanup_task_shutdown_signal: None,
+            http_auth_state: None,
+            api_cors: None,
         }
     }
 
@@ -104,6 +112,7 @@ impl Application {
         match collect_api_config(blueprint_config, &self.runtime_config) {
             Ok(api_config) => {
                 self.http_server_app = Some(self.setup_http_server_app(&api_config)?);
+                self.api_cors = api_config.cors.clone();
                 app_config.api = Some(api_config);
             }
             Err(ConfigError::ApiMissing) => (),
@@ -246,9 +255,27 @@ impl Application {
                     connection_auth_guard: self
                         .get_custom_auth_guard_blocking(&websocket_config.connection_auth_guard),
                     cors: api_config.cors.clone(),
-                    resource_store,
+                    resource_store: resource_store.clone(),
                 }),
             );
+        }
+
+        // Build HTTP auth state from API auth configuration.
+        if let Some(api_auth) = &api_config.auth {
+            let mut route_guards = HashMap::new();
+            if let Some(http_config) = &api_config.http {
+                for handler in &http_config.handlers {
+                    if !handler.public {
+                        route_guards.insert(handler.path.clone(), handler.auth_guard.clone());
+                    }
+                }
+            }
+            self.http_auth_state = Some(HttpAuthState {
+                api_auth: api_auth.clone(),
+                resource_store,
+                custom_auth_guards: self.custom_auth_guards.clone(),
+                route_guards,
+            });
         }
 
         Ok(http_server_app)
@@ -367,10 +394,27 @@ impl Application {
             platform: self.runtime_config.platform.clone(),
         };
         let http_app = http_app.layer(middleware::from_fn(log_request));
+        let http_app = if let Some(http_auth_state) = &self.http_auth_state {
+            http_app.layer(middleware::from_fn_with_state(
+                http_auth_state.clone(),
+                http_auth_middleware,
+            ))
+        } else {
+            http_app
+        };
+        let http_app = if let Some(cors) = &self.api_cors {
+            http_app.layer(build_cors_layer(cors))
+        } else {
+            http_app
+        };
         let final_http_app =
             attach_tracing_layers(http_app, api_app_state.clone(), self.app_tracing_enabled)
-                // TODO: make client IP extractor configurable from env vars.
-                .layer(ClientIpSource::ConnectInfo.into_extension())
+                .layer(
+                    self.runtime_config
+                        .client_ip_source
+                        .clone()
+                        .into_extension(),
+                )
                 .layer(middleware::from_fn(request_id))
                 .with_state(api_app_state);
 
@@ -606,6 +650,69 @@ fn resolve_websocket_base_path<'a>(
             }
         }
     }
+}
+
+fn build_cors_layer(cors: &CelerityApiCors) -> CorsLayer {
+    match cors {
+        CelerityApiCors::Str(s) if s == "*" => CorsLayer::permissive(),
+        CelerityApiCors::Str(s) => {
+            warn!("unrecognised CORS shorthand \"{s}\", only \"*\" is supported; defaulting to restrictive CORS policy");
+            CorsLayer::new()
+        }
+        CelerityApiCors::CorsConfiguration(config) => build_cors_layer_from_config(config),
+    }
+}
+
+fn build_cors_layer_from_config(config: &CelerityApiCorsConfiguration) -> CorsLayer {
+    let mut layer = CorsLayer::new();
+
+    // Allow origins.
+    if let Some(origins) = &config.allow_origins {
+        let origins: Vec<HeaderValue> = origins
+            .iter()
+            .filter_map(|o| HeaderValue::from_str(o).ok())
+            .collect();
+        layer = layer.allow_origin(origins);
+    }
+
+    // Allow methods.
+    if let Some(methods) = &config.allow_methods {
+        let methods: Vec<HttpMethod> = methods
+            .iter()
+            .filter_map(|m| m.parse::<HttpMethod>().ok())
+            .collect();
+        layer = layer.allow_methods(methods);
+    }
+
+    // Allow headers.
+    if let Some(headers) = &config.allow_headers {
+        let headers: Vec<HeaderName> = headers
+            .iter()
+            .filter_map(|h| h.parse::<HeaderName>().ok())
+            .collect();
+        layer = layer.allow_headers(headers);
+    }
+
+    // Expose headers.
+    if let Some(headers) = &config.expose_headers {
+        let headers: Vec<HeaderName> = headers
+            .iter()
+            .filter_map(|h| h.parse::<HeaderName>().ok())
+            .collect();
+        layer = layer.expose_headers(headers);
+    }
+
+    // Allow credentials.
+    if let Some(true) = config.allow_credentials {
+        layer = layer.allow_credentials(true);
+    }
+
+    // Max age.
+    if let Some(max_age) = config.max_age {
+        layer = layer.max_age(Duration::from_secs(max_age as u64));
+    }
+
+    layer
 }
 
 #[derive(Debug)]

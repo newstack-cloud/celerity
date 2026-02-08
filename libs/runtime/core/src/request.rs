@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, net::IpAddr};
 
 use axum::{
     extract::Request,
@@ -16,6 +16,21 @@ use crate::consts::REQUEST_ID_HEADER;
 #[derive(Clone)]
 pub struct RequestId(pub String);
 
+/// The client IP address resolved by the configured `ClientIpSource`.
+/// Inserted by the `enrich_span` middleware.
+#[derive(Clone, Debug)]
+pub struct ResolvedClientIp(pub IpAddr);
+
+/// The user-agent string from the request.
+/// Inserted by the `enrich_span` middleware.
+#[derive(Clone, Debug)]
+pub struct ResolvedUserAgent(pub String);
+
+/// The matched Axum route pattern (e.g. "/orders/{orderId}").
+/// Inserted by the `enrich_span` middleware.
+#[derive(Clone, Debug)]
+pub struct MatchedRoute(pub String);
+
 // A middleware function for extracting a request ID from the request headers,
 // falling back to generating one if not found.
 pub async fn request_id(mut request: Request, next: Next) -> Result<Response, StatusCode> {
@@ -25,9 +40,15 @@ pub async fn request_id(mut request: Request, next: Next) -> Result<Response, St
         .and_then(|value| value.to_str().ok())
         .map_or_else(|| nanoid!(), |value| value.to_string());
 
-    request.extensions_mut().insert(RequestId(req_id));
+    request.extensions_mut().insert(RequestId(req_id.clone()));
 
-    let response = next.run(request).await;
+    let mut response = next.run(request).await;
+    if let Ok(header_value) = axum::http::HeaderValue::from_str(&req_id) {
+        response.headers_mut().insert(
+            axum::http::HeaderName::from_static(REQUEST_ID_HEADER),
+            header_value,
+        );
+    }
 
     Ok(response)
 }

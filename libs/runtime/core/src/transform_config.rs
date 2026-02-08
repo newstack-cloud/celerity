@@ -1,9 +1,9 @@
-use std::cmp::max;
+use std::cmp::min;
 
 use celerity_blueprint_config_parser::blueprint::{
-    BlueprintConfig, BlueprintMetadata, BlueprintScalarValue, CelerityApiBasePath,
-    CelerityApiProtocol, CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType,
-    RuntimeBlueprintResource, WebSocketAuthStrategy,
+    BlueprintConfig, BlueprintMetadata, BlueprintScalarValue, CelerityApiAuth, CelerityApiBasePath,
+    CelerityApiCors, CelerityApiProtocol, CelerityHandlerSpec, CelerityResourceSpec,
+    CelerityResourceType, RuntimeBlueprintResource, WebSocketAuthStrategy,
 };
 
 use crate::{
@@ -13,6 +13,7 @@ use crate::{
         WebSocketHandlerDefinition,
     },
     consts::{
+        CELERITY_HANDLER_GUARD_ANNOTATION_NAME, CELERITY_HANDLER_PUBLIC_ANNOTATION_NAME,
         CELERITY_HTTP_HANDLER_ANNOTATION_NAME, CELERITY_HTTP_METHOD_ANNOTATION_NAME,
         CELERITY_HTTP_PATH_ANNOTATION_NAME, CELERITY_WS_HANDLER_ANNOTATION_NAME,
         CELERITY_WS_ROUTE_ANNOTATION_NAME, DEFAULT_HANDLER_TIMEOUT, DEFAULT_TRACING_ENABLED,
@@ -68,6 +69,8 @@ pub(crate) fn collect_api_config(
     }
 
     api_config.tracing_enabled = resolve_api_tracing_enabled(&api.spec);
+    api_config.auth = resolve_api_auth(&api.spec);
+    api_config.cors = resolve_api_cors(&api.spec);
 
     Ok(api_config)
 }
@@ -138,11 +141,20 @@ fn collect_http_handler_definitions(
                         .get(CELERITY_HTTP_PATH_ANNOTATION_NAME)
                         .map(ToString::to_string)
                         .unwrap_or_else(|| "/".to_string());
+                    let auth_guard = annotations
+                        .get(CELERITY_HANDLER_GUARD_ANNOTATION_NAME)
+                        .map(ToString::to_string);
+                    let public = annotations
+                        .get(CELERITY_HANDLER_PUBLIC_ANNOTATION_NAME)
+                        .map(|v| v.to_string() == "true")
+                        .unwrap_or(false);
 
                     collect_http_handler_definition(
                         handler,
                         method,
                         path,
+                        auth_guard,
+                        public,
                         blueprint_config,
                         &mut http_handlers,
                         collected_handler_names,
@@ -155,10 +167,13 @@ fn collect_http_handler_definitions(
     Ok(http_handlers)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn collect_http_handler_definition(
     handler: &ResourceWithName,
     method: String,
     path: String,
+    auth_guard: Option<String>,
+    public: bool,
     blueprint_config: &BlueprintConfig,
     http_handlers: &mut Vec<HttpHandlerDefinition>,
     collected_handler_names: &mut Vec<String>,
@@ -176,6 +191,8 @@ fn collect_http_handler_definition(
             blueprint_config.metadata.as_ref(),
             method,
             path,
+            auth_guard,
+            public,
         )?;
         http_handlers.push(handler_definition);
         collected_handler_names.push(handler.name.clone());
@@ -369,6 +386,7 @@ fn check_handler_already_collected(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn apply_http_handler_configurations(
     handler_name: String,
     handler_spec: &CelerityHandlerSpec,
@@ -376,6 +394,8 @@ fn apply_http_handler_configurations(
     blueprint_metadata: Option<&BlueprintMetadata>,
     method: String,
     path: String,
+    auth_guard: Option<String>,
+    public: bool,
 ) -> Result<HttpHandlerDefinition, ConfigError> {
     let handler_definition = HttpHandlerDefinition {
         name: handler_name.clone(),
@@ -394,6 +414,8 @@ fn apply_http_handler_configurations(
             handler_configs.first(),
             blueprint_metadata,
         ),
+        auth_guard,
+        public,
     };
 
     Ok(handler_definition)
@@ -470,14 +492,14 @@ fn resolve_handler_timeout(
 ) -> i64 {
     handler_spec
         .timeout
-        .map(|timeout| max(timeout, MAX_HANDLER_TIMEOUT))
+        .map(|timeout| min(timeout, MAX_HANDLER_TIMEOUT))
         .or_else(|| {
             handler_config
                 .and_then(|config| match &config.resource.spec {
                     CelerityResourceSpec::HandlerConfig(handler_config) => handler_config.timeout,
                     _ => None,
                 })
-                .map(|timeout| max(timeout, MAX_HANDLER_TIMEOUT))
+                .map(|timeout| min(timeout, MAX_HANDLER_TIMEOUT))
         })
         .or_else(|| {
             blueprint_metadata.and_then(|metadata| {
@@ -524,6 +546,20 @@ fn resolve_api_tracing_enabled(api_spec: &CelerityResourceSpec) -> bool {
             api_spec.tracing_enabled.unwrap_or(DEFAULT_TRACING_ENABLED)
         }
         _ => DEFAULT_TRACING_ENABLED,
+    }
+}
+
+fn resolve_api_auth(api_spec: &CelerityResourceSpec) -> Option<CelerityApiAuth> {
+    match api_spec {
+        CelerityResourceSpec::Api(api_spec) => api_spec.auth.clone(),
+        _ => None,
+    }
+}
+
+fn resolve_api_cors(api_spec: &CelerityResourceSpec) -> Option<CelerityApiCors> {
+    match api_spec {
+        CelerityResourceSpec::Api(api_spec) => api_spec.cors.clone(),
+        _ => None,
     }
 }
 

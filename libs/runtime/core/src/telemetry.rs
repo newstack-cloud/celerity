@@ -1,10 +1,13 @@
 use std::time::Instant;
 
 use crate::{
-    config::RuntimeConfig, errors::ApplicationStartError, request::RequestId, types::ApiAppState,
+    config::RuntimeConfig,
+    errors::ApplicationStartError,
+    request::{MatchedRoute, RequestId, ResolvedClientIp, ResolvedUserAgent},
+    types::ApiAppState,
 };
 use axum::{
-    extract::{Request, State},
+    extract::{MatchedPath, Request, State},
     http::StatusCode,
     middleware::Next,
     response::Response,
@@ -142,11 +145,25 @@ pub async fn enrich_span(
     // Connection ID is the same as the request ID but is associated with long-lived
     // connections like WebSockets.
     span.record("connection_id", request_id.0);
-    span.record("user_agent", user_agent);
+    span.record("user_agent", user_agent.as_str());
 
     if state.platform == RuntimePlatform::AWS {
         let xray_trace_id = XrayTraceId::from(trace_id);
         span.record("xray_trace_id", xray_trace_id.to_string());
+    }
+
+    // Insert resolved values as extensions for downstream handlers and SDK bindings.
+    let matched_route = request
+        .extensions()
+        .get::<MatchedPath>()
+        .map(|mp| mp.as_str().to_string());
+    let mut request = request;
+    request.extensions_mut().insert(ResolvedClientIp(client_ip));
+    request
+        .extensions_mut()
+        .insert(ResolvedUserAgent(user_agent));
+    if let Some(route) = matched_route {
+        request.extensions_mut().insert(MatchedRoute(route));
     }
 
     let response = next.run(request).await;
