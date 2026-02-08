@@ -18,6 +18,11 @@
     ]
   },
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/newstack-cloud/celerity",
+    "directory": "libs/runtime/sdk/node"
+  },
   "devDependencies": {
     "@napi-rs/cli": "^3.0.0",
     "ava": "^6.0.1",
@@ -40,7 +45,7 @@
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm",
+    "prepublishOnly": "napi prepublish -t npm --no-gh-release",
     "test": "dotenvx run -f .env.test -- ava -s",
     "universal": "napi universalize",
     "version": "napi version"

@@ -12,6 +12,11 @@
     "runtime.darwin-arm64.node"
   ],
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/newstack-cloud/celerity",
+    "directory": "libs/runtime/sdk/node"
+  },
   "engines": {
     "node": ">= 22"
   }
