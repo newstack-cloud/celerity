@@ -4,7 +4,7 @@
   "libs/runtime/consumers": "0.1.0",
   "libs/runtime/ws": "0.1.0",
   "libs/runtime/sdk": "0.1.0",
-  "libs/runtime/sdk/node": "0.0.0",
+  "libs/runtime/sdk/node": "1.0.0",
   "libs/runtime/sdk/python": "0.1.0",
   "apps/runtime/nodejs": "0.0.0",
   "apps/runtime/python": "0.0.0"
