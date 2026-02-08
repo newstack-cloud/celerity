@@ -24,7 +24,6 @@ module.exports = {
       2,
       "always",
       [
-        "celerity-one",
         "cli",
         "lib-rt-core",
         "lib-rt-workflow",
