@@ -24,7 +24,7 @@ opentelemetry-aws = "0.10.0"
 nanoid = "0.4.0"
 jsonpath-rust = "0.7.1"
 jsonwebtoken = "9.3.1"
-reqwest = "0.12.23"
+reqwest = { version = "0.12.23", default-features = false, features = ["rustls-tls-webpki-roots"] }
 
 [dependencies.celerity_blueprint_config_parser]
 path = "../blueprint-config-parser"
