@@ -1224,6 +1224,7 @@ dependencies = [
  "ring",
  "serde",
  "serde_json",
+ "tempfile",
  "test-log",
  "tokio",
  "tokio-tungstenite 0.23.1",
@@ -1323,6 +1324,7 @@ dependencies = [
  "axum 0.8.8",
  "celerity_helpers",
  "celerity_runtime_core",
+ "chrono",
  "napi",
  "napi-build",
  "napi-derive",
@@ -2714,6 +2716,8 @@ dependencies = [
  "napi-sys",
  "nohash-hasher",
  "rustc-hash",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 
