@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.2.1...runtime-core/v0.3.0) (2026-02-08)
+
+
+### Features
+
+* **lib-rt-core:** add support for chaining multiple guards for auth and other checks ([6bd5e98](https://github.com/newstack-cloud/celerity/commit/6bd5e98553e52b792d8ac3c053a96b750ee3714f))
+
 ## [0.2.1](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.2.0...runtime-core/v0.2.1) (2026-02-08)
 
 
