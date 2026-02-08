@@ -21,10 +21,17 @@
   "devDependencies": {
     "@napi-rs/cli": "^3.0.0",
     "ava": "^6.0.1",
-    "supertest": "^7.0.0"
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
   },
   "ava": {
-    "timeout": "3m"
+    "timeout": "3m",
+    "extensions": {
+      "ts": "module"
+    },
+    "nodeArguments": [
+      "--import=tsx"
+    ]
   },
   "engines": {
     "node": ">= 22"

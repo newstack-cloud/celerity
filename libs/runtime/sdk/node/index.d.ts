@@ -3,7 +3,7 @@
 export declare class CoreRuntimeApplication {
   constructor(runtimeConfig: CoreRuntimeConfig)
   setup(): CoreRuntimeAppConfig
-  registerHttpHandler(path: string, method: string, handler: (err: Error | null, request: Request) => Promise<Response>): void
+  registerHttpHandler(path: string, method: string, timeoutSeconds: number | undefined | null, handler: (err: Error | null, request: Request) => Promise<Response>): void
   run(block: boolean): Promise<void>
   shutdown(): void
 }
@@ -16,15 +16,44 @@ export declare class Request {
    */
   constructor(method: string, uri: string, headers: Record<string, string>)
   /** The HTTP version used for the request. */
-  httpVersion(): string
+  get httpVersion(): string
   /** The HTTP method of the request. */
-  method(): string
+  get method(): string
   /** The URI of the request. */
-  uri(): string
-  /** The headers of the request. */
-  headers(): Record<string, string>
-  /** The body of the request, either as a string or `null` if the body is empty. */
-  body(): Promise<string | null>
+  get uri(): string
+  /** The headers of the request as a map of header name to list of values. */
+  get headers(): Record<string, Array<string>>
+  /** The path of the request (e.g. "/orders/123"). */
+  get path(): string
+  /** Path parameters extracted from the URL (e.g. { "orderId": "123" }). */
+  get pathParams(): Record<string, string>
+  /** Query parameters, supporting multiple values per key. */
+  get query(): Record<string, Array<string>>
+  /** Cookies from the request. */
+  get cookies(): Record<string, string>
+  /** The content type of the request body. */
+  get contentType(): string
+  /** The request ID (from x-request-id header or auto-generated). */
+  get requestId(): string
+  /** The request time as an ISO 8601 string. */
+  get requestTime(): string
+  /** Authentication claims from the auth middleware, or null if no auth. */
+  get auth(): any | null
+  /** The client IP address resolved by the runtime. */
+  get clientIp(): string
+  /**
+   * The trace context for distributed tracing propagation.
+   * Contains "traceparent" (W3C) and optionally "xray_trace_id" (AWS).
+   */
+  get traceContext(): Record<string, string> | null
+  /** The user-agent string from the request. */
+  get userAgent(): string
+  /** The matched route pattern (e.g. "/orders/{orderId}"), or null if unavailable. */
+  get matchedRoute(): string | null
+  /** The text body of the request, or null if the body is empty or binary. */
+  get textBody(): string | null
+  /** The binary body of the request as a Buffer, or null if the body is empty or text. */
+  get binaryBody(): Buffer | null
 }
 export type JsRequestWrapper = Request
 
@@ -42,6 +71,7 @@ export interface CoreHttpHandlerDefinition {
   method: string
   location: string
   handler: string
+  timeout: number
 }
 
 export interface CoreRuntimeAppConfig {
@@ -62,4 +92,5 @@ export interface Response {
   status: number
   headers?: Record<string, string>
   body?: string
+  binaryBody?: Buffer
 }

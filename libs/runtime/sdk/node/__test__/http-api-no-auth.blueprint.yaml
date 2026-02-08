@@ -1,0 +1,157 @@
+version: 2025-11-02
+transform: celerity-2026-02-28
+variables: {}
+resources:
+  testApi:
+    type: "celerity/api"
+    metadata:
+      displayName: Test HTTP API
+    linkSelector:
+      byLabel:
+        application: "test-http"
+    spec:
+      protocols: ["http"]
+      cors:
+        allowCredentials: false
+        allowOrigins:
+          - "https://example.com"
+        allowMethods:
+          - "GET"
+          - "POST"
+          - "PUT"
+          - "DELETE"
+        allowHeaders:
+          - "Content-Type"
+          - "x-request-id"
+          - "x-custom"
+        exposeHeaders:
+          - "Content-Length"
+          - "x-request-id"
+        maxAge: 3600
+      tracingEnabled: false
+
+  listItemsHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: List Items Handler
+      labels:
+        application: "test-http"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "GET"
+        celerity.handler.http.path: "/items"
+    spec:
+      handlerName: Test-ListItems-v1
+      codeLocation: "./test"
+      handler: "handlers.listItems"
+      runtime: "nodejs22.x"
+      timeout: 60
+      tracingEnabled: false
+
+  createItemHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Create Item Handler
+      labels:
+        application: "test-http"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "POST"
+        celerity.handler.http.path: "/items"
+    spec:
+      handlerName: Test-CreateItem-v1
+      codeLocation: "./test"
+      handler: "handlers.createItem"
+      runtime: "nodejs22.x"
+      timeout: 60
+      tracingEnabled: false
+
+  getItemHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Get Item Handler
+      labels:
+        application: "test-http"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "GET"
+        celerity.handler.http.path: "/items/{itemId}"
+    spec:
+      handlerName: Test-GetItem-v1
+      codeLocation: "./test"
+      handler: "handlers.getItem"
+      runtime: "nodejs22.x"
+      timeout: 60
+      tracingEnabled: false
+
+  updateItemHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Update Item Handler
+      labels:
+        application: "test-http"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "PUT"
+        celerity.handler.http.path: "/items/{itemId}"
+    spec:
+      handlerName: Test-UpdateItem-v1
+      codeLocation: "./test"
+      handler: "handlers.updateItem"
+      runtime: "nodejs22.x"
+      timeout: 60
+      tracingEnabled: false
+
+  deleteItemHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Delete Item Handler
+      labels:
+        application: "test-http"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "DELETE"
+        celerity.handler.http.path: "/items/{itemId}"
+    spec:
+      handlerName: Test-DeleteItem-v1
+      codeLocation: "./test"
+      handler: "handlers.deleteItem"
+      runtime: "nodejs22.x"
+      timeout: 60
+      tracingEnabled: false
+
+  slowHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Slow Handler
+      labels:
+        application: "test-http"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "GET"
+        celerity.handler.http.path: "/slow"
+    spec:
+      handlerName: Test-SlowHandler-v1
+      codeLocation: "./test"
+      handler: "handlers.slow"
+      runtime: "nodejs22.x"
+      timeout: 60
+      tracingEnabled: false
+
+  binaryEchoHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Binary Echo Handler
+      labels:
+        application: "test-http"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "POST"
+        celerity.handler.http.path: "/binary-echo"
+    spec:
+      handlerName: Test-BinaryEcho-v1
+      codeLocation: "./test"
+      handler: "handlers.binaryEcho"
+      runtime: "nodejs22.x"
+      timeout: 60
+      tracingEnabled: false
