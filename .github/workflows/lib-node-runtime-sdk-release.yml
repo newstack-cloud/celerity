@@ -18,11 +18,16 @@ permissions:
         description: 'Release tag (e.g. runtime-sdk-node/v1.0.0)'
         required: true
         type: string
+      artifact-run-id:
+        description: 'Reuse artifacts from a previous run (skip build & test). Provide the run ID.'
+        required: false
+        type: string
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   build:
+    if: inputs.artifact-run-id == ''
     strategy:
       fail-fast: false
       matrix:
@@ -114,6 +119,7 @@ jobs:
           path: ./libs/runtime/sdk/node/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   build-freebsd:
+    if: inputs.artifact-run-id == ''
     runs-on: ubuntu-latest
     name: Build FreeBSD
     defaults:
@@ -167,6 +173,7 @@ jobs:
           path: ./libs/runtime/sdk/node/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   test-macOS-windows-binding:
+    if: inputs.artifact-run-id == ''
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
     needs:
       - build
@@ -211,6 +218,7 @@ jobs:
       - name: Test bindings
         run: yarn test
   test-linux-binding:
+    if: inputs.artifact-run-id == ''
     name: Test ${{ matrix.target }} - node@${{ matrix.node }}
     needs:
       - build
@@ -291,7 +299,7 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
-    if: inputs.tag != ''
+    if: ${{ always() && inputs.tag != '' && (inputs.artifact-run-id != '' || (needs.build-freebsd.result == 'success' && needs.test-macOS-windows-binding.result == 'success' && needs.test-linux-binding.result == 'success')) }}
     defaults:
       run:
         working-directory: ${{ env.working-directory }}
@@ -325,6 +333,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./libs/runtime/sdk/node/artifacts
+          run-id: ${{ inputs.artifact-run-id || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Move artifacts
         run: yarn artifacts
       - name: List packages
