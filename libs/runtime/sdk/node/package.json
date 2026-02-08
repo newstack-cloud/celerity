@@ -24,6 +24,7 @@
     "directory": "libs/runtime/sdk/node"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.45.2",
     "@napi-rs/cli": "^3.0.0",
     "ava": "^6.0.1",
     "tsx": "^4.19.0",
@@ -49,8 +50,5 @@
     "test": "dotenvx run -f .env.test -- ava -s",
     "universal": "napi universalize",
     "version": "napi version"
-  },
-  "dependencies": {
-    "@dotenvx/dotenvx": "^1.45.2"
   }
 }
