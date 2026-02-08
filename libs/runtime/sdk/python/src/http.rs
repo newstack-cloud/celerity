@@ -222,6 +222,8 @@ pub struct PyRequest {
   pub path_params: HashMap<String, String>,
   #[pyo3(get)]
   pub protocol_version: HttpProtocolVersion,
+  #[pyo3(get)]
+  pub user_agent: String,
 }
 
 impl Default for PyRequest {
@@ -237,6 +239,7 @@ impl Default for PyRequest {
       path: "/".to_string(),
       path_params: HashMap::new(),
       protocol_version: HttpProtocolVersion::Http1_1,
+      user_agent: String::new(),
     }
   }
 }
@@ -334,6 +337,13 @@ impl PyRequestBuilder {
     self_.into()
   }
 
+  fn set_user_agent(mut self_: PyRefMut<Self>, user_agent: String) -> Py<Self> {
+    if let Some(request) = &mut self_.request {
+      request.user_agent = user_agent;
+    }
+    self_.into()
+  }
+
   fn build(mut self_: PyRefMut<Self>, py: Python) -> PyResult<Py<PyRequest>> {
     if let Some(request) = &mut self_.request {
       if request.content_type.is_empty() {
@@ -396,23 +406,31 @@ pub struct PyRequestContext {
   pub auth: Py<PyAny>,
   #[pyo3(get)]
   pub trace_context: Option<HashMap<String, String>>,
+  #[pyo3(get)]
+  pub client_ip: String,
+  #[pyo3(get)]
+  pub matched_route: Option<String>,
 }
 
 #[pymethods]
 impl PyRequestContext {
   #[new]
-  #[pyo3(signature = (request_id, request_time, auth, trace_context))]
+  #[pyo3(signature = (request_id, request_time, auth, trace_context, client_ip, matched_route))]
   fn new(
     request_id: String,
     request_time: chrono::DateTime<chrono::Utc>,
     auth: Py<PyAny>,
     trace_context: Option<HashMap<String, String>>,
+    client_ip: String,
+    matched_route: Option<String>,
   ) -> Self {
     Self {
       request_id,
       request_time,
       auth,
       trace_context,
+      client_ip,
+      matched_route,
     }
   }
 }

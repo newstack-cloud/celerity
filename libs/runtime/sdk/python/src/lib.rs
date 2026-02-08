@@ -4,6 +4,7 @@ use std::{
   str::FromStr,
   sync::{Arc, Mutex},
   thread,
+  time::Duration,
 };
 
 use axum::{
@@ -22,12 +23,17 @@ use pyo3::prelude::*;
 
 use celerity_runtime_core::{
   application::Application,
-  config::{ApiConfig, AppConfig, RuntimeConfig},
-  request::RequestId,
+  auth_http::AuthClaims,
+  config::{ApiConfig, AppConfig, ClientIpSource, RuntimeConfig},
+  request::{MatchedRoute, RequestId, ResolvedClientIp, ResolvedUserAgent},
   telemetry_utils::extract_trace_context,
 };
+use pythonize::pythonize;
 use tokio::sync::{mpsc, Mutex as TokioMutex};
+use tokio::time;
 use tracing::Level;
+
+const MAX_REQUEST_BODY_SIZE: usize = 10 * 1024 * 1024; // 10 MiB
 
 use crate::{
   core_runtime_config::{CoreRuntimeConfig, CoreRuntimeConfigBuilder, CoreRuntimePlatform},
@@ -122,6 +128,7 @@ impl CoreRuntimeApplication {
       resource_store_verify_tls: runtime_config.resource_store_verify_tls,
       resource_store_cache_entry_ttl: runtime_config.resource_store_cache_entry_ttl,
       resource_store_cleanup_interval: runtime_config.resource_store_cleanup_interval,
+      client_ip_source: ClientIpSource::ConnectInfo,
     };
     println!("Creating CoreRuntimeApplication with config: {native_runtime_config:?}");
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
@@ -164,11 +171,13 @@ impl CoreRuntimeApplication {
     Ok(app_config.into())
   }
 
+  #[pyo3(signature = (path, method, handler, timeout_seconds=None))]
   fn register_http_handler(
     &mut self,
     path: String,
     method: String,
     handler: Py<PyAny>,
+    timeout_seconds: Option<i64>,
   ) -> PyResult<()> {
     let handler_id = format!("{path}::{method}");
     {
@@ -176,6 +185,7 @@ impl CoreRuntimeApplication {
       registry.insert(handler_id.clone(), handler);
     }
 
+    let timeout_secs = timeout_seconds.unwrap_or(60) as u64;
     let py_tx = self.py_tx.as_ref().unwrap().clone();
     let final_handler = move |req: Request<Body>| {
       let py_tx = py_tx.clone();
@@ -189,9 +199,27 @@ impl CoreRuntimeApplication {
           .unwrap_or(&RequestId("".to_string()))
           .0
           .clone();
+        let auth_claims = req
+          .extensions()
+          .get::<AuthClaims>()
+          .and_then(|ac| ac.0.clone());
+        let user_agent = req
+          .extensions()
+          .get::<ResolvedUserAgent>()
+          .map(|ua| ua.0.clone())
+          .unwrap_or_default();
+        let client_ip = req
+          .extensions()
+          .get::<ResolvedClientIp>()
+          .map(|rci| rci.0.to_string())
+          .unwrap_or_default();
+        let matched_route = req
+          .extensions()
+          .get::<MatchedRoute>()
+          .map(|mr| mr.0.clone());
 
         let (mut parts, body) = req.into_parts();
-        let body_bytes = axum::body::to_bytes(body, usize::MAX)
+        let body_bytes = axum::body::to_bytes(body, MAX_REQUEST_BODY_SIZE)
           .await
           .map_err(|err| HandlerError::new(err.to_string()))?;
 
@@ -218,19 +246,28 @@ impl CoreRuntimeApplication {
               path: parts.uri.path().to_string(),
               path_params,
               protocol_version: parts.version.into(),
+              user_agent,
             },
           )
         })
         .map_err(|err| HandlerError::new(err.to_string()))?;
 
         let py_req_ctx = Python::with_gil(|py| {
+          let auth = match &auth_claims {
+            Some(claims) => pythonize(py, claims)
+              .map(|bound| bound.unbind())
+              .unwrap_or_else(|_| Python::None(py)),
+            None => Python::None(py),
+          };
           Py::new(
             py,
             PyRequestContext {
               request_id,
               request_time: chrono::Utc::now(),
-              auth: Python::None(py),
+              auth,
               trace_context: extract_trace_context(),
+              client_ip,
+              matched_route,
             },
           )
         })
@@ -243,10 +280,18 @@ impl CoreRuntimeApplication {
             response: response_tx,
           })
           .map_err(|_| HandlerError::new("Python worker unavailable".to_string()))?;
-        let result = response_rx
-          .await
-          .map_err(|_| HandlerError::new("Python worker dropped".to_string()))?;
-        result.map_err(|e| HandlerError::new(format!("Python error: {e}")))
+
+        let sleep = time::sleep(Duration::from_secs(timeout_secs));
+        tokio::select! {
+          _ = sleep => {
+            Err(HandlerError::timeout())
+          }
+          result = response_rx => {
+            result
+              .map_err(|_| HandlerError::new("Python worker dropped".to_string()))?
+              .map_err(|e| HandlerError::new(format!("Python error: {e}")))
+          }
+        }
       }
     };
 
