@@ -402,6 +402,10 @@ pub struct PyRequestContext {
   pub request_id: String,
   #[pyo3(get)]
   pub request_time: chrono::DateTime<chrono::Utc>,
+  /// Authentication claims from the auth middleware, or None if no auth.
+  /// Claims are namespaced by guard name: `{ "guardName": claims }`.
+  /// When multiple guards are configured in a chain, each guard's claims
+  /// appear under its own key.
   #[pyo3(get)]
   pub auth: Py<PyAny>,
   #[pyo3(get)]

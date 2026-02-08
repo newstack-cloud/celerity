@@ -23,7 +23,7 @@ use pyo3::prelude::*;
 
 use celerity_runtime_core::{
   application::Application,
-  auth_http::AuthClaims,
+  auth_http::AuthContext,
   config::{ApiConfig, AppConfig, ClientIpSource, RuntimeConfig},
   request::{MatchedRoute, RequestId, ResolvedClientIp, ResolvedUserAgent},
   telemetry_utils::extract_trace_context,
@@ -199,9 +199,9 @@ impl CoreRuntimeApplication {
           .unwrap_or(&RequestId("".to_string()))
           .0
           .clone();
-        let auth_claims = req
+        let auth_context_opt = req
           .extensions()
-          .get::<AuthClaims>()
+          .get::<AuthContext>()
           .and_then(|ac| ac.0.clone());
         let user_agent = req
           .extensions()
@@ -253,8 +253,8 @@ impl CoreRuntimeApplication {
         .map_err(|err| HandlerError::new(err.to_string()))?;
 
         let py_req_ctx = Python::with_gil(|py| {
-          let auth = match &auth_claims {
-            Some(claims) => pythonize(py, claims)
+          let auth = match &auth_context_opt {
+            Some(auth_context) => pythonize(py, auth_context)
               .map(|bound| bound.unbind())
               .unwrap_or_else(|_| Python::None(py)),
             None => Python::None(py),
