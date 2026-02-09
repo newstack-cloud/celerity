@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.2.1...runtime-sdk-node/v0.2.2) (2026-02-09)
+
+
+### Bug Fixes
+
+* **lib-rt-sdk-node:** add missing implementation for runtime config ([9abcb0a](https://github.com/newstack-cloud/celerity/commit/9abcb0a78c160d104c51b20d3036b19fffd930bc))
+
 ## [0.2.1](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.2.0...runtime-sdk-node/v0.2.1) (2026-02-08)
 
 
