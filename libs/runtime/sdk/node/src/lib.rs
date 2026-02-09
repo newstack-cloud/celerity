@@ -29,12 +29,12 @@ use celerity_runtime_core::{
   request::{MatchedRoute, RequestId, ResolvedClientIp, ResolvedUserAgent},
   telemetry_utils::extract_trace_context,
 };
-use tracing::Level;
 use napi::bindgen_prelude::*;
 use napi::threadsafe_function::ThreadsafeFunction;
 use napi_derive::napi;
 use serde::{Deserialize, Serialize};
 use tokio::time;
+use tracing::Level;
 
 const MAX_REQUEST_BODY_SIZE: usize = 10 * 1024 * 1024; // 10 MiB
 
