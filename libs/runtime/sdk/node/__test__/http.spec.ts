@@ -1,13 +1,34 @@
 import test from "ava";
 import {
   CoreRuntimeApplication,
+  CoreRuntimePlatform,
   type CoreRuntimeAppConfig,
+  type CoreRuntimeConfig,
   type Request,
   type Response as SdkResponse,
 } from "../index.js";
 
 const PORT = 30100;
 const BASE = `http://localhost:${PORT}`;
+
+/** Returns a full CoreRuntimeConfig with sensible test defaults. */
+function testConfig(
+  overrides: Partial<CoreRuntimeConfig> & { serverPort: number },
+): CoreRuntimeConfig {
+  return {
+    blueprintConfigPath: "__test__/http-api-no-auth.blueprint.yaml",
+    serviceName: "node-sdk-test",
+    traceOtlpCollectorEndpoint: "",
+    runtimeMaxDiagnosticsLevel: "info",
+    platform: CoreRuntimePlatform.Local,
+    testMode: true,
+    resourceStoreVerifyTls: false,
+    resourceStoreCacheEntryTtl: 600,
+    resourceStoreCleanupInterval: 3600,
+    serverLoopbackOnly: true,
+    ...overrides,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Handlers
@@ -99,11 +120,7 @@ async function binaryEchoHandler(
 let app: CoreRuntimeApplication;
 
 test.before(async () => {
-  app = new CoreRuntimeApplication({
-    blueprintConfigPath: "__test__/http-api-no-auth.blueprint.yaml",
-    serverPort: PORT,
-    serverLoopbackOnly: true,
-  });
+  app = new CoreRuntimeApplication(testConfig({ serverPort: PORT }));
   const appConfig = app.setup();
 
   for (const handler of appConfig.api?.http?.handlers ?? []) {
@@ -201,11 +218,7 @@ async function fetchEcho(
 test("setup() returns expected handler definitions", (t) => {
   // Use a different port to avoid conflicts with the main app.
   const serverPort = PORT + 1;
-  const testApp = new CoreRuntimeApplication({
-    blueprintConfigPath: "__test__/http-api-no-auth.blueprint.yaml",
-    serverPort,
-    serverLoopbackOnly: true,
-  });
+  const testApp = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config: CoreRuntimeAppConfig = testApp.setup();
 
   t.truthy(config.api);
@@ -276,11 +289,7 @@ test("custom response status and headers", async (t) => {
   // Register a temporary app on a different port with a custom-status handler.
   // Since we can't re-register handlers on the shared app, create a fresh one.
   const serverPort = PORT + 2;
-  const customApp = new CoreRuntimeApplication({
-    blueprintConfigPath: "__test__/http-api-no-auth.blueprint.yaml",
-    serverPort,
-    serverLoopbackOnly: true,
-  });
+  const customApp = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config = customApp.setup();
   for (const handler of config.api?.http?.handlers ?? []) {
     if (handler.path === "/items" && handler.method === "GET") {

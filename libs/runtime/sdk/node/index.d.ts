@@ -8,6 +8,24 @@ export declare class CoreRuntimeApplication {
   shutdown(): void
 }
 
+export declare class CoreRuntimeConfigBuilder {
+  constructor(blueprintConfigPath: string, serviceName: string, serverPort: number)
+  setServerLoopbackOnly(value: boolean): this
+  setUseCustomHealthCheck(value: boolean): this
+  setTraceOtlpCollectorEndpoint(value: string): this
+  setRuntimeMaxDiagnosticsLevel(value: string): this
+  setPlatform(value: CoreRuntimePlatform): this
+  setTestMode(value: boolean): this
+  setApiResource(value: string): this
+  setConsumerApp(value: string): this
+  setScheduleApp(value: string): this
+  setResourceStoreVerifyTls(value: boolean): this
+  setResourceStoreCacheEntryTtl(value: number): this
+  setResourceStoreCleanupInterval(value: number): this
+  setClientIpSource(value: string): this
+  build(): CoreRuntimeConfig
+}
+
 export declare class Request {
   /**
    * Allows the creation of requests, primarily for test purposes.
@@ -37,7 +55,12 @@ export declare class Request {
   get requestId(): string
   /** The request time as an ISO 8601 string. */
   get requestTime(): string
-  /** Authentication claims from the auth middleware, or null if no auth. */
+  /**
+   * Authentication context from the auth middleware, or null if no auth.
+   * Claims are namespaced by guard name: `{ "guardName": claims }`.
+   * When multiple guards are configured in a chain, each guard's claims
+   * appear under its own key.
+   */
   get auth(): any | null
   /** The client IP address resolved by the runtime. */
   get clientIp(): string
@@ -80,8 +103,35 @@ export interface CoreRuntimeAppConfig {
 
 export interface CoreRuntimeConfig {
   blueprintConfigPath: string
+  serviceName: string
   serverPort: number
   serverLoopbackOnly?: boolean
+  useCustomHealthCheck?: boolean
+  traceOtlpCollectorEndpoint: string
+  runtimeMaxDiagnosticsLevel: string
+  platform: CoreRuntimePlatform
+  testMode: boolean
+  apiResource?: string
+  consumerApp?: string
+  scheduleApp?: string
+  resourceStoreVerifyTls: boolean
+  resourceStoreCacheEntryTtl: number
+  resourceStoreCleanupInterval: number
+  /**
+   * The source used to resolve client IP addresses.
+   * One of: "ConnectInfo", "CfConnectingIp", "TrueClientIp",
+   * "CloudFrontViewerAddress", "RightmostXForwardedFor", "XRealIp", "FlyClientIp".
+   */
+  clientIpSource?: string
+}
+
+/** The platform the runtime is running on. */
+export declare const enum CoreRuntimePlatform {
+  Aws = 'aws',
+  Azure = 'azure',
+  Gcp = 'gcp',
+  Local = 'local',
+  Other = 'other'
 }
 
 export interface CoreWebsocketConfig {
@@ -94,3 +144,6 @@ export interface Response {
   body?: string
   binaryBody?: Buffer
 }
+
+/** Creates a `CoreRuntimeConfig` by reading from `CELERITY_*` environment variables. */
+export declare function runtimeConfigFromEnv(): CoreRuntimeConfig
