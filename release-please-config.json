@@ -61,7 +61,7 @@
       "package-name": "celerity-python-runtime-sdk"
     },
     "apps/runtime/nodejs": {
-      "release-type": "simple",
+      "release-type": "node",
       "component": "runtime-nodejs",
       "package-name": "celerity-runtime-nodejs"
     },

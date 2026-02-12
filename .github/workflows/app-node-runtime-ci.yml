@@ -16,42 +16,45 @@ permissions:
   contents: read
 
 jobs:
-  lint-and-test:
-    name: Lint & Test - Node ${{ matrix.node-version }}
+  validate:
+    name: Validate
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: ['20', '22']
     defaults:
       run:
         working-directory: apps/runtime/nodejs
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22'
 
       - name: Enable corepack
         run: corepack enable
 
-      - name: Setup dependency cache
-        uses: actions/setup-node@v4
-        with:
-          cache: yarn
-
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --immutable
 
-      - name: Lint
-        run: yarn lint
-        if: hashFiles('apps/runtime/nodejs/.eslintrc*', 'apps/runtime/nodejs/eslint.config*') != ''
+      - name: Verify SDK packages resolve
+        run: node -e "import('@celerity-sdk/core').then(m => console.log('core OK'))"
 
-      - name: Build
-        run: yarn build
-        if: hashFiles('apps/runtime/nodejs/tsconfig.json') != ''
+  docker-build:
+    name: Docker Build (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [runtime, dev]
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Test
-        run: yarn test
-        if: hashFiles('apps/runtime/nodejs/jest.config*', 'apps/runtime/nodejs/vitest.config*') != ''
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps/runtime/nodejs
+          target: ${{ matrix.target }}
+          push: false
+          load: true
+          tags: celerity-runtime-nodejs:${{ matrix.target }}-test
+          cache-from: type=gha,scope=ci-${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=ci-${{ matrix.target }}
