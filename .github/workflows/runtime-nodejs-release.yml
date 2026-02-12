@@ -179,6 +179,7 @@ jobs:
     name: Sign & Attest Images
     runs-on: ubuntu-latest
     needs: [build-runtime, build-dev, scan-images]
+    if: always() && needs.build-runtime.result == 'success' && needs.build-dev.result == 'success'
     steps:
       - uses: docker/login-action@v3
         with:
