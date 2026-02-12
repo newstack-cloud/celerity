@@ -40,8 +40,8 @@ Release-As: 0.4.0"
 3. The `release-please.yml` `post-process-tags` job dispatches `runtime-nodejs-release.yml`
    with the tag.
 4. The release workflow builds and pushes Docker images to GHCR:
-   - Production: `ghcr.io/newstack-cloud/celerity-runtime-nodejs:0.4.0`, `:0.4`, `:latest`
-   - Dev: `ghcr.io/newstack-cloud/celerity-runtime-nodejs:dev-0.4.0`, `:dev-latest`
+   - Production: `ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:0.4.0`, `:0.4`, `:latest`
+   - Dev: `ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-0.4.0`, `:dev-latest`
 5. Images are scanned (Trivy), signed (cosign keyless), and attested (SBOM + build provenance).
 
 ## Image Verification
@@ -49,13 +49,13 @@ Release-As: 0.4.0"
 ```bash
 # Verify cosign signature
 cosign verify \
-  ghcr.io/newstack-cloud/celerity-runtime-nodejs:0.4.0 \
+  ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:0.4.0 \
   --certificate-identity-regexp="github.com/newstack-cloud" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
 
 # Verify SBOM attestation
 cosign verify-attestation --type spdxjson \
-  ghcr.io/newstack-cloud/celerity-runtime-nodejs:0.4.0 \
+  ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:0.4.0 \
   --certificate-identity-regexp="github.com/newstack-cloud" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
 ```

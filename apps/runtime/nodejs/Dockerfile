@@ -2,12 +2,12 @@
 # Celerity Node.js Runtime — Multi-Target Dockerfile
 #
 # Targets:
-#   runtime  — Production base image (ghcr.io/newstack-cloud/runtime-nodejs:1.0.0)
-#   dev      — Dev image with tsx + pino-pretty (ghcr.io/newstack-cloud/runtime-nodejs:dev-1.0.0)
+#   runtime  — Production base image (ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:1.0.0)
+#   dev      — Dev image with tsx + pino-pretty (ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-1.0.0)
 #
 # Build:
-#   docker build --target runtime -t ghcr.io/newstack-cloud/runtime-nodejs:1.0.0 .
-#   docker build --target dev -t ghcr.io/newstack-cloud/runtime-nodejs:dev-1.0.0 .
+#   docker build --target runtime -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:1.0.0 .
+#   docker build --target dev -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-1.0.0 .
 # =============================================================================
 
 # -----------------------------------------------------------------------------

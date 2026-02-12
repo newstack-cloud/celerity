@@ -55,6 +55,6 @@ jobs:
           target: ${{ matrix.target }}
           push: false
           load: true
-          tags: celerity-runtime-nodejs:${{ matrix.target }}-test
+          tags: celerity-runtime-nodejs-22:${{ matrix.target }}-test
           cache-from: type=gha,scope=ci-${{ matrix.target }}
           cache-to: type=gha,mode=max,scope=ci-${{ matrix.target }}

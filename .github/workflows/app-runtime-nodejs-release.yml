@@ -17,7 +17,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: newstack-cloud/celerity-runtime-nodejs
+  IMAGE_NAME: newstack-cloud/celerity-runtime-nodejs-22
 
 jobs:
   prepare:
