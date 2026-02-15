@@ -15,7 +15,7 @@ reqwest = { version = "0.12.23", default-features = false, features = [
 ] }
 chrono = "0.4.41"
 axum = { version = "0.8.4", features = ["ws", "http2"] }
-axum-extra = { version = "0.10.1", features = ["cookie"] }
+axum-extra = { version = "0.10.3", features = ["cookie"] }
 opentelemetry = "0.22.0"
 tracing = "0.1.40"
 futures = "0.3.30"
