@@ -8,14 +8,14 @@ license.workspace = true
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
 coverage-helper = "0.2.2"
-env_logger = "0.11.8"
+env_logger = "0.11.9"
 
 [dependencies]
 async-trait = "0.1.88"
-aws-types = "1.3.7"
+aws-types = "1.3.12"
 tokio = { version = "1.45.1", features = ["full"] }
-aws-config = "1.8.0"
-aws-sdk-sqs = "1.73.0"
+aws-config = "1.8.14"
+aws-sdk-sqs = "1.94.0"
 aws-smithy-http = "0.62.1"
 aws-smithy-runtime-api = "1.8.1"
 aws-smithy-types = "1.3.2"

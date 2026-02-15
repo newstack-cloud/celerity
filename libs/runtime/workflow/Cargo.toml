@@ -22,7 +22,7 @@ opentelemetry-otlp = { version = "0.15.0" }
 tracing-opentelemetry = "0.23.0"
 opentelemetry-aws = "0.10.0"
 nanoid = "0.4.0"
-uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }
+uuid = { version = "1.21.0", features = ["v4", "fast-rng"] }
 futures = "0.3.30"
 tokio-stream = { version = "0.1.16", features = ["sync"] }
 jsonpath-rust = "0.7.1"
@@ -46,7 +46,7 @@ path = "../core"
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
-hyper-util = { version = "0.1.6", features = ["client", "client-legacy"] }
+hyper-util = { version = "0.1.20", features = ["client", "client-legacy"] }
 http-body-util = "0.1.2"
 coverage-helper = "0.2.2"
 futures = "0.3.30"
