@@ -103,5 +103,9 @@ jobs:
   cascade-core-to-sdks:
     needs: [release-please, post-process-tags]
     if: ${{ needs.release-please.outputs.releases_created == 'true' }}
-    uses: ./.github/workflows/cascade-core-to-sdks.yml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch cascade workflow
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run cascade-core-to-sdks.yml --repo ${{ github.repository }}

@@ -10,7 +10,6 @@ name: Cascade Core Releases to SDKs
 # (see https://github.com/googleapis/release-please/pull/2534).
 
 on:
-  workflow_call:
   workflow_dispatch:
     inputs:
       core_tags:
