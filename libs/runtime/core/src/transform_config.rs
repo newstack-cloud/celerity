@@ -1,9 +1,9 @@
 use std::cmp::min;
 
 use celerity_blueprint_config_parser::blueprint::{
-    BlueprintConfig, BlueprintMetadata, BlueprintScalarValue, CelerityApiAuth, CelerityApiBasePath,
-    CelerityApiCors, CelerityApiProtocol, CelerityHandlerSpec, CelerityResourceSpec,
-    CelerityResourceType, RuntimeBlueprintResource, WebSocketAuthStrategy,
+    BlueprintConfig, BlueprintMetadata, CelerityApiAuth, CelerityApiBasePath, CelerityApiCors,
+    CelerityApiProtocol, CelerityHandlerSpec, CelerityResourceSpec, CelerityResourceType,
+    RuntimeBlueprintResource, WebSocketAuthStrategy,
 };
 
 use crate::{
@@ -126,46 +126,46 @@ fn collect_http_handler_definitions(
 
     for handler in target_handlers {
         if let Some(annotations) = &handler.resource.metadata.annotations {
-            if let Some(BlueprintScalarValue::Bool(http_enabled)) =
-                annotations.get(CELERITY_HTTP_HANDLER_ANNOTATION_NAME)
-            {
-                if *http_enabled {
-                    check_handler_already_collected(&handler.name, collected_handler_names)?;
+            let http_enabled = annotations
+                .get(CELERITY_HTTP_HANDLER_ANNOTATION_NAME)
+                .map(|v| v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false);
 
-                    // Get http-specific annotations and push to http handlers list.
-                    let method = annotations
-                        .get(CELERITY_HTTP_METHOD_ANNOTATION_NAME)
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| "GET".to_string());
-                    let path = annotations
-                        .get(CELERITY_HTTP_PATH_ANNOTATION_NAME)
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| "/".to_string());
-                    let auth_guard: Option<Vec<String>> = annotations
-                        .get(CELERITY_HANDLER_GUARD_ANNOTATION_NAME)
-                        .map(|v| {
-                            v.to_string()
-                                .split(',')
-                                .map(|s| s.trim().to_string())
-                                .filter(|s| !s.is_empty())
-                                .collect()
-                        });
-                    let public = annotations
-                        .get(CELERITY_HANDLER_PUBLIC_ANNOTATION_NAME)
-                        .map(|v| v.to_string() == "true")
-                        .unwrap_or(false);
+            if http_enabled {
+                check_handler_already_collected(&handler.name, collected_handler_names)?;
 
-                    collect_http_handler_definition(
-                        handler,
-                        method,
-                        path,
-                        auth_guard,
-                        public,
-                        blueprint_config,
-                        &mut http_handlers,
-                        collected_handler_names,
-                    )?;
-                }
+                // Get http-specific annotations and push to http handlers list.
+                let method = annotations
+                    .get(CELERITY_HTTP_METHOD_ANNOTATION_NAME)
+                    .cloned()
+                    .unwrap_or_else(|| "GET".to_string());
+                let path = annotations
+                    .get(CELERITY_HTTP_PATH_ANNOTATION_NAME)
+                    .cloned()
+                    .unwrap_or_else(|| "/".to_string());
+                let auth_guard: Option<Vec<String>> = annotations
+                    .get(CELERITY_HANDLER_GUARD_ANNOTATION_NAME)
+                    .map(|v| {
+                        v.split(',')
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .collect()
+                    });
+                let public = annotations
+                    .get(CELERITY_HANDLER_PUBLIC_ANNOTATION_NAME)
+                    .map(|v| v.eq_ignore_ascii_case("true"))
+                    .unwrap_or(false);
+
+                collect_http_handler_definition(
+                    handler,
+                    method,
+                    path,
+                    auth_guard,
+                    public,
+                    blueprint_config,
+                    &mut http_handlers,
+                    collected_handler_names,
+                )?;
             }
         }
     }
@@ -221,31 +221,32 @@ fn collect_ws_handler_definitions(
 
     for handler in target_handlers {
         if let Some(annotations) = &handler.resource.metadata.annotations {
-            if let Some(BlueprintScalarValue::Bool(ws_enabled)) =
-                annotations.get(CELERITY_WS_HANDLER_ANNOTATION_NAME)
-            {
-                if *ws_enabled {
-                    check_handler_already_collected(&handler.name, collected_handler_names)?;
+            let ws_enabled = annotations
+                .get(CELERITY_WS_HANDLER_ANNOTATION_NAME)
+                .map(|v| v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false);
 
-                    // Get websocket-specific annotations and push to websocket handlers list.
-                    let route = annotations
-                        .get(CELERITY_WS_ROUTE_ANNOTATION_NAME)
-                        .map(ToString::to_string)
-                        .unwrap_or_else(|| "$default".to_string());
+            if ws_enabled {
+                check_handler_already_collected(&handler.name, collected_handler_names)?;
 
-                    // Derive the message object property name to use
-                    // as the route key from the API spec.
-                    let route_key = resolve_websocket_api_route_key(api_spec)?;
+                // Get websocket-specific annotations and push to websocket handlers list.
+                let route = annotations
+                    .get(CELERITY_WS_ROUTE_ANNOTATION_NAME)
+                    .cloned()
+                    .unwrap_or_else(|| "$default".to_string());
 
-                    collect_websocket_handler_definition(
-                        handler,
-                        route,
-                        route_key,
-                        blueprint_config,
-                        &mut ws_handlers,
-                        collected_handler_names,
-                    )?;
-                }
+                // Derive the message object property name to use
+                // as the route key from the API spec.
+                let route_key = resolve_websocket_api_route_key(api_spec)?;
+
+                collect_websocket_handler_definition(
+                    handler,
+                    route,
+                    route_key,
+                    blueprint_config,
+                    &mut ws_handlers,
+                    collected_handler_names,
+                )?;
             }
         }
     }
