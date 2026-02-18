@@ -47,7 +47,7 @@ jobs:
 
       - name: Upload test logs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-logs
           path: ./libs/runtime/sdk/python/test-server.log

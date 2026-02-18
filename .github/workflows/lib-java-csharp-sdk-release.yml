@@ -42,7 +42,7 @@ jobs:
           cp -a sdk/bindings/dotnet/celerity/doc ~/doc/dotnet
           cp -a sdk/bindings/java/celerity/target/apidocs ~/doc/java
       - name: Upload documentation
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: doc-api
           path: ~/doc
@@ -91,7 +91,7 @@ jobs:
           Copy-Item -Path ./target/${{ matrix.target }}/release/celerity_runtime_bindgen_ffi.dll.lib -Destination ffi-modules/${{ matrix.target }}
           Copy-Item -Path ./target/${{ matrix.target }}/release/celerity_runtime_bindgen_ffi_java.dll -Destination ffi-modules/${{ matrix.target }}
       - name: Upload compiled FFI modules
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ffi-modules-${{ matrix.target }}
           path: ./libs/runtime/ffi-modules
@@ -143,7 +143,7 @@ jobs:
           cp ./target/release/libcelerity_runtime_bindgen_ffi.dylib ./ffi-modules/${{ matrix.target }}
           cp ./target/release/libcelerity_runtime_bindgen_ffi_java.dylib ./ffi-modules/${{ matrix.target }}
       - name: Upload compiled FFI modules
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ffi-modules-${{ matrix.target }}
           path: ./libs/runtime/ffi-modules
@@ -204,7 +204,7 @@ jobs:
           cp ./target/${{ matrix.cases.target }}/release/libcelerity_runtime_bindgen_ffi.so ./ffi-modules/${{ matrix.cases.target }}
           cp ./target/${{ matrix.cases.target }}/release/libcelerity_runtime_bindgen_ffi_java.so ./ffi-modules/${{ matrix.cases.target }}
       - name: Upload compiled FFI modules
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ffi-modules-${{ matrix.cases.target }}
           path: ./libs/runtime/ffi-modules
@@ -231,17 +231,17 @@ jobs:
       - name: Package Java bindings
         run: cargo run --bin celerity-runtime-bindings -- --java --package ./ffi-modules --options ./packaging.json
       - name: Upload .NET bindings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dotnet-bindings
           path: ./libs/runtime/sdk/bindings/dotnet/nupkg/celerity*
       - name: Upload Java bindings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: java-bindings-jar
           path: ./libs/runtime/sdk/bindings/java/celerity/target/*.jar
       - name: Upload Java pom.xml
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: java-bindings-pom
           path: ./libs/runtime/sdk/bindings/java/celerity/pom.xml
