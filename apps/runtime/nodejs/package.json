@@ -12,12 +12,12 @@
     "dev": "node --import @swc-node/register/esm-register --import ./register-hooks.mjs --import @celerity-sdk/telemetry/setup --watch-path=${CELERITY_APP_DIR:-./app} index.mjs"
   },
   "dependencies": {
-    "@celerity-sdk/common": "^0.3.0",
-    "@celerity-sdk/config": "^0.3.0",
-    "@celerity-sdk/core": "^0.3.0",
+    "@celerity-sdk/common": "^0.3.1",
+    "@celerity-sdk/config": "^0.3.1",
+    "@celerity-sdk/core": "^0.3.1",
     "@celerity-sdk/runtime": "^0.2.3",
-    "@celerity-sdk/telemetry": "^0.3.0",
-    "@celerity-sdk/types": "^0.3.0"
+    "@celerity-sdk/telemetry": "^0.3.1",
+    "@celerity-sdk/types": "^0.3.1"
   },
   "devDependencies": {
     "@swc-node/register": "^1.10.0",
