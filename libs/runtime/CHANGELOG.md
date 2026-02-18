@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.3.0...runtime-core/v0.3.1) (2026-02-18)
+
+
+### Bug Fixes
+
+* **lib-rt-blueprint-parser:** correct anotation parsing to be string-based ([cf421cd](https://github.com/newstack-cloud/celerity/commit/cf421cd26e97e7580e8e96ac8f953aa1fde7afe1))
+* **lib-rt-core:** update config transformation to handle annotations as strings ([2956cfb](https://github.com/newstack-cloud/celerity/commit/2956cfbe6a7edb5adc52847368230df739070849))
+
 ## [0.3.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.2.1...runtime-core/v0.3.0) (2026-02-08)
 
 
