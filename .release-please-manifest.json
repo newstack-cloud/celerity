@@ -3,7 +3,7 @@
   "libs/runtime": "0.3.1",
   "libs/runtime/consumers": "0.1.0",
   "libs/runtime/ws": "0.1.0",
-  "libs/runtime/sdk": "0.1.0",
+  "libs/runtime/sdk": "0.1.1",
   "libs/runtime/sdk/node": "0.2.2",
   "libs/runtime/sdk/python": "0.1.0",
   "apps/runtime/nodejs": "0.3.0",
