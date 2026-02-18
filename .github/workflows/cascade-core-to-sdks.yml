@@ -1,0 +1,116 @@
+name: Cascade Core Releases to SDKs
+
+# Cascade core library releases to SDK packages.
+# When shared Rust crates (runtime-core, runtime-consumers, runtime-ws) are
+# released, SDK packages that compile them need new releases too.
+# This workflow touches a .core-version file in each SDK directory so
+# release-please sees a file change and opens SDK release PRs on the next run.
+#
+# Workaround for release-please lacking an `additional-paths` feature
+# (see https://github.com/googleapis/release-please/pull/2534).
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      core_tags:
+        description: >
+          Space-separated core tags to cascade (e.g. "runtime-core/v0.3.0").
+          Leave empty to auto-detect from tags on HEAD.
+        required: false
+        type: string
+        default: ""
+      dry_run:
+        description: "Log what would happen without pushing commits"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  cascade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Cascade core releases to SDK directories
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CORE_COMPONENTS="runtime-core runtime-consumers runtime-ws"
+
+          # Map SDK directories to their release-please component names
+          declare -A SDK_COMPONENTS=(
+            ["libs/runtime/sdk/node"]="runtime-sdk-node"
+            ["libs/runtime/sdk/python"]="runtime-sdk-python"
+            ["libs/runtime/sdk"]="runtime-sdk-ffi"
+          )
+
+          # Use manually provided tags or auto-detect from HEAD
+          input_tags="${{ inputs.core_tags }}"
+          core_tags=()
+          if [[ -n "$input_tags" ]]; then
+            for tag in $input_tags; do
+              core_tags+=("$tag")
+              echo "Using provided core tag: $tag"
+            done
+          else
+            for tag in $(git tag --points-at HEAD); do
+              for comp in $CORE_COMPONENTS; do
+                if [[ "$tag" == "$comp/"* ]]; then
+                  core_tags+=("$tag")
+                  echo "Core release detected: $tag"
+                fi
+              done
+            done
+          fi
+
+          if [[ ${#core_tags[@]} -eq 0 ]]; then
+            echo "No core component releases found, skipping SDK cascade."
+            exit 0
+          fi
+
+          # Collect release notes from each core release
+          release_notes=""
+          for tag in "${core_tags[@]}"; do
+            body=$(gh release view "$tag" --json body -q '.body' 2>/dev/null || echo "")
+            if [[ -n "$body" ]]; then
+              release_notes+="$body"$'\n\n'
+            fi
+          done
+
+          # Create a separate commit per SDK so release-please associates
+          # each change with the correct SDK component and changelog.
+          for sdk_dir in "${!SDK_COMPONENTS[@]}"; do
+            sdk_component="${SDK_COMPONENTS[$sdk_dir]}"
+            if [[ -d "$sdk_dir" ]]; then
+              printf "%s\n" "${core_tags[@]}" > "$sdk_dir/.core-version"
+              git add "$sdk_dir/.core-version"
+              commit_msg="deps(${sdk_component}): update core dependencies"
+              commit_msg+=$'\n\n'"Core releases: ${core_tags[*]}"
+              if [[ -n "$release_notes" ]]; then
+                commit_msg+=$'\n\n'"$release_notes"
+              fi
+              git commit -m "$commit_msg"
+              echo "Created cascade commit for $sdk_component"
+            fi
+          done
+
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            echo "Dry run — showing commits that would be pushed:"
+            git log --oneline origin/main..HEAD
+            exit 0
+          fi
+
+          git push origin main
+
+          # Commits made with GITHUB_TOKEN don't trigger on.push workflows,
+          # so explicitly dispatch the release-please workflow to pick up
+          # the .core-version file changes in SDK directories.
+          gh workflow run release-please.yml
