@@ -1,7 +1,6 @@
 ---
 source: blueprint-config-parser/tests/blueprint_config_test.rs
 expression: blueprint_config
-
 ---
 {
   "version": "2025-11-02",
@@ -40,7 +39,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Get Order Handler",
         "annotations": {
-          "celerity.handler.http": true,
+          "celerity.handler.http": "true",
           "celerity.handler.http.method": "GET",
           "celerity.handler.http.path": "/orders/{orderId}"
         },

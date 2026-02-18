@@ -1942,19 +1942,19 @@ fn resolve_annotations(
     annotations: Option<HashMap<String, MappingNode>>,
     env: Box<dyn EnvVars>,
     resource_name: &str,
-) -> Result<Option<HashMap<String, BlueprintScalarValue>>, ResolveError> {
+) -> Result<Option<HashMap<String, String>>, ResolveError> {
     match annotations {
         Some(unwrapped_annotations) => {
             let mut resolved_annotations = HashMap::new();
             for (key, value) in unwrapped_annotations {
-                resolved_annotations.insert(
-                    key.clone(),
-                    resolve_mapping_node_to_scalar_value(
-                        value,
-                        env.clone(),
-                        &resource_metadata_field_path(resource_name, &["annotations", &key]),
-                    )?,
-                );
+                let scalar = resolve_mapping_node_to_scalar_value(
+                    value,
+                    env.clone(),
+                    &resource_metadata_field_path(resource_name, &["annotations", &key]),
+                )?;
+                // Annotations are always stored as strings.
+                // Convert any scalar type to its string representation.
+                resolved_annotations.insert(key, scalar.to_string());
             }
             Ok(Some(resolved_annotations))
         }

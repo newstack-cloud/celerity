@@ -200,8 +200,13 @@ pub enum CelerityResourceType {
 pub struct BlueprintResourceMetadata {
     #[serde(rename = "displayName")]
     pub display_name: String,
+    /// Annotations are always stored as string values.
+    /// Literal booleans, integers, and floats in YAML/JSONC
+    /// are converted to their string representation during parsing.
+    /// Consumers are responsible for validating and converting
+    /// annotation values to the expected type.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub annotations: Option<HashMap<String, BlueprintScalarValue>>,
+    pub annotations: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub labels: Option<HashMap<String, String>>,
 }

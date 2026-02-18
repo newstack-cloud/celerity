@@ -1,7 +1,6 @@
 ---
 source: blueprint-config-parser/tests/blueprint_config_test.rs
 expression: blueprint_config
-
 ---
 {
   "version": "2025-11-02",
@@ -14,7 +13,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Job Handler",
         "annotations": {
-          "celerity.handler.schedule": true
+          "celerity.handler.schedule": "true"
         },
         "labels": {
           "application": "jobs"

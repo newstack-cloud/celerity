@@ -39,7 +39,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Get Order Handler",
         "annotations": {
-          "celerity.handler.http": true,
+          "celerity.handler.http": "true",
           "celerity.handler.http.method": "GET",
           "celerity.handler.http.path": "/orders/{orderId}"
         },
@@ -224,7 +224,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Order Events Processor",
         "annotations": {
-          "celerity.handler.consumer": true
+          "celerity.handler.consumer": "true"
         },
         "labels": {
           "application": "orders"

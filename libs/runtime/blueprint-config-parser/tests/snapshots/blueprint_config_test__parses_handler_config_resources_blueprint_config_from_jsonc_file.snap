@@ -60,7 +60,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Create Invoice Handler",
         "annotations": {
-          "celerity.handler.http": true,
+          "celerity.handler.http": "true",
           "celerity.handler.http.method": "POST",
           "celerity.handler.http.path": "/invoices"
         },
@@ -83,7 +83,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Create Order Handler",
         "annotations": {
-          "celerity.handler.http": true,
+          "celerity.handler.http": "true",
           "celerity.handler.http.method": "POST",
           "celerity.handler.http.path": "/orders"
         },
@@ -106,7 +106,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Get Invoice Handler",
         "annotations": {
-          "celerity.handler.http": true,
+          "celerity.handler.http": "true",
           "celerity.handler.http.method": "GET",
           "celerity.handler.http.path": "/invoices/{invoiceId}"
         },
@@ -129,7 +129,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Get Order Handler",
         "annotations": {
-          "celerity.handler.http": true,
+          "celerity.handler.http": "true",
           "celerity.handler.http.method": "GET",
           "celerity.handler.http.path": "/orders/{orderId}"
         },

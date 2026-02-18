@@ -23,7 +23,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Get Order Handler",
         "annotations": {
-          "celerity.handler.http": true,
+          "celerity.handler.http": "true",
           "celerity.handler.http.method": "GET",
           "celerity.handler.http.path": "/orders/{orderId}"
         },
@@ -51,7 +51,7 @@ expression: blueprint_config
         "displayName": "Order Stream Handler",
         "annotations": {
           "celerity.handler.guard.protectedBy": "jwtWebSocket",
-          "celerity.handler.websocket": true,
+          "celerity.handler.websocket": "true",
           "celerity.handler.websocket.routeKey": "stream"
         },
         "labels": {

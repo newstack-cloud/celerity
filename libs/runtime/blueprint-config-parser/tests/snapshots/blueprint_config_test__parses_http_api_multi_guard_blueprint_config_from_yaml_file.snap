@@ -34,7 +34,7 @@ expression: blueprint_config
       "metadata": {
         "displayName": "Get Order Handler",
         "annotations": {
-          "celerity.handler.http": true,
+          "celerity.handler.http": "true",
           "celerity.handler.http.method": "GET",
           "celerity.handler.http.path": "/orders/{orderId}"
         },
