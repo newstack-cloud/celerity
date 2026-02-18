@@ -26,6 +26,44 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      # Components listed here require an explicit Release-As commit footer
+      # to trigger a release. If release-please opens a PR without one, close
+      # it. This prevents accidental version bumps from feat/fix commits.
+      # See: apps/runtime/nodejs/RELEASING.md
+      - name: Gate Release-As-only components
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          GATED_COMPONENTS=("apps/runtime/nodejs")
+
+          for path in "${GATED_COMPONENTS[@]}"; do
+            # release-please outputs use -- as separator for path-based keys
+            key="${path//\//-}"
+            pr_number="${{ steps.release.outputs[format('{0}--pr', key)] }}"
+
+            if [[ -z "$pr_number" || "$pr_number" == "0" ]]; then
+              continue
+            fi
+
+            echo "Checking gated component: $path (PR #$pr_number)"
+
+            # Get commits in the PR
+            has_release_as=false
+            while IFS= read -r msg; do
+              if echo "$msg" | grep -qiE '^Release-As:'; then
+                has_release_as=true
+                break
+              fi
+            done < <(gh pr view "$pr_number" --json commits --jq '.commits[].messageBody')
+
+            if [[ "$has_release_as" == "false" ]]; then
+              echo "Closing PR #$pr_number — $path requires a Release-As commit footer."
+              gh pr close "$pr_number" --comment "Closed automatically: $path releases require a \`Release-As: x.y.z\` commit footer. See [RELEASING.md](../blob/main/apps/runtime/nodejs/RELEASING.md)."
+            else
+              echo "PR #$pr_number has Release-As footer — allowing."
+            fi
+          done
+
   post-process-tags:
     needs: release-please
     if: ${{ needs.release-please.outputs.releases_created == 'true' }}
@@ -108,4 +146,4 @@ jobs:
       - name: Dispatch cascade workflow
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run cascade-core-to-sdks.yml --repo ${{ github.repository }}
+        run: gh workflow run cascade-core-to-sdks.yml --repo ${{ github.repository }} -f dry_run=false
