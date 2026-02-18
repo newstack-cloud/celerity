@@ -51,82 +51,82 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-darwin-arm64@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime-darwin-arm64@npm:0.2.2"
+"@celerity-sdk/runtime-darwin-arm64@npm:0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime-darwin-arm64@npm:0.2.3"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-darwin-x64@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime-darwin-x64@npm:0.2.2"
+"@celerity-sdk/runtime-darwin-x64@npm:0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime-darwin-x64@npm:0.2.3"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-freebsd-x64@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime-freebsd-x64@npm:0.2.2"
+"@celerity-sdk/runtime-freebsd-x64@npm:0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime-freebsd-x64@npm:0.2.3"
   conditions: os=freebsd & cpu=x64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-arm64-gnu@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime-linux-arm64-gnu@npm:0.2.2"
+"@celerity-sdk/runtime-linux-arm64-gnu@npm:0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime-linux-arm64-gnu@npm:0.2.3"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-arm64-musl@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime-linux-arm64-musl@npm:0.2.2"
+"@celerity-sdk/runtime-linux-arm64-musl@npm:0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime-linux-arm64-musl@npm:0.2.3"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-x64-gnu@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime-linux-x64-gnu@npm:0.2.2"
+"@celerity-sdk/runtime-linux-x64-gnu@npm:0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime-linux-x64-gnu@npm:0.2.3"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-x64-musl@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime-linux-x64-musl@npm:0.2.2"
+"@celerity-sdk/runtime-linux-x64-musl@npm:0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime-linux-x64-musl@npm:0.2.3"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-win32-arm64-msvc@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime-win32-arm64-msvc@npm:0.2.2"
+"@celerity-sdk/runtime-win32-arm64-msvc@npm:0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime-win32-arm64-msvc@npm:0.2.3"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-win32-x64-msvc@npm:0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime-win32-x64-msvc@npm:0.2.2"
+"@celerity-sdk/runtime-win32-x64-msvc@npm:0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime-win32-x64-msvc@npm:0.2.3"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime@npm:^0.2.2":
-  version: 0.2.2
-  resolution: "@celerity-sdk/runtime@npm:0.2.2"
+"@celerity-sdk/runtime@npm:^0.2.3":
+  version: 0.2.3
+  resolution: "@celerity-sdk/runtime@npm:0.2.3"
   dependencies:
-    "@celerity-sdk/runtime-darwin-arm64": "npm:0.2.2"
-    "@celerity-sdk/runtime-darwin-x64": "npm:0.2.2"
-    "@celerity-sdk/runtime-freebsd-x64": "npm:0.2.2"
-    "@celerity-sdk/runtime-linux-arm64-gnu": "npm:0.2.2"
-    "@celerity-sdk/runtime-linux-arm64-musl": "npm:0.2.2"
-    "@celerity-sdk/runtime-linux-x64-gnu": "npm:0.2.2"
-    "@celerity-sdk/runtime-linux-x64-musl": "npm:0.2.2"
-    "@celerity-sdk/runtime-win32-arm64-msvc": "npm:0.2.2"
-    "@celerity-sdk/runtime-win32-x64-msvc": "npm:0.2.2"
+    "@celerity-sdk/runtime-darwin-arm64": "npm:0.2.3"
+    "@celerity-sdk/runtime-darwin-x64": "npm:0.2.3"
+    "@celerity-sdk/runtime-freebsd-x64": "npm:0.2.3"
+    "@celerity-sdk/runtime-linux-arm64-gnu": "npm:0.2.3"
+    "@celerity-sdk/runtime-linux-arm64-musl": "npm:0.2.3"
+    "@celerity-sdk/runtime-linux-x64-gnu": "npm:0.2.3"
+    "@celerity-sdk/runtime-linux-x64-musl": "npm:0.2.3"
+    "@celerity-sdk/runtime-win32-arm64-msvc": "npm:0.2.3"
+    "@celerity-sdk/runtime-win32-x64-msvc": "npm:0.2.3"
   dependenciesMeta:
     "@celerity-sdk/runtime-darwin-arm64":
       optional: true
@@ -146,7 +146,7 @@ __metadata:
       optional: true
     "@celerity-sdk/runtime-win32-x64-msvc":
       optional: true
-  checksum: 10c0/c6229c65c39db5cbfa3fc4135a174e4f26441e883d67a1f949713880d3bfb6fa580407a0cc60eb4713474be0a854ae1fda26ed438b1a0209103a901ac9e7520b
+  checksum: 10c0/6f06ea5a502ba45d1d0fe502da3f4d843174aefa218f68fb82f2a5a798b69a1a66c9f12dd03116644f8b4905d1b790b5a8a323eafa61e0f94a1b347d4d57db3b
   languageName: node
   linkType: hard
 
@@ -1255,7 +1255,7 @@ __metadata:
     "@celerity-sdk/common": "npm:^0.3.0"
     "@celerity-sdk/config": "npm:^0.3.0"
     "@celerity-sdk/core": "npm:^0.3.0"
-    "@celerity-sdk/runtime": "npm:^0.2.2"
+    "@celerity-sdk/runtime": "npm:^0.2.3"
     "@celerity-sdk/telemetry": "npm:^0.3.0"
     "@celerity-sdk/types": "npm:^0.3.0"
     "@swc-node/register": "npm:^1.10.0"

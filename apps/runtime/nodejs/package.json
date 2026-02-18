@@ -15,7 +15,7 @@
     "@celerity-sdk/common": "^0.3.0",
     "@celerity-sdk/config": "^0.3.0",
     "@celerity-sdk/core": "^0.3.0",
-    "@celerity-sdk/runtime": "^0.2.2",
+    "@celerity-sdk/runtime": "^0.2.3",
     "@celerity-sdk/telemetry": "^0.3.0",
     "@celerity-sdk/types": "^0.3.0"
   },
