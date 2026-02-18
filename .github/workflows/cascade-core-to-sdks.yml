@@ -20,10 +20,10 @@ on:
         type: string
         default: ""
       dry_run:
-        description: "Log what would happen without pushing commits"
+        description: "DRY RUN — preview commits without pushing (uncheck to push for real)"
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: write
@@ -37,6 +37,11 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Cascade core releases to SDK directories
         env:
