@@ -53,59 +53,36 @@ yarn build:debug
 
 ## Releasing
 
-To release a new version of the Node.js Runtime SDK, follow these steps:
+Releases are managed by [release-please](https://github.com/googleapis/release-please) and triggered automatically through conventional commits.
 
-### Pre-Release Checklist:
+### How It Works
 
-1. **Update Version in package.json**
-   ```bash
-   # Edit libs/runtime/sdk/node/package.json
-   # Change the version field to match your release
-   "version": "1.2.3"
+1. **Merge a conventional commit** to `main` that touches files in `libs/runtime/sdk/node/`:
+   ```
+   feat(runtime-sdk-node): add support for custom middleware
+   fix(runtime-sdk-node): correct handler timeout resolution
    ```
 
-2. **Update Version in Cargo.toml**
-   ```bash
-   # Edit libs/runtime/sdk/node/Cargo.toml
-   # Change the version field to match your release
-   version = "1.2.3"
-   ```
+2. **release-please opens a release PR** that bumps `package.json` version, updates the changelog, and updates platform-specific `npm/*/package.json` versions.
 
-3. **Commit the Version Changes**
-   ```bash
-   git add libs/runtime/sdk/node/package.json libs/runtime/sdk/node/Cargo.toml
-   git commit -m "chore(lib-rt-sdk-node): bump version to 1.2.3"
-   git push origin main
-   ```
+3. **Merge the release PR** — release-please creates a Git tag (`runtime-sdk-node/v1.2.3`) and a GitHub release.
 
-4. **Create and Push Release Tag**
-   ```bash
-   # Note: Use 'v' prefix in the tag name
-   git tag -a libs/runtime/sdk/node-v1.2.3 -m "Release Celerity Runtime SDK for Node.js v1.2.3"
-   git push origin libs/runtime/sdk/node-v1.2.3
-   ```
+4. **CI automatically publishes** — the release workflow builds native modules for all supported platforms, runs tests, and publishes to NPM as `@celerity-sdk/runtime`.
 
-### Version Format Guidelines:
+### Core Library Changes
 
-- **package.json**: Use `"1.2.3"` (no 'v' prefix)
-- **Cargo.toml**: Use `1.2.3` (no 'v' prefix)
-- **Git Tags**: Use `libs/runtime/sdk/node-v1.2.3` (with 'v' prefix)
-- **NPM Package**: Will be published as `@celerity-sdk/runtime 1.2.3`
+When a shared Rust crate (`runtime-core`, `runtime-consumers`, or `runtime-ws`) is released but no SDK binding code changed, the release-please workflow automatically cascades the release to all SDK packages. It commits a `.core-version` marker file into each SDK directory, which triggers release-please to open SDK release PRs on the next run.
 
-### What Happens After Tagging:
+No manual action is needed — core releases automatically propagate to the Node SDK, Python SDK, and FFI SDK.
 
-1. **CI/CD Pipeline**: The GitHub Actions workflow will automatically:
-   - Build native modules for all supported platforms
-   - Run tests across multiple Node.js versions and platforms
-   - Extract version from tag (e.g., `v1.2.3` from `libs/runtime/sdk/node-v1.2.3`)
-   - Publish to NPM as `@celerity-sdk/runtime 1.2.3`
+### Verification
 
-2. **Verification**: Check that the package is available on NPM:
-   ```bash
-   npm install @celerity-sdk/runtime@1.2.3
-   ```
+After the release workflow completes, verify the package is available on NPM:
+```bash
+npm info @celerity-sdk/runtime versions --json | tail -5
+```
 
-### Supported Platforms:
+### Supported Platforms
 
 The SDK is built and tested for the following platforms:
 
@@ -113,9 +90,3 @@ The SDK is built and tested for the following platforms:
 - **Linux**: x86_64 (GNU), x86_64 (musl), aarch64 (GNU), aarch64 (musl)
 - **Windows**: x86_64, aarch64
 - **FreeBSD**: x86_64
-
-### Important Notes:
-
-- All tests must pass before the package is published
-- Cross-platform compatibility is verified automatically
-- The published package version will be clean (no monorepo prefixes)
