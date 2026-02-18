@@ -98,8 +98,8 @@ jobs:
             ["runtime-sdk-node"]="lib-node-runtime-sdk-release.yml"
             ["runtime-sdk-python"]="lib-python-runtime-sdk-release.yml"
             ["runtime-sdk-ffi"]="lib-java-csharp-sdk-release.yml"
-            ["runtime-nodejs"]="runtime-nodejs-release.yml"
-            ["runtime-python"]="runtime-python-release.yml"
+            ["runtime-nodejs"]="app-runtime-nodejs-release.yml"
+            ["runtime-python"]="app-runtime-python-release.yml"
           )
 
           for tag in $(git tag --points-at HEAD); do
