@@ -22,6 +22,6 @@ path = "../../helpers"
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
 coverage-helper = "0.2.2"
-futures = "0.3.30"
+futures = "0.3.32"
 tokio-tungstenite = "0.23.1"
 nanoid = "0.4.0"

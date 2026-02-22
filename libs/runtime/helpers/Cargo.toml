@@ -18,7 +18,7 @@ axum = { version = "0.8.4", features = ["ws", "http2"] }
 axum-extra = { version = "0.10.1", features = ["cookie"] }
 opentelemetry = "0.22.0"
 tracing = "0.1.40"
-futures = "0.3.30"
+futures = "0.3.32"
 redis = { version = "0.32.5", features = [
     "cluster",
     "tokio-comp",
@@ -31,5 +31,5 @@ rand = "0.8.5"
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
 coverage-helper = "0.2.2"
-hyper-util = { version = "0.1.6", features = ["client", "client-legacy"] }
+hyper-util = { version = "0.1.20", features = ["client", "client-legacy"] }
 http-body-util = "0.1.2"
