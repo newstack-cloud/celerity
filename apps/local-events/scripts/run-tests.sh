@@ -56,15 +56,12 @@ set -a
 source .env.test
 set +a
 
-go test -timeout 120000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic `go list ./... | egrep -v '(/(testutils))$'`
-
-if [ -z "$GITHUB_ACTION" ]; then
-  # We are on a dev machine so produce html output of coverage
-  # to get a visual to better reveal uncovered lines.
-  go tool cover -html=coverage.txt -o coverage.html
-fi
+PACKAGES=$(go list ./... | egrep -v '(/(testutils))$')
 
 if [ -n "$GITHUB_ACTION" ]; then
-  # We are in a CI environment so run tests again to generate JSON report.
-  go test -timeout 120000ms -json -tags "$TEST_TYPES" `go list ./... | egrep -v '(/(testutils))$'` > report.json
+  # CI: single run producing both coverage and JSON report for SonarCloud.
+  go test -timeout 120000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic -json $PACKAGES > report.json
+else
+  go test -timeout 120000ms -race -coverprofile=coverage.txt -coverpkg=./... -covermode=atomic $PACKAGES
+  go tool cover -html=coverage.txt -o coverage.html
 fi
