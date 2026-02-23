@@ -40,6 +40,7 @@ Non-Go components do not need path-based tags — the component tag created by r
 | Component | Path | Description |
 |---|---|---|
 | `cli` | `apps/cli` | CLI for test/build/package/deploy tooling |
+| `local-events` | `apps/local-events` | Sidecar that captures events from local sources and forwards them to Celerity runtime applications for integrated testing. |
 | `runtime-core` | `libs/runtime` | Core runtime libraries (core, workflow, signature, helpers, blueprint parser) |
 | `runtime-consumers` | `libs/runtime/consumers` | Message consumer crates (SQS, Redis, Kinesis, Azure Service Bus, Azure Events Hub, GCloud Pub/Sub, GCloud Tasks) |
 | `runtime-ws` | `libs/runtime/ws` | WebSocket crates (ws-registry, ws-redis) |
