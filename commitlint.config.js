@@ -26,6 +26,7 @@ module.exports = {
       "always",
       [
         "cli",
+        "local-events",
         "lib-rt-core",
         "lib-rt-workflow",
         "lib-rt-blueprint-parser",

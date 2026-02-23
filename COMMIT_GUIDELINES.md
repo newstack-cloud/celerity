@@ -36,6 +36,7 @@ This list will evolve as more applications and libraries are added to Celerity.
 #### Applications
 
 - `cli` - CLI for test/build/package/deploy tooling (`apps/cli`)
+- `local-events` - Local events sidecar for Celerity application event triggers for local and CI testing (`apps/local-events`)
 - `runtime-nodejs` - Node.js runtime wrapper application (`apps/runtime/nodejs`)
 - `runtime-python` - Python runtime wrapper application (`apps/runtime/python`)
 
@@ -92,6 +93,7 @@ Release-please routes commits to component groups by **longest file path match**
 | Component Group | Release-Please Path | Publishes To | Commit Scopes |
 |---|---|---|---|
 | `cli` | `apps/cli` | GitHub Release | `cli` |
+| `local-events` | `apps/local-events` | GHCR | `local-events` |
 | `runtime-core` | `libs/runtime` | Internal | `lib-rt-core`, `lib-rt-workflow`, `lib-rt-blueprint-parser`, `lib-rt-signature`, `lib-rt-helpers`, `lib-rt-aws-helpers` |
 | `runtime-consumers` | `libs/runtime/consumers` | Internal | `lib-rt-consumer-sqs`, `lib-rt-consumer-redis`, `lib-rt-consumer-kinesis`, `lib-rt-consumer-asb`, `lib-rt-consumer-aeh`, `lib-rt-consumer-gcloud-pubsub`, `lib-rt-consumer-gcloud-tasks` |
 | `runtime-ws` | `libs/runtime/ws` | Internal | `lib-rt-ws-registry`, `lib-rt-ws-redis` |

@@ -19,6 +19,11 @@
       "component": "cli",
       "package-name": "cli"
     },
+    "apps/local-events": {
+      "release-type": "simple",
+      "component": "local-events",
+      "package-name": "local-events"
+    },
     "libs/runtime": {
       "release-type": "simple",
       "component": "runtime-core",

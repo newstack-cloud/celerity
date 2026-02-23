@@ -88,7 +88,8 @@ jobs:
           # tags (e.g. cli/v1.0.0). This step creates the path-based tag and
           # re-associates the GitHub release.
           declare -A GO_COMPONENTS=(
-            ["cli"]="apps/cli"
+            ["cli"]="apps/cli",
+            ["local-events"]="apps/local-events"
           )
 
           # Map component names to release workflow files.
@@ -99,7 +100,8 @@ jobs:
             ["runtime-sdk-python"]="lib-python-runtime-sdk-release.yml"
             ["runtime-sdk-ffi"]="lib-java-csharp-sdk-release.yml"
             ["runtime-nodejs"]="app-runtime-nodejs-release.yml"
-            ["runtime-python"]="app-runtime-python-release.yml"
+            ["runtime-python"]="app-runtime-python-release.yml",
+            ["local-events"]="app-local-events-release.yml"
           )
 
           for tag in $(git tag --points-at HEAD); do
