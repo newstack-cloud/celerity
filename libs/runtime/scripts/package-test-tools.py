@@ -61,10 +61,13 @@ def _run_integration_tests(args: argparse.Namespace) -> None:
     test_env_file = '.env.test-ci' if in_ci_env else '.env.test'
     report_flags = "--lcov --output-path coverage.lcov" if in_ci_env else "--html"
     selection_flags = f"--package {args.package}" if args.package else "--workspace"
+    exclude_flags = "--exclude celerity-python-runtime-sdk"
+    feature_flags = "--features celerity_local_consumers"
+
+    # Use cargo-nextest for cleaner per-test output with a summary at the end.
+    # Debug output is only shown for failing tests.
     completed_process = subprocess.run(
-        # By default cargo will run all tests for the workspace
-        # including unit and integration tests.
-        f'cargo llvm-cov {report_flags} test {selection_flags} -- --color always --nocapture --show-output',
+        f'cargo llvm-cov {report_flags} nextest {selection_flags} {exclude_flags} {feature_flags} --no-fail-fast --color always',
         env={
             # Integration tests can't share the same env vars (.env) as the API running
             # in docker as the host endpoints for the AWS service mocks are different.
