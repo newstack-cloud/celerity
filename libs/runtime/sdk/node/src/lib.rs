@@ -3,6 +3,7 @@
 
 use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
 
+use async_trait::async_trait;
 use axum::{
   body::Body,
   http::{request::Parts, Request, StatusCode},
@@ -17,10 +18,11 @@ use celerity_helpers::{
 };
 use celerity_runtime_core::{
   application::Application,
+  auth_custom::{AuthGuardHandler, AuthGuardValidateError, AuthGuardValidateInput},
   auth_http::AuthContext,
   config::{
-    ApiConfig, AppConfig, ClientIpSource, HttpConfig, HttpHandlerDefinition, RuntimeConfig,
-    WebSocketConfig,
+    ApiConfig, AppConfig, ClientIpSource, GuardHandlerDefinition, GuardsConfig, HttpConfig,
+    HttpHandlerDefinition, RuntimeConfig, WebSocketConfig,
   },
   consts::{
     DEFAULT_RESOURCE_STORE_CACHE_ENTRY_TTL, DEFAULT_RESOURCE_STORE_CLEANUP_INTERVAL,
@@ -41,6 +43,10 @@ const MAX_REQUEST_BODY_SIZE: usize = 10 * 1024 * 1024; // 10 MiB
 /// A weak ThreadsafeFunction that does not prevent the Node.js event loop from exiting.
 type WeakTsfn =
   ThreadsafeFunction<JsRequestWrapper, Promise<Response>, JsRequestWrapper, Status, true, true>;
+
+/// A weak ThreadsafeFunction for guard handler callbacks.
+type GuardWeakTsfn =
+  ThreadsafeFunction<GuardInput, Promise<GuardResult>, GuardInput, Status, true, true>;
 
 /// The platform the runtime is running on.
 #[napi(string_enum)]
@@ -152,6 +158,7 @@ impl From<AppConfig> for CoreRuntimeAppConfig {
 pub struct CoreApiConfig {
   pub http: Option<CoreHttpConfig>,
   pub websocket: Option<CoreWebsocketConfig>,
+  pub guards: Option<CoreGuardsConfig>,
 }
 
 impl From<ApiConfig> for CoreApiConfig {
@@ -160,7 +167,12 @@ impl From<ApiConfig> for CoreApiConfig {
     let websocket = api_config
       .websocket
       .map(|websocket_config| websocket_config.into());
-    Self { http, websocket }
+    let guards = api_config.guards.map(|guards_config| guards_config.into());
+    Self {
+      http,
+      websocket,
+      guards,
+    }
   }
 }
 
@@ -190,7 +202,160 @@ impl From<WebSocketConfig> for CoreWebsocketConfig {
 }
 
 #[napi(object)]
+pub struct CoreGuardsConfig {
+  pub handlers: Vec<CoreGuardHandlerDefinition>,
+}
+
+impl From<GuardsConfig> for CoreGuardsConfig {
+  fn from(guards_config: GuardsConfig) -> Self {
+    let handlers = guards_config
+      .handlers
+      .into_iter()
+      .map(|h| h.into())
+      .collect::<Vec<_>>();
+    Self { handlers }
+  }
+}
+
+#[napi(object)]
+pub struct CoreGuardHandlerDefinition {
+  pub name: String,
+}
+
+impl From<GuardHandlerDefinition> for CoreGuardHandlerDefinition {
+  fn from(def: GuardHandlerDefinition) -> Self {
+    Self { name: def.name }
+  }
+}
+
+/// The input passed to a guard handler callback from the Rust runtime.
+#[napi(object)]
+pub struct GuardInput {
+  /// The auth token extracted from the request by the runtime
+  /// (using the configured token source and auth scheme).
+  pub token: String,
+  /// Request information available to the guard.
+  pub request: GuardRequestInfo,
+  /// Accumulated auth context from preceding guards in the chain.
+  /// Keyed by guard name, e.g. `{ "jwt": { "claims": { ... } } }`.
+  /// Empty for the first guard in the chain.
+  pub auth: serde_json::Value,
+  /// The blueprint handler name for the route being protected (e.g. "Orders").
+  /// None for WebSocket connections and when no name is available.
+  pub handler_name: Option<String>,
+}
+
+impl From<AuthGuardValidateInput> for GuardInput {
+  fn from(input: AuthGuardValidateInput) -> Self {
+    let headers = {
+      let mut map: HashMap<String, Vec<String>> = HashMap::new();
+      for (key, value) in input.request.headers.iter() {
+        map
+          .entry(key.as_str().to_string())
+          .or_default()
+          .push(value.to_str().unwrap_or_default().to_string());
+      }
+      map
+    };
+
+    let cookies = {
+      let jar = input.request.cookies;
+      jar
+        .iter()
+        .map(|c| (c.name().to_string(), c.value().to_string()))
+        .collect()
+    };
+
+    Self {
+      token: input.token,
+      request: GuardRequestInfo {
+        method: input.request.method,
+        path: input.request.path,
+        headers,
+        query: input.request.query,
+        cookies,
+        body: input.request.body,
+        request_id: input.request.request_id.0,
+        client_ip: input.request.client_ip,
+      },
+      auth: serde_json::Value::Object(input.auth),
+      handler_name: input.handler_name,
+    }
+  }
+}
+
+/// HTTP request information available to guard handlers.
+#[napi(object)]
+pub struct GuardRequestInfo {
+  pub method: String,
+  pub path: String,
+  pub headers: HashMap<String, Vec<String>>,
+  pub query: HashMap<String, Vec<String>>,
+  pub cookies: HashMap<String, String>,
+  pub body: Option<String>,
+  pub request_id: String,
+  pub client_ip: String,
+}
+
+/// The result returned from a guard handler callback.
+#[napi(object)]
+pub struct GuardResult {
+  /// One of: "allowed", "unauthorised", "forbidden", "error".
+  pub status: String,
+  /// The auth context to store for this guard (returned on success).
+  pub auth: Option<serde_json::Value>,
+  /// Error message (returned on failure).
+  pub message: Option<String>,
+}
+
+/// Wraps a Node.js guard callback as an `AuthGuardHandler` implementation
+/// that the Rust runtime can invoke during the auth guard chain.
+struct NapiAuthGuardHandler {
+  tsfn: Arc<GuardWeakTsfn>,
+}
+
+impl std::fmt::Debug for NapiAuthGuardHandler {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("NapiAuthGuardHandler").finish()
+  }
+}
+
+#[async_trait]
+impl AuthGuardHandler for NapiAuthGuardHandler {
+  async fn validate(
+    &self,
+    input: AuthGuardValidateInput,
+  ) -> std::result::Result<serde_json::Value, AuthGuardValidateError> {
+    let guard_input = GuardInput::from(input);
+    let promise = self
+      .tsfn
+      .call_async(Ok(guard_input))
+      .await
+      .map_err(|e| AuthGuardValidateError::UnexpectedError(e.to_string()))?;
+    let result: GuardResult = promise
+      .await
+      .map_err(|e| AuthGuardValidateError::UnexpectedError(e.to_string()))?;
+
+    match result.status.as_str() {
+      "allowed" => Ok(result.auth.unwrap_or(serde_json::Value::Null)),
+      "unauthorised" => Err(AuthGuardValidateError::Unauthorised(
+        result.message.unwrap_or_default(),
+      )),
+      "forbidden" => Err(AuthGuardValidateError::Forbidden(
+        result.message.unwrap_or_default(),
+      )),
+      _ => Err(AuthGuardValidateError::UnexpectedError(
+        result
+          .message
+          .unwrap_or_else(|| "Guard validation failed".to_string()),
+      )),
+    }
+  }
+}
+
+#[napi(object)]
 pub struct CoreHttpHandlerDefinition {
+  pub name: String,
   pub path: String,
   pub method: String,
   pub location: String,
@@ -201,6 +366,7 @@ pub struct CoreHttpHandlerDefinition {
 impl From<HttpHandlerDefinition> for CoreHttpHandlerDefinition {
   fn from(handler: HttpHandlerDefinition) -> Self {
     Self {
+      name: handler.name,
       path: handler.path,
       method: handler.method,
       location: handler.location,
@@ -668,6 +834,7 @@ impl CoreRuntimeConfigBuilder {
 pub struct CoreRuntimeApplication {
   inner: Application,
   tsfn_cache: Vec<Arc<WeakTsfn>>,
+  guard_tsfn_cache: Vec<Arc<GuardWeakTsfn>>,
 }
 
 #[napi]
@@ -685,6 +852,8 @@ impl CoreRuntimeApplication {
       .unwrap_or("ConnectInfo")
       .parse::<ClientIpSource>()
       .unwrap_or(ClientIpSource::ConnectInfo);
+
+    let log_format = std::env::var("CELERITY_LOG_FORMAT").ok();
 
     let native_runtime_config = RuntimeConfig {
       blueprint_config_path: runtime_config.blueprint_config_path,
@@ -705,11 +874,13 @@ impl CoreRuntimeApplication {
       resource_store_cache_entry_ttl: runtime_config.resource_store_cache_entry_ttl,
       resource_store_cleanup_interval: runtime_config.resource_store_cleanup_interval,
       client_ip_source,
+      log_format,
     };
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
     CoreRuntimeApplication {
       inner,
       tsfn_cache: vec![],
+      guard_tsfn_cache: vec![],
     }
   }
 
@@ -764,6 +935,24 @@ impl CoreRuntimeApplication {
 
   #[allow(clippy::missing_safety_doc)]
   #[napi]
+  pub async unsafe fn register_guard_handler(
+    &mut self,
+    name: String,
+    #[napi(ts_arg_type = "(err: Error | null, input: GuardInput) => Promise<GuardResult>")]
+    handler: GuardWeakTsfn,
+  ) -> Result<()> {
+    let tsfn = Arc::new(handler);
+    self.guard_tsfn_cache.push(tsfn.clone());
+    let guard_handler = NapiAuthGuardHandler { tsfn };
+    self
+      .inner
+      .register_custom_auth_guard(&name, guard_handler)
+      .await;
+    Ok(())
+  }
+
+  #[allow(clippy::missing_safety_doc)]
+  #[napi]
   pub async unsafe fn run(&mut self, block: bool) -> Result<()> {
     self.inner.run(block).await.map_err(|err| {
       Error::new(
@@ -778,6 +967,7 @@ impl CoreRuntimeApplication {
   pub fn shutdown(&mut self) -> Result<()> {
     self.inner.shutdown();
     self.tsfn_cache.clear();
+    self.guard_tsfn_cache.clear();
     Ok(())
   }
 }

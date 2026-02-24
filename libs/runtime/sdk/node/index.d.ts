@@ -4,6 +4,7 @@ export declare class CoreRuntimeApplication {
   constructor(runtimeConfig: CoreRuntimeConfig)
   setup(): CoreRuntimeAppConfig
   registerHttpHandler(path: string, method: string, timeoutSeconds: number | undefined | null, handler: (err: Error | null, request: Request) => Promise<Response>): void
+  registerGuardHandler(name: string, handler: (err: Error | null, input: GuardInput) => Promise<GuardResult>): Promise<void>
   run(block: boolean): Promise<void>
   shutdown(): void
 }
@@ -83,6 +84,15 @@ export type JsRequestWrapper = Request
 export interface CoreApiConfig {
   http?: CoreHttpConfig
   websocket?: CoreWebsocketConfig
+  guards?: CoreGuardsConfig
+}
+
+export interface CoreGuardHandlerDefinition {
+  name: string
+}
+
+export interface CoreGuardsConfig {
+  handlers: Array<CoreGuardHandlerDefinition>
 }
 
 export interface CoreHttpConfig {
@@ -90,6 +100,7 @@ export interface CoreHttpConfig {
 }
 
 export interface CoreHttpHandlerDefinition {
+  name: string
   path: string
   method: string
   location: string
@@ -136,6 +147,50 @@ export declare const enum CoreRuntimePlatform {
 
 export interface CoreWebsocketConfig {
 
+}
+
+/** The input passed to a guard handler callback from the Rust runtime. */
+export interface GuardInput {
+  /**
+   * The auth token extracted from the request by the runtime
+   * (using the configured token source and auth scheme).
+   */
+  token: string
+  /** Request information available to the guard. */
+  request: GuardRequestInfo
+  /**
+   * Accumulated auth context from preceding guards in the chain.
+   * Keyed by guard name, e.g. `{ "jwt": { "claims": { ... } } }`.
+   * Empty for the first guard in the chain.
+   */
+  auth: any
+  /**
+   * The blueprint handler name for the route being protected (e.g. "Orders").
+   * None for WebSocket connections and when no name is available.
+   */
+  handlerName?: string
+}
+
+/** HTTP request information available to guard handlers. */
+export interface GuardRequestInfo {
+  method: string
+  path: string
+  headers: Record<string, Array<string>>
+  query: Record<string, Array<string>>
+  cookies: Record<string, string>
+  body?: string
+  requestId: string
+  clientIp: string
+}
+
+/** The result returned from a guard handler callback. */
+export interface GuardResult {
+  /** One of: "allowed", "unauthorised", "forbidden", "error". */
+  status: string
+  /** The auth context to store for this guard (returned on success). */
+  auth?: any
+  /** Error message (returned on failure). */
+  message?: string
 }
 
 export interface Response {
