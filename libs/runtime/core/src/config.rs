@@ -8,6 +8,7 @@ use celerity_helpers::{
     env::EnvVars,
     runtime_types::{RuntimeCallMode, RuntimePlatform},
 };
+use serde_json::Value;
 use tracing::Level;
 
 use crate::consts::DEFAULT_LOCAL_API_PORT;
@@ -113,6 +114,10 @@ pub struct RuntimeConfig {
     /// Defaults to `ConnectInfo` (TCP socket peer address).
     /// Set to a vendor-specific source when running behind a reverse proxy or CDN.
     pub client_ip_source: ClientIpSource,
+    /// Override for log format selection.
+    /// "json" forces JSON output, "pretty"/"human" forces pretty-print.
+    /// If unset, format is determined by platform (Local -> pretty, others -> JSON).
+    pub log_format: Option<String>,
 }
 
 impl RuntimeConfig {
@@ -226,6 +231,8 @@ impl RuntimeConfig {
                  TrueClientIp, CloudFrontViewerAddress, RightmostXForwardedFor, XRealIp, FlyClientIp",
             );
 
+        let log_format = env.var("CELERITY_LOG_FORMAT").ok();
+
         RuntimeConfig {
             blueprint_config_path,
             runtime_call_mode,
@@ -245,6 +252,7 @@ impl RuntimeConfig {
             resource_store_cache_entry_ttl,
             resource_store_cleanup_interval,
             client_ip_source,
+            log_format,
         }
     }
 }
@@ -254,15 +262,28 @@ pub struct AppConfig {
     pub api: Option<ApiConfig>,
     pub consumers: Option<ConsumersConfig>,
     pub schedules: Option<SchedulesConfig>,
+    pub events: Option<EventsConfig>,
+    pub custom_handlers: Option<CustomHandlersConfig>,
 }
 
 #[derive(Debug)]
 pub struct ApiConfig {
     pub http: Option<HttpConfig>,
     pub websocket: Option<WebSocketConfig>,
+    pub guards: Option<GuardsConfig>,
     pub auth: Option<CelerityApiAuth>,
     pub cors: Option<CelerityApiCors>,
     pub tracing_enabled: bool,
+}
+
+#[derive(Debug)]
+pub struct GuardsConfig {
+    pub handlers: Vec<GuardHandlerDefinition>,
+}
+
+#[derive(Debug, Clone)]
+pub struct GuardHandlerDefinition {
+    pub name: String,
 }
 
 #[derive(Debug)]
@@ -316,14 +337,27 @@ pub struct WebSocketHandlerDefinition {
     pub tracing_enabled: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConsumersConfig {
     pub consumers: Vec<ConsumerConfig>,
 }
 
-#[derive(Debug)]
+/// Distinguishes the source type of a consumer for stream name derivation.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConsumerSourceType {
+    /// A pull-based queue (SQS, Service Bus, Pub/Sub pull subscription).
+    Queue,
+    /// A Celerity topic identified by the `celerity::topic::` prefix in sourceId.
+    Topic,
+}
+
+#[derive(Debug, Clone)]
 pub struct ConsumerConfig {
+    /// The blueprint resource name of this consumer.
+    pub consumer_name: String,
     pub source_id: String,
+    /// Whether this consumer sources from a queue or a Celerity topic.
+    pub source_type: ConsumerSourceType,
     // Depending on the deployment environment,
     // this may be overridden if the provided
     // value is not within the allowed range.
@@ -341,10 +375,16 @@ pub struct ConsumerConfig {
     // This defaults to `event` and is only used when routing is activated through the use of
     // a `celerity.handler.consumer.route` annotation set on a handler.
     pub routing_key: Option<String>,
+    /// The source ID for the dead-letter queue/stream, if configured.
+    /// For queue sources: resolved from a linked DLQ queue resource in the blueprint.
+    /// For topic sources: auto-generated when `celerity.consumer.deadLetterQueue` is true (default).
+    pub dlq_source_id: Option<String>,
+    /// Max processing attempts before a message is moved to the DLQ.
+    pub max_retries: Option<i64>,
     pub handlers: Vec<EventHandlerDefinition>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct EventHandlerDefinition {
     pub name: String,
     pub location: String,
@@ -352,14 +392,17 @@ pub struct EventHandlerDefinition {
     // Timeout in seconds.
     pub timeout: i64,
     pub tracing_enabled: bool,
+    // The route value for consumer message routing.
+    // From the `celerity.handler.consumer.route` annotation.
+    pub route: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SchedulesConfig {
     pub schedules: Vec<ScheduleConfig>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ScheduleConfig {
     // The schedule ID provided in messages polled from the
     // schedule message queue.
@@ -383,14 +426,16 @@ pub struct ScheduleConfig {
     // this may not be used.
     pub partial_failures: Option<bool>,
     pub handlers: Vec<EventHandlerDefinition>,
+    // A static JSON value delivered to the schedule handler on every trigger.
+    pub input: Option<Value>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EventsConfig {
     pub events: Vec<EventConfig>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum EventConfig {
     // An event trigger (e.g. file uploaded to Amazon S3)
     EventTrigger(EventTriggerConfig),
@@ -398,7 +443,7 @@ pub enum EventConfig {
     Stream(StreamConfig),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EventTriggerConfig {
     // The event type provided in messages polled from the
     // events message queue.
@@ -420,8 +465,19 @@ pub struct EventTriggerConfig {
     pub handlers: Vec<EventHandlerDefinition>,
 }
 
-#[derive(Debug)]
+/// Distinguishes the source type of a stream for naming and routing.
+#[derive(Debug, Clone, PartialEq)]
+pub enum StreamSourceType {
+    /// Database change stream (DynamoDB Streams, Cosmos DB Change Feed, etc.).
+    Datastore,
+    /// Standalone data stream (Kinesis, Event Hubs, etc.).
+    DataStream,
+}
+
+#[derive(Debug, Clone)]
 pub struct StreamConfig {
+    /// The source type determines the Valkey stream naming prefix.
+    pub source_type: StreamSourceType,
     // The ID of the stream from which event messages
     // are consumed.
     pub stream_id: String,
@@ -432,5 +488,22 @@ pub struct StreamConfig {
     // Depending on the deployment environment,
     // this may not be used.
     pub partial_failures: Option<bool>,
+    // Whether to start reading from the beginning of the stream.
+    pub start_from_beginning: Option<bool>,
     pub handlers: Vec<EventHandlerDefinition>,
+}
+
+#[derive(Debug)]
+pub struct CustomHandlersConfig {
+    pub handlers: Vec<CustomHandlerDefinition>,
+}
+
+#[derive(Debug)]
+pub struct CustomHandlerDefinition {
+    pub name: String,
+    pub location: String,
+    pub handler: String,
+    // Timeout in seconds.
+    pub timeout: i64,
+    pub tracing_enabled: bool,
 }

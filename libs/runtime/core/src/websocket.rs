@@ -11,7 +11,7 @@ use async_trait::async_trait;
 use axum::{
     extract::{
         ws::{CloseFrame, Message, WebSocket},
-        Request, State, WebSocketUpgrade,
+        FromRequestParts, Request, State, WebSocketUpgrade,
     },
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
@@ -35,7 +35,10 @@ use tokio::{sync::Mutex, time::sleep};
 use tracing::{debug, error, info, info_span, warn, Instrument};
 
 use crate::{
-    auth_custom::{validate_custom_auth_on_connect, AuthGuardHandler, AuthGuardValidateError},
+    auth_custom::{
+        validate_custom_auth_on_connect, AuthGuardHandler, AuthGuardValidateError,
+        CustomAuthRequestContext,
+    },
     auth_jwt::{validate_jwt_on_ws_connect, ValidateJwtError},
     consts::{
         CELERITY_WS_CONNECT_HANDLER_ROUTE, CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE,
@@ -96,8 +99,6 @@ pub struct JsonMessageInfo {
     pub message_id: String,
     #[serde(rename = "context")]
     pub request_ctx: Option<MessageRequestContext>,
-    // Loosely typed JSON value that represents the message body parsed
-    // from a text WebSocket message.
     pub body: serde_json::Value,
     #[serde(rename = "traceContext")]
     pub trace_context: Option<HashMap<String, String>>,
@@ -106,7 +107,6 @@ pub struct JsonMessageInfo {
 /// A binary message received from a WebSocket client with additional information.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BinaryMessageInfo<'a> {
-    // The connection ID for the client that sent the message.
     #[serde(rename = "connectionId")]
     pub connection_id: String,
     #[serde(rename = "eventType")]
@@ -115,8 +115,7 @@ pub struct BinaryMessageInfo<'a> {
     pub message_id: String,
     #[serde(rename = "context")]
     pub request_ctx: Option<MessageRequestContext>,
-    // The body of the binary message after stripping routing information
-    // from the beginning of the message.
+    /// The body after stripping routing information from the beginning of the message.
     pub body: &'a [u8],
     #[serde(rename = "traceContext")]
     pub trace_context: Option<HashMap<String, String>>,
@@ -165,15 +164,29 @@ pub struct WebSocketRequestContext {
     pub trace_context: Option<HashMap<String, String>>,
 }
 
-#[allow(clippy::too_many_arguments)]
-pub(crate) async fn handler(
-    ws: WebSocketUpgrade,
+/// Bundles the per-request Axum extractors for the WebSocket upgrade handler,
+/// keeping `WebSocketUpgrade`, `State`, and `Request` as separate parameters.
+#[derive(FromRequestParts)]
+#[from_request(state(WebSocketAppState))]
+pub(crate) struct WsHandlerParts {
     user_agent_header: Option<TypedHeader<headers::UserAgent>>,
     headers: HeaderMap,
-    Extension(request_id): Extension<RequestId>,
-    State(state): State<WebSocketAppState>,
-    ClientIp(client_ip): ClientIp,
+    #[from_request(via(Extension))]
+    request_id: RequestId,
+    client_ip: ClientIp,
     cookies: CookieJar,
+}
+
+pub(crate) async fn handler(
+    ws: WebSocketUpgrade,
+    State(state): State<WebSocketAppState>,
+    WsHandlerParts {
+        user_agent_header,
+        headers,
+        request_id,
+        client_ip,
+        cookies,
+    }: WsHandlerParts,
     request: Request,
 ) -> impl IntoResponse {
     let _ = match user_agent_header.clone() {
@@ -196,7 +209,7 @@ pub(crate) async fn handler(
             protocol_version: HttpProtocolVersion::Http1_1,
             headers,
             user_agent_header,
-            client_ip,
+            client_ip: client_ip.0,
             query,
             cookies,
             trace_context: extract_trace_context(),
@@ -239,23 +252,39 @@ async fn handle_socket(
         }
 
         let mut auth_result_data = serde_json::Value::Null;
-        if let Some(WebSocketAuthStrategy::Connect) = &state.auth_strategy {
-            let step_after_auth =
-                authenticate_connection(socket_ref.clone(), &state, &request_ctx).await;
-            match step_after_auth {
-                ControlFlow::Continue(data) => auth_result_data = data,
-                ControlFlow::Break(_) => {
-                    return;
+        let requires_auth_message =
+            matches!(&state.auth_strategy, Some(WebSocketAuthStrategy::AuthMessage));
+        let mut is_authenticated = !requires_auth_message;
+
+        match &state.auth_strategy {
+            Some(WebSocketAuthStrategy::Connect) => {
+                // Connect strategy: auth happens during the upgrade.
+                // $connect only fires if auth succeeds (below).
+                let step_after_auth =
+                    authenticate_connection(socket_ref.clone(), &state, &request_ctx).await;
+                match step_after_auth {
+                    ControlFlow::Continue(data) => auth_result_data = data,
+                    ControlFlow::Break(_) => {
+                        return;
+                    }
                 }
             }
+            Some(WebSocketAuthStrategy::AuthMessage) => {
+                // AuthMessage strategy: connection upgrades without auth.
+                // $connect fires immediately (below) with null auth data.
+                // Auth happens later when client sends an "authenticate" message.
+            }
+            _ => {} // No auth configured
         }
 
+        // For Connect strategy, only reached after successful auth (with auth data).
+        // For AuthMessage / no auth, fires immediately with null auth data.
         if let ControlFlow::Break(_) = on_connect(
             socket_ref.clone(),
             connection_id.clone(),
             &state,
             &request_ctx,
-            auth_result_data,
+            auth_result_data.clone(),
         )
         .await
         {
@@ -270,15 +299,59 @@ async fn handle_socket(
             let mut acquired_socket = socket_ref.lock().await;
 
             if let Some(Ok(msg)) = acquired_socket.recv().await {
-                if process_message(msg, connection_id.clone(), request_ctx.clone(), &state)
+                // Handle Celerity application-level heartbeat pings before
+                // route resolution. These are distinct from WebSocket protocol-level
+                // Ping frames (handled by tungstenite automatically).
+                if let Some(pong) = detect_heartbeat_ping(&msg) {
+                    let _ = acquired_socket.send(pong).await;
+                    continue;
+                }
+
+                if !is_authenticated {
+                    // Connection is in unauthenticated state (authMessage strategy).
+                    // Only accept an "authenticate" message; reject everything else.
+                    match handle_auth_message(
+                        &msg,
+                        &connection_id,
+                        &state,
+                        &request_ctx,
+                        &mut acquired_socket,
+                    )
                     .await
-                    .is_break()
-                {
-                    state.connections.remove_connection(connection_id.clone());
-                    connection_alive = false;
+                    {
+                        AuthMessageResult::Authenticated(_data) => {
+                            is_authenticated = true;
+                            // TODO: propagate auth data into request context
+                            // for subsequent message handlers.
+                        }
+                        AuthMessageResult::Failed => {
+                            state.connections.remove_connection(connection_id.clone());
+                            connection_alive = false;
+                        }
+                        AuthMessageResult::NotAuthMessage => {
+                            let reject = serde_json::json!({
+                                "event": "error",
+                                "data": {
+                                    "message": "Authentication required. Send an authenticate message first."
+                                }
+                            })
+                            .to_string();
+                            let _ = acquired_socket.send(Message::Text(reject.into())).await;
+                        }
+                    }
+                } else {
+                    // Release lock before processing to allow other tasks
+                    // (e.g. cluster relay) to write to the socket.
+                    drop(acquired_socket);
+                    if process_message(msg, connection_id.clone(), request_ctx.clone(), &state)
+                        .await
+                        .is_break()
+                    {
+                        state.connections.remove_connection(connection_id.clone());
+                        connection_alive = false;
+                    }
                 }
             } else {
-                // client disconnected
                 state.connections.remove_connection(connection_id.clone());
                 connection_alive = false;
             }
@@ -344,12 +417,17 @@ async fn authenticate_connection(
                 let guard_handler = state.connection_auth_guards.get(guard_name).cloned();
                 match validate_custom_auth_on_connect(
                     auth_guard_config,
-                    &request_ctx.headers,
-                    &request_ctx.query,
-                    &request_ctx.cookies,
-                    &request_ctx.request_id,
-                    &request_ctx.client_ip,
+                    CustomAuthRequestContext {
+                        method: "GET",
+                        path: &request_ctx.path,
+                        headers: &request_ctx.headers,
+                        query: &request_ctx.query,
+                        cookies: &request_ctx.cookies,
+                        request_id: &request_ctx.request_id,
+                        client_ip: &request_ctx.client_ip,
+                    },
                     guard_handler,
+                    &accumulated_claims,
                 )
                 .await
                 {
@@ -574,6 +652,212 @@ fn forbidden_error_close_message() -> Message {
     }))
 }
 
+// ---------- authMessage strategy ----------
+
+enum AuthMessageResult {
+    /// Auth succeeded; carries the validated claims/user info.
+    Authenticated(serde_json::Value),
+    /// Auth failed; the handler already sent failure + close frames.
+    Failed,
+    /// The message was not an "authenticate" message.
+    NotAuthMessage,
+}
+
+/// Handles a message received while the connection is in the unauthenticated
+/// state (`authMessage` strategy). If the message matches the "authenticate"
+/// route, the token is extracted and validated through the guard chain.
+async fn handle_auth_message(
+    msg: &Message,
+    connection_id: &str,
+    state: &WebSocketAppState,
+    request_ctx: &WebSocketRequestContext,
+    socket: &mut WebSocket,
+) -> AuthMessageResult {
+    let text = match msg {
+        Message::Text(t) => t.to_string(),
+        _ => return AuthMessageResult::NotAuthMessage,
+    };
+
+    let data: serde_json::Value = match serde_json::from_str(&text) {
+        Ok(v) => v,
+        Err(_) => return AuthMessageResult::NotAuthMessage,
+    };
+
+    let route = data.get(&state.route_key).and_then(|v| v.as_str());
+    if route != Some("authenticate") {
+        return AuthMessageResult::NotAuthMessage;
+    }
+
+    // Extract token from $.data.token in the message body.
+    let token = data
+        .pointer("/data/token")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    let token = match token {
+        Some(t) => t,
+        None => {
+            let fail_msg = create_auth_response(false, None, Some("Token not found in message"));
+            let _ = socket.send(Message::Text(fail_msg.into())).await;
+            let _ = socket.send(Message::Close(None)).await;
+            return AuthMessageResult::Failed;
+        }
+    };
+
+    // Validate through the guard chain by creating a synthetic request context
+    // with the token placed in an Authorization header so the existing validation
+    // functions can extract it from their configured tokenSource.
+    match validate_auth_message_token(&token, state, request_ctx).await {
+        Ok(auth_data) => {
+            let success_msg = create_auth_response(true, Some(&auth_data), None);
+            let _ = socket.send(Message::Text(success_msg.into())).await;
+            AuthMessageResult::Authenticated(auth_data)
+        }
+        Err(e) => {
+            warn!(
+                connection_id = %connection_id,
+                "authMessage validation failed: {e}",
+            );
+            let fail_msg = create_auth_response(false, None, Some("Authentication failed"));
+            let _ = socket.send(Message::Text(fail_msg.into())).await;
+            let _ = socket.send(Message::Close(None)).await;
+            AuthMessageResult::Failed
+        }
+    }
+}
+
+fn create_auth_response(
+    success: bool,
+    auth_data: Option<&serde_json::Value>,
+    message: Option<&str>,
+) -> String {
+    let mut data = serde_json::json!({"success": success});
+    if let Some(auth) = auth_data {
+        data["userInfo"] = auth.clone();
+    }
+    if let Some(msg) = message {
+        data["message"] = serde_json::Value::String(msg.to_string());
+    }
+    serde_json::json!({"event": "authenticated", "data": data}).to_string()
+}
+
+/// Validates the token extracted from an authMessage by running it through
+/// the configured guard chain. Creates a synthetic `HeaderMap` with
+/// `Authorization: Bearer <token>` so the existing JWT/custom guard
+/// validation functions can extract the token from their configured source.
+async fn validate_auth_message_token(
+    token: &str,
+    state: &WebSocketAppState,
+    request_ctx: &WebSocketRequestContext,
+) -> Result<serde_json::Value, ValidateAuthError> {
+    let guard_names = match &state.connection_auth_guard_names {
+        Some(names) if !names.is_empty() => names,
+        _ => {
+            // No guards configured — fall through to the default guard.
+            let default_guards = state
+                .api_auth
+                .as_ref()
+                .and_then(|auth| auth.default_guard.as_ref());
+            if let Some(defaults) = default_guards {
+                return validate_auth_message_token_with_guards(
+                    token,
+                    defaults,
+                    state,
+                    request_ctx,
+                )
+                .await;
+            }
+            return Ok(serde_json::Value::Null);
+        }
+    };
+
+    validate_auth_message_token_with_guards(token, guard_names, state, request_ctx).await
+}
+
+async fn validate_auth_message_token_with_guards(
+    token: &str,
+    guard_names: &[String],
+    state: &WebSocketAppState,
+    request_ctx: &WebSocketRequestContext,
+) -> Result<serde_json::Value, ValidateAuthError> {
+    // Build a synthetic HeaderMap with the token as a Bearer token.
+    let mut synthetic_headers = HeaderMap::new();
+    if let Ok(val) = format!("Bearer {token}").parse() {
+        synthetic_headers.insert("authorization", val);
+    }
+
+    let empty_query: HashMap<String, Vec<String>> = HashMap::new();
+    let empty_cookies = CookieJar::new();
+
+    let mut accumulated_claims = serde_json::Map::new();
+
+    for guard_name in guard_names {
+        let auth_guard_config = match find_auth_guard_config(guard_name, &state.api_auth) {
+            Some(config) => config,
+            None => {
+                warn!("auth guard config not found for guard: {guard_name}");
+                return Err(ValidateAuthError::Custom(
+                    AuthGuardValidateError::UnexpectedError(format!(
+                        "guard config not found for \"{guard_name}\""
+                    )),
+                ));
+            }
+        };
+
+        match auth_guard_config.guard_type {
+            CelerityApiAuthGuardType::Jwt => {
+                match validate_jwt_on_ws_connect(
+                    auth_guard_config,
+                    &synthetic_headers,
+                    &empty_query,
+                    &empty_cookies,
+                    state.resource_store.clone(),
+                )
+                .await
+                {
+                    Ok(data) => {
+                        accumulated_claims.insert(guard_name.clone(), data);
+                    }
+                    Err(e) => {
+                        return Err(ValidateAuthError::Jwt(e));
+                    }
+                }
+            }
+            CelerityApiAuthGuardType::Custom => {
+                let guard_handler = state.connection_auth_guards.get(guard_name).cloned();
+                match validate_custom_auth_on_connect(
+                    auth_guard_config,
+                    CustomAuthRequestContext {
+                        method: "GET",
+                        path: &request_ctx.path,
+                        headers: &synthetic_headers,
+                        query: &empty_query,
+                        cookies: &empty_cookies,
+                        request_id: &request_ctx.request_id,
+                        client_ip: &request_ctx.client_ip,
+                    },
+                    guard_handler,
+                    &accumulated_claims,
+                )
+                .await
+                {
+                    Ok(data) => {
+                        accumulated_claims.insert(guard_name.clone(), data);
+                    }
+                    Err(err) => {
+                        return Err(ValidateAuthError::Custom(err));
+                    }
+                }
+            }
+            CelerityApiAuthGuardType::NoGuardType => {
+                debug!("no auth guard type configured for guard \"{guard_name}\", skipping");
+            }
+        }
+    }
+
+    Ok(serde_json::Value::Object(accumulated_claims))
+}
+
 async fn process_message(
     msg: Message,
     connection_id: String,
@@ -648,9 +932,43 @@ async fn process_message(
                 return ControlFlow::Break(());
             }
         }
-        _ => {}
+        Message::Ping(_) | Message::Pong(_) => {
+            // WebSocket protocol-level ping/pong — handled automatically by tungstenite.
+        }
     }
     ControlFlow::Continue(())
+}
+
+/// Detects Celerity application-level heartbeat pings and returns the
+/// corresponding pong message. Returns `None` if the message is not a ping.
+///
+/// Supported formats:
+/// - JSON: `{"ping": true}` → responds with `{"pong": true}`
+/// - Binary: `[0x1, 0x1, 0x0, 0x0]` → responds with `[0x1, 0x2, 0x0, 0x0]`
+fn detect_heartbeat_ping(msg: &Message) -> Option<Message> {
+    match msg {
+        Message::Text(text) => {
+            if let Ok(val) = serde_json::from_str::<serde_json::Value>(text.as_ref()) {
+                if val.get("ping") == Some(&serde_json::Value::Bool(true)) {
+                    let pong = serde_json::json!({"pong": true}).to_string();
+                    return Some(Message::Text(pong.into()));
+                }
+            }
+            None
+        }
+        Message::Binary(bytes) => {
+            if bytes.len() == 4
+                && bytes[0] == 0x1
+                && bytes[1] == 0x1
+                && bytes[2] == 0x0
+                && bytes[3] == 0x0
+            {
+                return Some(Message::Binary(vec![0x1, 0x2, 0x0, 0x0].into()));
+            }
+            None
+        }
+        _ => None,
+    }
 }
 
 async fn get_message_route_handler(
@@ -931,5 +1249,89 @@ async fn close_connection(socket_ref: Arc<Mutex<WebSocket>>) {
     let mut socket = socket_ref.lock().await;
     if let Err(err) = socket.send(Message::Close(None)).await {
         error!("failed to send close frame to client: {err}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_json_ping() {
+        let msg = Message::Text(r#"{"ping":true}"#.into());
+        let result = detect_heartbeat_ping(&msg);
+        assert!(result.is_some());
+        match result.unwrap() {
+            Message::Text(text) => {
+                let val: serde_json::Value = serde_json::from_str(&text).unwrap();
+                assert_eq!(val.get("pong"), Some(&serde_json::Value::Bool(true)));
+            }
+            _ => panic!("expected text message"),
+        }
+    }
+
+    #[test]
+    fn test_detect_binary_ping() {
+        let msg = Message::Binary(vec![0x1, 0x1, 0x0, 0x0].into());
+        let result = detect_heartbeat_ping(&msg);
+        assert!(result.is_some());
+        match result.unwrap() {
+            Message::Binary(bytes) => {
+                assert_eq!(bytes.as_ref(), &[0x1, 0x2, 0x0, 0x0]);
+            }
+            _ => panic!("expected binary message"),
+        }
+    }
+
+    #[test]
+    fn test_detect_non_ping_text() {
+        let msg = Message::Text(r#"{"event":"myAction","data":"hello"}"#.into());
+        assert!(detect_heartbeat_ping(&msg).is_none());
+    }
+
+    #[test]
+    fn test_detect_non_ping_binary() {
+        let msg = Message::Binary(vec![0x5, b'h', b'e', b'l', b'l', b'o'].into());
+        assert!(detect_heartbeat_ping(&msg).is_none());
+    }
+
+    #[test]
+    fn test_detect_non_ping_close() {
+        let msg = Message::Close(None);
+        assert!(detect_heartbeat_ping(&msg).is_none());
+    }
+
+    #[test]
+    fn test_detect_ping_false_is_not_heartbeat() {
+        let msg = Message::Text(r#"{"ping":false}"#.into());
+        assert!(detect_heartbeat_ping(&msg).is_none());
+    }
+
+    #[test]
+    fn test_create_auth_response_success() {
+        let auth_data = serde_json::json!({"claims": {"sub": "user123"}});
+        let response = create_auth_response(true, Some(&auth_data), None);
+        let val: serde_json::Value = serde_json::from_str(&response).unwrap();
+        assert_eq!(val["event"], "authenticated");
+        assert_eq!(val["data"]["success"], true);
+        assert_eq!(val["data"]["userInfo"]["claims"]["sub"], "user123");
+    }
+
+    #[test]
+    fn test_create_auth_response_failure() {
+        let response = create_auth_response(false, None, Some("Authentication failed"));
+        let val: serde_json::Value = serde_json::from_str(&response).unwrap();
+        assert_eq!(val["event"], "authenticated");
+        assert_eq!(val["data"]["success"], false);
+        assert_eq!(val["data"]["message"], "Authentication failed");
+    }
+
+    #[test]
+    fn test_create_auth_response_failure_without_message() {
+        let response = create_auth_response(false, None, None);
+        let val: serde_json::Value = serde_json::from_str(&response).unwrap();
+        assert_eq!(val["event"], "authenticated");
+        assert_eq!(val["data"]["success"], false);
+        assert!(val["data"]["message"].is_null());
     }
 }

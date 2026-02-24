@@ -10,6 +10,7 @@
 - Docker Compose >=2.24.6 - For running integration test dependencies (Comes with Docker Desktop)
 - [cargo-llvm-cov](https://crates.io/crates/cargo-llvm-cov) >=0.6.11 - For generating code coverage reports
 - [cargo-insta](https://crates.io/crates/cargo-insta) - For snapshot test reviews
+- [cargo-nextest](https://crates.io/crates/cargo-nextest) - Test runner for rust crates.
 - _Optional_ - [dotnet](https://dotnet.microsoft.com/download) >=8.0.7 - For building the C#/.NET runtime SDK and running tests
 - _Optional_ - [java development kit](https://www.oracle.com/uk/java/technologies/downloads/) >=21.0.1 - For building the Java runtime SDK and running tests
 
@@ -26,6 +27,14 @@ Run the following to install dependencies:
 
 ```bash
 uv sync --group dev
+```
+
+### Install cargo-nextest on your machine
+
+This tool is used to run tests for rust crates.
+
+```bash
+cargo install cargo-nextest
 ```
 
 ### Install cargo-llvm-cov on your machine

@@ -425,6 +425,114 @@ async fn test_cors_preflight_returns_cors_headers_on_protected_route() {
         .is_some());
 }
 
+/// Writes a blueprint where the JWT guard uses a header-based token source
+/// with `authScheme: bearer`. This exercises the "Bearer " prefix stripping
+/// path in `strip_auth_scheme()`.
+fn write_auth_blueprint_with_bearer_scheme(issuer: &str) -> NamedTempFile {
+    let blueprint = format!(
+        r#"version: 2025-11-02
+transform: celerity-2026-02-28
+variables: {{}}
+resources:
+  testApi:
+    type: "celerity/api"
+    metadata:
+      displayName: Test Auth Scheme API
+    linkSelector:
+      byLabel:
+        application: "test-auth-scheme"
+    spec:
+      protocols: ["http"]
+      cors:
+        allowCredentials: false
+        allowOrigins:
+          - "https://example.com"
+        allowMethods:
+          - "GET"
+        allowHeaders:
+          - "Content-Type"
+          - "Authorization"
+        exposeHeaders:
+          - "Content-Length"
+        maxAge: 3600
+      tracingEnabled: false
+      auth:
+        defaultGuard: "jwt"
+        guards:
+          jwt:
+            type: jwt
+            issuer: "{issuer}"
+            tokenSource: "$.headers.Authorization"
+            authScheme: bearer
+            audience:
+              - "test-audience"
+
+  protectedHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Protected Handler
+      labels:
+        application: "test-auth-scheme"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "GET"
+        celerity.handler.http.path: "/protected"
+    spec:
+      handlerName: Test-AuthSchemeProtectedHandler-v1
+      codeLocation: "./test"
+      handler: "handlers.protected"
+      runtime: "python3.12.x"
+      timeout: 60
+      tracingEnabled: false
+"#
+    );
+    let mut tmp = NamedTempFile::new().expect("failed to create temp file");
+    std::io::Write::write_all(&mut tmp, blueprint.as_bytes())
+        .expect("failed to write blueprint to temp file");
+    tmp
+}
+
+#[test_log::test(tokio::test)]
+async fn test_jwt_auth_scheme_bearer_strips_prefix_from_header() {
+    let oidc_server = setup_test_oidc_server();
+    let issuer = oidc_server.url("").to_string();
+    let tmp_blueprint = write_auth_blueprint_with_bearer_scheme(&issuer);
+    let blueprint_path = tmp_blueprint.path().to_str().unwrap().to_string();
+    let env_vars = create_env_vars(&blueprint_path);
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
+    let _ = app.setup().unwrap();
+    app.register_http_handler("/protected", "GET", protected_handler);
+    let app_info = app.run(false).await.unwrap();
+    let addr = app_info.http_server_address.unwrap();
+
+    let token = create_jwt(
+        "bearer-test-subject".to_string(),
+        "test-audience".to_string(),
+        issuer,
+        Utc::now() + Duration::hours(1),
+    )
+    .unwrap();
+
+    let client = http_client();
+
+    // Send with "Bearer <token>" header — the authScheme should strip the prefix.
+    let response = client
+        .request(
+            Request::builder()
+                .uri(format!("http://{addr}/protected"))
+                .header("Host", "localhost")
+                .header("Authorization", format!("Bearer {token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(&body[..], b"Protected content");
+}
+
 /// Writes a blueprint with JWT auth that includes both a protected and a public handler.
 fn write_auth_blueprint_with_public_handler(issuer: &str) -> NamedTempFile {
     let blueprint = format!(
@@ -672,6 +780,76 @@ resources:
       handlerName: Test-MultiGuardProtectedHandler-v1
       codeLocation: "./test"
       handler: "handlers.protected"
+      runtime: "python3.12.x"
+      timeout: 60
+      tracingEnabled: false
+"#
+    );
+    let mut tmp = NamedTempFile::new().expect("failed to create temp file");
+    std::io::Write::write_all(&mut tmp, blueprint.as_bytes())
+        .expect("failed to write blueprint to temp file");
+    tmp
+}
+
+/// Writes a blueprint where defaultGuard is "jwt" and a handler specifies
+/// `protectedBy: "customGuard"` WITHOUT including jwt. The runtime should
+/// prepend the default guard so the final chain is ["jwt", "customGuard"].
+fn write_per_handler_partial_override_blueprint(issuer: &str) -> NamedTempFile {
+    let blueprint = format!(
+        r#"version: 2025-11-02
+transform: celerity-2026-02-28
+variables: {{}}
+resources:
+  testApi:
+    type: "celerity/api"
+    metadata:
+      displayName: Test Partial Override API
+    linkSelector:
+      byLabel:
+        application: "test-partial-override"
+    spec:
+      protocols: ["http"]
+      cors:
+        allowCredentials: false
+        allowOrigins:
+          - "https://example.com"
+        allowMethods:
+          - "GET"
+        allowHeaders:
+          - "Content-Type"
+          - "Authorization"
+        exposeHeaders:
+          - "Content-Length"
+        maxAge: 3600
+      tracingEnabled: false
+      auth:
+        defaultGuard: "jwt"
+        guards:
+          jwt:
+            type: jwt
+            issuer: "{issuer}"
+            tokenSource: "$.query.token"
+            audience:
+              - "test-audience"
+          customGuard:
+            type: custom
+            tokenSource: "$.query.token"
+
+  partialOverrideHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Partial Override Handler
+      labels:
+        application: "test-partial-override"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "GET"
+        celerity.handler.http.path: "/partial"
+        celerity.handler.guard.protectedBy: "customGuard"
+    spec:
+      handlerName: Test-PartialOverrideHandler-v1
+      codeLocation: "./test"
+      handler: "handlers.partial"
       runtime: "python3.12.x"
       timeout: 60
       tracingEnabled: false
@@ -969,4 +1147,101 @@ async fn test_per_handler_protectedby_override_with_multi_guard() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let body_str = std::str::from_utf8(&body).unwrap();
     assert_eq!(body_str, "jwt=true,custom=true");
+}
+
+#[test_log::test(tokio::test)]
+async fn test_per_handler_protectedby_prepends_default_guard() {
+    let oidc_server = setup_test_oidc_server();
+    let issuer_url = oidc_server.url("").to_string();
+    let tmp_blueprint = write_per_handler_partial_override_blueprint(&issuer_url);
+    let blueprint_path = tmp_blueprint.path().to_str().unwrap().to_string();
+    let env_vars = create_env_vars(&blueprint_path);
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
+    let _ = app.setup().unwrap();
+
+    // Register the custom auth guard.
+    app.register_custom_auth_guard("customGuard", TestCustomAuthGuard)
+        .await;
+
+    // Handler returns claim namespaces to verify both guards ran.
+    app.register_http_handler(
+        "/partial",
+        "GET",
+        |req: axum::extract::Request| async move {
+            use celerity_runtime_core::auth_http::AuthContext;
+            let claims = req.extensions().get::<AuthContext>().cloned();
+            match claims {
+                Some(AuthContext(Some(value))) => {
+                    let has_jwt = value.get("jwt").is_some();
+                    let has_custom = value.get("customGuard").is_some();
+                    format!("jwt={has_jwt},custom={has_custom}")
+                }
+                _ => "no-claims".to_string(),
+            }
+        },
+    );
+
+    let app_info = app.run(false).await.unwrap();
+    let addr = app_info.http_server_address.unwrap();
+
+    let token = create_jwt(
+        "partial-override-user".to_string(),
+        "test-audience".to_string(),
+        issuer_url,
+        Utc::now() + Duration::hours(1),
+    )
+    .unwrap();
+
+    let client = http_client();
+    let response = client
+        .request(
+            Request::builder()
+                .uri(format!("http://{addr}/partial?token={token}"))
+                .header("Host", "localhost")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    // Both JWT (default) and customGuard (explicit) should have run.
+    assert_eq!(response.status(), 200);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let body_str = std::str::from_utf8(&body).unwrap();
+    assert_eq!(body_str, "jwt=true,custom=true");
+}
+
+#[test_log::test(tokio::test)]
+async fn test_per_handler_protectedby_without_jwt_still_requires_valid_jwt() {
+    let oidc_server = setup_test_oidc_server();
+    let issuer_url = oidc_server.url("").to_string();
+    let tmp_blueprint = write_per_handler_partial_override_blueprint(&issuer_url);
+    let blueprint_path = tmp_blueprint.path().to_str().unwrap().to_string();
+    let env_vars = create_env_vars(&blueprint_path);
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut app = Application::new(runtime_config, Box::new(env_vars));
+    let _ = app.setup().unwrap();
+
+    app.register_custom_auth_guard("customGuard", TestCustomAuthGuard)
+        .await;
+    app.register_http_handler("/partial", "GET", protected_handler);
+
+    let app_info = app.run(false).await.unwrap();
+    let addr = app_info.http_server_address.unwrap();
+
+    // No token — the prepended JWT guard should reject with 401.
+    let client = http_client();
+    let response = client
+        .request(
+            Request::builder()
+                .uri(format!("http://{addr}/partial"))
+                .header("Host", "localhost")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), 401);
 }

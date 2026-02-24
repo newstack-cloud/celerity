@@ -474,11 +474,12 @@ mod tests {
         } else {
             test_audience.to_string()
         };
+        let expiry = Utc::now() + Duration::hours(1);
         let token = create_jwt(
             "test-subject".to_string(),
             audience,
             auth_guard_config.issuer.clone().unwrap(),
-            Utc::now() + Duration::hours(1),
+            expiry,
         )
         .unwrap();
 
@@ -511,7 +512,7 @@ mod tests {
                         "sub": "test-subject",
                         "aud": test_audience,
                         "iss": auth_guard_config.issuer.clone().unwrap(),
-                        "exp": (Utc::now() + Duration::hours(1)).timestamp(),
+                        "exp": expiry.timestamp(),
                     },
                 })
             );

@@ -100,6 +100,8 @@ pub struct ScheduleEventData {
     #[serde(rename = "messageId")]
     pub message_id: String,
     pub schedule: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input: Option<Value>,
     pub vendor: Value,
 }
 
@@ -188,4 +190,7 @@ pub struct ScheduledEventResponseData {
 #[derive(Debug, Clone)]
 pub struct ApiAppState {
     pub platform: RuntimePlatform,
+    /// Maps (HTTP method, route path) to the blueprint handler name.
+    /// Used by the tracing middleware to record handler_name in the span.
+    pub handler_names: HashMap<(String, String), String>,
 }

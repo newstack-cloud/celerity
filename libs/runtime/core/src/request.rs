@@ -80,6 +80,8 @@ impl From<Version> for HttpProtocolVersion {
 /// This is passed into handlers for APIs and custom auth guards.
 pub struct RequestInfo {
     pub request_id: RequestId,
+    pub method: String,
+    pub path: String,
     pub headers: HeaderMap,
     pub query: HashMap<String, Vec<String>>,
     pub cookies: CookieJar,

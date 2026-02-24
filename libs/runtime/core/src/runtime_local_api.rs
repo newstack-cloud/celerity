@@ -20,6 +20,9 @@ use tracing::debug;
 use crate::{
     config::AppConfig,
     errors::{ApplicationStartError, EventResultError, WebSocketsMessageError},
+    handler_invoke::{
+        invoke_handler as invoke_handler_fn, HandlerInvokeRegistry, InvokeHandlerState,
+    },
     types::{EventData, EventResult, EventTuple},
 };
 
@@ -31,6 +34,7 @@ pub fn create_runtime_local_api(
     event_queue: Arc<Mutex<VecDeque<EventTuple>>>,
     processing_events_map: Arc<Mutex<HashMap<String, EventTuple>>>,
     ws_conn_registry_send: Option<Arc<dyn WebSocketRegistrySend>>,
+    handler_invoke_registry: HandlerInvokeRegistry,
 ) -> Result<Router, ApplicationStartError> {
     let local_runtime_api_config = create_local_runtime_api_config(app_config);
     let shared_state = Arc::new(LocalRuntimeAppState {
@@ -44,7 +48,13 @@ pub fn create_runtime_local_api(
         .route("/events/result", post(event_result_handler))
         .route("/websockets/messages", post(websockets_messages_handler))
         .route("/runtime/config", get(runtime_config_handler))
-        .with_state(shared_state))
+        .with_state(shared_state)
+        .route(
+            "/handlers/invoke",
+            post(invoke_handler_fn).with_state(InvokeHandlerState {
+                registry: handler_invoke_registry,
+            }),
+        ))
 }
 
 async fn next_event_handler(
@@ -134,6 +144,7 @@ fn create_local_runtime_api_config(app_config: &AppConfig) -> LocalRuntimeConfig
     let websocket = create_local_runtime_websocket_config(app_config);
     let consumer = create_local_runtime_consumer_config(app_config);
     let schedule = create_local_runtime_schedule_config(app_config);
+    let custom = create_local_runtime_custom_handlers_config(app_config);
 
     LocalRuntimeConfig {
         app_config: LocalRuntimeAppConfig {
@@ -142,6 +153,7 @@ fn create_local_runtime_api_config(app_config: &AppConfig) -> LocalRuntimeConfig
             websocket,
             consumer,
             schedule,
+            custom,
         },
     }
 }
@@ -197,6 +209,7 @@ fn create_local_runtime_consumer_config(app_config: &AppConfig) -> LocalRuntimeC
                         handler.name.clone()
                     ),
                     source_id: consumer.source_id.clone(),
+                    route: handler.route.clone(),
                     timeout: handler.timeout,
                     tracing_enabled: handler.tracing_enabled,
                 });
@@ -228,6 +241,23 @@ fn create_local_runtime_schedule_config(app_config: &AppConfig) -> LocalRuntimeS
     config
 }
 
+fn create_local_runtime_custom_handlers_config(
+    app_config: &AppConfig,
+) -> LocalRuntimeCustomHandlersConfig {
+    let mut config = LocalRuntimeCustomHandlersConfig { handlers: vec![] };
+    if let Some(custom) = &app_config.custom_handlers {
+        for handler in &custom.handlers {
+            config.handlers.push(LocalRuntimeCustomHandlerConfig {
+                handler_name: handler.name.clone(),
+                handler_tag: format!("custom::{}", handler.name),
+                timeout: handler.timeout,
+                tracing_enabled: handler.tracing_enabled,
+            });
+        }
+    }
+    config
+}
+
 #[derive(Debug)]
 struct LocalRuntimeAppState {
     event_queue: Arc<Mutex<VecDeque<EventTuple>>>,
@@ -250,6 +280,7 @@ pub struct LocalRuntimeAppConfig {
     websocket: LocalRuntimeWebSocketConfig,
     consumer: LocalRuntimeConsumerConfig,
     schedule: LocalRuntimeScheduleConfig,
+    custom: LocalRuntimeCustomHandlersConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -302,6 +333,9 @@ pub struct LocalRuntimeConsumerHandlerConfig {
     handler_tag: String,
     #[serde(rename = "sourceId")]
     source_id: String,
+    #[serde(rename = "route")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    route: Option<String>,
     timeout: i64,
     #[serde(rename = "tracingEnabled")]
     tracing_enabled: bool,
@@ -319,6 +353,22 @@ pub struct LocalRuntimeScheduleHandlerConfig {
     #[serde(rename = "handlerTag")]
     handler_tag: String,
     schedule: String,
+    timeout: i64,
+    #[serde(rename = "tracingEnabled")]
+    tracing_enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct LocalRuntimeCustomHandlersConfig {
+    handlers: Vec<LocalRuntimeCustomHandlerConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct LocalRuntimeCustomHandlerConfig {
+    #[serde(rename = "handlerName")]
+    handler_name: String,
+    #[serde(rename = "handlerTag")]
+    handler_tag: String,
     timeout: i64,
     #[serde(rename = "tracingEnabled")]
     tracing_enabled: bool,
@@ -368,14 +418,16 @@ mod tests {
 
     use crate::{
         config::{
-            ApiConfig, ConsumerConfig, ConsumersConfig, EventHandlerDefinition, HttpConfig,
-            HttpHandlerDefinition, ScheduleConfig, SchedulesConfig, WebSocketConfig,
-            WebSocketHandlerDefinition,
+            ApiConfig, ConsumerConfig, ConsumerSourceType, ConsumersConfig, EventHandlerDefinition,
+            GuardsConfig, HttpConfig, HttpHandlerDefinition, ScheduleConfig, SchedulesConfig,
+            WebSocketConfig, WebSocketHandlerDefinition,
         },
         types::{
             EventDataPayload, EventResultData, EventType, HttpRequestEventData, HttpResponseData,
         },
     };
+
+    use crate::handler_invoke::new_handler_invoke_registry;
 
     use super::*;
 
@@ -394,6 +446,7 @@ mod tests {
             event_queue.clone(),
             processing_events_map.clone(),
             None,
+            new_handler_invoke_registry(),
         )
         .unwrap();
 
@@ -447,6 +500,7 @@ mod tests {
             event_queue.clone(),
             processing_events_map.clone(),
             None,
+            new_handler_invoke_registry(),
         )
         .unwrap();
 
@@ -505,6 +559,7 @@ mod tests {
             event_queue.clone(),
             processing_events_map.clone(),
             None,
+            new_handler_invoke_registry(),
         )
         .unwrap();
 
@@ -572,6 +627,7 @@ mod tests {
             event_queue.clone(),
             processing_events_map.clone(),
             None,
+            new_handler_invoke_registry(),
         )
         .unwrap();
 
@@ -629,6 +685,7 @@ mod tests {
             event_queue.clone(),
             processing_events_map.clone(),
             None,
+            new_handler_invoke_registry(),
         )
         .unwrap();
 
@@ -675,6 +732,7 @@ mod tests {
             event_queue.clone(),
             processing_events_map.clone(),
             Some(ws_conn_registry),
+            new_handler_invoke_registry(),
         )
         .unwrap();
 
@@ -781,6 +839,8 @@ mod tests {
 
     fn create_test_app_config() -> AppConfig {
         AppConfig {
+            events: None,
+            custom_handlers: None,
             api: Some(ApiConfig {
                 http: Some(HttpConfig {
                     handlers: vec![HttpHandlerDefinition {
@@ -796,6 +856,7 @@ mod tests {
                     }],
                     base_paths: vec!["/".to_string()],
                 }),
+                guards: Some(GuardsConfig { handlers: vec![] }),
                 websocket: Some(WebSocketConfig {
                     handlers: vec![WebSocketHandlerDefinition {
                         name: "Orders-StreamOrders-v1".to_string(),
@@ -841,18 +902,23 @@ mod tests {
             }),
             consumers: Some(ConsumersConfig {
                 consumers: vec![ConsumerConfig {
+                    consumer_name: "ordersConsumer".to_string(),
                     source_id: "arn:aws:sqs:us-east-2:444455556666:queue1".to_string(),
+                    source_type: ConsumerSourceType::Queue,
                     batch_size: Some(10),
                     visibility_timeout: None,
                     wait_time_seconds: None,
                     partial_failures: Some(true),
                     routing_key: None,
+                    dlq_source_id: None,
+                    max_retries: None,
                     handlers: vec![EventHandlerDefinition {
                         name: "Orders-ProcessOrder-v1".to_string(),
                         timeout: 30,
                         tracing_enabled: true,
                         location: "./handlers/orders".to_string(),
                         handler: "process_order".to_string(),
+                        route: None,
                     }],
                 }],
             }),
@@ -871,7 +937,9 @@ mod tests {
                         tracing_enabled: true,
                         location: "./handlers/orders".to_string(),
                         handler: "sync_orders".to_string(),
+                        route: None,
                     }],
+                    input: None,
                 }],
             }),
         }
@@ -928,6 +996,7 @@ mod tests {
                         handler_name: "Orders-ProcessOrder-v1".to_string(),
                         handler_tag: "source::arn:aws:sqs:us-east-2:444455556666:queue1::Orders-ProcessOrder-v1".to_string(),
                         source_id: "arn:aws:sqs:us-east-2:444455556666:queue1".to_string(),
+                        route: None,
                         timeout: 30,
                         tracing_enabled: true,
                     }],
@@ -941,6 +1010,7 @@ mod tests {
                         tracing_enabled: true,
                     }],
                 },
+                custom: LocalRuntimeCustomHandlersConfig { handlers: vec![] },
             },
         }
     }

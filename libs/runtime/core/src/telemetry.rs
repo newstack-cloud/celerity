@@ -29,81 +29,105 @@ use tracing_subscriber::{
     EnvFilter, Layer,
 };
 
-/// Sets up tracing for the runtime.
-/// This tracing configuration is only for the runtime, applications that provide handlers
-/// should set up their own tracing and logging configuration native to the language of choice.
-/// The various handler SDKs provide helpers for developers to more easily set up instrumentation
-/// for their handlers.
-pub fn setup_tracing(runtime_config: &RuntimeConfig) -> Result<(), ApplicationStartError> {
-    let propagator = TextMapCompositePropagator::new(vec![
-        Box::new(TraceContextPropagator::new()),
-        Box::new(AwsXrayPropagator::new()),
-    ]);
-
-    global::set_text_map_propagator(propagator);
-
-    let trace_config = opentelemetry_sdk::trace::config()
-        .with_sampler(opentelemetry_sdk::trace::Sampler::AlwaysOn);
-    let trace_config = attach_id_generator(&runtime_config.platform, trace_config);
-
-    let tracer = opentelemetry_otlp::new_pipeline()
-        .tracing()
-        .with_exporter(
-            opentelemetry_otlp::new_exporter()
-                .tonic()
-                .with_endpoint(runtime_config.trace_otlp_collector_endpoint.clone()),
-        )
-        .with_trace_config(
-            trace_config.with_resource(opentelemetry_sdk::Resource::new(vec![
-                opentelemetry::KeyValue::new("service.name", runtime_config.service_name.clone()),
-            ])),
-        )
-        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
-
+/// Sets up logging and optionally OpenTelemetry tracing for the runtime.
+///
+/// Console logging (the fmt layer) is always enabled. The OTel tracing layer
+/// is only added when `otel_enabled` is true (controlled by the blueprint's
+/// `tracingEnabled` field on the API resource).
+///
+/// Format selection:
+/// - Test mode: always pretty-printed
+/// - CELERITY_LOG_FORMAT=json: JSON output regardless of platform
+/// - CELERITY_LOG_FORMAT=pretty|human: pretty-printed regardless of platform
+/// - Otherwise: Local platform -> pretty, all others -> JSON
+pub fn setup_tracing(
+    runtime_config: &RuntimeConfig,
+    otel_enabled: bool,
+) -> Result<(), ApplicationStartError> {
     let level_filter = LevelFilter::from_level(runtime_config.runtime_max_diagnostics_level);
+    let use_pretty = if runtime_config.test_mode {
+        true
+    } else {
+        match runtime_config.log_format.as_deref() {
+            Some("json") => false,
+            Some("pretty") | Some("human") => true,
+            _ => runtime_config.platform == RuntimePlatform::Local,
+        }
+    };
 
-    let otel_layer = tracing_opentelemetry::layer()
-        .with_tracer(tracer)
-        .with_filter(
-            EnvFilter::from_default_env()
-                .add_directive(level_filter.into())
-                .add_directive("celerity_runtime_core".parse()?)
-                .add_directive("tower_http=info".parse()?)
-                .add_directive("hyper=info".parse()?)
-                .add_directive("axum::rejection=trace".parse()?),
+    let otel_layer = if otel_enabled {
+        let propagator = TextMapCompositePropagator::new(vec![
+            Box::new(TraceContextPropagator::new()),
+            Box::new(AwsXrayPropagator::new()),
+        ]);
+        global::set_text_map_propagator(propagator);
+
+        let trace_config = opentelemetry_sdk::trace::config()
+            .with_sampler(opentelemetry_sdk::trace::Sampler::AlwaysOn);
+        let trace_config = attach_id_generator(&runtime_config.platform, trace_config);
+
+        let tracer =
+            opentelemetry_otlp::new_pipeline()
+                .tracing()
+                .with_exporter(
+                    opentelemetry_otlp::new_exporter()
+                        .tonic()
+                        .with_endpoint(runtime_config.trace_otlp_collector_endpoint.clone()),
+                )
+                .with_trace_config(trace_config.with_resource(opentelemetry_sdk::Resource::new(
+                    vec![opentelemetry::KeyValue::new(
+                        "service.name",
+                        runtime_config.service_name.clone(),
+                    )],
+                )))
+                .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+
+        Some(
+            tracing_opentelemetry::layer()
+                .with_tracer(tracer)
+                .with_filter(
+                    EnvFilter::from_default_env()
+                        .add_directive(level_filter.into())
+                        .add_directive("celerity_runtime_core".parse()?)
+                        .add_directive("tower_http=info".parse()?)
+                        .add_directive("hyper=info".parse()?)
+                        .add_directive("axum::rejection=trace".parse()?),
+                )
+                .with_filter(level_filter),
         )
-        .with_filter(level_filter);
-
-    let fmt_layer_prod = fmt::layer()
-        .event_format(format().json().with_span_list(true))
-        // Since we're using the JSON event formatter, we must also
-        // use the JSON field formatter.
-        .fmt_fields(format::JsonFields::default())
-        .with_filter(level_filter);
-
-    let fmt_layer_local = fmt::layer()
-        .event_format(format().pretty())
-        .with_filter(level_filter);
+    } else {
+        None
+    };
 
     if runtime_config.test_mode {
-        // If we're in test mode, we don't want to initialize the subscriber
-        // globally as it will fail tests due to the global trace subscriber
-        // having already been registered.
-        // To get around this, we set the default subscriber for the current
-        // thread only.
+        // In test mode, use a thread-local subscriber to avoid conflicts
+        // with the global subscriber across concurrent tests.
         tracing_subscriber::registry()
             .with(otel_layer)
-            .with(fmt_layer_local)
+            .with(
+                fmt::layer()
+                    .event_format(format().pretty())
+                    .with_filter(level_filter),
+            )
             .set_default();
-    } else if runtime_config.platform == RuntimePlatform::Local {
+    } else if use_pretty {
         tracing_subscriber::registry()
             .with(otel_layer)
-            .with(fmt_layer_local)
+            .with(
+                fmt::layer()
+                    .event_format(format().pretty())
+                    .with_filter(level_filter),
+            )
             .try_init()?;
     } else {
         tracing_subscriber::registry()
             .with(otel_layer)
-            .with(fmt_layer_prod)
+            .with(
+                fmt::layer()
+                    .event_format(format().json().with_span_list(true))
+                    .fmt_fields(format::JsonFields::default())
+                    .with_filter(level_filter),
+            )
             .try_init()?;
     }
 
@@ -153,10 +177,14 @@ pub async fn enrich_span(
     }
 
     // Insert resolved values as extensions for downstream handlers and SDK bindings.
-    let matched_route = request
-        .extensions()
-        .get::<MatchedPath>()
-        .map(|mp| mp.as_str().to_string());
+    let matched_path = request.extensions().get::<MatchedPath>();
+    let matched_route = matched_path.map(|mp| mp.as_str().to_string());
+    if let Some(mp) = matched_path {
+        let method = request.method().as_str().to_uppercase();
+        if let Some(name) = state.handler_names.get(&(method, mp.as_str().to_string())) {
+            span.record("handler_name", name.as_str());
+        }
+    }
     let mut request = request;
     request.extensions_mut().insert(ResolvedClientIp(client_ip));
     request

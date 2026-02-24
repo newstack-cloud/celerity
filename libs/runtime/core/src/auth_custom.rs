@@ -17,6 +17,13 @@ pub struct AuthGuardValidateInput {
     // this may be a standard HTTP request or the initial HTTP request that will be upgraded
     // to a WebSocket connection.
     pub request: RequestInfo,
+    // Accumulated auth context from preceding guards in the chain.
+    // Keyed by guard name, e.g. `{ "jwt": { "claims": { ... } } }`.
+    // Empty for the first guard in the chain.
+    pub auth: serde_json::Map<String, serde_json::Value>,
+    // The blueprint handler name for the route being protected.
+    // None for WebSocket connections and when no name is available.
+    pub handler_name: Option<String>,
 }
 
 #[derive(Debug)]
@@ -56,106 +63,130 @@ pub trait AuthGuardHandler: std::fmt::Debug {
     ) -> Result<serde_json::Value, AuthGuardValidateError>;
 }
 
+/// Borrow-based view of an incoming request, shared by both the WebSocket connect
+/// and HTTP custom auth validators. Defined here so the dependency flows from
+/// `auth_http` → `auth_custom`, not the reverse.
+pub struct CustomAuthRequestContext<'a> {
+    pub method: &'a str,
+    pub path: &'a str,
+    pub headers: &'a HeaderMap,
+    pub query: &'a HashMap<String, Vec<String>>,
+    pub cookies: &'a CookieJar,
+    pub request_id: &'a RequestId,
+    pub client_ip: &'a IpAddr,
+}
+
 /// Validates a token with a custom auth guard on a WebSocket connection for the `connect` auth strategy.
 pub async fn validate_custom_auth_on_connect(
     auth_guard_config: &CelerityApiAuthGuard,
-    headers: &HeaderMap,
-    query: &HashMap<String, Vec<String>>,
-    cookies: &CookieJar,
-    request_id: &RequestId,
-    client_ip: &IpAddr,
+    ctx: CustomAuthRequestContext<'_>,
     auth_guard_opt: Option<Arc<dyn AuthGuardHandler + Send + Sync>>,
+    accumulated_auth: &serde_json::Map<String, serde_json::Value>,
 ) -> Result<serde_json::Value, AuthGuardValidateError> {
     let token_source_opt = get_websocket_token_source(auth_guard_config);
 
-    match token_source_opt {
+    let token = match token_source_opt {
         Some(token_source) => {
-            let token = extract_value_from_request_elements(
+            let extracted = extract_value_from_request_elements(
                 token_source,
                 serde_json::Value::Null,
-                headers,
-                query,
-                cookies,
+                ctx.headers,
+                ctx.query,
+                ctx.cookies,
             )?;
-
-            match token {
-                serde_json::Value::String(token) => {
-                    let stripped_token = strip_auth_scheme(&token, auth_guard_config);
-                    if let Some(auth_guard) = &auth_guard_opt {
-                        let input = AuthGuardValidateInput {
-                            token: stripped_token,
-                            request: RequestInfo {
-                                headers: headers.clone(),
-                                query: query.clone(),
-                                cookies: cookies.clone(),
-                                body: None,
-                                request_id: request_id.clone(),
-                                client_ip: client_ip.to_string(),
-                            },
-                        };
-                        auth_guard.validate(input).await
-                    } else {
-                        Err(AuthGuardValidateError::UnexpectedError(
-                            "No auth guard handler configured".to_string(),
-                        ))
-                    }
+            match extracted {
+                serde_json::Value::String(t) => strip_auth_scheme(&t, auth_guard_config),
+                _ => {
+                    return Err(AuthGuardValidateError::Unauthorised(
+                        "Invalid token value provided, token must be a string".to_string(),
+                    ))
                 }
-                _ => Err(AuthGuardValidateError::Unauthorised(
-                    "Invalid token value provided, token must be a string".to_string(),
-                )),
             }
         }
-        None => Err(AuthGuardValidateError::TokenSourceMissing),
+        // tokenSource is optional for custom guards; pass an empty token so the
+        // handler can still run (e.g. inspecting accumulated auth from prior guards).
+        None => String::new(),
+    };
+
+    if let Some(auth_guard) = &auth_guard_opt {
+        let input = AuthGuardValidateInput {
+            token,
+            request: RequestInfo {
+                method: ctx.method.to_string(),
+                path: ctx.path.to_string(),
+                headers: ctx.headers.clone(),
+                query: ctx.query.clone(),
+                cookies: ctx.cookies.clone(),
+                body: None,
+                request_id: ctx.request_id.clone(),
+                client_ip: ctx.client_ip.to_string(),
+            },
+            auth: accumulated_auth.clone(),
+            handler_name: None,
+        };
+        auth_guard.validate(input).await
+    } else {
+        Err(AuthGuardValidateError::UnexpectedError(
+            "No auth guard handler configured".to_string(),
+        ))
     }
 }
 
 /// Validates a token with a custom auth guard on an HTTP request.
-#[allow(clippy::too_many_arguments)]
 pub async fn validate_custom_auth_on_http_request(
     auth_guard_config: &CelerityApiAuthGuard,
-    headers: &HeaderMap,
-    query: &HashMap<String, Vec<String>>,
-    cookies: &CookieJar,
+    ctx: CustomAuthRequestContext<'_>,
     body: serde_json::Value,
-    request_id: &RequestId,
-    client_ip: &IpAddr,
     auth_guard_opt: Option<Arc<dyn AuthGuardHandler + Send + Sync>>,
+    accumulated_auth: &serde_json::Map<String, serde_json::Value>,
+    handler_name: Option<String>,
 ) -> Result<serde_json::Value, AuthGuardValidateError> {
     let token_source_opt = get_http_token_source(auth_guard_config);
 
-    match token_source_opt {
+    let token = match token_source_opt {
         Some(token_source) => {
-            let token =
-                extract_value_from_request_elements(token_source, body, headers, query, cookies)?;
-
-            match token {
-                serde_json::Value::String(token) => {
-                    let stripped_token = strip_auth_scheme(&token, auth_guard_config);
-                    if let Some(auth_guard) = &auth_guard_opt {
-                        let input = AuthGuardValidateInput {
-                            token: stripped_token,
-                            request: RequestInfo {
-                                headers: headers.clone(),
-                                query: query.clone(),
-                                cookies: cookies.clone(),
-                                body: None,
-                                request_id: request_id.clone(),
-                                client_ip: client_ip.to_string(),
-                            },
-                        };
-                        auth_guard.validate(input).await
-                    } else {
-                        Err(AuthGuardValidateError::UnexpectedError(
-                            "No auth guard handler configured".to_string(),
-                        ))
-                    }
+            let extracted = extract_value_from_request_elements(
+                token_source,
+                body,
+                ctx.headers,
+                ctx.query,
+                ctx.cookies,
+            )?;
+            match extracted {
+                serde_json::Value::String(t) => strip_auth_scheme(&t, auth_guard_config),
+                _ => {
+                    return Err(AuthGuardValidateError::Unauthorised(
+                        "Invalid token value provided, token must be a string".to_string(),
+                    ))
                 }
-                _ => Err(AuthGuardValidateError::Unauthorised(
-                    "Invalid token value provided, token must be a string".to_string(),
-                )),
             }
         }
-        None => Err(AuthGuardValidateError::TokenSourceMissing),
+        // tokenSource is optional for custom guards; pass an empty token so the
+        // handler can still run (e.g. inspecting accumulated auth from prior guards).
+        None => String::new(),
+    };
+
+    if let Some(auth_guard) = &auth_guard_opt {
+        let input = AuthGuardValidateInput {
+            token,
+            request: RequestInfo {
+                method: ctx.method.to_string(),
+                path: ctx.path.to_string(),
+                headers: ctx.headers.clone(),
+                query: ctx.query.clone(),
+                cookies: ctx.cookies.clone(),
+                body: None,
+                request_id: ctx.request_id.clone(),
+                client_ip: ctx.client_ip.to_string(),
+            },
+            auth: accumulated_auth.clone(),
+            handler_name,
+        };
+        auth_guard.validate(input).await
+    } else {
+        Err(AuthGuardValidateError::UnexpectedError(
+            "No auth guard handler configured".to_string(),
+        ))
     }
 }
 
@@ -179,7 +210,7 @@ mod tests {
     use crate::{
         auth_custom::{
             validate_custom_auth_on_connect, AuthGuardHandler, AuthGuardValidateError,
-            AuthGuardValidateInput,
+            AuthGuardValidateInput, CustomAuthRequestContext,
         },
         request::RequestId,
         value_sources::ExtractValueError,
@@ -248,14 +279,20 @@ mod tests {
         let cookies = CookieJar::new();
         let request_id = RequestId("test-request-1".to_string());
 
+        let client_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
         let result = validate_custom_auth_on_connect(
             &auth_guard_config,
-            &headers,
-            &query,
-            &cookies,
-            &request_id,
-            &IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            CustomAuthRequestContext {
+                method: "GET",
+                path: "/test",
+                headers: &headers,
+                query: &query,
+                cookies: &cookies,
+                request_id: &request_id,
+                client_ip: &client_ip,
+            },
             auth_guard_opt,
+            &serde_json::Map::new(),
         )
         .await;
 
@@ -286,14 +323,20 @@ mod tests {
         let cookies = CookieJar::new();
         let request_id = RequestId("test-request-2".to_string());
 
+        let client_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
         let result = validate_custom_auth_on_connect(
             &auth_guard_config,
-            &headers,
-            &query,
-            &cookies,
-            &request_id,
-            &IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            CustomAuthRequestContext {
+                method: "GET",
+                path: "/test",
+                headers: &headers,
+                query: &query,
+                cookies: &cookies,
+                request_id: &request_id,
+                client_ip: &client_ip,
+            },
             auth_guard_opt,
+            &serde_json::Map::new(),
         )
         .await;
 
@@ -320,14 +363,20 @@ mod tests {
         let cookies = CookieJar::new();
         let request_id = RequestId("test-request-3".to_string());
 
+        let client_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
         let result = validate_custom_auth_on_connect(
             &auth_guard_config,
-            &headers,
-            &query,
-            &cookies,
-            &request_id,
-            &IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            CustomAuthRequestContext {
+                method: "GET",
+                path: "/test",
+                headers: &headers,
+                query: &query,
+                cookies: &cookies,
+                request_id: &request_id,
+                client_ip: &client_ip,
+            },
             auth_guard_opt,
+            &serde_json::Map::new(),
         )
         .await;
 
@@ -354,14 +403,20 @@ mod tests {
         let cookies = CookieJar::new();
         let request_id = RequestId("test-request-4".to_string());
 
+        let client_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
         let result = validate_custom_auth_on_connect(
             &auth_guard_config,
-            &headers,
-            &query,
-            &cookies,
-            &request_id,
-            &IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            CustomAuthRequestContext {
+                method: "GET",
+                path: "/test",
+                headers: &headers,
+                query: &query,
+                cookies: &cookies,
+                request_id: &request_id,
+                client_ip: &client_ip,
+            },
             auth_guard_opt,
+            &serde_json::Map::new(),
         )
         .await;
 
@@ -389,14 +444,20 @@ mod tests {
         let cookies = CookieJar::new();
         let request_id = RequestId("test-request-5".to_string());
 
+        let client_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
         let result = validate_custom_auth_on_connect(
             &auth_guard_config,
-            &headers,
-            &query,
-            &cookies,
-            &request_id,
-            &IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            CustomAuthRequestContext {
+                method: "GET",
+                path: "/test",
+                headers: &headers,
+                query: &query,
+                cookies: &cookies,
+                request_id: &request_id,
+                client_ip: &client_ip,
+            },
             auth_guard_opt,
+            &serde_json::Map::new(),
         )
         .await;
 
@@ -420,14 +481,20 @@ mod tests {
         let cookies = CookieJar::new();
         let request_id = RequestId("test-request-6".to_string());
 
+        let client_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
         let result = validate_custom_auth_on_connect(
             &auth_guard_config,
-            &headers,
-            &query,
-            &cookies,
-            &request_id,
-            &IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            CustomAuthRequestContext {
+                method: "GET",
+                path: "/test",
+                headers: &headers,
+                query: &query,
+                cookies: &cookies,
+                request_id: &request_id,
+                client_ip: &client_ip,
+            },
             None,
+            &serde_json::Map::new(),
         )
         .await;
 
@@ -438,8 +505,12 @@ mod tests {
         ));
     }
 
+    // When token_source is absent, an empty token is passed to allow guards that
+    // operate on accumulated auth context from prior guards rather than a raw token.
+    // The guard handler is still called and its result determines the outcome.
     #[test_log::test(tokio::test)]
-    async fn test_validate_custom_auth_on_connect_fails_due_to_missing_token_source() {
+    async fn test_validate_custom_auth_on_connect_with_no_token_source_calls_guard_with_empty_token(
+    ) {
         let auth_guard_config = CelerityApiAuthGuard {
             guard_type: CelerityApiAuthGuardType::Custom,
             issuer: None,
@@ -461,21 +532,29 @@ mod tests {
             Arc::new(TestAuthGuardHandler::new());
         let auth_guard_opt = Some(auth_guard);
 
+        let client_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
         let result = validate_custom_auth_on_connect(
             &auth_guard_config,
-            &headers,
-            &query,
-            &cookies,
-            &request_id,
-            &IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            CustomAuthRequestContext {
+                method: "GET",
+                path: "/test",
+                headers: &headers,
+                query: &query,
+                cookies: &cookies,
+                request_id: &request_id,
+                client_ip: &client_ip,
+            },
             auth_guard_opt,
+            &serde_json::Map::new(),
         )
         .await;
 
+        // The guard is invoked with an empty token; the test handler returns
+        // UnexpectedError for any token it doesn't recognise.
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
-            AuthGuardValidateError::TokenSourceMissing
+            AuthGuardValidateError::UnexpectedError(_)
         ));
     }
 }

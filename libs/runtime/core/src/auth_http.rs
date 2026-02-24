@@ -20,7 +20,7 @@ use celerity_helpers::http::ResourceStore;
 use tracing::warn;
 
 use crate::{
-    auth_custom::{AuthGuardHandler, AuthGuardValidateError},
+    auth_custom::{AuthGuardHandler, AuthGuardValidateError, CustomAuthRequestContext},
     request::{RequestId, ResolvedClientIp},
 };
 
@@ -43,24 +43,36 @@ pub struct HttpAuthState {
     pub resource_store: Arc<ResourceStore>,
     pub custom_auth_guards:
         Arc<tokio::sync::Mutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
-    // Maps Axum matched path patterns (e.g. "/orders/{orderId}") to an optional per-handler
-    // guard chain. If the value is None, the handler uses the default guard chain.
-    // If a path is absent from this map, no auth is required for that route.
-    pub route_guards: HashMap<String, Option<Vec<String>>>,
+    // Maps (method, path) to an optional per-handler guard chain.
+    // If the value is None, the handler uses the default guard chain.
+    // If a key is absent from this map, no auth is required for that route.
+    // Keyed on (method, path) because multiple handlers can share the same path
+    // with different methods and different guard configurations.
+    pub route_guards: HashMap<(String, String), Option<Vec<String>>>,
+    // Maps (method, path) to the blueprint handler name.
+    // Used to pass handler_name to custom auth guard callbacks.
+    pub handler_names: HashMap<(String, String), String>,
 }
 
 /// Request elements extracted once and reused across guards in the chain.
 struct HttpAuthRequestElements {
+    method: String,
+    path: String,
     headers: axum::http::HeaderMap,
     query: HashMap<String, Vec<String>>,
     cookies: CookieJar,
     body_json: serde_json::Value,
     request_id: RequestId,
     client_ip: IpAddr,
+    handler_name: Option<String>,
 }
 
 /// Resolves the ordered guard chain for the current request.
 /// Returns `None` if auth should be skipped (public handler, unmatched route, no guard configured).
+///
+/// When a handler specifies explicit guards via `protectedBy`, the default guard
+/// is prepended to the chain (if not already present) so that the base authentication
+/// (e.g. JWT) always runs before additional authorization guards (e.g. custom RBAC).
 fn resolve_guard_chain(
     request: &axum::extract::Request,
     state: &HttpAuthState,
@@ -68,14 +80,31 @@ fn resolve_guard_chain(
     let matched_path = request
         .extensions()
         .get::<MatchedPath>()
-        .map(|mp| mp.as_str());
+        .map(|mp| mp.as_str())?;
+    let method = request.method().as_str().to_uppercase();
 
-    let per_handler_guard = matched_path.and_then(|mp| state.route_guards.get(mp))?;
+    let per_handler_guard = state
+        .route_guards
+        .get(&(method, matched_path.to_string()))?;
 
-    per_handler_guard
-        .as_ref()
-        .or(state.api_auth.default_guard.as_ref())
-        .cloned()
+    match (
+        per_handler_guard.as_ref(),
+        state.api_auth.default_guard.as_ref(),
+    ) {
+        (Some(explicit), Some(default_guards)) => {
+            let mut chain = Vec::new();
+            // Prepend default guards that aren't already in the explicit list.
+            for guard in default_guards {
+                if !explicit.contains(guard) {
+                    chain.push(guard.clone());
+                }
+            }
+            chain.extend(explicit.iter().cloned());
+            Some(chain)
+        }
+        (Some(explicit), None) => Some(explicit.clone()),
+        (None, default_guards) => default_guards.cloned(),
+    }
 }
 
 /// Parses query parameters from a URI into a multi-valued map.
@@ -192,38 +221,52 @@ pub async fn http_auth_middleware(
         (serde_json::Value::Null, request)
     };
 
+    let method = request.method().as_str().to_uppercase();
+    let path = request
+        .extensions()
+        .get::<MatchedPath>()
+        .map(|mp| mp.as_str().to_string())
+        .unwrap_or_else(|| request.uri().path().to_string());
+    let handler_name = state
+        .handler_names
+        .get(&(method.clone(), path.clone()))
+        .cloned();
+
     let elements = HttpAuthRequestElements {
+        method,
+        path,
         headers,
         query,
         cookies,
         body_json,
         request_id,
         client_ip,
+        handler_name,
     };
 
     match execute_guard_chain(&guard_chain, &state, &elements).await {
-        Ok(accumulated_claims) => {
+        Ok(accumulated_auth) => {
             let mut request = request;
-            let claims = if accumulated_claims.is_empty() {
+            let auth_context = if accumulated_auth.is_empty() {
                 AuthContext(None)
             } else {
-                AuthContext(Some(serde_json::Value::Object(accumulated_claims)))
+                AuthContext(Some(serde_json::Value::Object(accumulated_auth)))
             };
-            request.extensions_mut().insert(claims);
+            request.extensions_mut().insert(auth_context);
             next.run(request).await
         }
         Err(response) => response,
     }
 }
 
-/// Executes the ordered guard chain, accumulating claims from each passing guard.
+/// Executes the ordered guard chain, accumulating auth context from each passing guard.
 /// Short-circuits on the first guard failure, returning the error response.
 async fn execute_guard_chain(
     guard_chain: &[String],
     state: &HttpAuthState,
     elements: &HttpAuthRequestElements,
 ) -> Result<serde_json::Map<String, serde_json::Value>, Response> {
-    let mut accumulated_claims = serde_json::Map::new();
+    let mut accumulated_auth = serde_json::Map::new();
 
     for guard_name in guard_chain {
         let guard_config = match state.api_auth.guards.get(guard_name) {
@@ -238,20 +281,23 @@ async fn execute_guard_chain(
             }
         };
 
-        let claims = validate_single_guard(guard_name, guard_config, state, elements).await?;
-        accumulated_claims.insert(guard_name.clone(), claims);
+        let auth =
+            validate_single_guard(guard_name, guard_config, state, elements, &accumulated_auth)
+                .await?;
+        accumulated_auth.insert(guard_name.clone(), auth);
     }
 
-    Ok(accumulated_claims)
+    Ok(accumulated_auth)
 }
 
 /// Validates a single auth guard, dispatching to the appropriate validator
-/// based on the guard type. Returns claims on success or an error response on failure.
+/// based on the guard type. Returns auth context on success or an error response on failure.
 async fn validate_single_guard(
     guard_name: &str,
     guard_config: &CelerityApiAuthGuard,
     state: &HttpAuthState,
     elements: &HttpAuthRequestElements,
+    accumulated_auth: &serde_json::Map<String, serde_json::Value>,
 ) -> Result<serde_json::Value, Response> {
     match guard_config.guard_type {
         CelerityApiAuthGuardType::Jwt => {
@@ -276,13 +322,19 @@ async fn validate_single_guard(
             };
             crate::auth_custom::validate_custom_auth_on_http_request(
                 guard_config,
-                &elements.headers,
-                &elements.query,
-                &elements.cookies,
+                CustomAuthRequestContext {
+                    method: &elements.method,
+                    path: &elements.path,
+                    headers: &elements.headers,
+                    query: &elements.query,
+                    cookies: &elements.cookies,
+                    request_id: &elements.request_id,
+                    client_ip: &elements.client_ip,
+                },
                 elements.body_json.clone(),
-                &elements.request_id,
-                &elements.client_ip,
                 guard_handler,
+                accumulated_auth,
+                elements.handler_name.clone(),
             )
             .await
             .map_err(|e| match e {

@@ -87,5 +87,56 @@ pub const CELERITY_WS_DISCONNECT_HANDLER_ROUTE: &str = "$disconnect";
 // other registered handler.
 pub const CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE: &str = "$default";
 
+// The annotation name that activates consumer capabilities for a handler.
+pub const CELERITY_CONSUMER_HANDLER_ANNOTATION_NAME: &str = "celerity.handler.consumer";
+
+// The annotation name that holds the consumer route value for a handler.
+// Used to route messages based on a payload field matching this value.
+pub const CELERITY_CONSUMER_HANDLER_ROUTE_ANNOTATION_NAME: &str = "celerity.handler.consumer.route";
+
+// The annotation name that activates schedule capabilities for a handler.
+pub const CELERITY_SCHEDULE_HANDLER_ANNOTATION_NAME: &str = "celerity.handler.schedule";
+
+// The annotation name on a consumer resource that disambiguates
+// which queue resource should be used as the source
+// when multiple queue resources link to the same consumer.
+pub const CELERITY_CONSUMER_QUEUE_ANNOTATION_NAME: &str = "celerity.consumer.queue";
+
+// The annotation name on a consumer resource that disambiguates
+// which datastore resource should be used as the stream source
+// when multiple datastore resources link to the same consumer.
+pub const CELERITY_CONSUMER_DATASTORE_ANNOTATION_NAME: &str = "celerity.consumer.datastore";
+
+// The annotation name on a consumer resource that controls
+// whether to start reading from the beginning of a datastore stream.
+pub const CELERITY_CONSUMER_DATASTORE_START_ANNOTATION_NAME: &str =
+    "celerity.consumer.datastore.startFromBeginning";
+
+// The annotation name on a consumer resource that disambiguates
+// which bucket resource should be used as the event source
+// when multiple bucket resources link to the same consumer.
+pub const CELERITY_CONSUMER_BUCKET_ANNOTATION_NAME: &str = "celerity.consumer.bucket";
+
+// The annotation name on a consumer resource that specifies
+// the bucket event types (comma-separated) to listen for.
+pub const CELERITY_CONSUMER_BUCKET_EVENTS_ANNOTATION_NAME: &str = "celerity.consumer.bucket.events";
+
+// The annotation name on a queue resource that controls
+// the maximum number of delivery attempts before a message
+// is moved to the dead-letter queue.
+pub const CELERITY_QUEUE_DLQ_MAX_ATTEMPTS_ANNOTATION_NAME: &str =
+    "celerity.queue.deadLetterMaxAttempts";
+
+// The annotation name on a consumer resource that controls
+// whether a dead-letter queue is automatically created for topic consumers.
+// Defaults to `true` when not specified.
+pub const CELERITY_CONSUMER_DLQ_ANNOTATION_NAME: &str = "celerity.consumer.deadLetterQueue";
+
+// The annotation name on a consumer resource that controls
+// the maximum number of delivery attempts before a message
+// is moved to the dead-letter queue for topic consumers.
+pub const CELERITY_CONSUMER_DLQ_MAX_ATTEMPTS_ANNOTATION_NAME: &str =
+    "celerity.consumer.deadLetterQueueMaxAttempts";
+
 // The leeway for JWT validation in seconds.
 pub const JWT_VALIDATION_CLOCK_SKEW_LEEWAY: u64 = 60;

@@ -43,6 +43,8 @@ impl fmt::Display for MessageHandlerError {
 pub enum ConfigError {
     Api(String),
     ApiMissing,
+    Consumer(String),
+    Schedule(String),
 }
 
 impl fmt::Display for ConfigError {
@@ -50,6 +52,12 @@ impl fmt::Display for ConfigError {
         match self {
             ConfigError::Api(api_error) => write!(f, "config error: {api_error}"),
             ConfigError::ApiMissing => write!(f, "config error: no API resource found"),
+            ConfigError::Consumer(consumer_error) => {
+                write!(f, "config error: {consumer_error}")
+            }
+            ConfigError::Schedule(schedule_error) => {
+                write!(f, "config error: {schedule_error}")
+            }
         }
     }
 }
@@ -68,6 +76,7 @@ pub enum ApplicationStartError {
     TracerTryInit(TryInitError),
     TracingFilterParse(ParseError),
     HttpClient(reqwest::Error),
+    ConsumerSetup(String),
 }
 
 impl fmt::Display for ApplicationStartError {
@@ -96,6 +105,9 @@ impl fmt::Display for ApplicationStartError {
             }
             ApplicationStartError::HttpClient(http_client_error) => {
                 write!(f, "application start error: {http_client_error}")
+            }
+            ApplicationStartError::ConsumerSetup(msg) => {
+                write!(f, "application start error: consumer setup failed: {msg}")
             }
         }
     }

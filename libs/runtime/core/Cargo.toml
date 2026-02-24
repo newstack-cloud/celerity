@@ -24,7 +24,11 @@ opentelemetry-aws = "0.10.0"
 nanoid = "0.4.0"
 jsonpath-rust = "0.7.1"
 jsonwebtoken = "9.3.1"
-reqwest = { version = "0.12.23", default-features = false, features = ["rustls-tls-native-roots"] }
+reqwest = { version = "0.12.23", default-features = false, features = [
+    "rustls-tls-native-roots",
+] }
+aws-config = { version = "1.8.0", optional = true }
+aws-sdk-sqs = { version = "1.73.0", optional = true }
 
 [dependencies.celerity_blueprint_config_parser]
 path = "../blueprint-config-parser"
@@ -78,7 +82,7 @@ ring = "0.17.14"
 tempfile = "3"
 
 [features]
-aws_consumers = ["dep:celerity_consumer_sqs", "dep:celerity_consumer_kinesis"]
+aws_consumers = ["dep:celerity_consumer_sqs", "dep:celerity_consumer_kinesis", "dep:aws-config", "dep:aws-sdk-sqs"]
 azure_consumers = [
     "dep:celerity_consumer_azure_events_hub",
     "dep:celerity_consumer_azure_service_bus",
@@ -87,4 +91,4 @@ gcloud_consumers = [
     "dep:celerity_consumer_gcloud_pubsub",
     "dep:celerity_consumer_gcloud_tasks",
 ]
-celerity_one_consumers = ["dep:celerity_consumer_redis"]
+celerity_local_consumers = ["dep:celerity_consumer_redis"]
