@@ -12,18 +12,20 @@ use celerity_helpers::{
     time::{calcuate_polling_wait_time, Clock},
 };
 use futures::future::join_all;
-use opentelemetry::trace::SpanKind;
+use opentelemetry::{global, trace::SpanKind};
 use redis::{streams::StreamId, RedisError, Script};
 use tokio::{
     sync::broadcast,
     time::{self, timeout, Instant},
 };
 use tracing::{debug, error, field, info, info_span, instrument, warn, Instrument};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::{
     errors::WorkerError,
     lock_durations::LockDurationExtender,
     locks::MessageLocks,
+    telemetry::RedisMessageTraceContextExtractor,
     trim_lock::TrimLock,
     types::{FromRedisStreamId, RedisMessageMetadata, ToStreamRedisArgParts},
 };
@@ -542,6 +544,12 @@ impl RedisMessageConsumer {
             if let Some(celerity_context_id) = trace_context.get(CELERITY_CONTEXT_ID_KEY) {
                 span.record(CELERITY_CONTEXT_ID_KEY, celerity_context_id.to_string());
             }
+
+            let parent_context = global::get_text_map_propagator(|propagator| {
+                let extractor = RedisMessageTraceContextExtractor::new(trace_context);
+                propagator.extract(&extractor)
+            });
+            span.set_parent(parent_context);
         }
 
         self.handle_messages_future(future_result)
@@ -624,6 +632,17 @@ impl RedisMessageConsumer {
         let context_ids = extract_context_ids(messages);
         if !context_ids.is_empty() {
             span.record(CELERITY_CONTEXT_IDS_KEY, context_ids.join(","));
+        }
+
+        // Use the first message's trace context for parent linkage in batch mode.
+        if let Some(first_msg) = messages.first() {
+            if let Some(trace_context) = &first_msg.trace_context {
+                let parent_context = global::get_text_map_propagator(|propagator| {
+                    let extractor = RedisMessageTraceContextExtractor::new(trace_context);
+                    propagator.extract(&extractor)
+                });
+                span.set_parent(parent_context);
+            }
         }
 
         self.handle_messages_future(future_result)
