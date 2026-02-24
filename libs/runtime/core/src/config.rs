@@ -118,6 +118,22 @@ pub struct RuntimeConfig {
     /// "json" forces JSON output, "pretty"/"human" forces pretty-print.
     /// If unset, format is determined by platform (Local -> pretty, others -> JSON).
     pub log_format: Option<String>,
+    /// Whether to enable OpenTelemetry metrics export.
+    /// When enabled, runtime metrics (HTTP request counts/durations, WebSocket connection gauge,
+    /// consumer processing metrics) are exported via OTLP to the same collector endpoint as traces.
+    /// Disabled by default to avoid overlap with platform infrastructure metrics
+    /// (e.g. ALB, Cloud Run ingress) in environments that already provide HTTP-level metrics.
+    ///
+    /// Defaults to false.
+    pub metrics_enabled: bool,
+    /// The ratio of traces to sample, between 0.0 and 1.0.
+    /// 1.0 means all traces are sampled (AlwaysOn), 0.0 means none (AlwaysOff).
+    /// Values between 0.0 and 1.0 use TraceIdRatioBased sampling wrapped in ParentBased
+    /// so child spans inherit the parent's sampling decision.
+    ///
+    /// Defaults to 0.1 (10%) — a production-friendly default that avoids noise for
+    /// high-volume apps while capturing enough traces for debugging.
+    pub trace_sample_ratio: f64,
 }
 
 impl RuntimeConfig {
@@ -233,6 +249,20 @@ impl RuntimeConfig {
 
         let log_format = env.var("CELERITY_LOG_FORMAT").ok();
 
+        let metrics_enabled = env
+            .var("CELERITY_METRICS_ENABLED")
+            .map(|val| {
+                val.parse()
+                    .expect("Invalid metrics enabled value, must be either \"true\" or \"false\"")
+            })
+            .unwrap_or(false);
+
+        let trace_sample_ratio: f64 = env
+            .var("CELERITY_TRACE_SAMPLE_RATIO")
+            .unwrap_or_else(|_| "0.1".to_string())
+            .parse()
+            .expect("Invalid trace sample ratio, must be a float between 0.0 and 1.0");
+
         RuntimeConfig {
             blueprint_config_path,
             runtime_call_mode,
@@ -253,6 +283,8 @@ impl RuntimeConfig {
             resource_store_cleanup_interval,
             client_ip_source,
             log_format,
+            metrics_enabled,
+            trace_sample_ratio,
         }
     }
 }

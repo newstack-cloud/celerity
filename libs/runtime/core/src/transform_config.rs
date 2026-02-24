@@ -1474,6 +1474,8 @@ mod tests {
             resource_store_cleanup_interval: 3600,
             client_ip_source: axum_client_ip::ClientIpSource::ConnectInfo,
             log_format: None,
+            metrics_enabled: false,
+            trace_sample_ratio: 1.0,
         }
     }
 

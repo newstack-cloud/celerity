@@ -381,6 +381,12 @@ impl Application {
         // we need to be in an async context (tokio runtime) in order to set up tracing.
         telemetry::setup_tracing(&self.runtime_config, self.app_tracing_enabled)?;
 
+        // Set up OTel metrics when enabled. This must happen before RuntimeMetrics::new()
+        // so the global MeterProvider is available for creating real instruments.
+        if self.runtime_config.metrics_enabled {
+            telemetry::setup_metrics(&self.runtime_config)?;
+        }
+
         let mut server_task = None;
         let mut local_api_task = None;
         let mut server_address = None;
@@ -621,11 +627,18 @@ impl Application {
                 batch_size,
                 lock_duration_ms,
                 polling_wait_time_ms,
+                // Descriptive source label for telemetry span context, distinguishing
+                // event source types (e.g. "stream:datastore:orders" vs "trigger:uploads").
+                event_source_label,
             ) = match event_config {
                 crate::config::EventConfig::Stream(cfg) => {
                     let prefix = match cfg.source_type {
                         crate::config::StreamSourceType::Datastore => "celerity:datastore",
                         crate::config::StreamSourceType::DataStream => "celerity:stream",
+                    };
+                    let source_type_label = match cfg.source_type {
+                        crate::config::StreamSourceType::Datastore => "datastore",
+                        crate::config::StreamSourceType::DataStream => "stream",
                     };
                     (
                         format!("{}:{}", prefix, cfg.stream_id),
@@ -634,6 +647,7 @@ impl Application {
                         cfg.batch_size,
                         None,
                         None,
+                        format!("stream:{}:{}", source_type_label, cfg.stream_id),
                     )
                 }
                 crate::config::EventConfig::EventTrigger(cfg) => (
@@ -643,6 +657,7 @@ impl Application {
                     cfg.batch_size,
                     cfg.visibility_timeout.map(|v| v as u64 * 1000),
                     cfg.wait_time_seconds.map(|w| w as u64 * 1000),
+                    format!("trigger:{}", cfg.queue_id),
                 ),
             };
 
@@ -674,7 +689,7 @@ impl Application {
                     crate::consumer_handler::ConsumerHandlerBridge::<RedisMessageMetadata>::new(
                         self.consumer_event_handler.clone(),
                         handler_tag,
-                        source_id.to_string(),
+                        event_source_label.clone(),
                     );
                 consumer.register_handler(Arc::new(bridge));
             }
@@ -852,11 +867,20 @@ impl Application {
         // We also need to make sure the tracing layers are attached first so that layers such as the client IP
         // extractor run first and extracted data can be added to the current span.
 
+        let runtime_metrics = if self.runtime_config.metrics_enabled {
+            Some(Arc::new(telemetry::RuntimeMetrics::new()))
+        } else {
+            None
+        };
         let api_app_state = ApiAppState {
             platform: self.runtime_config.platform.clone(),
             handler_names: self.handler_names.clone(),
+            metrics: runtime_metrics,
         };
-        let http_app = http_app.layer(middleware::from_fn(log_request));
+        let http_app = http_app.layer(middleware::from_fn_with_state(
+            api_app_state.clone(),
+            log_request,
+        ));
         let http_app = if let Some(http_auth_state) = &self.http_auth_state {
             http_app.layer(middleware::from_fn_with_state(
                 http_auth_state.clone(),

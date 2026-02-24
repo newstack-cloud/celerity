@@ -16,7 +16,13 @@ use axum::{
 use axum_client_ip::ClientIp;
 use axum_extra::{headers, TypedHeader};
 use celerity_helpers::{aws_telemetry::XrayTraceId, runtime_types::RuntimePlatform};
-use opentelemetry::{global, propagation::TextMapCompositePropagator, trace::TraceContextExt};
+use opentelemetry::{
+    global,
+    metrics::{Counter, Histogram, UpDownCounter},
+    propagation::TextMapCompositePropagator,
+    trace::TraceContextExt,
+    KeyValue,
+};
 use opentelemetry_aws::trace::XrayPropagator as AwsXrayPropagator;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{propagation::TraceContextPropagator, trace::Config as TraceConfig};
@@ -28,6 +34,55 @@ use tracing_subscriber::{
     util::SubscriberInitExt,
     EnvFilter, Layer,
 };
+
+// ---------------------------------------------------------------------------
+// RuntimeMetrics — pre-created OTel metric instruments
+// ---------------------------------------------------------------------------
+
+/// Holds pre-created OpenTelemetry metric instruments for the runtime.
+///
+/// When `CELERITY_METRICS_ENABLED=true`, these are real instruments backed by
+/// an OTLP exporter. When metrics are disabled, they are no-op instruments
+/// from the global meter (which has no MeterProvider set).
+#[derive(Clone)]
+pub struct RuntimeMetrics {
+    pub http_request_counter: Counter<u64>,
+    pub http_request_duration: Histogram<f64>,
+    pub ws_connections: UpDownCounter<i64>,
+}
+
+impl RuntimeMetrics {
+    /// Creates metric instruments from the global meter.
+    /// If no MeterProvider has been set (metrics disabled), these will be no-op.
+    pub fn new() -> Self {
+        let meter = global::meter("celerity_runtime");
+        Self {
+            http_request_counter: meter
+                .u64_counter("http.server.request.count")
+                .with_description("Total number of HTTP requests processed")
+                .init(),
+            http_request_duration: meter
+                .f64_histogram("http.server.request.duration")
+                .with_description("HTTP request duration in seconds")
+                .with_unit(opentelemetry::metrics::Unit::new("s"))
+                .init(),
+            ws_connections: meter
+                .i64_up_down_counter("ws.server.active_connections")
+                .with_description("Number of active WebSocket connections")
+                .init(),
+        }
+    }
+}
+
+impl Default for RuntimeMetrics {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Tracing & metrics setup
+// ---------------------------------------------------------------------------
 
 /// Sets up logging and optionally OpenTelemetry tracing for the runtime.
 ///
@@ -62,8 +117,8 @@ pub fn setup_tracing(
         ]);
         global::set_text_map_propagator(propagator);
 
-        let trace_config = opentelemetry_sdk::trace::config()
-            .with_sampler(opentelemetry_sdk::trace::Sampler::AlwaysOn);
+        let sampler = build_sampler(runtime_config.trace_sample_ratio);
+        let trace_config = opentelemetry_sdk::trace::config().with_sampler(sampler);
         let trace_config = attach_id_generator(&runtime_config.platform, trace_config);
 
         let tracer =
@@ -134,6 +189,42 @@ pub fn setup_tracing(
     Ok(())
 }
 
+/// Sets up the OpenTelemetry metrics pipeline with OTLP export.
+///
+/// Only called when `CELERITY_METRICS_ENABLED=true`. Uses the same OTLP
+/// endpoint and service name as tracing.
+pub fn setup_metrics(runtime_config: &RuntimeConfig) -> Result<(), ApplicationStartError> {
+    let exporter = opentelemetry_otlp::new_exporter()
+        .tonic()
+        .with_endpoint(runtime_config.trace_otlp_collector_endpoint.clone());
+
+    let meter_provider = opentelemetry_otlp::new_pipeline()
+        .metrics(opentelemetry_sdk::runtime::Tokio)
+        .with_exporter(exporter)
+        .with_period(std::time::Duration::from_secs(30))
+        .with_resource(opentelemetry_sdk::Resource::new(vec![
+            opentelemetry::KeyValue::new("service.name", runtime_config.service_name.clone()),
+        ]))
+        .build()
+        .map_err(|e| ApplicationStartError::OpenTelemetryMetrics(e.to_string()))?;
+
+    global::set_meter_provider(meter_provider);
+    Ok(())
+}
+
+/// Builds a sampler based on the configured trace sample ratio.
+fn build_sampler(ratio: f64) -> opentelemetry_sdk::trace::Sampler {
+    use opentelemetry_sdk::trace::Sampler;
+    if ratio >= 1.0 {
+        Sampler::AlwaysOn
+    } else if ratio <= 0.0 {
+        Sampler::AlwaysOff
+    } else {
+        // ParentBased ensures child spans inherit the parent's sampling decision.
+        Sampler::ParentBased(Box::new(Sampler::TraceIdRatioBased(ratio)))
+    }
+}
+
 fn attach_id_generator(platform: &RuntimePlatform, config: TraceConfig) -> TraceConfig {
     match platform {
         RuntimePlatform::AWS => {
@@ -142,6 +233,10 @@ fn attach_id_generator(platform: &RuntimePlatform, config: TraceConfig) -> Trace
         _ => config.with_id_generator(opentelemetry_sdk::trace::RandomIdGenerator::default()),
     }
 }
+
+// ---------------------------------------------------------------------------
+// Middleware
+// ---------------------------------------------------------------------------
 
 // A middleware function for enriching span context with values
 // obtained from extractors.
@@ -200,20 +295,46 @@ pub async fn enrich_span(
 }
 
 // A middleware function for logging the entry and exit of a request,
-// including logging the time taken to process the request.
+// including logging the time taken to process the request and recording
+// HTTP request metrics when metrics are enabled.
 // This won't be precise to the nanosecond or even microsecond
 // as there will be middleware that runs after this, there shouldn't be
 // any middleware that does heavy lifting after this yields a response
 // so we can still be confident in the millisecond precision.
-pub async fn log_request(request: Request, next: Next) -> Result<Response, StatusCode> {
+pub async fn log_request(
+    State(state): State<ApiAppState>,
+    request: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
     info!("HTTP request received");
+    let method = request.method().to_string();
+    let matched_path = request
+        .extensions()
+        .get::<MatchedPath>()
+        .map(|mp| mp.as_str().to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+
     let start = Instant::now();
     let response = next.run(request).await;
     let duration = start.elapsed();
     let millis_precise = duration.as_micros() as f64 / 1000.0;
+    let status_code = response.status().as_u16();
     info!(
-        status_code = response.status().as_u16(),
+        status_code = status_code,
         "HTTP request processed in {:?} milliseconds", millis_precise
     );
+
+    if let Some(metrics) = &state.metrics {
+        let attrs = [
+            KeyValue::new("http.request.method", method),
+            KeyValue::new("http.route", matched_path),
+            KeyValue::new("http.response.status_code", status_code.to_string()),
+        ];
+        metrics.http_request_counter.add(1, &attrs);
+        metrics
+            .http_request_duration
+            .record(duration.as_secs_f64(), &attrs);
+    }
+
     Ok(response)
 }

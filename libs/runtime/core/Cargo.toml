@@ -18,7 +18,7 @@ tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json"] }
 opentelemetry = { version = "0.22.0" }
 opentelemetry_sdk = { version = "0.22.1", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.15.0" }
+opentelemetry-otlp = { version = "0.15.0", features = ["metrics"] }
 tracing-opentelemetry = "0.23.0"
 opentelemetry-aws = "0.10.0"
 nanoid = "0.4.0"

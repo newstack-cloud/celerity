@@ -10,6 +10,7 @@ use celerity_helpers::consumers::{
     Message, MessageHandler, MessageHandlerError, RoutedMessage, RoutedMessageHandler,
 };
 use serde_json::{json, Value};
+use tracing::{field, instrument};
 
 use crate::types::{
     ConsumerEventData, ConsumerMessage, EventData, EventDataPayload, EventResult, EventTuple,
@@ -165,6 +166,11 @@ where
     M: Debug + Clone + Send + Sync + 'static,
     Message<M>: ToConsumerEventData,
 {
+    #[instrument(
+        name = "consumer_handler_bridge",
+        skip(self, message),
+        fields(handler_tag = %self.handler_tag, source = %self.source, otel.status_code = field::Empty)
+    )]
     async fn handle(&self, message: &Message<M>) -> Result<(), MessageHandlerError> {
         let messages = message.to_consumer_messages(&self.source);
         let event_data = ConsumerEventData {
@@ -178,6 +184,11 @@ where
             .map_err(map_handler_error)
     }
 
+    #[instrument(
+        name = "consumer_handler_bridge_batch",
+        skip(self, messages),
+        fields(handler_tag = %self.handler_tag, source = %self.source, batch_size = messages.len(), otel.status_code = field::Empty)
+    )]
     async fn handle_batch(&self, messages: &[Message<M>]) -> Result<(), MessageHandlerError> {
         let mut all_messages = Vec::new();
         let mut vendor = json!({});
@@ -231,6 +242,11 @@ where
     M: Debug + Clone + Send + Sync + 'static,
     Message<M>: ToConsumerEventData,
 {
+    #[instrument(
+        name = "routed_consumer_handler_bridge",
+        skip(self, message),
+        fields(handler_tag = %self.handler_tag, source = %self.source, otel.status_code = field::Empty)
+    )]
     async fn handle(&self, message: &RoutedMessage<M>) -> Result<(), MessageHandlerError> {
         let messages = vec![ConsumerMessage {
             message_id: message.message_id.clone(),
@@ -250,6 +266,11 @@ where
             .map_err(map_handler_error)
     }
 
+    #[instrument(
+        name = "routed_consumer_handler_bridge",
+        skip(self, message),
+        fields(handler_tag = %self.handler_tag, source = %self.source, otel.status_code = field::Empty)
+    )]
     async fn handle_raw_message(&self, message: &Message<M>) -> Result<(), MessageHandlerError> {
         let messages = message.to_consumer_messages(&self.source);
         let event_data = ConsumerEventData {
@@ -263,6 +284,11 @@ where
             .map_err(map_handler_error)
     }
 
+    #[instrument(
+        name = "routed_consumer_handler_bridge_batch",
+        skip(self, messages),
+        fields(handler_tag = %self.handler_tag, source = %self.source, batch_size = messages.len(), otel.status_code = field::Empty)
+    )]
     async fn handle_raw_message_batch(
         &self,
         messages: &[Message<M>],
@@ -325,6 +351,15 @@ where
     M: Debug + Clone + Send + Sync + 'static,
     Message<M>: ToConsumerEventData,
 {
+    #[instrument(
+        name = "schedule_handler_bridge",
+        skip(self, message),
+        fields(
+            handler_tag = %self.handler_tag,
+            schedule_id = %self.schedule_id,
+            schedule_value = %self.schedule_value,
+        )
+    )]
     async fn handle(&self, message: &Message<M>) -> Result<(), MessageHandlerError> {
         let event_data = ScheduleEventData {
             schedule_id: self.schedule_id.clone(),
@@ -340,6 +375,16 @@ where
             .map_err(map_handler_error)
     }
 
+    #[instrument(
+        name = "schedule_handler_bridge_batch",
+        skip(self, messages),
+        fields(
+            handler_tag = %self.handler_tag,
+            schedule_id = %self.schedule_id,
+            schedule_value = %self.schedule_value,
+            batch_size = messages.len(),
+        )
+    )]
     async fn handle_batch(&self, messages: &[Message<M>]) -> Result<(), MessageHandlerError> {
         for message in messages {
             self.handle(message).await?;
@@ -366,6 +411,11 @@ impl EventQueueConsumerEventHandler {
 
 #[async_trait]
 impl ConsumerEventHandler for EventQueueConsumerEventHandler {
+    #[instrument(
+        name = "event_queue_consumer_handler",
+        skip(self, event_data),
+        fields(handler_tag = %handler_tag, event_type = "consumer")
+    )]
     async fn handle_consumer_event(
         &self,
         handler_tag: &str,
@@ -384,6 +434,11 @@ impl ConsumerEventHandler for EventQueueConsumerEventHandler {
         enqueue_and_await(self.event_queue.clone(), event).await
     }
 
+    #[instrument(
+        name = "event_queue_schedule_handler",
+        skip(self, event_data),
+        fields(handler_tag = %handler_tag, event_type = "schedule")
+    )]
     async fn handle_schedule_event(
         &self,
         handler_tag: &str,
@@ -519,6 +574,9 @@ impl ManagedConsumer for ManagedSqsConsumer {
 }
 
 fn map_handler_error(err: ConsumerEventHandlerError) -> MessageHandlerError {
+    let span = tracing::Span::current();
+    span.record("otel.status_code", "ERROR");
+
     match err {
         ConsumerEventHandlerError::Timeout => MessageHandlerError::HandlerFailure(Box::new(err)),
         ConsumerEventHandlerError::HandlerFailure(_) => {

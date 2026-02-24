@@ -77,6 +77,7 @@ pub enum ApplicationStartError {
     TracingFilterParse(ParseError),
     HttpClient(reqwest::Error),
     ConsumerSetup(String),
+    OpenTelemetryMetrics(String),
 }
 
 impl fmt::Display for ApplicationStartError {
@@ -108,6 +109,9 @@ impl fmt::Display for ApplicationStartError {
             }
             ApplicationStartError::ConsumerSetup(msg) => {
                 write!(f, "application start error: consumer setup failed: {msg}")
+            }
+            ApplicationStartError::OpenTelemetryMetrics(msg) => {
+                write!(f, "application start error: metrics setup failed: {msg}")
             }
         }
     }

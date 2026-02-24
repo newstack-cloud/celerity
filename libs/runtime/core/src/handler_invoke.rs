@@ -5,7 +5,7 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use celerity_helpers::runtime_types::ResponseMessage;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex as AsyncMutex;
-use tracing::error;
+use tracing::{error, instrument};
 
 /// Trait implemented by each handler type to allow invocation by name.
 ///
@@ -85,6 +85,14 @@ pub struct InvokeHandlerState {
 
 /// Axum handler for `POST /runtime/handlers/invoke` (public, local/test only)
 /// and `POST /handlers/invoke` (internal, runtime local API, all environments).
+#[instrument(
+    name = "invoke_handler",
+    skip(state, request),
+    fields(
+        handler_name = %request.handler_name,
+        invocation_type = ?request.invocation_type,
+    )
+)]
 pub async fn invoke_handler(
     State(state): State<InvokeHandlerState>,
     Json(request): Json<InvokeHandlerRequest>,

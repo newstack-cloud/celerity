@@ -1,9 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use celerity_helpers::runtime_types::RuntimePlatform;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::oneshot;
+
+use crate::telemetry::RuntimeMetrics;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EventData {
@@ -187,10 +189,13 @@ pub struct ScheduledEventResponseData {
 
 // ApiAppState holds shared API application state to be used in axum
 // middleware and handlers.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ApiAppState {
     pub platform: RuntimePlatform,
     /// Maps (HTTP method, route path) to the blueprint handler name.
     /// Used by the tracing middleware to record handler_name in the span.
     pub handler_names: HashMap<(String, String), String>,
+    /// Pre-created OTel metric instruments. `None` when metrics are disabled
+    /// (`CELERITY_METRICS_ENABLED` is not set or false).
+    pub metrics: Option<Arc<RuntimeMetrics>>,
 }

@@ -32,7 +32,7 @@ use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::{sync::Mutex, time::sleep};
-use tracing::{debug, error, info, info_span, warn, Instrument};
+use tracing::{debug, error, field, info, info_span, warn, Instrument};
 
 use crate::{
     auth_custom::{
@@ -50,6 +50,15 @@ use crate::{
     telemetry_utils::extract_trace_context,
     utils::get_epoch_seconds,
 };
+
+/// Returns a lazily-initialised UpDownCounter for tracking active WebSocket connections.
+/// Uses the global meter — returns no-op when metrics are disabled.
+fn ws_connections_counter() -> opentelemetry::metrics::UpDownCounter<i64> {
+    opentelemetry::global::meter("celerity_runtime")
+        .i64_up_down_counter("ws.server.active_connections")
+        .with_description("Number of active WebSocket connections")
+        .init()
+}
 
 #[derive(Clone, Debug)]
 pub(crate) struct WebSocketAppState {
@@ -230,6 +239,7 @@ async fn handle_socket(
         state
             .connections
             .add_connection(connection_id.clone(), socket_ref.clone());
+        ws_connections_counter().add(1, &[]);
 
         // For the purpose of establishing a WebSocket connection,
         // an origin check is carried out on the server-side to determine
@@ -326,6 +336,7 @@ async fn handle_socket(
                         }
                         AuthMessageResult::Failed => {
                             state.connections.remove_connection(connection_id.clone());
+                            ws_connections_counter().add(-1, &[]);
                             connection_alive = false;
                         }
                         AuthMessageResult::NotAuthMessage => {
@@ -348,11 +359,13 @@ async fn handle_socket(
                         .is_break()
                     {
                         state.connections.remove_connection(connection_id.clone());
+                        ws_connections_counter().add(-1, &[]);
                         connection_alive = false;
                     }
                 }
             } else {
                 state.connections.remove_connection(connection_id.clone());
+                ws_connections_counter().add(-1, &[]);
                 connection_alive = false;
             }
         }
@@ -475,6 +488,7 @@ async fn on_connect(
                 ))
                 .await
             {
+                tracing::Span::current().record("otel.status_code", "ERROR");
                 error!("connect handler failed, closing connection: {err}");
                 close_connection(socket_ref.clone()).await;
                 ControlFlow::Break(())
@@ -482,7 +496,7 @@ async fn on_connect(
                 ControlFlow::Continue(())
             }
         }
-        .instrument(info_span!("on_connect", route = %CELERITY_WS_CONNECT_HANDLER_ROUTE))
+        .instrument(info_span!("on_connect", route = %CELERITY_WS_CONNECT_HANDLER_ROUTE, otel.status_code = field::Empty))
         .await
     } else {
         ControlFlow::Continue(())
@@ -1016,6 +1030,7 @@ async fn handle_json_message(
 
         let success = result.is_ok();
         if let Err(e) = result {
+            tracing::Span::current().record("otel.status_code", "ERROR");
             error!(
                 "failed to handle websocket message from client {}: {}",
                 connection_id, e
@@ -1027,6 +1042,7 @@ async fn handle_json_message(
         "websocket_json_message",
         message_id = %final_message_id,
         route = %route,
+        otel.status_code = field::Empty,
     ))
     .await;
 }
@@ -1056,6 +1072,7 @@ async fn handle_binary_message(
 
         let success = result.is_ok();
         if let Err(e) = result {
+            tracing::Span::current().record("otel.status_code", "ERROR");
             error!(
                 "failed to handle websocket message from client {}: {}",
                 connection_id, e
@@ -1067,6 +1084,7 @@ async fn handle_binary_message(
         "websocket_binary_message",
         message_id = %final_message_id,
         route = %route,
+        otel.status_code = field::Empty,
     ))
     .await;
 }
