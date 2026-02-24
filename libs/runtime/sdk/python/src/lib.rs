@@ -129,6 +129,8 @@ impl CoreRuntimeApplication {
       resource_store_cache_entry_ttl: runtime_config.resource_store_cache_entry_ttl,
       resource_store_cleanup_interval: runtime_config.resource_store_cleanup_interval,
       client_ip_source: ClientIpSource::ConnectInfo,
+      // TODO: source real log format from config
+      log_format: None,
     };
     println!("Creating CoreRuntimeApplication with config: {native_runtime_config:?}");
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
