@@ -532,9 +532,10 @@ impl Application {
                     service_name: service_name.clone(),
                     consumer_name: consumer_name.clone(),
                     stream,
-                    dlq_stream: consumer_config.dlq_source_id.as_ref().map(|id| {
-                        format!("celerity:dlq:consumer-{}", id)
-                    }),
+                    dlq_stream: consumer_config
+                        .dlq_source_id
+                        .as_ref()
+                        .map(|id| format!("celerity:dlq:consumer-{}", id)),
                     polling_wait_time_ms: consumer_config
                         .wait_time_seconds
                         .map(|w| w as u64 * 1000),

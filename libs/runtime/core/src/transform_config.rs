@@ -20,16 +20,16 @@ use crate::{
     consts::{
         CELERITY_CONSUMER_BUCKET_ANNOTATION_NAME, CELERITY_CONSUMER_BUCKET_EVENTS_ANNOTATION_NAME,
         CELERITY_CONSUMER_DATASTORE_ANNOTATION_NAME,
-        CELERITY_CONSUMER_DATASTORE_START_ANNOTATION_NAME,
-        CELERITY_CONSUMER_DLQ_ANNOTATION_NAME, CELERITY_CONSUMER_DLQ_MAX_ATTEMPTS_ANNOTATION_NAME,
+        CELERITY_CONSUMER_DATASTORE_START_ANNOTATION_NAME, CELERITY_CONSUMER_DLQ_ANNOTATION_NAME,
+        CELERITY_CONSUMER_DLQ_MAX_ATTEMPTS_ANNOTATION_NAME,
         CELERITY_CONSUMER_HANDLER_ANNOTATION_NAME, CELERITY_CONSUMER_HANDLER_ROUTE_ANNOTATION_NAME,
         CELERITY_CONSUMER_QUEUE_ANNOTATION_NAME, CELERITY_HANDLER_GUARD_ANNOTATION_NAME,
         CELERITY_HANDLER_PUBLIC_ANNOTATION_NAME, CELERITY_HTTP_HANDLER_ANNOTATION_NAME,
         CELERITY_HTTP_METHOD_ANNOTATION_NAME, CELERITY_HTTP_PATH_ANNOTATION_NAME,
-        CELERITY_QUEUE_DLQ_MAX_ATTEMPTS_ANNOTATION_NAME,
-        CELERITY_SCHEDULE_HANDLER_ANNOTATION_NAME, CELERITY_WS_HANDLER_ANNOTATION_NAME,
-        CELERITY_WS_ROUTE_ANNOTATION_NAME, DEFAULT_HANDLER_TIMEOUT, DEFAULT_TRACING_ENABLED,
-        DEFAULT_WEBSOCKET_API_AUTH_STRATEGY, DEFAULT_WEBSOCKET_API_ROUTE_KEY, MAX_HANDLER_TIMEOUT,
+        CELERITY_QUEUE_DLQ_MAX_ATTEMPTS_ANNOTATION_NAME, CELERITY_SCHEDULE_HANDLER_ANNOTATION_NAME,
+        CELERITY_WS_HANDLER_ANNOTATION_NAME, CELERITY_WS_ROUTE_ANNOTATION_NAME,
+        DEFAULT_HANDLER_TIMEOUT, DEFAULT_TRACING_ENABLED, DEFAULT_WEBSOCKET_API_AUTH_STRATEGY,
+        DEFAULT_WEBSOCKET_API_ROUTE_KEY, MAX_HANDLER_TIMEOUT,
     },
     errors::ConfigError,
 };
@@ -904,10 +904,7 @@ fn get_consumer_annotation<'a>(
 }
 
 /// Reads an annotation value from a resource and parses it as an i64.
-fn get_annotation_i64(
-    resource: &RuntimeBlueprintResource,
-    annotation_name: &str,
-) -> Option<i64> {
+fn get_annotation_i64(resource: &RuntimeBlueprintResource, annotation_name: &str) -> Option<i64> {
     resource
         .metadata
         .annotations
@@ -918,10 +915,7 @@ fn get_annotation_i64(
 }
 
 /// Reads an annotation value from a resource and parses it as a bool.
-fn get_annotation_bool(
-    resource: &RuntimeBlueprintResource,
-    annotation_name: &str,
-) -> Option<bool> {
+fn get_annotation_bool(resource: &RuntimeBlueprintResource, annotation_name: &str) -> Option<bool> {
     resource
         .metadata
         .annotations
@@ -978,11 +972,9 @@ fn resolve_consumer_dlq(
         ConsumerSourceResolution::ExplicitSourceId(_)
             if *source_type == ConsumerSourceType::Topic =>
         {
-            let dlq_enabled = get_annotation_bool(
-                consumer_resource,
-                CELERITY_CONSUMER_DLQ_ANNOTATION_NAME,
-            )
-            .unwrap_or(true);
+            let dlq_enabled =
+                get_annotation_bool(consumer_resource, CELERITY_CONSUMER_DLQ_ANNOTATION_NAME)
+                    .unwrap_or(true);
             if dlq_enabled {
                 let max_attempts = get_annotation_i64(
                     consumer_resource,
@@ -2618,8 +2610,7 @@ mod tests {
         ]);
 
         let mut collected = Vec::new();
-        let result =
-            collect_consumer_config(&bp, &test_runtime_config(), &mut collected).unwrap();
+        let result = collect_consumer_config(&bp, &test_runtime_config(), &mut collected).unwrap();
         let consumers_config = result.expect("should have consumers");
         assert_eq!(consumers_config.consumers.len(), 1);
         let config = &consumers_config.consumers[0];
@@ -2664,8 +2655,7 @@ mod tests {
         ]);
 
         let mut collected = Vec::new();
-        let result =
-            collect_consumer_config(&bp, &test_runtime_config(), &mut collected).unwrap();
+        let result = collect_consumer_config(&bp, &test_runtime_config(), &mut collected).unwrap();
         let consumers_config = result.expect("should have consumers");
         assert_eq!(consumers_config.consumers.len(), 1);
         let config = &consumers_config.consumers[0];
@@ -2702,8 +2692,7 @@ mod tests {
         ]);
 
         let mut collected = Vec::new();
-        let result =
-            collect_consumer_config(&bp, &test_runtime_config(), &mut collected).unwrap();
+        let result = collect_consumer_config(&bp, &test_runtime_config(), &mut collected).unwrap();
         let consumers_config = result.expect("should have consumers");
         assert_eq!(consumers_config.consumers.len(), 1);
         let config = &consumers_config.consumers[0];
@@ -2744,8 +2733,7 @@ mod tests {
         ]);
 
         let mut collected = Vec::new();
-        let result =
-            collect_consumer_config(&bp, &test_runtime_config(), &mut collected).unwrap();
+        let result = collect_consumer_config(&bp, &test_runtime_config(), &mut collected).unwrap();
         let consumers_config = result.expect("should have consumers");
         assert_eq!(consumers_config.consumers.len(), 1);
         let config = &consumers_config.consumers[0];
