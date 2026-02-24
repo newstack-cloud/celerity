@@ -131,6 +131,8 @@ impl CoreRuntimeApplication {
       client_ip_source: ClientIpSource::ConnectInfo,
       // TODO: source real log format from config
       log_format: None,
+      metrics_enabled: false,
+      trace_sample_ratio: 1.0,
     };
     println!("Creating CoreRuntimeApplication with config: {native_runtime_config:?}");
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
