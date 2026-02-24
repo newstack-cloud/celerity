@@ -327,6 +327,10 @@ pub struct DataStreamSourceConfigurationWithSubs {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct CelerityScheduleSpecWithSubs {
     pub schedule: StringOrSubstitutions,
+    /// A static JSON value that is delivered to the schedule handler
+    /// on every trigger. Not subject to substitution resolution.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input: Option<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]

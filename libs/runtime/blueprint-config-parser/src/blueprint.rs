@@ -339,12 +339,17 @@ pub struct CelerityConsumerSpec {
 #[derive(Serialize, Debug, PartialEq)]
 pub struct CelerityScheduleSpec {
     pub schedule: String,
+    /// A static JSON value that is delivered to the schedule handler
+    /// on every trigger.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input: Option<serde_json::Value>,
 }
 
 impl Default for CelerityScheduleSpec {
     fn default() -> Self {
         CelerityScheduleSpec {
             schedule: "".to_string(),
+            input: None,
         }
     }
 }

@@ -428,6 +428,7 @@ fn resolve_schedule_spec(
             env.clone(),
             &resource_spec_field_path(resource_name, &["scheduleName"]),
         )?,
+        input: spec_with_subs.input,
     })
 }
 
