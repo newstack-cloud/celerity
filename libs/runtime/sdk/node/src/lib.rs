@@ -875,6 +875,8 @@ impl CoreRuntimeApplication {
       resource_store_cleanup_interval: runtime_config.resource_store_cleanup_interval,
       client_ip_source,
       log_format,
+      metrics_enabled: false,
+      trace_sample_ratio: 1.0,
     };
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
     CoreRuntimeApplication {
