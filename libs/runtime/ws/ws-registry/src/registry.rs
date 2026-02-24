@@ -200,9 +200,18 @@ impl WebSocketConnRegistry {
                             );
                             let mut connection = connection.lock().await;
                             debug!(connection_id = %message.connection_id, "sending message to connection: {}", message.connection_id);
-                            // TODO: support sending binary messages
-                            let send_result =
-                                connection.send(Message::Text(message.message.into())).await;
+                            let ws_message =
+                                match create_ws_message(message.message_type, message.message) {
+                                    Ok(msg) => msg,
+                                    Err(e) => {
+                                        error!(
+                                            connection_id = %message.connection_id,
+                                            "failed to decode message for cluster relay: {e:?}",
+                                        );
+                                        continue;
+                                    }
+                                };
+                            let send_result = connection.send(ws_message).await;
                             if let Err(e) = send_result {
                                 error!(
                                     connection_id = %message.connection_id,
