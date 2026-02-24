@@ -23,7 +23,9 @@ use celerity_helpers::{
 use futures::future::join_all;
 use opentelemetry::{
     global,
+    metrics::{Counter, Histogram},
     trace::{SpanKind, TraceContextExt},
+    KeyValue,
 };
 use std::{fmt::Debug, sync::Arc, time::Duration};
 use tokio::time;
@@ -102,6 +104,9 @@ pub struct SQSMessageConsumer {
     client: Arc<Client>,
     visibility_timeout_extender: Arc<VisibilityTimeoutExtender>,
     config: Arc<SQSConsumerFinalisedConfig>,
+    metrics_messages_processed: Counter<u64>,
+    metrics_errors: Counter<u64>,
+    metrics_duration: Histogram<f64>,
 }
 
 impl Debug for SQSMessageConsumer {
@@ -117,6 +122,9 @@ impl Clone for SQSMessageConsumer {
             client: self.client.clone(),
             visibility_timeout_extender: self.visibility_timeout_extender.clone(),
             config: self.config.clone(),
+            metrics_messages_processed: self.metrics_messages_processed.clone(),
+            metrics_errors: self.metrics_errors.clone(),
+            metrics_duration: self.metrics_duration.clone(),
         }
     }
 }
@@ -186,11 +194,25 @@ impl SQSMessageConsumer {
             message_attribute_names: config.message_attribute_names,
             num_workers: config.num_workers.unwrap_or(10),
         };
+        let meter = global::meter("celerity_consumer_sqs");
         SQSMessageConsumer {
             handler: None,
             client,
             visibility_timeout_extender,
             config: Arc::new(final_config),
+            metrics_messages_processed: meter
+                .u64_counter("consumer.sqs.messages.processed")
+                .with_description("Total SQS messages processed")
+                .init(),
+            metrics_errors: meter
+                .u64_counter("consumer.sqs.messages.errors")
+                .with_description("Total SQS message processing errors")
+                .init(),
+            metrics_duration: meter
+                .f64_histogram("consumer.sqs.message.duration")
+                .with_description("SQS message processing duration in seconds")
+                .with_unit(opentelemetry::metrics::Unit::new("s"))
+                .init(),
         }
     }
 
@@ -440,6 +462,7 @@ impl SQSMessageConsumer {
             .collect();
 
         let handle_msg_future = self.derive_handler_future(handler_messages.clone());
+        let message_count = handler_messages.len() as u64;
 
         // May or may not start a heartbeat for the visibility timeout extender,
         // it's at the discretion of the visibility timeout extender.
@@ -448,7 +471,9 @@ impl SQSMessageConsumer {
             .clone()
             .start_heartbeat(messages.into_iter().map(|m| m.into()).collect());
 
+        let handler_start = Instant::now();
         let result = handle_msg_future.await;
+        let handler_elapsed = handler_start.elapsed();
         if let Some(send_kill_heartbeat) = send_kill_heartbeat_opt {
             debug!("sending kill signal to visibility timeout extender");
             match send_kill_heartbeat.send(()) {
@@ -463,10 +488,25 @@ impl SQSMessageConsumer {
             error!("failed to delete messages from queue: {}", err);
         }
 
+        // Record metrics for the handler invocation.
+        self.metrics_duration
+            .record(handler_elapsed.as_secs_f64(), &[]);
         match result {
-            Ok(_) => (),
+            Ok(_) => {
+                self.metrics_messages_processed
+                    .add(message_count, &[KeyValue::new("status", "success")]);
+            }
             Err(error) => {
                 let _res = self.terminate_visibility_timeout(&message_handles).await;
+
+                let error_type = match &error {
+                    MessageHandlerError::Timeout(_) => "timeout",
+                    MessageHandlerError::MissingHandler => "missing_handler",
+                    MessageHandlerError::HandlerFailure(_) => "handler_failure",
+                    _ => "unknown",
+                };
+                self.metrics_errors
+                    .add(1, &[KeyValue::new("error_type", error_type)]);
 
                 match error {
                     MessageHandlerError::Timeout(_) => {
