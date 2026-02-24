@@ -56,6 +56,7 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 resource_store_cache_entry_ttl: 600,
                 resource_store_cleanup_interval: 3600,
                 client_ip_source: ClientIpSource::ConnectInfo,
+                log_format: None,
             },
             Box::new(ProcessEnvVars::new()),
         ),
@@ -197,6 +198,9 @@ impl From<ApplicationStartError> for GeneralError {
             ApplicationStartError::Config(config_err) => match config_err {
                 ConfigError::Api(_) => GeneralError::ApplicationStartConfigApiError,
                 ConfigError::ApiMissing => GeneralError::ApplicationStartConfigApiMissing,
+                ConfigError::Consumer(_) | ConfigError::Schedule(_) => {
+                    GeneralError::ApplicationStartConfigApiError
+                }
             },
             ApplicationStartError::TaskWaitError(_) => GeneralError::ApplicationStartTaskWaitError,
             ApplicationStartError::OpenTelemetryTrace(_) => {
@@ -209,6 +213,9 @@ impl From<ApplicationStartError> for GeneralError {
                 GeneralError::ApplicationStartTracingFilterParseError
             }
             ApplicationStartError::HttpClient(_) => GeneralError::ApplicationStartHttpClientError,
+            ApplicationStartError::ConsumerSetup(_) => {
+                GeneralError::ApplicationStartConsumerSetupError
+            }
         }
     }
 }
