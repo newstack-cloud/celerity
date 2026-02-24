@@ -375,13 +375,17 @@ impl StateMachine {
             Ok(output) => {
                 self.clone()
                     .handle_state_success(
-                        state_name.clone(),
-                        parent_state.clone(),
+                        StateLocation {
+                            name: state_name.clone(),
+                            parent: parent_state.clone(),
+                        },
                         state_config,
                         state,
-                        input,
-                        output,
-                        instant_for_duration,
+                        StateSuccessContext {
+                            input,
+                            output,
+                            instant: instant_for_duration,
+                        },
                     )
                     .await
             }
@@ -400,33 +404,29 @@ impl StateMachine {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     async fn handle_state_success(
         self: Arc<Self>,
-        state_name: String,
-        parent_state: Option<String>,
+        location: StateLocation,
         state_config: &CelerityWorkflowState,
         state: WorkflowExecutionState,
-        input: &Value,
-        output: Value,
-        instant_for_duration: Instant,
+        ctx: StateSuccessContext<'_>,
     ) -> Result<Value, StateMachineError> {
-        let duration = as_fractional_seconds(instant_for_duration.elapsed());
+        let duration = as_fractional_seconds(ctx.instant.elapsed());
         let final_output = self.clone().prepare_state_output(
-            state_name.clone(),
-            parent_state.clone(),
+            location.name.clone(),
+            location.parent.clone(),
             state_config,
-            input,
-            &output,
+            ctx.input,
+            &ctx.output,
             duration,
         )?;
         self.clone()
             .record_completed_state(
-                state_name.clone(),
+                location.name.clone(),
                 duration,
-                &output,
+                &ctx.output,
                 &final_output,
-                parent_state.clone(),
+                location.parent.clone(),
             )
             .await?;
 
@@ -436,15 +436,15 @@ impl StateMachine {
                 next.clone(),
                 &final_output,
                 Some(&state),
-                parent_state,
+                location.parent,
             )
             .await;
         } else if is_end {
             self.record_completed_workflow_execution().await?;
         } else {
             Err(StateMachineError::InvalidState(WorkflowStateErrorInfo {
-                state_name,
-                parent_state_name: parent_state,
+                state_name: location.name,
+                parent_state_name: location.parent,
                 error_name: None,
                 error_message: "State is missing next or end field".to_string(),
                 duration: Some(duration),
@@ -563,13 +563,17 @@ impl StateMachine {
             sleep(Duration::from_secs(wait_time)).await;
 
             self.handle_state_success(
-                state_name,
-                parent_state,
+                StateLocation {
+                    name: state_name,
+                    parent: parent_state,
+                },
                 state_config,
                 state,
-                input,
-                input.clone(),
-                instant_for_duration,
+                StateSuccessContext {
+                    input,
+                    output: input.clone(),
+                    instant: instant_for_duration,
+                },
             )
             .await
         } else {
@@ -627,13 +631,17 @@ impl StateMachine {
 
         let output = Value::Array(result_values);
         self.handle_state_success(
-            state_name,
-            None,
+            StateLocation {
+                name: state_name,
+                parent: None,
+            },
             state_config,
             state,
-            input,
-            output,
-            instant_for_duration,
+            StateSuccessContext {
+                input,
+                output,
+                instant: instant_for_duration,
+            },
         )
         .await
     }
@@ -937,13 +945,17 @@ impl StateMachine {
 
         self.clone()
             .record_error(
-                err_info.state_name.clone(),
-                err_info.parent_state_name.clone(),
-                error_name,
-                err_info.error_message.clone(),
-                true,
-                matching_retry_config.is_some() && !exceeded_max_attempts,
-                err_info.duration,
+                StateLocation {
+                    name: err_info.state_name.clone(),
+                    parent: err_info.parent_state_name.clone(),
+                },
+                StateErrorRecord {
+                    error_name,
+                    error_message: err_info.error_message.clone(),
+                    persist: true,
+                    can_continue: matching_retry_config.is_some() && !exceeded_max_attempts,
+                    duration: err_info.duration,
+                },
             )
             .await;
 
@@ -1064,13 +1076,17 @@ impl StateMachine {
                 err_info.error_message
             );
             self.record_error(
-                err_info.state_name,
-                err_info.parent_state_name,
-                "InvalidResultPath".to_string(),
-                err_info.error_message,
-                true,
-                false,
-                err_info.duration,
+                StateLocation {
+                    name: err_info.state_name,
+                    parent: err_info.parent_state_name,
+                },
+                StateErrorRecord {
+                    error_name: "InvalidResultPath".to_string(),
+                    error_message: err_info.error_message,
+                    persist: true,
+                    can_continue: false,
+                    duration: err_info.duration,
+                },
             )
             .await;
         } else {
@@ -1082,13 +1098,17 @@ impl StateMachine {
                 retry_or_catch_err
             );
             self.record_error(
-                "unknown".to_string(),
-                None,
-                "UnknownError".to_string(),
-                format!("An unexpected error occurred: {retry_or_catch_err}"),
-                true,
-                false,
-                None,
+                StateLocation {
+                    name: "unknown".to_string(),
+                    parent: None,
+                },
+                StateErrorRecord {
+                    error_name: "UnknownError".to_string(),
+                    error_message: format!("An unexpected error occurred: {retry_or_catch_err}"),
+                    persist: true,
+                    can_continue: false,
+                    duration: None,
+                },
             )
             .await;
         }
@@ -1154,38 +1174,34 @@ impl StateMachine {
             err_info.error_message
         );
         self.record_error(
-            err_info.state_name,
-            err_info.parent_state_name,
-            error_name.to_string(),
-            err_info.error_message,
-            persist,
-            can_continue,
-            err_info.duration,
+            StateLocation {
+                name: err_info.state_name,
+                parent: err_info.parent_state_name,
+            },
+            StateErrorRecord {
+                error_name: error_name.to_string(),
+                error_message: err_info.error_message,
+                persist,
+                can_continue,
+                duration: err_info.duration,
+            },
         )
         .await;
     }
 
-    #[allow(clippy::too_many_arguments)]
-    async fn record_error(
-        self: Arc<Self>,
-        state_name: String,
-        parent_state_name: Option<String>,
-        error_name: String,
-        error_message: String,
-        persist: bool,
-        can_continue: bool,
-        duration: Option<f64>,
-    ) {
+    async fn record_error(self: Arc<Self>, location: StateLocation, error: StateErrorRecord) {
         // Only acquire a lock to update error state and take a copy of the current state to persist
         // and broadcast.
         // It's important to avoid holding the lock while persisting state and broadcasting events to
         // prevent significant blocking when executing parallel branches.
         let (captured_workflow_execution, captured_state) = {
             let mut workflow_execution = self.workflow_execution.lock().await;
-            let status_detail =
-                format!("Error executing state \"{state_name}\" [{error_name}]: {error_message}",);
+            let status_detail = format!(
+                "Error executing state \"{}\" [{}]: {}",
+                location.name, error.error_name, error.error_message,
+            );
 
-            if !can_continue {
+            if !error.can_continue {
                 workflow_execution.status = WorkflowExecutionStatus::Failed;
                 workflow_execution.status_detail = status_detail.clone();
                 workflow_execution.duration = Some(as_fractional_seconds(
@@ -1198,21 +1214,21 @@ impl StateMachine {
             }
 
             let state = extract_state_from_workflow_execution_mut(
-                state_name.clone(),
+                location.name.clone(),
                 &mut workflow_execution,
-                parent_state_name.clone(),
+                location.parent.clone(),
             )
             .expect("Failed state must exist in workflow execution");
 
             state.error = Some(status_detail);
             state.status = WorkflowExecutionStatus::Failed;
-            state.duration = duration;
+            state.duration = error.duration;
             state.completed = Some(self.workflow_app.clock.now_millis());
             let captured_state = state.clone();
             (workflow_execution.clone(), captured_state)
         };
 
-        if persist {
+        if error.persist {
             let persist_result = self
                 .workflow_app
                 .execution_service
@@ -1233,7 +1249,7 @@ impl StateMachine {
 
             if let Err(err) = persist_result {
                 error!(
-                    state = state_name.as_str(),
+                    state = location.name.as_str(),
                     error_name = "PersistFailed",
                     "failed to persist workflow execution changes in response to an error, \
                      the currently persisted state is likely to be incorrect: {}",
@@ -1259,7 +1275,7 @@ impl StateMachine {
                 failed_state: captured_state,
             }));
 
-        if !can_continue {
+        if !error.can_continue {
             // Completion event will contain a workflow execution with the failed status
             // and error information in the status detail field.
             let _ = self.workflow_app.event_broadcaster.send(
@@ -1821,5 +1837,27 @@ struct WorkflowStateErrorInfo {
     parent_state_name: Option<String>,
     error_name: Option<String>,
     error_message: String,
+    duration: Option<f64>,
+}
+
+/// Identifies a state within the workflow execution tree.
+struct StateLocation {
+    name: String,
+    parent: Option<String>,
+}
+
+/// Bundles the I/O context for a successfully completed state execution.
+struct StateSuccessContext<'a> {
+    input: &'a serde_json::Value,
+    output: serde_json::Value,
+    instant: Instant,
+}
+
+/// Bundles all fields needed to record a state error.
+struct StateErrorRecord {
+    error_name: String,
+    error_message: String,
+    persist: bool,
+    can_continue: bool,
     duration: Option<f64>,
 }
