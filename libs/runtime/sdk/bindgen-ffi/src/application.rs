@@ -57,6 +57,8 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 resource_store_cleanup_interval: 3600,
                 client_ip_source: ClientIpSource::ConnectInfo,
                 log_format: None,
+                metrics_enabled: false,
+                trace_sample_ratio: 1.0,
             },
             Box::new(ProcessEnvVars::new()),
         ),
@@ -215,6 +217,9 @@ impl From<ApplicationStartError> for GeneralError {
             ApplicationStartError::HttpClient(_) => GeneralError::ApplicationStartHttpClientError,
             ApplicationStartError::ConsumerSetup(_) => {
                 GeneralError::ApplicationStartConsumerSetupError
+            }
+            ApplicationStartError::OpenTelemetryMetrics(_) => {
+                GeneralError::ApplicationStartOpenTelemetryTraceError
             }
         }
     }
