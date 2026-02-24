@@ -33,7 +33,7 @@ use crate::{
     parse_substitutions::{parse_substitutions, ParseError},
     yaml_helpers::{
         extract_scalar_value, validate_array_of_strings, validate_mapping_node,
-        validate_single_substitution,
+        validate_single_substitution, yaml_to_json_value,
     },
     yaml_workflow::validate_celerity_workflow_spec,
 };
@@ -485,6 +485,11 @@ fn validate_celerity_schedule_spec(
             "expected a schedule field for schedule configuration".to_string(),
         ))?;
     }
+
+    if let Some(input_val) = spec_map.get(&yaml_rust2::Yaml::String("input".to_string())) {
+        celerity_schedule_spec.input = Some(yaml_to_json_value(input_val));
+    }
+
     Ok(celerity_schedule_spec)
 }
 
@@ -1407,6 +1412,24 @@ fn validate_celerity_api_auth_guard(
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
                             "expected an array for audience, found {value:?}",
+                        )))?;
+                    }
+                }
+                "authScheme" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        guard.auth_scheme = Some(parse_substitutions::<ParseError>(value_str)?);
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for authScheme, found {value:?}",
+                        )))?;
+                    }
+                }
+                "discoveryMode" => {
+                    if let yaml_rust2::Yaml::String(value_str) = value {
+                        guard.discovery_mode = Some(parse_substitutions::<ParseError>(value_str)?);
+                    } else {
+                        Err(BlueprintParseError::YamlFormatError(format!(
+                            "expected a string for discoveryMode, found {value:?}",
                         )))?;
                     }
                 }

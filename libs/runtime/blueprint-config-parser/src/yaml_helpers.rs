@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde_json::json;
+
 use crate::{
     blueprint::BlueprintScalarValue,
     blueprint_with_subs::{MappingNode, StringOrSubstitution, StringOrSubstitutions},
@@ -104,4 +106,34 @@ pub fn validate_array_of_strings(
         }
     }
     Ok(strings)
+}
+
+/// Converts a `yaml_rust2::Yaml` value into a `serde_json::Value`.
+pub fn yaml_to_json_value(yaml: &yaml_rust2::Yaml) -> serde_json::Value {
+    match yaml {
+        yaml_rust2::Yaml::Hash(map) => {
+            let mut json_map = serde_json::Map::new();
+            for (key, value) in map.iter() {
+                if let yaml_rust2::Yaml::String(key_str) = key {
+                    json_map.insert(key_str.clone(), yaml_to_json_value(value));
+                }
+            }
+            serde_json::Value::Object(json_map)
+        }
+        yaml_rust2::Yaml::Array(seq) => {
+            serde_json::Value::Array(seq.iter().map(yaml_to_json_value).collect())
+        }
+        yaml_rust2::Yaml::String(s) => json!(s),
+        yaml_rust2::Yaml::Integer(i) => json!(i),
+        yaml_rust2::Yaml::Real(r) => {
+            if let Ok(f) = r.parse::<f64>() {
+                json!(f)
+            } else {
+                json!(r)
+            }
+        }
+        yaml_rust2::Yaml::Boolean(b) => json!(b),
+        yaml_rust2::Yaml::Null => serde_json::Value::Null,
+        _ => serde_json::Value::Null,
+    }
 }
