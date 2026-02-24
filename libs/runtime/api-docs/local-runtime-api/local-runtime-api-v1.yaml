@@ -11,6 +11,8 @@ tags:
     description: Endpoints for retrieving and processing requests and messages received by the runtime.
   - name: websockets
     description: Endpoints for sending messages to specific WebSocket connections.
+  - name: handlers
+    description: Endpoints for invoking handlers by name, used for handler-to-handler invocation in HTTP call mode.
   - name: runtime
     description: Runtime-specific endpoints for tasks like retrieving configuration for the current application.
 
@@ -134,6 +136,79 @@ paths:
             applicatoin/json:
               schema:
                 $ref: "#/components/schemas/ServerErrorResponse"
+  /handlers/invoke:
+    post:
+      tags:
+        - handlers
+      summary: Invoke a handler by name.
+      description: |
+        Invokes a registered handler by its unique name. This is the internal endpoint
+        available on the runtime local API in all environments, used for handler-to-handler
+        invocation in HTTP call mode.
+
+        Unlike the public `POST /runtime/handlers/invoke` endpoint (which is restricted to
+        local/test environments), this endpoint is available whenever the runtime local API
+        is running (i.e. when the runtime call mode is `http`).
+
+        Supports two invocation types:
+        - `requestResponse`: waits for the handler to complete and returns the result.
+        - `async`: fires the handler in the background and returns immediately.
+      operationId: invokeHandler
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - handlerName
+                - invocationType
+              properties:
+                handlerName:
+                  type: string
+                  description: The unique name for the handler as defined in the `spec.handlerName` field of a handler definition in a blueprint specification.
+                  examples: ["Orders-GetOrder-v1"]
+                invocationType:
+                  type: string
+                  description: |
+                    The type of invocation, can be one of `requestResponse` or `async`.
+                    Use `requestResponse` to wait for the handler to complete and return a response and `async` to return immediately without waiting for a response.
+                  enum:
+                    - requestResponse
+                    - async
+                payload:
+                  description: An optional JSON payload to pass to the handler.
+      responses:
+        "200":
+          description: |
+            The response from the handler.
+            For `requestResponse`, contains the handler's return value in the `data` field.
+            For `async`, contains a message indicating the handler invocation has started.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvokeHandlerResponse"
+        "400":
+          description: |
+            Invalid request parameters provided in payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+        "404":
+          description: |
+            The handler could not be found in the current runtime.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HandlerNotFoundResponse"
+        "500":
+          description: |
+            The handler invocation failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerErrorResponse"
+
   /runtime/config:
     get:
       tags:
@@ -835,3 +910,28 @@ components:
         message:
           type: string
           examples: ["Event with provided ID was not found"]
+
+    InvokeHandlerResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: A message indicating the result of the handler invocation.
+          examples: ["Handler invoked successfully"]
+        data:
+          type: string
+          description: |
+            An optional string containing the response data returned from the invoked handler.
+            Present for `requestResponse` invocations, absent for `async` invocations.
+            In most cases this will be a serialised JSON object.
+          examples:
+            - '{"status":200,"body":{"id":40392}}'
+
+    HandlerNotFoundResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          examples: ["handler 'Orders-GetOrder-v1' not found"]
