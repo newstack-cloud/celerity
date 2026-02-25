@@ -549,6 +549,7 @@ impl Application {
 
             let mut consumer = create_redis_consumer(
                 consumer_conn,
+                conn_config.clone(),
                 shutdown_tx.clone(),
                 RedisConsumerParams {
                     service_name: service_name.clone(),
@@ -602,6 +603,7 @@ impl Application {
 
             let mut consumer = create_redis_consumer(
                 schedule_conn,
+                conn_config.clone(),
                 shutdown_tx.clone(),
                 RedisConsumerParams {
                     service_name: service_name.clone(),
@@ -700,6 +702,7 @@ impl Application {
 
             let mut consumer = create_redis_consumer(
                 event_conn,
+                conn_config.clone(),
                 shutdown_tx.clone(),
                 RedisConsumerParams {
                     service_name: service_name.clone(),
@@ -1185,6 +1188,7 @@ struct RedisConsumerParams {
 #[cfg(feature = "celerity_local_consumers")]
 fn create_redis_consumer(
     redis_conn: celerity_helpers::redis::ConnectionWrapper,
+    conn_config: celerity_helpers::redis::ConnectionConfig,
     shutdown_tx: tokio::sync::broadcast::Sender<()>,
     params: RedisConsumerParams,
 ) -> celerity_consumer_redis::message_consumer::RedisMessageConsumer {
@@ -1230,7 +1234,7 @@ fn create_redis_consumer(
         num_workers: None,
     };
 
-    RedisMessageConsumer::new(lock_extender, clock, redis_conn, shutdown_tx, redis_config)
+    RedisMessageConsumer::new(lock_extender, clock, redis_conn, conn_config, shutdown_tx, redis_config)
 }
 
 fn attach_tracing_layers(

@@ -523,15 +523,12 @@ async fn start_consumer(
         num_workers: consumer_config.num_workers,
     };
 
-    let redis_connection = get_redis_connection(
-        &ConnectionConfig {
-            nodes: consumer_config.nodes,
-            password: consumer_config.password,
-            cluster_mode: false,
-        },
-        None,
-    )
-    .await?;
+    let conn_config = ConnectionConfig {
+        nodes: consumer_config.nodes,
+        password: consumer_config.password,
+        cluster_mode: false,
+    };
+    let redis_connection = get_redis_connection(&conn_config, None).await?;
 
     let message_locks = MessageLocks::new(
         test_case_config.service_name,
@@ -550,6 +547,7 @@ async fn start_consumer(
         Arc::new(lock_duration_extender),
         Arc::new(DefaultClock::new()),
         redis_connection,
+        conn_config,
         shutdown_test_context.shutdown_broadcast_tx.clone(),
         redis_consumer_config,
     );

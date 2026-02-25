@@ -6,7 +6,7 @@ use celerity_helpers::{
         extract_context_ids, Message, MessageConsumer, MessageHandler, MessageHandlerError,
         PartialBatchFailureInfo, PinnedMessageHandlerFuture,
     },
-    redis::{ConnectionWrapper, StreamTrimStrategy},
+    redis::{get_redis_connection, ConnectionConfig, ConnectionWrapper, StreamTrimStrategy},
     retries::{calculate_retry_wait_time_ms, RetryConfig},
     telemetry::{CELERITY_CONTEXT_IDS_KEY, CELERITY_CONTEXT_ID_KEY},
     time::{calcuate_polling_wait_time, Clock},
@@ -153,6 +153,10 @@ pub struct RedisMessageConsumer {
     update_last_message_id_script: Arc<Script>,
     lock_duration_extender: Arc<LockDurationExtender>,
     redis_connection: ConnectionWrapper,
+    /// Connection config used to create dedicated per-worker connections.
+    /// `XREAD BLOCK` is incompatible with `MultiplexedAsyncConnection`
+    /// (see redis-rs#1236), so each worker needs its own TCP connection.
+    conn_config: ConnectionConfig,
     clock: Arc<dyn Clock + Send + Sync>,
     shutdown_broadcast_tx: broadcast::Sender<()>,
     config: Arc<RedisConsumerFinalisedConfig>,
@@ -171,6 +175,7 @@ impl Clone for RedisMessageConsumer {
             handler: self.handler.clone(),
             lock_duration_extender: self.lock_duration_extender.clone(),
             redis_connection: self.redis_connection.clone(),
+            conn_config: self.conn_config.clone(),
             clock: self.clock.clone(),
             shutdown_broadcast_tx: self.shutdown_broadcast_tx.clone(),
             config: self.config.clone(),
@@ -193,9 +198,19 @@ impl MessageConsumer<RedisMessageMetadata> for RedisMessageConsumer {
     async fn start(&self) -> Result<(), Self::Error> {
         let consumer_arc = Arc::new(self.clone());
         let mut worker_handles = Vec::new();
+
+        // Each worker gets a dedicated connection because `XREAD BLOCK`
+        // is incompatible with shared `MultiplexedAsyncConnection`
+        // (see redis-rs#1236).
         for worker_id in 0..self.config.num_workers {
             let consumer = consumer_arc.clone();
-            let mut conn_for_worker = self.redis_connection.clone();
+            let mut conn_for_worker = get_redis_connection(&self.conn_config, None)
+                .await
+                .map_err(|e| {
+                    WorkerError::new(format!(
+                        "failed to create dedicated connection for worker {worker_id}: {e}"
+                    ))
+                })?;
             let shutdown_broadcast_tx = self.shutdown_broadcast_tx.clone();
             let worker_handle = tokio::spawn(async move {
                 consumer
@@ -206,6 +221,8 @@ impl MessageConsumer<RedisMessageMetadata> for RedisMessageConsumer {
         }
 
         if self.config.trim_stream_interval >= 0 {
+            // The trim worker only uses non-blocking commands, so the
+            // shared multiplexed connection is fine.
             let mut conn_for_trim_stream_worker = self.redis_connection.clone();
             let shutdown_broadcast_tx = self.shutdown_broadcast_tx.clone();
             let worker_handle = tokio::spawn(async move {
@@ -245,6 +262,7 @@ impl RedisMessageConsumer {
         lock_duration_extender: Arc<LockDurationExtender>,
         clock: Arc<dyn Clock + Send + Sync>,
         redis_connection: ConnectionWrapper,
+        conn_config: ConnectionConfig,
         shutdown_broadcast_tx: broadcast::Sender<()>,
         config: RedisConsumerConfig,
     ) -> Self {
@@ -280,10 +298,11 @@ impl RedisMessageConsumer {
             update_last_message_id_script,
             handler: None,
             lock_duration_extender,
+            redis_connection,
+            conn_config,
             clock,
             shutdown_broadcast_tx,
             config: Arc::new(final_config),
-            redis_connection,
         }
     }
 

@@ -160,6 +160,7 @@ async fn create_consumer(
         lock_extender,
         clock,
         redis_conn,
+        conn_config(),
         shutdown_tx.clone(),
         redis_config,
     );
