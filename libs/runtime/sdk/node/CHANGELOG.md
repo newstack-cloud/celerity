@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.2.3...runtime-sdk-node/v0.3.0) (2026-02-25)
+
+
+### Features
+
+* **lib-rt-sdk-node:** add support for guards ([96c09b1](https://github.com/newstack-cloud/celerity/commit/96c09b1b143982da374276fc502031be15585e36))
+* **lib-rt-sdk-node:** complete core runtime bindings for nodejs ([37c1e43](https://github.com/newstack-cloud/celerity/commit/37c1e43a1a5d80dc62b7e5a9f1c98778a4827d67))
+
+
+### Dependencies
+
+* **runtime-sdk-node:** update core dependencies ([c5bc93d](https://github.com/newstack-cloud/celerity/commit/c5bc93d3672458ab7ec9b6e4d1fd4fc059f19846))
+* **runtime-sdk-node:** update core dependencies ([88d1f9c](https://github.com/newstack-cloud/celerity/commit/88d1f9cf23a5ec0e9ad8e987830d8277d758ea3b))
+* **runtime-sdk-node:** update core dependencies ([8318570](https://github.com/newstack-cloud/celerity/commit/83185708be263d3c55bde273af15941be77aabe2))
+
 ## [0.2.3](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.2.2...runtime-sdk-node/v0.2.3) (2026-02-18)
 
 
