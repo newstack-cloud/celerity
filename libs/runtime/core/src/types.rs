@@ -165,26 +165,26 @@ pub struct SimpleResponseData {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MessageProcessingResponseData {
-    success: bool,
+    pub success: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
-    failues: Option<Vec<MessageProcessingFailure>>,
+    pub failures: Option<Vec<MessageProcessingFailure>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MessageProcessingFailure {
     #[serde(rename = "messageId")]
-    message_id: String,
+    pub message_id: String,
     #[serde(rename = "errorMessage")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    error_message: Option<String>,
+    pub error_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ScheduledEventResponseData {
-    success: bool,
+    pub success: bool,
     #[serde(rename = "errorMessage")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    error_message: Option<String>,
+    pub error_message: Option<String>,
 }
 
 // ApiAppState holds shared API application state to be used in axum

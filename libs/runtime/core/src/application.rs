@@ -284,7 +284,10 @@ impl Application {
                     routes: self.ws_app_routes.clone(),
                     route_key: websocket_config.route_key.clone(),
                     api_auth: api_config.auth.clone(),
-                    auth_strategy: Some(websocket_config.auth_strategy.clone()),
+                    auth_strategy: api_config
+                        .auth
+                        .as_ref()
+                        .map(|_| websocket_config.auth_strategy.clone()),
                     connection_auth_guard_names: websocket_config.connection_auth_guard.clone(),
                     connection_auth_guards: self
                         .get_custom_auth_guards_blocking(&websocket_config.connection_auth_guard),
@@ -505,7 +508,8 @@ impl Application {
             password: None,
             cluster_mode: false,
         };
-        let redis_conn = get_redis_connection(&conn_config, None)
+        // Verify connectivity with an initial connection.
+        let _verify_conn = get_redis_connection(&conn_config, None)
             .await
             .map_err(|e| {
                 ApplicationStartError::ConsumerSetup(format!("redis connection failed: {e}"))
@@ -531,8 +535,20 @@ impl Application {
                 }
             };
 
+            // Each consumer gets its own connection because XREAD BLOCK
+            // is a blocking command that does not work correctly when
+            // multiple callers share a single MultiplexedConnection.
+            let consumer_conn = get_redis_connection(&conn_config, None)
+                .await
+                .map_err(|e| {
+                    ApplicationStartError::ConsumerSetup(format!(
+                        "redis connection for consumer {} failed: {e}",
+                        consumer_name
+                    ))
+                })?;
+
             let mut consumer = create_redis_consumer(
-                redis_conn.clone(),
+                consumer_conn,
                 shutdown_tx.clone(),
                 RedisConsumerParams {
                     service_name: service_name.clone(),
@@ -575,8 +591,17 @@ impl Application {
             let consumer_name = format!("schedule-consumer-{}", schedule_config.schedule_id);
             let (shutdown_tx, _) = tokio::sync::broadcast::channel(1);
 
+            let schedule_conn = get_redis_connection(&conn_config, None)
+                .await
+                .map_err(|e| {
+                    ApplicationStartError::ConsumerSetup(format!(
+                        "redis connection for schedule consumer {} failed: {e}",
+                        consumer_name
+                    ))
+                })?;
+
             let mut consumer = create_redis_consumer(
-                redis_conn.clone(),
+                schedule_conn,
                 shutdown_tx.clone(),
                 RedisConsumerParams {
                     service_name: service_name.clone(),
@@ -664,8 +689,17 @@ impl Application {
             let consumer_name = format!("event-consumer-{}", source_id);
             let (shutdown_tx, _) = tokio::sync::broadcast::channel(1);
 
+            let event_conn = get_redis_connection(&conn_config, None)
+                .await
+                .map_err(|e| {
+                    ApplicationStartError::ConsumerSetup(format!(
+                        "redis connection for event consumer {} failed: {e}",
+                        consumer_name
+                    ))
+                })?;
+
             let mut consumer = create_redis_consumer(
-                redis_conn.clone(),
+                event_conn,
                 shutdown_tx.clone(),
                 RedisConsumerParams {
                     service_name: service_name.clone(),
