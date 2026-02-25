@@ -19,9 +19,14 @@ permissions:
         required: true
         type: string
       artifact-run-id:
-        description: 'Reuse artifacts from a previous run (skip build & test). Provide the run ID.'
+        description: 'Reuse artifacts from a previous run (skip build). Provide the run ID.'
         required: false
         type: string
+      skip-tests:
+        description: 'Skip tests (use with artifact-run-id to publish without re-testing)'
+        required: false
+        type: boolean
+        default: false
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -173,7 +178,7 @@ jobs:
           path: ./libs/runtime/sdk/node/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
   test-macOS-windows-binding:
-    if: inputs.artifact-run-id == ''
+    if: ${{ !cancelled() && !failure() && !inputs.skip-tests }}
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
     needs:
       - build
@@ -212,6 +217,8 @@ jobs:
         with:
           name: bindings-${{ matrix.settings.target }}
           path: ./libs/runtime/sdk/node
+          run-id: ${{ inputs.artifact-run-id || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: List packages
         run: ls -R .
         shell: bash
@@ -220,7 +227,7 @@ jobs:
         env:
           SKIP_CONSUMER_TESTS: '1'
   test-linux-binding:
-    if: inputs.artifact-run-id == ''
+    if: ${{ !cancelled() && !failure() && !inputs.skip-tests }}
     name: Test ${{ matrix.target }} - node@${{ matrix.node }}
     needs:
       - build
@@ -280,6 +287,8 @@ jobs:
         with:
           name: bindings-${{ matrix.target }}
           path: ./libs/runtime/sdk/node
+          run-id: ${{ inputs.artifact-run-id || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: List packages
         run: ls -R .
         shell: bash
@@ -311,7 +320,13 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
-    if: ${{ always() && inputs.tag != '' && (inputs.artifact-run-id != '' || (needs.build-freebsd.result == 'success' && needs.test-macOS-windows-binding.result == 'success' && needs.test-linux-binding.result == 'success')) }}
+    if: >-
+      ${{
+        always() && inputs.tag != '' &&
+        (needs.build-freebsd.result == 'success' || needs.build-freebsd.result == 'skipped') &&
+        (needs.test-macOS-windows-binding.result == 'success' || needs.test-macOS-windows-binding.result == 'skipped') &&
+        (needs.test-linux-binding.result == 'success' || needs.test-linux-binding.result == 'skipped')
+      }}
     defaults:
       run:
         working-directory: ${{ env.working-directory }}
