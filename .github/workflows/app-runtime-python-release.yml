@@ -14,7 +14,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: newstack-cloud/celerity-runtime-python-3.12
+  IMAGE_NAME: newstack-cloud/celerity-runtime-python-3.13
 
 jobs:
   build-and-push:
