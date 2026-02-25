@@ -1,0 +1,46 @@
+version: 2025-11-02
+transform: celerity-2026-02-28
+variables: {}
+resources:
+  testApi:
+    type: "celerity/api"
+    metadata:
+      displayName: Test API
+    linkSelector:
+      byLabel:
+        application: "test-custom-handler"
+    spec:
+      protocols: ["http"]
+      tracingEnabled: false
+
+  healthHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Health Handler
+      labels:
+        application: "test-custom-handler"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "GET"
+        celerity.handler.http.path: "/health"
+    spec:
+      handlerName: Test-Health-v1
+      codeLocation: "./test"
+      handler: "handlers.health"
+      runtime: "nodejs22.x"
+      timeout: 10
+      tracingEnabled: false
+
+  utilityHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Utility Handler
+      labels:
+        application: "test-custom-handler"
+    spec:
+      handlerName: Test-UtilityHandler-v1
+      codeLocation: "./test"
+      handler: "handlers.utility"
+      runtime: "nodejs22.x"
+      timeout: 60
+      tracingEnabled: false

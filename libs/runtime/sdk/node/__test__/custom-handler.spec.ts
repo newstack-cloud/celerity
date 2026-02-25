@@ -12,7 +12,7 @@ function testConfig(
   overrides: Partial<CoreRuntimeConfig> & { serverPort: number },
 ): CoreRuntimeConfig {
   return {
-    blueprintConfigPath: "__test__/consumer-schedule.blueprint.yaml",
+    blueprintConfigPath: "__test__/custom-handler.blueprint.yaml",
     serviceName: "node-sdk-custom-handler-test",
     traceOtlpCollectorEndpoint: "",
     runtimeMaxDiagnosticsLevel: "info",
