@@ -58,7 +58,7 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 client_ip_source: ClientIpSource::ConnectInfo,
                 log_format: None,
                 metrics_enabled: false,
-                trace_sample_ratio: 1.0,
+                trace_sample_ratio: 0.1,
             },
             Box::new(ProcessEnvVars::new()),
         ),
