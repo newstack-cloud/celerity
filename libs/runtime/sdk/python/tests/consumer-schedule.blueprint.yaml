@@ -1,0 +1,105 @@
+version: 2025-11-02
+transform: celerity-2026-02-28
+variables: {}
+resources:
+  testApi:
+    type: "celerity/api"
+    metadata:
+      displayName: Test API
+    linkSelector:
+      byLabel:
+        application: "test-consumer"
+    spec:
+      protocols: ["http"]
+      tracingEnabled: false
+
+  healthHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Health Handler
+      labels:
+        application: "test-consumer"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "GET"
+        celerity.handler.http.path: "/health"
+    spec:
+      handlerName: Test-Health-v1
+      codeLocation: "./consumer_handlers"
+      handler: "handlers.health_check"
+      runtime: "python3.12"
+      timeout: 10
+      tracingEnabled: false
+
+  testQueue:
+    type: "celerity/consumer"
+    metadata:
+      displayName: Test Order Queue
+    linkSelector:
+      byLabel:
+        application: "test-consumer"
+    spec:
+      sourceId: "test-order-queue"
+      batchSize: 10
+      visibilityTimeout: 30
+      waitTimeSeconds: 2
+      partialFailures: true
+
+  orderHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Order Events Handler
+      labels:
+        application: "test-consumer"
+      annotations:
+        celerity.handler.consumer: true
+    spec:
+      handlerName: Test-OrderHandler-v1
+      codeLocation: "./consumer_handlers"
+      handler: "handlers.handle_order"
+      runtime: "python3.12"
+      timeout: 60
+      tracingEnabled: false
+
+  dailyCleanup:
+    type: "celerity/schedule"
+    metadata:
+      displayName: Daily Cleanup
+    linkSelector:
+      byLabel:
+        application: "test-consumer"
+    spec:
+      schedule: "rate(1 day)"
+      input:
+        task: "cleanup"
+        enabled: true
+
+  cleanupHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Cleanup Handler
+      labels:
+        application: "test-consumer"
+      annotations:
+        celerity.handler.schedule: true
+    spec:
+      handlerName: Test-CleanupHandler-v1
+      codeLocation: "./consumer_handlers"
+      handler: "handlers.handle_cleanup"
+      runtime: "python3.12"
+      timeout: 60
+      tracingEnabled: false
+
+  utilityHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Utility Handler
+      labels:
+        application: "test-consumer"
+    spec:
+      handlerName: Test-UtilityHandler-v1
+      codeLocation: "./consumer_handlers"
+      handler: "handlers.handle_utility"
+      runtime: "python3.12"
+      timeout: 60
+      tracingEnabled: false

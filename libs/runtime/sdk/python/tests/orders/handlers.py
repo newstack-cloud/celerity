@@ -46,7 +46,7 @@ async def process_order_update(ws_message_info: WebSocketMessageInfo) -> None:
         ),
     })
     ws_registry = shared.get_ws_registry()
-    ws_registry.send_message(
+    await ws_registry.send_message(
         connection_id=ws_message_info.connection_id,
         message_id="123",
         message_type=WebSocketMessageType.JSON,

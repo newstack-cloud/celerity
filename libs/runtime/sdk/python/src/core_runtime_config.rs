@@ -79,6 +79,14 @@ pub struct CoreRuntimeConfig {
   pub resource_store_cache_entry_ttl: i64,
   #[pyo3(get)]
   pub resource_store_cleanup_interval: i64,
+  #[pyo3(get)]
+  pub client_ip_source: Option<String>,
+  #[pyo3(get)]
+  pub log_format: Option<String>,
+  #[pyo3(get)]
+  pub metrics_enabled: bool,
+  #[pyo3(get)]
+  pub trace_sample_ratio: f64,
 }
 
 #[pymethods]
@@ -107,6 +115,10 @@ struct InternalCoreRuntimeConfig {
   resource_store_verify_tls: Option<bool>,
   resource_store_cache_entry_ttl: Option<i64>,
   resource_store_cleanup_interval: Option<i64>,
+  client_ip_source: Option<String>,
+  log_format: Option<String>,
+  metrics_enabled: Option<bool>,
+  trace_sample_ratio: Option<f64>,
 }
 
 #[pyclass]
@@ -135,6 +147,10 @@ impl CoreRuntimeConfigBuilder {
         resource_store_verify_tls: None,
         resource_store_cache_entry_ttl: None,
         resource_store_cleanup_interval: None,
+        client_ip_source: None,
+        log_format: None,
+        metrics_enabled: None,
+        trace_sample_ratio: None,
       },
     }
   }
@@ -218,6 +234,26 @@ impl CoreRuntimeConfigBuilder {
     self_.into()
   }
 
+  fn set_client_ip_source(mut self_: PyRefMut<Self>, client_ip_source: String) -> Py<Self> {
+    self_.core_runtime_config.client_ip_source = Some(client_ip_source);
+    self_.into()
+  }
+
+  fn set_log_format(mut self_: PyRefMut<Self>, log_format: String) -> Py<Self> {
+    self_.core_runtime_config.log_format = Some(log_format);
+    self_.into()
+  }
+
+  fn set_metrics_enabled(mut self_: PyRefMut<Self>, metrics_enabled: bool) -> Py<Self> {
+    self_.core_runtime_config.metrics_enabled = Some(metrics_enabled);
+    self_.into()
+  }
+
+  fn set_trace_sample_ratio(mut self_: PyRefMut<Self>, trace_sample_ratio: f64) -> Py<Self> {
+    self_.core_runtime_config.trace_sample_ratio = Some(trace_sample_ratio);
+    self_.into()
+  }
+
   fn build(&self, py: Python) -> PyResult<Py<CoreRuntimeConfig>> {
     let runtime_config = CoreRuntimeConfig {
       blueprint_config_path: self.core_runtime_config.blueprint_config_path.clone(),
@@ -256,6 +292,10 @@ impl CoreRuntimeConfigBuilder {
         .core_runtime_config
         .resource_store_cleanup_interval
         .unwrap_or(DEFAULT_RESOURCE_STORE_CLEANUP_INTERVAL),
+      client_ip_source: self.core_runtime_config.client_ip_source.clone(),
+      log_format: self.core_runtime_config.log_format.clone(),
+      metrics_enabled: self.core_runtime_config.metrics_enabled.unwrap_or(false),
+      trace_sample_ratio: self.core_runtime_config.trace_sample_ratio.unwrap_or(0.1),
     };
     Py::new(py, runtime_config)
   }
@@ -279,6 +319,10 @@ impl From<RuntimeConfig> for CoreRuntimeConfig {
       resource_store_verify_tls: runtime_config.resource_store_verify_tls,
       resource_store_cache_entry_ttl: runtime_config.resource_store_cache_entry_ttl,
       resource_store_cleanup_interval: runtime_config.resource_store_cleanup_interval,
+      client_ip_source: Some(format!("{:?}", runtime_config.client_ip_source)),
+      log_format: runtime_config.log_format,
+      metrics_enabled: runtime_config.metrics_enabled,
+      trace_sample_ratio: runtime_config.trace_sample_ratio,
     }
   }
 }

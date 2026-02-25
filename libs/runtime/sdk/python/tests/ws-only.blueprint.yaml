@@ -1,0 +1,106 @@
+version: 2025-11-02
+transform: celerity-2026-02-28
+variables:
+  certificateId:
+    type: string
+    description: "The ID of the certificate to use for the API domain."
+resources:
+  testApi:
+    type: "celerity/api"
+    metadata:
+      displayName: Test WebSocket API
+    linkSelector:
+      byLabel:
+        application: "test-ws"
+    spec:
+      protocols:
+        - websocketConfig:
+            routeKey: "action"
+      domain:
+        domainName: "localhost"
+        basePaths:
+          - protocol: "websocket"
+            basePath: "/ws"
+        normalizeBasePath: false
+        certificateId: "${variables.certificateId}"
+        securityPolicy: "TLS_1_2"
+      cors:
+        allowCredentials: false
+        allowOrigins:
+          - "https://example.com"
+        allowMethods:
+          - "GET"
+          - "POST"
+        allowHeaders:
+          - "Content-Type"
+        exposeHeaders: []
+        maxAge: 3600
+      tracingEnabled: false
+
+  connectHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Connect Handler
+      labels:
+        application: "test-ws"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "$connect"
+    spec:
+      handlerName: Test-WS-Connect-v1
+      codeLocation: "./ws_handlers"
+      handler: "handlers.on_connect"
+      runtime: "python3.12"
+      timeout: 60
+      tracingEnabled: false
+
+  defaultHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Default Handler
+      labels:
+        application: "test-ws"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "$default"
+    spec:
+      handlerName: Test-WS-Default-v1
+      codeLocation: "./ws_handlers"
+      handler: "handlers.on_default"
+      runtime: "python3.12"
+      timeout: 60
+      tracingEnabled: false
+
+  disconnectHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Disconnect Handler
+      labels:
+        application: "test-ws"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "$disconnect"
+    spec:
+      handlerName: Test-WS-Disconnect-v1
+      codeLocation: "./ws_handlers"
+      handler: "handlers.on_disconnect"
+      runtime: "python3.12"
+      timeout: 60
+      tracingEnabled: false
+
+  echoHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Echo Handler
+      labels:
+        application: "test-ws"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "echo"
+    spec:
+      handlerName: Test-WS-Echo-v1
+      codeLocation: "./ws_handlers"
+      handler: "handlers.echo"
+      runtime: "python3.12"
+      timeout: 60
+      tracingEnabled: false

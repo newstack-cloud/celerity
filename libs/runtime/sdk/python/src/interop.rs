@@ -4,14 +4,14 @@ use pyo3::{prelude::*, types::PyTuple};
 use tokio::sync::{mpsc, oneshot, Mutex as TokioMutex};
 use tracing::info;
 
-use crate::{errors::HandlerError, http::PyResponse};
+use crate::errors::HandlerError;
 
 /// Message sent to the Python worker responsible for calling python handlers
 /// via the python asyncio event loop.
 pub struct PythonCall {
   pub handler_id: String,
   pub args: Vec<PyObject>,
-  pub response: oneshot::Sender<Result<PyResponse, HandlerError>>,
+  pub response: oneshot::Sender<Result<Py<PyAny>, HandlerError>>,
 }
 
 /// Starts the Python worker responsible for calling python handlers
@@ -20,8 +20,13 @@ pub async fn python_worker(
   mut rx: mpsc::UnboundedReceiver<PythonCall>,
   handlers: Arc<TokioMutex<HashMap<String, Py<PyAny>>>>,
 ) {
-  let task_locals = Python::with_gil(pyo3_async_runtimes::tokio::get_current_locals)
-    .expect("should be able to get task locals for current context");
+  let task_locals = match Python::with_gil(pyo3_async_runtimes::tokio::get_current_locals) {
+    Ok(locals) => locals,
+    Err(e) => {
+      eprintln!("fatal: failed to get Python task locals: {e}");
+      return;
+    }
+  };
 
   while let Some(call) = rx.recv().await {
     let handlers_clone = handlers.clone();
@@ -67,8 +72,7 @@ async fn process_python_call(
           .map_err(|err| HandlerError::new(err.to_string()));
 
         match run_result {
-          Ok(output) => Python::with_gil(|py| -> PyResult<PyResponse> { output.extract(py) })
-            .map_err(|err| HandlerError::new(err.to_string())),
+          Ok(output) => Ok(Python::with_gil(|py| output.clone_ref(py))),
           Err(err) => Err(err),
         }
       }

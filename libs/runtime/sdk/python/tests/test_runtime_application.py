@@ -1,13 +1,13 @@
-import subprocess
-from typing import List
-import os
-import time
 import json
+import os
+import subprocess
+import time
 
 import pytest
 import requests
 from dotenv import dotenv_values
 from websocket import create_connection
+
 from celerity_runtime_sdk import CoreRuntimeConfigBuilder, RuntimePlatform
 
 
@@ -18,7 +18,7 @@ def test_http_endpoint(runtime_server):
 
 
 def test_websockets(runtime_server):
-    ws = create_connection("ws://localhost:22346/ws")
+    ws = create_connection("ws://localhost:22346/ws", origin="https://example.com")
     ws.send(json.dumps({"action": "processOrderUpdate", "data": {"orderId": "1234"}}))
     msg = ws.recv()
     assert msg == '{"action": "processedOrderUpdate", "message": "Order received"}'
@@ -93,7 +93,7 @@ def test_core_runtime_config_builder_with_overrides():
 
 
 @pytest.fixture(scope="session")
-def runtime_server(command_args: List[str]):
+def runtime_server(command_args: list[str]):
     with open("test-server.log", "w") as log_file:
         server_proc = subprocess.Popen(
             command_args,
@@ -112,7 +112,7 @@ def runtime_server(command_args: List[str]):
 
 
 @pytest.fixture(name="command_args", scope="session")
-def fixture_command_args() -> List[str]:
+def fixture_command_args() -> list[str]:
     return [
         "uv",
         "run",

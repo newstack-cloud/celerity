@@ -31,6 +31,12 @@ async-trait = "0.1.88"
 pythonize = "0.25.0"
 chrono = "0.4.41"
 
+[features]
+celerity_local_consumers = ["celerity_runtime_core/celerity_local_consumers"]
+aws_consumers = ["celerity_runtime_core/aws_consumers"]
+azure_consumers = ["celerity_runtime_core/azure_consumers"]
+gcloud_consumers = ["celerity_runtime_core/gcloud_consumers"]
+
 [dependencies.celerity_runtime_core]
 path = "../../core"
 

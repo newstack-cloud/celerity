@@ -1,6 +1,7 @@
-from typing import Optional, Callable, Awaitable, Any
+from collections.abc import Callable, Awaitable
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 
 class RuntimePlatform(Enum):
@@ -55,23 +56,31 @@ class CoreRuntimeConfig:
                                         This defaults to 600 seconds (10 minutes).
         resource_store_cleanup_interval: The interval in seconds at which the resource store cleanup task should run.
                                          This defaults to 3600 seconds (1 hour).
+        client_ip_source: Source for resolving client IP addresses. Defaults to "ConnectInfo".
+        log_format: Log output format. Falls back to the CELERITY_LOG_FORMAT environment variable if not set.
+        metrics_enabled: Whether to enable metrics collection. Defaults to False.
+        trace_sample_ratio: Trace sampling ratio (0.0-1.0). Defaults to 0.1.
     """
 
     blueprint_config_path: str
     service_name: str
     server_port: int
-    server_loopback_only: Optional[bool]
-    use_custom_health_check: Optional[bool]
+    server_loopback_only: bool | None
+    use_custom_health_check: bool | None
     trace_otlp_collector_endpoint: str
     runtime_max_diagnostics_level: str
     platform: RuntimePlatform
     test_mode: bool
-    api_resource: Optional[str]
-    consumer_app: Optional[str]
-    schedule_app: Optional[str]
+    api_resource: str | None
+    consumer_app: str | None
+    schedule_app: str | None
     resource_store_verify_tls: bool
     resource_store_cache_entry_ttl: int
     resource_store_cleanup_interval: int
+    client_ip_source: str | None
+    log_format: str | None
+    metrics_enabled: bool
+    trace_sample_ratio: float
 
     def __init__(
         self,
@@ -313,6 +322,58 @@ class CoreRuntimeConfigBuilder:
             A CoreRuntimeConfigBuilder instance with the configuration set.
         """
 
+    def set_client_ip_source(self, client_ip_source: str) -> "CoreRuntimeConfigBuilder":
+        """
+        Set the source for resolving client IP addresses.
+
+        Defaults to "ConnectInfo" when not set.
+
+        Args:
+            client_ip_source: The source for resolving client IP addresses.
+
+        Returns:
+            A CoreRuntimeConfigBuilder instance with the configuration set.
+        """
+
+    def set_log_format(self, log_format: str) -> "CoreRuntimeConfigBuilder":
+        """
+        Set the log output format.
+
+        Falls back to the CELERITY_LOG_FORMAT environment variable if not set.
+
+        Args:
+            log_format: The log output format.
+
+        Returns:
+            A CoreRuntimeConfigBuilder instance with the configuration set.
+        """
+
+    def set_metrics_enabled(self, metrics_enabled: bool) -> "CoreRuntimeConfigBuilder":
+        """
+        Set whether to enable metrics collection.
+
+        Defaults to False when not set.
+
+        Args:
+            metrics_enabled: Whether to enable metrics collection.
+
+        Returns:
+            A CoreRuntimeConfigBuilder instance with the configuration set.
+        """
+
+    def set_trace_sample_ratio(self, trace_sample_ratio: float) -> "CoreRuntimeConfigBuilder":
+        """
+        Set the trace sampling ratio.
+
+        Defaults to 0.1 when not set. Must be between 0.0 and 1.0.
+
+        Args:
+            trace_sample_ratio: The trace sampling ratio.
+
+        Returns:
+            A CoreRuntimeConfigBuilder instance with the configuration set.
+        """
+
     def build(self) -> CoreRuntimeConfig:
         """
         Builds a new runtime configuration object from the configuration set
@@ -387,9 +448,139 @@ class CoreApiConfig:
     Attributes:
         http: Configuration for HTTP endpoints.
         websocket: Configuration for WebSocket connection lifecycle and message handlers.
+        guards: Configuration for authentication guard handlers.
     """
-    http: Optional[CoreHttpConfig]
-    websocket: Optional[CoreWebSocketConfig]
+    http: CoreHttpConfig | None
+    websocket: CoreWebSocketConfig | None
+    guards: "CoreGuardsConfig | None"
+
+
+class CoreGuardsConfig:
+    """
+    Configuration for authentication guard handlers.
+
+    Attributes:
+        handlers: List of guard handler definitions.
+    """
+    handlers: list["CoreGuardHandlerDefinition"]
+
+
+class CoreGuardHandlerDefinition:
+    """
+    Definition of a guard handler.
+
+    Attributes:
+        name: The name of the guard handler as defined in the blueprint.
+    """
+    name: str
+
+
+class CoreConsumersConfig:
+    """
+    Configuration for event source consumers.
+
+    Attributes:
+        consumers: List of consumer configurations.
+    """
+    consumers: list["CoreConsumerConfig"]
+
+
+class CoreConsumerConfig:
+    """
+    Configuration for an individual event source consumer.
+
+    Attributes:
+        consumer_name: The name of the consumer.
+        source_id: The identifier of the event source (e.g. queue URL or stream name).
+        batch_size: Maximum number of messages to process in a single batch.
+        visibility_timeout: Time in seconds before a message becomes visible again after being received.
+        wait_time_seconds: Long-polling wait time in seconds.
+        partial_failures: Whether to report partial batch failures.
+        routing_key: Optional routing key for filtering messages.
+        handlers: List of event handler definitions for this consumer.
+    """
+    consumer_name: str
+    source_id: str
+    batch_size: int | None
+    visibility_timeout: int | None
+    wait_time_seconds: int | None
+    partial_failures: bool | None
+    routing_key: str | None
+    handlers: list["CoreEventHandlerDefinition"]
+
+
+class CoreEventHandlerDefinition:
+    """
+    Definition of an event handler for consumers or schedules.
+
+    Attributes:
+        name: The name of the handler.
+        location: The file location of the handler.
+        handler: The fully qualified handler function (e.g. "module.function").
+        timeout: The timeout in seconds for the handler.
+        tracing_enabled: Whether distributed tracing is enabled for the handler.
+        route: Optional routing key for the handler.
+    """
+    name: str
+    location: str
+    handler: str
+    timeout: int
+    tracing_enabled: bool
+    route: str | None
+
+
+class CoreSchedulesConfig:
+    """
+    Configuration for scheduled event handlers.
+
+    Attributes:
+        schedules: List of schedule configurations.
+    """
+    schedules: list["CoreScheduleConfig"]
+
+
+class CoreScheduleConfig:
+    """
+    Configuration for an individual schedule.
+
+    Attributes:
+        schedule_id: The identifier of the schedule.
+        schedule_value: The schedule expression (e.g. cron expression or rate).
+        handlers: List of event handler definitions for this schedule.
+        input: Optional input data to pass to schedule handlers.
+    """
+    schedule_id: str
+    schedule_value: str
+    handlers: list[CoreEventHandlerDefinition]
+    input: Any | None
+
+
+class CoreCustomHandlersConfig:
+    """
+    Configuration for custom handler invocations.
+
+    Attributes:
+        handlers: List of custom handler definitions.
+    """
+    handlers: list["CoreCustomHandlerDefinition"]
+
+
+class CoreCustomHandlerDefinition:
+    """
+    Definition of a custom handler that can be invoked programmatically.
+
+    Attributes:
+        name: The name of the custom handler.
+        location: The file location of the handler.
+        handler: The fully qualified handler function (e.g. "module.function").
+        timeout: The timeout in seconds for the handler.
+        tracing_enabled: Whether distributed tracing is enabled for the handler.
+    """
+    name: str
+    location: str
+    handler: str
+    timeout: int
+    tracing_enabled: bool
 
 
 class CoreRuntimeAppConfig:
@@ -398,8 +589,14 @@ class CoreRuntimeAppConfig:
 
     Attributes:
         api: Configuration for HTTP and WebSocket APIs.
+        consumers: Configuration for event source consumers.
+        schedules: Configuration for scheduled event handlers.
+        custom_handlers: Configuration for custom handler invocations.
     """
-    api: Optional[CoreApiConfig]
+    api: CoreApiConfig | None
+    consumers: CoreConsumersConfig | None
+    schedules: CoreSchedulesConfig | None
+    custom_handlers: CoreCustomHandlersConfig | None
 
 
 class Response:
@@ -413,9 +610,9 @@ class Response:
     """
 
     status: int
-    headers: Optional[dict[str, str]]
-    text_body: Optional[str]
-    binary_body: Optional[bytes]
+    headers: dict[str, str] | None
+    text_body: str | None
+    binary_body: bytes | None
 
 
 class ResponseBuilder:
@@ -560,11 +757,11 @@ class WebSocketMessageRequestContext:
     path: str
     protocol_version: HttpProtocolVersion
     headers: dict[str, list[str]]
-    user_agent_header: Optional[str]
+    user_agent_header: str | None
     client_ip: str
     query: dict[str, list[str]]
     cookies: dict[str, str]
-    trace_context: Optional[dict[str, str]]
+    trace_context: dict[str, str] | None
 
 
 class WebSocketMessageRequestContextBuilder:
@@ -706,10 +903,10 @@ class WebSocketMessageInfo:
     event_type: WebSocketEventType
     connection_id: str
     message_id: str
-    json_body: Optional[Any]
-    binary_body: Optional[bytes]
-    request_context: Optional[WebSocketMessageRequestContext]
-    trace_context: Optional[dict[str, str]]
+    json_body: Any | None
+    binary_body: bytes | None
+    request_context: WebSocketMessageRequestContext | None
+    trace_context: dict[str, str] | None
 
 
 class WebSocketMessageInfoBuilder:
@@ -816,9 +1013,10 @@ class Request:
         path: The path of the request.
         path_params: A dictionary of path parameters.
         protocol_version: The protocol version of the request.
+        user_agent: The user agent string from the request headers.
     """
-    text_body: Optional[str]
-    binary_body: Optional[bytes]
+    text_body: str | None
+    binary_body: bytes | None
     content_type: str
     headers: dict[str, list[str]]
     query: dict[str, list[str]]
@@ -827,6 +1025,7 @@ class Request:
     path: str
     path_params: dict[str, str]
     protocol_version: HttpProtocolVersion
+    user_agent: str
 
 
 class RequestBuilder:
@@ -998,18 +1197,26 @@ class RequestContext:
         trace_context: A dictionary of trace context including a W3C Trace Context string
                        (in the traceparent format) and platform specific trace IDs such as
                        an AWS X-Ray Trace ID.
+        client_ip: The secure IP address of the client extracted from trusted
+                   headers or directly from the socket when there are no proxies
+                   in front of the runtime.
+        matched_route: The matched route pattern for the request (e.g. "/items/{itemId}").
     """
     request_id: str
     request_time: datetime
-    auth: Optional[Any]
-    trace_context: Optional[dict[str, str]]
+    auth: Any | None
+    trace_context: dict[str, str] | None
+    client_ip: str
+    matched_route: str | None
 
     def __init__(
         self,
         request_id: str,
         request_time: datetime,
-        auth: Optional[Any],
-        trace_context: Optional[dict[str, str]],
+        auth: Any | None,
+        trace_context: dict[str, str] | None,
+        client_ip: str,
+        matched_route: str | None,
     ):
         """
         Initialises a new request context.
@@ -1022,6 +1229,10 @@ class RequestContext:
             trace_context: A dictionary of trace context including a W3C Trace Context string
                            (in the traceparent format) and platform specific trace IDs such as
                            an AWS X-Ray Trace ID.
+            client_ip: The secure IP address of the client extracted from trusted
+                       headers or directly from the socket when there are no proxies
+                       in front of the runtime.
+            matched_route: The matched route pattern for the request (e.g. "/items/{itemId}").
         """
 
 
@@ -1035,13 +1246,13 @@ class SendContext:
         inform_clients: List of client IDs to inform when a message is considered lost.
     """
 
-    caller: Optional[str]
+    caller: str | None
     wait_for_ack: bool
     inform_clients: list[str]
 
     def __init__(
         self,
-        caller: Optional[str],
+        caller: str | None,
         wait_for_ack: bool,
         inform_clients: list[str],
     ):
@@ -1071,13 +1282,13 @@ class WebSocketRegistry:
         send_message: Sends a message to a WebSocket connection.
     """
 
-    def send_message(
+    async def send_message(
         self,
         connection_id: str,
         message_id: str,
         message_type: WebSocketMessageType,
         message: str,
-        ctx: Optional[SendContext],
+        ctx: SendContext | None,
     ) -> None:
         """
         Sends a message to a WebSocket connection that is either connected to the current
@@ -1090,6 +1301,189 @@ class WebSocketRegistry:
                           The message will be a base64-encoded string if the message type is binary.
             message: The message to send.
             ctx: Optional context for the message.
+        """
+
+
+class ConsumerEventInput:
+    """
+    The handler input for when consumer event messages are received from an event source.
+
+    Attributes:
+        handler_tag: A tag identifying the handler, in the format "source::<source_id>::<handler_name>".
+        messages: List of consumer messages in the batch.
+        vendor: Vendor-specific metadata for the event source (e.g. AWS SQS metadata).
+        trace_context: A dictionary of trace context including a W3C Trace Context string
+                       (in the traceparent format) and platform specific trace IDs.
+    """
+    handler_tag: str
+    messages: list["ConsumerMessage"]
+    vendor: Any
+    trace_context: dict[str, str] | None
+
+
+class ConsumerMessage:
+    """
+    A single message from an event source consumer.
+
+    Attributes:
+        message_id: The unique identifier of the message.
+        body: The message body as a string.
+        source: The source of the message (e.g. queue URL or stream name).
+        message_attributes: Vendor-specific message attributes.
+        vendor: Vendor-specific metadata for the message.
+    """
+    message_id: str
+    body: str
+    source: str
+    message_attributes: Any
+    vendor: Any
+
+
+class ScheduleEventInput:
+    """
+    The handler input for when a scheduled event is triggered.
+
+    Attributes:
+        handler_tag: A tag identifying the handler, in the format "source::<schedule_id>::<handler_name>".
+        schedule_id: The identifier of the schedule that triggered the event.
+        message_id: The unique identifier of the schedule event message.
+        schedule: The schedule expression (e.g. cron expression or rate).
+        input: Optional input data configured for the schedule.
+        vendor: Vendor-specific metadata for the schedule event.
+        trace_context: A dictionary of trace context including a W3C Trace Context string
+                       (in the traceparent format) and platform specific trace IDs.
+    """
+    handler_tag: str
+    schedule_id: str
+    message_id: str
+    schedule: str
+    input: Any | None
+    vendor: Any
+    trace_context: dict[str, str] | None
+
+
+class EventResult:
+    """
+    The result returned from a consumer or schedule event handler.
+
+    Attributes:
+        success: Whether the event was processed successfully.
+        failures: Optional list of individual message processing failures
+                  (for partial failure reporting in consumer handlers).
+        error_message: Optional error message (used for schedule handler failures).
+    """
+    success: bool
+    failures: list["MessageProcessingFailure"] | None
+    error_message: str | None
+
+    def __init__(
+        self,
+        success: bool,
+        failures: list["MessageProcessingFailure"] | None = None,
+        error_message: str | None = None,
+    ):
+        """
+        Creates a new event result.
+
+        Args:
+            success: Whether the event was processed successfully.
+            failures: Optional list of individual message processing failures.
+            error_message: Optional error message for schedule handler failures.
+        """
+
+
+class MessageProcessingFailure:
+    """
+    Represents a failure to process an individual message in a consumer batch.
+
+    Attributes:
+        message_id: The ID of the message that failed to process.
+        error_message: Optional description of the error.
+    """
+    message_id: str
+    error_message: str | None
+
+    def __init__(
+        self,
+        message_id: str,
+        error_message: str | None = None,
+    ):
+        """
+        Creates a new message processing failure.
+
+        Args:
+            message_id: The ID of the message that failed to process.
+            error_message: Optional description of the error.
+        """
+
+
+class GuardInput:
+    """
+    The input passed to an authentication guard handler.
+
+    Attributes:
+        token: The authentication token extracted from the request.
+        request: HTTP request information available to the guard.
+        auth: Accumulated authentication context from previous guards in the chain.
+        handler_name: Optional name of the handler being guarded.
+    """
+    token: str
+    request: "GuardRequestInfo"
+    auth: Any
+    handler_name: str | None
+
+
+class GuardRequestInfo:
+    """
+    HTTP request information available to guard handlers.
+
+    Attributes:
+        method: The HTTP method of the request.
+        path: The path of the request.
+        headers: A dictionary of HTTP headers, allowing for multiple values per header name.
+        query: A dictionary of query parameters, allowing for multiple values per parameter name.
+        cookies: A dictionary of cookies.
+        body: The text body of the request, if any.
+        request_id: The ID of the request.
+        client_ip: The client IP address.
+    """
+    method: str
+    path: str
+    headers: dict[str, list[str]]
+    query: dict[str, list[str]]
+    cookies: dict[str, str]
+    body: str | None
+    request_id: str
+    client_ip: str
+
+
+class GuardResult:
+    """
+    The result returned from an authentication guard handler.
+
+    Attributes:
+        status: The result status — "allowed", "unauthorised", or "forbidden".
+        auth: Optional authentication context to pass to downstream handlers.
+              This will be available in RequestContext.auth, namespaced by guard name.
+        message: Optional message to include in the error response for unauthorised/forbidden results.
+    """
+    status: str
+    auth: Any | None
+    message: str | None
+
+    def __init__(
+        self,
+        status: str,
+        auth: Any | None = None,
+        message: str | None = None,
+    ):
+        """
+        Creates a new guard result.
+
+        Args:
+            status: "allowed", "unauthorised", or "forbidden".
+            auth: Optional auth context to propagate downstream.
+            message: Optional error message for unauthorised/forbidden results.
         """
 
 
@@ -1112,17 +1506,17 @@ class CoreRuntimeApplication:
     from handler functions.
 
     Methods:
-        setup: Sets up the application based on the configuration the application was
-               instantiated with . This will return configuration such as HTTP handler
-               definitions that should be used to register handlers.
-        run: Runs the application including a HTTP/WebSocket server and event source consumers
-             based on the configuration the application was instantiated with .
+        setup: Sets up the application and returns configuration for registering handlers.
+        run: Runs the application including an HTTP/WebSocket server and event source consumers.
+        shutdown: Shuts down the application when running in non-blocking mode.
         register_http_handler: Registers a new HTTP handler with the application.
         register_websocket_handler: Registers a new WebSocket handler with the application.
-        websocket_registry: Retrieves the WebSocket registry for the application
-                            that allows sending messages to specific WebSocket connections
-                            that are either connected to the current node running the application
-                            or other nodes in a WebSocket API cluster.
+        register_consumer_handler: Registers a consumer event handler with the application.
+        register_schedule_handler: Registers a schedule event handler with the application.
+        register_guard_handler: Registers a custom authentication guard handler.
+        register_custom_handler: Registers a custom handler for programmatic invocation.
+        invoke_handler: Invokes a registered custom handler by name.
+        websocket_registry: Retrieves the WebSocket registry for sending messages to connections.
 
     """
 
@@ -1138,7 +1532,7 @@ class CoreRuntimeApplication:
     def setup(self) -> CoreRuntimeAppConfig:
         """
         Sets up the application based on the configuration the application was
-        instantiated with . This will return configuration such as HTTP handler
+        instantiated with. This will return configuration such as HTTP handler
         definitions that should be used to register handlers.
 
         Returns:
@@ -1146,12 +1540,22 @@ class CoreRuntimeApplication:
             with the application as defined in the blueprint file.
         """
 
-    def run(self) -> None:
+    def run(self, block: bool = True) -> None:
         """
-        Runs the application including a HTTP/WebSocket server and event source consumers
-        based on the configuration the application was instantiated with .
+        Runs the application including an HTTP/WebSocket server and event source consumers
+        based on the configuration the application was instantiated with.
 
-        This method will block until the application is stopped.
+        Args:
+            block: Whether to block the calling thread until the application stops.
+                   When True (default), the method blocks indefinitely.
+                   When False, the application runs in a background thread and returns immediately.
+        """
+
+    def shutdown(self) -> None:
+        """
+        Shuts down the application and cleans up resources.
+        This should be called when the application is running in non-blocking mode
+        (i.e. run(block=False)) to gracefully stop the server and consumers.
         """
 
     def register_http_handler(
@@ -1159,6 +1563,7 @@ class CoreRuntimeApplication:
         path: str,
         method: str,
         handler: Callable[[Request, RequestContext], Awaitable[Response]],
+        timeout_seconds: int | None = None,
     ) -> None:
         """
         Registers a new HTTP handler with the application.
@@ -1169,6 +1574,7 @@ class CoreRuntimeApplication:
             path: The path of the handler.
             method: The HTTP method of the handler.
             handler: The handler function.
+            timeout_seconds: Optional timeout in seconds for the handler (default: 60).
 
         Raises:
             TypeError: If the handler is not an asyncio.Future, coroutine or awaitable.
@@ -1190,6 +1596,99 @@ class CoreRuntimeApplication:
 
         Raises:
             TypeError: If the handler is not an asyncio.Future, coroutine or awaitable.
+        """
+
+    def register_consumer_handler(
+        self,
+        handler_tag: str,
+        handler: Callable[[ConsumerEventInput], Awaitable[EventResult]],
+        timeout_seconds: int | None = None,
+    ) -> None:
+        """
+        Registers a consumer event handler with the application.
+
+        Args:
+            handler_tag: A unique tag identifying the handler, typically the handler name
+                         from the blueprint event handler definition.
+            handler: An async function that receives a ConsumerEventInput and returns an EventResult.
+            timeout_seconds: Optional timeout in seconds for the handler (default: 60).
+
+        Raises:
+            TypeError: If the handler is not an asyncio.Future, coroutine or awaitable.
+        """
+
+    def register_schedule_handler(
+        self,
+        handler_tag: str,
+        handler: Callable[[ScheduleEventInput], Awaitable[EventResult]],
+        timeout_seconds: int | None = None,
+    ) -> None:
+        """
+        Registers a schedule event handler with the application.
+
+        Args:
+            handler_tag: A unique tag identifying the handler, typically the handler name
+                         from the blueprint schedule handler definition.
+            handler: An async function that receives a ScheduleEventInput and returns an EventResult.
+            timeout_seconds: Optional timeout in seconds for the handler (default: 60).
+
+        Raises:
+            TypeError: If the handler is not an asyncio.Future, coroutine or awaitable.
+        """
+
+    def register_guard_handler(
+        self,
+        name: str,
+        handler: Callable[[GuardInput], Awaitable[GuardResult]],
+    ) -> None:
+        """
+        Registers a custom authentication guard handler with the application.
+
+        Args:
+            name: The name of the guard as defined in the blueprint.
+            handler: An async function that receives a GuardInput and returns a GuardResult.
+
+        Raises:
+            RuntimeError: If setup() has not been called before registering handlers.
+            TypeError: If the handler is not an asyncio.Future, coroutine or awaitable.
+        """
+
+    def register_custom_handler(
+        self,
+        handler_name: str,
+        handler: Callable[..., Awaitable[Any]],
+        timeout_seconds: int | None = None,
+    ) -> None:
+        """
+        Registers a custom handler that can be invoked programmatically via the invoke API.
+
+        Args:
+            handler_name: The name of the custom handler as defined in the blueprint.
+            handler: An async function that will be called when the handler is invoked.
+            timeout_seconds: Optional timeout in seconds for the handler (default: 60).
+
+        Raises:
+            RuntimeError: If setup() has not been called before registering handlers.
+            TypeError: If the handler is not an asyncio.Future, coroutine or awaitable.
+        """
+
+    def invoke_handler(
+        self,
+        handler_name: str,
+        payload: Any,
+    ) -> Any:
+        """
+        Invokes a registered custom handler by name with the given payload.
+
+        Args:
+            handler_name: The name of the custom handler to invoke.
+            payload: The payload to pass to the handler.
+
+        Returns:
+            The result returned by the handler.
+
+        Raises:
+            RuntimeError: If the handler is not registered or the application is not running.
         """
 
     def websocket_registry(self) -> WebSocketRegistry:

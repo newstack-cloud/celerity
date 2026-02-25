@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "celerity-runtime-sdk"
-requires-python = ">=3.8"
+requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -20,7 +20,14 @@ dev = [
     "types-requests",
     "websocket-client",
     "python-dotenv",
+    "redis",
+    "mypy>=1.19.1",
 ]
+
+[tool.mypy]
+python_version = "3.13"
+warn_unused_configs = true
+check_untyped_defs = true
 
 [tool.maturin]
 python-source = "python"

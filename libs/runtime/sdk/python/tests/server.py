@@ -1,15 +1,15 @@
 import importlib
-from typing import Callable, Awaitable
-from os import path
-import sys
 import pathlib
+import sys
+from collections.abc import Awaitable, Callable
+from os import path
 
 from celerity_runtime_sdk import (
     CoreRuntimeApplication,
     CoreRuntimeConfigBuilder,
-    Response,
     Request,
     RequestContext,
+    Response,
     WebSocketMessageInfo,
 )
 import shared
@@ -33,13 +33,13 @@ def run_server() -> None:
     if runtime_app_config.api is None or runtime_app_config.api.http is None:
         raise ValueError("No HTTP API configuration found in blueprint")
 
-    for handler in runtime_app_config.api.http.handlers:
-        print(handler.path, handler.method, handler.location, handler.handler)
-        http_handler_callable = load_http_handler(handler.location, handler.handler)
+    for http_handler in runtime_app_config.api.http.handlers:
+        print(http_handler.path, http_handler.method, http_handler.location, http_handler.handler)
+        http_fn = load_http_handler(http_handler.location, http_handler.handler)
         app.register_http_handler(
-            path=handler.path,
-            method=handler.method,
-            handler=http_handler_callable,
+            path=http_handler.path,
+            method=http_handler.method,
+            handler=http_fn,
         )
 
     if runtime_app_config.api.websocket is None:
@@ -47,36 +47,36 @@ def run_server() -> None:
 
     for ws_handler in runtime_app_config.api.websocket.handlers:
         print(ws_handler.route, ws_handler.handler)
-        ws_handler_callable = load_ws_handler(ws_handler.location, ws_handler.handler)
+        ws_fn = load_ws_handler(ws_handler.location, ws_handler.handler)
         app.register_websocket_handler(
             route=ws_handler.route,
-            handler=ws_handler_callable,
+            handler=ws_fn,
         )
 
     app.run()
 
 
-WebSocektHandler = Callable[[WebSocketMessageInfo], Awaitable[None]]
+WebSocketHandler = Callable[[WebSocketMessageInfo], Awaitable[None]]
 
 
-def load_ws_handler(location: str, handler: str) -> WebSocektHandler:
-    return _load_handler(location, handler)
+def load_ws_handler(location: str, handler_path: str) -> WebSocketHandler:
+    return _load_handler(location, handler_path)
 
 
 HttpHandler = Callable[[Request, RequestContext], Awaitable[Response]]
 
 
-def load_http_handler(location: str, handler: str) -> HttpHandler:
-    return _load_handler(location, handler)
+def load_http_handler(location: str, handler_path: str) -> HttpHandler:
+    return _load_handler(location, handler_path)
 
 
-def _load_handler(location: str, handler: str) -> Callable:
+def _load_handler(location: str, handler_path: str) -> Callable:
     full_path = pathlib.Path(path.dirname(__file__), location)
     sys.path.append(str(full_path))
 
-    segments = handler.rsplit(".", 1)
+    segments = handler_path.rsplit(".", 1)
     if len(segments) != 2:
-        raise ValueError(f"Invalid handler path: {handler}")
+        raise ValueError(f"Invalid handler path: {handler_path}")
 
     module_name, function_name = segments
     module = importlib.import_module(module_name)

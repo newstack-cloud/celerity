@@ -27,21 +27,10 @@ pub struct CoreWebSocketConfig {
   handlers: Vec<Py<CoreWebSocketHandlerDefinition>>,
 }
 
-fn core_websocket_handler_definition(
-  websocket_handler_definition: WebSocketHandlerDefinition,
-) -> Py<CoreWebSocketHandlerDefinition> {
-  Python::with_gil(|py| {
-    Py::new(
-      py,
-      CoreWebSocketHandlerDefinition::from(websocket_handler_definition),
-    )
-    .unwrap()
-  })
-}
-
 impl From<WebSocketHandlerDefinition> for CoreWebSocketHandlerDefinition {
   fn from(handler: WebSocketHandlerDefinition) -> Self {
     Self {
+      name: handler.name,
       route: handler.route,
       location: handler.location,
       handler: handler.handler,
@@ -53,6 +42,8 @@ impl From<WebSocketHandlerDefinition> for CoreWebSocketHandlerDefinition {
 #[pyclass]
 pub struct CoreWebSocketHandlerDefinition {
   #[pyo3(get)]
+  name: String,
+  #[pyo3(get)]
   route: String,
   #[pyo3(get)]
   location: String,
@@ -62,19 +53,16 @@ pub struct CoreWebSocketHandlerDefinition {
   timeout: i64,
 }
 
-pub fn core_websocket_config(websocket_config: WebSocketConfig) -> Py<CoreWebSocketConfig> {
-  Python::with_gil(|py| Py::new(py, CoreWebSocketConfig::from(websocket_config)).unwrap())
-}
-
-impl From<WebSocketConfig> for CoreWebSocketConfig {
-  fn from(websocket_config: WebSocketConfig) -> Self {
-    let handlers = websocket_config
-      .handlers
-      .into_iter()
-      .map(core_websocket_handler_definition)
-      .collect::<Vec<_>>();
-    Self { handlers }
-  }
+pub fn core_websocket_config(
+  websocket_config: WebSocketConfig,
+  py: Python,
+) -> PyResult<Py<CoreWebSocketConfig>> {
+  let handlers = websocket_config
+    .handlers
+    .into_iter()
+    .map(|h| Py::new(py, CoreWebSocketHandlerDefinition::from(h)))
+    .collect::<PyResult<Vec<_>>>()?;
+  Py::new(py, CoreWebSocketConfig { handlers })
 }
 
 pub struct WSBindingMessageHandler {
@@ -205,7 +193,11 @@ impl WSBindingMessageRequestContext {
           message_request_context.request_time.try_into()?,
           0,
         )
-        .expect("message request context request time should be a valid timestamp"),
+        .ok_or_else(|| {
+          PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            "invalid timestamp in message request context",
+          )
+        })?,
         path: message_request_context.path,
         protocol_version: HttpProtocolVersion::from(message_request_context.protocol_version),
         headers: message_request_context.headers,

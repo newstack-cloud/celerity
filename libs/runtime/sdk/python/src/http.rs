@@ -13,19 +13,13 @@ pub struct CoreHttpConfig {
   handlers: Vec<Py<CoreHttpHandlerDefinition>>,
 }
 
-pub fn core_http_config(http_config: HttpConfig) -> Py<CoreHttpConfig> {
-  Python::with_gil(|py| Py::new(py, CoreHttpConfig::from(http_config)).unwrap())
-}
-
-impl From<HttpConfig> for CoreHttpConfig {
-  fn from(http_config: HttpConfig) -> Self {
-    let handlers = http_config
-      .handlers
-      .into_iter()
-      .map(core_http_handler_definition)
-      .collect::<Vec<_>>();
-    Self { handlers }
-  }
+pub fn core_http_config(http_config: HttpConfig, py: Python) -> PyResult<Py<CoreHttpConfig>> {
+  let handlers = http_config
+    .handlers
+    .into_iter()
+    .map(|h| Py::new(py, CoreHttpHandlerDefinition::from(h)))
+    .collect::<PyResult<Vec<_>>>()?;
+  Py::new(py, CoreHttpConfig { handlers })
 }
 
 #[pyclass]
@@ -40,14 +34,6 @@ pub struct CoreHttpHandlerDefinition {
   handler: String,
   #[pyo3(get)]
   timeout: i64,
-}
-
-pub fn core_http_handler_definition(
-  http_handler_definition: HttpHandlerDefinition,
-) -> Py<CoreHttpHandlerDefinition> {
-  Python::with_gil(|py| {
-    Py::new(py, CoreHttpHandlerDefinition::from(http_handler_definition)).unwrap()
-  })
 }
 
 impl From<HttpHandlerDefinition> for CoreHttpHandlerDefinition {
@@ -89,7 +75,9 @@ impl IntoResponse for PyResponse {
       Body::from("")
     };
     builder = builder.status(self.status);
-    builder.body(body).unwrap()
+    builder
+      .body(body)
+      .expect("response body construction is infallible for String and Vec<u8>")
   }
 }
 
@@ -149,7 +137,9 @@ impl PyResponseBuilder {
   ) -> PyResult<Py<Self>> {
     let bound_ref = json_body.bind(py);
     let value: serde_json::Value = depythonize(bound_ref)?;
-    self_.response.text_body = Some(serde_json::to_string(&value).unwrap());
+    self_.response.text_body = Some(serde_json::to_string(&value).map_err(|e| {
+      PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("failed to serialize JSON: {e}"))
+    })?);
 
     if let Some(headers) = &mut self_.response.headers {
       if !headers.contains_key("content-type") {

@@ -63,17 +63,6 @@ resources:
         certificateId: "${variables.certificateId}"
         securityPolicy: "TLS_1_2"
       tracingEnabled: true
-      auth:
-        defaultGuard: "jwt"
-        guards:
-          jwt:
-            type: jwt
-            issuer: "https://identity.newstack.cloud/oauth2/v1/"
-            tokenSource: "$.headers.Authorization"
-            audience:
-              - "https://identity.newstack.cloud/api/manage/v1/"
-          customGuard:
-            type: custom
 
   getOrderHandler:
     type: "celerity/handler"
