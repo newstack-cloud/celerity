@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/newstack-cloud/celerity/compare/runtime-consumers/v0.2.0...runtime-consumers/v0.2.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* **lib-rt-core:** add fix to use redis connection per worker ([a7c97ef](https://github.com/newstack-cloud/celerity/commit/a7c97efb7c11da06b3bd099e5f48e186c01a8b92))
+
 ## [0.2.0](https://github.com/newstack-cloud/celerity/compare/runtime-consumers/v0.1.0...runtime-consumers/v0.2.0) (2026-02-25)
 
 
