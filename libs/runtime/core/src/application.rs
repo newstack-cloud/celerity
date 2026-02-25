@@ -1234,7 +1234,14 @@ fn create_redis_consumer(
         num_workers: None,
     };
 
-    RedisMessageConsumer::new(lock_extender, clock, redis_conn, conn_config, shutdown_tx, redis_config)
+    RedisMessageConsumer::new(
+        lock_extender,
+        clock,
+        redis_conn,
+        conn_config,
+        shutdown_tx,
+        redis_config,
+    )
 }
 
 fn attach_tracing_layers(

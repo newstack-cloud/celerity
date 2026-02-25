@@ -53,10 +53,10 @@ function deferred<T>() {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Config tests (no Valkey required)
+// 1. Config tests
 // ---------------------------------------------------------------------------
 
-test("setup() returns consumer config", (t) => {
+depTest("setup() returns consumer config", (t) => {
   const serverPort = PORT + 1;
   const testApp = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config: CoreRuntimeAppConfig = testApp.setup();
@@ -70,7 +70,7 @@ test("setup() returns consumer config", (t) => {
   t.is(consumers[0].handlers[0].name, "orderHandler");
 });
 
-test("setup() returns schedule config", (t) => {
+depTest("setup() returns schedule config", (t) => {
   const serverPort = PORT + 2;
   const testApp = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config: CoreRuntimeAppConfig = testApp.setup();
