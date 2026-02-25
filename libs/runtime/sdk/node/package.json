@@ -30,9 +30,12 @@
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.45.2",
     "@napi-rs/cli": "^3.0.0",
+    "@types/ws": "^8.5.0",
     "ava": "^6.0.1",
+    "ioredis": "^5.4.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "ws": "^8.18.0"
   },
   "ava": {
     "timeout": "3m",
@@ -51,7 +54,8 @@
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm --no-gh-release",
-    "test": "dotenvx run -f .env.test -- ava -s",
+    "test": "bash scripts/test.sh",
+    "test:no-deps": "dotenvx run -f .env.test -- ava -s",
     "universal": "napi universalize",
     "version": "napi version"
   }

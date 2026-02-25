@@ -1,6 +1,10 @@
 #![deny(clippy::all)]
 #![allow(unexpected_cfgs)]
 
+mod consumer;
+mod invoke;
+mod websocket;
+
 use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
@@ -21,8 +25,10 @@ use celerity_runtime_core::{
   auth_custom::{AuthGuardHandler, AuthGuardValidateError, AuthGuardValidateInput},
   auth_http::AuthContext,
   config::{
-    ApiConfig, AppConfig, ClientIpSource, GuardHandlerDefinition, GuardsConfig, HttpConfig,
-    HttpHandlerDefinition, RuntimeConfig, WebSocketConfig,
+    ApiConfig, AppConfig, ClientIpSource, ConsumerConfig, ConsumersConfig, CustomHandlerDefinition,
+    CustomHandlersConfig, EventHandlerDefinition, GuardHandlerDefinition, GuardsConfig, HttpConfig,
+    HttpHandlerDefinition, RuntimeConfig, ScheduleConfig, SchedulesConfig, WebSocketConfig,
+    WebSocketHandlerDefinition,
   },
   consts::{
     DEFAULT_RESOURCE_STORE_CACHE_ENTRY_TTL, DEFAULT_RESOURCE_STORE_CLEANUP_INTERVAL,
@@ -31,12 +37,15 @@ use celerity_runtime_core::{
   request::{MatchedRoute, RequestId, ResolvedClientIp, ResolvedUserAgent},
   telemetry_utils::extract_trace_context,
 };
+use consumer::{ConsumerWeakTsfn, NapiConsumerEventHandlerBuilder, ScheduleWeakTsfn};
+use invoke::InvokeWeakTsfn;
 use napi::bindgen_prelude::*;
 use napi::threadsafe_function::ThreadsafeFunction;
 use napi_derive::napi;
 use serde::{Deserialize, Serialize};
 use tokio::time;
 use tracing::Level;
+use websocket::{CoreWebSocketRegistry, NapiWebSocketMessageHandler, WsMessageWeakTsfn};
 
 const MAX_REQUEST_BODY_SIZE: usize = 10 * 1024 * 1024; // 10 MiB
 
@@ -109,6 +118,13 @@ pub struct CoreRuntimeConfig {
   /// One of: "ConnectInfo", "CfConnectingIp", "TrueClientIp",
   /// "CloudFrontViewerAddress", "RightmostXForwardedFor", "XRealIp", "FlyClientIp".
   pub client_ip_source: Option<String>,
+  /// The log output format. If not set, falls back to the `CELERITY_LOG_FORMAT`
+  /// environment variable.
+  pub log_format: Option<String>,
+  /// Whether to enable metrics collection. Defaults to `false` when not set.
+  pub metrics_enabled: Option<bool>,
+  /// The trace sampling ratio (0.0–1.0). Defaults to `0.1` (10%) when not set.
+  pub trace_sample_ratio: Option<f64>,
 }
 
 impl From<RuntimeConfig> for CoreRuntimeConfig {
@@ -130,11 +146,18 @@ impl From<RuntimeConfig> for CoreRuntimeConfig {
       resource_store_cache_entry_ttl: rc.resource_store_cache_entry_ttl,
       resource_store_cleanup_interval: rc.resource_store_cleanup_interval,
       client_ip_source: Some(format!("{:?}", rc.client_ip_source)),
+      log_format: rc.log_format,
+      metrics_enabled: Some(rc.metrics_enabled),
+      trace_sample_ratio: Some(rc.trace_sample_ratio),
     }
   }
 }
 
 /// Creates a `CoreRuntimeConfig` by reading from `CELERITY_*` environment variables.
+///
+/// This reads all `CELERITY_*` environment variables and constructs a runtime
+/// configuration object. This is the recommended way to create a runtime config
+/// when deploying to a managed environment.
 #[napi]
 pub fn runtime_config_from_env() -> CoreRuntimeConfig {
   let env = ProcessEnvVars::new();
@@ -142,22 +165,47 @@ pub fn runtime_config_from_env() -> CoreRuntimeConfig {
   CoreRuntimeConfig::from(runtime_config)
 }
 
+/// Configuration for the application running in the Celerity runtime.
+///
+/// Returned by `CoreRuntimeApplication.setup()` and contains the handler definitions
+/// that should be used to register handlers with the application.
 #[napi(object)]
 pub struct CoreRuntimeAppConfig {
+  /// Configuration for HTTP and WebSocket APIs, or undefined if no API is configured.
   pub api: Option<CoreApiConfig>,
+  /// Configuration for event source consumers, or undefined if none are configured.
+  pub consumers: Option<CoreConsumersConfig>,
+  /// Configuration for scheduled event handlers, or undefined if none are configured.
+  pub schedules: Option<CoreSchedulesConfig>,
+  /// Configuration for custom handler invocations, or undefined if none are configured.
+  pub custom_handlers: Option<CoreCustomHandlersConfig>,
 }
 
 impl From<AppConfig> for CoreRuntimeAppConfig {
   fn from(app_config: AppConfig) -> Self {
     let api = app_config.api.map(|api_config| api_config.into());
-    Self { api }
+    let consumers = app_config.consumers.map(|c| c.into());
+    let schedules = app_config.schedules.map(|s| s.into());
+    let custom_handlers = app_config.custom_handlers.map(|ch| ch.into());
+    Self {
+      api,
+      consumers,
+      schedules,
+      custom_handlers,
+    }
   }
 }
 
+/// Configuration for HTTP and WebSocket APIs.
 #[napi(object)]
 pub struct CoreApiConfig {
+  /// Configuration for HTTP endpoint handlers, or undefined if no HTTP handlers are configured.
   pub http: Option<CoreHttpConfig>,
+  /// Configuration for WebSocket connection lifecycle and message handlers,
+  /// or undefined if no WebSocket handlers are configured.
   pub websocket: Option<CoreWebsocketConfig>,
+  /// Configuration for authentication guard handlers,
+  /// or undefined if no guards are configured.
   pub guards: Option<CoreGuardsConfig>,
 }
 
@@ -176,8 +224,10 @@ impl From<ApiConfig> for CoreApiConfig {
   }
 }
 
+/// Configuration for HTTP endpoint handlers.
 #[napi(object)]
 pub struct CoreHttpConfig {
+  /// List of HTTP handler definitions parsed from the blueprint.
   pub handlers: Vec<CoreHttpHandlerDefinition>,
 }
 
@@ -192,17 +242,25 @@ impl From<HttpConfig> for CoreHttpConfig {
   }
 }
 
+/// Configuration for WebSocket connection lifecycle and message handlers.
 #[napi(object)]
-pub struct CoreWebsocketConfig {}
+pub struct CoreWebsocketConfig {
+  /// List of WebSocket handler definitions parsed from the blueprint.
+  pub handlers: Vec<CoreWebSocketHandlerDefinition>,
+}
 
 impl From<WebSocketConfig> for CoreWebsocketConfig {
-  fn from(_: WebSocketConfig) -> Self {
-    Self {}
+  fn from(ws_config: WebSocketConfig) -> Self {
+    Self {
+      handlers: ws_config.handlers.into_iter().map(|h| h.into()).collect(),
+    }
   }
 }
 
+/// Configuration for authentication guard handlers.
 #[napi(object)]
 pub struct CoreGuardsConfig {
+  /// List of guard handler definitions parsed from the blueprint.
   pub handlers: Vec<CoreGuardHandlerDefinition>,
 }
 
@@ -217,14 +275,209 @@ impl From<GuardsConfig> for CoreGuardsConfig {
   }
 }
 
+/// Definition of a guard handler.
 #[napi(object)]
 pub struct CoreGuardHandlerDefinition {
+  /// The name of the guard handler as defined in the blueprint.
   pub name: String,
 }
 
 impl From<GuardHandlerDefinition> for CoreGuardHandlerDefinition {
   fn from(def: GuardHandlerDefinition) -> Self {
     Self { name: def.name }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Consumer / Schedule / Custom Handler / WebSocket config types
+// ---------------------------------------------------------------------------
+
+/// Configuration for event source consumers.
+#[napi(object)]
+pub struct CoreConsumersConfig {
+  /// List of consumer configurations parsed from the blueprint.
+  pub consumers: Vec<CoreConsumerConfig>,
+}
+
+impl From<ConsumersConfig> for CoreConsumersConfig {
+  fn from(c: ConsumersConfig) -> Self {
+    Self {
+      consumers: c.consumers.into_iter().map(|cc| cc.into()).collect(),
+    }
+  }
+}
+
+/// Configuration for an individual event source consumer.
+#[napi(object)]
+pub struct CoreConsumerConfig {
+  /// The name of the consumer.
+  pub consumer_name: String,
+  /// The identifier of the event source (e.g. queue URL or stream name).
+  pub source_id: String,
+  /// Maximum number of messages to process in a single batch.
+  pub batch_size: Option<i64>,
+  /// Time in seconds before a message becomes visible again after being received.
+  pub visibility_timeout: Option<i64>,
+  /// Long-polling wait time in seconds.
+  pub wait_time_seconds: Option<i64>,
+  /// Whether to report partial batch failures.
+  pub partial_failures: Option<bool>,
+  /// Optional routing key for filtering messages.
+  pub routing_key: Option<String>,
+  /// List of event handler definitions for this consumer.
+  pub handlers: Vec<CoreEventHandlerDefinition>,
+}
+
+impl From<ConsumerConfig> for CoreConsumerConfig {
+  fn from(c: ConsumerConfig) -> Self {
+    Self {
+      consumer_name: c.consumer_name,
+      source_id: c.source_id,
+      batch_size: c.batch_size,
+      visibility_timeout: c.visibility_timeout,
+      wait_time_seconds: c.wait_time_seconds,
+      partial_failures: c.partial_failures,
+      routing_key: c.routing_key,
+      handlers: c.handlers.into_iter().map(|h| h.into()).collect(),
+    }
+  }
+}
+
+/// Definition of an event handler for consumers or schedules.
+#[napi(object)]
+pub struct CoreEventHandlerDefinition {
+  /// The name of the handler.
+  pub name: String,
+  /// The file location of the handler.
+  pub location: String,
+  /// The fully qualified handler function (e.g. "module.function").
+  pub handler: String,
+  /// The timeout in seconds for the handler.
+  pub timeout: i64,
+  /// Whether distributed tracing is enabled for the handler.
+  pub tracing_enabled: bool,
+  /// Optional routing key for the handler.
+  pub route: Option<String>,
+}
+
+impl From<EventHandlerDefinition> for CoreEventHandlerDefinition {
+  fn from(h: EventHandlerDefinition) -> Self {
+    Self {
+      name: h.name,
+      location: h.location,
+      handler: h.handler,
+      timeout: h.timeout,
+      tracing_enabled: h.tracing_enabled,
+      route: h.route,
+    }
+  }
+}
+
+/// Configuration for scheduled event handlers.
+#[napi(object)]
+pub struct CoreSchedulesConfig {
+  /// List of schedule configurations parsed from the blueprint.
+  pub schedules: Vec<CoreScheduleConfig>,
+}
+
+impl From<SchedulesConfig> for CoreSchedulesConfig {
+  fn from(s: SchedulesConfig) -> Self {
+    Self {
+      schedules: s.schedules.into_iter().map(|sc| sc.into()).collect(),
+    }
+  }
+}
+
+/// Configuration for an individual schedule.
+#[napi(object)]
+pub struct CoreScheduleConfig {
+  /// The identifier of the schedule.
+  pub schedule_id: String,
+  /// The schedule expression (e.g. cron expression or rate).
+  pub schedule_value: String,
+  /// List of event handler definitions for this schedule.
+  pub handlers: Vec<CoreEventHandlerDefinition>,
+  /// Optional input data to pass to schedule handlers.
+  pub input: Option<serde_json::Value>,
+}
+
+impl From<ScheduleConfig> for CoreScheduleConfig {
+  fn from(s: ScheduleConfig) -> Self {
+    Self {
+      schedule_id: s.schedule_id,
+      schedule_value: s.schedule_value,
+      handlers: s.handlers.into_iter().map(|h| h.into()).collect(),
+      input: s.input,
+    }
+  }
+}
+
+/// Configuration for custom handler invocations.
+#[napi(object)]
+pub struct CoreCustomHandlersConfig {
+  /// List of custom handler definitions parsed from the blueprint.
+  pub handlers: Vec<CoreCustomHandlerDefinition>,
+}
+
+impl From<CustomHandlersConfig> for CoreCustomHandlersConfig {
+  fn from(ch: CustomHandlersConfig) -> Self {
+    Self {
+      handlers: ch.handlers.into_iter().map(|h| h.into()).collect(),
+    }
+  }
+}
+
+/// Definition of a custom handler that can be invoked programmatically.
+#[napi(object)]
+pub struct CoreCustomHandlerDefinition {
+  /// The name of the custom handler.
+  pub name: String,
+  /// The file location of the handler.
+  pub location: String,
+  /// The fully qualified handler function (e.g. "module.function").
+  pub handler: String,
+  /// The timeout in seconds for the handler.
+  pub timeout: i64,
+  /// Whether distributed tracing is enabled for the handler.
+  pub tracing_enabled: bool,
+}
+
+impl From<CustomHandlerDefinition> for CoreCustomHandlerDefinition {
+  fn from(h: CustomHandlerDefinition) -> Self {
+    Self {
+      name: h.name,
+      location: h.location,
+      handler: h.handler,
+      timeout: h.timeout,
+      tracing_enabled: h.tracing_enabled,
+    }
+  }
+}
+
+/// Definition of a WebSocket handler.
+#[napi(object)]
+pub struct CoreWebSocketHandlerDefinition {
+  /// The name of the WebSocket handler.
+  pub name: String,
+  /// The route of the handler (e.g. "$connect", "$default", "$disconnect", or a custom route).
+  pub route: String,
+  /// The file location of the handler.
+  pub location: String,
+  /// The fully qualified handler function (e.g. "module.function").
+  pub handler: String,
+  /// The timeout in seconds for the handler.
+  pub timeout: i64,
+}
+
+impl From<WebSocketHandlerDefinition> for CoreWebSocketHandlerDefinition {
+  fn from(h: WebSocketHandlerDefinition) -> Self {
+    Self {
+      name: h.name,
+      route: h.route,
+      location: h.location,
+      handler: h.handler,
+      timeout: h.timeout,
+    }
   }
 }
 
@@ -353,13 +606,20 @@ impl AuthGuardHandler for NapiAuthGuardHandler {
   }
 }
 
+/// Definition of an HTTP handler.
 #[napi(object)]
 pub struct CoreHttpHandlerDefinition {
+  /// The name of the handler as defined in the blueprint.
   pub name: String,
+  /// The path of the handler (e.g. "/items/{itemId}").
   pub path: String,
+  /// The HTTP method of the handler (e.g. "GET", "POST").
   pub method: String,
+  /// The file location of the handler.
   pub location: String,
+  /// The fully qualified handler function (e.g. "module.function").
   pub handler: String,
+  /// The timeout in seconds for the handler.
   pub timeout: i64,
 }
 
@@ -376,11 +636,16 @@ impl From<HttpHandlerDefinition> for CoreHttpHandlerDefinition {
   }
 }
 
+/// HTTP response to return to the client from a handler.
 #[napi(object)]
 pub struct Response {
+  /// HTTP status code to return to the client (e.g. 200, 404, 500).
   pub status: u16,
+  /// Optional headers to return to the client.
   pub headers: Option<HashMap<String, String>>,
+  /// Optional text body to return to the client.
   pub body: Option<String>,
+  /// Optional binary body to return to the client as a Buffer.
   pub binary_body: Option<Buffer>,
 }
 
@@ -396,7 +661,9 @@ impl IntoResponse for Response {
     } else {
       Body::from(self.body.unwrap_or_default())
     };
-    builder.body(body).unwrap()
+    builder
+      .body(body)
+      .expect("response body construction is infallible for String and Vec<u8>")
   }
 }
 
@@ -436,7 +703,9 @@ impl JsRequestWrapper {
     for (key, value) in headers {
       builder = builder.header(key, value);
     }
-    let request = builder.body(Body::empty()).unwrap();
+    let request = builder
+      .body(Body::empty())
+      .expect("request body construction is infallible for Body::empty()");
     let (parts, _) = request.into_parts();
     Self {
       inner_parts: parts,
@@ -675,6 +944,8 @@ impl JsRequestWrapper {
   }
 }
 
+/// Builder for manually creating core runtime configuration
+/// that can be used to instantiate an application.
 #[napi]
 pub struct CoreRuntimeConfigBuilder {
   blueprint_config_path: String,
@@ -693,10 +964,14 @@ pub struct CoreRuntimeConfigBuilder {
   resource_store_cache_entry_ttl: Option<i64>,
   resource_store_cleanup_interval: Option<i64>,
   client_ip_source: Option<String>,
+  log_format: Option<String>,
+  metrics_enabled: Option<bool>,
+  trace_sample_ratio: Option<f64>,
 }
 
 #[napi]
 impl CoreRuntimeConfigBuilder {
+  /// Creates a new builder with the required configuration elements.
   #[napi(constructor)]
   pub fn new(blueprint_config_path: String, service_name: String, server_port: i32) -> Self {
     Self {
@@ -716,87 +991,162 @@ impl CoreRuntimeConfigBuilder {
       resource_store_cache_entry_ttl: None,
       resource_store_cleanup_interval: None,
       client_ip_source: None,
+      log_format: None,
+      metrics_enabled: None,
+      trace_sample_ratio: None,
     }
   }
 
+  /// Sets whether the HTTP/WebSocket server should only be exposed on
+  /// the loopback interface (127.0.0.1). Defaults to `true`.
+  ///
+  /// When running in an environment such as a docker container,
+  /// this should be set to `false` so that the server can be accessed
+  /// from outside the container.
   #[napi]
   pub fn set_server_loopback_only(&mut self, value: bool) -> &Self {
     self.server_loopback_only = Some(value);
     self
   }
 
+  /// Sets whether the runtime should use a custom health check endpoint.
+  /// Defaults to `false`.
+  ///
+  /// When `false`, the `GET /runtime/health/check` endpoint returns 200 OK.
+  /// The default health check is not accessible under custom base paths
+  /// and is only accessible from the root path.
   #[napi]
   pub fn set_use_custom_health_check(&mut self, value: bool) -> &Self {
     self.use_custom_health_check = Some(value);
     self
   }
 
+  /// Sets the endpoint for sending trace data to an OTLP collector.
+  /// Defaults to `"http://otelcollector:4317"`.
   #[napi]
   pub fn set_trace_otlp_collector_endpoint(&mut self, value: String) -> &Self {
     self.trace_otlp_collector_endpoint = Some(value);
     self
   }
 
+  /// Sets the maximum diagnostics level for logging and tracing.
+  /// Defaults to `"info"`.
   #[napi]
   pub fn set_runtime_max_diagnostics_level(&mut self, value: String) -> &Self {
     self.runtime_max_diagnostics_level = Some(value);
     self
   }
 
+  /// Sets the platform the application is running on.
+  /// Defaults to `CoreRuntimePlatform.Other`.
+  ///
+  /// This determines which platform-specific features are available,
+  /// such as AWS X-Ray trace propagation.
   #[napi]
   pub fn set_platform(&mut self, value: CoreRuntimePlatform) -> &Self {
     self.platform = Some(value);
     self
   }
 
+  /// Sets whether the runtime is running in test mode
+  /// (e.g. for integration tests). Defaults to `false`.
   #[napi]
   pub fn set_test_mode(&mut self, value: bool) -> &Self {
     self.test_mode = Some(value);
     self
   }
 
+  /// Sets the name of the API resource in the blueprint to use as the
+  /// configuration source for setting up API endpoints.
   #[napi]
   pub fn set_api_resource(&mut self, value: String) -> &Self {
     self.api_resource = Some(value);
     self
   }
 
+  /// Sets the name of the consumer app in the blueprint to use as the
+  /// configuration source for setting up event source consumers.
+  ///
+  /// If not set, the runtime will use the first `celerity/consumer`
+  /// resource defined in the blueprint.
   #[napi]
   pub fn set_consumer_app(&mut self, value: String) -> &Self {
     self.consumer_app = Some(value);
     self
   }
 
+  /// Sets the name of the schedule app in the blueprint to use as the
+  /// configuration source for setting up scheduled event handlers.
+  ///
+  /// If not set, the runtime will use the first `celerity/schedule`
+  /// resource defined in the blueprint.
   #[napi]
   pub fn set_schedule_app(&mut self, value: String) -> &Self {
     self.schedule_app = Some(value);
     self
   }
 
+  /// Sets whether to verify TLS certificates when making requests
+  /// to the resource store. Defaults to `true`.
+  ///
+  /// Must be `true` for production environments; can be `false`
+  /// for development environments with self-signed certificates.
   #[napi]
   pub fn set_resource_store_verify_tls(&mut self, value: bool) -> &Self {
     self.resource_store_verify_tls = Some(value);
     self
   }
 
+  /// Sets the TTL in seconds for cache entries in the resource store.
+  /// Defaults to 600 seconds (10 minutes).
   #[napi]
   pub fn set_resource_store_cache_entry_ttl(&mut self, value: i64) -> &Self {
     self.resource_store_cache_entry_ttl = Some(value);
     self
   }
 
+  /// Sets the interval in seconds at which the resource store cleanup
+  /// task should run. Defaults to 3600 seconds (1 hour).
   #[napi]
   pub fn set_resource_store_cleanup_interval(&mut self, value: i64) -> &Self {
     self.resource_store_cleanup_interval = Some(value);
     self
   }
 
+  /// Sets the source used to resolve client IP addresses.
+  ///
+  /// One of: "ConnectInfo", "CfConnectingIp", "TrueClientIp",
+  /// "CloudFrontViewerAddress", "RightmostXForwardedFor", "XRealIp", "FlyClientIp".
+  /// Defaults to "ConnectInfo".
   #[napi]
   pub fn set_client_ip_source(&mut self, value: String) -> &Self {
     self.client_ip_source = Some(value);
     self
   }
 
+  /// Sets the log output format.
+  /// If not set, falls back to the `CELERITY_LOG_FORMAT` environment variable.
+  #[napi]
+  pub fn set_log_format(&mut self, value: String) -> &Self {
+    self.log_format = Some(value);
+    self
+  }
+
+  /// Sets whether to enable metrics collection. Defaults to `false`.
+  #[napi]
+  pub fn set_metrics_enabled(&mut self, value: bool) -> &Self {
+    self.metrics_enabled = Some(value);
+    self
+  }
+
+  /// Sets the trace sampling ratio (0.0–1.0). Defaults to `0.1` (10%).
+  #[napi]
+  pub fn set_trace_sample_ratio(&mut self, value: f64) -> &Self {
+    self.trace_sample_ratio = Some(value);
+    self
+  }
+
+  /// Builds a new runtime configuration object from the values set on the builder.
   #[napi]
   pub fn build(&self) -> CoreRuntimeConfig {
     CoreRuntimeConfig {
@@ -826,19 +1176,38 @@ impl CoreRuntimeConfigBuilder {
         .resource_store_cleanup_interval
         .unwrap_or(DEFAULT_RESOURCE_STORE_CLEANUP_INTERVAL),
       client_ip_source: self.client_ip_source.clone(),
+      log_format: self.log_format.clone(),
+      metrics_enabled: self.metrics_enabled,
+      trace_sample_ratio: self.trace_sample_ratio,
     }
   }
 }
 
+/// An application to run in the Celerity runtime.
+///
+/// Depending on the blueprint configuration file, this can run HTTP APIs,
+/// WebSocket APIs and event source consumers for the current environment
+/// (e.g. SQS queue consumers when deployed to AWS).
+///
+/// This class is not thread-safe — handlers run on the Rust async runtime
+/// and should not access the application instance directly.
+/// Use `websocketRegistry()` to get a thread-safe registry for sending
+/// WebSocket messages from handlers.
 #[napi]
 pub struct CoreRuntimeApplication {
   inner: Application,
   tsfn_cache: Vec<Arc<WeakTsfn>>,
   guard_tsfn_cache: Vec<Arc<GuardWeakTsfn>>,
+  consumer_handler_builder: NapiConsumerEventHandlerBuilder,
+  consumer_tsfn_cache: Vec<Arc<ConsumerWeakTsfn>>,
+  schedule_tsfn_cache: Vec<Arc<ScheduleWeakTsfn>>,
+  ws_tsfn_cache: Vec<Arc<WsMessageWeakTsfn>>,
+  invoke_tsfn_cache: Vec<Arc<InvokeWeakTsfn>>,
 }
 
 #[napi]
 impl CoreRuntimeApplication {
+  /// Creates a new application with the given runtime configuration.
   #[napi(constructor)]
   pub fn new(runtime_config: CoreRuntimeConfig) -> Self {
     let platform: RuntimePlatform = runtime_config.platform.into();
@@ -853,7 +1222,9 @@ impl CoreRuntimeApplication {
       .parse::<ClientIpSource>()
       .unwrap_or(ClientIpSource::ConnectInfo);
 
-    let log_format = std::env::var("CELERITY_LOG_FORMAT").ok();
+    let log_format = runtime_config
+      .log_format
+      .or_else(|| std::env::var("CELERITY_LOG_FORMAT").ok());
 
     let native_runtime_config = RuntimeConfig {
       blueprint_config_path: runtime_config.blueprint_config_path,
@@ -861,7 +1232,10 @@ impl CoreRuntimeApplication {
       service_name: runtime_config.service_name,
       server_port: runtime_config.server_port,
       server_loopback_only: runtime_config.server_loopback_only,
-      local_api_port: 8592,
+      // Local API port is not used for the Node runtime
+      // as the runtime mode for interaction with application handlers
+      // is FFI.
+      local_api_port: 0,
       use_custom_health_check: runtime_config.use_custom_health_check,
       trace_otlp_collector_endpoint: runtime_config.trace_otlp_collector_endpoint,
       runtime_max_diagnostics_level: diagnostics_level,
@@ -875,17 +1249,28 @@ impl CoreRuntimeApplication {
       resource_store_cleanup_interval: runtime_config.resource_store_cleanup_interval,
       client_ip_source,
       log_format,
-      metrics_enabled: false,
-      trace_sample_ratio: 1.0,
+      metrics_enabled: runtime_config.metrics_enabled.unwrap_or(false),
+      trace_sample_ratio: runtime_config.trace_sample_ratio.unwrap_or(0.1),
     };
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
     CoreRuntimeApplication {
       inner,
       tsfn_cache: vec![],
       guard_tsfn_cache: vec![],
+      consumer_handler_builder: NapiConsumerEventHandlerBuilder::new(),
+      consumer_tsfn_cache: vec![],
+      schedule_tsfn_cache: vec![],
+      ws_tsfn_cache: vec![],
+      invoke_tsfn_cache: vec![],
     }
   }
 
+  /// Sets up the application based on the configuration the application was
+  /// instantiated with. Returns configuration such as HTTP handler definitions
+  /// that should be used to register handlers.
+  ///
+  /// This must be called before `registerHttpHandler`, `registerWebsocketHandler`,
+  /// or any other registration methods.
   #[napi]
   pub fn setup(&mut self) -> Result<CoreRuntimeAppConfig> {
     let app_config = self.inner.setup().map_err(|err| {
@@ -897,6 +1282,11 @@ impl CoreRuntimeApplication {
     Ok(app_config.into())
   }
 
+  /// Registers a new HTTP handler with the application.
+  ///
+  /// The handler must be an async function that takes a `Request` object
+  /// and returns a `Response` object. An optional timeout in seconds can be
+  /// specified (defaults to 60s).
   #[napi]
   pub fn register_http_handler(
     &mut self,
@@ -935,6 +1325,10 @@ impl CoreRuntimeApplication {
     Ok(())
   }
 
+  /// Registers a custom authentication guard handler with the application.
+  ///
+  /// The handler receives a `GuardInput` and must return a `GuardResult`
+  /// with status "allowed", "unauthorised", or "forbidden".
   #[allow(clippy::missing_safety_doc)]
   #[napi]
   pub async unsafe fn register_guard_handler(
@@ -953,9 +1347,148 @@ impl CoreRuntimeApplication {
     Ok(())
   }
 
+  /// Registers a consumer event handler with the application.
+  ///
+  /// The handler receives a `JsConsumerEventInput` containing a batch of messages
+  /// and must return a `JsEventResult`. An optional timeout in seconds can be
+  /// specified (defaults to 60s).
+  #[napi]
+  pub fn register_consumer_handler(
+    &mut self,
+    handler_tag: String,
+    timeout_seconds: Option<i64>,
+    #[napi(
+      ts_arg_type = "(err: Error | null, input: JsConsumerEventInput) => Promise<JsEventResult>"
+    )]
+    handler: ConsumerWeakTsfn,
+  ) -> Result<()> {
+    let tsfn = Arc::new(handler);
+    self.consumer_tsfn_cache.push(tsfn.clone());
+    let timeout_secs = timeout_seconds.unwrap_or(60) as u64;
+    self
+      .consumer_handler_builder
+      .add_consumer_handler(handler_tag, timeout_secs, tsfn);
+    Ok(())
+  }
+
+  /// Registers a schedule event handler with the application.
+  ///
+  /// The handler receives a `JsScheduleEventInput` when a schedule fires
+  /// and must return a `JsEventResult`. An optional timeout in seconds can be
+  /// specified (defaults to 60s).
+  #[napi]
+  pub fn register_schedule_handler(
+    &mut self,
+    handler_tag: String,
+    timeout_seconds: Option<i64>,
+    #[napi(
+      ts_arg_type = "(err: Error | null, input: JsScheduleEventInput) => Promise<JsEventResult>"
+    )]
+    handler: ScheduleWeakTsfn,
+  ) -> Result<()> {
+    let tsfn = Arc::new(handler);
+    self.schedule_tsfn_cache.push(tsfn.clone());
+    let timeout_secs = timeout_seconds.unwrap_or(60) as u64;
+    self
+      .consumer_handler_builder
+      .add_schedule_handler(handler_tag, timeout_secs, tsfn);
+    Ok(())
+  }
+
+  /// Registers a WebSocket handler with the application for the given route.
+  ///
+  /// The handler receives a `JsWebSocketMessageInfo` object for each WebSocket event
+  /// ($connect, $disconnect, or a message matching the route).
+  #[napi]
+  pub fn register_websocket_handler(
+    &mut self,
+    route: String,
+    #[napi(ts_arg_type = "(err: Error | null, message: JsWebSocketMessageInfo) => Promise<void>")]
+    handler: WsMessageWeakTsfn,
+  ) -> Result<()> {
+    let tsfn = Arc::new(handler);
+    self.ws_tsfn_cache.push(tsfn.clone());
+    let ws_handler = NapiWebSocketMessageHandler::new(tsfn);
+    self
+      .inner
+      .register_websocket_message_handler(&route, ws_handler);
+    Ok(())
+  }
+
+  /// Retrieves the WebSocket registry for the application.
+  ///
+  /// The registry allows sending messages to specific WebSocket connections
+  /// that are either connected to the current node or other nodes in a
+  /// WebSocket API cluster. The returned registry is thread-safe and can
+  /// be used from handler functions.
+  #[napi]
+  pub fn websocket_registry(&self) -> CoreWebSocketRegistry {
+    CoreWebSocketRegistry::new(self.inner.websocket_registry())
+  }
+
+  /// Registers a custom handler that can be invoked programmatically
+  /// via `invokeHandler()`.
+  ///
+  /// An optional timeout in seconds can be specified (defaults to 60s).
+  #[napi]
+  pub fn register_custom_handler(
+    &mut self,
+    handler_name: String,
+    timeout_seconds: Option<i64>,
+    #[napi(ts_arg_type = "(err: Error | null, payload: any) => Promise<any>")]
+    handler: InvokeWeakTsfn,
+  ) -> Result<()> {
+    let tsfn = Arc::new(handler);
+    self.invoke_tsfn_cache.push(tsfn.clone());
+    let timeout_secs = timeout_seconds.unwrap_or(60) as u64;
+    let invoker = invoke::NapiHandlerInvoker::new(tsfn, timeout_secs);
+    self
+      .inner
+      .register_handler_invoker(handler_name, Arc::new(invoker));
+    Ok(())
+  }
+
+  /// Invokes a registered custom handler by name with the given payload.
+  ///
+  /// Returns the result from the handler. Throws if the handler is not
+  /// registered or the application is not running.
+  #[napi]
+  pub async fn invoke_handler(
+    &self,
+    handler_name: String,
+    payload: serde_json::Value,
+  ) -> Result<serde_json::Value> {
+    let registry = self.inner.handler_invoke_registry();
+    let guard = registry.lock().await;
+    let invoker = guard.get(&handler_name).cloned().ok_or_else(|| {
+      Error::new(
+        Status::GenericFailure,
+        format!("handler '{}' not found", handler_name),
+      )
+    })?;
+    drop(guard);
+    invoker
+      .invoke(payload)
+      .await
+      .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))
+  }
+
+  /// Runs the application including an HTTP/WebSocket server and event source consumers
+  /// based on the configuration the application was instantiated with.
+  ///
+  /// When `block` is `true`, the method blocks until the application is stopped.
+  /// When `block` is `false`, the application runs in a background thread and
+  /// returns immediately — call `shutdown()` to stop it.
   #[allow(clippy::missing_safety_doc)]
   #[napi]
   pub async unsafe fn run(&mut self, block: bool) -> Result<()> {
+    // Finalize the consumer/schedule handler builder before starting.
+    if !self.consumer_handler_builder.is_empty() {
+      let builder = std::mem::take(&mut self.consumer_handler_builder);
+      let handler = builder.build();
+      self.inner.register_consumer_handler(Arc::new(handler));
+    }
+
     self.inner.run(block).await.map_err(|err| {
       Error::new(
         Status::GenericFailure,
@@ -965,11 +1498,19 @@ impl CoreRuntimeApplication {
     Ok(())
   }
 
+  /// Shuts down the application and cleans up resources.
+  ///
+  /// This should be called when the application is running in non-blocking mode
+  /// (i.e. `run(false)`) to gracefully stop the server and consumers.
   #[napi]
   pub fn shutdown(&mut self) -> Result<()> {
     self.inner.shutdown();
     self.tsfn_cache.clear();
     self.guard_tsfn_cache.clear();
+    self.consumer_tsfn_cache.clear();
+    self.schedule_tsfn_cache.clear();
+    self.ws_tsfn_cache.clear();
+    self.invoke_tsfn_cache.clear();
     Ok(())
   }
 }

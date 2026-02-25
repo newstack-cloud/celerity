@@ -578,7 +578,10 @@ if (!nativeBinding) {
 module.exports = nativeBinding
 module.exports.CoreRuntimeApplication = nativeBinding.CoreRuntimeApplication
 module.exports.CoreRuntimeConfigBuilder = nativeBinding.CoreRuntimeConfigBuilder
+module.exports.CoreWebSocketRegistry = nativeBinding.CoreWebSocketRegistry
 module.exports.Request = nativeBinding.Request
 module.exports.JsRequestWrapper = nativeBinding.JsRequestWrapper
 module.exports.CoreRuntimePlatform = nativeBinding.CoreRuntimePlatform
+module.exports.JsMessageType = nativeBinding.JsMessageType
+module.exports.JsWebSocketEventType = nativeBinding.JsWebSocketEventType
 module.exports.runtimeConfigFromEnv = nativeBinding.runtimeConfigFromEnv

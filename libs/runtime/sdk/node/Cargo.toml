@@ -32,8 +32,17 @@ path = "../../core"
 [dependencies.celerity_helpers]
 path = "../../helpers"
 
+[dependencies.celerity_ws_registry]
+path = "../../ws/ws-registry"
+
 [build-dependencies]
 napi-build = "2"
+
+[features]
+celerity_local_consumers = ["celerity_runtime_core/celerity_local_consumers"]
+aws_consumers = ["celerity_runtime_core/aws_consumers"]
+azure_consumers = ["celerity_runtime_core/azure_consumers"]
+gcloud_consumers = ["celerity_runtime_core/gcloud_consumers"]
 
 [profile.release]
 lto = true
