@@ -293,8 +293,13 @@ jobs:
       - name: Test bindings (GNU host — full tests with Valkey)
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: yarn test
+      - name: Test bindings (GNU host — binding validation only)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: yarn test:no-deps
+        env:
+          SKIP_CONSUMER_TESTS: '1'
       - name: Test bindings (container — binding validation only)
-        if: matrix.target != 'x86_64-unknown-linux-gnu'
+        if: ${{ matrix.target != 'x86_64-unknown-linux-gnu' && matrix.target != 'aarch64-unknown-linux-gnu' }}
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:${{ github.workspace }} \
