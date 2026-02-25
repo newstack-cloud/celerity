@@ -13,6 +13,10 @@ import Redis from "ioredis";
 const PORT = 30200;
 const REDIS_URL = process.env.CELERITY_LOCAL_REDIS_URL ?? "redis://127.0.0.1:6379";
 
+// Skip Valkey-dependent tests when external deps aren't available
+// (e.g. release workflow cross-platform binding tests without Docker).
+const depTest = process.env.SKIP_CONSUMER_TESTS ? test.skip : test;
+
 function testConfig(
   overrides: Partial<CoreRuntimeConfig> & { serverPort: number },
 ): CoreRuntimeConfig {
@@ -83,7 +87,7 @@ test("setup() returns schedule config", (t) => {
 // 2. Consumer handler receives messages from Valkey
 // ---------------------------------------------------------------------------
 
-test("consumer handler receives messages from Valkey", async (t) => {
+depTest("consumer handler receives messages from Valkey", async (t) => {
   const serverPort = PORT + 10;
   const app = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config = app.setup();
@@ -158,7 +162,7 @@ test("consumer handler receives messages from Valkey", async (t) => {
 // 3. Consumer handler batch processing
 // ---------------------------------------------------------------------------
 
-test("consumer handler receives batch of messages", async (t) => {
+depTest("consumer handler receives batch of messages", async (t) => {
   const serverPort = PORT + 11;
   const app = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config = app.setup();
@@ -229,7 +233,7 @@ test("consumer handler receives batch of messages", async (t) => {
 // 4. Schedule handler receives trigger from Valkey
 // ---------------------------------------------------------------------------
 
-test("schedule handler receives trigger from Valkey", async (t) => {
+depTest("schedule handler receives trigger from Valkey", async (t) => {
   const serverPort = PORT + 12;
   const app = new CoreRuntimeApplication(testConfig({ serverPort }));
   const config = app.setup();

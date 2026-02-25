@@ -216,7 +216,9 @@ jobs:
         run: ls -R .
         shell: bash
       - name: Test bindings
-        run: yarn test
+        run: yarn test:no-deps
+        env:
+          SKIP_CONSUMER_TESTS: '1'
   test-linux-binding:
     if: inputs.artifact-run-id == ''
     name: Test ${{ matrix.target }} - node@${{ matrix.node }}
@@ -288,14 +290,19 @@ jobs:
           platforms: all
       - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         if: ${{ contains(matrix.target, 'armv7') }}
-      - name: Test bindings
+      - name: Test bindings (GNU host — full tests with Valkey)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: yarn test
+      - name: Test bindings (container — binding validation only)
+        if: matrix.target != 'x86_64-unknown-linux-gnu'
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:${{ github.workspace }} \
             -w ${{ github.workspace }} \
+            -e SKIP_CONSUMER_TESTS=1 \
             --platform ${{ steps.docker.outputs.PLATFORM }} \
             ${{ steps.docker.outputs.IMAGE }} \
-            bash -c "cd ./libs/runtime/sdk/node && corepack enable && yarn test"
+            sh -c "cd ./libs/runtime/sdk/node && corepack enable && yarn test:no-deps"
   publish:
     name: Publish
     runs-on: ubuntu-latest

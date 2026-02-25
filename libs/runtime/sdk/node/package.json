@@ -51,7 +51,7 @@
   },
   "scripts": {
     "artifacts": "napi artifacts",
-    "build": "napi build --platform --release",
+    "build": "napi build --platform --release -F celerity_local_consumers -F aws_consumers -F gcloud_consumers -F azure_consumers",
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm --no-gh-release",
     "test": "bash scripts/test.sh",
