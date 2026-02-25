@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.3.1...runtime-core/v0.4.0) (2026-02-25)
+
+
+### Features
+
+* **lib-rt-blueprint-parser:** add support for static input for a schedule ([e2476c7](https://github.com/newstack-cloud/celerity/commit/e2476c72df99c7a8c6a90413556dabf5b88582ba))
+* **lib-rt-core:** add missing instrumentation and optional metrics ([7456e6d](https://github.com/newstack-cloud/celerity/commit/7456e6d5a2960f2a6ffaf2bab5ab4f18475840ab))
+* **lib-rt-core:** complete foundations for v0 implementation ([0a0d70d](https://github.com/newstack-cloud/celerity/commit/0a0d70d078a26810da178768980a924e75c9b588))
+
+
+### Bug Fixes
+
+* **lib-rt-blueprint-parser:** add missing auth scheme and discovery mode fields ([5ef50dc](https://github.com/newstack-cloud/celerity/commit/5ef50dc05aa4392466afa771f550fa1bacca394b))
+* **lib-rt-core:** add fixes for redis consumers and ws auth strategy ([354b678](https://github.com/newstack-cloud/celerity/commit/354b67833833de3d2c30435dce8612682d658c96))
+
 ## [0.3.1](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.3.0...runtime-core/v0.3.1) (2026-02-18)
 
 

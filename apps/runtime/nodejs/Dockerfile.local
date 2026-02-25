@@ -1,0 +1,123 @@
+# =============================================================================
+# Celerity Node.js Runtime — Local Development Dockerfile
+#
+# Builds a dev image that overlays locally built SDK packages on top of the
+# registry-installed dependencies. The sdk-resolver.mjs hook ensures all
+# @celerity-sdk/* imports resolve from /opt/celerity/node_modules/ (the
+# runtime host), so overriding dist/ directories there is sufficient.
+#
+# Quick rebuild (Node SDK changes only — reuses cached NAPI binary):
+#   docker build -f Dockerfile.local \
+#     --build-arg NAPI_IMAGE=celerity-napi:local \
+#     --build-context sdk=$HOME/projects2026/celerity-node-sdk/packages \
+#     -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-local .
+#
+# Full rebuild (includes Rust NAPI addon):
+#   docker build -f Dockerfile.local \
+#     --build-context sdk=$HOME/projects2026/celerity-node-sdk/packages \
+#     --build-context runtime=$HOME/projects2023/celerity/libs/runtime \
+#     -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-local .
+#
+# Build NAPI addon only (run once, then use quick rebuild):
+#   docker build -f Dockerfile.local --target rust-builder \
+#     --build-context runtime=$HOME/projects2023/celerity/libs/runtime \
+#     -t celerity-napi:local .
+# =============================================================================
+
+# Controls where the pre-built NAPI binary comes from.
+# Default: "rust-builder" stage (builds from Rust source).
+# Override: --build-arg NAPI_IMAGE=celerity-napi:local to skip Rust build.
+ARG NAPI_IMAGE=rust-builder
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build the runtime NAPI addon from local Rust source
+# -----------------------------------------------------------------------------
+FROM rust:1.93-bookworm AS rust-builder
+
+# Install Node.js 22 for napi-cli
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy the Rust workspace (from --build-context runtime=...)
+COPY --from=runtime Cargo.toml Cargo.lock ./
+COPY --from=runtime core/ ./core/
+COPY --from=runtime helpers/ ./helpers/
+COPY --from=runtime blueprint-config-parser/ ./blueprint-config-parser/
+COPY --from=runtime signature/ ./signature/
+COPY --from=runtime aws-helpers/ ./aws-helpers/
+COPY --from=runtime workflow/ ./workflow/
+COPY --from=runtime consumers/ ./consumers/
+COPY --from=runtime ws/ ./ws/
+COPY --from=runtime sdk/ ./sdk/
+
+# Install napi-cli and build the native addon for this platform
+WORKDIR /build/sdk/node
+RUN npm install
+RUN npx napi build --platform
+
+# -----------------------------------------------------------------------------
+# Stage 2: Resolve NAPI source (rust-builder by default, or a pre-built image)
+# -----------------------------------------------------------------------------
+FROM ${NAPI_IMAGE} AS napi
+
+# -----------------------------------------------------------------------------
+# Stage 3: Install all dependencies from the registry
+# -----------------------------------------------------------------------------
+FROM dhi.io/node:22-debian13-dev AS deps
+
+WORKDIR /opt/celerity
+
+COPY package.json .yarnrc.yml yarn.lock ./
+
+RUN corepack enable && corepack prepare yarn@4.3.1 --activate \
+    && yarn install --immutable 2>/dev/null || yarn install
+
+# -----------------------------------------------------------------------------
+# Stage 4: Dev image with local SDK overrides
+# -----------------------------------------------------------------------------
+FROM dhi.io/node:22-debian13-dev
+
+WORKDIR /opt/celerity
+
+# Copy registry-installed node_modules
+COPY --from=deps /opt/celerity/node_modules ./node_modules
+COPY --from=deps /opt/celerity/package.json ./package.json
+COPY --from=deps /opt/celerity/.yarnrc.yml ./.yarnrc.yml
+
+# Override with locally built SDK packages (from --build-context sdk=...)
+COPY --from=sdk types/dist/ ./node_modules/@celerity-sdk/types/dist/
+COPY --from=sdk core/dist/ ./node_modules/@celerity-sdk/core/dist/
+COPY --from=sdk cli/dist/ ./node_modules/@celerity-sdk/cli/dist/
+
+# Override the runtime NAPI package with the pre-built version
+COPY --from=napi /build/sdk/node/index.js ./node_modules/@celerity-sdk/runtime/index.js
+COPY --from=napi /build/sdk/node/index.d.ts ./node_modules/@celerity-sdk/runtime/index.d.ts
+COPY --from=napi /build/sdk/node/runtime.*.node ./node_modules/@celerity-sdk/runtime/
+
+# Copy runtime host files
+COPY index.mjs register-hooks.mjs sdk-resolver.mjs sdk-compat-check.mjs generate-manifest.mjs tsconfig.json ./
+COPY entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+
+# Generate runtime-manifest.json with installed SDK versions
+RUN node generate-manifest.mjs
+
+# Create app directory for derivative images
+RUN mkdir -p /opt/celerity/app
+
+# Default environment variables
+ENV NODE_ENV=development \
+    CELERITY_RUNTIME_CALL_MODE=ffi \
+    CELERITY_SERVER_PORT=8080 \
+    CELERITY_RUNTIME_PLATFORM=other \
+    CELERITY_SERVER_LOOPBACK_ONLY=false
+
+EXPOSE 8080
+
+USER node
+
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["dev"]
