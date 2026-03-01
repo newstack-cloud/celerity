@@ -29,7 +29,7 @@ tracing-core = "0.1.32"
 tracing-subscriber = { version = "0.3.20", features = ["chrono", "json"] }
 async-trait = "0.1.88"
 pythonize = "0.25.0"
-chrono = "0.4.41"
+chrono = "0.4.44"
 
 [features]
 celerity_local_consumers = ["celerity_runtime_core/celerity_local_consumers"]
