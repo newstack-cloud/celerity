@@ -19,4 +19,5 @@ The sidecar provides the following features:
 
 ## Additional documentation
 
+- [Architecture](docs/ARCHITECTURE.md)
 - [Contributing](docs/CONTRIBUTING.md)
