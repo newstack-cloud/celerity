@@ -1,6 +1,6 @@
 module github.com/newstack-cloud/celerity/apps/local-events
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1
