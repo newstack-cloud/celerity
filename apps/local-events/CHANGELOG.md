@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/newstack-cloud/celerity/compare/local-events/v0.3.0...local-events/v0.4.0) (2026-03-06)
+
+
+### Features
+
+* **local-events:** add message id to topic envelope ([0cce892](https://github.com/newstack-cloud/celerity/commit/0cce892187dd647c4f20ad403d5154ef41c047f2))
+
 ## [0.3.0](https://github.com/newstack-cloud/celerity/compare/local-events/v0.2.0...local-events/v0.3.0) (2026-03-06)
 
 
