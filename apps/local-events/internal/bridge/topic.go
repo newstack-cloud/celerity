@@ -18,6 +18,7 @@ import (
 // attributes when delivering to SQS subscriptions.
 type topicEnvelope struct {
 	Body       string            `json:"body"`
+	MessageID  string            `json:"messageId,omitempty"`
 	Subject    string            `json:"subject,omitempty"`
 	Attributes map[string]string `json:"attributes,omitempty"`
 }
@@ -116,6 +117,9 @@ func (tb *TopicBridge) buildStreamValues(payload string, logger *zap.Logger) map
 		"body":         env.Body,
 		"timestamp":    now,
 		"message_type": "0",
+	}
+	if env.MessageID != "" {
+		values["message_id"] = env.MessageID
 	}
 	if env.Subject != "" {
 		values["subject"] = env.Subject

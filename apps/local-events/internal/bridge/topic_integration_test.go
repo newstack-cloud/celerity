@@ -136,7 +136,7 @@ func (s *TopicBridgeSuite) Test_envelope_with_subject_and_attributes() {
 	)
 	defer stop()
 
-	envelope := `{"body":"{\"orderId\":\"123\"}","subject":"OrderCreated","attributes":{"env":"prod","region":"us-east-1"}}`
+	envelope := `{"body":"{\"orderId\":\"123\"}","messageId":"550e8400-e29b-41d4-a716-446655440000","subject":"OrderCreated","attributes":{"env":"prod","region":"us-east-1"}}`
 	err := s.rdb.Publish(context.Background(), channel, envelope).Err()
 	s.Require().NoError(err)
 
@@ -144,6 +144,7 @@ func (s *TopicBridgeSuite) Test_envelope_with_subject_and_attributes() {
 	s.Require().Len(msgs, 1)
 
 	s.Assert().Equal(`{"orderId":"123"}`, msgs[0].Values["body"])
+	s.Assert().Equal("550e8400-e29b-41d4-a716-446655440000", msgs[0].Values["message_id"])
 	s.Assert().Equal("OrderCreated", msgs[0].Values["subject"])
 	s.Assert().Equal("0", msgs[0].Values["message_type"])
 
@@ -174,7 +175,9 @@ func (s *TopicBridgeSuite) Test_envelope_with_body_only() {
 
 	s.Assert().Equal(`{"id":1}`, msgs[0].Values["body"])
 	s.Assert().Equal("0", msgs[0].Values["message_type"])
-	// subject and attributes should be absent when not provided.
+	// message_id, subject, and attributes should be absent when not provided.
+	_, hasMsgID := msgs[0].Values["message_id"]
+	s.Assert().False(hasMsgID, "message_id should not be present")
 	_, hasSubject := msgs[0].Values["subject"]
 	s.Assert().False(hasSubject, "subject should not be present")
 	_, hasAttrs := msgs[0].Values["attributes"]
