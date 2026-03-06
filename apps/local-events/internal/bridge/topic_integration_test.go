@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"sync"
 	"testing"
@@ -61,13 +62,14 @@ func (s *TopicBridgeSuite) Test_single_target_receives_published_message() {
 	)
 	defer stop()
 
-	err := s.rdb.Publish(context.Background(), channel, "hello world").Err()
+	envelope := `{"body":"{\"msg\":\"hello world\"}"}`
+	err := s.rdb.Publish(context.Background(), channel, envelope).Err()
 	s.Require().NoError(err)
 
 	msgs := readStreamMessages(s.T(), s.rdb, stream, 1, 5*time.Second)
 	s.Require().Len(msgs, 1)
 
-	s.Assert().Equal("hello world", msgs[0].Values["body"])
+	s.Assert().Equal(`{"msg":"hello world"}`, msgs[0].Values["body"])
 	s.Assert().Equal("0", msgs[0].Values["message_type"])
 
 	ts, err := strconv.ParseInt(msgs[0].Values["timestamp"].(string), 10, 64)
@@ -89,13 +91,14 @@ func (s *TopicBridgeSuite) Test_fan_out_to_multiple_targets() {
 	)
 	defer stop()
 
-	err := s.rdb.Publish(context.Background(), channel, "fan-out-payload").Err()
+	envelope := `{"body":"{\"key\":\"fan-out\"}"}`
+	err := s.rdb.Publish(context.Background(), channel, envelope).Err()
 	s.Require().NoError(err)
 
 	for _, target := range streams {
 		msgs := readStreamMessages(s.T(), s.rdb, target.Stream, 1, 5*time.Second)
 		s.Require().Len(msgs, 1, "expected 1 message on stream %s", target.Stream)
-		s.Assert().Equal("fan-out-payload", msgs[0].Values["body"])
+		s.Assert().Equal(`{"key":"fan-out"}`, msgs[0].Values["body"])
 	}
 }
 
@@ -110,7 +113,8 @@ func (s *TopicBridgeSuite) Test_multiple_messages_arrive_in_order() {
 	defer stop()
 
 	for i := 0; i < 5; i++ {
-		err := s.rdb.Publish(context.Background(), channel, "msg-"+strconv.Itoa(i)).Err()
+		envelope := `{"body":"msg-` + strconv.Itoa(i) + `"}`
+		err := s.rdb.Publish(context.Background(), channel, envelope).Err()
 		s.Require().NoError(err)
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -120,6 +124,82 @@ func (s *TopicBridgeSuite) Test_multiple_messages_arrive_in_order() {
 	for i, msg := range msgs {
 		s.Assert().Equal("msg-"+strconv.Itoa(i), msg.Values["body"])
 	}
+}
+
+func (s *TopicBridgeSuite) Test_envelope_with_subject_and_attributes() {
+	channel := uniqueStream(s.T(), "chan")
+	stream := uniqueStream(s.T(), "target")
+
+	stop := s.startBridge(
+		&config.TopicBridgeSource{Channel: channel},
+		[]config.TopicBridgeTarget{{Stream: stream}},
+	)
+	defer stop()
+
+	envelope := `{"body":"{\"orderId\":\"123\"}","subject":"OrderCreated","attributes":{"env":"prod","region":"us-east-1"}}`
+	err := s.rdb.Publish(context.Background(), channel, envelope).Err()
+	s.Require().NoError(err)
+
+	msgs := readStreamMessages(s.T(), s.rdb, stream, 1, 5*time.Second)
+	s.Require().Len(msgs, 1)
+
+	s.Assert().Equal(`{"orderId":"123"}`, msgs[0].Values["body"])
+	s.Assert().Equal("OrderCreated", msgs[0].Values["subject"])
+	s.Assert().Equal("0", msgs[0].Values["message_type"])
+
+	// Attributes are re-serialized as JSON; verify by unmarshalling.
+	var attrs map[string]string
+	err = json.Unmarshal([]byte(msgs[0].Values["attributes"].(string)), &attrs)
+	s.Require().NoError(err)
+	s.Assert().Equal("prod", attrs["env"])
+	s.Assert().Equal("us-east-1", attrs["region"])
+}
+
+func (s *TopicBridgeSuite) Test_envelope_with_body_only() {
+	channel := uniqueStream(s.T(), "chan")
+	stream := uniqueStream(s.T(), "target")
+
+	stop := s.startBridge(
+		&config.TopicBridgeSource{Channel: channel},
+		[]config.TopicBridgeTarget{{Stream: stream}},
+	)
+	defer stop()
+
+	envelope := `{"body":"{\"id\":1}"}`
+	err := s.rdb.Publish(context.Background(), channel, envelope).Err()
+	s.Require().NoError(err)
+
+	msgs := readStreamMessages(s.T(), s.rdb, stream, 1, 5*time.Second)
+	s.Require().Len(msgs, 1)
+
+	s.Assert().Equal(`{"id":1}`, msgs[0].Values["body"])
+	s.Assert().Equal("0", msgs[0].Values["message_type"])
+	// subject and attributes should be absent when not provided.
+	_, hasSubject := msgs[0].Values["subject"]
+	s.Assert().False(hasSubject, "subject should not be present")
+	_, hasAttrs := msgs[0].Values["attributes"]
+	s.Assert().False(hasAttrs, "attributes should not be present")
+}
+
+func (s *TopicBridgeSuite) Test_non_envelope_payload_falls_back_to_raw_body() {
+	channel := uniqueStream(s.T(), "chan")
+	stream := uniqueStream(s.T(), "target")
+
+	stop := s.startBridge(
+		&config.TopicBridgeSource{Channel: channel},
+		[]config.TopicBridgeTarget{{Stream: stream}},
+	)
+	defer stop()
+
+	// Publish a plain string that is not a valid JSON envelope.
+	err := s.rdb.Publish(context.Background(), channel, "plain text message").Err()
+	s.Require().NoError(err)
+
+	msgs := readStreamMessages(s.T(), s.rdb, stream, 1, 5*time.Second)
+	s.Require().Len(msgs, 1)
+
+	s.Assert().Equal("plain text message", msgs[0].Values["body"])
+	s.Assert().Equal("0", msgs[0].Values["message_type"])
 }
 
 func (s *TopicBridgeSuite) Test_no_messages_before_publish() {
