@@ -9,20 +9,20 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@celerity-sdk/runtime@workspace:."
   dependencies:
-    "@dotenvx/dotenvx": "npm:^1.45.2"
+    "@dotenvx/dotenvx": "npm:^1.54.1"
     "@napi-rs/cli": "npm:^3.0.0"
     "@types/ws": "npm:^8.5.0"
     ava: "npm:^6.0.1"
-    ioredis: "npm:^5.4.0"
+    ioredis: "npm:^5.10.0"
     tsx: "npm:^4.19.0"
     typescript: "npm:^5.7.0"
     ws: "npm:^8.18.0"
   languageName: unknown
   linkType: soft
 
-"@dotenvx/dotenvx@npm:^1.45.2":
-  version: 1.52.0
-  resolution: "@dotenvx/dotenvx@npm:1.52.0"
+"@dotenvx/dotenvx@npm:^1.54.1":
+  version: 1.54.1
+  resolution: "@dotenvx/dotenvx@npm:1.54.1"
   dependencies:
     commander: "npm:^11.1.0"
     dotenv: "npm:^17.2.1"
@@ -35,7 +35,7 @@ __metadata:
     which: "npm:^4.0.0"
   bin:
     dotenvx: src/cli/dotenvx.js
-  checksum: 10c0/dde557dbb11c16460267ec0e3e4551298f89ea88c6b98fb6fc210dc2c3aa892b15e8e13a9dcb5d30ea1aa0afc4f37045f9150ad670b01c3b9b8e9f778a1eefcf
+  checksum: 10c0/fea82f32a873e5c29377a587bee543c974d00025f72cb1dc54f0a28059623814fbf46b69dd87b867da0f6ac4b9edc823cfde158239b525a12aba8fd58b459921
   languageName: node
   linkType: hard
 
@@ -499,10 +499,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ioredis/commands@npm:1.5.0":
-  version: 1.5.0
-  resolution: "@ioredis/commands@npm:1.5.0"
-  checksum: 10c0/2d192d967a21f0192e17310d27ead02b0bdd504e834c782714abe641190ebfb548ad307fd89fd2d80db97c462afdc69ab4a4383831ab64ce61fe92f130d8b466
+"@ioredis/commands@npm:1.5.1":
+  version: 1.5.1
+  resolution: "@ioredis/commands@npm:1.5.1"
+  checksum: 10c0/cb8f6d13cff0753e3e7ef001fb895491985d9a623248192538f13bc2fd9bfdfde3c18cf2ba6f20ec8ceaa681b0771070d3a09b82eed044c798bcfef5e3ae54b3
   languageName: node
   linkType: hard
 
@@ -2441,11 +2441,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ioredis@npm:^5.4.0":
-  version: 5.9.3
-  resolution: "ioredis@npm:5.9.3"
+"ioredis@npm:^5.10.0":
+  version: 5.10.0
+  resolution: "ioredis@npm:5.10.0"
   dependencies:
-    "@ioredis/commands": "npm:1.5.0"
+    "@ioredis/commands": "npm:1.5.1"
     cluster-key-slot: "npm:^1.1.0"
     debug: "npm:^4.3.4"
     denque: "npm:^2.1.0"
@@ -2454,7 +2454,7 @@ __metadata:
     redis-errors: "npm:^1.2.0"
     redis-parser: "npm:^3.0.0"
     standard-as-callback: "npm:^2.1.0"
-  checksum: 10c0/f3d5c811bc1f320236f488ee6bd8a4857c7c0e8e5de1154b064afc03eb35aafbf24156e430025061b6939c58a5a6b424d86814d726439f5811b2e9c56c710dd4
+  checksum: 10c0/294e8cdef963f922b04ad023d4165f1d399b27279b9890f3e1311da57fb2a082c8dca52d18bd14a54acd6fb82853783641a0c47ff18661a8756221049f807e88
   languageName: node
   linkType: hard
 
