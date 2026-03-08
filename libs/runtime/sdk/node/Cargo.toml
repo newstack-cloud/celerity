@@ -16,7 +16,7 @@ napi = { version = "3.8", default-features = false, features = [
 ] }
 napi-derive = "3"
 async-trait = "0.1.88"
-tokio = "1.39.2"
+tokio = "1.50.0"
 axum = "0.8.4"
 axum-extra = { version = "0.10.1", features = ["cookie"] }
 serde = "1.0.204"
