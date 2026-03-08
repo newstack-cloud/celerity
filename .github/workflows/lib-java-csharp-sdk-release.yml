@@ -272,7 +272,7 @@ jobs:
           git commit -m "[celerity] release ${{github.ref_name}}"
           git push
       - name: Import PGP key
-        uses: crazy-max/ghaction-import-gpg@v3
+        uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg-private-key: ${{ secrets.CELERITY_PGP_PRIVATE_KEY }}
           passphrase: ${{ secrets.CELERITY_PGP_PRIVATE_KEY_PASSPHRASE }}
