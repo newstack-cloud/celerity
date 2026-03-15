@@ -5,18 +5,19 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@celerity-sdk/common@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/common@npm:0.3.1"
-  checksum: 10c0/459d40b7c124ea0a7670541d7c9d7a833da175fff3499486e0995871339e368e42c916121da89ccd2d63ea821e576dbff02a2a5b29da8ff1cd5bcc37d8d4d4d5
+"@celerity-sdk/common@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@celerity-sdk/common@npm:0.4.0"
+  checksum: 10c0/40e1126d7a28b958e6f3a1641cbc0f02ac8643da1492ea69284d11fcae5147031bde446687665565a5a65c7ec2f9c609b48ebcf1a6c8b2b2548a64f288e9ce51
   languageName: node
   linkType: hard
 
-"@celerity-sdk/config@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/config@npm:0.3.1"
+"@celerity-sdk/config@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@celerity-sdk/config@npm:0.4.0"
   dependencies:
-    "@celerity-sdk/types": "npm:^0.3.1"
+    "@celerity-sdk/common": "npm:^0.4.0"
+    "@celerity-sdk/types": "npm:^0.4.0"
     debug: "npm:^4.4.0"
   peerDependencies:
     "@aws-sdk/client-secrets-manager": ^3.0.0
@@ -29,104 +30,104 @@ __metadata:
       optional: true
     ioredis:
       optional: true
-  checksum: 10c0/b3586578165514f1ce4da9e81615d49ad200f37e2cae46a3306ac07527b0fe5bacfcc2f932cd0cab1b4008ce1c49f1f396c9f5a1c6cd6f739b822ff5946a9171
+  checksum: 10c0/120d22c58602eb1da4fe9fa3598daf116601af6dcd6bd871ffe9e1f50e1d320cbf30bdcf4b0e56041c9b34e29b6a32c91930050c43ff26b4cbed29b858a5293b
   languageName: node
   linkType: hard
 
-"@celerity-sdk/core@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/core@npm:0.3.1"
+"@celerity-sdk/core@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@celerity-sdk/core@npm:0.4.0"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.3.1"
-    "@celerity-sdk/config": "npm:^0.3.1"
-    "@celerity-sdk/types": "npm:^0.3.1"
+    "@celerity-sdk/common": "npm:^0.4.0"
+    "@celerity-sdk/config": "npm:^0.4.0"
+    "@celerity-sdk/types": "npm:^0.4.0"
     debug: "npm:^4.4.0"
     reflect-metadata: "npm:^0.2.0"
   peerDependencies:
-    "@celerity-sdk/runtime": ^0.2.3
+    "@celerity-sdk/runtime": ^0.3.1
   peerDependenciesMeta:
     "@celerity-sdk/runtime":
       optional: true
-  checksum: 10c0/1e4604e843d4a4aac5a8e0d28656280ab7c5ccbe17f5368f0eb35a8a47d4ae284a085a92d6ff2f8f827041a08d0cb782f7cc5c66d3df7506227853481b2c1402
+  checksum: 10c0/f8638989ab8f435aba87a698d96e53c8ce4ae7aacedae0f7b5cfa15a151d3e61a2d8d6d6e4b4f4e9ffefbb227a9d9daedb5d2784978d33f7a799c730e98a9c54
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-darwin-arm64@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-darwin-arm64@npm:0.2.3"
+"@celerity-sdk/runtime-darwin-arm64@npm:0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime-darwin-arm64@npm:0.3.1"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-darwin-x64@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-darwin-x64@npm:0.2.3"
+"@celerity-sdk/runtime-darwin-x64@npm:0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime-darwin-x64@npm:0.3.1"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-freebsd-x64@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-freebsd-x64@npm:0.2.3"
+"@celerity-sdk/runtime-freebsd-x64@npm:0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime-freebsd-x64@npm:0.3.1"
   conditions: os=freebsd & cpu=x64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-arm64-gnu@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-linux-arm64-gnu@npm:0.2.3"
+"@celerity-sdk/runtime-linux-arm64-gnu@npm:0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime-linux-arm64-gnu@npm:0.3.1"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-arm64-musl@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-linux-arm64-musl@npm:0.2.3"
+"@celerity-sdk/runtime-linux-arm64-musl@npm:0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime-linux-arm64-musl@npm:0.3.1"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-x64-gnu@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-linux-x64-gnu@npm:0.2.3"
+"@celerity-sdk/runtime-linux-x64-gnu@npm:0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime-linux-x64-gnu@npm:0.3.1"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-x64-musl@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-linux-x64-musl@npm:0.2.3"
+"@celerity-sdk/runtime-linux-x64-musl@npm:0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime-linux-x64-musl@npm:0.3.1"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-win32-arm64-msvc@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-win32-arm64-msvc@npm:0.2.3"
+"@celerity-sdk/runtime-win32-arm64-msvc@npm:0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime-win32-arm64-msvc@npm:0.3.1"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-win32-x64-msvc@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-win32-x64-msvc@npm:0.2.3"
+"@celerity-sdk/runtime-win32-x64-msvc@npm:0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime-win32-x64-msvc@npm:0.3.1"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime@npm:^0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime@npm:0.2.3"
+"@celerity-sdk/runtime@npm:^0.3.1":
+  version: 0.3.1
+  resolution: "@celerity-sdk/runtime@npm:0.3.1"
   dependencies:
-    "@celerity-sdk/runtime-darwin-arm64": "npm:0.2.3"
-    "@celerity-sdk/runtime-darwin-x64": "npm:0.2.3"
-    "@celerity-sdk/runtime-freebsd-x64": "npm:0.2.3"
-    "@celerity-sdk/runtime-linux-arm64-gnu": "npm:0.2.3"
-    "@celerity-sdk/runtime-linux-arm64-musl": "npm:0.2.3"
-    "@celerity-sdk/runtime-linux-x64-gnu": "npm:0.2.3"
-    "@celerity-sdk/runtime-linux-x64-musl": "npm:0.2.3"
-    "@celerity-sdk/runtime-win32-arm64-msvc": "npm:0.2.3"
-    "@celerity-sdk/runtime-win32-x64-msvc": "npm:0.2.3"
+    "@celerity-sdk/runtime-darwin-arm64": "npm:0.3.1"
+    "@celerity-sdk/runtime-darwin-x64": "npm:0.3.1"
+    "@celerity-sdk/runtime-freebsd-x64": "npm:0.3.1"
+    "@celerity-sdk/runtime-linux-arm64-gnu": "npm:0.3.1"
+    "@celerity-sdk/runtime-linux-arm64-musl": "npm:0.3.1"
+    "@celerity-sdk/runtime-linux-x64-gnu": "npm:0.3.1"
+    "@celerity-sdk/runtime-linux-x64-musl": "npm:0.3.1"
+    "@celerity-sdk/runtime-win32-arm64-msvc": "npm:0.3.1"
+    "@celerity-sdk/runtime-win32-x64-msvc": "npm:0.3.1"
   dependenciesMeta:
     "@celerity-sdk/runtime-darwin-arm64":
       optional: true
@@ -146,16 +147,16 @@ __metadata:
       optional: true
     "@celerity-sdk/runtime-win32-x64-msvc":
       optional: true
-  checksum: 10c0/6f06ea5a502ba45d1d0fe502da3f4d843174aefa218f68fb82f2a5a798b69a1a66c9f12dd03116644f8b4905d1b790b5a8a323eafa61e0f94a1b347d4d57db3b
+  checksum: 10c0/59d56546de7b4a993bc1b2fa628e7945ce1f67ce132740aad540b101b530aba96022617d37259056ea589ef78b43d9db4dff7fdc98accb6563cbd2c15b67ab4e
   languageName: node
   linkType: hard
 
-"@celerity-sdk/telemetry@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/telemetry@npm:0.3.1"
+"@celerity-sdk/telemetry@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@celerity-sdk/telemetry@npm:0.4.0"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.3.1"
-    "@celerity-sdk/types": "npm:^0.3.1"
+    "@celerity-sdk/common": "npm:^0.4.0"
+    "@celerity-sdk/types": "npm:^0.4.0"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/api-logs": "npm:^0.200.0"
     "@opentelemetry/core": "npm:^2.0.0"
@@ -187,14 +188,14 @@ __metadata:
       optional: true
     "@opentelemetry/instrumentation-pg":
       optional: true
-  checksum: 10c0/718434097c8ef782be4d16078b1726b29957c168e9c7e6b6e013bf98ff4f983efc07b4d7bff65ce9d6b4b005cc9502f76264d4e3d1dfc170e35189c345b61921
+  checksum: 10c0/cc8c8d0a326aff3bad432faf6702f7633a60506ced80f97a6aaf8859d508bc9923e8c5eb91d5a88bf304d61c6a058f64772fc3b90210ed3593400edfd6822660
   languageName: node
   linkType: hard
 
-"@celerity-sdk/types@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/types@npm:0.3.1"
-  checksum: 10c0/1761a0abd48f48d257becbde406faa3fc1993cfc1639271519979d395c490eb62302109147350ca2a0c212478baa64248993600c53b0625e357415e22b8a4929
+"@celerity-sdk/types@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@celerity-sdk/types@npm:0.4.0"
+  checksum: 10c0/92c98aacb2dd027ee95df32a88c4a0dd59faf4912c1a4cdede5aa242013fb9b01f9c0c49961c953b2f6037f63578966852aa2cbc06d4b5a3f3e70cda21d20f3e
   languageName: node
   linkType: hard
 
@@ -1043,90 +1044,90 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-arm64@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-darwin-arm64@npm:1.15.11"
+"@swc/core-darwin-arm64@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-darwin-arm64@npm:1.15.18"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-x64@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-darwin-x64@npm:1.15.11"
+"@swc/core-darwin-x64@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-darwin-x64@npm:1.15.18"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm-gnueabihf@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.15.11"
+"@swc/core-linux-arm-gnueabihf@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.15.18"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-gnu@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-arm64-gnu@npm:1.15.11"
+"@swc/core-linux-arm64-gnu@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-linux-arm64-gnu@npm:1.15.18"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-musl@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-arm64-musl@npm:1.15.11"
+"@swc/core-linux-arm64-musl@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-linux-arm64-musl@npm:1.15.18"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-gnu@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-x64-gnu@npm:1.15.11"
+"@swc/core-linux-x64-gnu@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-linux-x64-gnu@npm:1.15.18"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-musl@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-x64-musl@npm:1.15.11"
+"@swc/core-linux-x64-musl@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-linux-x64-musl@npm:1.15.18"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-win32-arm64-msvc@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-win32-arm64-msvc@npm:1.15.11"
+"@swc/core-win32-arm64-msvc@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-win32-arm64-msvc@npm:1.15.18"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-win32-ia32-msvc@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-win32-ia32-msvc@npm:1.15.11"
+"@swc/core-win32-ia32-msvc@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-win32-ia32-msvc@npm:1.15.18"
   conditions: os=win32 & cpu=ia32
   languageName: node
   linkType: hard
 
-"@swc/core-win32-x64-msvc@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-win32-x64-msvc@npm:1.15.11"
+"@swc/core-win32-x64-msvc@npm:1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core-win32-x64-msvc@npm:1.15.18"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core@npm:^1.11.0":
-  version: 1.15.11
-  resolution: "@swc/core@npm:1.15.11"
+"@swc/core@npm:^1.15.18":
+  version: 1.15.18
+  resolution: "@swc/core@npm:1.15.18"
   dependencies:
-    "@swc/core-darwin-arm64": "npm:1.15.11"
-    "@swc/core-darwin-x64": "npm:1.15.11"
-    "@swc/core-linux-arm-gnueabihf": "npm:1.15.11"
-    "@swc/core-linux-arm64-gnu": "npm:1.15.11"
-    "@swc/core-linux-arm64-musl": "npm:1.15.11"
-    "@swc/core-linux-x64-gnu": "npm:1.15.11"
-    "@swc/core-linux-x64-musl": "npm:1.15.11"
-    "@swc/core-win32-arm64-msvc": "npm:1.15.11"
-    "@swc/core-win32-ia32-msvc": "npm:1.15.11"
-    "@swc/core-win32-x64-msvc": "npm:1.15.11"
+    "@swc/core-darwin-arm64": "npm:1.15.18"
+    "@swc/core-darwin-x64": "npm:1.15.18"
+    "@swc/core-linux-arm-gnueabihf": "npm:1.15.18"
+    "@swc/core-linux-arm64-gnu": "npm:1.15.18"
+    "@swc/core-linux-arm64-musl": "npm:1.15.18"
+    "@swc/core-linux-x64-gnu": "npm:1.15.18"
+    "@swc/core-linux-x64-musl": "npm:1.15.18"
+    "@swc/core-win32-arm64-msvc": "npm:1.15.18"
+    "@swc/core-win32-ia32-msvc": "npm:1.15.18"
+    "@swc/core-win32-x64-msvc": "npm:1.15.18"
     "@swc/counter": "npm:^0.1.3"
     "@swc/types": "npm:^0.1.25"
   peerDependencies:
@@ -1155,7 +1156,7 @@ __metadata:
   peerDependenciesMeta:
     "@swc/helpers":
       optional: true
-  checksum: 10c0/84b9dbed8d4d39da9941b796f97f84a52a3ab1a5e002b0395e98d0c3368acab4dde84051eb97c47c85b67c5fc29e3e9b7a646cf238a96df93fc7c54177925c3e
+  checksum: 10c0/b52381eefaf88ba1b8ff603c58418fcc7ca661cd0fc8b68bfc17e523b356d027dfcc3bfd459ddc107a67021a943979a79cd0589338d20c6564bbb5cf8f35afb5
   languageName: node
   linkType: hard
 
@@ -1252,14 +1253,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "celerity-runtime-nodejs@workspace:."
   dependencies:
-    "@celerity-sdk/common": "npm:^0.3.1"
-    "@celerity-sdk/config": "npm:^0.3.1"
-    "@celerity-sdk/core": "npm:^0.3.1"
-    "@celerity-sdk/runtime": "npm:^0.2.3"
-    "@celerity-sdk/telemetry": "npm:^0.3.1"
-    "@celerity-sdk/types": "npm:^0.3.1"
+    "@celerity-sdk/common": "npm:^0.4.0"
+    "@celerity-sdk/config": "npm:^0.4.0"
+    "@celerity-sdk/core": "npm:^0.4.0"
+    "@celerity-sdk/runtime": "npm:^0.3.1"
+    "@celerity-sdk/telemetry": "npm:^0.4.0"
+    "@celerity-sdk/types": "npm:^0.4.0"
     "@swc-node/register": "npm:^1.10.0"
-    "@swc/core": "npm:^1.11.0"
+    "@swc/core": "npm:^1.15.18"
     pino-pretty: "npm:^13.0.0"
     typescript: "npm:^5.7.0"
   languageName: unknown
