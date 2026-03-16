@@ -92,6 +92,7 @@ along with blueprints used for Infrastructure as Code.`,
 	setupVersionCommand(rootCmd)
 	setupInitCommand(rootCmd, confProvider)
 	setupValidateCommand(rootCmd, confProvider)
+	setupDevCommand(rootCmd, confProvider)
 
 	return rootCmd
 }
