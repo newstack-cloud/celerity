@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.4.1...runtime-core/v0.5.0) (2026-03-16)
+
+
+### Features
+
+* **lib-rt-core:** integrate consumer message body transformation ([c35bdfd](https://github.com/newstack-cloud/celerity/commit/c35bdfdc1af523b08640c96d6592d69cbbb459c0))
+
+
+### Bug Fixes
+
+* **lib-rt-blueprint-parser:** add missing resource types to yaml parser ([1a51394](https://github.com/newstack-cloud/celerity/commit/1a51394c6ac152b5a17d3d297844dec6495980cb))
+* **lib-rt-core:** add fixes for ws auth message strategy and cors ([e57706a](https://github.com/newstack-cloud/celerity/commit/e57706a06c081c3faae74b34d3100a0064bc9f08))
+
 ## [0.4.1](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.4.0...runtime-core/v0.4.1) (2026-02-25)
 
 
