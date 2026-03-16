@@ -434,6 +434,7 @@ impl CoreRuntimeApplication {
       log_format,
       metrics_enabled: runtime_config.metrics_enabled,
       trace_sample_ratio: runtime_config.trace_sample_ratio,
+      deploy_target: std::env::var("CELERITY_DEPLOY_TARGET").ok(),
     };
     println!("Creating CoreRuntimeApplication with config: {native_runtime_config:?}");
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));

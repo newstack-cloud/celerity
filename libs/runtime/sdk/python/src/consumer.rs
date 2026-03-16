@@ -39,6 +39,15 @@ pub struct PyConsumerMessage {
   pub body: String,
   #[pyo3(get)]
   pub source: String,
+  /// The type of source parsed from the `celerity:{type}:{name}` format.
+  #[pyo3(get)]
+  pub source_type: Option<String>,
+  /// The name of the source parsed from the `celerity:{type}:{name}` format.
+  #[pyo3(get)]
+  pub source_name: Option<String>,
+  /// The Celerity-standard event type (e.g. "created", "inserted").
+  #[pyo3(get)]
+  pub event_type: Option<String>,
   #[pyo3(get)]
   pub message_attributes: Py<PyAny>,
   #[pyo3(get)]
@@ -129,6 +138,9 @@ impl PyConsumerEventInput {
               message_id: m.message_id,
               body: m.body,
               source: m.source,
+              source_type: m.source_type,
+              source_name: m.source_name,
+              event_type: m.event_type,
               message_attributes,
               vendor,
             },
