@@ -27,7 +27,7 @@ pub fn select_resources<'a>(
                         labels
                             .get(key)
                             .map(|search_label_val| search_label_val == value)
-                            .is_some()
+                            .unwrap_or(false)
                             && resource.resource_type == target_type
                     } else {
                         false

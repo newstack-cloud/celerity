@@ -134,6 +134,16 @@ pub struct RuntimeConfig {
     /// Defaults to 0.1 (10%) — a production-friendly default that avoids noise for
     /// high-volume apps while capturing enough traces for debugging.
     pub trace_sample_ratio: f64,
+    /// The target deployment provider for body transforms and provider-specific
+    /// event handling (e.g. `"aws"`, `"gcp"`, `"azure"`).
+    ///
+    /// Required when `platform` is `Local` or `Other` so the runtime knows which
+    /// provider-specific event formats to use for datastore streams, bucket events,
+    /// etc.  For cloud platforms (`AWS`, `GCP`, `Azure`) the provider is derived
+    /// directly from the platform and this field is ignored.
+    ///
+    /// Set via `CELERITY_DEPLOY_TARGET`.
+    pub deploy_target: Option<String>,
 }
 
 impl RuntimeConfig {
@@ -263,6 +273,8 @@ impl RuntimeConfig {
             .parse()
             .expect("Invalid trace sample ratio, must be a float between 0.0 and 1.0");
 
+        let deploy_target = env.var("CELERITY_DEPLOY_TARGET").ok();
+
         RuntimeConfig {
             blueprint_config_path,
             runtime_call_mode,
@@ -285,6 +297,25 @@ impl RuntimeConfig {
             log_format,
             metrics_enabled,
             trace_sample_ratio,
+            deploy_target,
+        }
+    }
+
+    /// Resolves the body transform provider identifier based on the runtime
+    /// platform and optional deploy target.
+    ///
+    /// For cloud platforms the provider is derived directly:
+    /// - `AWS` → `"aws"`, `GCP` → `"gcp"`, `Azure` → `"azure"`.
+    ///
+    /// For `Local` and `Other` platforms the provider comes from the
+    /// `CELERITY_DEPLOY_TARGET` env var.  Returns `None` when no deploy target
+    /// is configured, meaning provider-specific body transforms will be skipped.
+    pub fn resolve_body_transform_provider(&self) -> Option<&str> {
+        match &self.platform {
+            RuntimePlatform::AWS => Some("aws"),
+            RuntimePlatform::GCP => Some("gcp"),
+            RuntimePlatform::Azure => Some("azure"),
+            RuntimePlatform::Local | RuntimePlatform::Other => self.deploy_target.as_deref(),
         }
     }
 }
@@ -477,6 +508,8 @@ pub enum EventConfig {
 
 #[derive(Debug, Clone)]
 pub struct EventTriggerConfig {
+    // The name of the consumer resource in the blueprint.
+    pub consumer_name: String,
     // The event type provided in messages polled from the
     // events message queue.
     pub event_type: String,
@@ -508,6 +541,8 @@ pub enum StreamSourceType {
 
 #[derive(Debug, Clone)]
 pub struct StreamConfig {
+    // The name of the consumer resource in the blueprint.
+    pub consumer_name: String,
     /// The source type determines the Valkey stream naming prefix.
     pub source_type: StreamSourceType,
     // The ID of the stream from which event messages

@@ -518,6 +518,10 @@ impl Application {
         let mut managed: Vec<Box<dyn ManagedConsumer>> = Vec::new();
         let mut shutdown_signals = HashMap::new();
         let service_name = self.runtime_config.service_name.clone();
+        let provider = self
+            .runtime_config
+            .resolve_body_transform_provider()
+            .unwrap_or_default();
 
         for consumer_config in &self.consumer_configs {
             let consumer_name = format!("consumer-{}", consumer_config.source_id);
@@ -578,6 +582,7 @@ impl Application {
             > = build_consumer_message_handler::<RedisMessageMetadata>(
                 consumer_config,
                 self.consumer_event_handler.clone(),
+                provider,
             );
             consumer.register_handler(handler);
 
@@ -654,8 +659,8 @@ impl Application {
                 batch_size,
                 lock_duration_ms,
                 polling_wait_time_ms,
-                // Descriptive source label for telemetry span context, distinguishing
-                // event source types (e.g. "stream:datastore:orders" vs "trigger:uploads").
+                // Source label used by parse_source() for body transforms and
+                // telemetry span context. Must use "celerity:<type>:<name>" format.
                 event_source_label,
             ) = match event_config {
                 crate::config::EventConfig::Stream(cfg) => {
@@ -663,18 +668,15 @@ impl Application {
                         crate::config::StreamSourceType::Datastore => "celerity:datastore",
                         crate::config::StreamSourceType::DataStream => "celerity:stream",
                     };
-                    let source_type_label = match cfg.source_type {
-                        crate::config::StreamSourceType::Datastore => "datastore",
-                        crate::config::StreamSourceType::DataStream => "stream",
-                    };
+                    let stream_name = format!("{}:{}", prefix, cfg.stream_id);
                     (
-                        format!("{}:{}", prefix, cfg.stream_id),
+                        stream_name.clone(),
                         &cfg.stream_id,
                         &cfg.handlers,
                         cfg.batch_size,
                         None,
                         None,
-                        format!("stream:{}:{}", source_type_label, cfg.stream_id),
+                        stream_name,
                     )
                 }
                 crate::config::EventConfig::EventTrigger(cfg) => (
@@ -684,7 +686,7 @@ impl Application {
                     cfg.batch_size,
                     cfg.visibility_timeout.map(|v| v as u64 * 1000),
                     cfg.wait_time_seconds.map(|w| w as u64 * 1000),
-                    format!("trigger:{}", cfg.queue_id),
+                    format!("celerity:bucket:{}", cfg.queue_id),
                 ),
             };
 
@@ -727,6 +729,7 @@ impl Application {
                         self.consumer_event_handler.clone(),
                         handler_tag,
                         event_source_label.clone(),
+                        provider.to_string(),
                     );
                 consumer.register_handler(Arc::new(bridge));
             }
@@ -759,6 +762,10 @@ impl Application {
         let sqs_client = Arc::new(aws_sdk_sqs::Client::new(&aws_config));
 
         let mut managed: Vec<Box<dyn ManagedConsumer>> = Vec::new();
+        let provider = self
+            .runtime_config
+            .resolve_body_transform_provider()
+            .unwrap_or("aws");
 
         // Queue consumers
         for consumer_config in &self.consumer_configs {
@@ -803,6 +810,7 @@ impl Application {
             > = build_consumer_message_handler::<SQSMessageMetadata>(
                 consumer_config,
                 self.consumer_event_handler.clone(),
+                provider,
             );
             consumer.register_handler(handler);
 
@@ -1103,10 +1111,14 @@ impl Application {
 
 /// Builds a `MessageHandler<M>` for a consumer config, using either a routed
 /// handler (when routing is configured) or a simple bridge.
+///
+/// The `provider` string (e.g. `"aws"`, `"gcp"`) selects which body transform
+/// implementation to use for event source types like bucket and datastore.
 #[cfg(any(feature = "aws_consumers", feature = "celerity_local_consumers"))]
 fn build_consumer_message_handler<M>(
     consumer_config: &ConsumerConfig,
     event_handler: Arc<dyn ConsumerEventHandler>,
+    provider: &str,
 ) -> Arc<dyn celerity_helpers::consumers::MessageHandler<M> + Send + Sync>
 where
     M: std::fmt::Debug + Clone + Send + Sync + 'static,
@@ -1135,6 +1147,7 @@ where
             event_handler.clone(),
             fallback_tag,
             consumer_config.source_id.clone(),
+            provider.to_string(),
         ));
 
         let mut router = MessageHandlerWithRouter::new(routing_key, None, fallback);
@@ -1149,6 +1162,7 @@ where
                     event_handler.clone(),
                     handler_tag,
                     consumer_config.source_id.clone(),
+                    provider.to_string(),
                 ));
                 router.register_route(route.clone(), routed_bridge);
             }
@@ -1166,6 +1180,7 @@ where
             event_handler,
             handler_tag,
             consumer_config.source_id.clone(),
+            provider.to_string(),
         ))
     }
 }

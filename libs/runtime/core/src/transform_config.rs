@@ -1019,6 +1019,9 @@ pub(crate) fn collect_consumer_config(
                 if let Some(topic_name) = id.strip_prefix("celerity::topic::") {
                     // Source is a Celerity topic — strip the prefix to get the topic name.
                     (topic_name.to_string(), ConsumerSourceType::Topic)
+                } else if let Some(queue_name) = id.strip_prefix("celerity::queue::") {
+                    // Source is a Celerity queue — strip the prefix to get the queue name.
+                    (queue_name.to_string(), ConsumerSourceType::Queue)
                 } else {
                     (id.clone(), ConsumerSourceType::Queue)
                 }
@@ -1105,7 +1108,7 @@ pub(crate) fn collect_events_config(
                 )?;
                 for ext_event in external_events.values() {
                     let event_config =
-                        build_event_config_from_external(ext_event, consumer_spec, &handlers);
+                        build_event_config_from_external(name, ext_event, consumer_spec, &handlers);
                     events.push(event_config);
                 }
             }
@@ -1124,6 +1127,7 @@ pub(crate) fn collect_events_config(
                 )
                 .and_then(|v| v.parse::<bool>().ok());
                 events.push(EventConfig::Stream(StreamConfig {
+                    consumer_name: name.clone(),
                     source_type: StreamSourceType::Datastore,
                     stream_id: datastore_resource_name,
                     batch_size: consumer_spec.batch_size,
@@ -1148,6 +1152,7 @@ pub(crate) fn collect_events_config(
                 .cloned()
                 .unwrap_or_default();
                 events.push(EventConfig::EventTrigger(EventTriggerConfig {
+                    consumer_name: name.clone(),
                     event_type,
                     queue_id: bucket_resource_name,
                     batch_size: consumer_spec.batch_size,
@@ -1177,12 +1182,14 @@ pub(crate) fn collect_events_config(
 
 /// Builds an EventConfig from an ExternalEventConfiguration entry.
 fn build_event_config_from_external(
+    consumer_name: &str,
     ext_event: &ExternalEventConfiguration,
     consumer_spec: &CelerityConsumerSpec,
     handlers: &[EventHandlerDefinition],
 ) -> EventConfig {
     match &ext_event.source_configuration {
         EventSourceConfiguration::DataStream(config) => EventConfig::Stream(StreamConfig {
+            consumer_name: consumer_name.to_string(),
             source_type: StreamSourceType::DataStream,
             stream_id: config.data_stream_id.clone(),
             batch_size: config.batch_size,
@@ -1191,6 +1198,7 @@ fn build_event_config_from_external(
             handlers: handlers.to_vec(),
         }),
         EventSourceConfiguration::DatabaseStream(config) => EventConfig::Stream(StreamConfig {
+            consumer_name: consumer_name.to_string(),
             source_type: StreamSourceType::Datastore,
             stream_id: config.db_stream_id.clone(),
             batch_size: config.batch_size,
@@ -1206,6 +1214,7 @@ fn build_event_config_from_external(
                 .collect::<Vec<_>>()
                 .join(",");
             EventConfig::EventTrigger(EventTriggerConfig {
+                consumer_name: consumer_name.to_string(),
                 event_type,
                 queue_id: config.bucket.clone(),
                 batch_size: consumer_spec.batch_size,
@@ -1476,6 +1485,7 @@ mod tests {
             log_format: None,
             metrics_enabled: false,
             trace_sample_ratio: 1.0,
+            deploy_target: None,
         }
     }
 

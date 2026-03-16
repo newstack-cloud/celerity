@@ -10,7 +10,8 @@ use celerity_helpers::consumers::{
     Message, MessageHandler, MessageHandlerError, RoutedMessage, RoutedMessageHandler,
 };
 use serde_json::{json, Value};
-use tracing::{field, instrument};
+use std::time::Instant;
+use tracing::{field, info, instrument};
 
 use crate::types::{
     ConsumerEventData, ConsumerMessage, EventData, EventDataPayload, EventResult, EventTuple,
@@ -70,14 +71,117 @@ pub trait ToConsumerEventData {
     fn to_vendor_json(&self) -> Value;
 }
 
+// ---------------------------------------------------------------------------
+// Source parsing and event type mapping
+// ---------------------------------------------------------------------------
+
+/// Parses a `celerity:{type}:{name}` source string into `(source_type, source_name)`.
+/// Returns `(None, None)` if the source does not follow the `celerity:` convention.
+fn parse_source(source: &str) -> (Option<String>, Option<String>) {
+    let parts: Vec<&str> = source.splitn(3, ':').collect();
+    if parts.len() == 3 && parts[0] == "celerity" {
+        (Some(parts[1].to_string()), Some(parts[2].to_string()))
+    } else {
+        (None, None)
+    }
+}
+
+// Event type mapping and body transformation are delegated to the
+// `body_transform` module which organises provider-specific logic by cloud
+// provider (AWS, GCP, etc.).  See `crate::body_transform`.
+
+/// Applies provider-specific event type mapping and body transformation to a
+/// batch of consumer messages.
+///
+/// For each message that has a `source_type` and `event_name`, this resolves
+/// the Celerity-standard `event_type` and transforms the raw body into the
+/// normalised shape.  The original body is preserved in `vendor.originalBody`
+/// when a transform is applied.
+fn apply_body_transforms(messages: Vec<ConsumerMessage>, provider: &str) -> Vec<ConsumerMessage> {
+    use crate::body_transform;
+
+    messages
+        .into_iter()
+        .map(|mut msg| {
+            let source_type = msg.source_type.as_deref();
+            let event_name = msg.event_name.as_deref();
+
+            // Map provider event name → Celerity event type.
+            if let Some(en) = event_name {
+                msg.event_type = body_transform::map_event_type(provider, en, source_type);
+            }
+
+            // Transform body if a provider transform exists for this source type.
+            if let Some(st) = source_type {
+                if msg.event_type.is_some() {
+                    if let Some(transformed) =
+                        body_transform::transform_body(provider, st, &msg.body)
+                    {
+                        if transformed != msg.body {
+                            msg.vendor.as_object_mut().map(|v| {
+                                v.insert(
+                                    "originalBody".to_string(),
+                                    Value::String(msg.body.clone()),
+                                )
+                            });
+                            msg.body = transformed;
+                        }
+                    }
+                }
+            }
+
+            msg
+        })
+        .collect()
+}
+
 #[cfg(feature = "celerity_local_consumers")]
 impl ToConsumerEventData for Message<celerity_consumer_redis::types::RedisMessageMetadata> {
     fn to_consumer_messages(&self, source: &str) -> Vec<ConsumerMessage> {
+        let mut attrs = serde_json::Map::new();
+
+        if let Some(ref msg_id) = self.metadata.source_message_id {
+            attrs.insert(
+                "sourceMessageId".to_string(),
+                json!({ "dataType": "String", "stringValue": msg_id }),
+            );
+        }
+
+        if let Some(ref subject) = self.metadata.subject {
+            attrs.insert(
+                "subject".to_string(),
+                json!({ "dataType": "String", "stringValue": subject }),
+            );
+        }
+
+        if let Some(ref attributes_json) = self.metadata.attributes {
+            if let Ok(user_attrs) =
+                serde_json::from_str::<std::collections::HashMap<String, String>>(attributes_json)
+            {
+                for (k, v) in user_attrs {
+                    attrs.insert(k, json!({ "dataType": "String", "stringValue": v }));
+                }
+            }
+        }
+
+        if let Some(ref event_name) = self.metadata.event_name {
+            attrs.insert(
+                "eventName".to_string(),
+                json!({ "dataType": "String", "stringValue": event_name }),
+            );
+        }
+
+        let (source_type, source_name) = parse_source(source);
+
         vec![ConsumerMessage {
             message_id: self.message_id.clone(),
             body: self.body.clone().unwrap_or_default(),
             source: source.to_string(),
-            message_attributes: json!({}),
+            source_type,
+            source_name,
+            event_type: None,
+            event_name: self.metadata.event_name.clone(),
+            message_attributes: Value::Object(attrs),
             vendor: json!({
                 "timestamp": self.metadata.timestamp,
                 "messageType": format!("{:?}", self.metadata.message_type),
@@ -95,10 +199,16 @@ impl ToConsumerEventData for Message<celerity_consumer_redis::types::RedisMessag
 #[cfg(feature = "aws_consumers")]
 impl ToConsumerEventData for Message<celerity_consumer_sqs::types::SQSMessageMetadata> {
     fn to_consumer_messages(&self, source: &str) -> Vec<ConsumerMessage> {
+        let (source_type, source_name) = parse_source(source);
+
         vec![ConsumerMessage {
             message_id: self.message_id.clone(),
             body: self.body.clone().unwrap_or_default(),
             source: source.to_string(),
+            source_type,
+            source_name,
+            event_type: None,
+            event_name: None,
             message_attributes: self
                 .metadata
                 .message_attributes
@@ -138,10 +248,15 @@ impl ToConsumerEventData for Message<celerity_consumer_sqs::types::SQSMessageMet
 
 /// Bridges a platform-specific `MessageConsumer<M>` to the metadata-agnostic
 /// `ConsumerEventHandler`. Used for consumers without routing.
+///
+/// After converting platform messages via [`ToConsumerEventData`], the bridge
+/// applies provider-specific body transforms and event type mapping from the
+/// [`crate::body_transform`] module using the configured `provider`.
 pub struct ConsumerHandlerBridge<M: Debug + Clone + Send + Sync> {
     event_handler: Arc<dyn ConsumerEventHandler>,
     handler_tag: String,
     source: String,
+    provider: String,
     _metadata: PhantomData<M>,
 }
 
@@ -150,11 +265,13 @@ impl<M: Debug + Clone + Send + Sync> ConsumerHandlerBridge<M> {
         event_handler: Arc<dyn ConsumerEventHandler>,
         handler_tag: String,
         source: String,
+        provider: String,
     ) -> Self {
         Self {
             event_handler,
             handler_tag,
             source,
+            provider,
             _metadata: PhantomData,
         }
     }
@@ -172,16 +289,23 @@ where
         fields(handler_tag = %self.handler_tag, source = %self.source, otel.status_code = field::Empty)
     )]
     async fn handle(&self, message: &Message<M>) -> Result<(), MessageHandlerError> {
-        let messages = message.to_consumer_messages(&self.source);
+        info!(handler_tag = %self.handler_tag, "consumer handler invocation started");
+        let start = Instant::now();
+        let messages =
+            apply_body_transforms(message.to_consumer_messages(&self.source), &self.provider);
         let event_data = ConsumerEventData {
             messages,
             vendor: message.to_vendor_json(),
         };
-        self.event_handler
+        let result = self
+            .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map(|_| ())
-            .map_err(map_handler_error)
+            .map_err(map_handler_error);
+        let millis = start.elapsed().as_micros() as f64 / 1000.0;
+        info!(handler_tag = %self.handler_tag, "consumer handler processed in {millis:.3} milliseconds");
+        result
     }
 
     #[instrument(
@@ -190,21 +314,28 @@ where
         fields(handler_tag = %self.handler_tag, source = %self.source, batch_size = messages.len(), otel.status_code = field::Empty)
     )]
     async fn handle_batch(&self, messages: &[Message<M>]) -> Result<(), MessageHandlerError> {
+        info!(handler_tag = %self.handler_tag, batch_size = messages.len(), "consumer batch handler invocation started");
+        let start = Instant::now();
         let mut all_messages = Vec::new();
         let mut vendor = json!({});
         for msg in messages {
             all_messages.extend(msg.to_consumer_messages(&self.source));
             vendor = msg.to_vendor_json();
         }
+        let all_messages = apply_body_transforms(all_messages, &self.provider);
         let event_data = ConsumerEventData {
             messages: all_messages,
             vendor,
         };
-        self.event_handler
+        let result = self
+            .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map(|_| ())
-            .map_err(map_handler_error)
+            .map_err(map_handler_error);
+        let millis = start.elapsed().as_micros() as f64 / 1000.0;
+        info!(handler_tag = %self.handler_tag, "consumer batch handler processed in {millis:.3} milliseconds");
+        result
     }
 }
 
@@ -218,6 +349,7 @@ pub struct RoutedConsumerHandlerBridge<M: Debug + Clone + Send + Sync> {
     event_handler: Arc<dyn ConsumerEventHandler>,
     handler_tag: String,
     source: String,
+    provider: String,
     _metadata: PhantomData<M>,
 }
 
@@ -226,11 +358,13 @@ impl<M: Debug + Clone + Send + Sync> RoutedConsumerHandlerBridge<M> {
         event_handler: Arc<dyn ConsumerEventHandler>,
         handler_tag: String,
         source: String,
+        provider: String,
     ) -> Self {
         Self {
             event_handler,
             handler_tag,
             source,
+            provider,
             _metadata: PhantomData,
         }
     }
@@ -248,10 +382,17 @@ where
         fields(handler_tag = %self.handler_tag, source = %self.source, otel.status_code = field::Empty)
     )]
     async fn handle(&self, message: &RoutedMessage<M>) -> Result<(), MessageHandlerError> {
+        info!(handler_tag = %self.handler_tag, "consumer handler invocation started");
+        let start = Instant::now();
+        let (source_type, source_name) = parse_source(&self.source);
         let messages = vec![ConsumerMessage {
             message_id: message.message_id.clone(),
             body: message.body.to_string(),
             source: self.source.clone(),
+            source_type,
+            source_name,
+            event_type: None,
+            event_name: None,
             message_attributes: json!({}),
             vendor: json!({}),
         }];
@@ -259,11 +400,15 @@ where
             messages,
             vendor: json!({}),
         };
-        self.event_handler
+        let result = self
+            .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map(|_| ())
-            .map_err(map_handler_error)
+            .map_err(map_handler_error);
+        let millis = start.elapsed().as_micros() as f64 / 1000.0;
+        info!(handler_tag = %self.handler_tag, "consumer handler processed in {millis:.3} milliseconds");
+        result
     }
 
     #[instrument(
@@ -272,16 +417,23 @@ where
         fields(handler_tag = %self.handler_tag, source = %self.source, otel.status_code = field::Empty)
     )]
     async fn handle_raw_message(&self, message: &Message<M>) -> Result<(), MessageHandlerError> {
-        let messages = message.to_consumer_messages(&self.source);
+        info!(handler_tag = %self.handler_tag, "consumer handler invocation started");
+        let start = Instant::now();
+        let messages =
+            apply_body_transforms(message.to_consumer_messages(&self.source), &self.provider);
         let event_data = ConsumerEventData {
             messages,
             vendor: message.to_vendor_json(),
         };
-        self.event_handler
+        let result = self
+            .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map(|_| ())
-            .map_err(map_handler_error)
+            .map_err(map_handler_error);
+        let millis = start.elapsed().as_micros() as f64 / 1000.0;
+        info!(handler_tag = %self.handler_tag, "consumer handler processed in {millis:.3} milliseconds");
+        result
     }
 
     #[instrument(
@@ -293,21 +445,28 @@ where
         &self,
         messages: &[Message<M>],
     ) -> Result<(), MessageHandlerError> {
+        info!(handler_tag = %self.handler_tag, batch_size = messages.len(), "consumer batch handler invocation started");
+        let start = Instant::now();
         let mut all_messages = Vec::new();
         let mut vendor = json!({});
         for msg in messages {
             all_messages.extend(msg.to_consumer_messages(&self.source));
             vendor = msg.to_vendor_json();
         }
+        let all_messages = apply_body_transforms(all_messages, &self.provider);
         let event_data = ConsumerEventData {
             messages: all_messages,
             vendor,
         };
-        self.event_handler
+        let result = self
+            .event_handler
             .handle_consumer_event(&self.handler_tag, event_data)
             .await
             .map(|_| ())
-            .map_err(map_handler_error)
+            .map_err(map_handler_error);
+        let millis = start.elapsed().as_micros() as f64 / 1000.0;
+        info!(handler_tag = %self.handler_tag, "consumer batch handler processed in {millis:.3} milliseconds");
+        result
     }
 }
 
@@ -361,6 +520,8 @@ where
         )
     )]
     async fn handle(&self, message: &Message<M>) -> Result<(), MessageHandlerError> {
+        info!(handler_tag = %self.handler_tag, schedule_id = %self.schedule_id, "schedule handler invocation started");
+        let start = Instant::now();
         let event_data = ScheduleEventData {
             schedule_id: self.schedule_id.clone(),
             message_id: message.message_id.clone(),
@@ -368,11 +529,15 @@ where
             input: self.input.clone(),
             vendor: message.to_vendor_json(),
         };
-        self.event_handler
+        let result = self
+            .event_handler
             .handle_schedule_event(&self.handler_tag, event_data)
             .await
             .map(|_| ())
-            .map_err(map_handler_error)
+            .map_err(map_handler_error);
+        let millis = start.elapsed().as_micros() as f64 / 1000.0;
+        info!(handler_tag = %self.handler_tag, schedule_id = %self.schedule_id, "schedule handler processed in {millis:.3} milliseconds");
+        result
     }
 
     #[instrument(
@@ -654,10 +819,15 @@ mod tests {
 
     impl ToConsumerEventData for Message<TestMetadata> {
         fn to_consumer_messages(&self, source: &str) -> Vec<ConsumerMessage> {
+            let (source_type, source_name) = parse_source(source);
             vec![ConsumerMessage {
                 message_id: self.message_id.clone(),
                 body: self.body.clone().unwrap_or_default(),
                 source: source.to_string(),
+                source_type,
+                source_name,
+                event_type: None,
+                event_name: None,
                 message_attributes: json!({}),
                 vendor: json!({ "timestamp": self.metadata.timestamp }),
             }]
@@ -685,6 +855,7 @@ mod tests {
             Arc::new(handler),
             "source::queue1::handler1".to_string(),
             "queue1".to_string(),
+            "aws".to_string(),
         );
 
         let msg = test_message();
@@ -700,6 +871,7 @@ mod tests {
             Arc::new(handler),
             "source::queue1::handler1".to_string(),
             "queue1".to_string(),
+            "aws".to_string(),
         );
 
         let messages = vec![test_message(), test_message()];
@@ -753,6 +925,10 @@ mod tests {
                 message_id: "msg-1".to_string(),
                 body: "test body".to_string(),
                 source: "queue1".to_string(),
+                source_type: None,
+                source_name: None,
+                event_type: None,
+                event_name: None,
                 message_attributes: json!({}),
                 vendor: json!({}),
             }],
@@ -849,5 +1025,298 @@ mod tests {
             .await;
         assert!(result.is_ok());
         assert!(consumer_called.load(Ordering::SeqCst));
+    }
+
+    #[cfg(feature = "celerity_local_consumers")]
+    mod redis_consumer_event_data_tests {
+        use super::*;
+        use celerity_consumer_redis::types::{RedisMessageMetadata, RedisMessageType};
+
+        #[test]
+        fn test_topic_envelope_fields_populate_message_attributes() {
+            let msg: Message<RedisMessageMetadata> = Message {
+                message_id: "1709740800123-0".to_string(),
+                body: Some(r#"{"orderId":"123"}"#.to_string()),
+                md5_of_body: None,
+                metadata: RedisMessageMetadata {
+                    timestamp: 1709740800,
+                    message_type: RedisMessageType::Text,
+                    source_message_id: Some("550e8400-e29b-41d4-a716-446655440000".to_string()),
+                    subject: Some("OrderCreated".to_string()),
+                    attributes: Some(r#"{"env":"prod","region":"us-east-1"}"#.to_string()),
+                    ..Default::default()
+                },
+                trace_context: None,
+            };
+
+            let consumer_messages = msg.to_consumer_messages("orders-stream");
+            assert_eq!(consumer_messages.len(), 1);
+
+            let cm = &consumer_messages[0];
+            // messageId remains the Redis stream ID
+            assert_eq!(cm.message_id, "1709740800123-0");
+            assert_eq!(cm.body, r#"{"orderId":"123"}"#);
+            assert_eq!(cm.source, "orders-stream");
+
+            // sourceMessageId from topic envelope
+            assert_eq!(
+                cm.message_attributes["sourceMessageId"]["stringValue"],
+                "550e8400-e29b-41d4-a716-446655440000"
+            );
+            assert_eq!(
+                cm.message_attributes["sourceMessageId"]["dataType"],
+                "String"
+            );
+
+            // subject from topic envelope
+            assert_eq!(
+                cm.message_attributes["subject"]["stringValue"],
+                "OrderCreated"
+            );
+
+            // user-defined attributes from topic envelope
+            assert_eq!(cm.message_attributes["env"]["stringValue"], "prod");
+            assert_eq!(cm.message_attributes["region"]["stringValue"], "us-east-1");
+        }
+
+        #[test]
+        fn test_plain_message_has_empty_attributes() {
+            let msg: Message<RedisMessageMetadata> = Message {
+                message_id: "0-1".to_string(),
+                body: Some("hello".to_string()),
+                md5_of_body: None,
+                metadata: RedisMessageMetadata {
+                    timestamp: 1000,
+                    message_type: RedisMessageType::Text,
+                    ..Default::default()
+                },
+                trace_context: None,
+            };
+
+            let consumer_messages = msg.to_consumer_messages("queue1");
+            let cm = &consumer_messages[0];
+            assert_eq!(cm.message_attributes, json!({}));
+        }
+
+        #[test]
+        fn test_datastore_event_sets_event_type_and_transforms_body() {
+            let msg: Message<RedisMessageMetadata> = Message {
+                message_id: "1709740800456-0".to_string(),
+                body: Some(
+                    r#"{"Keys":{"id":{"S":"123"}},"NewImage":{"id":{"S":"123"},"name":{"S":"John"},"age":{"N":"30"}}}"#
+                        .to_string(),
+                ),
+                md5_of_body: None,
+                metadata: RedisMessageMetadata {
+                    timestamp: 1709740800,
+                    message_type: RedisMessageType::Text,
+                    event_name: Some("INSERT".to_string()),
+                    ..Default::default()
+                },
+                trace_context: None,
+            };
+
+            let raw = msg.to_consumer_messages("celerity:datastore:orders");
+            let consumer_messages = apply_body_transforms(raw, "aws");
+            assert_eq!(consumer_messages.len(), 1);
+
+            let cm = &consumer_messages[0];
+            assert_eq!(cm.source_type.as_deref(), Some("datastore"));
+            assert_eq!(cm.source_name.as_deref(), Some("orders"));
+            assert_eq!(cm.event_type.as_deref(), Some("inserted"));
+
+            // Body should be Celerity-standard shape with unmarshalled attributes
+            let body: Value = serde_json::from_str(&cm.body).unwrap();
+            assert_eq!(body["keys"]["id"], "123");
+            assert_eq!(body["newItem"]["name"], "John");
+            assert_eq!(body["newItem"]["age"], 30);
+
+            // Original body preserved in vendor
+            assert!(cm.vendor.get("originalBody").is_some());
+
+            // eventName still in message attributes
+            assert_eq!(cm.message_attributes["eventName"]["stringValue"], "INSERT");
+        }
+
+        #[test]
+        fn test_bucket_event_sets_event_type_and_transforms_body() {
+            let msg: Message<RedisMessageMetadata> = Message {
+                message_id: "1709740800789-0".to_string(),
+                body: Some(
+                    r#"{"Records":[{"s3":{"bucket":{"name":"uploads"},"object":{"key":"photo.jpg","size":1024,"eTag":"abc123"}}}]}"#
+                        .to_string(),
+                ),
+                md5_of_body: None,
+                metadata: RedisMessageMetadata {
+                    timestamp: 1709740800,
+                    message_type: RedisMessageType::Text,
+                    event_name: Some("s3:ObjectCreated:Put".to_string()),
+                    ..Default::default()
+                },
+                trace_context: None,
+            };
+
+            let raw = msg.to_consumer_messages("celerity:bucket:uploads");
+            let consumer_messages = apply_body_transforms(raw, "aws");
+            assert_eq!(consumer_messages.len(), 1);
+
+            let cm = &consumer_messages[0];
+            assert_eq!(cm.source_type.as_deref(), Some("bucket"));
+            assert_eq!(cm.source_name.as_deref(), Some("uploads"));
+            assert_eq!(cm.event_type.as_deref(), Some("created"));
+
+            // Body should be Celerity-standard shape
+            let body: Value = serde_json::from_str(&cm.body).unwrap();
+            assert_eq!(body["key"], "photo.jpg");
+            assert_eq!(body["size"], 1024);
+            assert_eq!(body["eTag"], "abc123");
+
+            // Original body preserved in vendor
+            assert!(cm.vendor.get("originalBody").is_some());
+
+            // eventName still in message attributes
+            assert_eq!(
+                cm.message_attributes["eventName"]["stringValue"],
+                "s3:ObjectCreated:Put"
+            );
+        }
+
+        #[test]
+        fn test_event_name_absent_when_not_set() {
+            let msg: Message<RedisMessageMetadata> = Message {
+                message_id: "0-1".to_string(),
+                body: Some("hello".to_string()),
+                md5_of_body: None,
+                metadata: RedisMessageMetadata {
+                    timestamp: 1000,
+                    message_type: RedisMessageType::Text,
+                    ..Default::default()
+                },
+                trace_context: None,
+            };
+
+            let consumer_messages = msg.to_consumer_messages("queue1");
+            let cm = &consumer_messages[0];
+            assert!(cm.message_attributes.get("eventName").is_none());
+            assert!(cm.source_type.is_none());
+            assert!(cm.source_name.is_none());
+            assert!(cm.event_type.is_none());
+        }
+
+        #[test]
+        fn test_plain_celerity_source_sets_source_type_and_name() {
+            let msg: Message<RedisMessageMetadata> = Message {
+                message_id: "0-1".to_string(),
+                body: Some("hello".to_string()),
+                md5_of_body: None,
+                metadata: RedisMessageMetadata {
+                    timestamp: 1000,
+                    message_type: RedisMessageType::Text,
+                    ..Default::default()
+                },
+                trace_context: None,
+            };
+
+            let consumer_messages = msg.to_consumer_messages("celerity:queue:my-queue");
+            let cm = &consumer_messages[0];
+            assert_eq!(cm.source_type.as_deref(), Some("queue"));
+            assert_eq!(cm.source_name.as_deref(), Some("my-queue"));
+            assert!(cm.event_type.is_none());
+            // Body unchanged for queue sources
+            assert_eq!(cm.body, "hello");
+        }
+
+        #[test]
+        fn test_datastore_modify_event_with_old_and_new_image() {
+            let msg: Message<RedisMessageMetadata> = Message {
+                message_id: "0-1".to_string(),
+                body: Some(
+                    r#"{"Keys":{"userId":{"S":"u1"}},"OldImage":{"userId":{"S":"u1"},"age":{"N":"29"}},"NewImage":{"userId":{"S":"u1"},"age":{"N":"30"}}}"#
+                        .to_string(),
+                ),
+                md5_of_body: None,
+                metadata: RedisMessageMetadata {
+                    timestamp: 1000,
+                    message_type: RedisMessageType::Text,
+                    event_name: Some("MODIFY".to_string()),
+                    ..Default::default()
+                },
+                trace_context: None,
+            };
+
+            let raw = msg.to_consumer_messages("celerity:datastore:users");
+            let consumer_messages = apply_body_transforms(raw, "aws");
+            let cm = &consumer_messages[0];
+            assert_eq!(cm.event_type.as_deref(), Some("modified"));
+
+            let body: Value = serde_json::from_str(&cm.body).unwrap();
+            assert_eq!(body["keys"]["userId"], "u1");
+            assert_eq!(body["oldItem"]["age"], 29);
+            assert_eq!(body["newItem"]["age"], 30);
+        }
+
+        #[test]
+        fn test_bucket_delete_event() {
+            let msg: Message<RedisMessageMetadata> = Message {
+                message_id: "0-1".to_string(),
+                body: Some(
+                    r#"{"Records":[{"s3":{"bucket":{"name":"uploads"},"object":{"key":"photo.jpg"}}}]}"#
+                        .to_string(),
+                ),
+                md5_of_body: None,
+                metadata: RedisMessageMetadata {
+                    timestamp: 1000,
+                    message_type: RedisMessageType::Text,
+                    event_name: Some("s3:ObjectRemoved:Delete".to_string()),
+                    ..Default::default()
+                },
+                trace_context: None,
+            };
+
+            let raw = msg.to_consumer_messages("celerity:bucket:uploads");
+            let consumer_messages = apply_body_transforms(raw, "aws");
+            let cm = &consumer_messages[0];
+            assert_eq!(cm.event_type.as_deref(), Some("deleted"));
+
+            let body: Value = serde_json::from_str(&cm.body).unwrap();
+            assert_eq!(body["key"], "photo.jpg");
+            assert!(body.get("size").is_none());
+            assert!(body.get("eTag").is_none());
+        }
+    }
+
+    mod helper_function_tests {
+        use super::*;
+
+        #[test]
+        fn test_parse_source_celerity_format() {
+            let (st, sn) = parse_source("celerity:bucket:uploads");
+            assert_eq!(st.as_deref(), Some("bucket"));
+            assert_eq!(sn.as_deref(), Some("uploads"));
+        }
+
+        #[test]
+        fn test_parse_source_with_colons_in_name() {
+            let (st, sn) = parse_source("celerity:datastore:my:special:table");
+            assert_eq!(st.as_deref(), Some("datastore"));
+            assert_eq!(sn.as_deref(), Some("my:special:table"));
+        }
+
+        #[test]
+        fn test_parse_source_non_celerity() {
+            let (st, sn) = parse_source("my-queue");
+            assert!(st.is_none());
+            assert!(sn.is_none());
+        }
+
+        #[test]
+        fn test_parse_source_wrong_prefix() {
+            let (st, sn) = parse_source("other:bucket:uploads");
+            assert!(st.is_none());
+            assert!(sn.is_none());
+        }
+
+        // Transform, event type mapping, and unmarshalling tests are in
+        // `crate::body_transform::aws_s3` and `crate::body_transform::aws_dynamodb`.
     }
 }

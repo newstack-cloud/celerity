@@ -3,6 +3,7 @@ pub mod auth_custom;
 pub mod auth_http;
 mod auth_jwt;
 pub mod blueprint_helpers;
+pub mod body_transform;
 pub mod config;
 pub mod consts;
 pub mod consumer_handler;

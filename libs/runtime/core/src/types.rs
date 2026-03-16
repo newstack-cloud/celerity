@@ -90,6 +90,17 @@ pub struct ConsumerMessage {
     pub message_id: String,
     pub body: String,
     pub source: String,
+    #[serde(rename = "sourceType", skip_serializing_if = "Option::is_none")]
+    pub source_type: Option<String>,
+    #[serde(rename = "sourceName", skip_serializing_if = "Option::is_none")]
+    pub source_name: Option<String>,
+    #[serde(rename = "eventType", skip_serializing_if = "Option::is_none")]
+    pub event_type: Option<String>,
+    /// Raw provider event name (e.g. `"s3:ObjectCreated:Put"`, `"INSERT"`).
+    /// Used internally by the handler bridge to resolve `event_type` via the
+    /// provider-specific body transform module.  Not serialised to the SDK.
+    #[serde(skip)]
+    pub event_name: Option<String>,
     #[serde(rename = "messageAttributes")]
     pub message_attributes: Value,
     pub vendor: Value,
