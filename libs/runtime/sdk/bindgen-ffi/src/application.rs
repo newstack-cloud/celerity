@@ -59,6 +59,7 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 log_format: None,
                 metrics_enabled: false,
                 trace_sample_ratio: 0.1,
+                deploy_target: std::env::var("CELERITY_DEPLOY_TARGET").ok(),
             },
             Box::new(ProcessEnvVars::new()),
         ),
