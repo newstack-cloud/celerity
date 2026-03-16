@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.2](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.1...runtime-sdk-node/v0.3.2) (2026-03-16)
+
+
+### Bug Fixes
+
+* **lib-rt-sdk-node:** add missing events config and consumer message fields ([c2d4ec4](https://github.com/newstack-cloud/celerity/commit/c2d4ec48bed61ed98728f517cfb6455f053da3c9))
+
+
+### Dependencies
+
+* **runtime-sdk-node:** update core dependencies ([55b2c23](https://github.com/newstack-cloud/celerity/commit/55b2c23b184054edade20ec3e19dd7e9ed340575))
+
 ## [0.3.1](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.0...runtime-sdk-node/v0.3.1) (2026-02-25)
 
 
