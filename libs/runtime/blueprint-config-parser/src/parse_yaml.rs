@@ -7,9 +7,11 @@ use crate::{
     blueprint::{
         BlueprintLinkSelector, BlueprintScalarValue, BlueprintVariable, CelerityResourceType,
         EventSourceType, BLUELINK_BLUEPRINT_V2025_11_02, CELERITY_API_RESOURCE_TYPE,
+        CELERITY_BUCKET_RESOURCE_TYPE, CELERITY_CONFIG_RESOURCE_TYPE,
         CELERITY_CONSUMER_RESOURCE_TYPE, CELERITY_DATASTORE_RESOURCE_TYPE,
         CELERITY_HANDLER_CONFIG_RESOURCE_TYPE, CELERITY_HANDLER_RESOURCE_TYPE,
-        CELERITY_SCHEDULE_RESOURCE_TYPE, CELERITY_VPC_RESOURCE_TYPE,
+        CELERITY_QUEUE_RESOURCE_TYPE, CELERITY_SCHEDULE_RESOURCE_TYPE,
+        CELERITY_TOPIC_RESOURCE_TYPE, CELERITY_VPC_RESOURCE_TYPE,
         CELERITY_WORKFLOW_RESOURCE_TYPE,
     },
     blueprint_with_subs::{
@@ -305,11 +307,15 @@ fn validate_resource_type(
 ) -> Result<CelerityResourceType, BlueprintParseError> {
     match resource_type {
         CELERITY_API_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityApi),
+        CELERITY_BUCKET_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityBucket),
+        CELERITY_CONFIG_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityConfig),
         CELERITY_CONSUMER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityConsumer),
         CELERITY_DATASTORE_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityDatastore),
-        CELERITY_SCHEDULE_RESOURCE_TYPE => Ok(CelerityResourceType::CeleritySchedule),
         CELERITY_HANDLER_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandler),
         CELERITY_HANDLER_CONFIG_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityHandlerConfig),
+        CELERITY_QUEUE_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityQueue),
+        CELERITY_SCHEDULE_RESOURCE_TYPE => Ok(CelerityResourceType::CeleritySchedule),
+        CELERITY_TOPIC_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityTopic),
         CELERITY_VPC_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityVpc),
         CELERITY_WORKFLOW_RESOURCE_TYPE => Ok(CelerityResourceType::CelerityWorkflow),
         _ => Err(BlueprintParseError::UnsupportedResourceType(
@@ -1834,12 +1840,9 @@ fn validate_celerity_vpc_spec(
                         ));
                     }
                 }
-                _ => {
-                    return Err(BlueprintParseError::YamlFormatError(format!(
-                        "Unsupported key for VPC spec: {}",
-                        key_str
-                    )));
-                }
+                // Ignore unknown keys — other tools (CLI, deploy engine)
+                // may add fields the runtime does not need.
+                _ => {}
             }
         }
     }
@@ -1934,12 +1937,9 @@ fn validate_celerity_datastore_spec(
                         ));
                     }
                 }
-                _ => {
-                    return Err(BlueprintParseError::YamlFormatError(format!(
-                        "Unsupported key for Datastore spec: {}",
-                        key_str
-                    )));
-                }
+                // Ignore unknown keys — other tools (CLI, deploy engine)
+                // may add fields the runtime does not need.
+                _ => {}
             }
         }
     }
