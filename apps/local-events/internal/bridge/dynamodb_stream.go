@@ -116,6 +116,11 @@ func (p *DynamoDBStreamPoller) pollShards(
 	targetStream string,
 	logger *zap.Logger,
 ) {
+	// Track the last processed sequence number per shard so that restarts
+	// (e.g. after a transient GetRecords error or shard rotation) resume
+	// where we left off instead of re-reading from TrimHorizon.
+	lastSeqByShardID := make(map[string]*string)
+
 	for {
 		shards, err := p.describeShards(ctx, client, streamARN)
 		if err != nil {
@@ -138,7 +143,10 @@ func (p *DynamoDBStreamPoller) pollShards(
 			if shard.ShardId == nil {
 				continue
 			}
-			p.pollShard(ctx, client, streamARN, *shard.ShardId, targetStream, logger)
+			lastSeq := p.pollShard(ctx, client, streamARN, *shard.ShardId, targetStream, logger, lastSeqByShardID[*shard.ShardId])
+			if lastSeq != nil {
+				lastSeqByShardID[*shard.ShardId] = lastSeq
+			}
 			if ctx.Err() != nil {
 				return
 			}
@@ -167,13 +175,19 @@ func (p *DynamoDBStreamPoller) pollShard(
 	shardID string,
 	targetStream string,
 	logger *zap.Logger,
-) {
+	afterSequenceNumber *string,
+) *string {
 	logger = logger.With(zap.String("shard", shardID))
 
-	iterator, err := p.getShardIterator(ctx, client, streamARN, shardID)
+	// Track the last processed sequence number so that iterator refreshes
+	// and restarts (from the outer pollShards loop) resume where we left off
+	// instead of re-reading from the beginning of the shard.
+	lastSequenceNumber := afterSequenceNumber
+
+	iterator, err := p.getShardIterator(ctx, client, streamARN, shardID, afterSequenceNumber)
 	if err != nil {
 		logger.Error("GetShardIterator failed", zap.Error(err))
-		return
+		return lastSequenceNumber
 	}
 
 	iteratorCreated := time.Now()
@@ -184,15 +198,15 @@ func (p *DynamoDBStreamPoller) pollShard(
 		select {
 		case <-ctx.Done():
 			logger.Info("shard poller stopped")
-			return
+			return lastSequenceNumber
 		case <-ticker.C:
 		}
 
 		if time.Since(iteratorCreated) > iteratorRefreshInterval {
-			iterator, err = p.getShardIterator(ctx, client, streamARN, shardID)
+			iterator, err = p.getShardIterator(ctx, client, streamARN, shardID, lastSequenceNumber)
 			if err != nil {
 				logger.Error("failed to refresh shard iterator", zap.Error(err))
-				return
+				return lastSequenceNumber
 			}
 			iteratorCreated = time.Now()
 		}
@@ -202,11 +216,14 @@ func (p *DynamoDBStreamPoller) pollShard(
 		})
 		if err != nil {
 			logger.Error("GetRecords failed", zap.Error(err))
-			return
+			return lastSequenceNumber
 		}
 
 		for _, record := range out.Records {
 			p.writeRecord(ctx, record, targetStream, logger)
+			if record.Dynamodb != nil && record.Dynamodb.SequenceNumber != nil {
+				lastSequenceNumber = record.Dynamodb.SequenceNumber
+			}
 		}
 
 		iterator = out.NextShardIterator
@@ -214,6 +231,7 @@ func (p *DynamoDBStreamPoller) pollShard(
 
 	// NextShardIterator is nil — shard is closed (uncommon in DynamoDB Local).
 	logger.Info("shard closed")
+	return lastSequenceNumber
 }
 
 func (p *DynamoDBStreamPoller) getShardIterator(
@@ -221,12 +239,20 @@ func (p *DynamoDBStreamPoller) getShardIterator(
 	client *dynamodbstreams.Client,
 	streamARN string,
 	shardID string,
+	afterSequenceNumber *string,
 ) (*string, error) {
-	out, err := client.GetShardIterator(ctx, &dynamodbstreams.GetShardIteratorInput{
-		StreamArn:         aws.String(streamARN),
-		ShardId:           aws.String(shardID),
-		ShardIteratorType: streamtypes.ShardIteratorTypeTrimHorizon,
-	})
+	input := &dynamodbstreams.GetShardIteratorInput{
+		StreamArn: aws.String(streamARN),
+		ShardId:   aws.String(shardID),
+	}
+	if afterSequenceNumber != nil {
+		// Resume after the last processed record to avoid re-reading.
+		input.ShardIteratorType = streamtypes.ShardIteratorTypeAfterSequenceNumber
+		input.SequenceNumber = afterSequenceNumber
+	} else {
+		input.ShardIteratorType = streamtypes.ShardIteratorTypeTrimHorizon
+	}
+	out, err := client.GetShardIterator(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +265,11 @@ func (p *DynamoDBStreamPoller) writeRecord(
 	targetStream string,
 	logger *zap.Logger,
 ) {
-	body, err := json.Marshal(record)
+	// Build the body from just the StreamRecord part using DynamoDB JSON
+	// format ({"S":"value"}) so the runtime's body transform can parse it.
+	// json.Marshal on the Go SDK types doesn't produce the DynamoDB wire
+	// format because AttributeValue is an interface without JSON tags.
+	body, err := json.Marshal(marshalStreamRecord(record.Dynamodb))
 	if err != nil {
 		logger.Error("failed to marshal stream record", zap.Error(err))
 		return
@@ -266,6 +296,68 @@ func (p *DynamoDBStreamPoller) writeRecord(
 		zap.String("event", eventName),
 		zap.String("stream", targetStream),
 	)
+}
+
+// marshalStreamRecord converts a DynamoDB StreamRecord into a map with
+// Keys, NewImage, OldImage in DynamoDB JSON attribute format.
+func marshalStreamRecord(sr *streamtypes.StreamRecord) map[string]any {
+	if sr == nil {
+		return map[string]any{}
+	}
+	result := make(map[string]any)
+	if sr.Keys != nil {
+		result["Keys"] = marshalAttributeMap(sr.Keys)
+	}
+	if sr.NewImage != nil {
+		result["NewImage"] = marshalAttributeMap(sr.NewImage)
+	}
+	if sr.OldImage != nil {
+		result["OldImage"] = marshalAttributeMap(sr.OldImage)
+	}
+	return result
+}
+
+// marshalAttributeMap converts a DynamoDB attribute map to the standard
+// DynamoDB JSON format (e.g. {"userId": {"S": "123"}}).
+func marshalAttributeMap(attrs map[string]streamtypes.AttributeValue) map[string]any {
+	result := make(map[string]any, len(attrs))
+	for k, v := range attrs {
+		result[k] = marshalAttributeValue(v)
+	}
+	return result
+}
+
+// marshalAttributeValue converts a single DynamoDB AttributeValue interface
+// to the DynamoDB JSON wire format (e.g. {"S": "hello"}, {"N": "42"}).
+func marshalAttributeValue(av streamtypes.AttributeValue) map[string]any {
+	switch v := av.(type) {
+	case *streamtypes.AttributeValueMemberS:
+		return map[string]any{"S": v.Value}
+	case *streamtypes.AttributeValueMemberN:
+		return map[string]any{"N": v.Value}
+	case *streamtypes.AttributeValueMemberBOOL:
+		return map[string]any{"BOOL": v.Value}
+	case *streamtypes.AttributeValueMemberNULL:
+		return map[string]any{"NULL": true}
+	case *streamtypes.AttributeValueMemberB:
+		return map[string]any{"B": v.Value}
+	case *streamtypes.AttributeValueMemberL:
+		items := make([]any, len(v.Value))
+		for i, item := range v.Value {
+			items[i] = marshalAttributeValue(item)
+		}
+		return map[string]any{"L": items}
+	case *streamtypes.AttributeValueMemberM:
+		return map[string]any{"M": marshalAttributeMap(v.Value)}
+	case *streamtypes.AttributeValueMemberSS:
+		return map[string]any{"SS": v.Value}
+	case *streamtypes.AttributeValueMemberNS:
+		return map[string]any{"NS": v.Value}
+	case *streamtypes.AttributeValueMemberBS:
+		return map[string]any{"BS": v.Value}
+	default:
+		return nil
+	}
 }
 
 func eventNameFromRecord(record streamtypes.Record) string {

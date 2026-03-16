@@ -102,7 +102,11 @@ func (l *MinIOListener) writeEvent(
 	targetStream string,
 	logger *zap.Logger,
 ) {
-	body, err := json.Marshal(record)
+	// Wrap the individual record in an S3-style {"Records":[...]} envelope
+	// so the runtime's body transform can process it uniformly, matching the
+	// format produced by AWS S3 event notifications.
+	envelope := map[string]any{"Records": []any{record}}
+	body, err := json.Marshal(envelope)
 	if err != nil {
 		logger.Error("failed to marshal notification event", zap.Error(err))
 		return

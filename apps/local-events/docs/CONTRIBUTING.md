@@ -49,6 +49,23 @@ Tags follow the pattern: `apps/local-events/vX.Y.Z`
 
 Example: `apps/local-events/v1.0.0`
 
+## Building and testing locally with the CLI
+
+To test local changes with `celerity dev run`, build the Docker image and tag it with the version the CLI expects. The version is defined in `apps/cli/internal/compose/consts.go` (`localEventsImageVersion`).
+
+```bash
+# From apps/local-events/
+docker build -t ghcr.io/newstack-cloud/celerity-local-events:<version> .
+```
+
+For example, if the CLI currently points to `0.4.0`:
+
+```bash
+docker build -t ghcr.io/newstack-cloud/celerity-local-events:0.4.0 .
+```
+
+The CLI will use the locally tagged image instead of pulling from GHCR.
+
 ## Commit scope
 
 **local-events**
