@@ -10,6 +10,7 @@
 
 ### Dependencies
 
+* **runtime-sdk-node:** update core dependencies ([67e7525](https://github.com/newstack-cloud/celerity/commit/67e7525444158563a60fadd2ed93e8daa99f66a5))
 * **runtime-sdk-node:** update core dependencies ([55b2c23](https://github.com/newstack-cloud/celerity/commit/55b2c23b184054edade20ec3e19dd7e9ed340575))
 
 ## [0.3.1](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.0...runtime-sdk-node/v0.3.1) (2026-02-25)
