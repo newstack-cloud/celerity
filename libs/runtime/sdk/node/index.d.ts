@@ -344,6 +344,18 @@ export interface CoreCustomHandlersConfig {
   handlers: Array<CoreCustomHandlerDefinition>
 }
 
+/** Configuration for an individual event consumer (stream or event trigger). */
+export interface CoreEventConsumerConfig {
+  /** The name of the consumer resource in the blueprint. */
+  consumerName: string
+  /** A unique identifier for the event source (e.g. datastore or bucket resource name). */
+  sourceId: string
+  /** Maximum number of messages to process in a single batch. */
+  batchSize?: number
+  /** List of event handler definitions for this event consumer. */
+  handlers: Array<CoreEventHandlerDefinition>
+}
+
 /** Definition of an event handler for consumers or schedules. */
 export interface CoreEventHandlerDefinition {
   /** The name of the handler. */
@@ -358,6 +370,12 @@ export interface CoreEventHandlerDefinition {
   tracingEnabled: boolean
   /** Optional routing key for the handler. */
   route?: string
+}
+
+/** Configuration for event-driven consumers (datastore streams, bucket events). */
+export interface CoreEventsConfig {
+  /** List of event consumer configurations parsed from the blueprint. */
+  events: Array<CoreEventConsumerConfig>
 }
 
 /** Definition of a guard handler. */
@@ -405,6 +423,11 @@ export interface CoreRuntimeAppConfig {
   api?: CoreApiConfig
   /** Configuration for event source consumers, or undefined if none are configured. */
   consumers?: CoreConsumersConfig
+  /**
+   * Configuration for event-driven consumers (datastore streams, bucket events),
+   * or undefined if none are configured.
+   */
+  events?: CoreEventsConfig
   /** Configuration for scheduled event handlers, or undefined if none are configured. */
   schedules?: CoreSchedulesConfig
   /** Configuration for custom handler invocations, or undefined if none are configured. */
@@ -558,6 +581,18 @@ export interface JsConsumerMessage {
   body: string
   /** The source of the message (e.g. queue URL or stream name). */
   source: string
+  /**
+   * The type of source parsed from the `celerity:{type}:{name}` format
+   * (e.g. "bucket", "datastore", "queue", "topic").
+   */
+  sourceType?: string
+  /** The name of the source parsed from the `celerity:{type}:{name}` format. */
+  sourceName?: string
+  /**
+   * The Celerity-standard event type (e.g. "created", "deleted", "inserted", "modified").
+   * Present for bucket and datastore consumers only.
+   */
+  eventType?: string
   /** Vendor-specific message attributes. */
   messageAttributes: any
   /** Vendor-specific metadata for the message. */

@@ -26,9 +26,9 @@ use celerity_runtime_core::{
   auth_http::AuthContext,
   config::{
     ApiConfig, AppConfig, ClientIpSource, ConsumerConfig, ConsumersConfig, CustomHandlerDefinition,
-    CustomHandlersConfig, EventHandlerDefinition, GuardHandlerDefinition, GuardsConfig, HttpConfig,
-    HttpHandlerDefinition, RuntimeConfig, ScheduleConfig, SchedulesConfig, WebSocketConfig,
-    WebSocketHandlerDefinition,
+    CustomHandlersConfig, EventConfig, EventHandlerDefinition, EventsConfig,
+    GuardHandlerDefinition, GuardsConfig, HttpConfig, HttpHandlerDefinition, RuntimeConfig,
+    ScheduleConfig, SchedulesConfig, WebSocketConfig, WebSocketHandlerDefinition,
   },
   consts::{
     DEFAULT_RESOURCE_STORE_CACHE_ENTRY_TTL, DEFAULT_RESOURCE_STORE_CLEANUP_INTERVAL,
@@ -175,6 +175,9 @@ pub struct CoreRuntimeAppConfig {
   pub api: Option<CoreApiConfig>,
   /// Configuration for event source consumers, or undefined if none are configured.
   pub consumers: Option<CoreConsumersConfig>,
+  /// Configuration for event-driven consumers (datastore streams, bucket events),
+  /// or undefined if none are configured.
+  pub events: Option<CoreEventsConfig>,
   /// Configuration for scheduled event handlers, or undefined if none are configured.
   pub schedules: Option<CoreSchedulesConfig>,
   /// Configuration for custom handler invocations, or undefined if none are configured.
@@ -185,11 +188,13 @@ impl From<AppConfig> for CoreRuntimeAppConfig {
   fn from(app_config: AppConfig) -> Self {
     let api = app_config.api.map(|api_config| api_config.into());
     let consumers = app_config.consumers.map(|c| c.into());
+    let events = app_config.events.map(|e| e.into());
     let schedules = app_config.schedules.map(|s| s.into());
     let custom_handlers = app_config.custom_handlers.map(|ch| ch.into());
     Self {
       api,
       consumers,
+      events,
       schedules,
       custom_handlers,
     }
@@ -369,6 +374,53 @@ impl From<EventHandlerDefinition> for CoreEventHandlerDefinition {
       timeout: h.timeout,
       tracing_enabled: h.tracing_enabled,
       route: h.route,
+    }
+  }
+}
+
+/// Configuration for event-driven consumers (datastore streams, bucket events).
+#[napi(object)]
+pub struct CoreEventsConfig {
+  /// List of event consumer configurations parsed from the blueprint.
+  pub events: Vec<CoreEventConsumerConfig>,
+}
+
+impl From<EventsConfig> for CoreEventsConfig {
+  fn from(e: EventsConfig) -> Self {
+    Self {
+      events: e.events.into_iter().map(|ec| ec.into()).collect(),
+    }
+  }
+}
+
+/// Configuration for an individual event consumer (stream or event trigger).
+#[napi(object)]
+pub struct CoreEventConsumerConfig {
+  /// The name of the consumer resource in the blueprint.
+  pub consumer_name: String,
+  /// A unique identifier for the event source (e.g. datastore or bucket resource name).
+  pub source_id: String,
+  /// Maximum number of messages to process in a single batch.
+  pub batch_size: Option<i64>,
+  /// List of event handler definitions for this event consumer.
+  pub handlers: Vec<CoreEventHandlerDefinition>,
+}
+
+impl From<EventConfig> for CoreEventConsumerConfig {
+  fn from(ec: EventConfig) -> Self {
+    match ec {
+      EventConfig::EventTrigger(cfg) => Self {
+        consumer_name: cfg.consumer_name,
+        source_id: cfg.queue_id,
+        batch_size: cfg.batch_size,
+        handlers: cfg.handlers.into_iter().map(|h| h.into()).collect(),
+      },
+      EventConfig::Stream(cfg) => Self {
+        consumer_name: cfg.consumer_name,
+        source_id: cfg.stream_id,
+        batch_size: cfg.batch_size,
+        handlers: cfg.handlers.into_iter().map(|h| h.into()).collect(),
+      },
     }
   }
 }
@@ -1251,6 +1303,7 @@ impl CoreRuntimeApplication {
       log_format,
       metrics_enabled: runtime_config.metrics_enabled.unwrap_or(false),
       trace_sample_ratio: runtime_config.trace_sample_ratio.unwrap_or(0.1),
+      deploy_target: std::env::var("CELERITY_DEPLOY_TARGET").ok(),
     };
     let inner = Application::new(native_runtime_config, Box::new(ProcessEnvVars::new()));
     CoreRuntimeApplication {

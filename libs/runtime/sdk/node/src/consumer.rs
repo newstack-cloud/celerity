@@ -64,6 +64,14 @@ pub struct JsConsumerMessage {
   pub body: String,
   /// The source of the message (e.g. queue URL or stream name).
   pub source: String,
+  /// The type of source parsed from the `celerity:{type}:{name}` format
+  /// (e.g. "bucket", "datastore", "queue", "topic").
+  pub source_type: Option<String>,
+  /// The name of the source parsed from the `celerity:{type}:{name}` format.
+  pub source_name: Option<String>,
+  /// The Celerity-standard event type (e.g. "created", "deleted", "inserted", "modified").
+  /// Present for bucket and datastore consumers only.
+  pub event_type: Option<String>,
   /// Vendor-specific message attributes.
   pub message_attributes: serde_json::Value,
   /// Vendor-specific metadata for the message.
@@ -126,6 +134,9 @@ impl JsConsumerEventInput {
           message_id: m.message_id,
           body: m.body,
           source: m.source,
+          source_type: m.source_type,
+          source_name: m.source_name,
+          event_type: m.event_type,
           message_attributes: m.message_attributes,
           vendor: m.vendor,
         })
