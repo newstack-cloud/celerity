@@ -56,7 +56,7 @@ COPY --from=runtime sdk/ ./sdk/
 # Install napi-cli and build the native addon for this platform
 WORKDIR /build/sdk/node
 RUN npm install
-RUN npx napi build --platform
+RUN npx napi build --platform --features celerity_local_consumers
 
 # -----------------------------------------------------------------------------
 # Stage 2: Resolve NAPI source (rust-builder by default, or a pre-built image)
@@ -88,9 +88,12 @@ COPY --from=deps /opt/celerity/package.json ./package.json
 COPY --from=deps /opt/celerity/.yarnrc.yml ./.yarnrc.yml
 
 # Override with locally built SDK packages (from --build-context sdk=...)
+COPY --from=sdk common/dist/ ./node_modules/@celerity-sdk/common/dist/
 COPY --from=sdk types/dist/ ./node_modules/@celerity-sdk/types/dist/
 COPY --from=sdk core/dist/ ./node_modules/@celerity-sdk/core/dist/
+COPY --from=sdk config/dist/ ./node_modules/@celerity-sdk/config/dist/
 COPY --from=sdk cli/dist/ ./node_modules/@celerity-sdk/cli/dist/
+COPY --from=sdk telemetry/dist/ ./node_modules/@celerity-sdk/telemetry/dist/
 
 # Override the runtime NAPI package with the pre-built version
 COPY --from=napi /build/sdk/node/index.js ./node_modules/@celerity-sdk/runtime/index.js

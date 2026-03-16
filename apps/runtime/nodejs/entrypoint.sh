@@ -14,12 +14,12 @@ case "${1}" in
   dev)
     # Dev mode: file watching with restart on changes + SWC for TypeScript support
     APP_DIR="${CELERITY_APP_DIR:-${RUNTIME_DIR}/app}"
-    echo "[celerity-runtime] Dev mode: watching ${APP_DIR} for changes"
+    echo "[celerity-runtime] Dev mode: watching ${APP_DIR}/src for changes"
     exec node \
       --import @swc-node/register/esm-register \
       --import "${RUNTIME_DIR}/register-hooks.mjs" \
       --import @celerity-sdk/telemetry/setup \
-      --watch-path="${APP_DIR}" \
+      --watch-path="${APP_DIR}/src" \
       "${RUNTIME_DIR}/index.mjs"
     ;;
   *)

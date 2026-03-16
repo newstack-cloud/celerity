@@ -5,18 +5,26 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@celerity-sdk/common@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/common@npm:0.3.1"
-  checksum: 10c0/459d40b7c124ea0a7670541d7c9d7a833da175fff3499486e0995871339e368e42c916121da89ccd2d63ea821e576dbff02a2a5b29da8ff1cd5bcc37d8d4d4d5
+"@celerity-sdk/common@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@celerity-sdk/common@npm:0.4.0"
+  checksum: 10c0/40e1126d7a28b958e6f3a1641cbc0f02ac8643da1492ea69284d11fcae5147031bde446687665565a5a65c7ec2f9c609b48ebcf1a6c8b2b2548a64f288e9ce51
   languageName: node
   linkType: hard
 
-"@celerity-sdk/config@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/config@npm:0.3.1"
+"@celerity-sdk/common@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@celerity-sdk/common@npm:0.5.0"
+  checksum: 10c0/84fbebe4bd3373e3308ba1edb7842d974350708d768d207053b54b2b27f81cbb3bfa3e2b824e53c7081a6fd4822832026257acce73ddd0f17a6c925f3f927127
+  languageName: node
+  linkType: hard
+
+"@celerity-sdk/config@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@celerity-sdk/config@npm:0.4.0"
   dependencies:
-    "@celerity-sdk/types": "npm:^0.3.1"
+    "@celerity-sdk/common": "npm:^0.4.0"
+    "@celerity-sdk/types": "npm:^0.4.0"
     debug: "npm:^4.4.0"
   peerDependencies:
     "@aws-sdk/client-secrets-manager": ^3.0.0
@@ -29,104 +37,127 @@ __metadata:
       optional: true
     ioredis:
       optional: true
-  checksum: 10c0/b3586578165514f1ce4da9e81615d49ad200f37e2cae46a3306ac07527b0fe5bacfcc2f932cd0cab1b4008ce1c49f1f396c9f5a1c6cd6f739b822ff5946a9171
+  checksum: 10c0/120d22c58602eb1da4fe9fa3598daf116601af6dcd6bd871ffe9e1f50e1d320cbf30bdcf4b0e56041c9b34e29b6a32c91930050c43ff26b4cbed29b858a5293b
   languageName: node
   linkType: hard
 
-"@celerity-sdk/core@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/core@npm:0.3.1"
+"@celerity-sdk/config@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@celerity-sdk/config@npm:0.5.0"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.3.1"
-    "@celerity-sdk/config": "npm:^0.3.1"
-    "@celerity-sdk/types": "npm:^0.3.1"
+    "@celerity-sdk/common": "npm:^0.5.0"
+    "@celerity-sdk/types": "npm:^0.5.0"
+    debug: "npm:^4.4.0"
+  peerDependencies:
+    "@aws-sdk/client-secrets-manager": ^3.0.0
+    "@aws-sdk/client-ssm": ^3.0.0
+    ioredis: ^5.0.0
+    reflect-metadata: ^0.2.0
+  peerDependenciesMeta:
+    "@aws-sdk/client-secrets-manager":
+      optional: true
+    "@aws-sdk/client-ssm":
+      optional: true
+    ioredis:
+      optional: true
+  checksum: 10c0/4180eff52f8354238fd25cffbc710cd8a8ae73a6b5cf83e6f2f42f5ea97524baca89f9b35b05164af021bf2e8ca98ac632f8496b9cdad47b2c8f26b574ab40cc
+  languageName: node
+  linkType: hard
+
+"@celerity-sdk/core@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@celerity-sdk/core@npm:0.4.0"
+  dependencies:
+    "@celerity-sdk/common": "npm:^0.4.0"
+    "@celerity-sdk/config": "npm:^0.4.0"
+    "@celerity-sdk/types": "npm:^0.4.0"
     debug: "npm:^4.4.0"
     reflect-metadata: "npm:^0.2.0"
   peerDependencies:
-    "@celerity-sdk/runtime": ^0.2.3
+    "@celerity-sdk/runtime": ^0.3.1
   peerDependenciesMeta:
     "@celerity-sdk/runtime":
       optional: true
-  checksum: 10c0/1e4604e843d4a4aac5a8e0d28656280ab7c5ccbe17f5368f0eb35a8a47d4ae284a085a92d6ff2f8f827041a08d0cb782f7cc5c66d3df7506227853481b2c1402
+  checksum: 10c0/f8638989ab8f435aba87a698d96e53c8ce4ae7aacedae0f7b5cfa15a151d3e61a2d8d6d6e4b4f4e9ffefbb227a9d9daedb5d2784978d33f7a799c730e98a9c54
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-darwin-arm64@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-darwin-arm64@npm:0.2.3"
+"@celerity-sdk/runtime-darwin-arm64@npm:0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime-darwin-arm64@npm:0.3.2"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-darwin-x64@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-darwin-x64@npm:0.2.3"
+"@celerity-sdk/runtime-darwin-x64@npm:0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime-darwin-x64@npm:0.3.2"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-freebsd-x64@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-freebsd-x64@npm:0.2.3"
+"@celerity-sdk/runtime-freebsd-x64@npm:0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime-freebsd-x64@npm:0.3.2"
   conditions: os=freebsd & cpu=x64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-arm64-gnu@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-linux-arm64-gnu@npm:0.2.3"
+"@celerity-sdk/runtime-linux-arm64-gnu@npm:0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime-linux-arm64-gnu@npm:0.3.2"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-arm64-musl@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-linux-arm64-musl@npm:0.2.3"
+"@celerity-sdk/runtime-linux-arm64-musl@npm:0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime-linux-arm64-musl@npm:0.3.2"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-x64-gnu@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-linux-x64-gnu@npm:0.2.3"
+"@celerity-sdk/runtime-linux-x64-gnu@npm:0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime-linux-x64-gnu@npm:0.3.2"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-linux-x64-musl@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-linux-x64-musl@npm:0.2.3"
+"@celerity-sdk/runtime-linux-x64-musl@npm:0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime-linux-x64-musl@npm:0.3.2"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-win32-arm64-msvc@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-win32-arm64-msvc@npm:0.2.3"
+"@celerity-sdk/runtime-win32-arm64-msvc@npm:0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime-win32-arm64-msvc@npm:0.3.2"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime-win32-x64-msvc@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime-win32-x64-msvc@npm:0.2.3"
+"@celerity-sdk/runtime-win32-x64-msvc@npm:0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime-win32-x64-msvc@npm:0.3.2"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"@celerity-sdk/runtime@npm:^0.2.3":
-  version: 0.2.3
-  resolution: "@celerity-sdk/runtime@npm:0.2.3"
+"@celerity-sdk/runtime@npm:^0.3.2":
+  version: 0.3.2
+  resolution: "@celerity-sdk/runtime@npm:0.3.2"
   dependencies:
-    "@celerity-sdk/runtime-darwin-arm64": "npm:0.2.3"
-    "@celerity-sdk/runtime-darwin-x64": "npm:0.2.3"
-    "@celerity-sdk/runtime-freebsd-x64": "npm:0.2.3"
-    "@celerity-sdk/runtime-linux-arm64-gnu": "npm:0.2.3"
-    "@celerity-sdk/runtime-linux-arm64-musl": "npm:0.2.3"
-    "@celerity-sdk/runtime-linux-x64-gnu": "npm:0.2.3"
-    "@celerity-sdk/runtime-linux-x64-musl": "npm:0.2.3"
-    "@celerity-sdk/runtime-win32-arm64-msvc": "npm:0.2.3"
-    "@celerity-sdk/runtime-win32-x64-msvc": "npm:0.2.3"
+    "@celerity-sdk/runtime-darwin-arm64": "npm:0.3.2"
+    "@celerity-sdk/runtime-darwin-x64": "npm:0.3.2"
+    "@celerity-sdk/runtime-freebsd-x64": "npm:0.3.2"
+    "@celerity-sdk/runtime-linux-arm64-gnu": "npm:0.3.2"
+    "@celerity-sdk/runtime-linux-arm64-musl": "npm:0.3.2"
+    "@celerity-sdk/runtime-linux-x64-gnu": "npm:0.3.2"
+    "@celerity-sdk/runtime-linux-x64-musl": "npm:0.3.2"
+    "@celerity-sdk/runtime-win32-arm64-msvc": "npm:0.3.2"
+    "@celerity-sdk/runtime-win32-x64-msvc": "npm:0.3.2"
   dependenciesMeta:
     "@celerity-sdk/runtime-darwin-arm64":
       optional: true
@@ -146,16 +177,16 @@ __metadata:
       optional: true
     "@celerity-sdk/runtime-win32-x64-msvc":
       optional: true
-  checksum: 10c0/6f06ea5a502ba45d1d0fe502da3f4d843174aefa218f68fb82f2a5a798b69a1a66c9f12dd03116644f8b4905d1b790b5a8a323eafa61e0f94a1b347d4d57db3b
+  checksum: 10c0/c1a2ac4e9fd84649a57c70aa08f2e80c6d388868f69ad357538c424c3d96a244037ceba82d55d08234e57bc84836c916612171e88b87bc120068f17a0f44b2d5
   languageName: node
   linkType: hard
 
-"@celerity-sdk/telemetry@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/telemetry@npm:0.3.1"
+"@celerity-sdk/telemetry@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@celerity-sdk/telemetry@npm:0.5.0"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.3.1"
-    "@celerity-sdk/types": "npm:^0.3.1"
+    "@celerity-sdk/common": "npm:^0.5.0"
+    "@celerity-sdk/types": "npm:^0.5.0"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/api-logs": "npm:^0.200.0"
     "@opentelemetry/core": "npm:^2.0.0"
@@ -187,14 +218,21 @@ __metadata:
       optional: true
     "@opentelemetry/instrumentation-pg":
       optional: true
-  checksum: 10c0/718434097c8ef782be4d16078b1726b29957c168e9c7e6b6e013bf98ff4f983efc07b4d7bff65ce9d6b4b005cc9502f76264d4e3d1dfc170e35189c345b61921
+  checksum: 10c0/122b898de22aa776ffb9ee02594d5b8c3cce76ff2930135e2111cd6e5c193c39fb6fd063929cbde89e5664283cf3b11cd5282e50e485b7f287d1e495389b1341
   languageName: node
   linkType: hard
 
-"@celerity-sdk/types@npm:^0.3.1":
-  version: 0.3.1
-  resolution: "@celerity-sdk/types@npm:0.3.1"
-  checksum: 10c0/1761a0abd48f48d257becbde406faa3fc1993cfc1639271519979d395c490eb62302109147350ca2a0c212478baa64248993600c53b0625e357415e22b8a4929
+"@celerity-sdk/types@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@celerity-sdk/types@npm:0.4.0"
+  checksum: 10c0/92c98aacb2dd027ee95df32a88c4a0dd59faf4912c1a4cdede5aa242013fb9b01f9c0c49961c953b2f6037f63578966852aa2cbc06d4b5a3f3e70cda21d20f3e
+  languageName: node
+  linkType: hard
+
+"@celerity-sdk/types@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@celerity-sdk/types@npm:0.5.0"
+  checksum: 10c0/3d8518d2a107870ab8ae8bcdb31ac54a2bc3d64b39fde10e0aa474017da3ebad7d97e2901ee9a59cf981fc71c77360b2cda08070bb74c1834e9315e3062fee9d
   languageName: node
   linkType: hard
 
@@ -247,6 +285,13 @@ __metadata:
   bin:
     proto-loader-gen-types: build/bin/proto-loader-gen-types.js
   checksum: 10c0/a27da3b85d5d17bab956d536786c717287eae46ca264ea9ec774db90ff571955bae2705809f431b4622fbf3be9951d7c7bbb1360b2015ee88abe1587cf3d6fe0
+  languageName: node
+  linkType: hard
+
+"@ioredis/commands@npm:1.5.1":
+  version: 1.5.1
+  resolution: "@ioredis/commands@npm:1.5.1"
+  checksum: 10c0/cb8f6d13cff0753e3e7ef001fb895491985d9a623248192538f13bc2fd9bfdfde3c18cf2ba6f20ec8ceaa681b0771070d3a09b82eed044c798bcfef5e3ae54b3
   languageName: node
   linkType: hard
 
@@ -1252,14 +1297,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "celerity-runtime-nodejs@workspace:."
   dependencies:
-    "@celerity-sdk/common": "npm:^0.3.1"
-    "@celerity-sdk/config": "npm:^0.3.1"
-    "@celerity-sdk/core": "npm:^0.3.1"
-    "@celerity-sdk/runtime": "npm:^0.2.3"
-    "@celerity-sdk/telemetry": "npm:^0.3.1"
-    "@celerity-sdk/types": "npm:^0.3.1"
+    "@celerity-sdk/common": "npm:^0.5.0"
+    "@celerity-sdk/config": "npm:^0.5.0"
+    "@celerity-sdk/core": "npm:^0.4.0"
+    "@celerity-sdk/runtime": "npm:^0.3.2"
+    "@celerity-sdk/telemetry": "npm:^0.5.0"
+    "@celerity-sdk/types": "npm:^0.5.0"
     "@swc-node/register": "npm:^1.10.0"
     "@swc/core": "npm:^1.11.0"
+    ioredis: "npm:^5.0.0"
     pino-pretty: "npm:^13.0.0"
     typescript: "npm:^5.7.0"
   languageName: unknown
@@ -1280,6 +1326,13 @@ __metadata:
     strip-ansi: "npm:^6.0.1"
     wrap-ansi: "npm:^7.0.0"
   checksum: 10c0/4bda0f09c340cbb6dfdc1ed508b3ca080f12992c18d68c6be4d9cf51756033d5266e61ec57529e610dacbf4da1c634423b0c1b11037709cc6b09045cbd815df5
+  languageName: node
+  linkType: hard
+
+"cluster-key-slot@npm:^1.1.0":
+  version: 1.1.2
+  resolution: "cluster-key-slot@npm:1.1.2"
+  checksum: 10c0/d7d39ca28a8786e9e801eeb8c770e3c3236a566625d7299a47bb71113fb2298ce1039596acb82590e598c52dbc9b1f088c8f587803e697cb58e1867a95ff94d3
   languageName: node
   linkType: hard
 
@@ -1313,7 +1366,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:^4.3.5, debug@npm:^4.4.0, debug@npm:^4.4.1":
+"debug@npm:^4.3.4, debug@npm:^4.3.5, debug@npm:^4.4.0, debug@npm:^4.4.1":
   version: 4.4.3
   resolution: "debug@npm:4.4.3"
   dependencies:
@@ -1322,6 +1375,13 @@ __metadata:
     supports-color:
       optional: true
   checksum: 10c0/d79136ec6c83ecbefd0f6a5593da6a9c91ec4d7ddc4b54c883d6e71ec9accb5f67a1a5e96d00a328196b5b5c86d365e98d8a3a70856aaf16b4e7b1985e67f5a6
+  languageName: node
+  linkType: hard
+
+"denque@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "denque@npm:2.1.0"
+  checksum: 10c0/f9ef81aa0af9c6c614a727cb3bd13c5d7db2af1abf9e6352045b86e85873e629690f6222f4edd49d10e4ccf8f078bbeec0794fafaf61b659c0589d0c511ec363
   languageName: node
   linkType: hard
 
@@ -1411,6 +1471,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ioredis@npm:^5.0.0":
+  version: 5.10.0
+  resolution: "ioredis@npm:5.10.0"
+  dependencies:
+    "@ioredis/commands": "npm:1.5.1"
+    cluster-key-slot: "npm:^1.1.0"
+    debug: "npm:^4.3.4"
+    denque: "npm:^2.1.0"
+    lodash.defaults: "npm:^4.2.0"
+    lodash.isarguments: "npm:^3.1.0"
+    redis-errors: "npm:^1.2.0"
+    redis-parser: "npm:^3.0.0"
+    standard-as-callback: "npm:^2.1.0"
+  checksum: 10c0/294e8cdef963f922b04ad023d4165f1d399b27279b9890f3e1311da57fb2a082c8dca52d18bd14a54acd6fb82853783641a0c47ff18661a8756221049f807e88
+  languageName: node
+  linkType: hard
+
 "is-core-module@npm:^2.16.1":
   version: 2.16.1
   resolution: "is-core-module@npm:2.16.1"
@@ -1438,6 +1515,20 @@ __metadata:
   version: 4.3.0
   resolution: "lodash.camelcase@npm:4.3.0"
   checksum: 10c0/fcba15d21a458076dd309fce6b1b4bf611d84a0ec252cb92447c948c533ac250b95d2e00955801ebc367e5af5ed288b996d75d37d2035260a937008e14eaf432
+  languageName: node
+  linkType: hard
+
+"lodash.defaults@npm:^4.2.0":
+  version: 4.2.0
+  resolution: "lodash.defaults@npm:4.2.0"
+  checksum: 10c0/d5b77aeb702caa69b17be1358faece33a84497bcca814897383c58b28a2f8dfc381b1d9edbec239f8b425126a3bbe4916223da2a576bb0411c2cefd67df80707
+  languageName: node
+  linkType: hard
+
+"lodash.isarguments@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "lodash.isarguments@npm:3.1.0"
+  checksum: 10c0/5e8f95ba10975900a3920fb039a3f89a5a79359a1b5565e4e5b4310ed6ebe64011e31d402e34f577eca983a1fc01ff86c926e3cbe602e1ddfc858fdd353e62d8
   languageName: node
   linkType: hard
 
@@ -1679,6 +1770,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"redis-errors@npm:^1.0.0, redis-errors@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "redis-errors@npm:1.2.0"
+  checksum: 10c0/5b316736e9f532d91a35bff631335137a4f974927bb2fb42bf8c2f18879173a211787db8ac4c3fde8f75ed6233eb0888e55d52510b5620e30d69d7d719c8b8a7
+  languageName: node
+  linkType: hard
+
+"redis-parser@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "redis-parser@npm:3.0.0"
+  dependencies:
+    redis-errors: "npm:^1.0.0"
+  checksum: 10c0/ee16ac4c7b2a60b1f42a2cdaee22b005bd4453eb2d0588b8a4939718997ae269da717434da5d570fe0b05030466eeb3f902a58cf2e8e1ca058bf6c9c596f632f
+  languageName: node
+  linkType: hard
+
 "reflect-metadata@npm:^0.2.0":
   version: 0.2.2
   resolution: "reflect-metadata@npm:0.2.2"
@@ -1781,6 +1888,13 @@ __metadata:
   version: 4.2.0
   resolution: "split2@npm:4.2.0"
   checksum: 10c0/b292beb8ce9215f8c642bb68be6249c5a4c7f332fc8ecadae7be5cbdf1ea95addc95f0459ef2e7ad9d45fd1064698a097e4eb211c83e772b49bc0ee423e91534
+  languageName: node
+  linkType: hard
+
+"standard-as-callback@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "standard-as-callback@npm:2.1.0"
+  checksum: 10c0/012677236e3d3fdc5689d29e64ea8a599331c4babe86956bf92fc5e127d53f85411c5536ee0079c52c43beb0026b5ce7aa1d834dd35dd026e82a15d1bcaead1f
   languageName: node
   linkType: hard
 
