@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/newstack-cloud/celerity/compare/runtime-consumers/v0.2.1...runtime-consumers/v0.3.0) (2026-03-16)
+
+
+### Features
+
+* **lib-rt-consumer-redis:** add additional fields to redis consumer messages ([fa9215f](https://github.com/newstack-cloud/celerity/commit/fa9215f6cfdd2192fe918645fc3389e1593e1697))
+
 ## [0.2.1](https://github.com/newstack-cloud/celerity/compare/runtime-consumers/v0.2.0...runtime-consumers/v0.2.1) (2026-02-25)
 
 
