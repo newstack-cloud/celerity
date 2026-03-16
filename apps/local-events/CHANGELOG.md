@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/newstack-cloud/celerity/compare/local-events/v0.4.0...local-events/v0.4.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* **local-events:** add ddb stream and minio fixes ([a0070c4](https://github.com/newstack-cloud/celerity/commit/a0070c4432f264fb22c250aa5c3bce163c1e7bbd))
+
 ## [0.4.0](https://github.com/newstack-cloud/celerity/compare/local-events/v0.3.0...local-events/v0.4.0) (2026-03-06)
 
 
