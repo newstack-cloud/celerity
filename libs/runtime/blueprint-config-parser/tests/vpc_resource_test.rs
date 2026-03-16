@@ -321,7 +321,7 @@ resources:
 }
 
 #[test_log::test]
-fn rejects_vpc_with_unsupported_field() {
+fn ignores_unsupported_fields_in_vpc() {
     let yaml = r#"
 version: 2025-11-02
 resources:
@@ -335,13 +335,14 @@ resources:
     "#;
 
     let result = BlueprintConfig::from_yaml_str(yaml, Box::new(MockEnvVars::new()));
-    assert!(result.is_err());
+    assert!(result.is_ok(), "Failed to parse VPC: {:?}", result.err());
 
-    let err = result.unwrap_err();
-    let err_string = err.to_string();
-    assert!(
-        err_string.contains("Unsupported") || err_string.contains("unsupportedField"),
-        "Expected error about unsupported field, got: {}",
-        err_string
-    );
+    let config = result.unwrap();
+    let vpc_resource = config.resources.get("badVpc").unwrap();
+
+    if let CelerityResourceSpec::Vpc(vpc_spec) = &vpc_resource.spec {
+        assert_eq!(vpc_spec.name, "my-vpc");
+    } else {
+        panic!("Expected VPC resource spec");
+    }
 }
