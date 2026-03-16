@@ -171,6 +171,10 @@ pub struct WebSocketRequestContext {
     pub query: HashMap<String, Vec<String>>,
     pub cookies: CookieJar,
     pub trace_context: Option<HashMap<String, String>>,
+    /// Authentication data from the Connect or AuthMessage strategy.
+    /// Populated after successful authentication and propagated to all
+    /// subsequent message handler invocations.
+    pub auth_data: Option<serde_json::Value>,
 }
 
 /// Bundles the per-request Axum extractors for the WebSocket upgrade handler,
@@ -222,6 +226,7 @@ pub(crate) async fn handler(
             query,
             cookies,
             trace_context: extract_trace_context(),
+            auth_data: None,
         };
         handle_socket(socket, request_id.0.clone(), request_ctx, state)
     })
@@ -230,29 +235,21 @@ pub(crate) async fn handler(
 async fn handle_socket(
     socket: WebSocket,
     connection_id: String,
-    request_ctx: WebSocketRequestContext,
+    mut request_ctx: WebSocketRequestContext,
     state: WebSocketAppState,
 ) {
     let socket_ref = Arc::new(Mutex::new(socket));
     async {
         info!("websocket connection received: {}", connection_id);
-        state
-            .connections
-            .add_connection(connection_id.clone(), socket_ref.clone());
-        ws_connections_counter().add(1, &[]);
 
-        // For the purpose of establishing a WebSocket connection,
-        // an origin check is carried out on the server-side to determine
-        // whether or not a browser client is allowed to connect to the server.
-        // Browsers do not send a CORS preflight request for WebSocket connections
-        // and do not check and block the connection based on CORS response headers.
-        // When CORS is not configured for the API, the connection will be allowed
-        // without origin checks.
-        // Server-side clients should provide a known allowed origin header when an API
-        // is configured with a set of allowed origins (bypassing the origin check).
-        // This check is for preventing third-party origins from connecting to the API
-        // in web browsers, there is no risk in letting server-side clients bypass
-        // the origin check.
+        // Origin check for WebSocket upgrade requests (RFC 6455 §4.1).
+        // Browsers MUST send the Origin header; non-browser clients MAY omit it.
+        // When CORS is configured, we validate the Origin against allowed origins
+        // for browser clients. Connections without an Origin header are assumed
+        // to be server-side clients and are allowed through, since the purpose
+        // of this check is to prevent third-party web origins — not to block
+        // CLI tools, SDKs, or service-to-service connections.
+        // When CORS is not configured at all, all connections are allowed.
         if let Some(cors) = &state.cors {
             if let Err(err) = check_cors_origin(cors, &request_ctx) {
                 debug!("origin check failed, closing connection: {err}");
@@ -273,7 +270,10 @@ async fn handle_socket(
                 let step_after_auth =
                     authenticate_connection(socket_ref.clone(), &state, &request_ctx).await;
                 match step_after_auth {
-                    ControlFlow::Continue(data) => auth_result_data = data,
+                    ControlFlow::Continue(data) => {
+                        auth_result_data = data.clone();
+                        request_ctx.auth_data = Some(data);
+                    }
                     ControlFlow::Break(_) => {
                         return;
                     }
@@ -286,6 +286,15 @@ async fn handle_socket(
             }
             _ => {} // No auth configured
         }
+
+        // Register the connection only after CORS and auth checks pass.
+        // Registering earlier would keep an Arc<WebSocket> in the registry
+        // on early return, preventing the socket from being dropped and
+        // causing the TCP connection to linger.
+        state
+            .connections
+            .add_connection(connection_id.clone(), socket_ref.clone());
+        ws_connections_counter().add(1, &[]);
 
         // For Connect strategy, only reached after successful auth (with auth data).
         // For AuthMessage / no auth, fires immediately with null auth data.
@@ -329,10 +338,9 @@ async fn handle_socket(
                     )
                     .await
                     {
-                        AuthMessageResult::Authenticated(_data) => {
+                        AuthMessageResult::Authenticated(data) => {
                             is_authenticated = true;
-                            // TODO: propagate auth data into request context
-                            // for subsequent message handlers.
+                            request_ctx.auth_data = Some(data);
                         }
                         AuthMessageResult::Failed => {
                             state.connections.remove_connection(connection_id.clone());
@@ -364,6 +372,12 @@ async fn handle_socket(
                     }
                 }
             } else {
+                // recv() returned None — the underlying connection was dropped
+                // without a WebSocket close handshake (e.g. TCP reset, client
+                // killed). Fire the disconnect handler so the application can
+                // clean up connection state.
+                info!("connection lost, client {connection_id} disconnected without close frame");
+                let _ = on_disconnect(connection_id.clone(), &state, &request_ctx).await;
                 state.connections.remove_connection(connection_id.clone());
                 ws_connections_counter().add(-1, &[]);
                 connection_alive = false;
@@ -566,7 +580,7 @@ fn create_disconnect_message(
 
 fn create_message_request_context(
     request_ctx: &WebSocketRequestContext,
-    auth_result_data: Option<serde_json::Value>,
+    auth_override: Option<serde_json::Value>,
 ) -> MessageRequestContext {
     let headers = headers_to_hashmap(&request_ctx.headers);
 
@@ -589,7 +603,9 @@ fn create_message_request_context(
         client_ip: request_ctx.client_ip.to_string(),
         query: request_ctx.query.clone(),
         cookies,
-        auth: auth_result_data,
+        // Use explicit override if provided (e.g. on_connect passes fresh auth data),
+        // otherwise use the auth data stored on the request context.
+        auth: auth_override.or_else(|| request_ctx.auth_data.clone()),
         trace_context: extract_trace_context(),
     }
 }
@@ -940,11 +956,8 @@ async fn process_message(
                 }
             };
             info!(info_msg);
-            if let ControlFlow::Break(_) =
-                on_disconnect(connection_id.clone(), state, &request_ctx).await
-            {
-                return ControlFlow::Break(());
-            }
+            let _ = on_disconnect(connection_id.clone(), state, &request_ctx).await;
+            return ControlFlow::Break(());
         }
         Message::Ping(_) | Message::Pong(_) => {
             // WebSocket protocol-level ping/pong — handled automatically by tungstenite.
@@ -1128,11 +1141,17 @@ fn resolve_route(
             ControlFlow::Continue(None)
         }
     } else {
-        error!(
-            "invalid JSON message from client {}, missing route key",
-            connection_id
+        // No route key found — fall through to the $default handler.
+        // If no $default handler is registered, the caller will log an error.
+        debug!(
+            "message from client {} has no route key \"{}\", falling back to $default",
+            connection_id, route_key,
         );
-        ControlFlow::Continue(None)
+        ControlFlow::Continue(Some((
+            CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE.to_string(),
+            None,
+            data,
+        )))
     }
 }
 
@@ -1258,7 +1277,11 @@ fn check_cors_origin(
                 }
             }
 
-            Err("cors origin check failed, origin header is missing".to_string())
+            // Per RFC 6455 §4.1, browser clients MUST send the Origin header
+            // on WebSocket upgrade requests; non-browser clients MAY omit it.
+            // A missing Origin header therefore indicates a server-side client
+            // (CLI tool, SDK, service-to-service) — allow the connection.
+            Ok(())
         }
     }
 }
