@@ -744,6 +744,10 @@ fn create_test_message(n: u64) -> Message<RedisMessageMetadata> {
             retry_count: None,
             failure_reason: None,
             message_type: RedisMessageType::Text,
+            source_message_id: None,
+            subject: None,
+            attributes: None,
+            event_name: None,
         },
         trace_context: Some(HashMap::from([(
             CELERITY_CONTEXT_ID_KEY.to_string(),

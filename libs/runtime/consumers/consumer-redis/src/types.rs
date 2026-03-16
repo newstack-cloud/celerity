@@ -17,6 +17,18 @@ pub struct RedisMessageMetadata {
     /// The type of message that was received.
     /// Useful for determining how to parse the body of the message.
     pub message_type: RedisMessageType,
+    /// The SDK-generated message ID from a topic envelope.
+    /// Present when the message was published via the topic SDK and
+    /// fanned out by the local-events bridge.
+    pub source_message_id: Option<String>,
+    /// The subject from a topic envelope, if provided by the publisher.
+    pub subject: Option<String>,
+    /// JSON-encoded string key-value attributes from a topic envelope.
+    pub attributes: Option<String>,
+    /// The event name from the local-events bridge.
+    /// Present for datastore stream events (INSERT, MODIFY, REMOVE)
+    /// and bucket notification events (s3:ObjectCreated:Put, etc.).
+    pub event_name: Option<String>,
 }
 
 /// The type of message that was received.
@@ -94,6 +106,26 @@ impl FromRedisStreamId for Message<RedisMessageMetadata> {
             _ => None,
         };
 
+        let source_message_id = match stream_id.map.get("message_id") {
+            Some(value) => from_redis_stream_field_value("message_id", value).ok(),
+            _ => None,
+        };
+
+        let subject = match stream_id.map.get("subject") {
+            Some(value) => from_redis_stream_field_value("subject", value).ok(),
+            _ => None,
+        };
+
+        let attributes = match stream_id.map.get("attributes") {
+            Some(value) => from_redis_stream_field_value("attributes", value).ok(),
+            _ => None,
+        };
+
+        let event_name = match stream_id.map.get("event_name") {
+            Some(value) => from_redis_stream_field_value("event_name", value).ok(),
+            _ => None,
+        };
+
         Self {
             message_id: stream_id.id.clone(),
             body: Some(body),
@@ -104,6 +136,10 @@ impl FromRedisStreamId for Message<RedisMessageMetadata> {
                 retry_count,
                 failure_reason,
                 message_type: message_type.unwrap_or_default(),
+                source_message_id,
+                subject,
+                attributes,
+                event_name,
             },
             trace_context: None,
         }
@@ -183,6 +219,31 @@ impl<'a> ToStreamRedisArgParts<'a> for Message<RedisMessageMetadata> {
 
         if let Some(retry_count) = self.metadata.retry_count {
             fields.push(("retry_count", StreamRedisArgFieldValue::Uint(retry_count)));
+        }
+
+        if let Some(ref source_message_id) = self.metadata.source_message_id {
+            fields.push((
+                "message_id",
+                StreamRedisArgFieldValue::String(source_message_id.clone()),
+            ));
+        }
+
+        if let Some(ref subject) = self.metadata.subject {
+            fields.push(("subject", StreamRedisArgFieldValue::String(subject.clone())));
+        }
+
+        if let Some(ref attributes) = self.metadata.attributes {
+            fields.push((
+                "attributes",
+                StreamRedisArgFieldValue::String(attributes.clone()),
+            ));
+        }
+
+        if let Some(ref event_name) = self.metadata.event_name {
+            fields.push((
+                "event_name",
+                StreamRedisArgFieldValue::String(event_name.clone()),
+            ));
         }
 
         if for_dlq {

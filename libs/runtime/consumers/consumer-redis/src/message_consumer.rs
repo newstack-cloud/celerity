@@ -822,7 +822,7 @@ impl RedisMessageConsumer {
                     match trim_lock.acquire(self.config.trim_lock_timeout_ms).await {
                         Ok(true) => {
                             if let Err(err) = self.trim_stream(conn).await {
-                                error!("failed to trim stream: {err}");
+                                warn!("failed to trim stream (this is expected if the stream has not yet received any messages): {err}");
                             }
                         }
                         Ok(false) => {
