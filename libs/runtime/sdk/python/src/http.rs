@@ -25,6 +25,8 @@ pub fn core_http_config(http_config: HttpConfig, py: Python) -> PyResult<Py<Core
 #[pyclass]
 pub struct CoreHttpHandlerDefinition {
   #[pyo3(get)]
+  name: String,
+  #[pyo3(get)]
   path: String,
   #[pyo3(get)]
   method: String,
@@ -39,6 +41,7 @@ pub struct CoreHttpHandlerDefinition {
 impl From<HttpHandlerDefinition> for CoreHttpHandlerDefinition {
   fn from(handler: HttpHandlerDefinition) -> Self {
     Self {
+      name: handler.name,
       path: handler.path,
       method: handler.method,
       location: handler.location,

@@ -389,6 +389,7 @@ class CoreHttpHandlerDefinition:
     Definition of an HTTP handler.
 
     Attributes:
+        name: The name of the handler as defined in the blueprint.
         path: The path of the handler.
         method: The HTTP method of the handler.
         location: The location of the handler.
@@ -396,6 +397,7 @@ class CoreHttpHandlerDefinition:
         timeout: The timeout in seconds for the handler.
     """
 
+    name: str
     path: str
     method: str
     location: str
@@ -419,12 +421,14 @@ class CoreWebSocketHandlerDefinition:
     Definition of a WebSocket handler.
 
     Attributes:
+        name: The name of the handler as defined in the blueprint.
         route: The route of the handler.
         location: The location of the handler.
         handler: The handler function.
         timeout: The timeout in seconds for the handler.
     """
 
+    name: str
     route: str
     location: str
     handler: str
@@ -583,6 +587,32 @@ class CoreCustomHandlerDefinition:
     tracing_enabled: bool
 
 
+class CoreEventConsumerConfig:
+    """
+    Configuration for an event-driven consumer (datastore stream, bucket event).
+
+    Attributes:
+        consumer_name: The name of the consumer resource in the blueprint.
+        source_id: The ID of the event source (queue ID or stream ID).
+        batch_size: Optional batch size for processing events.
+        handlers: List of event handler definitions for this consumer.
+    """
+    consumer_name: str
+    source_id: str
+    batch_size: int | None
+    handlers: list[CoreEventHandlerDefinition]
+
+
+class CoreEventsConfig:
+    """
+    Configuration for event-driven consumers (datastore streams, bucket events).
+
+    Attributes:
+        events: List of event consumer configurations parsed from the blueprint.
+    """
+    events: list[CoreEventConsumerConfig]
+
+
 class CoreRuntimeAppConfig:
     """
     Configuration for the application running in the Celerity runtime.
@@ -590,11 +620,13 @@ class CoreRuntimeAppConfig:
     Attributes:
         api: Configuration for HTTP and WebSocket APIs.
         consumers: Configuration for event source consumers.
+        events: Configuration for event-driven consumers (datastore streams, bucket events).
         schedules: Configuration for scheduled event handlers.
         custom_handlers: Configuration for custom handler invocations.
     """
     api: CoreApiConfig | None
     consumers: CoreConsumersConfig | None
+    events: CoreEventsConfig | None
     schedules: CoreSchedulesConfig | None
     custom_handlers: CoreCustomHandlersConfig | None
 
@@ -1676,9 +1708,10 @@ class CoreRuntimeApplication:
         self,
         handler_name: str,
         payload: Any,
-    ) -> Any:
+    ) -> Awaitable[Any]:
         """
         Invokes a registered custom handler by name with the given payload.
+        This method returns an awaitable that must be awaited.
 
         Args:
             handler_name: The name of the custom handler to invoke.
@@ -1689,6 +1722,7 @@ class CoreRuntimeApplication:
 
         Raises:
             RuntimeError: If the handler is not registered or the application is not running.
+            ValueError: If the payload cannot be converted to a valid format.
         """
 
     def websocket_registry(self) -> WebSocketRegistry:

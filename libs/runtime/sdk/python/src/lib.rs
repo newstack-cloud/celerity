@@ -26,13 +26,13 @@ use celerity_runtime_core::{
   auth_http::AuthContext,
   config::{
     ApiConfig, AppConfig, ClientIpSource, ConsumerConfig, ConsumersConfig, CustomHandlerDefinition,
-    CustomHandlersConfig, EventHandlerDefinition, GuardHandlerDefinition, GuardsConfig,
-    RuntimeConfig, ScheduleConfig, SchedulesConfig,
+    CustomHandlersConfig, EventConfig, EventHandlerDefinition, EventsConfig,
+    GuardHandlerDefinition, GuardsConfig, RuntimeConfig, ScheduleConfig, SchedulesConfig,
   },
   request::{MatchedRoute, RequestId, ResolvedClientIp, ResolvedUserAgent},
   telemetry_utils::extract_trace_context,
 };
-use pythonize::pythonize;
+use pythonize::{depythonize, pythonize};
 use tokio::sync::{mpsc, Mutex as TokioMutex};
 use tokio::time;
 use tracing::Level;
@@ -73,6 +73,8 @@ struct CoreRuntimeAppConfig {
   #[pyo3(get)]
   consumers: Option<Py<CoreConsumersConfig>>,
   #[pyo3(get)]
+  events: Option<Py<CoreEventsConfig>>,
+  #[pyo3(get)]
   schedules: Option<Py<CoreSchedulesConfig>>,
   #[pyo3(get)]
   custom_handlers: Option<Py<CoreCustomHandlersConfig>>,
@@ -86,6 +88,10 @@ impl CoreRuntimeAppConfig {
         .consumers
         .map(|c| Py::new(py, CoreConsumersConfig::try_from_core(c, py)?))
         .transpose()?;
+      let events = app_config
+        .events
+        .map(|e| Py::new(py, CoreEventsConfig::try_from_core(e, py)?))
+        .transpose()?;
       let schedules = app_config
         .schedules
         .map(|s| Py::new(py, CoreSchedulesConfig::try_from_core(s, py)?))
@@ -98,6 +104,7 @@ impl CoreRuntimeAppConfig {
       Ok(Self {
         api,
         consumers,
+        events,
         schedules,
         custom_handlers,
       })
@@ -260,6 +267,72 @@ impl From<EventHandlerDefinition> for CoreEventHandlerDefinition {
       timeout: h.timeout,
       tracing_enabled: h.tracing_enabled,
       route: h.route,
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Events config types (datastore streams, bucket events)
+// ---------------------------------------------------------------------------
+
+#[pyclass]
+pub struct CoreEventsConfig {
+  #[pyo3(get)]
+  events: Vec<Py<CoreEventConsumerConfig>>,
+}
+
+impl CoreEventsConfig {
+  fn try_from_core(e: EventsConfig, py: Python) -> PyResult<Self> {
+    let events = e
+      .events
+      .into_iter()
+      .map(|ec| Py::new(py, CoreEventConsumerConfig::try_from_core(ec, py)?))
+      .collect::<PyResult<Vec<_>>>()?;
+    Ok(Self { events })
+  }
+}
+
+#[pyclass]
+pub struct CoreEventConsumerConfig {
+  #[pyo3(get)]
+  consumer_name: String,
+  #[pyo3(get)]
+  source_id: String,
+  #[pyo3(get)]
+  batch_size: Option<i64>,
+  #[pyo3(get)]
+  handlers: Vec<Py<CoreEventHandlerDefinition>>,
+}
+
+impl CoreEventConsumerConfig {
+  fn try_from_core(ec: EventConfig, py: Python) -> PyResult<Self> {
+    match ec {
+      EventConfig::EventTrigger(cfg) => {
+        let handlers = cfg
+          .handlers
+          .into_iter()
+          .map(|h| Py::new(py, CoreEventHandlerDefinition::from(h)))
+          .collect::<PyResult<Vec<_>>>()?;
+        Ok(Self {
+          consumer_name: cfg.consumer_name,
+          source_id: cfg.queue_id,
+          batch_size: cfg.batch_size,
+          handlers,
+        })
+      }
+      EventConfig::Stream(cfg) => {
+        let handlers = cfg
+          .handlers
+          .into_iter()
+          .map(|h| Py::new(py, CoreEventHandlerDefinition::from(h)))
+          .collect::<PyResult<Vec<_>>>()?;
+        Ok(Self {
+          consumer_name: cfg.consumer_name,
+          source_id: cfg.stream_id,
+          batch_size: cfg.batch_size,
+          handlers,
+        })
+      }
     }
   }
 }
@@ -732,6 +805,59 @@ impl CoreRuntimeApplication {
     Ok(())
   }
 
+  fn invoke_handler<'a>(
+    &self,
+    handler_name: String,
+    payload: Py<PyAny>,
+    py: Python<'a>,
+  ) -> PyResult<Bound<'a, PyAny>> {
+    let inner = self.inner.clone();
+
+    pyo3_async_runtimes::tokio::future_into_py(py, async move {
+      let registry = {
+        let app = inner.lock().map_err(|e| {
+          PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+            "failed to acquire application lock: {e}"
+          ))
+        })?;
+        app.handler_invoke_registry()
+      };
+
+      let guard = registry.lock().await;
+      let invoker = guard.get(&handler_name).cloned().ok_or_else(|| {
+        PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+          "handler '{}' not found",
+          handler_name
+        ))
+      })?;
+      drop(guard);
+
+      let json_payload = Python::with_gil(|py| {
+        let bound = payload.bind(py);
+        depythonize::<serde_json::Value>(bound)
+      })
+      .map_err(|e| {
+        PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+          "failed to convert payload: {e}"
+        ))
+      })?;
+
+      let result = invoker.invoke(json_payload).await.map_err(|e| {
+        PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string())
+      })?;
+
+      Python::with_gil(|py| {
+        pythonize(py, &result)
+          .map(|b| b.unbind())
+          .map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+              "failed to convert result: {e}"
+            ))
+          })
+      })
+    })
+  }
+
   fn websocket_registry(&self, py: Python) -> PyResult<Py<WSBindingRegistrySend>> {
     Py::new(
       py,
@@ -884,6 +1010,8 @@ fn _celerity_runtime_sdk(m: &Bound<'_, PyModule>) -> PyResult<()> {
   m.add_class::<CoreGuardHandlerDefinition>()?;
   m.add_class::<CoreConsumersConfig>()?;
   m.add_class::<CoreConsumerConfig>()?;
+  m.add_class::<CoreEventsConfig>()?;
+  m.add_class::<CoreEventConsumerConfig>()?;
   m.add_class::<CoreEventHandlerDefinition>()?;
   m.add_class::<CoreSchedulesConfig>()?;
   m.add_class::<CoreScheduleConfig>()?;
