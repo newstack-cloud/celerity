@@ -18,13 +18,14 @@ jobs:
   linux:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - runner: ubuntu-latest
             target: x86_64
           - runner: ubuntu-latest
             target: x86
-          - runner: ubuntu-latest
+          - runner: ubuntu-24.04-arm
             target: aarch64
           - runner: ubuntu-latest
             target: armv7
@@ -54,13 +55,14 @@ jobs:
   musllinux:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - runner: ubuntu-latest
             target: x86_64
           - runner: ubuntu-latest
             target: x86
-          - runner: ubuntu-latest
+          - runner: ubuntu-24.04-arm
             target: aarch64
           - runner: ubuntu-latest
             target: armv7
@@ -86,6 +88,7 @@ jobs:
   windows:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - runner: windows-latest
@@ -114,11 +117,12 @@ jobs:
   macos:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
+      fail-fast: false
       matrix:
         platform:
-          - runner: macos-13
+          - runner: macos-latest
             target: x86_64
-          - runner: macos-14
+          - runner: macos-latest
             target: aarch64
     steps:
       - uses: actions/checkout@v4
@@ -155,38 +159,15 @@ jobs:
           path: ./libs/runtime/sdk/python/dist
 
   test:
-    name: Test on ${{ matrix.platform.name }}
-    runs-on: ${{ matrix.platform.runner }}
-    strategy:
-      matrix:
-        platform:
-          - name: Ubuntu x86_64
-            runner: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - name: Ubuntu aarch64
-            runner: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-          - name: Windows x64
-            runner: windows-latest
-            target: x86_64-pc-windows-msvc
-          - name: macOS x86_64
-            runner: macos-13
-            target: x86_64-apple-darwin
-          - name: macOS aarch64
-            runner: macos-14
-            target: aarch64-apple-darwin
+    # Full integration tests run only on Linux x86_64 where Docker is available
+    # for the Valkey dependency. The wheel builds on other platforms validate
+    # compilation; SDK logic is platform-independent.
+    name: Test - Linux x86_64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Python (x64)
-        if: matrix.platform.target == 'x86_64-pc-windows-msvc'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          architecture: x64
-      
-      - name: Set up Python (default)
-        if: matrix.platform.target != 'x86_64-pc-windows-msvc'
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -195,10 +176,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: ${{ matrix.platform.target }}
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
         run: uv sync --group dev
@@ -212,7 +190,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs-${{ matrix.platform.name }}
+          name: test-logs
           path: ./libs/runtime/sdk/python/test-server.log
 
   release:
