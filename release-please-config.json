@@ -63,7 +63,10 @@
     "libs/runtime/sdk/python": {
       "release-type": "python",
       "component": "runtime-sdk-python",
-      "package-name": "celerity-python-runtime-sdk"
+      "package-name": "celerity-python-runtime-sdk",
+      "extra-files": [
+        "Cargo.toml"
+      ]
     },
     "apps/runtime/nodejs": {
       "release-type": "node",

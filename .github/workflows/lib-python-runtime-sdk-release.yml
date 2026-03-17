@@ -10,12 +10,26 @@ on:
         description: 'Release tag (e.g. runtime-sdk-python/v1.0.0)'
         required: true
         type: string
+      artifact-run-id:
+        description: 'Reuse artifacts from a previous run (skip build). Provide the run ID.'
+        required: false
+        type: string
+      skip-tests:
+        description: 'Skip tests (use with artifact-run-id to publish without re-testing)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   linux:
+    if: inputs.artifact-run-id == ''
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -53,6 +67,7 @@ jobs:
           path: ./libs/runtime/sdk/python/dist
 
   musllinux:
+    if: inputs.artifact-run-id == ''
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -86,6 +101,7 @@ jobs:
           path: ./libs/runtime/sdk/python/dist
 
   windows:
+    if: inputs.artifact-run-id == ''
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -115,6 +131,7 @@ jobs:
           path: ./libs/runtime/sdk/python/dist
 
   macos:
+    if: inputs.artifact-run-id == ''
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -143,6 +160,7 @@ jobs:
           path: ./libs/runtime/sdk/python/dist
 
   sdist:
+    if: inputs.artifact-run-id == ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -162,6 +180,7 @@ jobs:
     # Full integration tests run only on Linux x86_64 where Docker is available
     # for the Valkey dependency. The wheel builds on other platforms validate
     # compilation; SDK logic is platform-independent.
+    if: ${{ !inputs.skip-tests }}
     name: Test - Linux x86_64
     runs-on: ubuntu-latest
     steps:
@@ -196,12 +215,23 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: inputs.tag != ''
+    if: >-
+      ${{
+        always() && inputs.tag != '' &&
+        (needs.linux.result == 'success' || needs.linux.result == 'skipped') &&
+        (needs.musllinux.result == 'success' || needs.musllinux.result == 'skipped') &&
+        (needs.windows.result == 'success' || needs.windows.result == 'skipped') &&
+        (needs.macos.result == 'success' || needs.macos.result == 'skipped') &&
+        (needs.sdist.result == 'success' || needs.sdist.result == 'skipped') &&
+        (needs.test.result == 'success' || needs.test.result == 'skipped')
+      }}
     needs: [linux, musllinux, windows, macos, sdist, test]
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: ./libs/runtime/sdk/python
+          run-id: ${{ inputs.artifact-run-id || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract version from tag
         id: version
         run: |
