@@ -837,23 +837,20 @@ impl CoreRuntimeApplication {
         depythonize::<serde_json::Value>(bound)
       })
       .map_err(|e| {
-        PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-          "failed to convert payload: {e}"
-        ))
+        PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("failed to convert payload: {e}"))
       })?;
 
-      let result = invoker.invoke(json_payload).await.map_err(|e| {
-        PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string())
-      })?;
+      let result = invoker
+        .invoke(json_payload)
+        .await
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 
       Python::with_gil(|py| {
-        pythonize(py, &result)
-          .map(|b| b.unbind())
-          .map_err(|e| {
-            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-              "failed to convert result: {e}"
-            ))
-          })
+        pythonize(py, &result).map(|b| b.unbind()).map_err(|e| {
+          PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
+            "failed to convert result: {e}"
+          ))
+        })
       })
     })
   }
