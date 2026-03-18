@@ -6,14 +6,14 @@
 #   dev      — Development (shell, SWC + pino-pretty, file watching)
 #
 # Build:
-#   docker build --target runtime -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:1.0.0 .
-#   docker build --target dev -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-1.0.0 .
+#   docker build --target runtime -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:1.0.0 .
+#   docker build --target dev -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-1.0.0 .
 # =============================================================================
 
 # -----------------------------------------------------------------------------
 # Stage 1: Install production dependencies only
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:22-debian13-dev AS deps-prod
+FROM dhi.io/node:24-debian13-dev AS deps-prod
 
 WORKDIR /opt/celerity
 
@@ -28,7 +28,7 @@ RUN yarn workspaces focus --production 2>/dev/null || true
 # -----------------------------------------------------------------------------
 # Stage 2: Install all dependencies (prod + dev)
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:22-debian13-dev AS deps-dev
+FROM dhi.io/node:24-debian13-dev AS deps-dev
 
 WORKDIR /opt/celerity
 
@@ -40,7 +40,7 @@ RUN corepack enable && corepack prepare yarn@4.3.1 --activate \
 # -----------------------------------------------------------------------------
 # Stage 3: Build-time prep (needs shell for mkdir, generate-manifest, etc.)
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:22-debian13-dev AS build
+FROM dhi.io/node:24-debian13-dev AS build
 
 WORKDIR /opt/celerity
 
@@ -61,7 +61,7 @@ RUN mkdir -p /opt/celerity/app
 # -----------------------------------------------------------------------------
 # Stage 4: Production runtime (distroless — no shell, no package manager)
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:22-debian13 AS runtime
+FROM dhi.io/node:24-debian13 AS runtime
 
 WORKDIR /opt/celerity
 
@@ -88,7 +88,7 @@ ENTRYPOINT ["node", \
 # -----------------------------------------------------------------------------
 # Stage 5: Development image (has shell, SWC for TS decorators, pino-pretty)
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:22-debian13-dev AS dev
+FROM dhi.io/node:24-debian13-dev AS dev
 
 WORKDIR /opt/celerity
 

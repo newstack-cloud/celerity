@@ -10,13 +10,13 @@
 #   docker build -f Dockerfile.local \
 #     --build-arg NAPI_IMAGE=celerity-napi:local \
 #     --build-context sdk=$HOME/projects2026/celerity-node-sdk/packages \
-#     -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-local .
+#     -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-local .
 #
 # Full rebuild (includes Rust NAPI addon):
 #   docker build -f Dockerfile.local \
 #     --build-context sdk=$HOME/projects2026/celerity-node-sdk/packages \
 #     --build-context runtime=$HOME/projects2023/celerity/libs/runtime \
-#     -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-local .
+#     -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-local .
 #
 # Build NAPI addon only (run once, then use quick rebuild):
 #   docker build -f Dockerfile.local --target rust-builder \
@@ -34,8 +34,8 @@ ARG NAPI_IMAGE=rust-builder
 # -----------------------------------------------------------------------------
 FROM rust:1.93-bookworm AS rust-builder
 
-# Install Node.js 22 for napi-cli
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+# Install Node.js 24 for napi-cli
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
@@ -66,7 +66,7 @@ FROM ${NAPI_IMAGE} AS napi
 # -----------------------------------------------------------------------------
 # Stage 3: Install all dependencies from the registry
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:22-debian13-dev AS deps
+FROM dhi.io/node:24-debian13-dev AS deps
 
 WORKDIR /opt/celerity
 
@@ -78,7 +78,7 @@ RUN corepack enable && corepack prepare yarn@4.3.1 --activate \
 # -----------------------------------------------------------------------------
 # Stage 4: Dev image with local SDK overrides
 # -----------------------------------------------------------------------------
-FROM dhi.io/node:22-debian13-dev
+FROM dhi.io/node:24-debian13-dev
 
 WORKDIR /opt/celerity
 

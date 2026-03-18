@@ -32,7 +32,7 @@ Built and pushed to GHCR by CI. Two targets:
 - **`runtime`** — Production. Distroless (no shell), direct `node` entrypoint.
 - **`dev`** — Development. Includes shell, SWC (for TypeScript decorator support), pino-pretty, and `--watch-path` file watching via `entrypoint.sh`.
 
-Both use [Docker Hardened Images](https://hub.docker.com/hardened-images/catalog) (`dhi.io/node:22-debian13`) as the base.
+Both use [Docker Hardened Images](https://hub.docker.com/hardened-images/catalog) (`dhi.io/node:24-debian13`) as the base.
 
 ### Local testing image (`Dockerfile.local`)
 
@@ -46,7 +46,7 @@ The Rust NAPI addon must be compiled for Linux (the container platform), so macO
 docker build -f Dockerfile.local \
   --build-context sdk=$HOME/projects2026/celerity-node-sdk/packages \
   --build-context runtime=$HOME/projects2023/celerity/libs/runtime \
-  -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-local .
+  -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-local .
 ```
 
 **Quick rebuild** (Node SDK or runtime host changes only — skips Rust):
@@ -65,14 +65,14 @@ Then rebuild using the cached image:
 docker build -f Dockerfile.local \
   --build-arg NAPI_IMAGE=celerity-napi:local \
   --build-context sdk=$HOME/projects2026/celerity-node-sdk/packages \
-  -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-local .
+  -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-local .
 ```
 
 After building, retag to match the current SDK version so `celerity dev run` picks it up:
 
 ```bash
-docker tag ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-local \
-           ghcr.io/newstack-cloud/celerity-runtime-nodejs-22:dev-{version}
+docker tag ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-local \
+           ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-{version}
 ```
 
 For full local e2e testing instructions (building SDK packages, linking, running the auth server, testing endpoints), see the test project's `docs/local-e2e-testing.md` guide.
