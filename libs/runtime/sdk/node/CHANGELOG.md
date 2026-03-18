@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.2...runtime-sdk-node/v0.3.3) (2026-03-18)
+
+
+### Dependencies
+
+* **lib-rt-sdk-node:** upgrade node sdk bindings to target node 24 ([94836f1](https://github.com/newstack-cloud/celerity/commit/94836f13a44c01111ad8666304512336ec8cebdc))
+
 ## [0.3.2](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.1...runtime-sdk-node/v0.3.2) (2026-03-16)
 
 
