@@ -18,7 +18,7 @@
     "directory": "libs/runtime/sdk/node"
   },
   "engines": {
-    "node": ">= 22"
+    "node": ">= 24"
   },
   "libc": [
     "glibc"

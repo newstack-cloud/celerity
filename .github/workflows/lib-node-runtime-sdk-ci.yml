@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Build & Test - Linux x86_64 - node@22
+    name: Build & Test - Linux x86_64 - node@24
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -46,7 +46,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - name: Enable corepack
         run: corepack enable
       - name: Setup Dependency Cache
