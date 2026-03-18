@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.5.0...runtime-nodejs/v0.6.0) (2026-03-18)
+
+
+### Dependencies
+
+* **runtime-nodejs:** update to node 24 and update @celerity-sdk/* to 0.6.0 ([44d141f](https://github.com/newstack-cloud/celerity/commit/44d141f8167b09ec070e3c22a4df2d7a0e24c05a))
+
 ## [0.5.0](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.3.1...runtime-nodejs/v0.5.0) (2026-03-16)
 
 
