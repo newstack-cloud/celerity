@@ -206,8 +206,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           architecture: x64
-      - name: Enable corepack
-        run: corepack enable
+      - name: Install and enable corepack
+        run: npm install -g corepack && corepack enable
       - name: Setup Dependency Cache
         uses: actions/setup-node@v4
         with:
@@ -318,7 +318,7 @@ jobs:
             -e SKIP_CONSUMER_TESTS=1 \
             --platform ${{ steps.docker.outputs.PLATFORM }} \
             ${{ steps.docker.outputs.IMAGE }} \
-            sh -c "cd ./libs/runtime/sdk/node && corepack enable && yarn test:no-deps"
+            sh -c "cd ./libs/runtime/sdk/node && npm install -g corepack && corepack enable && yarn test:no-deps"
   publish:
     name: Publish
     runs-on: ubuntu-latest
