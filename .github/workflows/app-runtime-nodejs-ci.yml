@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
 
       - name: Enable corepack
         run: corepack enable
@@ -61,6 +61,6 @@ jobs:
           target: ${{ matrix.target }}
           push: false
           load: true
-          tags: celerity-runtime-nodejs-22:${{ matrix.target }}-test
+          tags: celerity-runtime-nodejs-24:${{ matrix.target }}-test
           cache-from: type=gha,scope=ci-${{ matrix.target }}
           cache-to: type=gha,mode=max,scope=ci-${{ matrix.target }}
