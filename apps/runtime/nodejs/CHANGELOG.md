@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.6.0...runtime-nodejs/v0.7.0) (2026-03-20)
+
+
+### Dependencies
+
+* **runtime-nodejs:** update @celerity-sdk/* to 0.7.0 ([0296468](https://github.com/newstack-cloud/celerity/commit/0296468ba6d0bb8c5959d0d2cfcfe354f668c9ff))
+
 ## [0.6.0](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.5.0...runtime-nodejs/v0.6.0) (2026-03-18)
 
 
