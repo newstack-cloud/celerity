@@ -5,19 +5,19 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@celerity-sdk/common@npm:^0.6.0":
-  version: 0.6.0
-  resolution: "@celerity-sdk/common@npm:0.6.0"
-  checksum: 10c0/11afe198d5dab24fdd9879177d7f6543f42d89562f30096d74a95fbffe6bb76178558dbdc13098d7f06a2a71e97cd736810e29f10ea18d5a7b0e35a6fd9c2207
+"@celerity-sdk/common@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@celerity-sdk/common@npm:0.7.0"
+  checksum: 10c0/788774b99c49dfd1f3a7617ce5c3cf1e4d3e8456872d1af71a6b6e9cd7501567ad994b7b0234ad5dd532c414732f7f4889055bfc6a95b690a90fc0f0c8677a95
   languageName: node
   linkType: hard
 
-"@celerity-sdk/config@npm:^0.6.0":
-  version: 0.6.0
-  resolution: "@celerity-sdk/config@npm:0.6.0"
+"@celerity-sdk/config@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@celerity-sdk/config@npm:0.7.0"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.6.0"
-    "@celerity-sdk/types": "npm:^0.6.0"
+    "@celerity-sdk/common": "npm:^0.7.0"
+    "@celerity-sdk/types": "npm:^0.7.0"
     debug: "npm:^4.4.0"
   peerDependencies:
     "@aws-sdk/client-secrets-manager": ^3.0.0
@@ -31,17 +31,17 @@ __metadata:
       optional: true
     ioredis:
       optional: true
-  checksum: 10c0/f89099e7a6c1b3c60d54c62e0aca2a4293929f840610507af0f50bd2e899e5f1265c61d110abb14b2308d6863d2879510e6caa9fe239ee7033a67c8fb2e34c02
+  checksum: 10c0/44a9b5b547d5cabd04af6533f9ceeb599fb08df28b058b15e294f303116c025906c6bff273bbcf23e556ca5e457cf31e6226ead3b496f29664e37a687a7af8c1
   languageName: node
   linkType: hard
 
-"@celerity-sdk/core@npm:^0.6.0":
-  version: 0.6.0
-  resolution: "@celerity-sdk/core@npm:0.6.0"
+"@celerity-sdk/core@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@celerity-sdk/core@npm:0.7.0"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.6.0"
-    "@celerity-sdk/config": "npm:^0.6.0"
-    "@celerity-sdk/types": "npm:^0.6.0"
+    "@celerity-sdk/common": "npm:^0.7.0"
+    "@celerity-sdk/config": "npm:^0.7.0"
+    "@celerity-sdk/types": "npm:^0.7.0"
     debug: "npm:^4.4.0"
     reflect-metadata: "npm:^0.2.0"
   peerDependencies:
@@ -49,7 +49,7 @@ __metadata:
   peerDependenciesMeta:
     "@celerity-sdk/runtime":
       optional: true
-  checksum: 10c0/cca934418d83cc7753f2e89ea265ec6a7838ecebcb040f8d5a426e33ff94b1bf1f2816883b88b2189b9241d802c1090cedce3de5d874f441f120eac8609dea88
+  checksum: 10c0/7afd60711fd86b16a3fcdb7f5504d67434bbe4c50d77dbcb36f99df88159a7466ee058013bbb590b590420ef27f398651381e3c54e7b3684c994d7d4e3950124
   languageName: node
   linkType: hard
 
@@ -152,12 +152,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@celerity-sdk/telemetry@npm:^0.6.0":
-  version: 0.6.0
-  resolution: "@celerity-sdk/telemetry@npm:0.6.0"
+"@celerity-sdk/telemetry@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@celerity-sdk/telemetry@npm:0.7.0"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.6.0"
-    "@celerity-sdk/types": "npm:^0.6.0"
+    "@celerity-sdk/common": "npm:^0.7.0"
+    "@celerity-sdk/types": "npm:^0.7.0"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/api-logs": "npm:^0.200.0"
     "@opentelemetry/core": "npm:^2.0.0"
@@ -189,14 +189,14 @@ __metadata:
       optional: true
     "@opentelemetry/instrumentation-pg":
       optional: true
-  checksum: 10c0/c531400ab9b44a71ebb8a47b6b0aa998a1eb6c72aed68f2ee5427ac0774794a57647beb3a992f54aef052dbdbc0d12ca7a249edd327a6b2d7aa038611da4745b
+  checksum: 10c0/20703e3cacaae73251beeffbf041286a19a7659822805fe0884717e463e6dabe1b5003d97ca5420131d3c43fc9219d6fd1e9a0959ef4ec38ab8ebd5cd3252c4d
   languageName: node
   linkType: hard
 
-"@celerity-sdk/types@npm:^0.6.0":
-  version: 0.6.0
-  resolution: "@celerity-sdk/types@npm:0.6.0"
-  checksum: 10c0/97077d48d4587326edc186af49077a3249408a1fe38191c4dca4325fd6b4122f49ddae29123b577e8d662680d64bc43f54027721e2159681b5c0aed6dc4c6647
+"@celerity-sdk/types@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@celerity-sdk/types@npm:0.7.0"
+  checksum: 10c0/d7ac502d27571f3276607b8d81df7b88d6f217769dfc87c512149178ea77c6af8147a6c1ef207d5bc2f6c1af942557bc14eb6ff616122d49e62fa4afd2442613
   languageName: node
   linkType: hard
 
@@ -1261,12 +1261,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "celerity-runtime-nodejs@workspace:."
   dependencies:
-    "@celerity-sdk/common": "npm:^0.6.0"
-    "@celerity-sdk/config": "npm:^0.6.0"
-    "@celerity-sdk/core": "npm:^0.6.0"
+    "@celerity-sdk/common": "npm:^0.7.0"
+    "@celerity-sdk/config": "npm:^0.7.0"
+    "@celerity-sdk/core": "npm:^0.7.0"
     "@celerity-sdk/runtime": "npm:^0.3.3"
-    "@celerity-sdk/telemetry": "npm:^0.6.0"
-    "@celerity-sdk/types": "npm:^0.6.0"
+    "@celerity-sdk/telemetry": "npm:^0.7.0"
+    "@celerity-sdk/types": "npm:^0.7.0"
     "@swc-node/register": "npm:^1.10.0"
     "@swc/core": "npm:^1.11.0"
     ioredis: "npm:^5.0.0"
