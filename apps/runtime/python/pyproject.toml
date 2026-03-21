@@ -5,7 +5,7 @@ description = "Celerity Python Runtime — hosts Python applications on the Cele
 license = "Apache-2.0"
 requires-python = ">=3.13"
 dependencies = [
-    "celerity-sdk[runtime,telemetry]>=0.2.1",
+    "celerity-sdk[runtime,telemetry]>=0.3.0",
 ]
 
 [dependency-groups]
