@@ -35,7 +35,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_OUTPUTS: ${{ toJSON(steps.release.outputs) }}
         run: |
-          GATED_COMPONENTS=("apps/runtime/nodejs")
+          GATED_COMPONENTS=("apps/runtime/nodejs" "apps/runtime/python")
 
           for path in "${GATED_COMPONENTS[@]}"; do
             # release-please outputs use -- as separator for path-based keys
@@ -59,7 +59,7 @@ jobs:
 
             if [[ "$has_release_as" == "false" ]]; then
               echo "Closing PR #$pr_number — $path requires a Release-As commit footer."
-              gh pr close "$pr_number" --comment "Closed automatically: $path releases require a \`Release-As: x.y.z\` commit footer. See [RELEASING.md](../blob/main/apps/runtime/nodejs/RELEASING.md)."
+              gh pr close "$pr_number" --comment "Closed automatically: $path releases require a \`Release-As: x.y.z\` commit footer. See [RELEASING.md](../blob/main/${path}/RELEASING.md)."
             else
               echo "PR #$pr_number has Release-As footer — allowing."
             fi
@@ -100,7 +100,7 @@ jobs:
             ["runtime-sdk-python"]="lib-python-runtime-sdk-release.yml"
             ["runtime-sdk-ffi"]="lib-java-csharp-sdk-release.yml"
             ["runtime-nodejs"]="app-runtime-nodejs-release.yml"
-            ["runtime-python"]="app-runtime-python-release.yml",
+            ["runtime-python"]="app-runtime-python-release.yml"
             ["local-events"]="app-local-events-release.yml"
           )
 
