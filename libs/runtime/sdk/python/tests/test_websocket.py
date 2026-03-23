@@ -61,6 +61,17 @@ def _ws_connect(query: str = ""):
     return create_connection(url, origin="https://example.com")
 
 
+def _recv_text(ws):
+    """Receive the next text frame, skipping any binary frames
+    (e.g. the capabilities signal sent on connect)."""
+    while True:
+        opcode, data = ws.recv_data()
+        # opcode 1 = text, 2 = binary
+        if opcode == 1:
+            return data.decode("utf-8") if isinstance(data, bytes) else data
+        # skip binary frames
+
+
 def _wait_for_file(path: str, timeout: float = 10.0):
     start = time.time()
     while time.time() - start < timeout:
@@ -102,10 +113,10 @@ def test_setup_returns_websocket_config():
 def test_ws_connect_triggers_handler(ws_server):
     ws = _ws_connect()
     try:
-        msg = json.loads(ws.recv())
+        msg = json.loads(_recv_text(ws))
         assert msg["event"] == "connected"
         assert msg["connectionId"]
-        assert "CONNECT" in msg["eventType"]
+        assert "connect" in msg["eventType"].lower()
     finally:
         ws.close()
 
@@ -119,10 +130,10 @@ def test_ws_json_message_routes_to_echo(ws_server):
     ws = _ws_connect()
     try:
         # Consume the connect message first.
-        ws.recv()
+        _recv_text(ws)
 
         ws.send(json.dumps({"action": "echo", "data": "hello"}))
-        msg = json.loads(ws.recv())
+        msg = json.loads(_recv_text(ws))
         assert msg["event"] == "echo"
         assert msg["body"]["data"] == "hello"
         assert msg["connectionId"]
@@ -139,10 +150,10 @@ def test_ws_default_route(ws_server):
     ws = _ws_connect()
     try:
         # Consume the connect message.
-        ws.recv()
+        _recv_text(ws)
 
         ws.send(json.dumps({"action": "unknownAction", "data": "test"}))
-        msg = json.loads(ws.recv())
+        msg = json.loads(_recv_text(ws))
         assert msg["event"] == "default"
         assert msg["connectionId"]
     finally:
@@ -164,7 +175,7 @@ def test_ws_disconnect_triggers_handler(ws_server):
 
     ws = _ws_connect()
     # Consume the connect message.
-    ws.recv()
+    _recv_text(ws)
     ws.close()
 
     result = _wait_for_file(disconnect_file)
@@ -181,10 +192,10 @@ def test_ws_registry_send_message(ws_server):
     ws = _ws_connect()
     try:
         # Consume the connect message.
-        ws.recv()
+        _recv_text(ws)
 
         ws.send(json.dumps({"action": "echo", "payload": {"key": "value"}}))
-        msg = json.loads(ws.recv())
+        msg = json.loads(_recv_text(ws))
         # The echo handler uses ws_registry.send_message to send back.
         assert msg["event"] == "echo"
         assert msg["body"]["payload"] == {"key": "value"}
@@ -201,10 +212,10 @@ def test_ws_request_context(ws_server):
     ws = _ws_connect(query="token=abc")
     try:
         # Consume the connect message.
-        ws.recv()
+        _recv_text(ws)
 
         ws.send(json.dumps({"action": "echo", "data": "ctx-test"}))
-        msg = json.loads(ws.recv())
+        msg = json.loads(_recv_text(ws))
         assert msg["requestContext"] is not None
         assert msg["requestContext"]["requestId"]
         assert msg["requestContext"]["clientIp"]

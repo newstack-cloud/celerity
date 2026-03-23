@@ -17,10 +17,19 @@ def test_http_endpoint(runtime_server):
     assert response.json() == {"message": "Order received"}
 
 
+def _recv_text(ws):
+    """Receive the next text frame, skipping binary frames
+    (e.g. the capabilities signal sent on connect)."""
+    while True:
+        opcode, data = ws.recv_data()
+        if opcode == 1:
+            return data.decode("utf-8") if isinstance(data, bytes) else data
+
+
 def test_websockets(runtime_server):
     ws = create_connection("ws://localhost:22346/ws", origin="https://example.com")
     ws.send(json.dumps({"action": "processOrderUpdate", "data": {"orderId": "1234"}}))
-    msg = ws.recv()
+    msg = _recv_text(ws)
     assert msg == '{"action": "processedOrderUpdate", "message": "Order received"}'
     ws.close()
 
