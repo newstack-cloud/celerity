@@ -5,9 +5,13 @@ all-features = true
 [advisories]
 db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
-severity-threshold = "high"
 unmaintained = "workspace"
 yanked = "warn"
+ignore = [
+    # Low-impact rustls-webpki CRL matching bug; upstream aws-smithy-http-client
+    # still pulls in rustls 0.21 — no fix available yet.
+    "RUSTSEC-2026-0049",
+]
 
 [licenses]
 allow = [
