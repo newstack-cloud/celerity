@@ -11,12 +11,12 @@ APP_DIR="${CELERITY_APP_DIR:-${RUNTIME_DIR}/app}"
 install_app_deps() {
   if [ -f "${APP_DIR}/pyproject.toml" ]; then
     echo "[celerity-runtime] Installing app dependencies from ${APP_DIR}/pyproject.toml"
-    pip install --quiet "${APP_DIR}" || {
+    uv pip install --quiet "${APP_DIR}" || {
       echo "[celerity-runtime] Warning: failed to install app dependencies" >&2
     }
   elif [ -f "${APP_DIR}/requirements.txt" ]; then
     echo "[celerity-runtime] Installing app dependencies from ${APP_DIR}/requirements.txt"
-    pip install --quiet -r "${APP_DIR}/requirements.txt" || {
+    uv pip install --quiet -r "${APP_DIR}/requirements.txt" || {
       echo "[celerity-runtime] Warning: failed to install app dependencies" >&2
     }
   fi

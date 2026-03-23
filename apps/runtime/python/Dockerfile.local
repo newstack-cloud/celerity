@@ -1,20 +1,65 @@
 # =============================================================================
 # Celerity Python Runtime — Local Development Dockerfile
 #
-# Supports two workflows:
-#   1. Install from local SDK wheel:
-#      docker build --build-arg SDK_WHEEL=celerity_sdk-0.2.0-py3-none-any.whl \
-#        -f Dockerfile.local -t celerity-runtime-python:dev-local .
+# Builds a dev image that overlays locally built SDK and runtime SDK on top
+# of the registry-installed dependencies.
 #
-#   2. Install from local SDK source:
-#      docker build --build-arg SDK_SOURCE_DIR=../../celerity-python-sdk \
-#        -f Dockerfile.local -t celerity-runtime-python:dev-local .
+# Full rebuild (includes Rust runtime SDK):
+#   ./scripts/prepare-runtime-sdk-context.sh  # filters out target/, node_modules
+#   docker build -f Dockerfile.local \
+#     --build-context sdk=$HOME/projects2026/celerity-python-sdk \
+#     --build-context runtime-sdk=/tmp/celerity-runtime-sdk-context \
+#     -t ghcr.io/newstack-cloud/celerity-runtime-python-3-13:dev-local .
 #
-# Usage:
-#   docker tag celerity-runtime-python:dev-local \
+# Build runtime SDK only (run once, then use quick rebuild):
+#   ./scripts/prepare-runtime-sdk-context.sh
+#   docker build -f Dockerfile.local --target runtime-sdk-builder \
+#     --build-context runtime-sdk=/tmp/celerity-runtime-sdk-context \
+#     -t celerity-python-runtime-sdk:local .
+#
+# Quick rebuild (Python SDK changes only — reuses cached Rust build):
+#   docker build -f Dockerfile.local \
+#     --build-arg RUNTIME_SDK_IMAGE=celerity-python-runtime-sdk:local \
+#     --build-context sdk=$HOME/projects2026/celerity-python-sdk \
+#     -t ghcr.io/newstack-cloud/celerity-runtime-python-3-13:dev-local .
+#
+# Retag for celerity dev run:
+#   docker tag ghcr.io/newstack-cloud/celerity-runtime-python-3-13:dev-local \
 #     ghcr.io/newstack-cloud/celerity-runtime-python-3-13:dev-{version}
 # =============================================================================
 
+# Controls where the pre-built runtime SDK wheel comes from.
+# Default: "runtime-sdk-builder" stage (builds from Rust source).
+# Override: --build-arg RUNTIME_SDK_IMAGE=celerity-python-runtime-sdk:local
+#           to skip Rust build.
+ARG RUNTIME_SDK_IMAGE=runtime-sdk-builder
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build the Rust runtime SDK (celerity-runtime-sdk) for Linux
+# Uses --build-context runtime-sdk=path/to/libs/runtime (the Cargo workspace root)
+# -----------------------------------------------------------------------------
+FROM ghcr.io/pyo3/maturin:v1.12.6 AS runtime-sdk-builder
+
+WORKDIR /build
+
+# Copy the Cargo workspace source. The build context should be prepared with
+# scripts/prepare-runtime-sdk-context.sh to exclude target/ (40+ GB),
+# node_modules (5+ GB), and other build artifacts.
+COPY --from=runtime-sdk . /build/runtime/
+
+# Build the Python SDK crate wheel.
+# maturin builds a platform-specific Linux wheel into /build/wheels/.
+RUN cd /build/runtime/sdk/python \
+    && maturin build --release --interpreter python3.13 --out /build/wheels/
+
+# -----------------------------------------------------------------------------
+# Stage 2: Resolve runtime SDK source (builder by default, or a pre-built image)
+# -----------------------------------------------------------------------------
+FROM ${RUNTIME_SDK_IMAGE} AS runtime-sdk-resolved
+
+# -----------------------------------------------------------------------------
+# Stage 3: Development image
+# -----------------------------------------------------------------------------
 FROM dhi.io/python:3.13-debian13-dev AS dev
 
 WORKDIR /opt/celerity
@@ -30,7 +75,18 @@ RUN chmod +x entrypoint.sh
 # Install base dependencies first
 RUN uv sync
 
-# --- Option 1: Overlay a local SDK wheel ---
+# --- Overlay local runtime SDK wheel (built in stage 1 or from cached image) ---
+COPY --from=runtime-sdk-resolved /build/wheels/ /tmp/runtime-sdk-wheel/
+RUN . /opt/celerity/.venv/bin/activate \
+    && uv pip install --force-reinstall /tmp/runtime-sdk-wheel/*.whl
+
+# --- Option 1: Overlay local SDK source via build context ---
+# Usage: --build-context sdk=$HOME/projects2026/celerity-python-sdk
+COPY --from=sdk . /tmp/sdk-source/
+RUN . /opt/celerity/.venv/bin/activate \
+    && uv pip install --force-reinstall /tmp/sdk-source/
+
+# --- Option 2: Overlay a local SDK wheel ---
 ARG SDK_WHEEL=""
 COPY ${SDK_WHEEL:-.dockerignore} /tmp/sdk-wheel/
 RUN if [ -n "$SDK_WHEEL" ]; then \
@@ -38,25 +94,19 @@ RUN if [ -n "$SDK_WHEEL" ]; then \
       && uv pip install --force-reinstall /tmp/sdk-wheel/*.whl; \
     fi
 
-# --- Option 2: Overlay a local SDK source directory ---
-ARG SDK_SOURCE_DIR=""
-COPY ${SDK_SOURCE_DIR:-.dockerignore} /tmp/sdk-source/
-RUN if [ -n "$SDK_SOURCE_DIR" ]; then \
-      . /opt/celerity/.venv/bin/activate \
-      && uv pip install --force-reinstall /tmp/sdk-source/; \
-    fi
-
 # Generate manifest
 RUN . /opt/celerity/.venv/bin/activate && python generate_manifest.py
 
-# Create app directory
-RUN mkdir -p /opt/celerity/app
+# Create app directory and ensure nonroot user can install app deps into the venv
+RUN mkdir -p /opt/celerity/app \
+    && chown -R nonroot:nonroot /opt/celerity/.venv
 
 ENV CELERITY_ENV=development \
     CELERITY_RUNTIME_CALL_MODE=ffi \
     CELERITY_SERVER_PORT=8080 \
     CELERITY_RUNTIME_PLATFORM=other \
     CELERITY_SERVER_LOOPBACK_ONLY=false \
+    PYTHONUNBUFFERED=1 \
     VIRTUAL_ENV=/opt/celerity/.venv \
     PATH="/opt/celerity/.venv/bin:$PATH"
 

@@ -9,16 +9,6 @@
 #   docker build --target runtime -t ghcr.io/newstack-cloud/celerity-runtime-python-3-13:1.0.0 .
 #   docker build --target dev -t ghcr.io/newstack-cloud/celerity-runtime-python-3-13:dev-1.0.0 .
 #
-# Dependency Resolution:
-#   Python's import system uses a single sys.modules namespace, so unlike
-#   Node.js there is no duplicate-symbol problem from multiple package copies.
-#   Instead, the runtime and app dependencies are installed into the same venv:
-#
-#   1. The runtime's pyproject.toml brings celerity-sdk[runtime] (core + PyO3).
-#   2. Derivative images install the app's dependencies (e.g. celerity-sdk[cache],
-#      celerity-sdk[resources-sql]) into the same venv.
-#   3. Resource layers that are not installed are silently skipped at startup
-#      (see celerity.layers.system.create_default_system_layers).
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -90,6 +80,7 @@ ENV CELERITY_ENV=production \
     CELERITY_SERVER_PORT=8080 \
     CELERITY_RUNTIME_PLATFORM=other \
     CELERITY_SERVER_LOOPBACK_ONLY=false \
+    PYTHONUNBUFFERED=1 \
     VIRTUAL_ENV=/opt/celerity/.venv \
     PATH="/opt/celerity/.venv/bin:$PATH"
 
@@ -110,6 +101,9 @@ FROM dhi.io/python:3.13-debian13-dev AS dev
 
 WORKDIR /opt/celerity
 
+# Install uv for fast app dependency installation at startup
+RUN pip install uv
+
 # Copy full venv (includes watchfiles)
 COPY --from=deps-dev /opt/celerity/.venv ./.venv
 
@@ -121,8 +115,9 @@ RUN chmod +x entrypoint.sh
 # Generate runtime-manifest.json with installed SDK versions
 RUN . /opt/celerity/.venv/bin/activate && python generate_manifest.py
 
-# Create app directory for derivative images
-RUN mkdir -p /opt/celerity/app
+# Create app directory and ensure nonroot user can install app deps into the venv
+RUN mkdir -p /opt/celerity/app \
+    && chown -R nonroot:nonroot /opt/celerity/.venv
 
 # Default environment variables
 ENV CELERITY_ENV=development \
@@ -130,6 +125,7 @@ ENV CELERITY_ENV=development \
     CELERITY_SERVER_PORT=8080 \
     CELERITY_RUNTIME_PLATFORM=other \
     CELERITY_SERVER_LOOPBACK_ONLY=false \
+    PYTHONUNBUFFERED=1 \
     VIRTUAL_ENV=/opt/celerity/.venv \
     PATH="/opt/celerity/.venv/bin:$PATH"
 

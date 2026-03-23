@@ -59,18 +59,29 @@ docker run --rm \
 
 ## Local SDK Development
 
-Use `Dockerfile.local` to test with a locally built SDK:
+Use `Dockerfile.local` to test with locally built SDK packages.
+See the header comments in `Dockerfile.local` for all build variants.
 
 ```bash
-# From a local wheel
-docker build -f Dockerfile.local \
-  --build-arg SDK_WHEEL=path/to/celerity_sdk-0.2.0-py3-none-any.whl \
-  -t celerity-runtime-python:dev-local .
+# Prepare a filtered build context (excludes target/, node_modules — ~2 MB vs 40+ GB)
+./scripts/prepare-runtime-sdk-context.sh
 
-# From local source
+# Full rebuild — compiles Rust runtime SDK from source + overlays local Python SDK
 docker build -f Dockerfile.local \
-  --build-arg SDK_SOURCE_DIR=../../path/to/celerity-python-sdk \
-  -t celerity-runtime-python:dev-local .
+  --build-context sdk=$HOME/projects2026/celerity-python-sdk \
+  --build-context runtime-sdk=/tmp/celerity-runtime-sdk-context \
+  -t ghcr.io/newstack-cloud/celerity-runtime-python-3-13:dev-local .
+
+# Build runtime SDK once (cache for quick rebuilds)
+docker build -f Dockerfile.local --target runtime-sdk-builder \
+  --build-context runtime-sdk=/tmp/celerity-runtime-sdk-context \
+  -t celerity-python-runtime-sdk:local .
+
+# Quick rebuild — Python SDK changes only, reuses cached Rust build
+docker build -f Dockerfile.local \
+  --build-arg RUNTIME_SDK_IMAGE=celerity-python-runtime-sdk:local \
+  --build-context sdk=$HOME/projects2026/celerity-python-sdk \
+  -t ghcr.io/newstack-cloud/celerity-runtime-python-3-13:dev-local .
 ```
 
 ## Releasing
