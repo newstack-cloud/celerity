@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-python/v0.2.0...runtime-sdk-python/v0.2.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* **lib-rt-sdk-python:** add fixes to websocket types and include all features in build ([39cee06](https://github.com/newstack-cloud/celerity/commit/39cee06918f6bbdd1f020d1a33908db32205ca0a))
+
+
+### Dependencies
+
+* **runtime-sdk-python:** update core dependencies ([d2be0ed](https://github.com/newstack-cloud/celerity/commit/d2be0edddef9e16d6ec348eb41df5ab8d328501e))
+
 ## [0.2.0](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-python/v0.1.0...runtime-sdk-python/v0.2.0) (2026-03-17)
 
 
