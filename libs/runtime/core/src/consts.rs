@@ -70,6 +70,15 @@ pub const CELERITY_WS_UNAUTHORISED_ERROR_CODE: u16 = 4001;
 // via the `Forbidden` error variant.
 pub const CELERITY_WS_FORBIDDEN_ERROR_CODE: u16 = 4002;
 
+// Binary prefix for the server capabilities signal.
+// Sent immediately after a WebSocket connection is established to indicate
+// that the server supports full protocol capabilities (binary messages,
+// custom close codes, and binary control frames).
+// In environments where binary frames are not supported (e.g., managed
+// WebSocket gateways), this frame will not reach the client, causing the
+// client to fall back to constrained capabilities (text-only).
+pub const CELERITY_WS_CAPABILITIES_SIGNAL: [u8; 4] = [0x1, 0x5, 0x0, 0x0];
+
 // The route key for the connect handler for a WebSocket API.
 // A handler registered with this route key will be called when a client
 // connects to the WebSocket API server after authentication has been performed

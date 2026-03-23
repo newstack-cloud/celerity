@@ -41,9 +41,9 @@ use crate::{
     },
     auth_jwt::{validate_jwt_on_ws_connect, ValidateJwtError},
     consts::{
-        CELERITY_WS_CONNECT_HANDLER_ROUTE, CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE,
-        CELERITY_WS_DISCONNECT_HANDLER_ROUTE, CELERITY_WS_FORBIDDEN_ERROR_CODE,
-        CELERITY_WS_UNAUTHORISED_ERROR_CODE,
+        CELERITY_WS_CAPABILITIES_SIGNAL, CELERITY_WS_CONNECT_HANDLER_ROUTE,
+        CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE, CELERITY_WS_DISCONNECT_HANDLER_ROUTE,
+        CELERITY_WS_FORBIDDEN_ERROR_CODE, CELERITY_WS_UNAUTHORISED_ERROR_CODE,
     },
     errors::WebSocketsMessageError,
     request::{HttpProtocolVersion, RequestId},
@@ -295,6 +295,21 @@ async fn handle_socket(
             .connections
             .add_connection(connection_id.clone(), socket_ref.clone());
         ws_connections_counter().add(1, &[]);
+
+        // Send the capabilities signal — a binary frame that indicates the server
+        // supports full protocol capabilities (binary messages, custom close codes,
+        // binary control frames). In environments where binary frames are not
+        // supported (e.g., managed WebSocket gateways that proxy via text-only APIs),
+        // this frame will not reach the client, causing it to fall back to constrained
+        // capabilities (text-only, JSON-format control frames).
+        {
+            let mut sock = socket_ref.lock().await;
+            let _ = sock
+                .send(Message::Binary(
+                    CELERITY_WS_CAPABILITIES_SIGNAL.to_vec().into(),
+                ))
+                .await;
+        }
 
         // For Connect strategy, only reached after successful auth (with auth data).
         // For AuthMessage / no auth, fires immediately with null auth data.
