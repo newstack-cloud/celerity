@@ -144,6 +144,17 @@ pub enum WSBindingEventType {
   Disconnect,
 }
 
+#[pymethods]
+impl WSBindingEventType {
+  fn __str__(&self) -> &str {
+    match self {
+      Self::Connect => "connect",
+      Self::Message => "message",
+      Self::Disconnect => "disconnect",
+    }
+  }
+}
+
 impl From<WebSocketEventType> for WSBindingEventType {
   fn from(event_type: WebSocketEventType) -> Self {
     match event_type {
@@ -176,6 +187,8 @@ pub struct WSBindingMessageRequestContext {
   #[pyo3(get)]
   pub cookies: HashMap<String, String>,
   #[pyo3(get)]
+  pub auth: Option<Py<PyAny>>,
+  #[pyo3(get)]
   pub trace_context: Option<HashMap<String, String>>,
 }
 
@@ -185,6 +198,12 @@ impl WSBindingMessageRequestContext {
     trace_context: Option<HashMap<String, String>>,
     py: Python,
   ) -> PyResult<Py<Self>> {
+    let auth = message_request_context
+      .auth
+      .as_ref()
+      .map(|v| json_value_to_python(v, py).map(|b| b.unbind()))
+      .transpose()?;
+
     Py::new(
       py,
       Self {
@@ -205,6 +224,7 @@ impl WSBindingMessageRequestContext {
         client_ip: message_request_context.client_ip,
         query: message_request_context.query,
         cookies: message_request_context.cookies,
+        auth,
         trace_context,
       },
     )
@@ -236,6 +256,7 @@ impl WSBindingMessageRequestContextBuilder {
         client_ip: String::new(),
         query: HashMap::new(),
         cookies: HashMap::new(),
+        auth: None,
         trace_context: None,
       }),
     }
@@ -481,6 +502,16 @@ pub enum WSBindingMessageType {
   Json,
   #[pyo3(name = "BINARY")]
   Binary,
+}
+
+#[pymethods]
+impl WSBindingMessageType {
+  fn __str__(&self) -> &str {
+    match self {
+      Self::Json => "json",
+      Self::Binary => "binary",
+    }
+  }
 }
 
 impl From<WSBindingMessageType> for MessageType {

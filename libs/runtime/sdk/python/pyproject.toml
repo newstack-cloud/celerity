@@ -45,4 +45,4 @@ check_untyped_defs = true
 python-source = "python"
 module-name = "celerity_runtime_sdk._celerity_runtime_sdk"
 bindings = "pyo3"
-features = ["pyo3/extension-module"]
+features = ["pyo3/extension-module", "celerity_local_consumers", "aws_consumers", "gcloud_consumers", "azure_consumers"]
