@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.5.0...runtime-core/v0.6.0) (2026-03-23)
+
+
+### Features
+
+* **lib-rt-core:** add capability message to websocket server ([43e8bb6](https://github.com/newstack-cloud/celerity/commit/43e8bb6540c2752d57c185d3da58a082e66f43fa))
+
 ## [0.5.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.4.1...runtime-core/v0.5.0) (2026-03-16)
 
 
