@@ -65,7 +65,11 @@
       "component": "runtime-sdk-python",
       "package-name": "celerity-python-runtime-sdk",
       "extra-files": [
-        "Cargo.toml"
+        {
+          "type": "toml",
+          "path": "Cargo.toml",
+          "jsonpath": "$.package.version"
+        }
       ]
     },
     "apps/runtime/nodejs": {
