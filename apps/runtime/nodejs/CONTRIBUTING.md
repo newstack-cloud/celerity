@@ -4,7 +4,7 @@
 
 - Docker (with BuildKit)
 - Rust toolchain (for the NAPI addon)
-- Node.js >= 22 and Yarn 4
+- Node.js >= 24 and Yarn 4
 - Go (for the Celerity CLI)
 - Local clones of:
   - This repo (`celerity`)
@@ -54,7 +54,7 @@ docker build -f Dockerfile.local \
 First, cache the NAPI binary once:
 
 ```bash
-docker build -f Dockerfile.local --target rust-builder \
+docker build -f Dockerfile.local --target napi-cache \
   --build-context runtime=$HOME/projects2023/celerity/libs/runtime \
   -t celerity-napi:local .
 ```

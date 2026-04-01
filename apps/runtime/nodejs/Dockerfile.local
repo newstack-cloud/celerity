@@ -19,15 +19,15 @@
 #     -t ghcr.io/newstack-cloud/celerity-runtime-nodejs-24:dev-local .
 #
 # Build NAPI addon only (run once, then use quick rebuild):
-#   docker build -f Dockerfile.local --target rust-builder \
+#   docker build -f Dockerfile.local --target napi-cache \
 #     --build-context runtime=$HOME/projects2023/celerity/libs/runtime \
 #     -t celerity-napi:local .
 # =============================================================================
 
 # Controls where the pre-built NAPI binary comes from.
-# Default: "rust-builder" stage (builds from Rust source).
+# Default: "napi-cache" stage (builds from Rust source, keeps only artifacts).
 # Override: --build-arg NAPI_IMAGE=celerity-napi:local to skip Rust build.
-ARG NAPI_IMAGE=rust-builder
+ARG NAPI_IMAGE=napi-cache
 
 # -----------------------------------------------------------------------------
 # Stage 1: Build the runtime NAPI addon from local Rust source
@@ -59,7 +59,15 @@ RUN npm install
 RUN npx napi build --platform --features celerity_local_consumers
 
 # -----------------------------------------------------------------------------
-# Stage 2: Resolve NAPI source (rust-builder by default, or a pre-built image)
+# Stage 1b: Lightweight cache — only the final NAPI artifacts (~100 MB vs ~14 GB)
+# -----------------------------------------------------------------------------
+FROM debian:bookworm-slim AS napi-cache
+COPY --from=rust-builder /build/sdk/node/index.js /build/sdk/node/
+COPY --from=rust-builder /build/sdk/node/index.d.ts /build/sdk/node/
+COPY --from=rust-builder /build/sdk/node/runtime.*.node /build/sdk/node/
+
+# -----------------------------------------------------------------------------
+# Stage 2: Resolve NAPI source (napi-cache by default, or a pre-built image)
 # -----------------------------------------------------------------------------
 FROM ${NAPI_IMAGE} AS napi
 
