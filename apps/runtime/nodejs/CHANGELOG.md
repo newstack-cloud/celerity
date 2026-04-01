@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.1](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.7.0...runtime-nodejs/v0.8.1) (2026-04-01)
+
+
+### Dependencies
+
+* **runtime-nodejs:** update @celerity-sdk/* to 0.8.0 ([d6326dc](https://github.com/newstack-cloud/celerity/commit/d6326dcd0fba51d929913c48e25532367e7e93cc))
+* **runtime-nodejs:** update @celerity-sdk/* to 0.8.1 ([82d2833](https://github.com/newstack-cloud/celerity/commit/82d28337dfa7e6eecd1cec48640ba730c530a4ed))
+
 ## [0.7.0](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.6.0...runtime-nodejs/v0.7.0) (2026-03-20)
 
 
