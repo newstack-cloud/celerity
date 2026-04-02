@@ -26,6 +26,7 @@ module.exports = {
       "always",
       [
         "cli",
+        "dev-auth",
         "local-events",
         "lib-rt-core",
         "lib-rt-workflow",

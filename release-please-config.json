@@ -24,6 +24,11 @@
       "component": "local-events",
       "package-name": "local-events"
     },
+    "apps/dev-auth": {
+      "release-type": "simple",
+      "component": "dev-auth",
+      "package-name": "dev-auth"
+    },
     "libs/runtime": {
       "release-type": "simple",
       "component": "runtime-core",

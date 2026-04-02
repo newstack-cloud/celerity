@@ -1,0 +1,36 @@
+# Test infrastructure
+docker-compose.test-deps.yml
+.env.test
+scripts/
+
+# Test and CI artifacts
+*.test
+*.out
+coverage.txt
+coverage.html
+coverage/
+report.json
+
+# Build artifacts
+vendor/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE and tooling
+.claude/
+CLAUDE.md
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Docker (avoid recursive context)
+Dockerfile
+.dockerignore
+
+# Sonar
+sonar-project.properties

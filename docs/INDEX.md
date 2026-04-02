@@ -8,6 +8,7 @@ All projects in the Celerity monorepo, grouped by area. Each release component i
 |------|-------------|----------|-------------------|
 | [apps/cli](../apps/cli) | CLI for developing, building, deploying, and managing Celerity applications and blueprints. | Go | `cli` |
 | [apps/local-events](../apps/local-events) | Sidecar that captures events from local sources and forwards them to Celerity runtime applications for integrated testing. | Go | `local-events` |
+| [apps/dev-auth](../apps/dev-auth) | Lightweight OIDC provider for local development that issues signed JWTs with customisable claims. | Go | `dev-auth` |
 
 ## Runtime Applications
 

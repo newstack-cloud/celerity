@@ -5,4 +5,5 @@ toolchain go1.26.0
 use (
 	./apps/cli
 	./apps/local-events
+	./apps/dev-auth
 )

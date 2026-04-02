@@ -27,6 +27,7 @@ lint_project libs/runtime
 
 lint_project apps/cli
 lint_project apps/local-events
+lint_project apps/dev-auth
 
 # lint_project apps/runtime/nodejs
 # lint_project apps/runtime/python

@@ -102,6 +102,7 @@ jobs:
             ["runtime-nodejs"]="app-runtime-nodejs-release.yml"
             ["runtime-python"]="app-runtime-python-release.yml"
             ["local-events"]="app-local-events-release.yml"
+            ["dev-auth"]="app-dev-auth-release.yml"
           )
 
           for tag in $(git tag --points-at HEAD); do
