@@ -141,7 +141,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "celerity-sdk", extras = ["runtime", "telemetry"], specifier = ">=0.4.0" }]
+requires-dist = [{ name = "celerity-sdk", extras = ["runtime", "telemetry"], specifier = ">=0.5.0" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -201,15 +201,15 @@ wheels = [
 
 [[package]]
 name = "celerity-sdk"
-version = "0.4.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/28/23/96b618960c9c2045b42c6239e7818f113bfa0e80f4c953754d633f7f1bba/celerity_sdk-0.4.0.tar.gz", hash = "sha256:55a9e058de6fe8480dbc03eca760a76767fd32ee93ca730fed1ae7eacf9e8ff2", size = 239051 }
+sdist = { url = "https://files.pythonhosted.org/packages/08/4d/3ceae6ea475d9d988a7335c11e12f880b69bfbf4e71f55767e86f5486bdc/celerity_sdk-0.5.0.tar.gz", hash = "sha256:a01e59f7a2a5d20a56f4f760902317a9f031a3187be8953ec7b2887761f98836", size = 248041 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9f/95/511aece8cf86831e5935bed898a8cb0d02398f9a875e9cb086852cd5b4c5/celerity_sdk-0.4.0-py3-none-any.whl", hash = "sha256:02e7a31fab7df9197c0ab7d3259b466768740075b2fe94a250518ad540406d8e", size = 219589 },
+    { url = "https://files.pythonhosted.org/packages/64/4e/36d5ff95c98902fe7dd8b054e04d9c4f5c39f4eccefb13b5f93a6fe9927c/celerity_sdk-0.5.0-py3-none-any.whl", hash = "sha256:99c6ff4a6322a0ec566058d688b3d4226967aeb137094bb3ec136cc4bf7fc5be", size = 230621 },
 ]
 
 [package.optional-dependencies]
