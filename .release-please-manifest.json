@@ -1,5 +1,5 @@
 {
-  "apps/cli": "0.1.0",
+  "apps/cli": "0.2.0",
   "apps/local-events": "0.4.1",
   "apps/dev-auth": "0.2.0",
   "libs/runtime": "0.6.0",
