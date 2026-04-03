@@ -35,3 +35,7 @@ test-*.sh
 
 # Local binary output directory for testing.
 bin
+
+# Only contains config and credentials for local emulators
+# brought up in isolation for test runs.
+!.env.test
