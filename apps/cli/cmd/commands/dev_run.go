@@ -99,9 +99,12 @@ func runDevRun(ctx context.Context, confProvider *config.Provider) error {
 		return err
 	}
 
-	composeMgr := compose.NewComposeManager(
+	composeMgr, err := compose.NewComposeManager(
 		resolved.ComposeConfig.ProjectName, resolved.AppDir, logger,
 	)
+	if err != nil {
+		return err
+	}
 
 	if err := devrun.HandleStaleState(ctx, resolved.AppDir, dockerMgr, composeMgr, output); err != nil {
 		return err

@@ -61,9 +61,12 @@ func runDevStop(cmd *cobra.Command, confProvider *config.Provider) error {
 		return err
 	}
 
-	composeMgr := compose.NewComposeManager(
+	composeMgr, err := compose.NewComposeManager(
 		state.ComposeProject, appDir, logger,
 	)
+	if err != nil {
+		return err
+	}
 
 	return devrun.StopFromState(cmd.Context(), appDir, dockerMgr, composeMgr, output, logger)
 }

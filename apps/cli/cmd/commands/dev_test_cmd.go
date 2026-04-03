@@ -181,9 +181,12 @@ func setupTestInfra(
 		return nil, nil, err
 	}
 
-	composeMgr := compose.NewComposeManager(
+	composeMgr, err := compose.NewComposeManager(
 		resolved.ComposeConfig.ProjectName, resolved.AppDir, logger,
 	)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	if err := devrun.HandleStaleState(ctx, resolved.AppDir, dockerMgr, composeMgr, output); err != nil {
 		return nil, nil, err
