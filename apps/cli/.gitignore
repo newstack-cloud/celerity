@@ -15,6 +15,7 @@ gen-*.go
 *.out
 coverage.txt
 coverage.html
+coverage/
 
 # Test report for sonar.
 report.json
@@ -31,3 +32,6 @@ test-*.sh
 
 # Test blueprint files used when testing the CLI during development.
 *.blueprint.yaml
+
+# Local binary output directory for testing.
+bin

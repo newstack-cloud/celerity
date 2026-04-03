@@ -4,7 +4,8 @@
 
 ### Prerequisites
 
-- [Go](https://golang.org/dl/) >=1.22
+- [Go](https://golang.org/dl/) >=1.26
+- [Docker](https://docs.docker.com/get-docker/) (for integration tests)
 
 Dependencies are managed with Go modules (go.mod) and will be installed automatically when you first
 run tests.
@@ -17,9 +18,78 @@ go mod download
 
 ## Running tests
 
+### Unit tests only (no Docker required)
+
+To run tests without starting Docker test infrastructure:
+
+```bash
+bash ./scripts/run-tests.sh --no-infra
+```
+
+### Full test suite (unit + integration)
+
+The full test suite requires Docker for integration test dependencies
+(DynamoDB Local, MinIO, PostgreSQL, Valkey).
+
 ```bash
 bash ./scripts/run-tests.sh
 ```
+
+This will:
+1. Start test dependencies via `docker-compose.test-deps.yml`
+2. Wait for all services to be healthy
+3. Export environment variables from `.env.test`
+4. Run all tests with coverage
+5. Generate `coverage.html` for local inspection
+6. Tear down test dependencies on exit
+
+### Test infrastructure
+
+Test dependencies are defined in `docker-compose.test-deps.yml` with pinned versions
+matching the compose generator (`internal/compose/consts.go`):
+
+| Service | Image | Host Port |
+|---------|-------|-----------|
+| DynamoDB Local | `amazon/dynamodb-local:3.3.0` | 48000 |
+| MinIO | `minio/minio:RELEASE.2025-09-07T16-13-09Z` | 49000 |
+| PostgreSQL | `postgres:17-alpine` | 45433 |
+| Valkey | `valkey/valkey:8-alpine` | 46379 |
+
+Environment variables for connecting to these services are in `.env.test`.
+
+Integration tests should check for the relevant environment variable and skip
+if it is not set:
+
+```go
+func (s *MySuite) SetupTest() {
+    endpoint := testutils.RequireEnv(s.T(), "CELERITY_TEST_DYNAMODB_ENDPOINT")
+    // ...
+}
+```
+
+### Updating snapshots
+
+```bash
+bash ./scripts/run-tests.sh --update-snapshots
+```
+
+### Viewing coverage
+
+After running tests, open the coverage report:
+
+```bash
+open coverage.html
+```
+
+## Test conventions
+
+- Use `testify/suite` for test organisation
+- Test only the **public API** of each package — do not test unexported functions directly
+- Use `s.T().TempDir()` for filesystem fixtures
+- Use `s.Require().NoError()` for preconditions, `s.Assert()` for test assertions
+- Shared mocks live in `internal/testutils/`
+- Integration tests that need Docker services should use `testutils.RequireEnv()`
+  to skip gracefully when infrastructure is unavailable
 
 ## Releasing
 
@@ -75,7 +145,7 @@ GOPROXY=proxy.golang.org go list -m github.com/newstack-cloud/celerity/apps/cli@
 
 ## Commit scope
 
-**blueprint**
+**cli**
 
 Example commit:
 

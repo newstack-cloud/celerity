@@ -41,9 +41,10 @@ type Provider struct {
 // values for the CLI.
 func NewProvider() *Provider {
 	return &Provider{
-		config:  map[string]string{},
-		pFlags:  map[string]*pflag.Flag{},
-		envVars: map[string]string{},
+		config:   map[string]string{},
+		pFlags:   map[string]*pflag.Flag{},
+		envVars:  map[string]string{},
+		defaults: map[string]string{},
 	}
 }
 
