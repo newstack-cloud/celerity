@@ -15,6 +15,7 @@ import (
 
 // ComposeManager wraps the Docker Compose CLI for managing the local dependency stack.
 type ComposeManager struct {
+	dockerBin     string
 	projectName   string
 	generatedFile string
 	overrideFile  string
@@ -23,16 +24,22 @@ type ComposeManager struct {
 
 // NewComposeManager creates a compose manager for the given project.
 // appDir is the root directory of the Celerity app.
-func NewComposeManager(projectName string, appDir string, logger *zap.Logger) *ComposeManager {
+func NewComposeManager(projectName string, appDir string, logger *zap.Logger) (*ComposeManager, error) {
+	dockerBin, err := exec.LookPath("docker")
+	if err != nil {
+		return nil, fmt.Errorf("docker not found on PATH: %w", err)
+	}
+
 	celerityDir := filepath.Join(appDir, ".celerity")
 	overridePath := filepath.Join(appDir, "compose.yaml")
 
 	return &ComposeManager{
+		dockerBin:     dockerBin,
 		projectName:   projectName,
 		generatedFile: filepath.Join(celerityDir, "compose.generated.yaml"),
 		overrideFile:  overridePath,
 		logger:        logger,
-	}
+	}, nil
 }
 
 // Up starts the compose stack with health check waiting.
@@ -59,7 +66,7 @@ func (cm *ComposeManager) IsRunning(ctx context.Context) bool {
 	args = append(args, "ps", "--status", "running", "-q")
 
 	var stdout bytes.Buffer
-	cmd := exec.CommandContext(ctx, "docker", args...)
+	cmd := exec.CommandContext(ctx, cm.dockerBin, args...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = nil
 
@@ -88,7 +95,7 @@ func (cm *ComposeManager) Logs(ctx context.Context, service string, tail int) (s
 	args = append(args, service)
 
 	var stdout, stderr bytes.Buffer
-	cmd := exec.CommandContext(ctx, "docker", args...)
+	cmd := exec.CommandContext(ctx, cm.dockerBin, args...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
@@ -105,7 +112,7 @@ func (cm *ComposeManager) UnhealthyServices(ctx context.Context) []string {
 	args = append(args, "ps", "--status", "unhealthy", "--format", "{{.Service}}")
 
 	var stdout bytes.Buffer
-	cmd := exec.CommandContext(ctx, "docker", args...)
+	cmd := exec.CommandContext(ctx, cm.dockerBin, args...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = nil
 
@@ -146,7 +153,7 @@ func (cm *ComposeManager) baseArgs() []string {
 func (cm *ComposeManager) runWithOutput(ctx context.Context, args []string, output io.Writer) error {
 	cm.logger.Debug("running docker compose", zap.Strings("args", args))
 
-	cmd := exec.CommandContext(ctx, "docker", args...)
+	cmd := exec.CommandContext(ctx, cm.dockerBin, args...)
 	cmd.Stderr = output
 	cmd.Stdout = nil
 
@@ -165,7 +172,7 @@ func (cm *ComposeManager) run(ctx context.Context, args []string) error {
 	cm.logger.Debug("running docker compose", zap.Strings("args", args))
 
 	var stderr bytes.Buffer
-	cmd := exec.CommandContext(ctx, "docker", args...)
+	cmd := exec.CommandContext(ctx, cm.dockerBin, args...)
 	cmd.Stderr = &stderr
 	cmd.Stdout = nil
 

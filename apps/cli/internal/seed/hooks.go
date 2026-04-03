@@ -63,7 +63,7 @@ func runHook(
 		return err
 	}
 
-	cmd := exec.CommandContext(ctx, script)
+	cmd := exec.CommandContext(ctx, filepath.Clean(script))
 	cmd.Env = env
 
 	stdoutPipe, err := cmd.StdoutPipe()

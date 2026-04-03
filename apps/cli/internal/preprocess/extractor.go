@@ -37,9 +37,14 @@ func (e *Extractor) Extract(ctx context.Context) (*HandlerManifest, error) {
 		return nil, err
 	}
 
+	bin, err := exec.LookPath(args[0])
+	if err != nil {
+		return nil, fmt.Errorf("%s not found on PATH: %w", args[0], err)
+	}
+
 	e.logger.Debug("running extraction CLI", zap.Strings("args", args))
 
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd := exec.CommandContext(ctx, bin, args[1:]...)
 	cmd.Dir = e.config.ProjectRoot
 	cmd.Stderr = os.Stderr
 

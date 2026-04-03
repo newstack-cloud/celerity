@@ -53,14 +53,18 @@ func (r *PythonRunner) Run(ctx context.Context, config RunConfig) (*RunResult, e
 }
 
 func (r *PythonRunner) runShellCommand(ctx context.Context, config RunConfig) (*RunResult, error) {
-	cmd := exec.CommandContext(ctx, "sh", "-c", config.TestCommand)
+	shBin, err := exec.LookPath("sh")
+	if err != nil {
+		return nil, fmt.Errorf("sh not found on PATH: %w", err)
+	}
+	cmd := exec.CommandContext(ctx, shBin, "-c", config.TestCommand)
 	cmd.Dir = config.AppDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = r.buildEnv(config)
 
 	r.logger.Debug("running user test command", zap.String("command", config.TestCommand))
-	err := cmd.Run()
+	err = cmd.Run()
 	return &RunResult{ExitCode: exitCodeFromError(err)}, nil
 }
 
@@ -114,7 +118,11 @@ func (r *PythonRunner) runCommands(ctx context.Context, commands []testCommand, 
 			zap.Strings("args", tc.args),
 		)
 
-		cmd := exec.CommandContext(ctx, tc.args[0], tc.args[1:]...)
+		bin, err := exec.LookPath(tc.args[0])
+		if err != nil {
+			return nil, fmt.Errorf("%s not found on PATH: %w", tc.args[0], err)
+		}
+		cmd := exec.CommandContext(ctx, bin, tc.args[1:]...)
 		cmd.Dir = config.AppDir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
