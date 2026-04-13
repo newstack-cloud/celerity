@@ -61,7 +61,7 @@ jobs:
           manylinux: auto
           working-directory: ./libs/runtime/sdk/python
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: ./libs/runtime/sdk/python/dist
@@ -95,7 +95,7 @@ jobs:
           manylinux: musllinux_1_2
           working-directory: ./libs/runtime/sdk/python
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}
           path: ./libs/runtime/sdk/python/dist
@@ -125,7 +125,7 @@ jobs:
           sccache: 'true'
           working-directory: ./libs/runtime/sdk/python
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-windows-${{ matrix.platform.target }}
           path: ./libs/runtime/sdk/python/dist
@@ -154,7 +154,7 @@ jobs:
           sccache: 'true'
           working-directory: ./libs/runtime/sdk/python
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-macos-${{ matrix.platform.target }}
           path: ./libs/runtime/sdk/python/dist
@@ -171,7 +171,7 @@ jobs:
           args: --out dist
           working-directory: ./libs/runtime/sdk/python
       - name: Upload sdist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-sdist
           path: ./libs/runtime/sdk/python/dist
@@ -207,7 +207,7 @@ jobs:
 
       - name: Upload test logs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-logs
           path: ./libs/runtime/sdk/python/test-server.log
