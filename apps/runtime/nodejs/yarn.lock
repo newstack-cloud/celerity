@@ -5,19 +5,19 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@celerity-sdk/common@npm:^0.8.1":
-  version: 0.8.1
-  resolution: "@celerity-sdk/common@npm:0.8.1"
-  checksum: 10c0/65243334477f08aa03d982e3e2991f18ff2c759bb066fe0196b62b271a611b96b14e6b4a7f5edadcfda5c4b00848fcc3915e442140f2331fc931b43a282b2bbe
+"@celerity-sdk/common@npm:^0.8.2":
+  version: 0.8.2
+  resolution: "@celerity-sdk/common@npm:0.8.2"
+  checksum: 10c0/844ec5d45738be00727f0d0c28a840759b8b96ef6b20ccaa3b96501b83826046a22539719d8617ec67fb3a6facc8a4686d6454e391ac953bc2703529c9c567c1
   languageName: node
   linkType: hard
 
-"@celerity-sdk/config@npm:^0.8.1":
-  version: 0.8.1
-  resolution: "@celerity-sdk/config@npm:0.8.1"
+"@celerity-sdk/config@npm:^0.8.2":
+  version: 0.8.2
+  resolution: "@celerity-sdk/config@npm:0.8.2"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.8.1"
-    "@celerity-sdk/types": "npm:^0.8.1"
+    "@celerity-sdk/common": "npm:^0.8.2"
+    "@celerity-sdk/types": "npm:^0.8.2"
     debug: "npm:^4.4.0"
   peerDependencies:
     "@aws-sdk/client-secrets-manager": ^3.0.0
@@ -31,17 +31,17 @@ __metadata:
       optional: true
     ioredis:
       optional: true
-  checksum: 10c0/428a6e297debfeafd9391fa4d8d45ee5d9ad8b10899ecca65f4cb4728e8619b0a433ed9ba8879fb126917f6f6dad345d2ff43bdc05a8400d0faef00f9b97ef50
+  checksum: 10c0/8af4a7948da08e477c960b33b65a32d6d98cdc6052a2ff607d10e0f2ae04c82a1eb6c16fe279da8bf983344ba77d0c538b6e0d441312ee7e265f80afc109786d
   languageName: node
   linkType: hard
 
-"@celerity-sdk/core@npm:^0.8.1":
-  version: 0.8.1
-  resolution: "@celerity-sdk/core@npm:0.8.1"
+"@celerity-sdk/core@npm:^0.8.2":
+  version: 0.8.2
+  resolution: "@celerity-sdk/core@npm:0.8.2"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.8.1"
-    "@celerity-sdk/config": "npm:^0.8.1"
-    "@celerity-sdk/types": "npm:^0.8.1"
+    "@celerity-sdk/common": "npm:^0.8.2"
+    "@celerity-sdk/config": "npm:^0.8.2"
+    "@celerity-sdk/types": "npm:^0.8.2"
     debug: "npm:^4.4.0"
     reflect-metadata: "npm:^0.2.0"
   peerDependencies:
@@ -49,7 +49,7 @@ __metadata:
   peerDependenciesMeta:
     "@celerity-sdk/runtime":
       optional: true
-  checksum: 10c0/35ae587c504baaad3a4c04453a352a4df8c9fa888f7701ea20d479c148269a652c236349163f7ce7028684ba6411353805aa380b74c170519e773a33f889c7f0
+  checksum: 10c0/40c3fa72f2fafa2ae2b6448ac6d263ab292aae8d0e122e0866feba4ecc359049236d17a359a653faed3c23f9071ba83dca236de34b9068981485a1d856ed3401
   languageName: node
   linkType: hard
 
@@ -152,12 +152,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@celerity-sdk/telemetry@npm:^0.8.1":
-  version: 0.8.1
-  resolution: "@celerity-sdk/telemetry@npm:0.8.1"
+"@celerity-sdk/telemetry@npm:^0.8.2":
+  version: 0.8.2
+  resolution: "@celerity-sdk/telemetry@npm:0.8.2"
   dependencies:
-    "@celerity-sdk/common": "npm:^0.8.1"
-    "@celerity-sdk/types": "npm:^0.8.1"
+    "@celerity-sdk/common": "npm:^0.8.2"
+    "@celerity-sdk/types": "npm:^0.8.2"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/api-logs": "npm:^0.200.0"
     "@opentelemetry/core": "npm:^2.0.0"
@@ -189,14 +189,14 @@ __metadata:
       optional: true
     "@opentelemetry/instrumentation-pg":
       optional: true
-  checksum: 10c0/1b0bd3ea174df00b9ab18bfea898c0fbff5de40b579da020656bcb7130099fb6e3a1f16c5b723e004b4374cfc6699a47f17f449398115400df169d726cda6e21
+  checksum: 10c0/2e78abb1345251e1b70118c1a54b3575babe10e4a7bdeea7c00f588c1395cd352e021c26b7c594a881b89e5ca4e510d3ec771ec7eb04e4a154a4a56ec6ba4c98
   languageName: node
   linkType: hard
 
-"@celerity-sdk/types@npm:^0.8.1":
-  version: 0.8.1
-  resolution: "@celerity-sdk/types@npm:0.8.1"
-  checksum: 10c0/87f2732ba42a0e77330e5ce0ce347f55660ae8c0272abe6e364947e73cec85af876deaf4fa70673e3a5760f0a1764dcb3c0327599a10e5b384151e7f38a0e58e
+"@celerity-sdk/types@npm:^0.8.2":
+  version: 0.8.2
+  resolution: "@celerity-sdk/types@npm:0.8.2"
+  checksum: 10c0/966e33c9d0b54e3172d6b45d2547682738623885bdb6223d0e6d4f830ae3c6661588834463d78b7f9c6f0bb3b4dd07804572e5933b1e034c9df99380674bdd2e
   languageName: node
   linkType: hard
 
@@ -1052,92 +1052,108 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-arm64@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-darwin-arm64@npm:1.15.11"
+"@swc/core-darwin-arm64@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-darwin-arm64@npm:1.15.30"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-x64@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-darwin-x64@npm:1.15.11"
+"@swc/core-darwin-x64@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-darwin-x64@npm:1.15.30"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm-gnueabihf@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.15.11"
+"@swc/core-linux-arm-gnueabihf@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.15.30"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-gnu@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-arm64-gnu@npm:1.15.11"
+"@swc/core-linux-arm64-gnu@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-linux-arm64-gnu@npm:1.15.30"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-musl@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-arm64-musl@npm:1.15.11"
+"@swc/core-linux-arm64-musl@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-linux-arm64-musl@npm:1.15.30"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-gnu@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-x64-gnu@npm:1.15.11"
+"@swc/core-linux-ppc64-gnu@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-linux-ppc64-gnu@npm:1.15.30"
+  conditions: os=linux & cpu=ppc64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@swc/core-linux-s390x-gnu@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-linux-s390x-gnu@npm:1.15.30"
+  conditions: os=linux & cpu=s390x & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@swc/core-linux-x64-gnu@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-linux-x64-gnu@npm:1.15.30"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-musl@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-linux-x64-musl@npm:1.15.11"
+"@swc/core-linux-x64-musl@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-linux-x64-musl@npm:1.15.30"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-win32-arm64-msvc@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-win32-arm64-msvc@npm:1.15.11"
+"@swc/core-win32-arm64-msvc@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-win32-arm64-msvc@npm:1.15.30"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-win32-ia32-msvc@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-win32-ia32-msvc@npm:1.15.11"
+"@swc/core-win32-ia32-msvc@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-win32-ia32-msvc@npm:1.15.30"
   conditions: os=win32 & cpu=ia32
   languageName: node
   linkType: hard
 
-"@swc/core-win32-x64-msvc@npm:1.15.11":
-  version: 1.15.11
-  resolution: "@swc/core-win32-x64-msvc@npm:1.15.11"
+"@swc/core-win32-x64-msvc@npm:1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core-win32-x64-msvc@npm:1.15.30"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core@npm:^1.11.0":
-  version: 1.15.11
-  resolution: "@swc/core@npm:1.15.11"
+"@swc/core@npm:^1.15.30":
+  version: 1.15.30
+  resolution: "@swc/core@npm:1.15.30"
   dependencies:
-    "@swc/core-darwin-arm64": "npm:1.15.11"
-    "@swc/core-darwin-x64": "npm:1.15.11"
-    "@swc/core-linux-arm-gnueabihf": "npm:1.15.11"
-    "@swc/core-linux-arm64-gnu": "npm:1.15.11"
-    "@swc/core-linux-arm64-musl": "npm:1.15.11"
-    "@swc/core-linux-x64-gnu": "npm:1.15.11"
-    "@swc/core-linux-x64-musl": "npm:1.15.11"
-    "@swc/core-win32-arm64-msvc": "npm:1.15.11"
-    "@swc/core-win32-ia32-msvc": "npm:1.15.11"
-    "@swc/core-win32-x64-msvc": "npm:1.15.11"
+    "@swc/core-darwin-arm64": "npm:1.15.30"
+    "@swc/core-darwin-x64": "npm:1.15.30"
+    "@swc/core-linux-arm-gnueabihf": "npm:1.15.30"
+    "@swc/core-linux-arm64-gnu": "npm:1.15.30"
+    "@swc/core-linux-arm64-musl": "npm:1.15.30"
+    "@swc/core-linux-ppc64-gnu": "npm:1.15.30"
+    "@swc/core-linux-s390x-gnu": "npm:1.15.30"
+    "@swc/core-linux-x64-gnu": "npm:1.15.30"
+    "@swc/core-linux-x64-musl": "npm:1.15.30"
+    "@swc/core-win32-arm64-msvc": "npm:1.15.30"
+    "@swc/core-win32-ia32-msvc": "npm:1.15.30"
+    "@swc/core-win32-x64-msvc": "npm:1.15.30"
     "@swc/counter": "npm:^0.1.3"
-    "@swc/types": "npm:^0.1.25"
+    "@swc/types": "npm:^0.1.26"
   peerDependencies:
     "@swc/helpers": ">=0.5.17"
   dependenciesMeta:
@@ -1150,6 +1166,10 @@ __metadata:
     "@swc/core-linux-arm64-gnu":
       optional: true
     "@swc/core-linux-arm64-musl":
+      optional: true
+    "@swc/core-linux-ppc64-gnu":
+      optional: true
+    "@swc/core-linux-s390x-gnu":
       optional: true
     "@swc/core-linux-x64-gnu":
       optional: true
@@ -1164,7 +1184,7 @@ __metadata:
   peerDependenciesMeta:
     "@swc/helpers":
       optional: true
-  checksum: 10c0/84b9dbed8d4d39da9941b796f97f84a52a3ab1a5e002b0395e98d0c3368acab4dde84051eb97c47c85b67c5fc29e3e9b7a646cf238a96df93fc7c54177925c3e
+  checksum: 10c0/32193741b047ee1ed68e5539579f55fc4fbc093a3494babf5c87b69bc5c896e0efe9c5c945b52a5f46ebcb7bf289a693becb7e4558db293aafed9a84b3111a13
   languageName: node
   linkType: hard
 
@@ -1175,12 +1195,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc/types@npm:^0.1.25":
-  version: 0.1.25
-  resolution: "@swc/types@npm:0.1.25"
+"@swc/types@npm:^0.1.26":
+  version: 0.1.26
+  resolution: "@swc/types@npm:0.1.26"
   dependencies:
     "@swc/counter": "npm:^0.1.3"
-  checksum: 10c0/847a5b20b131281f89d640a7ed4887fb65724807d53d334b230e84b98c21097aa10cd28a074f9ed287a6ce109e443dd4bafbe7dcfb62333d7806c4ea3e7f8aca
+  checksum: 10c0/8449341e8bbff81c14e9918c25421143cf605dff20f70f048847e1f7cede396f8dd73903cbef331a809b4a8e15d0db374a5f6809003e7b440f93df1dd4934d28
   languageName: node
   linkType: hard
 
@@ -1261,15 +1281,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "celerity-runtime-nodejs@workspace:."
   dependencies:
-    "@celerity-sdk/common": "npm:^0.8.1"
-    "@celerity-sdk/config": "npm:^0.8.1"
-    "@celerity-sdk/core": "npm:^0.8.1"
+    "@celerity-sdk/common": "npm:^0.8.2"
+    "@celerity-sdk/config": "npm:^0.8.2"
+    "@celerity-sdk/core": "npm:^0.8.2"
     "@celerity-sdk/runtime": "npm:^0.3.4"
-    "@celerity-sdk/telemetry": "npm:^0.8.1"
-    "@celerity-sdk/types": "npm:^0.8.1"
+    "@celerity-sdk/telemetry": "npm:^0.8.2"
+    "@celerity-sdk/types": "npm:^0.8.2"
     "@swc-node/register": "npm:^1.10.0"
-    "@swc/core": "npm:^1.11.0"
-    ioredis: "npm:^5.0.0"
+    "@swc/core": "npm:^1.15.30"
+    ioredis: "npm:^5.10.1"
     pino-pretty: "npm:^13.0.0"
     typescript: "npm:^5.7.0"
   languageName: unknown
@@ -1435,9 +1455,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ioredis@npm:^5.0.0":
-  version: 5.10.0
-  resolution: "ioredis@npm:5.10.0"
+"ioredis@npm:^5.10.1":
+  version: 5.10.1
+  resolution: "ioredis@npm:5.10.1"
   dependencies:
     "@ioredis/commands": "npm:1.5.1"
     cluster-key-slot: "npm:^1.1.0"
@@ -1448,7 +1468,7 @@ __metadata:
     redis-errors: "npm:^1.2.0"
     redis-parser: "npm:^3.0.0"
     standard-as-callback: "npm:^2.1.0"
-  checksum: 10c0/294e8cdef963f922b04ad023d4165f1d399b27279b9890f3e1311da57fb2a082c8dca52d18bd14a54acd6fb82853783641a0c47ff18661a8756221049f807e88
+  checksum: 10c0/d0507b52520d3bdd5dacaa33aed9dd3133794d8633b43a6b7fc3199a5e73f92cb77409f6904abe68e3221a95a630d97073b8c1c9e2c0c7613124db67e97c0eb0
   languageName: node
   linkType: hard
 
