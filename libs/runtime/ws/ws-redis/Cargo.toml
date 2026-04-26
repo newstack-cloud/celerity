@@ -10,7 +10,7 @@ serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.122"
 jsonpath-rust = "0.7.1"
 async-trait = "0.1.88"
-tokio = { version = "1.45.1", features = ["full"] }
+tokio = { version = "1.50.0", features = ["full"] }
 redis = { version = "0.32.3", features = [
     "cluster",
     "tokio-comp",
@@ -26,6 +26,6 @@ path = "../ws-registry"
 path = "../../helpers"
 
 [dev-dependencies]
-test-log = { version = "0.2.16", features = ["log", "trace"] }
+test-log = { version = "0.2.20", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"
 coverage-helper = "0.2.2"

@@ -8,7 +8,7 @@ license.workspace = true
 
 [dependencies]
 aws-types = "1.3.7"
-aws-config = "1.8.0"
-aws-sdk-sqs = "1.73.0"
-aws-sdk-account = "1.76.0"
+aws-config = "1.8.13"
+aws-sdk-sqs = "1.93.0"
+aws-sdk-account = "1.96.0"
 http = "1.3.1"
