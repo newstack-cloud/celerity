@@ -21,7 +21,7 @@ cd apps/runtime/python
 # 1. Update celerity-sdk dependency in pyproject.toml
 #    celerity-sdk[runtime] → >=0.3.0
 
-# 2. Commit with Release-As footer to force version alignment
+# 2. Commit with Release-As footer to force version alignment.
 git commit -m "deps(runtime-python): update celerity-sdk to 0.3.0
 
 Release-As: 0.3.0"
