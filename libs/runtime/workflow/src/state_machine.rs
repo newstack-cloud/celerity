@@ -204,10 +204,12 @@ impl StateMachine {
             .clone()
             .derive_state_config(state_name.clone(), parent_state.clone())?;
 
+        // A retry of the same state increments the attempt; otherwise this is the
+        // first attempt of the state (no previous state, or a transition from a
+        // different state).
         let attempt = match prev_state {
             Some(prev_state) if prev_state.name == state_name => prev_state.attempt + 1,
-            None => 1,
-            Some(_) => todo!(),
+            _ => 1,
         };
 
         let final_input = self.clone().prepare_state_input(
