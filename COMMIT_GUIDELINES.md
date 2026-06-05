@@ -46,6 +46,7 @@ This list will evolve as more applications and libraries are added to Celerity.
 - `lib-rt-core` - Core Rust runtime library (`libs/runtime/core`)
 - `lib-rt-workflow` - Workflow orchestration runtime (`libs/runtime/workflow`)
 - `lib-rt-blueprint-parser` - Blueprint YAML/JSON configuration parsing (`libs/runtime/blueprint-config-parser`)
+- `lib-rt-blueprint-lang` - Blueprint language (`.bp`/`.blueprint`) parser (`libs/runtime/blueprint-lang`)
 - `lib-rt-signature` - Header signing authentication method using API key + secret (`libs/runtime/signature`)
 - `lib-rt-helpers` - Shared utilities and helper functions (`libs/runtime/helpers`)
 - `lib-rt-aws-helpers` - AWS SDK helper utilities (`libs/runtime/aws-helpers`)
@@ -96,7 +97,7 @@ Release-please routes commits to component groups by **longest file path match**
 | `cli` | `apps/cli` | GitHub Release | `cli` |
 | `local-events` | `apps/local-events` | GHCR | `local-events` |
 | `dev-auth` | `apps/dev-auth` | GHCR | `dev-auth` |
-| `runtime-core` | `libs/runtime` | Internal | `lib-rt-core`, `lib-rt-workflow`, `lib-rt-blueprint-parser`, `lib-rt-signature`, `lib-rt-helpers`, `lib-rt-aws-helpers` |
+| `runtime-core` | `libs/runtime` | Internal | `lib-rt-core`, `lib-rt-workflow`, `lib-rt-blueprint-parser`, `lib-rt-blueprint-lang`, `lib-rt-signature`, `lib-rt-helpers`, `lib-rt-aws-helpers` |
 | `runtime-consumers` | `libs/runtime/consumers` | Internal | `lib-rt-consumer-sqs`, `lib-rt-consumer-redis`, `lib-rt-consumer-kinesis`, `lib-rt-consumer-asb`, `lib-rt-consumer-aeh`, `lib-rt-consumer-gcloud-pubsub`, `lib-rt-consumer-gcloud-tasks` |
 | `runtime-ws` | `libs/runtime/ws` | Internal | `lib-rt-ws-registry`, `lib-rt-ws-redis` |
 | `runtime-sdk-ffi` | `libs/runtime/sdk` | Triggers Java/.NET release | `lib-rt-sdk-ffi`, `lib-rt-sdk-ffi-java`, `lib-rt-sdk-schema`, `runtime-bindings`, `lib-rt-sdk-java`, `lib-rt-sdk-dotnet` |
