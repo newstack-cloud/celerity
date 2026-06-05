@@ -94,15 +94,12 @@ impl Scanner {
     /// Otherwise, returns false without advancing the scanner position.
     pub fn take(&mut self, target: &char) -> bool {
         match self.chars.get(self.pos) {
-            Some(ch) => {
-                if target == ch {
-                    self.pos += 1;
-                    true
-                } else {
-                    false
-                }
+            Some(ch) if target == ch => {
+                self.pos += 1;
+                true
             }
             None => false,
+            Some(_) => todo!(),
         }
     }
 
