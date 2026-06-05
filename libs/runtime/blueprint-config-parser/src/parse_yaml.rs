@@ -1579,7 +1579,7 @@ fn validate_resource_metadata(
                 "displayName" => {
                     if let yaml_rust2::Yaml::String(value_str) = value {
                         resource_metadata.display_name =
-                            parse_substitutions::<ParseError>(value_str)?;
+                            Some(parse_substitutions::<ParseError>(value_str)?);
                     } else {
                         Err(BlueprintParseError::YamlFormatError(format!(
                             "expected a string for resource display name, found {value:?}",
@@ -1623,10 +1623,13 @@ fn validate_resource_metadata(
         }
     }
 
-    if is_string_with_substitutions_empty(&resource_metadata.display_name) {
-        Err(BlueprintParseError::YamlFormatError(
-            "expected a display name for resource metadata".to_string(),
-        ))?;
+    // A display name is optional, but a provided one must not be empty.
+    if let Some(display_name) = &resource_metadata.display_name {
+        if is_string_with_substitutions_empty(display_name) {
+            Err(BlueprintParseError::YamlFormatError(
+                "expected a non-empty display name for resource metadata".to_string(),
+            ))?;
+        }
     }
     Ok(resource_metadata)
 }

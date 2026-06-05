@@ -118,6 +118,6 @@ impl<'de> Visitor<'de> for MappingNodeVisitor {
     }
 
     fn visit_none<E>(self) -> Result<Self::Value, E> {
-        Ok(MappingNode::Null)
+        Ok(MappingNode::None)
     }
 }

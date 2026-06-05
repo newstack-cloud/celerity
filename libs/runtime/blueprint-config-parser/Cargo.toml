@@ -15,6 +15,9 @@ json-strip-comments = "1.0.4"
 [dependencies.celerity_helpers]
 path = "../helpers"
 
+[dependencies.celerity_blueprint_lang]
+path = "../blueprint-lang"
+
 [dev-dependencies]
 test-log = { version = "0.2.16", features = ["log", "trace"] }
 pretty_assertions = "1.4.0"

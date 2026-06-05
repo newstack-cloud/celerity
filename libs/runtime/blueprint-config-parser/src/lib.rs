@@ -6,6 +6,7 @@ mod parse_helpers;
 mod parse_mapping_node;
 mod parse_substitutions;
 mod parse_yaml;
+mod reshape;
 mod resolve_substitutions;
 mod validate_parsed;
 pub mod workflow_consts;

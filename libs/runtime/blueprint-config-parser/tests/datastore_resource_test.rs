@@ -54,7 +54,10 @@ resources:
         .resources
         .get("userStore")
         .expect("Datastore resource not found");
-    assert_eq!(datastore_resource.metadata.display_name, "User Store");
+    assert_eq!(
+        datastore_resource.metadata.display_name.as_deref(),
+        Some("User Store")
+    );
 
     if let CelerityResourceSpec::Datastore(datastore_spec) = &datastore_resource.spec {
         assert_eq!(datastore_spec.keys.partition_key, "userId");

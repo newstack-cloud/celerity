@@ -1928,12 +1928,18 @@ fn resolve_resource_metadata(
     env: Box<dyn EnvVars>,
     resource_name: &str,
 ) -> Result<BlueprintResourceMetadata, ResolveError> {
+    let display_name = metadata
+        .display_name
+        .map(|display_name| {
+            resolve_string_or_substitutions_to_string(
+                display_name,
+                env.clone(),
+                &resource_metadata_field_path(resource_name, &["displayName"]),
+            )
+        })
+        .transpose()?;
     Ok(BlueprintResourceMetadata {
-        display_name: resolve_string_or_substitutions_to_string(
-            metadata.display_name,
-            env.clone(),
-            &resource_metadata_field_path(resource_name, &["displayName"]),
-        )?,
+        display_name,
         annotations: resolve_annotations(metadata.annotations, env.clone(), resource_name)?,
         labels: metadata.labels,
     })
@@ -2129,7 +2135,7 @@ fn resolve_mapping_node(
             resolve_scalar_value_from_string_or_substitutions(string_or_substitutions, env, field)
                 .map(ResolvedMappingNode::Scalar)
         }
-        MappingNode::Null => Ok(ResolvedMappingNode::Null),
+        MappingNode::None => Ok(ResolvedMappingNode::None),
     }
 }
 

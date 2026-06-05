@@ -151,7 +151,7 @@ impl Default for RuntimeBlueprintResource {
         RuntimeBlueprintResource {
             resource_type: CelerityResourceType::CelerityHandler,
             metadata: BlueprintResourceMetadata {
-                display_name: "".to_string(),
+                display_name: None,
                 annotations: None,
                 labels: None,
             },
@@ -196,10 +196,10 @@ pub enum CelerityResourceType {
 
 /// This holds the metadata
 /// for a resource in the blueprint configuration.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct BlueprintResourceMetadata {
-    #[serde(rename = "displayName")]
-    pub display_name: String,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     /// Annotations are always stored as string values.
     /// Literal booleans, integers, and floats in YAML/JSONC
     /// are converted to their string representation during parsing.
@@ -209,16 +209,6 @@ pub struct BlueprintResourceMetadata {
     pub annotations: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub labels: Option<HashMap<String, String>>,
-}
-
-impl Default for BlueprintResourceMetadata {
-    fn default() -> Self {
-        BlueprintResourceMetadata {
-            display_name: "".to_string(),
-            annotations: None,
-            labels: None,
-        }
-    }
 }
 
 /// This holds the configuration
@@ -1151,5 +1141,5 @@ pub enum ResolvedMappingNode {
     Scalar(BlueprintScalarValue),
     Mapping(HashMap<String, ResolvedMappingNode>),
     Sequence(Vec<ResolvedMappingNode>),
-    Null,
+    None,
 }

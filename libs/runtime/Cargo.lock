@@ -1016,6 +1016,7 @@ dependencies = [
 name = "celerity_blueprint_config_parser"
 version = "0.1.0"
 dependencies = [
+ "celerity_blueprint_lang",
  "celerity_helpers",
  "hashlink",
  "insta",
@@ -1026,6 +1027,19 @@ dependencies = [
  "test-log",
  "tracing",
  "yaml-rust2",
+]
+
+[[package]]
+name = "celerity_blueprint_lang"
+version = "0.1.0"
+dependencies = [
+ "hashlink",
+ "insta",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "test-log",
+ "tracing",
 ]
 
 [[package]]
@@ -1943,6 +1957,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8094feaf31ff591f651a2664fb9cfd92bba7a60ce3197265e9482ebe753c8f7"
 dependencies = [
  "hashbrown 0.14.5",
+ "serde",
 ]
 
 [[package]]

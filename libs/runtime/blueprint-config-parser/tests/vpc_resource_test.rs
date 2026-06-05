@@ -49,7 +49,10 @@ resources:
         .resources
         .get("myVpc")
         .expect("VPC resource not found");
-    assert_eq!(vpc_resource.metadata.display_name, "My VPC");
+    assert_eq!(
+        vpc_resource.metadata.display_name.as_deref(),
+        Some("My VPC")
+    );
 
     if let CelerityResourceSpec::Vpc(vpc_spec) = &vpc_resource.spec {
         assert_eq!(vpc_spec.name, "production-vpc");

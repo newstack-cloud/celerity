@@ -11,9 +11,7 @@ expression: blueprint_config
   "resources": {
     "docProcessingWorkflow": {
       "type": "celerity/workflow",
-      "metadata": {
-        "displayName": ""
-      },
+      "metadata": {},
       "spec": {
         "startAt": "fetchDocument",
         "states": {

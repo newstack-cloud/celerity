@@ -13,6 +13,11 @@ This package provides the core components designed to be used in the Celerity ru
 This package provides a Rust parser for runtime-specific configuration represented by a subset of a Bluelink [blueprint](https://www.bluelink.dev/docs/blueprint/specification).
 This implementation is not an exact implementation of the blueprint specification and is designed to be used in the Celerity runtime with strong typing for Celerity-specific resource types.
 
+### [celerity_blueprint_lang](./blueprint-lang)
+
+This package provides a Rust parser for the Bluelink [blueprint language](https://www.bluelink.dev/docs/bluelink/blueprints/language) (`.bp`/`.blueprint` files): a hand-written lexer and recursive-descent parser that produces the general, format-independent blueprint schema.
+Unlike `celerity_blueprint_config_parser`, it is an implementation of the full language; the runtime-specific transformation into the narrow config model lives in that crate, which depends on this one.
+
 ### [celerity_consumer_sqs](./consumers/consumer-sqs)
 
 This package provides an Amazon SQS queue consumer implementation for the Celerity runtime.

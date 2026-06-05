@@ -50,8 +50,8 @@ impl Default for RuntimeBlueprintResourceWithSubs {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct BlueprintResourceMetadataWithSubs {
-    #[serde(rename = "displayName")]
-    pub display_name: StringOrSubstitutions,
+    #[serde(rename = "displayName", skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<StringOrSubstitutions>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<HashMap<String, MappingNode>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -575,7 +575,7 @@ pub enum MappingNode {
     Sequence(Vec<MappingNode>),
     SubstitutionStr(StringOrSubstitutions),
     #[default]
-    Null,
+    None,
 }
 
 #[derive(Serialize, Debug, PartialEq, Clone, Default)]

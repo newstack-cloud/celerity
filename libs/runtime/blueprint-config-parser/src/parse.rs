@@ -48,6 +48,34 @@ impl BlueprintConfig {
         Ok(final_config)
     }
 
+    /// Parses a Runtime-specific Blueprint configuration from blueprint-language
+    /// (`.bp` / `.blueprint`) source and resolves variable substitutions with
+    /// the provided environment variables.
+    pub fn from_blueprint_lang_str(
+        blueprint_lang: &str,
+        env: Box<dyn EnvVars>,
+    ) -> Result<BlueprintConfig, BlueprintParseError> {
+        let blueprint = celerity_blueprint_lang::parse_string_with_options(
+            blueprint_lang,
+            celerity_blueprint_lang::ParseOptions {
+                substitutions: celerity_blueprint_lang::SubstitutionMode::RawText,
+            },
+        )?;
+        let json = crate::reshape::to_jsonc_string(&blueprint)?;
+        Self::from_jsonc_str(&json, env)
+    }
+
+    /// Parses a Runtime-specific Blueprint configuration from a blueprint-language
+    /// (`.bp` / `.blueprint`) file and resolves variable substitutions with the
+    /// provided environment variables.
+    pub fn from_blueprint_lang_file(
+        file_path: &str,
+        env: Box<dyn EnvVars>,
+    ) -> Result<BlueprintConfig, BlueprintParseError> {
+        let doc_str = read_to_string(file_path)?;
+        Self::from_blueprint_lang_str(&doc_str, env)
+    }
+
     /// Parses a Runtime-specific Blueprint
     /// configuration from a YAML string
     /// and resolves variable substitutions with
@@ -93,6 +121,7 @@ pub enum BlueprintParseError {
     UnsupportedResourceType(String),
     UnsupportedWorkflowStateType(String),
     SubstitutionParseError(parse_substitutions::ParseError),
+    BlueprintLangError(celerity_blueprint_lang::Errors),
 }
 
 impl fmt::Display for BlueprintParseError {
@@ -116,6 +145,9 @@ impl fmt::Display for BlueprintParseError {
             }
             BlueprintParseError::SubstitutionParseError(error) => {
                 write!(f, "substitution parse error: {error}")
+            }
+            BlueprintParseError::BlueprintLangError(error) => {
+                write!(f, "blueprint language parse error: {error}")
             }
         }
     }
@@ -154,5 +186,11 @@ impl From<ResolveError> for BlueprintParseError {
 impl From<parse_substitutions::ParseError> for BlueprintParseError {
     fn from(error: parse_substitutions::ParseError) -> Self {
         BlueprintParseError::SubstitutionParseError(error)
+    }
+}
+
+impl From<celerity_blueprint_lang::Errors> for BlueprintParseError {
+    fn from(error: celerity_blueprint_lang::Errors) -> Self {
+        BlueprintParseError::BlueprintLangError(error)
     }
 }

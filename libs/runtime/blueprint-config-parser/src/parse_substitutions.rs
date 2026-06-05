@@ -183,29 +183,35 @@ where
     E: de::Error,
 {
     let is_close_sub_bracket = ch == '}' && state.in_possible_sub && !state.in_string_literal;
-    if is_close_sub_bracket && state.potential_sub.starts_with("variables") {
-        // We check for the "variables" prefix to avoid parsing unsupported substitutions
-        // and differentiating between errors in parsing a variable reference and trying to
-        // parse a substitution that is not supported (e.g. values.*, datasources.* etc.).
-        // End of a supported substitution, let's parse it.
-        let mut scanner = Scanner::new(&state.potential_sub);
-        let parsed_sub = parse_substitution(&mut scanner).map_err(de::Error::custom)?;
-        state
-            .parsed
-            .push(StringOrSubstitution::SubstitutionValue(parsed_sub));
-        state.potential_sub = "".to_string();
-        state.potential_non_sub_str = "".to_string();
-        state.in_possible_sub = false;
-    } else if is_close_sub_bracket {
-        // End of a substitution, but it's not a supported substitution.
+    if !is_close_sub_bracket {
+        return Ok(CheckCloseSubBracketResult::Not);
+    }
+
+    // The "variables" prefix gates whether we attempt to parse a variable
+    // reference at all: this keeps a malformed reference (e.g. `${variables.-1}`)
+    // surfaced as an error, while a body with an unsupported prefix
+    // (e.g. `${values.x}`) is left as literal text for downstream tooling.
+    if !state.potential_sub.starts_with("variables") {
         return Ok(CheckCloseSubBracketResult::Unsupported);
     }
 
-    Ok(if is_close_sub_bracket {
-        CheckCloseSubBracketResult::Supported
-    } else {
-        CheckCloseSubBracketResult::Not
-    })
+    // A supported substitution must be a variable reference in full. A body
+    // that begins with a valid reference but carries trailing content (an
+    // expression such as `${variables.a && variables.b}`) is not a plain
+    // reference, so it is kept as literal text rather than silently truncated to
+    // the leading reference.
+    match full_variable_reference(&state.potential_sub).map_err(de::Error::custom)? {
+        Some(parsed_sub) => {
+            state
+                .parsed
+                .push(StringOrSubstitution::SubstitutionValue(parsed_sub));
+            state.potential_sub = String::new();
+            state.potential_non_sub_str = String::new();
+            state.in_possible_sub = false;
+            Ok(CheckCloseSubBracketResult::Supported)
+        }
+        None => Ok(CheckCloseSubBracketResult::Unsupported),
+    }
 }
 
 #[derive(Debug)]
@@ -265,6 +271,22 @@ impl From<ScannerError> for ParseError {
 
 fn parse_substitution(scanner: &mut Scanner) -> Result<Substitution, ParseError> {
     substitution(scanner)
+}
+
+/// Parses `body` as a complete variable reference. Returns `Ok(Some(_))` when
+/// the whole body is a valid reference, `Ok(None)` when it begins with a valid
+/// reference but has trailing content (so it is an expression, not a plain
+/// reference), and `Err` when the reference itself is malformed.
+fn full_variable_reference(body: &str) -> Result<Option<Substitution>, ParseError> {
+    let mut scanner = Scanner::new(body);
+    // parse_substitution doesn't support the blueprint language features
+    // such as boolean expressions, so it will only successfully parse a plain variable reference.
+    let parsed = parse_substitution(&mut scanner)?;
+    consume_whitespace(&mut scanner);
+    if scanner.peek().is_some() {
+        return Ok(None);
+    }
+    Ok(Some(parsed))
 }
 
 fn substitution(scanner: &mut Scanner) -> Result<Substitution, ParseError> {
@@ -551,5 +573,23 @@ mod tests {
             error.to_string(),
             "parse error at position 10, expected identifier start character in the ${..} substitution at line 1 column 39",
         );
+    }
+
+    #[test]
+    fn test_keeps_variable_prefixed_expression_as_literal() {
+        // A `${..}` whose body begins with a valid variable reference but is
+        // actually an expression must be preserved verbatim, not silently
+        // truncated to the leading reference (`${variables.a}`).
+        let input = "\"${variables.a && variables.b}\"";
+        let result = serde_json::from_str::<StringOrSubstitutions>(input);
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            StringOrSubstitutions {
+                values: vec![StringOrSubstitution::StringValue(
+                    "${variables.a && variables.b}".to_string()
+                )],
+            }
+        )
     }
 }

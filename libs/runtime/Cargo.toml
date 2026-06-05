@@ -6,6 +6,7 @@ members = [
     "helpers",
     "aws-helpers",
     "blueprint-config-parser",
+    "blueprint-lang",
     "sdk/node",
     "sdk/python",
     "sdk/bindgen-ffi",
