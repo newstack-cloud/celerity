@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.4...runtime-sdk-node/v0.3.5) (2026-06-05)
+
+
+### Dependencies
+
+* **runtime-sdk-node:** update core dependencies ([2fed7ad](https://github.com/newstack-cloud/celerity/commit/2fed7adfcc34a892d0c87c177d64e108f159de98))
+
 ## [0.3.4](https://github.com/newstack-cloud/celerity/compare/runtime-sdk-node/v0.3.3...runtime-sdk-node/v0.3.4) (2026-04-01)
 
 
