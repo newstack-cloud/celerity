@@ -8,6 +8,6 @@
   "libs/runtime/sdk": "0.1.0",
   "libs/runtime/sdk/node": "0.3.5",
   "libs/runtime/sdk/python": "0.2.2",
-  "apps/runtime/nodejs": "0.8.1",
+  "apps/runtime/nodejs": "0.8.3",
   "apps/runtime/python": "0.5.1"
 }

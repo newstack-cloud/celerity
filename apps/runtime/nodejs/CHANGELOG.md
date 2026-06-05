@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.3](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.8.1...runtime-nodejs/v0.8.3) (2026-06-05)
+
+
+### Bug Fixes
+
+* **runtime-nodejs:** add correction to yarn installation in docker build ([3c2d599](https://github.com/newstack-cloud/celerity/commit/3c2d5990fa7ad9c93a2ea4c29a09aa9ada4a196a))
+
+
+### Dependencies
+
+* **runtime-nodejs:** update @celerity-sdk/* to 0.8.3 ([8f08bc6](https://github.com/newstack-cloud/celerity/commit/8f08bc630d56a52e54a75272dbd5f69bb80241e7))
+
 ## [0.8.1](https://github.com/newstack-cloud/celerity/compare/runtime-nodejs/v0.7.0...runtime-nodejs/v0.8.1) (2026-04-01)
 
 
