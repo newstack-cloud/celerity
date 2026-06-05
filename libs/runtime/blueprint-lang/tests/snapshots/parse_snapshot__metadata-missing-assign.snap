@@ -1,0 +1,10 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: errs.to_string()
+
+---
+blueprint language errors:
+	- parse error: expected '=', got string at 1:16
+	  1 | metadata { foo "bar" }
+	    |                ^
+	- parse error: missing required 'version' directive

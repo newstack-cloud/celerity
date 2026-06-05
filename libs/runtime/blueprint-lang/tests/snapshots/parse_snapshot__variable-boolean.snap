@@ -1,0 +1,146 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {
+            "enableTracing": Variable {
+                var_type: Spanned {
+                    value: Boolean,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 25,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 32,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: Some(
+                    Scalar {
+                        value: String(
+                            "Whether request tracing is enabled",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 19,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 55,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                secret: None,
+                default: Some(
+                    Scalar {
+                        value: Bool(
+                            true,
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 15,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 19,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                allowed_values: [],
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 23,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "enableTracing": Span {
+                start: Position {
+                    line: 3,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 23,
+                    },
+                ),
+            },
+        },
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

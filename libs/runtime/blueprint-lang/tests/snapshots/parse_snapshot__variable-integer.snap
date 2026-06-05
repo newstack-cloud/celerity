@@ -1,0 +1,204 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {
+            "databasePort": Variable {
+                var_type: Spanned {
+                    value: Integer,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 24,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 31,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: Some(
+                    Scalar {
+                        value: String(
+                            "The database port the Orders API connects to",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 19,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 65,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                secret: None,
+                default: Some(
+                    Scalar {
+                        value: Int(
+                            5432,
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 15,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 19,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                allowed_values: [
+                    Scalar {
+                        value: Int(
+                            5432,
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 6,
+                                    column: 22,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 6,
+                                        column: 26,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Scalar {
+                        value: Int(
+                            5433,
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 6,
+                                    column: 28,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 6,
+                                        column: 32,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Scalar {
+                        value: Int(
+                            -1,
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 6,
+                                    column: 34,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 6,
+                                        column: 36,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 22,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "databasePort": Span {
+                start: Position {
+                    line: 3,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 22,
+                    },
+                ),
+            },
+        },
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

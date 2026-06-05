@@ -1,0 +1,10 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: errs.to_string()
+
+---
+blueprint language errors:
+	- parse error: keyword "resource" is reserved and cannot be a bare name; quote it to use it as a name at 1:10
+	  1 | variable resource: string {}
+	    |          ^
+	- parse error: missing required 'version' directive

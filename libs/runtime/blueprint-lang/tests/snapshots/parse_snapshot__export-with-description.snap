@@ -1,0 +1,198 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {
+            "environment": Export {
+                export_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 21,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 27,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                field: Scalar {
+                    value: String(
+                        "variables.environment",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 4,
+                                column: 13,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 4,
+                                    column: 34,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: Some(
+                    StringOrSubstitutions {
+                        values: [
+                            String {
+                                value: "The environment the blueprint is deployed to (",
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 20,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 5,
+                                                column: 66,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                            Substitution(
+                                Substitution {
+                                    kind: Variable(
+                                        SubstitutionVariable {
+                                            variable_name: "environment",
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 5,
+                                                column: 68,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 5,
+                                                    column: 89,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                            String {
+                                value: ")",
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 90,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 5,
+                                                column: 91,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 19,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 92,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 8,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 19,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "environment": Span {
+                start: Position {
+                    line: 3,
+                    column: 8,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 19,
+                    },
+                ),
+            },
+        },
+    },
+    metadata: None,
+    span: None,
+}

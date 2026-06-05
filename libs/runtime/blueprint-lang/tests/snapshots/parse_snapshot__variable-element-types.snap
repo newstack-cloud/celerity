@@ -1,0 +1,219 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {
+            "instanceSize": Variable {
+                var_type: Spanned {
+                    value: Custom(
+                        "aws/ec2/instanceSize",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 24,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 44,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: Some(
+                    Scalar {
+                        value: String(
+                            "The instance size for the background batch processor",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 19,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 73,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                secret: None,
+                default: Some(
+                    Scalar {
+                        value: String(
+                            "t3.micro",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 15,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 25,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                allowed_values: [],
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 22,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "dataset": Variable {
+                var_type: Spanned {
+                    value: Custom(
+                        "gcp/data/dataset",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 8,
+                                column: 19,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 8,
+                                    column: 35,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: Some(
+                    Scalar {
+                        value: String(
+                            "Target BigQuery dataset",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 9,
+                                    column: 19,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 9,
+                                        column: 44,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                secret: None,
+                default: None,
+                allowed_values: [],
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 8,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 8,
+                                column: 17,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "dataset": Span {
+                start: Position {
+                    line: 8,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 8,
+                        column: 17,
+                    },
+                ),
+            },
+            "instanceSize": Span {
+                start: Position {
+                    line: 3,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 22,
+                    },
+                ),
+            },
+        },
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

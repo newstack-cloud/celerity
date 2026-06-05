@@ -1,0 +1,507 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {
+            "bucketTags": Value {
+                value_type: Spanned {
+                    value: Object,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 19,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 25,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: StringWithSubstitutions(
+                    StringOrSubstitutions {
+                        values: [
+                            Substitution(
+                                Substitution {
+                                    kind: Function(
+                                        SubstitutionFunction {
+                                            name: SubstitutionFunctionName(
+                                                "object",
+                                            ),
+                                            arguments: [
+                                                SubstitutionFunctionArg {
+                                                    name: Some(
+                                                        "environment",
+                                                    ),
+                                                    value: Substitution {
+                                                        kind: Variable(
+                                                            SubstitutionVariable {
+                                                                variable_name: "environment",
+                                                            },
+                                                        ),
+                                                        span: Some(
+                                                            Span {
+                                                                start: Position {
+                                                                    line: 5,
+                                                                    column: 23,
+                                                                },
+                                                                end: Some(
+                                                                    Position {
+                                                                        line: 5,
+                                                                        column: 44,
+                                                                    },
+                                                                ),
+                                                            },
+                                                        ),
+                                                    },
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 5,
+                                                                column: 9,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 5,
+                                                                    column: 44,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                                SubstitutionFunctionArg {
+                                                    name: Some(
+                                                        "owner",
+                                                    ),
+                                                    value: Substitution {
+                                                        kind: String(
+                                                            "platform-team",
+                                                        ),
+                                                        span: Some(
+                                                            Span {
+                                                                start: Position {
+                                                                    line: 6,
+                                                                    column: 17,
+                                                                },
+                                                                end: Some(
+                                                                    Position {
+                                                                        line: 6,
+                                                                        column: 32,
+                                                                    },
+                                                                ),
+                                                            },
+                                                        ),
+                                                    },
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 6,
+                                                                column: 9,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 6,
+                                                                    column: 32,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                                SubstitutionFunctionArg {
+                                                    name: Some(
+                                                        "managedBy",
+                                                    ),
+                                                    value: Substitution {
+                                                        kind: String(
+                                                            "bluelink",
+                                                        ),
+                                                        span: Some(
+                                                            Span {
+                                                                start: Position {
+                                                                    line: 7,
+                                                                    column: 21,
+                                                                },
+                                                                end: Some(
+                                                                    Position {
+                                                                        line: 7,
+                                                                        column: 31,
+                                                                    },
+                                                                ),
+                                                            },
+                                                        ),
+                                                    },
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 7,
+                                                                column: 9,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 7,
+                                                                    column: 31,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                            ],
+                                            path: [],
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 4,
+                                                column: 13,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 8,
+                                                    column: 6,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 8,
+                                        column: 6,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: None,
+                secret: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 17,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "combinedRegions": Value {
+                value_type: Spanned {
+                    value: Array,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 11,
+                                column: 24,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 11,
+                                    column: 29,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: StringWithSubstitutions(
+                    StringOrSubstitutions {
+                        values: [
+                            Substitution(
+                                Substitution {
+                                    kind: Function(
+                                        SubstitutionFunction {
+                                            name: SubstitutionFunctionName(
+                                                "concat",
+                                            ),
+                                            arguments: [
+                                                SubstitutionFunctionArg {
+                                                    name: None,
+                                                    value: Substitution {
+                                                        kind: ValueReference(
+                                                            SubstitutionValueReference {
+                                                                value_name: "primaryRegions",
+                                                                path: [],
+                                                            },
+                                                        ),
+                                                        span: Some(
+                                                            Span {
+                                                                start: Position {
+                                                                    line: 12,
+                                                                    column: 20,
+                                                                },
+                                                                end: Some(
+                                                                    Position {
+                                                                        line: 12,
+                                                                        column: 41,
+                                                                    },
+                                                                ),
+                                                            },
+                                                        ),
+                                                    },
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 12,
+                                                                column: 20,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 12,
+                                                                    column: 41,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                                SubstitutionFunctionArg {
+                                                    name: None,
+                                                    value: Substitution {
+                                                        kind: ValueReference(
+                                                            SubstitutionValueReference {
+                                                                value_name: "secondaryRegions",
+                                                                path: [],
+                                                            },
+                                                        ),
+                                                        span: Some(
+                                                            Span {
+                                                                start: Position {
+                                                                    line: 12,
+                                                                    column: 43,
+                                                                },
+                                                                end: Some(
+                                                                    Position {
+                                                                        line: 12,
+                                                                        column: 66,
+                                                                    },
+                                                                ),
+                                                            },
+                                                        ),
+                                                    },
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 12,
+                                                                column: 43,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 12,
+                                                                    column: 66,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                                SubstitutionFunctionArg {
+                                                    name: None,
+                                                    value: Substitution {
+                                                        kind: Function(
+                                                            SubstitutionFunction {
+                                                                name: SubstitutionFunctionName(
+                                                                    "list",
+                                                                ),
+                                                                arguments: [
+                                                                    SubstitutionFunctionArg {
+                                                                        name: None,
+                                                                        value: Substitution {
+                                                                            kind: String(
+                                                                                "global",
+                                                                            ),
+                                                                            span: Some(
+                                                                                Span {
+                                                                                    start: Position {
+                                                                                        line: 12,
+                                                                                        column: 69,
+                                                                                    },
+                                                                                    end: Some(
+                                                                                        Position {
+                                                                                            line: 12,
+                                                                                            column: 77,
+                                                                                        },
+                                                                                    ),
+                                                                                },
+                                                                            ),
+                                                                        },
+                                                                        span: None,
+                                                                    },
+                                                                ],
+                                                                path: [],
+                                                            },
+                                                        ),
+                                                        span: Some(
+                                                            Span {
+                                                                start: Position {
+                                                                    line: 12,
+                                                                    column: 68,
+                                                                },
+                                                                end: Some(
+                                                                    Position {
+                                                                        line: 12,
+                                                                        column: 78,
+                                                                    },
+                                                                ),
+                                                            },
+                                                        ),
+                                                    },
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 12,
+                                                                column: 68,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 12,
+                                                                    column: 78,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                            ],
+                                            path: [],
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 12,
+                                                column: 13,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 12,
+                                                    column: 79,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 12,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 12,
+                                        column: 79,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: None,
+                secret: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 11,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 11,
+                                column: 22,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "bucketTags": Span {
+                start: Position {
+                    line: 3,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 17,
+                    },
+                ),
+            },
+            "combinedRegions": Span {
+                start: Position {
+                    line: 11,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 11,
+                        column: 22,
+                    },
+                ),
+            },
+        },
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

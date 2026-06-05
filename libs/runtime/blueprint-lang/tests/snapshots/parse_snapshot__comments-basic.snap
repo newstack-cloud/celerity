@@ -1,0 +1,216 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {
+            "region": Variable {
+                var_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 5,
+                                column: 18,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 5,
+                                    column: 24,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: Some(
+                    Scalar {
+                        value: String(
+                            "The region to deploy resources in",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 8,
+                                    column: 19,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 8,
+                                        column: 54,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                secret: None,
+                default: Some(
+                    Scalar {
+                        value: String(
+                            "us-east-1",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 7,
+                                    column: 15,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 7,
+                                        column: 26,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                allowed_values: [],
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 5,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 5,
+                                column: 16,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "region": Span {
+                start: Position {
+                    line: 5,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 5,
+                        column: 16,
+                    },
+                ),
+            },
+        },
+    },
+    values: NamedMap {
+        values: {
+            "tableName": Value {
+                value_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 13,
+                                column: 18,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 13,
+                                    column: 24,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: Scalar(
+                    Scalar {
+                        value: String(
+                            "orders",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 14,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 14,
+                                        column: 21,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: None,
+                secret: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 13,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 13,
+                                column: 16,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "tableName": Span {
+                start: Position {
+                    line: 13,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 13,
+                        column: 16,
+                    },
+                ),
+            },
+        },
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

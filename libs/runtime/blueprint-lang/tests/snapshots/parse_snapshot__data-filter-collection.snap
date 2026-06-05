@@ -1,0 +1,589 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {
+            "instances": DataSource {
+                ds_type: Spanned {
+                    value: "aws/ec2/instance",
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 17,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 33,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                metadata: None,
+                filters: [
+                    Filter {
+                        field: Scalar {
+                            value: String(
+                                "state",
+                            ),
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 4,
+                                        column: 12,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 4,
+                                            column: 19,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        operator: Spanned {
+                            value: In,
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 4,
+                                        column: 20,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 4,
+                                            column: 22,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        search: [
+                            StringOrSubstitutions {
+                                values: [
+                                    String {
+                                        value: "available",
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 4,
+                                                    column: 24,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 4,
+                                                        column: 35,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                ],
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 4,
+                                            column: 24,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 4,
+                                                column: 35,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                            StringOrSubstitutions {
+                                values: [
+                                    String {
+                                        value: "pending",
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 4,
+                                                    column: 37,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 4,
+                                                        column: 46,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                ],
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 4,
+                                            column: 37,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 4,
+                                                column: 46,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 5,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 47,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Filter {
+                        field: Scalar {
+                            value: String(
+                                "instanceType",
+                            ),
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 5,
+                                        column: 12,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 5,
+                                            column: 26,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        operator: Spanned {
+                            value: NotIn,
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 5,
+                                        column: 27,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 5,
+                                            column: 33,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        search: [
+                            StringOrSubstitutions {
+                                values: [
+                                    String {
+                                        value: "t2.nano",
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 5,
+                                                    column: 35,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 5,
+                                                        column: 44,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                ],
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 35,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 5,
+                                                column: 44,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                            StringOrSubstitutions {
+                                values: [
+                                    String {
+                                        value: "t2.micro",
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 5,
+                                                    column: 46,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 5,
+                                                        column: 56,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                ],
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 46,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 5,
+                                                column: 56,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 5,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 57,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Filter {
+                        field: Scalar {
+                            value: String(
+                                "tags",
+                            ),
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 6,
+                                        column: 12,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 6,
+                                            column: 18,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        operator: Spanned {
+                            value: HasKey,
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 6,
+                                        column: 19,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 6,
+                                            column: 26,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        search: [
+                            StringOrSubstitutions {
+                                values: [
+                                    String {
+                                        value: "environment",
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 6,
+                                                    column: 27,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 6,
+                                                        column: 40,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                ],
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 6,
+                                            column: 27,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 6,
+                                                column: 40,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 6,
+                                    column: 5,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 6,
+                                        column: 40,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Filter {
+                        field: Scalar {
+                            value: String(
+                                "tags",
+                            ),
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 7,
+                                        column: 12,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 7,
+                                            column: 18,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        operator: Spanned {
+                            value: NotHasKey,
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 7,
+                                        column: 19,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 7,
+                                            column: 30,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        search: [
+                            StringOrSubstitutions {
+                                values: [
+                                    String {
+                                        value: "deprecated",
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 7,
+                                                    column: 31,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 7,
+                                                        column: 43,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                ],
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 7,
+                                            column: 31,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 7,
+                                                column: 43,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 7,
+                                    column: 5,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 7,
+                                        column: 43,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                exports: DataSourceExportMap {
+                    exports: NamedMap {
+                        values: {
+                            "id": DataSourceExport {
+                                field_type: Spanned {
+                                    value: String,
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 9,
+                                                column: 16,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 9,
+                                                    column: 22,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                                alias_for: None,
+                                description: None,
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 9,
+                                            column: 12,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 9,
+                                                column: 14,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        },
+                        source_meta: {
+                            "id": Span {
+                                start: Position {
+                                    line: 9,
+                                    column: 12,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 9,
+                                        column: 14,
+                                    },
+                                ),
+                            },
+                        },
+                    },
+                    export_all: false,
+                },
+                description: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 6,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 15,
+                            },
+                        ),
+                    },
+                ),
+                fields_source_meta: {},
+            },
+        },
+        source_meta: {
+            "instances": Span {
+                start: Position {
+                    line: 3,
+                    column: 6,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 15,
+                    },
+                ),
+            },
+        },
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

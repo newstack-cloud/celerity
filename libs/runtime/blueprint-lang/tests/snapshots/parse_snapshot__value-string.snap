@@ -1,0 +1,200 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {
+            "tableName": Value {
+                value_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 18,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 24,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: StringWithSubstitutions(
+                    StringOrSubstitutions {
+                        values: [
+                            String {
+                                value: "orders-",
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 4,
+                                            column: 14,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 4,
+                                                column: 21,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                            Substitution(
+                                Substitution {
+                                    kind: Variable(
+                                        SubstitutionVariable {
+                                            variable_name: "environment",
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 4,
+                                                column: 23,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 4,
+                                                    column: 44,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 46,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: Some(
+                    StringOrSubstitutions {
+                        values: [
+                            String {
+                                value: "The DynamoDB table name for orders",
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 19,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 5,
+                                                column: 55,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 19,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 55,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                secret: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 16,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "tableName": Span {
+                start: Position {
+                    line: 3,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 16,
+                    },
+                ),
+            },
+        },
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

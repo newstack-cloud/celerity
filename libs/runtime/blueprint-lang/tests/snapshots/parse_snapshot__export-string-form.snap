@@ -1,0 +1,122 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {
+            "saveOrderFunctionArn": Export {
+                export_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 30,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 36,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                field: Scalar {
+                    value: String(
+                        "resources.saveOrderFunction.spec.functionArn",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 4,
+                                column: 13,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 4,
+                                    column: 59,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 8,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 28,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "saveOrderFunctionArn": Span {
+                start: Position {
+                    line: 3,
+                    column: 8,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 28,
+                    },
+                ),
+            },
+        },
+    },
+    metadata: None,
+    span: None,
+}

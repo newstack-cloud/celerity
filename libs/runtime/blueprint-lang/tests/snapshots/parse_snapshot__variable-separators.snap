@@ -1,0 +1,185 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {
+            "region": Variable {
+                var_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 18,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 24,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: Some(
+                    Scalar {
+                        value: String(
+                            "Deploy region",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 3,
+                                    column: 64,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 3,
+                                        column: 79,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                secret: None,
+                default: Some(
+                    Scalar {
+                        value: String(
+                            "us-east-1",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 3,
+                                    column: 37,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 3,
+                                        column: 48,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                allowed_values: [
+                    Scalar {
+                        value: String(
+                            "us-east-1",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 3,
+                                    column: 98,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 3,
+                                        column: 109,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Scalar {
+                        value: String(
+                            "us-west-2",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 3,
+                                    column: 111,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 3,
+                                        column: 122,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 16,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "region": Span {
+                start: Position {
+                    line: 3,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 16,
+                    },
+                ),
+            },
+        },
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

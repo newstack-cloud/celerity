@@ -1,0 +1,221 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {
+            "greeting": Value {
+                value_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 17,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 23,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: StringWithSubstitutions(
+                    StringOrSubstitutions {
+                        values: [
+                            String {
+                                value: "Hello, ",
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 9,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 5,
+                                                column: 16,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                            Substitution(
+                                Substitution {
+                                    kind: Variable(
+                                        SubstitutionVariable {
+                                            variable_name: "name",
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 5,
+                                                column: 18,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 5,
+                                                    column: 32,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                            String {
+                                value: "!\nWelcome to ",
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 33,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 6,
+                                                column: 20,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                            Substitution(
+                                Substitution {
+                                    kind: Variable(
+                                        SubstitutionVariable {
+                                            variable_name: "environment",
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 6,
+                                                column: 22,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 6,
+                                                    column: 43,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                            String {
+                                value: ".",
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 6,
+                                            column: 44,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 7,
+                                                column: 9,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 7,
+                                        column: 12,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: None,
+                secret: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 15,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "greeting": Span {
+                start: Position {
+                    line: 3,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 15,
+                    },
+                ),
+            },
+        },
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

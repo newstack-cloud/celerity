@@ -1,0 +1,277 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {
+            "tableName": Value {
+                value_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 18,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 24,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: StringWithSubstitutions(
+                    StringOrSubstitutions {
+                        values: [
+                            Substitution(
+                                Substitution {
+                                    kind: ResourceProperty(
+                                        SubstitutionResourceProperty {
+                                            resource_name: "ordersTable",
+                                            resource_each_template_index: None,
+                                            path: [
+                                                Field {
+                                                    name: "spec.fully.qualified.tableName",
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 4,
+                                                                column: 34,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 4,
+                                                                    column: 68,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                            ],
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 4,
+                                                column: 13,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 4,
+                                                    column: 68,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 68,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: None,
+                secret: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 16,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "bareTableName": Value {
+                value_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 7,
+                                column: 22,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 7,
+                                    column: 28,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: StringWithSubstitutions(
+                    StringOrSubstitutions {
+                        values: [
+                            Substitution(
+                                Substitution {
+                                    kind: ResourceProperty(
+                                        SubstitutionResourceProperty {
+                                            resource_name: "ordersTable",
+                                            resource_each_template_index: None,
+                                            path: [
+                                                Field {
+                                                    name: "spec.fully.qualified.tableName",
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 8,
+                                                                column: 24,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 8,
+                                                                    column: 58,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                            ],
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 8,
+                                                column: 13,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 8,
+                                                    column: 58,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 8,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 8,
+                                        column: 58,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: None,
+                secret: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 7,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 7,
+                                column: 20,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "bareTableName": Span {
+                start: Position {
+                    line: 7,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 7,
+                        column: 20,
+                    },
+                ),
+            },
+            "tableName": Span {
+                start: Position {
+                    line: 3,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 16,
+                    },
+                ),
+            },
+        },
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

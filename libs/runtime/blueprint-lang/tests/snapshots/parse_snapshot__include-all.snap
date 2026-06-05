@@ -1,0 +1,475 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {
+            "coreInfra": Include {
+                path: StringOrSubstitutions {
+                    values: [
+                        Substitution(
+                            Substitution {
+                                kind: Function(
+                                    SubstitutionFunction {
+                                        name: SubstitutionFunctionName(
+                                            "cwd",
+                                        ),
+                                        arguments: [],
+                                        path: [],
+                                    },
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 3,
+                                            column: 22,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 3,
+                                                column: 27,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        String {
+                            value: "/core-infra.yaml",
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 3,
+                                        column: 28,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 3,
+                                            column: 44,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                    ],
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 19,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 45,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                variables: Some(
+                    Fields {
+                        fields: {
+                            "environment": StringWithSubstitutions(
+                                StringOrSubstitutions {
+                                    values: [
+                                        Substitution(
+                                            Substitution {
+                                                kind: Variable(
+                                                    SubstitutionVariable {
+                                                        variable_name: "environment",
+                                                    },
+                                                ),
+                                                span: Some(
+                                                    Span {
+                                                        start: Position {
+                                                            line: 7,
+                                                            column: 23,
+                                                        },
+                                                        end: Some(
+                                                            Position {
+                                                                line: 7,
+                                                                column: 44,
+                                                            },
+                                                        ),
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 7,
+                                                column: 23,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 7,
+                                                    column: 44,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                            "databaseName": StringWithSubstitutions(
+                                StringOrSubstitutions {
+                                    values: [
+                                        Substitution(
+                                            Substitution {
+                                                kind: Variable(
+                                                    SubstitutionVariable {
+                                                        variable_name: "databaseName",
+                                                    },
+                                                ),
+                                                span: Some(
+                                                    Span {
+                                                        start: Position {
+                                                            line: 8,
+                                                            column: 24,
+                                                        },
+                                                        end: Some(
+                                                            Position {
+                                                                line: 8,
+                                                                column: 46,
+                                                            },
+                                                        ),
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 8,
+                                                column: 24,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 8,
+                                                    column: 46,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        fields_span: {
+                            "databaseName": Span {
+                                start: Position {
+                                    line: 8,
+                                    column: 9,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 8,
+                                        column: 21,
+                                    },
+                                ),
+                            },
+                            "environment": Span {
+                                start: Position {
+                                    line: 7,
+                                    column: 9,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 7,
+                                        column: 20,
+                                    },
+                                ),
+                            },
+                        },
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 6,
+                                    column: 15,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 9,
+                                        column: 6,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                metadata: Some(
+                    Fields {
+                        fields: {
+                            "sourceType": Scalar(
+                                Scalar {
+                                    value: String(
+                                        "aws/s3",
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 12,
+                                                column: 22,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 12,
+                                                    column: 30,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                            "bucket": Scalar(
+                                Scalar {
+                                    value: String(
+                                        "order-system-blueprints",
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 13,
+                                                column: 18,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 13,
+                                                    column: 43,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                            "region": Scalar(
+                                Scalar {
+                                    value: String(
+                                        "eu-west-1",
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 14,
+                                                column: 18,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 14,
+                                                    column: 29,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                        fields_span: {
+                            "bucket": Span {
+                                start: Position {
+                                    line: 13,
+                                    column: 9,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 13,
+                                        column: 15,
+                                    },
+                                ),
+                            },
+                            "region": Span {
+                                start: Position {
+                                    line: 14,
+                                    column: 9,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 14,
+                                        column: 15,
+                                    },
+                                ),
+                            },
+                            "sourceType": Span {
+                                start: Position {
+                                    line: 12,
+                                    column: 9,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 12,
+                                        column: 19,
+                                    },
+                                ),
+                            },
+                        },
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 11,
+                                    column: 14,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 15,
+                                        column: 6,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: Some(
+                    StringOrSubstitutions {
+                        values: [
+                            String {
+                                value: "Core infra (including database) for the Orders API",
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 4,
+                                            column: 19,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 4,
+                                                column: 71,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 19,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 71,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 9,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 18,
+                            },
+                        ),
+                    },
+                ),
+                fields_source_meta: {
+                    "description": Span {
+                        start: Position {
+                            line: 4,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 4,
+                                column: 16,
+                            },
+                        ),
+                    },
+                    "metadata": Span {
+                        start: Position {
+                            line: 11,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 11,
+                                column: 13,
+                            },
+                        ),
+                    },
+                    "variables": Span {
+                        start: Position {
+                            line: 6,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 6,
+                                column: 14,
+                            },
+                        ),
+                    },
+                },
+            },
+        },
+        source_meta: {
+            "coreInfra": Span {
+                start: Position {
+                    line: 3,
+                    column: 9,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 18,
+                    },
+                ),
+            },
+        },
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

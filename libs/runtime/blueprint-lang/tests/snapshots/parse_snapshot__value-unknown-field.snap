@@ -1,0 +1,10 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: errs.to_string()
+
+---
+blueprint language errors:
+	- parse error: unknown field "foo" in value declaration at 1:19
+	  1 | value x: string { foo = "bar" }
+	    |                   ^
+	- parse error: missing required 'version' directive

@@ -1,0 +1,213 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: Some(
+        Fields {
+            fields: {
+                "build.profile": Fields {
+                    fields: {
+                        "target": Scalar(
+                            Scalar {
+                                value: String(
+                                    "es2020",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 18,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 5,
+                                                column: 26,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        "externals": Items {
+                            items: [
+                                Scalar(
+                                    Scalar {
+                                        value: String(
+                                            "aws-sdk",
+                                        ),
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 6,
+                                                    column: 22,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 6,
+                                                        column: 31,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                ),
+                                Scalar(
+                                    Scalar {
+                                        value: String(
+                                            "node:fs",
+                                        ),
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 6,
+                                                    column: 33,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 6,
+                                                        column: 42,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                ),
+                            ],
+                            span: Some(
+                                Span {
+                                    start: Position {
+                                        line: 6,
+                                        column: 21,
+                                    },
+                                    end: Some(
+                                        Position {
+                                            line: 6,
+                                            column: 43,
+                                        },
+                                    ),
+                                },
+                            ),
+                        },
+                    },
+                    fields_span: {
+                        "externals": Span {
+                            start: Position {
+                                line: 6,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 6,
+                                    column: 18,
+                                },
+                            ),
+                        },
+                        "target": Span {
+                            start: Position {
+                                line: 5,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 5,
+                                    column: 15,
+                                },
+                            ),
+                        },
+                    },
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 4,
+                                column: 23,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 7,
+                                    column: 6,
+                                },
+                            ),
+                        },
+                    ),
+                },
+            },
+            fields_span: {
+                "build.profile": Span {
+                    start: Position {
+                        line: 4,
+                        column: 5,
+                    },
+                    end: Some(
+                        Position {
+                            line: 4,
+                            column: 20,
+                        },
+                    ),
+                },
+            },
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 3,
+                        column: 10,
+                    },
+                    end: Some(
+                        Position {
+                            line: 8,
+                            column: 2,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    span: None,
+}

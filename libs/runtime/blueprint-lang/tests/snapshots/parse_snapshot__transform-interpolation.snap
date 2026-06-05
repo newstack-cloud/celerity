@@ -1,0 +1,10 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: errs.to_string()
+
+---
+blueprint language errors:
+	- parse error: interpolation is not allowed in this position at 1:12
+	  1 | transform "${variables.region}"
+	    |            ^
+	- parse error: missing required 'version' directive

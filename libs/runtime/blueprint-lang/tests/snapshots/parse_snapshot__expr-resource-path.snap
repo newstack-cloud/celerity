@@ -1,0 +1,362 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {
+            "firstSubnetId": Value {
+                value_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 22,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 28,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: StringWithSubstitutions(
+                    StringOrSubstitutions {
+                        values: [
+                            Substitution(
+                                Substitution {
+                                    kind: ResourceProperty(
+                                        SubstitutionResourceProperty {
+                                            resource_name: "network",
+                                            resource_each_template_index: None,
+                                            path: [
+                                                Field {
+                                                    name: "spec",
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 4,
+                                                                column: 30,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 4,
+                                                                    column: 35,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                                Field {
+                                                    name: "subnets",
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 4,
+                                                                column: 35,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 4,
+                                                                    column: 43,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                                Index {
+                                                    index: 0,
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 4,
+                                                                column: 43,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 4,
+                                                                    column: 46,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                                Field {
+                                                    name: "id",
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 4,
+                                                                column: 46,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 4,
+                                                                    column: 49,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                            ],
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 4,
+                                                column: 13,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 4,
+                                                    column: 49,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 49,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: None,
+                secret: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 20,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "primaryTableName": Value {
+                value_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 7,
+                                column: 25,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 7,
+                                    column: 31,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: StringWithSubstitutions(
+                    StringOrSubstitutions {
+                        values: [
+                            Substitution(
+                                Substitution {
+                                    kind: ResourceProperty(
+                                        SubstitutionResourceProperty {
+                                            resource_name: "ordersTable",
+                                            resource_each_template_index: None,
+                                            path: [
+                                                Field {
+                                                    name: "spec",
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 8,
+                                                                column: 37,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 8,
+                                                                    column: 42,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                                Field {
+                                                    name: "tableName",
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 8,
+                                                                column: 42,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 8,
+                                                                    column: 52,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                            ],
+                                        },
+                                    ),
+                                    span: Some(
+                                        Span {
+                                            start: Position {
+                                                line: 8,
+                                                column: 16,
+                                            },
+                                            end: Some(
+                                                Position {
+                                                    line: 8,
+                                                    column: 52,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                            String {
+                                value: "-primary",
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 8,
+                                            column: 53,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 8,
+                                                column: 61,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ],
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 8,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 8,
+                                        column: 62,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                description: None,
+                secret: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 7,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 7,
+                                column: 23,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "firstSubnetId": Span {
+                start: Position {
+                    line: 3,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 20,
+                    },
+                ),
+            },
+            "primaryTableName": Span {
+                start: Position {
+                    line: 7,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 7,
+                        column: 23,
+                    },
+                ),
+            },
+        },
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

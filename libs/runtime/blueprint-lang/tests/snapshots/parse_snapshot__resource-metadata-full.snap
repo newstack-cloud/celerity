@@ -1,0 +1,590 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {
+            "saveOrderFunction": Resource {
+                res_type: Spanned {
+                    value: "aws/lambda/function",
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 29,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 48,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                metadata: Some(
+                    Metadata {
+                        display_name: Some(
+                            StringOrSubstitutions {
+                                values: [
+                                    String {
+                                        value: "Save Order Function",
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 5,
+                                                    column: 23,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 5,
+                                                        column: 44,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                ],
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 23,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 5,
+                                                column: 44,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        annotations: Some(
+                            NamedMap {
+                                values: {
+                                    "aws.lambda.function.populateEnvVars": StringOrSubstitutions {
+                                        values: [
+                                            Substitution(
+                                                Substitution {
+                                                    kind: Bool(
+                                                        true,
+                                                    ),
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 11,
+                                                                column: 53,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 11,
+                                                                    column: 57,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                            ),
+                                        ],
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 11,
+                                                    column: 53,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 11,
+                                                        column: 57,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                    "celerity.deployment.target": StringOrSubstitutions {
+                                        values: [
+                                            Substitution(
+                                                Substitution {
+                                                    kind: Variable(
+                                                        SubstitutionVariable {
+                                                            variable_name: "deploymentTarget",
+                                                        },
+                                                    ),
+                                                    span: Some(
+                                                        Span {
+                                                            start: Position {
+                                                                line: 12,
+                                                                column: 44,
+                                                            },
+                                                            end: Some(
+                                                                Position {
+                                                                    line: 12,
+                                                                    column: 70,
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                            ),
+                                        ],
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 12,
+                                                    column: 44,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 12,
+                                                        column: 70,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                },
+                                source_meta: {
+                                    "aws.lambda.function.populateEnvVars": Span {
+                                        start: Position {
+                                            line: 11,
+                                            column: 13,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 11,
+                                                column: 50,
+                                            },
+                                        ),
+                                    },
+                                    "celerity.deployment.target": Span {
+                                        start: Position {
+                                            line: 12,
+                                            column: 13,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 12,
+                                                column: 41,
+                                            },
+                                        ),
+                                    },
+                                },
+                            },
+                        ),
+                        labels: Some(
+                            NamedMap {
+                                values: {
+                                    "service": "ordersApi",
+                                    "owner": "platform-team",
+                                },
+                                source_meta: {
+                                    "owner": Span {
+                                        start: Position {
+                                            line: 8,
+                                            column: 13,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 8,
+                                                column: 18,
+                                            },
+                                        ),
+                                    },
+                                    "service": Span {
+                                        start: Position {
+                                            line: 7,
+                                            column: 13,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 7,
+                                                column: 20,
+                                            },
+                                        ),
+                                    },
+                                },
+                            },
+                        ),
+                        custom: Some(
+                            Fields {
+                                fields: {
+                                    "ui": Fields {
+                                        fields: {
+                                            "position": Fields {
+                                                fields: {
+                                                    "x": Scalar(
+                                                        Scalar {
+                                                            value: Int(
+                                                                120,
+                                                            ),
+                                                            span: Some(
+                                                                Span {
+                                                                    start: Position {
+                                                                        line: 17,
+                                                                        column: 25,
+                                                                    },
+                                                                    end: Some(
+                                                                        Position {
+                                                                            line: 17,
+                                                                            column: 28,
+                                                                        },
+                                                                    ),
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                    "y": Scalar(
+                                                        Scalar {
+                                                            value: Int(
+                                                                200,
+                                                            ),
+                                                            span: Some(
+                                                                Span {
+                                                                    start: Position {
+                                                                        line: 18,
+                                                                        column: 25,
+                                                                    },
+                                                                    end: Some(
+                                                                        Position {
+                                                                            line: 18,
+                                                                            column: 28,
+                                                                        },
+                                                                    ),
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                },
+                                                fields_span: {
+                                                    "x": Span {
+                                                        start: Position {
+                                                            line: 17,
+                                                            column: 21,
+                                                        },
+                                                        end: Some(
+                                                            Position {
+                                                                line: 17,
+                                                                column: 22,
+                                                            },
+                                                        ),
+                                                    },
+                                                    "y": Span {
+                                                        start: Position {
+                                                            line: 18,
+                                                            column: 21,
+                                                        },
+                                                        end: Some(
+                                                            Position {
+                                                                line: 18,
+                                                                column: 22,
+                                                            },
+                                                        ),
+                                                    },
+                                                },
+                                                span: Some(
+                                                    Span {
+                                                        start: Position {
+                                                            line: 16,
+                                                            column: 28,
+                                                        },
+                                                        end: Some(
+                                                            Position {
+                                                                line: 19,
+                                                                column: 18,
+                                                            },
+                                                        ),
+                                                    },
+                                                ),
+                                            },
+                                        },
+                                        fields_span: {
+                                            "position": Span {
+                                                start: Position {
+                                                    line: 16,
+                                                    column: 17,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 16,
+                                                        column: 25,
+                                                    },
+                                                ),
+                                            },
+                                        },
+                                        span: Some(
+                                            Span {
+                                                start: Position {
+                                                    line: 15,
+                                                    column: 18,
+                                                },
+                                                end: Some(
+                                                    Position {
+                                                        line: 20,
+                                                        column: 14,
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                },
+                                fields_span: {
+                                    "ui": Span {
+                                        start: Position {
+                                            line: 15,
+                                            column: 13,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 15,
+                                                column: 15,
+                                            },
+                                        ),
+                                    },
+                                },
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 14,
+                                            column: 18,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 21,
+                                                column: 10,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 5,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 22,
+                                        column: 6,
+                                    },
+                                ),
+                            },
+                        ),
+                        fields_source_meta: {
+                            "annotations": Span {
+                                start: Position {
+                                    line: 10,
+                                    column: 9,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 10,
+                                        column: 20,
+                                    },
+                                ),
+                            },
+                            "custom": Span {
+                                start: Position {
+                                    line: 14,
+                                    column: 9,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 14,
+                                        column: 15,
+                                    },
+                                ),
+                            },
+                            "displayName": Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 9,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 20,
+                                    },
+                                ),
+                            },
+                            "labels": Span {
+                                start: Position {
+                                    line: 6,
+                                    column: 9,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 6,
+                                        column: 15,
+                                    },
+                                ),
+                            },
+                        },
+                    },
+                ),
+                depends_on: [],
+                condition: None,
+                each: None,
+                link_selector: None,
+                removal_policy: None,
+                spec: Fields {
+                    fields: {
+                        "functionName": Scalar(
+                            Scalar {
+                                value: String(
+                                    "saveOrderFunction",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 25,
+                                            column: 24,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 25,
+                                                column: 43,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    fields_span: {
+                        "functionName": Span {
+                            start: Position {
+                                line: 25,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 25,
+                                    column: 21,
+                                },
+                            ),
+                        },
+                    },
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 24,
+                                column: 10,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 26,
+                                    column: 6,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 27,
+                            },
+                        ),
+                    },
+                ),
+                fields_source_meta: {
+                    "metadata": Span {
+                        start: Position {
+                            line: 4,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 22,
+                                column: 6,
+                            },
+                        ),
+                    },
+                    "spec": Span {
+                        start: Position {
+                            line: 24,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 26,
+                                column: 6,
+                            },
+                        ),
+                    },
+                },
+            },
+        },
+        source_meta: {
+            "saveOrderFunction": Span {
+                start: Position {
+                    line: 3,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 27,
+                    },
+                ),
+            },
+        },
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

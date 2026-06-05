@@ -1,0 +1,22 @@
+[package]
+name = "celerity_blueprint_lang"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+
+[dependencies]
+# Order-preserving maps for schema field collections (matches the workspace pin
+# used by celerity_blueprint_config_parser). `serde_impl` adds Serialize /
+# Deserialize for LinkedHashMap.
+hashlink = { version = "=0.8.4", features = ["serde_impl"] }
+# Used to serialise the general blueprint schema for CST/LSP consumers and to
+# make snapshot testing ergonomic. The hand-written parser itself does not
+# depend on serde.
+serde = { version = "1.0.120", features = ["derive"] }
+tracing = "0.1.40"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
+insta = "=0.13.1"
+serde_json = "1.0.120"
+test-log = { version = "0.2.16", features = ["log", "trace"] }

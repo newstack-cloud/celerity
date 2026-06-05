@@ -1,0 +1,175 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: Some(
+        Fields {
+            fields: {
+                "function.builder": Scalar(
+                    Scalar {
+                        value: String(
+                            "ESM",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 26,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 31,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                "function.builder.minify": Scalar(
+                    Scalar {
+                        value: Bool(
+                            false,
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 33,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 38,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                "owner": Scalar(
+                    Scalar {
+                        value: String(
+                            "platform-team",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 6,
+                                    column: 13,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 6,
+                                        column: 28,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+            },
+            fields_span: {
+                "function.builder": Span {
+                    start: Position {
+                        line: 4,
+                        column: 5,
+                    },
+                    end: Some(
+                        Position {
+                            line: 4,
+                            column: 23,
+                        },
+                    ),
+                },
+                "function.builder.minify": Span {
+                    start: Position {
+                        line: 5,
+                        column: 5,
+                    },
+                    end: Some(
+                        Position {
+                            line: 5,
+                            column: 30,
+                        },
+                    ),
+                },
+                "owner": Span {
+                    start: Position {
+                        line: 6,
+                        column: 5,
+                    },
+                    end: Some(
+                        Position {
+                            line: 6,
+                            column: 10,
+                        },
+                    ),
+                },
+            },
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 3,
+                        column: 10,
+                    },
+                    end: Some(
+                        Position {
+                            line: 7,
+                            column: 2,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    span: None,
+}

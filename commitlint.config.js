@@ -31,6 +31,7 @@ module.exports = {
         "lib-rt-core",
         "lib-rt-workflow",
         "lib-rt-blueprint-parser",
+        "lib-rt-blueprint-lang",
         "lib-rt-signature",
         "lib-rt-helpers",
         "lib-rt-ws-registry",

@@ -1,0 +1,372 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {
+            "webhookHandler": Resource {
+                res_type: Spanned {
+                    value: "aws/lambda/function",
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 26,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 45,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                metadata: None,
+                depends_on: [
+                    Spanned {
+                        value: "auditLogStream",
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 17,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 33,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                condition: None,
+                each: None,
+                link_selector: None,
+                removal_policy: None,
+                spec: Fields {
+                    fields: {
+                        "functionName": Scalar(
+                            Scalar {
+                                value: String(
+                                    "webhookHandler",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 7,
+                                            column: 24,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 7,
+                                                column: 40,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    fields_span: {
+                        "functionName": Span {
+                            start: Position {
+                                line: 7,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 7,
+                                    column: 21,
+                                },
+                            ),
+                        },
+                    },
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 6,
+                                column: 10,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 8,
+                                    column: 6,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 24,
+                            },
+                        ),
+                    },
+                ),
+                fields_source_meta: {
+                    "dependsOn": Span {
+                        start: Position {
+                            line: 4,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 4,
+                                column: 33,
+                            },
+                        ),
+                    },
+                    "spec": Span {
+                        start: Position {
+                            line: 6,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 8,
+                                column: 6,
+                            },
+                        ),
+                    },
+                },
+            },
+            "consumer": Resource {
+                res_type: Spanned {
+                    value: "aws/lambda/function",
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 11,
+                                column: 20,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 11,
+                                    column: 39,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                metadata: None,
+                depends_on: [
+                    Spanned {
+                        value: "queueDrainer",
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 12,
+                                    column: 18,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 12,
+                                        column: 30,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Spanned {
+                        value: "schemaInitialiser",
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 12,
+                                    column: 32,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 12,
+                                        column: 51,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                condition: None,
+                each: None,
+                link_selector: None,
+                removal_policy: None,
+                spec: Fields {
+                    fields: {
+                        "functionName": Scalar(
+                            Scalar {
+                                value: String(
+                                    "consumer",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 15,
+                                            column: 24,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 15,
+                                                column: 34,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    fields_span: {
+                        "functionName": Span {
+                            start: Position {
+                                line: 15,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 15,
+                                    column: 21,
+                                },
+                            ),
+                        },
+                    },
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 14,
+                                column: 10,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 16,
+                                    column: 6,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 11,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 11,
+                                column: 18,
+                            },
+                        ),
+                    },
+                ),
+                fields_source_meta: {
+                    "dependsOn": Span {
+                        start: Position {
+                            line: 12,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 12,
+                                column: 51,
+                            },
+                        ),
+                    },
+                    "spec": Span {
+                        start: Position {
+                            line: 14,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 16,
+                                column: 6,
+                            },
+                        ),
+                    },
+                },
+            },
+        },
+        source_meta: {
+            "consumer": Span {
+                start: Position {
+                    line: 11,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 11,
+                        column: 18,
+                    },
+                ),
+            },
+            "webhookHandler": Span {
+                start: Position {
+                    line: 3,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 24,
+                    },
+                ),
+            },
+        },
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

@@ -1,0 +1,205 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {
+            "regions": Value {
+                value_type: Spanned {
+                    value: Array,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 16,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 21,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                value: Items {
+                    items: [
+                        Scalar(
+                            Scalar {
+                                value: String(
+                                    "us-east-1",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 4,
+                                            column: 14,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 4,
+                                                column: 25,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        Scalar(
+                            Scalar {
+                                value: String(
+                                    "us-west-2",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 4,
+                                            column: 27,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 4,
+                                                column: 38,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        Scalar(
+                            Scalar {
+                                value: String(
+                                    "eu-west-1",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 4,
+                                            column: 40,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 4,
+                                                column: 51,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                    ],
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 4,
+                                column: 13,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 4,
+                                    column: 52,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                secret: Some(
+                    Scalar {
+                        value: Bool(
+                            true,
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 14,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 18,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 7,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 14,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "regions": Span {
+                start: Position {
+                    line: 3,
+                    column: 7,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 14,
+                    },
+                ),
+            },
+        },
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

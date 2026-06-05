@@ -1,0 +1,308 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {
+            "saveOrderFunction": Resource {
+                res_type: Spanned {
+                    value: "aws/lambda/function",
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 29,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 48,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                metadata: None,
+                depends_on: [],
+                condition: None,
+                each: None,
+                link_selector: None,
+                removal_policy: None,
+                spec: Fields {
+                    fields: {
+                        "functionName": Scalar(
+                            Scalar {
+                                value: String(
+                                    "saveOrderFunction",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 5,
+                                            column: 24,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 5,
+                                                column: 43,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        "codeUri": Scalar(
+                            Scalar {
+                                value: String(
+                                    "./orders",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 6,
+                                            column: 19,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 6,
+                                                column: 29,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        "handler": Scalar(
+                            Scalar {
+                                value: String(
+                                    "save_order.handler",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 7,
+                                            column: 19,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 7,
+                                                column: 39,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        "runtime": Scalar(
+                            Scalar {
+                                value: String(
+                                    "python3.12",
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 8,
+                                            column: 19,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 8,
+                                                column: 31,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        "timeout": Scalar(
+                            Scalar {
+                                value: Int(
+                                    120,
+                                ),
+                                span: Some(
+                                    Span {
+                                        start: Position {
+                                            line: 9,
+                                            column: 19,
+                                        },
+                                        end: Some(
+                                            Position {
+                                                line: 9,
+                                                column: 22,
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    fields_span: {
+                        "codeUri": Span {
+                            start: Position {
+                                line: 6,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 6,
+                                    column: 16,
+                                },
+                            ),
+                        },
+                        "functionName": Span {
+                            start: Position {
+                                line: 5,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 5,
+                                    column: 21,
+                                },
+                            ),
+                        },
+                        "handler": Span {
+                            start: Position {
+                                line: 7,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 7,
+                                    column: 16,
+                                },
+                            ),
+                        },
+                        "runtime": Span {
+                            start: Position {
+                                line: 8,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 8,
+                                    column: 16,
+                                },
+                            ),
+                        },
+                        "timeout": Span {
+                            start: Position {
+                                line: 9,
+                                column: 9,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 9,
+                                    column: 16,
+                                },
+                            ),
+                        },
+                    },
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 4,
+                                column: 10,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 10,
+                                    column: 6,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 27,
+                            },
+                        ),
+                    },
+                ),
+                fields_source_meta: {
+                    "spec": Span {
+                        start: Position {
+                            line: 4,
+                            column: 5,
+                        },
+                        end: Some(
+                            Position {
+                                line: 10,
+                                column: 6,
+                            },
+                        ),
+                    },
+                },
+            },
+        },
+        source_meta: {
+            "saveOrderFunction": Span {
+                start: Position {
+                    line: 3,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 27,
+                    },
+                ),
+            },
+        },
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

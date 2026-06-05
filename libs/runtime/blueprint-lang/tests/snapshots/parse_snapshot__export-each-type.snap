@@ -1,0 +1,447 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {
+            "region": Export {
+                export_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 16,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 22,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                field: Scalar {
+                    value: String(
+                        "variables.region",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 4,
+                                column: 13,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 4,
+                                    column: 29,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 8,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 14,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "instanceCount": Export {
+                export_type: Spanned {
+                    value: Integer,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 7,
+                                column: 23,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 7,
+                                    column: 30,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                field: Scalar {
+                    value: String(
+                        "values.instanceCount",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 8,
+                                column: 13,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 8,
+                                    column: 33,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 7,
+                            column: 8,
+                        },
+                        end: Some(
+                            Position {
+                                line: 7,
+                                column: 21,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "weight": Export {
+                export_type: Spanned {
+                    value: Float,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 11,
+                                column: 16,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 11,
+                                    column: 21,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                field: Scalar {
+                    value: String(
+                        "variables.weight",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 12,
+                                column: 13,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 12,
+                                    column: 29,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 11,
+                            column: 8,
+                        },
+                        end: Some(
+                            Position {
+                                line: 11,
+                                column: 14,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "enabled": Export {
+                export_type: Spanned {
+                    value: Boolean,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 15,
+                                column: 17,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 15,
+                                    column: 24,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                field: Scalar {
+                    value: String(
+                        "values.enabled",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 16,
+                                column: 13,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 16,
+                                    column: 27,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 15,
+                            column: 8,
+                        },
+                        end: Some(
+                            Position {
+                                line: 15,
+                                column: 15,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "tags": Export {
+                export_type: Spanned {
+                    value: Array,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 19,
+                                column: 14,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 19,
+                                    column: 19,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                field: Scalar {
+                    value: String(
+                        "values.tags",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 20,
+                                column: 13,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 20,
+                                    column: 24,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 19,
+                            column: 8,
+                        },
+                        end: Some(
+                            Position {
+                                line: 19,
+                                column: 12,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "config": Export {
+                export_type: Spanned {
+                    value: Object,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 23,
+                                column: 16,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 23,
+                                    column: 22,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                field: Scalar {
+                    value: String(
+                        "values.config",
+                    ),
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 24,
+                                column: 13,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 24,
+                                    column: 26,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 23,
+                            column: 8,
+                        },
+                        end: Some(
+                            Position {
+                                line: 23,
+                                column: 14,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "config": Span {
+                start: Position {
+                    line: 23,
+                    column: 8,
+                },
+                end: Some(
+                    Position {
+                        line: 23,
+                        column: 14,
+                    },
+                ),
+            },
+            "enabled": Span {
+                start: Position {
+                    line: 15,
+                    column: 8,
+                },
+                end: Some(
+                    Position {
+                        line: 15,
+                        column: 15,
+                    },
+                ),
+            },
+            "instanceCount": Span {
+                start: Position {
+                    line: 7,
+                    column: 8,
+                },
+                end: Some(
+                    Position {
+                        line: 7,
+                        column: 21,
+                    },
+                ),
+            },
+            "region": Span {
+                start: Position {
+                    line: 3,
+                    column: 8,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 14,
+                    },
+                ),
+            },
+            "tags": Span {
+                start: Position {
+                    line: 19,
+                    column: 8,
+                },
+                end: Some(
+                    Position {
+                        line: 19,
+                        column: 12,
+                    },
+                ),
+            },
+            "weight": Span {
+                start: Position {
+                    line: 11,
+                    column: 8,
+                },
+                end: Some(
+                    Position {
+                        line: 11,
+                        column: 14,
+                    },
+                ),
+            },
+        },
+    },
+    metadata: None,
+    span: None,
+}

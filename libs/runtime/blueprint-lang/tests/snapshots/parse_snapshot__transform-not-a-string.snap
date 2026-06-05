@@ -1,0 +1,10 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: errs.to_string()
+
+---
+blueprint language errors:
+	- parse error: expected a string literal for transform, got integer at 1:11
+	  1 | transform 123
+	    |           ^
+	- parse error: missing required 'version' directive

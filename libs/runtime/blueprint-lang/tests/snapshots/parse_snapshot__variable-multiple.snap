@@ -1,0 +1,381 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: "format!(\"{bp:#?}\")"
+
+---
+Blueprint {
+    version: Some(
+        Scalar {
+            value: String(
+                "2025-11-02",
+            ),
+            span: Some(
+                Span {
+                    start: Position {
+                        line: 1,
+                        column: 9,
+                    },
+                    end: Some(
+                        Position {
+                            line: 1,
+                            column: 21,
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    transform: [],
+    variables: NamedMap {
+        values: {
+            "environment": Variable {
+                var_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 3,
+                                column: 23,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 3,
+                                    column: 29,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                secret: None,
+                default: Some(
+                    Scalar {
+                        value: String(
+                            "dev",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 4,
+                                    column: 15,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 4,
+                                        column: 20,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                allowed_values: [
+                    Scalar {
+                        value: String(
+                            "dev",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 22,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 27,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Scalar {
+                        value: String(
+                            "staging",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 29,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 38,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Scalar {
+                        value: String(
+                            "prod",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 5,
+                                    column: 40,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 5,
+                                        column: 46,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 3,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 3,
+                                column: 21,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "databasePort": Variable {
+                var_type: Spanned {
+                    value: Integer,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 8,
+                                column: 24,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 8,
+                                    column: 31,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: None,
+                secret: None,
+                default: Some(
+                    Scalar {
+                        value: Int(
+                            5432,
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 9,
+                                    column: 15,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 9,
+                                        column: 19,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                allowed_values: [],
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 8,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 8,
+                                column: 22,
+                            },
+                        ),
+                    },
+                ),
+            },
+            "deploymentTarget": Variable {
+                var_type: Spanned {
+                    value: String,
+                    span: Some(
+                        Span {
+                            start: Position {
+                                line: 12,
+                                column: 28,
+                            },
+                            end: Some(
+                                Position {
+                                    line: 12,
+                                    column: 34,
+                                },
+                            ),
+                        },
+                    ),
+                },
+                description: Some(
+                    Scalar {
+                        value: String(
+                            "Whether the Orders API is deployed as a containerised service or as cloud functions",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 15,
+                                    column: 19,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 15,
+                                        column: 104,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                secret: None,
+                default: Some(
+                    Scalar {
+                        value: String(
+                            "container",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 13,
+                                    column: 15,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 13,
+                                        column: 26,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                allowed_values: [
+                    Scalar {
+                        value: String(
+                            "container",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 14,
+                                    column: 22,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 14,
+                                        column: 33,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                    Scalar {
+                        value: String(
+                            "cloudFunctions",
+                        ),
+                        span: Some(
+                            Span {
+                                start: Position {
+                                    line: 14,
+                                    column: 35,
+                                },
+                                end: Some(
+                                    Position {
+                                        line: 14,
+                                        column: 51,
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                span: Some(
+                    Span {
+                        start: Position {
+                            line: 12,
+                            column: 10,
+                        },
+                        end: Some(
+                            Position {
+                                line: 12,
+                                column: 26,
+                            },
+                        ),
+                    },
+                ),
+            },
+        },
+        source_meta: {
+            "databasePort": Span {
+                start: Position {
+                    line: 8,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 8,
+                        column: 22,
+                    },
+                ),
+            },
+            "deploymentTarget": Span {
+                start: Position {
+                    line: 12,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 12,
+                        column: 26,
+                    },
+                ),
+            },
+            "environment": Span {
+                start: Position {
+                    line: 3,
+                    column: 10,
+                },
+                end: Some(
+                    Position {
+                        line: 3,
+                        column: 21,
+                    },
+                ),
+            },
+        },
+    },
+    values: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    include: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    resources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    data_sources: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    exports: NamedMap {
+        values: {},
+        source_meta: {},
+    },
+    metadata: None,
+    span: None,
+}

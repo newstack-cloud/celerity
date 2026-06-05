@@ -1,0 +1,9 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: errs.to_string()
+
+---
+blueprint language errors:
+	- parse error: version directive already declared at 2:1
+	  2 | version "2025-11-02"
+	    | ^

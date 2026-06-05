@@ -1,0 +1,10 @@
+---
+source: blueprint-lang/tests/parse_snapshot.rs
+expression: errs.to_string()
+
+---
+blueprint language errors:
+	- parse error: invalid element type segment "aws-x": a letter followed by letters or digits at 1:20
+	  1 | variable instance: aws-x/ec2 {}
+	    |                    ^
+	- parse error: missing required 'version' directive
