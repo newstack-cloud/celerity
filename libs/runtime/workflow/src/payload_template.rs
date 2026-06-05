@@ -148,7 +148,7 @@ impl EngineV1 {
                 ResolvedMappingNode::Sequence(child_items) => {
                     self.render_sequence(key, child_items, input)?
                 }
-                ResolvedMappingNode::Null => Value::Null,
+                ResolvedMappingNode::None => Value::Null,
             };
             rendered.push(rendered_item);
         }
@@ -288,7 +288,7 @@ impl Engine for EngineV1 {
                 ResolvedMappingNode::Scalar(value) => self.render_scalar(key, value, input)?,
                 ResolvedMappingNode::Mapping(mapping) => self.render(mapping, input)?,
                 ResolvedMappingNode::Sequence(items) => self.render_sequence(key, items, input)?,
-                ResolvedMappingNode::Null => Value::Null,
+                ResolvedMappingNode::None => Value::Null,
             };
             rendered.insert(key.to_string(), rendered_value);
         }
@@ -386,7 +386,7 @@ mod engine_v1_render_tests {
                                 "func:list(3054, 43.2, remove_duplicates($.values[?(@ > 300)]), true, $['inputStructure'], null, \"string value\")"
                                     .to_string(),
                             )),
-                            ResolvedMappingNode::Null,
+                            ResolvedMappingNode::None,
                         ]),
                     ),
                     (
