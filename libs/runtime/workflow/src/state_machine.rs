@@ -205,14 +205,9 @@ impl StateMachine {
             .derive_state_config(state_name.clone(), parent_state.clone())?;
 
         let attempt = match prev_state {
-            Some(prev_state) => {
-                if prev_state.name == state_name {
-                    prev_state.attempt + 1
-                } else {
-                    1
-                }
-            }
+            Some(prev_state) if prev_state.name == state_name => prev_state.attempt + 1,
             None => 1,
+            Some(_) => todo!(),
         };
 
         let final_input = self.clone().prepare_state_input(
