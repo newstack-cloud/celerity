@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/newstack-cloud/celerity/compare/runtime-python/v0.5.0...runtime-python/v0.5.1) (2026-06-05)
+
+
+### Dependencies
+
+* **runtime-python:** update celerity-sdk to 0.5.2 ([7707a6c](https://github.com/newstack-cloud/celerity/commit/7707a6cc0271eee28fd6f00c7dd922c3a43ca32b))
+
 ## [0.5.0](https://github.com/newstack-cloud/celerity/compare/runtime-python/v0.4.0...runtime-python/v0.5.0) (2026-04-02)
 
 
