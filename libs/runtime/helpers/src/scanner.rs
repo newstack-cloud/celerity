@@ -98,8 +98,7 @@ impl Scanner {
                 self.pos += 1;
                 true
             }
-            None => false,
-            Some(_) => todo!(),
+            _ => false,
         }
     }
 
