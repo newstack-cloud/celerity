@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.6.0...runtime-core/v0.7.0) (2026-06-05)
+
+
+### Features
+
+* **lib-rt-blueprint-lang:** add blueprint language implementation ([96715a4](https://github.com/newstack-cloud/celerity/commit/96715a4903e02c684e2d12cdac8f44521555ec85))
+* **lib-rt-blueprint-parser:** integrate blueprint lang into config parser ([432b9a1](https://github.com/newstack-cloud/celerity/commit/432b9a1a211493e6b261270d702c8a6a2b4f4207))
+* **lib-rt-core:** integrate blueprint language support ([df1ea3d](https://github.com/newstack-cloud/celerity/commit/df1ea3d0057b8aed9a123e09c2d4cbae7be94c14))
+
+
+### Bug Fixes
+
+* **lib-rt-helpers:** correct match statement to avoid panic ([6b8f944](https://github.com/newstack-cloud/celerity/commit/6b8f94459ce8720ec700f04278ab2c08153cb431))
+* **lib-rt-helpers:** correct scanner to use match instead of if ([6ae6056](https://github.com/newstack-cloud/celerity/commit/6ae60563f9ea90af44c0843184e5b6306ed815f3))
+* **lib-rt-workflow:** correct attempt number extraction to use match instead of if ([04ac1f1](https://github.com/newstack-cloud/celerity/commit/04ac1f12381eb9a8b5aa90255b5d10d6eca1dff1))
+* **lib-rt-workflow:** correct mapping node variant for none ([f6f21ec](https://github.com/newstack-cloud/celerity/commit/f6f21ec1afaed11384db0393ee214f795bf7311e))
+* **lib-rt-workflow:** correct match statement to avoid panic ([88a5554](https://github.com/newstack-cloud/celerity/commit/88a555498fd2d83c6231d3a1e0501ecac04d4261))
+
 ## [0.6.0](https://github.com/newstack-cloud/celerity/compare/runtime-core/v0.5.0...runtime-core/v0.6.0) (2026-03-23)
 
 
