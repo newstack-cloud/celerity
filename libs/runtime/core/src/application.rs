@@ -982,7 +982,11 @@ impl Application {
 
     fn load_and_parse_blueprint(&self) -> Result<BlueprintConfig, BlueprintParseError> {
         let blueprint_config_path = self.runtime_config.blueprint_config_path.as_str();
-        if blueprint_config_path.ends_with(".json") || blueprint_config_path.ends_with(".jsonc") {
+        if blueprint_config_path.ends_with(".bp") || blueprint_config_path.ends_with(".blueprint") {
+            BlueprintConfig::from_blueprint_lang_file(blueprint_config_path, self.env_vars.clone())
+        } else if blueprint_config_path.ends_with(".json")
+            || blueprint_config_path.ends_with(".jsonc")
+        {
             BlueprintConfig::from_jsonc_file(blueprint_config_path, self.env_vars.clone())
         } else {
             BlueprintConfig::from_yaml_file(blueprint_config_path, self.env_vars.clone())

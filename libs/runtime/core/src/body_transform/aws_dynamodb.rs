@@ -233,7 +233,7 @@ mod tests {
     #[test]
     fn unmarshall_number_int_and_float() {
         assert_eq!(unmarshall_attribute(&json!({"N": "42"})), json!(42));
-        assert_eq!(unmarshall_attribute(&json!({"N": "3.14"})), json!(3.14));
+        assert_eq!(unmarshall_attribute(&json!({"N": "2.5"})), json!(2.5));
     }
 
     #[test]

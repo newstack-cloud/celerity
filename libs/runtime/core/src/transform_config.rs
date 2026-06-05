@@ -1385,7 +1385,7 @@ mod tests {
         RuntimeBlueprintResource {
             resource_type,
             metadata: BlueprintResourceMetadata {
-                display_name: "".to_string(),
+                display_name: None,
                 annotations,
                 labels,
             },
