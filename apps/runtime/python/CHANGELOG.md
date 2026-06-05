@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/newstack-cloud/celerity/compare/runtime-python/v0.5.1...runtime-python/v0.5.2) (2026-06-05)
+
+
+### Bug Fixes
+
+* **runtime-python:** correct version bump to 0.5.2 ([396a0f9](https://github.com/newstack-cloud/celerity/commit/396a0f942ea58d3aa384e514a63dca04daf8f848))
+
 ## [0.5.1](https://github.com/newstack-cloud/celerity/compare/runtime-python/v0.5.0...runtime-python/v0.5.1) (2026-06-05)
 
 
