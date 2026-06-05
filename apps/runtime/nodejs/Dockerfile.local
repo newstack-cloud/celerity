@@ -80,8 +80,10 @@ WORKDIR /opt/celerity
 
 COPY package.json .yarnrc.yml yarn.lock ./
 
-RUN corepack enable && corepack prepare yarn@4.3.1 --activate \
-    && yarn install --immutable 2>/dev/null || yarn install
+# Invoke yarn through corepack's direct dispatch to avoid the non-executable
+# /usr/bin/yarn shim in the Docker Hardened Image (bare `yarn` fails with exit 126).
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack yarn install --immutable 2>/dev/null || corepack yarn install
 
 # -----------------------------------------------------------------------------
 # Stage 4: Dev image with local SDK overrides

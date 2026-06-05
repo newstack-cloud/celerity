@@ -19,11 +19,15 @@ WORKDIR /opt/celerity
 
 COPY package.json .yarnrc.yml yarn.lock ./
 
-RUN corepack enable && corepack prepare yarn@4.3.1 --activate \
-    && yarn install --immutable 2>/dev/null || yarn install
+# Invoke yarn via corepack's direct dispatch (`corepack yarn ...`) rather than the
+# PATH shim. The Docker Hardened Image ships a non-executable /usr/bin/yarn shim, so
+# running bare `yarn` after `corepack enable` fails with exit 126 (permission denied).
+# The yarn version is taken from package.json's "packageManager" field.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack yarn install --immutable 2>/dev/null || corepack yarn install
 
 # Remove devDependencies after install (yarn doesn't support --production with PnP/node-modules)
-RUN yarn workspaces focus --production 2>/dev/null || true
+RUN corepack yarn workspaces focus --production 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
 # Stage 2: Install all dependencies (prod + dev)
@@ -34,8 +38,10 @@ WORKDIR /opt/celerity
 
 COPY package.json .yarnrc.yml yarn.lock ./
 
-RUN corepack enable && corepack prepare yarn@4.3.1 --activate \
-    && yarn install --immutable 2>/dev/null || yarn install
+# See note in deps-prod: invoke yarn through corepack to avoid the non-executable
+# /usr/bin/yarn shim in the Docker Hardened Image.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack yarn install --immutable 2>/dev/null || corepack yarn install
 
 # -----------------------------------------------------------------------------
 # Stage 3: Build-time prep (needs shell for mkdir, generate-manifest, etc.)
