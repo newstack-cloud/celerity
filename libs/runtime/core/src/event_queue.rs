@@ -29,7 +29,7 @@ use tokio_util::time::DelayQueue;
 use tracing::{debug, info, warn};
 
 use crate::{
-    config::AppConfig,
+    config::{AppConfig, EventConfig},
     consts::{
         DEFAULT_HANDLER_TIMEOUT, EVENT_QUEUE_ADMISSION_WAIT_DIVISOR,
         MAX_EVENT_QUEUE_ADMISSION_WAIT_SECS,
@@ -172,6 +172,23 @@ pub fn collect_handler_timeouts(app_config: &AppConfig) -> HandlerTimeouts {
             for handler in &schedule.handlers {
                 by_tag.insert(
                     source_handler_tag(&schedule.schedule_id, &handler.name),
+                    timeout_from_seconds(handler.timeout),
+                );
+            }
+        }
+    }
+
+    // Event handlers are dispatched with a source tag built from the stream or
+    // queue they are fed by, so they are keyed the same way here.
+    if let Some(events) = &app_config.events {
+        for event in &events.events {
+            let (source_id, handlers) = match event {
+                EventConfig::Stream(config) => (&config.stream_id, &config.handlers),
+                EventConfig::EventTrigger(config) => (&config.queue_id, &config.handlers),
+            };
+            for handler in handlers {
+                by_tag.insert(
+                    source_handler_tag(source_id, &handler.name),
                     timeout_from_seconds(handler.timeout),
                 );
             }
@@ -526,6 +543,71 @@ mod tests {
 
         assert!(result.is_ok());
         assert!(drain.await.unwrap().is_some());
+    }
+
+    #[test]
+    fn collects_timeouts_for_event_handlers_from_both_source_kinds() {
+        use crate::config::{
+            EventConfig, EventHandlerDefinition, EventTriggerConfig, EventsConfig, StreamConfig,
+            StreamSourceType,
+        };
+
+        fn handler(name: &str, timeout: i64) -> EventHandlerDefinition {
+            EventHandlerDefinition {
+                name: name.to_string(),
+                location: String::new(),
+                handler: String::new(),
+                timeout,
+                tracing_enabled: false,
+                route: None,
+            }
+        }
+
+        let app_config = AppConfig {
+            api: None,
+            consumers: None,
+            schedules: None,
+            events: Some(EventsConfig {
+                events: vec![
+                    EventConfig::Stream(StreamConfig {
+                        consumer_name: "orders-consumer".to_string(),
+                        source_type: StreamSourceType::DataStream,
+                        stream_id: "orders-stream".to_string(),
+                        batch_size: None,
+                        partial_failures: None,
+                        start_from_beginning: None,
+                        handlers: vec![handler("ProcessOrders", 45)],
+                    }),
+                    EventConfig::EventTrigger(EventTriggerConfig {
+                        consumer_name: "uploads-consumer".to_string(),
+                        event_type: "created".to_string(),
+                        queue_id: "uploads-queue".to_string(),
+                        batch_size: None,
+                        visibility_timeout: None,
+                        wait_time_seconds: None,
+                        partial_failures: None,
+                        handlers: vec![handler("ProcessUpload", 120)],
+                    }),
+                ],
+            }),
+            custom_handlers: None,
+        };
+
+        let timeouts = collect_handler_timeouts(&app_config);
+
+        assert_eq!(
+            timeouts.for_tag("source::orders-stream::ProcessOrders"),
+            Duration::from_secs(45)
+        );
+        assert_eq!(
+            timeouts.for_tag("source::uploads-queue::ProcessUpload"),
+            Duration::from_secs(120)
+        );
+        // An unknown tag still falls back to the default.
+        assert_eq!(
+            timeouts.for_tag("source::unknown::Handler"),
+            Duration::from_secs(DEFAULT_HANDLER_TIMEOUT as u64)
+        );
     }
 
     #[test]
