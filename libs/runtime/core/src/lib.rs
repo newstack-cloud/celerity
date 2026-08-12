@@ -11,6 +11,7 @@ pub mod errors;
 pub mod event_queue;
 pub mod handler_invoke;
 pub mod ipc_http;
+pub mod ipc_websocket;
 pub mod request;
 pub(crate) mod runtime_local_api;
 pub(crate) mod telemetry;

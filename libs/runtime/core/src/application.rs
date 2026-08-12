@@ -52,14 +52,15 @@ use crate::{
     },
     errors::{ApplicationStartError, ConfigError},
     event_queue::{
-        collect_handler_timeouts, http_handler_tag, timeout_from_seconds, EventQueueHandles,
-        EventQueueParts,
+        collect_handler_timeouts, http_handler_tag, timeout_from_seconds, websocket_handler_tag,
+        EventQueueHandles, EventQueueParts,
     },
     handler_invoke::{
         invoke_handler as invoke_handler_fn, new_handler_invoke_registry, HandlerInvokeRegistry,
         HandlerInvoker, InvokeHandlerState,
     },
     ipc_http::{self, IpcHttpRoute},
+    ipc_websocket::IpcWebSocketHandler,
     request::request_id,
     runtime_local_api::create_runtime_local_api,
     telemetry::{self, enrich_span, log_request},
@@ -303,6 +304,35 @@ impl Application {
                 None,
             ));
             self.ws_connections = Some(conn_registry.clone());
+
+            // As with HTTP routes, the FFI call mode has the SDK register these
+            // as it binds each in-process handler. In the IPC call mode the
+            // runtime registers one per blueprint handler, so that messages
+            // have somewhere to route to.
+            if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
+                if let Some(event_queue) = &self.event_queue {
+                    // `try_lock` rather than `blocking_lock`, which panics when
+                    // called from within a runtime, and setup runs inside one.
+                    // Nothing else holds the route map during setup, so failing
+                    // to take it would mean the invariant no longer holds.
+                    let mut ws_app_routes = self.ws_app_routes.try_lock().map_err(|_| {
+                        ApplicationStartError::Config(ConfigError::Api(
+                            "the WebSocket route map was already held during setup".to_string(),
+                        ))
+                    })?;
+                    for handler in &websocket_config.handlers {
+                        ws_app_routes.insert(
+                            handler.route.clone(),
+                            Arc::new(IpcWebSocketHandler::new(
+                                event_queue.queue.clone(),
+                                websocket_handler_tag(&handler.route_key, &handler.route),
+                                handler.route.clone(),
+                                timeout_from_seconds(handler.timeout),
+                            )),
+                        );
+                    }
+                }
+            }
             http_server_app = http_server_app.route(
                 websocket_base_path,
                 get(websocket::handler).with_state(websocket::WebSocketAppState {

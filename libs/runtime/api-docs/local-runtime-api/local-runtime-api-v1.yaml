@@ -786,11 +786,25 @@ components:
         message:
           type: string
           description: |
-            A serialised JSON object that is expected
-            to contain the property used for the routeKey
-            to route the message to the correct handler.
+            The message body.
+
+            For a text frame this is the message as sent, a serialised JSON
+            object that is expected to contain the property used for the
+            routeKey to route the message to the correct handler.
+
+            For a binary frame this is the standard base64 encoding of the
+            frame's bytes, since this event is carried as JSON, which has no
+            binary representation. `isBinary` indicates which of the two this
+            is, and a handler must decode the body when it is set.
           examples:
             - '{"action":"myAction","text":"A new message for myAction"}'
+        isBinary:
+          type: boolean
+          default: false
+          description: |
+            Whether `message` holds a base64 encoded binary frame rather
+            than text.
+          examples: [false]
 
     QueueConsumerMessagesEventData:
       type: object

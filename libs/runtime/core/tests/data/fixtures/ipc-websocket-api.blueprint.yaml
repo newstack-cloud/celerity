@@ -1,0 +1,45 @@
+version: 2025-11-02
+transform: celerity-2026-02-28
+variables:
+  logLevel:
+    type: string
+    description: "The log level to use for logging."
+    default: "INFO"
+    allowedValues:
+      - "DEBUG"
+      - "INFO"
+      - "WARNING"
+      - "ERROR"
+
+resources:
+  ordersWebSocketApi:
+    type: "celerity/api"
+    description: "A WebSocket-only API, so that IPC message routing can be exercised on its own."
+    metadata:
+      displayName: Orders WebSocket API
+    linkSelector:
+      byLabel:
+        application: "orders"
+    spec:
+      protocols: ["websocket"]
+      tracingEnabled: false
+
+  sendMessageHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Send Message Handler
+      labels:
+        application: "orders"
+      annotations:
+        celerity.handler.websocket: true
+        celerity.handler.websocket.route: "sendMessage"
+    spec:
+      handlerName: Orders-SendMessageHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.send_message"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 10
+      tracingEnabled: false
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"

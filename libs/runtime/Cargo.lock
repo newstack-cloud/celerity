@@ -1211,6 +1211,7 @@ dependencies = [
  "axum 0.8.8",
  "axum-client-ip",
  "axum-extra 0.10.3",
+ "base64 0.22.1",
  "biscuit",
  "celerity_blueprint_config_parser",
  "celerity_consumer_azure_events_hub",
