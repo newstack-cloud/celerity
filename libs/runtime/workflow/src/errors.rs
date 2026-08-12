@@ -1,12 +1,6 @@
 use std::fmt;
 
-use axum::{
-    http::StatusCode,
-    response::{IntoResponse, Response},
-    Json,
-};
 use celerity_blueprint_config_parser::parse::BlueprintParseError;
-use celerity_helpers::runtime_types::ResponseMessage;
 use opentelemetry::trace::TraceError as OTelTraceError;
 use tokio::task::JoinError;
 use tracing_subscriber::{filter::ParseError, util::TryInitError};
@@ -104,31 +98,5 @@ impl From<TryInitError> for WorkflowApplicationStartError {
 impl From<ParseError> for WorkflowApplicationStartError {
     fn from(error: ParseError) -> Self {
         WorkflowApplicationStartError::TracingFilterParse(error)
-    }
-}
-
-#[derive(Debug)]
-pub enum EventResultError {
-    EventNotFound,
-    UnexpectedError,
-}
-
-impl IntoResponse for EventResultError {
-    fn into_response(self) -> Response {
-        let resp_tuple = match self {
-            EventResultError::EventNotFound => (
-                StatusCode::NOT_FOUND,
-                Json(ResponseMessage {
-                    message: "Event with provided ID was not found".to_string(),
-                }),
-            ),
-            EventResultError::UnexpectedError => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ResponseMessage {
-                    message: "An unexpected error occurred".to_string(),
-                }),
-            ),
-        };
-        resp_tuple.into_response()
     }
 }
