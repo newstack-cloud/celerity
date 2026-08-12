@@ -1,0 +1,11 @@
+version: v2
+modules:
+  - path: .
+lint:
+  use:
+    - STANDARD
+  # The wire contract is consumed by SDKs in several languages, so the standard
+  # rules are kept as-is rather than relaxed per-file.
+breaking:
+  use:
+    - FILE
