@@ -4,17 +4,13 @@ use serde::{Deserialize, Serialize};
 /// with handlers.
 #[derive(Debug, PartialEq)]
 pub enum RuntimeCallMode {
-    // FFI mode, where the runtime calls into a handler
-    // via a foreign function interface.
+    /// Handlers run in-process, called through a foreign function interface.
+    /// Used by the Node.js (NAPI) and Python (PyO3) SDKs.
     Ffi,
-    // HTTP mode, where the runtime exposes a HTTP API on localhost
-    // on a port that must not be exposed outside of the container
-    // or host machine.
-    // The HTTP API allows the handlers to retrieve the latest message/request
-    // from the runtime and send a response back to the runtime.
-    // This mode is useful for languages that are compiled ahead of time
-    // such as Go, Rust, C and C++.
-    Http,
+    /// Handlers run in a separate executable, driven over an IPC transport.
+    /// This mode is useful for languages that are compiled ahead of time
+    /// such as Go, Rust, C and C++.
+    Ipc,
 }
 
 /// The platform that the runtime hosted application is running on.

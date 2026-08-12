@@ -38,7 +38,7 @@ pub struct RuntimeConfig {
     /// The port on which the local HTTP API server
     /// should run.
     /// This is only used when the runtime call mode
-    /// is set to `RuntimeCallMode::Http`.
+    /// is set to `RuntimeCallMode::Ipc`.
     pub local_api_port: i32,
     /// Set to true if one of your handlers defines a custom health check endpoint.
     ///
@@ -161,8 +161,8 @@ impl RuntimeConfig {
 
         let runtime_call_mode = match runtime_call_mode.as_str() {
             "ffi" => RuntimeCallMode::Ffi,
-            "http" => RuntimeCallMode::Http,
-            _ => panic!("Invalid runtime call mode, must be one of 'ffi' or 'http'"),
+            "ipc" => RuntimeCallMode::Ipc,
+            _ => panic!("Invalid runtime call mode, must be one of 'ffi' or 'ipc'"),
         };
 
         let service_name = env

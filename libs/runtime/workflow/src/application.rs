@@ -96,7 +96,7 @@ impl WorkflowApplication {
             }
             Err(err) => return Err(WorkflowApplicationStartError::Config(err)),
         };
-        if self.runtime_config.runtime_call_mode == RuntimeCallMode::Http {
+        if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
             self.runtime_local_api = Some(self.setup_runtime_local_api(&workflow_app_config)?);
         }
         Ok(workflow_app_config)
