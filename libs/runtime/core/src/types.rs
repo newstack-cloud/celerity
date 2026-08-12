@@ -75,7 +75,15 @@ pub struct WebSocketEventData {
     #[serde(rename = "requestId")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
+    /// The message body. For a text frame this is the message as sent. For a
+    /// binary frame this is the standard base64 encoding of its bytes, since
+    /// the event is carried as JSON, which has no binary representation.
     pub message: String,
+    /// Whether `message` holds a base64 encoded binary frame rather than text.
+    /// Handlers must decode the body when this is set.
+    #[serde(rename = "isBinary")]
+    #[serde(default)]
+    pub is_binary: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -168,10 +176,10 @@ pub struct HttpResponseData {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SimpleResponseData {
-    success: bool,
+    pub success: bool,
     #[serde(rename = "errorMessage")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    error_message: Option<String>,
+    pub error_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
