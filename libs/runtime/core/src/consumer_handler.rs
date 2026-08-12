@@ -949,10 +949,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_event_queue_handler() {
-        let parts = EventQueueParts::new(4);
-        let receiver = parts.receiver.clone();
+        let (queue, _cleanup) = EventQueueParts::new(4).into_parts();
+        let receiver = queue.receiver.clone();
         let handler = EventQueueConsumerEventHandler::new(
-            parts.queue.clone(),
+            queue.queue.clone(),
             HandlerTimeouts::new(HashMap::new(), Duration::from_secs(60)),
         );
 
@@ -995,10 +995,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_event_queue_handler_schedule() {
-        let parts = EventQueueParts::new(4);
-        let receiver = parts.receiver.clone();
+        let (queue, _cleanup) = EventQueueParts::new(4).into_parts();
+        let receiver = queue.receiver.clone();
         let handler = EventQueueConsumerEventHandler::new(
-            parts.queue.clone(),
+            queue.queue.clone(),
             HandlerTimeouts::new(HashMap::new(), Duration::from_secs(60)),
         );
 
