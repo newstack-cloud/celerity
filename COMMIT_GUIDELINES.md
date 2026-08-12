@@ -41,6 +41,12 @@ This list will evolve as more applications and libraries are added to Celerity.
 - `runtime-nodejs` - Node.js runtime wrapper application (`apps/runtime/nodejs`)
 - `runtime-python` - Python runtime wrapper application (`apps/runtime/python`)
 
+#### Runtime libraries as a whole (`libs/runtime`)
+
+- `runtime-libs` - Changes that span several runtime library crates, or that apply to the runtime workspace itself rather than to any one crate, this includes the workspace `Cargo.toml`, dependency and lockfile updates, CI workflows, shared test infrastructure, and documentation covering more than one crate.
+
+Prefer one of the specific scopes below whenever a change maps cleanly onto a single crate; reach for `runtime-libs` only when no single crate is the subject.
+
 #### Core runtime libraries (`libs/runtime`)
 
 - `lib-rt-core` - Core Rust runtime library (`libs/runtime/core`)
@@ -77,8 +83,9 @@ This list will evolve as more applications and libraries are added to Celerity.
 - `lib-rt-sdk-java` - Generated Java language bindings (`libs/runtime/sdk/bindings/java`)
 - `lib-rt-sdk-dotnet` - Generated .NET/C# language bindings (`libs/runtime/sdk/bindings/dotnet`)
 
-The commit scope can be omitted for changes that cut across these scopes.
-However, it's best to check in commits that map to a specific scope where possible.
+It's best to check in commits that map to a specific scope where possible.
+
+Where a change cuts across several scopes, prefer the broader scope that covers them rather than omitting the scope — for the runtime libraries that is `runtime-libs`. An unscoped commit is invisible to `git log --grep` filtering by scope, so omit the scope only when no scope above covers the change at all.
 
 ### How commit scopes relate to releases
 
@@ -97,7 +104,7 @@ Release-please routes commits to component groups by **longest file path match**
 | `cli` | `apps/cli` | GitHub Release | `cli` |
 | `local-events` | `apps/local-events` | GHCR | `local-events` |
 | `dev-auth` | `apps/dev-auth` | GHCR | `dev-auth` |
-| `runtime-core` | `libs/runtime` | Internal | `lib-rt-core`, `lib-rt-workflow`, `lib-rt-blueprint-parser`, `lib-rt-blueprint-lang`, `lib-rt-signature`, `lib-rt-helpers`, `lib-rt-aws-helpers` |
+| `runtime-core` | `libs/runtime` | Internal | `runtime-libs`\*, `lib-rt-core`, `lib-rt-workflow`, `lib-rt-blueprint-parser`, `lib-rt-blueprint-lang`, `lib-rt-signature`, `lib-rt-helpers`, `lib-rt-aws-helpers` |
 | `runtime-consumers` | `libs/runtime/consumers` | Internal | `lib-rt-consumer-sqs`, `lib-rt-consumer-redis`, `lib-rt-consumer-kinesis`, `lib-rt-consumer-asb`, `lib-rt-consumer-aeh`, `lib-rt-consumer-gcloud-pubsub`, `lib-rt-consumer-gcloud-tasks` |
 | `runtime-ws` | `libs/runtime/ws` | Internal | `lib-rt-ws-registry`, `lib-rt-ws-redis` |
 | `runtime-sdk-ffi` | `libs/runtime/sdk` | Triggers Java/.NET release | `lib-rt-sdk-ffi`, `lib-rt-sdk-ffi-java`, `lib-rt-sdk-schema`, `runtime-bindings`, `lib-rt-sdk-java`, `lib-rt-sdk-dotnet` |
@@ -105,6 +112,8 @@ Release-please routes commits to component groups by **longest file path match**
 | `runtime-sdk-python` | `libs/runtime/sdk/python` | PyPI | `lib-rt-sdk-python` |
 | `runtime-nodejs` | `apps/runtime/nodejs` | GHCR | `runtime-nodejs` |
 | `runtime-python` | `apps/runtime/python` | GHCR | `runtime-python` |
+
+> **Note:** \* `runtime-libs` is not bound to `runtime-core`. Like every other scope it is a label, and routing follows the changed file paths, so a `runtime-libs` commit lands in whichever runtime component group those paths match — `runtime-consumers` if it touches `libs/runtime/consumers`, and so on. It is listed under `runtime-core` because that is where cross-crate runtime changes most often land, not because the scope implies it.
 
 > **Note:** Only Go components (e.g. `cli`) receive an additional path-based tag (`{path}/v{version}`) for the Go module proxy. All other components use only the release-please component tag (`{component}/v{version}`). See the [release strategy](./SOURCE_CONTROL_RELEASE_STRATEGY.md#release-strategy) for details.
 
