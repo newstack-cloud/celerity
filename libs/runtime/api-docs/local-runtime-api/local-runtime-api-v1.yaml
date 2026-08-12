@@ -761,6 +761,15 @@ components:
         requestId:
           type: string
           examples: ["e9c9d01c-64a0-4127-8c5c-9745a4d05840"]
+        isBinary:
+          type: boolean
+          default: false
+          description: |
+            Whether `body` holds a base64 encoded binary payload rather than
+            text. A body that is not valid UTF-8 is encoded this way, since
+            this event is carried as JSON, which has no binary representation.
+            A handler must decode the body when this is set.
+          examples: [false]
 
     WebSocketMessageEventData:
       type: object

@@ -15,11 +15,13 @@
 use std::{collections::HashMap, time::Duration};
 
 use axum::{
-    body::{to_bytes, Body},
+    body::{to_bytes, Body, Bytes},
     extract::{RawPathParams, Request},
     http::{header::RETRY_AFTER, HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use http_body_util::LengthLimitError;
 use tracing::{error, warn};
 
 use crate::{
@@ -73,9 +75,20 @@ pub async fn handle_request(
     let path_params = collect_path_params(&path_params);
     let (query_params, multi_query_params) = collect_query_params(&query);
 
-    let body = match to_bytes(request.into_body(), MAX_HTTP_REQUEST_BODY_BYTES).await {
-        Ok(bytes) if bytes.is_empty() => None,
-        Ok(bytes) => Some(String::from_utf8_lossy(&bytes).into_owned()),
+    let (body, is_binary) = match to_bytes(request.into_body(), MAX_HTTP_REQUEST_BODY_BYTES).await {
+        Ok(bytes) if bytes.is_empty() => (None, false),
+        Ok(bytes) => encode_body(bytes),
+        Err(err) if is_length_limit(&err) => {
+            warn!(
+                limit = MAX_HTTP_REQUEST_BODY_BYTES,
+                "rejecting request with an oversized body"
+            );
+            return (
+                StatusCode::PAYLOAD_TOO_LARGE,
+                "the request body is larger than the runtime accepts",
+            )
+                .into_response();
+        }
         Err(err) => {
             warn!("failed to read request body: {err}");
             return (StatusCode::BAD_REQUEST, "failed to read request body").into_response();
@@ -100,6 +113,7 @@ pub async fn handle_request(
             headers: single_headers,
             multi_headers,
             body,
+            is_binary,
             source_ip,
             request_id,
         })),
@@ -159,6 +173,35 @@ async fn dispatch(route: &IpcHttpRoute, event: EventData) -> Response {
             (StatusCode::GATEWAY_TIMEOUT, "handler timed out").into_response()
         }
     }
+}
+
+/// Carries the body without losing anything.
+///
+/// A text body travels as sent. One that is not valid UTF-8 is base64 encoded
+/// rather than being forced through a lossy conversion, which would replace
+/// every invalid sequence with the replacement character and silently corrupt
+/// any payload that is not text, such as an upload or a protobuf request.
+///
+/// The event is serialised as JSON, which cannot represent raw bytes, so an
+/// encoding is unavoidable here. It disappears when bodies become `bytes`.
+fn encode_body(bytes: Bytes) -> (Option<String>, bool) {
+    match String::from_utf8(bytes.into()) {
+        Ok(text) => (Some(text), false),
+        Err(err) => (Some(BASE64.encode(err.as_bytes())), true),
+    }
+}
+
+/// Whether reading the body failed because it exceeded the limit, as opposed to
+/// the connection breaking partway through.
+fn is_length_limit(err: &axum::Error) -> bool {
+    let mut source: Option<&(dyn std::error::Error + 'static)> = Some(err);
+    while let Some(err) = source {
+        if err.downcast_ref::<LengthLimitError>().is_some() {
+            return true;
+        }
+        source = err.source();
+    }
+    false
 }
 
 /// A shed request is a capacity signal rather than a fault, so it is reported
@@ -335,6 +378,45 @@ mod tests {
         });
 
         assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn carries_a_text_body_as_sent() {
+        let (body, is_binary) = encode_body(Bytes::from_static(br#"{"id":1}"#));
+
+        assert_eq!(body.as_deref(), Some(r#"{"id":1}"#));
+        assert!(!is_binary);
+    }
+
+    #[test]
+    fn carries_a_non_utf8_body_without_corrupting_it() {
+        let raw = vec![0xff, 0xfe, 0x00, 0x80, 0x01];
+        let (body, is_binary) = encode_body(Bytes::from(raw.clone()));
+
+        assert!(is_binary);
+        let decoded = BASE64
+            .decode(body.expect("a body should be carried"))
+            .expect("the body should be base64 encoded");
+        assert_eq!(decoded, raw);
+    }
+
+    #[tokio::test]
+    async fn an_oversized_body_is_reported_as_too_large_not_a_bad_request() {
+        let err = to_bytes(Body::from(vec![0u8; 64]), 8).await.unwrap_err();
+        assert!(is_length_limit(&err));
+    }
+
+    #[tokio::test]
+    async fn a_body_read_failure_is_not_mistaken_for_an_oversized_one() {
+        let err = to_bytes(
+            Body::from_stream(futures::stream::once(async {
+                Err::<Bytes, std::io::Error>(std::io::Error::other("connection reset"))
+            })),
+            1024,
+        )
+        .await
+        .unwrap_err();
+        assert!(!is_length_limit(&err));
     }
 
     #[test]

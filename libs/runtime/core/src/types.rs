@@ -56,9 +56,17 @@ pub struct HttpRequestEventData {
     pub headers: HashMap<String, String>,
     #[serde(rename = "multiHeaders")]
     pub multi_headers: HashMap<String, Vec<String>>,
+    /// The request body. Text bodies are carried as sent. A body that is not
+    /// valid UTF-8 is carried as its standard base64 encoding, since this event
+    /// is serialised as JSON, which has no binary representation.
     #[serde(rename = "body")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub body: Option<String>,
+    /// Whether `body` holds a base64 encoded binary payload rather than text.
+    /// Handlers must decode the body when this is set.
+    #[serde(rename = "isBinary")]
+    #[serde(default)]
+    pub is_binary: bool,
     #[serde(rename = "sourceIp")]
     pub source_ip: String,
     #[serde(rename = "requestId")]
