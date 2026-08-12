@@ -1,6 +1,6 @@
 use std::{
-    collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex, RwLock},
+    collections::HashMap,
+    sync::{Arc, RwLock},
     time::Duration,
 };
 
@@ -13,7 +13,7 @@ use axum::{
 use celerity_blueprint_config_parser::{blueprint::BlueprintConfig, parse::BlueprintParseError};
 use celerity_helpers::{
     env::EnvVars,
-    runtime_types::{HealthCheckResponse, RuntimeCallMode},
+    runtime_types::HealthCheckResponse,
     time::{Clock, DefaultClock},
 };
 use futures::TryStreamExt as _;
@@ -31,11 +31,10 @@ use crate::{
     handlers::BoxedWorkflowStateHandler,
     state_machine::StateMachine,
     transform_config::collect_workflow_app_config,
-    types::{EventTuple, Response, WorkflowAppState, WorkflowExecutionEvent},
+    types::{Response, WorkflowAppState, WorkflowExecutionEvent},
     workflow_executions::{
         SaveWorkflowExecutionPayload, WorkflowExecutionService, WorkflowExecutionStatus,
     },
-    workflow_runtime_local_api::create_workflow_runtime_local_api,
 };
 
 /// Provides an application for a workflow
@@ -48,13 +47,8 @@ pub struct WorkflowApplication {
     workflow_api: Option<Router<WorkflowAppState>>,
     state_handlers: Arc<RwLock<HashMap<String, BoxedWorkflowStateHandler>>>,
     workflow_app_config: Option<WorkflowAppConfig>,
-    runtime_local_api: Option<Router>,
-    event_queue: Option<Arc<Mutex<VecDeque<EventTuple>>>>,
-    processing_events_map: Option<Arc<Mutex<HashMap<String, EventTuple>>>>,
     #[allow(dead_code)]
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
-    #[allow(dead_code)]
-    local_api_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     clock: Arc<dyn Clock + Send + Sync>,
     #[allow(dead_code)]
     execution_service: Arc<dyn WorkflowExecutionService + Send + Sync>,
@@ -75,11 +69,7 @@ impl WorkflowApplication {
             workflow_api: None,
             state_handlers: Arc::new(RwLock::new(HashMap::new())),
             workflow_app_config: None,
-            runtime_local_api: None,
-            event_queue: None,
-            processing_events_map: None,
             server_shutdown_signal: None,
-            local_api_shutdown_signal: None,
             clock: Arc::new(DefaultClock::new()),
             execution_service,
             event_broadcaster: broadcast::channel(EVENT_BROADCASTER_CAPACITY).0,
@@ -96,9 +86,6 @@ impl WorkflowApplication {
             }
             Err(err) => return Err(WorkflowApplicationStartError::Config(err)),
         };
-        if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
-            self.runtime_local_api = Some(self.setup_runtime_local_api(&workflow_app_config)?);
-        }
         Ok(workflow_app_config)
     }
 
@@ -140,17 +127,6 @@ impl WorkflowApplication {
             .route("/executions", get(get_executions_handler));
 
         Ok(workflow_api_router)
-    }
-
-    fn setup_runtime_local_api(
-        &mut self,
-        app_config: &WorkflowAppConfig,
-    ) -> Result<Router, WorkflowApplicationStartError> {
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
-        self.event_queue = Some(event_queue.clone());
-        let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
-        self.processing_events_map = Some(processing_events_map.clone());
-        create_workflow_runtime_local_api(app_config, event_queue, processing_events_map)
     }
 
     pub fn register_workflow_state_handler(
