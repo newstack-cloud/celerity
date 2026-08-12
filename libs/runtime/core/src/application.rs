@@ -53,7 +53,7 @@ use crate::{
     errors::{ApplicationStartError, ConfigError},
     event_queue::{
         collect_handler_timeouts, http_handler_tag, timeout_from_seconds, websocket_handler_tag,
-        EventQueueHandles, EventQueueParts,
+        EventCleanupTask, EventQueueHandles, EventQueueParts,
     },
     handler_invoke::{
         invoke_handler as invoke_handler_fn, new_handler_invoke_registry, HandlerInvokeRegistry,
@@ -92,6 +92,8 @@ pub struct Application {
     http_server_app: Option<Router<ApiAppState>>,
     runtime_local_api: Option<Router>,
     event_queue: Option<EventQueueHandles>,
+    /// Created during setup, started in `run`.
+    event_cleanup_task: Option<EventCleanupTask>,
     event_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     ws_connections: Option<Arc<dyn WebSocketRegistrySend + 'static>>,
     ws_app_routes: Arc<AsyncMutex<HashMap<String, Arc<dyn WebSocketMessageHandler + Send + Sync>>>>,
@@ -131,6 +133,7 @@ impl Application {
             local_api_shutdown_signal: None,
             consumer_shutdown_signals: None,
             event_queue: None,
+            event_cleanup_task: None,
             event_cleanup_task_shutdown_signal: None,
             ws_connections: None,
             ws_app_routes: Arc::new(AsyncMutex::new(HashMap::new())),
@@ -162,12 +165,14 @@ impl Application {
         let mut collected_handler_names: Vec<String> = Vec::new();
 
         // The event queue has to exist before the API router is built, because
-        // in the IPC call mode every HTTP route holds a producer for it.
+        // in the IPC call mode every HTTP route holds a producer for it. Only
+        // the queue is created here; the cleanup task that goes with it is
+        // started in `run`, where there is a runtime to spawn it on.
         if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
-            let (handles, shutdown_tx) =
-                EventQueueParts::new(DEFAULT_EVENT_QUEUE_CAPACITY).spawn_cleanup_task_detached();
+            let (handles, cleanup_task) =
+                EventQueueParts::new(DEFAULT_EVENT_QUEUE_CAPACITY).into_parts();
             self.event_queue = Some(handles);
-            self.event_cleanup_task_shutdown_signal = Some(shutdown_tx);
+            self.event_cleanup_task = Some(cleanup_task);
         }
 
         match collect_api_config(&blueprint_config, &self.runtime_config) {
@@ -468,6 +473,12 @@ impl Application {
         // so the global MeterProvider is available for creating real instruments.
         if self.runtime_config.metrics_enabled {
             telemetry::setup_metrics(&self.runtime_config)?;
+        }
+
+        // Started before anything serves requests, so that no event can be
+        // dispatched before its deadline is being watched.
+        if let Some(cleanup_task) = self.event_cleanup_task.take() {
+            self.event_cleanup_task_shutdown_signal = Some(cleanup_task.spawn());
         }
 
         let mut server_task = None;

@@ -23,7 +23,6 @@ use std::{
 
 use tokio::{
     sync::{mpsc, oneshot},
-    task::JoinHandle,
     time::Instant,
 };
 use tokio_util::time::DelayQueue;
@@ -316,53 +315,60 @@ pub type EventQueueReceiver = Arc<tokio::sync::Mutex<mpsc::Receiver<EventTuple>>
 
 /// Everything needed to run the event path in the IPC runtime call mode.
 pub struct EventQueueParts {
-    pub queue: EventQueue,
-    pub receiver: EventQueueReceiver,
-    pub in_flight: Arc<InFlightTable>,
-    arm_rx: mpsc::UnboundedReceiver<(String, Instant)>,
+    handles: EventQueueHandles,
+    cleanup_task: EventCleanupTask,
 }
 
 impl EventQueueParts {
-    /// Creates the bounded queue, the in-flight table and the channel that
-    /// arms deadlines with the cleanup task.
+    /// Creates the bounded queue, the in-flight table and the channel that arms
+    /// deadlines with the cleanup task.
+    ///
+    /// Nothing is spawned here, so this is safe to call outside a tokio
+    /// runtime. Starting the cleanup task is a separate step.
     pub fn new(capacity: usize) -> Self {
         let (tx, rx) = mpsc::channel(capacity);
         let (arm_tx, arm_rx) = mpsc::unbounded_channel();
+        let in_flight = Arc::new(InFlightTable {
+            entries: Mutex::new(HashMap::new()),
+            arm_tx,
+        });
+
         EventQueueParts {
-            queue: EventQueue { tx },
-            receiver: Arc::new(tokio::sync::Mutex::new(rx)),
-            in_flight: Arc::new(InFlightTable {
-                entries: Mutex::new(HashMap::new()),
-                arm_tx,
-            }),
-            arm_rx,
+            handles: EventQueueHandles {
+                queue: EventQueue { tx },
+                receiver: Arc::new(tokio::sync::Mutex::new(rx)),
+                in_flight: in_flight.clone(),
+            },
+            cleanup_task: EventCleanupTask { in_flight, arm_rx },
         }
     }
 
-    /// Starts the cleanup task, consuming the arm channel receiver.
+    /// Separates the handles the rest of the runtime uses from the cleanup task
+    /// that has yet to be started.
     ///
-    /// Returns the handles the rest of the runtime needs, the cleanup task's
-    /// handle and the sender that stops it.
-    pub fn spawn_cleanup_task(self) -> (EventQueueHandles, JoinHandle<()>, oneshot::Sender<()>) {
-        let (shutdown_tx, shutdown_rx) = oneshot::channel();
-        let handle =
-            spawn_expired_event_cleanup_task(self.in_flight.clone(), self.arm_rx, shutdown_rx);
-        (
-            EventQueueHandles {
-                queue: self.queue,
-                receiver: self.receiver,
-                in_flight: self.in_flight,
-            },
-            handle,
-            shutdown_tx,
-        )
+    /// The two have different lifetimes, the handles are needed while the
+    /// application is being set up, because every HTTP route in this mode holds
+    /// a producer, while the task can only be started once there is a runtime
+    /// to spawn it on.
+    pub fn into_parts(self) -> (EventQueueHandles, EventCleanupTask) {
+        (self.handles, self.cleanup_task)
     }
+}
 
-    /// Starts the cleanup task without returning its task handle, for callers that
-    /// stop it with the shutdown signal rather than by joining it.
-    pub fn spawn_cleanup_task_detached(self) -> (EventQueueHandles, oneshot::Sender<()>) {
-        let (handles, _task, shutdown_tx) = self.spawn_cleanup_task();
-        (handles, shutdown_tx)
+/// The cleanup task, created but not yet running.
+pub struct EventCleanupTask {
+    in_flight: Arc<InFlightTable>,
+    arm_rx: mpsc::UnboundedReceiver<(String, Instant)>,
+}
+
+impl EventCleanupTask {
+    /// Starts the task, returning the sender that stops it.
+    ///
+    /// Must be called from within a tokio runtime.
+    pub fn spawn(self) -> oneshot::Sender<()> {
+        let (shutdown_tx, shutdown_rx) = oneshot::channel();
+        spawn_expired_event_cleanup_task(self.in_flight, self.arm_rx, shutdown_rx);
+        shutdown_tx
     }
 }
 
@@ -384,7 +390,7 @@ fn spawn_expired_event_cleanup_task(
     in_flight: Arc<InFlightTable>,
     mut arm_rx: mpsc::UnboundedReceiver<(String, Instant)>,
     mut shutdown_rx: oneshot::Receiver<()>,
-) -> JoinHandle<()> {
+) {
     tokio::spawn(async move {
         let mut deadlines: DelayQueue<String> = DelayQueue::new();
         // Holds an armed deadline between the select that received it and the
@@ -435,7 +441,7 @@ fn spawn_expired_event_cleanup_task(
         }
 
         info!("received shutdown signal, stopping expired event cleanup task");
-    })
+    });
 }
 
 #[cfg(test)]
@@ -465,9 +471,9 @@ mod tests {
 
     #[tokio::test]
     async fn enqueue_yields_the_event_to_the_receiver() {
-        let parts = EventQueueParts::new(4);
-        let receiver = parts.receiver.clone();
-        let queue = parts.queue.clone();
+        let (handles, _cleanup) = EventQueueParts::new(4).into_parts();
+        let receiver = handles.receiver.clone();
+        let queue = handles.queue.clone();
 
         let _rx = queue
             .enqueue(test_event("event-1"), Duration::from_secs(1))
@@ -480,14 +486,14 @@ mod tests {
 
     #[tokio::test(start_paused = true)]
     async fn enqueue_reports_queue_full_when_no_room_appears_within_the_admission_wait() {
-        let parts = EventQueueParts::new(1);
+        let (handles, _cleanup) = EventQueueParts::new(1).into_parts();
 
-        parts
+        handles
             .queue
             .enqueue(test_event("event-1"), Duration::from_secs(1))
             .await
             .unwrap();
-        let result = parts
+        let result = handles
             .queue
             .enqueue(test_event("event-2"), Duration::from_secs(1))
             .await;
@@ -497,10 +503,10 @@ mod tests {
 
     #[tokio::test]
     async fn enqueue_waits_for_capacity_rather_than_shedding_immediately() {
-        let parts = EventQueueParts::new(1);
-        let receiver = parts.receiver.clone();
+        let (handles, _cleanup) = EventQueueParts::new(1).into_parts();
+        let receiver = handles.receiver.clone();
 
-        parts
+        handles
             .queue
             .enqueue(test_event("event-1"), Duration::from_secs(1))
             .await
@@ -513,7 +519,7 @@ mod tests {
             receiver.lock().await.recv().await
         });
 
-        let result = parts
+        let result = handles
             .queue
             .enqueue(test_event("event-2"), Duration::from_secs(5))
             .await;
@@ -539,9 +545,10 @@ mod tests {
 
     #[tokio::test]
     async fn enqueue_reports_closed_when_the_receiver_is_dropped() {
-        let parts = EventQueueParts::new(4);
-        let queue = parts.queue.clone();
-        drop(parts);
+        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let queue = handles.queue.clone();
+        drop(handles);
+        drop(cleanup);
 
         assert_eq!(
             queue
@@ -554,8 +561,8 @@ mod tests {
 
     #[tokio::test]
     async fn in_flight_entries_are_removed_by_a_matching_result() {
-        let parts = EventQueueParts::new(4);
-        let (handles, _cleanup_task, _shutdown) = parts.spawn_cleanup_task();
+        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let _shutdown = cleanup.spawn();
 
         let (result_tx, _result_rx) = oneshot::channel();
         handles.in_flight.insert(
@@ -573,8 +580,8 @@ mod tests {
 
     #[tokio::test(start_paused = true)]
     async fn cleanup_removes_entries_whose_deadline_has_passed() {
-        let parts = EventQueueParts::new(4);
-        let (handles, _cleanup_task, _shutdown) = parts.spawn_cleanup_task();
+        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let _shutdown = cleanup.spawn();
 
         let (result_tx, mut result_rx) = oneshot::channel();
         handles.in_flight.insert(
@@ -596,8 +603,8 @@ mod tests {
 
     #[tokio::test(start_paused = true)]
     async fn cleanup_leaves_entries_that_are_still_within_their_deadline() {
-        let parts = EventQueueParts::new(4);
-        let (handles, _cleanup_task, _shutdown) = parts.spawn_cleanup_task();
+        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let _shutdown = cleanup.spawn();
 
         let (result_tx, _result_rx) = oneshot::channel();
         handles.in_flight.insert(

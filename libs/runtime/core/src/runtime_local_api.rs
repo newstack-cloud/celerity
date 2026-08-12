@@ -440,8 +440,8 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_retrieve_next_event_in_runtime_queue() {
         let app_config = create_test_app_config();
-        let (event_queue, _cleanup_shutdown) =
-            EventQueueParts::new(8).spawn_cleanup_task_detached();
+        let (event_queue, cleanup) = EventQueueParts::new(8).into_parts();
+        let _cleanup_shutdown = cleanup.spawn();
         let expected_event = create_test_http_event();
         event_queue
             .queue
@@ -500,8 +500,8 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_returns_null_when_no_events_in_queue() {
         let app_config = create_test_app_config();
-        let (event_queue, _cleanup_shutdown) =
-            EventQueueParts::new(8).spawn_cleanup_task_detached();
+        let (event_queue, cleanup) = EventQueueParts::new(8).into_parts();
+        let _cleanup_shutdown = cleanup.spawn();
         let api = create_runtime_local_api(
             &app_config,
             event_queue.clone(),
@@ -544,8 +544,8 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_proceses_event_result() {
         let app_config = create_test_app_config();
-        let (event_queue, _cleanup_shutdown) =
-            EventQueueParts::new(8).spawn_cleanup_task_detached();
+        let (event_queue, cleanup) = EventQueueParts::new(8).into_parts();
+        let _cleanup_shutdown = cleanup.spawn();
         let event = create_test_http_event();
         let (tx, rx) = oneshot::channel();
         // Create a channel to verify that the result has been processed with a buffer
@@ -629,8 +629,8 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_returns_error_when_event_for_provided_result_is_not_found() {
         let app_config = create_test_app_config();
-        let (event_queue, _cleanup_shutdown) =
-            EventQueueParts::new(8).spawn_cleanup_task_detached();
+        let (event_queue, cleanup) = EventQueueParts::new(8).into_parts();
+        let _cleanup_shutdown = cleanup.spawn();
 
         let api = create_runtime_local_api(
             &app_config,
@@ -687,8 +687,8 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_retrieves_runtime_config() {
         let app_config = create_test_app_config();
-        let (event_queue, _cleanup_shutdown) =
-            EventQueueParts::new(8).spawn_cleanup_task_detached();
+        let (event_queue, cleanup) = EventQueueParts::new(8).into_parts();
+        let _cleanup_shutdown = cleanup.spawn();
 
         let api = create_runtime_local_api(
             &app_config,
@@ -733,8 +733,8 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_sends_websocket_messages() {
         let app_config = create_test_app_config();
-        let (event_queue, _cleanup_shutdown) =
-            EventQueueParts::new(8).spawn_cleanup_task_detached();
+        let (event_queue, cleanup) = EventQueueParts::new(8).into_parts();
+        let _cleanup_shutdown = cleanup.spawn();
         let (tx, mut rx) = mpsc::channel(10);
         let ws_conn_registry = Arc::new(TestWebSocketConnRegistry::new(tx));
         let api = create_runtime_local_api(
