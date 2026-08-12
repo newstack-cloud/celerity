@@ -17,7 +17,10 @@
 use std::{
     collections::HashMap,
     future::poll_fn,
-    sync::{Arc, Mutex},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, Mutex,
+    },
     time::Duration,
 };
 
@@ -25,7 +28,7 @@ use tokio::{
     sync::{mpsc, oneshot},
     time::Instant,
 };
-use tokio_util::time::DelayQueue;
+use tokio_util::time::{delay_queue, DelayQueue};
 use tracing::{debug, info, warn};
 
 use crate::{
@@ -250,6 +253,12 @@ impl HandlerTimeouts {
     }
 }
 
+/// Tells the cleanup task to start or stop watching an event's deadline.
+enum DeadlineMessage {
+    Watch { event_id: String, deadline: Instant },
+    Unwatch { event_id: String },
+}
+
 /// An event that has been taken by the handlers executable and is awaiting
 /// a result.
 #[derive(Debug)]
@@ -266,11 +275,15 @@ pub struct InFlightEntry {
 #[derive(Debug)]
 pub struct InFlightTable {
     entries: Mutex<HashMap<String, InFlightEntry>>,
-    arm_tx: mpsc::UnboundedSender<(String, Instant)>,
+    deadline_tx: mpsc::UnboundedSender<DeadlineMessage>,
+    /// How many deadlines the cleanup task is currently watching. Kept in step
+    /// by the task itself, and useful both as an operational signal and to
+    /// confirm that completed events stop being watched.
+    watched_deadlines: Arc<AtomicUsize>,
 }
 
 impl InFlightTable {
-    /// Records an event as in-flight and arms its deadline with the cleanup task.
+    /// Records an event as in-flight and has the cleanup task watch its deadline.
     ///
     /// The deadline is resolved to an absolute instant here rather than being
     /// sent as a duration, so that time spent waiting for the cleanup task to pick
@@ -286,7 +299,11 @@ impl InFlightTable {
         // A send failure means the cleanup task has stopped, which happens only
         // during shutdown. The entry is still tracked and will be dropped with
         // the table, so this is not worth failing the event over.
-        if self.arm_tx.send((event_id, deadline)).is_err() {
+        if self
+            .deadline_tx
+            .send(DeadlineMessage::Watch { event_id, deadline })
+            .is_err()
+        {
             debug!("expired event cleanup task is not running, deadline will not be enforced");
         }
     }
@@ -296,10 +313,31 @@ impl InFlightTable {
     /// A missing entry is expected rather than exceptional: the cleanup task may
     /// have already removed it, or a result may arrive twice.
     pub fn remove(&self, event_id: &str) -> Option<InFlightEntry> {
+        let entry = self.take(event_id);
+        if entry.is_some() {
+            // Stop watching a deadline that can no longer be missed. Without
+            // this the cleanup task holds an entry per completed event until
+            // its deadline elapses, which at any real rate is a large amount
+            // of memory spent watching events that already finished.
+            let _ = self.deadline_tx.send(DeadlineMessage::Unwatch {
+                event_id: event_id.to_string(),
+            });
+        }
+        entry
+    }
+
+    /// Removes an entry without stopping the deadline watch, for the cleanup task,
+    /// which has already taken the deadline out of its queue.
+    fn take(&self, event_id: &str) -> Option<InFlightEntry> {
         self.entries
             .lock()
             .expect("in-flight table lock should not be poisoned")
             .remove(event_id)
+    }
+
+    /// How many deadlines are currently being watched.
+    pub fn watched_deadlines(&self) -> usize {
+        self.watched_deadlines.load(Ordering::Relaxed)
     }
 
     /// The number of events currently awaiting a result.
@@ -337,17 +375,19 @@ pub struct EventQueueParts {
 }
 
 impl EventQueueParts {
-    /// Creates the bounded queue, the in-flight table and the channel that arms
-    /// deadlines with the cleanup task.
+    /// Creates the bounded queue, the in-flight table and the channel the
+    /// cleanup task watches deadlines through.
     ///
     /// Nothing is spawned here, so this is safe to call outside a tokio
     /// runtime. Starting the cleanup task is a separate step.
     pub fn new(capacity: usize) -> Self {
         let (tx, rx) = mpsc::channel(capacity);
-        let (arm_tx, arm_rx) = mpsc::unbounded_channel();
+        let (deadline_tx, deadline_rx) = mpsc::unbounded_channel();
+        let watched_deadlines = Arc::new(AtomicUsize::new(0));
         let in_flight = Arc::new(InFlightTable {
             entries: Mutex::new(HashMap::new()),
-            arm_tx,
+            deadline_tx,
+            watched_deadlines: watched_deadlines.clone(),
         });
 
         EventQueueParts {
@@ -356,7 +396,11 @@ impl EventQueueParts {
                 receiver: Arc::new(tokio::sync::Mutex::new(rx)),
                 in_flight: in_flight.clone(),
             },
-            cleanup_task: EventCleanupTask { in_flight, arm_rx },
+            cleanup_task: EventCleanupTask {
+                in_flight,
+                deadline_rx,
+                watched_deadlines,
+            },
         }
     }
 
@@ -375,7 +419,8 @@ impl EventQueueParts {
 /// The cleanup task, created but not yet running.
 pub struct EventCleanupTask {
     in_flight: Arc<InFlightTable>,
-    arm_rx: mpsc::UnboundedReceiver<(String, Instant)>,
+    deadline_rx: mpsc::UnboundedReceiver<DeadlineMessage>,
+    watched_deadlines: Arc<AtomicUsize>,
 }
 
 impl EventCleanupTask {
@@ -384,7 +429,12 @@ impl EventCleanupTask {
     /// Must be called from within a tokio runtime.
     pub fn spawn(self) -> oneshot::Sender<()> {
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
-        spawn_expired_event_cleanup_task(self.in_flight, self.arm_rx, shutdown_rx);
+        spawn_expired_event_cleanup_task(
+            self.in_flight,
+            self.deadline_rx,
+            self.watched_deadlines,
+            shutdown_rx,
+        );
         shutdown_tx
     }
 }
@@ -405,26 +455,43 @@ pub struct EventQueueHandles {
 /// deliver the timeout to the caller.
 fn spawn_expired_event_cleanup_task(
     in_flight: Arc<InFlightTable>,
-    mut arm_rx: mpsc::UnboundedReceiver<(String, Instant)>,
+    mut deadline_rx: mpsc::UnboundedReceiver<DeadlineMessage>,
+    watched_deadlines: Arc<AtomicUsize>,
     mut shutdown_rx: oneshot::Receiver<()>,
 ) {
     tokio::spawn(async move {
         let mut deadlines: DelayQueue<String> = DelayQueue::new();
-        // Holds an armed deadline between the select that received it and the
-        // top of the loop, so that no select branch borrows `deadlines`
-        // while another is polling it.
-        let mut pending_arm: Option<(String, Instant)> = None;
+        // The queue key for each event being watched, so that an event which
+        // completes can have its deadline taken back out. The keys never leave
+        // this task, which is why unwatching is a message rather than something
+        // the in-flight table does directly.
+        let mut watched: HashMap<String, delay_queue::Key> = HashMap::new();
+        // Holds a message between the select that received it and the top of
+        // the loop, so that no select branch borrows `deadlines` while another
+        // is polling it.
+        let mut pending: Option<DeadlineMessage> = None;
 
         loop {
-            if let Some((event_id, deadline)) = pending_arm.take() {
-                deadlines.insert_at(event_id, deadline);
+            match pending.take() {
+                Some(DeadlineMessage::Watch { event_id, deadline }) => {
+                    let key = deadlines.insert_at(event_id.clone(), deadline);
+                    watched.insert(event_id, key);
+                    watched_deadlines.store(watched.len(), Ordering::Relaxed);
+                }
+                Some(DeadlineMessage::Unwatch { event_id }) => {
+                    if let Some(key) = watched.remove(&event_id) {
+                        deadlines.remove(&key);
+                        watched_deadlines.store(watched.len(), Ordering::Relaxed);
+                    }
+                }
+                None => {}
             }
 
             if deadlines.is_empty() {
                 tokio::select! {
                     _ = &mut shutdown_rx => break,
-                    armed = arm_rx.recv() => match armed {
-                        Some(armed) => pending_arm = Some(armed),
+                    message = deadline_rx.recv() => match message {
+                        Some(message) => pending = Some(message),
                         None => break,
                     },
                 }
@@ -433,9 +500,9 @@ fn spawn_expired_event_cleanup_task(
 
             let expired = tokio::select! {
                 _ = &mut shutdown_rx => break,
-                armed = arm_rx.recv() => {
-                    match armed {
-                        Some(armed) => pending_arm = Some(armed),
+                message = deadline_rx.recv() => {
+                    match message {
+                        Some(message) => pending = Some(message),
                         None => break,
                     }
                     continue;
@@ -447,7 +514,12 @@ fn spawn_expired_event_cleanup_task(
                 continue;
             };
             let event_id = expired.into_inner();
-            if let Some(entry) = in_flight.remove(&event_id) {
+            watched.remove(&event_id);
+            watched_deadlines.store(watched.len(), Ordering::Relaxed);
+
+            // `take` rather than `remove`, since the deadline has already left
+            // the queue and the watch is already gone.
+            if let Some(entry) = in_flight.take(&event_id) {
                 warn!(
                     event_id = %event_id,
                     handler_tag = %entry.event.handler_tag,
@@ -658,6 +730,39 @@ mod tests {
 
         assert!(handles.in_flight.remove("event-1").is_some());
         assert!(handles.in_flight.is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_completed_event_stops_being_watched() {
+        let (handles, cleanup) = EventQueueParts::new(4).into_parts();
+        let _shutdown = cleanup.spawn();
+
+        let (result_tx, _result_rx) = oneshot::channel();
+        handles.in_flight.insert(
+            InFlightEntry {
+                result_tx,
+                event: test_event("event-1"),
+            },
+            // Long enough that the deadline could not have fired on its own.
+            Duration::from_secs(3600),
+        );
+        wait_for(|| handles.in_flight.watched_deadlines() == 1).await;
+
+        // A result arriving takes the deadline back out, rather than leaving it
+        // to occupy the queue until it elapses.
+        assert!(handles.in_flight.remove("event-1").is_some());
+        wait_for(|| handles.in_flight.watched_deadlines() == 0).await;
+    }
+
+    /// Waits for the cleanup task to catch up with a message sent to it.
+    async fn wait_for(condition: impl Fn() -> bool) {
+        for _ in 0..100 {
+            if condition() {
+                return;
+            }
+            tokio::task::yield_now().await;
+        }
+        panic!("the cleanup task did not reach the expected state");
     }
 
     #[tokio::test(start_paused = true)]
