@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex},
-};
+use std::sync::Arc;
 
 use axum::{
     extract::State,
@@ -20,10 +17,14 @@ use tracing::debug;
 use crate::{
     config::AppConfig,
     errors::{ApplicationStartError, EventResultError, WebSocketsMessageError},
+    event_queue::{
+        custom_handler_tag, http_handler_tag, source_handler_tag, websocket_handler_tag,
+        EventQueueHandles, HandlerTimeouts, InFlightEntry,
+    },
     handler_invoke::{
         invoke_handler as invoke_handler_fn, HandlerInvokeRegistry, InvokeHandlerState,
     },
-    types::{EventData, EventResult, EventTuple},
+    types::{EventData, EventResult},
 };
 
 // Creates a router for the local runtime API
@@ -31,15 +32,15 @@ use crate::{
 // and the handlers executable over HTTP.
 pub fn create_runtime_local_api(
     app_config: &AppConfig,
-    event_queue: Arc<Mutex<VecDeque<EventTuple>>>,
-    processing_events_map: Arc<Mutex<HashMap<String, EventTuple>>>,
+    event_queue: EventQueueHandles,
+    handler_timeouts: HandlerTimeouts,
     ws_conn_registry_send: Option<Arc<dyn WebSocketRegistrySend>>,
     handler_invoke_registry: HandlerInvokeRegistry,
 ) -> Result<Router, ApplicationStartError> {
     let local_runtime_api_config = create_local_runtime_api_config(app_config);
     let shared_state = Arc::new(LocalRuntimeAppState {
-        event_queue: event_queue.clone(),
-        processing_events_map: processing_events_map.clone(),
+        event_queue,
+        handler_timeouts,
         ws_conn_registry_send,
         runtime_api_config: local_runtime_api_config,
     });
@@ -61,25 +62,33 @@ async fn next_event_handler(
     State(state): State<Arc<LocalRuntimeAppState>>,
 ) -> Json<Option<EventData>> {
     debug!("retrieving next event in the runtime queue");
-    let mut event_queue = state.event_queue.lock().unwrap();
-    let mut processing_events_map = state.processing_events_map.lock().unwrap();
+    // `try_recv` keeps this endpoint's existing behaviour of returning
+    // immediately when there is nothing queued, rather than holding the
+    // single receiver while waiting.
+    let taken = state.event_queue.receiver.lock().await.try_recv().ok();
 
-    if let Some((tx, event)) = event_queue.pop_front() {
-        let event_for_response = event.clone();
-        processing_events_map.insert(event.id.clone(), (tx, event));
-        return Json(Some(event_for_response));
-    }
-    debug!("no events in the queue, returning null");
-    Json(None)
+    let Some((result_tx, event)) = taken else {
+        debug!("no events in the queue, returning null");
+        return Json(None);
+    };
+
+    let event_for_response = event.clone();
+    let timeout = state.handler_timeouts.for_tag(&event.handler_tag);
+    state
+        .event_queue
+        .in_flight
+        .insert(InFlightEntry { result_tx, event }, timeout);
+    Json(Some(event_for_response))
 }
 
 async fn event_result_handler(
     State(state): State<Arc<LocalRuntimeAppState>>,
     Json(event_result): Json<EventResult>,
 ) -> Result<Json<ResponseMessage>, EventResultError> {
-    let mut processing_events_map = state.processing_events_map.lock().unwrap();
-    if let Some((tx, event)) = processing_events_map.remove(&event_result.event_id) {
-        tx.send((event, event_result))
+    if let Some(entry) = state.event_queue.in_flight.remove(&event_result.event_id) {
+        entry
+            .result_tx
+            .send((entry.event, event_result))
             .map_err(|_| EventResultError::UnexpectedError)?;
         return Ok(Json(ResponseMessage {
             message: "The result has been successfully processed".to_string(),
@@ -165,7 +174,7 @@ fn create_local_runtime_http_config(app_config: &AppConfig) -> LocalRuntimeHttpC
             for handler in &http.handlers {
                 config.handlers.push(LocalRuntimeHttpHandlerConfig {
                     handler_name: handler.name.clone(),
-                    handler_tag: format!("{}::{}", handler.method, handler.path),
+                    handler_tag: http_handler_tag(&handler.method, &handler.path),
                     path: handler.path.clone(),
                     method: handler.method.clone(),
                     timeout: handler.timeout,
@@ -184,7 +193,7 @@ fn create_local_runtime_websocket_config(app_config: &AppConfig) -> LocalRuntime
             for handler in &websocket.handlers {
                 config.handlers.push(LocalRuntimeWebSocketHandlerConfig {
                     handler_name: handler.name.clone(),
-                    handler_tag: format!("{}::{}", handler.route_key, handler.route),
+                    handler_tag: websocket_handler_tag(&handler.route_key, &handler.route),
                     route_key: handler.route_key.clone(),
                     route: handler.route.clone(),
                     timeout: handler.timeout,
@@ -203,11 +212,7 @@ fn create_local_runtime_consumer_config(app_config: &AppConfig) -> LocalRuntimeC
             for handler in &consumer.handlers {
                 config.handlers.push(LocalRuntimeConsumerHandlerConfig {
                     handler_name: handler.name.clone(),
-                    handler_tag: format!(
-                        "source::{}::{}",
-                        consumer.source_id,
-                        handler.name.clone()
-                    ),
+                    handler_tag: source_handler_tag(&consumer.source_id, &handler.name),
                     source_id: consumer.source_id.clone(),
                     route: handler.route.clone(),
                     timeout: handler.timeout,
@@ -226,11 +231,7 @@ fn create_local_runtime_schedule_config(app_config: &AppConfig) -> LocalRuntimeS
             for handler in &schedule.handlers {
                 config.handlers.push(LocalRuntimeScheduleHandlerConfig {
                     handler_name: handler.name.clone(),
-                    handler_tag: format!(
-                        "source::{}::{}",
-                        schedule.schedule_id,
-                        handler.name.clone()
-                    ),
+                    handler_tag: source_handler_tag(&schedule.schedule_id, &handler.name),
                     schedule: schedule.schedule_value.clone(),
                     timeout: handler.timeout,
                     tracing_enabled: handler.tracing_enabled,
@@ -249,7 +250,7 @@ fn create_local_runtime_custom_handlers_config(
         for handler in &custom.handlers {
             config.handlers.push(LocalRuntimeCustomHandlerConfig {
                 handler_name: handler.name.clone(),
-                handler_tag: format!("custom::{}", handler.name),
+                handler_tag: custom_handler_tag(&handler.name),
                 timeout: handler.timeout,
                 tracing_enabled: handler.tracing_enabled,
             });
@@ -260,8 +261,8 @@ fn create_local_runtime_custom_handlers_config(
 
 #[derive(Debug)]
 struct LocalRuntimeAppState {
-    event_queue: Arc<Mutex<VecDeque<EventTuple>>>,
-    processing_events_map: Arc<Mutex<HashMap<String, EventTuple>>>,
+    event_queue: EventQueueHandles,
+    handler_timeouts: HandlerTimeouts,
     ws_conn_registry_send: Option<Arc<dyn WebSocketRegistrySend>>,
     runtime_api_config: LocalRuntimeConfig,
 }
@@ -427,24 +428,30 @@ mod tests {
         },
     };
 
-    use crate::handler_invoke::new_handler_invoke_registry;
+    use std::{collections::HashMap, time::Duration};
+
+    use crate::{
+        event_queue::{collect_handler_timeouts, EventQueueParts, InFlightEntry},
+        handler_invoke::new_handler_invoke_registry,
+    };
 
     use super::*;
 
     #[test_log::test(tokio::test)]
     async fn test_retrieve_next_event_in_runtime_queue() {
         let app_config = create_test_app_config();
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
+        let (event_queue, _cleanup_shutdown) =
+            EventQueueParts::new(8).spawn_cleanup_task_detached();
         let expected_event = create_test_http_event();
         event_queue
-            .lock()
-            .unwrap()
-            .push_back((oneshot::channel().0, expected_event.clone()));
-        let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
+            .queue
+            .enqueue(expected_event.clone(), Duration::from_secs(1))
+            .await
+            .unwrap();
         let api = create_runtime_local_api(
             &app_config,
             event_queue.clone(),
-            processing_events_map.clone(),
+            collect_handler_timeouts(&app_config),
             None,
             new_handler_invoke_registry(),
         )
@@ -486,19 +493,19 @@ mod tests {
         // The event needs to be cleared from the queue so that the next event
         // can be retrieved immediately, allowing the handlers process to handle
         // multiple events concurrently.
-        assert_eq!(event_queue.lock().unwrap().len(), 0);
-        assert_eq!(processing_events_map.lock().unwrap().len(), 1);
+        assert_eq!(event_queue.receiver.lock().await.len(), 0);
+        assert_eq!(event_queue.in_flight.len(), 1);
     }
 
     #[test_log::test(tokio::test)]
     async fn test_returns_null_when_no_events_in_queue() {
         let app_config = create_test_app_config();
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
-        let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
+        let (event_queue, _cleanup_shutdown) =
+            EventQueueParts::new(8).spawn_cleanup_task_detached();
         let api = create_runtime_local_api(
             &app_config,
             event_queue.clone(),
-            processing_events_map.clone(),
+            collect_handler_timeouts(&app_config),
             None,
             new_handler_invoke_registry(),
         )
@@ -537,8 +544,8 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_proceses_event_result() {
         let app_config = create_test_app_config();
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
-        let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
+        let (event_queue, _cleanup_shutdown) =
+            EventQueueParts::new(8).spawn_cleanup_task_detached();
         let event = create_test_http_event();
         let (tx, rx) = oneshot::channel();
         // Create a channel to verify that the result has been processed with a buffer
@@ -549,15 +556,18 @@ mod tests {
             verify_tx.send(res).await.unwrap();
         });
 
-        processing_events_map
-            .lock()
-            .unwrap()
-            .insert(event.id.clone(), (tx, event.clone()));
+        event_queue.in_flight.insert(
+            InFlightEntry {
+                result_tx: tx,
+                event: event.clone(),
+            },
+            Duration::from_secs(60),
+        );
 
         let api = create_runtime_local_api(
             &app_config,
             event_queue.clone(),
-            processing_events_map.clone(),
+            collect_handler_timeouts(&app_config),
             None,
             new_handler_invoke_registry(),
         )
@@ -619,13 +629,13 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_returns_error_when_event_for_provided_result_is_not_found() {
         let app_config = create_test_app_config();
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
-        let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
+        let (event_queue, _cleanup_shutdown) =
+            EventQueueParts::new(8).spawn_cleanup_task_detached();
 
         let api = create_runtime_local_api(
             &app_config,
             event_queue.clone(),
-            processing_events_map.clone(),
+            collect_handler_timeouts(&app_config),
             None,
             new_handler_invoke_registry(),
         )
@@ -677,13 +687,13 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_retrieves_runtime_config() {
         let app_config = create_test_app_config();
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
-        let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
+        let (event_queue, _cleanup_shutdown) =
+            EventQueueParts::new(8).spawn_cleanup_task_detached();
 
         let api = create_runtime_local_api(
             &app_config,
             event_queue.clone(),
-            processing_events_map.clone(),
+            collect_handler_timeouts(&app_config),
             None,
             new_handler_invoke_registry(),
         )
@@ -723,14 +733,14 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_sends_websocket_messages() {
         let app_config = create_test_app_config();
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
-        let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
+        let (event_queue, _cleanup_shutdown) =
+            EventQueueParts::new(8).spawn_cleanup_task_detached();
         let (tx, mut rx) = mpsc::channel(10);
         let ws_conn_registry = Arc::new(TestWebSocketConnRegistry::new(tx));
         let api = create_runtime_local_api(
             &app_config,
             event_queue.clone(),
-            processing_events_map.clone(),
+            collect_handler_timeouts(&app_config),
             Some(ws_conn_registry),
             new_handler_invoke_registry(),
         )

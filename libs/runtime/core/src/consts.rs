@@ -35,8 +35,25 @@ pub const DEFAULT_HANDLER_TIMEOUT: i64 = 60;
 // The default value for whether or not tracing is enabled for a handler.
 pub const DEFAULT_TRACING_ENABLED: bool = false;
 
-// The default port that the local API runs on in the "http" runtime call mode.
+// The default port that the local API runs on in the "ipc" runtime call mode.
 pub const DEFAULT_LOCAL_API_PORT: &str = "8592";
+
+// The longest a producer will wait for event queue capacity before shedding
+// the event. Bounds how long a consumer can be held off its source loop, and
+// how long an HTTP request waits before a 503 rather than being served.
+pub const MAX_EVENT_QUEUE_ADMISSION_WAIT_SECS: u64 = 5;
+
+// The fraction of an event's timeout that may be spent waiting for queue
+// capacity, expressed as a divisor. A quarter leaves the majority of the
+// budget for the handler that will eventually run.
+pub const EVENT_QUEUE_ADMISSION_WAIT_DIVISOR: u32 = 4;
+
+// The capacity of the bounded event channel used to hand events to handlers
+// in the "ipc" runtime call mode.
+// Once this many events are waiting to be picked up, producers (HTTP routes,
+// WebSocket routing, consumers and schedules) apply backpressure rather than
+// growing the queue without limit.
+pub const DEFAULT_EVENT_QUEUE_CAPACITY: usize = 1024;
 
 // The default endpoint used for the runtime health check.
 pub const DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT: &str = "/runtime/health/check";
