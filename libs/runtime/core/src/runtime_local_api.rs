@@ -971,6 +971,7 @@ mod tests {
                 headers: HashMap::from([("Host".to_string(), "localhost".to_string())]),
                 multi_headers: HashMap::new(),
                 body: None,
+                is_binary: false,
                 source_ip: "192.168.0.1".to_string(),
                 request_id: "test_request_1".to_string(),
             })),
