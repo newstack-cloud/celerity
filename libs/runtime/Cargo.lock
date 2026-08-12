@@ -971,7 +971,7 @@ dependencies = [
 
 [[package]]
 name = "celerity-python-runtime-sdk"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "async-trait",
  "axum 0.8.8",
@@ -1244,6 +1244,7 @@ dependencies = [
  "test-log",
  "tokio",
  "tokio-tungstenite 0.23.1",
+ "tokio-util",
  "tower 0.4.13",
  "tower-http",
  "tracing",
@@ -4210,6 +4211,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "pin-project-lite",
+ "slab",
  "tokio",
 ]
 

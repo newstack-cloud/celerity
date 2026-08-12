@@ -1,9 +1,4 @@
-use std::{
-    collections::VecDeque,
-    fmt::Debug,
-    marker::PhantomData,
-    sync::{Arc, Mutex},
-};
+use std::{fmt::Debug, marker::PhantomData, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use celerity_helpers::consumers::{
@@ -13,9 +8,12 @@ use serde_json::{json, Value};
 use std::time::Instant;
 use tracing::{field, info, instrument};
 
-use crate::types::{
-    ConsumerEventData, ConsumerMessage, EventData, EventDataPayload, EventResult, EventTuple,
-    EventType, ScheduleEventData,
+use crate::{
+    event_queue::{admission_wait, EventQueue, EventQueueError, HandlerTimeouts},
+    types::{
+        ConsumerEventData, ConsumerMessage, EventData, EventDataPayload, EventResult, EventType,
+        ScheduleEventData,
+    },
 };
 
 // ---------------------------------------------------------------------------
@@ -29,6 +27,9 @@ pub enum ConsumerEventHandlerError {
     HandlerFailure(String),
     MissingHandler,
     ChannelClosed,
+    /// The event queue is at capacity, so the event was shed rather than
+    /// queued. Consumers should leave the message for redelivery.
+    QueueFull,
 }
 
 impl std::fmt::Display for ConsumerEventHandlerError {
@@ -38,6 +39,7 @@ impl std::fmt::Display for ConsumerEventHandlerError {
             ConsumerEventHandlerError::HandlerFailure(msg) => write!(f, "handler failed: {msg}"),
             ConsumerEventHandlerError::MissingHandler => write!(f, "no handler registered"),
             ConsumerEventHandlerError::ChannelClosed => write!(f, "response channel closed"),
+            ConsumerEventHandlerError::QueueFull => write!(f, "event queue is full"),
         }
     }
 }
@@ -562,15 +564,19 @@ where
 // EventQueueConsumerEventHandler (HTTP call mode)
 // ---------------------------------------------------------------------------
 
-/// Implements `ConsumerEventHandler` for HTTP call mode by pushing events
-/// onto the shared event queue and awaiting results via oneshot channels.
+/// Implements `ConsumerEventHandler` for the IPC call mode by pushing events
+/// onto the bounded event queue and awaiting results via oneshot channels.
 pub struct EventQueueConsumerEventHandler {
-    event_queue: Arc<Mutex<VecDeque<EventTuple>>>,
+    event_queue: EventQueue,
+    timeouts: HandlerTimeouts,
 }
 
 impl EventQueueConsumerEventHandler {
-    pub fn new(event_queue: Arc<Mutex<VecDeque<EventTuple>>>) -> Self {
-        Self { event_queue }
+    pub fn new(event_queue: EventQueue, timeouts: HandlerTimeouts) -> Self {
+        Self {
+            event_queue,
+            timeouts,
+        }
     }
 }
 
@@ -596,7 +602,8 @@ impl ConsumerEventHandler for EventQueueConsumerEventHandler {
                 .as_secs(),
             data: EventDataPayload::ConsumerMessageEventData(event_data),
         };
-        enqueue_and_await(self.event_queue.clone(), event).await
+        let timeout = self.timeouts.for_tag(handler_tag);
+        enqueue_and_await(&self.event_queue, event, timeout).await
     }
 
     #[instrument(
@@ -619,22 +626,40 @@ impl ConsumerEventHandler for EventQueueConsumerEventHandler {
                 .as_secs(),
             data: EventDataPayload::ScheduleMessageEventData(event_data),
         };
-        enqueue_and_await(self.event_queue.clone(), event).await
+        let timeout = self.timeouts.for_tag(handler_tag);
+        enqueue_and_await(&self.event_queue, event, timeout).await
     }
 }
 
+/// Pushes an event onto the queue and waits for a handler to return its result.
+///
+/// The wait is bounded by the handler's configured timeout. Without it a caller
+/// is held for as long as the handlers executable takes, which for a process
+/// that has died is forever.
 async fn enqueue_and_await(
-    event_queue: Arc<Mutex<VecDeque<EventTuple>>>,
+    event_queue: &EventQueue,
     event: EventData,
+    timeout: Duration,
 ) -> Result<EventResult, ConsumerEventHandlerError> {
-    let (tx, rx) = tokio::sync::oneshot::channel();
-    {
-        let mut queue = event_queue.lock().unwrap();
-        queue.push_back((tx, event));
-    }
-    match rx.await {
-        Ok((_event_data, result)) => Ok(result),
-        Err(_) => Err(ConsumerEventHandlerError::ChannelClosed),
+    // The whole exchange, waiting for queue capacity included, is bounded by
+    // the handler's timeout. Anchoring both waits to one deadline stops a slow
+    // admission from silently extending the time an event may take.
+    let deadline = tokio::time::Instant::now() + timeout;
+
+    let rx = event_queue
+        .enqueue(event, admission_wait(timeout))
+        .await
+        .map_err(|err| match err {
+            EventQueueError::QueueFull => ConsumerEventHandlerError::QueueFull,
+            EventQueueError::Closed => ConsumerEventHandlerError::ChannelClosed,
+        })?;
+
+    match tokio::time::timeout_at(deadline, rx).await {
+        Ok(Ok((_event_data, result))) => Ok(result),
+        // The sender was dropped, which happens when the cleanup task removes
+        // the in-flight entry after its deadline passed.
+        Ok(Err(_)) => Err(ConsumerEventHandlerError::ChannelClosed),
+        Err(_) => Err(ConsumerEventHandlerError::Timeout),
     }
 }
 
@@ -751,14 +776,21 @@ fn map_handler_error(err: ConsumerEventHandlerError) -> MessageHandlerError {
         ConsumerEventHandlerError::ChannelClosed => {
             MessageHandlerError::HandlerFailure(Box::new(err))
         }
+        // Shedding is a failure to process, so the message must not be acked.
+        // Leaving it for the source queue to redeliver is the backpressure
+        // reaching the producer.
+        ConsumerEventHandlerError::QueueFull => MessageHandlerError::HandlerFailure(Box::new(err)),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::EventResultData;
-    use std::sync::atomic::{AtomicBool, Ordering};
+    use crate::{event_queue::EventQueueParts, types::EventResultData};
+    use std::{
+        collections::HashMap,
+        sync::atomic::{AtomicBool, Ordering},
+    };
 
     fn success_event_result(event_id: &str) -> EventResult {
         // EventResultData uses #[serde(untagged)], so deserialize the inner struct directly.
@@ -917,8 +949,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_event_queue_handler() {
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
-        let handler = EventQueueConsumerEventHandler::new(event_queue.clone());
+        let parts = EventQueueParts::new(4);
+        let receiver = parts.receiver.clone();
+        let handler = EventQueueConsumerEventHandler::new(
+            parts.queue.clone(),
+            HandlerTimeouts::new(HashMap::new(), Duration::from_secs(60)),
+        );
 
         let event_data = ConsumerEventData {
             messages: vec![ConsumerMessage {
@@ -942,12 +978,12 @@ mod tests {
                 .await
         });
 
-        // Wait for the event to appear in the queue.
-        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-        let (tx, event) = {
-            let mut queue = event_queue.lock().unwrap();
-            queue.pop_front().expect("event should be in queue")
-        };
+        let (tx, event) = receiver
+            .lock()
+            .await
+            .recv()
+            .await
+            .expect("event should be in queue");
         let result = success_event_result(&event.id);
         let result_event_id = result.event_id.clone();
         tx.send((event, result)).unwrap();
@@ -959,8 +995,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_event_queue_handler_schedule() {
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
-        let handler = EventQueueConsumerEventHandler::new(event_queue.clone());
+        let parts = EventQueueParts::new(4);
+        let receiver = parts.receiver.clone();
+        let handler = EventQueueConsumerEventHandler::new(
+            parts.queue.clone(),
+            HandlerTimeouts::new(HashMap::new(), Duration::from_secs(60)),
+        );
 
         let event_data = ScheduleEventData {
             schedule_id: "sched1".to_string(),
@@ -976,11 +1016,12 @@ mod tests {
                 .await
         });
 
-        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-        let (tx, event) = {
-            let mut queue = event_queue.lock().unwrap();
-            queue.pop_front().expect("event should be in queue")
-        };
+        let (tx, event) = receiver
+            .lock()
+            .await
+            .recv()
+            .await
+            .expect("event should be in queue");
         assert_eq!(event.event_type, EventType::ScheduleMessage);
 
         let result = success_event_result(&event.id);

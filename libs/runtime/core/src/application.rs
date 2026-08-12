@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::HashMap,
     fmt::Display,
     net::SocketAddr,
     sync::{Arc, Mutex},
@@ -46,11 +46,12 @@ use crate::{
         ApiConfig, AppConfig, ConsumerConfig, EventConfig, RuntimeConfig, ScheduleConfig,
         WebSocketConfig,
     },
-    consts::DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT,
+    consts::{DEFAULT_EVENT_QUEUE_CAPACITY, DEFAULT_RUNTIME_HEALTH_CHECK_ENDPOINT},
     consumer_handler::{
         ConsumerEventHandler, EventQueueConsumerEventHandler, SharedConsumerEventHandler,
     },
     errors::{ApplicationStartError, ConfigError},
+    event_queue::{collect_handler_timeouts, EventQueueHandles, EventQueueParts},
     handler_invoke::{
         invoke_handler as invoke_handler_fn, new_handler_invoke_registry, HandlerInvokeRegistry,
         HandlerInvoker, InvokeHandlerState,
@@ -62,7 +63,7 @@ use crate::{
         collect_api_config, collect_consumer_config, collect_custom_handler_definitions,
         collect_events_config, collect_schedule_config,
     },
-    types::{ApiAppState, EventTuple},
+    types::ApiAppState,
     utils::get_epoch_seconds,
     websocket::{self, WebSocketMessageHandler},
 };
@@ -85,8 +86,8 @@ pub struct Application {
     app_tracing_enabled: bool,
     http_server_app: Option<Router<ApiAppState>>,
     runtime_local_api: Option<Router>,
-    event_queue: Option<Arc<Mutex<VecDeque<EventTuple>>>>,
-    processing_events_map: Option<Arc<Mutex<HashMap<String, EventTuple>>>>,
+    event_queue: Option<EventQueueHandles>,
+    event_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     ws_connections: Option<Arc<dyn WebSocketRegistrySend + 'static>>,
     ws_app_routes: Arc<AsyncMutex<HashMap<String, Arc<dyn WebSocketMessageHandler + Send + Sync>>>>,
     custom_auth_guards: Arc<AsyncMutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
@@ -125,7 +126,7 @@ impl Application {
             local_api_shutdown_signal: None,
             consumer_shutdown_signals: None,
             event_queue: None,
-            processing_events_map: None,
+            event_cleanup_task_shutdown_signal: None,
             ws_connections: None,
             ws_app_routes: Arc::new(AsyncMutex::new(HashMap::new())),
             custom_auth_guards: Arc::new(AsyncMutex::new(HashMap::new())),
@@ -202,7 +203,10 @@ impl Application {
         // In IPC call mode, wire the event queue as the consumer event handler.
         if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
             if let Some(event_queue) = &self.event_queue {
-                let eq_handler = EventQueueConsumerEventHandler::new(event_queue.clone());
+                let eq_handler = EventQueueConsumerEventHandler::new(
+                    event_queue.queue.clone(),
+                    collect_handler_timeouts(&app_config),
+                );
                 self.consumer_event_handler.set(Arc::new(eq_handler));
             }
         }
@@ -366,14 +370,14 @@ impl Application {
         &mut self,
         app_config: &AppConfig,
     ) -> Result<Router, ApplicationStartError> {
-        let event_queue = Arc::new(Mutex::new(VecDeque::new()));
-        self.event_queue = Some(event_queue.clone());
-        let processing_events_map = Arc::new(Mutex::new(HashMap::new()));
-        self.processing_events_map = Some(processing_events_map.clone());
+        let (handles, shutdown_tx) =
+            EventQueueParts::new(DEFAULT_EVENT_QUEUE_CAPACITY).spawn_cleanup_task_detached();
+        self.event_queue = Some(handles.clone());
+        self.event_cleanup_task_shutdown_signal = Some(shutdown_tx);
         create_runtime_local_api(
             app_config,
-            event_queue,
-            processing_events_map,
+            handles,
+            collect_handler_timeouts(app_config),
             self.ws_connections.clone(),
             self.handler_invoke_registry.clone(),
         )
@@ -1082,6 +1086,11 @@ impl Application {
         if let Some(tx) = self.local_api_shutdown_signal.take() {
             tx.send(())
                 .expect("failed to send shutdown signal to local api server");
+        }
+        if let Some(tx) = self.event_cleanup_task_shutdown_signal.take() {
+            // The cleanup task also stops when the arm channel closes, so a failed
+            // send here just means it has already gone.
+            let _ = tx.send(());
         }
         if let Some(tx) = self.resource_store_cleanup_task_shutdown_signal.take() {
             tx.send(())
