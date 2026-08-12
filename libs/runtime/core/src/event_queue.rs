@@ -143,7 +143,7 @@ pub fn collect_handler_timeouts(app_config: &AppConfig) -> HandlerTimeouts {
             for handler in &http.handlers {
                 by_tag.insert(
                     http_handler_tag(&handler.method, &handler.path),
-                    seconds(handler.timeout),
+                    timeout_from_seconds(handler.timeout),
                 );
             }
         }
@@ -151,7 +151,7 @@ pub fn collect_handler_timeouts(app_config: &AppConfig) -> HandlerTimeouts {
             for handler in &websocket.handlers {
                 by_tag.insert(
                     websocket_handler_tag(&handler.route_key, &handler.route),
-                    seconds(handler.timeout),
+                    timeout_from_seconds(handler.timeout),
                 );
             }
         }
@@ -162,7 +162,7 @@ pub fn collect_handler_timeouts(app_config: &AppConfig) -> HandlerTimeouts {
             for handler in &consumer.handlers {
                 by_tag.insert(
                     source_handler_tag(&consumer.source_id, &handler.name),
-                    seconds(handler.timeout),
+                    timeout_from_seconds(handler.timeout),
                 );
             }
         }
@@ -173,7 +173,7 @@ pub fn collect_handler_timeouts(app_config: &AppConfig) -> HandlerTimeouts {
             for handler in &schedule.handlers {
                 by_tag.insert(
                     source_handler_tag(&schedule.schedule_id, &handler.name),
-                    seconds(handler.timeout),
+                    timeout_from_seconds(handler.timeout),
                 );
             }
         }
@@ -181,16 +181,19 @@ pub fn collect_handler_timeouts(app_config: &AppConfig) -> HandlerTimeouts {
 
     if let Some(custom) = &app_config.custom_handlers {
         for handler in &custom.handlers {
-            by_tag.insert(custom_handler_tag(&handler.name), seconds(handler.timeout));
+            by_tag.insert(
+                custom_handler_tag(&handler.name),
+                timeout_from_seconds(handler.timeout),
+            );
         }
     }
 
-    HandlerTimeouts::new(by_tag, seconds(DEFAULT_HANDLER_TIMEOUT))
+    HandlerTimeouts::new(by_tag, timeout_from_seconds(DEFAULT_HANDLER_TIMEOUT))
 }
 
 /// Converts a configured timeout in seconds to a duration, treating a
 /// non-positive value as "unset" and falling back to the default.
-fn seconds(timeout: i64) -> Duration {
+pub fn timeout_from_seconds(timeout: i64) -> Duration {
     if timeout <= 0 {
         Duration::from_secs(DEFAULT_HANDLER_TIMEOUT as u64)
     } else {
