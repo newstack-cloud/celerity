@@ -24,11 +24,6 @@ pub struct WorkflowRuntimeConfig {
     ///
     /// Defaults to true.
     pub server_loopback_only: Option<bool>,
-    /// The port on which the local HTTP API server
-    /// should run.
-    /// This is only used when the runtime call mode
-    /// is set to `RuntimeCallMode::Ipc`.
-    pub local_api_port: i32,
     /// Sets the endpoint to be used for sending trace data to an OTLP collector.
     ///
     /// Defaults to "http://otelcollector:4317".
