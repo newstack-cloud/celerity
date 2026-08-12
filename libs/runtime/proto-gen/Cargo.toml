@@ -1,0 +1,12 @@
+[package]
+name = "celerity-proto-gen"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+publish = false
+
+# Regenerates the checked-in Rust stubs for the IPC handler protocol.
+# Building this crate needs nothing special; running it needs protoc.
+
+[dependencies]
+tonic-prost-build = "0.14"

@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "core",
+    "proto-gen",
     "workflow",
     "signature",
     "helpers",
