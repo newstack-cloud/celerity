@@ -48,6 +48,10 @@ pub const MAX_EVENT_QUEUE_ADMISSION_WAIT_SECS: u64 = 5;
 // budget for the handler that will eventually run.
 pub const EVENT_QUEUE_ADMISSION_WAIT_DIVISOR: u32 = 4;
 
+// The largest HTTP request body the runtime will buffer into an event in the
+// IPC call mode. Matches axum's own default extractor limit.
+pub const MAX_HTTP_REQUEST_BODY_BYTES: usize = 2 * 1024 * 1024;
+
 // The capacity of the bounded event channel used to hand events to handlers
 // in the "ipc" runtime call mode.
 // Once this many events are waiting to be picked up, producers (HTTP routes,

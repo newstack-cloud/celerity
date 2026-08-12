@@ -1224,6 +1224,7 @@ dependencies = [
  "celerity_ws_registry",
  "chrono",
  "coverage-helper",
+ "form_urlencoded",
  "futures",
  "http-body-util",
  "httptest",

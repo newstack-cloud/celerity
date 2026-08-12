@@ -9,7 +9,7 @@ use std::{
 use async_trait::async_trait;
 use axum::http::{HeaderName, HeaderValue, Method as HttpMethod};
 use axum::{
-    extract::{MatchedPath, Request},
+    extract::{MatchedPath, RawPathParams, Request},
     handler::Handler,
     middleware,
     routing::{get, post},
@@ -51,11 +51,15 @@ use crate::{
         ConsumerEventHandler, EventQueueConsumerEventHandler, SharedConsumerEventHandler,
     },
     errors::{ApplicationStartError, ConfigError},
-    event_queue::{collect_handler_timeouts, EventQueueHandles, EventQueueParts},
+    event_queue::{
+        collect_handler_timeouts, http_handler_tag, timeout_from_seconds, EventQueueHandles,
+        EventQueueParts,
+    },
     handler_invoke::{
         invoke_handler as invoke_handler_fn, new_handler_invoke_registry, HandlerInvokeRegistry,
         HandlerInvoker, InvokeHandlerState,
     },
+    ipc_http::{self, IpcHttpRoute},
     request::request_id,
     runtime_local_api::create_runtime_local_api,
     telemetry::{self, enrich_span, log_request},
@@ -156,6 +160,15 @@ impl Application {
 
         let mut collected_handler_names: Vec<String> = Vec::new();
 
+        // The event queue has to exist before the API router is built, because
+        // in the IPC call mode every HTTP route holds a producer for it.
+        if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
+            let (handles, shutdown_tx) =
+                EventQueueParts::new(DEFAULT_EVENT_QUEUE_CAPACITY).spawn_cleanup_task_detached();
+            self.event_queue = Some(handles);
+            self.event_cleanup_task_shutdown_signal = Some(shutdown_tx);
+        }
+
         match collect_api_config(&blueprint_config, &self.runtime_config) {
             Ok((api_config, api_handler_names)) => {
                 self.http_server_app = Some(self.setup_http_server_app(&api_config)?);
@@ -212,6 +225,15 @@ impl Application {
         }
 
         Ok(app_config)
+    }
+
+    /// The event queue handles for the IPC call mode, or `None` in the FFI
+    /// call mode where handlers run in-process and no queue is created.
+    ///
+    /// This is what a component draining the queue needs the receiver to take
+    /// events from, and the in-flight table to return results through.
+    pub fn event_queue(&self) -> Option<EventQueueHandles> {
+        self.event_queue.clone()
     }
 
     pub fn websocket_registry(&self) -> Arc<dyn WebSocketRegistrySend> {
@@ -322,6 +344,28 @@ impl Application {
                     handler.name.clone(),
                 );
             }
+
+            // In the FFI call mode the SDK registers these routes itself as it
+            // binds each in-process handler. In the IPC call mode there is no
+            // in-process handler to bind, so the runtime registers a route per
+            // blueprint handler that dispatches over the event queue.
+            if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
+                if let Some(event_queue) = &self.event_queue {
+                    for handler in &http_config.handlers {
+                        http_server_app = register_ipc_http_route(
+                            http_server_app,
+                            &handler.method,
+                            &handler.path,
+                            IpcHttpRoute {
+                                event_queue: event_queue.queue.clone(),
+                                handler_tag: http_handler_tag(&handler.method, &handler.path),
+                                route: handler.path.clone(),
+                                timeout: timeout_from_seconds(handler.timeout),
+                            },
+                        );
+                    }
+                }
+            }
         }
         if let Some(api_auth) = &api_config.auth {
             let mut route_guards = HashMap::new();
@@ -370,10 +414,12 @@ impl Application {
         &mut self,
         app_config: &AppConfig,
     ) -> Result<Router, ApplicationStartError> {
-        let (handles, shutdown_tx) =
-            EventQueueParts::new(DEFAULT_EVENT_QUEUE_CAPACITY).spawn_cleanup_task_detached();
-        self.event_queue = Some(handles.clone());
-        self.event_cleanup_task_shutdown_signal = Some(shutdown_tx);
+        let handles = self
+            .event_queue
+            .clone()
+            .ok_or(ApplicationStartError::Config(ConfigError::Api(
+                "event queue must be created before the local runtime API".to_string(),
+            )))?;
         create_runtime_local_api(
             app_config,
             handles,
@@ -1457,5 +1503,41 @@ impl WebSocketRegistrySend for NoopWebSocketRegistrySend {
 impl Display for NoopWebSocketRegistrySend {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "NoopWebSocketRegistrySend")
+    }
+}
+
+/// Registers a route that dispatches to a handler in the separate handlers
+/// executable over the event queue.
+///
+/// Mirrors the method dispatch of `Application::register_http_handler`, which
+/// serves the same purpose in the FFI call mode.
+fn register_ipc_http_route(
+    router: Router<ApiAppState>,
+    method: &str,
+    path: &str,
+    route: IpcHttpRoute,
+) -> Router<ApiAppState> {
+    let handler = move |path_params: RawPathParams, request: Request| {
+        let route = route.clone();
+        async move { ipc_http::handle_request(route, path_params, request).await }
+    };
+
+    match method.to_lowercase().as_str() {
+        "get" => router.route(path, get(handler)),
+        "head" => router.route(path, axum::routing::head(handler)),
+        "options" => router.route(path, axum::routing::options(handler)),
+        "trace" => router.route(path, axum::routing::trace(handler)),
+        "post" => router.route(path, post(handler)),
+        "put" => router.route(path, axum::routing::put(handler)),
+        "patch" => router.route(path, axum::routing::patch(handler)),
+        "delete" => router.route(path, axum::routing::delete(handler)),
+        unsupported => {
+            warn!(
+                method = %unsupported,
+                path = %path,
+                "skipping route registration for an unsupported HTTP method"
+            );
+            router
+        }
     }
 }
