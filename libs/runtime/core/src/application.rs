@@ -184,7 +184,7 @@ impl Application {
         app_config.custom_handlers =
             collect_custom_handler_definitions(&blueprint_config, &collected_handler_names)?;
 
-        if self.runtime_config.runtime_call_mode == RuntimeCallMode::Http {
+        if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
             self.runtime_local_api = Some(self.setup_runtime_local_api(&app_config)?);
         }
 
@@ -199,8 +199,8 @@ impl Application {
             self.event_configs = events_config.events.clone();
         }
 
-        // In HTTP call mode, wire the event queue as the consumer event handler.
-        if self.runtime_config.runtime_call_mode == RuntimeCallMode::Http {
+        // In IPC call mode, wire the event queue as the consumer event handler.
+        if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
             if let Some(event_queue) = &self.event_queue {
                 let eq_handler = EventQueueConsumerEventHandler::new(event_queue.clone());
                 self.consumer_event_handler.set(Arc::new(eq_handler));
