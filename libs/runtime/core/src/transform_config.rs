@@ -1469,7 +1469,7 @@ mod tests {
             service_name: "test".to_string(),
             server_port: 8080,
             server_loopback_only: None,
-            local_api_port: 8592,
+            runtime_socket_fallback_port: 8592,
             runtime_socket: "/tmp/celerity-test.sock".to_string(),
             drain_timeout: None,
             enable_local_invoke: false,

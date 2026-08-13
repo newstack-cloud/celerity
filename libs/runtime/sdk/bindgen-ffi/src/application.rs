@@ -42,7 +42,7 @@ pub unsafe fn application_create(core_runtime_config: CoreRuntimeConfig) -> *mut
                 runtime_call_mode: RuntimeCallMode::Ffi,
                 server_port: core_runtime_config.server_port(),
                 server_loopback_only: Some(true),
-                local_api_port: 3001,
+                runtime_socket_fallback_port: 0,
                 // Unused in the FFI call mode, where handlers run in-process.
                 runtime_socket: String::new(),
                 drain_timeout: None,

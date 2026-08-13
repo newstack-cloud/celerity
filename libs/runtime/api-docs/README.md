@@ -1,10 +1,10 @@
 # Runtime API Docs
 
-The Celerity Runtimes provide HTTP APIs that enable key functionality for all the kinds of applications that can be built using Celerity.
+The Celerity Runtimes expose the interfaces that enable key functionality for all the kinds of applications that can be built using Celerity. Most are HTTP APIs; the contract between the core runtime and a handlers executable is a gRPC stream and is documented alongside its schema.
 
 ## Core Runtime APIs
 
-- [Local Runtime API](./local-runtime-api/README.md) - The Local Runtime API allows the runtime to interact with an executable containing an application's handlers.
+- [IPC Handler Protocol](../proto/README.md) - The contract between the core runtime and a handlers executable running as a separate process, used by SDKs for ahead-of-time compiled languages. One long-lived bidirectional gRPC stream carries events, results, configuration, WebSocket sends, cancellation and shutdown. `celerity/runtime/v1/runtime.proto` is the source of truth.
 
 ## Workflow Runtime APIs
 

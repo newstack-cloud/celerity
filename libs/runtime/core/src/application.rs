@@ -63,7 +63,7 @@ use crate::{
     errors::{ApplicationStartError, ConfigError},
     event_queue::{
         collect_handler_timeouts, http_handler_tag, timeout_from_seconds, websocket_handler_tag,
-        EventCleanupTask, EventQueueHandles, EventQueueParts,
+        EventCleanupTask, EventQueueHandles, EventQueueParts, EventQueueReceivers,
     },
     handler_invoke::{
         invoke_handler as invoke_handler_fn, invoke_handler_ipc, new_handler_invoke_registry,
@@ -77,7 +77,6 @@ use crate::{
     },
     ipc_websocket::IpcWebSocketHandler,
     request::request_id,
-    runtime_local_api::create_runtime_local_api,
     telemetry::{self, enrich_span, log_request},
     transform_config::{
         collect_api_config, collect_consumer_config, collect_custom_handler_definitions,
@@ -105,8 +104,9 @@ pub struct Application {
     env_vars: Box<dyn EnvVars>,
     app_tracing_enabled: bool,
     http_server_app: Option<Router<ApiAppState>>,
-    runtime_local_api: Option<Router>,
     event_queue: Option<EventQueueHandles>,
+    /// Moved into the dispatcher when it starts, since it is the sole consumer.
+    event_queue_receivers: Option<EventQueueReceivers>,
     /// Created during setup, started in `run`.
     event_cleanup_task: Option<EventCleanupTask>,
     /// Built during setup, served in `run` once there is a runtime to spawn on.
@@ -120,7 +120,6 @@ pub struct Application {
     ws_app_routes: Arc<AsyncMutex<HashMap<String, Arc<dyn WebSocketMessageHandler + Send + Sync>>>>,
     custom_auth_guards: Arc<AsyncMutex<HashMap<String, Arc<dyn AuthGuardHandler + Send + Sync>>>>,
     server_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
-    local_api_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
     consumer_shutdown_signals: Option<Arc<Mutex<ConsumerShutdownSignals>>>,
     resource_store: Option<Arc<ResourceStore>>,
     resource_store_cleanup_task_shutdown_signal: Option<tokio::sync::oneshot::Sender<()>>,
@@ -150,10 +149,9 @@ impl Application {
             app_tracing_enabled: false,
             http_server_app: None,
             server_shutdown_signal: None,
-            runtime_local_api: None,
-            local_api_shutdown_signal: None,
             consumer_shutdown_signals: None,
             event_queue: None,
+            event_queue_receivers: None,
             event_cleanup_task: None,
             event_cleanup_task_shutdown_signal: None,
             ipc_stream_context: None,
@@ -195,9 +193,10 @@ impl Application {
         // the queue is created here; the cleanup task that goes with it is
         // started in `run`, where there is a runtime to spawn it on.
         if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
-            let (handles, cleanup_task) =
+            let (handles, receivers, cleanup_task) =
                 EventQueueParts::new(DEFAULT_EVENT_QUEUE_CAPACITY).into_parts();
             self.event_queue = Some(handles);
+            self.event_queue_receivers = Some(receivers);
             self.event_cleanup_task = Some(cleanup_task);
         }
 
@@ -231,7 +230,6 @@ impl Application {
             collect_custom_handler_definitions(&blueprint_config, &collected_handler_names)?;
 
         if self.runtime_config.runtime_call_mode == RuntimeCallMode::Ipc {
-            self.runtime_local_api = Some(self.setup_runtime_local_api(&app_config)?);
             self.setup_ipc_stream(&app_config);
         }
 
@@ -463,25 +461,6 @@ impl Application {
         guards
     }
 
-    fn setup_runtime_local_api(
-        &mut self,
-        app_config: &AppConfig,
-    ) -> Result<Router, ApplicationStartError> {
-        let handles = self
-            .event_queue
-            .clone()
-            .ok_or(ApplicationStartError::Config(ConfigError::Api(
-                "event queue must be created before the local runtime API".to_string(),
-            )))?;
-        create_runtime_local_api(
-            app_config,
-            handles,
-            collect_handler_timeouts(app_config),
-            self.ws_connections.clone(),
-            self.handler_invoke_registry.clone(),
-        )
-    }
-
     /// Adds the endpoint that invokes a handler directly by name, which exists
     /// so that a handler can be exercised while developing or testing.
     ///
@@ -610,22 +589,17 @@ impl Application {
     /// than reachability of localhost. Where one cannot be bound the runtime
     /// falls back to loopback TCP so the platform is still serviceable.
     async fn run_ipc_stream_server(&mut self) -> Result<(), ApplicationStartError> {
-        let (Some(dispatcher), Some(commands_rx), Some(context), Some(event_queue)) = (
+        let (Some(dispatcher), Some(receivers), Some(commands_rx), Some(context)) = (
             self.ipc_dispatcher.take(),
+            self.event_queue_receivers.take(),
             self.ipc_commands_rx.take(),
             self.ipc_stream_context.clone(),
-            self.event_queue.clone(),
         ) else {
             return Ok(());
         };
 
         let (dispatcher_shutdown_tx, dispatcher_shutdown_rx) = tokio::sync::oneshot::channel();
-        tokio::spawn(dispatcher.run(
-            event_queue.receiver.clone(),
-            event_queue.cancellations.clone(),
-            commands_rx,
-            dispatcher_shutdown_rx,
-        ));
+        tokio::spawn(dispatcher.run(receivers, commands_rx, dispatcher_shutdown_rx));
         self.ipc_dispatcher_shutdown_signal = Some(dispatcher_shutdown_tx);
 
         let service = HandlerRuntimeServer::new(HandlerRuntimeService::new(context));
@@ -652,7 +626,7 @@ impl Application {
                 });
             }
             Err(err) => {
-                let port = self.runtime_config.local_api_port;
+                let port = self.runtime_config.runtime_socket_fallback_port;
                 warn!(
                     socket = %self.runtime_config.runtime_socket,
                     "could not bind a unix socket ({err}), falling back to loopback tcp on {port}"
@@ -694,19 +668,11 @@ impl Application {
         self.run_ipc_stream_server().await?;
 
         let mut server_task = None;
-        let mut local_api_task = None;
         let mut server_address = None;
         if let Some(http_app_unwrapped) = self.http_server_app.clone() {
             let (task, addr) = self.run_http_server_app(http_app_unwrapped).await;
             server_task = Some(task);
             server_address = Some(addr);
-        }
-
-        if let Some(runtime_local_api_unwrapped) = self.runtime_local_api.clone() {
-            let task = self
-                .start_runtime_local_api(runtime_local_api_unwrapped)
-                .await;
-            local_api_task = Some(task);
         }
 
         if self.resource_store.is_some() {
@@ -723,9 +689,6 @@ impl Application {
 
         if block {
             if let Some(task) = server_task {
-                task.await?;
-            }
-            if let Some(task) = local_api_task {
                 task.await?;
             }
             for handle in self.consumer_task_handles.drain(..) {
@@ -1187,25 +1150,6 @@ impl Application {
         Ok(managed)
     }
 
-    async fn start_runtime_local_api(&mut self, runtime_local_api: Router) -> JoinHandle<()> {
-        let port = self.runtime_config.local_api_port;
-        // Bind on loopback only as this API must not be exposed to the outside world.
-        let listener = TcpListener::bind(format!("127.0.0.1:{port}"))
-            .await
-            .unwrap();
-        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
-        let task = tokio::spawn(async move {
-            axum::serve(listener, runtime_local_api)
-                .with_graceful_shutdown(async {
-                    rx.await.ok();
-                })
-                .await
-                .unwrap();
-        });
-        self.local_api_shutdown_signal = Some(tx);
-        task
-    }
-
     async fn run_http_server_app(
         &mut self,
         http_app: Router<ApiAppState>,
@@ -1381,10 +1325,6 @@ impl Application {
         if let Some(tx) = self.server_shutdown_signal.take() {
             tx.send(())
                 .expect("failed to send shutdown signal to http server");
-        }
-        if let Some(tx) = self.local_api_shutdown_signal.take() {
-            tx.send(())
-                .expect("failed to send shutdown signal to local api server");
         }
         if let Some(tx) = self.ipc_server_shutdown_signal.take() {
             let _ = tx.send(());

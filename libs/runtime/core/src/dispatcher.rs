@@ -35,9 +35,7 @@ use tracing::{debug, info, warn};
 
 use crate::{
     consts::{HANDLER_ATTACH_GRACE_SECS, MAX_DERIVED_DRAIN_TIMEOUT_SECS},
-    event_queue::{
-        CancelReceiver, EventQueueReceiver, HandlerTimeouts, InFlightEntry, InFlightTable,
-    },
+    event_queue::{EventQueueReceivers, HandlerTimeouts, InFlightEntry, InFlightTable},
     types::{CancelReason, CancelRequest, EventData, EventOutcome, EventTuple, UnservableReason},
 };
 
@@ -242,13 +240,14 @@ impl Dispatcher {
     /// then drains what is already in flight.
     pub async fn run(
         mut self,
-        event_rx: EventQueueReceiver,
-        cancel_rx: CancelReceiver,
+        receivers: EventQueueReceivers,
         mut command_rx: mpsc::Receiver<DispatcherCommand>,
         mut shutdown_rx: oneshot::Receiver<()>,
     ) {
-        let mut events = event_rx.lock().await;
-        let mut cancellations = cancel_rx.lock().await;
+        let EventQueueReceivers {
+            mut events,
+            mut cancellations,
+        } = receivers;
 
         loop {
             // Recomputed each pass because attaching a stream can make a queue
@@ -736,7 +735,7 @@ mod tests {
     }
 
     fn start(capacity: usize) -> Harness {
-        let (handles, cleanup) = EventQueueParts::new(capacity).into_parts();
+        let (handles, receivers, cleanup) = EventQueueParts::new(capacity).into_parts();
         let cleanup_shutdown = cleanup.spawn();
         let (command_tx, command_rx) = mpsc::channel(16);
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
@@ -746,9 +745,7 @@ mod tests {
             timeouts(),
             Duration::from_secs(30),
         );
-        let receiver = handles.receiver.clone();
-        let cancellations = handles.cancellations.clone();
-        tokio::spawn(dispatcher.run(receiver, cancellations, command_rx, shutdown_rx));
+        tokio::spawn(dispatcher.run(receivers, command_rx, shutdown_rx));
 
         Harness {
             queue: handles.queue.clone(),

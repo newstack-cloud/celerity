@@ -28,7 +28,6 @@ pub mod ipc_http;
 pub mod ipc_stream;
 pub mod ipc_websocket;
 pub mod request;
-pub(crate) mod runtime_local_api;
 pub(crate) mod telemetry;
 pub mod telemetry_utils;
 mod transform_config;
