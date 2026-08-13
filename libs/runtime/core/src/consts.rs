@@ -97,6 +97,16 @@ pub const DEFAULT_DRAIN_TIMEOUT_SECS: u64 = 30;
 // hints that arrive too late to be worth anything.
 pub const CANCELLATION_BUFFER: usize = 256;
 
+// How many messages may be waiting to be processed for one WebSocket connection
+// before its read loop waits for room.
+//
+// Messages are handled off the read loop so that a slow handler cannot stop the
+// connection answering heartbeats or noticing a close. This bounds how far a
+// client can run ahead of its own handlers before it is pushed back on, which
+// is a different situation from one handler being slow and deserves the
+// backpressure.
+pub const WS_CONNECTION_WORK_BUFFER: usize = 64;
+
 // How many dispatcher commands may be queued before a handler stream waits.
 // Commands are small and are drained by a single task, so this only needs to
 // absorb bursts of results arriving together.

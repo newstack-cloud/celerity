@@ -31,7 +31,11 @@ use celerity_ws_registry::registry::WebSocketConnRegistry;
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tokio::{sync::Mutex, time::sleep};
+use tokio::{
+    sync::{mpsc, Mutex},
+    task::JoinHandle,
+    time::sleep,
+};
 use tracing::{debug, error, field, info, info_span, warn, Instrument};
 
 use crate::{
@@ -44,6 +48,7 @@ use crate::{
         CELERITY_WS_CAPABILITIES_SIGNAL, CELERITY_WS_CONNECT_HANDLER_ROUTE,
         CELERITY_WS_DEFAULT_MESSAGE_HANDLER_ROUTE, CELERITY_WS_DISCONNECT_HANDLER_ROUTE,
         CELERITY_WS_FORBIDDEN_ERROR_CODE, CELERITY_WS_UNAUTHORISED_ERROR_CODE,
+        WS_CONNECTION_WORK_BUFFER,
     },
     errors::WebSocketsMessageError,
     request::{HttpProtocolVersion, RequestId},
@@ -325,6 +330,25 @@ async fn handle_socket(
             return;
         }
 
+        // Messages are processed off this loop, one at a time, by a worker for
+        // this connection. Sequentially, because a WebSocket delivers frames in
+        // order and an application may depend on being given them that way;
+        // the point here is only that reading does not wait for handling.
+        //
+        // Bounded, so a client that outruns its handlers is pushed back on
+        // rather than growing a queue without limit. Once the buffer is full
+        // this loop does wait, which is the intended answer to a flood, and a
+        // different situation from one slow handler.
+        let (work_tx, work_rx) = mpsc::channel::<(Message, WebSocketRequestContext)>(
+            WS_CONNECTION_WORK_BUFFER,
+        );
+        let worker = spawn_message_worker(
+            work_rx,
+            socket_ref.clone(),
+            connection_id.clone(),
+            state.clone(),
+        );
+
         let mut connection_alive = true;
         while connection_alive {
             // Wait some time before acquiring the lock again to allow other tasks to write
@@ -358,8 +382,6 @@ async fn handle_socket(
                             request_ctx.auth_data = Some(data);
                         }
                         AuthMessageResult::Failed => {
-                            state.connections.remove_connection(connection_id.clone());
-                            ws_connections_counter().add(-1, &[]);
                             connection_alive = false;
                         }
                         AuthMessageResult::NotAuthMessage => {
@@ -374,30 +396,38 @@ async fn handle_socket(
                         }
                     }
                 } else {
-                    // Release lock before processing to allow other tasks
-                    // (e.g. cluster relay) to write to the socket.
+                    // Release the lock before handing the message on, so other
+                    // tasks (a cluster relay, say) can write to the socket.
                     drop(acquired_socket);
-                    if process_message(msg, connection_id.clone(), request_ctx.clone(), &state)
-                        .await
-                        .is_break()
-                    {
-                        state.connections.remove_connection(connection_id.clone());
-                        ws_connections_counter().add(-1, &[]);
+                    // Handed to the worker rather than run here. A handler that
+                    // takes a while must not stop this loop reading, or the
+                    // heartbeat above goes unanswered and a close frame goes
+                    // unnoticed, and the client concludes the connection is
+                    // dead while its work is still in progress.
+                    if work_tx.send((msg, request_ctx.clone())).await.is_err() {
                         connection_alive = false;
                     }
                 }
             } else {
                 // recv() returned None — the underlying connection was dropped
                 // without a WebSocket close handshake (e.g. TCP reset, client
-                // killed). Fire the disconnect handler so the application can
-                // clean up connection state.
+                // killed).
                 info!("connection lost, client {connection_id} disconnected without close frame");
-                let _ = on_disconnect(connection_id.clone(), &state, &request_ctx).await;
-                state.connections.remove_connection(connection_id.clone());
-                ws_connections_counter().add(-1, &[]);
                 connection_alive = false;
             }
         }
+
+        // Closing the channel ends the worker once it has finished whatever it
+        // was given, so the disconnect handler runs after the messages that
+        // preceded it rather than alongside them.
+        drop(work_tx);
+        let disconnect_handled = worker.await.unwrap_or(false);
+
+        if !disconnect_handled {
+            let _ = on_disconnect(connection_id.clone(), &state, &request_ctx).await;
+        }
+        state.connections.remove_connection(connection_id.clone());
+        ws_connections_counter().add(-1, &[]);
     }
     .instrument(info_span!("websocket_connection", connection_id = %connection_id))
     .await
@@ -548,6 +578,34 @@ fn create_connect_message(
         body: serde_json::Value::Null,
         trace_context: extract_trace_context(),
     }
+}
+
+/// Runs a connection's messages, one at a time, off its read loop.
+///
+/// Returns whether the disconnect handler has already been fired, which happens
+/// when the client sent a close frame and the worker saw it in sequence. The
+/// read loop fires it otherwise, for a connection that simply went away.
+fn spawn_message_worker(
+    mut work_rx: mpsc::Receiver<(Message, WebSocketRequestContext)>,
+    socket_ref: Arc<Mutex<WebSocket>>,
+    connection_id: String,
+    state: WebSocketAppState,
+) -> JoinHandle<bool> {
+    tokio::spawn(async move {
+        while let Some((message, request_ctx)) = work_rx.recv().await {
+            if process_message(message, connection_id.clone(), request_ctx, &state)
+                .await
+                .is_break()
+            {
+                // The connection is finished, and the read loop is waiting on a
+                // socket that may never produce anything again. Closing it is
+                // what wakes the loop so the connection can be torn down.
+                close_connection(socket_ref.clone()).await;
+                return true;
+            }
+        }
+        false
+    })
 }
 
 async fn on_disconnect(

@@ -1062,6 +1062,109 @@ async fn routes_a_websocket_message_to_a_handler_over_the_stream() {
 }
 
 #[test_log::test(tokio::test)]
+async fn answers_heartbeats_while_a_handler_is_still_running() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-heartbeat",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    // Withhold every result, standing in for a handler that takes a while.
+    let mut handler = HandlerStub::attach(&socket, |_| None).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({ "event": "sendMessage", "data": { "text": "hello" } }).to_string(),
+        ))
+        .await
+        .unwrap();
+
+    // Once this arrives the handler is running and has not answered.
+    handler
+        .next_dispatch()
+        .await
+        .expect("the message should reach the handler");
+
+    socket_conn
+        .send(tokio_tungstenite::tungstenite::Message::Text(
+            json!({ "ping": true }).to_string(),
+        ))
+        .await
+        .unwrap();
+
+    // A client whose heartbeat goes unanswered concludes the connection is
+    // dead and reconnects, tearing down work that is still in progress. The
+    // handler's own timeout is far longer than any heartbeat interval, so the
+    // pong cannot wait on it.
+    let pong = tokio::time::timeout(Duration::from_secs(3), async {
+        while let Some(Ok(message)) = socket_conn.next().await {
+            if let tokio_tungstenite::tungstenite::Message::Text(text) = message {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if value.get("pong") == Some(&serde_json::Value::Bool(true)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    })
+    .await;
+
+    assert_eq!(
+        pong,
+        Ok(true),
+        "the heartbeat should be answered while the handler is still running"
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn keeps_messages_from_one_connection_in_order() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-ws-order",
+        "tests/data/fixtures/ipc-websocket-api.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| Some(websocket_ack())).await;
+
+    let (mut socket_conn, _) = tokio_tungstenite::connect_async(format!("ws://{addr}/"))
+        .await
+        .expect("the WebSocket server should accept the connection");
+
+    for index in 0..5 {
+        socket_conn
+            .send(tokio_tungstenite::tungstenite::Message::Text(
+                json!({ "event": "sendMessage", "data": { "index": index } }).to_string(),
+            ))
+            .await
+            .unwrap();
+    }
+
+    // Handling messages off the read loop must not reorder them: a WebSocket
+    // delivers frames in order and an application may depend on being given
+    // them that way.
+    let mut seen = Vec::new();
+    for _ in 0..5 {
+        let dispatch = handler
+            .next_dispatch()
+            .await
+            .expect("every message should reach the handler");
+        let Some(proto::dispatch::Source::Websocket(message)) = dispatch.source else {
+            panic!("expected a WebSocket source");
+        };
+        let body: serde_json::Value = serde_json::from_slice(&message.message).unwrap();
+        seen.push(body["data"]["index"].as_i64().unwrap());
+    }
+    assert_eq!(seen, vec![0, 1, 2, 3, 4]);
+
+    let _ = socket_conn.close(None).await;
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn carries_a_binary_websocket_frame_without_corrupting_it() {
     let (_app, addr, socket) = start_runtime(
         "ipc-ws-binary",
