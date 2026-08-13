@@ -186,8 +186,10 @@ pub mod cancel {
     pub enum Reason {
         Unspecified = 0,
         DeadlineExceeded = 1,
-        /// The originating caller went away: an HTTP client disconnected, or a
-        /// WebSocket connection closed.
+        /// The originating caller went away, so nothing is waiting for the result.
+        /// Sent when an HTTP client disconnects. Not sent when a WebSocket
+        /// connection closes as a message is closer to a queue message than to a
+        /// request and response, so the work is still worth finishing.
         CallerGone = 2,
         Shutdown = 3,
     }

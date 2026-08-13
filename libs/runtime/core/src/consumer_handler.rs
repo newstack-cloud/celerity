@@ -6,13 +6,13 @@ use celerity_helpers::consumers::{
 };
 use serde_json::{json, Value};
 use std::time::Instant;
-use tracing::{field, info, instrument};
+use tracing::{field, info, instrument, warn};
 
 use crate::{
     event_queue::{admission_wait, EventQueue, EventQueueError, HandlerTimeouts},
     types::{
-        ConsumerEventData, ConsumerMessage, EventData, EventDataPayload, EventResult, EventType,
-        ScheduleEventData,
+        ConsumerEventData, ConsumerMessage, EventData, EventDataPayload, EventOutcome, EventResult,
+        EventType, ScheduleEventData,
     },
 };
 
@@ -655,7 +655,14 @@ async fn enqueue_and_await(
         })?;
 
     match tokio::time::timeout_at(deadline, rx).await {
-        Ok(Ok((_event_data, result))) => Ok(result),
+        Ok(Ok(EventOutcome::Completed(_event_data, result))) => Ok(result),
+        // Nothing ran and nothing will, so this is reported the same way as an
+        // event that could not be handled, the message is left for redelivery
+        // rather than being treated as processed.
+        Ok(Ok(EventOutcome::Unservable(reason))) => {
+            warn!(%reason, "shedding event, the runtime will not dispatch it");
+            Err(ConsumerEventHandlerError::QueueFull)
+        }
         // The sender was dropped, which happens when the cleanup task removes
         // the in-flight entry after its deadline passed.
         Ok(Err(_)) => Err(ConsumerEventHandlerError::ChannelClosed),
@@ -986,7 +993,8 @@ mod tests {
             .expect("event should be in queue");
         let result = success_event_result(&event.id);
         let result_event_id = result.event_id.clone();
-        tx.send((event, result)).unwrap();
+        tx.send(EventOutcome::Completed(Box::new(event), result))
+            .unwrap();
 
         let handler_result = handle.await.unwrap();
         assert!(handler_result.is_ok());
@@ -1025,7 +1033,8 @@ mod tests {
         assert_eq!(event.event_type, EventType::ScheduleMessage);
 
         let result = success_event_result(&event.id);
-        tx.send((event, result)).unwrap();
+        tx.send(EventOutcome::Completed(Box::new(event), result))
+            .unwrap();
 
         let handler_result = handle.await.unwrap();
         assert!(handler_result.is_ok());

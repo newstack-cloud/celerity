@@ -151,10 +151,62 @@ pub struct EventMessageEventData {
 // A tuple that contains a oneshot sender and received event data.
 // The purpose of this tuple is to hand off processing of an event
 // to another process or task. (That takes the event from a queue asynchronously)
-// The oneshot sender allows the caller to wait to receive the result of processing the
+// The oneshot sender allows the caller to wait to receive the outcome of processing the
 // event along with the original event data to carry out any further tasks using the input
 // data.
-pub type EventTuple = (oneshot::Sender<(EventData, EventResult)>, EventData);
+pub type EventTuple = (oneshot::Sender<EventOutcome>, EventData);
+
+/// What the runtime hands back to whoever enqueued an event.
+#[derive(Debug)]
+pub enum EventOutcome {
+    /// A handler ran and returned this result, along with the event it was
+    /// given.
+    Completed(Box<EventData>, EventResult),
+    /// The runtime will not have this event handled at all.
+    ///
+    /// Distinct from a handler failing or timing out as nothing ever ran, and
+    /// nothing will. Callers should treat it as a capacity or availability
+    /// signal rather than an error in the application.
+    Unservable(UnservableReason),
+}
+
+/// Why the runtime will not handle an event.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnservableReason {
+    /// No attached handler stream serves the event's handler tag, and none
+    /// attached within the grace window allowed for one to connect.
+    NoHandler,
+    /// The runtime is shutting down and has stopped dispatching.
+    ShuttingDown,
+}
+
+impl std::fmt::Display for UnservableReason {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UnservableReason::NoHandler => write!(f, "no handler is attached for this event"),
+            UnservableReason::ShuttingDown => write!(f, "the runtime is shutting down"),
+        }
+    }
+}
+
+/// Why the runtime is telling a handler to stop work.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CancelReason {
+    /// The event's deadline passed before a result came back.
+    DeadlineExceeded,
+    /// The originating caller went away, so nothing is waiting for the result.
+    /// Raised when an HTTP client disconnects.
+    CallerGone,
+    /// The runtime is shutting down.
+    Shutdown,
+}
+
+/// Asks the runtime to tell whichever handler holds an event to stop.
+#[derive(Debug)]
+pub struct CancelRequest {
+    pub event_id: String,
+    pub reason: CancelReason,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EventResult {

@@ -37,7 +37,7 @@ use crate::{
         DEFAULT_HANDLER_TIMEOUT, EVENT_QUEUE_ADMISSION_WAIT_DIVISOR,
         MAX_EVENT_QUEUE_ADMISSION_WAIT_SECS,
     },
-    types::{EventData, EventResult, EventTuple},
+    types::{CancelReason, CancelRequest, EventData, EventOutcome, EventTuple},
 };
 
 /// The reason an event could not be handed to the handlers executable.
@@ -68,6 +68,7 @@ impl std::error::Error for EventQueueError {}
 #[derive(Debug, Clone)]
 pub struct EventQueue {
     tx: mpsc::Sender<EventTuple>,
+    cancel_tx: mpsc::UnboundedSender<CancelRequest>,
 }
 
 impl EventQueue {
@@ -88,7 +89,7 @@ impl EventQueue {
         &self,
         event: EventData,
         admission_wait: Duration,
-    ) -> Result<oneshot::Receiver<(EventData, EventResult)>, EventQueueError> {
+    ) -> Result<oneshot::Receiver<EventOutcome>, EventQueueError> {
         let (tx, rx) = oneshot::channel();
         self.tx
             .send_timeout((tx, event), admission_wait)
@@ -98,6 +99,60 @@ impl EventQueue {
                 mpsc::error::SendTimeoutError::Closed(_) => EventQueueError::Closed,
             })
             .map(|()| rx)
+    }
+
+    /// Guards an event so that a caller which goes away mid-request tells the
+    /// handler to stop.
+    ///
+    /// A dropped future is the only way a client disconnect reaches this code,
+    /// so the cancellation has to hang off `Drop` rather than off a branch a
+    /// caller could return through. Every path that stops waiting for a reason
+    /// the runtime already knows about, a result, a closed channel or the
+    /// deadline passing, should [`disarm`](CancelOnDrop::disarm) the guard
+    /// instead.
+    ///
+    /// Only the HTTP path uses this. A WebSocket message is closer to a queue
+    /// message than to a request and response, so a closing connection does not
+    /// make the work pointless, and the connection loop awaits its handlers
+    /// inline rather than dropping them.
+    pub fn cancel_on_drop(&self, event_id: String) -> CancelOnDrop {
+        CancelOnDrop {
+            event_id: Some(event_id),
+            cancel_tx: self.cancel_tx.clone(),
+        }
+    }
+}
+
+/// Cancels an event if it is dropped before being disarmed.
+///
+/// See [`EventQueue::cancel_on_drop`].
+pub struct CancelOnDrop {
+    /// Taken when the guard is disarmed, so that `Drop` can tell the two apart
+    /// without a second field.
+    event_id: Option<String>,
+    cancel_tx: mpsc::UnboundedSender<CancelRequest>,
+}
+
+impl CancelOnDrop {
+    /// Stops the guard cancelling, for a caller that stopped waiting for a
+    /// reason the runtime already knows about.
+    pub fn disarm(mut self) {
+        self.event_id = None;
+    }
+}
+
+impl Drop for CancelOnDrop {
+    fn drop(&mut self) {
+        let Some(event_id) = self.event_id.take() else {
+            return;
+        };
+        // Unbounded because this runs in `Drop`, which cannot wait, and because
+        // dropping a cancellation leaves a handler working on something nobody
+        // wants. A failed send means the dispatcher has already stopped.
+        let _ = self.cancel_tx.send(CancelRequest {
+            event_id,
+            reason: CancelReason::CallerGone,
+        });
     }
 }
 
@@ -251,6 +306,16 @@ impl HandlerTimeouts {
             .copied()
             .unwrap_or(self.fallback)
     }
+
+    /// The longest any configured handler may run for.
+    ///
+    /// Used to decide how long a shutdown should wait for in-flight work: a
+    /// handler that was told it had ten minutes should not be abandoned after
+    /// thirty seconds. Falls back to the default timeout when no handler
+    /// configures one, which covers an application with no handlers at all.
+    pub fn longest(&self) -> Duration {
+        self.by_tag.values().copied().max().unwrap_or(self.fallback)
+    }
 }
 
 /// Tells the cleanup task to start or stop watching an event's deadline.
@@ -263,7 +328,7 @@ enum DeadlineMessage {
 /// a result.
 #[derive(Debug)]
 pub struct InFlightEntry {
-    pub result_tx: oneshot::Sender<(EventData, EventResult)>,
+    pub result_tx: oneshot::Sender<EventOutcome>,
     pub event: EventData,
 }
 
@@ -368,6 +433,14 @@ impl InFlightTable {
 /// schedule events, so this shape has to survive until then.
 pub type EventQueueReceiver = Arc<tokio::sync::Mutex<mpsc::Receiver<EventTuple>>>;
 
+/// The receiving half of the cancellation channel.
+///
+/// Wrapped the same way as [`EventQueueReceiver`] only so that the handles can
+/// stay cloneable while the local API still exists; the dispatcher is the sole
+/// consumer, and this collapses to a plain receiver with the rest of that
+/// transitional shape.
+pub type CancelReceiver = Arc<tokio::sync::Mutex<mpsc::UnboundedReceiver<CancelRequest>>>;
+
 /// Everything needed to run the event path in the IPC runtime call mode.
 pub struct EventQueueParts {
     handles: EventQueueHandles,
@@ -383,6 +456,7 @@ impl EventQueueParts {
     pub fn new(capacity: usize) -> Self {
         let (tx, rx) = mpsc::channel(capacity);
         let (deadline_tx, deadline_rx) = mpsc::unbounded_channel();
+        let (cancel_tx, cancel_rx) = mpsc::unbounded_channel();
         let watched_deadlines = Arc::new(AtomicUsize::new(0));
         let in_flight = Arc::new(InFlightTable {
             entries: Mutex::new(HashMap::new()),
@@ -392,13 +466,18 @@ impl EventQueueParts {
 
         EventQueueParts {
             handles: EventQueueHandles {
-                queue: EventQueue { tx },
+                queue: EventQueue {
+                    tx,
+                    cancel_tx: cancel_tx.clone(),
+                },
                 receiver: Arc::new(tokio::sync::Mutex::new(rx)),
+                cancellations: Arc::new(tokio::sync::Mutex::new(cancel_rx)),
                 in_flight: in_flight.clone(),
             },
             cleanup_task: EventCleanupTask {
                 in_flight,
                 deadline_rx,
+                cancel_tx,
                 watched_deadlines,
             },
         }
@@ -420,6 +499,7 @@ impl EventQueueParts {
 pub struct EventCleanupTask {
     in_flight: Arc<InFlightTable>,
     deadline_rx: mpsc::UnboundedReceiver<DeadlineMessage>,
+    cancel_tx: mpsc::UnboundedSender<CancelRequest>,
     watched_deadlines: Arc<AtomicUsize>,
 }
 
@@ -432,6 +512,7 @@ impl EventCleanupTask {
         spawn_expired_event_cleanup_task(
             self.in_flight,
             self.deadline_rx,
+            self.cancel_tx,
             self.watched_deadlines,
             shutdown_rx,
         );
@@ -444,6 +525,7 @@ impl EventCleanupTask {
 pub struct EventQueueHandles {
     pub queue: EventQueue,
     pub receiver: EventQueueReceiver,
+    pub cancellations: CancelReceiver,
     pub in_flight: Arc<InFlightTable>,
 }
 
@@ -456,6 +538,7 @@ pub struct EventQueueHandles {
 fn spawn_expired_event_cleanup_task(
     in_flight: Arc<InFlightTable>,
     mut deadline_rx: mpsc::UnboundedReceiver<DeadlineMessage>,
+    cancel_tx: mpsc::UnboundedSender<CancelRequest>,
     watched_deadlines: Arc<AtomicUsize>,
     mut shutdown_rx: oneshot::Receiver<()>,
 ) {
@@ -526,6 +609,13 @@ fn spawn_expired_event_cleanup_task(
                     "event deadline exceeded before a result was returned, \
                      removing it from the in-flight table"
                 );
+                // Nobody is waiting for this any more, so tell whichever handler
+                // holds it to stop rather than leaving it to finish work whose
+                // result will be discarded.
+                let _ = cancel_tx.send(CancelRequest {
+                    event_id,
+                    reason: CancelReason::DeadlineExceeded,
+                });
             }
         }
 

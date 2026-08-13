@@ -73,6 +73,8 @@ async fn start_runtime(name: &str, fixture: &str) -> (Application, std::net::Soc
 struct HandlerStub {
     /// The events the handler was asked to process.
     dispatches: mpsc::Receiver<proto::Dispatch>,
+    /// The events the handler was told to stop working on.
+    cancels: mpsc::Receiver<proto::Cancel>,
 }
 
 impl HandlerStub {
@@ -145,10 +147,16 @@ impl HandlerStub {
         );
 
         let (dispatch_tx, dispatches) = mpsc::channel(16);
+        let (cancel_tx, cancels) = mpsc::channel(16);
         tokio::spawn(async move {
             while let Some(Ok(message)) = frames.next().await {
-                let Some(runtime_message::Frame::Dispatch(dispatch)) = message.frame else {
-                    continue;
+                let dispatch = match message.frame {
+                    Some(runtime_message::Frame::Dispatch(dispatch)) => dispatch,
+                    Some(runtime_message::Frame::Cancel(cancel)) => {
+                        cancel_tx.send(cancel).await.ok();
+                        continue;
+                    }
+                    _ => continue,
                 };
                 let outcome = respond(&dispatch);
                 let id = dispatch.id.clone();
@@ -169,11 +177,21 @@ impl HandlerStub {
             }
         });
 
-        HandlerStub { dispatches }
+        HandlerStub {
+            dispatches,
+            cancels,
+        }
     }
 
     async fn next_dispatch(&mut self) -> Option<proto::Dispatch> {
         tokio::time::timeout(Duration::from_secs(10), self.dispatches.recv())
+            .await
+            .ok()
+            .flatten()
+    }
+
+    async fn next_cancel(&mut self) -> Option<proto::Cancel> {
+        tokio::time::timeout(Duration::from_secs(10), self.cancels.recv())
             .await
             .ok()
             .flatten()
@@ -302,6 +320,86 @@ async fn returns_504_when_the_handler_never_answers() {
     .unwrap();
 
     assert_eq!(response.status(), 504);
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn sheds_with_503_when_no_handler_stream_is_attached() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-no-handler",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    // No handler stub connects, which is what an application whose handlers
+    // executable has not started, or has crashed, looks like.
+
+    let started = tokio::time::Instant::now();
+    let response = tokio::time::timeout(
+        Duration::from_secs(20),
+        http_client().request(
+            Request::builder()
+                .uri(format!("http://{addr}/orders/order-1"))
+                .header("Host", "localhost")
+                .body(Body::empty())
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the runtime should answer rather than hang")
+    .unwrap();
+
+    // A capacity signal rather than a fault, and retryable.
+    assert_eq!(response.status(), 503);
+    assert!(response.headers().get("retry-after").is_some());
+    // This route's handler timeout is the sixty second default, so answering
+    // in seconds is what distinguishes shedding from waiting it out.
+    assert!(
+        started.elapsed() < Duration::from_secs(15),
+        "the request should have been shed after the grace window, took {:?}",
+        started.elapsed()
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn tells_the_handler_to_stop_work_whose_deadline_has_passed() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-cancel-deadline",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    // Withhold every result, so the event outlives its deadline.
+    let mut handler = HandlerStub::attach(&socket, |_| None).await;
+
+    // The POST route's timeout is deliberately short in this fixture.
+    let response = tokio::time::timeout(
+        Duration::from_secs(20),
+        http_client().request(
+            Request::builder()
+                .method("POST")
+                .uri(format!("http://{addr}/orders"))
+                .header("Host", "localhost")
+                .body(Body::from(r#"{"sku":"abc"}"#))
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the runtime should time the request out rather than hang")
+    .unwrap();
+    assert_eq!(response.status(), 504);
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the handler should have been given the request");
+    let cancel = handler
+        .next_cancel()
+        .await
+        .expect("the handler should be told to stop work nobody is waiting for");
+    assert_eq!(cancel.id, dispatch.id);
+    assert_eq!(cancel.reason(), proto::cancel::Reason::DeadlineExceeded);
 
     let _ = tokio::fs::remove_file(&socket).await;
 }
