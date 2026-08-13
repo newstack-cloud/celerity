@@ -11,7 +11,7 @@ pub struct Values {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RuntimeMessage {
-    #[prost(oneof = "runtime_message::Frame", tags = "1, 2, 3, 4, 5, 6, 7")]
+    #[prost(oneof = "runtime_message::Frame", tags = "1, 2, 3, 4, 5, 6")]
     pub frame: ::core::option::Option<runtime_message::Frame>,
 }
 /// Nested message and enum types in `RuntimeMessage`.
@@ -30,16 +30,13 @@ pub mod runtime_message {
         Cancel(super::Cancel),
         #[prost(message, tag = "5")]
         Drain(super::Drain),
-        /// The reply to a handler-initiated invoke.
         #[prost(message, tag = "6")]
-        InvokeResult(super::InvokeResult),
-        #[prost(message, tag = "7")]
         WsAck(super::WsSendAck),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct HandlerMessage {
-    #[prost(oneof = "handler_message::Frame", tags = "1, 2, 3, 4, 5, 6")]
+    #[prost(oneof = "handler_message::Frame", tags = "1, 2, 3, 4, 5")]
     pub frame: ::core::option::Option<handler_message::Frame>,
 }
 /// Nested message and enum types in `HandlerMessage`.
@@ -53,10 +50,8 @@ pub mod handler_message {
         #[prost(message, tag = "3")]
         Credit(super::CreditGrant),
         #[prost(message, tag = "4")]
-        Invoke(super::InvokeRequest),
-        #[prost(message, tag = "5")]
         WsSend(super::WsSend),
-        #[prost(message, tag = "6")]
+        #[prost(message, tag = "5")]
         Draining(super::Draining),
     }
 }
@@ -426,33 +421,49 @@ pub struct WsOutbound {
     pub is_binary: bool,
     #[prost(string, repeated, tag = "4")]
     pub inform_clients_on_loss: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Identifies this message to the runtime, for the acknowledgement between
+    /// nodes when the target connection lives on another one, and in the loss
+    /// event delivered to the clients named in inform_clients_on_loss. Generated
+    /// by the runtime when left empty, which is the right choice unless the
+    /// handler needs to match a loss event back to what it sent.
+    ///
+    /// Not the message id the client sees. The runtime sends `message` to the
+    /// socket exactly as given, so a client-visible id, and the acknowledgement
+    /// and deduplication that depend on it, is something the handler puts in the
+    /// payload it composes.
+    #[prost(string, tag = "5")]
+    pub message_id: ::prost::alloc::string::String,
+    /// The connection that caused this message to be sent, carried through to the
+    /// loss event so an informed client can tell who was being replied to. Only
+    /// meaningful alongside inform_clients_on_loss.
+    #[prost(string, tag = "6")]
+    pub caller: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+/// Reports what happened to each message in a WsSend.
+///
+/// Failures are per message rather than per batch because a client has no way to
+/// deduplicate: a message reaches it as a bare text or binary frame with no id,
+/// so re-sending one that already arrived is visible to the application. A
+/// handler must therefore be able to retry exactly what failed.
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct WsSendAck {
     #[prost(string, tag = "1")]
     pub correlation_id: ::prost::alloc::string::String,
+    /// True when every message was delivered, equivalent to failures being empty.
     #[prost(bool, tag = "2")]
     pub success: bool,
-    #[prost(string, tag = "3")]
-    pub error_message: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag = "3")]
+    pub failures: ::prost::alloc::vec::Vec<WsSendFailure>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct InvokeRequest {
-    #[prost(string, tag = "1")]
-    pub correlation_id: ::prost::alloc::string::String,
+pub struct WsSendFailure {
+    /// Index into WsSend.messages. Identifies the message rather than message_id
+    /// does, because the runtime generates that when the handler leaves it empty,
+    /// so the handler may never have seen it.
+    #[prost(uint32, tag = "1")]
+    pub index: u32,
     #[prost(string, tag = "2")]
-    pub handler_name: ::prost::alloc::string::String,
-    #[prost(bytes = "vec", tag = "3")]
-    pub input: ::prost::alloc::vec::Vec<u8>,
-    #[prost(int64, tag = "4")]
-    pub deadline_unix_ms: i64,
-}
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct InvokeResult {
-    #[prost(string, tag = "1")]
-    pub correlation_id: ::prost::alloc::string::String,
-    #[prost(bytes = "vec", tag = "2")]
-    pub output: ::prost::alloc::vec::Vec<u8>,
+    pub connection_id: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub error_message: ::prost::alloc::string::String,
 }

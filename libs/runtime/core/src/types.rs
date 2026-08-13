@@ -30,6 +30,8 @@ pub enum EventType {
     ScheduleMessage,
     #[serde(rename = "eventMessage")]
     EventMessage,
+    #[serde(rename = "customInvoke")]
+    CustomInvoke,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -39,6 +41,7 @@ pub enum EventDataPayload {
     ConsumerMessageEventData(ConsumerEventData),
     ScheduleMessageEventData(ScheduleEventData),
     EventMessageEventData(EventMessageEventData),
+    CustomInvokeEventData(CustomInvokeEventData),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -134,6 +137,20 @@ pub struct ScheduleEventData {
     pub vendor: Value,
 }
 
+/// A handler invoked by name rather than by a request, a message or a schedule.
+///
+/// Reaches the runtime through the local invoke endpoint, which exists so that
+/// any handler can be exercised directly while developing or testing, whatever
+/// normally triggers it. The input is passed through untouched, so it is the
+/// caller's job to send the shape that handler expects.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CustomInvokeEventData {
+    #[serde(rename = "handlerName")]
+    pub handler_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input: Option<Value>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EventMessageEventData {
     pub body: String,
@@ -225,6 +242,20 @@ pub enum EventResultData {
     MessageProcessingResponse(MessageProcessingResponseData),
     ScheduledEventResponse(ScheduledEventResponseData),
     EventResponse(SimpleResponseData),
+    /// Last because this enum is untagged, so variants are tried in order. Every
+    /// variant above requires either `success` or the full HTTP triple, and this
+    /// one requires `output`, so none of them can shadow each other.
+    CustomInvokeResponse(CustomInvokeResponseData),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CustomInvokeResponseData {
+    /// Whatever the handler returned, as it was serialised. Carried as text
+    /// rather than parsed, since the runtime has no reason to look inside it.
+    pub output: String,
+    #[serde(rename = "errorMessage")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

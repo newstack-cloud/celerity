@@ -10,7 +10,7 @@
 //! The service implementation is a thin adapter over it.
 
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     pin::Pin,
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -18,10 +18,15 @@ use std::{
     },
 };
 
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use celerity_ws_registry::{
+    registry::{SendContext, WebSocketRegistrySend},
+    types::MessageType,
+};
 use futures::{Stream, StreamExt};
 use tokio::sync::{mpsc, oneshot};
 use tonic::Status;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     config::AppConfig,
@@ -44,6 +49,8 @@ pub struct StreamContext {
     pub blueprint_tags: HashSet<String>,
     pub commands: mpsc::Sender<DispatcherCommand>,
     pub in_flight: Arc<InFlightTable>,
+    /// Where messages a handler sends to WebSocket clients are delivered.
+    pub ws_registry: Arc<dyn WebSocketRegistrySend>,
 }
 
 /// The outcome of checking a handler's declared tags against the blueprint.
@@ -192,6 +199,30 @@ pub fn runtime_config_from_app_config(
     }
 }
 
+/// The handler tag for each handler name the runtime config declares.
+///
+/// Direct invocation addresses a handler by name, but dispatch routes by tag,
+/// so this is what bridges the two. Built from the same config the handler is
+/// sent, so a name the runtime will accept is by construction one the handler
+/// was told about.
+pub fn handler_tags_by_name(config: &proto::RuntimeConfig) -> HashMap<String, String> {
+    let mut by_name = HashMap::new();
+    for handler in &config.handlers {
+        if let Some(existing) =
+            by_name.insert(handler.handler_name.clone(), handler.handler_tag.clone())
+        {
+            // Names come from blueprint resource names, so this means two
+            // resources share one. Direct invocation of that name is ambiguous
+            // and whichever tag wins here is arbitrary.
+            warn!(
+                handler_name = %handler.handler_name,
+                "two handlers share a name, direct invocation will reach only one of them, dropping the tag {existing}"
+            );
+        }
+    }
+    by_name
+}
+
 /// The tags a runtime config declares, which is what a handshake is checked
 /// against.
 pub fn tags_from_runtime_config(config: &proto::RuntimeConfig) -> HashSet<String> {
@@ -226,7 +257,7 @@ pub async fn run_stream<I>(
 ) where
     I: Stream<Item = Result<proto::HandlerMessage, Status>> + Unpin,
 {
-    if send(&outbound, frame_config(context.runtime_config.clone()))
+    if send_frame(&outbound, frame_config(context.runtime_config.clone()))
         .await
         .is_err()
     {
@@ -249,7 +280,7 @@ pub async fn run_stream<I>(
         );
     }
 
-    let _ = send(
+    let _ = send_frame(
         &outbound,
         frame_ready_ack(proto::ReadyAck {
             accepted,
@@ -300,7 +331,7 @@ pub async fn run_stream<I>(
         tokio::select! {
             frame = dispatch_rx.recv() => match frame {
                 Some(frame) => {
-                    if send(&outbound, runtime_frame(frame)).await.is_err() {
+                    if send_frame(&outbound, runtime_frame(frame)).await.is_err() {
                         break;
                     }
                 }
@@ -308,7 +339,7 @@ pub async fn run_stream<I>(
             },
             message = inbound.next() => match message {
                 Some(Ok(message)) => {
-                    if !handle_inbound(stream_id, &context, message).await {
+                    if !handle_inbound(stream_id, &context, &outbound, message).await {
                         break;
                     }
                 }
@@ -355,10 +386,23 @@ where
 /// Applies one frame from the handler. Returns whether the stream continues.
 async fn handle_inbound(
     stream_id: StreamId,
-    context: &StreamContext,
+    context: &Arc<StreamContext>,
+    outbound: &mpsc::Sender<Result<proto::RuntimeMessage, Status>>,
     message: proto::HandlerMessage,
 ) -> bool {
     match message.frame {
+        Some(proto::handler_message::Frame::WsSend(send)) => {
+            // Spawned rather than awaited, because delivering to a slow or
+            // remote connection must not hold up the events queued behind it
+            // on this stream.
+            let context = context.clone();
+            let outbound = outbound.clone();
+            tokio::spawn(async move {
+                let ack = send_to_websockets(stream_id, &context, send).await;
+                let _ = send_frame(&outbound, frame_ws_ack(ack)).await;
+            });
+            true
+        }
         Some(proto::handler_message::Frame::Result(result)) => {
             complete(stream_id, context, result).await;
             true
@@ -431,16 +475,123 @@ async fn complete(stream_id: StreamId, context: &StreamContext, result: proto::R
         .await;
 }
 
-async fn send(
+async fn send_frame(
     outbound: &mpsc::Sender<Result<proto::RuntimeMessage, Status>>,
     frame: proto::RuntimeMessage,
 ) -> Result<(), ()> {
     outbound.send(Ok(frame)).await.map_err(|_| ())
 }
 
+/// Delivers a handler's outbound WebSocket messages and reports what happened.
+///
+/// Every message is attempted even when an earlier one fails, so that one dead
+/// connection in a batch does not stop the rest being delivered, and each
+/// failure is reported against its position in the batch so a handler can retry
+/// exactly those. Reporting only a single outcome for the batch would leave a
+/// handler no choice but to resend all of it, delivering the successful ones
+/// twice.
+async fn send_to_websockets(
+    stream_id: StreamId,
+    context: &StreamContext,
+    send: proto::WsSend,
+) -> proto::WsSendAck {
+    let correlation_id = send.correlation_id;
+    let mut failures = Vec::new();
+
+    for (index, outbound) in send.messages.into_iter().enumerate() {
+        let index = index as u32;
+        let connection_id = outbound.connection_id.clone();
+        let (message_type, message) = match encode_outbound(&outbound) {
+            Ok(encoded) => encoded,
+            Err(err) => {
+                failures.push(proto::WsSendFailure {
+                    index,
+                    connection_id,
+                    error_message: err,
+                });
+                continue;
+            }
+        };
+
+        // Generated here when the handler did not supply one, since the id
+        // exists to correlate acknowledgements and loss events rather than to
+        // mean anything to the application.
+        let message_id = if outbound.message_id.is_empty() {
+            nanoid::nanoid!()
+        } else {
+            outbound.message_id
+        };
+
+        if let Err(err) = context
+            .ws_registry
+            .send_message(
+                connection_id.clone(),
+                message_id,
+                message_type,
+                message,
+                send_context(outbound.caller, outbound.inform_clients_on_loss),
+            )
+            .await
+        {
+            error!(stream_id, %connection_id, "failed to send a websocket message: {err}");
+            failures.push(proto::WsSendFailure {
+                index,
+                connection_id,
+                error_message: err.to_string(),
+            });
+        }
+    }
+
+    proto::WsSendAck {
+        correlation_id,
+        success: failures.is_empty(),
+        failures,
+    }
+}
+
+/// Renders an outbound message the way the connection registry expects it.
+///
+/// The registry carries a message as a string, so a binary frame travels as its
+/// base64 encoding and is decoded again before it reaches the socket. A text
+/// frame has to be valid UTF-8, and a handler that marks bytes as text without
+/// that being true is told rather than having them silently mangled.
+fn encode_outbound(outbound: &proto::WsOutbound) -> Result<(MessageType, String), String> {
+    if outbound.is_binary {
+        return Ok((MessageType::Binary, BASE64.encode(&outbound.message)));
+    }
+    match std::str::from_utf8(&outbound.message) {
+        Ok(text) => Ok((MessageType::Json, text.to_string())),
+        Err(err) => Err(format!("a text message must be valid UTF-8: {err}")),
+    }
+}
+
+/// Builds the context that decides what happens when a message cannot be
+/// delivered.
+///
+/// Only meaningful when the handler named clients to inform, which is why no
+/// context is produced without them. Acknowledgements are not waited for, since
+/// the handler has already been told the send was accepted and holding the
+/// stream for a cluster round trip would delay every message behind it.
+fn send_context(caller: String, inform_clients: Vec<String>) -> Option<SendContext> {
+    if inform_clients.is_empty() {
+        return None;
+    }
+    Some(SendContext {
+        caller: (!caller.is_empty()).then_some(caller),
+        inform_clients,
+        wait_for_ack: false,
+    })
+}
+
 fn frame_config(config: proto::RuntimeConfig) -> proto::RuntimeMessage {
     proto::RuntimeMessage {
         frame: Some(proto::runtime_message::Frame::Config(config)),
+    }
+}
+
+fn frame_ws_ack(ack: proto::WsSendAck) -> proto::RuntimeMessage {
+    proto::RuntimeMessage {
+        frame: Some(proto::runtime_message::Frame::WsAck(ack)),
     }
 }
 
@@ -532,21 +683,64 @@ mod tests {
         tags.iter().map(|tag| tag.to_string()).collect()
     }
 
+    /// Stands in for the connection registry, recording what reached it and
+    /// failing for connections named as unreachable.
+    #[derive(Debug, Default)]
+    struct RecordingWsRegistry {
+        sent: std::sync::Mutex<Vec<(String, String, MessageType, String)>>,
+        unreachable: HashSet<String>,
+    }
+
+    impl std::fmt::Display for RecordingWsRegistry {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "RecordingWsRegistry")
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl WebSocketRegistrySend for RecordingWsRegistry {
+        async fn send_message(
+            &self,
+            connection_id: String,
+            message_id: String,
+            message_type: MessageType,
+            message: String,
+            _: Option<SendContext>,
+        ) -> Result<(), celerity_ws_registry::errors::WebSocketConnError> {
+            if self.unreachable.contains(&connection_id) {
+                return Err(
+                    celerity_ws_registry::errors::WebSocketConnError::MessageLost(message_id),
+                );
+            }
+            self.sent
+                .lock()
+                .unwrap()
+                .push((connection_id, message_id, message_type, message));
+            Ok(())
+        }
+    }
+
     struct Harness {
         inbound_tx: mpsc::Sender<Result<proto::HandlerMessage, Status>>,
         outbound_rx: mpsc::Receiver<Result<proto::RuntimeMessage, Status>>,
         commands_rx: mpsc::Receiver<DispatcherCommand>,
         in_flight: Arc<InFlightTable>,
+        ws_registry: Arc<RecordingWsRegistry>,
         _cleanup: oneshot::Sender<()>,
     }
 
     fn start(tags: &[&str]) -> Harness {
+        start_with_registry(tags, RecordingWsRegistry::default())
+    }
+
+    fn start_with_registry(tags: &[&str], registry: RecordingWsRegistry) -> Harness {
         let (handles, cleanup) = EventQueueParts::new(8).into_parts();
         let cleanup_shutdown = cleanup.spawn();
         let (commands_tx, commands_rx) = mpsc::channel(16);
         let (inbound_tx, inbound_rx) = mpsc::channel(16);
         let (outbound_tx, outbound_rx) = mpsc::channel(16);
 
+        let ws_registry = Arc::new(registry);
         let context = Arc::new(StreamContext {
             runtime_config: proto::RuntimeConfig {
                 tracing_enabled: false,
@@ -556,6 +750,7 @@ mod tests {
             blueprint_tags: blueprint_tags(tags),
             commands: commands_tx,
             in_flight: handles.in_flight.clone(),
+            ws_registry: ws_registry.clone(),
         });
 
         let in_flight = handles.in_flight.clone();
@@ -571,6 +766,7 @@ mod tests {
             outbound_rx,
             commands_rx,
             in_flight,
+            ws_registry,
             _cleanup: cleanup_shutdown,
         }
     }
@@ -758,6 +954,203 @@ mod tests {
             panic!("expected the slot and credit to be returned, got {command:?}");
         };
         assert_eq!(credit_grant, 1);
+    }
+
+    async fn ready_stream(harness: &mut Harness) -> Box<StreamRegistration> {
+        let _config = next_frame(&mut harness.outbound_rx).await;
+        harness
+            .inbound_tx
+            .send(Ok(ready(&["schedule::a"])))
+            .await
+            .unwrap();
+        let _ack = next_frame(&mut harness.outbound_rx).await;
+        complete_handshake(harness).await
+    }
+
+    fn ws_send(correlation_id: &str, messages: Vec<proto::WsOutbound>) -> proto::HandlerMessage {
+        proto::HandlerMessage {
+            frame: Some(proto::handler_message::Frame::WsSend(proto::WsSend {
+                correlation_id: correlation_id.to_string(),
+                messages,
+            })),
+        }
+    }
+
+    fn outbound(connection_id: &str, message: &[u8], is_binary: bool) -> proto::WsOutbound {
+        proto::WsOutbound {
+            connection_id: connection_id.to_string(),
+            message: message.to_vec(),
+            is_binary,
+            inform_clients_on_loss: vec![],
+            message_id: String::new(),
+            caller: String::new(),
+        }
+    }
+
+    #[tokio::test]
+    async fn delivers_a_websocket_message_a_handler_sent() {
+        let mut harness = start(&["schedule::a"]);
+        let _registration = ready_stream(&mut harness).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ws_send(
+                "correlation-1",
+                vec![outbound("connection-1", br#"{"event":"tick"}"#, false)],
+            )))
+            .await
+            .unwrap();
+
+        let Some(proto::runtime_message::Frame::WsAck(ack)) =
+            next_frame(&mut harness.outbound_rx).await
+        else {
+            panic!("expected the send to be acknowledged");
+        };
+        assert_eq!(ack.correlation_id, "correlation-1");
+        assert!(ack.success, "unexpected failures: {:?}", ack.failures);
+
+        let sent = harness.ws_registry.sent.lock().unwrap().clone();
+        assert_eq!(sent.len(), 1);
+        assert_eq!(sent[0].0, "connection-1");
+        assert_eq!(sent[0].2, MessageType::Json);
+        assert_eq!(sent[0].3, r#"{"event":"tick"}"#);
+        // Generated for the handler, which did not supply one.
+        assert!(!sent[0].1.is_empty());
+    }
+
+    #[tokio::test]
+    async fn carries_a_binary_websocket_message_without_corrupting_it() {
+        let mut harness = start(&["schedule::a"]);
+        let _registration = ready_stream(&mut harness).await;
+
+        // Bytes that are not valid UTF-8, so a text path would destroy them.
+        let payload = vec![0xff, 0xfe, 0x00, 0x80, 0x01];
+        harness
+            .inbound_tx
+            .send(Ok(ws_send(
+                "correlation-1",
+                vec![outbound("connection-1", &payload, true)],
+            )))
+            .await
+            .unwrap();
+
+        let Some(proto::runtime_message::Frame::WsAck(ack)) =
+            next_frame(&mut harness.outbound_rx).await
+        else {
+            panic!("expected the send to be acknowledged");
+        };
+        assert!(ack.success);
+
+        let sent = harness.ws_registry.sent.lock().unwrap().clone();
+        assert_eq!(sent[0].2, MessageType::Binary);
+        // The registry carries a message as a string, so binary travels base64
+        // encoded and is decoded again on its way to the socket.
+        assert_eq!(BASE64.decode(&sent[0].3).unwrap(), payload);
+    }
+
+    #[tokio::test]
+    async fn delivers_the_rest_of_a_batch_when_one_connection_fails() {
+        let mut harness = start_with_registry(
+            &["schedule::a"],
+            RecordingWsRegistry {
+                unreachable: blueprint_tags(&["gone"]),
+                ..Default::default()
+            },
+        );
+        let _registration = ready_stream(&mut harness).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ws_send(
+                "correlation-1",
+                vec![
+                    outbound("gone", b"{}", false),
+                    outbound("here", b"{}", false),
+                ],
+            )))
+            .await
+            .unwrap();
+
+        let Some(proto::runtime_message::Frame::WsAck(ack)) =
+            next_frame(&mut harness.outbound_rx).await
+        else {
+            panic!("expected the send to be acknowledged");
+        };
+        // The failure is reported against its position in the batch, so a
+        // handler retries only that message. Resending the whole batch would
+        // deliver the second message twice, and a client can only tell the
+        // difference if the application put a message id in the payload.
+        assert!(!ack.success);
+        assert_eq!(ack.failures.len(), 1);
+        assert_eq!(ack.failures[0].index, 0);
+        assert_eq!(ack.failures[0].connection_id, "gone");
+
+        let sent = harness.ws_registry.sent.lock().unwrap().clone();
+        assert_eq!(sent.len(), 1);
+        assert_eq!(sent[0].0, "here");
+    }
+
+    #[tokio::test]
+    async fn refuses_a_text_websocket_message_that_is_not_utf8() {
+        let mut harness = start(&["schedule::a"]);
+        let _registration = ready_stream(&mut harness).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ws_send(
+                "correlation-1",
+                vec![outbound("connection-1", &[0xff, 0xfe], false)],
+            )))
+            .await
+            .unwrap();
+
+        let Some(proto::runtime_message::Frame::WsAck(ack)) =
+            next_frame(&mut harness.outbound_rx).await
+        else {
+            panic!("expected the send to be acknowledged");
+        };
+        // Told rather than silently mangled into replacement characters.
+        assert!(!ack.success);
+        assert_eq!(ack.failures.len(), 1);
+        assert_eq!(ack.failures[0].index, 0);
+        assert!(ack.failures[0].error_message.contains("UTF-8"));
+        assert!(harness.ws_registry.sent.lock().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn keeps_dispatching_while_a_websocket_send_is_in_progress() {
+        let mut harness = start(&["schedule::a"]);
+        let registration = ready_stream(&mut harness).await;
+
+        harness
+            .inbound_tx
+            .send(Ok(ws_send(
+                "correlation-1",
+                vec![outbound("connection-1", b"{}", false)],
+            )))
+            .await
+            .unwrap();
+
+        // An event queued behind the send still goes out, which is what the
+        // send being spawned rather than awaited buys.
+        registration
+            .dispatch_tx
+            .send(crate::dispatcher::StreamFrame::Drain {
+                deadline_unix_ms: 1,
+            })
+            .await
+            .unwrap();
+
+        let mut seen_ack = false;
+        let mut seen_drain = false;
+        for _ in 0..2 {
+            match next_frame(&mut harness.outbound_rx).await {
+                Some(proto::runtime_message::Frame::WsAck(_)) => seen_ack = true,
+                Some(proto::runtime_message::Frame::Drain(_)) => seen_drain = true,
+                other => panic!("unexpected frame {other:?}"),
+            }
+        }
+        assert!(seen_ack && seen_drain);
     }
 
     #[tokio::test]

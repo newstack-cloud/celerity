@@ -1,0 +1,49 @@
+version: 2025-11-02
+transform: celerity-2026-02-28
+variables:
+  logLevel:
+    type: string
+    description: "The log level to use for logging."
+    default: "INFO"
+    allowedValues:
+      - "DEBUG"
+      - "INFO"
+      - "WARNING"
+      - "ERROR"
+
+# No API of any kind. Handlers here have nothing that triggers them from
+# outside, which is the case direct invocation exists for.
+resources:
+  reindexHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Reindex Handler
+      labels:
+        application: "orders"
+    spec:
+      handlerName: Orders-ReindexHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.reindex"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 2
+      tracingEnabled: false
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"
+
+  reconcileHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Reconcile Handler
+      labels:
+        application: "orders"
+    spec:
+      handlerName: Orders-ReconcileHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.reconcile"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 2
+      tracingEnabled: false
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"

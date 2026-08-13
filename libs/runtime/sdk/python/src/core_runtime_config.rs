@@ -84,6 +84,8 @@ pub struct CoreRuntimeConfig {
   #[pyo3(get)]
   pub log_format: Option<String>,
   #[pyo3(get)]
+  pub enable_local_invoke: bool,
+  #[pyo3(get)]
   pub metrics_enabled: bool,
   #[pyo3(get)]
   pub trace_sample_ratio: f64,
@@ -117,6 +119,7 @@ struct InternalCoreRuntimeConfig {
   resource_store_cleanup_interval: Option<i64>,
   client_ip_source: Option<String>,
   log_format: Option<String>,
+  enable_local_invoke: Option<bool>,
   metrics_enabled: Option<bool>,
   trace_sample_ratio: Option<f64>,
 }
@@ -149,6 +152,7 @@ impl CoreRuntimeConfigBuilder {
         resource_store_cleanup_interval: None,
         client_ip_source: None,
         log_format: None,
+        enable_local_invoke: None,
         metrics_enabled: None,
         trace_sample_ratio: None,
       },
@@ -244,6 +248,11 @@ impl CoreRuntimeConfigBuilder {
     self_.into()
   }
 
+  fn set_enable_local_invoke(mut self_: PyRefMut<Self>, enable_local_invoke: bool) -> Py<Self> {
+    self_.core_runtime_config.enable_local_invoke = Some(enable_local_invoke);
+    self_.into()
+  }
+
   fn set_metrics_enabled(mut self_: PyRefMut<Self>, metrics_enabled: bool) -> Py<Self> {
     self_.core_runtime_config.metrics_enabled = Some(metrics_enabled);
     self_.into()
@@ -294,6 +303,10 @@ impl CoreRuntimeConfigBuilder {
         .unwrap_or(DEFAULT_RESOURCE_STORE_CLEANUP_INTERVAL),
       client_ip_source: self.core_runtime_config.client_ip_source.clone(),
       log_format: self.core_runtime_config.log_format.clone(),
+      enable_local_invoke: self
+        .core_runtime_config
+        .enable_local_invoke
+        .unwrap_or(false),
       metrics_enabled: self.core_runtime_config.metrics_enabled.unwrap_or(false),
       trace_sample_ratio: self.core_runtime_config.trace_sample_ratio.unwrap_or(0.1),
     };
@@ -321,6 +334,7 @@ impl From<RuntimeConfig> for CoreRuntimeConfig {
       resource_store_cleanup_interval: runtime_config.resource_store_cleanup_interval,
       client_ip_source: Some(format!("{:?}", runtime_config.client_ip_source)),
       log_format: runtime_config.log_format,
+      enable_local_invoke: runtime_config.enable_local_invoke,
       metrics_enabled: runtime_config.metrics_enabled,
       trace_sample_ratio: runtime_config.trace_sample_ratio,
     }

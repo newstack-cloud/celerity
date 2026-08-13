@@ -56,6 +56,19 @@ pub struct RuntimeConfig {
     /// Set it when the deployment has its own grace period to respect,
     /// which should be the larger of the two if in-flight work is to finish.
     pub drain_timeout: Option<u64>,
+    /// Whether to serve `POST /runtime/handlers/invoke`, which runs any handler
+    /// the blueprint declares, by name, with a payload the caller supplies.
+    ///
+    /// Off unless asked for, and one of two conditions rather than the whole
+    /// decision; the runtime must also be on a local platform or in test mode.
+    /// Setting it can therefore take the endpoint away locally but cannot
+    /// introduce it anywhere else.
+    ///
+    /// Both are required because it bypasses whatever normally triggers a
+    /// handler and is not covered by the API's auth guards, including a
+    /// configured default guard, since it is not a blueprint route. Anything
+    /// bringing up a local environment has to turn it on deliberately.
+    pub enable_local_invoke: bool,
     /// Set to true if one of your handlers defines a custom health check endpoint.
     ///
     /// Defaults to false.
@@ -239,6 +252,15 @@ impl RuntimeConfig {
             _ => RuntimePlatform::Other,
         };
 
+        let enable_local_invoke = env
+            .var("CELERITY_ENABLE_LOCAL_INVOKE")
+            .map(|val| {
+                val.parse().expect(
+                    "Invalid enable local invoke value, must be either \"true\" or \"false\"",
+                )
+            })
+            .unwrap_or(false);
+
         let test_mode = env
             .var("CELERITY_TEST_MODE")
             .map(|val| {
@@ -309,6 +331,7 @@ impl RuntimeConfig {
             local_api_port,
             runtime_socket,
             drain_timeout,
+            enable_local_invoke,
             use_custom_health_check,
             trace_otlp_collector_endpoint,
             runtime_max_diagnostics_level,

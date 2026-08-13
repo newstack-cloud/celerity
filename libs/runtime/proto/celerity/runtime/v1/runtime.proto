@@ -28,9 +28,7 @@ message RuntimeMessage {
     Dispatch dispatch = 3;
     Cancel cancel = 4;
     Drain drain = 5;
-    // The reply to a handler-initiated invoke.
-    InvokeResult invoke_result = 6;
-    WsSendAck ws_ack = 7;
+    WsSendAck ws_ack = 6;
   }
 }
 
@@ -41,9 +39,8 @@ message HandlerMessage {
     Ready ready = 1;
     Result result = 2;
     CreditGrant credit = 3;
-    InvokeRequest invoke = 4;
-    WsSend ws_send = 5;
-    Draining draining = 6;
+    WsSend ws_send = 4;
+    Draining draining = 5;
   }
 }
 
@@ -271,7 +268,7 @@ message HandlerError {
   string stack = 3;
 }
 
-// ──────────────────── side channels on the same stream ────────────────────
+// ─────────────────── side channel on the same stream ───────────────────
 
 message WsSend {
   string correlation_id = 1;
@@ -283,24 +280,42 @@ message WsOutbound {
   bytes message = 2;
   bool is_binary = 3;
   repeated string inform_clients_on_loss = 4;
+  // Identifies this message to the runtime, for the acknowledgement between
+  // nodes when the target connection lives on another one, and in the loss
+  // event delivered to the clients named in inform_clients_on_loss. Generated
+  // by the runtime when left empty, which is the right choice unless the
+  // handler needs to match a loss event back to what it sent.
+  //
+  // Not the message id the client sees. The runtime sends `message` to the
+  // socket exactly as given, so a client-visible id, and the acknowledgement
+  // and deduplication that depend on it, is something the handler puts in the
+  // payload it composes.
+  string message_id = 5;
+  // The connection that caused this message to be sent, carried through to the
+  // loss event so an informed client can tell who was being replied to. Only
+  // meaningful alongside inform_clients_on_loss.
+  string caller = 6;
 }
 
+// Reports what happened to each message in a WsSend.
+//
+// Failures are per message rather than per batch because a client has no way to
+// deduplicate: a message reaches it as a bare text or binary frame with no id,
+// so re-sending one that already arrived is visible to the application. A
+// handler must therefore be able to retry exactly what failed.
 message WsSendAck {
   string correlation_id = 1;
+  // True when every message was delivered, equivalent to failures being empty.
   bool success = 2;
-  string error_message = 3;
+  repeated WsSendFailure failures = 3;
 }
 
-message InvokeRequest {
-  string correlation_id = 1;
-  string handler_name = 2;
-  bytes input = 3;
-  int64 deadline_unix_ms = 4;
-}
-
-message InvokeResult {
-  string correlation_id = 1;
-  bytes output = 2;
+message WsSendFailure {
+  // Index into WsSend.messages. Identifies the message rather than message_id
+  // does, because the runtime generates that when the handler leaves it empty,
+  // so the handler may never have seen it.
+  uint32 index = 1;
+  string connection_id = 2;
   string error_message = 3;
 }
 

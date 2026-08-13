@@ -1472,6 +1472,7 @@ mod tests {
             local_api_port: 8592,
             runtime_socket: "/tmp/celerity-test.sock".to_string(),
             drain_timeout: None,
+            enable_local_invoke: false,
             use_custom_health_check: None,
             trace_otlp_collector_endpoint: "".to_string(),
             runtime_max_diagnostics_level: Level::INFO,
