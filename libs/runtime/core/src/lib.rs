@@ -7,6 +7,7 @@ pub mod body_transform;
 pub mod config;
 pub mod consts;
 pub mod consumer_handler;
+pub mod dispatcher;
 pub mod errors;
 pub mod event_queue;
 pub mod handler_invoke;

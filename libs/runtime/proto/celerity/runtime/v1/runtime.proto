@@ -88,10 +88,14 @@ message ReadyAck {
 // this frame exists for resizing the window,
 // for grants not tied to a completion, and for resuming after a
 // deliberate withhold.
+//
+// There is one credit window per stream, covering every tag it serves.
+// Isolation between tags is expressed by the concurrency caps in Ready, not by
+// separate credit pools, a cap is what stops one slow tag consuming the whole
+// window. Granting credit for a single tag would be a second mechanism for the
+// same concern, and would let one tag stall unnoticed while the others flow.
 message CreditGrant {
   uint32 additional = 1;
-  // Absent means the global pool.
-  optional string handler_tag = 2;
 }
 
 message Dispatch {
