@@ -651,7 +651,7 @@ impl Application {
                      loopback tcp on {port} as configured, which lets any process that can \
                      reach loopback register as a handler and be given events"
                 );
-                let addr = SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, port as u16));
+                let addr = SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, port));
                 tokio::spawn(async move {
                     if let Err(err) = Server::builder()
                         .add_service(service)

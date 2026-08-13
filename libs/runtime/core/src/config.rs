@@ -38,7 +38,7 @@ pub struct RuntimeConfig {
     /// The loopback port the handler stream is served on when a Unix socket
     /// cannot be bound and [`RuntimeConfig::runtime_socket_fallback_enabled`]
     /// allows it.
-    pub runtime_socket_fallback_port: i32,
+    pub runtime_socket_fallback_port: u16,
     /// Whether to serve the handler stream over loopback TCP when a Unix socket
     /// cannot be bound.
     ///
@@ -231,7 +231,16 @@ impl RuntimeConfig {
             .var("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT")
             .unwrap_or_else(|_| DEFAULT_RUNTIME_SOCKET_FALLBACK_PORT.to_string())
             .parse()
-            .expect("Invalid runtime socket fallback port, must be a valid integer");
+            .expect("Invalid runtime socket fallback port, must be a whole number from 0 to 65535");
+
+        // A port of zero asks the operating system for whichever one is free,
+        // which a handlers executable has no way to discover. Harmless while
+        // the fallback is off, since nothing binds it then.
+        assert!(
+            !(runtime_socket_fallback_enabled && runtime_socket_fallback_port == 0),
+            "Invalid runtime socket fallback port, must be a specific port when the fallback \
+             is enabled, since a handlers executable has to know where to connect"
+        );
 
         let runtime_socket = env
             .var("CELERITY_RUNTIME_SOCKET")
@@ -641,4 +650,98 @@ pub struct CustomHandlerDefinition {
     // Timeout in seconds.
     pub timeout: i64,
     pub tracing_enabled: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use celerity_helpers::env::EnvVars;
+
+    use super::*;
+
+    #[derive(Clone)]
+    struct MapEnv(HashMap<&'static str, String>);
+
+    impl EnvVars for MapEnv {
+        fn var(&self, key: &str) -> Result<String, std::env::VarError> {
+            self.0
+                .get(key)
+                .cloned()
+                .ok_or(std::env::VarError::NotPresent)
+        }
+
+        fn clone_env_vars(&self) -> Box<dyn EnvVars> {
+            Box::new(self.clone())
+        }
+    }
+
+    /// The smallest environment `from_env` will accept, plus whatever a test
+    /// is actually about.
+    fn env(overrides: &[(&'static str, &str)]) -> MapEnv {
+        let mut vars: HashMap<&'static str, String> = vec![
+            ("CELERITY_BLUEPRINT", "blueprint.yaml".to_string()),
+            ("CELERITY_SERVICE_NAME", "test".to_string()),
+            ("CELERITY_SERVER_PORT", "8080".to_string()),
+            ("CELERITY_RUNTIME_PLATFORM", "local".to_string()),
+            ("CELERITY_RUNTIME_CALL_MODE", "ipc".to_string()),
+        ]
+        .into_iter()
+        .collect();
+        for (key, value) in overrides {
+            vars.insert(key, value.to_string());
+        }
+        MapEnv(vars)
+    }
+
+    #[test]
+    fn reads_a_fallback_port_within_the_range_a_port_can_take() {
+        let config =
+            RuntimeConfig::from_env(&env(&[("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT", "9000")]));
+
+        assert_eq!(config.runtime_socket_fallback_port, 9000);
+    }
+
+    #[test]
+    fn defaults_the_fallback_port_when_it_is_not_set() {
+        let config = RuntimeConfig::from_env(&env(&[]));
+
+        assert_eq!(
+            config.runtime_socket_fallback_port.to_string(),
+            DEFAULT_RUNTIME_SOCKET_FALLBACK_PORT
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid runtime socket fallback port")]
+    fn refuses_a_fallback_port_above_the_range_a_port_can_take() {
+        // Held as a u16 so this cannot quietly wrap to 4464 and bind the wrong
+        // port, which is what an i32 truncated at the point of use would do.
+        RuntimeConfig::from_env(&env(&[("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT", "70000")]));
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid runtime socket fallback port")]
+    fn refuses_a_negative_fallback_port() {
+        RuntimeConfig::from_env(&env(&[("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT", "-1")]));
+    }
+
+    #[test]
+    #[should_panic(expected = "must be a specific port when the fallback")]
+    fn refuses_an_ephemeral_fallback_port_when_the_fallback_is_enabled() {
+        RuntimeConfig::from_env(&env(&[
+            ("CELERITY_RUNTIME_SOCKET_FALLBACK_ENABLED", "true"),
+            ("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT", "0"),
+        ]));
+    }
+
+    #[test]
+    fn allows_an_ephemeral_fallback_port_while_the_fallback_is_off() {
+        // Nothing binds it, so the value is never used.
+        let config =
+            RuntimeConfig::from_env(&env(&[("CELERITY_RUNTIME_SOCKET_FALLBACK_PORT", "0")]));
+
+        assert_eq!(config.runtime_socket_fallback_port, 0);
+        assert!(!config.runtime_socket_fallback_enabled);
+    }
 }
