@@ -1304,6 +1304,7 @@ impl CoreRuntimeApplication {
       server_loopback_only: runtime_config.server_loopback_only,
       // Unused in the FFI call mode, where handlers run in-process.
       runtime_socket_fallback_port: 0,
+      runtime_socket_fallback_enabled: false,
       // Unused in the FFI call mode, where handlers run in-process.
       runtime_socket: String::new(),
       drain_timeout: None,

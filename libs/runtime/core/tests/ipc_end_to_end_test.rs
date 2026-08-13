@@ -360,6 +360,61 @@ async fn splits_a_catch_all_path_into_segments_without_losing_encoded_separators
 }
 
 #[test_log::test(tokio::test)]
+async fn restricts_the_handler_socket_to_the_runtime_user() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let (_app, _addr, socket) = start_runtime(
+        "ipc-socket-mode",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+
+    // Anything able to connect can register as a handler and be given events,
+    // so the permissions on this socket are the whole of the access control.
+    let mode = tokio::fs::metadata(&socket)
+        .await
+        .expect("the socket should exist")
+        .permissions()
+        .mode()
+        & 0o777;
+    assert_eq!(mode, 0o600, "socket mode was {mode:o}");
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
+async fn refuses_to_take_over_a_socket_another_runtime_is_listening_on() {
+    let (_app, _addr, socket) = start_runtime(
+        "ipc-socket-contended",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+
+    // A second runtime pointed at the same socket must not unlink it. Doing so
+    // would leave the first serving a socket nothing can reach any more.
+    let env_vars = ipc_env(
+        "ipc-socket-contended-second",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+        &socket,
+        &[("CELERITY_SERVER_PORT", "0")],
+    );
+    let runtime_config = RuntimeConfig::from_env(&env_vars);
+    let mut second = Application::new(runtime_config, Box::new(env_vars));
+    second.setup().unwrap();
+
+    let started = second.run(false).await;
+    assert!(
+        started.is_err(),
+        "the second runtime should refuse to start rather than take the socket"
+    );
+
+    // The first is still reachable, which is the point of refusing.
+    let _handler = HandlerStub::attach(&socket, |_| None).await;
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn returns_504_when_the_handler_never_answers() {
     let (_app, addr, socket) = start_runtime(
         "ipc-timeout",
