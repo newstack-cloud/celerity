@@ -543,13 +543,26 @@ impl Dispatcher {
     }
 
     /// Tells the handlers still holding events that the runtime has stopped
-    /// waiting for them.
+    /// waiting for them, and releases the callers still waiting on those
+    /// events.
     ///
     /// Only reached when the drain deadline passes, at which point the process
-    /// is going away regardless; the cancellations are what stop a handler
-    /// that outlives it from finishing work whose result has nowhere to go.
+    /// is going away regardless; the cancellations are what stop a handler that
+    /// outlives it from finishing work whose result has nowhere to go.
+    ///
+    /// Releasing the entry drops the sender the caller is waiting on, so it
+    /// finds out now rather than waiting out its own timeout against a runtime
+    /// that has stopped. It is deliberately not answered with an unservable
+    /// outcome, as a queued event would be. This one was dispatched, and a
+    /// handler may have applied some of it, so inviting a retry could apply it
+    /// twice. A caller that cannot be told what happened should hear that,
+    /// rather than hear that nothing happened.
     fn abandon_in_flight(&mut self) {
         for (event_id, stream_id) in std::mem::take(&mut self.holders) {
+            // Before the stream is looked up, so an event whose stream has
+            // already gone is still released rather than skipped.
+            self.in_flight.remove(&event_id);
+
             let Some(stream) = self.streams.get(&stream_id) else {
                 continue;
             };
@@ -735,16 +748,16 @@ mod tests {
     }
 
     fn start(capacity: usize) -> Harness {
+        start_with_drain_timeout(capacity, Duration::from_secs(30))
+    }
+
+    fn start_with_drain_timeout(capacity: usize, drain_timeout: Duration) -> Harness {
         let (handles, receivers, cleanup) = EventQueueParts::new(capacity).into_parts();
         let cleanup_shutdown = cleanup.spawn();
         let (command_tx, command_rx) = mpsc::channel(16);
         let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
-        let dispatcher = Dispatcher::new(
-            handles.in_flight.clone(),
-            timeouts(),
-            Duration::from_secs(30),
-        );
+        let dispatcher = Dispatcher::new(handles.in_flight.clone(), timeouts(), drain_timeout);
         tokio::spawn(dispatcher.run(receivers, command_rx, shutdown_rx));
 
         Harness {
@@ -1128,6 +1141,35 @@ mod tests {
             outcome,
             EventOutcome::Unservable(UnservableReason::ShuttingDown)
         ));
+    }
+
+    #[tokio::test]
+    async fn releases_callers_whose_events_are_abandoned_at_the_drain_deadline() {
+        let mut harness = start_with_drain_timeout(8, Duration::from_millis(100));
+        let mut stream = attach(&harness, 1, &["schedule::a"], 4, HashMap::new()).await;
+
+        let result_rx = harness
+            .queue
+            .enqueue(
+                event("event-1", "schedule::a"),
+                admission_wait(Duration::from_secs(60)),
+            )
+            .await
+            .unwrap();
+        assert!(recv_dispatch(&mut stream).await.is_some());
+
+        // Nothing answers, so the drain runs out of time with the event still
+        // held. The caller should hear about it then, rather than waiting out
+        // its own timeout against a runtime that has stopped.
+        harness.stop();
+
+        let outcome = tokio::time::timeout(Duration::from_secs(2), result_rx)
+            .await
+            .expect("the caller should be woken at the drain deadline");
+        assert!(
+            outcome.is_err(),
+            "the caller should find the result channel closed, got {outcome:?}"
+        );
     }
 
     #[tokio::test]
