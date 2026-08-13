@@ -25,6 +25,7 @@ pub mod ipc_proto {
 
 pub mod ipc_frames;
 pub mod ipc_http;
+pub mod ipc_stream;
 pub mod ipc_websocket;
 pub mod request;
 pub(crate) mod runtime_local_api;

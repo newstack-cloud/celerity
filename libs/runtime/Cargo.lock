@@ -1253,6 +1253,7 @@ dependencies = [
  "tempfile",
  "test-log",
  "tokio",
+ "tokio-stream",
  "tokio-tungstenite 0.23.1",
  "tokio-util",
  "tonic 0.14.6",

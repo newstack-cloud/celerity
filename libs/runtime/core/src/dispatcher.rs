@@ -37,6 +37,18 @@ use crate::{
 /// Identifies one attached handler stream.
 pub type StreamId = u64;
 
+/// An event on its way to a handler, with the deadline the runtime will hold it
+/// to.
+///
+/// The deadline travels with the event because the dispatcher is what resolves
+/// it, and a handler is expected to observe the same deadline the runtime
+/// enforces rather than deriving its own.
+#[derive(Debug)]
+pub struct DispatchedEvent {
+    pub event: EventData,
+    pub deadline_unix_ms: i64,
+}
+
 /// What a handler stream declares about itself when it attaches.
 #[derive(Debug)]
 pub struct StreamRegistration {
@@ -49,7 +61,7 @@ pub struct StreamRegistration {
     /// by the credit window.
     pub limits: HashMap<String, u32>,
     /// Where dispatched events are sent.
-    pub dispatch_tx: mpsc::Sender<EventData>,
+    pub dispatch_tx: mpsc::Sender<DispatchedEvent>,
 }
 
 /// Tells the dispatcher about something that happened outside its own loop.
@@ -95,7 +107,7 @@ struct StreamState {
     in_flight: HashMap<String, u32>,
     /// The events this stream is holding, so they can be released if it goes.
     holding: HashSet<String>,
-    dispatch_tx: mpsc::Sender<EventData>,
+    dispatch_tx: mpsc::Sender<DispatchedEvent>,
 }
 
 impl StreamState {
@@ -121,6 +133,14 @@ pub struct Dispatcher {
     streams: BTreeMap<StreamId, StreamState>,
     in_flight: Arc<InFlightTable>,
     timeouts: HandlerTimeouts,
+}
+
+/// The wall-clock instant a timeout from now lands on, in milliseconds.
+fn unix_millis_from_now(timeout: std::time::Duration) -> i64 {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default();
+    now.saturating_add(timeout).as_millis() as i64
 }
 
 /// An event waiting for a stream that can take it.
@@ -307,6 +327,7 @@ impl Dispatcher {
 
         let event_id = queued.event.id.clone();
         let timeout = self.timeouts.for_tag(handler_tag);
+        let deadline_unix_ms = unix_millis_from_now(timeout);
 
         // Recorded as in flight before it is sent, so a result arriving
         // immediately finds the entry already there.
@@ -323,7 +344,10 @@ impl Dispatcher {
             .get_mut(&stream_id)
             .expect("the chosen stream should still be attached");
 
-        if let Err(err) = stream.dispatch_tx.try_send(queued.event) {
+        if let Err(err) = stream.dispatch_tx.try_send(DispatchedEvent {
+            event: queued.event,
+            deadline_unix_ms,
+        }) {
             // The stream went away between being chosen and being sent to.
             // Releasing the entry lets the caller fail now rather than wait.
             warn!(stream_id, %handler_tag, "failed to send to handler stream: {err}");
@@ -419,7 +443,7 @@ mod tests {
         tags: &[&str],
         credit: u32,
         limits: HashMap<String, u32>,
-    ) -> mpsc::Receiver<EventData> {
+    ) -> mpsc::Receiver<DispatchedEvent> {
         let (dispatch_tx, dispatch_rx) = mpsc::channel(64);
         let (registered_tx, registered_rx) = oneshot::channel();
         harness
@@ -442,7 +466,7 @@ mod tests {
         dispatch_rx
     }
 
-    async fn recv(rx: &mut mpsc::Receiver<EventData>) -> Option<EventData> {
+    async fn recv(rx: &mut mpsc::Receiver<DispatchedEvent>) -> Option<DispatchedEvent> {
         tokio::time::timeout(Duration::from_secs(2), rx.recv())
             .await
             .ok()
@@ -464,7 +488,7 @@ mod tests {
             .unwrap();
 
         let dispatched = recv(&mut stream).await.expect("the event should arrive");
-        assert_eq!(dispatched.id, "event-1");
+        assert_eq!(dispatched.event.id, "event-1");
     }
 
     #[tokio::test]
@@ -555,7 +579,7 @@ mod tests {
 
         let mut seen = Vec::new();
         while let Some(dispatched) = recv(&mut stream).await {
-            seen.push(dispatched.id);
+            seen.push(dispatched.event.id);
         }
 
         // The cap allows one slow event at a time, so the fast one is not stuck
