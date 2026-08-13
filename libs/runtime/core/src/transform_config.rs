@@ -1470,6 +1470,7 @@ mod tests {
             server_port: 8080,
             server_loopback_only: None,
             local_api_port: 8592,
+            runtime_socket: "/tmp/celerity-test.sock".to_string(),
             use_custom_health_check: None,
             trace_otlp_collector_endpoint: "".to_string(),
             runtime_max_diagnostics_level: Level::INFO,

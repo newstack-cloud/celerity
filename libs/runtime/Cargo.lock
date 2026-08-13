@@ -1259,6 +1259,7 @@ dependencies = [
  "tonic 0.14.6",
  "tonic-prost",
  "tower 0.4.13",
+ "tower 0.5.3",
  "tower-http",
  "tracing",
  "tracing-opentelemetry",

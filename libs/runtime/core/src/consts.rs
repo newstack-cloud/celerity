@@ -35,6 +35,12 @@ pub const DEFAULT_HANDLER_TIMEOUT: i64 = 60;
 // The default value for whether or not tracing is enabled for a handler.
 pub const DEFAULT_TRACING_ENABLED: bool = false;
 
+// The default Unix socket the handler stream is served on in the "ipc" runtime
+// call mode. A Unix socket is preferred over loopback TCP: it is consistently
+// faster on Linux, needs no port allocation, and its access control is
+// filesystem permissions rather than "anything that can reach localhost".
+pub const DEFAULT_RUNTIME_SOCKET: &str = "/var/run/celerity/runtime.sock";
+
 // The default port that the local API runs on in the "ipc" runtime call mode.
 pub const DEFAULT_LOCAL_API_PORT: &str = "8592";
 
@@ -51,6 +57,11 @@ pub const EVENT_QUEUE_ADMISSION_WAIT_DIVISOR: u32 = 4;
 // The largest HTTP request body the runtime will buffer into an event in the
 // IPC call mode. Matches axum's own default extractor limit.
 pub const MAX_HTTP_REQUEST_BODY_BYTES: usize = 2 * 1024 * 1024;
+
+// How many dispatcher commands may be queued before a handler stream waits.
+// Commands are small and are drained by a single task, so this only needs to
+// absorb bursts of results arriving together.
+pub const DISPATCHER_COMMAND_BUFFER: usize = 1024;
 
 // The capacity of the bounded event channel used to hand events to handlers
 // in the "ipc" runtime call mode.
