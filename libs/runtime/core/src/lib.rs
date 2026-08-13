@@ -23,6 +23,7 @@ pub mod ipc_proto {
     include!("generated/celerity.runtime.v1.rs");
 }
 
+pub mod ipc_frames;
 pub mod ipc_http;
 pub mod ipc_websocket;
 pub mod request;
