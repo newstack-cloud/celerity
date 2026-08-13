@@ -22,14 +22,23 @@ jobs:
     # building the generator, and it should fail on its own terms.
     name: Protocol contract
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       working-directory: ./libs/runtime
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The drift check runs `git diff` and never writes back, so the token
+          # does not need to be left behind in the checkout's git config.
+          persist-credentials: false
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1
         with:
+          # Raises the GitHub API rate limit while the action resolves and
+          # downloads a buf release, which shared runners otherwise hit. Not
+          # authentication for the Buf Schema Registry, which nothing here uses.
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Lint the protocol
         run: buf lint
