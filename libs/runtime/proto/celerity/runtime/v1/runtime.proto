@@ -339,6 +339,6 @@ message HandlerConfig {
 // One long-lived bidirectional stream carries everything: events, results,
 // configuration, WebSocket sends, handler-to-handler invocation, cancellation
 // and shutdown.
-service HandlerRuntime {
+service HandlerRuntimeService {
   rpc EventStream(stream HandlerMessage) returns (stream RuntimeMessage);
 }

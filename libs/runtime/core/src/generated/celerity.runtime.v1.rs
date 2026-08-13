@@ -490,7 +490,7 @@ pub struct HandlerConfig {
     pub tracing_enabled: bool,
 }
 /// Generated client implementations.
-pub mod handler_runtime_client {
+pub mod handler_runtime_service_client {
     #![allow(
         unused_variables,
         dead_code,
@@ -504,10 +504,10 @@ pub mod handler_runtime_client {
     /// configuration, WebSocket sends, handler-to-handler invocation, cancellation
     /// and shutdown.
     #[derive(Debug, Clone)]
-    pub struct HandlerRuntimeClient<T> {
+    pub struct HandlerRuntimeServiceClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl HandlerRuntimeClient<tonic::transport::Channel> {
+    impl HandlerRuntimeServiceClient<tonic::transport::Channel> {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -518,7 +518,7 @@ pub mod handler_runtime_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> HandlerRuntimeClient<T>
+    impl<T> HandlerRuntimeServiceClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::Body>,
         T::Error: Into<StdError>,
@@ -536,7 +536,7 @@ pub mod handler_runtime_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> HandlerRuntimeClient<InterceptedService<T, F>>
+        ) -> HandlerRuntimeServiceClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -550,7 +550,7 @@ pub mod handler_runtime_client {
                 http::Request<tonic::body::Body>,
             >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
-            HandlerRuntimeClient::new(InterceptedService::new(inner, interceptor))
+            HandlerRuntimeServiceClient::new(InterceptedService::new(inner, interceptor))
         }
         /// Compress requests with the given encoding.
         ///
@@ -600,19 +600,22 @@ pub mod handler_runtime_client {
                 })?;
             let codec = tonic_prost::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/celerity.runtime.v1.HandlerRuntime/EventStream",
+                "/celerity.runtime.v1.HandlerRuntimeService/EventStream",
             );
             let mut req = request.into_streaming_request();
             req.extensions_mut()
                 .insert(
-                    GrpcMethod::new("celerity.runtime.v1.HandlerRuntime", "EventStream"),
+                    GrpcMethod::new(
+                        "celerity.runtime.v1.HandlerRuntimeService",
+                        "EventStream",
+                    ),
                 );
             self.inner.streaming(req, path, codec).await
         }
     }
 }
 /// Generated server implementations.
-pub mod handler_runtime_server {
+pub mod handler_runtime_service_server {
     #![allow(
         unused_variables,
         dead_code,
@@ -621,9 +624,9 @@ pub mod handler_runtime_server {
         clippy::let_unit_value,
     )]
     use tonic::codegen::*;
-    /// Generated trait containing gRPC methods that should be implemented for use with HandlerRuntimeServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with HandlerRuntimeServiceServer.
     #[async_trait]
-    pub trait HandlerRuntime: std::marker::Send + std::marker::Sync + 'static {
+    pub trait HandlerRuntimeService: std::marker::Send + std::marker::Sync + 'static {
         /// Server streaming response type for the EventStream method.
         type EventStreamStream: tonic::codegen::tokio_stream::Stream<
                 Item = std::result::Result<super::RuntimeMessage, tonic::Status>,
@@ -642,14 +645,14 @@ pub mod handler_runtime_server {
     /// configuration, WebSocket sends, handler-to-handler invocation, cancellation
     /// and shutdown.
     #[derive(Debug)]
-    pub struct HandlerRuntimeServer<T> {
+    pub struct HandlerRuntimeServiceServer<T> {
         inner: Arc<T>,
         accept_compression_encodings: EnabledCompressionEncodings,
         send_compression_encodings: EnabledCompressionEncodings,
         max_decoding_message_size: Option<usize>,
         max_encoding_message_size: Option<usize>,
     }
-    impl<T> HandlerRuntimeServer<T> {
+    impl<T> HandlerRuntimeServiceServer<T> {
         pub fn new(inner: T) -> Self {
             Self::from_arc(Arc::new(inner))
         }
@@ -700,9 +703,10 @@ pub mod handler_runtime_server {
             self
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for HandlerRuntimeServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>>
+    for HandlerRuntimeServiceServer<T>
     where
-        T: HandlerRuntime,
+        T: HandlerRuntimeService,
         B: Body + std::marker::Send + 'static,
         B::Error: Into<StdError> + std::marker::Send + 'static,
     {
@@ -717,11 +721,11 @@ pub mod handler_runtime_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
-                "/celerity.runtime.v1.HandlerRuntime/EventStream" => {
+                "/celerity.runtime.v1.HandlerRuntimeService/EventStream" => {
                     #[allow(non_camel_case_types)]
-                    struct EventStreamSvc<T: HandlerRuntime>(pub Arc<T>);
+                    struct EventStreamSvc<T: HandlerRuntimeService>(pub Arc<T>);
                     impl<
-                        T: HandlerRuntime,
+                        T: HandlerRuntimeService,
                     > tonic::server::StreamingService<super::HandlerMessage>
                     for EventStreamSvc<T> {
                         type Response = super::RuntimeMessage;
@@ -738,7 +742,8 @@ pub mod handler_runtime_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as HandlerRuntime>::event_stream(&inner, request).await
+                                <T as HandlerRuntimeService>::event_stream(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -787,7 +792,7 @@ pub mod handler_runtime_server {
             }
         }
     }
-    impl<T> Clone for HandlerRuntimeServer<T> {
+    impl<T> Clone for HandlerRuntimeServiceServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -800,8 +805,8 @@ pub mod handler_runtime_server {
         }
     }
     /// Generated gRPC service name
-    pub const SERVICE_NAME: &str = "celerity.runtime.v1.HandlerRuntime";
-    impl<T> tonic::server::NamedService for HandlerRuntimeServer<T> {
+    pub const SERVICE_NAME: &str = "celerity.runtime.v1.HandlerRuntimeService";
+    impl<T> tonic::server::NamedService for HandlerRuntimeServiceServer<T> {
         const NAME: &'static str = SERVICE_NAME;
     }
 }

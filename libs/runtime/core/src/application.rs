@@ -70,10 +70,10 @@ use crate::{
         HandlerInvokeRegistry, HandlerInvoker, InvokeHandlerState, IpcInvokeState,
     },
     ipc_http::{self, IpcHttpRoute},
-    ipc_proto::handler_runtime_server::HandlerRuntimeServer,
+    ipc_proto::handler_runtime_service_server::HandlerRuntimeServiceServer,
     ipc_stream::{
         handler_tags_by_name, runtime_config_from_app_config, tags_from_runtime_config,
-        HandlerRuntimeService, StreamContext,
+        HandlerStreamService, StreamContext,
     },
     ipc_websocket::IpcWebSocketHandler,
     request::request_id,
@@ -602,7 +602,7 @@ impl Application {
         tokio::spawn(dispatcher.run(receivers, commands_rx, dispatcher_shutdown_rx));
         self.ipc_dispatcher_shutdown_signal = Some(dispatcher_shutdown_tx);
 
-        let service = HandlerRuntimeServer::new(HandlerRuntimeService::new(context));
+        let service = HandlerRuntimeServiceServer::new(HandlerStreamService::new(context));
         let (server_shutdown_tx, server_shutdown_rx) = tokio::sync::oneshot::channel();
         let shutdown = async {
             server_shutdown_rx.await.ok();
