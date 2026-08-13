@@ -6,7 +6,9 @@ license.workspace = true
 publish = false
 
 # Regenerates the checked-in Rust stubs for the IPC handler protocol.
-# Building this crate needs nothing special; running it needs protoc.
+# Building this crate needs nothing special; running it needs buf.
 
 [dependencies]
+prost = "0.14"
+prost-types = "0.14"
 tonic-prost-build = "0.14"

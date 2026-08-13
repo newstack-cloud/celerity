@@ -15,26 +15,24 @@ The Rust stubs live at
 and are committed, rather than produced by a build script.
 
 Building the runtime therefore needs nothing beyond a Rust toolchain. The SDK release workflows cross-compile inside containers and
-virtual machines, so a build-time `protoc` would have to be present in every
+virtual machines, so a build-time compiler would have to be present in every
 matrix leg of every one of them, and a leg that was missed would fail at release
 time rather than in CI.
 
 The trade-off is that regeneration is a manual step. **Changing the `.proto` without
-regenerating leaves the two out of step**, so do both in the same commit.
+regenerating leaves the two out of step**, so do both in the same commit. CI
+regenerates and fails on any difference, so this is caught rather than merged.
 
 ## Regenerating after changing the `.proto`
 
-Install `protoc` (3.15 or newer, as the contract uses proto3 `optional`):
+Install [`buf`](https://buf.build/docs/installation):
 
 ```bash
 # macOS
-brew install protobuf
-
-# Debian/Ubuntu
-apt-get install -y protobuf-compiler
+brew install bufbuild/buf/buf
 
 # or download a release directly
-# https://github.com/protocolbuffers/protobuf/releases
+# https://github.com/bufbuild/buf/releases
 ```
 
 Then, from `libs/runtime`:
@@ -47,6 +45,12 @@ That rewrites the generated module in place. Commit the `.proto` and the
 regenerated Rust together, and review the generated diff as part of the change:
 it is the clearest signal of whether an edit to the contract was additive or
 breaking.
+
+`buf` compiles the contract and the generator turns the resulting descriptor set
+into Rust, so `buf` is the only tool the protocol needs, the same one that lints
+it and checks it for compatibility. Nothing here uses `protoc` directly, which
+means CI and a developer's machine cannot disagree about which compiler produced
+the checked-in stubs.
 
 ## Compatibility
 
