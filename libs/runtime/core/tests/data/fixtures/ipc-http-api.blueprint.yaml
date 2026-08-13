@@ -86,3 +86,25 @@ resources:
       tracingEnabled: false
       environmentVariables:
         LOG_LEVEL: "${variables.logLevel}"
+
+  # A catch-all route, so that segment splitting can be exercised end to end.
+  getFileHandler:
+    type: "celerity/handler"
+    metadata:
+      displayName: Get File Handler
+      labels:
+        application: "orders"
+      annotations:
+        celerity.handler.http: true
+        celerity.handler.http.method: "GET"
+        celerity.handler.http.path: "/files/{filePath+}"
+    spec:
+      handlerName: Orders-GetFileHandler-v1
+      codeLocation: "./orders"
+      handler: "handlers.get_file"
+      runtime: "python3.12.x"
+      memory: 1024
+      timeout: 2
+      tracingEnabled: false
+      environmentVariables:
+        LOG_LEVEL: "${variables.logLevel}"

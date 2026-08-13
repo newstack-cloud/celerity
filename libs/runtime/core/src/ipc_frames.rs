@@ -10,7 +10,7 @@
 
 use std::collections::HashMap;
 
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use bytes::Bytes;
 use serde_json::Value;
 use tracing::warn;
 
@@ -98,12 +98,12 @@ fn http_request(request: HttpRequestEventData) -> proto::HttpRequest {
         method: request.method.to_uppercase(),
         path: request.path,
         route: request.route,
-        path_params: single_valued(request.path_params),
-        query_params: multi_valued(request.query_params, request.multi_query_params),
-        headers: multi_valued(request.headers, request.multi_headers),
+        path_params: values_map(request.path_params),
+        query_params: values_map(request.query_params),
+        headers: values_map(request.headers),
         source_ip: request.source_ip,
         request_id: request.request_id,
-        body: decode_body(request.body, request.is_binary),
+        body: request.body.to_vec(),
     }
 }
 
@@ -113,7 +113,7 @@ fn websocket_message(message: WebSocketEventData) -> proto::WebSocketMessage {
         connection_id: message.connection_id,
         source_ip: message.source_ip,
         request_id: message.request_id.unwrap_or_default(),
-        message: decode_body(Some(message.message), message.is_binary),
+        message: message.message.to_vec(),
         is_binary: message.is_binary,
     }
 }
@@ -211,7 +211,7 @@ pub fn event_result_from_frame(result: proto::Result) -> EventResult {
             EventResultData::HttpResponse(HttpResponseData {
                 status: 500,
                 headers: HashMap::new(),
-                body: "handler returned an empty result".to_string(),
+                body: Bytes::from_static(b"handler returned an empty result"),
             })
         }
     };
@@ -226,17 +226,12 @@ pub fn event_result_from_frame(result: proto::Result) -> EventResult {
 fn http_response(response: proto::HttpResponse) -> HttpResponseData {
     HttpResponseData {
         status: response.status as u16,
-        // The internal response type holds one value per header, so only the
-        // first survives. Multi-valued responses arrive intact once that type
-        // carries them too.
         headers: response
             .headers
             .into_iter()
-            .filter_map(|(name, values)| {
-                values.values.into_iter().next().map(|value| (name, value))
-            })
+            .map(|(name, values)| (name, values.values))
             .collect(),
-        body: String::from_utf8_lossy(&response.body).into_owned(),
+        body: Bytes::from(response.body),
     }
 }
 
@@ -244,7 +239,7 @@ fn handler_error_response(error: &proto::HandlerError) -> HttpResponseData {
     HttpResponseData {
         status: 500,
         headers: HashMap::new(),
-        body: error.message.clone(),
+        body: Bytes::from(error.message.clone()),
     }
 }
 
@@ -275,21 +270,6 @@ fn batch_result(batch: proto::BatchResult) -> MessageProcessingResponseData {
 ///
 /// A body flagged as binary was base64 encoded to survive being carried as
 /// JSON. Anything else is text, and its UTF-8 bytes are the body.
-fn decode_body(body: Option<String>, is_binary: bool) -> Vec<u8> {
-    let Some(body) = body else {
-        return Vec::new();
-    };
-    if !is_binary {
-        return body.into_bytes();
-    }
-    BASE64.decode(&body).unwrap_or_else(|err| {
-        // Only reachable if something produced a body that claims to be binary
-        // but is not valid base64, which would be a bug on the producing side.
-        warn!("a body marked as binary was not valid base64: {err}");
-        body.into_bytes()
-    })
-}
-
 fn json_bytes(value: Option<Value>) -> Vec<u8> {
     match value {
         Some(value) => serde_json::to_vec(&value).unwrap_or_else(|err| {
@@ -300,41 +280,15 @@ fn json_bytes(value: Option<Value>) -> Vec<u8> {
     }
 }
 
-fn single_valued(values: HashMap<String, String>) -> HashMap<String, proto::Values> {
+/// Carries an ordered set of values per name through to the protocol.
+///
+/// The internal types and the protocol agree on this shape, so nothing has to
+/// be chosen between or dropped here.
+fn values_map(values: HashMap<String, Vec<String>>) -> HashMap<String, proto::Values> {
     values
         .into_iter()
-        .map(|(name, value)| {
-            (
-                name,
-                proto::Values {
-                    values: vec![value],
-                },
-            )
-        })
-        .collect()
-}
-
-/// Prefers the multi-valued map, falling back to the single-valued one for any
-/// name it does not cover.
-///
-/// The internal types carry both, and the two can disagree. The protocol has
-/// one canonical multi-valued representation, so this is where the duplication
-/// is resolved rather than being passed on to every SDK.
-fn multi_valued(
-    single: HashMap<String, String>,
-    multi: HashMap<String, Vec<String>>,
-) -> HashMap<String, proto::Values> {
-    let mut out: HashMap<String, proto::Values> = multi
-        .into_iter()
         .map(|(name, values)| (name, proto::Values { values }))
-        .collect();
-
-    for (name, value) in single {
-        out.entry(name).or_insert(proto::Values {
-            values: vec![value],
-        });
-    }
-    out
+        .collect()
 }
 
 fn none_if_empty(value: String) -> Option<String> {
@@ -348,7 +302,7 @@ mod tests {
     use super::*;
     use crate::types::{ConsumerMessage, EventType};
 
-    fn http_event(body: Option<String>, is_binary: bool) -> EventData {
+    fn http_event(body: &'static [u8]) -> EventData {
         EventData {
             id: "event-1".to_string(),
             event_type: EventType::HttpRequest,
@@ -358,16 +312,16 @@ mod tests {
                 method: "get".to_string(),
                 path: "/orders/1".to_string(),
                 route: "/orders/{id}".to_string(),
-                path_params: HashMap::from([("id".to_string(), "1".to_string())]),
-                query_params: HashMap::from([("expand".to_string(), "items".to_string())]),
-                multi_query_params: HashMap::from([(
+                path_params: HashMap::from([("id".to_string(), vec!["1".to_string()])]),
+                query_params: HashMap::from([(
                     "expand".to_string(),
                     vec!["items".to_string(), "totals".to_string()],
                 )]),
-                headers: HashMap::from([("accept".to_string(), "application/json".to_string())]),
-                multi_headers: HashMap::new(),
-                body,
-                is_binary,
+                headers: HashMap::from([(
+                    "accept".to_string(),
+                    vec!["application/json".to_string()],
+                )]),
+                body: Bytes::from_static(body),
                 source_ip: "10.0.0.1".to_string(),
                 request_id: "request-1".to_string(),
             })),
@@ -376,7 +330,7 @@ mod tests {
 
     #[test]
     fn carries_an_http_request_onto_the_wire() {
-        let dispatch = dispatch_from_event(http_event(Some("{}".to_string()), false), 42);
+        let dispatch = dispatch_from_event(http_event(b"{}"), 42);
 
         assert_eq!(dispatch.id, "event-1");
         assert_eq!(dispatch.deadline_unix_ms, 42);
@@ -395,14 +349,12 @@ mod tests {
     }
 
     #[test]
-    fn prefers_the_multi_valued_map_where_the_two_disagree() {
-        let dispatch = dispatch_from_event(http_event(None, false), 0);
+    fn carries_every_value_a_name_was_sent_with() {
+        let dispatch = dispatch_from_event(http_event(b""), 0);
         let Some(proto::dispatch::Source::Http(request)) = dispatch.source else {
             panic!("expected an HTTP source");
         };
 
-        // Both maps carry `expand`; the multi-valued one wins so no value is
-        // lost, and the header only the single-valued map has still arrives.
         assert_eq!(
             request.query_params.get("expand").map(|v| v.values.clone()),
             Some(vec!["items".to_string(), "totals".to_string()])
@@ -414,14 +366,40 @@ mod tests {
     }
 
     #[test]
-    fn recovers_the_bytes_of_a_binary_body() {
-        let raw = vec![0xff, 0xfe, 0x00, 0x80];
-        let dispatch = dispatch_from_event(http_event(Some(BASE64.encode(&raw)), true), 0);
+    fn carries_a_body_that_is_not_text_byte_for_byte() {
+        let raw: &[u8] = &[0xff, 0xfe, 0x00, 0x80];
+        let dispatch = dispatch_from_event(http_event(raw), 0);
 
         let Some(proto::dispatch::Source::Http(request)) = dispatch.source else {
             panic!("expected an HTTP source");
         };
         assert_eq!(request.body, raw);
+    }
+
+    #[test]
+    fn keeps_every_value_of_a_repeated_response_header() {
+        let result = event_result_from_frame(proto::Result {
+            id: "event-1".to_string(),
+            credit_grant: 1,
+            outcome: Some(proto::result::Outcome::Http(proto::HttpResponse {
+                status: 200,
+                headers: HashMap::from([(
+                    "set-cookie".to_string(),
+                    proto::Values {
+                        values: vec!["a=1".to_string(), "b=2".to_string()],
+                    },
+                )]),
+                body: b"{}".to_vec(),
+            })),
+        });
+
+        let EventResultData::HttpResponse(response) = result.data else {
+            panic!("expected an HTTP response");
+        };
+        assert_eq!(
+            response.headers.get("set-cookie"),
+            Some(&vec!["a=1".to_string(), "b=2".to_string()])
+        );
     }
 
     #[test]
@@ -517,10 +495,10 @@ mod tests {
             panic!("expected an HTTP response");
         };
         assert_eq!(response.status, 201);
-        assert_eq!(response.body, "{\"id\":1}");
+        assert_eq!(response.body, &b"{\"id\":1}"[..]);
         assert_eq!(
             response.headers.get("content-type"),
-            Some(&"application/json".to_string())
+            Some(&vec!["application/json".to_string()])
         );
     }
 

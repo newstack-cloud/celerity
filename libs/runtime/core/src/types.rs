@@ -1,5 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
+use bytes::Bytes;
+
 use celerity_helpers::runtime_types::RuntimePlatform;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -49,27 +51,18 @@ pub struct HttpRequestEventData {
     pub method: String,
     pub path: String,
     pub route: String,
+    /// Ordered values per name. A catch-all parameter yields one value per path
+    /// segment; every other kind yields exactly one.
     #[serde(rename = "pathParams")]
-    pub path_params: HashMap<String, String>,
+    pub path_params: HashMap<String, Vec<String>>,
     #[serde(rename = "queryParams")]
-    pub query_params: HashMap<String, String>,
-    #[serde(rename = "multiQueryParams")]
-    pub multi_query_params: HashMap<String, Vec<String>>,
-    #[serde(rename = "headers")]
-    pub headers: HashMap<String, String>,
-    #[serde(rename = "multiHeaders")]
-    pub multi_headers: HashMap<String, Vec<String>>,
-    /// The request body. Text bodies are carried as sent. A body that is not
-    /// valid UTF-8 is carried as its standard base64 encoding, since this event
-    /// is serialised as JSON, which has no binary representation.
-    #[serde(rename = "body")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub body: Option<String>,
-    /// Whether `body` holds a base64 encoded binary payload rather than text.
-    /// Handlers must decode the body when this is set.
-    #[serde(rename = "isBinary")]
-    #[serde(default)]
-    pub is_binary: bool,
+    pub query_params: HashMap<String, Vec<String>>,
+    /// Names are lowercase. Order within a name is significant, order across
+    /// names is not.
+    pub headers: HashMap<String, Vec<String>>,
+    /// The request body exactly as it was received. Opaque to the runtime,
+    /// which never parses it.
+    pub body: Bytes,
     #[serde(rename = "sourceIp")]
     pub source_ip: String,
     #[serde(rename = "requestId")]
@@ -86,12 +79,11 @@ pub struct WebSocketEventData {
     #[serde(rename = "requestId")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
-    /// The message body. For a text frame this is the message as sent. For a
-    /// binary frame this is the standard base64 encoding of its bytes, since
-    /// the event is carried as JSON, which has no binary representation.
-    pub message: String,
-    /// Whether `message` holds a base64 encoded binary frame rather than text.
-    /// Handlers must decode the body when this is set.
+    /// The message exactly as it arrived.
+    pub message: Bytes,
+    /// Whether this arrived as a binary frame rather than a text one. Bytes
+    /// alone cannot express the distinction, and the WebSocket protocol treats
+    /// the two frame types as distinct.
     #[serde(rename = "isBinary")]
     #[serde(default)]
     pub is_binary: bool,
@@ -261,8 +253,10 @@ pub struct CustomInvokeResponseData {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct HttpResponseData {
     pub status: u16,
-    pub headers: HashMap<String, String>,
-    pub body: String,
+    /// Ordered values per name, so a handler can emit two `Set-Cookie` headers,
+    /// which RFC 9110 forbids folding into one comma-separated value.
+    pub headers: HashMap<String, Vec<String>>,
+    pub body: Bytes,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

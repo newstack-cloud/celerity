@@ -311,6 +311,55 @@ async fn serves_an_http_request_through_a_handler_over_the_stream() {
 }
 
 #[test_log::test(tokio::test)]
+async fn splits_a_catch_all_path_into_segments_without_losing_encoded_separators() {
+    let (_app, addr, socket) = start_runtime(
+        "ipc-catch-all",
+        "tests/data/fixtures/ipc-http-api.blueprint.yaml",
+    )
+    .await;
+    let mut handler = HandlerStub::attach(&socket, |_| Some(json_response(r#"{"ok":true}"#))).await;
+
+    // The middle segment carries an encoded separator, which must stay inside
+    // that segment rather than splitting it in two.
+    let response = tokio::time::timeout(
+        Duration::from_secs(10),
+        http_client().request(
+            Request::builder()
+                .uri(format!("http://{addr}/files/docs/a%2Fb/report%20final.pdf"))
+                .header("Host", "localhost")
+                .body(Body::empty())
+                .unwrap(),
+        ),
+    )
+    .await
+    .expect("the request should be served rather than time out")
+    .unwrap();
+    assert_eq!(response.status(), 200);
+
+    let dispatch = handler
+        .next_dispatch()
+        .await
+        .expect("the handler should have been given the request");
+    let Some(proto::dispatch::Source::Http(request)) = dispatch.source else {
+        panic!("expected an HTTP source");
+    };
+    assert_eq!(request.route, "/files/{*filePath}");
+    assert_eq!(
+        request
+            .path_params
+            .get("filePath")
+            .map(|v| v.values.clone()),
+        Some(vec![
+            "docs".to_string(),
+            "a/b".to_string(),
+            "report final.pdf".to_string(),
+        ])
+    );
+
+    let _ = tokio::fs::remove_file(&socket).await;
+}
+
+#[test_log::test(tokio::test)]
 async fn returns_504_when_the_handler_never_answers() {
     let (_app, addr, socket) = start_runtime(
         "ipc-timeout",
